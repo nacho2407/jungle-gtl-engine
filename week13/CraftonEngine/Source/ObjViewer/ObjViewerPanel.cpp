@@ -45,6 +45,7 @@ void FObjViewerPanel::Render(float DeltaTime)
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
 	RenderMeshList();
+	RenderImportPopup();
 	RenderPreviewViewport(DeltaTime);
 
 	ImGui::Render();
@@ -72,25 +73,123 @@ void FObjViewerPanel::RenderMeshList()
 {
 	ImGui::Begin("Mesh List");
 
-	const TArray<FMeshAssetListItem>& MeshFiles = FObjManager::GetAvailableMeshFiles();
-
-	for (int32 i = 0; i < static_cast<int32>(MeshFiles.size()); ++i)
+	// OBJ Files 섹션
+	if (ImGui::CollapsingHeader("OBJ Files", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		bool bSelected = (i == SelectedMeshIndex);
-		if (ImGui::Selectable(MeshFiles[i].DisplayName.c_str(), bSelected))
+		const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
+
+		for (int32 i = 0; i < static_cast<int32>(ObjFiles.size()); ++i)
 		{
-			if (SelectedMeshIndex != i)
+			bool bSelected = (i == SelectedObjIndex);
+			if (ImGui::Selectable(ObjFiles[i].DisplayName.c_str(), bSelected))
 			{
-				SelectedMeshIndex = i;
-				if (Engine)
+				SelectedObjIndex = i;
+			}
+		}
+
+		// Import 버튼 — 선택된 OBJ가 있을 때만 활성
+		bool bHasSelection = SelectedObjIndex >= 0 && SelectedObjIndex < static_cast<int32>(ObjFiles.size());
+		if (!bHasSelection) ImGui::BeginDisabled();
+		if (ImGui::Button("Import..."))
+		{
+			PendingImportOptions = FImportOptions::Default();
+			bShowImportPopup = true;
+			ImGui::OpenPopup("Import Options");
+		}
+		if (!bHasSelection) ImGui::EndDisabled();
+	}
+
+	ImGui::Separator();
+
+	// Cached Meshes (.bin) 섹션
+	if (ImGui::CollapsingHeader("Cached Meshes (.bin)", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		const TArray<FMeshAssetListItem>& MeshFiles = FObjManager::GetAvailableMeshFiles();
+
+		for (int32 i = 0; i < static_cast<int32>(MeshFiles.size()); ++i)
+		{
+			bool bSelected = (i == SelectedMeshIndex);
+			if (ImGui::Selectable(MeshFiles[i].DisplayName.c_str(), bSelected))
+			{
+				if (SelectedMeshIndex != i)
 				{
-					Engine->LoadPreviewMesh(MeshFiles[i].FullPath);
+					SelectedMeshIndex = i;
+					if (Engine)
+					{
+						Engine->LoadPreviewMesh(MeshFiles[i].FullPath);
+					}
 				}
 			}
 		}
 	}
 
 	ImGui::End();
+}
+
+void FObjViewerPanel::RenderImportPopup()
+{
+	if (!bShowImportPopup) return;
+
+	ImGui::OpenPopup("Import Options");
+
+	ImVec2 Center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(Center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+	if (ImGui::BeginPopupModal("Import Options", &bShowImportPopup, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		// Scale
+		ImGui::InputFloat("Scale", &PendingImportOptions.Scale, 0.01f, 1.0f, "%.4f");
+		ImGui::SameLine();
+		if (ImGui::SmallButton("cm->m"))
+		{
+			PendingImportOptions.Scale = 0.01f;
+		}
+		ImGui::SameLine();
+		if (ImGui::SmallButton("1:1"))
+		{
+			PendingImportOptions.Scale = 1.0f;
+		}
+
+		// Forward Axis
+		const char* AxisLabels[] = { "X", "-X", "Y", "-Y", "Z", "-Z" };
+		int AxisIndex = static_cast<int>(PendingImportOptions.ForwardAxis);
+		if (ImGui::Combo("Forward Axis", &AxisIndex, AxisLabels, IM_ARRAYSIZE(AxisLabels)))
+		{
+			PendingImportOptions.ForwardAxis = static_cast<EForwardAxis>(AxisIndex);
+		}
+
+		// Winding Order
+		const char* WindingLabels[] = { "CCW -> CW (DirectX)", "Keep Original" };
+		int WindingIndex = static_cast<int>(PendingImportOptions.WindingOrder);
+		if (ImGui::Combo("Winding Order", &WindingIndex, WindingLabels, IM_ARRAYSIZE(WindingLabels)))
+		{
+			PendingImportOptions.WindingOrder = static_cast<EWindingOrder>(WindingIndex);
+		}
+
+		ImGui::Separator();
+
+		// Import / Cancel 버튼
+		if (ImGui::Button("Import", ImVec2(120, 0)))
+		{
+			const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
+			if (Engine && SelectedObjIndex >= 0 && SelectedObjIndex < static_cast<int32>(ObjFiles.size()))
+			{
+				Engine->ImportObjWithOptions(ObjFiles[SelectedObjIndex].FullPath, PendingImportOptions);
+			}
+			bShowImportPopup = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			bShowImportPopup = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
 }
 
 void FObjViewerPanel::RenderPreviewViewport(float DeltaTime)
