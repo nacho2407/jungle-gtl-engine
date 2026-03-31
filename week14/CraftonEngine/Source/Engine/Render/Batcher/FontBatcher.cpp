@@ -163,8 +163,8 @@ void FFontBatcher::AddScreenText(const FString& Text,
 		return;
 	}
 
-	const float CharW = 25.0f * Scale;
-	const float CharH = 25.0f * Scale;
+	const float CharW = 23.0f * Scale;
+	const float CharH = 23.0f * Scale;
 	const float LetterSpacing = - 0.5f * CharW;
 
 	const uint32 Base = static_cast<uint32>(ScreenVertices.size());

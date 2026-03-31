@@ -33,8 +33,9 @@ public:
 	static void AddIndexBufferMemory(uint32 Size) { IndexBufferMemory += Size; }
 	static void SubIndexBufferMemory(uint32 Size) { IndexBufferMemory -= Size; }
 
-	static void AddConstantBufferMemory(uint32 Size) { ConstantBufferMemory += Size; }
-	static void SubConstantBufferMemory(uint32 Size) { ConstantBufferMemory -= Size; }
+	// StaticMesh CPU
+	static void AddStaticMeshCPUMemory(uint32 Size) { StaticMeshCPUMemory += Size; }
+	static void SubStaticMeshCPUMemory(uint32 Size) { StaticMeshCPUMemory -= Size; }
 
 	static uint32 GetTotalAllocationBytes() { return TotalAllocationBytes; }
 	static uint32 GetTotalAllocationCount() { return TotalAllocationCount; }
@@ -43,7 +44,8 @@ public:
 	static uint32 GetTextureMemory() { return TextureMemory; }
 	static uint32 GetVertexBufferMemory() { return VertexBufferMemory; }
 	static uint32 GetIndexBufferMemory() { return IndexBufferMemory; }
-	static uint32 GetConstantBufferMemory() { return ConstantBufferMemory; }
+	static uint32 GetStaticMeshCPUMemory() { return StaticMeshCPUMemory; }
+
 
 private:
 	static uint32 TotalAllocationBytes;
@@ -53,5 +55,5 @@ private:
 	static uint32 TextureMemory;
 	static uint32 VertexBufferMemory;
 	static uint32 IndexBufferMemory;
-	static uint32 ConstantBufferMemory;
+	static uint32 StaticMeshCPUMemory;
 };
