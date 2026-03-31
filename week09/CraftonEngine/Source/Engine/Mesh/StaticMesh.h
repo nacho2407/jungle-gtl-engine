@@ -15,7 +15,7 @@ public:
 	DECLARE_CLASS(UStaticMesh, UObject)
 
 	UStaticMesh() = default;
-	~UStaticMesh() override = default;
+	~UStaticMesh() override;
 
 	void Serialize(FArchive& Ar);
 
