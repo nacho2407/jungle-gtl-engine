@@ -1,25 +1,446 @@
 #include "ObjManager.h"
-#include "Core/Paths.h"
+
+#include <algorithm>
+#include <cctype>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <Windows.h>
 
 #include "Core/Engine.h"
+#include "Core/Paths.h"
 #include "Debug/EngineLog.h"
-#include "Renderer/Renderer.h"
 #include "Math/MathUtility.h"
-#include "Renderer/MaterialManager.h"
-#include "Renderer/Shader.h"
 #include "Renderer/Material.h"
+#include "Renderer/MaterialManager.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/Shader.h"
 #include "Renderer/ShaderMap.h"
 
 TMap<FString, UStaticMesh*> FObjManager::ObjStaticMeshMap;
 
 namespace
 {
+	constexpr char GModelMagic[4] = { 'M', 'O', 'D', 'L' };
+	constexpr uint32 GModelVersionLegacy = 1;
+	constexpr uint32 GModelVersionEmbeddedMaterials = 2;
+	constexpr uint32 GModelVersion = GModelVersionEmbeddedMaterials;
+
+	FString WideToUtf8(const std::wstring& WideString)
+	{
+		if (WideString.empty())
+		{
+			return "";
+		}
+
+		const int32 RequiredBytes = ::WideCharToMultiByte(
+			CP_UTF8,
+			0,
+			WideString.c_str(),
+			-1,
+			nullptr,
+			0,
+			nullptr,
+			nullptr);
+		if (RequiredBytes <= 1)
+		{
+			return "";
+		}
+
+		FString Utf8String;
+		Utf8String.resize(static_cast<size_t>(RequiredBytes));
+		::WideCharToMultiByte(
+			CP_UTF8,
+			0,
+			WideString.c_str(),
+			-1,
+			Utf8String.data(),
+			RequiredBytes,
+			nullptr,
+			nullptr);
+		Utf8String.pop_back();
+		return Utf8String;
+	}
+
+	FString PathToUtf8(const std::filesystem::path& Path)
+	{
+		return WideToUtf8(Path.wstring());
+	}
+
+	FString TrimAscii(const FString& Value)
+	{
+		size_t Start = 0;
+		while (Start < Value.size() && std::isspace(static_cast<unsigned char>(Value[Start])))
+		{
+			++Start;
+		}
+
+		size_t End = Value.size();
+		while (End > Start && std::isspace(static_cast<unsigned char>(Value[End - 1])))
+		{
+			--End;
+		}
+
+		return Value.substr(Start, End - Start);
+	}
+
+	bool PathExists(const std::filesystem::path& Path)
+	{
+		std::error_code ErrorCode;
+		return !Path.empty() && std::filesystem::exists(Path, ErrorCode);
+	}
+
+	template <typename T>
+	bool WriteBinaryValue(std::ofstream& File, const T& Value)
+	{
+		File.write(reinterpret_cast<const char*>(&Value), sizeof(T));
+		return File.good();
+	}
+
+	template <typename T>
+	bool ReadBinaryValue(std::ifstream& File, T& Value)
+	{
+		File.read(reinterpret_cast<char*>(&Value), sizeof(T));
+		return File.good();
+	}
+
+	bool WriteBinaryBytes(std::ofstream& File, const void* Data, std::streamsize Size)
+	{
+		if (Size <= 0)
+		{
+			return true;
+		}
+
+		File.write(reinterpret_cast<const char*>(Data), Size);
+		return File.good();
+	}
+
+	bool ReadBinaryBytes(std::ifstream& File, void* Data, std::streamsize Size)
+	{
+		if (Size <= 0)
+		{
+			return true;
+		}
+
+		File.read(reinterpret_cast<char*>(Data), Size);
+		return File.good();
+	}
+
+	bool WriteUtf8String(std::ofstream& File, const FString& Value)
+	{
+		const uint32 ByteCount = static_cast<uint32>(Value.size());
+		if (!WriteBinaryValue(File, ByteCount))
+		{
+			return false;
+		}
+
+		return WriteBinaryBytes(File, Value.data(), static_cast<std::streamsize>(ByteCount));
+	}
+
+	bool ReadUtf8String(std::ifstream& File, FString& OutValue)
+	{
+		uint32 ByteCount = 0;
+		if (!ReadBinaryValue(File, ByteCount))
+		{
+			return false;
+		}
+
+		OutValue.resize(ByteCount);
+		return ReadBinaryBytes(File, OutValue.data(), static_cast<std::streamsize>(ByteCount));
+	}
+
+	std::filesystem::path ResolveMaterialReferencePath(const std::filesystem::path& ObjPath, const FString& MaterialReference)
+	{
+		const std::filesystem::path ReferencePath = std::filesystem::path(FPaths::ToWide(MaterialReference)).lexically_normal();
+		if (ReferencePath.is_absolute() && PathExists(ReferencePath))
+		{
+			return ReferencePath;
+		}
+
+		const TArray<std::filesystem::path> Candidates =
+		{
+			(ObjPath.parent_path() / ReferencePath).lexically_normal(),
+			(FPaths::MaterialDir() / ReferencePath).lexically_normal(),
+			(FPaths::MaterialDir() / ReferencePath.filename()).lexically_normal(),
+			(FPaths::ProjectRoot() / ReferencePath).lexically_normal()
+		};
+
+		for (const std::filesystem::path& Candidate : Candidates)
+		{
+			if (PathExists(Candidate))
+			{
+				return Candidate;
+			}
+		}
+
+		return (ObjPath.parent_path() / ReferencePath).lexically_normal();
+	}
+
+	std::filesystem::path ResolveTextureReferencePath(const std::filesystem::path& SourceFilePath, const FString& TextureReference)
+	{
+		const FString TrimmedReference = TrimAscii(TextureReference);
+		if (TrimmedReference.empty())
+		{
+			return {};
+		}
+
+		const std::filesystem::path ReferencePath = std::filesystem::path(FPaths::ToWide(TrimmedReference)).lexically_normal();
+		if (ReferencePath.is_absolute() && PathExists(ReferencePath))
+		{
+			return ReferencePath;
+		}
+
+		const TArray<std::filesystem::path> Candidates =
+		{
+			(SourceFilePath.parent_path() / ReferencePath).lexically_normal(),
+			(FPaths::ProjectRoot() / ReferencePath).lexically_normal(),
+			(FPaths::TextureDir() / ReferencePath).lexically_normal(),
+			(FPaths::TextureDir() / ReferencePath.filename()).lexically_normal()
+		};
+
+		for (const std::filesystem::path& Candidate : Candidates)
+		{
+			if (PathExists(Candidate))
+			{
+				return Candidate;
+			}
+		}
+
+		return (SourceFilePath.parent_path() / ReferencePath).lexically_normal();
+	}
+
+	FString MakeStoredTexturePath(const std::filesystem::path& ModelFilePath, const std::filesystem::path& TexturePath)
+	{
+		if (TexturePath.empty())
+		{
+			return "";
+		}
+
+		const std::filesystem::path BaseDirectory = ModelFilePath.parent_path().empty()
+			? FPaths::ProjectRoot()
+			: ModelFilePath.parent_path();
+		const std::filesystem::path RelativePath = TexturePath.lexically_relative(BaseDirectory);
+		if (!RelativePath.empty())
+		{
+			return PathToUtf8(RelativePath);
+		}
+
+		return PathToUtf8(TexturePath);
+	}
+
+	FString GetNormalizedExtension(const FString& PathFileName)
+	{
+		FString Extension = std::filesystem::path(PathFileName).extension().string();
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char Ch)
+		{
+			return static_cast<char>(std::tolower(Ch));
+		});
+		return Extension;
+	}
+
+	uint32 GetRequiredMaterialSlotCount(const FStaticMesh& StaticMesh, const TArray<FString>& MaterialSlotNames)
+	{
+		uint32 SlotCount = static_cast<uint32>(MaterialSlotNames.size());
+		for (const FMeshSection& Section : StaticMesh.Sections)
+		{
+			SlotCount = (std::max)(SlotCount, Section.MaterialIndex + 1);
+		}
+		return SlotCount;
+	}
+
+	uint32 GetRequiredMaterialSlotCount(const FStaticMesh& StaticMesh, const TArray<FModelMaterialInfo>& MaterialInfos)
+	{
+		uint32 SlotCount = static_cast<uint32>(MaterialInfos.size());
+		for (const FMeshSection& Section : StaticMesh.Sections)
+		{
+			SlotCount = (std::max)(SlotCount, Section.MaterialIndex + 1);
+		}
+		return SlotCount;
+	}
+
+	FString GetMaterialSlotNameOrDefault(const TArray<FString>& MaterialSlotNames, uint32 SlotIndex)
+	{
+		if (SlotIndex < MaterialSlotNames.size() && !MaterialSlotNames[SlotIndex].empty())
+		{
+			return MaterialSlotNames[SlotIndex];
+		}
+
+		return "M_Default";
+	}
+
+	FModelMaterialInfo GetMaterialInfoOrDefault(const TArray<FModelMaterialInfo>& MaterialInfos, uint32 SlotIndex)
+	{
+		if (SlotIndex < MaterialInfos.size())
+		{
+			FModelMaterialInfo MaterialInfo = MaterialInfos[SlotIndex];
+			if (MaterialInfo.Name.empty())
+			{
+				MaterialInfo.Name = "M_Default";
+			}
+			return MaterialInfo;
+		}
+
+		return {};
+	}
+
+	std::shared_ptr<FMaterial> CreateImportedMaterialTemplate(const FString& MaterialName)
+	{
+		std::shared_ptr<FMaterial> Material = std::make_shared<FMaterial>();
+		Material->SetOriginName(MaterialName.empty() ? "M_Default" : MaterialName);
+
+		std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
+		std::wstring PSPath = FPaths::ShaderDir() / L"ColorPixelShader.hlsl";
+		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
+		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
+
+		FMaterial* DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
+		Material->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
+		Material->SetRasterizerState(DefaultTexMat->GetRasterizerState());
+		Material->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
+		Material->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
+		Material->SetBlendOption(DefaultTexMat->GetBlendOption());
+		Material->SetBlendState(DefaultTexMat->GetBlendState());
+
+		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 16);
+		if (SlotIndex >= 0)
+		{
+			Material->RegisterParameter("BaseColor", SlotIndex, 0, 16);
+			const float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			Material->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+		}
+
+		return Material;
+	}
+
+	void ApplyBaseColorToMaterial(const std::shared_ptr<FMaterial>& Material, const FVector4& BaseColor)
+	{
+		if (!Material)
+		{
+			return;
+		}
+
+		const float DiffuseColor[4] = { BaseColor.X, BaseColor.Y, BaseColor.Z, BaseColor.W };
+		if (FMaterialConstantBuffer* ConstantBuffer = Material->GetConstantBuffer(0))
+		{
+			ConstantBuffer->SetData(DiffuseColor, sizeof(DiffuseColor));
+		}
+	}
+
+	bool TryLoadTextureIntoMaterial(const std::shared_ptr<FMaterial>& Material, const std::filesystem::path& TexturePath, const char* LogPrefix)
+	{
+		if (!Material || TexturePath.empty())
+		{
+			return false;
+		}
+
+		ID3D11ShaderResourceView* NewSRV = nullptr;
+		if (!GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath.string().c_str(), &NewSRV))
+		{
+			return false;
+		}
+
+		auto MaterialTexture = std::make_shared<FMaterialTexture>();
+		MaterialTexture->TextureSRV = NewSRV;
+		Material->SetMaterialTexture(MaterialTexture);
+
+		std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
+		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
+		UE_LOG("%s %s", LogPrefix, TexturePath.string().c_str());
+		return true;
+	}
+
+	UStaticMesh* FinalizeStaticMeshAsset(
+		const FString& PathFileName,
+		std::unique_ptr<FStaticMesh> RawData,
+		const TArray<FString>& MaterialSlotNames)
+	{
+		RawData->PathFileName = PathFileName;
+		RawData->UpdateLocalBound();
+
+		UStaticMesh* NewAsset = new UStaticMesh();
+		NewAsset->SetStaticMeshAsset(RawData.release());
+
+		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
+		NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
+		NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
+
+		uint32 SlotCount = GetRequiredMaterialSlotCount(*NewAsset->GetRenderData(), MaterialSlotNames);
+		if (SlotCount == 0)
+		{
+			SlotCount = 1;
+		}
+
+		for (uint32 SlotIndex = 0; SlotIndex < SlotCount; ++SlotIndex)
+		{
+			const FString MaterialName = GetMaterialSlotNameOrDefault(MaterialSlotNames, SlotIndex);
+			std::shared_ptr<FMaterial> Material = FMaterialManager::Get().FindByName(MaterialName);
+			if (!Material)
+			{
+				UE_LOG("[Warning] Static mesh requested missing material '%s'. Falling back to M_Default.", MaterialName.c_str());
+				Material = FMaterialManager::Get().FindByName("M_Default");
+			}
+
+			NewAsset->AddDefaultMaterial(Material);
+		}
+
+		return NewAsset;
+	}
+
+	UStaticMesh* FinalizeStaticMeshAsset(
+		const FString& PathFileName,
+		std::unique_ptr<FStaticMesh> RawData,
+		const TArray<FModelMaterialInfo>& MaterialInfos)
+	{
+		RawData->PathFileName = PathFileName;
+		RawData->UpdateLocalBound();
+
+		UStaticMesh* NewAsset = new UStaticMesh();
+		NewAsset->SetStaticMeshAsset(RawData.release());
+
+		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
+		NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
+		NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
+
+		uint32 SlotCount = GetRequiredMaterialSlotCount(*NewAsset->GetRenderData(), MaterialInfos);
+		if (SlotCount == 0)
+		{
+			SlotCount = 1;
+		}
+
+		const std::filesystem::path ModelPath = std::filesystem::path(FPaths::ToWide(FPaths::ToAbsolutePath(PathFileName))).lexically_normal();
+		for (uint32 SlotIndex = 0; SlotIndex < SlotCount; ++SlotIndex)
+		{
+			const FModelMaterialInfo MaterialInfo = GetMaterialInfoOrDefault(MaterialInfos, SlotIndex);
+
+			std::shared_ptr<FMaterial> Material = CreateImportedMaterialTemplate(MaterialInfo.Name);
+			ApplyBaseColorToMaterial(Material, MaterialInfo.BaseColor);
+
+			if (!MaterialInfo.DiffuseTexturePath.empty())
+			{
+				const std::filesystem::path TexturePath = ResolveTextureReferencePath(ModelPath, MaterialInfo.DiffuseTexturePath);
+				if (!TryLoadTextureIntoMaterial(Material, TexturePath, "[.Model Loader] Auto-loaded texture-backed pixel shader:"))
+				{
+					UE_LOG("[.Model Loader] Failed to resolve embedded texture '%s' for material '%s'.",
+						MaterialInfo.DiffuseTexturePath.c_str(),
+						MaterialInfo.Name.c_str());
+				}
+			}
+
+			if (!Material)
+			{
+				Material = FMaterialManager::Get().FindByName("M_Default");
+			}
+
+			NewAsset->AddDefaultMaterial(Material);
+		}
+
+		return NewAsset;
+	}
+
 	struct FObjParserContext
 	{
-		FStaticMesh* OutMesh;
+		FStaticMesh* OutMesh = nullptr;
 		TArray<FString>& OutMaterialNames;
 
 		TArray<FVector> TempPositions;
@@ -33,12 +454,11 @@ namespace
 		{
 			if (OutMesh->Indices.size() > CurrentSectionStartIndex)
 			{
-				FMeshSection Section;
-				Section.MaterialIndex = CurrentMaterialIndex;
+				FMeshSection Section{};
+				Section.MaterialIndex = static_cast<uint32>(CurrentMaterialIndex);
 				Section.StartIndex = CurrentSectionStartIndex;
 				Section.IndexCount = static_cast<uint32>(OutMesh->Indices.size()) - CurrentSectionStartIndex;
 				OutMesh->Sections.push_back(Section);
-
 				CurrentSectionStartIndex = static_cast<uint32>(OutMesh->Indices.size());
 			}
 		}
@@ -50,9 +470,8 @@ namespace
 
 			CloseCurrentSection();
 
-			FString NewMaterialName(MaterialName.c_str());
 			CurrentMaterialIndex = static_cast<int32>(OutMaterialNames.size());
-			OutMaterialNames.push_back(NewMaterialName);
+			OutMaterialNames.push_back(FString(MaterialName.c_str()));
 		}
 
 		void ParseFace(std::stringstream& SS)
@@ -63,57 +482,59 @@ namespace
 				OutMaterialNames.push_back("M_Default");
 			}
 
-			std::string VStr;
 			struct FIndex
 			{
-				uint32 PositionIndex;
-				uint32 UVIndex;
-				uint32 NormalIndex;
+				uint32 PositionIndex = 0;
+				uint32 UVIndex = 0;
+				uint32 NormalIndex = 0;
 			};
+
+			std::string VStr;
 			TArray<FIndex> Face;
 
 			while (SS >> VStr)
 			{
 				std::stringstream VSS(VStr);
-				std::string PositionString, UVString, NormalString;
+				std::string PositionString;
+				std::string UVString;
+				std::string NormalString;
 
 				std::getline(VSS, PositionString, '/');
 				std::getline(VSS, UVString, '/');
 				std::getline(VSS, NormalString, '/');
 
 				FIndex Idx{};
-				Idx.PositionIndex = std::stoi(PositionString) - 1;
-				Idx.UVIndex = UVString.empty() ? 0 : std::stoi(UVString) - 1;
-				Idx.NormalIndex = NormalString.empty() ? 0 : std::stoi(NormalString) - 1;
-
+				Idx.PositionIndex = static_cast<uint32>(std::stoi(PositionString) - 1);
+				Idx.UVIndex = UVString.empty() ? 0u : static_cast<uint32>(std::stoi(UVString) - 1);
+				Idx.NormalIndex = NormalString.empty() ? 0u : static_cast<uint32>(std::stoi(NormalString) - 1);
 				Face.push_back(Idx);
 			}
 
-			for (size_t i = 1; i + 1 < Face.size(); ++i)
+			for (size_t FaceIndex = 1; FaceIndex + 1 < Face.size(); ++FaceIndex)
 			{
-				uint32 BaseIndex = static_cast<uint32>(OutMesh->Vertices.size());
+				const uint32 BaseIndex = static_cast<uint32>(OutMesh->Vertices.size());
 
 				auto AddVertex = [&](const FIndex& Idx)
+				{
+					FVertex Vertex{};
+					Vertex.Position = TempPositions[Idx.PositionIndex];
+					Vertex.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+					if (!TempUVs.empty() && Idx.UVIndex < TempUVs.size())
 					{
-						FVertex V{};
-						V.Position = TempPositions[Idx.PositionIndex];
-						V.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+						Vertex.UV = TempUVs[Idx.UVIndex];
+					}
+					if (!TempNormals.empty() && Idx.NormalIndex < TempNormals.size())
+					{
+						Vertex.Normal = TempNormals[Idx.NormalIndex];
+					}
 
-						if (!TempUVs.empty() && Idx.UVIndex < TempUVs.size())
-						{
-							V.UV = TempUVs[Idx.UVIndex];
-						}
-						if (!TempNormals.empty() && Idx.NormalIndex < TempNormals.size())
-						{
-							V.Normal = TempNormals[Idx.NormalIndex];
-						}
-
-						OutMesh->Vertices.push_back(V);
-					};
+					OutMesh->Vertices.push_back(Vertex);
+				};
 
 				AddVertex(Face[0]);
-				AddVertex(Face[i]);
-				AddVertex(Face[i + 1]);
+				AddVertex(Face[FaceIndex]);
+				AddVertex(Face[FaceIndex + 1]);
 
 				OutMesh->Indices.push_back(BaseIndex + 0);
 				OutMesh->Indices.push_back(BaseIndex + 1);
@@ -123,7 +544,24 @@ namespace
 	};
 }
 
-inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
+UStaticMesh* FObjManager::LoadStaticMeshAsset(const FString& PathFileName)
+{
+	const FString Extension = GetNormalizedExtension(PathFileName);
+	if (Extension == ".model")
+	{
+		return LoadModelStaticMeshAsset(PathFileName);
+	}
+
+	if (Extension.empty() || Extension == ".obj")
+	{
+		return LoadObjStaticMeshAsset(PathFileName);
+	}
+
+	UE_LOG("[FObjManager] Unsupported static mesh extension: %s", PathFileName.c_str());
+	return nullptr;
+}
+
+UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 {
 	auto It = ObjStaticMeshMap.find(PathFileName);
 	if (It != ObjStaticMeshMap.end())
@@ -132,43 +570,389 @@ inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileN
 	}
 
 	auto RawData = std::make_unique<FStaticMesh>();
-	RawData->PathFileName = PathFileName;
-
 	TArray<FString> FoundMaterials;
 	if (!ParseObjFile(PathFileName, RawData.get(), FoundMaterials))
 	{
 		return nullptr;
 	}
 
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* NewAsset = new UStaticMesh();
-	NewAsset->SetStaticMeshAsset(RawData.release());
-
-	NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
-	NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
-	NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
-
-	for (const FString& MatName : FoundMaterials)
-	{
-		auto Material = FMaterialManager::Get().FindByName(MatName);
-
-		if (!Material)
-		{
-			UE_LOG("[경고] OBJ에서 요청한 머티리얼 '%s'가 없습니다. 기본 머티리얼로 대체합니다.", MatName.c_str());
-			Material = FMaterialManager::Get().FindByName("M_Default");
-		}
-
-		NewAsset->AddDefaultMaterial(Material);
-	}
-
-	if (FoundMaterials.empty())
-	{
-		NewAsset->AddDefaultMaterial(FMaterialManager::Get().FindByName("M_Default"));
-	}
-
+	UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), FoundMaterials);
 	ObjStaticMeshMap[PathFileName] = NewAsset;
 	return NewAsset;
+}
+
+UStaticMesh* FObjManager::LoadModelStaticMeshAsset(const FString& PathFileName)
+{
+	auto It = ObjStaticMeshMap.find(PathFileName);
+	if (It != ObjStaticMeshMap.end())
+	{
+		return It->second;
+	}
+
+	const FString AbsolutePath = FPaths::ToAbsolutePath(PathFileName);
+	const std::filesystem::path FilePath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	std::ifstream File(FilePath, std::ios::binary);
+	if (!File.is_open())
+	{
+		UE_LOG("[FObjManager] Failed to open .Model file: %s", AbsolutePath.c_str());
+		return nullptr;
+	}
+
+	char Magic[sizeof(GModelMagic)] = {};
+	if (!ReadBinaryBytes(File, Magic, sizeof(Magic)) || std::memcmp(Magic, GModelMagic, sizeof(GModelMagic)) != 0)
+	{
+		UE_LOG("[FObjManager] Invalid .Model header: %s", AbsolutePath.c_str());
+		return nullptr;
+	}
+
+	uint32 Version = 0;
+	uint32 VertexCount = 0;
+	uint32 IndexCount = 0;
+	uint32 SectionCount = 0;
+	uint32 MaterialSlotCount = 0;
+	if (!ReadBinaryValue(File, Version)
+		|| !ReadBinaryValue(File, VertexCount)
+		|| !ReadBinaryValue(File, IndexCount)
+		|| !ReadBinaryValue(File, SectionCount)
+		|| !ReadBinaryValue(File, MaterialSlotCount))
+	{
+		UE_LOG("[FObjManager] Failed to read .Model header: %s", AbsolutePath.c_str());
+		return nullptr;
+	}
+
+	if (Version != GModelVersionLegacy && Version != GModelVersionEmbeddedMaterials)
+	{
+		UE_LOG("[FObjManager] Unsupported .Model version %u: %s", Version, AbsolutePath.c_str());
+		return nullptr;
+	}
+
+	auto RawData = std::make_unique<FStaticMesh>();
+	RawData->Topology = EMeshTopology::EMT_TriangleList;
+	RawData->Vertices.resize(VertexCount);
+	RawData->Indices.resize(IndexCount);
+	RawData->Sections.resize(SectionCount);
+
+	for (FVertex& Vertex : RawData->Vertices)
+	{
+		if (!ReadBinaryValue(File, Vertex.Position.X)
+			|| !ReadBinaryValue(File, Vertex.Position.Y)
+			|| !ReadBinaryValue(File, Vertex.Position.Z)
+			|| !ReadBinaryValue(File, Vertex.Color.X)
+			|| !ReadBinaryValue(File, Vertex.Color.Y)
+			|| !ReadBinaryValue(File, Vertex.Color.Z)
+			|| !ReadBinaryValue(File, Vertex.Color.W)
+			|| !ReadBinaryValue(File, Vertex.Normal.X)
+			|| !ReadBinaryValue(File, Vertex.Normal.Y)
+			|| !ReadBinaryValue(File, Vertex.Normal.Z)
+			|| !ReadBinaryValue(File, Vertex.UV.X)
+			|| !ReadBinaryValue(File, Vertex.UV.Y))
+		{
+			UE_LOG("[FObjManager] Failed to read .Model vertices: %s", AbsolutePath.c_str());
+			return nullptr;
+		}
+	}
+
+	for (uint32& Index : RawData->Indices)
+	{
+		if (!ReadBinaryValue(File, Index))
+		{
+			UE_LOG("[FObjManager] Failed to read .Model indices: %s", AbsolutePath.c_str());
+			return nullptr;
+		}
+	}
+
+	for (FMeshSection& Section : RawData->Sections)
+	{
+		if (!ReadBinaryValue(File, Section.MaterialIndex)
+			|| !ReadBinaryValue(File, Section.StartIndex)
+			|| !ReadBinaryValue(File, Section.IndexCount))
+		{
+			UE_LOG("[FObjManager] Failed to read .Model sections: %s", AbsolutePath.c_str());
+			return nullptr;
+		}
+
+		const uint64 SectionEndIndex = static_cast<uint64>(Section.StartIndex) + static_cast<uint64>(Section.IndexCount);
+		if (SectionEndIndex > RawData->Indices.size())
+		{
+			UE_LOG("[FObjManager] Invalid .Model section range: %s", AbsolutePath.c_str());
+			return nullptr;
+		}
+	}
+
+	TArray<FString> MaterialSlotNames;
+	MaterialSlotNames.resize(MaterialSlotCount);
+	for (FString& MaterialSlotName : MaterialSlotNames)
+	{
+		if (!ReadUtf8String(File, MaterialSlotName))
+		{
+			UE_LOG("[FObjManager] Failed to read .Model material slots: %s", AbsolutePath.c_str());
+			return nullptr;
+		}
+	}
+
+	if (Version == GModelVersionLegacy)
+	{
+		UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), MaterialSlotNames);
+		ObjStaticMeshMap[PathFileName] = NewAsset;
+		return NewAsset;
+	}
+
+	TArray<FModelMaterialInfo> MaterialInfos;
+	MaterialInfos.resize(MaterialSlotCount);
+	for (uint32 SlotIndex = 0; SlotIndex < MaterialSlotCount; ++SlotIndex)
+	{
+		FModelMaterialInfo& MaterialInfo = MaterialInfos[SlotIndex];
+		MaterialInfo.Name = GetMaterialSlotNameOrDefault(MaterialSlotNames, SlotIndex);
+
+		if (!ReadBinaryValue(File, MaterialInfo.BaseColor.X)
+			|| !ReadBinaryValue(File, MaterialInfo.BaseColor.Y)
+			|| !ReadBinaryValue(File, MaterialInfo.BaseColor.Z)
+			|| !ReadBinaryValue(File, MaterialInfo.BaseColor.W)
+			|| !ReadUtf8String(File, MaterialInfo.DiffuseTexturePath))
+		{
+			UE_LOG("[FObjManager] Failed to read .Model material metadata: %s", AbsolutePath.c_str());
+			return nullptr;
+		}
+	}
+
+	UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), MaterialInfos);
+	ObjStaticMeshMap[PathFileName] = NewAsset;
+	return NewAsset;
+}
+
+bool FObjManager::SaveModelStaticMeshAsset(const FString& PathFileName, const FStaticMesh& StaticMesh, const TArray<FModelMaterialInfo>& MaterialInfos)
+{
+	if (StaticMesh.Topology != EMeshTopology::EMT_TriangleList)
+	{
+		UE_LOG("[FObjManager] Only triangle-list meshes can be exported as .Model: %s", PathFileName.c_str());
+		return false;
+	}
+
+	const FString AbsolutePath = FPaths::ToAbsolutePath(PathFileName);
+	const std::filesystem::path FilePath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	std::error_code ErrorCode;
+	if (!FilePath.parent_path().empty())
+	{
+		std::filesystem::create_directories(FilePath.parent_path(), ErrorCode);
+	}
+
+	std::ofstream File(FilePath, std::ios::binary | std::ios::trunc);
+	if (!File.is_open())
+	{
+		UE_LOG("[FObjManager] Failed to create .Model file: %s", AbsolutePath.c_str());
+		return false;
+	}
+
+	uint32 MaterialSlotCount = GetRequiredMaterialSlotCount(StaticMesh, MaterialInfos);
+	if (MaterialSlotCount == 0)
+	{
+		MaterialSlotCount = 1;
+	}
+
+	if (!WriteBinaryBytes(File, GModelMagic, sizeof(GModelMagic))
+		|| !WriteBinaryValue(File, GModelVersion)
+		|| !WriteBinaryValue(File, static_cast<uint32>(StaticMesh.Vertices.size()))
+		|| !WriteBinaryValue(File, static_cast<uint32>(StaticMesh.Indices.size()))
+		|| !WriteBinaryValue(File, static_cast<uint32>(StaticMesh.Sections.size()))
+		|| !WriteBinaryValue(File, MaterialSlotCount))
+	{
+		return false;
+	}
+
+	for (const FVertex& Vertex : StaticMesh.Vertices)
+	{
+		if (!WriteBinaryValue(File, Vertex.Position.X)
+			|| !WriteBinaryValue(File, Vertex.Position.Y)
+			|| !WriteBinaryValue(File, Vertex.Position.Z)
+			|| !WriteBinaryValue(File, Vertex.Color.X)
+			|| !WriteBinaryValue(File, Vertex.Color.Y)
+			|| !WriteBinaryValue(File, Vertex.Color.Z)
+			|| !WriteBinaryValue(File, Vertex.Color.W)
+			|| !WriteBinaryValue(File, Vertex.Normal.X)
+			|| !WriteBinaryValue(File, Vertex.Normal.Y)
+			|| !WriteBinaryValue(File, Vertex.Normal.Z)
+			|| !WriteBinaryValue(File, Vertex.UV.X)
+			|| !WriteBinaryValue(File, Vertex.UV.Y))
+		{
+			return false;
+		}
+	}
+
+	for (uint32 Index : StaticMesh.Indices)
+	{
+		if (!WriteBinaryValue(File, Index))
+		{
+			return false;
+		}
+	}
+
+	for (const FMeshSection& Section : StaticMesh.Sections)
+	{
+		if (!WriteBinaryValue(File, Section.MaterialIndex)
+			|| !WriteBinaryValue(File, Section.StartIndex)
+			|| !WriteBinaryValue(File, Section.IndexCount))
+		{
+			return false;
+		}
+	}
+
+	for (uint32 SlotIndex = 0; SlotIndex < MaterialSlotCount; ++SlotIndex)
+	{
+		const FModelMaterialInfo MaterialInfo = GetMaterialInfoOrDefault(MaterialInfos, SlotIndex);
+		if (!WriteUtf8String(File, MaterialInfo.Name))
+		{
+			return false;
+		}
+	}
+
+	for (uint32 SlotIndex = 0; SlotIndex < MaterialSlotCount; ++SlotIndex)
+	{
+		const FModelMaterialInfo MaterialInfo = GetMaterialInfoOrDefault(MaterialInfos, SlotIndex);
+		if (!WriteBinaryValue(File, MaterialInfo.BaseColor.X)
+			|| !WriteBinaryValue(File, MaterialInfo.BaseColor.Y)
+			|| !WriteBinaryValue(File, MaterialInfo.BaseColor.Z)
+			|| !WriteBinaryValue(File, MaterialInfo.BaseColor.W)
+			|| !WriteUtf8String(File, MaterialInfo.DiffuseTexturePath))
+		{
+			return false;
+		}
+	}
+
+	return File.good();
+}
+
+bool FObjManager::BuildModelMaterialInfosFromObj(
+	const FString& ObjFilePath,
+	const FString& ModelFilePath,
+	const TArray<FString>& MaterialSlotNames,
+	TArray<FModelMaterialInfo>& OutMaterialInfos)
+{
+	const uint32 SlotCount = (std::max)(1u, static_cast<uint32>(MaterialSlotNames.size()));
+	OutMaterialInfos.clear();
+	OutMaterialInfos.resize(SlotCount);
+	for (uint32 SlotIndex = 0; SlotIndex < SlotCount; ++SlotIndex)
+	{
+		OutMaterialInfos[SlotIndex].Name = GetMaterialSlotNameOrDefault(MaterialSlotNames, SlotIndex);
+	}
+
+	const FString AbsoluteObjPath = FPaths::ToAbsolutePath(ObjFilePath);
+	const FString AbsoluteModelPath = FPaths::ToAbsolutePath(ModelFilePath);
+	const std::filesystem::path ObjPath = std::filesystem::path(FPaths::ToWide(AbsoluteObjPath)).lexically_normal();
+	const std::filesystem::path ModelPath = std::filesystem::path(FPaths::ToWide(AbsoluteModelPath)).lexically_normal();
+
+	std::ifstream ObjFile(ObjPath);
+	if (!ObjFile.is_open())
+	{
+		UE_LOG("[FObjManager] Failed to open OBJ while collecting .Model material data: %s", AbsoluteObjPath.c_str());
+		return false;
+	}
+
+	struct FParsedMaterialData
+	{
+		FVector4 BaseColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		FString DiffuseTexturePath;
+	};
+
+	TMap<FString, FParsedMaterialData> ParsedMaterials;
+	FString ObjLine;
+	while (std::getline(ObjFile, ObjLine))
+	{
+		if (ObjLine.empty() || ObjLine[0] == '#')
+		{
+			continue;
+		}
+
+		std::stringstream ObjSS(ObjLine);
+		FString Type;
+		ObjSS >> Type;
+		if (Type != "mtllib")
+		{
+			continue;
+		}
+
+		FString MaterialReference;
+		std::getline(ObjSS, MaterialReference);
+		MaterialReference = TrimAscii(MaterialReference);
+		if (MaterialReference.empty())
+		{
+			continue;
+		}
+
+		const std::filesystem::path MtlPath = ResolveMaterialReferencePath(ObjPath, MaterialReference);
+		std::ifstream MtlFile(MtlPath);
+		if (!MtlFile.is_open())
+		{
+			UE_LOG("[FObjManager] Failed to open MTL while collecting .Model material data: %s", MtlPath.string().c_str());
+			continue;
+		}
+
+		FString CurrentMaterialName;
+		FString MtlLine;
+		while (std::getline(MtlFile, MtlLine))
+		{
+			if (MtlLine.empty() || MtlLine[0] == '#')
+			{
+				continue;
+			}
+
+			std::stringstream MtlSS(MtlLine);
+			FString MtlType;
+			MtlSS >> MtlType;
+
+			if (MtlType == "newmtl")
+			{
+				MtlSS >> CurrentMaterialName;
+				if (!CurrentMaterialName.empty())
+				{
+					ParsedMaterials.try_emplace(CurrentMaterialName, FParsedMaterialData{});
+				}
+			}
+			else if (MtlType == "Kd" && !CurrentMaterialName.empty())
+			{
+				float R = 1.0f;
+				float G = 1.0f;
+				float B = 1.0f;
+				MtlSS >> R >> G >> B;
+				ParsedMaterials[CurrentMaterialName].BaseColor = FVector4(R, G, B, 1.0f);
+			}
+			else if (MtlType == "map_Kd" && !CurrentMaterialName.empty())
+			{
+				FString TextureReference;
+				std::getline(MtlSS, TextureReference);
+				TextureReference = TrimAscii(TextureReference);
+				if (TextureReference.empty())
+				{
+					continue;
+				}
+
+				const std::filesystem::path TexturePath = ResolveTextureReferencePath(MtlPath, TextureReference);
+				if (PathExists(TexturePath))
+				{
+					ParsedMaterials[CurrentMaterialName].DiffuseTexturePath = MakeStoredTexturePath(ModelPath, TexturePath);
+				}
+				else
+				{
+					UE_LOG("[FObjManager] Failed to resolve MTL texture '%s' for material '%s'.",
+						TextureReference.c_str(),
+						CurrentMaterialName.c_str());
+				}
+			}
+		}
+	}
+
+	for (FModelMaterialInfo& MaterialInfo : OutMaterialInfos)
+	{
+		auto It = ParsedMaterials.find(MaterialInfo.Name);
+		if (It != ParsedMaterials.end())
+		{
+			MaterialInfo.BaseColor = It->second.BaseColor;
+			MaterialInfo.DiffuseTexturePath = It->second.DiffuseTexturePath;
+		}
+	}
+
+	return true;
 }
 
 bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
@@ -201,61 +985,30 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			std::string MaterialName;
 			SS >> MaterialName;
 
-			CurrentMaterial = std::make_shared<FMaterial>();
-			CurrentMaterial->SetOriginName(MaterialName.c_str());
-
-			std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
-			std::wstring PSPath = FPaths::ShaderDir() / L"ColorPixelShader.hlsl";
-			CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
-			CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
-
-			auto DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
-			CurrentMaterial->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
-			CurrentMaterial->SetRasterizerState(DefaultTexMat->GetRasterizerState());
-			CurrentMaterial->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
-			CurrentMaterial->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
-
-			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 16);
-			if (SlotIndex >= 0)
-			{
-				CurrentMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
-				float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
-			}
-
+			CurrentMaterial = CreateImportedMaterialTemplate(MaterialName.c_str());
 			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
 		}
 		else if (Type == "Kd" && CurrentMaterial)
 		{
-			float R, G, B;
+			float R = 0.0f;
+			float G = 0.0f;
+			float B = 0.0f;
 			SS >> R >> G >> B;
 
-			float DiffuseColor[4] = { R, G, B, 1.0f };
-
-			auto CB = CurrentMaterial->GetConstantBuffer(0);
-			if (CB)
-			{
-				CB->SetData(DiffuseColor, sizeof(DiffuseColor));
-			}
+			ApplyBaseColorToMaterial(CurrentMaterial, FVector4(R, G, B, 1.0f));
 		}
 		else if (Type == "map_Kd" && CurrentMaterial)
 		{
-			std::string TextureFileName;
-			SS >> TextureFileName;
+			FString TextureReference;
+			std::getline(SS, TextureReference);
+			TextureReference = TrimAscii(TextureReference);
 
-			std::filesystem::path TexturePath = FPaths::TextureDir() / TextureFileName;
-
-			ID3D11ShaderResourceView* NewSRV = nullptr;
-			if (GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath.string().c_str(), &NewSRV))
+			const std::filesystem::path TexturePath = ResolveTextureReferencePath(FilePath, TextureReference);
+			if (!TryLoadTextureIntoMaterial(CurrentMaterial, TexturePath, "[MTL Parser] Auto-loaded texture-backed pixel shader:"))
 			{
-				auto MaterialTexture = std::make_shared<FMaterialTexture>();
-				MaterialTexture->TextureSRV = NewSRV;
-				CurrentMaterial->SetMaterialTexture(MaterialTexture);
-
-				std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
-				CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
-
-				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TexPSPath.c_str());
+				UE_LOG("[MTL Parser] Failed to resolve texture '%s' referenced by '%s'.",
+					TextureReference.c_str(),
+					AbsolutePath.c_str());
 			}
 		}
 	}
@@ -263,16 +1016,15 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 	return true;
 }
 
-inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
+bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(FilePath);
 	const std::filesystem::path ObjPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
-	const std::string FilePathDisplay = AbsolutePath;
 
 	std::ifstream File(ObjPath);
 	if (!File.is_open())
 	{
-		UE_LOG("[FObjManager] Failed to open OBJ file: %s\n", FilePathDisplay.c_str());
+		UE_LOG("[FObjManager] Failed to open OBJ file: %s", AbsolutePath.c_str());
 		return false;
 	}
 
@@ -292,15 +1044,10 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 
 		if (Type == "mtllib")
 		{
-			std::string MtlFIleName;
-			SS >> MtlFIleName;
+			std::string MtlFileName;
+			SS >> MtlFileName;
 
-			std::filesystem::path ResolvedMtlPath = ObjPath.parent_path() / MtlFIleName;
-			if (!std::filesystem::exists(ResolvedMtlPath))
-			{
-				ResolvedMtlPath = FPaths::MaterialDir() / MtlFIleName;
-			}
-
+			const std::filesystem::path ResolvedMtlPath = ResolveMaterialReferencePath(ObjPath, MtlFileName.c_str());
 			ParseMtlFile(ResolvedMtlPath.string().c_str());
 		}
 		else if (Type == "usemtl")
@@ -335,13 +1082,16 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 	Context.CloseCurrentSection();
 	OutMesh->Topology = EMeshTopology::EMT_TriangleList;
 
-	UE_LOG("[FObjManager] Parsed Temporary OBJ: %s (Verts: %zu, Inds: %zu)\n",
-		FilePathDisplay.c_str(), OutMesh->Vertices.size(), OutMesh->Indices.size());
+	UE_LOG(
+		"[FObjManager] Parsed OBJ: %s (Verts: %zu, Indices: %zu)",
+		AbsolutePath.c_str(),
+		OutMesh->Vertices.size(),
+		OutMesh->Indices.size());
 
 	return true;
 }
 
-inline void FObjManager::ClearCache()
+void FObjManager::ClearCache()
 {
 	for (auto& [PathName, Asset] : ObjStaticMeshMap)
 	{
@@ -351,6 +1101,7 @@ inline void FObjManager::ClearCache()
 			{
 				delete Asset->GetRenderData();
 			}
+
 			delete Asset;
 			Asset = nullptr;
 		}

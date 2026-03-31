@@ -55,14 +55,22 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 		{
 			AssetName = StaticMesh->GetAssetPathFileName();
 		}
-		Ar.Serialize("ObjStaticMeshAsset", AssetName);
+		Ar.Serialize("StaticMeshAsset", AssetName);
 	}
 	else
 	{
-		Ar.Serialize("ObjStaticMeshAsset", AssetName);
+		if (Ar.Contains("StaticMeshAsset"))
+		{
+			Ar.Serialize("StaticMeshAsset", AssetName);
+		}
+		else
+		{
+			Ar.Serialize("ObjStaticMeshAsset", AssetName);
+		}
+
 		if (!AssetName.empty())
 		{
-			SetStaticMesh(FObjManager::LoadObjStaticMeshAsset(AssetName));
+			SetStaticMesh(FObjManager::LoadStaticMeshAsset(AssetName));
 		}
 	}
 }
