@@ -217,6 +217,30 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 							ImGui::EndCombo();
 						}
 						ImGui::PopItemWidth();
+
+						float MasterScroll[2] = { 0.0f, 0.0f };
+
+						if (NumSections > 0)
+						{
+							if (std::shared_ptr<FMaterial> FirstMat = MeshComp->GetMaterial(0))
+							{
+								FirstMat->GetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
+							}
+						}
+
+						ImGui::PushItemWidth(180.f);
+						if (ImGui::DragFloat2("Scroll All Sections", MasterScroll, 0.001f, -5.0f, 5.0f, "%.2f"))
+						{
+							for (uint32 j = 0; j < NumSections; ++j)
+							{
+								if (std::shared_ptr<FMaterial> Mat = MeshComp->GetMaterial(j))
+								{
+									Mat->SetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
+								}
+							}
+						}
+						ImGui::PopItemWidth();
+
 						ImGui::Separator();
 						ImGui::Spacing();
 						// ========================================================
