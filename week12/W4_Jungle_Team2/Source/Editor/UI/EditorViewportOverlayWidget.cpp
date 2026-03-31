@@ -47,7 +47,7 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 	RenderViewportSettings(DeltaTime);
 	RenderDebugStats(DeltaTime);
 	RenderSplitterBar();
-	RenderViewportToolbars();
+	// RenderViewportToolbars();
 }
 
 // ── 뷰포트별 UE 스타일 View Mode 툴바 ─────────────────────────────

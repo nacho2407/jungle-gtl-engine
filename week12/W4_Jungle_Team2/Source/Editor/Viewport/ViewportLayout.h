@@ -54,6 +54,7 @@ public:
 	bool  IsSingleViewportMode()        const { return bSingleViewport; }
 	int32 GetSingleViewportIndex()      const { return SingleViewportIndex; }
 	int32 GetLastFocusedViewportIndex() const { return LastFocusedViewportIndex; }
+	void SetLastFocusedViewportIndex(int32 Index);
 
 	// Viewport Get Set
 	FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportClients[Index]; }
