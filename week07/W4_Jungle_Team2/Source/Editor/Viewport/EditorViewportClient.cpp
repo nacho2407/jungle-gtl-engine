@@ -43,7 +43,7 @@ void FEditorViewportClient::DestroyCamera()
 {
 	bHasCamera = false;
 	NavigationController.SetCamera(nullptr); 
-	EndMouseConstrain();
+	// EndMouseConstrain();
 }
 
 void FEditorViewportClient::ResetCamera()
@@ -92,12 +92,11 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
-	// 우클릭 회전 / 중클릭 팬 / Alt+좌클릭 오빗이 진행 중이면
+	// 우클릭 회전 / 중클릭 팬이 진행 중이면
 	// 마우스가 다른 뷰포트로 나가더라도 이 뷰포트가 계속 입력을 독점합니다.
 	const bool bActiveOperation = bRightMouseRotating
 	                            || bRightMousePanning
 	                            || bMiddleMousePanning
-	                            || bAltLeftMouseOrbiting
 	                            || bAltRightMouseDollying
 	                            || bBoxSelecting;
 
@@ -228,14 +227,14 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (!bHasCamera)
 	{
-		EndMouseConstrain();
+		// EndMouseConstrain();
 		return;
 	}
 
 	/*InputSystem::Get().GetGuiInputState().bUsingMouse*/
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard)
 	{
-		EndMouseConstrain();
+		// EndMouseConstrain();
 		return;
 	}
 
@@ -333,50 +332,23 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
-	if (InputSystem::Get().GetKeyDown(VK_LBUTTON) && bAltDown && !bCtrlDown && !bShiftDown)
-	{
-		bAltLeftMouseOrbiting = true;
-		bFirstMouseMoveAfterOrbitStart = true;
-		NavigationController.BeginOrbit(ResolveOrbitPivot());
-
-		if (bIsCursorVisible)
-		{
-			for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
-			bIsCursorVisible = false;
-		}
-	}
-
-	if ((InputSystem::Get().GetKeyUp(VK_LBUTTON) || !bAltDown) && bAltLeftMouseOrbiting)
-	{
-		bAltLeftMouseOrbiting = false;
-		NavigationController.EndOrbit();
-		NavigationController.ResetTargetLocation();
-
-		if (!bIsCursorVisible)
-		{
-			for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
-			bIsCursorVisible = true;
-		}
-	}
-
 	const bool bAnyMouseOperation = bRightMouseRotating
 		|| bRightMousePanning
 		|| bMiddleMousePanning
-		|| bAltLeftMouseOrbiting
 		|| bAltRightMouseDollying;
 
-	if (bAnyMouseOperation)
-	{
-		if (!bMouseConstrained)
-		{
-			BeginMouseConstrain();
-		}
-		UpdateMouseConstrain();
-	}
-	else if (bMouseConstrained)
-	{
-		EndMouseConstrain();
-	}
+	// if (bAnyMouseOperation)
+	// {
+	// 	if (!bMouseConstrained)
+	// 	{
+	// 		BeginMouseConstrain();
+	// 	}
+	// 	UpdateMouseConstrain();
+	// }
+	// else if (bMouseConstrained)
+	// {
+	// 	EndMouseConstrain();
+	// }
 		
 	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.0f;
 	const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.0f;
@@ -455,19 +427,6 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
-	if (bAltLeftMouseOrbiting)
-	{
-		if (bFirstMouseMoveAfterOrbitStart)
-		{
-			bFirstMouseMoveAfterOrbitStart = false;
-		}
-		else
-		{
-			NavigationController.AddYawInput(ScaledRotateX);
-			NavigationController.AddPitchInput(-ScaledRotateY);
-		}
-	}
-
 	if (bAltRightMouseDollying)
 	{
 		if (bFirstMouseMoveAfterDollyStart)
@@ -476,7 +435,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 		else
 		{
-			NavigationController.Dolly(MouseDeltaY);
+			const float ClampedDollyInput = MathUtil::Clamp(MouseDeltaY, -12.0f, 12.0f);
+			NavigationController.Dolly(ClampedDollyInput * 0.12f);
 		}
 	}
 
@@ -517,11 +477,6 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	if (InputSystem::Get().GetKeyUp('X') && Gizmo)
 	{
 		Gizmo->SetWorldSpace(!Gizmo->IsWorldSpace());
-	}
-
-	if (InputSystem::Get().GetKeyUp('F'))
-	{
-		FocusPrimarySelection();
 	}
 
 	if (InputSystem::Get().GetKeyUp(VK_DELETE))
@@ -835,6 +790,7 @@ void FEditorViewportClient::FocusPrimarySelection()
 	}
 
 	const FVector Target = Primary->GetActorLocation();
+
 	if (Camera.IsOrthographic())
 	{
 		const FVector Forward = Camera.GetEffectiveForward().GetSafeNormal();
@@ -848,7 +804,7 @@ void FEditorViewportClient::FocusPrimarySelection()
 	else
 	{
 		const FVector Forward = Camera.GetForwardVector().GetSafeNormal();
-		Camera.SetLocation(Target - Forward * 300.0f);
+		Camera.SetLocation(Target - Forward * 5.0f);
 		Camera.SetLookAt(Target);
 	}
 
@@ -897,49 +853,3 @@ void FEditorViewportClient::SelectAllActors()
 	}
 }
 
-void FEditorViewportClient::BeginMouseConstrain()
-{
-	if (!Window || !State)
-	{
-		return;
-	}
-
-	bMouseConstrained = true;
-	UpdateMouseConstrain();
-}
-
-void FEditorViewportClient::UpdateMouseConstrain()
-{
-	if (!bMouseConstrained || !Window || !State)
-	{
-		return;
-	}
-
-	if (State->Rect.Width <= 0 || State->Rect.Height <= 0)
-	{
-		return;
-	}
-
-	POINT TopLeft{ State->Rect.X, State->Rect.Y };
-	POINT BottomRight{ State->Rect.X + State->Rect.Width - 1, State->Rect.Y + State->Rect.Height - 1 };
-	::ClientToScreen(Window->GetHWND(), &TopLeft);
-	::ClientToScreen(Window->GetHWND(), &BottomRight);
-
-	RECT ClipRect{};
-	ClipRect.left = TopLeft.x;
-	ClipRect.top = TopLeft.y;
-	ClipRect.right = BottomRight.x;
-	ClipRect.bottom = BottomRight.y;
-	::ClipCursor(&ClipRect);
-}
-
-void FEditorViewportClient::EndMouseConstrain()
-{
-	if (!bMouseConstrained)
-	{
-		return;
-	}
-
-	bMouseConstrained = false;
-	::ClipCursor(nullptr);
-}
