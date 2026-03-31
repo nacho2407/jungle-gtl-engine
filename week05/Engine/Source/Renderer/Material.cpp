@@ -162,6 +162,36 @@ bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uin
 	return true;
 }
 
+bool FMaterial::GetParameterData(const FString& ParamName, void* OutData, uint32 DataSize) const
+{
+	auto It = ParameterMap.find(ParamName);
+	if (It == ParameterMap.end()) return false;
+
+	const FMaterialParameterInfo& Info = It->second;
+	if (DataSize > Info.Size) return false;
+
+	if (Info.BufferIndex < 0 || Info.BufferIndex >= static_cast<int32>(ConstantBuffers.size())) return false;
+
+	const FMaterialConstantBuffer& CB = ConstantBuffers[Info.BufferIndex];
+	if (!CB.CPUData || Info.Offset + DataSize > CB.Size) return false;
+
+	memcpy(OutData, CB.CPUData + Info.Offset, DataSize);
+	return true;
+}
+
+FVector4 FMaterial::GetVectorParameter(const FString& ParamName) const
+{
+	FVector4 Result(1.0f, 1.0f, 1.0f, 1.0f);
+	float Data[4] = { 0.0f };
+
+	if (GetParameterData(ParamName, Data, sizeof(Data)))
+	{
+		Result = FVector4(Data[0], Data[1], Data[2], Data[3]);
+	}
+
+	return Result;
+}
+
 std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 {
 	ID3D11Device* Device = nullptr;
