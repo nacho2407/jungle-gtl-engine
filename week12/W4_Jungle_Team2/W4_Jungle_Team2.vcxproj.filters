@@ -188,9 +188,6 @@
     <ClCompile Include="Source\Editor\Viewport\ViewportNavigationController.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\AssetBinder.cpp">
-      <Filter>Source\Engine\Asset</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -438,9 +435,8 @@
     <ClCompile Include="Source\Editor\UI\EditorMaterialWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Shaders\OutlinePostProcess.hlsl" />
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
-    <ClCompile Include="Shaders\SelectionMask.hlsl" />
+    <ClCompile Include="Source\Engine\Slate\SSplitterCross.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -502,9 +498,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportNavigationController.h">
       <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\AssetBinder.h">
-      <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h">
       <Filter>Source\Engine\Asset</Filter>
@@ -880,5 +873,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
+    <ClInclude Include="Source\Engine\Slate\SSplitterCross.h" />
   </ItemGroup>
 </Project>

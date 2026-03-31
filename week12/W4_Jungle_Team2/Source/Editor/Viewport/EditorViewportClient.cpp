@@ -13,6 +13,8 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "Runtime/SceneView.h"
 #include "EditorUtils.h"
+#include "Math/Vector4.h"
+#include <algorithm>
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -41,6 +43,7 @@ void FEditorViewportClient::DestroyCamera()
 {
 	bHasCamera = false;
 	NavigationController.SetCamera(nullptr); 
+	EndMouseConstrain();
 }
 
 void FEditorViewportClient::ResetCamera()
@@ -94,7 +97,9 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	const bool bActiveOperation = bRightMouseRotating
 	                            || bRightMousePanning
 	                            || bMiddleMousePanning
-	                            || bAltLeftMouseOrbiting;
+	                            || bAltLeftMouseOrbiting
+	                            || bAltRightMouseDollying
+	                            || bBoxSelecting;
 
 	if (State && !State->bHovered && !bActiveOperation)
 	{
@@ -223,12 +228,14 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (!bHasCamera)
 	{
+		EndMouseConstrain();
 		return;
 	}
 
 	/*InputSystem::Get().GetGuiInputState().bUsingMouse*/
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard)
 	{
+		EndMouseConstrain();
 		return;
 	}
 
@@ -262,6 +269,18 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
+	if (InputSystem::Get().GetKeyDown(VK_RBUTTON) && bAltDown && !bCtrlDown && !bShiftDown)
+	{
+		bAltRightMouseDollying = true;
+		bFirstMouseMoveAfterDollyStart = true;
+
+		if (bIsCursorVisible)
+		{
+			for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
+			bIsCursorVisible = false;
+		}
+	}
+
 	if (InputSystem::Get().GetKeyUp(VK_RBUTTON))
 	{
 		if (bRightMouseRotating)
@@ -273,6 +292,11 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		{
 			bRightMousePanning = false;
 			NavigationController.EndPanning();
+			NavigationController.ResetTargetLocation();
+		}
+		if (bAltRightMouseDollying)
+		{
+			bAltRightMouseDollying = false;
 			NavigationController.ResetTargetLocation();
 		}
 
@@ -333,6 +357,25 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
 			bIsCursorVisible = true;
 		}
+	}
+
+	const bool bAnyMouseOperation = bRightMouseRotating
+		|| bRightMousePanning
+		|| bMiddleMousePanning
+		|| bAltLeftMouseOrbiting
+		|| bAltRightMouseDollying;
+
+	if (bAnyMouseOperation)
+	{
+		if (!bMouseConstrained)
+		{
+			BeginMouseConstrain();
+		}
+		UpdateMouseConstrain();
+	}
+	else if (bMouseConstrained)
+	{
+		EndMouseConstrain();
 	}
 		
 	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.0f;
@@ -425,6 +468,18 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
+	if (bAltRightMouseDollying)
+	{
+		if (bFirstMouseMoveAfterDollyStart)
+		{
+			bFirstMouseMoveAfterDollyStart = false;
+		}
+		else
+		{
+			NavigationController.Dolly(MouseDeltaY);
+		}
+	}
+
 	// Zoom / speed
 	const float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (!MathUtil::IsNearlyZero(ScrollNotches))
@@ -458,6 +513,27 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	{
 		Gizmo->SetNextMode();
 	}
+
+	if (InputSystem::Get().GetKeyUp('X') && Gizmo)
+	{
+		Gizmo->SetWorldSpace(!Gizmo->IsWorldSpace());
+	}
+
+	if (InputSystem::Get().GetKeyUp('F'))
+	{
+		FocusPrimarySelection();
+	}
+
+	if (InputSystem::Get().GetKeyUp(VK_DELETE))
+	{
+		DeleteSelectedActors();
+	}
+
+	if (InputSystem::Get().GetKeyDown('A') && bCtrlDown && !bAltDown)
+	{
+		SelectAllActors();
+	}
+
 }
 
 void FEditorViewportClient::TickInteraction(float DeltaTime)
@@ -487,6 +563,19 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 
 	POINT MousePoint = InputSystem::Get().GetMousePos();
+
+	// Marquee(박스 선택) 드래그가 Viewport 영역을 벗어나 ImGui 패널로 넘어가면 즉시 취소합니다.
+	// (선택 적용/시각화 모두 중단)
+	if (bBoxSelecting)
+	{
+		const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+		if (!GuiState.IsInViewportHost(MousePoint.x, MousePoint.y))
+		{
+			bBoxSelecting = false;
+			return;
+		}
+	}
+
 	MousePoint = Window->ScreenToClientPoint(MousePoint);
 
 	// 윈도우 기준 좌표 → 뷰포트 로컬 좌표로 변환
@@ -494,6 +583,15 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	const float ViewportOffsetY = State ? static_cast<float>(State->Rect.Y) : 0.f;
 	const float LocalX = static_cast<float>(MousePoint.x) - ViewportOffsetX;
 	const float LocalY = static_cast<float>(MousePoint.y) - ViewportOffsetY;
+
+	if (bBoxSelecting)
+	{
+		if (LocalX < 0.0f || LocalY < 0.0f || LocalX > WindowWidth || LocalY > WindowHeight)
+		{
+			bBoxSelecting = false;
+			return;
+		}
+	}
 
 	FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, WindowWidth, WindowHeight);
 	
@@ -506,12 +604,31 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	FHitResult HitResult;
 	Gizmo->Raycast(Ray, HitResult);
 
+	const bool bCtrlDown = InputSystem::Get().GetKey(VK_CONTROL);
+	const bool bAltDown = InputSystem::Get().GetKey(VK_MENU);
+	const bool bShiftDown = InputSystem::Get().GetKey(VK_SHIFT);
+	const bool bBoxSelectModifier = bCtrlDown && bAltDown;
+
 	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
 	{
+		if (bBoxSelectModifier)
+		{
+			bBoxSelecting = true;
+			BoxSelectStart = POINT{ static_cast<LONG>(LocalX), static_cast<LONG>(LocalY) };
+			BoxSelectEnd = BoxSelectStart;
+			return;
+		}
+
 		HandleDragStart(Ray);
 	}
 	else if (InputSystem::Get().GetLeftDragging())
 	{
+		if (bBoxSelecting)
+		{
+			BoxSelectEnd = POINT{ static_cast<LONG>(LocalX), static_cast<LONG>(LocalY) };
+			return;
+		}
+
 		if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
 		{
 			Gizmo->SetHolding(true);
@@ -524,7 +641,20 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 	else if (InputSystem::Get().GetLeftDragEnd())
 	{
+		if (bBoxSelecting)
+		{
+			HandleBoxSelection();
+			bBoxSelecting = false;
+			return;
+		}
+
 		Gizmo->DragEnd();
+	}
+
+	if (bBoxSelecting && InputSystem::Get().GetKeyUp(VK_LBUTTON))
+	{
+		bBoxSelecting = false;
+		return;
 	}
 
 	if (Gizmo->IsPressedOnHandle() && InputSystem::Get().GetKeyUp(VK_LBUTTON))
@@ -571,18 +701,23 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 			}
 		}
 
-		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+		const bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+		const bool bShiftHeld = InputSystem::Get().GetKey(VK_SHIFT);
 
 		if (BestActor == nullptr)
 		{
-			if (!bCtrlHeld && SelectionManager)
+			if (!bCtrlHeld && !bShiftHeld && SelectionManager)
 			{
 				SelectionManager->ClearSelection();
 			}
 		}
 		else
 		{
-			if (bCtrlHeld)
+			if (bShiftHeld)
+			{
+				SelectionManager->AddSelect(BestActor);
+			}
+			else if (bCtrlHeld)
 			{
 				SelectionManager->ToggleSelect(BestActor);
 			}
@@ -601,7 +736,210 @@ FVector FEditorViewportClient::ResolveOrbitPivot() const
 		return Camera.GetLocation() + Camera.GetForwardVector() * 300.0f;
 	}
 
-	// 현재 SelectionManager API를 모르므로 임시 기본값.
-	// 나중에 primary selection Center 를 반환하도록 연결 권장.
+	if (AActor* Primary = SelectionManager->GetPrimarySelection())
+	{
+		return Primary->GetActorLocation();
+	}
+
 	return Camera.GetLocation() + Camera.GetForwardVector() * 300.0f;
+}
+
+bool FEditorViewportClient::TryProjectWorldToViewport(const FVector& WorldPos, float& OutViewportX, float& OutViewportY, float& OutDepth) const
+{
+	const FVector4 Clip = FMatrix::Identity.TransformVector4(FVector4(WorldPos, 1.0f), Camera.GetViewProjectionMatrix());
+	if (MathUtil::IsNearlyZero(Clip.W))
+	{
+		return false;
+	}
+
+	const float InvW = 1.0f / Clip.W;
+	const float NdcX = Clip.X * InvW;
+	const float NdcY = Clip.Y * InvW;
+	const float NdcZ = Clip.Z * InvW;
+	if (NdcX < -1.0f || NdcX > 1.0f || NdcY < -1.0f || NdcY > 1.0f)
+	{
+		return false;
+	}
+
+	OutViewportX = (NdcX * 0.5f + 0.5f) * WindowWidth;
+	OutViewportY = (1.0f - (NdcY * 0.5f + 0.5f)) * WindowHeight;
+	OutDepth = NdcZ;
+	return true;
+}
+
+void FEditorViewportClient::HandleBoxSelection()
+{
+	if (!SelectionManager || !World)
+	{
+		return;
+	}
+
+	const int32 MinX = std::min(BoxSelectStart.x, BoxSelectEnd.x);
+	const int32 MinY = std::min(BoxSelectStart.y, BoxSelectEnd.y);
+	const int32 MaxX = std::max(BoxSelectStart.x, BoxSelectEnd.x);
+	const int32 MaxY = std::max(BoxSelectStart.y, BoxSelectEnd.y);
+	const int32 Width = MaxX - MinX;
+	const int32 Height = MaxY - MinY;
+
+	if (Width < 2 || Height < 2)
+	{
+		return;
+	}
+
+	const bool bAddToExisting = InputSystem::Get().GetKey(VK_SHIFT);
+	if (!bAddToExisting)
+	{
+		SelectionManager->ClearSelection();
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor || !Actor->GetRootComponent())
+		{
+			continue;
+		}
+
+		float ViewportX = 0.0f;
+		float ViewportY = 0.0f;
+		float Depth = 0.0f;
+		if (!TryProjectWorldToViewport(Actor->GetActorLocation(), ViewportX, ViewportY, Depth))
+		{
+			continue;
+		}
+
+		if (Depth < 0.0f || Depth > 1.0f)
+		{
+			continue;
+		}
+
+		const int32 Px = static_cast<int32>(ViewportX);
+		const int32 Py = static_cast<int32>(ViewportY);
+		if (Px >= MinX && Px <= MaxX && Py >= MinY && Py <= MaxY)
+		{
+			SelectionManager->AddSelect(Actor);
+		}
+	}
+}
+
+void FEditorViewportClient::FocusPrimarySelection()
+{
+	if (!SelectionManager || !bHasCamera)
+	{
+		return;
+	}
+
+	AActor* Primary = SelectionManager->GetPrimarySelection();
+	if (!Primary)
+	{
+		return;
+	}
+
+	const FVector Target = Primary->GetActorLocation();
+	if (Camera.IsOrthographic())
+	{
+		const FVector Forward = Camera.GetEffectiveForward().GetSafeNormal();
+		float Distance = FVector::DotProduct(Camera.GetLocation() - Target, Forward);
+		if (MathUtil::IsNearlyZero(Distance))
+		{
+			Distance = 1000.0f;
+		}
+		Camera.SetLocation(Target + Forward * Distance);
+	}
+	else
+	{
+		const FVector Forward = Camera.GetForwardVector().GetSafeNormal();
+		Camera.SetLocation(Target - Forward * 300.0f);
+		Camera.SetLookAt(Target);
+	}
+
+	NavigationController.ResetTargetLocation();
+}
+
+void FEditorViewportClient::DeleteSelectedActors()
+{
+	if (!SelectionManager)
+	{
+		return;
+	}
+
+	const TArray<AActor*> SelectedActors = SelectionManager->GetSelectedActors();
+	for (AActor* Actor : SelectedActors)
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
+		if (UWorld* ActorWorld = Actor->GetWorld())
+		{
+			ActorWorld->DestroyActor(Actor);
+		}
+	}
+
+	SelectionManager->ClearSelection();
+}
+
+void FEditorViewportClient::SelectAllActors()
+{
+	if (!SelectionManager || !World)
+	{
+		return;
+	}
+
+	SelectionManager->ClearSelection();
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+		SelectionManager->AddSelect(Actor);
+	}
+}
+
+void FEditorViewportClient::BeginMouseConstrain()
+{
+	if (!Window || !State)
+	{
+		return;
+	}
+
+	bMouseConstrained = true;
+	UpdateMouseConstrain();
+}
+
+void FEditorViewportClient::UpdateMouseConstrain()
+{
+	if (!bMouseConstrained || !Window || !State)
+	{
+		return;
+	}
+
+	if (State->Rect.Width <= 0 || State->Rect.Height <= 0)
+	{
+		return;
+	}
+
+	POINT TopLeft{ State->Rect.X, State->Rect.Y };
+	POINT BottomRight{ State->Rect.X + State->Rect.Width - 1, State->Rect.Y + State->Rect.Height - 1 };
+	::ClientToScreen(Window->GetHWND(), &TopLeft);
+	::ClientToScreen(Window->GetHWND(), &BottomRight);
+
+	RECT ClipRect{};
+	ClipRect.left = TopLeft.x;
+	ClipRect.top = TopLeft.y;
+	ClipRect.right = BottomRight.x;
+	ClipRect.bottom = BottomRight.y;
+	::ClipCursor(&ClipRect);
+}
+
+void FEditorViewportClient::EndMouseConstrain()
+{
+	if (!bMouseConstrained)
+	{
+		return;
+	}
+
+	bMouseConstrained = false;
+	::ClipCursor(nullptr);
 }
