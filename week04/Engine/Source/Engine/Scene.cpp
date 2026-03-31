@@ -202,7 +202,8 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 FStaticMeshRenderItem MeshItem = {};
 
                 // 1. 트랜스폼 데이터 세팅
-                MeshItem.World = Actor->GetWorldMatrix(); // (또는 컴포넌트의 월드 매트릭스)
+                MeshItem.World =
+                    StaticMeshComp->GetWorldMatrix(); // (또는 컴포넌트의 월드 매트릭스)
 
                 // 2. VBO/IBO가 들어있는 렌더 리소스 포인터 전달
                 MeshItem.RenderResource = StaticMeshAsset->GetRenderResource();
@@ -226,7 +227,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 // 4. 상태 및 피킹 데이터
                 MeshItem.WorldAABB = StaticMeshComp->GetWorldAABB();
                 MeshItem.State.ObjectId = ObjectId;
-                MeshItem.State.bShowBounds = Actor->IsShowBounds();
+                MeshItem.State.bShowBounds = StaticMeshComp->IsShowBounds();
                 MeshItem.State.SetVisible(Actor->IsVisible());
                 MeshItem.State.SetPickable(Actor->IsPickable());
                 MeshItem.State.SetSelected(Actor->IsSelected());
@@ -277,14 +278,14 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 }
 
                 FPrimitiveRenderItem PrimitiveItem = {};
-                PrimitiveItem.World = Actor->GetWorldMatrix();
+                PrimitiveItem.World = PrimitiveComponent->GetWorldMatrix();
                 PrimitiveItem.Color = Actor->GetColor();
                 PrimitiveItem.MeshType = Actor->GetMeshType();
                 PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
                 PrimitiveItem.bHasWorldAABB = true;
 
                 PrimitiveItem.State.ObjectId = ObjectId;
-                PrimitiveItem.State.bShowBounds = Actor->IsShowBounds();
+                PrimitiveItem.State.bShowBounds = PrimitiveComponent->IsShowBounds();
                 PrimitiveItem.State.SetVisible(Actor->IsVisible());
                 PrimitiveItem.State.SetPickable(Actor->IsPickable());
                 PrimitiveItem.State.SetSelected(Actor->IsSelected());
