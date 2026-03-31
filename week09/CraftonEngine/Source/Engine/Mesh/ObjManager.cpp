@@ -35,48 +35,24 @@ void FObjManager::ScanMeshAssets()
 {
 	AvailableMeshFiles.clear();
 
-	std::map<FString, FMeshAssetListItem> MergedItems;
-
-	auto AddFilesFromRoot = [](const std::filesystem::path& RootPath, const wchar_t* TargetExt, std::map<FString, FMeshAssetListItem>& OutMap)
-		{
-			if (!std::filesystem::exists(RootPath))
-			{
-				return;
-			}
-
-			for (const auto& Entry : std::filesystem::recursive_directory_iterator(RootPath))
-			{
-				if (!Entry.is_regular_file())
-				{
-					continue;
-				}
-
-				const std::filesystem::path& Path = Entry.path();
-				if (Path.extension() != TargetExt)
-				{
-					continue;
-				}
-
-				FString Key = FPaths::ToUtf8(Path.stem().wstring());
-
-				FMeshAssetListItem Item;
-				Item.DisplayName = Key;
-				Item.FullPath = FPaths::ToUtf8(Path.wstring());
-
-				OutMap[Key] = Item;
-			}
-		};
-
-	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
 	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
 
-	// bin이 같은 키를 덮어쓰도록 우선적용
-	AddFilesFromRoot(DataRoot, L".obj", MergedItems);
-	AddFilesFromRoot(MeshCacheRoot, L".bin", MergedItems);
 
-	AvailableMeshFiles.reserve(MergedItems.size());
-	for (auto& [Key, Item] : MergedItems)
+	if (!std::filesystem::exists(MeshCacheRoot))
 	{
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+		if (Path.extension() != L".bin") continue;
+
+		FMeshAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.wstring());
 		AvailableMeshFiles.push_back(std::move(Item));
 	}
 }
