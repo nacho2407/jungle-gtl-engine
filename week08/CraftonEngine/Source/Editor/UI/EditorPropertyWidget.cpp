@@ -14,9 +14,11 @@
 #include "Materials/Material.h"
 #include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Platform/Paths.h"
 
 #include <Windows.h>
 #include <commdlg.h>
+#include <filesystem>
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -52,9 +54,17 @@ FString FEditorPropertyWidget::OpenObjFileDialog()
 
 	if (GetOpenFileNameA(&Ofn))
 	{
-		return FString(FilePath);
+		std::filesystem::path AbsPath = std::filesystem::path(FPaths::ToWide(FilePath)).lexically_normal();
+		std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir());
+		std::filesystem::path RelPath = AbsPath.lexically_relative(RootPath);
+
+		// 상대 경로 변환 실패 시 (드라이브가 다른 경우 등) 절대 경로를 그대로 반환
+		if (RelPath.empty() || RelPath.string().starts_with(".."))
+		{
+			return FString(FilePath);
+		}
+		return FPaths::ToUtf8(RelPath.generic_wstring());
 	}
-	return {};
 }
 
 void FEditorPropertyWidget::Render(float DeltaTime)
