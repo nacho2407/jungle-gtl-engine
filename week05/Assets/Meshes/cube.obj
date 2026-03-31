@@ -1,4 +1,4 @@
-# cube.obj
+# cube-tex.obj
 # Import into Blender with Y-forward, Z-up
 #
 # Vertices:                        Faces:
@@ -12,6 +12,8 @@
 #   a-------d         +---- x          +-------+
 #                                           6
 #                                        bottom
+
+# Material defined in separate file.
 
 g cube
 
@@ -33,6 +35,35 @@ vn  0.0  1.0  0.0  # 3 gcbf
 vn  0.0 -1.0  0.0  # 4 dhea
 vn  0.0  0.0  1.0  # 5 hgfe
 vn  0.0  0.0 -1.0  # 6 cdab
+
+# Texture
+# (u,v) coordinate into texture map image, ranging from 0.0 - 1.0.
+#  +---f---g---+---+
+#  |   | 5 |   |   |
+#  f---e---h---g---+
+#  | 2 | 4 | 1 |   |     v
+#  b---a---d---c---+     |
+#  |   | 6 |   |   |     |
+#  +---b---c---+---+     +---- u
+#  |   | 3 |   |   |
+#  +---f---g---+---+
+vt 0.25 1.00  # 1 f(5) = f for face 5
+vt 0.50 1.00  # 2 g(5)
+vt 0    0.75  # 3 f(2)
+vt 0.25 0.75  # 4 e(2,4,5)
+vt 0.50 0.75  # 5 h(1,4,5)
+vt 0.75 0.75  # 6 g(1)
+vt 0    0.50  # 7 b(2)
+vt 0.25 0.50  # 8 a(2,4,6)
+vt 0.50 0.50  # 9 d(1,4,6)
+vt 0.75 0.50  # 10 c(1)
+vt 0.25 0.25  # 11 b(3,6)
+vt 0.50 0.25  # 12 c(3,6)
+vt 0.25 0     # 13 f(3)
+vt 0.50 0     # 14 g(3)
+
+# Define material for the following faces
+usemtl texture
 
 # Faces v/vt/vn
 #   3-------2

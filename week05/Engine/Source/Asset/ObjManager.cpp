@@ -136,8 +136,8 @@ namespace
 			for (size_t i = 1; i + 1 < FaceIndices.size(); ++i)
 			{
 				OutMesh->Indices.push_back(FaceIndices[0]);
-				OutMesh->Indices.push_back(FaceIndices[i]);
 				OutMesh->Indices.push_back(FaceIndices[i + 1]);
+				OutMesh->Indices.push_back(FaceIndices[i]);
 			}
 		}
 	};
@@ -175,7 +175,6 @@ inline UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileN
 
 		if (!Material)
 		{
-			UE_LOG("[경고] OBJ에서 요청한 머티리얼 '%s'가 없습니다. 기본 머티리얼로 대체합니다.", MatName.c_str());
 			Material = FMaterialManager::Get().FindByName("M_Default");
 		}
 
@@ -365,6 +364,7 @@ inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutM
 		{
 			FVector Position;
 			SS >> Position.X >> Position.Y >> Position.Z;
+			Position.Y = -Position.Y;
 			Context.TempPositions.push_back(Position);
 		}
 		else if (Type == "vt")
