@@ -14,19 +14,12 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl",
 		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
 
-	Shaders[(uint32)EShaderType::Outline].Create(InDevice, L"Shaders/Outline.hlsl",
-		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
-
-	// OutlinePNCT: 같은 Outline.hlsl을 USE_NORMAL_EXPANSION define으로 컴파일
-	static const D3D_SHADER_MACRO OutlinePNCTDefines[] = {
-		{ "USE_NORMAL_EXPANSION", "1" },
-		{ nullptr, nullptr }
-	};
-	Shaders[(uint32)EShaderType::OutlinePNCT].Create(InDevice, L"Shaders/Outline.hlsl",
-		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout), OutlinePNCTDefines);
-
 	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/StaticMeshShader.hlsl",
 		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
+
+	// PostProcess outline: fullscreen quad (InputLayout 없음)
+	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl",
+		"VS", "PS", nullptr, 0);
 
 	bIsInitialized = true;
 }

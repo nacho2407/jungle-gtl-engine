@@ -86,6 +86,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	if (VP)
 	{
 		Bus.SetViewportSize(static_cast<float>(VP->GetWidth()), static_cast<float>(VP->GetHeight()));
+		Bus.SetViewportResources(VP->GetRTV(), VP->GetDSV(), VP->GetStencilSRV());
 	}
 
 	// RenderCommand를 ERenderPass별로 수집. 각 컴포넌트가 자신의 렌더 엔트리를 Bus에 직접 추가.
