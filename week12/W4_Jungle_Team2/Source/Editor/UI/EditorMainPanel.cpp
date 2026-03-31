@@ -11,6 +11,15 @@
 #include "Engine/Core/InputSystem.h"
 namespace
 {
+	void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
+	{
+		ID3D11DeviceContext* DeviceContext = static_cast<ID3D11DeviceContext*>(Cmd->UserCallbackData);
+		if (!DeviceContext) return;
+
+		const float BlendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+		DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);
+	}
+
 	const char* GetViewportTypeName(EEditorViewportType Type)
 	{
 		switch (Type)
@@ -107,7 +116,6 @@ void FEditorMainPanel::Render(float DeltaTime)
 	PropertyWidget.Render(DeltaTime);
 	SceneWidget.Render(DeltaTime);
 	StatWidget.Render(DeltaTime);
-
 	ViewportOverlayWidget.Render(DeltaTime);
 
 	ImGui::Render();
@@ -144,77 +152,127 @@ void FEditorMainPanel::Update()
 void FEditorMainPanel::RenderViewportHostWindow()
 {
 	if (!EditorEngine) return;
-	constexpr ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_MenuBar;
+	constexpr ImGuiWindowFlags WindowFlags = 0;
+	FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+
 	if (!ImGui::Begin("Viewport", nullptr, WindowFlags))
 	{
+		GuiState.bViewportHostVisible = false;
+		GuiState.ViewportHostRect = FViewportRect();
+		EditorEngine->GetViewportLayout().SetHostRect(FViewportRect());
 		ImGui::End();
 		return;
-	}
-
-	if (ImGui::BeginMenuBar())
-	{
-		RenderViewportMenuBar();
-		ImGui::EndMenuBar();
 	}
 
 	const ImVec2 ContentSize = ImGui::GetContentRegionAvail();
 	if (ContentSize.x > 1.0f && ContentSize.y > 1.0f)
 	{
-		// ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
-		ImGui::Dummy(ContentSize);
+		const ImVec2 ContentPos = ImGui::GetCursorScreenPos();
+		const FViewportRect HostRect(
+			static_cast<int32>(ContentPos.x),
+			static_cast<int32>(ContentPos.y),
+			static_cast<int32>(ContentSize.x),
+			static_cast<int32>(ContentSize.y));
+
+		GuiState.bViewportHostVisible = true;
+		GuiState.ViewportHostRect = HostRect;
+		EditorEngine->GetViewportLayout().SetHostRect(HostRect);
+
+		if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetFD3DDevice().GetViewportSceneColorSRV())
+		{
+			ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+			DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
+			ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
+			DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+		}
+		else
+		{
+			ImGui::Dummy(ContentSize);
+		}
+
+		// 뷰포트별 독립 메뉴바 오버레이
+		{
+			FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+			const float MenuBarH = ImGui::GetFrameHeight();
+
+			for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+			{
+				const FEditorViewportState& VState = Layout.GetViewportState(i);
+				if (VState.Rect.Width <= 0 || VState.Rect.Height <= 0) continue;
+
+				const float LocalX = static_cast<float>(VState.Rect.X - HostRect.X);
+				const float LocalY = static_cast<float>(VState.Rect.Y - HostRect.Y);
+				if (LocalX < 0.0f || LocalY < 0.0f) continue;
+
+				ImGui::SetCursorScreenPos(ImVec2(ContentPos.x + LocalX, ContentPos.y + LocalY));
+
+				char ChildID[32];
+				snprintf(ChildID, sizeof(ChildID), "##VPMenu%d", i);
+
+				ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.05f, 0.05f, 0.05f, 0.75f));
+				constexpr ImGuiWindowFlags OverlayFlags =
+					ImGuiWindowFlags_MenuBar           |
+					ImGuiWindowFlags_NoScrollbar       |
+					ImGuiWindowFlags_NoScrollWithMouse |
+					ImGuiWindowFlags_NoNav             |
+					ImGuiWindowFlags_NoFocusOnAppearing;
+
+				if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(VState.Rect.Width), MenuBarH), false, OverlayFlags))
+				{
+					if (ImGui::BeginMenuBar())
+					{
+						RenderViewportMenuBarForIndex(i);
+						ImGui::EndMenuBar();
+					}
+				}
+				ImGui::EndChild();
+				ImGui::PopStyleColor();
+			}
+		}
+	}
+	else
+	{
+		GuiState.bViewportHostVisible = false;
+		GuiState.ViewportHostRect = FViewportRect();
+		EditorEngine->GetViewportLayout().SetHostRect(FViewportRect());
 	}
 
 	ImGui::End();
 }
 
-void FEditorMainPanel::RenderViewportMenuBar()
+// 개별 뷰포트 메뉴바 렌더링 — Index 번 뷰포트에 대한 Layout / Type / View / Stats 메뉴
+void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
 {
 	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
-	const int32 TargetIndex = ResolveViewportMenuTarget();
-	FEditorViewportClient& TargetClient = Layout.GetViewportClient(TargetIndex);
-	FEditorViewportState& TargetState = Layout.GetViewportState(TargetIndex);
-	ImGui::Text("Target : %s | %s | %s",
-		GetViewportSlotName(TargetIndex),
-		GetViewportTypeName(TargetClient.GetViewportType()),
-		GetViewModeName(TargetState.ViewMode));
-	ImGui::SameLine();
+	FEditorViewportClient& Client = Layout.GetViewportClient(Index);
+	FEditorViewportState& State = Layout.GetViewportState(Index);
 
-	if (ImGui::BeginMenu("Target"))
-	{
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
-		{
-			const bool bSelected = (i == TargetIndex);
-			if (ImGui::MenuItem(GetViewportSlotName(i), nullptr, bSelected))
-			{
-				Layout.SetLastFocusedViewportIndex(i);
-			}
-		}
-		ImGui::EndMenu();
-	}
+	ImGui::TextDisabled("%s | %s | %s",
+		GetViewportSlotName(Index),
+		GetViewportTypeName(Client.GetViewportType()),
+		GetViewModeName(State.ViewMode));
+	ImGui::SameLine();
 
 	if (ImGui::BeginMenu("Layout"))
 	{
 		const bool bSingle = Layout.IsSingleViewportMode();
 
 		if (ImGui::MenuItem("SingleView", nullptr, bSingle))
-		{
-			Layout.SetSingleViewportMode(true, TargetIndex);
-		}
+			Layout.SetSingleViewportMode(true, Index);
 		if (ImGui::MenuItem("Quad View", nullptr, !bSingle))
-		{
 			Layout.SetSingleViewportMode(false);
-		}
 
 		if (bSingle)
 		{
 			ImGui::Separator();
-			for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+			for (int32 j = 0; j < FViewportLayout::MaxViewports; ++j)
 			{
-				const bool bSelected = (Layout.GetSingleViewportIndex() == i);
-				if (ImGui::MenuItem(GetViewportSlotName(i), nullptr, bSelected))
+				const bool bSel = (Layout.GetSingleViewportIndex() == j);
+				if (ImGui::MenuItem(GetViewportSlotName(j), nullptr, bSel))
 				{
-					Layout.SetSingleViewportMode(true, i);
-					Layout.SetLastFocusedViewportIndex(i);
+					Layout.SetSingleViewportMode(true, j);
+					Layout.SetLastFocusedViewportIndex(j);
 				}
 			}
 		}
@@ -223,7 +281,7 @@ void FEditorMainPanel::RenderViewportMenuBar()
 
 	if (ImGui::BeginMenu("Type"))
 	{
-		if (TargetIndex == 0)
+		if (Index == 0)
 		{
 			ImGui::TextDisabled("Viewport 0 is fixed to Perspective.");
 			ImGui::Separator();
@@ -237,71 +295,42 @@ void FEditorMainPanel::RenderViewportMenuBar()
 				EVT_OrthoFront, EVT_OrthoBack,
 				EVT_OrthoLeft, EVT_OrthoRight
 			};
-
 			for (EEditorViewportType Type : kOrthoTypes)
 			{
-				const bool bSelected = (TargetClient.GetViewportType() == Type);
-				if (ImGui::MenuItem(GetViewportTypeName(Type), nullptr, bSelected))
+				const bool bSel = (Client.GetViewportType() == Type);
+				if (ImGui::MenuItem(GetViewportTypeName(Type), nullptr, bSel))
 				{
-					TargetClient.SetViewportType(Type);
-					TargetClient.ApplyCameraMode();
+					Client.SetViewportType(Type);
+					Client.ApplyCameraMode();
 				}
 			}
 		}
-
 		ImGui::EndMenu();
 	}
 
-	if(ImGui::BeginMenu("View"))
+	if (ImGui::BeginMenu("View"))
 	{
 		static constexpr EViewMode Modes[] =
 		{
 			EViewMode::Lit,
 			EViewMode::Unlit,
 			EViewMode::Wireframe
-		};	
-
-		static constexpr const char* Labels[] = {
-			"Lit",
-			"Unlit",
-			"Wireframe"
 		};
+		static constexpr const char* Labels[] = { "Lit", "Unlit", "Wireframe" };
 
-		for (int32 i = 0; i < 3; ++i)
+		for (int32 j = 0; j < 3; ++j)
 		{
-			const bool bSelected = (TargetState.ViewMode == Modes[i]);
-			if (ImGui::MenuItem(Labels[i], nullptr, bSelected))
-			{
-				TargetState.ViewMode = Modes[i];
-			}
+			const bool bSel = (State.ViewMode == Modes[j]);
+			if (ImGui::MenuItem(Labels[j], nullptr, bSel))
+				State.ViewMode = Modes[j];
 		}
 		ImGui::EndMenu();
 	}
 
 	if (ImGui::BeginMenu("Stats"))
 	{
-		ImGui::MenuItem("FPS", nullptr, &TargetState.bShowStatFPS);
-		ImGui::MenuItem("Memory", nullptr, &TargetState.bShowStatMemory);
+		ImGui::MenuItem("FPS", nullptr, &State.bShowStatFPS);
+		ImGui::MenuItem("Memory", nullptr, &State.bShowStatMemory);
 		ImGui::EndMenu();
 	}
-
-}
-
-// Target Viewport의 index를 반환한다.
-int32 FEditorMainPanel::ResolveViewportMenuTarget() const
-{
-	if (!EditorEngine) return 0;
-
-	const FViewportLayout& Layout = EditorEngine->GetViewportLayout();
-
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
-	{
-		const FEditorViewportState& State = Layout.GetViewportState(i);
-		if (State.bHovered && State.Rect.Width > 0 && State.Rect.Height > 0)
-		{
-			return i;
-		}
-	}
-
-	return Layout.GetLastFocusedViewportIndex();
 }
