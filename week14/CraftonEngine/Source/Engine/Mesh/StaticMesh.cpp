@@ -9,41 +9,6 @@ IMPLEMENT_CLASS(UStaticMesh, UObject)
 
 static const FString EmptyPath;
 
-void UStaticMesh::Build(const std::string& SourceFilePath, ID3D11Device* InDevice)
-{
-	std::string BinPath = FObjManager::GetBinaryFilePath(SourceFilePath);
-
-	FWindowsBinReader Reader(BinPath);
-	if (Reader.IsValid())
-	{
-		// 1. 캐시 히트: 무거운 .obj 파싱 없이 빠르게 바이너리 통째로 복사 (O(1) 수준)
-		this->Serialize(Reader);
-	}
-	else
-	{
-		// 2. 캐시 미스: 원본 OBJ 파싱 진행
-		auto NewMeshAsset = std::make_unique<FStaticMesh>();
-		TArray<FStaticMaterial> ParsedMaterials;
-
-		if (FObjImporter::Import(SourceFilePath, *NewMeshAsset, ParsedMaterials))
-		{
-			NewMeshAsset->PathFileName = SourceFilePath;
-			this->SetStaticMeshAsset(std::move(NewMeshAsset));
-			this->SetStaticMaterials(std::move(ParsedMaterials));
-
-			// 3. 파싱 결과를 하드디스크에 굽기 (다음 로딩 속도 최적화)
-			FWindowsBinWriter Writer(BinPath);
-			if (Writer.IsValid())
-			{
-				this->Serialize(Writer);
-			}
-		}
-	}
-
-	// 4. 캐시에서 불렀든 파싱을 했든, 최종적으로 GPU 버퍼와 텍스처를 세팅합니다.
-	InitResources(InDevice);
-}
-
 void UStaticMesh::Serialize(FArchive& Ar)
 {
 	// 에셋이 비어있으면 로드용으로 생성
