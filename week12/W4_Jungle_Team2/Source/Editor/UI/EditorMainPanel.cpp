@@ -218,8 +218,8 @@ void FEditorMainPanel::RenderViewportMenuBar()
 				}
 			}
 		}
+		ImGui::EndMenu();
 	}
-	ImGui::EndMenu();
 
 	if (ImGui::BeginMenu("Type"))
 	{
@@ -259,7 +259,7 @@ void FEditorMainPanel::RenderViewportMenuBar()
 			EViewMode::Lit,
 			EViewMode::Unlit,
 			EViewMode::Wireframe
-		};
+		};	
 
 		static constexpr const char* Labels[] = {
 			"Lit",

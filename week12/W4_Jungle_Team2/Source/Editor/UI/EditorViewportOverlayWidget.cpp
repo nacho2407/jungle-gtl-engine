@@ -45,8 +45,8 @@ static const char* GetViewModeName(EViewMode Mode)
 void FEditorViewportOverlayWidget::Render(float DeltaTime)
 {
 	RenderViewportSettings(DeltaTime);
-	RenderDebugStats(DeltaTime);
-	RenderSplitterBar();
+	// RenderDebugStats(DeltaTime);
+	// RenderSplitterBar();
 	// RenderViewportToolbars();
 }
 
