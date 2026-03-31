@@ -31,11 +31,23 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	const FViewportCamera* Camera = nullptr;
 	TryGetActiveCamera(Camera);
 
-	CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-		GetWorldScale(),
-		Camera->GetEffectiveForward(),
-		Camera->GetEffectiveRight(),
-		Camera->GetEffectiveUp());
+	if (TryGetActiveCamera(Camera) && Camera != nullptr)
+	{
+		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
+			GetWorldScale(),
+			Camera->GetEffectiveForward(),
+			Camera->GetEffectiveRight(),
+			Camera->GetEffectiveUp());
+	}
+	else
+	{
+		// 카메라를 찾을 수 없는 로드 초기 시점 등에서는 기본 축을 사용합니다.
+		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
+			GetWorldScale(),
+			FVector(1.0f, 0.0f, 0.0f),  // Forward
+			FVector(0.0f, 1.0f, 0.0f),  // Right
+			FVector(0.0f, 0.0f, 1.0f)); // Up
+	}
 
 	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]).Normalized();
 	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]).Normalized();
