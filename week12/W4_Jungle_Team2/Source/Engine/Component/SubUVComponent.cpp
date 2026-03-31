@@ -46,13 +46,24 @@ void USubUVComponent::UpdateWorldAABB() const
 	WorldAABB.Reset();
 
 	const FViewportCamera* Camera = nullptr;
-	TryGetActiveCamera(Camera);
 
-	CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-		GetWorldScale(),
-		Camera->GetEffectiveForward(),
-		Camera->GetEffectiveRight(),
-		Camera->GetEffectiveUp());
+	if (TryGetActiveCamera(Camera) && Camera != nullptr)
+	{
+		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
+			GetWorldScale(),
+			Camera->GetEffectiveForward(),
+			Camera->GetEffectiveRight(),
+			Camera->GetEffectiveUp());
+	}
+	else
+	{
+		// 카메라를 찾을 수 없는 로드 초기 시점 등에서는 기본 축을 사용합니다.
+		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
+			GetWorldScale(),
+			FVector(1.0f, 0.0f, 0.0f),  // Forward
+			FVector(0.0f, 1.0f, 0.0f),  // Right
+			FVector(0.0f, 0.0f, 1.0f)); // Up
+	}
 
 	FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
 

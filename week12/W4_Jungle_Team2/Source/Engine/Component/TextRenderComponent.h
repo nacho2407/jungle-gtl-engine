@@ -33,7 +33,7 @@ enum class ETextVAlign : int32
 class UTextRenderComponent : public UBillboardComponent
 {
 public:
-	DECLARE_CLASS(UTextRenderComponent, UPrimitiveComponent)
+	DECLARE_CLASS(UTextRenderComponent, UBillboardComponent)
 
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;

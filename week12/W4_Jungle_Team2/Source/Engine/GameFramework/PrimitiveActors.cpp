@@ -161,7 +161,7 @@ void ASubUVActor::InitDefaultComponents()
     Text->SetText("UUID: " + std::to_string(GetUUID()));
 
     FVector Extent = SubUV->GetWorldAABB().GetExtent();
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
 }
 
 void ATextRenderActor::InitDefaultComponents()
@@ -172,10 +172,10 @@ void ATextRenderActor::InitDefaultComponents()
 	Text->SetText("TextRender");
     
     auto* TextUUID = AddComponent<UTextRenderComponent>();
-    TextUUID->AttachToComponent(TextUUID);
+    TextUUID->AttachToComponent(Text);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
-    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
