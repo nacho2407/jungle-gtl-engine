@@ -48,6 +48,8 @@ public:
 	void BeginFrame();
 	void Render(const FRenderBus& InRenderBus);
 	void EndFrame();
+	void UseBackBufferRenderTargets();
+	void UseViewportRenderTargets();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
@@ -71,6 +73,7 @@ private:
 
 private:
 	FD3DDevice Device;
+	FRenderTargetSet CurrentRenderTargets;
 	FRenderResources Resources;
 	FLineBatcher   EditorLineBatcher;
 	FLineBatcher   GridLineBatcher;
