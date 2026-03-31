@@ -303,12 +303,16 @@ namespace
 		Material->SetBlendOption(DefaultTexMat->GetBlendOption());
 		Material->SetBlendState(DefaultTexMat->GetBlendState());
 
-		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 16);
+		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
 		if (SlotIndex >= 0)
 		{
 			Material->RegisterParameter("BaseColor", SlotIndex, 0, 16);
 			const float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 			Material->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+
+			Material->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
+			const float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			Material->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
 		}
 
 		return Material;
@@ -347,6 +351,9 @@ namespace
 
 		std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
 		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
+
+		std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
+		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
 		UE_LOG("%s %s", LogPrefix, TexturePath.string().c_str());
 		return true;
 	}

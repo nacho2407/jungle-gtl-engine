@@ -218,7 +218,7 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 						}
 						ImGui::PopItemWidth();
 
-						float MasterScroll[2] = { 0.0f, 0.0f };
+						float MasterScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 						if (NumSections > 0)
 						{
@@ -229,6 +229,7 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 						}
 
 						ImGui::PushItemWidth(180.f);
+						// DragFloat2를 사용하므로 MasterScroll[0], MasterScroll[1] 값만 조작됩니다. (나머지 2개는 패딩 역할)
 						if (ImGui::DragFloat2("Scroll All Sections", MasterScroll, 0.001f, -5.0f, 5.0f, "%.2f"))
 						{
 							for (uint32 j = 0; j < NumSections; ++j)
@@ -312,10 +313,11 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 
 								if (auto MatTex = CurrentMat->GetMaterialTexture())
 								{
-									float SpeedArray[2] = { 0.0f, 0.0f };
+									float SpeedArray[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 									CurrentMat->GetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
 
 									ImGui::PushID(i + 2000);
+									// 마찬가지로 UI 조작은 X, Y 2개만 합니다.
 									if (ImGui::DragFloat2("UV Scroll", SpeedArray, 0.001f, -5.0f, 5.0f, "%.2f"))
 									{
 										CurrentMat->SetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
