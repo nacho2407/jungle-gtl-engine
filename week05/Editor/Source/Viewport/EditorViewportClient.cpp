@@ -47,9 +47,11 @@ void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)
 	ID3D11Device* Device = Renderer->GetDevice();
 	if (Device)
 	{
+		constexpr int32 GridVertexCount = 42;
+
 		GridMesh = std::make_unique<FDynamicMesh>();
 		GridMesh->Topology = EMeshTopology::EMT_TriangleList;
-		for (int i = 0; i < 18; ++i)
+		for (int32 i = 0; i < GridVertexCount; ++i)
 		{
 			FVertex Vertex;
 			GridMesh->Vertices.push_back(Vertex);
@@ -82,16 +84,25 @@ void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)
 		GridMaterial->SetDepthStencilOption(DepthStencilOption);
 		GridMaterial->SetDepthStencilState(DSS);
 
-		int32 SlotIndex = GridMaterial->CreateConstantBuffer(Device, 32);
+		int32 SlotIndex = GridMaterial->CreateConstantBuffer(Device, 64);
 		if (SlotIndex >= 0)
 		{
-			GridMaterial->RegisterParameter("GridSize", SlotIndex, 12, 4);
-			GridMaterial->RegisterParameter("LineThickness", SlotIndex, 16, 4);
+			GridMaterial->RegisterParameter("GridSize", SlotIndex, 0, 4);
+			GridMaterial->RegisterParameter("LineThickness", SlotIndex, 4, 4);
+			GridMaterial->RegisterParameter("GridAxisU", SlotIndex, 16, 12);
+			GridMaterial->RegisterParameter("GridAxisV", SlotIndex, 32, 12);
+			GridMaterial->RegisterParameter("ViewForward", SlotIndex, 48, 12);
 
 			float DefaultGridSize = 10.0f;
 			float DefaultLineThickness = 1.0f;
+			const FVector DefaultGridAxisU = FVector::ForwardVector;
+			const FVector DefaultGridAxisV = FVector::RightVector;
+			const FVector DefaultViewForward = FVector::ForwardVector;
 			GridMaterial->SetParameterData("GridSize", &DefaultGridSize, 4);
 			GridMaterial->SetParameterData("LineThickness", &DefaultLineThickness, 4);
+			GridMaterial->SetParameterData("GridAxisU", &DefaultGridAxisU, sizeof(FVector));
+			GridMaterial->SetParameterData("GridAxisV", &DefaultGridAxisV, sizeof(FVector));
+			GridMaterial->SetParameterData("ViewForward", &DefaultViewForward, sizeof(FVector));
 		}
 	}
 }
