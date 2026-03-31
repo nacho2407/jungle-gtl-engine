@@ -215,12 +215,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 {
                     FStaticMeshMaterialBinding Binding = {};
                     Binding.Material = StaticMeshComp->GetMaterial(i);
-
-                    const Engine::Asset::FMaterialSlot* Slot = StaticMeshAsset->GetMaterialSlot(i);
-                    if (Slot)
-                    {
-                        Binding.SubMaterialName = Slot->SubMaterialName;
-                    }
+                    Binding.SubMaterialName = StaticMeshComp->GetSubMaterialName(i);
                     MeshItem.MaterialBindings.push_back(Binding);
                 }
 
@@ -268,32 +263,32 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
             }
 #pragma endregion
 
-#pragma region __PRIMITIVE__
-            else if (auto* PrimitiveComponent =
-                         Cast<Engine::Component::UPrimitiveComponent>(Component))
-            {
-                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives))
-                {
-                    continue;
-                }
-
-                FPrimitiveRenderItem PrimitiveItem = {};
-                PrimitiveItem.World = PrimitiveComponent->GetWorldMatrix();
-                PrimitiveItem.Color = Actor->GetColor();
-                PrimitiveItem.MeshType = Actor->GetMeshType();
-                PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
-                PrimitiveItem.bHasWorldAABB = true;
-
-                PrimitiveItem.State.ObjectId = ObjectId;
-                PrimitiveItem.State.bShowBounds = PrimitiveComponent->IsShowBounds();
-                PrimitiveItem.State.SetVisible(Actor->IsVisible());
-                PrimitiveItem.State.SetPickable(Actor->IsPickable());
-                PrimitiveItem.State.SetSelected(Actor->IsSelected());
-                PrimitiveItem.State.SetHovered(Actor->IsHovered());
-
-                OutRenderData.Primitives.push_back(PrimitiveItem);
-            }
-#pragma endregion
+//#pragma region __PRIMITIVE__
+//            else if (auto* PrimitiveComponent =
+//                         Cast<Engine::Component::UPrimitiveComponent>(Component))
+//            {
+//                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives))
+//                {
+//                    continue;
+//                }
+//
+//                FPrimitiveRenderItem PrimitiveItem = {};
+//                PrimitiveItem.World = PrimitiveComponent->GetWorldMatrix();
+//                PrimitiveItem.Color = Actor->GetColor();
+//                PrimitiveItem.MeshType = Actor->GetMeshType();
+//                PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
+//                PrimitiveItem.bHasWorldAABB = true;
+//
+//                PrimitiveItem.State.ObjectId = ObjectId;
+//                PrimitiveItem.State.bShowBounds = PrimitiveComponent->IsShowBounds();
+//                PrimitiveItem.State.SetVisible(Actor->IsVisible());
+//                PrimitiveItem.State.SetPickable(Actor->IsPickable());
+//                PrimitiveItem.State.SetSelected(Actor->IsSelected());
+//                PrimitiveItem.State.SetHovered(Actor->IsHovered());
+//
+//                OutRenderData.Primitives.push_back(PrimitiveItem);
+//            }
+//#pragma endregion
         }
     }
 }

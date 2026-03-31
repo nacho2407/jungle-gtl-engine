@@ -21,7 +21,8 @@ namespace Engine::Asset
         UMaterial() = default;
         virtual ~UMaterial() override = default;
 
-        void Initialize(const FSourceRecord& InSource, std::shared_ptr<::FMaterialResource> InResource);
+        void                         Initialize(const FSourceRecord&                 InSource,
+                                                std::shared_ptr<::FMaterialResource> InResource);
         virtual const FMaterialData* GetMaterialData(const FString& SubMaterialName) const override;
 
         TArray<UTexture2DAsset*>&       GetReferencedTextures() { return ReferencedTextures; }
@@ -29,8 +30,12 @@ namespace Engine::Asset
         void                            AddTextureDependency(UTexture2DAsset* InTexture);
         bool HasTextureDependency(const UTexture2DAsset* InTexture) const;
 
+        virtual const FString GetMaterialLibraryName() const { return MaterialLibraryName; }
+        void SetMaterialLibraryName(const FString& InName) { MaterialLibraryName = InName; }
+
       private:
+        FString                              MaterialLibraryName{"Default"};
         std::shared_ptr<::FMaterialResource> Resource;
-        TArray<UTexture2DAsset*>           ReferencedTextures;
+        TArray<UTexture2DAsset*>             ReferencedTextures;
     };
 } // namespace Engine::Asset

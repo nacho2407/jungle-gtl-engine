@@ -101,6 +101,11 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
     Engine::Asset::UMaterial* NewMatAsset = new Engine::Asset::UMaterial();
     NewMatAsset->Initialize(Source, MatResource);
 
+    const std::filesystem::path MtlPath(Source.NormalizedPath);
+    const FWString LibraryNameWide = MtlPath.stem().native();
+    const FString  LibraryName = WidePathToUtf8(LibraryNameWide);
+    NewMatAsset->SetMaterialLibraryName(LibraryName);
+
     if (AssetManager)
     {
         // MTL 파일의 디렉토리 경로 추출 (텍스처 상대 경로 조합용)

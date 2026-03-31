@@ -213,7 +213,7 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
     };
     RHI.SetViewport(VP);
 
-    if (HasScenePrimitives(InSceneRenderData))
+   /* if (HasScenePrimitives(InSceneRenderData))
     {
         FMeshPassParams ScenePassParams = {};
         ScenePassParams.SceneView = InSceneRenderData.SceneView;
@@ -235,10 +235,10 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         }
 
         MeshBatchRenderer.EndFrame();
-    }
+    }*/
 
     // -------------------------------------------------------------------------
-    // [추가됨] 2. Static Mesh 렌더링
+    // Static Mesh 렌더링
     // -------------------------------------------------------------------------
     if (InSceneRenderData.SceneView != nullptr && !InSceneRenderData.StaticMeshes.empty())
     {
