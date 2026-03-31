@@ -71,7 +71,7 @@ UStaticMesh* UStaticMeshComp::GetStaticMesh() const
 	return StaticMesh;
 }
 
-void UStaticMeshComp::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
+void UStaticMeshComp::SetMaterial(int32 ElementIndex, std::shared_ptr<UMaterial> InMaterial)
 {
 	// 인덱스가 배열 범위를 벗어나지 않는지 안전 검사 (IsValidIndex 등 사용)
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
@@ -80,7 +80,7 @@ void UStaticMeshComp::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 	}
 }
 
-UMaterial* UStaticMeshComp::GetMaterial(int32 ElementIndex) const
+std::shared_ptr<UMaterial> UStaticMeshComp::GetMaterial(int32 ElementIndex) const
 {
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
 	{
@@ -271,7 +271,11 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 				if (FoundMat)
 				{
 					// 찾은 머티리얼을 해당 슬롯에 적용합니다. 
-					SetMaterial(Index, FoundMat);
+					// shared_ptr 관리 방식에 따라 아래와 같이 캐스팅하여 넣습니다.
+					SetMaterial(Index, std::shared_ptr<UMaterial>(FoundMat, [](UMaterial*) {
+						// UObjectManager가 수명을 관리하므로 shared_ptr이 해제될 때 
+						// 실제 객체를 delete하지 않도록 빈 삭제자(No-op deleter)를 사용합니다.
+						}));
 				}
 			}
 		}
