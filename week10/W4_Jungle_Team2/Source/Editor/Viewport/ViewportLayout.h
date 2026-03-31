@@ -10,6 +10,7 @@ class UWorld;
 class SViewport;
 class SSplitterV;
 class SSplitterH;
+class SSplitterCross;
 class FWindowsWindow;
 class FViewportCamera;
 class FSelectionManager;
@@ -43,9 +44,10 @@ public:
 	}
 
 	// Splitter Get
-	SSplitterV* GetRootSplitterV() const { return RootSplitterV; }
-	SSplitterH* GetTopSplitterH()  const { return TopSplitterH; }
-	SSplitterH* GetBotSplitterH()  const { return BotSplitterH; }
+	SSplitterV*    GetRootSplitterV() const { return RootSplitterV; }
+	SSplitterH*    GetTopSplitterH()  const { return TopSplitterH; }
+	SSplitterH*    GetBotSplitterH()  const { return BotSplitterH; }
+	SSplitterCross* GetCrossWidget()  const { return CrossWidget; }
 
 	// 1개 ↔ 4개 전환
 	// bSingle=true  : Index 번 뷰포트만 전체 화면
@@ -94,9 +96,10 @@ private:
 	TStaticArray<FEditorViewportState, MaxViewports>  ViewportStates;
 
 	// Slate 위젯 트리 — UEditorEngine 이 소유합니다.
-	SSplitterV* RootSplitterV = nullptr;
-	SSplitterH* TopSplitterH = nullptr;
-	SSplitterH* BotSplitterH = nullptr;
+	SSplitterV*    RootSplitterV = nullptr;
+	SSplitterH*    TopSplitterH  = nullptr;
+	SSplitterH*    BotSplitterH  = nullptr;
+	SSplitterCross* CrossWidget  = nullptr;
 	SViewport* ViewportWidgets[MaxViewports] = {};
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)

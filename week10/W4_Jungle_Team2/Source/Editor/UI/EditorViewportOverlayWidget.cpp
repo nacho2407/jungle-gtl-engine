@@ -12,11 +12,13 @@
 #include "Slate/SSplitter.h"
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
+#include "Slate/SSplitterCross.h"
 #include "Viewport/ViewportLayout.h"
 #include "Core/InputSystem.h"
 #include <initializer_list>
 #include <utility>
 #include <algorithm>
+#include "Engine/Component/GizmoComponent.h"
 
 // 뷰포트 타입 → 표시 이름
 static const char* GetViewportTypeName(EEditorViewportType Type)
@@ -174,12 +176,19 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 	}
 }
 
+// 스플리터 바 시각화
 void FEditorViewportOverlayWidget::RenderSplitterBar()
 {
-	// Caputre 중인 Widget이 있다면 SplitterBar 하이라이트를 비활성화 합니다.
+	 // Caputre 중인 Widget이 있다면 SplitterBar 하이라이트를 비활성화 합니다.
 	 if (FSlateApplication::Get().GetCapturedWidget()) return;
 
-	// 스플리터 바 시각화
+	 bool bIsHodingGizmo = EditorEngine->GetGizmo()->IsHolding();
+	 // 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
+	 if (bIsHodingGizmo || InputSystem::Get().GetRightDragging())
+	 {
+		 return;
+	 }
+
 	 if (!EditorEngine) return;
 	
 	FViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
@@ -194,9 +203,13 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 		const SWidget* Hovered  = FSlateApplication::Get().GetHoveredWidget();
 		const SWidget* Captured = FSlateApplication::Get().GetCapturedWidget();
 
-		// 드래그 중(LButton + 이동)에는 하이라이트를 표시하지 않음
-		// InputSystem::Get().GetLeftDragging() || 
 		const bool bIsDragging = InputSystem::Get().GetRightDragging();
+
+		SSplitterCross* Cross = ViewportLayout.GetCrossWidget();
+		constexpr ImU32 CrossHoverColor = IM_COL32(140, 180, 255, 255);
+
+		// 교차점 핸들 호버 시 전체 바를 황금색으로 표시합니다.
+		const bool bCrossHovered = (Cross && Cross == Hovered);
 
 		SSplitter* Splitters[] = {
 			ViewportLayout.GetRootSplitterV(),
@@ -210,14 +223,28 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 			const FRect Bar = S->GetBarRect();
 
 			const SSplitter* Linked = S->GetLinkedSplitter();
-			const bool bHighlight = !bIsDragging
+			const bool bSplitterHover = !bIsDragging
 				&& ((S == Hovered || S == Captured)
 					|| (Linked && (Linked == Hovered || Linked == Captured)));
+
+			ImU32 Color = BarColor;
+			if (bCrossHovered)       Color = CrossHoverColor;
+			else if (bSplitterHover) Color = HoverColor;
 
 			DrawList->AddRectFilled(
 				ImVec2(Bar.X, Bar.Y),
 				ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
-				bHighlight ? HoverColor : BarColor);
+				Color);
+		}
+
+		// 교차점 핸들 렌더링 (4개 뷰포트 동시 조정)
+		if (Cross)
+		{
+			const FRect CR = Cross->GetCrossRect();
+			DrawList->AddRectFilled(
+				ImVec2(CR.X, CR.Y),
+				ImVec2(CR.X + CR.Width, CR.Y + CR.Height),
+				bCrossHovered ? CrossHoverColor : BarColor);
 		}
 	}
 }
