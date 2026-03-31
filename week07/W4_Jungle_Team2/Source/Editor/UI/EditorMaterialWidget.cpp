@@ -77,18 +77,34 @@ void FEditorMaterialWidget::Render(float DeltaTime)
 // -----------------------------------------------------------------------
 void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 {
-	const TArray<FMaterial*> OverrideMaterial = MeshComp->GetOverrideMaterial();
+	const TArray<FMaterial*>& OverrideMaterial = MeshComp->GetOverrideMaterial();
+	const TArray<FStaticMeshSection>& Sections = MeshComp->GetStaticMesh()->GetSections();
+	const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshComp->GetStaticMesh()->GetMaterialSlots();
 
     ImGui::Text("Sections (%d)", static_cast<int32>(OverrideMaterial.size()));
     ImGui::Separator();
 
     for (int32 i = 0; i < static_cast<int32>(OverrideMaterial.size()); ++i)
 	{
+		// 슬롯 이름 가져오기
+		FString SlotName = "Unknown";
+		if (i < static_cast<int32>(Sections.size()))
+		{
+			int32 SlotIdx = Sections[i].MaterialSlotIndex;
+			if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
+				SlotName = MatSlots[SlotIdx].SlotName;
+		}
+
+		bool bMissing = (OverrideMaterial[i] == nullptr);
+
         char Label[128];
-        snprintf(Label, sizeof(Label), "Section [%d]\n", i);
+        snprintf(Label, sizeof(Label), "[%d] %s%s", i, SlotName.c_str(), bMissing ? " (!)" : "");
 
         bool bSelected = (SelectedSectionIndex == i);
-        if (ImGui::Selectable(Label, bSelected, 0, ImVec2(0, 36)))
+		if (bMissing)
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+
+        if (ImGui::Selectable(Label, bSelected, 0, ImVec2(0, 20)))
         {
 			if (!bSelected)
 			{
@@ -96,6 +112,9 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 				SelectedMaterialPtr = MeshComp->GetMaterial(i);
 			}
         }
+
+		if (bMissing)
+			ImGui::PopStyleColor();
     }
 }
 
@@ -104,26 +123,47 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 // -----------------------------------------------------------------------
 void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp)
 {
-    if (SelectedSectionIndex < 0 || !SelectedMaterialPtr)
+    if (SelectedSectionIndex < 0)
     {
         ImGui::TextDisabled("Select a section to edit.");
         return;
     }
 
-    ImGui::Text("Section [%d]", SelectedSectionIndex);
+	// 슬롯 이름 표시
+	const TArray<FStaticMeshSection>& Sections = MeshComp->GetStaticMesh()->GetSections();
+	const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshComp->GetStaticMesh()->GetMaterialSlots();
+	FString SlotName = "Unknown";
+	if (SelectedSectionIndex < static_cast<int32>(Sections.size()))
+	{
+		int32 SlotIdx = Sections[SelectedSectionIndex].MaterialSlotIndex;
+		if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
+			SlotName = MatSlots[SlotIdx].SlotName;
+	}
+	ImGui::Text("Section [%d]  |  Slot: %s", SelectedSectionIndex, SlotName.c_str());
 
-    // ---- 머테리얼 교체 콤보박스 ----
+	// MTL 못 읽어 머테리얼 없는 경우 경고
+	if (!SelectedMaterialPtr)
+	{
+		ImGui::Spacing();
+		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Material not loaded. Assign one below.");
+		ImGui::Spacing();
+	}
+
+    // ---- 머테리얼 교체 콤보박스 (항상 표시) ----
     const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
 
     int32 CurrentIdx = -1;
-    for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
-    {
-        if (MatNames[i] == SelectedMaterialPtr->Name)
-        {
-            CurrentIdx = i;
-            break;
-        }
-    }
+	if (SelectedMaterialPtr)
+	{
+		for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
+		{
+			if (MatNames[i] == SelectedMaterialPtr->Name)
+			{
+				CurrentIdx = i;
+				break;
+			}
+		}
+	}
 
     const char* PreviewLabel = (CurrentIdx >= 0) ? MatNames[CurrentIdx].c_str() : "(none)";
     ImGui::SetNextItemWidth(-1);
@@ -146,6 +186,10 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
         }
         ImGui::EndCombo();
     }
+
+	// 머테리얼이 없으면 색상/텍스처 편집 불가
+	if (!SelectedMaterialPtr)
+		return;
 
     MAT_SEPARATOR();
     RenderColorSection(*SelectedMaterialPtr);
