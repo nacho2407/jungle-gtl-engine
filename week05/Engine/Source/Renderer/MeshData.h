@@ -25,6 +25,14 @@ class ENGINE_API UStaticMesh : public UObject
 {
 public:
 	DECLARE_RTTI(UStaticMesh, UObject)
+	virtual ~UStaticMesh()
+	{
+		if (StaticMeshAsset)
+		{
+			delete StaticMeshAsset;
+			StaticMeshAsset = nullptr;
+		}
+	}
 
 	FBoxSphereBounds LocalBounds;
 	const FString& GetAssetPathFileName() const;

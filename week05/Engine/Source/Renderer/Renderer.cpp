@@ -544,6 +544,21 @@ bool FRenderer::CreateConstantBuffers()
 	return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &ObjectConstantBuffer));
 }
 
+bool FRenderer::CreateSamplers()
+{
+	D3D11_SAMPLER_DESC SamplerDesc = {};
+	SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	SamplerDesc.MinLOD = 0;
+	SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	HRESULT hr = Device->CreateSamplerState(&SamplerDesc, &NormalSampler);
+	return SUCCEEDED(hr);
+}
+
 void FRenderer::UpdateFrameConstantBuffer()
 {
 	FFrameConstantBuffer CBData;

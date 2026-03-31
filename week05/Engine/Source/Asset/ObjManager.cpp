@@ -10,6 +10,7 @@
 #include "Math/MathUtility.h"
 #include "Renderer/MaterialManager.h"
 #include "Renderer/Shader.h"
+#include <map>
 #include "Renderer/Material.h"
 #include "Renderer/ShaderMap.h"
 
@@ -25,6 +26,22 @@ namespace
 		TArray<FVector> TempPositions;
 		TArray<FVector2> TempUVs;
 		TArray<FVector> TempNormals;
+
+		struct FIndex
+		{
+			uint32 PositionIndex;
+			uint32 UVIndex;
+			uint32 NormalIndex;
+
+			bool operator<(const FIndex& Other) const
+			{
+				if (PositionIndex != Other.PositionIndex) return PositionIndex < Other.PositionIndex;
+				if (UVIndex != Other.UVIndex) return UVIndex < Other.UVIndex;
+				return NormalIndex < Other.NormalIndex;
+			}
+		};
+
+		std::map<FIndex, uint32> VertexCache;
 
 		uint32 CurrentSectionStartIndex = 0;
 		int32 CurrentMaterialIndex = -1;
@@ -64,12 +81,6 @@ namespace
 			}
 
 			std::string VStr;
-			struct FIndex
-			{
-				uint32 PositionIndex;
-				uint32 UVIndex;
-				uint32 NormalIndex;
-			};
 			TArray<FIndex> Face;
 
 			while (SS >> VStr)
@@ -83,41 +94,50 @@ namespace
 
 				FIndex Idx{};
 				Idx.PositionIndex = std::stoi(PositionString) - 1;
-				Idx.UVIndex = UVString.empty() ? 0 : std::stoi(UVString) - 1;
-				Idx.NormalIndex = NormalString.empty() ? 0 : std::stoi(NormalString) - 1;
+				Idx.UVIndex = UVString.empty() ? -1 : std::stoi(UVString) - 1;
+				Idx.NormalIndex = NormalString.empty() ? -1 : std::stoi(NormalString) - 1;
 
 				Face.push_back(Idx);
 			}
 
-			for (size_t i = 1; i + 1 < Face.size(); ++i)
+			TArray<uint32> FaceIndices;
+
+			for (const FIndex& Idx : Face)
 			{
-				uint32 BaseIndex = static_cast<uint32>(OutMesh->Vertices.size());
+				auto It = VertexCache.find(Idx);
+				if (It != VertexCache.end())
+				{
+					FaceIndices.push_back(It->second);
+				}
+				else
+				{
+					uint32 NewVertexIndex = static_cast<uint32>(OutMesh->Vertices.size());
 
-				auto AddVertex = [&](const FIndex& Idx)
+					FVertex V{};
+					V.Position = TempPositions[Idx.PositionIndex];
+					V.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+					if (!TempUVs.empty() && Idx.UVIndex < TempUVs.size())
 					{
-						FVertex V{};
-						V.Position = TempPositions[Idx.PositionIndex];
-						V.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+						V.UV = TempUVs[Idx.UVIndex];
+					}
+					if (!TempNormals.empty() && Idx.NormalIndex < TempNormals.size())
+					{
+						V.Normal = TempNormals[Idx.NormalIndex];
+					}
 
-						if (!TempUVs.empty() && Idx.UVIndex < TempUVs.size())
-						{
-							V.UV = TempUVs[Idx.UVIndex];
-						}
-						if (!TempNormals.empty() && Idx.NormalIndex < TempNormals.size())
-						{
-							V.Normal = TempNormals[Idx.NormalIndex];
-						}
+					OutMesh->Vertices.push_back(V);
 
-						OutMesh->Vertices.push_back(V);
-					};
+					VertexCache[Idx] = NewVertexIndex;
+					FaceIndices.push_back(NewVertexIndex);
+				}
+			}
 
-				AddVertex(Face[0]);
-				AddVertex(Face[i]);
-				AddVertex(Face[i + 1]);
-
-				OutMesh->Indices.push_back(BaseIndex + 0);
-				OutMesh->Indices.push_back(BaseIndex + 1);
-				OutMesh->Indices.push_back(BaseIndex + 2);
+			for (size_t i = 1; i + 1 < FaceIndices.size(); ++i)
+			{
+				OutMesh->Indices.push_back(FaceIndices[0]);
+				OutMesh->Indices.push_back(FaceIndices[i]);
+				OutMesh->Indices.push_back(FaceIndices[i + 1]);
 			}
 		}
 	};
@@ -347,10 +367,6 @@ inline void FObjManager::ClearCache()
 	{
 		if (Asset != nullptr)
 		{
-			if (Asset->GetRenderData())
-			{
-				delete Asset->GetRenderData();
-			}
 			delete Asset;
 			Asset = nullptr;
 		}

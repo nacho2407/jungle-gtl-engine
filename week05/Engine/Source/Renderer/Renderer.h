@@ -115,6 +115,7 @@ private:
 	bool CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height);
 	bool CreateRenderTargetAndDepthStencil(int32 Width, int32 Height);
 	bool CreateConstantBuffers();
+	bool CreateSamplers();
 	void UpdateFrameConstantBuffer();
 	void UpdateObjectConstantBuffer(const FMatrix& WorldMatrix);
 	void ClearDepthBuffer();

@@ -208,8 +208,21 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 								}
 								ImGui::EndCombo();
 							}
-							ImGui::PopItemWidth();
-							ImGui::PopID();
+
+							if (CurrentMat)
+							{
+								FVector4 MatColor = CurrentMat->GetVectorParameter("BaseColor");
+								float ColorArray[4] = { MatColor.X, MatColor.Y, MatColor.Z, MatColor.W };
+
+								ImGui::PushID(i + 1000);
+								if (ImGui::ColorEdit4("Base Color", ColorArray))
+								{
+									CurrentMat->SetParameterData("BaseColor", ColorArray, sizeof(ColorArray));
+								}
+								ImGui::PopID();
+							}
+
+							ImGui::PopID(); // PushID(i)에 대한 Pop
 						}
 					}
 					else

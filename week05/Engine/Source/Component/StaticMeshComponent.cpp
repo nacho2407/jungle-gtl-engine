@@ -3,6 +3,7 @@
 #include "PrimitiveComponent.h"
 #include "MeshComponent.h"
 #include "Asset/ObjManager.h"
+#include "Renderer/Material.h"
 IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
@@ -16,7 +17,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 		const TArray<std::shared_ptr<FMaterial>>& DefaultMats = StaticMesh->GetDefaultMaterials();
 		for (int32 i = 0; i < NeededMaterialSlots && i < DefaultMats.size(); ++i)
 		{
-			Materials[i] = DefaultMats[i];
+			Materials[i] = DefaultMats[i]->CreateDynamicMaterial();
 		}
 		UpdateBounds();
 	}
