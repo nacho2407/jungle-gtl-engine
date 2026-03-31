@@ -22,11 +22,9 @@ public:
 	static bool SaveModelStaticMeshAsset(const FString& PathFileName, const FStaticMesh& StaticMesh, const TArray<FModelMaterialInfo>& MaterialInfos);
 	static bool BuildModelMaterialInfosFromObj(const FString& ObjFilePath, const FString& ModelFilePath, const TArray<FString>& MaterialSlotNames, TArray<FModelMaterialInfo>& OutMaterialInfos);
 	static bool ParseMtlFile(const FString& MtlFIlePath);
+	static void PreloadAllObjFiles(const FString& DirecttoryPath);
 
 	static void ClearCache();
-
-	// 임시용. 추후 .obj파일 파싱으로 변경될 예정.
-	static UStaticMesh* GetPrimitiveSky();
 
 private:
 	static bool ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames);

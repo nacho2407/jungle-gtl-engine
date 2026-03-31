@@ -303,12 +303,16 @@ namespace
 		Material->SetBlendOption(DefaultTexMat->GetBlendOption());
 		Material->SetBlendState(DefaultTexMat->GetBlendState());
 
-		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 16);
+		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
 		if (SlotIndex >= 0)
 		{
 			Material->RegisterParameter("BaseColor", SlotIndex, 0, 16);
 			const float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 			Material->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+
+			Material->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
+			const float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			Material->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
 		}
 
 		return Material;
@@ -347,6 +351,9 @@ namespace
 
 		std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
 		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
+
+		std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
+		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
 		UE_LOG("%s %s", LogPrefix, TexturePath.string().c_str());
 		return true;
 	}
@@ -557,8 +564,8 @@ namespace
 			for (size_t i = 1; i + 1 < FaceIndices.size(); ++i)
 			{
 				OutMesh->Indices.push_back(FaceIndices[0]);
-				OutMesh->Indices.push_back(FaceIndices[i]);
 				OutMesh->Indices.push_back(FaceIndices[i + 1]);
+				OutMesh->Indices.push_back(FaceIndices[i]);
 			}
 		}
 	};
@@ -596,6 +603,34 @@ UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 		return nullptr;
 	}
 
+/*<<<<<<< HEAD
+	RawData->UpdateLocalBound();
+
+	UStaticMesh* NewAsset = new UStaticMesh();
+	NewAsset->SetStaticMeshAsset(RawData.release());
+
+	NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
+	NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
+	NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
+
+	for (const FString& MatName : FoundMaterials)
+	{
+		auto Material = FMaterialManager::Get().FindByName(MatName);
+
+		if (!Material)
+		{
+			Material = FMaterialManager::Get().FindByName("M_Default");
+		}
+
+		NewAsset->AddDefaultMaterial(Material);
+	}
+
+	if (FoundMaterials.empty())
+	{
+		NewAsset->AddDefaultMaterial(FMaterialManager::Get().FindByName("M_Default"));
+	}
+
+=======*/
 	UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), FoundMaterials);
 	ObjStaticMeshMap[PathFileName] = NewAsset;
 	return NewAsset;
@@ -1005,6 +1040,34 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			std::string MaterialName;
 			SS >> MaterialName;
 
+/*<<<<<<< HEAD
+			CurrentMaterial = std::make_shared<FMaterial>();
+			CurrentMaterial->SetOriginName(MaterialName.c_str());
+
+			std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
+			std::wstring PSPath = FPaths::ShaderDir() / L"ColorPixelShader.hlsl";
+			CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
+			CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
+
+			auto DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
+			CurrentMaterial->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
+			CurrentMaterial->SetRasterizerState(DefaultTexMat->GetRasterizerState());
+			CurrentMaterial->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
+			CurrentMaterial->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
+
+			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
+			if (SlotIndex >= 0)
+			{
+				CurrentMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
+				float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+
+				CurrentMaterial->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
+				float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
+			}
+
+=======*/
 			CurrentMaterial = CreateImportedMaterialTemplate(MaterialName.c_str());
 			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
 		}
@@ -1026,6 +1089,19 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			const std::filesystem::path TexturePath = ResolveTextureReferencePath(FilePath, TextureReference);
 			if (!TryLoadTextureIntoMaterial(CurrentMaterial, TexturePath, "[MTL Parser] Auto-loaded texture-backed pixel shader:"))
 			{
+/*<<<<<<< HEAD
+				auto MaterialTexture = std::make_shared<FMaterialTexture>();
+				MaterialTexture->TextureSRV = NewSRV;
+				CurrentMaterial->SetMaterialTexture(MaterialTexture);
+
+				std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
+				CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
+
+				std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
+				CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
+
+				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TexPSPath.c_str());
+=======*/
 				UE_LOG("[MTL Parser] Failed to resolve texture '%s' referenced by '%s'.",
 					TextureReference.c_str(),
 					AbsolutePath.c_str());
@@ -1034,6 +1110,29 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 	}
 
 	return true;
+}
+
+void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
+{
+	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
+	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	// 폴더가 존재하는지 확인
+	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
+	{
+		UE_LOG("[FObjManager] Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
+	{
+		if (Entry.is_regular_file() && Entry.path().extension() == ".obj")
+		{
+			std::string FullFilePath = Entry.path().string();
+
+			UStaticMesh* LoadedMesh = LoadObjStaticMeshAsset(FullFilePath.c_str());
+		}
+	}
 }
 
 bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
@@ -1082,6 +1181,7 @@ bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TA
 		{
 			FVector Position;
 			SS >> Position.X >> Position.Y >> Position.Z;
+			Position.Y = -Position.Y;
 			Context.TempPositions.push_back(Position);
 		}
 		else if (Type == "vt")

@@ -167,15 +167,84 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 
 					if (UStaticMesh* MeshData = MeshComp->GetStaticMesh())
 					{
-						// 현재 어떤 모델(Mesh)이 장착되어 있는지 보여줌
-						ImGui::TextDisabled("Mesh:");
-						ImGui::SameLine();
-						ImGui::Text("%s", MeshData->GetAssetPathFileName().c_str());
-						ImGui::Spacing();
-
 						// 매니저에서 모든 머티리얼 리스트 가져오기
 						TArray<FString> MatNames = FMaterialManager::Get().GetAllMaterialNames();
 						uint32 NumSections = MeshData->GetNumSections();
+
+						// ========================================================
+						// [기능 1] 전체 섹션 머티리얼 일괄 변경
+						// ========================================================
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.8f, 1.0f, 1.0f));
+						ImGui::Text("Apply to All Sections:");
+						ImGui::PopStyleColor();
+						ImGui::SameLine();
+
+						ImGui::PushItemWidth(180.f);
+						if (ImGui::BeginCombo("##SetAllMaterials", "Select Material..."))
+						{
+							for (const FString& MatName : MatNames)
+							{
+								ImGui::PushID(MatName.c_str());
+
+								auto ListMaterial = FMaterialManager::Get().FindByName(MatName);
+								ImTextureID TexID = (ImTextureID)0; // 빨간줄 방지용 0 캐스팅
+
+								if (ListMaterial && ListMaterial->GetMaterialTexture() && ListMaterial->GetMaterialTexture()->TextureSRV)
+								{
+									TexID = (ImTextureID)ListMaterial->GetMaterialTexture()->TextureSRV;
+								}
+
+								// 텍스처가 있으면 리스트에 썸네일 렌더링
+								if (TexID)
+								{
+									ImGui::Image(TexID, ImVec2(24.0f, 24.0f));
+									ImGui::SameLine();
+									ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f); // 텍스트와 높이 맞춤
+								}
+
+								if (ImGui::Selectable(MatName.c_str(), false))
+								{
+									if (ListMaterial)
+									{
+										for (uint32 j = 0; j < NumSections; ++j)
+										{
+											MeshComp->SetMaterial(j, ListMaterial);
+										}
+									}
+								}
+								ImGui::PopID();
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::PopItemWidth();
+
+						float MasterScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+						if (NumSections > 0)
+						{
+							if (std::shared_ptr<FMaterial> FirstMat = MeshComp->GetMaterial(0))
+							{
+								FirstMat->GetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
+							}
+						}
+
+						ImGui::PushItemWidth(180.f);
+						// DragFloat2를 사용하므로 MasterScroll[0], MasterScroll[1] 값만 조작됩니다. (나머지 2개는 패딩 역할)
+						if (ImGui::DragFloat2("Scroll All Sections", MasterScroll, 0.001f, -5.0f, 5.0f, "%.2f"))
+						{
+							for (uint32 j = 0; j < NumSections; ++j)
+							{
+								if (std::shared_ptr<FMaterial> Mat = MeshComp->GetMaterial(j))
+								{
+									Mat->SetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
+								}
+							}
+						}
+						ImGui::PopItemWidth();
+
+						ImGui::Separator();
+						ImGui::Spacing();
+						// ========================================================
 
 						// 섹션 개수만큼 머티리얼 슬롯(콤보박스) 생성
 						for (uint32 i = 0; i < NumSections; ++i)
@@ -187,24 +256,45 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 							std::string Label = "Section " + std::to_string(i);
 
 							ImGui::PushItemWidth(180.f); // 콤보박스 너비 조절
+
+							// ========================================================
+							// [기능 2] 개별 섹션 콤보박스 오픈 시 미리보기 출력
+							// ========================================================
 							if (ImGui::BeginCombo(Label.c_str(), CurrentMatName.c_str()))
 							{
 								for (const FString& MatName : MatNames)
 								{
+									ImGui::PushID(MatName.c_str());
 									bool bSelected = (CurrentMatName == MatName);
+
+									auto ListMaterial = FMaterialManager::Get().FindByName(MatName);
+									ImTextureID TexID = (ImTextureID)0; // 빨간줄 방지용 0 캐스팅
+
+									if (ListMaterial && ListMaterial->GetMaterialTexture() && ListMaterial->GetMaterialTexture()->TextureSRV)
+									{
+										TexID = (ImTextureID)ListMaterial->GetMaterialTexture()->TextureSRV;
+									}
+
+									// 텍스처가 있으면 리스트에 썸네일 렌더링
+									if (TexID)
+									{
+										ImGui::Image(TexID, ImVec2(24.0f, 24.0f));
+										ImGui::SameLine();
+										ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f); // 텍스트와 높이 맞춤
+									}
+
 									if (ImGui::Selectable(MatName.c_str(), bSelected))
 									{
-										// 선택 시 머티리얼 즉시 교체!
-										auto SelectedMaterial = FMaterialManager::Get().FindByName(MatName);
-										if (SelectedMaterial)
+										if (ListMaterial)
 										{
-											MeshComp->SetMaterial(i, SelectedMaterial);
+											MeshComp->SetMaterial(i, ListMaterial);
 										}
 									}
 									if (bSelected)
 									{
 										ImGui::SetItemDefaultFocus();
 									}
+									ImGui::PopID();
 								}
 								ImGui::EndCombo();
 							}
@@ -220,9 +310,25 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 									CurrentMat->SetParameterData("BaseColor", ColorArray, sizeof(ColorArray));
 								}
 								ImGui::PopID();
-							}
 
+								if (auto MatTex = CurrentMat->GetMaterialTexture())
+								{
+									float SpeedArray[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+									CurrentMat->GetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
+
+									ImGui::PushID(i + 2000);
+									// 마찬가지로 UI 조작은 X, Y 2개만 합니다.
+									if (ImGui::DragFloat2("UV Scroll", SpeedArray, 0.001f, -5.0f, 5.0f, "%.2f"))
+									{
+										CurrentMat->SetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
+									}
+									ImGui::PopID();
+
+									// 기존에 밖으로 꺼내져 있던 텍스처 미리보기 렌더링(64x64) 코드는 삭제했습니다!
+								}
+							}
 							ImGui::PopID(); // PushID(i)에 대한 Pop
+							ImGui::Spacing();
 						}
 					}
 					else
