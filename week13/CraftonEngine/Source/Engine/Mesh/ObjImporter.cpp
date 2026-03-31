@@ -430,7 +430,31 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 	return true;
 }
 
-bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
+FVector FObjImporter::RemapPosition(const FVector& ObjPos, EForwardAxis Axis)
+{
+	// OBJ 원본 좌표 (Ox, Oy, Oz) → 엔진 (Ex, Ey, Ez)
+	// 엔진: X=Forward, Y=Right, Z=Up
+	// OBJ 기본: Y-up 우수 좌표계
+	switch (Axis)
+	{
+	case EForwardAxis::X:    // OBJ +X → Engine Forward(+X)
+		return FVector(ObjPos.X, ObjPos.Z, ObjPos.Y);
+	case EForwardAxis::NegX: // OBJ -X → Engine Forward(+X)
+		return FVector(-ObjPos.X, -ObjPos.Z, ObjPos.Y);
+	case EForwardAxis::Y:    // OBJ +Y → Engine Forward(+X)
+		return FVector(ObjPos.Y, ObjPos.X, ObjPos.Z);
+	case EForwardAxis::NegY: // OBJ -Y → Engine Forward(+X) — 블렌더 기본
+		return FVector(-ObjPos.Y, -ObjPos.X, ObjPos.Z);
+	case EForwardAxis::Z:    // OBJ +Z → Engine Forward(+X)
+		return FVector(ObjPos.Z, ObjPos.X, ObjPos.Y);
+	case EForwardAxis::NegZ: // OBJ -Z → Engine Forward(+X) — OBJ 기본 (Y-up, -Z forward)
+		return FVector(-ObjPos.Z, ObjPos.X, ObjPos.Y);
+	default:
+		return FVector(ObjPos.X, ObjPos.Z, ObjPos.Y);
+	}
+}
+
+bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, const FImportOptions& Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
 	OutMesh = FStaticMesh();
 	OutMaterials.clear();
@@ -597,27 +621,19 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 				{
 					// 새로운 정점 생성
 					FNormalVertex NewVertex;
-					NewVertex.pos = ObjInfo.Positions[Key.p];
 
-					// Normal 예외 처리
+					// 축 리맵 + 스케일 적용
+					NewVertex.pos = RemapPosition(ObjInfo.Positions[Key.p], Options.ForwardAxis) * Options.Scale;
+
+					// Normal 리맵
 					if (Key.n == -1)
 					{
-						NewVertex.normal = FaceNormal;
+						NewVertex.normal = RemapPosition(FaceNormal, Options.ForwardAxis).Normalized();
 					}
 					else
 					{
-						NewVertex.normal = ObjInfo.Normals[Key.n];
+						NewVertex.normal = RemapPosition(ObjInfo.Normals[Key.n], Options.ForwardAxis).Normalized();
 					}
-
-					// OBJ는 Y-up, Z-Forward (RHS)
-					// UE는 Z-Up, X-Forward (LHS)
-
-					float RawY = ObjInfo.Positions[Key.p].Y;
-					float RawZ = ObjInfo.Positions[Key.p].Z;
-
-					NewVertex.pos.X = ObjInfo.Positions[Key.p].X;
-					NewVertex.pos.Y = RawZ;
-					NewVertex.pos.Z = RawY;
 
 					// UV 예외 처리
 					if (Key.t == -1)
@@ -641,10 +657,18 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 				}
 			}
 
-			// CCW -> CW (인덱스 순서 변경)
+			// 와인딩 오더 처리
 			OutMesh.Indices.push_back(TriangleIndices[0]);
-			OutMesh.Indices.push_back(TriangleIndices[2]);
-			OutMesh.Indices.push_back(TriangleIndices[1]);
+			if (Options.WindingOrder == EWindingOrder::CCW_to_CW)
+			{
+				OutMesh.Indices.push_back(TriangleIndices[2]);
+				OutMesh.Indices.push_back(TriangleIndices[1]);
+			}
+			else
+			{
+				OutMesh.Indices.push_back(TriangleIndices[1]);
+				OutMesh.Indices.push_back(TriangleIndices[2]);
+			}
 		}
 
 		OutMesh.Sections.push_back(NewSection);
@@ -654,6 +678,11 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 }
 
 bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
+{
+	return Import(ObjFilePath, FImportOptions::Default(), OutMesh, OutMaterials);
+}
+
+bool FObjImporter::Import(const FString& ObjFilePath, const FImportOptions& Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials)
 {
 	auto StartTime = std::chrono::high_resolution_clock::now();
 
@@ -671,12 +700,12 @@ bool FObjImporter::Import(const FString& ObjFilePath, FStaticMesh& OutMesh, TArr
 		if (!FObjImporter::ParseMtl(ObjInfo.MaterialLibraryFilePath, ParsedMtlInfos))
 		{
 			UE_LOG("ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
-			ObjInfo.MaterialLibraryFilePath.clear(); // MTL 파일 파싱 실패 시, 머티리얼 라이브러리 경로 초기화
-			ParsedMtlInfos.clear(); // MTL 파일 파싱 실패 시, 머티리얼 정보 초기화
+			ObjInfo.MaterialLibraryFilePath.clear();
+			ParsedMtlInfos.clear();
 		}
 	}
 
-	if (!FObjImporter::Convert(ObjInfo, ParsedMtlInfos, OutMesh, OutMaterials)){
+	if (!FObjImporter::Convert(ObjInfo, ParsedMtlInfos, Options, OutMesh, OutMaterials)){
 		UE_LOG("Convert failed for: %s", ObjFilePath.c_str());
 		return false;
 	}
