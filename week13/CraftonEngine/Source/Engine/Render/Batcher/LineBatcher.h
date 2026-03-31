@@ -38,7 +38,7 @@ public:
 	void AddLine(const FVector& Start, const FVector& End, const FVector4& Color);
 	void AddLine(const FVector& Start, const FVector& End, const FVector4& StartColor, const FVector4& EndColor);
 	void AddAABB(const FBoundingBox& Box, const FColor& Color);
-	void AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward);
+	void AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward, bool bIsOrtho = false);
 
 	// 이번 프레임에 축적된 라인 모두 제거
 	void Clear();

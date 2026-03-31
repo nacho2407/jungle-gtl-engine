@@ -15,8 +15,8 @@ PS_Input_Tex VS(VS_Input_PT input)
 float4 PS(PS_Input_Tex input) : SV_TARGET
 {
     float4 col = SubUVAtlas.Sample(SubUVSampler, input.texcoord);
-    if (ShouldDiscardFontPixel(col.r))
+    if (!bIsWireframe && ShouldDiscardFontPixel(col.r))
         discard;
 
-    return float4(ApplyWireframe(col.rgb), col.a);
+    return float4(ApplyWireframe(col.rgb), bIsWireframe ? 1.0f : col.a);
 }
