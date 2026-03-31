@@ -22,7 +22,7 @@ namespace ECBSlot
 	constexpr uint32 Frame = 0;     // b0: View/Projection/Wireframe
 	constexpr uint32 PerObject = 1; // b1: Model/Color
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
-	constexpr uint32 Outline = 3;   // b3: Outline params
+	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 }
 
 //PerObject
@@ -55,13 +55,12 @@ struct FGizmoConstants
 	float HoveredAxisOpacity;
 };
 
-struct FOutlineConstants
+// PostProcess Outline CB (b3) — HLSL OutlinePostProcessCB와 1:1 대응
+struct FOutlinePostProcessConstants
 {
-	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // RGBA
-	FVector OutlineInvScale;
-	float OutlineOffset = 0.05f;
-	uint32 bIs3D; // 0: 2D (Plane 등), 1: 3D (Cube 등)
-	float Padding0[3];
+	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+	float OutlineThickness = 1.0f;
+	float Padding[3] = {};
 };
 
 struct FAABBConstants
@@ -145,7 +144,7 @@ struct FConstantBufferBinding
 	static constexpr size_t kMaxDataSize = 64;
 	alignas(16) uint8 Data[kMaxDataSize] = {};
 
-	// Buffer/Size/Slot をセットし、Data を T& で返す — Size 不一致を防止
+	// Buffer/Size/Slot
 	template<typename T>
 	T& Bind(FConstantBuffer* InBuffer, uint32 InSlot)
 	{

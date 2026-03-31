@@ -7,7 +7,6 @@
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Resource/ConstantBufferPool.h"
 #include "Texture/Texture2D.h"
 
 IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
@@ -136,9 +135,12 @@ void UStaticMeshComp::CollectSelection(FRenderBus& Bus) const
 	FMeshBuffer* Buffer = GetMeshBuffer();
 	if (!Buffer || !Buffer->IsValid()) return;
 
-	FShaderManager& SM = FShaderManager::Get();
-	BuildOutlineCommands(Bus, Buffer, GetWorldMatrix(), GetWorldScale(),
-		SM.GetShader(EShaderType::StaticMesh), SM.GetShader(EShaderType::OutlinePNCT));
+	// SelectionMask: 스텐실에 선택 오브젝트 마킹
+	FRenderCommand MaskCmd = {};
+	MaskCmd.MeshBuffer = Buffer;
+	MaskCmd.PerObjectConstants = FPerObjectConstants{ GetWorldMatrix() };
+	MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
+	Bus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 
 	if (Bus.GetShowFlags().bBoundingVolume)
 	{

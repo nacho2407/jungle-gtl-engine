@@ -90,15 +90,18 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	CachedPixelShaderSize = pixelShaderCSO->GetBufferSize();
 	MemoryStats::AddPixelShaderMemory(CachedPixelShaderSize);
 
-	// Input Layout 생성
-	hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
-	if (FAILED(hr))
+	// Input Layout 생성 (fullscreen quad 등 vertex buffer 없는 셰이더는 스킵)
+	if (InInputElements && InInputElementCount > 0)
 	{
-		std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
-		Release();
-		vertexShaderCSO->Release();
-		pixelShaderCSO->Release();
-		return;
+		hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+		if (FAILED(hr))
+		{
+			std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
+			Release();
+			vertexShaderCSO->Release();
+			pixelShaderCSO->Release();
+			return;
+		}
 	}
 
 	vertexShaderCSO->Release();

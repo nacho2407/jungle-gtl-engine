@@ -65,6 +65,9 @@ private:
 	// LineBatcher DrawBatch 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
+	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
+	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
