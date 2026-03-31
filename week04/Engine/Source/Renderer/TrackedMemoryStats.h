@@ -4,6 +4,7 @@
 
 struct FTrackedMemoryStats
 {
+    uint64 TextureBytes = 0;
     uint64 RenderTargetBytes = 0;
     uint64 DepthStencilBytes = 0;
     uint64 VertexBufferBytes = 0;
@@ -13,7 +14,7 @@ struct FTrackedMemoryStats
 
     uint64 TotalTrackedGpuBytes() const
     {
-        return RenderTargetBytes + DepthStencilBytes + VertexBufferBytes + IndexBufferBytes +
-               VertexShaderBlobBytes + PixelShaderBlobBytes;
+        return TextureBytes + RenderTargetBytes + DepthStencilBytes + VertexBufferBytes +
+               IndexBufferBytes + VertexShaderBlobBytes + PixelShaderBlobBytes;
     }
 };

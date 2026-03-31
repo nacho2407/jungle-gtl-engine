@@ -131,6 +131,7 @@
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h" />
+    <ClInclude Include="Source\Renderer\MemoryTracker.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\StaticMeshResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h" />
@@ -147,7 +148,7 @@
     <ClInclude Include="Source\Renderer\Submitter\WorldAxesSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldGridSubmitter.h" />
     <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
-    <ClInclude Include="Source\Renderer\TrackedMemorystats.h" />
+    <ClInclude Include="Source\Renderer\TrackedMemoryStats.h" />
     <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
@@ -248,6 +249,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\MemoryTracker.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\OverlayMeshSubmitter.cpp" />

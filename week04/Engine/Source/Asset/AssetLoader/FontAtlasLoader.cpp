@@ -11,6 +11,7 @@
 
 #include "Asset/FontAsset.h"
 #include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/MemoryTracker.h"
 
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -560,6 +561,8 @@ bool FFontAtlasLoader::CreateTextureResource(const FDecodedAtlasImage& DecodedIm
     OutAtlas.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     OutAtlas.Texture = std::move(Texture);
     OutAtlas.SRV = std::move(SRV);
+    OutAtlas.TextureAllocationHandle = GMemoryTracker.TrackTextureAllocation(
+        GMemoryTracker.EstimateTexture2DSizeBytes(TextureDesc));
     return true;
 }
 

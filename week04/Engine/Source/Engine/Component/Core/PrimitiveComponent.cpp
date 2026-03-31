@@ -58,11 +58,14 @@ namespace Engine::Component
         Builder.AddColor(
             "color", L"Color", [this]() { return GetColor(); },
             [this](const FColor& InColor) { SetColor(InColor); });
+        Builder.AddBool(
+            "boundingbox", L"BoundingBox", [this]() { return IsShowBounds(); },
+            [this](bool bInValue) { SetShowBounds(bInValue); });
     }
 
     void UPrimitiveComponent::UpdateBounds()
     {
-        const FMatrix WorldMatrix = GetRelativeMatrix();
+        const FMatrix               WorldMatrix = GetWorldMatrix();
         TArray<Geometry::FTriangle> LocalTriangles;
 
         if (GetLocalTriangles(LocalTriangles) && !LocalTriangles.empty())

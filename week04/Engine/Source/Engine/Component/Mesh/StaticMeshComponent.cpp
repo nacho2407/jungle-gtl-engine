@@ -76,6 +76,7 @@ namespace Engine::Component
         {
             InitializeMaterialSlots(0);
         }
+        OnTransformChanged();
     }
 
     FString UStaticMeshComponent::GetMeshPath() const
@@ -93,7 +94,36 @@ namespace Engine::Component
     bool UStaticMeshComponent::GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const
     {
         OutTriangles.clear();
-        return false;
+        if (StaticMesh == nullptr || StaticMesh->GetRenderResource() == nullptr)
+        {
+            return false;
+        }
+
+        const FStaticMeshResource* Resource = StaticMesh->GetRenderResource();
+        if (Resource->CPU_Positions.empty() || Resource->CPU_Indices.size() < 3)
+        {
+            return false;
+        }
+
+        OutTriangles.reserve(Resource->CPU_Indices.size() / 3);
+
+        for (size_t Index = 0; Index + 2 < Resource->CPU_Indices.size(); Index += 3)
+        {
+            const uint32 I0 = Resource->CPU_Indices[Index];
+            const uint32 I1 = Resource->CPU_Indices[Index + 1];
+            const uint32 I2 = Resource->CPU_Indices[Index + 2];
+
+            if (I0 >= Resource->CPU_Positions.size() || I1 >= Resource->CPU_Positions.size() ||
+                I2 >= Resource->CPU_Positions.size())
+            {
+                continue;
+            }
+
+            OutTriangles.emplace_back(Resource->CPU_Positions[I0], Resource->CPU_Positions[I1],
+                                      Resource->CPU_Positions[I2]);
+        }
+
+        return !OutTriangles.empty();
     }
 
     Geometry::FAABB UStaticMeshComponent::GetLocalAABB() const
@@ -121,6 +151,15 @@ namespace Engine::Component
         }
 
         return nullptr;
+    }
+
+    uint32 UStaticMeshComponent::GetNumMaterials() const
+    {
+        if (StaticMesh)
+        {
+            return StaticMesh->GetNumSections();
+        }
+        return UMeshComponent::GetNumMaterials();
     }
 
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)

@@ -5,6 +5,7 @@
 class FD3D11LineBatchRenderer;
 class FSceneView;
 struct FPrimitiveRenderItem;
+struct FStaticMeshRenderItem;
 
 class FAABBSubmitter
 {
@@ -21,7 +22,12 @@ class FAABBSubmitter
     static void   ExpandBounds(FVector& InOutMin, FVector& InOutMax, const FVector& InPoint);
     static void   SubmitBox(FD3D11LineBatchRenderer& InLineRenderer, const FVector& InMin,
                             const FVector& InMax, const FColor& InColor);
+    static void   SubmitWorldAABB(FD3D11LineBatchRenderer& InLineRenderer,
+                                  const Geometry::FAABB&   InWorldAABB,
+                                  const FRenderItemState&  InState);
 
     static void SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRenderer,
                                       const FPrimitiveRenderItem& InItem);
+    static void SubmitStaticMeshBounds(FD3D11LineBatchRenderer&     InLineRenderer,
+                                       const FStaticMeshRenderItem& InItem);
 };

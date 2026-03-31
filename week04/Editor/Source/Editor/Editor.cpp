@@ -1418,20 +1418,24 @@ void FEditor::DrawRootDockSpace()
             ? (Viewport->Size.y - FEditorChrome::TitleBarHeight - GutterMetrics.Bottom)
             : 0.0f;
 
-    if (DockSpaceWidth <= 0.0f || DockSpaceHeight <= 0.0f)
-    {
-        ViewportAvailableArea = {};
-        return;
-    }
-
     const float DockSpaceX = Viewport->Pos.x + GutterMetrics.Left;
     const float DockSpaceY = Viewport->Pos.y + FEditorChrome::TitleBarHeight;
+    const float SafeDockSpaceWidth = (DockSpaceWidth > 0.0f) ? DockSpaceWidth : 1.0f;
+    const float SafeDockSpaceHeight = (DockSpaceHeight > 0.0f) ? DockSpaceHeight : 1.0f;
 
     FViewportAvailableArea ComputedArea;
-    ComputedArea = MakeViewportAreaFromRect(ImVec2(DockSpaceX, DockSpaceY), ImVec2(DockSpaceWidth, DockSpaceHeight));
+    if (DockSpaceWidth > 0.0f && DockSpaceHeight > 0.0f)
+    {
+        ComputedArea = MakeViewportAreaFromRect(ImVec2(DockSpaceX, DockSpaceY), ImVec2(DockSpaceWidth, DockSpaceHeight));
+    }
+    else
+    {
+        ComputedArea = MakeViewportAreaFromRect(ImVec2(DockSpaceX, DockSpaceY),
+                                                ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight), false);
+    }
 
     ImGui::SetNextWindowPos(ImVec2(DockSpaceX, DockSpaceY));
-    ImGui::SetNextWindowSize(ImVec2(DockSpaceWidth, DockSpaceHeight));
+    ImGui::SetNextWindowSize(ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
     ImGui::SetNextWindowViewport(Viewport->ID);
 
     ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |

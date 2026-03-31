@@ -66,6 +66,10 @@ void FAABBSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
     {
         SubmitPrimitiveBounds(InLineRenderer, Item);
     }
+    for (const FStaticMeshRenderItem& Item : InSceneRenderData.StaticMeshes)
+    {
+        SubmitStaticMeshBounds(InLineRenderer, Item);
+    }
 }
 
 FColor FAABBSubmitter::ResolveBoundsColor(const FRenderItemState& InState)
@@ -127,6 +131,18 @@ void FAABBSubmitter::SubmitBox(FD3D11LineBatchRenderer& InLineRenderer, const FV
     InLineRenderer.AddLine(P010, P011, InColor);
 }
 
+void FAABBSubmitter::SubmitWorldAABB(FD3D11LineBatchRenderer& InLineRenderer,
+                                     const Geometry::FAABB&   InWorldAABB,
+                                     const FRenderItemState&  InState)
+{
+    if (!InState.IsVisible() || !InState.bShowBounds)
+    {
+        return;
+    }
+
+    SubmitBox(InLineRenderer, InWorldAABB.Min, InWorldAABB.Max, ResolveBoundsColor(InState));
+}
+
 void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRenderer,
                                            const FPrimitiveRenderItem& InItem)
 {
@@ -163,4 +179,10 @@ void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRen
     }
 
     SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
+}
+
+void FAABBSubmitter::SubmitStaticMeshBounds(FD3D11LineBatchRenderer&     InLineRenderer,
+                                            const FStaticMeshRenderItem& InItem)
+{
+    SubmitWorldAABB(InLineRenderer, InItem.WorldAABB, InItem.State);
 }

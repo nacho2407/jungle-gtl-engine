@@ -2,17 +2,19 @@
 
 #include <cstdio>
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+#include <imgui.h>
+
 #include "ApplicationCore/Input/InputRouter.h"
 #include "Core/HAL/PlatformMemory.h"
 #include "Editor/EditorContext.h"
 #include "Engine/EngineStatics.h"
 #include "Engine/Scene.h"
 #include "Engine/Game/Actor.h"
-
-#include "imgui.h"
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/MemoryTracker.h"
 
 namespace
 {
@@ -43,33 +45,10 @@ namespace
         }
         else
         {
-            snprintf(Buffer, sizeof(Buffer), "%llu B",
-                     static_cast<unsigned long long>(Bytes));
+            snprintf(Buffer, sizeof(Buffer), "%llu B", static_cast<unsigned long long>(Bytes));
         }
 
         return FString(Buffer);
-    }
-
-    bool QueryPlatformMemoryStats(FPlatformMemoryStats& OutStats)
-    {
-        OutStats = {};
-
-        MEMORYSTATUSEX MemoryStatus = {};
-        MemoryStatus.dwLength = sizeof(MemoryStatus);
-        if (!GlobalMemoryStatusEx(&MemoryStatus))
-        {
-            return false;
-        }
-
-        OutStats.TotalPhysical = static_cast<uint64>(MemoryStatus.ullTotalPhys);
-        OutStats.AvailablePhysical = static_cast<uint64>(MemoryStatus.ullAvailPhys);
-        OutStats.UsedPhysical = OutStats.TotalPhysical - OutStats.AvailablePhysical;
-
-        OutStats.TotalVirtual = static_cast<uint64>(MemoryStatus.ullTotalVirtual);
-        OutStats.AvailableVirtual = static_cast<uint64>(MemoryStatus.ullAvailVirtual);
-        OutStats.UsedVirtual = OutStats.TotalVirtual - OutStats.AvailableVirtual;
-
-        return true;
     }
 }
 
@@ -443,12 +422,82 @@ void FEditorViewportClient::DrawFPSStatOverlay(const FFPSStatData& InData, ImDra
 void FEditorViewportClient::DrawMemoryStatOverlay(const FMemoryStatData& InData, ImDrawList* DrawList,
                                                   const ImVec2& ViewPos, const ImVec2& ViewSize)
 {
-    (void)InData;
-    (void)DrawList;
-    (void)ViewPos;
-    (void)ViewSize;
+    if (DrawList == nullptr || InData.Rows.empty())
+    {
+        return;
+    }
 
-    // 추가 예정
+    const ImVec2 Padding(10.0f, 8.0f);
+    const ImVec2 PanelOffset(18.0f, 18.0f);
+    const float  RowHeight = 22.0f;
+    const float  LabelValueGap = 24.0f;
+    const float  MinPanelWidth = 320.0f;
+
+    const ImU32 PanelBgColor = IM_COL32(8, 12, 10, 190);
+    const ImU32 RowBgEvenColor = IM_COL32(18, 34, 22, 170);
+    const ImU32 RowBgOddColor = IM_COL32(26, 48, 32, 170);
+    const ImU32 BorderColor = IM_COL32(90, 180, 110, 180);
+    const ImU32 LabelColor = IM_COL32(170, 255, 180, 255);
+    const ImU32 ValueColor = IM_COL32(120, 255, 140, 255);
+
+    ImVec2 PanelMin(ViewPos.x + PanelOffset.x, ViewPos.y + PanelOffset.y);
+
+    float MaxLabelWidth = 0.0f;
+    float MaxValueWidth = 0.0f;
+
+    for (const FMemoryStatRow& Row : InData.Rows)
+    {
+        MaxLabelWidth = std::max(MaxLabelWidth, ImGui::CalcTextSize(Row.Label.c_str()).x);
+        MaxValueWidth = std::max(MaxValueWidth, ImGui::CalcTextSize(Row.Value.c_str()).x);
+    }
+
+    const float PanelWidth =
+        std::max(MinPanelWidth, Padding.x * 2.0f + MaxLabelWidth + LabelValueGap + MaxValueWidth);
+    const float PanelHeight = Padding.y * 2.0f + RowHeight * static_cast<float>(InData.Rows.size());
+
+    ImVec2 PanelMax(PanelMin.x + PanelWidth, PanelMin.y + PanelHeight);
+
+    // viewport 밖으로 넘치지 않게 살짝 보정
+    if (PanelMax.x > ViewPos.x + ViewSize.x - 8.0f)
+    {
+        const float ShiftX = PanelMax.x - (ViewPos.x + ViewSize.x - 8.0f);
+        PanelMin.x -= ShiftX;
+        PanelMax.x -= ShiftX;
+    }
+
+    if (PanelMax.y > ViewPos.y + ViewSize.y - 8.0f)
+    {
+        const float ShiftY = PanelMax.y - (ViewPos.y + ViewSize.y - 8.0f);
+        PanelMin.y -= ShiftY;
+        PanelMax.y -= ShiftY;
+    }
+
+    DrawList->AddRectFilled(PanelMin, PanelMax, PanelBgColor, 6.0f);
+    DrawList->AddRect(PanelMin, PanelMax, BorderColor, 6.0f, 0, 1.0f);
+
+    const float LabelX = PanelMin.x + Padding.x;
+    const float ValueX = PanelMax.x - Padding.x;
+
+    for (int32 RowIndex = 0; RowIndex < static_cast<int32>(InData.Rows.size()); ++RowIndex)
+    {
+        const FMemoryStatRow& Row = InData.Rows[RowIndex];
+
+        const float RowTop = PanelMin.y + Padding.y + RowHeight * static_cast<float>(RowIndex);
+        const float RowBottom = RowTop + RowHeight;
+        const ImU32 RowColor = (RowIndex % 2 == 0) ? RowBgEvenColor : RowBgOddColor;
+
+        DrawList->AddRectFilled(ImVec2(PanelMin.x + 4.0f, RowTop),
+                                ImVec2(PanelMax.x - 4.0f, RowBottom), RowColor, 3.0f);
+
+        const ImVec2 LabelSize = ImGui::CalcTextSize(Row.Label.c_str());
+        const ImVec2 ValueSize = ImGui::CalcTextSize(Row.Value.c_str());
+
+        const float TextY = RowTop + (RowHeight - LabelSize.y) * 0.5f;
+        const float ValueTextX = ValueX - ValueSize.x;
+
+        DrawList->AddText(ImVec2(LabelX, TextY), LabelColor, Row.Label.c_str());
+        DrawList->AddText(ImVec2(ValueTextX, TextY), ValueColor, Row.Value.c_str());
+    }
 }
 
 void FEditorViewportClient::DrawOutline() {}
@@ -470,17 +519,25 @@ FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
 {
     FMemoryStatData Data;
 
-    FPlatformMemoryStats Stats;
-    if (QueryPlatformMemoryStats(Stats))
-    {
-        Data.Rows.push_back({"Used Physical", FormatBytes(Stats.UsedPhysical)});
-        Data.Rows.push_back({"Available Physical", FormatBytes(Stats.AvailablePhysical)});
-        Data.Rows.push_back({"Used Virtual", FormatBytes(Stats.UsedVirtual)});
-        Data.Rows.push_back({"Available Virtual", FormatBytes(Stats.AvailableVirtual)});
-    }
+    FMemorySnapshot Snapshot = GMemoryTracker.CaptureSnapshot();
 
-    Data.Rows.push_back({"Total Allocated (Engine)", FormatBytes(UEngineStatics::TotalAllocatedBytes)});
-    Data.Rows.push_back({"Total Allocation Counts (Engine)", std::to_string(UEngineStatics::TotalAllocationCount)});
+    Data.Rows.push_back({"Heap Allocated Bytes (Engine)", FormatBytes(Snapshot.HeapAllocatedBytes)});
+    Data.Rows.push_back({"Heap Allocation Count (Engine)", std::to_string(Snapshot.HeapAllocationCount)});
+
+    Data.Rows.push_back({"Total Physical Memory", FormatBytes(Snapshot.Platform.TotalPhysical)});
+    Data.Rows.push_back({"Available Physical Memory", FormatBytes(Snapshot.Platform.AvailablePhysical)});
+    Data.Rows.push_back({"Total Virtual Memory", FormatBytes(Snapshot.Platform.TotalVirtual)});
+    Data.Rows.push_back({"Available Virtual Memory", FormatBytes(Snapshot.Platform.AvailableVirtual)});
+
+    Data.Rows.push_back({"Tracked Texture Memory", FormatBytes(Snapshot.TrackedGpu.TextureBytes)});
+    Data.Rows.push_back({"Tracked Render Target Memory", FormatBytes(Snapshot.TrackedGpu.RenderTargetBytes)});
+    Data.Rows.push_back({"Tracked Depth Stencil Memory", FormatBytes(Snapshot.TrackedGpu.DepthStencilBytes)});
+    Data.Rows.push_back({"Tracked Vertex Buffer Memory", FormatBytes(Snapshot.TrackedGpu.VertexBufferBytes)});
+    Data.Rows.push_back({"Tracked Index Buffer Memory", FormatBytes(Snapshot.TrackedGpu.IndexBufferBytes)});
+    Data.Rows.push_back({"Tracked Vertex Shader Memory", FormatBytes(Snapshot.TrackedGpu.VertexShaderBlobBytes)});
+    Data.Rows.push_back({"Tracked Pixel Shader Memory", FormatBytes(Snapshot.TrackedGpu.PixelShaderBlobBytes)});
+
+    Data.Rows.push_back({"Tracked Total GPU Memory", FormatBytes(Snapshot.TrackedGpu.TotalTrackedGpuBytes())});
 
     return Data;
 }

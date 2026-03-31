@@ -11,6 +11,7 @@
 #include "Engine/Component/Core/ComponentProperty.h"
 #include "Engine/Component/Core/UnknownComponent.h"
 
+#include "Asset/AssetManager.h"
 #include "Content/ContentBrowserDragDrop.h"
 #include "CoreUObject/UObjectIterator.h" // 이터레이터 헤더
 #include "Editor/Editor.h"
@@ -37,8 +38,8 @@ namespace
 {
     constexpr ImVec4 UnknownItemColor = ImVec4(0.95f, 0.35f, 0.35f, 1.0f);
 
-    /** 
-     * 객체의 이름을 안전하게 가져옵니다. 
+    /**
+     * 객체의 이름을 안전하게 가져옵니다.
      * 댕글링 포인터 방지를 위해 IsValidLowLevel()을 철저히 확인합니다.
      */
     FString GetBaseObjectDisplayName(const UObject* Object)
@@ -52,8 +53,9 @@ namespace
         if (NameStr.empty() || NameStr == "None")
         {
             const char* RawTypeName = Object->GetTypeName();
-            if (RawTypeName == nullptr) return "Unknown Type";
-            
+            if (RawTypeName == nullptr)
+                return "Unknown Type";
+
             if ((RawTypeName[0] == 'U' || RawTypeName[0] == 'A') && isupper(RawTypeName[1]))
                 return FString(RawTypeName + 1);
             return FString(RawTypeName);
@@ -84,7 +86,8 @@ namespace
                                  const Engine::Component::USceneComponent* Component)
     {
         // 배우와 컴포넌트 모두 유효한 상태인지 확인
-        if (Actor == nullptr || !Actor->IsValidLowLevel() || Component == nullptr || !Component->IsValidLowLevel())
+        if (Actor == nullptr || !Actor->IsValidLowLevel() || Component == nullptr ||
+            !Component->IsValidLowLevel())
             return false;
         return Component->GetOwnerActor() == Actor;
     }
@@ -206,47 +209,77 @@ namespace
         return bApplied;
     }
 
+    void CollectAssetItemsByType(const FContentBrowserFolderNode&    Folder,
+                                 EContentBrowserItemType             TargetType,
+                                 TArray<const FContentBrowserItem*>& OutItems)
+    {
+        for (const auto& File : Folder.Files)
+        {
+            if (File.ItemType == TargetType)
+                OutItems.push_back(&File);
+        }
+        for (const auto& SubFolder : Folder.ChildFolders)
+        {
+            CollectAssetItemsByType(SubFolder, TargetType, OutItems);
+        }
+    }
+
     bool DrawStaticMeshAssetCombo(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
                                   const FString& CurrentPath, const FString& RawValue,
-                                  TMap<FString, FString>* AssetPathEditBuffers)
+                                  TMap<FString, FString>* AssetPathEditBuffers,
+                                  FEditorContext*         Context)
     {
         bool    bChanged = false;
         FString ComboLabel = CurrentPath.empty() ? "None" : CurrentPath;
         if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
         {
-            for (TUObjectIterator<Engine::Asset::UStaticMesh> It; It; ++It)
+            // None 옵션 추가
+            bool bNoneSelected = RawValue.empty() || RawValue == "None";
+            if (ImGui::Selectable("None", bNoneSelected))
             {
-                Engine::Asset::UStaticMesh* MeshAsset = *It;
-                if (MeshAsset == nullptr || !MeshAsset->IsValidLowLevel())
-                    continue;
+                if (Descriptor.StringSetter)
+                    Descriptor.StringSetter("");
+                if (AssetPathEditBuffers != nullptr)
+                    (*AssetPathEditBuffers)[Descriptor.Key] = "";
+                bChanged = true;
+            }
 
-                const FString Path = MeshAsset->GetAssetName();
-                FString       Label = MeshAsset->GetAssetName();
-                if (MeshAsset->bIsBaked)                    Label += " [Baked]";
-                bool bSelected = (RawValue == Path);
-                if (ImGui::Selectable(Label.c_str(), bSelected))
+            if (Context && Context->ContentIndex)
+            {
+                TArray<const FContentBrowserItem*> MeshItems;
+                CollectAssetItemsByType(Context->ContentIndex->GetSnapshot().RootFolder,
+                                        EContentBrowserItemType::StaticMesh, MeshItems);
+
+                for (const auto* Item : MeshItems)
                 {
-                    if (Descriptor.StringSetter)
-                        Descriptor.StringSetter(Path);
-                    if (AssetPathEditBuffers != nullptr)
-                        (*AssetPathEditBuffers)[Descriptor.Key] = Path;
-                    bChanged = true;
+                    bool bSelected = (RawValue == Item->VirtualPath);
+                    if (ImGui::Selectable(Item->VirtualPath.c_str(), bSelected))
+                    {
+                        if (Descriptor.StringSetter)
+                            Descriptor.StringSetter(Item->VirtualPath);
+                        if (AssetPathEditBuffers != nullptr)
+                            (*AssetPathEditBuffers)[Descriptor.Key] = Item->VirtualPath;
+                        bChanged = true;
+                    }
+                    if (bSelected)
+                        ImGui::SetItemDefaultFocus();
                 }
-                if (bSelected)
-                    ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
         return bChanged;
     }
 
-    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex)
+    bool DrawMaterialAssetCombo(Engine::Component::UMeshComponent* MeshComp, uint32 SlotIndex,
+                                FEditorContext* Context)
     {
-        if (MeshComp == nullptr || !MeshComp->IsValidLowLevel())
+        if (MeshComp == nullptr || !MeshComp->IsValidLowLevel() || Context == nullptr)
             return false;
 
         Engine::Asset::UMaterialInterface* CurrentMat = MeshComp->GetMaterial(SlotIndex);
-        FString     CurrentPath = (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
+        // 현재 적용된 머티리얼이 있다면 그 이름을, 없으면 None 표시
+        FString CurrentDisplayName =
+            (CurrentMat && CurrentMat->IsValidLowLevel()) ? CurrentMat->GetAssetName() : "None";
         std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
 
         bool bChanged = false;
@@ -255,23 +288,58 @@ namespace
         ImGui::SetNextItemWidth(-1.0f);
 
         FString PopupId = FString("##MatCombo_") + std::to_string(SlotIndex);
-        if (ImGui::BeginCombo(PopupId.c_str(), CurrentPath.c_str()))
+        if (ImGui::BeginCombo(PopupId.c_str(), CurrentDisplayName.c_str()))
         {
-            for (TUObjectIterator<Engine::Asset::UMaterialInterface> It; It; ++It)
+            // None 옵션 추가
+            bool bNoneSelected = (CurrentMat == nullptr);
+            if (ImGui::Selectable("None", bNoneSelected))
             {
-                Engine::Asset::UMaterialInterface* MatAsset = *It;
-                if (MatAsset == nullptr || !MatAsset->IsValidLowLevel())
-                    continue;
+                MeshComp->SetMaterial(SlotIndex, nullptr);
+                bChanged = true;
+            }
 
-                bool bSelected = (CurrentMat == MatAsset);
-                if (ImGui::Selectable(MatAsset->GetAssetName().c_str(), bSelected))
+            if (Context->ContentIndex)
+            {
+                TArray<const FContentBrowserItem*> MaterialItems;
+                CollectAssetItemsByType(Context->ContentIndex->GetSnapshot().RootFolder,
+                                        EContentBrowserItemType::Material, MaterialItems);
+
+                for (const auto* Item : MaterialItems)
                 {
-                    MeshComp->SetMaterial(SlotIndex, MatAsset);
-                    bChanged = true;
+                    // 로드된 에셋의 이름(절대경로)과 인덱스의 절대경로를 비교하여 선택 상태 표시
+                    // 1. std::wstring을 FString(UTF-8)으로 안전하게 변환
+                    FString ItemAbsPath = Engine::Component::UMeshComponent::WidePathToUtf8(
+                        Item->AbsolutePath.wstring());
+
+                    // 2. 비교 연산 (타입이 FString 또는 std::wstring으로 통일되어야 함)
+                    // 만약 CurrentMat->GetPath() 가 std::wstring을 반환한다면:
+                    bool bSelected =
+                        (CurrentMat && CurrentMat->GetPath() == Item->AbsolutePath.wstring());
+
+                    // 만약 CurrentMat->GetPath() 가 FString을 반환한다면:
+                    // bool bSelected = (CurrentMat && CurrentMat->GetPath() == ItemAbsPath);
+
+                    if (ImGui::Selectable(Item->VirtualPath.c_str(), bSelected))
+                    {
+                        if (Context->AssetManager)
+                        {
+                            ::FAssetLoadParams Params;
+                            Params.ExplicitType = ::EAssetType::Material;
+                            // 인덱스가 가진 검증된 절대 경로를 직접 사용하여 로드
+                            UAsset* Loaded =
+                                Context->AssetManager->Load(Item->AbsolutePath.wstring(), Params);
+                            if (auto* NewMat = Cast<Engine::Asset::UMaterialInterface>(Loaded))
+                            {
+                                MeshComp->SetMaterial(SlotIndex, NewMat);
+                                bChanged = true;
+                            }
+                        }
+                    }
                 }
             }
             ImGui::EndCombo();
         }
+
         return bChanged;
     }
 
@@ -321,7 +389,8 @@ namespace
 
     bool DrawStringPropertyRow(const char* LabelId, const char* DisplayLabel,
                                const Engine::Component::FComponentPropertyDescriptor& Descriptor,
-                               bool bIsAssetPath, TMap<FString, FString>* AssetPathEditBuffers)
+                               bool bIsAssetPath, TMap<FString, FString>* AssetPathEditBuffers,
+                               FEditorContext* Context)
     {
         const FString Value = Descriptor.StringGetter ? Descriptor.StringGetter() : FString{};
         FString       InputValue = Value;
@@ -341,8 +410,8 @@ namespace
         if (bIsAssetPath && Descriptor.ExpectedAssetPathKind ==
                                 Engine::Component::EComponentAssetPathKind::StaticMeshFile)
         {
-            bChanged =
-                DrawStaticMeshAssetCombo(Descriptor, InputValue, Value, AssetPathEditBuffers);
+            bChanged = DrawStaticMeshAssetCombo(Descriptor, InputValue, Value, AssetPathEditBuffers,
+                                                Context);
             bDropped = TryAcceptAssetPathDrop(Descriptor, AssetPathEditBuffers);
         }
         else
@@ -403,7 +472,8 @@ namespace
     }
 
     bool DrawComponentPropertyRow(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
-                                  TMap<FString, FString>* AssetPathEditBuffers)
+                                  TMap<FString, FString>* AssetPathEditBuffers,
+                                  FEditorContext*         Context)
     {
         const FString LabelText = BuildPropertyLabel(Descriptor);
         const char*   Id = Descriptor.Key.c_str();
@@ -418,10 +488,11 @@ namespace
         case EComponentPropertyType::Float:
             return DrawFloatPropertyRow(Id, Label, Descriptor);
         case EComponentPropertyType::String:
-            return DrawStringPropertyRow(Id, Label, Descriptor, false, AssetPathEditBuffers);
+            return DrawStringPropertyRow(Id, Label, Descriptor, false, AssetPathEditBuffers,
+                                         nullptr);
         case EComponentPropertyType::AssetPath:
-            return DrawStringPropertyRow(Id, Label, Descriptor, true, AssetPathEditBuffers);
-        case EComponentPropertyType::Vector3:
+            return DrawStringPropertyRow(Id, Label, Descriptor, true, AssetPathEditBuffers,
+                                         Context);
             return DrawVectorPropertyRow(Id, Label, Descriptor);
         case EComponentPropertyType::Color:
             return DrawColorPropertyRow(Id, Label, Descriptor);
@@ -442,7 +513,8 @@ void FPropertiesPanel::Draw()
     }
 
     // 전역 선택 객체 유효성 검사 강화
-    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr || !GetContext()->SelectedObject->IsValidLowLevel())
+    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr ||
+        !GetContext()->SelectedObject->IsValidLowLevel())
     {
         CachedTargetComponent = nullptr;
         RenamingComponent = nullptr; // 이름 변경 중인 객체도 초기화
@@ -464,7 +536,7 @@ void FPropertiesPanel::Draw()
 
     AActor*                             SelActor = nullptr;
     Engine::Component::USceneComponent* TargetComp = ResolveTargetComponent(SelActor);
-    
+
     // 타겟 컴포넌트 유효성 검사 강화
     if (TargetComp == nullptr || !TargetComp->IsValidLowLevel())
     {
@@ -496,7 +568,8 @@ void FPropertiesPanel::SetTarget(const FVector& Loc, const FVector& Rot, const F
 
 AActor* FPropertiesPanel::ResolveSelectedActor() const
 {
-    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr || !GetContext()->SelectedObject->IsValidLowLevel())
+    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr ||
+        !GetContext()->SelectedObject->IsValidLowLevel())
         return nullptr;
     if (AActor* Actor = Cast<AActor>(GetContext()->SelectedObject))
         return Actor;
@@ -530,7 +603,8 @@ Engine::Component::USceneComponent*
 FPropertiesPanel::ResolveTargetComponent(AActor*& OutActor) const
 {
     OutActor = ResolveSelectedActor();
-    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr || !GetContext()->SelectedObject->IsValidLowLevel())
+    if (GetContext() == nullptr || GetContext()->SelectedObject == nullptr ||
+        !GetContext()->SelectedObject->IsValidLowLevel())
         return nullptr;
     if (auto* Comp = Cast<Engine::Component::USceneComponent>(GetContext()->SelectedObject))
         return Comp;
@@ -658,7 +732,12 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
     if (RenamingComponent == Comp)
     {
         // 렌더링 전 유효성 재확인
-        if (!Comp->IsValidLowLevel()) { RenamingComponent = nullptr; ImGui::PopID(); return; }
+        if (!Comp->IsValidLowLevel())
+        {
+            RenamingComponent = nullptr;
+            ImGui::PopID();
+            return;
+        }
 
         ImGui::AlignTextToFramePadding();
         if (bHasChildren)
@@ -725,9 +804,11 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
             if (ImGui::MenuItem("Remove", "Delete", false, Comp != Actor->GetRootComponent()))
             {
                 // 삭제 전 모든 캐시 초기화 (댕글링 포인터 방지 핵심 코드)
-                if (RenamingComponent == Comp) RenamingComponent = nullptr;
-                if (CachedTargetComponent == Comp) CachedTargetComponent = nullptr;
-                
+                if (RenamingComponent == Comp)
+                    RenamingComponent = nullptr;
+                if (CachedTargetComponent == Comp)
+                    CachedTargetComponent = nullptr;
+
                 Actor->RemoveOwnedComponent(Comp);
                 if (GetContext() && GetContext()->Editor)
                 {
@@ -766,7 +847,8 @@ void FPropertiesPanel::DrawComponentNode(AActor* Actor, Engine::Component::UScen
 
 void FPropertiesPanel::DrawTransformEditor(Engine::Component::USceneComponent* Comp)
 {
-    if (Comp == nullptr || !Comp->IsValidLowLevel()) return;
+    if (Comp == nullptr || !Comp->IsValidLowLevel())
+        return;
 
     ImGui::TextUnformatted("Transform");
     DrawVectorRow("Location", EditLocation);
@@ -815,7 +897,7 @@ void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComp
             for (uint32 i = 0; i < MeshComp->GetNumMaterials(); ++i)
             {
                 ImGui::PushID(i);
-                if (DrawMaterialAssetCombo(MeshComp, i))
+                if (DrawMaterialAssetCombo(MeshComp, i, GetContext()))
                     bMod = true;
                 ImGui::PopID();
             }
@@ -830,7 +912,7 @@ void FPropertiesPanel::DrawComponentPropertyEditor(Engine::Component::USceneComp
     {
         if (!Desc.bExposeInDetails)
             continue;
-        if (DrawComponentPropertyRow(Desc, &AssetPathEditBuffers))
+        if (DrawComponentPropertyRow(Desc, &AssetPathEditBuffers, GetContext()))
         {
             bMod = true;
             if (Desc.Type == Engine::Component::EComponentPropertyType::AssetPath && GetContext() &&

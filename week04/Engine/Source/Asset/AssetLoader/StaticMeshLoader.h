@@ -21,12 +21,12 @@ class ENGINE_API FStaticMeshLoader : public IAssetLoader
     bool ParseObjText(const FSourceRecord& Source, FStaticMeshResource& OutMesh,
                       TArray<FMeshVertexPNCT>& OutVertices) const;
     bool CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices,
-                       FStaticMeshResource&             OutMesh) const;
+                       FStaticMeshResource&           OutMesh) const;
 
     // 문자열 유틸리티
     FString WidePathToUtf8(const FWString& Path) const;
 
   private:
-    FD3D11RHI* RHI = nullptr;
+    FD3D11RHI*     RHI = nullptr;
     UAssetManager* AssetManager = nullptr;
 };

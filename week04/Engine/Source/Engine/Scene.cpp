@@ -194,22 +194,35 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 // if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_StaticMeshes)) continue;
 
                 Engine::Asset::UStaticMesh* StaticMeshAsset = StaticMeshComp->GetStaticMesh();
-                if (StaticMeshAsset == nullptr || StaticMeshAsset->GetRenderResource() == nullptr)
+                const FStaticMeshResource*  Resource =
+                    (StaticMeshAsset != nullptr) ? StaticMeshAsset->GetRenderResource() : nullptr;
+
+                if (StaticMeshAsset == nullptr || Resource == nullptr)
                 {
                     continue;
                 }
 
+                UE_LOG(Scene, ELogVerbosity::Log,
+                       "[BuildRenderData][StaticMesh] Actor=%s Component=%s Asset=%p Resource=%p",
+                       Actor->Name.ToFString().c_str(), StaticMeshComp->Name.ToFString().c_str(),
+                       StaticMeshAsset, Resource);
+
                 FStaticMeshRenderItem MeshItem = {};
 
                 // 1. 트랜스폼 데이터 세팅
-                MeshItem.World = Actor->GetWorldMatrix(); // (또는 컴포넌트의 월드 매트릭스)
+                MeshItem.World =
+                    StaticMeshComp->GetWorldMatrix(); // (또는 컴포넌트의 월드 매트릭스)
 
                 // 2. VBO/IBO가 들어있는 렌더 리소스 포인터 전달
-                MeshItem.RenderResource = StaticMeshAsset->GetRenderResource();
+                MeshItem.RenderResource = Resource;
 
                 // 3. 서브 메시 개수만큼 매핑된 머티리얼 포인터 수집
-                uint32 NumSubMeshes =
-                    static_cast<uint32>(MeshItem.RenderResource->SubMeshes.size());
+                const size_t SubMeshCount = Resource->SubMeshes.size();
+                UE_LOG(Scene, ELogVerbosity::Log,
+                       "[BuildRenderData][StaticMesh] Actor=%s Resource=%p SubMeshCount=%zu",
+                       Actor->Name.ToFString().c_str(), Resource, SubMeshCount);
+
+                uint32 NumSubMeshes = static_cast<uint32>(SubMeshCount);
                 for (uint32 i = 0; i < NumSubMeshes; ++i)
                 {
                     FStaticMeshMaterialBinding Binding = {};
@@ -226,7 +239,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 // 4. 상태 및 피킹 데이터
                 MeshItem.WorldAABB = StaticMeshComp->GetWorldAABB();
                 MeshItem.State.ObjectId = ObjectId;
-                MeshItem.State.bShowBounds = Actor->IsShowBounds();
+                MeshItem.State.bShowBounds = StaticMeshComp->IsShowBounds();
                 MeshItem.State.SetVisible(Actor->IsVisible());
                 MeshItem.State.SetPickable(Actor->IsPickable());
                 MeshItem.State.SetSelected(Actor->IsSelected());
@@ -277,14 +290,14 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 }
 
                 FPrimitiveRenderItem PrimitiveItem = {};
-                PrimitiveItem.World = Actor->GetWorldMatrix();
+                PrimitiveItem.World = PrimitiveComponent->GetWorldMatrix();
                 PrimitiveItem.Color = Actor->GetColor();
                 PrimitiveItem.MeshType = Actor->GetMeshType();
                 PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
                 PrimitiveItem.bHasWorldAABB = true;
 
                 PrimitiveItem.State.ObjectId = ObjectId;
-                PrimitiveItem.State.bShowBounds = Actor->IsShowBounds();
+                PrimitiveItem.State.bShowBounds = PrimitiveComponent->IsShowBounds();
                 PrimitiveItem.State.SetVisible(Actor->IsVisible());
                 PrimitiveItem.State.SetPickable(Actor->IsPickable());
                 PrimitiveItem.State.SetSelected(Actor->IsSelected());

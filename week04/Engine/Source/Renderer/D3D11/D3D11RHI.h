@@ -30,7 +30,6 @@ class FD3D11RHI
 
     int32 GetViewportWidth() const { return ViewportWidth; }
     int32 GetViewportHeight() const { return ViewportHeight; }
-    const FTrackedMemoryStats& GetTrackedMemoryStats() const { return TrackedMemoryStats; }
 
     void SetViewport(int32 InWidth, int32 InHeight);
     void SetViewport(D3D11_VIEWPORT& InViewport);
@@ -135,6 +134,4 @@ class FD3D11RHI
     TComPtr<ID3D11DepthStencilView> DepthStencilView;
 
     D3D11_VIEWPORT Viewport = {};
-
-    FTrackedMemoryStats TrackedMemoryStats;
 };

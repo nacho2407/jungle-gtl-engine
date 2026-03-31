@@ -1,6 +1,7 @@
 #include "Core/CoreMinimal.h"
 #include "TextureLoader.h"
 
+#include "Renderer/MemoryTracker.h"
 #include "Renderer/RenderAsset/TextureResource.h"
 #include "Asset/Texture2DAsset.h"
 
@@ -343,6 +344,7 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
 
     TComPtr<ID3D11Texture2D>          Texture;
     TComPtr<ID3D11ShaderResourceView> SRV;
+    FTrackedTextureAllocationHandle   TextureAllocationHandle;
     HRESULT                           Hr = S_OK;
 
     if (Settings.bGenerateMips)
@@ -392,6 +394,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
         RHI->GetDeviceContext()->UpdateSubresource(Texture.Get(), 0, nullptr, Image.Pixels.data(),
                                                    RowPitch, 0);
         RHI->GetDeviceContext()->GenerateMips(SRV.Get());
+
+        TextureAllocationHandle = GMemoryTracker.TrackTextureAllocation(
+            GMemoryTracker.EstimateTexture2DSizeBytes(TextureDesc));
     }
     else
     {
@@ -432,6 +437,9 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
                    static_cast<uint32>(Hr));
             return false;
         }
+
+        TextureAllocationHandle = GMemoryTracker.TrackTextureAllocation(
+            GMemoryTracker.EstimateTexture2DSizeBytes(TextureDesc));
     }
 
     OutResource = {};
@@ -440,6 +448,7 @@ bool FTextureLoader::CreateTextureResource(const FDecodedImage&         Image,
     OutResource.Format = TextureFormat;
     OutResource.Texture = std::move(Texture);
     OutResource.SRV = std::move(SRV);
+    OutResource.TextureAllocationHandle = std::move(TextureAllocationHandle);
 
     return true;
 }
