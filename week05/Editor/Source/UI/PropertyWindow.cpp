@@ -220,6 +220,22 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 									CurrentMat->SetParameterData("BaseColor", ColorArray, sizeof(ColorArray));
 								}
 								ImGui::PopID();
+
+								if (CurrentMat->GetMaterialTexture() != nullptr)
+								{
+									// 수정된 부분: 8바이트 배열을 직접 준비하고 GetParameterData로 읽어옵니다.
+									float SpeedArray[2] = { 0.0f, 0.0f };
+									CurrentMat->GetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
+
+									ImGui::PushID(i + 2000);
+									// 0.01f 속도로 드래그하며 조절할 수 있도록 합니다.
+									if (ImGui::DragFloat2("UV Scroll", SpeedArray, 0.001f, -5.0f, 5.0f, "%.2f"))
+									{
+										// 쓸 때도 정확히 8바이트(sizeof(SpeedArray))만 밀어 넣습니다.
+										CurrentMat->SetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
+									}
+									ImGui::PopID();
+								}
 							}
 
 							ImGui::PopID(); // PushID(i)에 대한 Pop

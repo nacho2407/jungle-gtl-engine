@@ -6,6 +6,9 @@ cbuffer FrameData : register(b0)
 {
 	float4x4 View;
 	float4x4 Projection;
+	float Time;
+	float DeltaTime;
+	float2 Framepadding;
 };
 
 // b1: 오브젝트당

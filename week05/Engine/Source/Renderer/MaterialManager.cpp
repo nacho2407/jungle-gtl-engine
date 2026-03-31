@@ -6,6 +6,8 @@
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "ThirdParty/nlohmann/json.hpp"
+#include "Core/Engine.h"
+#include "Renderer/Renderer.h"
 #include <fstream>
 
 // ─── HLSL cbuffer 패킹 유틸 ───
@@ -128,6 +130,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		Mat->SetPixelShader(PS);
 	}
 
+
 	// Render State 로드
 	if (Json.contains("RenderState"))
 	{
@@ -197,6 +200,32 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		Mat->SetDepthStencilState(DepthStencilState);
 
 		// DepthBias 등의 추가 옵션을 지원하려면 여기에 추가
+	}
+
+	if (Json.contains("Textures"))
+	{
+		auto TexturesJson = Json["Textures"];
+
+		// "Diffuse" 슬롯 텍스처 확인
+		if (TexturesJson.contains("Diffuse"))
+		{
+			FString TexRelPath = TexturesJson["Diffuse"].get<FString>();
+			std::filesystem::path FullTexPath = FPaths::AssetDir() / TexRelPath;
+
+			ID3D11ShaderResourceView* NewSRV = nullptr;
+
+			if (GEngine->GetRenderer()->CreateTextureFromSTB(
+				InDevice,
+				FullTexPath.string().c_str(),
+				&NewSRV))
+			{
+				// FMaterialTexture 구조체 생성 및 장착
+				auto MatTexture = std::make_shared<FMaterialTexture>();
+				MatTexture->TextureSRV = NewSRV;
+				Mat->SetMaterialTexture(MatTexture);
+
+			}
+		}
 	}
 
 	// 상수 버퍼 로드

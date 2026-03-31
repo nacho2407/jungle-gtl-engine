@@ -235,12 +235,16 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			CurrentMaterial->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
 			CurrentMaterial->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
 
-			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 16);
+			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
 			if (SlotIndex >= 0)
 			{
 				CurrentMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
 				float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
+
+				CurrentMaterial->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
+				float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
 			}
 
 			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
@@ -275,12 +279,38 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 				std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
 				CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
 
+				std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
+				CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
+
 				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TexPSPath.c_str());
 			}
 		}
 	}
 
 	return true;
+}
+
+void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
+{
+	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
+	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	// 폴더가 존재하는지 확인
+	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
+	{
+		UE_LOG("[FObjManager] Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
+	{
+		if (Entry.is_regular_file() && Entry.path().extension() == ".obj")
+		{
+			std::string FullFilePath = Entry.path().string();
+
+			UStaticMesh* LoadedMesh = LoadObjStaticMeshAsset(FullFilePath.c_str());
+		}
+	}
 }
 
 inline bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
