@@ -83,24 +83,44 @@ namespace
 
 	FVector GetViewUp(const FViewportEntry& Entry)
 	{
+		const FVector Forward = GetViewForward(Entry);
+
+		FVector UpSeed = FVector::UpVector;
 		switch (Entry.LocalState.ProjectionType)
 		{
-		case EViewportType::Perspective:
-			return Entry.LocalState.Rotation.RotateVector(FVector::UpVector).GetSafeNormal();
-
 		case EViewportType::OrthoTop:
 		case EViewportType::OrthoBottom:
-			return FVector::ForwardVector;
+			UpSeed = FVector::ForwardVector;
+			break;
 
 		case EViewportType::OrthoLeft:
 		case EViewportType::OrthoRight:
 		case EViewportType::OrthoFront:
 		case EViewportType::OrthoBack:
-			return FVector::UpVector;
+		case EViewportType::Perspective:
+			UpSeed = FVector::UpVector;
+			break;
 
 		default:
-			return FVector::UpVector;
+			UpSeed = FVector::UpVector;
+			break;
 		}
+
+		FVector Right = FVector::CrossProduct(UpSeed, Forward).GetSafeNormal();
+		if (Right.IsNearlyZero(ParallelTolerance))
+		{
+			const FVector FallbackUp = (std::abs(FVector::DotProduct(Forward, FVector::ForwardVector)) < 0.99f)
+				? FVector::ForwardVector
+				: FVector::RightVector;
+			Right = FVector::CrossProduct(FallbackUp, Forward).GetSafeNormal();
+		}
+
+		if (Right.IsNearlyZero(ParallelTolerance))
+		{
+			return UpSeed;
+		}
+
+		return FVector::CrossProduct(Forward, Right).GetSafeNormal();
 	}
 
 	FVector GetViewRight(const FViewportEntry& Entry)
@@ -108,7 +128,17 @@ namespace
 		const FVector Forward = GetViewForward(Entry);
 		const FVector Up = GetViewUp(Entry);
 
-		return FVector::CrossProduct(Up, Forward).GetSafeNormal();
+		FVector Right = FVector::CrossProduct(Up, Forward).GetSafeNormal();
+		if (Right.IsNearlyZero(ParallelTolerance))
+		{
+			Right = FVector::CrossProduct(FVector::ForwardVector, Forward).GetSafeNormal();
+		}
+		if (Right.IsNearlyZero(ParallelTolerance))
+		{
+			Right = FVector::RightVector;
+		}
+
+		return Right;
 	}
 
 	FVector GetViewEye(const FViewportEntry& Entry)
@@ -1102,18 +1132,16 @@ FVector FGizmo::GetAxisVector(EGizmoAxis Axis)
 FRotationGizmoDesc FGizmo::BuildRotationDesc(const FViewportEntry* Entry, const FVector& GizmoWorldLocation) const
 {
 	FRotationGizmoDesc Desc{};
+	(void)GizmoWorldLocation;
 	if (!Entry)
 	{
 		return Desc;
 	}
 
-	const FVector Eye = GetViewEye(*Entry);
 	const FVector Forward = GetViewForward(*Entry);
 	const FVector Right = GetViewRight(*Entry);
 	const FVector Up = GetViewUp(*Entry);
-	const FVector CameraToGizmo = (GizmoWorldLocation - Eye).GetSafeNormal();
-
-	Desc.cameraDirection = CameraToGizmo.IsNearlyZero(ParallelTolerance) ? Forward : CameraToGizmo;
+	Desc.cameraDirection = Forward;
 	Desc.viewUp = Up;
 	Desc.viewRight = Right;
 	Desc.fullAxisRings = false;
