@@ -270,8 +270,8 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 
 				if (FoundMat)
 				{
-					// 찾은 머티리얼을 해당 슬롯에 적용합니다. 
-					// shared_ptr 관리 방식에 따라 아래와 같이 캐스팅하여 넣습니다.
+					// 찾은 머티리얼을 해당 슬롯에 적용합니다.
+					// 머티리얼의 수명/소유권은 에셋/오브젝트 시스템에서 관리하며, 여기서는 포인터만 참조합니다.
 					SetMaterial(Index, FoundMat);
 				}
 			}
