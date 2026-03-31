@@ -400,22 +400,24 @@ void UGizmoComponent::UpdateGizmoTransform()
 	}
 }
 
-void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth)
+float UGizmoComponent::ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth)
 {
 	float NewScale;
 	if (bIsOrtho)
 	{
-		// Ortho에서는 카메라 거리가 시각적 크기와 무관 — OrthoWidth(줌 레벨)로 결정
-		NewScale = OrthoWidth * 0.1f;
+		NewScale = OrthoWidth * GizmoScreenScale;
 	}
 	else
 	{
 		float Distance = FVector::Distance(CameraLocation, GetWorldLocation());
-		NewScale = Distance * 0.1f;
+		NewScale = Distance * GizmoScreenScale;
 	}
+	return (NewScale < 0.01f) ? 0.01f : NewScale;
+}
 
-	if (NewScale < 0.01f) NewScale = 0.01f;
-
+void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth)
+{
+	float NewScale = ComputeScreenSpaceScale(CameraLocation, bIsOrtho, OrthoWidth);
 	SetRelativeScale(FVector(NewScale, NewScale, NewScale));
 }
 
@@ -457,7 +459,16 @@ void UGizmoComponent::CollectRender(FRenderBus& Bus) const
 	if (!IsVisible()) return;
 
 	FMeshBuffer* GizmoMesh = GetMeshBuffer();
-	FMatrix WorldMatrix = GetWorldMatrix();
+
+	// Per-viewport 스케일 계산 — 활성 뷰포트의 스케일과 독립
+	const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+	float PerViewScale = const_cast<UGizmoComponent*>(this)->ComputeScreenSpaceScale(
+		CameraPos, Bus.IsOrtho(), Bus.GetOrthoWidth());
+
+	// WorldMatrix를 per-viewport 스케일로 재구성 (S * R * T)
+	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(FVector(PerViewScale, PerViewScale, PerViewScale))
+		* FMatrix::MakeRotationEuler(GetRelativeRotation())
+		* FMatrix::MakeTranslationMatrix(GetWorldLocation());
 
 	auto CreateGizmoCmd = [&](bool bInner) {
 		FRenderCommand Cmd = {};
