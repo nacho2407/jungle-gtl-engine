@@ -72,12 +72,15 @@ void FShortcutsPanel::Draw()
         {"Ctrl + Alt + Shift + Drag", "기존 선택에 박스 선택 추가"}};
 
     static constexpr FShortcutEntry GizmoEntries[] = {
+        {"W / E / R", "기즈모 모드 전환 (이동 / 회전 / 스케일)"},
         {"Mouse Left Drag", "기즈모 축 드래그 조작"},
         {"Space", "기즈모 타입 순환"},
         {"X", "월드/로컬 기즈모 모드 전환"}};
 
     static constexpr FShortcutEntry EditorEntries[] = {
-        {"Delete", "선택된 Actor 삭제"}};
+        {"1 / 2 / 3", "뷰 모드 전환 (Lit / Unlit / Wireframe)"},
+        {"F2", "선택된 대상의 이름 변경"},
+        {"Delete", "선택된 Actor 또는 Component 삭제"}};
 
     bool bOpen = IsOpen();
     if (ImGui::Begin("Shortcuts", &bOpen))
