@@ -1094,6 +1094,51 @@ void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
 	}
 }
 
+void FObjManager::PreloadAllModelFiles(const FString& DirectoryPath)
+{
+	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
+	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	// 폴더가 존재하는지 확인
+	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
+	{
+		UE_LOG("[FObjManager] Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
+	{
+		if (Entry.is_regular_file() && GetNormalizedExtension(Entry.path().string()) == ".model")
+		{
+			std::string FullFilePath = Entry.path().string();
+
+			UStaticMesh* LoadedMesh = LoadModelStaticMeshAsset(FullFilePath.c_str());
+		}
+	}
+	PreloadAllMtlFiles(FPaths::MaterialDir().string().c_str());
+}
+
+void FObjManager::PreloadAllMtlFiles(const FString& DirectoryPath)
+{
+	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
+	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
+	{
+		UE_LOG("[FObjManager] MTL Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
+	{
+		if (Entry.is_regular_file() && GetNormalizedExtension(Entry.path().string()) == ".mtl")
+		{
+			std::string FullFilePath = Entry.path().string();
+			ParseMtlFile(FullFilePath.c_str());
+		}
+	}
+}
+
 bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(FilePath);
