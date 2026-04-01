@@ -495,6 +495,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		{
 			MatchedMaterial = &(*It);
 			// 섹션 머티리얼 슬롯 이름과 일치하는 머티리얼 이름이 MTL 파일에서 발견된 경우, 해당 머티리얼 로드 또는 생성
+			UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
 			UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
 
 			// 머티리얼 객체가 새로 생성된 경우에만 속성 설정 (캐시에서 로드된 경우 이미 설정되어 있다고 가정)
