@@ -9,13 +9,13 @@ class UMaterial;
 namespace json { class JSON; }
 
 // UStaticMeshComp — 월드 배치 컴포넌트
-class UStaticMeshComp : public UMeshComponent
+class UStaticMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(UStaticMeshComp, UMeshComponent)
+	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
 
-	UStaticMeshComp() = default;
-	~UStaticMeshComp() override = default;
+	UStaticMeshComponent() = default;
+	~UStaticMeshComponent() override = default;
 
 	FMeshBuffer* GetMeshBuffer() const override;
 	void CollectRender(FRenderBus& Bus) const override;

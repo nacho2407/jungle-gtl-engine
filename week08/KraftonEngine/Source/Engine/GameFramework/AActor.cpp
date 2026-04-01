@@ -5,8 +5,10 @@
 
 IMPLEMENT_CLASS(AActor, UObject)
 
-AActor::~AActor() {
-	for (auto* Comp : OwnedComponents) {
+AActor::~AActor()
+{
+	for (auto* Comp : OwnedComponents)
+	{
 		UObjectManager::Get().DestroyObject(Comp);
 	}
 
@@ -14,7 +16,8 @@ AActor::~AActor() {
 	RootComponent = nullptr;
 }
 
-UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
+UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
+{
 	if (!Class) return nullptr;
 
 	UObject* Obj = FObjectFactory::Get().Create(Class->name);
@@ -32,7 +35,8 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 	return Comp;
 }
 
-void AActor::RegisterComponent(UActorComponent* Comp) {
+void AActor::RegisterComponent(UActorComponent* Comp)
+{
 	if (!Comp) return;
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Comp);
@@ -43,7 +47,8 @@ void AActor::RegisterComponent(UActorComponent* Comp) {
 	}
 }
 
-void AActor::RemoveComponent(UActorComponent* Component) {
+void AActor::RemoveComponent(UActorComponent* Component)
+{
 	if (!Component) return;
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
@@ -59,33 +64,81 @@ void AActor::RemoveComponent(UActorComponent* Component) {
 	UObjectManager::Get().DestroyObject(Component);
 }
 
-void AActor::SetRootComponent(USceneComponent* Comp) {
+void AActor::SetRootComponent(USceneComponent* Comp)
+{
 	if (!Comp) return;
 	RootComponent = Comp;
 }
 
-FVector AActor::GetActorLocation() const {
-	if (RootComponent) {
+FVector AActor::GetActorLocation() const
+{
+	if (RootComponent)
+	{
 		return RootComponent->GetWorldLocation();
 	}
 	return FVector(0, 0, 0);
 }
 
-void AActor::SetActorLocation(const FVector& NewLocation) {
+void AActor::SetActorLocation(const FVector& NewLocation)
+{
 	PendingActorLocation = NewLocation;
 
-	if (RootComponent) {
+	if (RootComponent)
+	{
 		RootComponent->SetWorldLocation(NewLocation);
 	}
 }
 
+void AActor::AddActorWorldOffset(const FVector& Delta)
+{
+	if (RootComponent)
+	{
+		RootComponent->AddWorldOffset(Delta);
+	}
+}
 
 void AActor::Tick(float DeltaTime)
 {
 	for (UActorComponent* ActorComp : OwnedComponents)
 	{
-		ActorComp->ExecuteTick(DeltaTime);
+		ActorComp->Tick(DeltaTime);
 	}
+}
+
+FVector AActor::GetActorRotation() const
+{
+	return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
+}
+
+void AActor::SetActorRotation(const FVector& NewRotation)
+{
+	if (RootComponent)
+	{
+		RootComponent->SetRelativeRotation(NewRotation);
+	}
+}
+
+FVector AActor::GetActorScale() const
+{
+	return RootComponent ? RootComponent->GetRelativeScale() : FVector(1, 1, 1);
+}
+
+void AActor::SetActorScale(const FVector& NewScale)
+{
+	if (RootComponent)
+	{
+		RootComponent->SetRelativeScale(NewScale);
+	}
+}
+
+FVector AActor::GetActorForward() const
+{
+	if (RootComponent)
+	{
+		return RootComponent->GetForwardVector();
+	}
+
+	return FVector(0, 0, 1);
 }
 
 const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
