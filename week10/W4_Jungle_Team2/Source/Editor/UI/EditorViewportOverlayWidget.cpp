@@ -180,7 +180,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 void FEditorViewportOverlayWidget::RenderSplitterBar()
 {
 
-	 // Capture 중인데 middle dragging 이 아니라면 하이라이트를 하지 않습니다.
+	 // Capture 중이거나 middle dragging 중이라면 하이라이트를 하지 않습니다.
 	if (FSlateApplication::Get().GetCapturedWidget() || InputSystem::Get().GetMiddleDragging())
 		 return;
 	// 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
