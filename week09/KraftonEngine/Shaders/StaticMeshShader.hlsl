@@ -1,15 +1,9 @@
 #include "Common/Functions.hlsl"
 #include "Common/VertexLayouts.hlsl"
+#include "Common/ConstantBuffers.hlsl"
 
-Texture2D    g_txColor : register(t0);
-SamplerState g_Sample  : register(s0);
-
-// b4: Material properties
-cbuffer MaterialBuffer : register(b4)
-{
-    uint bIsUVScroll;
-    float3 _matPad;
-}
+Texture2D g_txColor : register(t0);
+SamplerState g_Sample : register(s0);
 
 PS_Input_Full VS(VS_Input_PNCT input)
 {
