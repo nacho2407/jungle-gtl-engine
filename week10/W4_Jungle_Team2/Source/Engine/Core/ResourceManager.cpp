@@ -661,11 +661,9 @@ void FResourceManager::ReleaseGPUResources()
 
 void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
 {
-	std::filesystem::path Path = FilePath;
-	std::filesystem::path MtlPath = Path.parent_path() / Path.stem().concat(".mtl");
-
-	LoadMaterial(MtlPath.generic_string());
-
+	std::filesystem::path Path = FPaths::ToWide(FilePath);
+	std::filesystem::path MtlPath = Path.parent_path() / Path.stem().concat(L".mtl");
+	LoadMaterial(FPaths::ToUtf8(MtlPath.generic_wstring()));
 }
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
