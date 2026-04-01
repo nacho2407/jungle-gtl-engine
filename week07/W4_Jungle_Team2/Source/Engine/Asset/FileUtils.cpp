@@ -66,15 +66,24 @@ bool FFileUtils::FindFileRecursively(const FString& SearchRootPath, const FStrin
 {
 	std::filesystem::path RootPath = FPaths::ToWide(SearchRootPath);
 	std::filesystem::path TargetName = FPaths::ToWide(TargetFileName);
+	OutFoundPath.clear();
 
 	if (!std::filesystem::exists(RootPath) || !std::filesystem::is_directory(RootPath))
 	{
 		return false;
 	}
 
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(RootPath))
+	// Error Code 확인 로직 제거, 필수 흐름만 유지
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(
+		RootPath,
+		std::filesystem::directory_options::skip_permission_denied))
 	{
-		if (Entry.is_regular_file() && Entry.path().filename() == TargetName)
+		if (!Entry.is_regular_file())
+		{
+			continue;
+		}
+
+		if (Entry.path().filename() == TargetName)
 		{
 			std::filesystem::path RelPath = std::filesystem::relative(Entry.path(), RootPath);
 			OutFoundPath = FPaths::ToUtf8(RelPath.generic_wstring());

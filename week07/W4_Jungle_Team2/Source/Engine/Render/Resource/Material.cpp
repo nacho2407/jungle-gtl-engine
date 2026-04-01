@@ -24,10 +24,19 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 			{
 				return {};
 			}
+
 			std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(RelPath)).filename();
+
 			FString outTexPath = "";
-			FFileUtils::FindFileRecursively(MtlDir.generic_string(), FileName.generic_string(), outTexPath);
-			std::filesystem::path TexPath = (MtlDir / outTexPath).lexically_normal();
+			FFileUtils::FindFileRecursively(
+				FPaths::ToUtf8(MtlDir.generic_wstring()),
+				FPaths::ToUtf8(FileName.generic_wstring()),
+				outTexPath);
+
+			// 기존: std::filesystem::path TexPath = (MtlDir / outTexPath).lexically_normal();
+			// 변경: UTF-8 문자열(outTexPath)을 wide로 명시 변환 후 결합
+			std::filesystem::path TexPath = (MtlDir / std::filesystem::path(FPaths::ToWide(outTexPath))).lexically_normal();
+
 			return FPaths::ToUtf8(TexPath.generic_wstring());
 		};
 
