@@ -32,9 +32,10 @@ void FEditorMaterialWidget::Render(float DeltaTime)
     }
 
 	UStaticMesh* MeshAsset = MeshComp->GetStaticMesh();
-    // 컴포넌트 내의 에셋이 바뀌면 상태 초기화
-    if (MeshAsset != LastMeshAsset)
+    // 선택된 컴포넌트 또는 메시 에셋이 바뀌면 상태 초기화
+    if (MeshComp != LastMeshComp || MeshAsset != LastMeshAsset)
     {
+		LastMeshComp = MeshComp;
 		LastMeshAsset = MeshAsset;
         SelectedSectionIndex = -1;
 		SelectedMaterialPtr = nullptr;
