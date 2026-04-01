@@ -15,12 +15,7 @@ public:
 	void Execute(float DeltaTime, FRenderer& Renderer) override;
 
 private:
-	D3D11_VIEWPORT GetD3DViewport() const;
-
-private:
 	UObjViewerEngine* Engine = nullptr;
 	FRenderCollector Collector;
 	FRenderBus Bus;
-
-	D3D11_VIEWPORT CurrentViewport = {};
 };
