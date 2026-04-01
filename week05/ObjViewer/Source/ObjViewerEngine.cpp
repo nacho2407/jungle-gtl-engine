@@ -154,8 +154,10 @@ namespace
 		return MaterialSlotNames;
 	}
 
-	FStaticMesh BuildBakedMeshCopy(const FStaticMesh& SourceMesh, const FQuat& ImportRotation)
+	FStaticMesh BuildBakedMeshCopy(const FStaticMesh& SourceMesh, const FQuat& ImportRotation, float UniformScale)
 	{
+		const float BakedScale = (std::max)(UniformScale, 0.01f);
+
 		FStaticMesh BakedMesh;
 		BakedMesh.Topology = SourceMesh.Topology;
 		BakedMesh.PathFileName = SourceMesh.PathFileName;
@@ -165,7 +167,7 @@ namespace
 
 		for (FVertex& Vertex : BakedMesh.Vertices)
 		{
-			Vertex.Position = ImportRotation.RotateVector(Vertex.Position);
+			Vertex.Position = ImportRotation.RotateVector(Vertex.Position * BakedScale);
 			if (!Vertex.Normal.IsNearlyZero())
 			{
 				Vertex.Normal = ImportRotation.RotateVector(Vertex.Normal).GetSafeNormal();
@@ -317,7 +319,10 @@ bool FObjViewerEngine::ExportLoadedModelAsModel(const FString& FilePath) const
 	}
 
 	const FQuat ImportRotation = MakeImportRotation(ModelState.LastImportSummary);
-	FStaticMesh BakedMesh = BuildBakedMeshCopy(*ModelState.Mesh->GetRenderData(), ImportRotation);
+	FStaticMesh BakedMesh = BuildBakedMeshCopy(
+		*ModelState.Mesh->GetRenderData(),
+		ImportRotation,
+		ModelState.LastImportSummary.UniformScale);
 	const TArray<FString> MaterialSlotNames = BuildMaterialSlotNames(ModelState.Mesh);
 	TArray<FModelMaterialInfo> MaterialInfos;
 	const bool bBuiltMaterialInfos = FObjManager::BuildModelMaterialInfosFromObj(ModelState.SourceFilePath, FilePath, MaterialSlotNames, MaterialInfos);
