@@ -17,7 +17,7 @@ public:
 
 	FString PathFileName;					// 어떤 Material인지 판별하는 고유 이름
 	FString DiffuseTextureFilePath;
-	FVector4 DiffuseColor;
+	FVector4 DiffuseColor = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
 	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만
 
 public:
