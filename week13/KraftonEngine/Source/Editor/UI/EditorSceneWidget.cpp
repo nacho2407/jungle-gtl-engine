@@ -68,7 +68,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 			UCameraComponent* PerspectiveCam = nullptr;
 			for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
 			{
-				if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective)
+				if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
 				{
 					PerspectiveCam = VC->GetCamera();
 					break;
@@ -129,7 +129,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 			{
 				for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
 				{
-					if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective)
+					if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
 					{
 						if (UCameraComponent* Cam = VC->GetCamera())
 						{

@@ -7,10 +7,6 @@
 
 namespace
 {
-	constexpr float GridFadeStartRatio = 0.72f;
-	constexpr float AxisFadeStartRatio = 0.9f;
-	constexpr float GridMinVisibleAlpha = 0.05f;
-	constexpr float AxisMinVisibleAlpha = 0.85f;
 
 	// FVector 컴포넌트 인덱스 접근 (X=0, Y=1, Z=2)
 	float  Comp(const FVector& V, int I) { return (&V.X)[I]; }
@@ -51,23 +47,6 @@ namespace
 		return std::ceil(Value / Spacing) * Spacing;
 	}
 
-	float ComputeLineFade(float OffsetFromFocus, float FadeStart, float FadeEnd)
-	{
-		if (FadeEnd <= FadeStart)
-		{
-			return 1.0f;
-		}
-
-		const float Normalized = (std::fabs(OffsetFromFocus) - FadeStart) / (FadeEnd - FadeStart);
-		const float LinearFade = Clamp(1.0f - Normalized, 0.0f, 1.0f);
-		return LinearFade * LinearFade;
-	}
-
-	FVector4 WithAlpha(const FVector4& Color, float Alpha)
-	{
-		return FVector4(Color.X, Color.Y, Color.Z, Color.W * Clamp(Alpha, 0.0f, 1.0f));
-	}
-
 	bool IsAxisLine(float Coordinate, float Spacing)
 	{
 		return std::fabs(Coordinate) <= (Spacing * 0.25f);
@@ -80,35 +59,6 @@ namespace
 		const float HeightDrivenExtent = (std::fabs(CameraNormalDist) * 2.0f) + (Spacing * 4.0f);
 		const float RequiredExtent = std::max(BaseExtent, HeightDrivenExtent);
 		return std::max(BaseHalfCount, static_cast<int32>(std::ceil(RequiredExtent / Spacing)));
-	}
-
-	// 카메라 forward와 그리드 법선축(NormalIdx)의 교점 계산
-	FVector ComputeGridFocusPoint(const FVector& CameraPosition, const FVector& CameraForward, int A0, int A1, int N, float PlaneOffset)
-	{
-		float FwdN = Comp(CameraForward, N);
-		if (std::fabs(FwdN) > EPSILON)
-		{
-			const float T = (PlaneOffset - Comp(CameraPosition, N)) / FwdN;
-			if (T > 0.0f)
-			{
-				return CameraPosition + (CameraForward * T);
-			}
-		}
-
-		// 평면과 거의 평행 → 그리드 평면에서 카메라 투영
-		FVector PlanarFwd = CameraForward;
-		(&PlanarFwd.X)[N] = 0.0f;
-		if (PlanarFwd.Length() > EPSILON)
-		{
-			PlanarFwd.Normalize();
-			FVector Result = CameraPosition;
-			(&Result.X)[N] = PlaneOffset;
-			return Result + (PlanarFwd * (std::fabs(Comp(CameraPosition, N) - PlaneOffset) * 0.5f));
-		}
-
-		FVector Result = CameraPosition;
-		(&Result.X)[N] = PlaneOffset;
-		return Result;
 	}
 
 	// 카메라 forward의 dominant axis 인덱스 (절대값이 가장 큰 축)
@@ -198,42 +148,23 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 	const int A1 = (N == 2) ? 1 : 2;
 	constexpr float PlaneOffset = 0.0f;
 
-	const FVector FocusPoint = ComputeGridFocusPoint(CameraPosition, CameraForward, A0, A1, N, PlaneOffset);
-	const float Focus0 = Comp(FocusPoint, A0);
-	const float Focus1 = Comp(FocusPoint, A1);
-
-	const float Center0 = SnapToGrid(Focus0, Spacing);
-	const float Center1 = SnapToGrid(Focus1, Spacing);
+	// 카메라 위치를 그리드 평면에 투영하여 중심으로 사용
+	const float Center0 = SnapToGrid(Comp(CameraPosition, A0), Spacing);
+	const float Center1 = SnapToGrid(Comp(CameraPosition, A1), Spacing);
 	const float CameraNormalDist = Comp(CameraPosition, N) - PlaneOffset;
 	const int32 DynamicHalfCount = ComputeDynamicHalfCount(Spacing, BaseHalfCount, CameraNormalDist);
 	const float BaseGridExtent = Spacing * static_cast<float>(DynamicHalfCount);
 
-	const float FocusMin0 = Center0 - BaseGridExtent;
-	const float FocusMax0 = Center0 + BaseGridExtent;
-	const float FocusMin1 = Center1 - BaseGridExtent;
-	const float FocusMax1 = Center1 + BaseGridExtent;
-
-	const float CamMin0 = SnapDownToGrid(Comp(CameraPosition, A0), Spacing);
-	const float CamMax0 = SnapUpToGrid(Comp(CameraPosition, A0), Spacing);
-	const float CamMin1 = SnapDownToGrid(Comp(CameraPosition, A1), Spacing);
-	const float CamMax1 = SnapUpToGrid(Comp(CameraPosition, A1), Spacing);
-
-	const float Min0 = std::min(FocusMin0, CamMin0);
-	const float Max0 = std::max(FocusMax0, CamMax0);
-	const float Min1 = std::min(FocusMin1, CamMin1);
-	const float Max1 = std::max(FocusMax1, CamMax1);
+	const float Min0 = Center0 - BaseGridExtent;
+	const float Max0 = Center0 + BaseGridExtent;
+	const float Min1 = Center1 - BaseGridExtent;
+	const float Max1 = Center1 + BaseGridExtent;
 
 	const int32 Min0Idx = static_cast<int32>(std::floor((Min0 - Center0) / Spacing));
 	const int32 Max0Idx = static_cast<int32>(std::ceil((Max0 - Center0) / Spacing));
 	const int32 Min1Idx = static_cast<int32>(std::floor((Min1 - Center1) / Spacing));
 	const int32 Max1Idx = static_cast<int32>(std::ceil((Max1 - Center1) / Spacing));
 
-	const float Extent0 = std::max(std::fabs(Min0 - Focus0), std::fabs(Max0 - Focus0));
-	const float Extent1 = std::max(std::fabs(Min1 - Focus1), std::fabs(Max1 - Focus1));
-	const float GridFadeStart0 = Extent0 * GridFadeStartRatio;
-	const float GridFadeStart1 = Extent1 * GridFadeStartRatio;
-	const float AxisFadeStart0 = Extent0 * AxisFadeStartRatio;
-	const float AxisFadeStart1 = Extent1 * AxisFadeStartRatio;
 	const float AxisBias = std::max(Spacing * 0.001f, 0.001f);
 
 	// 원점(0)이 범위 안에 있을 때 축 표시
@@ -251,14 +182,10 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 			const float W1 = Center1 + (static_cast<float>(I) * Spacing);
 			if (bShowAxis0 && IsAxisLine(W1, Spacing)) continue;
 
-			const float Alpha = ComputeLineFade(W1 - Focus1, GridFadeStart1, Extent1);
-			if (Alpha > GridMinVisibleAlpha)
-			{
-				AddLine(
-					MakeGridPoint(A0, A1, N, Min0, W1, PlaneOffset),
-					MakeGridPoint(A0, A1, N, Max0, W1, PlaneOffset),
-					WithAlpha(GridColor, Alpha));
-			}
+			AddLine(
+				MakeGridPoint(A0, A1, N, Min0, W1, PlaneOffset),
+				MakeGridPoint(A0, A1, N, Max0, W1, PlaneOffset),
+				GridColor);
 		}
 
 		// A0 방향 스윕 → A1 방향 라인
@@ -267,35 +194,29 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 			const float W0 = Center0 + (static_cast<float>(I) * Spacing);
 			if (bShowAxis1 && IsAxisLine(W0, Spacing)) continue;
 
-			const float Alpha = ComputeLineFade(W0 - Focus0, GridFadeStart0, Extent0);
-			if (Alpha > GridMinVisibleAlpha)
-			{
-				AddLine(
-					MakeGridPoint(A0, A1, N, W0, Min1, PlaneOffset),
-					MakeGridPoint(A0, A1, N, W0, Max1, PlaneOffset),
-					WithAlpha(GridColor, Alpha));
-			}
+			AddLine(
+				MakeGridPoint(A0, A1, N, W0, Min1, PlaneOffset),
+				MakeGridPoint(A0, A1, N, W0, Max1, PlaneOffset),
+				GridColor);
 		}
 	}
 
 	// ── 월드 축 (A0 방향 — A1=0 라인) ──
 	if (bShowAxis0)
 	{
-		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-Focus1, AxisFadeStart1, Extent1));
 		AddLine(
 			MakeGridPoint(A0, A1, N, Min0, 0.0f, AxisBias),
 			MakeGridPoint(A0, A1, N, Max0, 0.0f, AxisBias),
-			WithAlpha(AxisColor(A0), Alpha));
+			AxisColor(A0));
 	}
 
 	// ── 월드 축 (A1 방향 — A0=0 라인) ──
 	if (bShowAxis1)
 	{
-		const float Alpha = std::max(AxisMinVisibleAlpha, ComputeLineFade(-Focus0, AxisFadeStart0, Extent0));
 		AddLine(
 			MakeGridPoint(A0, A1, N, 0.0f, Min1, AxisBias),
 			MakeGridPoint(A0, A1, N, 0.0f, Max1, AxisBias),
-			WithAlpha(AxisColor(A1), Alpha));
+			AxisColor(A1));
 	}
 
 	// ── 법선축 (A0=0, A1=0 일 때 수직선) ──

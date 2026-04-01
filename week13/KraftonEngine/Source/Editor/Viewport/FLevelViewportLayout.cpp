@@ -441,22 +441,25 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 	DraggingSplitter = nullptr;
 
 	int32 RequiredSlots = GetSlotCount(NewLayout);
+	int32 OldSlotCount = static_cast<int32>(LevelViewportClients.size());
 
 	// 슬롯 수 조정
-	if (RequiredSlots > static_cast<int32>(LevelViewportClients.size()))
+	if (RequiredSlots > OldSlotCount)
 		EnsureViewportSlots(RequiredSlots);
-	else if (RequiredSlots < static_cast<int32>(LevelViewportClients.size()))
+	else if (RequiredSlots < OldSlotCount)
 		ShrinkViewportSlots(RequiredSlots);
 
-	// OnePane → 분할 전환 시 1번부터 Top, Front, Right 순으로 기본 설정
-	if (bWasOnePane && NewLayout != EViewportLayout::OnePane)
+	// 분할 전환 시 새로 추가된 슬롯에 Top, Front, Right 순으로 기본 설정
+	if (NewLayout != EViewportLayout::OnePane)
 	{
 		constexpr ELevelViewportType DefaultTypes[] = {
 			ELevelViewportType::Top,
 			ELevelViewportType::Front,
 			ELevelViewportType::Right
 		};
-		for (int32 i = 1; i < RequiredSlots && (i - 1) < 3; ++i)
+		// 기존 슬롯(또는 슬롯 0)은 유지, 새로 생긴 슬롯에만 적용
+		int32 StartIdx = bWasOnePane ? 1 : OldSlotCount;
+		for (int32 i = StartIdx; i < RequiredSlots && (i - 1) < 3; ++i)
 		{
 			LevelViewportClients[i]->SetViewportType(DefaultTypes[i - 1]);
 		}
@@ -738,8 +741,9 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 		ImGui::SameLine();
 
 		static const char* ViewportTypeNames[] = {
-			"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back"
+			"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back", "Free Orthographic"
 		};
+		constexpr int32 ViewportTypeCount = sizeof(ViewportTypeNames) / sizeof(ViewportTypeNames[0]);
 		int32 CurrentTypeIdx = static_cast<int32>(Opts.ViewportType);
 		const char* CurrentTypeName = ViewportTypeNames[CurrentTypeIdx];
 
@@ -753,7 +757,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 		if (ImGui::BeginPopup(VTPopupID))
 		{
-			for (int32 t = 0; t < 7; ++t)
+			for (int32 t = 0; t < ViewportTypeCount; ++t)
 			{
 				bool bSelected = (t == CurrentTypeIdx);
 				if (ImGui::Selectable(ViewportTypeNames[t], bSelected))

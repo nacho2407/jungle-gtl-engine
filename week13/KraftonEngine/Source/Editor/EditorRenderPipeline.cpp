@@ -75,6 +75,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetCameraInfo(Camera);
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportInfo(VP);
+	Bus.SetViewportType(Opts.ViewportType);
 
 	// 2. RenderCommand(DefaultPass), Entry(Batcher)를 ERenderPass별로 수집
 	const bool bIsActiveViewport = VC == Editor->GetActiveViewport();

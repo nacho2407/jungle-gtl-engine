@@ -42,7 +42,10 @@ public:
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
 	bool  IsOrtho()        const { return bIsOrtho; }
+	bool  IsFixedOrtho()   const { return bIsOrtho && ViewportType != ELevelViewportType::Perspective && ViewportType != ELevelViewportType::FreeOrthographic; }
 	float GetOrthoWidth()  const { return OrthoWidth; }
+	ELevelViewportType GetViewportType() const { return ViewportType; }
+	void SetViewportType(ELevelViewportType InType) { ViewportType = InType; }
 	EViewMode GetViewMode() const { return ViewMode; }
 	const FShowFlags& GetShowFlags() const { return ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
@@ -76,6 +79,7 @@ private:
 
 	bool  bIsOrtho = false;
 	float OrthoWidth = 10.0f;
+	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
 	// PostProcess용 뷰포트 D3D 리소스 (프레임 내 유효)
 	ID3D11RenderTargetView*   ViewportRTV        = nullptr;

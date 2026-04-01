@@ -28,7 +28,8 @@ enum class ELevelViewportType : uint8
 	Left,		// -Y → +Y
 	Right,		// +Y → -Y
 	Front,		// +X → -X
-	Back		// -X → +X
+	Back,		// -X → +X
+	FreeOrthographic	// 자유 각도 Orthographic
 };
 
 // 뷰포트별 렌더 옵션 — 각 뷰포트 클라이언트가 독립적으로 소유

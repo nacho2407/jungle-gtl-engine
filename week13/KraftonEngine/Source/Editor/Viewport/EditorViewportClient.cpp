@@ -54,7 +54,14 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 		return;
 	}
 
-	// Orthographic: 카메라를 고정 방향으로 설정
+	// FreeOrthographic: 현재 카메라 위치/회전 유지, 투영만 Ortho로 전환
+	if (NewType == ELevelViewportType::FreeOrthographic)
+	{
+		Camera->SetOrthographic(true);
+		return;
+	}
+
+	// 고정 방향 Orthographic: 카메라를 프리셋 방향으로 설정
 	Camera->SetOrthographic(true);
 
 	constexpr float OrthoDistance = 50.0f;
@@ -65,11 +72,11 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	{
 	case ELevelViewportType::Top:
 		Position = FVector(0, 0, OrthoDistance);
-		Rotation = FVector(0, 89.9f, 0);	// Pitch down (positive pitch = look -Z)
+		Rotation = FVector(0, 90.0f, 0);	// Pitch down (positive pitch = look -Z)
 		break;
 	case ELevelViewportType::Bottom:
 		Position = FVector(0, 0, -OrthoDistance);
-		Rotation = FVector(0, -89.9f, 0);	// Pitch up (negative pitch = look +Z)
+		Rotation = FVector(0, -90.0f, 0);	// Pitch up (negative pitch = look +Z)
 		break;
 	case ELevelViewportType::Front:
 		Position = FVector(OrthoDistance, 0, 0);
