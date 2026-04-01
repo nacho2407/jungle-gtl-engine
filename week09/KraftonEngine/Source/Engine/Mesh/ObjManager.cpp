@@ -307,8 +307,8 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 {
-	std::filesystem::path FullPath = FPaths::ToWide(MaterialName);
-	FString FileNameOnly = FPaths::ToUtf8(FullPath.stem().wstring());
+	std::filesystem::path SrcPath = FPaths::ToWide(MaterialName);
+	FString FileNameOnly = FPaths::ToUtf8(SrcPath.stem().wstring());
 
 	// 1. 캐시(RAM)에 이미 있는지 검사
 	if (MaterialCache.contains(FileNameOnly))
@@ -319,18 +319,60 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 
 	// 2. 캐시에 없다면 빈 객체 생성
 	UMaterial* NewMaterial = UObjectManager::Get().CreateObject<UMaterial>();
-	FString MatPath = MaterialName;
 	UE_LOG("Cache Missed MaterialName: %s;", FileNameOnly.c_str());
 
-	// 3. 하드디스크(.bin)에 있다면 로드
+	FString MBinPath = GetMBinaryFilePath(MaterialName);
+	std::filesystem::path MBinPathW = FPaths::ToWide(MBinPath);
+	bool bNeedRebuild = true;
 
-	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
+	if (std::filesystem::exists(MBinPathW))
 	{
-		FWindowsBinReader Reader(MatPath);
+		// 원본 파일이 없거나, 이미 mbin 경로가 들어왔거나, 
+		// mbin 파일의 수정 날짜가 원본 파일보다 최신(또는 같음)인 경우 리빌드 생략
+		if (!std::filesystem::exists(SrcPath) || MaterialName == MBinPath ||
+			std::filesystem::last_write_time(MBinPathW) >= std::filesystem::last_write_time(SrcPath))
+		{
+			bNeedRebuild = false;
+		}
+	}
+
+	if (!bNeedRebuild)
+	{
+		// MBIN 파일에서 통째로 로드
+		FWindowsBinReader Reader(MBinPath);
 		if (Reader.IsValid())
 		{
 			NewMaterial->Serialize(Reader);
 		}
+		else
+		{
+			bNeedRebuild = true; // 파일 읽기 실패 시 강제 리빌드로 전환
+		}
+	}
+
+	// 3. 하드디스크(.bin)에 있다면 로드
+	if (bNeedRebuild)
+	{
+		// [리빌드 진행 영역]
+		// 현재 첨부된 코드 상에는 ObjImporter에서 Material을 같이 추출하지만,
+		// 추후 Material 단독 파일(예: .mat, .json 등)을 파싱하는 전용 Importer가 있다면 이 부분에서 파싱을 수행해야 합니다.
+
+		// 기존 코드 동작 유지 보장: 파일이 존재하면 기존처럼 읽어들이기 시도
+		if (std::filesystem::exists(SrcPath))
+		{
+			FWindowsBinReader Reader(MaterialName);
+			if (Reader.IsValid())
+			{
+				NewMaterial->Serialize(Reader);
+			}
+		}
+
+		FWindowsBinWriter Writer(MBinPath);
+		if (Writer.IsValid())
+		{
+			NewMaterial->Serialize(Writer);
+		}
+		
 	}
 
 	// 4. 캐시에 등록 후 반환
