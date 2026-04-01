@@ -241,6 +241,16 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	const bool bAltDown = InputSystem::Get().GetKey(VK_MENU);
 	const bool bCtrlDown = InputSystem::Get().GetKey(VK_CONTROL);
 	const bool bShiftDown = InputSystem::Get().GetKey(VK_SHIFT);
+	
+	//	Alt가 눌렸을 때도 동일하게 해제
+	if (!bAltDown)
+	{
+		if (bAltRightMouseDollying)
+		{
+			bAltRightMouseDollying = false;
+			NavigationController.ResetTargetLocation();
+		}
+	}
 
 	// Mouse button begin/end state bridge
 	if (InputSystem::Get().GetKeyDown(VK_RBUTTON) && !bCtrlDown && !bAltDown && !bShiftDown)
@@ -305,6 +315,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			bIsCursorVisible = true;
 		}
 	}
+	
+
 
 	if (InputSystem::Get().GetKeyDown(VK_MBUTTON))
 	{
