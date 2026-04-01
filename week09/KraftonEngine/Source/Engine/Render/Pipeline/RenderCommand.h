@@ -185,7 +185,7 @@ struct FConstantBufferBinding
 struct FMeshSectionDraw
 {
 	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
-	FVector4 DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	FVector4 DiffuseColor = { 1.0f, 0.0f, 1.0f, 1.0f };		// 기본 마젠타 색
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 	bool bIsUVScroll = false;
