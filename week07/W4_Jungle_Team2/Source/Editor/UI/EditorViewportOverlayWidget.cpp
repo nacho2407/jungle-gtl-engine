@@ -336,7 +336,6 @@ void FEditorViewportOverlayWidget::RenderShortcutsWindow()
 	{
 		{"Mouse Right Drag", "뷰포트 카메라 회전"},
 		{"Mouse Middle Drag", "뷰포트 카메라 팬 이동"},
-		{"Alt + Mouse Left Drag", "선택 대상을 기준으로 오빗 회전"},
 		{"Alt + Mouse Right Drag", "카메라 돌리 인/아웃"},
 		{"Mouse Wheel", "원근 카메라 FOV 또는 직교 카메라 높이 조절"},
 		{"Mouse Wheel while rotating", "카메라 이동 속도 조절"},
