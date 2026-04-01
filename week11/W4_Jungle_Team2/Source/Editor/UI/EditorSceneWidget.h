@@ -8,6 +8,12 @@ class FEditorSceneWidget : public FEditorWidget
 public:
 	virtual void Initialize(UEditorEngine* InEditorEngine) override;
 	virtual void Render(float DeltaTime) override;
+	void NewScene();
+	void SaveScene();
+	void LoadScene();
+	void SaveSceneToFilePath(const FString& FilePath);
+	void LoadSceneFromFilePath(const FString& FilePath);
+	void RefreshSceneAndAssets();
 
 private:
 	void RefreshSceneFileList();
