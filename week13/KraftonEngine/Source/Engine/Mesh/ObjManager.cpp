@@ -14,7 +14,7 @@ TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
 
 FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 {
-	std::filesystem::path SrcPath(OriginalPath);
+	std::filesystem::path SrcPath(FPaths::ToWide(OriginalPath));
 	std::wstring Ext = SrcPath.extension().wstring();
 
 	// 이미 bin 경로가 들어온 경우에는 그대로 사용
@@ -36,7 +36,7 @@ FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 
 FString FObjManager::GetMBinaryFilePath(const FString& OriginalPath)
 {
-	std::filesystem::path SrcPath(OriginalPath);
+	std::filesystem::path SrcPath(FPaths::ToWide(OriginalPath));
 	std::wstring Ext = SrcPath.extension().wstring();
 
 	// 이미 bin 경로가 들어온 경우에는 그대로 사용
@@ -278,7 +278,7 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 	FString MatPath = MaterialName;
 
 	// 3. 하드디스크(.bin)에 있다면 로드
-	
+
 	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
 	{
 		FWindowsBinReader Reader(MatPath);
