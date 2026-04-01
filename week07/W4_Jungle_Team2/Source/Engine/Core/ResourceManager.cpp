@@ -110,6 +110,7 @@ namespace ResourceKey
 //	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
 void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device* Device)
 {
+	CahcedDevice = Device;
 	//	초기화
 	ObjFilePaths.clear();
 	FontFilePaths.clear();
@@ -712,7 +713,13 @@ const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) con
 
 TArray<FString> FResourceManager::GetMaterialNames() const
 {
-	return MaterialFilePaths;
+	TArray<FString> Names;
+	Names.reserve(MaterialRegistry.size());
+	for (const auto& [Name, Mat] : MaterialRegistry)
+	{
+		Names.push_back(Name);
+	}
+	return Names;
 }
 
 FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
