@@ -4,7 +4,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Component/CameraComponent.h"
 #include "Viewport/Viewport.h"
-#include "Math/Utils.h"
+#include "Math/MathUtils.h"
 #include "ImGui/imgui.h"
 
 #include <cmath>
