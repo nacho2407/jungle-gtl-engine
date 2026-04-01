@@ -294,6 +294,7 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
 			}())
 			{
+				TArray<FOutlineRenderItem> OutlineItems;
 				for (UActorComponent* Component : Selected->GetComponents())
 				{
 					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
@@ -303,11 +304,15 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
 					if (PrimitiveComponent->GetRenderMesh())
 					{
-						Renderer->RenderOutline(
-							PrimitiveComponent->GetRenderMesh(),
-							PrimitiveComponent->GetWorldTransform()
-						);
+						FOutlineRenderItem& Item = OutlineItems.emplace_back();
+						Item.Mesh = PrimitiveComponent->GetRenderMesh();
+						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
 					}
+				}
+
+				if (!OutlineItems.empty())
+				{
+					Renderer->RenderOutlines(OutlineItems);
 				}
 			}
 
