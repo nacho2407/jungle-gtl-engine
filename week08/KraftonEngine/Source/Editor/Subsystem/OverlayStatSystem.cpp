@@ -47,37 +47,37 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetPixelShaderMemory()));
+			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %.2f KB", static_cast<double>(MemoryStats::GetPixelShaderMemory() / 1024.0f));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetVertexShaderMemory()));
+			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %.2f KB", static_cast<double>(MemoryStats::GetVertexShaderMemory() / 1024.0f));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetVertexBufferMemory()));
+			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %.2f KB", static_cast<double>(MemoryStats::GetVertexBufferMemory() / 1024.0f));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "IndexBuffer Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetIndexBufferMemory()));
+			snprintf(Buffer, sizeof(Buffer), "IndexBuffer Memory : %.2f KB", static_cast<double>(MemoryStats::GetIndexBufferMemory() / 1024.0f));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetStaticMeshCPUMemory()));
+			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %.2f KB", static_cast<double>(MemoryStats::GetStaticMeshCPUMemory() / 1024.0f));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetTextureMemory()));
+			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %.2f KB", static_cast<double>(MemoryStats::GetTextureMemory() / 1024.0f));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
