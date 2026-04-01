@@ -22,7 +22,6 @@ public:
     int   IllumModel = 2;    
 
 	// Texture 정보
-	// 경로는 파싱 시점에 절대 경로로 정규화됨
     FString DiffuseTexPath;   // map_Kd
 	bool	bHasDiffuseTexture = { false };
 

@@ -248,9 +248,6 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		if (!primitiveComponent->SupportsOutline()) continue;
 
-		// 일단 불편해서 스태틱메시의 아웃라인은 끔
-		//if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh) continue;
-
 		// Selection Mask
 		FRenderCommand MaskCmd = BaseCmd;
 		MaskCmd.Type = ERenderCommandType::SelectionMask;
@@ -320,6 +317,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
 			};
 
+			// 와이어 프레임이 있는 경우 텍스쳐를 사용하지 않는 메테리얼에게 기본 텍스쳐를 강제 주입
 			if (ViewMode == EViewMode::Wireframe)
 			{
 				Cmd.Constants.StaticMesh.bHasDiffuseMap =  1u;
