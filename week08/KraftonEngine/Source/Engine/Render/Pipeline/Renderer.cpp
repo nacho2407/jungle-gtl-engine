@@ -145,7 +145,7 @@ void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 	}
 }
 
-//	GPU 프레임 시작. 반드시 Render 이전에 호출되어야 함.
+//	스왑체인 백버퍼 복귀 — ImGui 합성 직전에 호출
 void FRenderer::BeginFrame()
 {
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
@@ -154,20 +154,10 @@ void FRenderer::BeginFrame()
 
 	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
 	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
 	Context->RSSetViewports(1, &Viewport);
-
-	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-	Device.SetDepthStencilState(EDepthStencilState::Default);
-	Device.SetBlendState(EBlendState::Opaque);
-
 	Context->OMSetRenderTargets(1, &RTV, DSV);
-
-#if STATS
-	FGPUProfiler::Get().BeginFrame();
-#endif
 }
 
 //	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
@@ -179,19 +169,19 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
+		ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
 
 		if (PassBatchers[i])
 		{
-			// Batcher 패스 — DrawBatch 내부에서 빈 데이터 체크
-			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
 			PassBatchers[i].DrawBatch(CurPass, InRenderBus, Context);
 		}
 		else
 		{
-			// Mesh 패스
 			const auto& Commands = InRenderBus.GetCommands(CurPass);
-			if (Commands.empty()) continue;
-			ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
+			if (!Commands.empty())
+			{
+				ExecuteDefaultPass(Commands, InRenderBus, Context);
+			}
 		}
 	}
 }
@@ -224,14 +214,14 @@ void FRenderer::InitializePassRenderStates()
 void FRenderer::InitializePassBatchers()
 {
 	PassBatchers[(uint32)ERenderPass::Editor] = {
-		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			DrawLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
+		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+			DrawLineBatcher(EditorLineBatcher, Ctx);
 		}
 	};
 
 	PassBatchers[(uint32)ERenderPass::Grid] = {
-		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			DrawLineBatcher(GridLineBatcher, Pass, Bus, Ctx);
+		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+			DrawLineBatcher(GridLineBatcher, Ctx);
 		}
 	};
 
@@ -265,11 +255,9 @@ void FRenderer::InitializePassBatchers()
 // ============================================================
 // LineBatcher DrawBatch 공통
 // ============================================================
-void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context)
+void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context)
 {
 	if (Batcher.GetLineCount() == 0) return;
-
-	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
 
 	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
 	if (EditorShader) EditorShader->Bind(Context);
@@ -280,10 +268,8 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const F
 // ============================================================
 // 기본 패스 실행기
 // ============================================================
-void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context)
+void FRenderer::ExecuteDefaultPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context)
 {
-	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
-
 	for (const auto& Cmd : Commands)
 	{
 		BindCommand(Cmd, Context);
@@ -475,9 +461,6 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
 void FRenderer::EndFrame()
 {
-#if STATS
-	FGPUProfiler::Get().EndFrame();
-#endif
 	Device.Present();
 }
 
