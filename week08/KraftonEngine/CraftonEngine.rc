@@ -1,3 +1,0 @@
-#include "Source/Engine/Runtime/resource.h"
-
-IDI_APP_ICON ICON "Asset/KraftonEngine.ico"
