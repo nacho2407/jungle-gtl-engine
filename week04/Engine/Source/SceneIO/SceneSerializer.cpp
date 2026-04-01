@@ -1,5 +1,6 @@
 #include "SceneSerializer.h"
 
+#include "Engine/ViewPort/ViewportCameraState.h"
 #include "SceneAssetPath.h"
 #include "SceneJson.h"
 #include "SceneTypeRegistry.h"
@@ -984,13 +985,25 @@ namespace
     }
 } // namespace
 
-bool FSceneSerializer::Serialize(const FScene& Scene, FString& OutJson, FString* OutErrorMessage)
+bool FSceneSerializer::Serialize(const FScene& Scene, const FViewportCameraState& CameraState,
+                                 FString& OutJson, FString* OutErrorMessage)
 {
     (void)OutErrorMessage;
 
     FSceneJsonValue::Object RootObject;
     RootObject["schema"] = SceneSchemaName;
     RootObject["version"] = static_cast<double>(SceneSchemaVersion);
+
+    FSceneJsonValue::Object CameraObject;
+    CameraObject["Location"] =
+        MakeNumberArray({CameraState.Location.X, CameraState.Location.Y, CameraState.Location.Z});
+    CameraObject["Rotation"] = MakeNumberArray(
+        {CameraState.Rotation.X, CameraState.Rotation.Y, CameraState.Rotation.Z,
+         CameraState.Rotation.W});
+    CameraObject["FOV"]          = static_cast<double>(CameraState.FOV);
+    CameraObject["NearClip"]   = static_cast<double>(CameraState.NearPlane);
+    CameraObject["FarClip"]    = static_cast<double>(CameraState.FarPlane);
+    RootObject["PerspectiveCamera"] = std::move(CameraObject);
 
     FSceneJsonValue::Array ActorsArray;
     const TArray<AActor*>& Actors = Scene.GetActors();
@@ -1008,11 +1021,12 @@ bool FSceneSerializer::Serialize(const FScene& Scene, FString& OutJson, FString*
     return true;
 }
 
-bool FSceneSerializer::SaveToFile(const FScene& Scene, const std::filesystem::path& FilePath,
-                                  FString* OutErrorMessage)
+bool FSceneSerializer::SaveToFile(const FScene& Scene, const FViewportCameraState& CameraState,
+                                  const std::filesystem::path& FilePath,
+                                  FString*                     OutErrorMessage)
 {
     FString JsonText;
-    if (!Serialize(Scene, JsonText, OutErrorMessage))
+    if (!Serialize(Scene, CameraState, JsonText, OutErrorMessage))
     {
         return false;
     }
@@ -1043,8 +1057,9 @@ bool FSceneSerializer::SaveToFile(const FScene& Scene, const std::filesystem::pa
     return true;
 }
 
-std::unique_ptr<FScene> FSceneDeserializer::Deserialize(const FString& JsonSource,
-                                                        FString*       OutErrorMessage)
+std::unique_ptr<FScene> FSceneDeserializer::Deserialize(const FString&        JsonSource,
+                                                        FViewportCameraState* OutCameraState,
+                                                        FString*              OutErrorMessage)
 {
     FSceneJsonValue RootValue;
     if (!FSceneJsonParser::Parse(JsonSource, RootValue, OutErrorMessage))
@@ -1115,11 +1130,44 @@ std::unique_ptr<FScene> FSceneDeserializer::Deserialize(const FString& JsonSourc
         }
     }
 
+    if (OutCameraState != nullptr)
+    {
+        const auto CameraIt = RootObject->find("PerspectiveCamera");
+        if (CameraIt != RootObject->end())
+        {
+            const FSceneJsonValue::Object* CameraObject = nullptr;
+            if (TryGetObject(CameraIt->second, CameraObject, nullptr, "PerspectiveCamera"))
+            {
+                const FSceneJsonValue* LocValue = FindRequiredField(*CameraObject, "Location", nullptr, "PerspectiveCamera");
+                if (LocValue != nullptr)
+                    TryReadVector3(*LocValue, OutCameraState->Location, nullptr, "PerspectiveCamera.Location");
+
+                const FSceneJsonValue* RotValue = FindRequiredField(*CameraObject, "Rotation", nullptr, "PerspectiveCamera");
+                if (RotValue != nullptr)
+                    TryReadQuat(*RotValue, OutCameraState->Rotation, nullptr, "PerspectiveCamera.Rotation");
+
+                float Val;
+                const FSceneJsonValue* FovValue = FindRequiredField(*CameraObject, "FOV", nullptr, "PerspectiveCamera");
+                if (FovValue != nullptr && TryReadFloatValue(*FovValue, Val, nullptr, "PerspectiveCamera.FOV"))
+                    OutCameraState->FOV = Val;
+
+                const FSceneJsonValue* NearValue = FindRequiredField(*CameraObject, "NearClip", nullptr, "PerspectiveCamera");
+                if (NearValue != nullptr && TryReadFloatValue(*NearValue, Val, nullptr, "PerspectiveCamera.NearClip"))
+                    OutCameraState->NearPlane = Val;
+
+                const FSceneJsonValue* FarValue = FindRequiredField(*CameraObject, "FarClip", nullptr, "PerspectiveCamera");
+                if (FarValue != nullptr && TryReadFloatValue(*FarValue, Val, nullptr, "PerspectiveCamera.FarClip"))
+                    OutCameraState->FarPlane = Val;
+            }
+        }
+    }
+
     return Scene;
 }
 
 std::unique_ptr<FScene> FSceneDeserializer::LoadFromFile(const std::filesystem::path& FilePath,
-                                                         FString* OutErrorMessage)
+                                                         FViewportCameraState*        OutCameraState,
+                                                         FString*                     OutErrorMessage)
 {
     std::ifstream File(FilePath, std::ios::binary);
     if (!File.is_open())
@@ -1141,5 +1189,5 @@ std::unique_ptr<FScene> FSceneDeserializer::LoadFromFile(const std::filesystem::
         return nullptr;
     }
 
-    return Deserialize(JsonSource, OutErrorMessage);
+    return Deserialize(JsonSource, OutCameraState, OutErrorMessage);
 }

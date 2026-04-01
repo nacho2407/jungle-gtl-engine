@@ -1,6 +1,7 @@
 #include "Editor.h"
 
 #include "Viewport/EditorViewportClient.h"
+#include "Camera/ViewportCamera.h"
 
 #include "Asset/AssetManager.h"
 #include "Asset/Texture2DAsset.h"
@@ -455,7 +456,7 @@ void FEditor::Create()
     // so there is only one SelectedActors array — eliminates stale-pointer crashes on actor delete.
     WindowOverlayManager->SetSharedSelectionController(&ViewportClient.GetSelectionController());
 
-    WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::Single);
 
     // SubViewports and Splitter controls
     OverlayInputContext = new FViewportOverlayInputContext(WindowOverlayManager);
@@ -598,6 +599,7 @@ std::filesystem::path FEditor::GetSceneDirectory() const
 
 bool FEditor::SaveScene()
 {
+    CaptureCameraState();
     if (!SceneDocument.CurrentScenePath.empty())
     {
         return SaveSceneToPath(SceneDocument.CurrentScenePath, true);
@@ -689,7 +691,7 @@ bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdat
     }
 
     FString ErrorMessage;
-    if (!FSceneSerializer::SaveToFile(*CurScene, FilePath, &ErrorMessage))
+    if (!FSceneSerializer::SaveToFile(*CurScene, CameraState, FilePath, &ErrorMessage))
     {
         UE_LOG(FEditor, ELogVerbosity::Error, "Failed to save scene: %s", ErrorMessage.c_str());
         return false;
@@ -708,7 +710,8 @@ bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdat
 bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
 {
     FString                 ErrorMessage;
-    std::unique_ptr<FScene> LoadedScene = FSceneDeserializer::LoadFromFile(FilePath, &ErrorMessage);
+    std::unique_ptr<FScene> LoadedScene =
+        FSceneDeserializer::LoadFromFile(FilePath, &CameraState, &ErrorMessage);
     if (!LoadedScene)
     {
         UE_LOG(FEditor, ELogVerbosity::Error, "Failed to load scene: %s", ErrorMessage.c_str());
@@ -716,11 +719,35 @@ bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
     }
 
     ReplaceCurrentScene(std::move(LoadedScene));
+    ApplyCameraState();
     SceneDocument.CurrentScenePath = FilePath;
     MarkSceneClean();
 
     UE_LOG(FEditor, ELogVerbosity::Log, "Loaded scene: %s", PathToUtf8String(FilePath).c_str());
     return true;
+}
+
+void FEditor::CaptureCameraState()
+{
+    const FViewportCamera& Cam = ViewportClient.GetCamera();
+    CameraState.Location    = Cam.GetLocation();
+    CameraState.Rotation    = Cam.GetRotation();
+    CameraState.FOV         = Cam.GetFOV();
+    CameraState.NearPlane   = Cam.GetNearPlane();
+    CameraState.FarPlane    = Cam.GetFarPlane();
+    CameraState.OrthoHeight = Cam.GetOrthoHeight();
+}
+
+void FEditor::ApplyCameraState()
+{
+    FViewportCamera& Cam = ViewportClient.GetCamera();
+    Cam.SetLocation(CameraState.Location);
+    Cam.SetRotation(CameraState.Rotation);
+    Cam.SetFOV(CameraState.FOV);
+    Cam.SetNearPlane(CameraState.NearPlane);
+    Cam.SetFarPlane(CameraState.FarPlane);
+    Cam.SetOrthoHeight(CameraState.OrthoHeight);
+    ViewportClient.GetNavigationController().ResetTargetLocation(CameraState.Location);
 }
 
 void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
