@@ -84,6 +84,7 @@ void FStatWindow::RefreshObjectList()
 
 void FStatWindow::Render(const FRect& AreaRect)
 {
+	RefreshObjectList();
 	const float ViewportWidth = AreaRect.Width;
 	const float ViewportHeight = AreaRect.Height;
 
@@ -149,7 +150,7 @@ void FStatWindow::Render(const FRect& AreaRect)
 	ImGui::Text("Statistics");
 	ImGui::Separator();
 
-	ImGui::Text("Objects : %u", ObjectCount);
+	ImGui::Text("Objects : %u", ObjectEntries.size());
 	ImGui::Text("Current Heap Usage : %.2f KB", GetGMalloc()->MallocStats.CurrentAllocationBytes / 1024.0f);
 	ImGui::Text("Current Heap Count : %d", GetGMalloc()->MallocStats.CurrentAllocationCount);
 
