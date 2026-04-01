@@ -175,6 +175,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData,
                 TextItem.TextScale = TextComponent->GetTextScale();
                 TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
                 TextItem.LineSpacing = TextComponent->GetLineSpacing();
+                TextItem.bExcludeFromOutline = (UUIDTextComponent != nullptr);
 
                 TextItem.State.ObjectId = ObjectId;
                 TextItem.State.bShowBounds = Actor->IsShowBounds();

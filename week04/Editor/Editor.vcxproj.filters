@@ -358,4 +358,17 @@
       <Filter>Source\ThirdParty\ImGui</Filter>
     </Natvis>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\Shader\SelectionMaskMesh.hlsl" />
+    <FxCompile Include="Content\Shader\SelectionMaskSprite.hlsl" />
+    <FxCompile Include="Content\Shader\SelectionOutlinePostProcess.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderFont.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderInstancedMesh.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderLine.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderMesh.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderObjectId.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderPicking.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderSprite.hlsl" />
+    <FxCompile Include="Content\Shader\StaticMeshShader.hlsl" />
+  </ItemGroup>
 </Project>

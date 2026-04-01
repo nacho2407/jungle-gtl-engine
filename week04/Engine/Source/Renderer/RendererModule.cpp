@@ -10,47 +10,11 @@
 
 namespace
 {
-    bool HasScenePrimitives(const FSceneRenderData& InSceneRenderData)
-    {
-        return InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Primitives.empty();
-    }
-
     bool ShouldRenderSelectionOutline(const FEditorRenderData& InEditorRenderData,
                                       const FSceneRenderData&  InSceneRenderData)
     {
-        return HasScenePrimitives(InSceneRenderData) && InEditorRenderData.bShowSelectionOutline &&
+        return InSceneRenderData.SceneView != nullptr && InEditorRenderData.bShowSelectionOutline &&
                InSceneRenderData.ViewMode != EViewModeIndex::VMI_Wireframe;
-    }
-
-    bool ShouldTintSelectedWireframe(const FEditorRenderData& InEditorRenderData,
-                                     const FSceneRenderData&  InSceneRenderData)
-    {
-        return HasScenePrimitives(InSceneRenderData) && InEditorRenderData.bShowSelectionOutline &&
-               InSceneRenderData.ViewMode == EViewModeIndex::VMI_Wireframe;
-    }
-
-    TArray<FPrimitiveRenderItem>
-    BuildWireframePrimitiveSubmission(const FSceneRenderData& InSceneRenderData)
-    {
-        TArray<FPrimitiveRenderItem> SubmissionItems;
-        SubmissionItems.reserve(InSceneRenderData.Primitives.size());
-
-        for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
-        {
-            SubmissionItems.push_back(Item);
-        }
-
-        const FColor SelectionColor = FD3D11OutlineRenderer::GetVisibleOutlineColor();
-
-        for (FPrimitiveRenderItem& Item : SubmissionItems)
-        {
-            if (Item.State.IsSelected())
-            {
-                Item.Color = SelectionColor;
-            }
-        }
-
-        return SubmissionItems;
     }
 } // namespace
 
@@ -73,7 +37,13 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!OutlineRenderer.Initialize(&RHI))
+    if (!SelectionMaskRenderer.Initialize(&RHI))
+    {
+        ShutdownModule();
+        return false;
+    }
+
+    if (!PostProcessOutlineRenderer.Initialize(&RHI))
     {
         ShutdownModule();
         return false;
@@ -131,7 +101,8 @@ void FRendererModule::ShutdownModule()
     SpriteRenderer.Shutdown();
     TextRenderer.Shutdown();
     LineRenderer.Shutdown();
-    OutlineRenderer.Shutdown();
+    PostProcessOutlineRenderer.Shutdown();
+    SelectionMaskRenderer.Shutdown();
     MeshBatchRenderer.Shutdown();
     StaticMeshRenderer.Shutdown();
     WidgetRenderer.Shutdown();
@@ -173,6 +144,7 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
 
     RHI.Resize(InWidth, InHeight);
     ObjectIdRenderer.Resize(InWidth, InHeight);
+    SelectionMaskRenderer.Resize(InWidth, InHeight);
 }
 
 void FRendererModule::SetSceneFrameData(FSceneFrameRenderData&& InFrameData)
@@ -280,13 +252,6 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         LineRenderer.EndFrame();
     }
 
-    if (ShouldRenderSelectionOutline(InEditorRenderData, InSceneRenderData))
-    {
-        OutlineRenderer.BeginFrame(InSceneRenderData.SceneView);
-        OutlineRenderer.AddPrimitives(InSceneRenderData.Primitives);
-        OutlineRenderer.EndFrame();
-    }
-
     if (InSceneRenderData.SceneView != nullptr && !InSceneRenderData.Sprites.empty())
     {
         SpriteRenderer.BeginFrame(InSceneRenderData.SceneView);
@@ -308,6 +273,20 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
             TextSubmitter.Submit(TextRenderer, InSceneRenderData);
             TextRenderer.EndFrame(InSceneRenderData.SceneView);
         }
+    }
+
+    if (ShouldRenderSelectionOutline(InEditorRenderData, InSceneRenderData))
+    {
+        SelectionMaskRenderer.BeginFrame(InSceneRenderData.SceneView,
+                                         InEditorRenderData.bEnableOutlineOcclusion);
+        SelectionMaskRenderer.AddStaticMeshes(InSceneRenderData.StaticMeshes);
+        SelectionMaskRenderer.AddSprites(InSceneRenderData.Sprites);
+        SelectionMaskRenderer.AddTexts(InSceneRenderData.Texts);
+        SelectionMaskRenderer.EndFrame();
+
+        PostProcessOutlineRenderer.BeginFrame(InSceneRenderData.SceneView,
+                                              SelectionMaskRenderer.GetMaskSRV());
+        PostProcessOutlineRenderer.EndFrame();
     }
 }
 

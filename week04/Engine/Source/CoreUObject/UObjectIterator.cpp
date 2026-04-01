@@ -1,25 +1,25 @@
 #include "CoreUObject/UObjectIterator.h"
 
-FUObjectIteratorBase::FUObjectIteratorBase(const void* InClass)
+FObjectIteratorBase::FObjectIteratorBase(const void* InClass)
 {
     ClassToIterate = InClass;
     Advance();
 }
 
-FUObjectIteratorBase& FUObjectIteratorBase::operator++()
+FObjectIteratorBase& FObjectIteratorBase::operator++()
 {
     Advance();
     return *this;
 }
 
-FUObjectIteratorBase FUObjectIteratorBase::operator++(int)
+FObjectIteratorBase FObjectIteratorBase::operator++(int)
 {
-    FUObjectIteratorBase Temp = *this;
+    FObjectIteratorBase Temp = *this;
     Advance();
     return Temp;
 }
 
-void FUObjectIteratorBase::Advance(void)
+void FObjectIteratorBase::Advance(void)
 {
     while (++Index < GUObjectArray.Num())
     {
@@ -46,7 +46,7 @@ void FUObjectIteratorBase::Advance(void)
     CurrentObject = nullptr;
 }
 
-void TUObjectIterator<UObject>::Advance(void)
+void TObjectIterator<UObject>::Advance(void)
 {
     while (++Index < GUObjectArray.Num())
     {
