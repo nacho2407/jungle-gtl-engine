@@ -158,6 +158,9 @@
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorMaterialWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -368,6 +371,9 @@
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp">
       <Filter>Source\Engine\Slate</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Slate\SSplitterCross.cpp">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Slate\SSplitterH.cpp">
       <Filter>Source\Engine\Slate</Filter>
     </ClCompile>
@@ -432,11 +438,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorMaterialWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
-    <ClCompile Include="Source\Engine\Slate\SSplitterCross.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -461,6 +462,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorMaterialWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
@@ -793,6 +797,9 @@
     <ClInclude Include="Source\Engine\Slate\SSplitter.h">
       <Filter>Source\Engine\Slate</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Slate\SSplitterCross.h">
+      <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Slate\SSplitterH.h">
       <Filter>Source\Engine\Slate</Filter>
     </ClInclude>
@@ -868,11 +875,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorMaterialWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
-    <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
-    <ClInclude Include="Source\Engine\Slate\SSplitterCross.h" />
   </ItemGroup>
 </Project>
