@@ -6,46 +6,16 @@
 
 class AActor;
 
+enum EGizmoMode
+{
+	Translate,
+	Rotate,
+	Scale,
+	End
+};
+
 class UGizmoComponent : public UPrimitiveComponent
 {
-
-public:
-	enum EGizmoMode
-	{
-		Translate,
-		Rotate,
-		Scale,
-		End
-	};
-
-private:
-	AActor* TargetActor = nullptr;
-	const TArray<AActor*>* AllSelectedActors = nullptr;
-	EGizmoMode CurMode = EGizmoMode::Translate;
-	FVector LastIntersectionLocation;
-	const float AxisLength = 1.0f;
-	float Radius = 0.1f;
-	const float ScaleSensitivity = 1.0f;
-	static constexpr float GizmoScreenScale = 0.15f; // 화면 대비 기즈모 크기 비율
-	int32 SelectedAxis = -1;
-	bool bIsFirstFrameOfDrag = true;
-	bool bIsHolding = false;
-	bool bIsWorldSpace = true;
-	bool bPressedOnHandle = false;
-	const FMeshData* MeshData = nullptr;
-	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — 기본 전부 표시
-
-	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
-
-	//Control Target Method
-	void HandleDrag(float DragAmount);
-	void TranslateTarget(float DragAmount);
-	void RotateTarget(float DragAmount);
-	void ScaleTarget(float DragAmount);
-
-	void UpdateLinearDrag(const FRay& Ray);
-	void UpdateAngularDrag(const FRay& Ray);
-
 public:
 	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
 	UGizmoComponent();
@@ -96,4 +66,33 @@ public:
 	FMeshBuffer* GetMeshBuffer() const override;
 	void CollectRender(FRenderBus& Bus) const override;
 	void CollectSelection(FRenderBus& Bus) const override {}  // Gizmo는 선택 이펙트 없음
+
+private:
+	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
+
+	//Control Target Method
+	void HandleDrag(float DragAmount);
+	void TranslateTarget(float DragAmount);
+	void RotateTarget(float DragAmount);
+	void ScaleTarget(float DragAmount);
+
+	void UpdateLinearDrag(const FRay& Ray);
+	void UpdateAngularDrag(const FRay& Ray);
+
+private:
+	AActor* TargetActor = nullptr;
+	const TArray<AActor*>* AllSelectedActors = nullptr;
+	EGizmoMode CurMode = EGizmoMode::Translate;
+	FVector LastIntersectionLocation;
+	const float AxisLength = 1.0f;
+	float Radius = 0.1f;
+	const float ScaleSensitivity = 1.0f;
+	static constexpr float GizmoScreenScale = 0.15f; // 화면 대비 기즈모 크기 비율
+	int32 SelectedAxis = -1;
+	bool bIsFirstFrameOfDrag = true;
+	bool bIsHolding = false;
+	bool bIsWorldSpace = true;
+	bool bPressedOnHandle = false;
+	const FMeshData* MeshData = nullptr;
+	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — 기본 전부 표시
 };

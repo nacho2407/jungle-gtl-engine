@@ -8,7 +8,8 @@
 class UWorld;
 class UPrimitiveComponent;
 
-class AActor : public UObject {
+class AActor : public UObject
+{
 public:
 	DECLARE_CLASS(AActor, UObject)
 	AActor() = default;
@@ -46,38 +47,18 @@ public:
 	// Transform — Location
 	FVector GetActorLocation() const;
 	void SetActorLocation(const FVector& Location);
-	void AddActorWorldOffset(const FVector& Delta)
-	{
-		if (RootComponent) RootComponent->AddWorldOffset(Delta);
-	}
+	void AddActorWorldOffset(const FVector& Delta);
 
 	// Transform — Rotation
-	FVector GetActorRotation() const
-	{
-		return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
-	}
-	void SetActorRotation(const FVector& NewRotation)
-	{
-		if (RootComponent) RootComponent->SetRelativeRotation(NewRotation);
-	}
+	FVector GetActorRotation() const;
+	void SetActorRotation(const FVector& NewRotation);
 
 	// Transform — Scale
-	FVector GetActorScale() const
-	{
-		return RootComponent ? RootComponent->GetRelativeScale() : FVector(1, 1, 1);
-	}
-	void SetActorScale(const FVector& NewScale)
-	{
-		if (RootComponent) RootComponent->SetRelativeScale(NewScale);
-	}
+	FVector GetActorScale() const;
+	void SetActorScale(const FVector& NewScale);
 
 	// Direction
-	FVector GetActorForward() const
-	{
-		if (RootComponent)
-			return RootComponent->GetForwardVector();
-		return FVector(0, 0, 1);
-	}
+	FVector GetActorForward() const;
 
 	void SetWorld(UWorld* World) { OwningWorld = World; }
 	UWorld* GetWorld() const { return OwningWorld; }
