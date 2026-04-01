@@ -7,6 +7,9 @@
     <Filter Include="Source\Actor">
       <UniqueIdentifier>{fdf9760a-55b6-437a-ee71-e2ab34f8bb89}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Asset">
+      <UniqueIdentifier>{7b0f19cf-8606-575b-b6eb-d0959bf8d98c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Camera">
       <UniqueIdentifier>{5186471f-4dfb-b6f6-7c10-0e7ad54c1e4e}</UniqueIdentifier>
     </Filter>
@@ -61,6 +64,18 @@
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{889e92e0-4c84-fc5a-a876-5e7c393d8520}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\assimp">
+      <UniqueIdentifier>{dfd72cde-5aa6-fc44-7feb-6d73ecbb1860}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\assimp\Compiler">
+      <UniqueIdentifier>{03338e36-08dd-34e4-3b45-3b85b2830047}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\assimp\port">
+      <UniqueIdentifier>{d7cd2181-17e9-4a60-6d42-6e11fade2ae5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\assimp\port\AndroidJNI">
+      <UniqueIdentifier>{3ea053b2-a4e1-dece-7a2e-a471b586a201}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\nlohmann">
       <UniqueIdentifier>{c70e54eb-75c7-d408-4bdc-b003f49af18a}</UniqueIdentifier>
     </Filter>
@@ -68,6 +83,30 @@
   <ItemGroup>
     <ClCompile Include="Source\Actor\Actor.cpp">
       <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\CubeActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\PlaneActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\SkySphereActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\SphereActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\StaticMeshActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\SubUVActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\TextActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Asset\ObjManager.cpp">
+      <Filter>Source\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Camera\Camera.cpp">
       <Filter>Source\Camera</Filter>
@@ -79,6 +118,9 @@
       <Filter>Source\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Component\LineBatchComponent.cpp">
+      <Filter>Source\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Component\MeshComponent.cpp">
       <Filter>Source\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Component\PrimitiveComponent.cpp">
@@ -93,7 +135,13 @@
     <ClCompile Include="Source\Component\SkyComponent.cpp">
       <Filter>Source\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Component\StaticMeshComponent.cpp">
+      <Filter>Source\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Component\SubUVComponent.cpp">
+      <Filter>Source\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Component\TextComponent.cpp">
       <Filter>Source\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Component\UUIDBillboardComponent.cpp">
@@ -102,10 +150,22 @@
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Engine.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\EngineLoop.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\GameEngine.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Core\Paths.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\ShowFlags.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Timer.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\ViewportClient.cpp">
@@ -168,6 +228,15 @@
     <ClCompile Include="Source\Platform\Windows\PlatformGlobals.cpp">
       <Filter>Source\Platform\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Primitive\PrimitiveGizmo.cpp">
       <Filter>Source\Primitive</Filter>
     </ClCompile>
@@ -183,7 +252,13 @@
     <ClCompile Include="Source\Renderer\MaterialManager.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\MeshData.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\RenderCommand.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\RenderMesh.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\RenderState.cpp">
@@ -231,28 +306,6 @@
     <ClCompile Include="Source\World\World.cpp">
       <Filter>Source\World</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Component\TextComponent.cpp">
-      <Filter>Source\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Component\StaticMeshComponent.cpp" />
-    <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
-    <ClCompile Include="Source\Renderer\MeshData.cpp" />
-    <ClCompile Include="Source\Asset\ObjManager.cpp" />
-    <ClCompile Include="Source\Actor\StaticMeshActor.cpp" />
-    <ClCompile Include="Source\Core\EngineLoop.cpp" />
-    <ClCompile Include="Source\Core\GameEngine.cpp" />
-    <ClCompile Include="Source\Core\Engine.cpp" />
-    <ClCompile Include="Source\Core\Timer.cpp" />
-    <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp" />
-    <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp" />
-    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp" />
-    <ClCompile Include="Source\Actor\CubeActor.cpp" />
-    <ClCompile Include="Source\Actor\SphereActor.cpp" />
-    <ClCompile Include="Source\Actor\PlaneActor.cpp" />
-    <ClCompile Include="Source\Actor\SubUVActor.cpp" />
-    <ClCompile Include="Source\Actor\TextActor.cpp" />
-    <ClCompile Include="Source\Actor\SkySphereActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -264,6 +317,30 @@
     <ClInclude Include="Source\Actor\Actor.h">
       <Filter>Source\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Actor\CubeActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\PlaneActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\SkySphereActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\SphereActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\StaticMeshActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\SubUVActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\TextActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\ObjManager.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Camera\Camera.h">
       <Filter>Source\Camera</Filter>
     </ClInclude>
@@ -274,6 +351,9 @@
       <Filter>Source\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Component\LineBatchComponent.h">
+      <Filter>Source\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\MeshComponent.h">
       <Filter>Source\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Component\PrimitiveComponent.h">
@@ -288,7 +368,13 @@
     <ClInclude Include="Source\Component\SkyComponent.h">
       <Filter>Source\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Component\StaticMeshComponent.h">
+      <Filter>Source\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Component\SubUVComponent.h">
+      <Filter>Source\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\TextComponent.h">
       <Filter>Source\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Component\UUIDBillboardComponent.h">
@@ -297,10 +383,22 @@
     <ClInclude Include="Source\Core\ConsoleVariableManager.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Engine.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\EngineLoop.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\GameEngine.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Core\Paths.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\ShowFlags.h">
+      <Filter>Source\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Timer.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\ViewportClient.h">
@@ -387,6 +485,15 @@
     <ClInclude Include="Source\Platform\Windows\WindowTypes.h">
       <Filter>Source\Platform\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Platform\Windows\WindowsWindow.h">
+      <Filter>Source\Platform\Windows</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Primitive\PrimitiveGizmo.h">
       <Filter>Source\Primitive</Filter>
     </ClInclude>
@@ -402,7 +509,13 @@
     <ClInclude Include="Source\Renderer\MaterialManager.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\MeshData.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\RenderCommand.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderMesh.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\RenderState.h">
@@ -438,6 +551,9 @@
     <ClInclude Include="Source\Renderer\TextureVertex.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\Vertex.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Scene\RenderCollector.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
@@ -445,6 +561,9 @@
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Scene\SceneContext.h">
+      <Filter>Source\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scene\WorldTypes.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Serializer\Archive.h">
@@ -495,33 +614,279 @@
     <ClInclude Include="ThirdParty\stb_image.h">
       <Filter>ThirdParty</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\AssertHandler.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Base64.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\BaseImporter.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Bitmap.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\BlobIOSystem.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ByteSwapper.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ColladaMetaData.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\CreateAnimMesh.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\DefaultIOStream.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\DefaultIOSystem.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\DefaultLogger.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Exceptional.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Exporter.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\GenericProperty.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\GltfMaterial.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Hash.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\IOStream.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\IOStreamBuffer.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\IOSystem.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Importer.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\LineSplitter.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\LogAux.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\LogStream.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Logger.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\MathFunctions.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\MemoryIOWrapper.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\NullLogger.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ObjMaterial.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ParsingUtils.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Profiler.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ProgressHandler.hpp">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\RemoveComments.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SGSpatialSort.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SceneCombiner.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SkeletonMeshBuilder.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SmallVector.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SmoothingGroups.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SmoothingGroups.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\SpatialSort.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\StandardShapes.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\StreamReader.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\StreamWriter.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\StringComparison.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\StringUtils.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Subdivision.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\TinyFormatter.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Vertex.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\XMLTools.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\XmlParser.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ZipArchiveIOSystem.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\aabb.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\ai_assert.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\anim.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\camera.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\cexport.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\cfileio.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\cimport.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\color4.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\color4.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\commonMetaData.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\defs.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\fast_atof.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\importerdesc.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\light.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\material.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\material.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\matrix3x3.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\matrix3x3.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\matrix4x4.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\matrix4x4.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\mesh.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\metadata.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\pbrmaterial.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\postprocess.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\qnan.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\quaternion.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\quaternion.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\scene.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\texture.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\types.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\vector2.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\vector2.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\vector3.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\vector3.inl">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\version.h">
+      <Filter>ThirdParty\assimp</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Compiler\poppack1.h">
+      <Filter>ThirdParty\assimp\Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Compiler\pstdint.h">
+      <Filter>ThirdParty\assimp\Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\Compiler\pushpack1.h">
+      <Filter>ThirdParty\assimp\Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\port\AndroidJNI\AndroidJNIIOSystem.h">
+      <Filter>ThirdParty\assimp\port\AndroidJNI</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\assimp\port\AndroidJNI\BundledAssetIOSystem.h">
+      <Filter>ThirdParty\assimp\port\AndroidJNI</Filter>
+    </ClInclude>
     <ClInclude Include="ThirdParty\nlohmann\json.hpp">
       <Filter>ThirdParty\nlohmann</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Component\TextComponent.h">
-      <Filter>Source\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Component\StaticMeshComponent.h" />
-    <ClInclude Include="Source\Renderer\RenderMesh.h" />
-    <ClInclude Include="Source\Renderer\Vertex.h" />
-    <ClInclude Include="Source\Renderer\MeshData.h" />
-    <ClInclude Include="Source\Asset\ObjManager.h" />
-    <ClInclude Include="Source\Actor\StaticMeshActor.h" />
-    <ClInclude Include="Source\Core\EngineLoop.h" />
-    <ClInclude Include="Source\Core\GameEngine.h" />
-    <ClInclude Include="Source\Core\Engine.h" />
-    <ClInclude Include="Source\Core\Timer.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowsWindow.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h" />
-    <ClInclude Include="Source\Scene\WorldTypes.h" />
-    <ClInclude Include="Source\Actor\CubeActor.h" />
-    <ClInclude Include="Source\Actor\SphereActor.h" />
-    <ClInclude Include="Source\Actor\PlaneActor.h" />
-    <ClInclude Include="Source\Actor\SubUVActor.h" />
-    <ClInclude Include="Source\Actor\TextActor.h" />
-    <ClInclude Include="Source\Actor\SkySphereActor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

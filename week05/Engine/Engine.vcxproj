@@ -19,36 +19,37 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\CoreMinimal.h" />
+    <ClInclude Include="Source\EngineAPI.h" />
+    <ClInclude Include="Source\Actor\Actor.h" />
     <ClInclude Include="Source\Actor\CubeActor.h" />
     <ClInclude Include="Source\Actor\PlaneActor.h" />
     <ClInclude Include="Source\Actor\SkySphereActor.h" />
     <ClInclude Include="Source\Actor\SphereActor.h" />
+    <ClInclude Include="Source\Actor\StaticMeshActor.h" />
     <ClInclude Include="Source\Actor\SubUVActor.h" />
     <ClInclude Include="Source\Actor\TextActor.h" />
-    <ClInclude Include="Source\Core\EngineLoop.h" />
-    <ClInclude Include="Source\Core\GameEngine.h" />
-    <ClInclude Include="Source\Actor\StaticMeshActor.h" />
-    <ClInclude Include="Source\Component\TextComponent.h" />
-    <ClInclude Include="Source\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Component\StaticMeshComponent.h" />
-    <ClInclude Include="Source\CoreMinimal.h" />
-    <ClInclude Include="Source\EngineAPI.h" />
-    <ClInclude Include="Source\Actor\Actor.h" />
+    <ClInclude Include="Source\Asset\ObjManager.h" />
     <ClInclude Include="Source\Camera\Camera.h" />
     <ClInclude Include="Source\Component\ActorComponent.h" />
     <ClInclude Include="Source\Component\CameraComponent.h" />
     <ClInclude Include="Source\Component\LineBatchComponent.h" />
+    <ClInclude Include="Source\Component\MeshComponent.h" />
     <ClInclude Include="Source\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Component\RandomColorComponent.h" />
     <ClInclude Include="Source\Component\SceneComponent.h" />
     <ClInclude Include="Source\Component\SkyComponent.h" />
+    <ClInclude Include="Source\Component\StaticMeshComponent.h" />
     <ClInclude Include="Source\Component\SubUVComponent.h" />
+    <ClInclude Include="Source\Component\TextComponent.h" />
     <ClInclude Include="Source\Component\UUIDBillboardComponent.h" />
     <ClInclude Include="Source\Core\ConsoleVariableManager.h" />
     <ClInclude Include="Source\Core\Engine.h" />
-    <ClInclude Include="Source\Core\Timer.h" />
+    <ClInclude Include="Source\Core\EngineLoop.h" />
+    <ClInclude Include="Source\Core\GameEngine.h" />
     <ClInclude Include="Source\Core\Paths.h" />
     <ClInclude Include="Source\Core\ShowFlags.h" />
+    <ClInclude Include="Source\Core\Timer.h" />
     <ClInclude Include="Source\Core\ViewportClient.h" />
     <ClInclude Include="Source\Debug\DebugDrawManager.h" />
     <ClInclude Include="Source\Debug\EngineLog.h" />
@@ -74,13 +75,12 @@
     <ClInclude Include="Source\Object\ObjectGlobals.h" />
     <ClInclude Include="Source\Object\ObjectManager.h" />
     <ClInclude Include="Source\Object\ObjectTypes.h" />
-    <ClInclude Include="Source\Asset\ObjManager.h" />
     <ClInclude Include="Source\Physics\PhysicsManager.h" />
     <ClInclude Include="Source\Platform\Windows\PlatformGlobals.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowTypes.h" />
+    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h" />
     <ClInclude Include="Source\Platform\Windows\WindowsEngineLaunch.h" />
     <ClInclude Include="Source\Platform\Windows\WindowsWindow.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowsApplication.h" />
-    <ClInclude Include="Source\Platform\Windows\WindowTypes.h" />
     <ClInclude Include="Source\Primitive\PrimitiveGizmo.h" />
     <ClInclude Include="Source\Primitive\UnrealEditorStyledGizmo.h" />
     <ClInclude Include="Source\Renderer\FontAtlas.h" />
@@ -121,37 +121,128 @@
     <ClInclude Include="Source\World\World.h" />
     <ClInclude Include="Source\World\WorldContext.h" />
     <ClInclude Include="ThirdParty\stb_image.h" />
+    <ClInclude Include="ThirdParty\assimp\AssertHandler.h" />
+    <ClInclude Include="ThirdParty\assimp\Base64.hpp" />
+    <ClInclude Include="ThirdParty\assimp\BaseImporter.h" />
+    <ClInclude Include="ThirdParty\assimp\Bitmap.h" />
+    <ClInclude Include="ThirdParty\assimp\BlobIOSystem.h" />
+    <ClInclude Include="ThirdParty\assimp\ByteSwapper.h" />
+    <ClInclude Include="ThirdParty\assimp\ColladaMetaData.h" />
+    <ClInclude Include="ThirdParty\assimp\CreateAnimMesh.h" />
+    <ClInclude Include="ThirdParty\assimp\DefaultIOStream.h" />
+    <ClInclude Include="ThirdParty\assimp\DefaultIOSystem.h" />
+    <ClInclude Include="ThirdParty\assimp\DefaultLogger.hpp" />
+    <ClInclude Include="ThirdParty\assimp\Exceptional.h" />
+    <ClInclude Include="ThirdParty\assimp\Exporter.hpp" />
+    <ClInclude Include="ThirdParty\assimp\GenericProperty.h" />
+    <ClInclude Include="ThirdParty\assimp\GltfMaterial.h" />
+    <ClInclude Include="ThirdParty\assimp\Hash.h" />
+    <ClInclude Include="ThirdParty\assimp\IOStream.hpp" />
+    <ClInclude Include="ThirdParty\assimp\IOStreamBuffer.h" />
+    <ClInclude Include="ThirdParty\assimp\IOSystem.hpp" />
+    <ClInclude Include="ThirdParty\assimp\Importer.hpp" />
+    <ClInclude Include="ThirdParty\assimp\LineSplitter.h" />
+    <ClInclude Include="ThirdParty\assimp\LogAux.h" />
+    <ClInclude Include="ThirdParty\assimp\LogStream.hpp" />
+    <ClInclude Include="ThirdParty\assimp\Logger.hpp" />
+    <ClInclude Include="ThirdParty\assimp\MathFunctions.h" />
+    <ClInclude Include="ThirdParty\assimp\MemoryIOWrapper.h" />
+    <ClInclude Include="ThirdParty\assimp\NullLogger.hpp" />
+    <ClInclude Include="ThirdParty\assimp\ObjMaterial.h" />
+    <ClInclude Include="ThirdParty\assimp\ParsingUtils.h" />
+    <ClInclude Include="ThirdParty\assimp\Profiler.h" />
+    <ClInclude Include="ThirdParty\assimp\ProgressHandler.hpp" />
+    <ClInclude Include="ThirdParty\assimp\RemoveComments.h" />
+    <ClInclude Include="ThirdParty\assimp\SGSpatialSort.h" />
+    <ClInclude Include="ThirdParty\assimp\SceneCombiner.h" />
+    <ClInclude Include="ThirdParty\assimp\SkeletonMeshBuilder.h" />
+    <ClInclude Include="ThirdParty\assimp\SmallVector.h" />
+    <ClInclude Include="ThirdParty\assimp\SmoothingGroups.h" />
+    <ClInclude Include="ThirdParty\assimp\SmoothingGroups.inl" />
+    <ClInclude Include="ThirdParty\assimp\SpatialSort.h" />
+    <ClInclude Include="ThirdParty\assimp\StandardShapes.h" />
+    <ClInclude Include="ThirdParty\assimp\StreamReader.h" />
+    <ClInclude Include="ThirdParty\assimp\StreamWriter.h" />
+    <ClInclude Include="ThirdParty\assimp\StringComparison.h" />
+    <ClInclude Include="ThirdParty\assimp\StringUtils.h" />
+    <ClInclude Include="ThirdParty\assimp\Subdivision.h" />
+    <ClInclude Include="ThirdParty\assimp\TinyFormatter.h" />
+    <ClInclude Include="ThirdParty\assimp\Vertex.h" />
+    <ClInclude Include="ThirdParty\assimp\XMLTools.h" />
+    <ClInclude Include="ThirdParty\assimp\XmlParser.h" />
+    <ClInclude Include="ThirdParty\assimp\ZipArchiveIOSystem.h" />
+    <ClInclude Include="ThirdParty\assimp\aabb.h" />
+    <ClInclude Include="ThirdParty\assimp\ai_assert.h" />
+    <ClInclude Include="ThirdParty\assimp\anim.h" />
+    <ClInclude Include="ThirdParty\assimp\camera.h" />
+    <ClInclude Include="ThirdParty\assimp\cexport.h" />
+    <ClInclude Include="ThirdParty\assimp\cfileio.h" />
+    <ClInclude Include="ThirdParty\assimp\cimport.h" />
+    <ClInclude Include="ThirdParty\assimp\color4.h" />
+    <ClInclude Include="ThirdParty\assimp\color4.inl" />
+    <ClInclude Include="ThirdParty\assimp\commonMetaData.h" />
+    <ClInclude Include="ThirdParty\assimp\defs.h" />
+    <ClInclude Include="ThirdParty\assimp\fast_atof.h" />
+    <ClInclude Include="ThirdParty\assimp\importerdesc.h" />
+    <ClInclude Include="ThirdParty\assimp\light.h" />
+    <ClInclude Include="ThirdParty\assimp\material.h" />
+    <ClInclude Include="ThirdParty\assimp\material.inl" />
+    <ClInclude Include="ThirdParty\assimp\matrix3x3.h" />
+    <ClInclude Include="ThirdParty\assimp\matrix3x3.inl" />
+    <ClInclude Include="ThirdParty\assimp\matrix4x4.h" />
+    <ClInclude Include="ThirdParty\assimp\matrix4x4.inl" />
+    <ClInclude Include="ThirdParty\assimp\mesh.h" />
+    <ClInclude Include="ThirdParty\assimp\metadata.h" />
+    <ClInclude Include="ThirdParty\assimp\pbrmaterial.h" />
+    <ClInclude Include="ThirdParty\assimp\postprocess.h" />
+    <ClInclude Include="ThirdParty\assimp\qnan.h" />
+    <ClInclude Include="ThirdParty\assimp\quaternion.h" />
+    <ClInclude Include="ThirdParty\assimp\quaternion.inl" />
+    <ClInclude Include="ThirdParty\assimp\scene.h" />
+    <ClInclude Include="ThirdParty\assimp\texture.h" />
+    <ClInclude Include="ThirdParty\assimp\types.h" />
+    <ClInclude Include="ThirdParty\assimp\vector2.h" />
+    <ClInclude Include="ThirdParty\assimp\vector2.inl" />
+    <ClInclude Include="ThirdParty\assimp\vector3.h" />
+    <ClInclude Include="ThirdParty\assimp\vector3.inl" />
+    <ClInclude Include="ThirdParty\assimp\version.h" />
+    <ClInclude Include="ThirdParty\assimp\Compiler\poppack1.h" />
+    <ClInclude Include="ThirdParty\assimp\Compiler\pstdint.h" />
+    <ClInclude Include="ThirdParty\assimp\Compiler\pushpack1.h" />
+    <ClInclude Include="ThirdParty\assimp\port\AndroidJNI\AndroidJNIIOSystem.h" />
+    <ClInclude Include="ThirdParty\assimp\port\AndroidJNI\BundledAssetIOSystem.h" />
     <ClInclude Include="ThirdParty\nlohmann\json.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Actor\Actor.cpp" />
     <ClCompile Include="Source\Actor\CubeActor.cpp" />
     <ClCompile Include="Source\Actor\PlaneActor.cpp" />
     <ClCompile Include="Source\Actor\SkySphereActor.cpp" />
     <ClCompile Include="Source\Actor\SphereActor.cpp" />
+    <ClCompile Include="Source\Actor\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Actor\SubUVActor.cpp" />
     <ClCompile Include="Source\Actor\TextActor.cpp" />
-    <ClCompile Include="Source\Core\EngineLoop.cpp" />
-    <ClCompile Include="Source\Core\GameEngine.cpp" />
-    <ClCompile Include="Source\Actor\Actor.cpp" />
-    <ClCompile Include="Source\Actor\StaticMeshActor.cpp" />
+    <ClCompile Include="Source\Asset\ObjManager.cpp" />
     <ClCompile Include="Source\Camera\Camera.cpp" />
     <ClCompile Include="Source\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Component\LineBatchComponent.cpp" />
+    <ClCompile Include="Source\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Component\RandomColorComponent.cpp" />
     <ClCompile Include="Source\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Component\SkyComponent.cpp" />
+    <ClCompile Include="Source\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Component\TextComponent.cpp" />
-    <ClCompile Include="Source\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Component\UUIDBillboardComponent.cpp" />
     <ClCompile Include="Source\Core\ConsoleVariableManager.cpp" />
     <ClCompile Include="Source\Core\Engine.cpp" />
-    <ClCompile Include="Source\Core\Timer.cpp" />
+    <ClCompile Include="Source\Core\EngineLoop.cpp" />
+    <ClCompile Include="Source\Core\GameEngine.cpp" />
     <ClCompile Include="Source\Core\Paths.cpp" />
     <ClCompile Include="Source\Core\ShowFlags.cpp" />
+    <ClCompile Include="Source\Core\Timer.cpp" />
     <ClCompile Include="Source\Core\ViewportClient.cpp" />
     <ClCompile Include="Source\Debug\DebugDrawManager.cpp" />
     <ClCompile Include="Source\Debug\EngineLog.cpp" />
@@ -170,12 +261,11 @@
     <ClCompile Include="Source\Object\ObjectFactory.cpp" />
     <ClCompile Include="Source\Object\ObjectGlobals.cpp" />
     <ClCompile Include="Source\Object\ObjectManager.cpp" />
-    <ClCompile Include="Source\Asset\ObjManager.cpp" />
     <ClCompile Include="Source\Physics\PhysicsManager.cpp" />
     <ClCompile Include="Source\Platform\Windows\PlatformGlobals.cpp" />
+    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\Platform\Windows\WindowsEngineLaunch.cpp" />
     <ClCompile Include="Source\Platform\Windows\WindowsWindow.cpp" />
-    <ClCompile Include="Source\Platform\Windows\WindowsApplication.cpp" />
     <ClCompile Include="Source\Primitive\PrimitiveGizmo.cpp" />
     <ClCompile Include="Source\Primitive\UnrealEditorStyledGizmo.cpp" />
     <ClCompile Include="Source\Renderer\FontAtlas.cpp" />
@@ -264,7 +354,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -294,7 +383,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -312,7 +400,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

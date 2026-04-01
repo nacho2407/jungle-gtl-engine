@@ -2,12 +2,7 @@
 
 #include "EditorEngine.h"
 #include "Gizmo/Gizmo.h"
-#include "Slate/SlateApplication.h"
 #include "Viewport/EditorViewportClient.h"
-#include "Viewport/EditorViewportRegistry.h"
-#include "Viewport/Viewport.h"
-
-#include <algorithm>
 
 FTransformWidget::FTransformWidget(FEditorEngine* InEngine, FEditorViewportClient* InViewportClient) :
 	Engine(InEngine), ViewportClient(InViewportClient)
@@ -66,12 +61,29 @@ bool FTransformWidget::HitTest(FPoint Point) const
 	return ContainsPoint(GetExpandedInteractiveRect(), Point);
 }
 
+void FTransformWidget::SetWidgetRect(const FRect& InRect)
+{
+	Rect = InRect;
+	UpdateGeometry();
+}
+
+FRect FTransformWidget::GetInteractiveRect() const
+{
+	return GetExpandedInteractiveRect();
+}
+
+int32 FTransformWidget::GetDesiredWidth() const
+{
+	return Padding * 3 + ButtonSize * 4 + Gap * 2;
+}
+
 void FTransformWidget::SyncSelectionState()
 {
 	const bool bEnabled = (ViewportClient != nullptr);
 
 	EGizmoMode Mode = EGizmoMode::Location;
 	if (ViewportClient) Mode = ViewportClient->GetGizmoMode();
+	else return;
 
 	auto Configure = [bEnabled](SButton& Button, bool bActive)
 		{
@@ -108,8 +120,7 @@ void FTransformWidget::SyncSelectionState()
 
 void FTransformWidget::UpdateGeometry()
 {
-	FRect NewRect;
-	if (!ComputeButtonsRect(NewRect))
+	if (!Rect.IsValid())
 	{
 		Rect = { 0, 0, 0, 0 };
 		TranslateModeButton.Rect = { 0, 0, 0, 0 };
@@ -118,8 +129,6 @@ void FTransformWidget::UpdateGeometry()
 		ToggleCoordModeButton.Rect = { 0, 0, 0, 0 };
 		return;
 	}
-
-	Rect = NewRect;
 
 	const int32 RowY = Rect.Y + (Rect.Height - ButtonSize) / 2;
 	int32 CursorX = Rect.X + Padding;
@@ -171,50 +180,6 @@ void FTransformWidget::ToggleCoordMode()
 bool FTransformWidget::HandleButtonMouse(SButton& Button, int32 X, int32 Y)
 {
 	return Button.OnMouseDown(X, Y);
-}
-
-bool FTransformWidget::ComputeButtonsRect(FRect& OutRect) const
-{
-	if (!Engine) return false;
-
-	const auto& Entries = Engine->GetViewportRegistry().GetEntries();
-
-	int32 MinX = (std::numeric_limits<int32>::max)();
-	int32 MinY = (std::numeric_limits<int32>::max)();
-	int32 MaxX = (std::numeric_limits<int32>::min)();
-	bool bFound = false;
-
-	for (const FViewportEntry& Entry : Entries)
-	{
-		if (!Entry.bActive || !Entry.Viewport)
-		{
-			continue;
-		}
-
-		const FRect& ViewRect = Entry.Viewport->GetRect();
-		if (!ViewRect.IsValid())
-		{
-			continue;
-		}
-
-		bFound = true;
-		MinX = (std::min)(MinX, ViewRect.X);
-		MinY = (std::min)(MinY, ViewRect.Y);
-		MaxX = (std::max)(MaxX, ViewRect.X + ViewRect.Width);
-	}
-
-	if (!bFound)
-	{
-		return false;
-	}
-
-	const int32 Width = Padding * 3 + ButtonSize * 4 + Gap * 2;
-	const int32 HeaderY = (std::max)(0, MinY - HeaderHeight);
-	const int32 X = MaxX - Width - Padding;
-	const int32 Y = HeaderY;
-
-	OutRect = { X, Y + HeaderHeight, Width, HeaderHeight };
-	return true;
 }
 
 FRect FTransformWidget::GetExpandedInteractiveRect() const

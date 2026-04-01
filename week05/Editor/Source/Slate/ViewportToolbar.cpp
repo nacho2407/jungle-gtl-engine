@@ -3,11 +3,9 @@
 #include "Actor/Actor.h"
 #include "EditorEngine.h"
 #include "Viewport/EditorViewportRegistry.h"
-#include "Viewport/Viewport.h"
 #include "Slate/SlateApplication.h"
 
 #include <algorithm>
-#include <limits>
 
 namespace
 {
@@ -54,7 +52,7 @@ namespace
 SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 	: Engine(InEngine)
 {
-	Rect = { 0, 0, 330, HeaderHeight };
+	Rect = { 0, 0, 330, 0 };
 	TitleButton.Text = "Viewport";
 	TitleButton.bEnabled = false;
 	TitleButton.FontSize = 20.0f;
@@ -146,6 +144,22 @@ bool SViewportToolbarWidget::HitTest(FPoint Point) const
 	return ContainsPoint(GetExpandedInteractiveRect(), Point);
 }
 
+void SViewportToolbarWidget::SetHeaderRect(const FRect& InRect)
+{
+	Rect = InRect;
+	UpdateGeometry();
+}
+
+FRect SViewportToolbarWidget::GetInteractiveRect() const
+{
+	return GetExpandedInteractiveRect();
+}
+
+bool SViewportToolbarWidget::HasOpenDropdown() const
+{
+	return LayoutDropdown.IsOpen() || TypeDropdown.IsOpen() || ModeDropdown.IsOpen();
+}
+
 void SViewportToolbarWidget::SyncSelectionState()
 {
 	LayoutDropdown.bEnabled = true;
@@ -172,13 +186,14 @@ void SViewportToolbarWidget::SyncSelectionState()
 
 void SViewportToolbarWidget::UpdateGeometry()
 {
-	FRect HeaderRect;
-	if (!ComputeHeaderRect(HeaderRect))
+	if (!Rect.IsValid())
 	{
+		TitleButton.Rect = { 0, 0, 0, 0 };
+		LayoutDropdown.Rect = { 0, 0, 0, 0 };
+		TypeDropdown.Rect = { 0, 0, 0, 0 };
+		ModeDropdown.Rect = { 0, 0, 0, 0 };
 		return;
 	}
-
-	Rect = HeaderRect;
 
 	const int32 Padding = 8;
 	const int32 Gap = 6;
@@ -191,6 +206,10 @@ void SViewportToolbarWidget::UpdateGeometry()
 	const int32 InnerWidth = Rect.Width - Padding * 2;
 	if (InnerWidth < MinHeaderInnerWidth)
 	{
+		TitleButton.Rect = { 0, 0, 0, 0 };
+		LayoutDropdown.Rect = { 0, 0, 0, 0 };
+		TypeDropdown.Rect = { 0, 0, 0, 0 };
+		ModeDropdown.Rect = { 0, 0, 0, 0 };
 		return;
 	}
 
@@ -206,6 +225,10 @@ void SViewportToolbarWidget::UpdateGeometry()
 		DropdownWidth = DropdownAreaWidth / 3;
 		if (DropdownWidth < MinDropdownWidth)
 		{
+			TitleButton.Rect = { 0, 0, 0, 0 };
+			LayoutDropdown.Rect = { 0, 0, 0, 0 };
+			TypeDropdown.Rect = { 0, 0, 0, 0 };
+			ModeDropdown.Rect = { 0, 0, 0, 0 };
 			return;
 		}
 	}
@@ -300,70 +323,6 @@ FViewportEntry* SViewportToolbarWidget::GetFocusedEntry() const
 	}
 
 	return FocusedEntry;
-}
-
-const FViewportEntry* SViewportToolbarWidget::GetAnchorEntry() const
-{
-	if (FViewportEntry* Focused = GetFocusedEntry())
-	{
-		return Focused;
-	}
-
-	if (!Engine)
-	{
-		return nullptr;
-	}
-
-	for (const FViewportEntry& Entry : Engine->GetViewportRegistry().GetEntries())
-	{
-		if (Entry.bActive)
-		{
-			return &Entry;
-		}
-	}
-
-	return nullptr;
-}
-
-bool SViewportToolbarWidget::ComputeHeaderRect(FRect& OutRect) const
-{
-	if (!Engine)
-	{
-		return false;
-	}
-
-	int32 MinX = (std::numeric_limits<int32>::max)();
-	int32 MinY = (std::numeric_limits<int32>::max)();
-	int32 MaxX = (std::numeric_limits<int32>::min)();
-	bool bFound = false;
-
-	for (const FViewportEntry& Entry : Engine->GetViewportRegistry().GetEntries())
-	{
-		if (!Entry.bActive || !Entry.Viewport)
-		{
-			continue;
-		}
-
-		const FRect& ViewRect = Entry.Viewport->GetRect();
-		if (!ViewRect.IsValid())
-		{
-			continue;
-		}
-
-		bFound = true;
-		MinX = (std::min)(MinX, ViewRect.X);
-		MinY = (std::min)(MinY, ViewRect.Y);
-		MaxX = (std::max)(MaxX, ViewRect.X + ViewRect.Width);
-	}
-
-	if (!bFound)
-	{
-		return false;
-	}
-
-	const int32 HeaderY = (std::max)(0, MinY - HeaderHeight);
-	OutRect = { MinX, HeaderY, MaxX - MinX, HeaderHeight };
-	return true;
 }
 
 void SViewportToolbarWidget::ApplyLayout(EViewportLayout NewLayout)

@@ -212,6 +212,22 @@ void FConsoleWindow::ExecCommand(const char* CommandLine)
 		for (int32 i = First > 0 ? First : 0; i < History.Size; i++)
 			AddLog("%3d: %s\n", i, History[i]);
 	}
+	else if (Stricmp(CommandLine, "stat memory") == 0)
+	{
+		if (DebugState) DebugState->Memory = !DebugState->Memory;
+	}
+	else if (Stricmp(CommandLine, "stat fps") == 0)
+	{
+		if (DebugState) DebugState->FPS = !DebugState->FPS;
+	}
+	else if (Stricmp(CommandLine, "stat none") == 0)
+	{
+		if (DebugState)
+		{
+			DebugState->FPS = false;
+			DebugState->Memory = false;
+		}
+	}
 	else if (CommandHandler)
 	{
 		CommandHandler(CommandLine);

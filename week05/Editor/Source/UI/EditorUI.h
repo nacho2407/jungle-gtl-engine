@@ -7,6 +7,7 @@
 #include "Types/ObjectPtr.h"
 #include "ContentBrowserWindow.h"
 #include "Viewport/ViewportTypes.h"
+#include "EditorDebugState.h"
 
 class FEditorEngine;
 class FWindowsWindow;
@@ -31,6 +32,7 @@ public:
 
 	bool GetCentralDockRect(FRect& OutRect) const;
 	void SaveEditorSettings();
+	const FDebugState& GetDebugState() const { return DebugState; }
 
 private:
 	void BuildDefaultLayout(uint32 DockID);
@@ -54,4 +56,5 @@ private:
 	FRect CentralDockRect;
 	bool bHasCentralDockRect = false;
 	FRenderer* CurrentRenderer = nullptr;
+	FDebugState DebugState;
 };

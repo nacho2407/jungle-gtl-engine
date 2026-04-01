@@ -14,6 +14,10 @@ public:
 	void OnPaint(SWidget& Painter) override;
 	bool OnMouseDown(int32 X, int32 Y) override;
 	bool HitTest(FPoint Point) const override;
+	void SetWidgetRect(const FRect& InRect);
+	FRect GetInteractiveRect() const;
+	int32 GetDesiredWidth() const;
+	int32 GetRightPadding() const { return Padding; }
 
 private:
 	void SyncSelectionState();
@@ -25,7 +29,6 @@ private:
 	void ToggleCoordMode();
 
 	bool HandleButtonMouse(SButton& Button, int32 X, int32 Y);
-	bool ComputeButtonsRect(FRect& OutRect) const;
 
 	FRect GetExpandedInteractiveRect() const;
 
@@ -36,7 +39,6 @@ private:
 	FEditorEngine* Engine = nullptr;
 	FEditorViewportClient* ViewportClient = nullptr;
 
-	int32 HeaderHeight = 34;
 	int32 ButtonSize = 24;
 	int32 Padding = 8;
 	int32 Gap = 6;

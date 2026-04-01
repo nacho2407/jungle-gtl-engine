@@ -72,6 +72,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM,
 void FEditorUI::Initialize(FEditorEngine* InEngine)
 {
 	Engine = InEngine;
+	Console.SetDebugState(&DebugState);
 
 	Property.OnChanged = [this](const FVector& Loc, const FVector& Rot, const FVector& Scl)
 		{
@@ -586,7 +587,7 @@ void FEditorUI::SaveEditorSettings()
 
 std::wstring FEditorUI::GetEditorIniPathW() const
 {
-	return (FPaths::ProjectRoot() / "editor.ini").wstring();
+	return (FPaths::ProjectRoot() / "Editor.ini").wstring();
 }
 
 
@@ -660,10 +661,6 @@ void FEditorUI::Render()
 		{
 			SyncSelectedActorProperty();
 		}
-
-		const FTimer& Timer = Engine->GetTimer();
-		Stat.SetFPS(Timer.GetDisplayFPS());
-		Stat.SetFrameTimeMs(Timer.GetFrameTimeMs());
 	}
 
 	Stat.SetObjectCount(UObject::TotalAllocationCounts);
@@ -955,7 +952,15 @@ void FEditorUI::Render()
 	ControlPanel.Render(Engine);
 	Property.Render(Engine);
 	Console.Render();
-	Stat.Render();
+	if (DebugState.Memory)
+	{
+		FRect StatArea;
+		if (!GetCentralDockRect(StatArea))
+		{
+			StatArea = { 0, 0, 0, 0 };
+		}
+		Stat.Render(StatArea);
+	}
 	Outliner.Render(Engine);
 	ContentBrowser.Render();
 }

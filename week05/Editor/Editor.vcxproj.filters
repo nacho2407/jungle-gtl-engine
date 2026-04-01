@@ -19,11 +19,23 @@
     <Filter Include="Source\Picking">
       <UniqueIdentifier>{f6faa914-edd8-6594-d865-4579e893d626}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Slate">
+      <UniqueIdentifier>{cf7d3844-5ba2-f7cf-1e07-0d093f82c1b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Slate\Widget">
+      <UniqueIdentifier>{26507b7f-923c-4590-6c2c-7144cf307bdf}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Subsystem">
-      <UniqueIdentifier>{8f5e31ae-50f2-4da7-bd3b-7ad0f4ba83bf}</UniqueIdentifier>
+      <UniqueIdentifier>{b33b3264-e52c-7ebb-8008-7a8b4634fe4d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\UI">
       <UniqueIdentifier>{937fbf30-493d-dd10-0906-014ab75451c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport">
+      <UniqueIdentifier>{76033aac-1e00-3e72-af05-fad596f6ac30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Services">
+      <UniqueIdentifier>{6ec40dd4-62ae-d853-e03f-d1386826013d}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty">
       <UniqueIdentifier>{7f8f3604-0e2c-6720-6445-c319ebeb744c}</UniqueIdentifier>
@@ -34,6 +46,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\EditorEngine.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EditorGlobals.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\main.cpp">
@@ -54,6 +69,54 @@
     <ClCompile Include="Source\Picking\Picker.cpp">
       <Filter>Source\Picking</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Slate\EditorViewportOverlay.cpp">
+      <Filter>Source\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\FpsStatWidget.cpp">
+      <Filter>Source\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\SlateApplication.cpp">
+      <Filter>Source\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\TransformWidget.cpp">
+      <Filter>Source\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\ViewportToolbar.cpp">
+      <Filter>Source\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\Button.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\Dropdown.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\HorizontalBox.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\Overlay.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\Painter.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\SViewport.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\SplitterH.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\SplitterV.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\TextBlock.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\VerticalBox.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\Widget.cpp">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Subsystem\EditorCameraSubsystem.cpp">
       <Filter>Source\Subsystem</Filter>
     </ClCompile>
@@ -72,13 +135,7 @@
     <ClCompile Include="Source\UI\EditorUI.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
-      <Filter>Source\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\UI\OutlinerWindow.cpp">
-      <Filter>Source\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\UI\PropertyWindow.cpp">
@@ -86,6 +143,33 @@
     </ClCompile>
     <ClCompile Include="Source\UI\StatWindow.cpp">
       <Filter>Source\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\BlitRenderer.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Viewport.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\ViewportTypes.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Services\EditorViewportAssetInteractionService.cpp">
+      <Filter>Source\Viewport\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Services\EditorViewportInputService.cpp">
+      <Filter>Source\Viewport\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Services\EditorViewportRenderService.cpp">
+      <Filter>Source\Viewport\Services</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
       <Filter>ThirdParty\imgui</Filter>
@@ -108,31 +192,12 @@
     <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp">
       <Filter>ThirdParty\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\EditorGlobals.cpp" />
-    <ClCompile Include="Source\Viewport\Viewport.cpp" />
-    <ClCompile Include="Source\Viewport\ViewportTypes.cpp" />
-    <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
-    <ClCompile Include="Source\Slate\SlateApplication.cpp" />
-    <ClCompile Include="Source\Slate\Widget\SViewport.cpp" />
-    <ClCompile Include="Source\Slate\Widget\SplitterV.cpp" />
-    <ClCompile Include="Source\Slate\Widget\SplitterH.cpp" />
-    <ClCompile Include="Source\Viewport\Services\EditorViewportAssetInteractionService.cpp" />
-    <ClCompile Include="Source\Viewport\Services\EditorViewportInputService.cpp" />
-    <ClCompile Include="Source\Viewport\Services\EditorViewportRenderService.cpp" />
-    <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp" />
-    <ClCompile Include="Source\Slate\Widget\Widget.cpp" />
-    <ClCompile Include="Source\Slate\Widget\Painter.cpp" />
-    <ClCompile Include="Source\Slate\Widget\VerticalBox.cpp" />
-    <ClCompile Include="Source\Slate\Widget\HorizontalBox.cpp" />
-    <ClCompile Include="Source\Slate\Widget\Button.cpp" />
-    <ClCompile Include="Source\Slate\Widget\Dropdown.cpp" />
-    <ClCompile Include="Source\Slate\ViewportToolbar.cpp" />
-    <ClCompile Include="Source\Slate\Widget\TextBlock.cpp" />
-    <ClCompile Include="Source\Slate\Widget\Overlay.cpp" />
-    <ClCompile Include="Source\Slate\TransformWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\EditorEngine.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EditorGlobals.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Axis\AxisRenderer.h">
@@ -150,6 +215,69 @@
     <ClInclude Include="Source\Picking\Picker.h">
       <Filter>Source\Picking</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Slate\EditorViewportOverlay.h">
+      <Filter>Source\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\FpsStatWidget.h">
+      <Filter>Source\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\SlateApplication.h">
+      <Filter>Source\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\TransformWidget.h">
+      <Filter>Source\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\ViewportToolbar.h">
+      <Filter>Source\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Button.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Dropdown.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\HorizontalBox.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Image.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Overlay.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Painter.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Panel.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\SViewport.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Slot.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Splitter.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\SplitterH.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\SplitterV.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\TextBlock.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\VerticalBox.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Widget.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Window.h">
+      <Filter>Source\Slate\Widget</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Subsystem\EditorCameraSubsystem.h">
       <Filter>Source\Subsystem</Filter>
     </ClInclude>
@@ -165,16 +293,13 @@
     <ClInclude Include="Source\UI\ControlPanelWindow.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\UI\EditorDebugState.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\UI\EditorUI.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\EditorViewportClient.h">
-      <Filter>Source\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\UI\OutlinerWindow.h">
-      <Filter>Source\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Viewport\PreviewViewportClient.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\UI\PropertyWindow.h">
@@ -182,6 +307,33 @@
     </ClInclude>
     <ClInclude Include="Source\UI\StatWindow.h">
       <Filter>Source\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\BlitRenderer.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\EditorViewportRegistry.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\PreviewViewportClient.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Viewport.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\ViewportTypes.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h">
+      <Filter>Source\Viewport\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h">
+      <Filter>Source\Viewport\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h">
+      <Filter>Source\Viewport\Services</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
       <Filter>ThirdParty\imgui</Filter>
@@ -207,33 +359,6 @@
     <ClInclude Include="ThirdParty\imgui\imstb_truetype.h">
       <Filter>ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Source\EditorGlobals.h" />
-    <ClInclude Include="Source\Viewport\Viewport.h" />
-    <ClInclude Include="Source\Viewport\ViewportTypes.h" />
-    <ClInclude Include="Source\Viewport\BlitRenderer.h" />
-    <ClInclude Include="Source\Slate\SlateApplication.h" />
-    <ClInclude Include="Source\Slate\Widget\Splitter.h" />
-    <ClInclude Include="Source\Slate\Widget\SViewport.h" />
-    <ClInclude Include="Source\Slate\Widget\Window.h" />
-    <ClInclude Include="Source\Slate\Widget\SplitterH.h" />
-    <ClInclude Include="Source\Slate\Widget\SplitterV.h" />
-    <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h" />
-    <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h" />
-    <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h" />
-    <ClInclude Include="Source\Viewport\EditorViewportRegistry.h" />
-    <ClInclude Include="Source\Slate\Widget\Widget.h" />
-    <ClInclude Include="Source\Slate\Widget\Painter.h" />
-    <ClInclude Include="Source\Slate\Widget\TextBlock.h" />
-    <ClInclude Include="Source\Slate\Widget\Image.h" />
-    <ClInclude Include="Source\Slate\Widget\Slot.h" />
-    <ClInclude Include="Source\Slate\Widget\VerticalBox.h" />
-    <ClInclude Include="Source\Slate\Widget\Panel.h" />
-    <ClInclude Include="Source\Slate\Widget\HorizontalBox.h" />
-    <ClInclude Include="Source\Slate\Widget\Button.h" />
-    <ClInclude Include="Source\Slate\Widget\Dropdown.h" />
-    <ClInclude Include="Source\Slate\ViewportToolbar.h" />
-    <ClInclude Include="Source\Slate\Widget\Overlay.h" />
-    <ClInclude Include="Source\Slate\TransformWidget.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">
