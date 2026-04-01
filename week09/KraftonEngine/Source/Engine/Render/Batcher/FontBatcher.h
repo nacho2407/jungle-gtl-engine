@@ -7,7 +7,6 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/Types/RenderTypes.h"
-#include "Render/Resource/Shader.h"
 #include "Render/Types/VertexTypes.h"
 
 // Texture Atlas UV 정보
@@ -69,8 +68,6 @@ private:
 
 	// 고유 리소스
 	ID3D11SamplerState* SamplerState = nullptr;
-	FShader             FontShader;
-	FShader             OverlayFontShader;
 
 	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드
 	TMap<uint32, FCharacterInfo> CharInfoMap;
