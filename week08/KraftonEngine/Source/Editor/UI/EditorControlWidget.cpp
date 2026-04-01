@@ -62,11 +62,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	// Camera
 	UCameraComponent* Camera = EditorEngine->GetCamera();
-	bool bIsOrtho = Camera->IsOrthogonal();
-	if (ImGui::Checkbox("Orthographic", &bIsOrtho))
-	{
-		Camera->SetOrthographic(bIsOrtho);
-	}
 
 	float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
 	if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
