@@ -138,15 +138,19 @@ namespace Engine::Component
         OverrideSubMaterialNames.clear();
     }
 
-    const FString& UStaticMeshComponent::GetSubMaterialName(uint32 Index) const
+    FString UStaticMeshComponent::GetSubMaterialName(uint32 Index) const
     {
-        static const FString EmptyString = "";
         if (Index < OverrideSubMaterialNames.size())
         {
             return OverrideSubMaterialNames[Index];
         }
 
-        return EmptyString;
+        if (StaticMesh)
+        {
+            return StaticMesh->GetSubMaterialName(Index);
+        }
+
+        return UMeshComponent::GetSubMaterialName(Index);
     }
 
     void UStaticMeshComponent::SetSubMaterialName(uint32 Index, const FString& InSubMaterialName)
@@ -252,15 +256,6 @@ namespace Engine::Component
             return StaticMesh->GetNumSections();
         }
         return UMeshComponent::GetNumMaterials();
-    }
-
-    FString UStaticMeshComponent::GetSubMaterialName(uint32 Index) const
-    {
-        if (StaticMesh)
-        {
-            return StaticMesh->GetSubMaterialName(Index);
-        }
-        return UMeshComponent::GetSubMaterialName(Index);
     }
 
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)

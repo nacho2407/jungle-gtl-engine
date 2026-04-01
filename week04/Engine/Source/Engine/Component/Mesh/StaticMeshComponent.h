@@ -34,7 +34,7 @@ namespace Engine::Component
         // 에디터 및 외부 시스템에서 접근할 수 있도록 경로 관련 함수를 제공합니다.
         FString         GetMeshPath() const;
         void            SetMeshPath(const FString& InPath);
-        const FString&  GetSubMaterialName(uint32 Index) const;
+        FString         GetSubMaterialName(uint32 Index) const override;
         void            SetSubMaterialName(uint32 Index, const FString& InSubMaterialName);
         TArray<FString> GetAvailableSubMaterialNames() const;
 
@@ -43,7 +43,6 @@ namespace Engine::Component
         /** 머티리얼 접근 오버라이드 (컴포넌트에 없으면 에셋의 것을 반환) */
         virtual Asset::UMaterialInterface* GetMaterial(uint32 Index) const override;
         virtual uint32                     GetNumMaterials() const override;
-        virtual FString                    GetSubMaterialName(uint32 Index) const override;
 
       protected:
         virtual bool GetLocalTriangles(TArray<Geometry::FTriangle>& OutTriangles) const override;
