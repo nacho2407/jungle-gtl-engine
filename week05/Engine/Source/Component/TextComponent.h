@@ -39,6 +39,8 @@ public:
 	void MarkTextMeshDirty() { bTextMeshDirty = true; if (TextMesh) TextMesh->bIsDirty = true; }
 	void ClearTextMeshDirty() { bTextMeshDirty = false; }
 
+	void Serialize(FArchive& Ar) override;
+
 protected:
 	FString Text = "Text";
 	FVector4 TextColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);

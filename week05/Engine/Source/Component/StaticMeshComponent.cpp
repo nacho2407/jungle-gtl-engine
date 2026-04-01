@@ -1,8 +1,12 @@
 #include "StaticMeshComponent.h"
+
+#include <filesystem>
+
 #include "Object/Class.h"
 #include "PrimitiveComponent.h"
 #include "MeshComponent.h"
 #include "Asset/ObjManager.h"
+#include "Debug/EngineLog.h"
 #include "Renderer/Material.h"
 IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
 
@@ -48,30 +52,32 @@ FBoxSphereBounds UStaticMeshComponent::CalcBounds(const FMatrix& LocalToWorld) c
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
-	// UMeshComponent::Serialize(Ar);
-	FString AssetName;
+
 	if (Ar.IsSaving())
 	{
+		UMeshComponent::Serialize(Ar);
+
+		FString MeshFileName = "";
 		if (StaticMesh)
 		{
-			AssetName = StaticMesh->GetAssetPathFileName();
+			MeshFileName = std::filesystem::path(StaticMesh->GetAssetPathFileName()).filename().string();
 		}
-		Ar.Serialize("StaticMeshAsset", AssetName);
+		Ar.Serialize("ObjStaticMeshAsset", MeshFileName);
 	}
 	else
 	{
-		if (Ar.Contains("StaticMeshAsset"))
+		if (Ar.Contains("ObjStaticMeshAsset"))
 		{
-			Ar.Serialize("StaticMeshAsset", AssetName);
-		}
-		else
-		{
-			Ar.Serialize("ObjStaticMeshAsset", AssetName);
-		}
+			FString MeshFileName;
+			Ar.Serialize("ObjStaticMeshAsset", MeshFileName);
 
-		if (!AssetName.empty())
-		{
-			SetStaticMesh(FObjManager::LoadStaticMeshAsset(AssetName));
+			if (!MeshFileName.empty())
+			{
+				UE_LOG("여기 들어옴?");
+				UStaticMesh* LoadedMesh = FObjManager::LoadStaticMeshAsset(MeshFileName);
+				SetStaticMesh(LoadedMesh);
+			}
 		}
+		UMeshComponent::Serialize(Ar);
 	}
 }

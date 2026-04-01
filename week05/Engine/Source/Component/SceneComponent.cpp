@@ -1,5 +1,6 @@
 #include "SceneComponent.h"
 #include "Object/Class.h"
+#include "Serializer/Archive.h"
 
 IMPLEMENT_RTTI(USceneComponent, UActorComponent)
 
@@ -54,6 +55,47 @@ const FMatrix& USceneComponent::GetWorldTransform() const
 		UpdateWorldTransform();
 	}
 	return CachedWorldTransform;
+}
+
+void USceneComponent::Serialize(FArchive& Ar)
+{
+	UActorComponent::Serialize(Ar);
+
+	if (Ar.IsSaving())
+	{
+		FVector Location = RelativeTransform.GetTranslation();
+		FVector Rotation = RelativeTransform.Rotator().Euler();
+		FVector Scale = RelativeTransform.GetScale3D();
+
+		Ar.Serialize("Location", Location);
+		Ar.Serialize("Rotation", Rotation);
+		Ar.Serialize("Scale", Scale);
+	}
+	else
+	{
+		FTransform Transform = RelativeTransform;
+
+		if (Ar.Contains("Location"))
+		{
+			FVector Location;
+			Ar.Serialize("Location", Location);
+			Transform.SetTranslation(Location);
+		}
+		if (Ar.Contains("Rotation"))
+		{
+			FVector Rotation;
+			Ar.Serialize("Rotation", Rotation);
+			Transform.SetRotation(FRotator::MakeFromEuler(Rotation));
+		}
+		if (Ar.Contains("Scale"))
+		{
+			FVector Scale;
+			Ar.Serialize("Scale", Scale);
+			Transform.SetScale3D(Scale);
+		}
+
+		SetRelativeTransform(Transform);
+	}
 }
 
 FVector USceneComponent::GetWorldLocation() const

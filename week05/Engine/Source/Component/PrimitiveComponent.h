@@ -30,8 +30,6 @@ public:
 	virtual FBoxSphereBounds GetLocalBounds() const;
 	virtual FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const;
 
-	// virtual void Serialize(FArchive& Ar) override;
-
 	bool ShouldDrawDebugBounds() const { return bDrawDebugBounds; }
 	void SetDrawDebugBounds(bool bEnable) { bDrawDebugBounds = bEnable; }
 
