@@ -234,7 +234,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	Gizmo->UpdateAxisMask(RenderOptions.ViewportType);
 
-	if (InputSystem::Get().GetGuiInputState().bUsingMouse)
+	// 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 드래그 종료를 처리해야 함
+	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding())
 	{
 		return;
 	}
