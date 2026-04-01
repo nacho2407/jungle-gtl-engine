@@ -3,12 +3,16 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <unordered_map>
 
 #include "SimpleJSON/json.hpp"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Component/SceneComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Component/CameraComponent.h"
+#include "GameFramework/StaticMeshActor.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
@@ -85,12 +89,84 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	w[SceneKeys::ContextName] = Ctx.ContextName;
 	w[SceneKeys::ContextHandle] = Ctx.ContextHandle.ToString();
 
+	// ---- Primitives: gather static mesh components into a top-level block
+	JSON Primitives = json::Object();
+	std::unordered_map<AActor*, string> ActorPrimitiveKey;
+
+	for (AActor* Actor : World->GetActors()) {
+		if (!Actor) continue;
+
+		for (UActorComponent* Comp : Actor->GetComponents()) {
+			if (!Comp) continue;
+			if (!Comp->IsA<UStaticMeshComp>()) continue;
+
+			UStaticMeshComp* S = static_cast<UStaticMeshComp*>(Comp);
+
+			JSON p = json::Object();
+
+			const FMatrix& M = S->GetWorldMatrix();
+			FVector loc = M.GetLocation();
+			FVector rot = M.GetEuler();
+			FVector scale = M.GetScale();
+
+			p["ObjStaticMeshAsset"] = S->GetStaticMeshPath();
+
+			JSON locArr = json::Array();
+			locArr.append(static_cast<double>(loc.X));
+			locArr.append(static_cast<double>(loc.Y));
+			locArr.append(static_cast<double>(loc.Z));
+			p["Location"] = locArr;
+
+			JSON rotArr = json::Array();
+			rotArr.append(static_cast<double>(rot.X));
+			rotArr.append(static_cast<double>(rot.Y));
+			rotArr.append(static_cast<double>(rot.Z));
+			p["Rotation"] = rotArr;
+
+			JSON scaleArr = json::Array();
+			scaleArr.append(static_cast<double>(scale.X));
+			scaleArr.append(static_cast<double>(scale.Y));
+			scaleArr.append(static_cast<double>(scale.Z));
+			p["Scale"] = scaleArr;
+
+			p["Type"] = "StaticMeshComp";
+
+			// Note: per design, material/UV overrides are stored on the Actor->RootComponent Properties
+			// and are NOT duplicated inside the Primitives block to avoid redundancy.
+
+			// Use the Actor's UUID as the primitive key to avoid positional/index coupling
+			string key = std::to_string(Actor->GetUUID());
+			Primitives[key] = p;
+			ActorPrimitiveKey[Actor] = key;
+
+			// only first static mesh component per actor is exported as primitive
+			break;
+		}
+	}
+
+	if (Primitives.size() > 0) {
+		w["Primitives"] = Primitives;
+	}
+
+	// ---- Actors: serialize and attach PrimitiveKey when present ----
 	JSON Actors = json::Array();
 	for (AActor* Actor : World->GetActors()) {
 		if (!Actor) continue;
-		Actors.append(SerializeActor(Actor));
+		JSON a = SerializeActor(Actor);
+		auto it = ActorPrimitiveKey.find(Actor);
+		if (it != ActorPrimitiveKey.end()) {
+			a["PrimitiveKey"] = it->second;
+		}
+		Actors.append(a);
 	}
 	w[SceneKeys::Actors] = Actors;
+
+	// ---- Camera: serialize active camera if present ----
+	JSON cam = SerializeCamera(World);
+	if (cam.size() > 0) {
+		w["Camera"] = cam;
+	}
+
 	return w;
 }
 
@@ -147,6 +223,36 @@ json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
 	TArray<FPropertyDescriptor> Descriptors;
 	Comp->GetEditableProperties(Descriptors);
 
+	// Special-case UStaticMeshComp: expose material overrides and UVScrolls as arrays
+	if (Comp->IsA<UStaticMeshComp>()) {
+		JSON materials = json::Array();
+		JSON uvscrolls = json::Array();
+
+		for (const auto& Prop : Descriptors) {
+			// Collect Element N and UVScroll N into arrays instead of numbered keys
+			if (Prop.Name == "Static Mesh") {
+				// Static Mesh is stored in the top-level Primitives block; avoid duplicating it here.
+				continue;
+			}
+			if (Prop.Name.rfind("Element ", 0) == 0) {
+				// Material path
+				FString* Val = static_cast<FString*>(Prop.ValuePtr);
+				materials.append(JSON(*Val));
+				continue;
+			}
+			if (Prop.Name.rfind("UVScroll ", 0) == 0) {
+				uint8_t* Val = static_cast<uint8_t*>(Prop.ValuePtr);
+				uvscrolls.append(JSON(static_cast<bool>(*Val != 0)));
+				continue;
+			}
+			props[Prop.Name] = SerializePropertyValue(Prop);
+		}
+
+		props["OverrideMaterials"] = materials;
+		props["OverrideUVScrolls"] = uvscrolls;
+		return props;
+	}
+
 	for (const auto& Prop : Descriptors) {
 		props[Prop.Name] = SerializePropertyValue(Prop);
 	}
@@ -189,12 +295,149 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	case EPropertyType::Material:
 		return JSON(*static_cast<FString*>(Prop.ValuePtr));
 
+	case EPropertyType::ByteBool:
+		return JSON(static_cast<bool>(*static_cast<uint8_t*>(Prop.ValuePtr) != 0));
+
 	case EPropertyType::Name:
 		return JSON(static_cast<FName*>(Prop.ValuePtr)->ToString());
 
 	default:
 		return JSON();
 	}
+}
+
+// ---- Camera + Primitives helpers ----
+
+json::JSON FSceneSaveManager::SerializeCamera(UWorld* World)
+{
+	using namespace json;
+	JSON cam = json::Object();
+
+	for (AActor* Actor : World->GetActors()) {
+		if (!Actor) continue;
+		for (UActorComponent* Comp : Actor->GetComponents()) {
+			if (!Comp) continue;
+			if (!Comp->IsA<UCameraComponent>()) continue;
+
+			UCameraComponent* C = static_cast<UCameraComponent*>(Comp);
+			const FMatrix& M = C->GetWorldMatrix();
+			FVector loc = M.GetLocation();
+			FVector rot = M.GetEuler();
+			FVector scale = M.GetScale();
+
+			JSON locArr = json::Array();
+			locArr.append(static_cast<double>(loc.X));
+			locArr.append(static_cast<double>(loc.Y));
+			locArr.append(static_cast<double>(loc.Z));
+			cam["Location"] = locArr;
+
+			JSON rotArr = json::Array();
+			rotArr.append(static_cast<double>(rot.X));
+			rotArr.append(static_cast<double>(rot.Y));
+			rotArr.append(static_cast<double>(rot.Z));
+			cam["Rotation"] = rotArr;
+
+			JSON scaleArr = json::Array();
+			scaleArr.append(static_cast<double>(scale.X));
+			scaleArr.append(static_cast<double>(scale.Y));
+			scaleArr.append(static_cast<double>(scale.Z));
+			cam["Scale"] = scaleArr;
+
+			const FCameraState& S = C->GetCameraState();
+			JSON state = json::Object();
+			state["FOV"] = static_cast<double>(S.FOV);
+			state["AspectRatio"] = static_cast<double>(S.AspectRatio);
+			state["NearZ"] = static_cast<double>(S.NearZ);
+			state["FarZ"] = static_cast<double>(S.FarZ);
+			state["OrthoWidth"] = static_cast<double>(S.OrthoWidth);
+			state["bIsOrthogonal"] = S.bIsOrthogonal;
+			cam["State"] = state;
+
+			return cam; // first found camera
+		}
+	}
+	return cam;
+}
+
+void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors)
+{
+	using namespace json;
+	for (auto it = Primitives.ObjectRange().begin(); it != Primitives.ObjectRange().end(); ++it) {
+		const auto& kv = *it;
+		const string& Key = kv.first;
+		JSON Entry = kv.second;
+
+		if (!Entry.hasKey("Type")) continue;
+		if (Entry["Type"].ToString() != "StaticMeshComp") continue;
+
+		string MeshPath = Entry.hasKey("ObjStaticMeshAsset") ? Entry["ObjStaticMeshAsset"].ToString() : string("None");
+
+		// Spawn a static mesh actor and initialize
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (!Actor) continue;
+		Actor->InitDefaultComponents(FString(MeshPath));
+		OutCreatedActors[Key] = Actor;
+
+		// Location / Rotation / Scale
+		if (Entry.hasKey("Location")) {
+			auto locjson = Entry["Location"];
+			float lx = 0, ly = 0, lz = 0;
+			int i = 0;
+			for (auto& e : locjson.ArrayRange()) { if (i==0) lx = static_cast<float>(e.ToFloat()); else if (i==1) ly = static_cast<float>(e.ToFloat()); else if (i==2) lz = static_cast<float>(e.ToFloat()); i++; }
+			Actor->SetActorLocation(FVector(lx, ly, lz));
+		}
+		if (Entry.hasKey("Rotation")) {
+			auto rotjson = Entry["Rotation"];
+			float rx = 0, ry = 0, rz = 0;
+			int i = 0;
+			for (auto& e : rotjson.ArrayRange()) { if (i==0) rx = static_cast<float>(e.ToFloat()); else if (i==1) ry = static_cast<float>(e.ToFloat()); else if (i==2) rz = static_cast<float>(e.ToFloat()); i++; }
+			Actor->SetActorRotation(FVector(rx, ry, rz));
+		}
+		if (Entry.hasKey("Scale")) {
+			auto sjson = Entry["Scale"];
+			float sx = 1, sy = 1, sz = 1;
+			int i = 0;
+			for (auto& e : sjson.ArrayRange()) { if (i==0) sx = static_cast<float>(e.ToFloat()); else if (i==1) sy = static_cast<float>(e.ToFloat()); else if (i==2) sz = static_cast<float>(e.ToFloat()); i++; }
+			Actor->SetActorScale(FVector(sx, sy, sz));
+		}
+
+		// Material/UV overrides are applied later when deserializing the Actor's RootComponent properties
+	}
+}
+
+void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, UWorld* World)
+{
+	using namespace json;
+	if (CameraJSON.JSONType() == JSON::Class::Null) return;
+
+	UCameraComponent* Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
+	if (!Camera) return;
+
+	if (CameraJSON.hasKey("Location")) {
+		auto l = CameraJSON["Location"];
+		int i = 0; float x=0,y=0,z=0;
+		for (auto& e : l.ArrayRange()) { if (i==0) x = static_cast<float>(e.ToFloat()); else if (i==1) y = static_cast<float>(e.ToFloat()); else if (i==2) z = static_cast<float>(e.ToFloat()); i++; }
+		Camera->SetWorldLocation(FVector(x,y,z));
+	}
+	if (CameraJSON.hasKey("Rotation")) {
+		auto r = CameraJSON["Rotation"];
+		int i=0; float rx=0,ry=0,rz=0;
+		for (auto& e : r.ArrayRange()) { if (i==0) rx = static_cast<float>(e.ToFloat()); else if (i==1) ry = static_cast<float>(e.ToFloat()); else if (i==2) rz = static_cast<float>(e.ToFloat()); i++; }
+		Camera->SetRelativeRotation(FVector(rx,ry,rz));
+	}
+	if (CameraJSON.hasKey("State")) {
+		auto s = CameraJSON["State"];
+		FCameraState cs;
+		if (s.hasKey("FOV")) cs.FOV = static_cast<float>(s["FOV"].ToFloat());
+		if (s.hasKey("AspectRatio")) cs.AspectRatio = static_cast<float>(s["AspectRatio"].ToFloat());
+		if (s.hasKey("NearZ")) cs.NearZ = static_cast<float>(s["NearZ"].ToFloat());
+		if (s.hasKey("FarZ")) cs.FarZ = static_cast<float>(s["FarZ"].ToFloat());
+		if (s.hasKey("OrthoWidth")) cs.OrthoWidth = static_cast<float>(s["OrthoWidth"].ToFloat());
+		if (s.hasKey("bIsOrthogonal")) cs.bIsOrthogonal = s["bIsOrthogonal"].ToBool();
+		Camera->SetCameraState(cs);
+	}
+
+	World->SetActiveCamera(Camera);
 }
 
 // ============================================================
@@ -231,15 +474,39 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		? root[SceneKeys::ContextHandle].ToString()
 		: ContextName;
 
+	// Deserialize Primitives (top-level) and Camera first
+	std::unordered_map<string, AActor*> CreatedFromPrimitives;
+	if (root.hasKey("Primitives")) {
+		auto Prims = root["Primitives"];
+		DeserializePrimitives(Prims, World, CreatedFromPrimitives);
+	}
+
+	if (root.hasKey("Camera")) {
+		auto Cam = root["Camera"];
+		DeserializeCamera(Cam, World);
+	}
+
 	// Deserialize Actors
 	for (auto& ActorJSON : root[SceneKeys::Actors].ArrayRange()) {
 		string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
-		UObject* ActorObj = FObjectFactory::Get().Create(ActorClass);
-		if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
+		// If this actor references a PrimitiveKey and that primitive already created an actor,
+		// prefer the primitive-created actor and update it instead of creating a duplicate.
+		AActor* Actor = nullptr;
+		if (ActorJSON.hasKey("PrimitiveKey")) {
+			string pk = ActorJSON["PrimitiveKey"].ToString();
+			auto it = CreatedFromPrimitives.find(pk);
+			if (it != CreatedFromPrimitives.end()) {
+				Actor = it->second;
+			}
+		}
 
-		AActor* Actor = static_cast<AActor*>(ActorObj);
-		Actor->SetWorld(World);
-		World->AddActor(Actor);
+		if (!Actor) {
+			UObject* ActorObj = FObjectFactory::Get().Create(ActorClass);
+			if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
+			Actor = static_cast<AActor*>(ActorObj);
+			Actor->SetWorld(World);
+			World->AddActor(Actor);
+		}
 
 		if (ActorJSON.hasKey(SceneKeys::Visible)) {
 			Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
@@ -248,9 +515,12 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		// RootComponent 트리 복원
 		if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
 			auto RootJSON = ActorJSON[SceneKeys::RootComponent];
-			USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor);
-			if (Root) {
-				Actor->SetRootComponent(Root);
+			if (Actor->GetRootComponent()) {
+				// Merge properties into existing root component created by primitives
+				DeserializeSceneComponentIntoExisting(Actor->GetRootComponent(), RootJSON, Actor);
+			} else {
+				USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor);
+				if (Root) Actor->SetRootComponent(Root);
 			}
 		}
 
@@ -307,10 +577,61 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 	return Comp;
 }
 
+void FSceneSaveManager::DeserializeSceneComponentIntoExisting(USceneComponent* Existing, json::JSON& Node, AActor* Owner)
+{
+	using namespace json;
+	if (!Existing) return;
+
+	if (Node.hasKey(SceneKeys::Properties)) {
+		auto PropsJSON = Node[SceneKeys::Properties];
+		DeserializeProperties(Existing, PropsJSON);
+	}
+
+	// Children: merge into existing children by order; create new children if missing
+	if (Node.hasKey(SceneKeys::Children)) {
+		auto& ChildrenJSON = Node[SceneKeys::Children];
+		auto ExistingChildren = Existing->GetChildren();
+
+		size_t idx = 0;
+		for (auto& ChildJSON : ChildrenJSON.ArrayRange()) {
+			if (idx < ExistingChildren.size()) {
+				DeserializeSceneComponentIntoExisting(ExistingChildren[idx], const_cast<json::JSON&>(ChildJSON), Owner);
+			} else {
+				USceneComponent* NewChild = DeserializeSceneComponentTree(const_cast<json::JSON&>(ChildJSON), Owner);
+				if (NewChild) NewChild->AttachToComponent(Existing);
+			}
+			idx++;
+		}
+	}
+}
+
 void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON)
 {
 	TArray<FPropertyDescriptor> Descriptors;
 	Comp->GetEditableProperties(Descriptors);
+
+	// If this is a UStaticMeshComp and arrays are present, map them into Element N / UVScroll N descriptors
+	if (Comp->IsA<UStaticMeshComp>()) {
+		auto mapArrayToDescriptors = [&](const char* ArrayKey, const char* Prefix) {
+			if (!PropsJSON.hasKey(ArrayKey)) return;
+			auto arr = PropsJSON[ArrayKey];
+			int idx = 0;
+			for (auto& e : arr.ArrayRange()) {
+				string dname = string(Prefix) + std::to_string(idx);
+				for (auto& Prop : Descriptors) {
+					if (Prop.Name == dname) {
+						DeserializePropertyValue(Prop, const_cast<json::JSON&>(e));
+						Comp->PostEditProperty(Prop.Name.c_str());
+						break;
+					}
+				}
+				idx++;
+			}
+		};
+
+		mapArrayToDescriptors("OverrideMaterials", "Element ");
+		mapArrayToDescriptors("OverrideUVScrolls", "UVScroll ");
+	}
 
 	for (auto& Prop : Descriptors) {
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
@@ -338,6 +659,10 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	switch (Prop.Type) {
 	case EPropertyType::Bool:
 		*static_cast<bool*>(Prop.ValuePtr) = Value.ToBool();
+		break;
+
+	case EPropertyType::ByteBool:
+		*static_cast<uint8_t*>(Prop.ValuePtr) = Value.ToBool() ? 1 : 0;
 		break;
 
 	case EPropertyType::Int:
