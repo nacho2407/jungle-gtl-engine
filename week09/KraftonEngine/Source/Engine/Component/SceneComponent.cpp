@@ -12,7 +12,11 @@ void USceneComponent::AttachToComponent(USceneComponent* InParent)
 void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UActorComponent::GetEditableProperties(OutProps);
-	CachedEditRotator = RelativeTransform.GetRotator();
+	if (bCachedEulerDirty)
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
 	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
 	OutProps.push_back({ "Rotation", EPropertyType::Rotator, &CachedEditRotator, 0.0f, 0.0f, 0.1f });
 	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
@@ -168,19 +172,25 @@ void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
 
 void USceneComponent::SetRelativeRotation(const FRotator& NewRotation)
 {
+	CachedEditRotator = NewRotation.GetClamped();
+	bCachedEulerDirty = false;
 	RelativeTransform.SetRotation(NewRotation);
 	MarkTransformDirty();
 }
 
 void USceneComponent::SetRelativeRotation(const FQuat& NewRotation)
 {
+	bCachedEulerDirty = true;
 	RelativeTransform.SetRotation(NewRotation);
 	MarkTransformDirty();
 }
 
 void USceneComponent::SetRelativeRotation(const FVector& EulerRotation)
 {
-	RelativeTransform.SetRotation(FRotator(EulerRotation));
+	FRotator Rot(EulerRotation);
+	CachedEditRotator = Rot;
+	bCachedEulerDirty = false;
+	RelativeTransform.SetRotation(Rot);
 	MarkTransformDirty();
 }
 
@@ -201,8 +211,28 @@ void USceneComponent::MarkTransformDirty()
 	}
 }
 
+FRotator& USceneComponent::GetCachedEditRotator()
+{
+	if (bCachedEulerDirty)
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
+	return CachedEditRotator;
+}
+
+void USceneComponent::SetRelativeRotationWithEulerHint(const FQuat& NewQuat, const FRotator& EulerHint)
+{
+	CachedEditRotator = EulerHint.GetClamped();
+	bCachedEulerDirty = false;
+	RelativeTransform.SetRotation(NewQuat);
+	MarkTransformDirty();
+}
+
 void USceneComponent::ApplyCachedEditRotator()
 {
+	CachedEditRotator = CachedEditRotator.GetClamped();
+	bCachedEulerDirty = false;
 	RelativeTransform.SetRotation(CachedEditRotator);
 	MarkTransformDirty();
 }

@@ -119,12 +119,37 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
 	FQuat DeltaQuat = FQuat::FromAxisAngle(RotationAxis, DragAmount);
 
+	const float DeltaDeg = DragAmount * RAD_TO_DEG;
+
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
-			FQuat CurQuat = Actor->GetActorRotation().ToQuaternion();
-			FQuat NewQuat = DeltaQuat * CurQuat;
-			Actor->SetActorRotation(NewQuat.ToRotator());
+			USceneComponent* Root = Actor->GetRootComponent();
+			const FQuat& CurQuat = Root->GetRelativeQuat();
+			// 월드 스페이스: Delta * Cur, 로컬 스페이스: Cur * Delta
+			FQuat NewQuat = bIsWorldSpace ? (DeltaQuat * CurQuat) : (CurQuat * DeltaQuat);
+
+			// Euler 캐시를 기즈모 축 기준으로 직접 업데이트 (짐벌락 방지)
+			FRotator EulerHint = Root->GetCachedEditRotator();
+			if (bIsWorldSpace)
+			{
+				switch (SelectedAxis)
+				{
+				case 0: EulerHint.Roll  += DeltaDeg; break;  // World X = Roll
+				case 1: EulerHint.Pitch += DeltaDeg; break;  // World Y = Pitch
+				case 2: EulerHint.Yaw   += DeltaDeg; break;  // World Z = Yaw
+				}
+			}
+			else
+			{
+				switch (SelectedAxis)
+				{
+				case 0: EulerHint.Roll  += DeltaDeg; break;  // Local X = Roll
+				case 1: EulerHint.Pitch += DeltaDeg; break;  // Local Y = Pitch
+				case 2: EulerHint.Yaw   += DeltaDeg; break;  // Local Z = Yaw
+				}
+			}
+			Root->SetRelativeRotationWithEulerHint(NewQuat, EulerHint);
 		};
 
 	if (AllSelectedActors)
