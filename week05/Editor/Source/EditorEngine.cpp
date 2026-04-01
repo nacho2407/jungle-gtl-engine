@@ -248,7 +248,7 @@ void FEditorEngine::FinalizeInitialize()
 	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
 	EditorUI.OnSlateReady();
 	CreateInitUI();
-	FObjManager::PreloadAllObjFiles(FPaths::MeshDir().string().c_str());
+	FObjManager::PreloadAllModelFiles(FPaths::MeshDir().string().c_str());
 }
 
 void FEditorEngine::PrepareFrame(float DeltaTime)
