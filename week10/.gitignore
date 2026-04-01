@@ -454,6 +454,7 @@ W4_Jungle_Team2/Build/
 
 # ignore .ini Files
 *.ini
+W4_Jungle_Team2/*.ini
 
 # Asset 파일 살리기 - obj 등 (Bin 폴더 내의 파일은 무시)
 !W4_Jungle_Team2/Asset/Mesh/**
