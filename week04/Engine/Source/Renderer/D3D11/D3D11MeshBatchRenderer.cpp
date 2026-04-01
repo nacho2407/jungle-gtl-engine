@@ -1,6 +1,7 @@
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 
 #include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/MemoryTracker.h"
 #include "Renderer/SceneView.h"
 #include "Renderer/Types/RenderItem.h"
 #include "Renderer/Types/ShaderConstants.h"
@@ -70,6 +71,7 @@ void FD3D11MeshBatchRenderer::Shutdown()
     WireframeRasterizerState.Reset();
     SolidRasterizerState.Reset();
 
+    GMemoryTracker.RemoveVertexBufferBytes(InstanceBuffer.Get());
     InstanceBuffer.Reset();
     InstancedConstantBuffer.Reset();
     SingleConstantBuffer.Reset();
@@ -385,6 +387,8 @@ void FD3D11MeshBatchRenderer::ReleaseBasicMeshes()
 {
     for (int32 Index = 0; Index < static_cast<int32>(EBasicMeshType::Count); ++Index)
     {
+        GMemoryTracker.RemoveVertexBufferBytes(BasicMeshResources[Index].VertexBuffer.Get());
+        GMemoryTracker.RemoveIndexBufferBytes(BasicMeshResources[Index].IndexBuffer.Get());
         BasicMeshResources[Index].VertexBuffer.Reset();
         BasicMeshResources[Index].IndexBuffer.Reset();
         BasicMeshResources[Index].IndexCount = 0;
@@ -414,6 +418,7 @@ bool FD3D11MeshBatchRenderer::CreateBasicMeshResource(const FVertexSimple* InVer
     if (!RHI->CreateIndexBuffer(InIndices, sizeof(uint16) * InIndexCount, false,
                                 OutResource.IndexBuffer.GetAddressOf()))
     {
+        GMemoryTracker.RemoveVertexBufferBytes(OutResource.VertexBuffer.Get());
         OutResource.VertexBuffer.Reset();
         return false;
     }

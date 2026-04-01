@@ -164,8 +164,6 @@ bool FD3D11PostProcessOutlineRenderer::CreateShaders()
         return false;
     }
 
-    GMemoryTracker.AddVertexShaderBlobBytes(static_cast<uint64>(VertexShaderBlob->GetBufferSize()));
-
     if (!RHI->CreatePixelShader(ShaderPath, "PSMain", PixelShader.GetAddressOf()))
     {
         VertexShader.Reset();

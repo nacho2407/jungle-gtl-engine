@@ -1,6 +1,7 @@
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 
 #include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/MemoryTracker.h"
 #include "Renderer/SceneView.h"
 #include "Resources/Mesh/Cone.h"
 #include "Resources/Mesh/Cube.h"
@@ -398,6 +399,8 @@ void FD3D11ObjectIdRenderer::ReleaseBasicMeshes()
 {
     for (int32 i = 0; i < static_cast<int32>(EBasicMeshType::Count); ++i)
     {
+        GMemoryTracker.RemoveVertexBufferBytes(MeshResources[i].VertexBuffer.Get());
+        GMemoryTracker.RemoveIndexBufferBytes(MeshResources[i].IndexBuffer.Get());
         MeshResources[i].VertexBuffer.Reset();
         MeshResources[i].IndexBuffer.Reset();
         MeshResources[i].IndexCount = 0;
@@ -427,6 +430,7 @@ bool FD3D11ObjectIdRenderer::CreateBasicMeshResource(const FVertexSimple* InVert
     if (!RHI->CreateIndexBuffer(InIndices, sizeof(uint16) * InIndexCount, false,
                                 OutResource.IndexBuffer.GetAddressOf()))
     {
+        GMemoryTracker.RemoveVertexBufferBytes(OutResource.VertexBuffer.Get());
         OutResource.VertexBuffer.Reset();
         return false;
     }

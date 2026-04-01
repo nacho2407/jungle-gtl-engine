@@ -1,5 +1,6 @@
 #include "D3D11WidgetRenderer.h"
 #include "Renderer/D3D11/D3D11RHI.h"
+#include "Renderer/MemoryTracker.h"
 
 bool FD3D11WidgetRenderer::Initialize(FD3D11RHI* InRHI) 
 { 
@@ -117,6 +118,8 @@ void FD3D11WidgetRenderer::Shutdown()
     RasterizerState.Reset();
     BlendState.Reset();
     DepthStencilState.Reset();
+    GMemoryTracker.RemoveIndexBufferBytes(IndexBuffer.Get());
+    GMemoryTracker.RemoveVertexBufferBytes(VertexBuffer.Get());
     IndexBuffer.Reset();
     VertexBuffer.Reset();
     ConstantBuffer.Reset();

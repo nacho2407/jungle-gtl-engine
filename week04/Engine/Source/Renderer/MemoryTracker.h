@@ -7,6 +7,7 @@
 #include "Renderer/TrackedMemoryStats.h"
 
 struct D3D11_TEXTURE2D_DESC;
+struct ID3D11Buffer;
 
 class FMemoryTracker;
 
@@ -75,9 +76,11 @@ class ENGINE_API FMemoryTracker
     void AddDepthStencilBytes(uint64 Bytes);
     void RemoveDepthStencilBytes(uint64 Bytes);
     void AddVertexBufferBytes(uint64 Bytes);
+    void RemoveVertexBufferBytes(uint64 Bytes);
+    void RemoveVertexBufferBytes(ID3D11Buffer* Buffer);
     void AddIndexBufferBytes(uint64 Bytes);
-    void AddVertexShaderBlobBytes(uint64 Bytes);
-    void AddPixelShaderBlobBytes(uint64 Bytes);
+    void RemoveIndexBufferBytes(uint64 Bytes);
+    void RemoveIndexBufferBytes(ID3D11Buffer* Buffer);
 
   private:
     void AddToCounter(uint64& Counter, uint64 Bytes);
