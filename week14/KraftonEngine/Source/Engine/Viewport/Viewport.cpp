@@ -57,6 +57,20 @@ bool FViewport::ApplyPendingResize()
 	return true;
 }
 
+void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
+{
+	if (!RTV) return;
+
+	const float DefaultColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
+	const float* Color = ClearColor ? ClearColor : DefaultColor;
+	D3D11_VIEWPORT VPRect = GetViewportRect();
+
+	Ctx->ClearRenderTargetView(RTV, Color);
+	Ctx->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	Ctx->OMSetRenderTargets(1, &RTV, DSV);
+	Ctx->RSSetViewports(1, &VPRect);
+}
+
 bool FViewport::CreateResources()
 {
 	if (!Device || Width == 0 || Height == 0) return false;

@@ -3,6 +3,9 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/GizmoComponent.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Editor/EditorEngine.h"
 
 #include <algorithm>
 
@@ -26,16 +29,29 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 	RenderBus.AddGridEntry(std::move(Entry));
 }
 
-void FRenderCollector::CollectOverlayText(const TArray<FScreenTextItem>& Items, float TextScale, FRenderBus& RenderBus)
+void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, ELevelViewportType ViewportType, FRenderBus& RenderBus)
 {
-	for (const FScreenTextItem& Item : Items)
+	if (!Gizmo) return;
+
+	Gizmo->UpdateAxisMask(ViewportType);
+	Gizmo->CollectRender(RenderBus);
+}
+
+void FRenderCollector::CollectOverlayText(bool bActive, const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
+{
+	if (!bActive) return;
+
+	const TArray<FOverlayStatLine> Lines = OverlaySystem.BuildLines(Editor);
+	const float TextScale = OverlaySystem.GetLayout().TextScale;
+
+	for (const FOverlayStatLine& Line : Lines)
 	{
 		FFontEntry Entry = {};
-		Entry.Font.Text = Item.Text;
+		Entry.Font.Text = Line.Text;
 		Entry.Font.Font = nullptr;
 		Entry.Font.Scale = TextScale;
 		Entry.Font.bScreenSpace = 1;
-		Entry.Font.ScreenPosition = Item.ScreenPosition;
+		Entry.Font.ScreenPosition = Line.ScreenPosition;
 
 		RenderBus.AddOverlayFontEntry(std::move(Entry));
 	}

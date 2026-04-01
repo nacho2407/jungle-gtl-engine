@@ -1,4 +1,6 @@
 #include "RenderBus.h"
+#include "Component/CameraComponent.h"
+#include "Viewport/Viewport.h"
 
 void FRenderBus::Clear()
 {
@@ -58,13 +60,24 @@ void FRenderBus::AddGridEntry(FGridEntry&& Entry)
 	GridEntries.push_back(std::move(Entry));
 }
 
-void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraForwardVector, const FVector& CameraRightVector, const FVector& CameraUpVector)
+void FRenderBus::SetCameraInfo(const UCameraComponent* Camera)
 {
-	View = InView;
-	Proj = InProj;
-	CameraForward = CameraForwardVector;
-	CameraRight = CameraRightVector;
-	CameraUp = CameraUpVector;
+	View = Camera->GetViewMatrix();
+	Proj = Camera->GetProjectionMatrix();
+	CameraForward = Camera->GetForwardVector();
+	CameraRight = Camera->GetRightVector();
+	CameraUp = Camera->GetUpVector();
+	bIsOrtho = Camera->IsOrthogonal();
+	OrthoWidth = Camera->GetOrthoWidth();
+}
+
+void FRenderBus::SetViewportInfo(const FViewport* VP)
+{
+	viewportWidth = static_cast<float>(VP->GetWidth());
+	viewportHeight = static_cast<float>(VP->GetHeight());
+	ViewportRTV = VP->GetRTV();
+	ViewportDSV = VP->GetDSV();
+	ViewportStencilSRV = VP->GetStencilSRV();
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)

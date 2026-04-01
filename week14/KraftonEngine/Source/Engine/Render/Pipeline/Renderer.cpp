@@ -80,10 +80,10 @@ void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 	FontBatcher.Clear();
 	for (const auto& Entry : Bus.GetFontEntries())
 	{
-		if (Entry.Font.Text && !Entry.Font.Text->empty())
+		if (!Entry.Font.Text.empty())
 		{
 			FontBatcher.AddText(
-				*Entry.Font.Text,
+				Entry.Font.Text,
 				Entry.PerObject.Model.GetLocation(),
 				Bus.GetCameraRight(),
 				Bus.GetCameraUp(),
@@ -97,10 +97,10 @@ void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 	FontBatcher.ClearScreen();
 	for (const auto& Entry : Bus.GetOverlayFontEntries())
 	{
-		if (Entry.Font.Text && !Entry.Font.Text->empty())
+		if (!Entry.Font.Text.empty())
 		{
 			FontBatcher.AddScreenText(
-				*Entry.Font.Text,
+				Entry.Font.Text,
 				Entry.Font.ScreenPosition.X,
 				Entry.Font.ScreenPosition.Y,
 				Bus.GetViewportWidth(),
