@@ -5,15 +5,12 @@
 #include "Engine/Component/Core/ComponentProperty.h"
 #include "SceneIO/SceneAssetPath.h"
 #include "Asset/MaterialInterface.h"
+#include "Asset/Material.h"
 #include <algorithm>
 #include <filesystem>
 
 namespace Engine::Component
 {
-    UStaticMeshComponent::UStaticMeshComponent() : StaticMesh(nullptr) {}
-
-    UStaticMeshComponent::~UStaticMeshComponent() {}
-
     EBasicMeshType UStaticMeshComponent::GetBasicMeshType() const
     {
         return EBasicMeshType::None;
@@ -36,11 +33,8 @@ namespace Engine::Component
             return;
         }
 
-        // Sub-material selection removed. Material overrides are managed via MeshComponent.
-        /*
-        const TArray<Engine::Asset::FMaterialSlot>& SlotRef = StaticMesh->GetMaterialSlots();
-
-        for (int32 idx = 0; idx < static_cast<int32>(SlotRef.size()); ++idx)
+        const uint32 SlotCount = StaticMesh->GetMaterialSlotsSize();
+        for (uint32 idx = 0; idx < SlotCount; ++idx)
         {
             const FString  PropertyName = "StaticMeshMaterialSlot_" + std::to_string(idx);
             const FWString DisplayName = L"Material " + std::to_wstring(idx);
@@ -49,24 +43,82 @@ namespace Engine::Component
                 PropertyName, DisplayName,
                 [this, idx]() -> FString
                 {
-                    if (this->StaticMesh == nullptr)
+                    if (StaticMesh == nullptr)
                     {
                         return "";
                     }
 
-                    return this->GetSubMaterialName(idx);
+                    Asset::UMaterialInterface* CurrentMat = GetMaterial(idx);
+                    if (CurrentMat && CurrentMat->IsValidLowLevel())
+                    {
+                        if (auto* Material = Cast<Asset::UMaterial>(CurrentMat))
+                        {
+                            const FString Name = Material->GetMaterialName();
+                            return Name.empty() ? "None" : Name;
+                        }
+                        const FString Name = CurrentMat->GetAssetName();
+                        return Name.empty() ? "None" : Name;
+                    }
+                    return "";
                 },
-                [this, idx](const FString& InSubMaterial)
+                [this, idx](const FString& InMaterialName)
                 {
-                    this->SetSubMaterialName(idx, InSubMaterial);
+                    if (StaticMesh == nullptr)
+                    {
+                        return;
+                    }
+
+                    if (InMaterialName.empty() || InMaterialName == "None")
+                    {
+                        SetMaterial(idx, nullptr);
+                        return;
+                    }
+
+                    const TArray<Asset::UMaterialInterface*>& Slots =
+                        StaticMesh->GetMaterialSlots();
+                    for (auto* Mat : Slots)
+                    {
+                        if (Mat && Mat->IsValidLowLevel() &&
+                            ((Cast<Asset::UMaterial>(Mat) &&
+                              Cast<Asset::UMaterial>(Mat)->GetMaterialName() == InMaterialName) ||
+                             Mat->GetAssetName() == InMaterialName))
+                        {
+                            SetMaterial(idx, Mat);
+                            return;
+                        }
+                    }
                 },
                 [this]() -> TArray<FString>
                 {
-                    return this->GetAvailableSubMaterialNames();
+                    TArray<FString> Options;
+                    if (StaticMesh == nullptr)
+                    {
+                        return Options;
+                    }
+
+                    for (auto* Mat : StaticMesh->GetMaterialSlots())
+                    {
+                        if (Mat && Mat->IsValidLowLevel())
+                        {
+                            FString Name;
+                            if (auto* Material = Cast<Asset::UMaterial>(Mat))
+                            {
+                                Name = Material->GetMaterialName();
+                            }
+                            else
+                            {
+                                Name = Mat->GetAssetName();
+                            }
+                            if (!Name.empty())
+                            {
+                                Options.push_back(Name);
+                            }
+                        }
+                    }
+                    return Options;
                 },
                 FComponentPropertyOptions{});
         }
-        */
     }
 
     void UStaticMeshComponent::Serialize(bool bIsLoading, void* JsonHandle)
@@ -101,14 +153,14 @@ namespace Engine::Component
     void UStaticMeshComponent::SetStaticMesh(Asset::UStaticMesh* InStaticMesh)
     {
         StaticMesh = InStaticMesh;
-        if (StaticMesh && StaticMesh->GetRenderResource())
+        if (StaticMesh)
         {
-            uint32 NumSubMeshes = static_cast<uint32>(StaticMesh->GetRenderResource()->SubMeshes.size());
-            InitializeMaterialSlots(NumSubMeshes);
-        }
-        else if (StaticMesh)
-        {
-            InitializeMaterialSlots(StaticMesh->GetNumSections());
+            uint32 NumSlots = StaticMesh->GetMaterialSlotsSize();
+            if (NumSlots == 0 && StaticMesh->GetRenderResource())
+            {
+                NumSlots = static_cast<uint32>(StaticMesh->GetRenderResource()->SubMeshes.size());
+            }
+            InitializeMaterialSlots(NumSlots);
         }
         else
         {
@@ -194,11 +246,13 @@ namespace Engine::Component
 
     uint32 UStaticMeshComponent::GetNumMaterials() const
     {
+        const uint32 OverrideCount = UMeshComponent::GetNumMaterials();
         if (StaticMesh)
         {
-            return StaticMesh->GetNumSections();
+            const uint32 BaseCount = StaticMesh->GetMaterialSlotsSize();
+            return std::max(BaseCount, OverrideCount);
         }
-        return UMeshComponent::GetNumMaterials();
+        return OverrideCount;
     }
 
     REGISTER_CLASS(Engine::Component, UStaticMeshComponent)

@@ -27,7 +27,7 @@ namespace Engine::Asset
 
         /** 머티리얼 슬롯 관리 */
         void                      InitializeMaterialSlots(uint32 NumSlots);
-        const UMaterialInterface* GetMaterial(uint32 Index) const;
+        UMaterialInterface* GetMaterial(uint32 Index) const;
         void                      SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial);
 
         const TArray<UMaterialInterface*>& GetMaterialSlots() const { return MaterialSlots; }

@@ -2,6 +2,7 @@
 #include "StaticMeshLoader.h"
 #include "Asset/StaticMesh.h"
 #include "Asset/MaterialLibrary.h"
+#include "Asset/MaterialInterface.h"
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/Types/VertexTypes.h"
 

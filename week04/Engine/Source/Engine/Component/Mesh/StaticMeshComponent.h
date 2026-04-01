@@ -18,8 +18,8 @@ namespace Engine::Component
       public:
         DECLARE_RTTI(UStaticMeshComponent, UMeshComponent)
 
-        UStaticMeshComponent();
-        virtual ~UStaticMeshComponent() override;
+        UStaticMeshComponent() = default;
+        virtual ~UStaticMeshComponent() =default;
 
         virtual EBasicMeshType GetBasicMeshType() const override;
         virtual void           DescribeProperties(FComponentPropertyBuilder& Builder) override;

@@ -7921,7 +7921,6 @@ class lexer : public lexer_base<BasicJsonType>
                     }
                 }
             }
-
             // unexpected character after reading '/'
             default:
             {

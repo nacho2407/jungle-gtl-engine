@@ -18,7 +18,7 @@ namespace Engine::Asset
         MaterialSlots.resize(NumSlots, nullptr);
     }
 
-    const UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
+    UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
     {
         return (Index < MaterialSlots.size()) ? MaterialSlots[Index] : nullptr;
     }

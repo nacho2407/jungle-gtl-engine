@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOLUTION_NAME = "Kraftonjungle_Team2.sln"
+SOLUTION_NAME = "Kraftonjungle_Week4_Team8.sln"
 SOLUTION_GUID = "{CC734427-CF8D-4087-B514-F2730B4E82A8}"
 VS_PROJECT_TYPE = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 WINDOWS_TARGET_PLATFORM_VERSION = "10.0"

@@ -21,6 +21,7 @@
 #include "Renderer/SceneFrameRenderData.h"
 
 #include "ApplicationCore/Windows/WindowsApplication.h"
+#include "imgui.h"
 
 // ─── PreInit ─────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,17 @@ bool FObjViewerEngineLoop::PreInit(HINSTANCE HInstance, uint32 NCmdShow)
     AssetManager->RegisterLoader(MeshLoader);
 
     ImGuiLayer.Init(Hwnd, Renderer->GetRHI().GetDevice(), Renderer->GetRHI().GetDeviceContext());
+    ImGuiIO& IO = ImGui::GetIO();
+    ImFontGlyphRangesBuilder Builder;
+    Builder.AddRanges(IO.Fonts->GetGlyphRangesKorean());
+    Builder.AddRanges(IO.Fonts->GetGlyphRangesChineseFull());
+    ImVector<ImWchar> Ranges;
+    Builder.BuildRanges(&Ranges);
+    if (ImFont* CjkFont = IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf",
+                                                       18.0f, nullptr, Ranges.Data))
+    {
+        IO.FontDefault = CjkFont;
+    }
 
     WinApp->SetMessageHandler(&FObjViewerEngineLoop::HandleMessage, this);
 
@@ -200,10 +212,9 @@ bool FObjViewerEngineLoop::RunFrameOnce()
         Item.State.SetVisible(true);
         Item.State.SetPickable(false);
 
-        for (uint32 i = 0; i < LoadedMesh->GetNumSections(); ++i)
+        for (uint32 i = 0; i < LoadedMesh->GetMaterialSlotsSize(); ++i)
         {
-            const auto* Slot = LoadedMesh->GetMaterialSlot(i);
-            Item.Materials.push_back(Slot ? Slot->Material : nullptr);
+            Item.Materials.push_back(LoadedMesh->GetMaterial(i));
         }
         FrameData.StaticMeshes.push_back(std::move(Item));
     }

@@ -177,14 +177,6 @@ void FD3D11StaticMeshRenderer::Flush()
             {
                 continue;
             }
-            /*if (CurrentPassParams.ViewMode == EViewModeIndex::VMI_Wireframe)
-            {
-                BindDefaultMaterial();
-            }
-            else
-            {
-                BindMaterial(MaterialData);
-            }*/
             BindMaterial(MaterialData);
             RHI->DrawIndexed(Sub.IndexCount, Sub.StartIndexLocation, 0);
             BindDefaultMaterial();

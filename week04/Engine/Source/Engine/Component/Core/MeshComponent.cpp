@@ -17,15 +17,16 @@ namespace Engine::Component
 
     void UMeshComponent::InitializeMaterialSlots(uint32 NumSections)
     {
-        OverrideMaterials.resize(NumSections, nullptr);
+        OverrideMaterials.assign(NumSections, nullptr);
     }
 
     void UMeshComponent::SetMaterial(uint32 Index, Asset::UMaterialInterface* InMaterial)
     {
-        if (Index < OverrideMaterials.size())
+        if (Index >= OverrideMaterials.size())
         {
-            OverrideMaterials[Index] = InMaterial;
+            OverrideMaterials.resize(Index + 1, nullptr);
         }
+        OverrideMaterials[Index] = InMaterial;
     }
 
     Asset::UMaterialInterface* UMeshComponent::GetMaterial(uint32 Index) const
