@@ -42,14 +42,14 @@ void FEditorControlWidget::Render(float DeltaTime)
 			{
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents("Data/Cube.OBJ");
+				Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
 				break;
 			}
 			case 1: // Sphere
 			{
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents("Data/Sphere.OBJ");
+				Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
 				break;
 			}
 			}
