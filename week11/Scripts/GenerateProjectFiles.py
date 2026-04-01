@@ -29,6 +29,7 @@ CONFIGURATIONS = [
     ("Release", "Win32"),
     ("Debug", "x64"),
     ("Release", "x64"),
+    ("ObjViewer", "x64"),
 ]
 
 # Directories to recursively scan for source files
@@ -199,7 +200,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond, Label="Configuration")
-        is_release = cfg == "Release"
+        is_release = cfg == "Release" or cfg == "ObjViewer"
         ET.SubElement(pg, "ConfigurationType").text = "Application"
         ET.SubElement(pg, "UseDebugLibraries").text = "false" if is_release else "true"
         ET.SubElement(pg, "PlatformToolset").text = "v143"
@@ -241,7 +242,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
         cl = ET.SubElement(idg, "ClCompile")
         ET.SubElement(cl, "WarningLevel").text = "Level3"
 
-        is_release = cfg == "Release"
+        is_release = cfg == "Release" or cfg == "ObjViewer"
+        is_viewer = cfg == "ObjViewer"
         is_win32 = plat == "Win32"
         is_x64 = plat == "x64"
 
@@ -252,9 +254,12 @@ def generate_vcxproj(files: dict[str, list[str]]):
         ET.SubElement(cl, "SDLCheck").text = "true"
 
         if is_win32:
-            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions)"
+            defs = f"WIN32;{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions);"
         else:
-            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions)"
+            defs = f"{'NDEBUG' if is_release else '_DEBUG'};_CONSOLE;WITH_EDITOR=1;NOMINMAX;%(PreprocessorDefinitions);"
+            
+        if is_viewer:
+            defs += "IS_OBJ_VIEWER=1;"
         ET.SubElement(cl, "PreprocessorDefinitions").text = defs
 
         ET.SubElement(cl, "MultiProcessorCompilation").text = "true"

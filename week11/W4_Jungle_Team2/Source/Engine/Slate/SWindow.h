@@ -25,7 +25,7 @@ public:
 	SWidget* HitTest(int32 X, int32 Y) override;
 
 	// 자식 영역 계산
-	virtual void UpdateCildRect() {}
+	virtual void UpdateChildRect() {}
 
 private:
 	// SWindow 크기

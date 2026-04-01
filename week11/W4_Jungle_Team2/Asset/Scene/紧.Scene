@@ -1,18 +1,18 @@
 {
   "ClassName" : "UWorld",
-  "Name" : "工子",
+  "Name" : "紧",
   "PerspectiveCamera" : {
     "FOV" : 84.000000,
     "FarClip" : 2000.000000,
-    "Location" : [9.122863, 2.862189, 5.863430],
+    "Location" : [4.115130, -2.183203, 2.481685],
     "NearClip" : 0.100000,
-    "Rotation" : [-32.986633, -174.380096, 3.066629]
+    "Rotation" : [-18.553680, 136.001343, -17.080139]
   },
   "Primitives" : {
     "0" : {
-      "Location" : [5.382951, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Lowpoly_tree_sample/Lowpoly_tree_sample.obj",
-      "Rotation" : [-0.000000, 0.000000, 74.827759],
+      "Location" : [0.000000, 11.818798, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Scroll U" : 0.000000,
       "Scroll V" : 0.000000,
@@ -20,9 +20,9 @@
       "Visible" : true
     },
     "1" : {
-      "Location" : [0.000000, 12.472298, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
-      "Rotation" : [-0.000000, 0.000000, 53.973190],
+      "Location" : [-3.346476, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset\\Mesh\\MultiMaterialCube\\MultiMaterialCube.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Scroll U" : 0.000000,
       "Scroll V" : 0.000000,
@@ -31,8 +31,8 @@
     },
     "2" : {
       "Location" : [0.000000, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
-      "Rotation" : [-0.000000, 49.948235, -0.000000],
+      "ObjStaticMeshAsset" : "Asset\\Mesh\\Lumine\\LumineModel.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Scroll U" : 0.000000,
       "Scroll V" : 0.000000,
