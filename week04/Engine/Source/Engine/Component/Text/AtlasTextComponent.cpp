@@ -48,9 +48,6 @@ namespace Engine::Component
         Builder.AddFloat(
             "line_spacing", L"Line Spacing", [this]() { return GetLineSpacing(); },
             [this](float InValue) { SetLineSpacing(InValue); });
-        Builder.AddVector3(
-            "billboard_offset", L"Billboard Offset", [this]() { return GetBillboardOffset(); },
-            [this](const FVector& InValue) { SetBillboardOffset(InValue); });
         Builder.AddAssetPath(
             "font_path", L"Font Path", [this]() { return GetFontPath(); },
             [this](const FString& InValue) { SetFontPath(InValue); }, FontPathOptions);

@@ -23,6 +23,40 @@ namespace
 {
     namespace fs = std::filesystem;
 
+    bool IsUAssetUpToDate(const fs::path& Path, EUAssetBinaryType ExpectedType,
+                          uint64 SourceHash)
+    {
+        std::error_code ErrorCode;
+        if (!fs::exists(Path, ErrorCode) || !fs::is_regular_file(Path, ErrorCode))
+        {
+            return false;
+        }
+
+        FWindowsBinReader Ar(Path);
+        if (!Ar.IsValid())
+        {
+            return false;
+        }
+
+        uint32 Magic = 0;
+        uint32 Version = 0;
+        uint32 TypeValue = 0;
+        uint64 StoredHash = 0;
+
+        Ar << Magic;
+        Ar << Version;
+        Ar << TypeValue;
+        Ar << StoredHash;
+
+        if (Ar.HasError() || Magic != kUAssetMagic || Version != kUAssetVersion)
+        {
+            return false;
+        }
+
+        const auto StoredType = static_cast<EUAssetBinaryType>(TypeValue);
+        return (StoredType == ExpectedType && StoredHash == SourceHash);
+    }
+
     FString ParseMapPath(std::string_view View)
     {
         const size_t Begin = View.find_first_not_of(" \t\r");
@@ -469,6 +503,7 @@ bool FEditorAssetImporter::ParseObjText(const FSourceData& Source, FStaticMesh& 
         return View.substr(First, Last - First + 1);
     };
 
+    bool   bHasBounds = false;
     size_t LineStart = 0;
     while (LineStart < FileView.length())
     {
@@ -491,12 +526,21 @@ bool FEditorAssetImporter::ParseObjText(const FSourceData& Source, FStaticMesh& 
             ParseFloat(GetNextToken(LineView), Pos.Z);
             TempPositions.push_back(Pos);
 
-            OutMesh.BoundingBox.Min.X = std::min(OutMesh.BoundingBox.Min.X, Pos.X);
-            OutMesh.BoundingBox.Min.Y = std::min(OutMesh.BoundingBox.Min.Y, Pos.Y);
-            OutMesh.BoundingBox.Min.Z = std::min(OutMesh.BoundingBox.Min.Z, Pos.Z);
-            OutMesh.BoundingBox.Max.X = std::max(OutMesh.BoundingBox.Max.X, Pos.X);
-            OutMesh.BoundingBox.Max.Y = std::max(OutMesh.BoundingBox.Max.Y, Pos.Y);
-            OutMesh.BoundingBox.Max.Z = std::max(OutMesh.BoundingBox.Max.Z, Pos.Z);
+            if (!bHasBounds)
+            {
+                OutMesh.BoundingBox.Min = Pos;
+                OutMesh.BoundingBox.Max = Pos;
+                bHasBounds = true;
+            }
+            else
+            {
+                OutMesh.BoundingBox.Min.X = std::min(OutMesh.BoundingBox.Min.X, Pos.X);
+                OutMesh.BoundingBox.Min.Y = std::min(OutMesh.BoundingBox.Min.Y, Pos.Y);
+                OutMesh.BoundingBox.Min.Z = std::min(OutMesh.BoundingBox.Min.Z, Pos.Z);
+                OutMesh.BoundingBox.Max.X = std::max(OutMesh.BoundingBox.Max.X, Pos.X);
+                OutMesh.BoundingBox.Max.Y = std::max(OutMesh.BoundingBox.Max.Y, Pos.Y);
+                OutMesh.BoundingBox.Max.Z = std::max(OutMesh.BoundingBox.Max.Z, Pos.Z);
+            }
         }
         else if (Header == "vt")
         {
@@ -598,6 +642,12 @@ bool FEditorAssetImporter::ParseObjText(const FSourceData& Source, FStaticMesh& 
                 OutMesh.CPU_Indices.push_back(FaceIndices[i + 1]);
             }
         }
+    }
+
+    if (!bHasBounds)
+    {
+        OutMesh.BoundingBox.Min = FVector(0.f, 0.f, 0.f);
+        OutMesh.BoundingBox.Max = FVector(0.f, 0.f, 0.f);
     }
 
     if (bSubMeshActive)
@@ -799,6 +849,10 @@ bool FEditorAssetImporter::WriteStaticMeshUAsset(const FSourceData& Source, cons
                                                  const TArray<FString>& MaterialAssetPaths) const
 {
     const fs::path OutPath = MakeMeshUAssetPath(Source.NormalizedPath);
+    if (IsUAssetUpToDate(OutPath, EUAssetBinaryType::StaticMesh, Source.SourceHash))
+    {
+        return true;
+    }
 
     FWindowsBinWriter Ar(OutPath);
     if (!Ar.IsValid())
@@ -862,6 +916,11 @@ bool FEditorAssetImporter::WriteMaterialUAsset(const FSourceData& Source,
                                                const FMaterial& MaterialData,
                                                const std::filesystem::path& OutPath) const
 {
+    if (IsUAssetUpToDate(OutPath, EUAssetBinaryType::Material, Source.SourceHash))
+    {
+        return true;
+    }
+
     FWindowsBinWriter Ar(OutPath);
     if (!Ar.IsValid())
     {

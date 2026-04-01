@@ -284,6 +284,7 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMesh& O
     };
 
     // --- 메인 파싱 루프 ---
+    bool   bHasBounds = false;
     size_t LineStart = 0;
     while (LineStart < FileView.length())
     {
@@ -308,12 +309,21 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMesh& O
             ParseFloat(GetNextToken(LineView), Pos.Z);
             TempPositions.push_back(Pos);
 
-            OutMesh.BoundingBox.Min.X = std::min(OutMesh.BoundingBox.Min.X, Pos.X);
-            OutMesh.BoundingBox.Min.Y = std::min(OutMesh.BoundingBox.Min.Y, Pos.Y);
-            OutMesh.BoundingBox.Min.Z = std::min(OutMesh.BoundingBox.Min.Z, Pos.Z);
-            OutMesh.BoundingBox.Max.X = std::max(OutMesh.BoundingBox.Max.X, Pos.X);
-            OutMesh.BoundingBox.Max.Y = std::max(OutMesh.BoundingBox.Max.Y, Pos.Y);
-            OutMesh.BoundingBox.Max.Z = std::max(OutMesh.BoundingBox.Max.Z, Pos.Z);
+            if (!bHasBounds)
+            {
+                OutMesh.BoundingBox.Min = Pos;
+                OutMesh.BoundingBox.Max = Pos;
+                bHasBounds = true;
+            }
+            else
+            {
+                OutMesh.BoundingBox.Min.X = std::min(OutMesh.BoundingBox.Min.X, Pos.X);
+                OutMesh.BoundingBox.Min.Y = std::min(OutMesh.BoundingBox.Min.Y, Pos.Y);
+                OutMesh.BoundingBox.Min.Z = std::min(OutMesh.BoundingBox.Min.Z, Pos.Z);
+                OutMesh.BoundingBox.Max.X = std::max(OutMesh.BoundingBox.Max.X, Pos.X);
+                OutMesh.BoundingBox.Max.Y = std::max(OutMesh.BoundingBox.Max.Y, Pos.Y);
+                OutMesh.BoundingBox.Max.Z = std::max(OutMesh.BoundingBox.Max.Z, Pos.Z);
+            }
         }
         else if (Header == "vt")
         {
@@ -353,7 +363,13 @@ bool FStaticMeshLoader::ParseObjText(const FSourceRecord& Source, FStaticMesh& O
         }
         else if (Header == "usemtl")
         {
-            if (bSubMeshActive)
+            if (!bHasBounds)
+    {
+        OutMesh.BoundingBox.Min = FVector(0.f, 0.f, 0.f);
+        OutMesh.BoundingBox.Max = FVector(0.f, 0.f, 0.f);
+    }
+
+    if (bSubMeshActive)
             {
                 CurrentSubMesh.IndexCount = static_cast<uint32>(OutMesh.CPU_Indices.size()) -
                                             CurrentSubMesh.StartIndexLocation;
@@ -595,6 +611,24 @@ bool FStaticMeshLoader::ParseUAsset(const FSourceRecord& Source, FStaticMesh& Ou
     if (Ar.HasError())
     {
         return false;
+    }
+
+    if (!OutMesh.CPU_Positions.empty())
+    {
+        FVector Min = OutMesh.CPU_Positions[0];
+        FVector Max = OutMesh.CPU_Positions[0];
+        for (const FVector& Pos : OutMesh.CPU_Positions)
+        {
+            Min.X = std::min(Min.X, Pos.X);
+            Min.Y = std::min(Min.Y, Pos.Y);
+            Min.Z = std::min(Min.Z, Pos.Z);
+
+            Max.X = std::max(Max.X, Pos.X);
+            Max.Y = std::max(Max.Y, Pos.Y);
+            Max.Z = std::max(Max.Z, Pos.Z);
+        }
+        OutMesh.BoundingBox.Min = Min;
+        OutMesh.BoundingBox.Max = Max;
     }
 
     return OutMesh.VertexCount > 0 && OutMesh.IndexCount > 0;
