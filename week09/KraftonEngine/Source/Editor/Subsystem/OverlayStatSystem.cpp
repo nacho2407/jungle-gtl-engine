@@ -59,12 +59,6 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetTextureMemory()));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetVertexBufferMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
@@ -78,6 +72,12 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetStaticMeshCPUMemory()));
+			Group.Lines.push_back(FString(Buffer));
+		}
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetTextureMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
