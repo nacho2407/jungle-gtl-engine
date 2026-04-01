@@ -94,7 +94,7 @@ void UObjViewerEngine::LoadPreviewMesh(const FString& MeshPath)
 	AActor* PreviewActor = World->SpawnActor<AActor>();
 	if (!PreviewActor) return;
 
-	UStaticMeshComp* MeshComp = PreviewActor->AddComponent<UStaticMeshComp>();
+	UStaticMeshComponent* MeshComp = PreviewActor->AddComponent<UStaticMeshComponent>();
 	MeshComp->SetStaticMesh(Mesh);
 	PreviewActor->SetRootComponent(MeshComp);
 
@@ -123,7 +123,7 @@ void UObjViewerEngine::ImportObjWithOptions(const FString& ObjPath, const FImpor
 	AActor* PreviewActor = World->SpawnActor<AActor>();
 	if (!PreviewActor) return;
 
-	UStaticMeshComp* MeshComp = PreviewActor->AddComponent<UStaticMeshComp>();
+	UStaticMeshComponent* MeshComp = PreviewActor->AddComponent<UStaticMeshComponent>();
 	MeshComp->SetStaticMesh(Mesh);
 	PreviewActor->SetRootComponent(MeshComp);
 

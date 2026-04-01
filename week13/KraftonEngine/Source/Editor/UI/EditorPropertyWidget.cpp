@@ -360,24 +360,27 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		};
 
 	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
+	// Transform 변경은 배열 재할당을 일으키지 않으므로 break 불필요
 	if (!bIsRoot)
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
 			if (IsTransformProp(Props[i].Name))
-				if (RenderPropertyWidget(Props, i))
-					break;
+				RenderPropertyWidget(Props, i);
 		}
 		ImGui::Separator();
 	}
 
 	// Pass 2: 나머지 프로퍼티
+	// StaticMeshRef 변경은 OverrideMaterialPaths 재할당을 유발하므로 Props 포인터가
+	// 무효화된다. 이 경우에만 즉시 중단하고 다음 프레임에 재렌더링한다.
 	for (int32 i = 0; i < (int32)Props.size(); ++i)
 	{
 		if (IsTransformProp(Props[i].Name))
 			continue;
 
-		if (RenderPropertyWidget(Props, i))
+		bool bChanged = RenderPropertyWidget(Props, i);
+		if (bChanged && Props[i].Type == EPropertyType::StaticMeshRef)
 			break;
 	}
 
@@ -388,7 +391,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32& Index)
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32 Index)
 {
 	ImGui::PushID(Index);
 	FPropertyDescriptor& Prop = Props[Index];
@@ -504,87 +507,54 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		}
 		break;
 	}
-	case EPropertyType::Material:
+	case EPropertyType::MaterialSlot:
 	{
-		FString* Val = static_cast<FString*>(Prop.ValuePtr);
-		int32 ElementIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
+		FMaterialSlot* Slot    = static_cast<FMaterialSlot*>(Prop.ValuePtr);
+		int32          ElemIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
 
-		if (ElementIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComp>())
+		FString SlotName = "None";
+		if (ElemIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComponent>())
 		{
-			UStaticMeshComp* StaticMeshComp = static_cast<UStaticMeshComp*>(SelectedComponent);
-			FString SlotName = "None";
-			if (StaticMeshComp->GetStaticMesh() && ElementIdx < StaticMeshComp->GetStaticMesh()->GetStaticMaterials().size())
-				SlotName = StaticMeshComp->GetStaticMesh()->GetStaticMaterials()[ElementIdx].MaterialSlotName;
+			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
+			if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
+				SlotName = SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
+		}
 
-			// Left Column: [Element N] / [SlotName]
-			ImGui::BeginGroup();
-			ImGui::Text("Element %d", ElementIdx);
-			
-			// SlotName 표시 (TextDisabled 스타일 적용)
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-			ImGui::TextUnformatted(SlotName.c_str());
-			ImGui::PopStyleColor();
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+		// 좌측: Element 인덱스 + 슬롯 이름
+		ImGui::BeginGroup();
+		ImGui::Text("Element %d", ElemIdx);
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+		ImGui::TextUnformatted(SlotName.c_str());
+		ImGui::PopStyleColor();
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+		ImGui::EndGroup();
 
-			ImGui::EndGroup();
+		ImGui::SameLine(120);
 
-			ImGui::SameLine(120); // 좌측 섹션 너비 확장
-
-			// Right Column: [Material Combo] / [Scroll Checkbox]
-			ImGui::BeginGroup();
-			
-			ImGui::SetNextItemWidth(-1);
-
-			FString Preview = (Val->empty() || *Val == "None") ? "None" : GetStemFromPath(*Val);
-			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
+		// 우측: Material 콤보 + UVScroll 체크박스
+		ImGui::BeginGroup();
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::BeginCombo("##Mat", Slot->Path.c_str()))
+		{
+			for (TObjectIterator<UMaterial> It; It; ++It)
 			{
-				bool bSelectedNone = (*Val == "None" || Val->empty());
-				if (ImGui::Selectable("None", bSelectedNone))
+				if (!*It) continue;
+				FString Path = (*It)->GetAssetPathFileName();
+				if (ImGui::Selectable(Path.c_str(), Slot->Path == Path))
 				{
-					*Val = "None";
+					Slot->Path = Path;
 					bChanged = true;
 				}
-				if (bSelectedNone) ImGui::SetItemDefaultFocus();
-
-				// 추가된 FObjManager 스캔 함수 사용
-				const TArray<FMaterialAssetListItem>& MatFiles = FObjManager::GetAvailableMaterialFiles();
-				for (const FMaterialAssetListItem& Item : MatFiles)
-				{
-					bool bSelected = (*Val == Item.FullPath);
-					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-					{
-						*Val = Item.FullPath;
-						bChanged = true;
-					}
-					if (bSelected) ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
 			}
-
-			bool bHasScroll = (Index + 1 < (int32)Props.size() && Props[Index + 1].Name.find("UVScroll") != std::string::npos);
-			if (bHasScroll)
-			{
-				uint8* ScrollPtr = (uint8*)Props[Index + 1].ValuePtr;
-				bool bScroll = (*ScrollPtr != 0);
-				if (ImGui::Checkbox("Scroll", &bScroll)) { *ScrollPtr = bScroll ? 1 : 0; bChanged = true; }
-				Index++; // Consume UVScroll property
-			}
-
-			ImGui::EndGroup();
+			ImGui::EndCombo();
 		}
-		//else
-		//{
-		//	if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
-		//	{
-		//		for (TObjectIterator<UMaterial> It; It; ++It)
-		//		{
-		//			if (!*It) continue;
-		//			FString Path = (*It)->GetAssetPathFileName();
-		//			if (ImGui::Selectable(Path.c_str(), *Val == Path)) { *Val = Path; bChanged = true; }
-		//		}
-		//		ImGui::EndCombo();
-		//	}
-		//}
+
+		// UVScroll 체크박스 — 렌더러가 매 프레임 직접 읽으므로 PostEditProperty 불필요
+		bool bScroll = (Slot->bUVScroll != 0);
+		if (ImGui::Checkbox("Scroll", &bScroll))
+			Slot->bUVScroll = bScroll ? 1 : 0;
+
+		ImGui::EndGroup();
 		break;
 	}
 	case EPropertyType::Name:

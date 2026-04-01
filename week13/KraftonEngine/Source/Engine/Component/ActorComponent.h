@@ -7,6 +7,8 @@ class AActor;
 
 class UActorComponent : public UObject
 {
+	friend class AActor;
+
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
 
@@ -16,7 +18,7 @@ public:
 	virtual void Activate();
 	virtual void Deactivate();
 
-	void ExecuteTick(float DeltaTime);
+	virtual void TickComponent(float DeltaTime);
 	void SetActive(bool bNewActive);
 	inline void SetAutoActivate(bool bNewAutoActivate) { bAutoActivate = bNewAutoActivate; }
 	inline void SetComponentTickEnabled(bool bEnabled) { bCanEverTick = bEnabled; }
@@ -32,8 +34,9 @@ public:
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	virtual void PostEditProperty(const char* PropertyName) {}
 
-protected:
-	virtual void TickComponent(float DeltaTime) {}
+private:
+	// Component의 Tick은 UE 기준 Actor가 아닌 별도 시스템에서 돌아가나, 현재 관리를 위해 friend AActor로 설정. 추후 시스템이 완성되면 별도 매니저에서 관리하도록 리팩토링할 예정.
+	virtual void Tick(float DeltaTime);
 
 protected:
 	AActor* Owner = nullptr;
