@@ -20,26 +20,24 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 		const TArray<FStaticMaterial>& DefaultMaterials = StaticMesh->GetStaticMaterials();
 
 		OverrideMaterials.resize(DefaultMaterials.size());
-		OverrideMaterialPaths.resize(DefaultMaterials.size()); // 경로 배열도 사이즈 맞춤
-		OverrideUVScrolls.resize(DefaultMaterials.size());
+		MaterialSlots.resize(DefaultMaterials.size());
 
-		for (int32 i = 0; i < DefaultMaterials.size(); ++i)
+		for (int32 i = 0; i < (int32)DefaultMaterials.size(); ++i)
 		{
-			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
-			OverrideUVScrolls[i] = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
+			OverrideMaterials[i]        = DefaultMaterials[i].MaterialInterface;
+			MaterialSlots[i].bUVScroll  = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
 
 			if (OverrideMaterials[i])
-				OverrideMaterialPaths[i] = OverrideMaterials[i]->GetAssetPathFileName();
+				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
 			else
-				OverrideMaterialPaths[i] = "None";
+				MaterialSlots[i].Path = "None";
 		}
 	}
 	else
 	{
 		StaticMeshPath = "None";
 		OverrideMaterials.clear();
-		OverrideMaterialPaths.clear();
-		OverrideUVScrolls.clear();
+		MaterialSlots.clear();
 	}
 	CacheLocalBounds();
 }
@@ -125,9 +123,9 @@ void UStaticMeshComponent::CollectRender(FRenderBus& Bus) const
 						Draw.DiffuseColor = Mat->DiffuseColor;
 					}
 
-					if (i < OverrideUVScrolls.size())
+					if (i < (int32)MaterialSlots.size())
 					{
-						Draw.bIsUVScroll = OverrideUVScrolls[i];
+						Draw.bIsUVScroll = MaterialSlots[i].bUVScroll;
 					}
 					break;
 				}
@@ -227,10 +225,13 @@ void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
 
-	for (int32 i = 0; i < OverrideMaterialPaths.size(); ++i)
+	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
 	{
-		OutProps.push_back({ "Element " + std::to_string(i), EPropertyType::Material, &OverrideMaterialPaths[i] });
-		OutProps.push_back({ "UVScroll " + std::to_string(i), EPropertyType::ByteBool, &OverrideUVScrolls[i] });
+		FPropertyDescriptor Desc;
+		Desc.Name     = "Element " + std::to_string(i);
+		Desc.Type     = EPropertyType::MaterialSlot;
+		Desc.ValuePtr = &MaterialSlots[i];
+		OutProps.push_back(Desc);
 	}
 }
 
@@ -257,9 +258,9 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		int32 Index = atoi(&PropertyName[8]);
 
 		// 인덱스 범위 유효성 검사
-		if (Index >= 0 && Index < OverrideMaterialPaths.size())
+		if (Index >= 0 && Index < (int32)MaterialSlots.size())
 		{
-			FString NewMatPath = OverrideMaterialPaths[Index];
+			FString NewMatPath = MaterialSlots[Index].Path;
 
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{
