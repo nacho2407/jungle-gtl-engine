@@ -638,37 +638,50 @@ namespace
                     if (auto* Mat = Cast<Engine::Asset::UMaterial>(CurrentMat))
                     {
                         FString SubMatName = MeshComp->GetSubMaterialName(SlotIdx);
-                        if (auto* Data = Mat->GetMaterialDataMutable(SubMatName))
+                        
+                        // --- 인스턴스별 개별 조절 로직 (오버라이드 우선) ---
+                        FVector2 CurrentSpeed;
+                        if (MeshComp->HasUVScrollSpeedOverride(SlotIdx))
                         {
-                            // Indent(20.0f) 제거하여 Material 0 와 정렬을 맞춤
-                            
-                            ImGui::AlignTextToFramePadding();
-                            ImGui::TextUnformatted("UV Scroll Speed");
-                            ImGui::SameLine(140.0f); // 수평 정렬 시작
+                            CurrentSpeed = MeshComp->GetUVScrollSpeedOverride(SlotIdx);
+                        }
+                        else if (auto* DefaultData = Mat->GetMaterialData(SubMatName))
+                        {
+                            CurrentSpeed = DefaultData->UVScrollSpeed;
+                        }
+                        else
+                        {
+                            CurrentSpeed = FVector2::ZeroVector;
+                        }
 
-                            float SpeedX = Data->UVScrollSpeed.X;
-                            float SpeedY = Data->UVScrollSpeed.Y;
+                        // Indent(20.0f) 제거하여 Material 0 와 정렬을 맞춤
+                        
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("UV Scroll Speed");
+                        ImGui::SameLine(140.0f); // 수평 정렬 시작
 
-                            // X 부분
-                            ImGui::AlignTextToFramePadding();
-                            ImGui::TextUnformatted("X:"); ImGui::SameLine();
-                            ImGui::SetNextItemWidth(60.0f);
-                            if (ImGui::DragFloat("##X", &SpeedX, 0.001f, -10.0f, 10.0f, "%.3f"))
-                            {
-                                Data->UVScrollSpeed.X = SpeedX;
-                                bChanged = true;
-                            }
+                        float SpeedX = CurrentSpeed.X;
+                        float SpeedY = CurrentSpeed.Y;
 
-                            // Y 부분 (간격 조정: 220 -> 240)
-                            ImGui::SameLine(240.0f); 
-                            ImGui::AlignTextToFramePadding();
-                            ImGui::TextUnformatted("Y:"); ImGui::SameLine();
-                            ImGui::SetNextItemWidth(60.0f);
-                            if (ImGui::DragFloat("##Y", &SpeedY, 0.001f, -10.0f, 10.0f, "%.3f"))
-                            {
-                                Data->UVScrollSpeed.Y = SpeedY;
-                                bChanged = true;
-                            }
+                        // X 부분
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("X:"); ImGui::SameLine();
+                        ImGui::SetNextItemWidth(60.0f);
+                        if (ImGui::DragFloat("##X", &SpeedX, 0.001f, -10.0f, 10.0f, "%.3f"))
+                        {
+                            MeshComp->SetUVScrollSpeedOverride(SlotIdx, FVector2(SpeedX, SpeedY));
+                            bChanged = true;
+                        }
+
+                        // Y 부분 (간격 조정: 220 -> 240)
+                        ImGui::SameLine(240.0f); 
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Y:"); ImGui::SameLine();
+                        ImGui::SetNextItemWidth(60.0f);
+                        if (ImGui::DragFloat("##Y", &SpeedY, 0.001f, -10.0f, 10.0f, "%.3f"))
+                        {
+                            MeshComp->SetUVScrollSpeedOverride(SlotIdx, FVector2(SpeedX, SpeedY));
+                            bChanged = true;
                         }
                     }
                 }

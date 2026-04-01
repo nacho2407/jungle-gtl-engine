@@ -43,6 +43,26 @@ namespace Engine::Component
         return "";
     }
 
+    void UMeshComponent::SetUVScrollSpeedOverride(uint32 SlotIndex, const FVector2& Speed)
+    {
+        UVScrollOverrides[SlotIndex] = Speed;
+    }
+
+    FVector2 UMeshComponent::GetUVScrollSpeedOverride(uint32 SlotIndex) const
+    {
+        auto It = UVScrollOverrides.find(SlotIndex);
+        if (It != UVScrollOverrides.end())
+        {
+            return It->second;
+        }
+        return FVector2::ZeroVector;
+    }
+
+    bool UMeshComponent::HasUVScrollSpeedOverride(uint32 SlotIndex) const
+    {
+        return UVScrollOverrides.find(SlotIndex) != UVScrollOverrides.end();
+    }
+
     void UMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
         UPrimitiveComponent::DescribeProperties(Builder);

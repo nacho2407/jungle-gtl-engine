@@ -163,8 +163,21 @@ void FD3D11StaticMeshRenderer::Flush()
                 Constants.BaseColor =
                     FColor(MaterialData->DiffuseColor.X, MaterialData->DiffuseColor.Y,
                            MaterialData->DiffuseColor.Z, MaterialData->Opacity);
-                Constants.ScrollSpeedX = MaterialData->UVScrollSpeed.X;
-                Constants.ScrollSpeedY = MaterialData->UVScrollSpeed.Y;
+                
+                // --- 오버라이드 우선 적용 로직 ---
+                auto ItOverride = DrawItem.UVScrollOverrides.find(i);
+                if (ItOverride != DrawItem.UVScrollOverrides.end())
+                {
+                    // 인스턴스(컴포넌트) 레벨의 오버라이드 사용
+                    Constants.ScrollSpeedX = ItOverride->second.X;
+                    Constants.ScrollSpeedY = ItOverride->second.Y;
+                }
+                else
+                {
+                    // 에셋(머티리얼) 레벨의 기본값 사용
+                    Constants.ScrollSpeedX = MaterialData->UVScrollSpeed.X;
+                    Constants.ScrollSpeedY = MaterialData->UVScrollSpeed.Y;
+                }
             }
             else
             {
