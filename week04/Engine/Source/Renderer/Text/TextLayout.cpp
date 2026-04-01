@@ -2,6 +2,9 @@
 
 #include "Renderer/Types/RenderDebugColors.h"
 
+#include <algorithm>
+#include <cfloat>
+
 namespace
 {
     constexpr float DefaultLineHeight = 16.0f;
@@ -139,6 +142,49 @@ namespace
 
         return InLineHeight * 0.5f * InScale;
     }
+
+    void ExpandBounds(FVector& InOutMin, FVector& InOutMax, const FVector& InPoint)
+    {
+        InOutMin.X = std::min(InOutMin.X, InPoint.X);
+        InOutMin.Y = std::min(InOutMin.Y, InPoint.Y);
+        InOutMin.Z = std::min(InOutMin.Z, InPoint.Z);
+
+        InOutMax.X = std::max(InOutMax.X, InPoint.X);
+        InOutMax.Y = std::max(InOutMax.Y, InPoint.Y);
+        InOutMax.Z = std::max(InOutMax.Z, InPoint.Z);
+    }
+
+    void ExpandBoundsWithQuad(FVector& InOutMin, FVector& InOutMax, const FTextWorldQuad& InQuad)
+    {
+        const FVector P0 = InQuad.BottomLeft;
+        const FVector P1 = InQuad.BottomLeft + InQuad.Right;
+        const FVector P2 = InQuad.BottomLeft + InQuad.Up;
+        const FVector P3 = InQuad.BottomLeft + InQuad.Right + InQuad.Up;
+
+        ExpandBounds(InOutMin, InOutMax, P0);
+        ExpandBounds(InOutMin, InOutMax, P1);
+        ExpandBounds(InOutMin, InOutMax, P2);
+        ExpandBounds(InOutMin, InOutMax, P3);
+    }
+
+    void BuildPlacementAxes(const FMatrix& InViewMatrix, const FRenderPlacement& InPlacement,
+                            FVector& OutOrigin, FVector& OutRightAxis, FVector& OutUpAxis)
+    {
+        const FMatrix& PlacementWorld = InPlacement.World;
+        OutOrigin = PlacementWorld.GetOrigin() + InPlacement.WorldOffset;
+
+        if (InPlacement.IsBillboard())
+        {
+            const FMatrix CameraWorld = InViewMatrix.GetInverse();
+            OutRightAxis = CameraWorld.GetRightVector().GetSafeNormal();
+            OutUpAxis = CameraWorld.GetUpVector().GetSafeNormal();
+        }
+        else
+        {
+            OutRightAxis = PlacementWorld.GetRightVector().GetSafeNormal();
+            OutUpAxis = PlacementWorld.GetUpVector().GetSafeNormal();
+        }
+    }
 } // namespace
 
 FTextLayoutResult BuildTextLayout(const FTextRenderItem& InItem)
@@ -259,5 +305,113 @@ FTextLayoutResult BuildTextLayout(const FTextRenderItem& InItem)
     }
 
     return Layout;
+}
+
+FTextWorldGeometry BuildTextWorldGeometry(const FTextRenderItem& InItem, const FMatrix& InViewMatrix)
+{
+    FTextWorldGeometry WorldGeometry;
+
+    FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    auto AddQuad =
+        [&WorldGeometry, &Min, &Max](const FTextWorldQuad& InQuad)
+    {
+        WorldGeometry.GlyphQuads.push_back(InQuad);
+        ExpandBoundsWithQuad(Min, Max, InQuad);
+        WorldGeometry.bHasWorldAABB = true;
+    };
+
+    FVector Origin;
+    FVector RightAxis;
+    FVector UpAxis;
+    BuildPlacementAxes(InViewMatrix, InItem.Placement, Origin, RightAxis, UpAxis);
+
+    if (InItem.FontResource == nullptr)
+    {
+        float Width = 1.0f;
+        float Height = 1.0f;
+
+        if (InItem.LayoutMode == ETextLayoutMode::FitToBox)
+        {
+            const FVector WorldScale = InItem.Placement.World.GetScaleVector();
+            Width = std::max(WorldScale.X, 1.0f);
+            Height = std::max(WorldScale.Y, 1.0f);
+        }
+        else
+        {
+            const float FallbackExtent = std::max(InItem.TextScale, 1.0f);
+            Width = FallbackExtent;
+            Height = FallbackExtent;
+        }
+
+        FTextWorldQuad Quad;
+        Quad.Right = RightAxis * Width;
+        Quad.Up = -UpAxis * Height;
+        Quad.BottomLeft = Origin - Quad.Right * 0.5f + UpAxis * Height * 0.5f;
+        AddQuad(Quad);
+    }
+    else
+    {
+        const FTextLayoutResult Layout = BuildTextLayout(InItem);
+        if (!Layout.IsValid())
+        {
+            return WorldGeometry;
+        }
+
+        if (InItem.LayoutMode == ETextLayoutMode::FitToBox)
+        {
+            const FVector WorldScale = InItem.Placement.World.GetScaleVector();
+            const float BoxWidth = std::max(WorldScale.X, 1.0f);
+            const float BoxHeight = std::max(WorldScale.Y, 1.0f);
+
+            const float LayoutWidth = Layout.GetWidth();
+            const float LayoutHeight = Layout.GetHeight();
+            const float UniformScale = std::min(BoxWidth / LayoutWidth, BoxHeight / LayoutHeight);
+
+            const float FinalWidth = LayoutWidth * UniformScale;
+            const float FinalHeight = LayoutHeight * UniformScale;
+            const float OffsetX = (BoxWidth - FinalWidth) * 0.5f;
+            const float OffsetY = (BoxHeight - FinalHeight) * 0.5f;
+
+            for (const FTextLayoutGlyph& Glyph : Layout.Glyphs)
+            {
+                const float X0 = OffsetX + (Glyph.MinX - Layout.MinX) * UniformScale;
+                const float Y0 = OffsetY + (Glyph.MinY - Layout.MinY) * UniformScale;
+                const float W = (Glyph.MaxX - Glyph.MinX) * UniformScale;
+                const float H = (Glyph.MaxY - Glyph.MinY) * UniformScale;
+
+                FTextWorldQuad Quad;
+                Quad.BottomLeft = Origin + RightAxis * X0 - UpAxis * Y0;
+                Quad.Right = RightAxis * W;
+                Quad.Up = -UpAxis * H;
+                AddQuad(Quad);
+            }
+        }
+        else
+        {
+            const float CenterX = (Layout.MinX + Layout.MaxX) * 0.5f;
+            const float CenterY = (Layout.MinY + Layout.MaxY) * 0.5f;
+
+            for (const FTextLayoutGlyph& Glyph : Layout.Glyphs)
+            {
+                const float X0 = Glyph.MinX - CenterX;
+                const float YBottom = Glyph.MaxY - CenterY;
+
+                FTextWorldQuad Quad;
+                Quad.BottomLeft = Origin + RightAxis * X0 - UpAxis * YBottom;
+                Quad.Right = RightAxis * (Glyph.MaxX - Glyph.MinX);
+                Quad.Up = UpAxis * (Glyph.MaxY - Glyph.MinY);
+                AddQuad(Quad);
+            }
+        }
+    }
+
+    if (WorldGeometry.bHasWorldAABB)
+    {
+        WorldGeometry.WorldAABB = Geometry::FAABB(Min, Max);
+    }
+
+    return WorldGeometry;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Core/Geometry/Primitives/AABB.h"
 #include "Renderer/Types/RenderItem.h"
 
 struct FTextLayoutGlyph
@@ -31,4 +32,22 @@ struct FTextLayoutResult
     bool  IsValid() const { return HasGlyphs() && GetWidth() > 0.0f && GetHeight() > 0.0f; }
 };
 
+struct FTextWorldQuad
+{
+    FVector BottomLeft = FVector::ZeroVector;
+    FVector Right = FVector::ZeroVector;
+    FVector Up = FVector::ZeroVector;
+};
+
+struct FTextWorldGeometry
+{
+    TArray<FTextWorldQuad> GlyphQuads;
+    Geometry::FAABB        WorldAABB;
+    bool                   bHasWorldAABB = false;
+
+    bool HasQuads() const { return !GlyphQuads.empty(); }
+};
+
 ENGINE_API FTextLayoutResult BuildTextLayout(const FTextRenderItem& InItem);
+ENGINE_API FTextWorldGeometry BuildTextWorldGeometry(const FTextRenderItem& InItem,
+                                                     const FMatrix&         InViewMatrix);

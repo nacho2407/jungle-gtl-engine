@@ -200,22 +200,46 @@ void FMemoryTracker::AddVertexBufferBytes(uint64 Bytes)
     AddToCounter(TrackedStats.VertexBufferBytes, Bytes);
 }
 
+void FMemoryTracker::RemoveVertexBufferBytes(uint64 Bytes)
+{
+    std::lock_guard<std::mutex> Lock(Mutex);
+    RemoveFromCounter(TrackedStats.VertexBufferBytes, Bytes);
+}
+
+void FMemoryTracker::RemoveVertexBufferBytes(ID3D11Buffer* Buffer)
+{
+    if (Buffer == nullptr)
+    {
+        return;
+    }
+
+    D3D11_BUFFER_DESC Desc = {};
+    Buffer->GetDesc(&Desc);
+    RemoveVertexBufferBytes(static_cast<uint64>(Desc.ByteWidth));
+}
+
 void FMemoryTracker::AddIndexBufferBytes(uint64 Bytes)
 {
     std::lock_guard<std::mutex> Lock(Mutex);
     AddToCounter(TrackedStats.IndexBufferBytes, Bytes);
 }
 
-void FMemoryTracker::AddVertexShaderBlobBytes(uint64 Bytes)
+void FMemoryTracker::RemoveIndexBufferBytes(uint64 Bytes)
 {
     std::lock_guard<std::mutex> Lock(Mutex);
-    AddToCounter(TrackedStats.VertexShaderBlobBytes, Bytes);
+    RemoveFromCounter(TrackedStats.IndexBufferBytes, Bytes);
 }
 
-void FMemoryTracker::AddPixelShaderBlobBytes(uint64 Bytes)
+void FMemoryTracker::RemoveIndexBufferBytes(ID3D11Buffer* Buffer)
 {
-    std::lock_guard<std::mutex> Lock(Mutex);
-    AddToCounter(TrackedStats.PixelShaderBlobBytes, Bytes);
+    if (Buffer == nullptr)
+    {
+        return;
+    }
+
+    D3D11_BUFFER_DESC Desc = {};
+    Buffer->GetDesc(&Desc);
+    RemoveIndexBufferBytes(static_cast<uint64>(Desc.ByteWidth));
 }
 
 void FMemoryTracker::AddToCounter(uint64& Counter, uint64 Bytes) { Counter += Bytes; }

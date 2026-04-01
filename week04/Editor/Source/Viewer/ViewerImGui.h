@@ -30,20 +30,25 @@ namespace ViewerUI
 
     struct FViewerUIInput
     {
+        ERasterizerCullMode SelectedCullMode = ERasterizerCullMode::CULL_Back;
         const char*    MeshName          = nullptr;
         float          FPS               = 0.f;
         EViewModeIndex CurrentViewMode   = EViewModeIndex::VMI_Lit;
-        ERasterizerCullMode      SelectedCullMode  = ERasterizerCullMode::CULL_Back;
         bool           bConvertCoords    = false;  // LH Y-up → Z-up
+        FVector        ModelScale        = FVector(1.f, 1.f, 1.f);
+        float          AbsoluteScale     = 1.f;
     };
 
     struct FViewerUIOutput
     {
+        ERasterizerCullMode SelectedCullMode = ERasterizerCullMode::CULL_Back;
         ECameraCommand CameraCommand     = ECC_None;
         bool           bOpenRequested    = false;
         EViewModeIndex SelectedViewMode  = EViewModeIndex::VMI_Lit;
-        ERasterizerCullMode      SelectedCullMode  = ERasterizerCullMode::CULL_Back;
         bool           bConvertCoords    = false;
+        FVector        ModelScale        = FVector(1.f, 1.f, 1.f);
+        bool           bIsScaleChanged   = false;
+        float          AbsoluteScale     = 1.f;
     };
 
     class FViewerImGui
@@ -73,6 +78,7 @@ namespace ViewerUI
         void           DrawViewModePanel(EViewModeIndex Current, FViewerUIOutput& Out);
         void           DrawCullModePanel(ERasterizerCullMode Current, FViewerUIOutput& Out);
         void           DrawCameraPanel(FViewerUIOutput& Out);
+        void           DrawScalePanel(const FViewerUIInput& Input, FViewerUIOutput& Out);
     };
 } // namespace ViewerUI
 
