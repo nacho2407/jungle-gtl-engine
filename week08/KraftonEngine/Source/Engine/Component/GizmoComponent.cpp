@@ -1,6 +1,7 @@
 ﻿#include "GizmoComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
+#include "Math/Quat.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
@@ -116,14 +117,39 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
-	FMatrix DeltaMatrix = FMatrix::MakeRotationAxis(RotationAxis, DragAmount);
+	FQuat DeltaQuat = FQuat::FromAxisAngle(RotationAxis, DragAmount);
+
+	const float DeltaDeg = DragAmount * RAD_TO_DEG;
 
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
-			FMatrix CurMatrix = FMatrix::MakeRotationEuler(Actor->GetActorRotation());
-			FMatrix NewMatrix = CurMatrix * DeltaMatrix;
-			Actor->SetActorRotation(NewMatrix.GetEuler());
+			USceneComponent* Root = Actor->GetRootComponent();
+			const FQuat& CurQuat = Root->GetRelativeQuat();
+			// 월드 스페이스: Delta * Cur, 로컬 스페이스: Cur * Delta
+			FQuat NewQuat = bIsWorldSpace ? (DeltaQuat * CurQuat) : (CurQuat * DeltaQuat);
+
+			// Euler 캐시를 기즈모 축 기준으로 직접 업데이트 (짐벌락 방지)
+			FRotator EulerHint = Root->GetCachedEditRotator();
+			if (bIsWorldSpace)
+			{
+				switch (SelectedAxis)
+				{
+				case 0: EulerHint.Roll  += DeltaDeg; break;  // World X = Roll
+				case 1: EulerHint.Pitch += DeltaDeg; break;  // World Y = Pitch
+				case 2: EulerHint.Yaw   += DeltaDeg; break;  // World Z = Yaw
+				}
+			}
+			else
+			{
+				switch (SelectedAxis)
+				{
+				case 0: EulerHint.Roll  += DeltaDeg; break;  // Local X = Roll
+				case 1: EulerHint.Pitch += DeltaDeg; break;  // Local Y = Pitch
+				case 2: EulerHint.Yaw   += DeltaDeg; break;  // Local Z = Yaw
+				}
+			}
+			Root->SetRelativeRotationWithEulerHint(NewQuat, EulerHint);
 		};
 
 	if (AllSelectedActors)
@@ -179,7 +205,7 @@ void UGizmoComponent::SetTargetLocation(FVector NewLocation)
 	UpdateGizmoTransform();
 }
 
-void UGizmoComponent::SetTargetRotation(FVector NewRotation)
+void UGizmoComponent::SetTargetRotation(FRotator NewRotation)
 {
 	if (!TargetActor) return;
 
@@ -388,7 +414,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 
 	SetWorldLocation(TargetActor->GetActorLocation());
 
-	FVector ActorRot = TargetActor->GetActorRotation();
+	FRotator ActorRot = TargetActor->GetActorRotation();
 
 	switch (CurMode)
 	{
@@ -398,12 +424,12 @@ void UGizmoComponent::UpdateGizmoTransform()
 		break;
 
 	case EGizmoMode::Rotate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
+		SetRelativeRotation(bIsWorldSpace ? FRotator() : ActorRot);
 		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::RotGizmo);
 		break;
 
 	case EGizmoMode::Translate:
-		SetRelativeRotation(bIsWorldSpace ? FVector() : ActorRot);
+		SetRelativeRotation(bIsWorldSpace ? FRotator() : ActorRot);
 		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
 		break;
 	}
@@ -509,7 +535,7 @@ void UGizmoComponent::CollectRender(FRenderBus& Bus) const
 
 	// WorldMatrix를 per-viewport 스케일로 재구성 (S * R * T)
 	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(FVector(PerViewScale, PerViewScale, PerViewScale))
-		* FMatrix::MakeRotationEuler(GetRelativeRotation())
+		* FMatrix::MakeRotationEuler(GetRelativeRotation().ToVector())
 		* FMatrix::MakeTranslationMatrix(GetWorldLocation());
 
 	auto CreateGizmoCmd = [&](bool bInner) {

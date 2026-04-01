@@ -4,7 +4,7 @@ FMatrix FTransform::ToMatrix() const
 {
 	FMatrix translateMatrix = FMatrix::MakeTranslationMatrix(Location);
 
-	FMatrix rotationMatrix = FMatrix::MakeRotationEuler(Rotation);
+	FMatrix rotationMatrix = Rotation.ToMatrix();
 
 	FMatrix scaleMatrix = FMatrix::MakeScaleMatrix(Scale);
 

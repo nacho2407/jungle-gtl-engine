@@ -216,8 +216,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		FVector Pos = PrimaryActor->GetActorLocation();
 		float PosArray[3] = { Pos.X, Pos.Y, Pos.Z };
 
-		FVector Rot = PrimaryActor->GetActorRotation();
-		float RotArray[3] = { Rot.X, Rot.Y, Rot.Z };
+		USceneComponent* RootComp = PrimaryActor->GetRootComponent();
 
 		FVector Scale = PrimaryActor->GetActorScale();
 		float ScaleArray[3] = { Scale.X, Scale.Y, Scale.Z };
@@ -231,14 +230,30 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			}
 			EditorEngine->GetGizmo()->UpdateGizmoTransform();
 		}
-		if (ImGui::DragFloat3("Rotation", RotArray, 0.1f))
 		{
-			FVector Delta = FVector(RotArray[0], RotArray[1], RotArray[2]) - Rot;
-			for (AActor* Actor : SelectedActors)
+			// Rotation: CachedEditRotator 메모리를 DragFloat3가 직접 수정 (짐벌락 방지)
+			FRotator& CachedRot = RootComp->GetCachedEditRotator();
+			FRotator PrevRot = CachedRot;	// delta 계산용 복사본
+
+			if (ImGui::DragFloat3("Rotation", &CachedRot.Pitch, 0.1f))
 			{
-				if (Actor) Actor->SetActorRotation(Actor->GetActorRotation() + Delta);
+				if (SelectedActors.size() > 1)
+				{
+					FRotator Delta = CachedRot - PrevRot;
+					for (AActor* Actor : SelectedActors)
+					{
+						if (!Actor || Actor == PrimaryActor) continue;
+						USceneComponent* Root = Actor->GetRootComponent();
+						if (Root)
+						{
+							FRotator Other = Root->GetCachedEditRotator();
+							Root->SetRelativeRotation(Other + Delta);
+						}
+					}
+				}
+				RootComp->ApplyCachedEditRotator();
+				EditorEngine->GetGizmo()->UpdateGizmoTransform();
 			}
-			EditorEngine->GetGizmo()->UpdateGizmoTransform();
 		}
 		if (ImGui::DragFloat3("Scale", ScaleArray, 0.1f))
 		{
@@ -435,6 +450,16 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
+		break;
+	}
+	case EPropertyType::Rotator:
+	{
+		float* Val = static_cast<float*>(Prop.ValuePtr);
+		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
+		if (bChanged && SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+		{
+			static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();
+		}
 		break;
 	}
 	case EPropertyType::Vec4:

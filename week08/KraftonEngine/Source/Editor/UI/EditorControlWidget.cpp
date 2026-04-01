@@ -87,11 +87,11 @@ void FEditorControlWidget::Render(float DeltaTime)
 		Camera->SetWorldLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
 	}
 
-	FVector CamRot = Camera->GetRelativeRotation();
-	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
+	FRotator CamRot = Camera->GetRelativeRotation();
+	float CameraRotation[3] = { CamRot.Pitch, CamRot.Yaw, CamRot.Roll };
 	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
 	{
-		Camera->SetRelativeRotation(FVector(Clamp(CameraRotation[0], CamRot.X, CamRot.X), CameraRotation[1], CameraRotation[2]));
+		Camera->SetRelativeRotation(FRotator(CameraRotation[0], CameraRotation[1], Clamp(CameraRotation[2], CamRot.Roll, CamRot.Roll)));
 	}
 
 	ImGui::End();

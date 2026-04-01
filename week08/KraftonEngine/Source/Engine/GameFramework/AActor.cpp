@@ -2,6 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
+#include "Math/Rotator.h"
 
 IMPLEMENT_CLASS(AActor, UObject)
 
@@ -105,16 +106,24 @@ void AActor::Tick(float DeltaTime)
 	}
 }
 
-FVector AActor::GetActorRotation() const
+FRotator AActor::GetActorRotation() const
 {
-	return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
+	return RootComponent ? RootComponent->GetRelativeRotation() : FRotator();
 }
 
-void AActor::SetActorRotation(const FVector& NewRotation)
+void AActor::SetActorRotation(const FRotator& NewRotation)
 {
 	if (RootComponent)
 	{
 		RootComponent->SetRelativeRotation(NewRotation);
+	}
+}
+
+void AActor::SetActorRotation(const FVector& EulerRotation)
+{
+	if (RootComponent)
+	{
+		RootComponent->SetRelativeRotation(EulerRotation);
 	}
 }
 

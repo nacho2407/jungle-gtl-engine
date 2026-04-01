@@ -53,13 +53,14 @@ void UCameraComponent::LookAt(const FVector& Target)
 
 	constexpr float Rad2Deg = 180.0f / 3.14159265358979f;
 
-	RelativeRotation.Y = -asinf(Diff.Z) * Rad2Deg;
+	FRotator LookRotation = GetRelativeRotation();
+	LookRotation.Pitch = -asinf(Diff.Z) * Rad2Deg;
 
 	if (fabsf(Diff.Z) < 0.999f) {
-		RelativeRotation.Z = atan2f(Diff.Y, Diff.X) * Rad2Deg;
+		LookRotation.Yaw = atan2f(Diff.Y, Diff.X) * Rad2Deg;
 	}
 
-	SetRelativeRotation(RelativeRotation);
+	SetRelativeRotation(LookRotation);
 }
 
 void UCameraComponent::OnResize(int32 Width, int32 Height)
