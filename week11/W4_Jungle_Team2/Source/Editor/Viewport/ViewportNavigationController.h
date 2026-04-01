@@ -40,10 +40,10 @@ public:
 	}
 
 	// Orbit
-	void BeginOrbit(const FVector& InPivot);
-	void UpdateOrbitCamera();
-	void EndOrbit();
-	bool IsOrbiting() const { return bOrbiting; }
+	// void BeginOrbit(const FVector& InPivot);
+	// void UpdateOrbitCamera();
+	// void EndOrbit();
+	// bool IsOrbiting() const { return bOrbiting; }
 
 	// Dolly
 	void Dolly(float Value);

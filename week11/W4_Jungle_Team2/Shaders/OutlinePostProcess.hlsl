@@ -5,7 +5,6 @@ Texture2D<float> SelectionMaskTexture : register(t7);
 struct VSOutput
 {
     float4 position : SV_POSITION;
-    float2 uv : TEXCOORD0;
 };
 
 VSOutput VS(uint vertexId : SV_VertexID)
@@ -19,15 +18,7 @@ VSOutput VS(uint vertexId : SV_VertexID)
         float2(3.0f, -1.0f)
     };
 
-    float2 uvs[3] =
-    {
-        float2(0.0f, 1.0f),
-        float2(0.0f, -1.0f),
-        float2(2.0f, 1.0f)
-    };
-
     output.position = float4(positions[vertexId], 0.0f, 1.0f);
-    output.uv = uvs[vertexId];
     return output;
 }
 
@@ -35,18 +26,21 @@ float4 PS(VSOutput input) : SV_TARGET
 {
     const int2 viewportSize = int2(max(OutlineViewportSize, float2(1.0f, 1.0f)));
     const int2 pixelCoord = int2(input.position.xy);
+    
 	//	Viewport 범위 내 Clamp
     const int2 clampedCoord = clamp(pixelCoord, int2(0, 0), viewportSize - 1);
 
     const float centerMask = SelectionMaskTexture.Load(int3(clampedCoord, 0));
-	//	만일 0.5f 이상이라는 것은 Mask 자체라는 것
+	
+    //	만일 0.5f 이상이라는 것은 Mask 자체라는 것
     if (centerMask > 0.5f)
     {
         discard;
     }
 
-	//	OutlineThicknessPixel이 integer로 사용될 수 있도록 round 및 최소 1 보장
+	//	OutlineThicknessPixel이 integer로 사용될 수 있도록 round 및 최소 1 보장 (몇 픽셀까지 검사할 것인지)
     const int radius = max((int)round(OutlineThicknessPixels), 1);
+    
     const int2 neighborOffsets[8] =
     {
         int2(-1, 0), int2(1, 0), int2(0, -1), int2(0, 1),
