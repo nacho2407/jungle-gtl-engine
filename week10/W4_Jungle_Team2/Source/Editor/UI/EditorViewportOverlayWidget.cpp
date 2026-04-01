@@ -179,11 +179,13 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 // 스플리터 바 시각화
 void FEditorViewportOverlayWidget::RenderSplitterBar()
 {
-	 // Caputre 중인 Widget이 있다면 SplitterBar 하이라이트를 비활성화 합니다.
-	 if (FSlateApplication::Get().GetCapturedWidget()) return;
 
-	 bool bIsHodingGizmo = EditorEngine->GetGizmo()->IsHolding();
-	 // 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
+	 // Capture 중이거나 middle dragging 중이라면 하이라이트를 하지 않습니다.
+	if (FSlateApplication::Get().GetCapturedWidget() || InputSystem::Get().GetMiddleDragging())
+		 return;
+	// 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
+	bool bIsHodingGizmo = EditorEngine->GetGizmo()->IsHolding();
+
 	 if (bIsHodingGizmo || InputSystem::Get().GetRightDragging())
 	 {
 		 return;
@@ -208,7 +210,6 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 		SSplitterCross* Cross = ViewportLayout.GetCrossWidget();
 		constexpr ImU32 CrossHoverColor = IM_COL32(140, 180, 255, 255);
 
-		// 교차점 핸들 호버 시 전체 바를 황금색으로 표시합니다.
 		const bool bCrossHovered = (Cross && Cross == Hovered);
 
 		SSplitter* Splitters[] = {
