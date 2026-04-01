@@ -192,6 +192,7 @@ public:
     UAsset* RegisterAssetById(const FAssetId& Id, UAsset* Asset);
     UAsset* FindAssetById(const FAssetId& Id) const;
     bool    UnregisterAssetById(const FAssetId& Id);
+    TArray<UAsset*> GetAssetsByType(EAssetType Type) const;
     UAsset* FindLoadedAsset(const FAssetKey& Key) const;
     void    Invalidate(const FWString& Path);
     void    Clear();

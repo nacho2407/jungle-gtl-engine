@@ -339,6 +339,19 @@ bool UAssetManager::UnregisterAssetById(const FAssetId& Id)
     return AssetIdAssets.erase(Id) > 0;
 }
 
+TArray<UAsset*> UAssetManager::GetAssetsByType(EAssetType Type) const
+{
+    TArray<UAsset*> Result;
+    for (const auto& Pair : AssetIdAssets)
+    {
+        if (Pair.first.Type == Type)
+        {
+            Result.push_back(Pair.second.get());
+        }
+    }
+    return Result;
+}
+
 UAsset* UAssetManager::FindLoadedAsset(const FAssetKey& Key) const
 {
     auto It = LoadedAssets.find(Key);

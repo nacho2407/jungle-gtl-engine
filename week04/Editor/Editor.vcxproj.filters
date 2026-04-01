@@ -22,6 +22,9 @@
     <Filter Include="Source\Input">
       <UniqueIdentifier>{6a2850c9-e58a-f648-6b89-623ded1d763f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Importer">
+      <UniqueIdentifier>{d4f3b2a1-7c0d-4e83-9b57-1f2c3a4b5c6d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Launch">
       <UniqueIdentifier>{90ac0f15-c775-3ba7-f780-7222e93b8ddd}</UniqueIdentifier>
     </Filter>
@@ -110,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp">
       <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Importer\EditorAssetImporter.cpp">
+      <Filter>Source\Importer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
       <Filter>Source\Launch</Filter>
@@ -256,6 +262,9 @@
     </ClInclude>
     <ClInclude Include="Source\Input\ViewportOverlayInputContext.h">
       <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Importer\EditorAssetImporter.h">
+      <Filter>Source\Importer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Launch\EditorEngineLoop.h">
       <Filter>Source\Launch</Filter>

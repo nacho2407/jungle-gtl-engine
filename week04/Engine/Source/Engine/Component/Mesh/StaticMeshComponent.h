@@ -48,5 +48,6 @@ namespace Engine::Component
       private:
         Asset::UStaticMesh* StaticMesh = nullptr;
         FString             PendingMeshPath = ""; // 아직 로드되지 않은 에셋 경로
+        class UAssetManager* CachedAssetManager = nullptr;
     };
 } // namespace Engine::Component

@@ -2,6 +2,8 @@
 #include "MaterialLoader.h"
 #include "Asset/MaterialLibrary.h"
 #include "Asset/Material.h"
+#include "Asset/UAssetBinary.h"
+#include "Core/Serialization/WindowsBinArchive.h"
 #include "Asset/Texture2DAsset.h"
 
 #include <filesystem>
@@ -13,6 +15,42 @@ namespace fs = std::filesystem;
 
 namespace
 {
+    bool IsUAssetOfType(const FWString& Path, EUAssetBinaryType Expected)
+    {
+        const fs::path FilePath(Path);
+        std::error_code ErrorCode;
+        if (!fs::exists(FilePath, ErrorCode) || !fs::is_regular_file(FilePath, ErrorCode))
+        {
+            return false;
+        }
+
+        FWindowsBinReader Ar(FilePath);
+        if (!Ar.IsValid())
+        {
+            return false;
+        }
+
+        FUAssetBinaryHeader Header;
+        Header.Magic = 0;
+        Header.Version = 0;
+        uint32 TypeValue = 0;
+        Header.AssetType = EUAssetBinaryType::Unknown;
+        Header.SourceHash = 0;
+
+        Ar << Header.Magic;
+        Ar << Header.Version;
+        Ar << TypeValue;
+        Header.AssetType = static_cast<EUAssetBinaryType>(TypeValue);
+        Ar << Header.SourceHash;
+
+        if (Header.Magic != kUAssetMagic || Header.Version != kUAssetVersion)
+        {
+            return false;
+        }
+
+        return Header.AssetType == Expected;
+    }
+
     FAssetId MakeMaterialAssetId(const FString& LibraryName, const FString& MaterialName)
     {
         FAssetId Id;
@@ -67,7 +105,17 @@ bool FMaterialLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Para
         return false;
     }
 
-    return HasExtension(Path, {L".mtl"});
+    if (HasExtension(Path, {L".mtl"}))
+    {
+        return true;
+    }
+
+    if (HasExtension(Path, {L".uasset"}))
+    {
+        return IsUAssetOfType(Path, EUAssetBinaryType::Material);
+    }
+
+    return false;
 }
 
 EAssetType FMaterialLoader::GetAssetType() const { return EAssetType::Material; }
@@ -75,6 +123,96 @@ EAssetType FMaterialLoader::GetAssetType() const { return EAssetType::Material; 
 UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params)
 {
     (void)Params;
+
+    const bool bIsUAsset = HasExtension(Source.NormalizedPath, {L".uasset"});
+    if (bIsUAsset)
+    {
+        FString MaterialName;
+        FMaterial MaterialData;
+        if (!ParseUAssetMaterial(Source, MaterialName, MaterialData))
+        {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[MaterialLoader] Failed to parse .uasset file. Path=%s ",
+                   WidePathToUtf8(Source.NormalizedPath).c_str());
+            return nullptr;
+        }
+
+        Engine::Asset::UMaterial* MatAsset = new Engine::Asset::UMaterial();
+        if (AssetManager)
+        {
+            auto LoadTextureForMaterial = [&](const FString& InMapPath, bool bSRGB,
+                                              bool        bIsNormalMap,
+                                              const char* LogName,
+                                              Engine::Asset::UMaterial::EMaterialTextureSlot Slot)
+                -> UTexture2DAsset*
+            {
+                if (InMapPath.empty())
+                {
+                    return nullptr;
+                }
+
+                const FWString WideTexPath = NarrowPathToWidePath(InMapPath);
+                if (WideTexPath.empty())
+                {
+                    UE_LOG(Asset, ELogVerbosity::Warning,
+                           "[MaterialLoader] Failed to decode %s texture path. RawPath=%s",
+                           LogName, InMapPath.c_str());
+                    return nullptr;
+                }
+
+                FAssetLoadParams TexParams;
+                TexParams.ExplicitType = EAssetType::Texture;
+                TexParams.TextureSettings.bSRGB = bSRGB;
+                TexParams.TextureSettings.bIsNormalMap = bIsNormalMap;
+
+                UAsset* LoadedTex = AssetManager->Load(WideTexPath, TexParams);
+                if (LoadedTex)
+                {
+                    UTexture2DAsset* TexAsset = static_cast<UTexture2DAsset*>(LoadedTex);
+                    MatAsset->SetTextureDependency(Slot, TexAsset);
+                    return TexAsset;
+                }
+
+                UE_LOG(Asset, ELogVerbosity::Warning,
+                       "[MaterialLoader] Failed to load %s texture. Path=%s", LogName,
+                       WidePathToUtf8(WideTexPath).c_str());
+                return nullptr;
+            };
+
+            if (UTexture2DAsset* Tex = LoadTextureForMaterial(
+                    MaterialData.DiffuseMapPath, true, false, "Diffuse",
+                    Engine::Asset::UMaterial::EMaterialTextureSlot::Diffuse))
+            {
+                MaterialData.DiffuseTexture = Tex->GetResource();
+            }
+            if (UTexture2DAsset* Tex = LoadTextureForMaterial(
+                    MaterialData.AmbientMapPath, false, false, "Ambient",
+                    Engine::Asset::UMaterial::EMaterialTextureSlot::Ambient))
+            {
+                MaterialData.AmbientTexture = Tex->GetResource();
+            }
+            if (UTexture2DAsset* Tex = LoadTextureForMaterial(
+                    MaterialData.SpecularHighlightMapPath, false, false, "Specular",
+                    Engine::Asset::UMaterial::EMaterialTextureSlot::Specular))
+            {
+                MaterialData.SpecularTexture = Tex->GetResource();
+            }
+            if (UTexture2DAsset* Tex = LoadTextureForMaterial(
+                    MaterialData.NormalMapPath, false, true, "Normal",
+                    Engine::Asset::UMaterial::EMaterialTextureSlot::Normal))
+            {
+                MaterialData.NormalTexture = Tex->GetResource();
+            }
+        }
+
+        if (MaterialName.empty())
+        {
+            const std::filesystem::path FilePath(Source.NormalizedPath);
+            MaterialName = WidePathToUtf8(FilePath.stem().native());
+        }
+        MatAsset->Initialize(Source, MaterialData, MaterialName);
+        return MatAsset;
+    }
 
     // 1. 힙에 리소스 할당
     TMap<FString, FMaterial> ParsedMaterials;
@@ -435,15 +573,75 @@ FWString FMaterialLoader::ResolveSiblingPath(const FWString& BaseFilePath,
         return NormalizedRelative;
     }
 
-    const fs::path BasePath(BaseFilePath);
-    FWString BaseDirectory = BasePath.parent_path().native();
+    FWString BaseDirectory = BaseFilePath;
     NormalizePathSeparators(BaseDirectory);
 
-    if (!BaseDirectory.empty() && BaseDirectory.back() != L'\\')
+    const size_t LastSep = BaseDirectory.find_last_of(L"\\/");
+    if (LastSep != FWString::npos)
     {
-        BaseDirectory += L'\\';
+        BaseDirectory = BaseDirectory.substr(0, LastSep + 1);
+    }
+    else
+    {
+        BaseDirectory.clear();
     }
 
     return BaseDirectory + NormalizedRelative;
 }
 
+
+bool FMaterialLoader::ParseUAssetMaterial(const FSourceRecord& Source, FString& OutMaterialName,
+                                           FMaterial& OutMaterial) const
+{
+    FWindowsBinReader Ar(Source.NormalizedPath);
+    if (!Ar.IsValid())
+    {
+        return false;
+    }
+
+    FUAssetBinaryHeader Header;
+    Header.Magic = 0;
+    Header.Version = 0;
+    uint32 TypeValue = 0;
+    Header.AssetType = EUAssetBinaryType::Unknown;
+    Header.SourceHash = 0;
+
+    Ar << Header.Magic;
+    Ar << Header.Version;
+    Ar << TypeValue;
+    Header.AssetType = static_cast<EUAssetBinaryType>(TypeValue);
+    Ar << Header.SourceHash;
+
+    if (Header.Magic != kUAssetMagic || Header.Version != kUAssetVersion ||
+        Header.AssetType != EUAssetBinaryType::Material)
+    {
+        return false;
+    }
+
+    Ar << OutMaterialName;
+
+    Ar.Serialize(&OutMaterial.AmbientColor, sizeof(FVector));
+    Ar.Serialize(&OutMaterial.DiffuseColor, sizeof(FVector));
+    Ar.Serialize(&OutMaterial.SpecularColor, sizeof(FVector));
+    Ar.Serialize(&OutMaterial.EmissiveColor, sizeof(FVector));
+    Ar.Serialize(&OutMaterial.TransmissionFilter, sizeof(FVector));
+
+    Ar << OutMaterial.SpecularHighlight;
+    Ar << OutMaterial.OpticalDensity;
+    Ar << OutMaterial.Opacity;
+    Ar << OutMaterial.IlluminationModel;
+
+    Ar << OutMaterial.AmbientMapPath;
+    Ar << OutMaterial.DiffuseMapPath;
+    Ar << OutMaterial.SpecularHighlightMapPath;
+    Ar << OutMaterial.NormalMapPath;
+
+    Ar.Serialize(&OutMaterial.UVScrollSpeed, sizeof(FVector2));
+
+    OutMaterial.AmbientTexture = nullptr;
+    OutMaterial.DiffuseTexture = nullptr;
+    OutMaterial.SpecularTexture = nullptr;
+    OutMaterial.NormalTexture = nullptr;
+
+    return !Ar.HasError();
+}

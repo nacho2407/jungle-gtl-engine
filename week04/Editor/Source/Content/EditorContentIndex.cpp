@@ -1,6 +1,8 @@
 #include "EditorContentIndex.h"
 
 #include "Core/Path.h"
+#include "Asset/UAssetBinary.h"
+#include "Core/Serialization/WindowsBinArchive.h"
 #include "Core/Logging/LogMacros.h"
 
 #include <algorithm>
@@ -40,6 +42,43 @@ namespace
         return LowerValue;
     }
 
+    EContentBrowserItemType ClassifyUAssetType(const std::filesystem::path& FilePath)
+    {
+        FWindowsBinReader Ar(FilePath);
+        if (!Ar.IsValid())
+        {
+            return EContentBrowserItemType::UnknownFile;
+        }
+
+        FUAssetBinaryHeader Header;
+        Header.Magic = 0;
+        Header.Version = 0;
+        uint32 TypeValue = 0;
+        Header.AssetType = EUAssetBinaryType::Unknown;
+        Header.SourceHash = 0;
+
+        Ar << Header.Magic;
+        Ar << Header.Version;
+        Ar << TypeValue;
+        Header.AssetType = static_cast<EUAssetBinaryType>(TypeValue);
+        Ar << Header.SourceHash;
+
+        if (Header.Magic != kUAssetMagic || Header.Version != kUAssetVersion)
+        {
+            return EContentBrowserItemType::UnknownFile;
+        }
+
+        switch (Header.AssetType)
+        {
+        case EUAssetBinaryType::StaticMesh:
+            return EContentBrowserItemType::StaticMesh;
+        case EUAssetBinaryType::Material:
+            return EContentBrowserItemType::Material;
+        default:
+            return EContentBrowserItemType::UnknownFile;
+        }
+    }
+
     EContentBrowserItemType ClassifyFileType(const std::filesystem::path& FilePath)
     {
         FWString Extension = ToLowerWideCopy(FilePath.extension().wstring());
@@ -67,6 +106,10 @@ namespace
         else if (Extension == L".mtl")
         {
             return EContentBrowserItemType::Material;
+        }
+        else if (Extension == L".uasset")
+        {
+            return ClassifyUAssetType(FilePath);
         }
 
         return EContentBrowserItemType::UnknownFile;

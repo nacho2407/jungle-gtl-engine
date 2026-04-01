@@ -6,6 +6,7 @@
 
 class FD3D11RHI;
 struct FMeshVertexPNCT;
+namespace Engine::Asset { class UStaticMesh; }
 
 class ENGINE_API FStaticMeshLoader : public IAssetLoader
 {
@@ -20,7 +21,12 @@ class ENGINE_API FStaticMeshLoader : public IAssetLoader
   private:
     bool ParseObjText(const FSourceRecord& Source, FStaticMesh& OutMesh,
                       TArray<FMeshVertexPNCT>& OutVertices) const;
+    bool ParseUAsset(const FSourceRecord& Source, FStaticMesh& OutMesh,
+                     TArray<FMeshVertexPNCT>& OutVertices,
+                     TArray<FString>& OutMaterialAssetPaths) const;
     bool CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices, FStaticMesh& OutMesh) const;
+    void ApplyMaterialAssetPaths(Engine::Asset::UStaticMesh& MeshAsset,
+                                 const TArray<FString>& MaterialAssetPaths) const;
 
   private:
     FD3D11RHI*     RHI = nullptr;

@@ -74,17 +74,45 @@ namespace Engine::Component
                         return;
                     }
 
-                    const TArray<Asset::UMaterialInterface*>& Slots =
-                        StaticMesh->GetMaterialSlots();
+                    if (CachedAssetManager)
+                    {
+                        const TArray<UAsset*> AllMaterials =
+                            CachedAssetManager->GetAssetsByType(EAssetType::Material);
+                        for (UAsset* Asset : AllMaterials)
+                        {
+                            if (auto* Mat = Cast<Asset::UMaterialInterface>(Asset))
+                            {
+                                FString Name;
+                                if (auto* BaseMat = Cast<Asset::UMaterial>(Mat))
+                                {
+                                    Name = BaseMat->GetMaterialName();
+                                }
+                                else
+                                {
+                                    Name = Mat->GetAssetName();
+                                }
+                                if (!Name.empty() && Name == InMaterialName)
+                                {
+                                    SetMaterial(idx, Mat);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    const TArray<Asset::UMaterialInterface*>& Slots = StaticMesh->GetMaterialSlots();
                     for (auto* Mat : Slots)
                     {
-                        if (Mat && Mat->IsValidLowLevel() &&
-                            ((Cast<Asset::UMaterial>(Mat) &&
-                              Cast<Asset::UMaterial>(Mat)->GetMaterialName() == InMaterialName) ||
-                             Mat->GetAssetName() == InMaterialName))
+                        if (Mat && Mat->IsValidLowLevel())
                         {
-                            SetMaterial(idx, Mat);
-                            return;
+                            const FString Name =
+                                Cast<Asset::UMaterial>(Mat) ? Cast<Asset::UMaterial>(Mat)->GetMaterialName()
+                                                            : Mat->GetAssetName();
+                            if (!Name.empty() && Name == InMaterialName)
+                            {
+                                SetMaterial(idx, Mat);
+                                return;
+                            }
                         }
                     }
                 },
@@ -96,21 +124,45 @@ namespace Engine::Component
                         return Options;
                     }
 
+                    TSet<FString> Unique;
+
+                    if (CachedAssetManager)
+                    {
+                        const TArray<UAsset*> AllMaterials =
+                            CachedAssetManager->GetAssetsByType(EAssetType::Material);
+                        for (UAsset* Asset : AllMaterials)
+                        {
+                            if (auto* Mat = Cast<Asset::UMaterialInterface>(Asset))
+                            {
+                                FString Name;
+                                if (auto* Material = Cast<Asset::UMaterial>(Mat))
+                                {
+                                    Name = Material->GetMaterialName();
+                                }
+                                else
+                                {
+                                    Name = Mat->GetAssetName();
+                                }
+                                if (!Name.empty() && Unique.find(Name) == Unique.end())
+                                {
+                                    Unique.insert(Name);
+                                    Options.push_back(Name);
+                                }
+                            }
+                        }
+                        return Options;
+                    }
+
                     for (auto* Mat : StaticMesh->GetMaterialSlots())
                     {
                         if (Mat && Mat->IsValidLowLevel())
                         {
-                            FString Name;
-                            if (auto* Material = Cast<Asset::UMaterial>(Mat))
+                            const FString Name =
+                                Cast<Asset::UMaterial>(Mat) ? Cast<Asset::UMaterial>(Mat)->GetMaterialName()
+                                                            : Mat->GetAssetName();
+                            if (!Name.empty() && Unique.find(Name) == Unique.end())
                             {
-                                Name = Material->GetMaterialName();
-                            }
-                            else
-                            {
-                                Name = Mat->GetAssetName();
-                            }
-                            if (!Name.empty())
-                            {
+                                Unique.insert(Name);
                                 Options.push_back(Name);
                             }
                         }
@@ -128,6 +180,7 @@ namespace Engine::Component
 
     void UStaticMeshComponent::ResolveAssetReferences(UAssetManager* InAssetManager)
     {
+        CachedAssetManager = InAssetManager;
         if (InAssetManager == nullptr || PendingMeshPath.empty())
         {
             return;

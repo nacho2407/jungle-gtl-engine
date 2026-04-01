@@ -639,21 +639,13 @@ namespace
                 {
                     if (auto* Mat = Cast<Engine::Asset::UMaterial>(CurrentMat))
                     {
-                        FString SubMatName = MeshComp->GetSubMaterialName(SlotIdx);
+                        auto* Data = Mat->GetMaterialDataMutable();
                         
                         // --- 인스턴스별 개별 조절 로직 (오버라이드 우선) ---
-                        FVector2 CurrentSpeed;
-                        if (MeshComp->HasUVScrollSpeedOverride(SlotIdx))
+                        FVector2 CurrentSpeed = FVector2::ZeroVector;
+                        if (Data)
                         {
-                            CurrentSpeed = MeshComp->GetUVScrollSpeedOverride(SlotIdx);
-                        }
-                        else if (auto* DefaultData = Mat->GetMaterialData(SubMatName))
-                        {
-                            CurrentSpeed = DefaultData->UVScrollSpeed;
-                        }
-                        else
-                        {
-                            CurrentSpeed = FVector2::ZeroVector;
+                            CurrentSpeed = Data->UVScrollSpeed;
                         }
 
                         // Indent(20.0f) 제거하여 Material 0 와 정렬을 맞춤
@@ -671,8 +663,11 @@ namespace
                         ImGui::SetNextItemWidth(60.0f);
                         if (ImGui::DragFloat("##X", &SpeedX, 0.001f, -10.0f, 10.0f, "%.3f"))
                         {
-                            MeshComp->SetUVScrollSpeedOverride(SlotIdx, FVector2(SpeedX, SpeedY));
-                            bChanged = true;
+                            if (Data)
+                            {
+                                Data->UVScrollSpeed = FVector2(SpeedX, SpeedY);
+                                bChanged = true;
+                            }
                         }
 
                         // Y 부분 (간격 조정: 220 -> 240)
@@ -682,8 +677,11 @@ namespace
                         ImGui::SetNextItemWidth(60.0f);
                         if (ImGui::DragFloat("##Y", &SpeedY, 0.001f, -10.0f, 10.0f, "%.3f"))
                         {
-                            MeshComp->SetUVScrollSpeedOverride(SlotIdx, FVector2(SpeedX, SpeedY));
-                            bChanged = true;
+                            if (Data)
+                            {
+                                Data->UVScrollSpeed = FVector2(SpeedX, SpeedY);
+                                bChanged = true;
+                            }
                         }
                     }
                 }

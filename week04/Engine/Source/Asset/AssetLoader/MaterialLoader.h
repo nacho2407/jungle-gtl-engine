@@ -16,6 +16,8 @@ class ENGINE_API FMaterialLoader : public IAssetLoader
 
   private:
     bool ParseMtlText(const FSourceRecord& Source, TMap<FString, FMaterial>& OutMaterials) const;
+    bool ParseUAssetMaterial(const FSourceRecord& Source, FString& OutMaterialName,
+                             FMaterial& OutMaterial) const;
 
     // Texture 경로를 .mtl 파일 위치 기준으로 절대 경로화 해주는 유틸리티
     FWString ResolveSiblingPath(const FWString& BaseFilePath, const FString& RelativePath) const;
