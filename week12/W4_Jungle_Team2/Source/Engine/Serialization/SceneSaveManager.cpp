@@ -80,8 +80,6 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
     Root[SceneKeys::ClassName] = WorldContext.World->GetTypeInfo()->name;
     Root[SceneKeys::WorldType] = WorldTypeToString(WorldContext.WorldType);
     Root[SceneKeys::PerspectiveCamera] = SerializeCameraState(CameraState);
-
-    // Primitives 딕셔너리로 저장
     Root[SceneKeys::Primitives] = SerializeWorldToPrimitives(WorldContext.World, WorldContext);
 
     std::ofstream File(FileDestination);
@@ -96,7 +94,7 @@ json::JSON FSceneSaveManager::SerializeWorldToPrimitives(UWorld* World, const FW
 {
     using namespace json;
     JSON Primitives = json::Object();
-    int32 PrimitiveID = 0; // "3", "4" 등 인덱스로 사용할 키
+    int32 PrimitiveID = 0;
 
     for (AActor* Actor : World->GetActors()) 
     {
@@ -121,22 +119,10 @@ json::JSON FSceneSaveManager::SerializeComponentToPrimitive(USceneComponent* Sce
     if (ClassName == "UStaticMeshComponent") { ClassName = "StaticMeshComp"; }
     PrimObj[SceneKeys::Type] = ClassName;
 
-    FVector Loc = SceneComp->GetRelativeLocation();
-    FVector Rot = SceneComp->GetRelativeRotation();
-    FVector Scl = SceneComp->GetRelativeScale();
-
-    PrimObj[SceneKeys::Location] = Array(static_cast<double>(Loc.X), static_cast<double>(Loc.Y), static_cast<double>(Loc.Z));
-    PrimObj[SceneKeys::Rotation] = Array(static_cast<double>(Rot.X), static_cast<double>(Rot.Y), static_cast<double>(Rot.Z));
-    PrimObj[SceneKeys::Scale]    = Array(static_cast<double>(Scl.X), static_cast<double>(Scl.Y), static_cast<double>(Scl.Z));
-
-    // 추가 프로퍼티들을 딕셔너리 최상단에 평탄화하여 추가
     TArray<FPropertyDescriptor> Descriptors;
     SceneComp->GetEditableProperties(Descriptors);
     for (const auto& Prop : Descriptors) 
     {
-        // 트랜스폼 데이터는 위에서 명시적으로 추가했으므로 중복 생략
-        if (strcmp(Prop.Name, "Location") == 0 || strcmp(Prop.Name, "Rotation") == 0 || strcmp(Prop.Name, "Scale") == 0) continue;
-
         FString OutKey = Prop.Name;
         if (strcmp(Prop.Name, "StaticMesh") == 0) { OutKey = "ObjStaticMeshAsset"; }
         
@@ -310,47 +296,28 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
 void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode, UWorld* World)
 {
-    static std::unordered_map<string, std::function<AActor*()>> ActorFactoryMap = {
-        {"StaticMeshComp", []() { 
-            auto* A = FObjectFactory::Get().Create("AStaticMeshActor")->Cast<AStaticMeshActor>();
-            if (A) A->InitDefaultComponents(); return A; 
-        }},
-        {"UStaticMeshComponent", []() { 
-            auto* A = FObjectFactory::Get().Create("AStaticMeshActor")->Cast<AStaticMeshActor>();
-            if (A) A->InitDefaultComponents(); return A; 
-        }},
-        {"USubUVComponent", []() { 
-            auto* A = FObjectFactory::Get().Create("ASubUVActor")->Cast<ASubUVActor>();
-            if (A) A->InitDefaultComponents(); return A; 
-        }},
-        {"UTextRenderComponent", []() { 
-            auto* A = FObjectFactory::Get().Create("ATextRenderActor")->Cast<ATextRenderActor>();
-            if (A) A->InitDefaultComponents(); return A; 
-        }}
-    };
-
     for (auto& Pair : PrimitivesNode.ObjectRange()) 
     {
         json::JSON& PrimJSON = Pair.second;
 
         if (!PrimJSON.hasKey(SceneKeys::Type)) continue;
-        
         string CompType = PrimJSON[SceneKeys::Type].ToString();
-        AActor* NewActor = nullptr;
 
-        auto it = ActorFactoryMap.find(CompType);
-        if (it != ActorFactoryMap.end()) 
-        {
-            NewActor = it->second(); 
-        }
-        else 
-        {
-            UObject* Obj = FObjectFactory::Get().Create("AActor");
-            NewActor = Obj ? Obj->Cast<AActor>() : nullptr;
-        }
+		// StaticMeshComponent 예외 처리
+        if (CompType == "StaticMeshComp") CompType = "UStaticMeshComponent";
 
+        string ActorClassName = "AActor"; 
+        if (CompType.front() == 'U' && CompType.substr(CompType.length() - 9) == "Component") 
+        {
+            string BaseName = CompType.substr(1, CompType.length() - 10);
+            ActorClassName = "A" + BaseName + "Actor";
+        }
+        UObject* Obj = FObjectFactory::Get().Create(ActorClassName);
+
+        AActor* NewActor = Obj ? Obj->Cast<AActor>() : nullptr;
         if (!NewActor) continue;
 
+        NewActor->InitDefaultComponents();
         NewActor->SetWorld(World);
         World->AddActor(NewActor);
 
