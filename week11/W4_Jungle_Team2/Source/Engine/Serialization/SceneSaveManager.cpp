@@ -365,8 +365,12 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 	Comp->GetEditableProperties(Descriptors);
 
 	for (auto& Prop : Descriptors) {
-		if (!PropsJSON.hasKey(Prop.Name)) continue;
-		auto Value = PropsJSON[Prop.Name];
+		FString JsonKey = Prop.Name;
+		if (strcmp(Prop.Name, "StaticMesh") == 0) 
+			JsonKey = "ObjStaticMeshAsset";
+		if (!PropsJSON.hasKey(JsonKey)) continue;
+		
+		auto Value = PropsJSON[JsonKey];
 		DeserializePropertyValue(Prop, Value);
 		Comp->PostEditProperty(Prop.Name);
 	}
