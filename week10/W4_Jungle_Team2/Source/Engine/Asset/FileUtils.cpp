@@ -33,7 +33,7 @@ bool FFileUtils::LoadFileToLines(const FString& FileName, TArray<FString>& OutLi
 {
 	OutLines.clear();
 	
-	std::ifstream File(std::filesystem::path(FileName), std::ios::in);
+	std::ifstream File(std::filesystem::path(FPaths::ToWide(FileName)), std::ios::in);
 	if (!File.is_open())
 	{
 		return false;
