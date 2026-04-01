@@ -18,10 +18,20 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-static FVector GetCameraWorldPositionFromViewMatrix(const FMatrix& ViewMatrix)
+namespace
 {
-	const FMatrix InvView = ViewMatrix.GetInverse();
-	return FVector(InvView.M[3][0], InvView.M[3][1], InvView.M[3][2]);
+	struct FOutlineConstantBuffer
+	{
+		FMatrix WorldInverse;
+		float OutlineWidth = 0.0f;
+		float Padding[3] = {};
+	};
+
+	FVector GetCameraWorldPositionFromViewMatrix(const FMatrix& ViewMatrix)
+	{
+		const FMatrix InvView = ViewMatrix.GetInverse();
+		return FVector(InvView.M[3][0], InvView.M[3][1], InvView.M[3][2]);
+	}
 }
 
 FRenderer::FRenderer(HWND InHwnd, int32 InWidth, int32 InHeight)
@@ -597,6 +607,32 @@ void FRenderer::UpdateObjectConstantBuffer(const FMatrix& WorldMatrix)
 	}
 }
 
+void FRenderer::UpdateOutlineConstantBuffer(const FMatrix& WorldMatrix, float OutlineWidth)
+{
+	FOutlineConstantBuffer CBData = {};
+
+	// Matrices are transposed on upload, so sending inverse(World) here makes
+	// the HLSL cbuffer read inverse-transpose(World) at b2.
+	FMatrix WorldInverse = WorldMatrix;
+	if (!WorldInverse.Inverse())
+	{
+		WorldInverse = FMatrix::Identity;
+	}
+
+	CBData.WorldInverse = WorldInverse;
+	CBData.OutlineWidth = OutlineWidth;
+
+	D3D11_MAPPED_SUBRESOURCE Mapped;
+	if (SUCCEEDED(DeviceContext->Map(OutlineConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+	{
+		memcpy(Mapped.pData, &CBData, sizeof(CBData));
+		DeviceContext->Unmap(OutlineConstantBuffer, 0);
+	}
+
+	ID3D11Buffer* Buffer = OutlineConstantBuffer;
+	DeviceContext->VSSetConstantBuffers(2, 1, &Buffer);
+}
+
 bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV)
 {
 	int W, H, C;
@@ -621,7 +657,7 @@ bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath,
 
 bool FRenderer::InitOutlineResources()
 {
-	if (StencilWriteState && StencilTestState && OutlinePS) return true;
+	if (StencilWriteState && StencilTestState && OutlineVS && OutlinePS && OutlineConstantBuffer) return true;
 
 	D3D11_DEPTH_STENCIL_DESC WriteDesc = {};
 	WriteDesc.DepthEnable = TRUE; WriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; WriteDesc.DepthFunc = D3D11_COMPARISON_LESS;
@@ -638,16 +674,41 @@ bool FRenderer::InitOutlineResources()
 	TestDesc.BackFace = TestDesc.FrontFace;
 	if (FAILED(Device->CreateDepthStencilState(&TestDesc, &StencilTestState))) return false;
 
-	FString PSPath = (FPaths::ShaderDir() / "OutlinePixelShader.hlsl").string();
-	OutlinePS = FShaderMap::Get().GetOrCreatePixelShader(Device, FPaths::ToWide(PSPath).c_str());
-	return OutlinePS != nullptr;
+	FString VertexShaderPath = (FPaths::ShaderDir() / "OutlineVertexShader.hlsl").string();
+	FString PixelShaderPath = (FPaths::ShaderDir() / "OutlinePixelShader.hlsl").string();
+	OutlineVS = FShaderMap::Get().GetOrCreateVertexShader(Device, FPaths::ToWide(VertexShaderPath).c_str());
+	OutlinePS = FShaderMap::Get().GetOrCreatePixelShader(Device, FPaths::ToWide(PixelShaderPath).c_str());
+	if (!OutlineVS || !OutlinePS)
+	{
+		return false;
+	}
+
+	if (!OutlineConstantBuffer)
+	{
+		D3D11_BUFFER_DESC Desc = {};
+		Desc.Usage = D3D11_USAGE_DYNAMIC;
+		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		Desc.ByteWidth = sizeof(FOutlineConstantBuffer);
+
+		if (FAILED(Device->CreateBuffer(&Desc, nullptr, &OutlineConstantBuffer)))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, float OutlineScale)
 {
 	if (!Mesh || !InitOutlineResources()) return;
-	Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
+	if (!Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext)) return;
 	Mesh->Bind(DeviceContext);
+	if (Mesh->Topology != EMeshTopology::EMT_Undefined)
+	{
+		DeviceContext->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)Mesh->Topology);
+	}
 
 	ID3D11RenderTargetView* BoundRTV = nullptr;
 	ID3D11DepthStencilView* BoundDSV = nullptr;
@@ -659,11 +720,25 @@ void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, flo
 		return;
 	}
 
+	const float OutlineScaleDelta = std::max(0.0f, OutlineScale - 1.0f);
+	float OutlineWidth = OutlineScaleDelta;
+	//if (OutlineScaleDelta > 0.0f)
+	//{
+	//	const FVector WorldScale = WorldMatrix.GetScaleVector();
+	//	const float MaxWorldScale = std::max(WorldScale.X, std::max(WorldScale.Y, WorldScale.Z));
+	//	if (Mesh->GetLocalBoundRadius() > 0.0f && MaxWorldScale > 0.0f)
+	//	{
+	//		OutlineWidth = Mesh->GetLocalBoundRadius() * OutlineScaleDelta * MaxWorldScale;
+	//	}
+	//}
+
+	SetConstantBuffers();
+	OutlineVS->Bind(DeviceContext);
+	UpdateObjectConstantBuffer(WorldMatrix);
+	UpdateOutlineConstantBuffer(WorldMatrix, 0.0f);
+
 	DeviceContext->OMSetRenderTargets(0, nullptr, BoundDSV);
 	DeviceContext->OMSetDepthStencilState(StencilWriteState, 1);
-	UpdateObjectConstantBuffer(WorldMatrix);
-	// DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
-
 	DeviceContext->PSSetShader(nullptr, nullptr, 0);
 	if (!Mesh->Indices.empty())
 	{
@@ -676,7 +751,8 @@ void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, flo
 
 	DeviceContext->OMSetRenderTargets(1, &BoundRTV, BoundDSV);
 	DeviceContext->OMSetDepthStencilState(StencilTestState, 1);
-	UpdateObjectConstantBuffer(FMatrix::MakeScale(OutlineScale) * WorldMatrix);
+	UpdateOutlineConstantBuffer(WorldMatrix, OutlineWidth);
+	OutlineVS->Bind(DeviceContext);
 	OutlinePS->Bind(DeviceContext);
 	if (!Mesh->Indices.empty())
 	{
@@ -687,6 +763,8 @@ void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, flo
 		DeviceContext->Draw(static_cast<UINT>(Mesh->Vertices.size()), 0);
 	}
 
+	ID3D11Buffer* NullCB = nullptr;
+	DeviceContext->VSSetConstantBuffers(2, 1, &NullCB);
 	ShaderManager.Bind(DeviceContext);
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
 
@@ -749,7 +827,8 @@ void FRenderer::Release()
 	if (NormalSampler) NormalSampler->Release();
 	if (StencilWriteState) StencilWriteState->Release();
 	if (StencilTestState) StencilTestState->Release();
-	OutlinePS.reset(); DefaultMaterial.reset();
+	if (OutlineConstantBuffer) OutlineConstantBuffer->Release();
+	OutlineVS.reset(); OutlinePS.reset(); DefaultMaterial.reset();
 	if (FolderIconSRV)FolderIconSRV->Release();
 	if (FileIconSRV)FileIconSRV->Release();
 	if (LineVertexBuffer) LineVertexBuffer->Release();

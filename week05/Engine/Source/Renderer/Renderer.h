@@ -118,6 +118,7 @@ private:
 	bool CreateSamplers();
 	void UpdateFrameConstantBuffer();
 	void UpdateObjectConstantBuffer(const FMatrix& WorldMatrix);
+	void UpdateOutlineConstantBuffer(const FMatrix& WorldMatrix, float OutlineWidth);
 	void ClearDepthBuffer();
 
 private:
@@ -132,6 +133,7 @@ private:
 	
 	ID3D11Buffer* FrameConstantBuffer = nullptr;
 	ID3D11Buffer* ObjectConstantBuffer = nullptr;
+	ID3D11Buffer* OutlineConstantBuffer = nullptr;
 	
 	FMatrix ViewMatrix;
 	FMatrix ProjectionMatrix;
@@ -156,6 +158,7 @@ private:
 	/** 아웃라인(스텐실) 리소스 */
 	ID3D11DepthStencilState* StencilWriteState = nullptr;
 	ID3D11DepthStencilState* StencilTestState = nullptr;
+	std::shared_ptr<FVertexShader> OutlineVS;
 	std::shared_ptr<FPixelShader> OutlinePS;
 
 	FGUICallback GUIInit;
