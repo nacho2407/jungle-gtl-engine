@@ -40,6 +40,15 @@ private:
 	static json::JSON SerializeProperties(UActorComponent* Comp);
 	static json::JSON SerializePropertyValue(const FPropertyDescriptor& Prop);
 
+	// ---- Primitives + Camera ----
+	static json::JSON SerializePrimitives(UWorld* World);
+	static void DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors);
+	static json::JSON SerializeCamera(UWorld* World);
+	static void DeserializeCamera(json::JSON& CameraJSON, UWorld* World);
+
+	// Helper to deserialize into existing scene component tree
+	static void DeserializeSceneComponentIntoExisting(USceneComponent* Existing, json::JSON& Node, AActor* Owner);
+
 	// ---- Deserialization ----
 	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
 	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
