@@ -50,8 +50,9 @@ public:
 	void AddActorWorldOffset(const FVector& Delta);
 
 	// Transform — Rotation
-	FVector GetActorRotation() const;
-	void SetActorRotation(const FVector& NewRotation);
+	FRotator GetActorRotation() const;
+	void SetActorRotation(const FRotator& NewRotation);
+	void SetActorRotation(const FVector& EulerRotation);
 
 	// Transform — Scale
 	FVector GetActorScale() const;
