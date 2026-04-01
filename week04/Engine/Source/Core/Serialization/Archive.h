@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core/Containers/Array.h"
-#include "Core/Containers/String.h"
+#include "Core/CoreMinimal.h"
+
 
 #include <cstdint>
 #include <type_traits>

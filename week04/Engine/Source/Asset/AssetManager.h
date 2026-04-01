@@ -190,6 +190,7 @@ public:
     void    RegisterLoader(IAssetLoader* Loader);
     UAsset* Load(const FWString& Path, const FAssetLoadParams& Params = {});
     UAsset* RegisterAssetById(const FAssetId& Id, UAsset* Asset);
+    void    RegisterAssetByIdAlias(const FAssetId& Id, UAsset* Asset);
     UAsset* FindAssetById(const FAssetId& Id) const;
     bool    UnregisterAssetById(const FAssetId& Id);
     TArray<UAsset*> GetAssetsByType(EAssetType Type) const;
@@ -207,4 +208,5 @@ private:
     TArray<IAssetLoader*>                                     Loaders;
     TMap<FAssetKey, std::unique_ptr<UAsset>, FAssetKeyHasher> LoadedAssets;
     TMap<FAssetId, std::unique_ptr<UAsset>, FAssetIdHasher>   AssetIdAssets;
+    TMap<FAssetId, UAsset*, FAssetIdHasher>                AssetIdAliases;
 };

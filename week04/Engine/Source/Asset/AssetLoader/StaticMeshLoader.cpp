@@ -129,6 +129,16 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
     Engine::Asset::UStaticMesh* NewMeshAsset = new Engine::Asset::UStaticMesh();
     NewMeshAsset->Initialize(Source, MeshResource);
 
+    if (AssetManager && bIsUAsset)
+    {
+        FAssetId Id;
+        Id.Type = EAssetType::StaticMesh;
+        Id.PackageName = WidePathToUtf8(Source.NormalizedPath);
+        const std::filesystem::path FilePath(Source.NormalizedPath);
+        Id.ObjectName = WidePathToUtf8(FilePath.stem().native());
+        AssetManager->RegisterAssetByIdAlias(Id, NewMeshAsset);
+    }
+
     // --- 추가: 서브 메시 개수에 맞춰 머티리얼 슬롯 미리 확보 ---
     const uint32 NumSubMeshes = static_cast<uint32>(MeshResource->SubMeshes.size());
     NewMeshAsset->InitializeMaterialSlots(NumSubMeshes);

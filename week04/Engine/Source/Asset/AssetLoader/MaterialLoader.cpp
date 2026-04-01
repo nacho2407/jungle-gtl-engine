@@ -211,6 +211,16 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
             MaterialName = WidePathToUtf8(FilePath.stem().native());
         }
         MatAsset->Initialize(Source, MaterialData, MaterialName);
+
+        if (AssetManager)
+        {
+            FAssetId Id;
+            Id.Type = EAssetType::Material;
+            Id.PackageName = WidePathToUtf8(Source.NormalizedPath);
+            Id.ObjectName = MaterialName;
+            AssetManager->RegisterAssetByIdAlias(Id, MatAsset);
+        }
+
         return MatAsset;
     }
 

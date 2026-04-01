@@ -1,5 +1,6 @@
 #pragma once
-#include "Core/Containers/Array.h"
+
+#include "Core/CoreMinimal.h"
 
 class SWidget;
 

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Core/CoreMinimal.h"
+
 #include "Panel.h"
 
-#include "Core/Containers/Array.h"
-#include "Core/Containers/Map.h"
 
 #include <functional>
 #include <memory>

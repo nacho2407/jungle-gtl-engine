@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Containers/Array.h"
-#include "Core/Containers/Map.h"
+
+#include "Core/CoreMinimal.h"
 #include "Core/HAL/PlatformTypes.h"
 
 namespace Engine::Core::Misc

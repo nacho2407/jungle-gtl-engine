@@ -1,8 +1,11 @@
 #include "Importer/EditorAssetImporter.h"
 
 #include "Asset/UAssetBinary.h"
+#include "Asset/AssetManager.h"
+#include "Core/Path.h"
 #include "Core/Serialization/WindowsBinArchive.h"
 #include "Renderer/Types/VertexTypes.h"
+#include "Core/CoreMinimal.h"
 
 #include <filesystem>
 #include <fstream>
@@ -11,8 +14,6 @@
 #include <cwctype>
 #include <algorithm>
 #include <string_view>
-#include <vector>
-#include <unordered_map>
 #include <charconv>
 
 #define WIN32_LEAN_AND_MEAN
@@ -167,7 +168,14 @@ bool FEditorAssetImporter::ImportObj(const FWString& ObjPath)
         }
     }
 
-    return WriteStaticMeshUAsset(Source, Mesh, Vertices, MaterialAssetPaths);
+    const bool bWrote = WriteStaticMeshUAsset(Source, Mesh, Vertices, MaterialAssetPaths);
+    if (bWrote && AssetManager)
+    {
+        FAssetLoadParams Params;
+        Params.ExplicitType = EAssetType::StaticMesh;
+        AssetManager->Load(MakeMeshUAssetPath(Source.NormalizedPath).native(), Params);
+    }
+    return bWrote;
 }
 
 bool FEditorAssetImporter::ImportMtl(const FWString& MtlPath)
@@ -195,6 +203,12 @@ bool FEditorAssetImporter::ImportMtl(const FWString& MtlPath)
         if (WriteMaterialUAsset(Source, MaterialName, MaterialData, OutPath))
         {
             bAnyWritten = true;
+            if (AssetManager)
+            {
+                FAssetLoadParams Params;
+                Params.ExplicitType = EAssetType::Material;
+                AssetManager->Load(OutPath.native(), Params);
+            }
         }
     }
 
@@ -407,11 +421,11 @@ bool FEditorAssetImporter::ParseObjText(const FSourceData& Source, FStaticMesh& 
     std::string_view FileView(reinterpret_cast<const char*>(Source.Bytes.data()),
                               Source.Bytes.size());
 
-    std::vector<FVector>  TempPositions;
-    std::vector<FVector2> TempUVs;
-    std::vector<FVector>  TempNormals;
+    TArray<FVector>  TempPositions;
+    TArray<FVector2> TempUVs;
+    TArray<FVector>  TempNormals;
 
-    std::unordered_map<std::string_view, uint32> VertexCache;
+    TMap<std::string_view, uint32> VertexCache;
 
     FSubMesh CurrentSubMesh;
     bool     bSubMeshActive = false;
@@ -527,7 +541,7 @@ bool FEditorAssetImporter::ParseObjText(const FSourceData& Source, FStaticMesh& 
         }
         else if (Header == "f")
         {
-            std::vector<uint32> FaceIndices;
+            TArray<uint32> FaceIndices;
 
             while (true)
             {

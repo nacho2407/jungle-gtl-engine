@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Core/Containers/Array.h"
+#include "Core/CoreMinimal.h"
+
 #include "Renderer/D3D11/D3D11Common.h"
 #include "Renderer/Types/VertexTypes.h"
 

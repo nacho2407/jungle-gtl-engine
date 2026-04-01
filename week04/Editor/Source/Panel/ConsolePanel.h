@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Core/CoreMinimal.h"
+
 #include "Panel.h"
 
-#include "Core/Containers/String.h"
 
 #include <array>
 

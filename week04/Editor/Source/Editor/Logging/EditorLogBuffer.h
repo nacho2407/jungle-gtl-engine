@@ -1,8 +1,9 @@
 #pragma once
+
+#include "Core/CoreMinimal.h"
 #pragma once
 
 #include "EditorLogEntry.h"
-#include "Core/Containers/Array.h"
 #include "Core/Logging/LogOutputDevice.h"
 
 

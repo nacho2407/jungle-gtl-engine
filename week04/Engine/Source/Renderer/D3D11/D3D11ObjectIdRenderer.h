@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Core/Containers/Array.h"
+#include "Core/CoreMinimal.h"
+
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
 #include "Renderer/D3D11/D3D11Common.h"

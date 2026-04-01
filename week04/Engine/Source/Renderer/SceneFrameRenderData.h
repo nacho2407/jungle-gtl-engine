@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Core/Containers/Array.h"
+#include "Core/CoreMinimal.h"
+
 #include "Renderer/Types/RenderItem.h"
 
 // View-independent scene items built once per frame and stored by the renderer.

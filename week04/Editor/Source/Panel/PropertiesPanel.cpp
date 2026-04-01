@@ -310,43 +310,35 @@ namespace
                 bChanged = true;
             }
 
-            if (Context->ContentIndex)
+            if (Context->AssetManager)
             {
-                TArray<const FContentBrowserItem*> MaterialItems;
-                CollectAssetItemsByType(Context->ContentIndex->GetSnapshot().RootFolder,
-                                        EContentBrowserItemType::Material, MaterialItems);
+                TArray<UAsset*> MaterialAssets =
+                    Context->AssetManager->GetAssetsByType(EAssetType::Material);
 
-                for (const auto* Item : MaterialItems)
+                uint32 Index = 0;
+                for (UAsset* Asset : MaterialAssets)
                 {
-                    // 로드된 에셋의 이름(절대경로)과 인덱스의 절대경로를 비교하여 선택 상태 표시
-                    // 1. std::wstring을 FString(UTF-8)으로 안전하게 변환
-                    FString ItemAbsPath = Engine::Component::UMeshComponent::WidePathToUtf8(
-                        Item->AbsolutePath.wstring());
-
-                    // 2. 비교 연산 (타입이 FString 또는 std::wstring으로 통일되어야 함)
-                    // 만약 CurrentMat->GetPath() 가 std::wstring을 반환한다면:
-                    bool bSelected =
-                        (CurrentMat && CurrentMat->GetPath() == Item->AbsolutePath.wstring());
-
-                    // 만약 CurrentMat->GetPath() 가 FString을 반환한다면:
-                    // bool bSelected = (CurrentMat && CurrentMat->GetPath() == ItemAbsPath);
-
-                    if (ImGui::Selectable(Item->VirtualPath.c_str(), bSelected))
+                    auto* Mat = Cast<Engine::Asset::UMaterialInterface>(Asset);
+                    if (!Mat)
                     {
-                        if (Context->AssetManager)
-                        {
-                            ::FAssetLoadParams Params;
-                            Params.ExplicitType = ::EAssetType::Material;
-                            // 인덱스가 가진 검증된 절대 경로를 직접 사용하여 로드
-                            UAsset* Loaded =
-                                Context->AssetManager->Load(Item->AbsolutePath.wstring(), Params);
-                            if (auto* NewMat = Cast<Engine::Asset::UMaterialInterface>(Loaded))
-                            {
-                                MeshComp->SetMaterial(SlotIndex, NewMat);
-                                bChanged = true;
-                            }
-                        }
+                        ++Index;
+                        continue;
                     }
+
+                    FString DisplayName = Mat->GetAssetName();
+                    if (DisplayName.empty())
+                    {
+                        DisplayName = "Material";
+                    }
+
+                    std::string Label = DisplayName + "##Mat_" + std::to_string(Index);
+                    bool bSelected = (CurrentMat == Mat);
+                    if (ImGui::Selectable(Label.c_str(), bSelected))
+                    {
+                        MeshComp->SetMaterial(SlotIndex, Mat);
+                        bChanged = true;
+                    }
+                    ++Index;
                 }
             }
             ImGui::EndCombo();

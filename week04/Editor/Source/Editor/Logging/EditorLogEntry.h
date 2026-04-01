@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Core/Containers/String.h"
+#include "Core/CoreMinimal.h"
+
 #include "Core/Logging/LogOutputDevice.h"
 
 struct FEditorLogEntry
