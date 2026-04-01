@@ -168,7 +168,7 @@ void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 			static_cast<float>(LayoutRect.Width),
 			static_cast<float>(LayoutRect.Height)
 		});
-		GetRootSplitterV()->UpdateCildRect();
+		GetRootSplitterV()->UpdateChildRect();
 		SyncViewportRects();
 	}
 }
@@ -188,7 +188,7 @@ void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
 		static_cast<float>(HostRect.Width),
 		static_cast<float>(HostRect.Height)
 	});
-	RootSplitterV->UpdateCildRect();
+	RootSplitterV->UpdateChildRect();
 	SyncViewportRects();
 }
 
@@ -281,7 +281,7 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	TopSplitterH->SetSplitRatio(HRatio);
 	BotSplitterH->SetSplitRatio(HRatio);
 
-	RootSplitterV->UpdateCildRect();
+	RootSplitterV->UpdateChildRect();
 
 	// SViewport(FRect) → FSceneViewport::SetRect(FViewportRect) 동기화
 	SyncViewportRects();
