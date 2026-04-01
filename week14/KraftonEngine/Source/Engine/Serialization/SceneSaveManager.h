@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <filesystem>
@@ -15,7 +15,8 @@ class UActorComponent;
 class USceneComponent;
 class UCameraComponent;
 
-namespace json {
+namespace json
+{
 	class JSON;
 }
 
@@ -34,7 +35,8 @@ struct FPerspectiveCameraData
 	bool    bValid   = false;
 };
 
-class FSceneSaveManager {
+class FSceneSaveManager
+{
 public:
 	static constexpr const wchar_t* SceneExtension = L".Scene";
 

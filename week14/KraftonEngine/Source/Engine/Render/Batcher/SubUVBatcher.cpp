@@ -1,7 +1,7 @@
 ﻿#include "SubUVBatcher.h"
 
 #include "Core/CoreTypes.h"
-#include <UI/EditorConsoleWidget.h>
+#include "Render/Resource/ShaderManager.h"
 
 void FSubUVBatcher::Create(ID3D11Device* InDevice)
 {
@@ -16,14 +16,6 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     Device->CreateSamplerState(&sampDesc, &SamplerState);
 
-    // 셰이더 + Input Layout (FTextureVertex: POSITION float3, TEXCOORD float2)
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-    SubUVShader.Create(Device, L"Shaders/ShaderSubUV.hlsl",
-        "VS", "PS", layout, ARRAYSIZE(layout));
 }
 
 void FSubUVBatcher::Release()
@@ -31,7 +23,6 @@ void FSubUVBatcher::Release()
     Clear();
 
     if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
-    SubUVShader.Release();
 
     ReleaseBuffers();
 }
@@ -104,7 +95,7 @@ void FSubUVBatcher::DrawBatch(ID3D11DeviceContext* Context)
     if (!VB.Update(Context, Vertices.data(), VertexCount)) return;
     if (!IB.Update(Context, Indices.data(), IndexCount)) return;
 
-    SubUVShader.Bind(Context);
+    FShaderManager::Get().GetShader(EShaderType::SubUV)->Bind(Context);
     VB.Bind(Context);
     IB.Bind(Context);
     Context->PSSetSamplers(0, 1, &SamplerState);
