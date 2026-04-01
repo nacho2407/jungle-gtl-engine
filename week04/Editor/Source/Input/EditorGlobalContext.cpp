@@ -144,8 +144,15 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
             if (Controller->GetEditorContext() && Controller->GetEditorContext()->Editor)
             {
                 FEditor* Editor = Controller->GetEditorContext()->Editor;
+                FWindowOverlayManager* OverlayManager = Editor->GetWindowOverlayManager();
+                if (!OverlayManager || !OverlayManager->GetLastFocusedPanel() ||
+                    !OverlayManager->GetLastFocusedPanel()->ViewportClient)
+                {
+                    return false;
+                }
 
-                auto& Gizmo = Editor->GetViewportClient().GetGizmoController();
+                auto& Gizmo =
+                    OverlayManager->GetLastFocusedPanel()->ViewportClient->GetGizmoController();
 
                 if (Event.Key == EKey::W)
                     Gizmo.SetGizmoType(EGizmoType::Translation);
@@ -164,7 +171,14 @@ bool FEditorGlobalContext::HandleEvent(const Engine::ApplicationCore::FInputEven
             if (Controller->GetEditorContext() && Controller->GetEditorContext()->Editor)
             {
                 FEditor* Editor = Controller->GetEditorContext()->Editor;
-                auto&    Setting = Editor->GetViewportClient().GetRenderSetting();
+                FWindowOverlayManager* OverlayManager = Editor->GetWindowOverlayManager();
+                if (!OverlayManager || !OverlayManager->GetLastFocusedPanel() ||
+                    !OverlayManager->GetLastFocusedPanel()->ViewportClient)
+                {
+                    return false;
+                }
+                auto& Setting =
+                    OverlayManager->GetLastFocusedPanel()->ViewportClient->GetRenderSetting();
                 if (Event.Key == EKey::N1)
                     Setting.SetViewMode(EViewModeIndex::VMI_Lit);
                 else if (Event.Key == EKey::N2)
