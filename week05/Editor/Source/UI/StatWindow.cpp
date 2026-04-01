@@ -201,7 +201,7 @@ void FStatWindow::Render(const FRect& AreaRect)
 		ImGui::SameLine(NameX);
 		ImGui::TextDisabled("Name");
 		ImGui::SameLine(SizeX);
-		ImGui::TextDisabled("Size");
+		ImGui::TextDisabled("Size (Bytes)");
 		ImGui::Separator();
 
 		ImGuiListClipper Clipper;
