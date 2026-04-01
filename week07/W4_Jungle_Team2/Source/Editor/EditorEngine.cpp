@@ -43,9 +43,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 퍼스펙티브 카메라(0번)를 월드 활성 카메라로 등록
 	GetWorld()->SetActiveCamera(GetCamera());
 
-	// Slate 초기화 + 위젯 트리 구성 (SSplitterV → 2×SSplitterH → 4×SViewport)
+	// Slate 초기화
 	FSlateApplication::Get().Initialize();
-	ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
