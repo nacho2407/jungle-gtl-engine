@@ -21,6 +21,8 @@
 #include "Renderer/SceneRenderData.h"
 #include "Renderer/SceneView.h"
 
+#include "Engine/ViewPort/ViewportCameraState.h"
+
 #include <filesystem>
 #include <memory>
 
@@ -112,7 +114,6 @@ class FEditor
 
     FScene*                      GetScene() const { return CurScene; }
     FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
-    const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
     FWindowOverlayManager*       GetWindowOverlayManager() { return WindowOverlayManager; }
     class FPanelManager*         GetPanelManager() const { return PanelManager; }
 
@@ -150,6 +151,8 @@ class FEditor
     std::filesystem::path GetSceneDirectory() const;
     void ResolveActorAssetReferences(AActor* Actor);
     void ResolveSceneAssetReferences(FScene* Scene);
+    void CaptureCameraState();
+    void ApplyCameraState();
 
   private:
     FEditorViewportClient ViewportClient;
@@ -167,9 +170,10 @@ class FEditor
     FEditorMenuRegistry   MenuRegistry;
     IEditorChromeHost*    ChromeHost = nullptr;
 
-    FEditorRenderData EditorRenderData;
-    FSceneRenderData  SceneRenderData;
-    FSceneView        SceneView;
+    FEditorRenderData    EditorRenderData;
+    FSceneRenderData     SceneRenderData;
+    FSceneView           SceneView;
+    FViewportCameraState CameraState;
 
     FScene*             CurScene = nullptr;
     FSceneDocumentState SceneDocument;

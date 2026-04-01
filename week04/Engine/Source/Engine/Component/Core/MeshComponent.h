@@ -28,6 +28,11 @@ namespace Engine::Component
         virtual Asset::UMaterialInterface* GetMaterial(uint32 Index) const;
         virtual uint32                     GetNumMaterials() const;
 
+        /** UV Scroll 오버라이드 관리 */
+        void     SetUVScrollSpeedOverride(uint32 SlotIndex, const FVector2& Speed);
+        FVector2 GetUVScrollSpeedOverride(uint32 SlotIndex) const;
+        bool     HasUVScrollSpeedOverride(uint32 SlotIndex) const;
+
         virtual void DescribeProperties(FComponentPropertyBuilder& Builder) override;
 
         /** 경로 변환 유틸리티 */
@@ -35,5 +40,6 @@ namespace Engine::Component
 
       protected:
         TArray<Asset::UMaterialInterface*> OverrideMaterials;
+        TMap<uint32, FVector2>             UVScrollOverrides;
     };
 } // namespace Engine::Component

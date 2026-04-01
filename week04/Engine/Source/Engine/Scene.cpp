@@ -113,7 +113,8 @@ void FScene::Tick(float DeltaTime)
     }
 }
 
-void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFlags InShowFlags) const
+void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData,
+                             ESceneShowFlags        InShowFlags) const
 {
     OutRenderData.StaticMeshes.clear();
     OutRenderData.Primitives.clear();
@@ -192,7 +193,8 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                          Cast<Engine::Component::UStaticMeshComponent>(Component))
             {
                 // (선택 사항) ShowFlags에 SF_StaticMeshes 같은 플래그가 있다면 여기서 체크
-                 if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives)) continue;
+                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives))
+                    continue;
 
                 Engine::Asset::UStaticMesh* StaticMeshAsset = StaticMeshComp->GetStaticMesh();
                 const FStaticMesh*  Resource =
@@ -223,6 +225,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 if (MeshItem.Materials.size() < NumSubMeshes)
                 {
                     MeshItem.Materials.resize(NumSubMeshes, nullptr);
+
                 }
 
                 // 4. 상태 및 피킹 데이터
@@ -270,32 +273,32 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
             }
 #pragma endregion
 
-//#pragma region __PRIMITIVE__
-//            else if (auto* PrimitiveComponent =
-//                         Cast<Engine::Component::UPrimitiveComponent>(Component))
-//            {
-//                if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives))
-//                {
-//                    continue;
-//                }
-//
-//                FPrimitiveRenderItem PrimitiveItem = {};
-//                PrimitiveItem.World = PrimitiveComponent->GetWorldMatrix();
-//                PrimitiveItem.Color = Actor->GetColor();
-//                PrimitiveItem.MeshType = Actor->GetMeshType();
-//                PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
-//                PrimitiveItem.bHasWorldAABB = true;
-//
-//                PrimitiveItem.State.ObjectId = ObjectId;
-//                PrimitiveItem.State.bShowBounds = PrimitiveComponent->IsShowBounds();
-//                PrimitiveItem.State.SetVisible(Actor->IsVisible());
-//                PrimitiveItem.State.SetPickable(Actor->IsPickable());
-//                PrimitiveItem.State.SetSelected(Actor->IsSelected());
-//                PrimitiveItem.State.SetHovered(Actor->IsHovered());
-//
-//                OutRenderData.Primitives.push_back(PrimitiveItem);
-//            }
-//#pragma endregion
+            // #pragma region __PRIMITIVE__
+            //             else if (auto* PrimitiveComponent =
+            //                          Cast<Engine::Component::UPrimitiveComponent>(Component))
+            //             {
+            //                 if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives))
+            //                 {
+            //                     continue;
+            //                 }
+            //
+            //                 FPrimitiveRenderItem PrimitiveItem = {};
+            //                 PrimitiveItem.World = PrimitiveComponent->GetWorldMatrix();
+            //                 PrimitiveItem.Color = Actor->GetColor();
+            //                 PrimitiveItem.MeshType = Actor->GetMeshType();
+            //                 PrimitiveItem.WorldAABB = PrimitiveComponent->GetWorldAABB();
+            //                 PrimitiveItem.bHasWorldAABB = true;
+            //
+            //                 PrimitiveItem.State.ObjectId = ObjectId;
+            //                 PrimitiveItem.State.bShowBounds = PrimitiveComponent->IsShowBounds();
+            //                 PrimitiveItem.State.SetVisible(Actor->IsVisible());
+            //                 PrimitiveItem.State.SetPickable(Actor->IsPickable());
+            //                 PrimitiveItem.State.SetSelected(Actor->IsSelected());
+            //                 PrimitiveItem.State.SetHovered(Actor->IsHovered());
+            //
+            //                 OutRenderData.Primitives.push_back(PrimitiveItem);
+            //             }
+            // #pragma endregion
         }
     }
 }

@@ -254,7 +254,24 @@ bool FD3D11MeshBatchRenderer::CreateStates()
     {
         D3D11_RASTERIZER_DESC Desc = {};
         Desc.FillMode = D3D11_FILL_SOLID;
+#if IS_OBJ_VIEWER
+        switch (CurrentPassParams.CullMode)
+        {
+        case (ERasterizerCullMode::CULL_None):
+            Desc.CullMode = D3D11_CULL_NONE;
+            break;
+        case (ERasterizerCullMode::CULL_Back):
+            Desc.CullMode = D3D11_CULL_BACK;
+            break;
+        case (ERasterizerCullMode::CULL_Front):
+            Desc.CullMode = D3D11_CULL_FRONT;
+            break;
+        default:
+            Desc.CullMode = D3D11_CULL_BACK;
+        }
+#else
         Desc.CullMode = D3D11_CULL_BACK;
+#endif
         Desc.FrontCounterClockwise = FALSE;
         Desc.DepthClipEnable = TRUE;
 

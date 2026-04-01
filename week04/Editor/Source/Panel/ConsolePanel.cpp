@@ -574,9 +574,14 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
         return;
     }
 
-    FEditorContext* Context = GetContext();
-    FEditor*        Editor = Context != nullptr ? Context->Editor : nullptr;
-    FScene*         Scene = Context != nullptr ? Context->Scene : nullptr;
+    FEditorContext* Context               = GetContext();
+    FEditor*        Editor                = Context != nullptr ? Context->Editor : nullptr;
+    FScene*         Scene                 = Context != nullptr ? Context->Scene : nullptr;
+    FEditorViewportClient* ActiveViewport = nullptr;
+    if (Editor->GetWindowOverlayManager()->GetLastFocusedPanel())
+    {
+        ActiveViewport = Editor->GetWindowOverlayManager()->GetLastFocusedPanel()->ViewportClient;
+    }
     const TArray<FString> Tokens = TokenizeCommandLine(TrimmedCommand);
     if (Tokens.empty())
     {
@@ -896,7 +901,11 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
-            Editor->GetViewportClient().GetNavigationController().FocusActors();
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No active viewport to focus.");
+            }
+            ActiveViewport->GetNavigationController().FocusActors();
             UE_LOG(Console, ELogVerbosity::Log, "Focused camera on current selection.");
         }
         bScrollToBottom = true;
@@ -931,7 +940,11 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
-            FViewportCamera& Camera = Editor->GetViewportClient().GetCamera();
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No viewport is being focused.");
+            }
+            FViewportCamera& Camera = ActiveViewport->GetCamera();
             Camera.SetProjectionType(EViewportProjectionType::Perspective);
             Camera.SetFOV(3.141592f * 0.5f);
             Camera.SetNearPlane(0.1f);
@@ -948,8 +961,12 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No viewport is being focused.");
+            }
             FViewportNavigationController& NavigationController =
-                Editor->GetViewportClient().GetNavigationController();
+                ActiveViewport->GetNavigationController();
 
             if (Tokens.size() < 2)
             {
@@ -979,8 +996,12 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No viewport is being focused.");
+            }
             FViewportNavigationController& NavigationController =
-                Editor->GetViewportClient().GetNavigationController();
+                ActiveViewport->GetNavigationController();
 
             if (Tokens.size() < 2)
             {
@@ -1035,7 +1056,11 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
-            FViewportRenderSetting& RenderSetting = Editor->GetViewportClient().GetRenderSetting();
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No viewport is being focused.");
+            }
+            FViewportRenderSetting& RenderSetting = ActiveViewport->GetRenderSetting();
             if (Tokens.size() < 2)
             {
                 UE_LOG(Console, ELogVerbosity::Log, "View mode = %s",
@@ -1125,7 +1150,11 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
-            FViewportRenderSetting& RenderSetting = Editor->GetViewportClient().GetRenderSetting();
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No viewport is being focused.");
+            }
+            FViewportRenderSetting& RenderSetting = ActiveViewport->GetRenderSetting();
             if (Tokens.size() < 2)
             {
                 UE_LOG(Console, ELogVerbosity::Log, "Grid visibility = %s",
@@ -1154,7 +1183,11 @@ void FConsolePanel::ExecuteCommand(const FString& CommandLine)
     {
         if (RequireEditor())
         {
-            FViewportRenderSetting& RenderSetting = Editor->GetViewportClient().GetRenderSetting();
+            if (!ActiveViewport)
+            {
+                UE_LOG(Console, ELogVerbosity::Warning, "No viewport is being focused.");
+            }
+            FViewportRenderSetting& RenderSetting = ActiveViewport->GetRenderSetting();
             if (Tokens.size() < 2)
             {
                 UE_LOG(Console, ELogVerbosity::Log, "Selection outline visibility = %s",

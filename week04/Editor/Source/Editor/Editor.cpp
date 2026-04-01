@@ -1,6 +1,7 @@
 #include "Editor.h"
 
 #include "Viewport/EditorViewportClient.h"
+#include "Camera/ViewportCamera.h"
 
 #include "Asset/AssetManager.h"
 #include "Asset/Texture2DAsset.h"
@@ -455,7 +456,7 @@ void FEditor::Create()
     // so there is only one SelectedActors array — eliminates stale-pointer crashes on actor delete.
     WindowOverlayManager->SetSharedSelectionController(&ViewportClient.GetSelectionController());
 
-    WindowOverlayManager->SetViewportLayout(EViewportLayout::ColumnTwoRow);
+    WindowOverlayManager->SetViewportLayout(EViewportLayout::Single);
 
     // SubViewports and Splitter controls
     OverlayInputContext = new FViewportOverlayInputContext(WindowOverlayManager);
@@ -598,6 +599,7 @@ std::filesystem::path FEditor::GetSceneDirectory() const
 
 bool FEditor::SaveScene()
 {
+    CaptureCameraState();
     if (!SceneDocument.CurrentScenePath.empty())
     {
         return SaveSceneToPath(SceneDocument.CurrentScenePath, true);
@@ -689,7 +691,7 @@ bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdat
     }
 
     FString ErrorMessage;
-    if (!FSceneSerializer::SaveToFile(*CurScene, FilePath, &ErrorMessage))
+    if (!FSceneSerializer::SaveToFile(*CurScene, CameraState, FilePath, &ErrorMessage))
     {
         UE_LOG(FEditor, ELogVerbosity::Error, "Failed to save scene: %s", ErrorMessage.c_str());
         return false;
@@ -708,7 +710,8 @@ bool FEditor::SaveSceneToPath(const std::filesystem::path& FilePath, bool bUpdat
 bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
 {
     FString                 ErrorMessage;
-    std::unique_ptr<FScene> LoadedScene = FSceneDeserializer::LoadFromFile(FilePath, &ErrorMessage);
+    std::unique_ptr<FScene> LoadedScene =
+        FSceneDeserializer::LoadFromFile(FilePath, &CameraState, &ErrorMessage);
     if (!LoadedScene)
     {
         UE_LOG(FEditor, ELogVerbosity::Error, "Failed to load scene: %s", ErrorMessage.c_str());
@@ -716,11 +719,35 @@ bool FEditor::LoadSceneFromPath(const std::filesystem::path& FilePath)
     }
 
     ReplaceCurrentScene(std::move(LoadedScene));
+    ApplyCameraState();
     SceneDocument.CurrentScenePath = FilePath;
     MarkSceneClean();
 
     UE_LOG(FEditor, ELogVerbosity::Log, "Loaded scene: %s", PathToUtf8String(FilePath).c_str());
     return true;
+}
+
+void FEditor::CaptureCameraState()
+{
+    const FViewportCamera& Cam = ViewportClient.GetCamera();
+    CameraState.Location    = Cam.GetLocation();
+    CameraState.Rotation    = Cam.GetRotation();
+    CameraState.FOV         = Cam.GetFOV();
+    CameraState.NearPlane   = Cam.GetNearPlane();
+    CameraState.FarPlane    = Cam.GetFarPlane();
+    CameraState.OrthoHeight = Cam.GetOrthoHeight();
+}
+
+void FEditor::ApplyCameraState()
+{
+    FViewportCamera& Cam = ViewportClient.GetCamera();
+    Cam.SetLocation(CameraState.Location);
+    Cam.SetRotation(CameraState.Rotation);
+    Cam.SetFOV(CameraState.FOV);
+    Cam.SetNearPlane(CameraState.NearPlane);
+    Cam.SetFarPlane(CameraState.FarPlane);
+    Cam.SetOrthoHeight(CameraState.OrthoHeight);
+    ViewportClient.GetNavigationController().ResetTargetLocation(CameraState.Location);
 }
 
 void FEditor::ReplaceCurrentScene(std::unique_ptr<FScene> NewScene)
@@ -1364,12 +1391,42 @@ void FEditor::DrawAboutPopup()
             ImGui::PopStyleColor();
             ImGui::Unindent();
             ImGui::Spacing();
-        }
+            }
 
-        ImGui::Spacing();
+            ImGui::Spacing();
+            ImGui::SeparatorText("Second Contributors");
+            ImGui::Spacing();
 
-        if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr &&
-            AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
+         static const std::array<FWString, 4> SecondContributorNames = {
+             L"\uAE40\uAE30\uD6C8", // 김기훈
+             L"\uAE40\uD615\uB3C4", // 김형도
+             L"\uAE40\uD615\uC900", // 김형준
+             L"\uC7A5\uBBFC\uC900", // 장민준
+         };
+
+         static const std::array<FWString, 4> SecondContributorSummaries = {
+             L"Editor UI & Tools, Material editing and UV scroll",
+             L"OBJ parser, Binary mesh serialization and Material editing",
+             L"Multi-viewport architecture, Camera systems and Viewer core",
+             L"Stat overlay (FPS/Memory), Console engine and Timer management",
+         };
+
+            for (size_t i = 0; i < SecondContributorNames.size(); ++i)
+            {
+            const FString NameUtf8 = WideToUtf8(SecondContributorNames[i]);
+            const FString SummaryUtf8 = WideToUtf8(SecondContributorSummaries[i]);
+            ImGui::BulletText("%s", NameUtf8.c_str());
+            ImGui::Indent();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(185, 185, 190, 255));
+            ImGui::TextWrapped("%s", SummaryUtf8.c_str());
+            ImGui::PopStyleColor();
+            ImGui::Unindent();
+            ImGui::Spacing();
+            }
+
+            ImGui::Spacing();
+
+            if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr &&            AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
         {
             ImGui::Spacing();
             ImGui::Separator();

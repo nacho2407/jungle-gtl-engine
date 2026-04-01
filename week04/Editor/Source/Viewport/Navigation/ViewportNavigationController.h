@@ -41,6 +41,7 @@ class FViewportNavigationController : public Engine::Viewport::IViewportControll
     void SetRotationLocked(bool bInLocked) { bRotationLocked = bInLocked; }
     void SetTranslationLocked(bool bInLocked) { bTranslationLocked = bInLocked; }
     void ToggleHasTargetLocation() { bHasTargetLocation = !bHasTargetLocation; }
+    void ResetTargetLocation(const FVector& InLocation) { TargetLocation = InLocation; bHasTargetLocation = true; }
 
     /* Orbiting */
     void SetSelectionController(class FViewportSelectionController* InController)

@@ -163,8 +163,21 @@ void FD3D11StaticMeshRenderer::Flush()
                 Constants.BaseColor =
                     FColor(MaterialData->DiffuseColor.X, MaterialData->DiffuseColor.Y,
                            MaterialData->DiffuseColor.Z, MaterialData->Opacity);
-                Constants.ScrollSpeedX = MaterialData->UVScrollSpeed.X;
-                Constants.ScrollSpeedY = MaterialData->UVScrollSpeed.Y;
+                
+                // --- 오버라이드 우선 적용 로직 ---
+                auto ItOverride = DrawItem.UVScrollOverrides.find(i);
+                if (ItOverride != DrawItem.UVScrollOverrides.end())
+                {
+                    // 인스턴스(컴포넌트) 레벨의 오버라이드 사용
+                    Constants.ScrollSpeedX = ItOverride->second.X;
+                    Constants.ScrollSpeedY = ItOverride->second.Y;
+                }
+                else
+                {
+                    // 에셋(머티리얼) 레벨의 기본값 사용
+                    Constants.ScrollSpeedX = MaterialData->UVScrollSpeed.X;
+                    Constants.ScrollSpeedY = MaterialData->UVScrollSpeed.Y;
+                }
             }
             else
             {
@@ -231,15 +244,26 @@ bool FD3D11StaticMeshRenderer::CreateStates()
 
     {
         D3D11_RASTERIZER_DESC Desc = {};
-        Desc.FillMode = D3D11_FILL_SOLID;
-        Desc.CullMode = D3D11_CULL_BACK;
+        Desc.FillMode              = D3D11_FILL_SOLID;
         Desc.FrontCounterClockwise = FALSE;
-        Desc.DepthClipEnable = TRUE;
+        Desc.DepthClipEnable       = TRUE;
 
+        Desc.CullMode = D3D11_CULL_BACK;
         if (FAILED(Device->CreateRasterizerState(&Desc, SolidRasterizerState.GetAddressOf())))
             return false;
 
+#if IS_OBJ_VIEWER
+        Desc.CullMode = D3D11_CULL_NONE;
+        if (FAILED(Device->CreateRasterizerState(&Desc, SolidNoneRasterizerState.GetAddressOf())))
+            return false;
+
+        Desc.CullMode = D3D11_CULL_FRONT;
+        if (FAILED(Device->CreateRasterizerState(&Desc, SolidFrontRasterizerState.GetAddressOf())))
+            return false;
+#endif
+
         Desc.FillMode = D3D11_FILL_WIREFRAME;
+        Desc.CullMode = D3D11_CULL_BACK;
         if (FAILED(Device->CreateRasterizerState(&Desc, WireframeRasterizerState.GetAddressOf())))
             return false;
     }
@@ -282,8 +306,18 @@ void FD3D11StaticMeshRenderer::BindPipeline()
 
 void FD3D11StaticMeshRenderer::BindSolidRasterizer()
 {
-    if (RHI)
-        RHI->SetRasterizerState(SolidRasterizerState.Get());
+    if (!RHI) return;
+
+    ID3D11RasterizerState* State = SolidRasterizerState.Get();
+    #if IS_OBJ_VIEWER
+    switch (CurrentPassParams.CullMode)
+    {
+    case ERasterizerCullMode::CULL_None:  State = SolidNoneRasterizerState.Get();  break;
+    case ERasterizerCullMode::CULL_Front: State = SolidFrontRasterizerState.Get(); break;
+    default:                                                                        break;
+    }
+    #endif
+    RHI->SetRasterizerState(State);
 }
 
 void FD3D11StaticMeshRenderer::BindWireframeRasterizer()

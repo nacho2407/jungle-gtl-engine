@@ -10,7 +10,7 @@
 #include <imgui_impl_win32.h>
 
 #include "Core/CoreMinimal.h"
-#include "Renderer/Types/ViewMode.h"
+#include "Renderer/Types/MeshPassParams.h"
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -33,6 +33,7 @@ namespace ViewerUI
         const char*    MeshName          = nullptr;
         float          FPS               = 0.f;
         EViewModeIndex CurrentViewMode   = EViewModeIndex::VMI_Lit;
+        ERasterizerCullMode      SelectedCullMode  = ERasterizerCullMode::CULL_Back;
         bool           bConvertCoords    = false;  // LH Y-up → Z-up
     };
 
@@ -41,6 +42,7 @@ namespace ViewerUI
         ECameraCommand CameraCommand     = ECC_None;
         bool           bOpenRequested    = false;
         EViewModeIndex SelectedViewMode  = EViewModeIndex::VMI_Lit;
+        ERasterizerCullMode      SelectedCullMode  = ERasterizerCullMode::CULL_Back;
         bool           bConvertCoords    = false;
     };
 
@@ -64,10 +66,12 @@ namespace ViewerUI
 
     private:
         static constexpr const char* ViewModeLabels[] = {"Lit", "Unlit", "Wireframe"};
+      static constexpr const char* CullModeLabels[]   = {"None", "Cull Back", "Cull Front"};
 
         bool           DrawLoadPanel(const char* MeshName, float FPS);
         void           DrawControlPanel(const FViewerUIInput& Input, FViewerUIOutput& Out);
         void           DrawViewModePanel(EViewModeIndex Current, FViewerUIOutput& Out);
+        void           DrawCullModePanel(ERasterizerCullMode Current, FViewerUIOutput& Out);
         void           DrawCameraPanel(FViewerUIOutput& Out);
     };
 } // namespace ViewerUI

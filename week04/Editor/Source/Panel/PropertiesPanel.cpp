@@ -363,7 +363,6 @@ namespace
 
                     ImGui::TextUnformatted("UV Scroll Speed");
                     ImGui::PushID("UVScrollSpeed");
-
                     float SpeedX = Data->UVScrollSpeed.X;
                     float SpeedY = Data->UVScrollSpeed.Y;
 
@@ -389,7 +388,6 @@ namespace
                     }
 
                     ImGui::PopID();
-                    ImGui::Unindent(20.0f);
                 }
             }
         }
@@ -582,7 +580,8 @@ namespace
     }
 
     bool DrawMaterialSlotPropertyRow(const char* LabelId, const char* DisplayLabel,
-                                     const Engine::Component::FComponentPropertyDescriptor& Descriptor)
+                                     const Engine::Component::FComponentPropertyDescriptor& Descriptor,
+                                     FEditorContext* Context)
     {
         const FString CurrentValue = Descriptor.StringGetter ? Descriptor.StringGetter() : "";
         TArray<FString> Options = Descriptor.OptionsGetter ? Descriptor.OptionsGetter()
@@ -623,6 +622,74 @@ namespace
             ImGui::EndCombo();
         }
 
+        // --- UV Scroll UI 통합 ---
+        if (Context && Context->SelectedObject)
+        {
+            if (auto* MeshComp = Cast<Engine::Component::UMeshComponent>(Context->SelectedObject))
+            {
+                // Property Key (예: "StaticMeshMaterialSlot_0")에서 인덱스 추출
+                int32 SlotIdx = 0;
+                size_t UnderscorePos = Descriptor.Key.find_last_of('_');
+                if (UnderscorePos != std::string::npos)
+                {
+                    SlotIdx = std::stoi(Descriptor.Key.substr(UnderscorePos + 1));
+                }
+
+                if (auto* CurrentMat = MeshComp->GetMaterial(SlotIdx))
+                {
+                    if (auto* Mat = Cast<Engine::Asset::UMaterial>(CurrentMat))
+                    {
+                        FString SubMatName = MeshComp->GetSubMaterialName(SlotIdx);
+                        
+                        // --- 인스턴스별 개별 조절 로직 (오버라이드 우선) ---
+                        FVector2 CurrentSpeed;
+                        if (MeshComp->HasUVScrollSpeedOverride(SlotIdx))
+                        {
+                            CurrentSpeed = MeshComp->GetUVScrollSpeedOverride(SlotIdx);
+                        }
+                        else if (auto* DefaultData = Mat->GetMaterialData(SubMatName))
+                        {
+                            CurrentSpeed = DefaultData->UVScrollSpeed;
+                        }
+                        else
+                        {
+                            CurrentSpeed = FVector2::ZeroVector;
+                        }
+
+                        // Indent(20.0f) 제거하여 Material 0 와 정렬을 맞춤
+                        
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("UV Scroll Speed");
+                        ImGui::SameLine(140.0f); // 수평 정렬 시작
+
+                        float SpeedX = CurrentSpeed.X;
+                        float SpeedY = CurrentSpeed.Y;
+
+                        // X 부분
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("X:"); ImGui::SameLine();
+                        ImGui::SetNextItemWidth(60.0f);
+                        if (ImGui::DragFloat("##X", &SpeedX, 0.001f, -10.0f, 10.0f, "%.3f"))
+                        {
+                            MeshComp->SetUVScrollSpeedOverride(SlotIdx, FVector2(SpeedX, SpeedY));
+                            bChanged = true;
+                        }
+
+                        // Y 부분 (간격 조정: 220 -> 240)
+                        ImGui::SameLine(240.0f); 
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Y:"); ImGui::SameLine();
+                        ImGui::SetNextItemWidth(60.0f);
+                        if (ImGui::DragFloat("##Y", &SpeedY, 0.001f, -10.0f, 10.0f, "%.3f"))
+                        {
+                            MeshComp->SetUVScrollSpeedOverride(SlotIdx, FVector2(SpeedX, SpeedY));
+                            bChanged = true;
+                        }
+                    }
+                }
+            }
+        }
+
         ImGui::PopID();
         return bChanged;
     }
@@ -650,7 +717,7 @@ namespace
             return DrawStringPropertyRow(Id, Label, Descriptor, true, AssetPathEditBuffers,
                                          Context);
         case EComponentPropertyType::MaterialSlot:
-            return DrawMaterialSlotPropertyRow(Id, Label, Descriptor);
+            return DrawMaterialSlotPropertyRow(Id, Label, Descriptor, Context);
         case EComponentPropertyType::Vector3:
             return DrawVectorPropertyRow(Id, Label, Descriptor);
         case EComponentPropertyType::Color:

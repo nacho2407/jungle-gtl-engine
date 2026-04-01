@@ -57,7 +57,12 @@ class FD3D11StaticMeshRenderer
     TComPtr<ID3D11InputLayout>  InputLayout;
     TComPtr<ID3D11Buffer>       ConstantBuffer;
 
-    TComPtr<ID3D11RasterizerState>   SolidRasterizerState;
+    TComPtr<ID3D11RasterizerState>   SolidRasterizerState;        // CULL_Back
+#if IS_OBJ_VIEWER
+    TComPtr<ID3D11RasterizerState>   SolidNoneRasterizerState;    // CULL_None
+    TComPtr<ID3D11RasterizerState>   SolidFrontRasterizerState;   // CULL_Front
+#endif 
+
     TComPtr<ID3D11RasterizerState>   WireframeRasterizerState;
     TComPtr<ID3D11DepthStencilState> DepthStencilState;
     TComPtr<ID3D11DepthStencilState> DepthDisabledState;
