@@ -24,7 +24,7 @@ public:
 	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
-	static std::wstring ResourceFilePath();  // Settings/Resource.ini
+	static std::wstring AssetDirectoryPath();  // Settings/Resource.ini
 	static std::wstring ResourceDefaultMaterialTexture(); // Asset/Mesh/Default.png
 	static std::wstring ToRelative(const std::wstring& AbsolutePath);
 	static std::wstring ToAbsolute(const std::wstring& RelativePath);
