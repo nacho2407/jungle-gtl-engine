@@ -3,6 +3,9 @@
 #include "Render/Pipeline/RenderCommand.h"
 #include "Render/Types/ViewTypes.h"
 
+class UCameraComponent;
+class FViewport;
+
 
 class FRenderBus
 {
@@ -28,7 +31,9 @@ public:
 	const TArray<FGridEntry>& GetGridEntries() const { return GridEntries; }
 
 	// Getter,Setter
-	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, const FVector& CameraForwardVector, const FVector& CameraRightVector, const FVector& CameraUpVector);
+	void SetCameraInfo(const UCameraComponent* Camera);
+	void SetViewportInfo(const FViewport* VP);
+	void SetViewportSize(float InWidth, float InHeight);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
 
 	const FMatrix& GetView() const { return View; }
@@ -36,25 +41,15 @@ public:
 	const FVector& GetCameraForward() const { return CameraForward; }
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
+	bool  IsOrtho()        const { return bIsOrtho; }
+	float GetOrthoWidth()  const { return OrthoWidth; }
 	EViewMode GetViewMode() const { return ViewMode; }
 	const FShowFlags& GetShowFlags() const { return ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 
-	void SetViewportSize(float InWidth, float InHeight);
 	const float GetViewportWidth() const { return viewportWidth; }
 	const float GetViewportHeight() const { return viewportHeight; }
-
-	// 카메라 투영 정보 (Gizmo per-viewport 스케일링 등)
-	void SetCameraInfo(bool InIsOrtho, float InOrthoWidth) { bIsOrtho = InIsOrtho; OrthoWidth = InOrthoWidth; }
-	bool  IsOrtho()        const { return bIsOrtho; }
-	float GetOrthoWidth()  const { return OrthoWidth; }
-
-	// PostProcess용 뷰포트 리소스 — DSV unbind → StencilSRV bind 필요
-	void SetViewportResources(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, ID3D11ShaderResourceView* InStencilSRV)
-	{
-		ViewportRTV = InRTV; ViewportDSV = InDSV; ViewportStencilSRV = InStencilSRV;
-	}
 	ID3D11RenderTargetView*  GetViewportRTV()        const { return ViewportRTV; }
 	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }

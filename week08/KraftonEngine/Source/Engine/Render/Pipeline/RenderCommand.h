@@ -94,7 +94,7 @@ struct FGridConstants
 
 struct FFontConstants
 {
-	const FString* Text = nullptr;			// 컴포넌트 소유 문자열 참조 (프레임 내 유효)
+	FString Text;							// 렌더링할 문자열 (프레임 내 유효)
 	const FFontResource* Font = nullptr;
 	float Scale = 1.0f;
 
@@ -136,10 +136,10 @@ struct FGridEntry
 	FGridConstants Grid;
 };
 
-// 스크린 공간 텍스트 입력 — Overlay Stats 등에서 사용
-struct FScreenTextItem
+// 스크린 공간 텍스트 — Overlay Stats 등에서 사용
+struct FOverlayStatLine
 {
-	const FString* Text = nullptr;
+	FString Text;
 	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
 };
 

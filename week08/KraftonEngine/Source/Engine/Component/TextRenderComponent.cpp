@@ -27,7 +27,7 @@ void UTextRenderComponent::CollectRender(FRenderBus& Bus) const
 	FFontEntry Entry = {};
 	Entry.PerObject = FPerObjectConstants{ PerViewBillboard };
 	Entry.PerObject.Color = GetColor();
-	Entry.Font.Text = &Text;
+	Entry.Font.Text = Text;
 	Entry.Font.Font = Font;
 	Entry.Font.Scale = GetFontSize();
 	Bus.AddFontEntry(std::move(Entry));
