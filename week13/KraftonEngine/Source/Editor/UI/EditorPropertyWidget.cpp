@@ -500,7 +500,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				if (Loaded)
 				{
 					*Val = FObjManager::GetBinaryFilePath(ObjPath);
-					FObjManager::ScanMeshAssets(); // 목록 갱신
 					bChanged = true;
 				}
 			}
@@ -534,17 +533,30 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		// 우측: Material 콤보 + UVScroll 체크박스
 		ImGui::BeginGroup();
 		ImGui::SetNextItemWidth(-1);
-		if (ImGui::BeginCombo("##Mat", Slot->Path.c_str()))
+
+		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
+		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 		{
-			for (TObjectIterator<UMaterial> It; It; ++It)
+			// "None" 선택지 기본 제공
+			bool bSelectedNone = (Slot->Path == "None" || Slot->Path.empty());
+			if (ImGui::Selectable("None", bSelectedNone))
 			{
-				if (!*It) continue;
-				FString Path = (*It)->GetAssetPathFileName();
-				if (ImGui::Selectable(Path.c_str(), Slot->Path == Path))
+				Slot->Path = "None";
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			// TObjectIterator 대신 FObjManager 파일 목록 스캔 데이터 사용
+			const TArray<FMaterialAssetListItem>& MatFiles = FObjManager::GetAvailableMaterialFiles();
+			for (const FMaterialAssetListItem& Item : MatFiles)
+			{
+				bool bSelected = (Slot->Path == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
 				{
-					Slot->Path = Path;
+					Slot->Path = Item.FullPath; // 데이터는 전체 경로로 저장
 					bChanged = true;
 				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
 		}
