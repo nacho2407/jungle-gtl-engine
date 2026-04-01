@@ -73,7 +73,9 @@ bool FFileUtils::FindFileRecursively(const FString& SearchRootPath, const FStrin
 		return false;
 	}
 
-	// Error Code 확인 로직 제거, 필수 흐름만 유지
+	constexpr size_t MaxSearchLimit = 5000;
+    size_t CurrentSearchCount = 0;
+
 	for (const auto& Entry : std::filesystem::recursive_directory_iterator(
 		RootPath,
 		std::filesystem::directory_options::skip_permission_denied))
@@ -89,6 +91,12 @@ bool FFileUtils::FindFileRecursively(const FString& SearchRootPath, const FStrin
 			OutFoundPath = FPaths::ToUtf8(RelPath.generic_wstring());
 			return true;
 		}
+
+		// 최대 검색 회수를 초과하면 탐색을 중단하여 무한 루프 방지
+		if (CurrentSearchCount++ > MaxSearchLimit)
+        {
+            return false;
+        }
 	}
 
 	return false;

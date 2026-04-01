@@ -42,10 +42,21 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.PrepareBatchers(Bus);
 	Renderer.BeginFrame();
 
-	auto& VC = Engine->GetViewportClient();
-	Renderer.GetFD3DDevice().SetSubViewport(VC.GetViewportX(),VC.GetViewportY(), VC.GetViewportWidth(), VC.GetViewportHeight());
-
+	TransferViewportData(Renderer);
 	Renderer.Render(Bus);
 	Engine->RenderUI(DeltaTime);
 	Renderer.EndFrame();
+}
+
+// 렌더러에 데이터를 전송해 뷰포트 크기에 맞는 서브 뷰포트 세팅을 요청한다.
+void FObjViewerRenderPipeline::TransferViewportData(FRenderer& Renderer)
+{
+	auto& VC = Engine->GetViewportClient();
+
+	int32 vx = static_cast<uint32>(VC.GetViewportX());
+    int32 vy = static_cast<uint32>(VC.GetViewportY());
+    int32 vw = static_cast<uint32>(VC.GetViewportWidth());
+    int32 vh = static_cast<uint32>(VC.GetViewportHeight());
+
+	Renderer.GetFD3DDevice().SetSubViewport(vx, vy, vw, vh);
 }
