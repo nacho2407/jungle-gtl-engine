@@ -142,7 +142,7 @@ void FViewportNavigationController::AddYawInput(float Value)
 
 	if (bOrbiting)
 	{
-		UpdateOrbitCamera();
+		// UpdateOrbitCamera();
 	}
 	else
 	{
@@ -162,7 +162,7 @@ void FViewportNavigationController::AddPitchInput(float Value)
 
 	if (bOrbiting)
 	{
-		UpdateOrbitCamera();
+		// UpdateOrbitCamera();
 	}
 	else
 	{
@@ -170,86 +170,86 @@ void FViewportNavigationController::AddPitchInput(float Value)
 	}
 }
 
-void FViewportNavigationController::BeginOrbit(const FVector& InPivot)
-{
-	if (ViewportCamera == nullptr)
-	{
-		return;
-	}
-
-	if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
-	{
-		return;
-	}
-
-	OrbitPivot = InPivot;
-
-	const FVector CameraLocation = ViewportCamera->GetLocation();
-	const FVector Offset = CameraLocation - OrbitPivot;
-
-	OrbitRadius = Offset.Size();
-	if (MathUtil::IsNearlyZero(OrbitRadius))
-	{
-		OrbitRadius = DefaultOrbitRadius;
-	}
-
-	const FVector Forward = (-Offset).GetSafeNormal();
-	Pitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.0f, 1.0f)));
-	Yaw = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
-
-	bOrbiting = true;
-}
-
-void FViewportNavigationController::UpdateOrbitCamera()
-{
-	if (ViewportCamera == nullptr)
-	{
-		return;
-	}
-
-	if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
-	{
-		return;
-	}
-
-	const float PitchRad = MathUtil::DegreesToRadians(Pitch);
-	const float YawRad = MathUtil::DegreesToRadians(Yaw);
-
-	FVector ToPivotDir(
-		std::cos(PitchRad) * std::cos(YawRad),
-		std::cos(PitchRad) * std::sin(YawRad),
-		std::sin(PitchRad));
-
-	ToPivotDir = ToPivotDir.GetSafeNormal();
-
-	const FVector CameraLocation = OrbitPivot - ToPivotDir * OrbitRadius;
-	ViewportCamera->SetLocation(CameraLocation);
-
-	TargetLocation = CameraLocation;
-	bHasTargetLocation = true;
-
-	const FVector Forward = (OrbitPivot - CameraLocation).GetSafeNormal();
-
-	FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
-	if (Right.IsNearlyZero())
-	{
-		return;
-	}
-
-	FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
-
-	FMatrix RotationMatrix = FMatrix::Identity;
-	RotationMatrix.SetAxes(Forward, Right, Up);
-
-	FQuat NewRotation(RotationMatrix);
-	NewRotation.Normalize();
-	ViewportCamera->SetRotation(NewRotation);
-}
-
-void FViewportNavigationController::EndOrbit()
-{
-	bOrbiting = false;
-}
+// void FViewportNavigationController::BeginOrbit(const FVector& InPivot)
+// {
+// 	if (ViewportCamera == nullptr)
+// 	{
+// 		return;
+// 	}
+//
+// 	if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
+// 	{
+// 		return;
+// 	}
+//
+// 	OrbitPivot = InPivot;
+//
+// 	const FVector CameraLocation = ViewportCamera->GetLocation();
+// 	const FVector Offset = CameraLocation - OrbitPivot;
+//
+// 	OrbitRadius = Offset.Size();
+// 	if (MathUtil::IsNearlyZero(OrbitRadius))
+// 	{
+// 		OrbitRadius = DefaultOrbitRadius;
+// 	}
+//
+// 	const FVector Forward = (-Offset).GetSafeNormal();
+// 	Pitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.0f, 1.0f)));
+// 	Yaw = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
+//
+// 	bOrbiting = true;
+// }
+//
+// void FViewportNavigationController::UpdateOrbitCamera()
+// {
+// 	if (ViewportCamera == nullptr)
+// 	{
+// 		return;
+// 	}
+//
+// 	if (ViewportCamera->GetProjectionType() != EViewportProjectionType::Perspective)
+// 	{
+// 		return;
+// 	}
+//
+// 	const float PitchRad = MathUtil::DegreesToRadians(Pitch);
+// 	const float YawRad = MathUtil::DegreesToRadians(Yaw);
+//
+// 	FVector ToPivotDir(
+// 		std::cos(PitchRad) * std::cos(YawRad),
+// 		std::cos(PitchRad) * std::sin(YawRad),
+// 		std::sin(PitchRad));
+//
+// 	ToPivotDir = ToPivotDir.GetSafeNormal();
+//
+// 	const FVector CameraLocation = OrbitPivot - ToPivotDir * OrbitRadius;
+// 	ViewportCamera->SetLocation(CameraLocation);
+//
+// 	TargetLocation = CameraLocation;
+// 	bHasTargetLocation = true;
+//
+// 	const FVector Forward = (OrbitPivot - CameraLocation).GetSafeNormal();
+//
+// 	FVector Right = FVector::CrossProduct(FVector::UpVector, Forward).GetSafeNormal();
+// 	if (Right.IsNearlyZero())
+// 	{
+// 		return;
+// 	}
+//
+// 	FVector Up = FVector::CrossProduct(Forward, Right).GetSafeNormal();
+//
+// 	FMatrix RotationMatrix = FMatrix::Identity;
+// 	RotationMatrix.SetAxes(Forward, Right, Up);
+//
+// 	FQuat NewRotation(RotationMatrix);
+// 	NewRotation.Normalize();
+// 	ViewportCamera->SetRotation(NewRotation);
+// }
+//
+// void FViewportNavigationController::EndOrbit()
+// {
+// 	bOrbiting = false;
+// }
 
 void FViewportNavigationController::Dolly(float Value)
 {
@@ -267,7 +267,7 @@ void FViewportNavigationController::Dolly(float Value)
 	{
 		OrbitRadius -= Value * DollySpeed;
 		OrbitRadius = std::max(OrbitRadius, MinOrbitRadius);
-		UpdateOrbitCamera();
+		// UpdateOrbitCamera();
 		return;
 	}
 
