@@ -109,6 +109,7 @@ void FObjManager::ScanMaterialAssets()
 
 		// 확장자가 .mbin인지 확인
 		if (Path.extension() != L".mbin") continue;
+		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
 
 		FMaterialAssetListItem Item;
 		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
@@ -179,12 +180,15 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 
 	if (FObjImporter::Import(PathFileName, Options, *NewMeshAsset, ParsedMaterials))
 	{
-		// 머티리얼 .mbin 저장
+		// 머티리얼 .mbin 저장 ("None" Fallback 머티리얼은 저장하지 않음)
 		for (auto& Mat : ParsedMaterials)
 		{
 			if (Mat.MaterialInterface)
 			{
 				MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+				if (Mat.MaterialInterface->PathFileName == "None")
+					continue;
+
 				FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
 
 				FWindowsBinWriter MatWriter(MatBinPath);
@@ -271,6 +275,9 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 				if (Mat.MaterialInterface)
 				{
 					MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+					if (Mat.MaterialInterface->PathFileName == "None")
+						continue;
+
 					FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
 
 					FWindowsBinWriter MatWriter(MatBinPath);
