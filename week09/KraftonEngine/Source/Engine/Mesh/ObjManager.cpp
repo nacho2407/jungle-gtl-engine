@@ -297,6 +297,9 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	// 캐시 등록
 	StaticMeshCache[CacheKey] = StaticMesh;
 
+	ScanMeshAssets();
+	ScanMaterialAssets();
+
 	return StaticMesh;
 }
 
