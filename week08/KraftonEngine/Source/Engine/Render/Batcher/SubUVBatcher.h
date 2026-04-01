@@ -7,7 +7,6 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/Types/RenderTypes.h"
-#include "Render/Resource/Shader.h"
 #include "Render/Types/VertexTypes.h"
 
 // SubUV 아틀라스 내 한 프레임의 UV 정보
@@ -67,7 +66,6 @@ private:
 
 	// 고유 리소스
 	ID3D11SamplerState* SamplerState = nullptr;
-	FShader             SubUVShader;
 
 	FSubUVFrameInfo GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const;
 };

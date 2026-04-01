@@ -11,6 +11,9 @@ enum class EShaderType : uint32
 	Editor,
 	StaticMesh,
 	OutlinePostProcess,
+	Font,
+	OverlayFont,
+	SubUV,
 	MAX,
 };
 
