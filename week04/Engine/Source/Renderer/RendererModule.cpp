@@ -228,6 +228,10 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         StaticMeshPassParams.bDisableDepth = false;
         StaticMeshPassParams.Time = Time; // 시간 전달
 
+        #if IS_OBJ_VIEWER
+        StaticMeshPassParams.CullMode = InEditorRenderData.CullMode;
+        #endif
+
         StaticMeshRenderer.BeginFrame(StaticMeshPassParams);
 
         // Submitter를 통해 RenderData의 StaticMeshes를 Renderer로 전달

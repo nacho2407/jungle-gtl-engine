@@ -3,6 +3,10 @@
 #include "Core/HAL/PlatformTypes.h"
 #include "Core/Math/Matrix.h"
 
+#if IS_OBJ_VIEWER
+#include "Renderer/Types/MeshPassParams.h"
+#endif
+
 class FSceneView;
 
 enum class EGizmoType : uint8
@@ -47,4 +51,8 @@ struct FEditorRenderData
     bool bShowGizmo = false;
 
     FGizmoDrawData Gizmo;
+
+    #if IS_OBJ_VIEWER
+    ERasterizerCullMode CullMode = ERasterizerCullMode::CULL_Back;
+    #endif
 };

@@ -78,12 +78,12 @@ private:
     float  DeltaTime = 0.0f;
     float  FPS       = 0.0f;
 
-    EViewModeIndex ViewMode        = EViewModeIndex::VMI_Lit;
-    bool           bConvertCoords = false;
-
-    bool bIsExit                    = false;
-    bool bIsInSizeMoveLoop          = false;
-    bool bIsRenderingDuringSizeMove = false;
+    EViewModeIndex      ViewMode   = EViewModeIndex::VMI_Lit;
+    ERasterizerCullMode CullMode   = ERasterizerCullMode::CULL_Back;
+    bool bConvertCoords              = false;
+    bool bIsExit                     = false;
+    bool bIsInSizeMoveLoop           = false;
+    bool bIsRenderingDuringSizeMove  = false;
 
 private:
 };
