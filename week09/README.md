@@ -3,7 +3,7 @@
 DirectX 11 기반 실시간 3D 씬 에디터 엔진입니다.
 Actor/Component 아키텍처 위에 WYSIWYG 씬 편집, 레이캐스팅 오브젝트 선택, 멀티뷰포트, OBJ/머티리얼 임포트, JSON 직렬화를 지원합니다.
 
-> **Jungle Week 4 — Team 3** (심우진, 조현석, 박세영, 김효범, 강건우)
+> **Jungle Week 4 — Team 3**
 
 ---
 
@@ -188,14 +188,3 @@ KraftonEngine/
 - 네이밍: `F` (구조체/값), `U` (UObject), `A` (Actor), `E` (enum)
 - HLSL: UTF-8 (BOM 없음)
 
----
-
-## 팀원
-
-| 이름 | GitHub |
-|------|--------|
-| 심우진 | [@shimwoojin](https://github.com/shimwoojin) |
-| 조현석 | [@JunHyeop3631](https://github.com/JunHyeop3631) |
-| 박세영 | [@lin-ion](https://github.com/lin-ion) |
-| 김효범 | [@HyoBeom](https://github.com/HyoBeom) |
-| 강건우 | [@keonwookang0914](https://github.com/keonwookang0914) |
