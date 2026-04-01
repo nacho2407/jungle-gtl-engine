@@ -11,6 +11,7 @@ std::map<FString, UStaticMesh*> FObjManager::StaticMeshCache;
 TMap<FString, UMaterial*> FObjManager::MaterialCache;
 TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
+TArray<FMaterialAssetListItem> FObjManager::AvailableMaterialFiles;
 
 FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 {
@@ -85,11 +86,35 @@ void FObjManager::ScanMeshAssets()
 	}
 }
 
-const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
+void FObjManager::ScanMaterialAssets()
 {
-	return AvailableMeshFiles;
-}
+	AvailableMaterialFiles.clear();
 
+	// .mbin 파일도 .bin과 동일하게 MeshCache 폴더에 생성됨
+	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
+
+	if (!std::filesystem::exists(MeshCacheRoot))
+	{
+		return;
+	}
+
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+
+		// 확장자가 .mbin인지 확인
+		if (Path.extension() != L".mbin") continue;
+
+		FMaterialAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+		AvailableMaterialFiles.push_back(std::move(Item));
+	}
+}
 
 void FObjManager::ScanObjSourceFiles()
 {
@@ -121,6 +146,16 @@ void FObjManager::ScanObjSourceFiles()
 		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 		AvailableObjFiles.push_back(std::move(Item));
 	}
+}
+
+const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
+{
+	return AvailableMeshFiles;
+}
+
+const TArray<FMaterialAssetListItem>& FObjManager::GetAvailableMaterialFiles()
+{
+	return AvailableMaterialFiles;
 }
 
 const TArray<FMeshAssetListItem>& FObjManager::GetAvailableObjFiles()
@@ -176,6 +211,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 
 	// 리프레시
 	ScanMeshAssets();
+	ScanMaterialAssets();
 
 	return StaticMesh;
 }

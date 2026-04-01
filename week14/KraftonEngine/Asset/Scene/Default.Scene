@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "12",
+      "PrimitiveKey" : "5",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -13,7 +13,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 12",
+              "Text" : "UUID : 5",
               "Visible" : true
             }
           }, {
@@ -33,51 +33,8 @@
           }],
         "ClassName" : "UStaticMeshComp",
         "Properties" : {
-          "Location" : [1.921957, 0.000000, 0.000000],
-          "OverrideMaterials" : ["眼白", "RightMat"],
-          "OverrideUVScrolls" : [false, false],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "PrimitiveKey" : "43",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UTextRenderComponent",
-            "Properties" : {
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 43",
-              "Visible" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "USubUVComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 2.000000],
-              "Particle" : "Explosion",
-              "Play Rate" : 30.000000,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : false,
-              "Width" : 1.000000,
-              "bLoop" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComp",
-        "Properties" : {
-          "Location" : [0.000000, 2.559937, 0.000000],
-          "OverrideMaterials" : ["black"],
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "OverrideMaterials" : ["BasicShapeMaterial"],
           "OverrideUVScrolls" : [false],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -91,15 +48,8 @@
   "ContextName" : "Default",
   "Name" : "Default",
   "Primitives" : {
-    "12" : {
-      "Location" : [1.921957, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Data/TwoSectionPlane/TwoSectionPlane.obj",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "43" : {
-      "Location" : [0.000000, 2.559937, 0.000000],
+    "5" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],

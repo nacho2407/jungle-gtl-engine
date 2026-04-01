@@ -17,6 +17,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	UEngine::Init(InWindow);
 	
 	FObjManager::ScanMeshAssets();
+	FObjManager::ScanMaterialAssets();
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
