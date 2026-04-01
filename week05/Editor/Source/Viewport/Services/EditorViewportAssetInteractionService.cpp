@@ -129,7 +129,7 @@ void FEditorViewportAssetInteractionService::HandleFileDropOnViewport(
 		return;
 	}
 
-	UStaticMeshComponent* MeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(NewActor);
+	UStaticMeshComponent* MeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(NewActor, "StaticMeshComponent");
 	NewActor->AddOwnedComponent(MeshComponent);
 	NewActor->SetRootComponent(MeshComponent);
 
