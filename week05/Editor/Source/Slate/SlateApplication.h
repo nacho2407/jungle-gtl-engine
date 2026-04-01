@@ -18,6 +18,7 @@ class FSlateApplication
 	EViewportLayout LayoutBeforeMaximize = EViewportLayout::FourGrid;
 	FViewportId MaximizedViewportId = INVALID_VIEWPORT_ID;
 	int32 SwappedViewportIndex = -1;
+	float SavedSplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
 
 	FRect AreaRect;
 	EViewportLayout CurrentLayout = EViewportLayout::Single;

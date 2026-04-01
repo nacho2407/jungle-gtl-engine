@@ -509,6 +509,13 @@ void FSlateApplication::ToggleViewportMaximize(FViewportId ViewportId)
 		SwappedViewportIndex = -1;
 		SetLayout(RestoreLayout);
 
+		for (int32 i = 0; i < ActiveSplitterCount; i++)
+		{
+			if (ActiveSplitters[i])
+				ActiveSplitters[i]->Ratio = SavedSplitterRatios[i];
+		}
+		PerformLayout();
+
 		if (bRestoreOnly)
 		{
 			return;
@@ -519,6 +526,12 @@ void FSlateApplication::ToggleViewportMaximize(FViewportId ViewportId)
 	if (TargetIndex < 0)
 	{
 		return;
+	}
+
+	for (int32 i = 0; i < ActiveSplitterCount; i++)
+	{
+		if (ActiveSplitters[i])
+			SavedSplitterRatios[i] = ActiveSplitters[i]->Ratio;
 	}
 
 	LayoutBeforeMaximize = CurrentLayout;
