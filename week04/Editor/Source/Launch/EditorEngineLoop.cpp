@@ -20,11 +20,29 @@
 
 #include "Renderer/WidgetRenderData.h"
 
+#include "Renderer/WidgetRenderData.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND HWnd, UINT Message,
                                                              WPARAM WParam, LPARAM LParam);
 
 namespace
 {
+    bool IsConsoleToggleMessage(UINT Message, WPARAM WParam)
+    {
+        switch (Message)
+        {
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+            return WParam == VK_OEM_3;
+        case WM_CHAR:
+            return WParam == '`' || WParam == '~';
+        default:
+            return false;
+        }
+    }
+
     ImVec4 MakeColor(uint8 R, uint8 G, uint8 B, uint8 A = 255)
     {
         return ImVec4(static_cast<float>(R) / 255.0f, static_cast<float>(G) / 255.0f,
@@ -520,6 +538,12 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     const LRESULT ImGuiResult = ImGui_ImplWin32_WndProcHandler(HWnd, Message, WParam, LParam);
     if (ImGuiResult != 0)
     {
+        if (IsConsoleToggleMessage(Message, WParam))
+        {
+            OutResult = 0;
+            return false;
+        }
+
         OutResult = ImGuiResult;
         return true;
     }
@@ -557,6 +581,12 @@ bool FEditorEngineLoop::HandleEditorMessageInternal(HWND HWnd, UINT Message, WPA
     case WM_SYSKEYDOWN:
     case WM_SYSKEYUP:
     case WM_CHAR:
+        if (IsConsoleToggleMessage(Message, WParam))
+        {
+            OutResult = 0;
+            return false;
+        }
+
         if (IO.WantCaptureKeyboard || IO.WantTextInput)
         {
             // 텍스트 입력 중에는 카메라 단축키 같은 엔진 입력이 섞이지 않게 막습니다.

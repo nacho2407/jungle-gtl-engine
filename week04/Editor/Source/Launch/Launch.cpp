@@ -6,7 +6,11 @@
 #pragma comment(lib, "dbghelp.lib")
 
 #include "Launch.h"
+#if IS_OBJ_VIEWER
+#include "Viewer/ObjViewerEngineLoop.h"
+#else
 #include "Launch/EditorEngineLoop.h"
+#endif
 
 void WriteCrashLog(EXCEPTION_POINTERS* ExceptionInfo)
 {
@@ -84,18 +88,18 @@ namespace
 {
     int GuardedMain(HINSTANCE HInstance, int NCmdShow)
     {
-        FEditorEngineLoop EditorEngineLoop;
-        
-        if (!EditorEngineLoop.PreInit(HInstance, NCmdShow))
+#if IS_OBJ_VIEWER
+        FObjViewerEngineLoop EngineLoop;
+#else
+        FEditorEngineLoop EngineLoop;
+#endif
+        if (!EngineLoop.PreInit(HInstance, NCmdShow))
         {
-            //  Error Code
             return -1;
         }
-        
-        const int32 ExitCode = EditorEngineLoop.Run();
-        
-        EditorEngineLoop.ShutDown();
-        
+
+        const int32 ExitCode = EngineLoop.Run();
+        EngineLoop.ShutDown();
         return ExitCode;
     }
 }

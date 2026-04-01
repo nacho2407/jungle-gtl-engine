@@ -113,12 +113,6 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!StaticMeshRenderer.Initialize(&RHI))
-    {
-        ShutdownModule();
-        return false;
-    }
-
 #if defined(_DEBUG)
     if (RHI.GetDevice() != nullptr)
     {
@@ -141,6 +135,7 @@ void FRendererModule::ShutdownModule()
     OutlineRenderer.Shutdown();
     MeshBatchRenderer.Shutdown();
     StaticMeshRenderer.Shutdown();
+    WidgetRenderer.Shutdown();
 
 #if defined(_DEBUG)
     if (DebugDevice != nullptr)
@@ -178,7 +173,7 @@ void FRendererModule::OnWindowResized(int32 InWidth, int32 InHeight)
 
 void FRendererModule::SetSceneFrameData(FSceneFrameRenderData&& InFrameData)
 {
-    CachedSceneData.StaticMeshes = std::move(InFrameData.StaticMeshes);
+    CachedSceneData.StaticMeshes   = std::move(InFrameData.StaticMeshes);
     CachedSceneData.Primitives     = std::move(InFrameData.Primitives);
     CachedSceneData.Sprites        = std::move(InFrameData.Sprites);
     CachedSceneData.Texts          = std::move(InFrameData.Texts);

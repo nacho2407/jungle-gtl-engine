@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="OBJViewerDebug|x64">
+      <Configuration>OBJViewerDebug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
@@ -21,13 +25,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -39,11 +49,18 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>Build\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>Build\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -72,6 +89,26 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" copy /Y "$(Pro
 if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" "$(OutDir)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;_DEBUG;_WINDOWS;%(PreprocessorDefinitions); IS_OBJ_VIEWER=1</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)Source\ThirdParty\imgui;$(ProjectDir)..\Engine\Source;$(ProjectDir)..\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" "$(OutDir)"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -83,6 +120,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)Source\ThirdParty\imgui;$(ProjectDir)..\Engine\Source;$(ProjectDir)..\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -108,6 +146,8 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
     <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp" />
     <ClCompile Include="Source\Launch\EditorEngineLoop.cpp" />
+    <ClCompile Include="Source\Viewer\ObjViewerEngineLoop.cpp" />
+    <ClCompile Include="Source\Viewer\OrbitalCameraController.cpp" />
     <ClCompile Include="Source\Launch\Launch.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Panel\ConsolePanel.cpp" />
@@ -118,7 +158,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Panel\PanelManager.cpp" />
     <ClCompile Include="Source\Panel\PropertiesPanel.cpp" />
     <ClCompile Include="Source\Panel\ShortcutsPanel.cpp" />
-    <ClCompile Include="Source\Panel\StatePanel.cpp" />
     <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp" />
@@ -136,6 +175,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp" />
     <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp" />
     <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp" />
+    <ClCompile Include="Source\Viewer\ViewerImGui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Camera\ViewportCamera.h" />
@@ -156,6 +196,8 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Input\SelectionInputContext.h" />
     <ClInclude Include="Source\Input\ViewportOverlayInputContext.h" />
     <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
+    <ClInclude Include="Source\Viewer\ObjViewerEngineLoop.h" />
+    <ClInclude Include="Source\Viewer\OrbitalCameraController.h" />
     <ClInclude Include="Source\Launch\Launch.h" />
     <ClInclude Include="Source\Menu\EditorMenuRegistry.h" />
     <ClInclude Include="Source\Panel\ConsolePanel.h" />
@@ -166,7 +208,6 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Panel\PanelManager.h" />
     <ClInclude Include="Source\Panel\PropertiesPanel.h" />
     <ClInclude Include="Source\Panel\ShortcutsPanel.h" />
-    <ClInclude Include="Source\Panel\StatePanel.h" />
     <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="Source\ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h" />
@@ -185,6 +226,7 @@ if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(Pro
     <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h" />
     <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
     <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h" />
+    <ClInclude Include="Source\Viewer\ViewerImGui.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />

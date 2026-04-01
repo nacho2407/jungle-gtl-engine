@@ -31,8 +31,9 @@ void SSplitterV::OnDrag(float Delta)
         return;
     }
 
-    const float Lo = (MinBound > 0.f) ? MinBound : WindowWidth * 0.1f;
-    const float Hi = (MaxBound > 0.f) ? MaxBound : WindowWidth * 0.9f;
+    const float AreaWidth = AreaMaxX - AreaMinX;
+    const float Lo = (MinBound > 0.f) ? MinBound : (AreaMinX + AreaWidth * 0.1f);
+    const float Hi = (MaxBound > 0.f) ? MaxBound : (AreaMinX + AreaWidth * 0.9f);
     PosX = FMath::Clamp(PosX + Delta, Lo, Hi);
     ResetPanelDimension();
 }
@@ -44,8 +45,9 @@ void SSplitterH::OnDrag(float Delta)
         return;
     }
 
-    const float Lo = (MinBound > 0.f) ? MinBound : WindowHeight * 0.1f;
-    const float Hi = (MaxBound > 0.f) ? MaxBound : WindowHeight * 0.9f;
+    const float AreaHeight = AreaMaxY - AreaMinY;
+    const float Lo = (MinBound > 0.f) ? MinBound : (AreaMinY + AreaHeight * 0.1f);
+    const float Hi = (MaxBound > 0.f) ? MaxBound : (AreaMinY + AreaHeight * 0.9f);
     PosY = FMath::Clamp(PosY + Delta, Lo, Hi);
     ResetPanelDimension();
 }
@@ -58,8 +60,8 @@ void SSplitterV::ResetPanelDimension()
     {
         if (!Panel)
             continue;
-        Panel->PosX = 0.f;
-        Panel->Width = SplitX;
+        Panel->PosX = AreaMinX;
+        Panel->Width = SplitX - AreaMinX;
     }
 
     for (SWindow* Panel : RightPanels)
@@ -67,7 +69,7 @@ void SSplitterV::ResetPanelDimension()
         if (!Panel)
             continue;
         Panel->PosX = SplitX;
-        Panel->Width = WindowWidth - SplitX;
+        Panel->Width = AreaMaxX - SplitX;
     }
 }
 
@@ -79,8 +81,8 @@ void SSplitterH::ResetPanelDimension()
     {
         if (!Panel)
             continue;
-        Panel->PosY = 0.f;
-        Panel->Height = SplitY;
+        Panel->PosY = AreaMinY;
+        Panel->Height = SplitY - AreaMinY;
     }
 
     for (SWindow* Panel : BottomPanels)
@@ -88,6 +90,6 @@ void SSplitterH::ResetPanelDimension()
         if (!Panel)
             continue;
         Panel->PosY = SplitY;
-        Panel->Height = WindowHeight - SplitY;
+        Panel->Height = AreaMaxY - SplitY;
     }
 }

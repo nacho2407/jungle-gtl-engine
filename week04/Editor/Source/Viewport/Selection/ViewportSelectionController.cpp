@@ -17,11 +17,23 @@ void FViewportSelectionController::ClickSelect(int32 MouseX, int32 MouseY, ESele
 
 void FViewportSelectionController::BeginSelection(int32 MouseX, int32 MouseY, ESelectionMode Mode)
 {
+    const int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    if (LocalMouseX < 0 || LocalMouseX >= static_cast<int32>(ViewportCamera->GetWidth()))
+    {
+        return;
+    }
+
+    const int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
+    if (LocalMouseY < 0 || LocalMouseY >= static_cast<int32>(ViewportCamera->GetHeight()))
+    {
+        return;
+    }
+
     bIsDraggingSelection = true;
-    SelectionStartX = MouseX;
-    SelectionStartY = MouseY;
-    SelectionCurrentX = MouseX;
-    SelectionCurrentY = MouseY;
+    SelectionStartX = LocalMouseX;
+    SelectionStartY = LocalMouseY;
+    SelectionCurrentX = LocalMouseX;
+    SelectionCurrentY = LocalMouseY;
     CurSelectionMode = Mode;
 }
 
@@ -32,8 +44,14 @@ void FViewportSelectionController::UpdateSelection(int32 MouseX, int32 MouseY)
         return;
     }
 
-    SelectionCurrentX = MouseX;
-    SelectionCurrentY = MouseY;
+    int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    LocalMouseX = LocalMouseX < 0 ? 0: (LocalMouseX >= static_cast<int32>(ViewportCamera->GetWidth()) ? static_cast<int32>(ViewportCamera->GetWidth() - 1): LocalMouseX);
+
+    int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
+    LocalMouseY = LocalMouseY < 0 ? 0: (LocalMouseY >= static_cast<int32>(ViewportCamera->GetHeight()) ? static_cast<int32>(ViewportCamera->GetHeight() - 1): LocalMouseY);
+
+    SelectionCurrentX = LocalMouseX;
+    SelectionCurrentY = LocalMouseY;
 }
 
 void FViewportSelectionController::EndSelection(int32 MouseX, int32 MouseY)
@@ -48,8 +66,14 @@ void FViewportSelectionController::EndSelection(int32 MouseX, int32 MouseY)
         ClearSelection();
     }
 
-    SelectionCurrentX = MouseX;
-    SelectionCurrentY = MouseY;
+    int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    LocalMouseX = LocalMouseX < 0 ? 0: (LocalMouseX >= static_cast<int32>(ViewportCamera->GetWidth()) ? static_cast<int32>(ViewportCamera->GetWidth() - 1): LocalMouseX);
+
+    int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
+    LocalMouseY = LocalMouseY < 0 ? 0: (LocalMouseY >= static_cast<int32>(ViewportCamera->GetHeight()) ? static_cast<int32>(ViewportCamera->GetHeight() - 1): LocalMouseY);
+
+    SelectionCurrentX = LocalMouseX;
+    SelectionCurrentY = LocalMouseY;
     bIsDraggingSelection = false;
 
     const int32 MinX = std::min(SelectionStartX, SelectionCurrentX);
@@ -196,8 +220,20 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
         return nullptr;
     }
 
-    const Geometry::FRay PickRay = Geometry::FRay::BuildRay(
-        static_cast<int32>(MouseX), static_cast<int32>(MouseY),
+    // 이제 뷰포트 카메라의 원점이 윈도우의 (0, 0)이 아니기 때문에, 마우스 좌표를 로컬 뷰포트 좌표로 변환합니다.
+    const int32 LocalMouseX = MouseX - static_cast<int32>(ViewportCamera->GetOriginX());
+    if (LocalMouseX < 0 || LocalMouseX >= static_cast<int32>(ViewportCamera->GetWidth()))
+    {
+        return nullptr;
+    }
+
+    const int32 LocalMouseY = MouseY - static_cast<int32>(ViewportCamera->GetOriginY());
+    if (LocalMouseY < 0 || LocalMouseY >= static_cast<int32>(ViewportCamera->GetHeight()))
+    {
+        return nullptr;
+    }
+
+    const Geometry::FRay PickRay = Geometry::FRay::BuildRay(LocalMouseX, LocalMouseY,
         ViewportCamera->GetViewProjectionMatrix(), static_cast<float>(ViewportCamera->GetWidth()),
         static_cast<float>(ViewportCamera->GetHeight()));
 

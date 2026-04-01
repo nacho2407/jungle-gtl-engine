@@ -17,12 +17,11 @@
 #include "Panel/PanelManager.h"
 #include "Panel/PropertiesPanel.h"
 #include "Panel/ShortcutsPanel.h"
-#include "Panel/StatePanel.h"
 
-#include "imgui.h"
-#include "imgui_internal.h"
+#include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
+#include <imgui_internal.h>
 
 #include <algorithm>
 #include <array>
@@ -263,6 +262,139 @@ namespace
         OutSelectedPath = NormalizeSceneFilePath(std::filesystem::path(FileBuffer.data()));
         return true;
     }
+
+    void ShowStatToggleDialog(const FEditorViewportClient& ViewportClient, EViewportStatFlags InStat)
+    {
+        switch (InStat)
+        {
+        case EViewportStatFlags::FPS:
+            if (ViewportClient.IsStatEnabled(EViewportStatFlags::FPS))
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat enabled: fps");
+            }
+            else
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat disabled: fps");
+            }
+            break;
+        case EViewportStatFlags::Memory:
+            if (ViewportClient.IsStatEnabled(EViewportStatFlags::Memory))
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat enabled: memory");
+            }
+            else
+            {
+                UE_LOG(FEditor, ELogVerbosity::Log, "viewport stat disabled: memory");
+            }
+            break;
+        case EViewportStatFlags::None:
+            UE_LOG(FEditor, ELogVerbosity::Log, "all viewport stats disabled");
+            break;
+        }
+    }
+
+    FEditorViewportClient* GetActiveStatViewportClient(FEditor* Editor)
+    {
+        if (Editor == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (FWindowOverlayManager* OverlayManager = Editor->GetWindowOverlayManager())
+        {
+            if (FEditorViewportPanel* FocusedPanel = OverlayManager->GetLastFocusedPanel())
+            {
+                if (FocusedPanel->ViewportClient != nullptr)
+                {
+                    return FocusedPanel->ViewportClient;
+                }
+            }
+        }
+
+        return &Editor->GetViewportClient();
+    }
+
+    /**
+     * @brief 주어진 도킹 노드 트리에서 중앙 도킹 노드(게임 월드가 그려지는 중앙 패널)를 재귀적으로 탐색하여 반환합니다.
+     * 중앙 노드가 항상 트리의 루트에 위치한다는 보장이 없기 때문에 탐색할 필요가 있습니다.
+     * ChildNodes[0], ChildNodes[1] 접근은 internal 구조라 imgui_internal.h가 필요합니다.
+     */
+    ImGuiDockNode* FindCentralDockNode(ImGuiDockNode* Node)
+    {
+        if (Node == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (Node->IsCentralNode())
+        {
+            return Node;
+        }
+
+        if (ImGuiDockNode* Found = FindCentralDockNode(Node->ChildNodes[0]))
+        {
+            return Found;
+        }
+
+        if (ImGuiDockNode* Found = FindCentralDockNode(Node->ChildNodes[1]))
+        {
+            return Found;
+        }
+
+        return nullptr;
+    }
+
+    /**
+     * @brief 주어진 위치와 크기를 기반으로 FViewportAvailableArea 구조체를 생성하는 헬퍼
+     */
+    FViewportAvailableArea MakeViewportAreaFromRect(const ImVec2& Pos, const ImVec2& Size, bool bValid = true)
+    {
+        FViewportAvailableArea Area;
+        Area.X = Pos.x;
+        Area.Y = Pos.y;
+        Area.Width = Size.x;
+        Area.Height = Size.y;
+        Area.bValid = bValid;
+        return Area;
+    }
+
+    void ApplyInitialDockLayoutIfNeeded(ImGuiID DockSpaceId, const ImVec2& DockSpaceSize)
+    {
+        ImGuiDockNode* RootNode = ImGui::DockBuilderGetNode(DockSpaceId);
+        if (RootNode == nullptr)
+        {
+            return;
+        }
+
+        const bool bHasExistingSplit =
+            RootNode->ChildNodes[0] != nullptr || RootNode->ChildNodes[1] != nullptr;
+        const bool bHasExistingWindows = RootNode->Windows.Size > 0;
+        if (bHasExistingSplit || bHasExistingWindows)
+        {
+            return;
+        }
+
+        // imgui.ini가 아직 없는 첫 실행에서만 기본 패널 배치를 한 번 만듭니다.
+        ImGui::DockBuilderRemoveNode(DockSpaceId);
+        ImGui::DockBuilderAddNode(DockSpaceId,
+                                  RootDockSpaceFlags | ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(DockSpaceId, DockSpaceSize);
+
+        ImGuiID MainNode = DockSpaceId;
+        ImGuiID RightNode = 0;
+        ImGuiID RightTopNode = 0;
+        ImGuiID RightBottomNode = 0;
+
+        ImGui::DockBuilderSplitNode(MainNode, ImGuiDir_Right, 0.25f, &RightNode, &MainNode);
+        ImGui::DockBuilderSplitNode(RightNode, ImGuiDir_Up, 0.4f, &RightTopNode,
+                                    &RightBottomNode);
+
+        // 중앙은 WindowOverlayManager가 실제 viewport 작업 영역으로 사용하므로 비워 둡니다.
+        // 우측은 Unreal 스타일에 맞게 Outliner를 위, Details를 아래에 둡니다.
+        ImGui::DockBuilderDockWindow("Outliner", RightTopNode);
+        ImGui::DockBuilderDockWindow("Details", RightBottomNode);
+        ImGui::DockBuilderFinish(DockSpaceId);
+    }
 } // namespace
 
 void FEditor::Create()
@@ -299,7 +431,6 @@ void FEditor::Create()
     PanelManager->RegisterPanelInstance<FOutlinerPanel>();
     PanelManager->RegisterPanelInstance<FPropertiesPanel>();
     PanelManager->RegisterPanelInstance<FShortcutsPanel>();
-    PanelManager->RegisterPanelInstance<FStatePanel>();
 
     // PanelManager->RegisterPanelInstance<FSamplePanel>(&LogBuffer);
 
@@ -1301,12 +1432,14 @@ void FEditor::DrawRootDockSpace()
 #ifdef IMGUI_HAS_DOCK
     if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) == 0)
     {
+        ViewportAvailableArea = {};
         return;
     }
 
     ImGuiViewport* Viewport = ImGui::GetMainViewport();
     if (Viewport == nullptr)
     {
+        ViewportAvailableArea = {};
         return;
     }
 
@@ -1321,11 +1454,23 @@ void FEditor::DrawRootDockSpace()
             ? (Viewport->Size.y - FEditorChrome::TitleBarHeight - GutterMetrics.Bottom)
             : 0.0f;
 
+    const float DockSpaceX = Viewport->Pos.x + GutterMetrics.Left;
+    const float DockSpaceY = Viewport->Pos.y + FEditorChrome::TitleBarHeight;
     const float SafeDockSpaceWidth = (DockSpaceWidth > 0.0f) ? DockSpaceWidth : 1.0f;
     const float SafeDockSpaceHeight = (DockSpaceHeight > 0.0f) ? DockSpaceHeight : 1.0f;
 
-    ImGui::SetNextWindowPos(ImVec2(Viewport->Pos.x + GutterMetrics.Left,
-                                   Viewport->Pos.y + FEditorChrome::TitleBarHeight));
+    FViewportAvailableArea ComputedArea;
+    if (DockSpaceWidth > 0.0f && DockSpaceHeight > 0.0f)
+    {
+        ComputedArea = MakeViewportAreaFromRect(ImVec2(DockSpaceX, DockSpaceY), ImVec2(DockSpaceWidth, DockSpaceHeight));
+    }
+    else
+    {
+        ComputedArea = MakeViewportAreaFromRect(ImVec2(DockSpaceX, DockSpaceY),
+                                                ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight), false);
+    }
+
+    ImGui::SetNextWindowPos(ImVec2(DockSpaceX, DockSpaceY));
     ImGui::SetNextWindowSize(ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
     ImGui::SetNextWindowViewport(Viewport->ID);
 
@@ -1346,41 +1491,25 @@ void FEditor::DrawRootDockSpace()
 
     if (ImGui::Begin("##EditorRootDockSpace", nullptr, WindowFlags))
     {
-        ImGuiID DockSpaceID = ImGui::GetID("EditorRootDockSpace");
-        ImGui::DockSpace(DockSpaceID, ImVec2(0.0f, 0.0f), RootDockSpaceFlags);
+        const ImGuiID DockSpaceId = ImGui::GetID("EditorRootDockSpace");
+        ImGui::DockSpace(DockSpaceId, ImVec2(0.0f, 0.0f), RootDockSpaceFlags);
 
-        // 초기 레이아웃 설정 (첫 실행 시에만 적용)
-        static bool bLayoutInitialized = false;
-        if (!bLayoutInitialized)
+        ApplyInitialDockLayoutIfNeeded(DockSpaceId,
+                                       ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
+
+        ImGuiDockNode* RootNode = ImGui::DockBuilderGetNode(DockSpaceId);
+        ImGuiDockNode* CentralNode = FindCentralDockNode(RootNode);
+
+        if (CentralNode != nullptr)
         {
-            bLayoutInitialized = true;
-
-            // 기존 설정이 없을 때만 강제로 잡기 위해 체크 (선택 사항)
-            // 여기서는 명시적으로 Builder API를 사용해 구조를 잡습니다.
-            ImGui::DockBuilderRemoveNode(DockSpaceID);
-            ImGui::DockBuilderAddNode(DockSpaceID, RootDockSpaceFlags | ImGuiDockNodeFlags_DockSpace);
-            ImGui::DockBuilderSetNodeSize(DockSpaceID, ImVec2(SafeDockSpaceWidth, SafeDockSpaceHeight));
-
-            ImGuiID MainNode = DockSpaceID;
-            ImGuiID RightNode;
-            
-            // 1. 오른쪽 25% 영역 생성
-            ImGui::DockBuilderSplitNode(MainNode, ImGuiDir_Right, 0.25f, &RightNode, &MainNode);
-
-            // 2. 오른쪽 영역을 위(40%) / 아래(60%)로 분할
-            ImGuiID RightTopNode, RightBottomNode;
-            ImGui::DockBuilderSplitNode(RightNode, ImGuiDir_Up, 0.4f, &RightTopNode, &RightBottomNode);
-
-            // 3. 패널 배치 (이름은 GetDisplayName() 결과와 일치해야 함)
-            ImGui::DockBuilderDockWindow("Outliner", RightTopNode);
-            ImGui::DockBuilderDockWindow("Details", RightBottomNode);
-            ImGui::DockBuilderDockWindow("Viewport", MainNode);
-
-            ImGui::DockBuilderFinish(DockSpaceID);
+            ComputedArea = MakeViewportAreaFromRect(CentralNode->Pos, CentralNode->Size);
         }
     }
 
     ImGui::End();
+
+    ViewportAvailableArea = ComputedArea;
+
     ImGui::PopStyleVar(3);
 #endif
 }
@@ -1400,7 +1529,32 @@ void FEditor::DrawPanel()
         PanelManager->DrawPanels();
     }
 
-    ViewportClient.DrawViewportOverlay();
+    if (WindowOverlayManager != nullptr)
+    {
+        const FViewportAvailableArea& Area = GetViewportAvailableArea();
+        if (Area.bValid)
+        {
+            WindowOverlayManager->SetViewportAvailableArea(Area.X, Area.Y, Area.Width, Area.Height);
+        }
+
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (Panel != nullptr && Panel->ViewportClient != nullptr)
+            {
+                Panel->ViewportClient->DrawViewportOverlay(
+                    ImVec2(Panel->PosX, Panel->PosY),
+                    ImVec2(Panel->Width, Panel->Height));
+            }
+        }
+    }
+    else
+    {
+        ViewportClient.DrawViewportOverlay(
+            ImVec2(static_cast<float>(ViewportClient.GetViewportOriginX()),
+                   static_cast<float>(ViewportClient.GetViewportOriginY())),
+            ImVec2(static_cast<float>(ViewportClient.GetCamera().GetWidth()),
+                   static_cast<float>(ViewportClient.GetCamera().GetHeight())));
+    }
 
     EditorChrome.Draw(ChromeMenus);
     DrawAboutPopup();
@@ -1411,24 +1565,41 @@ void FEditor::DrawPanel()
 
 void FEditor::BuildRenderData()
 {
-    //EditorRenderData = FEditorRenderData{};
-    //SceneRenderData = FSceneRenderData{};
+}
 
-    //BuildSceneView();
+// 다중 뷰포트 머지 후에 active viewport를 토글하는 방식으로 변경 예정
+void FEditor::ToggleActiveViewportStat(EViewportStatFlags StatFlag)
+{
+    if (FEditorViewportClient* ActiveViewportClient = GetActiveStatViewportClient(this))
+    {
+        ActiveViewportClient->ToggleStat(StatFlag);
+        ShowStatToggleDialog(*ActiveViewportClient, StatFlag);
+    }
+}
 
-    //EditorRenderData.SceneView = &SceneView;
-    //SceneRenderData.SceneView = &SceneView;
-    //SceneRenderData.ViewMode = ViewportClient.GetRenderSetting().GetViewMode();
+void FEditor::ClearActiveViewportStats()
+{
+    bool bClearedAnyViewport = false;
 
-    //const EEditorShowFlags EditorShowFlags =
-    //    ViewportClient.GetRenderSetting().BuildEditorShowFlags(true);
-    //const ESceneShowFlags SceneShowFlags =
-    //    ViewportClient.GetRenderSetting().BuildSceneShowFlags();
+    if (WindowOverlayManager != nullptr)
+    {
+        for (FEditorViewportPanel* Panel : WindowOverlayManager->GetViewportPanels())
+        {
+            if (Panel != nullptr && Panel->ViewportClient != nullptr)
+            {
+                Panel->ViewportClient->ClearAllStats();
+                bClearedAnyViewport = true;
+            }
+        }
+    }
+    else
+    {
+        ViewportClient.ClearAllStats();
+        bClearedAnyViewport = true;
+    }
 
-    //ViewportClient.BuildRenderData(EditorRenderData, EditorShowFlags);
-
-    //if (CurScene != nullptr)
-    //{
-    //    CurScene->BuildRenderData(SceneRenderData, SceneShowFlags);
-    //}
+    if (bClearedAnyViewport)
+    {
+        ShowStatToggleDialog(ViewportClient, EViewportStatFlags::None);
+    }
 }

@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="OBJViewerDebug|x64">
+      <Configuration>OBJViewerDebug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
@@ -131,6 +135,7 @@
     <ClInclude Include="Source\Renderer\EditorRenderData.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\FontResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\MaterialResource.h" />
+    <ClInclude Include="Source\Renderer\MemoryTracker.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\StaticMeshResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\SubUVAtlasResource.h" />
     <ClInclude Include="Source\Renderer\RenderAsset\TextureResource.h" />
@@ -146,6 +151,8 @@
     <ClInclude Include="Source\Renderer\Submitter\TextSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldAxesSubmitter.h" />
     <ClInclude Include="Source\Renderer\Submitter\WorldGridSubmitter.h" />
+    <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
+    <ClInclude Include="Source\Renderer\TrackedMemoryStats.h" />
     <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
@@ -246,6 +253,7 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11TextBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\MemoryTracker.cpp" />
     <ClCompile Include="Source\Renderer\RendererModule.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\AABBSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\OverlayMeshSubmitter.cpp" />
@@ -255,6 +263,7 @@
     <ClCompile Include="Source\Renderer\Submitter\TextSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\WorldAxesSubmitter.cpp" />
     <ClCompile Include="Source\Renderer\Submitter\WorldGridSubmitter.cpp" />
+    <ClCompile Include="Source\Renderer\Text\TextLayout.cpp" />
     <ClCompile Include="Source\SceneIO\SceneJson.cpp" />
     <ClCompile Include="Source\SceneIO\SceneSerializer.cpp" />
     <ClCompile Include="Source\SceneIO\SceneTypeRegistry.cpp" />
@@ -273,13 +282,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -291,11 +306,18 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>Build\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>Build\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -324,6 +346,26 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>ENGINECORE_EXPORTS;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>Core/CoreMinimal.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeaderOutputFile>$(IntDir)CoreMinimal.pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -339,6 +381,7 @@
       <PrecompiledHeaderFile>Core/CoreMinimal.h</PrecompiledHeaderFile>
       <ForcedIncludeFiles>Core/CoreMinimal.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderOutputFile>$(IntDir)CoreMinimal.pch</PrecompiledHeaderOutputFile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

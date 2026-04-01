@@ -194,7 +194,10 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                  if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives)) continue;
 
                 Engine::Asset::UStaticMesh* StaticMeshAsset = StaticMeshComp->GetStaticMesh();
-                if (StaticMeshAsset == nullptr || StaticMeshAsset->GetRenderResource() == nullptr)
+                const FStaticMeshResource*  Resource =
+                    (StaticMeshAsset != nullptr) ? StaticMeshAsset->GetRenderResource() : nullptr;
+
+                if (StaticMeshAsset == nullptr || Resource == nullptr)
                 {
                     continue;
                 }
@@ -206,11 +209,12 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                     StaticMeshComp->GetWorldMatrix(); // (또는 컴포넌트의 월드 매트릭스)
 
                 // 2. VBO/IBO가 들어있는 렌더 리소스 포인터 전달
-                MeshItem.RenderResource = StaticMeshAsset->GetRenderResource();
+                MeshItem.RenderResource = Resource;
 
                 // 3. 서브 메시 개수만큼 매핑된 머티리얼 포인터 수집
-                uint32 NumSubMeshes =
-                    static_cast<uint32>(MeshItem.RenderResource->SubMeshes.size());
+                const size_t SubMeshCount = Resource->SubMeshes.size();
+
+                uint32 NumSubMeshes = static_cast<uint32>(SubMeshCount);
                 for (uint32 i = 0; i < NumSubMeshes; ++i)
                 {
                     FStaticMeshMaterialBinding Binding = {};
