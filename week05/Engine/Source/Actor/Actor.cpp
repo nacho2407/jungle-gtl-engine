@@ -5,6 +5,7 @@
 #include "Renderer/Material.h"
 #include "Component/TextComponent.h"
 #include "Component/SceneComponent.h"
+#include "Debug/EngineLog.h"
 #include "Serializer/Archive.h"
 #include "Scene/Scene.h"
 IMPLEMENT_RTTI(AActor, UObject)
@@ -101,6 +102,10 @@ void AActor::PostSpawnInitialize()
 		{
 			Component->OnRegister();
 		}
+		if (UPrimitiveComponent* PrimComp = dynamic_cast<UPrimitiveComponent*>(Component))
+		{
+			PrimComp->UpdateBounds();
+		}
 	}
 }
 
@@ -169,46 +174,27 @@ void AActor::Serialize(FArchive& Ar)
 		Ar.Serialize("Class", ClassName);
 		Ar.Serialize("UUID", UUID);
 
-		TArray<uint32> CompUUIDs;
-		for (UActorComponent* Comp : GetComponents())
-			if (Comp) CompUUIDs.push_back(Comp->UUID);
-		Ar.SerializeUIntArray("ComponentUUIDs", CompUUIDs);
+		uint32 RootCompUUID = RootComponent ? RootComponent->UUID : 0;
+		Ar.Serialize("RootComponentUUID", RootCompUUID);
 
-		if (USceneComponent* Root = GetRootComponent())
+		TArray<FArchive*> ComponentArchives;
+		for (UActorComponent* Component : OwnedComponents)
 		{
-			const FTransform Transform = Root->GetRelativeTransform();
-
-			FVector Location = Transform.GetTranslation();
-			FVector Rotation = Transform.Rotator().Euler();
-			FVector Scale = Transform.GetScale3D();
-			Ar.Serialize("Location", Location);
-			Ar.Serialize("Rotation", Rotation);
-			Ar.Serialize("Scale", Scale);
-		}
-		if (UPrimitiveComponent* PrimComp = GetComponentByClass<UPrimitiveComponent>())
-		{
-			/*if (PrimComp->GetMaterial() && !PrimComp->GetMaterial()->GetOriginName().empty())
+			if (Component)
 			{
-				FString MatName = PrimComp->GetMaterial()->GetOriginName();
-				Ar.Serialize("Material", MatName);
+				FArchive* ComponentArchive = new FArchive(true);
+				
+				FString ComponentClassName = Component->GetClass()->GetName();
+				ComponentArchive->Serialize("Class", ComponentClassName);
+
+				Component->Serialize(*ComponentArchive);
+				ComponentArchives.push_back(ComponentArchive);
 			}
+		}
 
-			if (PrimComp->GetPrimitive())
-			{
-				FString PrimFileName = PrimComp->GetPrimitiveFileName();
-				Ar.Serialize("PrimitiveFileName", PrimFileName);
-			}*/
-		}
-		if (UTextComponent* TC = GetComponentByClass<UTextComponent>())
-		{
-			FString Text = TC->GetText();
-			FVector4 Color4 = TC->GetTextColor();
-			bool bBillboard = TC->IsBillboard();
-			Ar.Serialize("Text", Text);
-			Ar.Serialize("TextColor", Color4);
-			Ar.Serialize("Billboard", bBillboard);
-		
-		}
+		Ar.Serialize("Components", ComponentArchives);
+
+		for (FArchive* ComponentArchive : ComponentArchives) delete ComponentArchive;
 	}
 	else//Load 
 	{
@@ -216,9 +202,8 @@ void AActor::Serialize(FArchive& Ar)
 		{
 			uint32 SavedUUID = 0;
 			Ar.Serialize("UUID", SavedUUID);
-			// 기존 UUID 제거
+
 			GUUIDToObjectMap.erase(UUID);
-			// 충돌하는 UUID가 이미 있으면 기존 것 제거
 			if (auto It = GUUIDToObjectMap.find(SavedUUID); It != GUUIDToObjectMap.end() && It->second != this)
 			{
 				It->second->UUID = 0;
@@ -229,66 +214,86 @@ void AActor::Serialize(FArchive& Ar)
 
 		}
 
-		//restore Transform
-		FTransform Transform;
-		if (Ar.Contains("Location"))
+		uint32 SavedRootCompUUID = 0;
+		if (Ar.Contains("RootComponentUUID"))
 		{
-			FVector Location;
-			Ar.Serialize("Location", Location);
-			Transform.SetTranslation(Location);
+			Ar.Serialize("RootComponentUUID", SavedRootCompUUID);
 		}
-		if (Ar.Contains("Rotation"))
+		
+		if (Ar.Contains("Components"))
 		{
-			FVector Rotation;
-			Ar.Serialize("Rotation", Rotation);
-			Transform.SetRotation(FRotator::MakeFromEuler(Rotation));
-		}
-		if (Ar.Contains("Scale"))
-		{
-			FVector Scale;
-			Ar.Serialize("Scale", Scale);
-			Transform.SetScale3D(Scale);
-		}
-		if (USceneComponent* Root = GetRootComponent())
-			Root->SetRelativeTransform(Transform);
+			TArray<FArchive*> ComponentArchives;
+			Ar.Serialize("Components", ComponentArchives);
 
-		// Components UUID Restore
-		if (Ar.Contains("ComponentUUIDs"))
-		{
-			TArray<uint32> CompUUIDs;
-			Ar.SerializeUIntArray("ComponentUUIDs", CompUUIDs);
-			const TArray<UActorComponent*>& Components = GetComponents();
-			for (size_t i = 0; i < CompUUIDs.size(); i++)
+			for (FArchive* ComponentArchive: ComponentArchives)
 			{
-				GUUIDToObjectMap.erase(Components[i]->UUID);
-				if (auto It = GUUIDToObjectMap.find(CompUUIDs[i]);
-					It != GUUIDToObjectMap.end() &&
-					It->second != Components[i])
+				if (ComponentArchive->Contains("Class"))
 				{
-					It->second->UUID = 0;
-					GUUIDToObjectMap.erase(It);
+					FString ComponentClassName;
+					ComponentArchive->Serialize("Class", ComponentClassName);
+
+					
+					UClass* ComponentClass = UClass::FindClass(ComponentClassName);
+					if (ComponentClass)
+					{
+						UActorComponent* TargetComponent = nullptr;
+
+						for (UActorComponent* ExistingComponent : OwnedComponents)
+						{
+							if (ExistingComponent->GetClass() == ComponentClass)
+							{
+								TargetComponent = ExistingComponent;
+								break;
+							}
+						}
+
+						if (!TargetComponent)
+						{
+							UObject* NewObject = FObjectFactory::ConstructObject(ComponentClass, this);
+							UE_LOG("Class Name: %s", NewObject->GetClass()->GetName());
+							TargetComponent = static_cast<UActorComponent*>(NewObject);
+
+							if (TargetComponent)
+							{
+								AddOwnedComponent(TargetComponent);
+							}
+						}
+
+						if (TargetComponent)
+						{
+							TargetComponent->Serialize(*ComponentArchive);
+						}
+					}
+					else
+					{
+						UE_LOG("[Serialize] Unknown Component Class: %s", ComponentClassName.c_str());
+					}
 				}
-				Components[i]->UUID = CompUUIDs[i];
-				GUUIDToObjectMap[CompUUIDs[i]] = Components[i];
+			}
+			for (FArchive* ComponentArchive : ComponentArchives) delete ComponentArchive;
+		}
+
+		if (SavedRootCompUUID != 0)
+		{
+			for (UActorComponent* Comp : OwnedComponents)
+			{
+				if (Comp && Comp->UUID == SavedRootCompUUID && Comp->IsA(USceneComponent::StaticClass()))
+				{
+					RootComponent = static_cast<USceneComponent*>(Comp);
+					break;
+				}
 			}
 		}
-		//Setting Owner
-		for (UActorComponent* Comp : GetComponents())
-			if (Comp)
-				Comp->SetOwner(this);
-		if (UTextComponent* TC = GetComponentByClass<UTextComponent>())
+		if (RootComponent)
 		{
-			FString Text = TC->GetText();
-			FVector4 TextColor = TC->GetTextColor();
-			bool bBillboard = TC->IsBillboard();
-
-			Ar.Serialize("Text", Text);
-			Ar.Serialize("TextColor", TextColor);
-			Ar.Serialize("Billboard", bBillboard);
-
-			TC->SetText(Text);
-			TC->SetTextColor(TextColor);
-			TC->SetBillboard(bBillboard);
+			for (UActorComponent* Comp : OwnedComponents)
+			{
+				if (Comp != RootComponent && Comp->IsA(USceneComponent::StaticClass()))
+				{
+					USceneComponent* SceneComp = static_cast<USceneComponent*>(Comp);
+					SceneComp->AttachTo(RootComponent);
+				}
+			}
 		}
 	}
 }

@@ -30,6 +30,23 @@ namespace
 	constexpr uint32 GModelVersionEmbeddedMaterials = 2;
 	constexpr uint32 GModelVersion = GModelVersionEmbeddedMaterials;
 
+	FString NormalizeSlashes(FString Path)
+	{
+		std::replace(Path.begin(), Path.end(), '\\', '/');
+		return Path;
+	}
+	FString GetStandardizedMeshPath(const FString& InPath)
+	{
+		FString Path = NormalizeSlashes(InPath);
+		if (Path.find('/') == std::string::npos)
+		{
+			Path = "Assets/Meshes/" + Path;
+		}
+		Path = FPaths::ToRelativePath(Path);
+
+		return NormalizeSlashes(Path);
+	}
+
 	FString WideToUtf8(const std::wstring& WideString)
 	{
 		if (WideString.empty())
@@ -365,7 +382,9 @@ namespace
 		std::unique_ptr<FStaticMesh> RawData,
 		const TArray<FString>& MaterialSlotNames)
 	{
-		RawData->PathFileName = PathFileName;
+		FString JustFileName = std::filesystem::path(PathFileName).filename().string();
+
+		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
 
 		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
@@ -402,7 +421,9 @@ namespace
 		std::unique_ptr<FStaticMesh> RawData,
 		const TArray<FModelMaterialInfo>& MaterialInfos)
 	{
-		RawData->PathFileName = PathFileName;
+		FString JustFileName = std::filesystem::path(PathFileName).filename().string();
+
+		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
 
 		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
@@ -575,15 +596,24 @@ namespace
 
 UStaticMesh* FObjManager::LoadStaticMeshAsset(const FString& PathFileName)
 {
-	const FString Extension = GetNormalizedExtension(PathFileName);
-	if (Extension == ".model")
+	FString StandardizedPath = GetStandardizedMeshPath(PathFileName);
+	const FString Extension = GetNormalizedExtension(StandardizedPath);
+	if (Extension == ".obj" || Extension.empty())
 	{
-		return LoadModelStaticMeshAsset(PathFileName);
+		std::filesystem::path ModelPath = StandardizedPath;
+		ModelPath.replace_extension(".model");
+
+		if (std::filesystem::exists(FPaths::ToAbsolutePath(ModelPath.string())))
+		{
+			return LoadModelStaticMeshAsset(ModelPath.string());
+		}
+
+		return LoadObjStaticMeshAsset(StandardizedPath);
 	}
 
-	if (Extension.empty() || Extension == ".obj")
+	if (Extension == ".model")
 	{
-		return LoadObjStaticMeshAsset(PathFileName);
+		return LoadModelStaticMeshAsset(StandardizedPath);
 	}
 
 	UE_LOG("[FObjManager] Unsupported static mesh extension: %s", PathFileName.c_str());
@@ -592,7 +622,9 @@ UStaticMesh* FObjManager::LoadStaticMeshAsset(const FString& PathFileName)
 
 UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 {
-	auto It = ObjStaticMeshMap.find(PathFileName);
+	FString StandardizedPath = GetStandardizedMeshPath(PathFileName);
+
+	auto It = ObjStaticMeshMap.find(StandardizedPath);
 	if (It != ObjStaticMeshMap.end())
 	{
 		return It->second;
@@ -612,7 +644,9 @@ UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 
 UStaticMesh* FObjManager::LoadModelStaticMeshAsset(const FString& PathFileName)
 {
-	auto It = ObjStaticMeshMap.find(PathFileName);
+	FString StandardizedPath = GetStandardizedMeshPath(PathFileName);
+
+	auto It = ObjStaticMeshMap.find(StandardizedPath);
 	if (It != ObjStaticMeshMap.end())
 	{
 		return It->second;

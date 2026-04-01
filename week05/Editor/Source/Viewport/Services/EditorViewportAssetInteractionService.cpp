@@ -146,17 +146,6 @@ void FEditorViewportAssetInteractionService::HandleFileDropOnViewport(
 		UE_LOG("[에러] %s 로드 실패! 프로젝트의 Assets/Meshes 폴더에 파일이 있는지 확인하세요.", PureFileName.c_str());
 	}
 
-	/*UStaticMesh* LoadedMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::ToRelativePath(FilePath));
-	if (LoadedMesh) MeshComponent->SetStaticMesh(LoadedMesh);
-
-	std::filesystem::path PngPath = FilePath;
-	PngPath.replace_extension(".png");
-	if (std::filesystem::exists(FPaths::ToAbsolutePath(PngPath.string())))
-	{
-		// TODO: 머티리얼 매니저를 통해 텍스처를 읽어오고 머티리얼을 생성해서 MeshComp에 입혀주는 로직 추가
-		// 예: MeshComp->SetMaterial(0, 생성한머티리얼);
-	}*/
-
 	FVector SpawnLocation = Ray.Origin + Ray.Direction * 5;
 	NewActor->SetActorLocation(SpawnLocation);
 	Engine->SetSelectedActor(NewActor);
