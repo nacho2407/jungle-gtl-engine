@@ -31,11 +31,61 @@
               "bLoop" : true
             }
           }],
-        "ClassName" : "UStaticMeshComp",
+        "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Element 0" : {
+            "Path" : "Eyes",
+            "UVScroll" : false
+          },
+          "Element 1" : {
+            "Path" : "EyeWhites",
+            "UVScroll" : false
+          },
+          "Element 10" : {
+            "Path" : "Skirt",
+            "UVScroll" : false
+          },
+          "Element 11" : {
+            "Path" : "Shoes",
+            "UVScroll" : false
+          },
+          "Element 12" : {
+            "Path" : "Gloves",
+            "UVScroll" : false
+          },
+          "Element 2" : {
+            "Path" : "Neck",
+            "UVScroll" : false
+          },
+          "Element 3" : {
+            "Path" : "Face",
+            "UVScroll" : false
+          },
+          "Element 4" : {
+            "Path" : "Hair",
+            "UVScroll" : false
+          },
+          "Element 5" : {
+            "Path" : "Expression",
+            "UVScroll" : false
+          },
+          "Element 6" : {
+            "Path" : "Skin",
+            "UVScroll" : false
+          },
+          "Element 7" : {
+            "Path" : "Clothes",
+            "UVScroll" : false
+          },
+          "Element 8" : {
+            "Path" : "Pants",
+            "UVScroll" : false
+          },
+          "Element 9" : {
+            "Path" : "BackAccessory",
+            "UVScroll" : false
+          },
           "Location" : [0.000000, 0.000000, 0.000000],
-          "OverrideMaterials" : ["BasicShapeMaterial"],
-          "OverrideUVScrolls" : [false],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true
@@ -47,10 +97,17 @@
   "ContextHandle" : "Default",
   "ContextName" : "Default",
   "Name" : "Default",
+  "PerspectiveCamera" : {
+    "FOV" : 1.570796,
+    "FarClip" : 1000.000000,
+    "Location" : [-1.447062, -2.458320, 2.014715],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 25.309357, 89.291389]
+  },
   "Primitives" : {
     "5" : {
       "Location" : [0.000000, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "ObjStaticMeshAsset" : "Data/Lumine/LumineModel.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
