@@ -20,6 +20,9 @@ public:
 	void RequestResize(uint32 InWidth, uint32 InHeight);
 	bool ApplyPendingResize();
 
+	// 오프스크린 RT 클리어 + 바인딩 (렌더 시작 시 호출)
+	void BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4] = nullptr);
+
 	// ViewportClient 참조
 	void SetClient(FViewportClient* InClient) { ViewportClient = InClient; }
 	FViewportClient* GetClient() const { return ViewportClient; }
