@@ -136,6 +136,8 @@ void FEditorViewportClient::BuildRenderData(FEditorRenderData& OutRenderData, EE
     OutRenderData.bShowWorldAxes = IsFlagSet(InShowFlags, EEditorShowFlags::SF_WorldAxes);
     OutRenderData.bShowSelectionOutline =
         IsFlagSet(InShowFlags, EEditorShowFlags::SF_SelectionOutline);
+    OutRenderData.bEnableOutlineOcclusion =
+        RenderSetting.IsSelectionOutlineOcclusionEnabled();
 
 
     if (!ActiveController->GetSelectedActors().empty())

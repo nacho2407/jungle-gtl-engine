@@ -8,16 +8,16 @@
 /**
  * @brief Traversal + type filtering까지 담당(UE 스타일)
  */
-class ENGINE_API FUObjectIteratorBase
+class ENGINE_API FObjectIteratorBase
 {
   public:
-    FUObjectIteratorBase(const void* InClass);
-    virtual ~FUObjectIteratorBase() = default;
+    FObjectIteratorBase(const void* InClass);
+    virtual ~FObjectIteratorBase() = default;
 
     explicit operator bool() const { return CurrentObject != nullptr; }
 
-    FUObjectIteratorBase& operator ++();
-    FUObjectIteratorBase  operator ++(int);
+    FObjectIteratorBase& operator ++();
+    FObjectIteratorBase  operator ++(int);
 
     UObject* operator *() const { return CurrentObject; }
     UObject* operator ->() const { return CurrentObject; }
@@ -37,21 +37,21 @@ class ENGINE_API FUObjectIteratorBase
  * @brief Base iterator의 class to iterate만 결정
  */
 template <typename T>
-class TUObjectIterator: public FUObjectIteratorBase
+class TObjectIterator: public FObjectIteratorBase
 {
   public:
-    TUObjectIterator(): FUObjectIteratorBase(T::GetClass()) {}
-    ~TUObjectIterator() = default;
+    TObjectIterator(): FObjectIteratorBase(T::GetClass()) {}
+    ~TObjectIterator() = default;
 
-    TUObjectIterator<T>& operator ++()
+    TObjectIterator<T>& operator ++()
     {
         Advance();
         return *this;
     }
 
-    TUObjectIterator<T> operator ++(int)
+    TObjectIterator<T> operator ++(int)
     {
-        TUObjectIterator<T> Temp = *this;
+        TObjectIterator<T> Temp = *this;
         Advance();
         return Temp;
     }
@@ -66,21 +66,21 @@ class TUObjectIterator: public FUObjectIteratorBase
  * @brief 별도의 타입 검사가 필요 없는 UObject는 특수화
  */
 template<>
-class ENGINE_API TUObjectIterator<UObject>: public FUObjectIteratorBase
+class ENGINE_API TObjectIterator<UObject>: public FObjectIteratorBase
 {
   public:
-    TUObjectIterator(): FUObjectIteratorBase(UObject::GetClass()) {}
-    ~TUObjectIterator() = default;
+    TObjectIterator(): FObjectIteratorBase(UObject::GetClass()) {}
+    ~TObjectIterator() = default;
 
-    TUObjectIterator<UObject>& operator++()
+    TObjectIterator<UObject>& operator++()
     {
         Advance();
         return *this;
     }
 
-    TUObjectIterator<UObject> operator++(int)
+    TObjectIterator<UObject> operator++(int)
     {
-        TUObjectIterator<UObject> Temp = *this;
+        TObjectIterator<UObject> Temp = *this;
         Advance();
         return Temp;
     }

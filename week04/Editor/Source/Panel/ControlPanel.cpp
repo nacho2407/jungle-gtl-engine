@@ -223,6 +223,13 @@ void FControlPanel::DrawShowFlagsSection() const
         RenderSetting.SetSelectionOutlineVisible(bShowSelectionOutline);
     }
 
+    bool bEnableSelectionOutlineOcclusion =
+        RenderSetting.IsSelectionOutlineOcclusionEnabled();
+    if (ImGui::Checkbox("Outline Occlusion", &bEnableSelectionOutlineOcclusion))
+    {
+        RenderSetting.SetSelectionOutlineOcclusionEnabled(bEnableSelectionOutlineOcclusion);
+    }
+
     bool bShowObjectLabels = RenderSetting.IsObjectLabelsVisible();
     if (ImGui::Checkbox("Editor Object Labels", &bShowObjectLabels))
     {

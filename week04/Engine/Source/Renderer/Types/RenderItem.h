@@ -122,5 +122,6 @@ struct FTextRenderItem
     float LineSpacing = 0.0f;
 
     ETextLayoutMode LayoutMode = ETextLayoutMode::Natural;
+    bool bExcludeFromOutline = false;
     FRenderItemState State;
 };

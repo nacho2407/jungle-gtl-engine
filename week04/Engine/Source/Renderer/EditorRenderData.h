@@ -43,6 +43,7 @@ struct FEditorRenderData
     bool bShowGrid = false;
     bool bShowWorldAxes = false;
     bool bShowSelectionOutline = false;
+    bool bEnableOutlineOcclusion = true;
     bool bShowGizmo = false;
 
     FGizmoDrawData Gizmo;

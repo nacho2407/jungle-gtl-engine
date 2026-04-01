@@ -7,6 +7,8 @@
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
 #include "Renderer/D3D11/D3D11OutlineRenderer.h"
+#include "Renderer/D3D11/D3D11PostProcessOutlineRenderer.h"
+#include "Renderer/D3D11/D3D11SelectionMaskRenderer.h"
 #include "Renderer/D3D11/D3D11RHI.h"
 #include "Renderer/D3D11/D3D11SpriteBatchRenderer.h"
 #include "Renderer/D3D11/D3D11TextBatchRenderer.h"
@@ -63,6 +65,8 @@ class ENGINE_API FRendererModule
 
     FD3D11MeshBatchRenderer  MeshBatchRenderer;
     FD3D11OutlineRenderer    OutlineRenderer;
+    FD3D11PostProcessOutlineRenderer PostProcessOutlineRenderer;
+    FD3D11SelectionMaskRenderer SelectionMaskRenderer; // outline 계산에 필요한 마스크 렌더러
     FD3D11LineBatchRenderer  LineRenderer;
     FD3D11TextBatchRenderer  TextRenderer;
     FD3D11SpriteBatchRenderer SpriteRenderer;
