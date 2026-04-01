@@ -30,7 +30,7 @@ struct FMaterialData
     FTextureResource* SpecularTexture = nullptr;
     FTextureResource* NormalTexture = nullptr;
 
-    FVector2 UVScrollSpeed = {0.0f, 0.0f}; // UV 스크롤 속도 추가
+    FVector2 UVScrollSpeed = {0.0f, 0.0f}; // UV 스크롤 속도 추가 
 };
 
 struct FMaterialResource
