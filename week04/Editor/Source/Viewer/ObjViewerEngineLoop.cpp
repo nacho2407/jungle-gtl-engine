@@ -199,12 +199,11 @@ bool FObjViewerEngineLoop::RunFrameOnce()
         {
             FMatrix CoordConv = FMatrix::Identity;
             CoordConv.SetAxes(FVector(0, 1, 0), FVector(0, 0, 1), FVector(1, 0, 0));
-            Item.World = CoordConv;
+            Item.World = FMatrix::MakeScale(ModelScale * AbsoluteScale) * CoordConv;
         }
         else
         {
-            //Item.World = FMatrix::Identity;
-            Item.World = FMatrix::MakeScale(ModelScale * AbsoluteScale) * Item.World;
+            Item.World = FMatrix::MakeScale(ModelScale * AbsoluteScale);
         }
 
         Item.RenderResource = LoadedMesh->GetRenderResource();
