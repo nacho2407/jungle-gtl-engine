@@ -1,13 +1,7 @@
 // OutlinePostProcess.hlsl
 // Fullscreen Quad VS (SV_VertexID) + Stencil Edge Detection PS
 
-// ── Outline 설정 (b3) ──
-cbuffer OutlinePostProcessCB : register(b3)
-{
-    float4 OutlineColor;    // 아웃라인 색상 + 알파
-    float  OutlineThickness; // 샘플링 오프셋 (픽셀 단위, 보통 1.0)
-    float3 _Pad;
-};
+#include "Common/ConstantBuffers.hlsl"
 
 // StencilSRV: X24_TYPELESS_G8_UINT 포맷 → uint2, 스텐실은 .g 채널
 Texture2D<uint2> StencilTex : register(t0);
@@ -16,7 +10,7 @@ Texture2D<uint2> StencilTex : register(t0);
 struct PS_Input
 {
     float4 position : SV_POSITION;
-    float2 uv       : TEXCOORD0;
+    float2 uv : TEXCOORD0;
 };
 
 PS_Input VS(uint vertexID : SV_VertexID)
@@ -32,7 +26,7 @@ PS_Input VS(uint vertexID : SV_VertexID)
 float4 PS(PS_Input input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
-    int offset = max((int)OutlineThickness, 1);
+    int offset = max((int) OutlineThickness, 1);
 
     // 중심 스텐실 값
     uint center = StencilTex.Load(int3(coord, 0)).g;
@@ -42,10 +36,10 @@ float4 PS(PS_Input input) : SV_TARGET
         discard;
 
     // 상하좌우 이웃 샘플링
-    uint up    = StencilTex.Load(int3(coord + int2( 0, -offset), 0)).g;
-    uint down  = StencilTex.Load(int3(coord + int2( 0,  offset), 0)).g;
-    uint left  = StencilTex.Load(int3(coord + int2(-offset,  0), 0)).g;
-    uint right = StencilTex.Load(int3(coord + int2( offset,  0), 0)).g;
+    uint up = StencilTex.Load(int3(coord + int2(0, -offset), 0)).g;
+    uint down = StencilTex.Load(int3(coord + int2(0, offset), 0)).g;
+    uint left = StencilTex.Load(int3(coord + int2(-offset, 0), 0)).g;
+    uint right = StencilTex.Load(int3(coord + int2(offset, 0), 0)).g;
 
     // 이웃 중 하나라도 0이면 → 경계(edge)
     if (up != 0 && down != 0 && left != 0 && right != 0)

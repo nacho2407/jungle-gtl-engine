@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Resource/ResourceManager.h"
+#include "Render/Resource/ShaderManager.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -15,18 +16,6 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	Device->CreateSamplerState(&sampDesc, &SamplerState);
-
-	// 셰이더 + Input Layout
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	FontShader.Create(Device, L"Shaders/ShaderFont.hlsl",
-		"VS", "PS", layout, ARRAYSIZE(layout));
-
-	OverlayFontShader.Create(Device, L"Shaders/ShaderOverlayFont.hlsl",
-		"VS", "PS", layout, ARRAYSIZE(layout));
 
 	if (const FFontResource* DefaultFont = FResourceManager::Get().FindFont(FName("Default")))
 	{
@@ -71,8 +60,6 @@ void FFontBatcher::Release()
 	ClearScreen();
 
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
-	FontShader.Release();
-	OverlayFontShader.Release();
 
 	ReleaseBuffers();
 }
@@ -264,7 +251,7 @@ void FFontBatcher::DrawBatch(ID3D11DeviceContext* Context, const FFontResource* 
 	if (!VB.Update(Context, Vertices.data(), VertexCount)) return;
 	if (!IB.Update(Context, Indices.data(), IndexCount)) return;
 
-	FontShader.Bind(Context);
+	FShaderManager::Get().GetShader(EShaderType::Font)->Bind(Context);
 	VB.Bind(Context);
 	IB.Bind(Context);
 
@@ -293,7 +280,7 @@ void FFontBatcher::DrawScreenBatch(ID3D11DeviceContext* Context, const FFontReso
 	if (!VB.Update(Context, ScreenVertices.data(), VertexCount)) return;
 	if (!IB.Update(Context, ScreenIndices.data(), IndexCount)) return;
 
-	OverlayFontShader.Bind(Context);
+	FShaderManager::Get().GetShader(EShaderType::OverlayFont)->Bind(Context);
 	VB.Bind(Context);
 	IB.Bind(Context);
 
