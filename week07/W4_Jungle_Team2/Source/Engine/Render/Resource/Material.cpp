@@ -12,25 +12,22 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
 		return false;
 	}
 
-
 	// 한글 경로 안전을 위해 wide string 기반으로 filesystem 연산 수행
 	std::filesystem::path MtlDir = std::filesystem::path(FPaths::ToWide(FilePath)).parent_path();
-	MtlDir = MtlDir.generic_string();
 
 	auto ResolveTexPath = [&](std::istringstream& InISS) -> FString
 		{
 			FString RelPath;
-			std::filesystem::path TexturePath = MtlDir;
-			TexturePath /= "Texture";
 
 			InISS >> RelPath;
 			if (RelPath.empty())
 			{
 				return {};
 			}
-
 			std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(RelPath)).filename();
-			std::filesystem::path TexPath = (TexturePath / FileName).lexically_normal();
+			FString outTexPath = "";
+			FFileUtils::FindFileRecursively(MtlDir.generic_string(), FileName.generic_string(), outTexPath);
+			std::filesystem::path TexPath = (MtlDir / outTexPath).lexically_normal();
 			return FPaths::ToUtf8(TexPath.generic_wstring());
 		};
 
