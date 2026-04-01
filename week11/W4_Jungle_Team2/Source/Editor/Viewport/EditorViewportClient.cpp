@@ -44,7 +44,6 @@ void FEditorViewportClient::DestroyCamera()
 {
 	bHasCamera = false;
 	NavigationController.SetCamera(nullptr); 
-	// EndMouseConstrain();
 }
 
 void FEditorViewportClient::ResetCamera()
@@ -228,14 +227,11 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (!bHasCamera)
 	{
-		// EndMouseConstrain();
 		return;
 	}
 
-	/*InputSystem::Get().GetGuiInputState().bUsingMouse*/
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard)
 	{
-		// EndMouseConstrain();
 		return;
 	}
 
@@ -281,6 +277,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
+	// 마우스 우클릭을 뗄 경우 드래그 관련 변수들 false 처리
 	if (InputSystem::Get().GetKeyUp(VK_RBUTTON))
 	{
 		if (bRightMouseRotating)
@@ -307,6 +304,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
+	// 중앙 휠 버튼 처리
 	if (InputSystem::Get().GetKeyDown(VK_MBUTTON))
 	{
 		if(ViewportType == EVT_Perspective)
@@ -338,24 +336,6 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			}
 		}
 	}
-
-	const bool bAnyMouseOperation = bRightMouseRotating
-		|| bRightMousePanning
-		|| bMiddleMousePanning
-		|| bAltRightMouseDollying;
-
-	// if (bAnyMouseOperation)
-	// {
-	// 	if (!bMouseConstrained)
-	// 	{
-	// 		BeginMouseConstrain();
-	// 	}
-	// 	UpdateMouseConstrain();
-	// }
-	// else if (bMouseConstrained)
-	// {
-	// 	EndMouseConstrain();
-	// }
 		
 	const float MoveSensitivity = Settings ? Settings->CameraMoveSensitivity : 1.0f;
 	const float RotateSensitivity = Settings ? Settings->CameraRotateSensitivity : 1.0f;
@@ -461,20 +441,6 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			NavigationController.ModifyFOVorOrthoHeight(-ScrollNotches);
 		}
 	}
-
-	// Toggle projection
-	// TODO: 현재는 오류 발생해서 제거
-	/*if (InputSystem::Get().GetKeyDown('O'))
-	{
-		if (Camera.GetProjectionType() == EViewportProjectionType::Perspective)
-		{
-			Camera.SetProjectionType(EViewportProjectionType::Orthographic);
-		}
-		else
-		{
-			Camera.SetProjectionType(EViewportProjectionType::Perspective);
-		}
-	}*/
 
 	if (InputSystem::Get().GetKeyUp(VK_SPACE) && Gizmo)
 	{
