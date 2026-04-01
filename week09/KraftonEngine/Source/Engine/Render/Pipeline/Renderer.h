@@ -59,11 +59,11 @@ private:
 	void DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRenderCommand& Cmd);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
-	// 기본 패스 실행기 — SetupRenderState + BindCommand + DrawCommand 루프
-	void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	// 기본 패스 실행기 — BindCommand + DrawCommand 루프
+	void ExecuteDefaultPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
-	// LineBatcher DrawBatch 공통 — EditorConstants 업데이트 + EditorShader 바인딩
-	void DrawLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
+	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
 
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
 	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
