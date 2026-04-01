@@ -14,6 +14,7 @@
 #include "Renderer/RenderAsset/SubUVAtlasResource.h"
 #include "Renderer/Types/RenderItem.h"
 #include "Core/Misc/BitMaskEnum.h"
+#include "Core/Geometry/Primitives/AABBUtility.h"
 
 namespace
 {
@@ -213,15 +214,20 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
 
                 // 3. 서브 메시 개수만큼 매핑된 머티리얼 포인터 수집
                 const size_t SubMeshCount = Resource->SubMeshes.size();
-
-                uint32 NumSubMeshes = static_cast<uint32>(SubMeshCount);
+                const uint32 NumSubMeshes = static_cast<uint32>(SubMeshCount);
+                MeshItem.Materials.reserve(NumSubMeshes);
                 for (uint32 i = 0; i < NumSubMeshes; ++i)
                 {
                     MeshItem.Materials.push_back(StaticMeshComp->GetMaterial(i));
                 }
+                if (MeshItem.Materials.size() < NumSubMeshes)
+                {
+                    MeshItem.Materials.resize(NumSubMeshes, nullptr);
+                }
 
                 // 4. 상태 및 피킹 데이터
-                MeshItem.WorldAABB = StaticMeshComp->GetWorldAABB();
+                MeshItem.WorldAABB = Geometry::TransformAABB(Resource->BoundingBox,
+                                                            StaticMeshComp->GetWorldMatrix());
                 MeshItem.State.ObjectId = ObjectId;
                 MeshItem.State.bShowBounds = StaticMeshComp->IsShowBounds();
                 MeshItem.State.SetVisible(Actor->IsVisible());
