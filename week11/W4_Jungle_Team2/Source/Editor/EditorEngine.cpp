@@ -43,8 +43,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 퍼스펙티브 카메라(0번)를 월드 활성 카메라로 등록
 	GetWorld()->SetActiveCamera(GetCamera());
 
-	// Slate 초기화 + 위젯 트리 구성 (SSplitterV → 2×SSplitterH → 4×SViewport)
+	// Slate 초기화
 	FSlateApplication::Get().Initialize();
+	// Make Viewport Layout ( SplitterV -> 2 * SplitterH)
 	ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
 
 	// Editor render pipeline
@@ -82,16 +83,16 @@ void UEditorEngine::Tick(float DeltaTime)
 {
 	// hover/focus 상태를 먼저 갱신한 뒤 ActiveCamera 를 업데이트합니다.
 	// 이렇게 해야 같은 프레임의 첫 클릭에서도 올바른 카메라로 피킹할 수 있습니다.
-	ViewportLayout.UpdateHoverStates();
+	// ViewportLayout.UpdateHoverStates();
+	ViewportLayout.Tick(DeltaTime);
 
 	if (UWorld* World = GetWorld())
 	{
+		// 활성화된 카메라 갱신
 		const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
 		if (FViewportCamera* FocusedCam = ViewportLayout.GetIndexedViewportClientCamera(FocusedIdx))
 			World->SetActiveCamera(FocusedCam);
 	}
-
-	ViewportLayout.Tick(DeltaTime);
 
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);

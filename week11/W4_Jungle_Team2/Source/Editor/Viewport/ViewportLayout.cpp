@@ -99,6 +99,7 @@ void FViewportLayout::UpdateHoverStates()
 		return;
 	}
 
+	// Find Active Viewport 
 	int32 ActiveOpViewport = -1;
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
@@ -145,6 +146,8 @@ void FViewportLayout::UpdateHoverStates()
 
 void FViewportLayout::Tick(float DeltaTime)
 {
+	UpdateHoverStates();
+
 	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
@@ -166,7 +169,7 @@ void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 			static_cast<float>(LayoutRect.Width),
 			static_cast<float>(LayoutRect.Height)
 		});
-		GetRootSplitterV()->UpdateCildRect();
+		GetRootSplitterV()->UpdateChildRect();
 		SyncViewportRects();
 	}
 }
@@ -186,7 +189,7 @@ void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
 		static_cast<float>(HostRect.Width),
 		static_cast<float>(HostRect.Height)
 	});
-	RootSplitterV->UpdateCildRect();
+	RootSplitterV->UpdateChildRect();
 	SyncViewportRects();
 }
 
@@ -215,7 +218,7 @@ void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	}
 }
 
-//  Viewport Layout
+//  Viewport Layout 생성 (2 x 2)
 void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 {
 	DestroyViewportLayout();  // 기존 위젯이 있으면 먼저 해제
@@ -279,7 +282,7 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	TopSplitterH->SetSplitRatio(HRatio);
 	BotSplitterH->SetSplitRatio(HRatio);
 
-	RootSplitterV->UpdateCildRect();
+	RootSplitterV->UpdateChildRect();
 
 	// SViewport(FRect) → FSceneViewport::SetRect(FViewportRect) 동기화
 	SyncViewportRects();

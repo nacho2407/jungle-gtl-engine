@@ -135,13 +135,12 @@ private:
 	float WindowHeight = 1080.f;
 
 	bool bIsCursorVisible = true;
-	bool bMouseConstrained = false;
 
 	// Input state bridge for current singleton InputSystem
-	bool bRightMouseRotating = false;
-	bool bRightMousePanning  = false;   // 직교 뷰: 우클릭 드래그 = 팬
-	bool bMiddleMousePanning = false;
-	bool bAltRightMouseDollying = false;
+	bool bRightMouseRotating = false;		// 원근 뷰: 우클릭 드래그 = 회전
+	bool bRightMousePanning  = false;		// 직교 뷰: 우클릭 드래그 = 팬
+	bool bMiddleMousePanning = false;		// 원근 뷰: 휠클릭 드래그 = 팬
+	bool bAltRightMouseDollying = false;	// 원근 + 직교 뷰: alt + 우클릭 = dolly
 
 	bool bBoxSelecting = false;
 	POINT BoxSelectStart = { 0, 0 };
@@ -152,3 +151,4 @@ private:
 	bool bFirstMouseMoveAfterPanStart      = false;
 	bool bFirstMouseMoveAfterDollyStart    = false;
 };
+
