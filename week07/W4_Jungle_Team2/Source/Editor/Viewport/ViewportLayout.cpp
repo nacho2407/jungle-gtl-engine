@@ -145,6 +145,8 @@ void FViewportLayout::UpdateHoverStates()
 
 void FViewportLayout::Tick(float DeltaTime)
 {
+	UpdateHoverStates();
+
 	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{

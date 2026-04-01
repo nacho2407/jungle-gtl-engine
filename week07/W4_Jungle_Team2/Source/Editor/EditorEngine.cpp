@@ -82,16 +82,16 @@ void UEditorEngine::Tick(float DeltaTime)
 {
 	// hover/focus 상태를 먼저 갱신한 뒤 ActiveCamera 를 업데이트합니다.
 	// 이렇게 해야 같은 프레임의 첫 클릭에서도 올바른 카메라로 피킹할 수 있습니다.
-	ViewportLayout.UpdateHoverStates();
+	// ViewportLayout.UpdateHoverStates();
+	ViewportLayout.Tick(DeltaTime);
 
 	if (UWorld* World = GetWorld())
 	{
+		// 활성화된 카메라 갱신
 		const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
 		if (FViewportCamera* FocusedCam = ViewportLayout.GetIndexedViewportClientCamera(FocusedIdx))
 			World->SetActiveCamera(FocusedCam);
 	}
-
-	ViewportLayout.Tick(DeltaTime);
 
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
