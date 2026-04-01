@@ -7,6 +7,7 @@
 #include <fstream>
 #include <filesystem>
 #include <chrono>
+#include "Asset/FileUtils.h"
 
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
@@ -109,6 +110,7 @@ namespace ResourceKey
 //	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
 void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device* Device)
 {
+	CahcedDevice = Device;
 	//	초기화
 	ObjFilePaths.clear();
 	FontFilePaths.clear();
@@ -579,14 +581,6 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 		}
 	}
 
-	for (auto& [Name, Mat] : MaterialRegistry)
-	{
-		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty()) LoadTexture(Mat.DiffuseTexPath, Device);
-		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty()) LoadTexture(Mat.AmbientTexPath, Device);
-		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, Device);
-		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty()) LoadTexture(Mat.BumpTexPath, Device);
-	}
-
 	return true;
 }
 
@@ -665,6 +659,15 @@ void FResourceManager::ReleaseGPUResources()
 	}
 }
 
+void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
+{
+	std::filesystem::path Path = FilePath;
+	std::filesystem::path MtlPath = Path.parent_path() / Path.stem().concat(".mtl");
+
+	LoadMaterial(MtlPath.generic_string());
+
+}
+
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 {
 	if (MtlFilePath.empty())
@@ -682,6 +685,14 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 	for (auto& [Name, Mat] : Parsed)
 	{
 		MaterialRegistry[Name] = Mat;
+	}
+
+	for (auto& [Name, Mat] : MaterialRegistry)
+	{
+		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath, CahcedDevice);
+		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath, CahcedDevice);
+		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, CahcedDevice);
+		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath, CahcedDevice);
 	}
 
 	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
@@ -702,11 +713,18 @@ const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) con
 
 TArray<FString> FResourceManager::GetMaterialNames() const
 {
-	return MaterialFilePaths;
+	TArray<FString> Names;
+	Names.reserve(MaterialRegistry.size());
+	for (const auto& [Name, Mat] : MaterialRegistry)
+	{
+		Names.push_back(Name);
+	}
+	return Names;
 }
 
 FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
 {
+	FString Degug = Path;
 	auto It = MaterialTextureResources.find(Path);
 	return (It != MaterialTextureResources.end()) ? const_cast<FMaterialResource*>(&It->second) : nullptr;
 }
@@ -841,6 +859,8 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return FoundMesh;
 	}
 
+	LoadMaterialFromPath(Path);
+
 	FStaticMeshLoadOptions LoadOptions = {};
 
 	for (const auto& [Key, Resource] : StaticMeshRegistry)
@@ -907,6 +927,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			BinaryPath.c_str());
 	}
 
+	// Material 연결
 	TArray<FStaticMeshMaterialSlot> MaterialSlots;
 	MaterialSlots.reserve(LoadedMeshData->SlotNames.size());
 	for (const FString& SlotName : LoadedMeshData->SlotNames)

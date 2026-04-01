@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <filesystem>
+#include "Core/Paths.h"
 
 bool FFileUtils::FileExists(const FString& FileName)
 {
@@ -52,7 +53,7 @@ bool FFileUtils::LoadFileToLines(const FString& FileName, TArray<FString>& OutLi
 	return true;
 }
 
-/* 
+/*
 // 하위 폴더를 검색하여 타겟 파일의 SearchRootPath 기준 상대 경로를 찾는 함수
 
 [사용 예시]
@@ -65,19 +66,28 @@ bool FFileUtils::FindFileRecursively(const FString& SearchRootPath, const FStrin
 {
 	std::filesystem::path RootPath = FPaths::ToWide(SearchRootPath);
 	std::filesystem::path TargetName = FPaths::ToWide(TargetFileName);
+	OutFoundPath.clear();
 
 	if (!std::filesystem::exists(RootPath) || !std::filesystem::is_directory(RootPath))
 	{
 		return false;
 	}
 
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(RootPath))
+	// Error Code 확인 로직 제거, 필수 흐름만 유지
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(
+		RootPath,
+		std::filesystem::directory_options::skip_permission_denied))
 	{
-		if (Entry.is_regular_file() && Entry.path().filename() == TargetName)
+		if (!Entry.is_regular_file())
 		{
-            std::filesystem::path RelPath = std::filesystem::relative(Entry.path(), RootPath);
-            OutFoundPath = FPaths::ToUtf8(RelPath.generic_wstring());
-            return true;
+			continue;
+		}
+
+		if (Entry.path().filename() == TargetName)
+		{
+			std::filesystem::path RelPath = std::filesystem::relative(Entry.path(), RootPath);
+			OutFoundPath = FPaths::ToUtf8(RelPath.generic_wstring());
+			return true;
 		}
 	}
 

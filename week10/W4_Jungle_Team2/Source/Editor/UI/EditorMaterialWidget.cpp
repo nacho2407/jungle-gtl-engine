@@ -273,7 +273,7 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                ImGui::Image((ImTextureID)SRV, ImVec2(256.0f, 256.0f));
+                ImGui::Image((ImTextureID)SRV, ImVec2(128.0f, 128.0f));
                 ImGui::EndTooltip();
             }
         }
