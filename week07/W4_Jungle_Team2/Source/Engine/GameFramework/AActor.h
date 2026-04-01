@@ -17,6 +17,7 @@ public:
 	virtual void BeginPlay() {}
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay() {}
+    virtual void InitDefaultComponents() {}
 
 	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.
 	template<typename T>
