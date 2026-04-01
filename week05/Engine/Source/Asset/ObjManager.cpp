@@ -13,6 +13,8 @@
 #include "Debug/EngineLog.h"
 #include "Math/MathUtility.h"
 #include <map>
+
+#include "Object/ObjectFactory.h"
 #include "Renderer/Material.h"
 #include "Renderer/MaterialManager.h"
 #include "Renderer/Renderer.h"
@@ -366,7 +368,7 @@ namespace
 		RawData->PathFileName = PathFileName;
 		RawData->UpdateLocalBound();
 
-		UStaticMesh* NewAsset = new UStaticMesh();
+		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		NewAsset->SetStaticMeshAsset(RawData.release());
 
 		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
@@ -403,7 +405,7 @@ namespace
 		RawData->PathFileName = PathFileName;
 		RawData->UpdateLocalBound();
 
-		UStaticMesh* NewAsset = new UStaticMesh();
+		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		NewAsset->SetStaticMeshAsset(RawData.release());
 
 		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
