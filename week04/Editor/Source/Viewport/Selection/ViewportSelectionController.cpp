@@ -5,6 +5,7 @@
 #include "Editor/EditorContext.h"
 #include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Sprite/SpriteComponent.h"
 #include "Engine/Component/Text/AtlasTextComponent.h"
 #include "Engine/Component/Text/UUIDComponent.h"
 #include "Engine/Game/Actor.h"
@@ -329,6 +330,89 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
                 if (bHitGlyph && ClosestGlyphT < ActorClosestT)
                 {
                     ActorClosestT = ClosestGlyphT;
+                    bActorHit = true;
+                }
+                return;
+            }
+
+            if (auto* SpriteComponent =
+                    dynamic_cast<Engine::Component::USpriteComponent*>(PrimitiveComponent))
+            {
+                const FMatrix& SpriteWorld = PrimitiveComponent->GetWorldMatrix();
+                const FVector SpriteOrigin =
+                    SpriteWorld.GetOrigin() + SpriteComponent->GetBillboardOffset();
+
+                FVector RightAxis;
+                FVector UpAxis;
+
+                if (SpriteComponent->GetBillboard())
+                {
+                    const FMatrix CameraMatrix = ViewportCamera->GetViewMatrix().GetInverse();
+                    RightAxis = CameraMatrix.GetRightVector();
+                    UpAxis = CameraMatrix.GetUpVector();
+
+                    const FVector WorldScale = SpriteWorld.GetScaleVector();
+                    RightAxis = RightAxis * WorldScale.X;
+                    UpAxis = UpAxis * WorldScale.Z;
+                }
+                else
+                {
+                    const FVector WorldScale = SpriteWorld.GetScaleVector();
+                    RightAxis = SpriteWorld.GetForwardVector().GetSafeNormal() * WorldScale.X;
+                    UpAxis = SpriteWorld.GetUpVector().GetSafeNormal() * WorldScale.Z;
+                }
+
+                const FVector V0 = SpriteOrigin - RightAxis - UpAxis;
+                const FVector V1 = SpriteOrigin + RightAxis - UpAxis;
+                const FVector V2 = SpriteOrigin + RightAxis + UpAxis;
+                const FVector V3 = SpriteOrigin - RightAxis + UpAxis;
+
+                Geometry::FAABB SpriteWorldAABB;
+                SpriteWorldAABB.Min = FVector(FLT_MAX, FLT_MAX, FLT_MAX);
+                SpriteWorldAABB.Max = FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+                auto ExpandSpriteBounds =
+                    [&SpriteWorldAABB](const FVector& InPoint)
+                {
+                    SpriteWorldAABB.Min.X = std::min(SpriteWorldAABB.Min.X, InPoint.X);
+                    SpriteWorldAABB.Min.Y = std::min(SpriteWorldAABB.Min.Y, InPoint.Y);
+                    SpriteWorldAABB.Min.Z = std::min(SpriteWorldAABB.Min.Z, InPoint.Z);
+                    SpriteWorldAABB.Max.X = std::max(SpriteWorldAABB.Max.X, InPoint.X);
+                    SpriteWorldAABB.Max.Y = std::max(SpriteWorldAABB.Max.Y, InPoint.Y);
+                    SpriteWorldAABB.Max.Z = std::max(SpriteWorldAABB.Max.Z, InPoint.Z);
+                };
+
+                ExpandSpriteBounds(V0);
+                ExpandSpriteBounds(V1);
+                ExpandSpriteBounds(V2);
+                ExpandSpriteBounds(V3);
+
+                float AABBHitT = 0.0f;
+                if (!Geometry::IntersectRayAABB(PickRay, SpriteWorldAABB, AABBHitT))
+                {
+                    return;
+                }
+
+                float ClosestTriangleT = FLT_MAX;
+                bool bHitTriangle = false;
+                float TriangleHitT = 0.0f;
+                if (Geometry::IntersectRayTriangle(PickRay, V0, V1, V2, TriangleHitT) &&
+                    TriangleHitT >= 0.0f && TriangleHitT < ClosestTriangleT)
+                {
+                    ClosestTriangleT = TriangleHitT;
+                    bHitTriangle = true;
+                }
+
+                if (Geometry::IntersectRayTriangle(PickRay, V0, V2, V3, TriangleHitT) &&
+                    TriangleHitT >= 0.0f && TriangleHitT < ClosestTriangleT)
+                {
+                    ClosestTriangleT = TriangleHitT;
+                    bHitTriangle = true;
+                }
+
+                if (bHitTriangle && ClosestTriangleT < ActorClosestT)
+                {
+                    ActorClosestT = ClosestTriangleT;
                     bActorHit = true;
                 }
                 return;

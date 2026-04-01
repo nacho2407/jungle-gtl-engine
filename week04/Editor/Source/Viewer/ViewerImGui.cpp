@@ -42,6 +42,7 @@ FViewerUIOutput FViewerImGui::Draw(const FViewerUIInput& Input)
     FViewerUIOutput Out;
     Out.bOpenRequested  = DrawLoadPanel(Input.MeshName, Input.FPS);
     DrawControlPanel(Input, Out);
+    DrawScalePanel(Input, Out);
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -158,6 +159,105 @@ void FViewerImGui::DrawCameraPanel(FViewerUIOutput& Out)
 
     CenteredBtn("Bottom", ECC_Bottom);
     CenteredBtn("Back",   ECC_Back);
+}
+
+void FViewerImGui::DrawScalePanel(const FViewerUIInput& Input, FViewerUIOutput& Out)
+{
+    ImGui::SetNextWindowPos(ImVec2(10.f, 190.f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(240.f, 0.f), ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.80f);
+    ImGui::Begin("##ScalePanel", nullptr,
+                 ImGuiWindowFlags_NoTitleBar    | ImGuiWindowFlags_NoResize |
+                 ImGuiWindowFlags_NoMove        | ImGuiWindowFlags_NoScrollbar |
+                 ImGuiWindowFlags_NoSavedSettings);
+
+    // Header
+    ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.3f, 1.f), "Model Scale");
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    float ScaleFactor[3] = { Input.ModelScale.X, Input.ModelScale.Y, Input.ModelScale.Z };
+    const float AvailW   = ImGui::GetContentRegionAvail().x;
+    const float LabelW   = 14.f; // colored axis label width
+    const float DragW    = (AvailW - LabelW * 3.f - ImGui::GetStyle().ItemSpacing.x * 2.f) / 3.f;
+
+    bool bChanged = false;
+
+    // X — red
+    ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(1.f, 0.35f, 0.35f, 1.f));
+    ImGui::TextUnformatted("X");
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.f, 4.f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,       ImVec4(0.35f, 0.10f, 0.10f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,ImVec4(0.50f, 0.18f, 0.18f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.65f, 0.22f, 0.22f, 1.f));
+    ImGui::SetNextItemWidth(DragW);
+    bChanged |= ImGui::DragFloat("##SX", &ScaleFactor[0], 0.001f, 0.00001f, 100.f, "%.4f");
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine(0.f, ImGui::GetStyle().ItemSpacing.x);
+
+    // Y — green
+    ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.35f, 1.f, 0.35f, 1.f));
+    ImGui::TextUnformatted("Y");
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.f, 4.f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,       ImVec4(0.10f, 0.30f, 0.10f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,ImVec4(0.18f, 0.45f, 0.18f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.22f, 0.60f, 0.22f, 1.f));
+    ImGui::SetNextItemWidth(DragW);
+    bChanged |= ImGui::DragFloat("##SY", &ScaleFactor[1], 0.001f, 0.00001f, 100.f, "%.4f");
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine(0.f, ImGui::GetStyle().ItemSpacing.x);
+
+    // Z — blue
+    ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.35f, 0.6f, 1.f, 1.f));
+    ImGui::TextUnformatted("Z");
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.f, 4.f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,       ImVec4(0.10f, 0.15f, 0.35f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,ImVec4(0.18f, 0.25f, 0.50f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.22f, 0.32f, 0.65f, 1.f));
+    ImGui::SetNextItemWidth(DragW);
+    bChanged |= ImGui::DragFloat("##SZ", &ScaleFactor[2], 0.001f, 0.00001f, 100.f, "%.4f");
+    ImGui::PopStyleColor(3);
+
+    // Absolute (uniform) scale
+    ImGui::NewLine();
+    ImGui::SameLine(0.f, ImGui::GetStyle().ItemSpacing.x);
+    ImGui::PushStyleColor(ImGuiCol_Text,           ImVec4(0.9f, 0.6f, 1.f, 1.f));
+    ImGui::TextUnformatted("Abs");
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0.f, 4.f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,        ImVec4(0.22f, 0.10f, 0.35f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.35f, 0.18f, 0.50f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,  ImVec4(0.45f, 0.22f, 0.65f, 1.f));
+    ImGui::SetNextItemWidth(DragW);
+    float AbsScale = Input.AbsoluteScale;
+    if (ImGui::DragFloat("##SABS", &AbsScale, 0.001f, 0.00001f, 100.f, "%.4f"))
+    {
+        Out.AbsoluteScale  = AbsScale;
+        Out.bIsScaleChanged = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    // Uniform scale reset button
+    ImGui::Spacing();
+    if (ImGui::Button("Reset", ImVec2(-1.f, 0.f)))
+    {
+        ScaleFactor[0] = ScaleFactor[1] = ScaleFactor[2] = 1.f;
+        bChanged = true;
+    }
+
+    if (bChanged)
+    {
+        Out.ModelScale      = { ScaleFactor[0], ScaleFactor[1], ScaleFactor[2] };
+        Out.AbsoluteScale   = AbsScale;
+        Out.bIsScaleChanged = true;
+    }
+
+    ImGui::End();
 }
 
 #endif // IS_OBJ_VIEWER

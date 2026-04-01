@@ -53,6 +53,38 @@ namespace
         ExpandLocal(InOutMin, InOutMax, P2);
         ExpandLocal(InOutMin, InOutMax, P3);
     }
+
+    bool BuildSpriteQuadWorldBounds(const FSceneView& InSceneView, const FSpriteRenderItem& InItem,
+                                    FVector& OutMin, FVector& OutMax)
+    {
+        const FMatrix& PlacementWorld = InItem.Placement.World;
+        const FVector SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
+
+        FVector RightAxis;
+        FVector UpAxis;
+
+        if (InItem.Placement.IsBillboard())
+        {
+            const FMatrix CameraWorld = InSceneView.GetViewMatrix().GetInverse();
+            RightAxis = CameraWorld.GetRightVector();
+            UpAxis = CameraWorld.GetUpVector();
+
+            const FVector WorldScale = PlacementWorld.GetScaleVector();
+            RightAxis = RightAxis * WorldScale.X;
+            UpAxis = UpAxis * WorldScale.Z;
+        }
+        else
+        {
+            const FVector WorldScale = PlacementWorld.GetScaleVector();
+            RightAxis = PlacementWorld.GetForwardVector().GetSafeNormal() * WorldScale.X;
+            UpAxis = PlacementWorld.GetUpVector().GetSafeNormal() * WorldScale.Z;
+        }
+
+        OutMin = FVector(FLT_MAX, FLT_MAX, FLT_MAX);
+        OutMax = FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        AddQuadBounds(OutMin, OutMax, SpriteOrigin, RightAxis, UpAxis);
+        return true;
+    }
 } // namespace
 
 void FAABBSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
@@ -70,6 +102,10 @@ void FAABBSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
     for (const FStaticMeshRenderItem& Item : InSceneRenderData.StaticMeshes)
     {
         SubmitStaticMeshBounds(InLineRenderer, Item);
+    }
+    for (const FSpriteRenderItem& Item : InSceneRenderData.Sprites)
+    {
+        SubmitSpriteBounds(InLineRenderer, *InSceneRenderData.SceneView, Item);
     }
     for (const FTextRenderItem& Item : InSceneRenderData.Texts)
     {
@@ -190,6 +226,25 @@ void FAABBSubmitter::SubmitStaticMeshBounds(FD3D11LineBatchRenderer&     InLineR
                                             const FStaticMeshRenderItem& InItem)
 {
     SubmitWorldAABB(InLineRenderer, InItem.WorldAABB, InItem.State);
+}
+
+void FAABBSubmitter::SubmitSpriteBounds(FD3D11LineBatchRenderer& InLineRenderer,
+                                        const FSceneView& InSceneView,
+                                        const FSpriteRenderItem& InItem)
+{
+    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds)
+    {
+        return;
+    }
+
+    FVector Min;
+    FVector Max;
+    if (!BuildSpriteQuadWorldBounds(InSceneView, InItem, Min, Max))
+    {
+        return;
+    }
+
+    SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
 }
 
 void FAABBSubmitter::SubmitTextBounds(FD3D11LineBatchRenderer& InLineRenderer,
