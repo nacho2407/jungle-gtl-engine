@@ -146,6 +146,7 @@ private:
 	/** 통합된 렌더링 명령 리스트 */
 	TArray<FRenderCommand> CommandList;
 	size_t PrevCommandCount = 0;
+	uint64 NextSubmissionOrder = 0;
 
 	/** 라인 렌더링용 임시 리소스 */
 	TArray<FVertex> LineVertices;

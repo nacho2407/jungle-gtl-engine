@@ -1,5 +1,6 @@
 #include "SlateApplication.h"
 #include "Viewport/Viewport.h"
+#include <algorithm>
 #include <utility>
 
 // ────────────────────────────────────────────────────────────
@@ -302,21 +303,55 @@ void FSlateApplication::Paint(SWidget& Painter)
 	for (auto* W : OverlayWidgets) W->Paint(Painter);
 }
 
+SWidget* FSlateApplication::FindTopOverlayWidgetAt(FPoint Point) const
+{
+	for (int32 i = static_cast<int32>(OverlayWidgets.size()) - 1; i >= 0; --i)
+	{
+		SWidget* Widget = OverlayWidgets[i];
+		if (Widget && Widget->HitTest(Point))
+		{
+			return Widget;
+		}
+	}
+
+	return nullptr;
+}
+
+void FSlateApplication::BringOverlayWidgetToFront(SWidget* Widget)
+{
+	if (!Widget)
+	{
+		return;
+	}
+
+	auto It = std::find(OverlayWidgets.begin(), OverlayWidgets.end(), Widget);
+	if (It == OverlayWidgets.end() || std::next(It) == OverlayWidgets.end())
+	{
+		return;
+	}
+
+	OverlayWidgets.erase(It);
+	OverlayWidgets.push_back(Widget);
+}
+
 // ────────────────────────────────────────────────────────────
 // Mouse input
 // ────────────────────────────────────────────────────────────
 void FSlateApplication::ProcessMouseDown(int32 X, int32 Y)
 {
+	const FPoint Point{ X, Y };
+
 	for (int32 i = static_cast<int32>(OverlayWidgets.size()) - 1; i >= 0; --i)
 	{
 		SWidget* W = OverlayWidgets[i];
-		if (!W || !W->HitTest({ X, Y }))
+		if (!W || !W->HitTest(Point))
 		{
 			continue;
 		}
 
 		if (W->OnMouseDown(X, Y))
 		{
+			BringOverlayWidgetToFront(W);
 			return;
 		}
 	}
@@ -348,13 +383,10 @@ void FSlateApplication::ProcessMouseDown(int32 X, int32 Y)
 
 void FSlateApplication::ProcessMouseDoubleClick(int32 X, int32 Y)
 {
-	for (int32 i = static_cast<int32>(OverlayWidgets.size()) - 1; i >= 0; --i)
+	if (SWidget* Overlay = FindTopOverlayWidgetAt({ X, Y }))
 	{
-		SWidget* W = OverlayWidgets[i];
-		if (W && W->HitTest({ X, Y }))
-		{
-			return;
-		}
+		BringOverlayWidgetToFront(Overlay);
+		return;
 	}
 
 	for (int i = 0; i < ActiveViewportCount; i++)
@@ -392,6 +424,13 @@ void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 		CurrentCursor = DraggingSplitter->GetCursor();
 		DraggingSplitter->OnMouseMove(X, Y);
 		PerformLayout();
+		return;
+	}
+
+	if (SWidget* Overlay = FindTopOverlayWidgetAt({ X, Y }))
+	{
+		HoveredViewportId = INVALID_VIEWPORT_ID;
+		CurrentCursor = Overlay->GetCursor();
 		return;
 	}
 

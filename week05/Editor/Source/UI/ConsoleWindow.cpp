@@ -39,6 +39,8 @@ FConsoleWindow::FConsoleWindow()
 	Commands.push_back("HELP");
 	Commands.push_back("HISTORY");
 	Commands.push_back("CLEAR");
+	Commands.push_back("stat fps");
+	Commands.push_back("stat memory");
 
 	AddLog("Welcome to Console.");
 }

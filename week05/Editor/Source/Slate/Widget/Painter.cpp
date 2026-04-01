@@ -94,110 +94,172 @@ void FPainter::SetScreenSize(int32 Width, int32 Height)
 	);
 }
 
+FDynamicMesh* FPainter::CreateFrameMesh(EMeshTopology Topology)
+{
+	auto Mesh = std::make_unique<FDynamicMesh>();
+	Mesh->Topology = Topology;
+	Mesh->bIsDirty = true;
+
+	FDynamicMesh* RawMesh = Mesh.get();
+	FrameMeshes.push_back(std::move(Mesh));
+	return RawMesh;
+}
+
+FDynamicMaterial* FPainter::GetOrCreateFontMaterial(uint32 Color)
+{
+	if (!Renderer)
+	{
+		return nullptr;
+	}
+
+	auto MatIt = FontMaterialByColor.find(Color);
+	if (MatIt != FontMaterialByColor.end())
+	{
+		return MatIt->second.get();
+	}
+
+	auto Material = Renderer->GetTextRenderer().GetFontMaterial()->CreateDynamicMaterial();
+	if (!Material)
+	{
+		return nullptr;
+	}
+
+	const FVector4 C = ToColor(Color);
+	Material->SetVectorParameter("TextColor", C);
+
+	FDepthStencilStateOption DepthOpt = Material->GetDepthStencilOption();
+	DepthOpt.DepthEnable = false;
+	DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
+	Material->SetDepthStencilOption(DepthOpt);
+	Material->SetDepthStencilState(DSS);
+
+	FDynamicMaterial* RawMaterial = Material.get();
+	FontMaterialByColor[Color] = std::move(Material);
+	return RawMaterial;
+}
+
+void FPainter::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material)
+{
+	if (!Mesh || !Material || Mesh->Vertices.empty())
+	{
+		return;
+	}
+
+	FRenderCommand Command;
+	Command.RenderMesh = Mesh;
+	Command.Material = Material;
+	Command.WorldMatrix = FMatrix::Identity;
+	Command.RenderLayer = ERenderLayer::UI;
+	UIQueue.AddCommand(Command);
+}
+
 void FPainter::DrawRect(FRect InRect, uint32 Color)
 {
 	if (!Renderer || !InRect.IsValid()) return;
 
-	auto Mesh = std::make_unique<FDynamicMesh>();
-	Mesh->Topology = EMeshTopology::EMT_LineList;
+	FDynamicMesh* Mesh = CreateFrameMesh(EMeshTopology::EMT_LineList);
+	if (!Mesh) return;
 
 	const FVector4 C = ToColor(Color);
-	auto V = [&](float X, float Y) {
-		FVertex Out{};
-		Out.Position = FVector(X, Y, 0.0f);
-		Out.Color = C;
-		Out.Normal = FVector(0.0f, 0.0f, 1.0f);
-		Out.UV = FVector2(0, 0);
-		return Out;
+	auto V = [&](float X, float Y)
+		{
+			FVertex Out{};
+			Out.Position = FVector(X, Y, 0.0f);
+			Out.Color = C;
+			Out.Normal = FVector(0.0f, 0.0f, 1.0f);
+			Out.UV = FVector2(0, 0);
+			return Out;
 		};
 
-	Mesh->Vertices = {
-		V((float)InRect.X, (float)InRect.Y),
-		V((float)(InRect.X + InRect.Width), (float)InRect.Y),
-		V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)),
-		V((float)InRect.X, (float)(InRect.Y + InRect.Height))
-	};
-	Mesh->Indices = { 0, 1, 1, 2, 2, 3, 3, 0 };
-	Mesh->bIsDirty = true;
+	const uint32 Base = static_cast<uint32>(Mesh->Vertices.size());
 
-	FDynamicMesh* MeshPtr = Mesh.get();
-	FrameMeshes.push_back(std::move(Mesh));
-	
-	FRenderCommand Commend;
-	Commend.RenderMesh = MeshPtr;
-	Commend.Material = UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial();
-	Commend.WorldMatrix = FMatrix::Identity;
-	Commend.RenderLayer = ERenderLayer::UI;
-	UIQueue.AddCommand(Commend);
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
+
+	Mesh->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 1);
+
+	Mesh->Indices.push_back(Base + 1);
+	Mesh->Indices.push_back(Base + 2);
+
+	Mesh->Indices.push_back(Base + 2);
+	Mesh->Indices.push_back(Base + 3);
+
+	Mesh->Indices.push_back(Base + 3);
+	Mesh->Indices.push_back(Base + 0);
+
+	Mesh->bIsDirty = true;
+	EnqueueMesh(Mesh, UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial());
 }
 
 void FPainter::DrawRectFilled(FRect InRect, uint32 Color)
 {
 	if (!Renderer || !InRect.IsValid()) return;
 
-	auto Mesh = std::make_unique<FDynamicMesh>();
-	Mesh->Topology = EMeshTopology::EMT_TriangleList;
+	FDynamicMesh* Mesh = CreateFrameMesh(EMeshTopology::EMT_TriangleList);
+	if (!Mesh) return;
 
 	const FVector4 C = ToColor(Color);
-	auto V = [&](float X, float Y) {
-		FVertex Out{};
-		Out.Position = FVector(X, Y, 0.0f);
-		Out.Color = C;
-		Out.Normal = FVector(0.0f, 0.0f, 1.0f);
-		Out.UV = FVector2(0, 0);
-		return Out;
+	auto V = [&](float X, float Y)
+		{
+			FVertex Out{};
+			Out.Position = FVector(X, Y, 0.0f);
+			Out.Color = C;
+			Out.Normal = FVector(0.0f, 0.0f, 1.0f);
+			Out.UV = FVector2(0, 0);
+			return Out;
 		};
 
-	Mesh->Vertices = {
-		V((float)InRect.X, (float)InRect.Y),
-		V((float)(InRect.X + InRect.Width), (float)InRect.Y),
-		V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)),
-		V((float)InRect.X, (float)(InRect.Y + InRect.Height))
-	};
-	Mesh->Indices = { 0, 1, 2, 0, 2, 3 };
+	const uint32 Base = static_cast<uint32>(Mesh->Vertices.size());
+
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
+
+	Mesh->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 1);
+	Mesh->Indices.push_back(Base + 2);
+
+	Mesh->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 2);
+	Mesh->Indices.push_back(Base + 3);
+
 	Mesh->bIsDirty = true;
-
-	FDynamicMesh* MeshPtr = Mesh.get();
-	FrameMeshes.push_back(std::move(Mesh));
-
-	FRenderCommand Commend;
-	Commend.RenderMesh = MeshPtr;
-	Commend.Material = UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial();
-	Commend.WorldMatrix = FMatrix::Identity;
-	Commend.RenderLayer = ERenderLayer::UI;
-	UIQueue.AddCommand(Commend);
+	EnqueueMesh(Mesh, UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial());
 }
 
 void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
 {
 	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return;
 
-	FDynamicMaterial* FontMat = nullptr;
-	auto It = FontMaterialByColor.find(Color);
-	if (It == FontMaterialByColor.end())
+	FDynamicMaterial* FontMat = GetOrCreateFontMaterial(Color);
+	if (!FontMat) return;
+
+	FDynamicMesh* Mesh = CreateFrameMesh(InOutMesh->Topology);
+	if (!Mesh) return;
+
+	for (const FVertex& Src : InOutMesh->Vertices)
 	{
-		auto M = Renderer->GetTextRenderer().GetFontMaterial()->CreateDynamicMaterial();
-		if (!M) return;
-		const FVector4 C = ToColor(Color);
-		M->SetVectorParameter("TextColor", C);
-		FontMat = M.get();
-		FontMaterialByColor[Color] = std::move(M);
-	}
-	else
-	{
-		FontMat = It->second.get();
+		FVertex Dst = Src;
+		Dst.Position = FVector(
+			(float)Point.X + Src.Position.X * FontSize,
+			(float)Point.Y + Src.Position.Y * FontSize,
+			0.0f
+		);
+		Mesh->Vertices.push_back(Dst);
 	}
 
-	FRenderCommand Command;
-	Command.RenderMesh = InOutMesh;
-	Command.Material = FontMat;
-	Command.WorldMatrix = FMatrix::MakeWorld(
-		{ (float)Point.X, (float)Point.Y, 0 },
-		FMatrix::Identity,
-		FVector::One() * FontSize
-	);
-	Command.RenderLayer = ERenderLayer::UI;
-	UIQueue.AddCommand(Command);
+	for (const auto& Idx : InOutMesh->Indices)
+	{
+		Mesh->Indices.push_back(static_cast<uint32>(Idx));
+	}
+
+	Mesh->bIsDirty = true;
+	EnqueueMesh(Mesh, FontMat);
 }
 
 FVector2 FPainter::MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
@@ -220,7 +282,12 @@ void FPainter::Flush()
 	if (!Renderer) return;
 	UIQueue.ViewMatrix = FMatrix::Identity;
 	UIQueue.ProjectionMatrix = OrthoProj;
-	Renderer->SubmitCommands(UIQueue);
-	Renderer->ExecuteCommands();
+
+	if (!UIQueue.Commands.empty())
+	{
+		Renderer->SubmitCommands(UIQueue);
+		Renderer->ExecuteCommands();
+	}
 	UIQueue.Clear();
+	FrameMeshes.clear();
 }

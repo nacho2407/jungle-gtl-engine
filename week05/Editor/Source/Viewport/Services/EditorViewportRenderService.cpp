@@ -17,6 +17,25 @@
 #include "Asset/ObjManager.h"
 #include "Slate/Widget/Painter.h"
 
+namespace
+{
+	void BuildGridVectors(const FRenderCommandQueue& Queue, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
+	{
+		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
+		OutViewForward = ViewInverse.GetForwardVector().GetSafeNormal();
+
+		if (LocalState.ProjectionType == EViewportType::Perspective)
+		{
+			OutGridAxisU = FVector::ForwardVector;
+			OutGridAxisV = FVector::RightVector;
+			return;
+		}
+
+		OutGridAxisU = ViewInverse.GetRightVector().GetSafeNormal();
+		OutGridAxisV = ViewInverse.GetUpVector().GetSafeNormal();
+	}
+}
+
 
 void FEditorViewportRenderService::RenderAll(
 	FEngine* Engine,
@@ -106,8 +125,16 @@ void FEditorViewportRenderService::RenderAll(
 
 		if (Entry.LocalState.bShowGrid && GridMesh && GridMaterial)
 		{
+			FVector GridAxisU = FVector::ForwardVector;
+			FVector GridAxisV = FVector::RightVector;
+			FVector ViewForward = FVector::ForwardVector;
+			BuildGridVectors(Queue, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
+
 			GridMaterial->SetParameterData("GridSize", &Entry.LocalState.GridSize, 4);
 			GridMaterial->SetParameterData("LineThickness", &Entry.LocalState.LineThickness, 4);
+			GridMaterial->SetParameterData("GridAxisU", &GridAxisU, sizeof(FVector));
+			GridMaterial->SetParameterData("GridAxisV", &GridAxisV, sizeof(FVector));
+			GridMaterial->SetParameterData("ViewForward", &ViewForward, sizeof(FVector));
 
 			FRenderCommand GridCommand;
 			GridCommand.RenderMesh = GridMesh;

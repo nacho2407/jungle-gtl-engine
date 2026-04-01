@@ -18,6 +18,7 @@ struct ENGINE_API FRenderCommand
 	FMatrix WorldMatrix;
 	FMaterial* Material = nullptr;
 	uint64 SortKey = 0;
+	uint64 SubmissionOrder = 0;
 
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;

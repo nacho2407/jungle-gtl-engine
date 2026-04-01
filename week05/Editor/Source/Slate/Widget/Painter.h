@@ -22,6 +22,10 @@ public:
 	void Flush();
 
 private:
+	FDynamicMesh* CreateFrameMesh(EMeshTopology Topology);
+	FDynamicMaterial* GetOrCreateFontMaterial(uint32 Color);
+	void EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material);
+
 	FRenderer* Renderer;
 	FMatrix OrthoProj;
 	FRenderCommandQueue UIQueue;
