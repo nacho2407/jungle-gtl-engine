@@ -2,18 +2,13 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Render/Pipeline/RenderCommand.h"
 
 class UEditorEngine;
 
 struct FOverlayStatGroup
 {
 	TArray<FString> Lines;
-};
-
-struct FOverlayStatLine
-{
-	FString Text;
-	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
 };
 
 struct FOverlayStatLayout

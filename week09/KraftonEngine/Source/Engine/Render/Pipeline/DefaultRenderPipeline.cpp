@@ -25,8 +25,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		FShowFlags ShowFlags;
 		EViewMode ViewMode = EViewMode::Lit;
 
-		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-			Camera->GetForwardVector(), Camera->GetRightVector(), Camera->GetUpVector());
+		Bus.SetCameraInfo(Camera);
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
 		Collector.CollectWorld(World, {}, Bus);

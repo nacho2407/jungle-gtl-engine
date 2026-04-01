@@ -35,35 +35,24 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	if (!Camera) return;
 
 	FViewport* VP = VC->GetViewport();
+	if (!VP) return;
+
 	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
 
-	// 지연 리사이즈 적용
-	if (VP && VP->ApplyPendingResize())
+	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
+	if (VP->ApplyPendingResize())
 	{
 		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
 	}
-
-	// 오프스크린 RT 바인딩
-	if (VP && VP->GetRTV())
-	{
-		const float ClearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
-		ID3D11RenderTargetView* RTV = VP->GetRTV();
-
-		Ctx->ClearRenderTargetView(RTV, ClearColor);
-		Ctx->ClearDepthStencilView(VP->GetDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		Ctx->OMSetRenderTargets(1, &RTV, VP->GetDSV());
-
-		D3D11_VIEWPORT VPRect = VP->GetViewportRect();
-		Ctx->RSSetViewports(1, &VPRect);
-	}
+	const float ClearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
+	VP->BeginRender(Ctx, ClearColor);
 
 	// Bus 설정
 	Bus.Clear();
 
 	UWorld* World = Engine->GetWorld();
 
-	Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(),
-		Camera->GetForwardVector(), Camera->GetRightVector(), Camera->GetUpVector());
+	Bus.SetCameraInfo(Camera);
 
 	FShowFlags ShowFlags;
 	ShowFlags.bGrid = false;
@@ -71,11 +60,7 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
 	Bus.SetRenderSettings(EViewMode::Lit, ShowFlags);
-
-	if (VP)
-	{
-		Bus.SetViewportSize(static_cast<float>(VP->GetWidth()), static_cast<float>(VP->GetHeight()));
-	}
+	Bus.SetViewportInfo(VP);
 
 	// 월드 수집 (선택 액터 없음)
 	TArray<AActor*> EmptySelection;
