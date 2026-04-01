@@ -2,6 +2,7 @@
 #include "ShaderType.h"
 #include "Shader.h"
 #include "ShaderMap.h"
+#include "ShaderResource.h"
 #include "Material.h"
 #include "MaterialManager.h"
 #include "Core/Paths.h"
@@ -18,10 +19,52 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
-static FVector GetCameraWorldPositionFromViewMatrix(const FMatrix& ViewMatrix)
+namespace
 {
-	const FMatrix InvView = ViewMatrix.GetInverse();
-	return FVector(InvView.M[3][0], InvView.M[3][1], InvView.M[3][2]);
+	struct FOutlinePostConstantBuffer
+	{
+		FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+		float OutlineThickness = 2.0f;
+		float OutlineThreshold = 0.1f;
+		float Padding[2] = {};
+	};
+
+	FVector GetCameraWorldPositionFromViewMatrix(const FMatrix& ViewMatrix)
+	{
+		const FMatrix InvView = ViewMatrix.GetInverse();
+		return FVector(InvView.M[3][0], InvView.M[3][1], InvView.M[3][2]);
+	}
+
+	bool GetRenderTargetSize(ID3D11RenderTargetView* RenderTargetView, uint32& OutWidth, uint32& OutHeight)
+	{
+		if (!RenderTargetView)
+		{
+			return false;
+		}
+
+		ID3D11Resource* Resource = nullptr;
+		RenderTargetView->GetResource(&Resource);
+		if (!Resource)
+		{
+			return false;
+		}
+
+		ID3D11Texture2D* Texture = nullptr;
+		const HRESULT Hr = Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture));
+		Resource->Release();
+		if (FAILED(Hr) || !Texture)
+		{
+			return false;
+		}
+
+		D3D11_TEXTURE2D_DESC Desc = {};
+		Texture->GetDesc(&Desc);
+		Texture->Release();
+
+		OutWidth = Desc.Width;
+		OutHeight = Desc.Height;
+		return true;
+	}
 }
 
 FRenderer::FRenderer(HWND InHwnd, int32 InWidth, int32 InHeight)
@@ -552,7 +595,10 @@ bool FRenderer::CreateConstantBuffers()
 	if (FAILED(Device->CreateBuffer(&Desc, nullptr, &FrameConstantBuffer))) return false;
 
 	Desc.ByteWidth = sizeof(FObjectConstantBuffer);
-	return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &ObjectConstantBuffer));
+	if (FAILED(Device->CreateBuffer(&Desc, nullptr, &ObjectConstantBuffer))) return false;
+
+	Desc.ByteWidth = sizeof(FOutlinePostConstantBuffer);
+	return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &OutlinePostConstantBuffer));
 }
 
 bool FRenderer::CreateSamplers()
@@ -566,8 +612,83 @@ bool FRenderer::CreateSamplers()
 	SamplerDesc.MinLOD = 0;
 	SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	HRESULT hr = Device->CreateSamplerState(&SamplerDesc, &NormalSampler);
-	return SUCCEEDED(hr);
+	HRESULT Hr = Device->CreateSamplerState(&SamplerDesc, &NormalSampler);
+	if (FAILED(Hr))
+	{
+		return false;
+	}
+
+	D3D11_SAMPLER_DESC OutlineSamplerDesc = SamplerDesc;
+	OutlineSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	OutlineSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	OutlineSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	OutlineSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	return SUCCEEDED(Device->CreateSamplerState(&OutlineSamplerDesc, &OutlineSampler));
+}
+
+bool FRenderer::EnsureOutlineMaskResources(uint32 Width, uint32 Height)
+{
+	if (OutlineMaskTexture && OutlineMaskRTV && OutlineMaskSRV &&
+		OutlineMaskWidth == Width && OutlineMaskHeight == Height)
+	{
+		return true;
+	}
+
+	ReleaseOutlineMaskResources();
+
+	D3D11_TEXTURE2D_DESC Desc = {};
+	Desc.Width = Width;
+	Desc.Height = Height;
+	Desc.MipLevels = 1;
+	Desc.ArraySize = 1;
+	Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	Desc.SampleDesc.Count = 1;
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	if (FAILED(Device->CreateTexture2D(&Desc, nullptr, &OutlineMaskTexture)))
+	{
+		ReleaseOutlineMaskResources();
+		return false;
+	}
+
+	if (FAILED(Device->CreateRenderTargetView(OutlineMaskTexture, nullptr, &OutlineMaskRTV)))
+	{
+		ReleaseOutlineMaskResources();
+		return false;
+	}
+
+	if (FAILED(Device->CreateShaderResourceView(OutlineMaskTexture, nullptr, &OutlineMaskSRV)))
+	{
+		ReleaseOutlineMaskResources();
+		return false;
+	}
+
+	OutlineMaskWidth = Width;
+	OutlineMaskHeight = Height;
+	return true;
+}
+
+void FRenderer::ReleaseOutlineMaskResources()
+{
+	if (OutlineMaskSRV)
+	{
+		OutlineMaskSRV->Release();
+		OutlineMaskSRV = nullptr;
+	}
+	if (OutlineMaskRTV)
+	{
+		OutlineMaskRTV->Release();
+		OutlineMaskRTV = nullptr;
+	}
+	if (OutlineMaskTexture)
+	{
+		OutlineMaskTexture->Release();
+		OutlineMaskTexture = nullptr;
+	}
+
+	OutlineMaskWidth = 0;
+	OutlineMaskHeight = 0;
 }
 
 void FRenderer::UpdateFrameConstantBuffer()
@@ -575,7 +696,7 @@ void FRenderer::UpdateFrameConstantBuffer()
 	FFrameConstantBuffer CBData;
 	CBData.View = ViewMatrix.GetTransposed();
 	CBData.Projection = ProjectionMatrix.GetTransposed();
-	CBData.Time = GEngine->GetTimer().GetTotalTime();
+	CBData.Time = static_cast<float>(GEngine->GetTimer().GetTotalTime());
 	CBData.DeltaTime = GEngine->GetDeltaTime();
 	D3D11_MAPPED_SUBRESOURCE Mapped;
 	if (SUCCEEDED(DeviceContext->Map(FrameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
@@ -595,6 +716,24 @@ void FRenderer::UpdateObjectConstantBuffer(const FMatrix& WorldMatrix)
 		memcpy(Mapped.pData, &CBData, sizeof(CBData));
 		DeviceContext->Unmap(ObjectConstantBuffer, 0);
 	}
+}
+
+void FRenderer::UpdateOutlinePostConstantBuffer(const FVector4& OutlineColor, float OutlineThickness, float OutlineThreshold)
+{
+	FOutlinePostConstantBuffer CBData = {};
+	CBData.OutlineColor = OutlineColor;
+	CBData.OutlineThickness = OutlineThickness;
+	CBData.OutlineThreshold = OutlineThreshold;
+
+	D3D11_MAPPED_SUBRESOURCE Mapped;
+	if (SUCCEEDED(DeviceContext->Map(OutlinePostConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+	{
+		memcpy(Mapped.pData, &CBData, sizeof(CBData));
+		DeviceContext->Unmap(OutlinePostConstantBuffer, 0);
+	}
+
+	ID3D11Buffer* Buffer = OutlinePostConstantBuffer;
+	DeviceContext->PSSetConstantBuffers(0, 1, &Buffer);
 }
 
 bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV)
@@ -621,33 +760,139 @@ bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath,
 
 bool FRenderer::InitOutlineResources()
 {
-	if (StencilWriteState && StencilTestState && OutlinePS) return true;
+	if (StencilWriteState && StencilEqualState && StencilNotEqualState &&
+		OutlineBlendState && OutlineRasterizerState && OutlineSampler &&
+		OutlinePostVS && OutlineMaskPS && OutlineSobelPS && OutlinePostConstantBuffer)
+	{
+		return true;
+	}
 
-	D3D11_DEPTH_STENCIL_DESC WriteDesc = {};
-	WriteDesc.DepthEnable = TRUE; WriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; WriteDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	WriteDesc.StencilEnable = TRUE; WriteDesc.StencilReadMask = 0xFF; WriteDesc.StencilWriteMask = 0xFF;
-	WriteDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE; WriteDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
-	WriteDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE; WriteDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	WriteDesc.BackFace = WriteDesc.FrontFace;
-	if (FAILED(Device->CreateDepthStencilState(&WriteDesc, &StencilWriteState))) return false;
+	if (!StencilWriteState)
+	{
+		D3D11_DEPTH_STENCIL_DESC WriteDesc = {};
+		WriteDesc.DepthEnable = FALSE;
+		WriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		WriteDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		WriteDesc.StencilEnable = TRUE;
+		WriteDesc.StencilReadMask = 0xFF;
+		WriteDesc.StencilWriteMask = 0xFF;
+		WriteDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;
+		WriteDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;
+		WriteDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+		WriteDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		WriteDesc.BackFace = WriteDesc.FrontFace;
+		if (FAILED(Device->CreateDepthStencilState(&WriteDesc, &StencilWriteState)))
+		{
+			return false;
+		}
+	}
 
-	D3D11_DEPTH_STENCIL_DESC TestDesc = {};
-	TestDesc.DepthEnable = FALSE; TestDesc.StencilEnable = TRUE; TestDesc.StencilReadMask = 0xFF; TestDesc.StencilWriteMask = 0xFF;
-	TestDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP; TestDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-	TestDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP; TestDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-	TestDesc.BackFace = TestDesc.FrontFace;
-	if (FAILED(Device->CreateDepthStencilState(&TestDesc, &StencilTestState))) return false;
+	if (!StencilEqualState)
+	{
+		D3D11_DEPTH_STENCIL_DESC EqualDesc = {};
+		EqualDesc.DepthEnable = FALSE;
+		EqualDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		EqualDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		EqualDesc.StencilEnable = TRUE;
+		EqualDesc.StencilReadMask = 0xFF;
+		EqualDesc.StencilWriteMask = 0x00;
+		EqualDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		EqualDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		EqualDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		EqualDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+		EqualDesc.BackFace = EqualDesc.FrontFace;
+		if (FAILED(Device->CreateDepthStencilState(&EqualDesc, &StencilEqualState)))
+		{
+			return false;
+		}
+	}
 
-	FString PSPath = (FPaths::ShaderDir() / "OutlinePixelShader.hlsl").string();
-	OutlinePS = FShaderMap::Get().GetOrCreatePixelShader(Device, FPaths::ToWide(PSPath).c_str());
-	return OutlinePS != nullptr;
+	if (!StencilNotEqualState)
+	{
+		D3D11_DEPTH_STENCIL_DESC NotEqualDesc = {};
+		NotEqualDesc.DepthEnable = FALSE;
+		NotEqualDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		NotEqualDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		NotEqualDesc.StencilEnable = TRUE;
+		NotEqualDesc.StencilReadMask = 0xFF;
+		NotEqualDesc.StencilWriteMask = 0x00;
+		NotEqualDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		NotEqualDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		NotEqualDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		NotEqualDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+		NotEqualDesc.BackFace = NotEqualDesc.FrontFace;
+		if (FAILED(Device->CreateDepthStencilState(&NotEqualDesc, &StencilNotEqualState)))
+		{
+			return false;
+		}
+	}
+
+	if (!OutlineBlendState)
+	{
+		D3D11_BLEND_DESC BlendDesc = {};
+		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		if (FAILED(Device->CreateBlendState(&BlendDesc, &OutlineBlendState)))
+		{
+			return false;
+		}
+	}
+
+	if (!OutlineRasterizerState)
+	{
+		D3D11_RASTERIZER_DESC RasterDesc = {};
+		RasterDesc.FillMode = D3D11_FILL_SOLID;
+		RasterDesc.CullMode = D3D11_CULL_NONE;
+		RasterDesc.DepthClipEnable = TRUE;
+		if (FAILED(Device->CreateRasterizerState(&RasterDesc, &OutlineRasterizerState)))
+		{
+			return false;
+		}
+	}
+
+	const std::wstring ShaderDir = FPaths::ShaderDir();
+	if (!OutlinePostVS)
+	{
+		auto Resource = FShaderResource::GetOrCompile((ShaderDir + L"OutlinePostVertexShader.hlsl").c_str(), "main", "vs_5_0");
+		if (!Resource || FAILED(Device->CreateVertexShader(Resource->GetBufferPointer(), Resource->GetBufferSize(), nullptr, &OutlinePostVS)))
+		{
+			return false;
+		}
+	}
+
+	if (!OutlineMaskPS)
+	{
+		auto Resource = FShaderResource::GetOrCompile((ShaderDir + L"OutlineMaskPixelShader.hlsl").c_str(), "main", "ps_5_0");
+		if (!Resource || FAILED(Device->CreatePixelShader(Resource->GetBufferPointer(), Resource->GetBufferSize(), nullptr, &OutlineMaskPS)))
+		{
+			return false;
+		}
+	}
+
+	if (!OutlineSobelPS)
+	{
+		auto Resource = FShaderResource::GetOrCompile((ShaderDir + L"OutlineSobelPixelShader.hlsl").c_str(), "main", "ps_5_0");
+		if (!Resource || FAILED(Device->CreatePixelShader(Resource->GetBufferPointer(), Resource->GetBufferSize(), nullptr, &OutlineSobelPS)))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
-void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, float OutlineScale)
+void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 {
-	if (!Mesh || !InitOutlineResources()) return;
-	Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
-	Mesh->Bind(DeviceContext);
+	if (Items.empty() || !InitOutlineResources())
+	{
+		return;
+	}
 
 	ID3D11RenderTargetView* BoundRTV = nullptr;
 	ID3D11DepthStencilView* BoundDSV = nullptr;
@@ -659,36 +904,84 @@ void FRenderer::RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, flo
 		return;
 	}
 
+	uint32 TargetWidth = 0;
+	uint32 TargetHeight = 0;
+	if (!GetRenderTargetSize(BoundRTV, TargetWidth, TargetHeight) || !EnsureOutlineMaskResources(TargetWidth, TargetHeight))
+	{
+		BoundRTV->Release();
+		BoundDSV->Release();
+		return;
+	}
+
+	constexpr float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
+	constexpr float BlendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	ID3D11Buffer* NullCB = nullptr;
+
+	DeviceContext->ClearDepthStencilView(BoundDSV, D3D11_CLEAR_STENCIL, 1.0f, 0);
+	SetConstantBuffers();
+	ShaderManager.Bind(DeviceContext);
+	DeviceContext->PSSetShader(nullptr, nullptr, 0);
+	DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xFFFFFFFF);
+	DeviceContext->RSSetState(nullptr);
 	DeviceContext->OMSetRenderTargets(0, nullptr, BoundDSV);
 	DeviceContext->OMSetDepthStencilState(StencilWriteState, 1);
-	UpdateObjectConstantBuffer(WorldMatrix);
-	// DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
 
-	DeviceContext->PSSetShader(nullptr, nullptr, 0);
-	if (!Mesh->Indices.empty())
+	for (const FOutlineRenderItem& Item : Items)
 	{
-		DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
+		if (!Item.Mesh || !Item.Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext))
+		{
+			continue;
+		}
+
+		Item.Mesh->Bind(DeviceContext);
+		if (Item.Mesh->Topology != EMeshTopology::EMT_Undefined)
+		{
+			DeviceContext->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)Item.Mesh->Topology);
+		}
+
+		UpdateObjectConstantBuffer(Item.WorldMatrix);
+		if (!Item.Mesh->Indices.empty())
+		{
+			DeviceContext->DrawIndexed(static_cast<UINT>(Item.Mesh->Indices.size()), 0, 0);
+		}
+		else
+		{
+			DeviceContext->Draw(static_cast<UINT>(Item.Mesh->Vertices.size()), 0);
+		}
 	}
-	else
-	{
-		DeviceContext->Draw(static_cast<UINT>(Mesh->Vertices.size()), 0);
-	}
+
+	DeviceContext->PSSetShaderResources(0, 1, &NullSRV);
+	DeviceContext->OMSetRenderTargets(1, &OutlineMaskRTV, BoundDSV);
+	DeviceContext->ClearRenderTargetView(OutlineMaskRTV, ClearColor);
+	DeviceContext->OMSetDepthStencilState(StencilEqualState, 1);
+	DeviceContext->RSSetState(OutlineRasterizerState);
+	DeviceContext->IASetInputLayout(nullptr);
+	DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DeviceContext->VSSetShader(OutlinePostVS, nullptr, 0);
+	DeviceContext->PSSetShader(OutlineMaskPS, nullptr, 0);
+	DeviceContext->Draw(3, 0);
 
 	DeviceContext->OMSetRenderTargets(1, &BoundRTV, BoundDSV);
-	DeviceContext->OMSetDepthStencilState(StencilTestState, 1);
-	UpdateObjectConstantBuffer(FMatrix::MakeScale(OutlineScale) * WorldMatrix);
-	OutlinePS->Bind(DeviceContext);
-	if (!Mesh->Indices.empty())
-	{
-		DeviceContext->DrawIndexed(static_cast<UINT>(Mesh->Indices.size()), 0, 0);
-	}
-	else
-	{
-		DeviceContext->Draw(static_cast<UINT>(Mesh->Vertices.size()), 0);
-	}
+	DeviceContext->OMSetDepthStencilState(StencilNotEqualState, 1);
+	DeviceContext->OMSetBlendState(OutlineBlendState, BlendFactor, 0xFFFFFFFF);
+	DeviceContext->VSSetShader(OutlinePostVS, nullptr, 0);
+	DeviceContext->PSSetShader(OutlineSobelPS, nullptr, 0);
+	UpdateOutlinePostConstantBuffer(FVector4(1.0f, 0.5f, 0.0f, 1.0f), 2.0f, 0.1f);
+	DeviceContext->PSSetShaderResources(0, 1, &OutlineMaskSRV);
+	DeviceContext->PSSetSamplers(0, 1, &OutlineSampler);
+	DeviceContext->Draw(3, 0);
 
-	ShaderManager.Bind(DeviceContext);
+	DeviceContext->PSSetShaderResources(0, 1, &NullSRV);
+	DeviceContext->PSSetConstantBuffers(0, 1, &NullCB);
+	DeviceContext->ClearDepthStencilView(BoundDSV, D3D11_CLEAR_STENCIL, 1.0f, 0);
+	DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xFFFFFFFF);
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
+	DeviceContext->RSSetState(nullptr);
+	ShaderManager.Bind(DeviceContext);
+	SetConstantBuffers();
+	RenderStateManager->RebindState();
 
 	BoundRTV->Release();
 	BoundDSV->Release();
@@ -747,14 +1040,23 @@ void FRenderer::Release()
 	TextRenderer.Release(); SubUVRenderer.Release();
 	ShaderManager.Release(); FShaderMap::Get().Clear(); FMaterialManager::Get().Clear();
 	if (NormalSampler) NormalSampler->Release();
+	if (OutlineSampler) OutlineSampler->Release();
 	if (StencilWriteState) StencilWriteState->Release();
-	if (StencilTestState) StencilTestState->Release();
-	OutlinePS.reset(); DefaultMaterial.reset();
+	if (StencilEqualState) StencilEqualState->Release();
+	if (StencilNotEqualState) StencilNotEqualState->Release();
+	if (OutlineBlendState) OutlineBlendState->Release();
+	if (OutlineRasterizerState) OutlineRasterizerState->Release();
+	if (OutlinePostVS) OutlinePostVS->Release();
+	if (OutlineMaskPS) OutlineMaskPS->Release();
+	if (OutlineSobelPS) OutlineSobelPS->Release();
+	ReleaseOutlineMaskResources();
+	DefaultMaterial.reset();
 	if (FolderIconSRV)FolderIconSRV->Release();
 	if (FileIconSRV)FileIconSRV->Release();
 	if (LineVertexBuffer) LineVertexBuffer->Release();
 	if (FrameConstantBuffer) FrameConstantBuffer->Release();
 	if (ObjectConstantBuffer) ObjectConstantBuffer->Release();
+	if (OutlinePostConstantBuffer) OutlinePostConstantBuffer->Release();
 	if (DepthStencilView) DepthStencilView->Release();
 	if (RenderTargetView) RenderTargetView->Release();
 	if (SwapChain) SwapChain->Release();
@@ -775,6 +1077,7 @@ void FRenderer::OnResize(int32 W, int32 H)
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 	if (RenderTargetView) { RenderTargetView->Release(); RenderTargetView = nullptr; }
 	if (DepthStencilView) { DepthStencilView->Release(); DepthStencilView = nullptr; }
+	ReleaseOutlineMaskResources();
 	SwapChain->ResizeBuffers(0, W, H, DXGI_FORMAT_UNKNOWN, 0);
 	CreateRenderTargetAndDepthStencil(W, H);
 	Viewport.Width = static_cast<float>(W); Viewport.Height = static_cast<float>(H);

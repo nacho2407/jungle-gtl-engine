@@ -4,6 +4,7 @@
 #include "MeshComponent.h"
 
 #include "Debug/EngineLog.h"
+#include "Renderer/MaterialManager.h"
 
 IMPLEMENT_RTTI(UMeshComponent, UPrimitiveComponent)
 
@@ -23,6 +24,41 @@ std::shared_ptr<FMaterial> UMeshComponent::GetMaterial(int32 Index) const
 {
 	if (Index >= 0 && Index < Materials.size()) return Materials[Index];
 	return nullptr;
+}
+
+void UMeshComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+
+	if (Ar.IsSaving())
+	{
+		TArray<FString> MaterialNames;
+		for (const std::shared_ptr<FMaterial>& Material : Materials)
+		{
+			if (Material) MaterialNames.push_back(Material->GetOriginName());
+			else MaterialNames.push_back("");
+		}
+		Ar.SerializeStringArray("Materials", MaterialNames);
+	}
+	else
+	{
+		if (Ar.Contains("Materials"))
+		{
+			TArray<FString> MaterialNames;
+			Ar.SerializeStringArray("Materials", MaterialNames);
+
+			Materials.clear();
+			for (const FString& MaterialName : MaterialNames)
+			{
+				if (!MaterialName.empty())
+				{
+					std::shared_ptr<FMaterial> LoadedMaterial = FMaterialManager::Get().FindByName(MaterialName);
+					Materials.push_back(LoadedMaterial);
+				}
+				else Materials.push_back(nullptr);
+			}
+		}
+	}
 }
 
 /*

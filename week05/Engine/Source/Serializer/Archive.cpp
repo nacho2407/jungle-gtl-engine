@@ -61,6 +61,37 @@ void FArchive::Serialize(const FString& Key, FVector4& Value)
 		Value = { xyzw[0].get<float>(), xyzw[1].get<float>(), xyzw[2].get<float>(),xyzw[3].get<float>() };
 	}
 }
+
+void FArchive::Serialize(const FString& Key, TArray<FArchive*>& SubArchives)
+{
+	json& Json = *static_cast<json*>(JsonData);
+
+	if (bSaving)
+	{
+		json Arr = json::array();
+		for (FArchive* SubAr : SubArchives)
+		{
+			if (SubAr)
+			{
+				Arr.push_back(*static_cast<json*>(SubAr->GetRawJson()));
+			}
+		}
+		Json[Key] = Arr;
+	}
+	else if (Json.contains(Key) && Json[Key].is_array())
+	{
+		for (auto& Element : Json[Key])
+		{
+			if (Element.is_object())
+			{
+				FArchive* NewAr = new FArchive(false);
+				*static_cast<json*>(NewAr->GetRawJson()) = Element;
+				SubArchives.push_back(NewAr);
+			}
+		}
+	}
+}
+
 void FArchive::SerializeUIntArray(const FString& Key, TArray<uint32>& Values)
 {
 	json& Json = *static_cast<json*>(JsonData);
@@ -76,6 +107,33 @@ void FArchive::SerializeUIntArray(const FString& Key, TArray<uint32>& Values)
 		Values.clear();
 		for (auto& Element : Json[Key])
 			Values.push_back(Element.get<uint32>());
+	}
+}
+
+void FArchive::SerializeStringArray(const FString& Key, TArray<FString>& Values)
+{
+	nlohmann::json* JsonObj = static_cast<nlohmann::json*>(JsonData);
+
+	if (bSaving)
+	{
+		nlohmann::json JsonArray = nlohmann::json::array();
+		for (const FString& Str : Values) JsonArray.push_back(Str);
+		(*JsonObj)[Key] = JsonArray;
+	}
+	else
+	{
+		if (JsonObj->contains(Key) && (*JsonObj)[Key].is_array())
+		{
+			Values.clear();
+			const nlohmann::json& JsonArray = (*JsonObj)[Key];
+			for (const auto& Element : JsonArray)
+			{
+				if (Element.is_string())
+				{
+					Values.push_back(Element.get<std::string>());
+				}
+			}
+		}
 	}
 }
 

@@ -295,6 +295,7 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
 			}())
 			{
+				TArray<FOutlineRenderItem> OutlineItems;
 				for (UActorComponent* Component : Selected->GetComponents())
 				{
 					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
@@ -304,11 +305,15 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
 					if (PrimitiveComponent->GetRenderMesh())
 					{
-						Renderer->RenderOutline(
-							PrimitiveComponent->GetRenderMesh(),
-							PrimitiveComponent->GetWorldTransform()
-						);
+						FOutlineRenderItem& Item = OutlineItems.emplace_back();
+						Item.Mesh = PrimitiveComponent->GetRenderMesh();
+						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
 					}
+				}
+
+				if (!OutlineItems.empty())
+				{
+					Renderer->RenderOutlines(OutlineItems);
 				}
 			}
 
@@ -890,18 +895,18 @@ void FEditorUI::Render()
 		DrawList->AddRectFilled(WinPos, ImVec2(WinPos.x + WinSize.x, WinPos.y + 60), IM_COL32(30, 30, 60, 255));
 
 		ImGui::SetCursorPosY(12);
-		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("Dino Engine").x) * 0.5f);
-		ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "Dino Engine");
+		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("Meteor Engine").x) * 0.5f);
+		ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "Meteor Engine");
 
 		ImGui::SetCursorPosY(35);
-		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("v1.0.0").x) * 0.5f);
-		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "v1.0.0");
+		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("v2.0.0").x) * 0.5f);
+		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "v2.0.0");
 
 		ImGui::SetCursorPosY(70);
 		ImGui::SetCursorPosX(20);
 
 		// Contributors
-		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "Contributors");
+		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "First Contributors (Dino Engine)");
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(20);
 		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.9f, 0.7f, 0.3f, 0.5f));
@@ -910,8 +915,28 @@ void FEditorUI::Render()
 
 		ImGui::Spacing();
 
-		const char* Contributors[] = { "김지수", "김태현", "박세영", "조상현" };
-		for (const char* Name : Contributors)
+		const char* First_Contributors[] = { "김지수", "김태현", "박세영", "조상현" };
+		for (const char* Name : First_Contributors)
+		{
+			ImGui::SetCursorPosX(20);
+			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "•");
+			ImGui::SameLine();
+			ImGui::Text("%s", Name);
+		}
+
+		ImGui::SetCursorPosX(20);
+
+		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "Second Contributors");
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(20);
+		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.9f, 0.7f, 0.3f, 0.5f));
+		ImGui::Separator();
+		ImGui::PopStyleColor();
+
+		ImGui::Spacing();
+
+		const char* Second_Contributors[] = { "강명호", "오준혁", "정찬일" };
+		for (const char* Name : Second_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
 			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "•");
