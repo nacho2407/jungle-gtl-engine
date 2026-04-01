@@ -62,9 +62,9 @@ std::wstring FPaths::ToWide(const std::string& Utf8Str)
 std::string FPaths::ToUtf8(const std::wstring& WideStr)
 {
 	if (WideStr.empty()) return {};
-	int32_t Size = WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), -1, nullptr, 0, nullptr, nullptr);
-	std::string Result(Size - 1, '\0');
-	WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), -1, &Result[0], Size, nullptr, nullptr);
+	int32_t Size = WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), (int)WideStr.length(), nullptr, 0, nullptr, nullptr);
+	std::string Result(Size, '\0');
+	WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), (int)WideStr.length(), Result.data(), Size, nullptr, nullptr);
 	return Result;
 }
 
