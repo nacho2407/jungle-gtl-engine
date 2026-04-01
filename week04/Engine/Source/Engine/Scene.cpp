@@ -221,6 +221,12 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                     Binding.Material = StaticMeshComp->GetMaterial(i);
                     Binding.SubMaterialName = StaticMeshComp->GetSubMaterialName(i);
                     MeshItem.MaterialBindings.push_back(Binding);
+
+                    // UV 오버라이드가 있다면 추가
+                    if (StaticMeshComp->HasUVScrollSpeedOverride(i))
+                    {
+                        MeshItem.UVScrollOverrides[i] = StaticMeshComp->GetUVScrollSpeedOverride(i);
+                    }
                 }
 
                 // 4. 상태 및 피킹 데이터

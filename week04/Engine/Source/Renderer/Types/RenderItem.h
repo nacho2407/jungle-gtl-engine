@@ -83,6 +83,7 @@ struct FStaticMeshRenderItem
     FMatrix World = FMatrix::Identity;
     const FStaticMeshResource* RenderResource = nullptr;
     TArray<FStaticMeshMaterialBinding>         MaterialBindings;
+    TMap<uint32, FVector2>                     UVScrollOverrides; // [슬롯 인덱스, 속도]
     Geometry::FAABB                            WorldAABB;
     FRenderItemState                           State;
 };
