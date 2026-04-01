@@ -2,27 +2,27 @@
   "ClassName" : "UWorld",
   "Name" : "Default",
   "PerspectiveCamera" : {
-    "FOV" : 60.000000,
+    "FOV" : 84.000000,
     "FarClip" : 2000.000000,
-    "Location" : [5.882665, -5.337511, 9.982057],
+    "Location" : [3.410131, 11.072779, 5.276610],
     "NearClip" : 0.100000,
-    "Rotation" : [-51.576630, -174.338089, 4.441335]
+    "Rotation" : [-26.325684, -137.506653, 22.110584]
   },
   "Primitives" : {
     "0" : {
-      "Font" : "Default",
-      "Font Size" : 1.000000,
-      "Location" : [4.304690, 0.000000, 0.000000],
-      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Location" : [5.382951, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [-0.000000, 0.000000, 74.827759],
       "Scale" : [1.000000, 1.000000, 1.000000],
-      "Text" : "asdasdasd",
-      "Type" : "UTextRenderComponent",
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
       "Visible" : true
     },
     "1" : {
-      "Location" : [0.503477, -4.868488, 0.000000],
+      "Location" : [0.000000, 12.472298, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
-      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 53.973190],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Scroll U" : 0.000000,
       "Scroll V" : 0.000000,
@@ -30,9 +30,9 @@
       "Visible" : true
     },
     "2" : {
-      "Location" : [-3.260409, 0.000000, 0.000000],
+      "Location" : [-11.730871, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
-      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 49.948235, -0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Scroll U" : 0.000000,
       "Scroll V" : 0.000000,
@@ -40,40 +40,6 @@
       "Visible" : true
     },
     "3" : {
-      "Location" : [0.000000, 2.554978, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
-      "Rotation" : [0.000000, 0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Scroll U" : 0.000000,
-      "Scroll V" : 0.000000,
-      "Type" : "StaticMeshComp",
-      "Visible" : true
-    },
-    "4" : {
-      "Height" : 2.000000,
-      "Location" : [0.000000, -11.033380, 0.000000],
-      "Particle" : "Explosion",
-      "Play Rate" : 30.000000,
-      "Rotation" : [0.000000, 0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "USubUVComponent",
-      "Visible" : true,
-      "Width" : 2.000000,
-      "bLoop" : true
-    },
-    "5" : {
-      "Height" : 2.000000,
-      "Location" : [-6.774603, 0.000000, 0.000000],
-      "Particle" : "Explosion",
-      "Play Rate" : 30.000000,
-      "Rotation" : [0.000000, 0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "USubUVComponent",
-      "Visible" : true,
-      "Width" : 2.000000,
-      "bLoop" : true
-    },
-    "6" : {
       "Font" : "Default",
       "Font Size" : 1.000000,
       "Location" : [0.000000, 0.000000, 0.000000],
@@ -82,6 +48,18 @@
       "Text" : "TextRender",
       "Type" : "UTextRenderComponent",
       "Visible" : true
+    },
+    "4" : {
+      "Height" : 2.000000,
+      "Location" : [0.000000, 5.670686, 0.000000],
+      "Particle" : "Explosion",
+      "Play Rate" : 30.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "USubUVComponent",
+      "Visible" : true,
+      "Width" : 2.000000,
+      "bLoop" : true
     }
   },
   "Version" : 3,
