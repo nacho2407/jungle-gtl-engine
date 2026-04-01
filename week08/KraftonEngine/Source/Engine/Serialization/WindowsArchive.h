@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Archive.h"
+#include "Platform/Paths.h"
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -14,7 +15,7 @@ public:
 	FWindowsBinWriter(const std::string& FilePath)
 	{
 		bIsSaving = true; // 나는 '쓰기' 전용이다!
-		FileStream.open(FilePath, std::ios::binary);
+		FileStream.open(FPaths::ToWide(FilePath), std::ios::binary);
 	}
 
 	~FWindowsBinWriter() override
@@ -44,7 +45,7 @@ public:
 	FWindowsBinReader(const std::string& FilePath)
 	{
 		bIsLoading = true; // 나는 '읽기' 전용이다!
-		FileStream.open(FilePath, std::ios::binary);
+		FileStream.open(FPaths::ToWide(FilePath), std::ios::binary);
 	}
 
 	~FWindowsBinReader() override

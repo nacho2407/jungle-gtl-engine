@@ -241,10 +241,12 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	bool bNeedRebuild = true;
 
 	// 3. 타임스탬프 비교 (디스크 캐시 확인)
-	if (std::filesystem::exists(BinPath))
+	std::filesystem::path BinPathW(FPaths::ToWide(BinPath));
+	std::filesystem::path PathFileNameW(FPaths::ToWide(PathFileName));
+	if (std::filesystem::exists(BinPathW))
 	{
-		if (!std::filesystem::exists(PathFileName) || PathFileName == BinPath ||
-			std::filesystem::last_write_time(BinPath) >= std::filesystem::last_write_time(PathFileName))
+		if (!std::filesystem::exists(PathFileNameW) || PathFileName == BinPath ||
+			std::filesystem::last_write_time(BinPathW) >= std::filesystem::last_write_time(PathFileNameW))
 		{
 			bNeedRebuild = false;
 		}
