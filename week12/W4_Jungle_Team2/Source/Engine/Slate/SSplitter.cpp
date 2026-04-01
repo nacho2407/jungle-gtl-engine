@@ -1,4 +1,4 @@
-#include "SSplitter.h"
+﻿#include "SSplitter.h"
 #include "SlateApplication.h"
 
 SWidget* SSplitter::HitTest(int32 X, int32 Y)
@@ -39,13 +39,13 @@ bool SSplitter::OnMouseMove(int32 X, int32 Y)
 	// 서브클래스(H/V)가 축에 맞는 비율을 계산합니다.
 	const float NewRatio = ComputeNewRatio(X, Y);
 	SetSplitRatio(NewRatio);
-	UpdateCildRect();
+	UpdateChildRect();
 
 	// 연결된 스플리터가 있으면 동일한 비율로 동기화합니다. (TopSplitterH ↔ BotSplitterH)
 	if (LinkedSplitter)
 	{
 		LinkedSplitter->SetSplitRatio(NewRatio);
-		LinkedSplitter->UpdateCildRect();
+		LinkedSplitter->UpdateChildRect();
 	}
 	return true;
 }

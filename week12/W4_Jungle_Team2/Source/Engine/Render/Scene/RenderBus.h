@@ -50,6 +50,6 @@ private:
 	//Editor Settings
 	EViewMode ViewMode;
 	FShowFlags ShowFlags;
-	FVector WireframeColor = FVector(0.0f, 0.0f, 0.7f);
+	FVector WireframeColor = FVector(1.0f, 1.0f, 1.0f);
 };
 

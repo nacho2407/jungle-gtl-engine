@@ -1,4 +1,5 @@
 ﻿#include "FileUtils.h"
+#include "Core/Paths.h"
 
 #include <fstream>
 #include <filesystem>
