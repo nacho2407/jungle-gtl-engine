@@ -102,6 +102,7 @@ void FViewportLayout::UpdateHoverStates()
 		return;
 	}
 
+	// Find Active Viewport 
 	int32 ActiveOpViewport = -1;
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
@@ -220,7 +221,7 @@ void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	}
 }
 
-//  Viewport Layout
+//  Viewport Layout 생성 (2 x 2)
 void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 {
 	DestroyViewportLayout();  // 기존 위젯이 있으면 먼저 해제
