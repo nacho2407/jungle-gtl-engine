@@ -34,7 +34,7 @@ std::wstring FPaths::SettingsDir() { return RootDir() + L"Settings/"; }
 std::wstring FPaths::ShaderFilePath() { return RootDir() + L"Shaders/ShaderW0.hlsl"; }
 std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings/Editor.ini"; }
 std::wstring FPaths::ViewerSettingsFilePath() { return RootDir() + L"Settings/ObjViewer.ini"; }
-std::wstring FPaths::ResourceFilePath() { return RootDir() + L"Settings/Resource.ini"; }
+std::wstring FPaths::AssetDirectoryPath() { return RootDir() + L"Asset"; }
 std::wstring FPaths::ResourceDefaultMaterialTexture() { return RootDir() + L"Asset/Mesh/Default.png"; }
 
 

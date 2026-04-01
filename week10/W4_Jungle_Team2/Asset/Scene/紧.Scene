@@ -1,0 +1,45 @@
+{
+  "ClassName" : "UWorld",
+  "Name" : "紧",
+  "PerspectiveCamera" : {
+    "FOV" : 84.000000,
+    "FarClip" : 2000.000000,
+    "Location" : [4.115130, -2.183203, 2.481685],
+    "NearClip" : 0.100000,
+    "Rotation" : [-18.553680, 136.001343, -17.080139]
+  },
+  "Primitives" : {
+    "0" : {
+      "Location" : [0.000000, 11.818798, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    },
+    "1" : {
+      "Location" : [-3.346476, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset\\Mesh\\MultiMaterialCube\\MultiMaterialCube.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    },
+    "2" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset\\Mesh\\Lumine\\LumineModel.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    }
+  },
+  "Version" : 3,
+  "WorldType" : "Editor"
+}
