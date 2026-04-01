@@ -1,16 +1,16 @@
 {
   "ClassName" : "UWorld",
-  "Name" : "國自",
+  "Name" : "紧",
   "PerspectiveCamera" : {
-    "FOV" : 60.000000,
+    "FOV" : 84.000000,
     "FarClip" : 2000.000000,
-    "Location" : [1.230518, 7.359515, 6.733189],
+    "Location" : [4.115130, -2.183203, 2.481685],
     "NearClip" : 0.100000,
-    "Rotation" : [-10.100555, -100.439178, 43.587807]
+    "Rotation" : [-18.553680, 136.001343, -17.080139]
   },
   "Primitives" : {
     "0" : {
-      "Location" : [0.000000, 4.795024, 0.000000],
+      "Location" : [0.000000, 11.818798, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
@@ -20,26 +20,24 @@
       "Visible" : true
     },
     "1" : {
-      "Font" : "Default",
-      "Font Size" : 1.000000,
-      "Location" : [3.368473, 0.000000, 0.000000],
+      "Location" : [-3.346476, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset\\Mesh\\MultiMaterialCube\\MultiMaterialCube.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
-      "Text" : "TextRender",
-      "Type" : "UTextRenderComponent",
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
       "Visible" : true
     },
     "2" : {
-      "Height" : 2.000000,
       "Location" : [0.000000, 0.000000, 0.000000],
-      "Particle" : "Explosion",
-      "Play Rate" : 30.000000,
+      "ObjStaticMeshAsset" : "Asset\\Mesh\\Lumine\\LumineModel.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "USubUVComponent",
-      "Visible" : true,
-      "Width" : 2.000000,
-      "bLoop" : true
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
     }
   },
   "Version" : 3,

@@ -49,7 +49,10 @@ static const char* GetViewModeName(EViewMode Mode)
 
 void FEditorViewportOverlayWidget::Render(float DeltaTime)
 {
-	RenderViewportSettings(DeltaTime);
+	if (bShowViewportSettings)
+	{
+		RenderViewportSettings(DeltaTime);
+	}
 	RenderDebugStats(DeltaTime);
 	RenderSplitterBar();
 	RenderBoxSelectionOverlay();
@@ -299,12 +302,36 @@ void FEditorViewportOverlayWidget::RenderShortcutsWindow()
 		return;
 	}
 
-	if (!ImGui::Begin("Shortcuts", &bShowShortcutsWindow))
+	ImGui::OpenPopup("Shortcuts##Modal");
+	ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0.0f, 0.0f, 0.0f, 0.55f));
+	ImGui::SetNextWindowSize(ImVec2(760.0f, 560.0f), ImGuiCond_Appearing);
+
+	if (!ImGui::BeginPopupModal("Shortcuts##Modal", &bShowShortcutsWindow, ImGuiWindowFlags_NoResize))
 	{
-		ImGui::End();
+		ImGui::PopStyleColor();
 		return;
 	}
 
+	if (!bShowShortcutsWindow)
+	{
+		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+		ImGui::PopStyleColor();
+		return;
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+	{
+		bShowShortcutsWindow = false;
+		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+		ImGui::PopStyleColor();
+		return;
+	}
+
+	ImGui::TextUnformatted("Shortcuts");
+
+	ImGui::Separator();
 	ImGui::Text("현재 코드상 실제로 동작하는 에디터 단축키만 정리했습니다.");
 
 	auto DrawShortcutTable = [](const char* Header, std::initializer_list<std::pair<const char*, const char*>> Rows)
@@ -368,6 +395,6 @@ void FEditorViewportOverlayWidget::RenderShortcutsWindow()
 
 	ImGui::Spacing();
 	ImGui::TextUnformatted("참고: ImGui 입력창이 키보드를 잡고 있을 때는 일부 단축키가 동작하지 않습니다.");
-
-	ImGui::End();
+	ImGui::EndPopup();
+	ImGui::PopStyleColor();
 }
