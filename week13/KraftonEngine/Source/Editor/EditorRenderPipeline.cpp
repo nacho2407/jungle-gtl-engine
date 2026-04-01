@@ -22,6 +22,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 #if STATS
 	FStatManager::Get().TakeSnapshot();
 	FGPUProfiler::Get().TakeSnapshot();
+	FGPUProfiler::Get().BeginFrame();
 #endif
 
 	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
@@ -30,9 +31,13 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		RenderViewport(VC, Renderer);
 	}
 
-	// 스왑체인 백버퍼 복귀 → ImGui 합성 (Image(SRV)로 뷰포트 표시) → Present
+	// 스왑체인 백버퍼 복귀 → ImGui 합성 → Present
 	Renderer.BeginFrame();
 	Editor->RenderUI(DeltaTime);
+
+#if STATS
+	FGPUProfiler::Get().EndFrame();
+#endif
 	Renderer.EndFrame();
 }
 
