@@ -772,7 +772,7 @@ void FD3D11SelectionMaskRenderer::DrawStaticMeshes()
     for (MeshIndex = 0; MeshIndex < PendingStaticMeshes.size(); ++MeshIndex)
     {
         const FStaticMeshRenderItem& DrawItem = PendingStaticMeshes[MeshIndex];
-        const FStaticMeshResource* Resource = DrawItem.RenderResource;
+        const FStaticMesh* Resource = DrawItem.RenderResource;
         if (Resource == nullptr || Resource->VertexBuffer == nullptr || Resource->IndexBuffer == nullptr)
         {
             continue;
