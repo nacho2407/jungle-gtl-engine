@@ -20,7 +20,7 @@ namespace
 {
 	bool HasStaticMeshAssetExtension(const FString& FilePath)
 	{
-		FString Extension = std::filesystem::path(FilePath).extension().string();
+		FString Extension = FPaths::FromPath(FPaths::ToPath(FilePath).extension());
 		std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char Ch)
 		{
 			return static_cast<char>(std::tolower(Ch));
@@ -133,9 +133,10 @@ void FEditorViewportAssetInteractionService::HandleFileDropOnViewport(
 	NewActor->AddOwnedComponent(MeshComponent);
 	NewActor->SetRootComponent(MeshComponent);
 
-	std::string PureFileName = std::filesystem::path(FilePath).filename().string();
-	std::filesystem::path TargetPath = FPaths::MeshDir() / PureFileName;
-	UStaticMesh* LoadedMesh = FObjManager::LoadStaticMeshAsset(TargetPath.string().c_str());
+	const std::filesystem::path SourcePath = FPaths::ToPath(FilePath);
+	const std::filesystem::path TargetPath = FPaths::MeshDir() / SourcePath.filename();
+	const FString PureFileName = FPaths::FromPath(SourcePath.filename());
+	UStaticMesh* LoadedMesh = FObjManager::LoadStaticMeshAsset(FPaths::FromPath(TargetPath));
 
 	if (LoadedMesh)
 	{

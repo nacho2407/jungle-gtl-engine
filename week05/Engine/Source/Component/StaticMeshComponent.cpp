@@ -6,6 +6,7 @@
 #include "PrimitiveComponent.h"
 #include "MeshComponent.h"
 #include "Asset/ObjManager.h"
+#include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Renderer/Material.h"
 IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
@@ -60,7 +61,7 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 		FString MeshFileName = "";
 		if (StaticMesh)
 		{
-			MeshFileName = std::filesystem::path(StaticMesh->GetAssetPathFileName()).filename().string();
+			MeshFileName = FPaths::FromPath(FPaths::ToPath(StaticMesh->GetAssetPathFileName()).filename());
 		}
 		Ar.Serialize("ObjStaticMeshAsset", MeshFileName);
 	}

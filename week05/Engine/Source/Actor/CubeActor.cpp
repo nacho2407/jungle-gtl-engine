@@ -11,7 +11,7 @@ IMPLEMENT_RTTI(ACubeActor, AActor)
 void ACubeActor::PostSpawnInitialize()
 {
 	UStaticMesh* CubeMesh = nullptr;
-	CubeMesh = FObjManager::LoadObjStaticMeshAsset((FPaths::MeshDir() / "PrimitiveBox.obj").string().c_str());
+	CubeMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::FromPath(FPaths::MeshDir() / "PrimitiveBox.obj"));
 
 	CubeMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
 	CubeMeshComponent->SetStaticMesh(CubeMesh);

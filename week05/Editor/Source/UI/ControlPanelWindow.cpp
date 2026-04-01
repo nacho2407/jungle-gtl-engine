@@ -256,7 +256,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 					UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>();
 
 					std::filesystem::path ModelPath = FPaths::MeshDir() / "cube-tex.obj";
-					FString FullPath = ModelPath.string().c_str();
+					FString FullPath = FPaths::FromPath(ModelPath);
 
 					UStaticMesh* MeshData = FObjManager::LoadObjStaticMeshAsset(FullPath);
 					if (MeshData)

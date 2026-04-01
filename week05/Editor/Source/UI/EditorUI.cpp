@@ -38,30 +38,30 @@ enum class EFileDialogType
 
 std::string GetFilePathUsingDialog(EFileDialogType Type)
 {
-	char FileName[MAX_PATH] = "";
-	FString ContentDir = FPaths::ContentDir().string();
+	wchar_t FileName[MAX_PATH] = L"";
+	const std::filesystem::path ContentDir = FPaths::ContentDir();
 
-	OPENFILENAMEA Ofn = {};
-	Ofn.lStructSize = sizeof(OPENFILENAMEA);
-	Ofn.lpstrFilter = "Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
+	OPENFILENAMEW Ofn = {};
+	Ofn.lStructSize = sizeof(OPENFILENAMEW);
+	Ofn.lpstrFilter = L"Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
 	Ofn.lpstrFile = FileName;
 	Ofn.nMaxFile = MAX_PATH;
-	Ofn.lpstrDefExt = "json";
+	Ofn.lpstrDefExt = L"json";
 	Ofn.lpstrInitialDir = ContentDir.c_str();
 
 	if (Type == EFileDialogType::Save)
 	{
 		Ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
 
-		if (GetSaveFileNameA(&Ofn))
-			return std::string(FileName);
+		if (GetSaveFileNameW(&Ofn))
+			return FPaths::FromWide(FileName);
 	}
 	else // Open
 	{
 		Ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-		if (GetOpenFileNameA(&Ofn))
-			return std::string(FileName);
+		if (GetOpenFileNameW(&Ofn))
+			return FPaths::FromWide(FileName);
 	}
 
 	return "";
@@ -111,8 +111,8 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 			{
 				if (ContentBrowser.IsMouseOnDirectory())
 				{
-					std::filesystem::path Src = DraggingFilePath;
-					std::filesystem::path DstDir = ReleaseDirectory;
+					std::filesystem::path Src = FPaths::ToPath(DraggingFilePath);
+					std::filesystem::path DstDir = FPaths::ToPath(ReleaseDirectory);
 
 					std::filesystem::path Dst = DstDir / Src.filename();
 
@@ -149,7 +149,9 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 					}
 					else
 					{
-						UE_LOG("Moved: %s -> %s", Src.string().c_str(), Dst.string().c_str());
+						const FString SrcPath = FPaths::FromPath(Src);
+						const FString DstPath = FPaths::FromPath(Dst);
+						UE_LOG("Moved: %s -> %s", SrcPath.c_str(), DstPath.c_str());
 					}
 				}
 			}

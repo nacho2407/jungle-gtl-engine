@@ -7,6 +7,7 @@
 #include "Renderer/SubUVRenderer.h"
 #include "ShaderManager.h"
 #include <d3d11.h>
+#include <filesystem>
 #include <functional>
 #include <memory>
 
@@ -27,8 +28,8 @@ struct FOutlineRenderItem
 };
 
 /**
- * 엔진의 핵심 렌더링 시스템
- * 렌더링 정책에 따라 제출된 명령들을 GPU에서 실행함
+ * ?붿쭊???듭떖 ?뚮뜑留??쒖뒪??
+ * ?뚮뜑留??뺤콉???곕씪 ?쒖텧??紐낅졊?ㅼ쓣 GPU?먯꽌 ?ㅽ뻾??
  */
 class ENGINE_API FRenderer
 {
@@ -36,29 +37,29 @@ public:
 	FRenderer(HWND InHwnd, int32 InWidth, int32 InHeight);
 	~FRenderer();
 
-	/** 시스템 초기화 및 D3D11 장치 생성 */
+	/** ?쒖뒪??珥덇린??諛?D3D11 ?μ튂 ?앹꽦 */
 	bool Initialize(HWND InHwnd, int32 InWidth, int32 InHeight);
 	
-	/** 프레임 시작 처리 (렌더 타겟 클리어 등) */
+	/** ?꾨젅???쒖옉 泥섎━ (?뚮뜑 ?寃??대━???? */
 	void BeginFrame();
 	
-	/** 프레임 종료 처리 (Present) */
+	/** ?꾨젅??醫낅즺 泥섎━ (Present) */
 	void EndFrame();
 	
-	/** 리소스 해제 */
+	/** 由ъ냼???댁젣 */
 	void Release();
 	
-	/** 화면 가림 여부 확인 */
+	/** ?붾㈃ 媛由??щ? ?뺤씤 */
 	bool IsOccluded();
 	
-	/** 뷰포트 크기 변경 대응 */
+	/** 酉고룷???ш린 蹂寃????*/
 	void OnResize(int32 NewWidth, int32 NewHeight);
 	
-	/** 씬 렌더 타겟 설정 (외부 오버라이드용) */
+	/** ???뚮뜑 ?寃??ㅼ젙 (?몃? ?ㅻ쾭?쇱씠?쒖슜) */
 	void SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView, ID3D11DepthStencilView* InDepthStencilView, const D3D11_VIEWPORT& InViewport);
 	void ClearSceneRenderTarget();
 
-	/** 멀티뷰포트 씬 패스 */
+	/** 硫?곕럭?ы듃 ???⑥뒪 */
 	void BeginScenePass(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, const D3D11_VIEWPORT& InVP);
 	void EndScenePass();
 	void BindSwapChainRTV();
@@ -67,37 +68,38 @@ public:
 	bool IsVSyncEnabled() const { return bVSyncEnabled; }
 
 	bool bSwapChainOccluded = false;
-	// ─── GUI 및 콜백 ───
-	/** ImGui 등 외부 GUI 시스템 연동용 콜백 */
+	// ??? GUI 諛?肄쒕갚 ???
+	/** ImGui ???몃? GUI ?쒖뒪???곕룞??肄쒕갚 */
 	void SetGUICallbacks(FGUICallback InInit, FGUICallback InShutdown, FGUICallback InNewFrame, FGUICallback InRender, FGUICallback InPostPresent = nullptr);
 	void ClearViewportCallbacks();
 	void SetGUIUpdateCallback(FGUICallback InUpdate);
 	void SetPostRenderCallback(FPostRenderCallback InCallback) { PostRenderCallback = std::move(InCallback); }
 
-	// ─── 명령 실행 ───
-	/** 커맨드 큐 제출 및 GPU 버퍼 업데이트 */
+	// ??? 紐낅졊 ?ㅽ뻾 ???
+	/** 而ㅻ㎤?????쒖텧 諛?GPU 踰꾪띁 ?낅뜲?댄듃 */
 	void SubmitCommands(const FRenderCommandQueue& Queue);
 	
-	/** 수집된 커맨드 정렬 및 실행 */
+	/** ?섏쭛??而ㅻ㎤???뺣젹 諛??ㅽ뻾 */
 	void ExecuteCommands();
 	
-	/** 특정 레이어의 명령들을 실제 드로우 콜로 변환 */
+	/** ?뱀젙 ?덉씠?댁쓽 紐낅졊?ㅼ쓣 ?ㅼ젣 ?쒕줈??肄쒕줈 蹂??*/
 	void ExecuteRenderPass(ERenderLayer RenderLayer);
 
-	// ─── 디버그 및 라인 렌더링 ───
+	// ??? ?붾쾭洹?諛??쇱씤 ?뚮뜑留????
 	void DrawLine(const FVector& Start, const FVector& End, const FVector4& Color);
 	void DrawCube(const FVector& Center, const FVector& BoxExtent, const FVector4& Color);
 	void ExecuteLineCommands();
 
-	// ─── 특수 효과 ───
-	/** 선택된 오브젝트 등의 아웃라인 렌더링 */
+	// ??? ?뱀닔 ?④낵 ???
+	/** ?좏깮???ㅻ툕?앺듃 ?깆쓽 ?꾩썐?쇱씤 ?뚮뜑留?*/
 	bool InitOutlineResources();
 	void RenderOutlines(const TArray<FOutlineRenderItem>& Items);
 
-	// Texture 생성을 위해 따로 뺏음. - 추후 TextureManager 리펙토링이 완성되면 필요 없어질것.
+	// Texture ?앹꽦???꾪빐 ?곕줈 類륁쓬. - 異뷀썑 TextureManager 由ы럺?좊쭅???꾩꽦?섎㈃ ?꾩슂 ?놁뼱吏덇쾬.
 	bool CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV);
+	bool CreateTextureFromSTB(ID3D11Device* Device, const std::filesystem::path& FilePath, ID3D11ShaderResourceView** OutSRV);
 
-	// ─── 접근자 ───
+	// ??? ?묎렐?????
 	FMaterial* GetDefaultMaterial() const { return DefaultMaterial.get(); }
 	FMaterial* GetDefaultTextureMaterial() const { return DefaultTextureMaterial.get(); }
 	size_t GetPrevCommandCount() const { return PrevCommandCount; }
@@ -154,17 +156,17 @@ private:
 	bool bUseSceneRenderTargetOverride = false;
 	bool bVSyncEnabled = false;
 
-	/** 통합된 렌더링 명령 리스트 */
+	/** ?듯빀???뚮뜑留?紐낅졊 由ъ뒪??*/
 	TArray<FRenderCommand> CommandList;
 	size_t PrevCommandCount = 0;
 	uint64 NextSubmissionOrder = 0;
 
-	/** 라인 렌더링용 임시 리소스 */
+	/** ?쇱씤 ?뚮뜑留곸슜 ?꾩떆 由ъ냼??*/
 	TArray<FVertex> LineVertices;
 	ID3D11Buffer* LineVertexBuffer = nullptr;
 	UINT LineVertexBufferSize = 0;
 
-	/** 아웃라인(스텐실) 리소스 */
+	/** ?꾩썐?쇱씤(?ㅽ뀗?? 由ъ냼??*/
 	ID3D11DepthStencilState* StencilWriteState = nullptr;
 	ID3D11DepthStencilState* StencilEqualState = nullptr;
 	ID3D11DepthStencilState* StencilNotEqualState = nullptr;
@@ -188,7 +190,7 @@ private:
 	FGUICallback GUIPostPresent;
 	FPostRenderCallback PostRenderCallback;
 
-	/** 기본 공유 리소스 */
+	/** 湲곕낯 怨듭쑀 由ъ냼??*/
 	std::shared_ptr<FMaterial> DefaultMaterial;
 	std::shared_ptr<FMaterial> DefaultTextureMaterial;
 
@@ -198,7 +200,7 @@ private:
 	ID3D11ShaderResourceView* FolderIconSRV = nullptr;
 	ID3D11ShaderResourceView* FileIconSRV = nullptr;
 
-	/** SubUV, Text 이외 일반 material texture sample 용도 */
+	/** SubUV, Text ?댁쇅 ?쇰컲 material texture sample ?⑸룄 */
 	ID3D11SamplerState* NormalSampler = nullptr;
 
 public:

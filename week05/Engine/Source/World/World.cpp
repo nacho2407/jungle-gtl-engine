@@ -37,7 +37,7 @@ void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 
 	if (Device)
 	{
-		FSceneSerializer::Load(PersistentLevel, (FPaths::SceneDir() / "DefaultScene.json").string(), Device);
+		FSceneSerializer::Load(PersistentLevel, FPaths::FromPath(FPaths::SceneDir() / "DefaultScene.json"), Device);
 	}
 }
 
@@ -134,7 +134,7 @@ UScene* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Devic
 
 	if (Device)
 	{
-		FSceneSerializer::Load(NewLevel, (FPaths::SceneDir() / (LevelName + ".json")).string(), Device);
+		FSceneSerializer::Load(NewLevel, FPaths::FromPath(FPaths::SceneDir() / FPaths::ToPath(LevelName + ".json")), Device);
 	}
 	StreamingLevels.push_back(NewLevel);
 

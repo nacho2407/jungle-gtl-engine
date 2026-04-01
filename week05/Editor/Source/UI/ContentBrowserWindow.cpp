@@ -40,7 +40,8 @@ void FContentBrowserWindow::Render()
 	}
 
 	ImGui::SameLine();
-	ImGui::Text("%s", CurrentPath.u8string().c_str());
+	const FString CurrentPathText = FPaths::FromPath(CurrentPath);
+	ImGui::Text("%s", CurrentPathText.c_str());
 
 	ImGui::Separator();
 
@@ -82,7 +83,7 @@ void FContentBrowserWindow::Render()
 		else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
 			bFileOnDrag = false;
-			OnFileDragEnd(SelectedFilePath.string(), DirectoryPathUnderMouse.string());
+			OnFileDragEnd(FPaths::FromPath(SelectedFilePath), FPaths::FromPath(DirectoryPathUnderMouse));
 		}
 	}
 }
@@ -105,8 +106,7 @@ void FContentBrowserWindow::DrawFolderTree(const std::filesystem::path& Path)
 			continue;
 
 		const auto& DirPath = Entry.path();
-		auto NameUtf8 = DirPath.filename().u8string();
-		std::string Name(NameUtf8.begin(), NameUtf8.end());
+		const FString Name = FPaths::FromPath(DirPath.filename());
 
 		ImGuiTreeNodeFlags Flags =
 			ImGuiTreeNodeFlags_OpenOnArrow |
@@ -158,10 +158,9 @@ void FContentBrowserWindow::DrawFileGrid()
 	{
 		const auto& 
 			Path = Entry.path();
-		auto NameUtf8 = Path.filename().u8string();
-		std::string Name(NameUtf8.begin(), NameUtf8.end());
+		const FString Name = FPaths::FromPath(Path.filename());
 
-		std::string Ext = Path.extension().string();
+		FString Ext = FPaths::FromPath(Path.extension());
 		std::ranges::transform(Ext, Ext.begin(), [](unsigned char c) {
 			return std::tolower(c);
 			});
@@ -226,7 +225,7 @@ void FContentBrowserWindow::DrawFileGrid()
 				}
 				else
 				{
-					OnFileDoubleClickCallback(Path.string());
+					OnFileDoubleClickCallback(FPaths::FromPath(Path));
 				}
 			}
 			else if (!bFileOnDrag && ImGui::IsMouseDown(ImGuiMouseButton_Left) && !Entry.is_directory())

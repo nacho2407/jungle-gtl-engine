@@ -9,6 +9,8 @@
 #include "RenderMesh.h"
 #include <cassert>
 #include <algorithm>
+#include <fstream>
+#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Asset/ObjManager.h"
@@ -247,7 +249,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	if (!ShaderManager.LoadVertexShader(Device, VSPath.c_str())) return false;
 	if (!ShaderManager.LoadPixelShader(Device, PSPath.c_str())) return false;
 
-	/** 기본 Material 생성 */
+	/** 湲곕낯 Material ?앹꽦 */
 	{
 		auto VS = FShaderMap::Get().GetOrCreateVertexShader(Device, VSPath.c_str());
 		std::wstring ColorPSPath = ShaderDirW + L"ColorPixelShader.hlsl";
@@ -281,7 +283,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		FMaterialManager::Get().Register("M_Default", DefaultMaterial);
 	}
 
-	/** Texture 용 Material 생성 */
+	/** Texture ??Material ?앹꽦 */
 	{
 		auto VS = FShaderMap::Get().GetOrCreateVertexShader(Device, VSPath.c_str());
 		std::wstring TexturePSPath = ShaderDirW + L"TexturePixelShader.hlsl";
@@ -329,8 +331,8 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 
 	std::filesystem::path FolderIconPath = FPaths::AssetDir() / FString("Textures/FolderIcon.png");
 	std::filesystem::path FileIconPath = FPaths::AssetDir() / FString("Textures/FileIcon.png");
-	CreateTextureFromSTB(Device, FolderIconPath.string().c_str(), &FolderIconSRV);
-	CreateTextureFromSTB(Device, FileIconPath.string().c_str(), &FileIconSRV);
+	CreateTextureFromSTB(Device, FolderIconPath, &FolderIconSRV);
+	CreateTextureFromSTB(Device, FileIconPath, &FileIconSRV);
 
 	return true;
 }
@@ -439,7 +441,7 @@ void FRenderer::ExecuteCommands()
 void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 {
 	FMaterial* CurrentMaterial = nullptr;
-	FRenderMesh* CurrentMeshPtr = nullptr; // ⭐ void* 에서 FRenderMesh* 로 변경
+	FRenderMesh* CurrentMeshPtr = nullptr; // 狩?void* ?먯꽌 FRenderMesh* 濡?蹂寃?
 	D3D11_PRIMITIVE_TOPOLOGY CurrentMeshTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
 	ID3D11ShaderResourceView* FontSRV = TextRenderer.GetAtlasSRV();
@@ -738,8 +740,44 @@ void FRenderer::UpdateOutlinePostConstantBuffer(const FVector4& OutlineColor, fl
 
 bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV)
 {
-	int W, H, C;
-	unsigned char* Data = stbi_load(FilePath, &W, &H, &C, 4);
+	if (FilePath == nullptr)
+	{
+		return false;
+	}
+
+	return CreateTextureFromSTB(Device, FPaths::ToPath(FilePath), OutSRV);
+}
+
+bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const std::filesystem::path& FilePath, ID3D11ShaderResourceView** OutSRV)
+{
+	if (Device == nullptr || OutSRV == nullptr || FilePath.empty())
+	{
+		return false;
+	}
+
+	std::ifstream File(FilePath, std::ios::binary | std::ios::ate);
+	if (!File.is_open())
+	{
+		return false;
+	}
+
+	const std::streamsize FileSize = File.tellg();
+	if (FileSize <= 0)
+	{
+		return false;
+	}
+
+	File.seekg(0, std::ios::beg);
+	std::vector<unsigned char> FileBytes(static_cast<size_t>(FileSize));
+	if (!File.read(reinterpret_cast<char*>(FileBytes.data()), FileSize))
+	{
+		return false;
+	}
+
+	int W = 0;
+	int H = 0;
+	int C = 0;
+	unsigned char* Data = stbi_load_from_memory(FileBytes.data(), static_cast<int>(FileBytes.size()), &W, &H, &C, 4);
 	if (!Data) return false;
 
 	D3D11_TEXTURE2D_DESC Desc = {};

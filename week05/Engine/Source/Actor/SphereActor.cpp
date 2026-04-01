@@ -11,7 +11,7 @@ IMPLEMENT_RTTI(ASphereActor, AActor)
 void ASphereActor::PostSpawnInitialize()
 {
 	UStaticMesh* SphereMesh = nullptr;
-	SphereMesh = FObjManager::LoadObjStaticMeshAsset((FPaths::MeshDir() / "PrimitiveSphere.obj").string().c_str());
+	SphereMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::FromPath(FPaths::MeshDir() / "PrimitiveSphere.obj"));
 
 	SphereMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
 	SphereMeshComponent->SetStaticMesh(SphereMesh);

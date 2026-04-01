@@ -383,7 +383,7 @@ namespace
 
 	FString GetNormalizedExtension(const FString& PathFileName)
 	{
-		FString Extension = std::filesystem::path(PathFileName).extension().string();
+		FString Extension = FPaths::FromPath(FPaths::ToPath(PathFileName).extension());
 		std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char Ch)
 		{
 			return static_cast<char>(std::tolower(Ch));
@@ -491,7 +491,7 @@ namespace
 		}
 
 		ID3D11ShaderResourceView* NewSRV = nullptr;
-		if (!GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath.string().c_str(), &NewSRV))
+		if (!GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath, &NewSRV))
 		{
 			return false;
 		}
@@ -505,7 +505,7 @@ namespace
 
 		std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
 		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
-		UE_LOG("%s %s", LogPrefix, TexturePath.string().c_str());
+		UE_LOG("%s %s", LogPrefix, WideToUtf8(TexturePath.wstring()).c_str());
 		return true;
 	}
 
@@ -514,7 +514,7 @@ namespace
 		std::unique_ptr<FStaticMesh> RawData,
 		const TArray<FString>& MaterialSlotNames)
 	{
-		FString JustFileName = std::filesystem::path(PathFileName).filename().string();
+		FString JustFileName = FPaths::FromPath(FPaths::ToPath(PathFileName).filename());
 
 		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
@@ -553,7 +553,7 @@ namespace
 		std::unique_ptr<FStaticMesh> RawData,
 		const TArray<FModelMaterialInfo>& MaterialInfos)
 	{
-		FString JustFileName = std::filesystem::path(PathFileName).filename().string();
+		FString JustFileName = FPaths::FromPath(FPaths::ToPath(PathFileName).filename());
 
 		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
@@ -571,7 +571,7 @@ namespace
 			SlotCount = 1;
 		}
 
-		const std::filesystem::path ModelPath = std::filesystem::path(FPaths::ToWide(FPaths::ToAbsolutePath(PathFileName))).lexically_normal();
+		const std::filesystem::path ModelPath = FPaths::ToPath(FPaths::ToAbsolutePath(PathFileName)).lexically_normal();
 		for (uint32 SlotIndex = 0; SlotIndex < SlotCount; ++SlotIndex)
 		{
 			const FModelMaterialInfo MaterialInfo = GetMaterialInfoOrDefault(MaterialInfos, SlotIndex);
@@ -799,7 +799,7 @@ UStaticMesh* FObjManager::LoadModelStaticMeshAsset(const FString& PathFileName)
 	}
 
 	const FString AbsolutePath = FPaths::ToAbsolutePath(PathFileName);
-	const std::filesystem::path FilePath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path FilePath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
@@ -939,7 +939,7 @@ bool FObjManager::SaveModelStaticMeshAsset(const FString& PathFileName, const FS
 	}
 
 	const FString AbsolutePath = FPaths::ToAbsolutePath(PathFileName);
-	const std::filesystem::path FilePath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path FilePath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
 	std::error_code ErrorCode;
 	if (!FilePath.parent_path().empty())
@@ -1048,8 +1048,8 @@ bool FObjManager::BuildModelMaterialInfosFromObj(
 
 	const FString AbsoluteObjPath = FPaths::ToAbsolutePath(ObjFilePath);
 	const FString AbsoluteModelPath = FPaths::ToAbsolutePath(ModelFilePath);
-	const std::filesystem::path ObjPath = std::filesystem::path(FPaths::ToWide(AbsoluteObjPath)).lexically_normal();
-	const std::filesystem::path ModelPath = std::filesystem::path(FPaths::ToWide(AbsoluteModelPath)).lexically_normal();
+	const std::filesystem::path ObjPath = FPaths::ToPath(AbsoluteObjPath).lexically_normal();
+	const std::filesystem::path ModelPath = FPaths::ToPath(AbsoluteModelPath).lexically_normal();
 
 	std::ifstream ObjFile(ObjPath);
 	if (!ObjFile.is_open())
@@ -1093,7 +1093,8 @@ bool FObjManager::BuildModelMaterialInfosFromObj(
 		std::ifstream MtlFile(MtlPath);
 		if (!MtlFile.is_open())
 		{
-			UE_LOG("[FObjManager] Failed to open MTL while collecting .Model material data: %s", MtlPath.string().c_str());
+			const FString MtlPathUtf8 = FPaths::FromPath(MtlPath);
+			UE_LOG("[FObjManager] Failed to open MTL while collecting .Model material data: %s", MtlPathUtf8.c_str());
 			continue;
 		}
 
@@ -1167,7 +1168,7 @@ bool FObjManager::BuildModelMaterialInfosFromObj(
 bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(MtlFIlePath);
-	const std::filesystem::path FilePath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path FilePath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
 	std::ifstream File(FilePath);
 	if (!File.is_open())
@@ -1228,12 +1229,12 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
-	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path DirPath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
-	// 폴더가 존재하는지 확인
+	// ?대뜑媛 議댁옱?섎뒗吏 ?뺤씤
 	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
 	{
-		UE_LOG("[FObjManager] Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		UE_LOG("[FObjManager] Preload ?ㅽ뙣: ?대뜑瑜?李얠쓣 ???놁뒿?덈떎. (%s)", AbsolutePath.c_str());
 		return;
 	}
 
@@ -1241,7 +1242,7 @@ void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
 	{
 		if (Entry.is_regular_file() && Entry.path().extension() == ".obj")
 		{
-			std::string FullFilePath = Entry.path().string();
+			FString FullFilePath = FPaths::FromPath(Entry.path());
 
 			UStaticMesh* LoadedMesh = LoadObjStaticMeshAsset(FullFilePath.c_str());
 		}
@@ -1251,43 +1252,43 @@ void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
 void FObjManager::PreloadAllModelFiles(const FString& DirectoryPath)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
-	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path DirPath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
-	// 폴더가 존재하는지 확인
+	// ?대뜑媛 議댁옱?섎뒗吏 ?뺤씤
 	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
 	{
-		UE_LOG("[FObjManager] Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		UE_LOG("[FObjManager] Preload ?ㅽ뙣: ?대뜑瑜?李얠쓣 ???놁뒿?덈떎. (%s)", AbsolutePath.c_str());
 		return;
 	}
 
 	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
 	{
-		if (Entry.is_regular_file() && GetNormalizedExtension(Entry.path().string()) == ".model")
+		if (Entry.is_regular_file() && GetNormalizedExtension(FPaths::FromPath(Entry.path())) == ".model")
 		{
-			std::string FullFilePath = Entry.path().string();
+			FString FullFilePath = FPaths::FromPath(Entry.path());
 
 			UStaticMesh* LoadedMesh = LoadModelStaticMeshAsset(FullFilePath.c_str());
 		}
 	}
-	PreloadAllMtlFiles(FPaths::MaterialDir().string().c_str());
+	PreloadAllMtlFiles(FPaths::FromPath(FPaths::MaterialDir()).c_str());
 }
 
 void FObjManager::PreloadAllMtlFiles(const FString& DirectoryPath)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
-	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path DirPath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
 	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
 	{
-		UE_LOG("[FObjManager] MTL Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		UE_LOG("[FObjManager] MTL Preload ?ㅽ뙣: ?대뜑瑜?李얠쓣 ???놁뒿?덈떎. (%s)", AbsolutePath.c_str());
 		return;
 	}
 
 	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
 	{
-		if (Entry.is_regular_file() && GetNormalizedExtension(Entry.path().string()) == ".mtl")
+		if (Entry.is_regular_file() && GetNormalizedExtension(FPaths::FromPath(Entry.path())) == ".mtl")
 		{
-			std::string FullFilePath = Entry.path().string();
+			FString FullFilePath = FPaths::FromPath(Entry.path());
 			ParseMtlFile(FullFilePath.c_str());
 		}
 	}
@@ -1295,7 +1296,7 @@ void FObjManager::PreloadAllMtlFiles(const FString& DirectoryPath)
 bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames, const FObjLoadOptions& LoadOptions)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(FilePath);
-	const std::filesystem::path ObjPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+	const std::filesystem::path ObjPath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
 	if (!LoadOptions.bUseLegacyObjConversion &&
 		GetAxisBaseIndex(LoadOptions.ForwardAxis) == GetAxisBaseIndex(LoadOptions.UpAxis))
@@ -1331,7 +1332,7 @@ bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TA
 			SS >> MtlFileName;
 
 			const std::filesystem::path ResolvedMtlPath = ResolveMaterialReferencePath(ObjPath, MtlFileName.c_str());
-			ParseMtlFile(ResolvedMtlPath.string().c_str());
+			ParseMtlFile(FPaths::FromPath(ResolvedMtlPath).c_str());
 		}
 		else if (Type == "usemtl")
 		{

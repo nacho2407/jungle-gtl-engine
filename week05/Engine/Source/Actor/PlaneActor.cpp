@@ -11,7 +11,7 @@ IMPLEMENT_RTTI(APlaneActor, AActor)
 void APlaneActor::PostSpawnInitialize()
 {
 	UStaticMesh* PlaneMesh = nullptr;
-	PlaneMesh = FObjManager::LoadObjStaticMeshAsset((FPaths::MeshDir() / "PrimitivePlane.obj").string().c_str());
+	PlaneMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::FromPath(FPaths::MeshDir() / "PrimitivePlane.obj"));
 
 	PlaneMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
 	PlaneMeshComponent->SetStaticMesh(PlaneMesh);

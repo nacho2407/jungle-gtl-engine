@@ -11,6 +11,7 @@
 #include "Object/ObjectFactory.h" 
 #include "Serializer/Archive.h"
 #include "Object/Class.h"
+#include <algorithm>
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
@@ -31,12 +32,20 @@ void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCamer
 	if (!LoadedPaths.empty())
 	{
 		nlohmann::json Materials = nlohmann::json::array();
-		FString Root = FPaths::ProjectRoot().string();
+		const std::filesystem::path Root = FPaths::ProjectRoot();
 		for (const FString& AbsPath : LoadedPaths)
 		{
 			// 절대 경로 → 프로젝트 루트 기준 상대 경로
-			std::filesystem::path Rel = std::filesystem::relative(AbsPath, Root);
-			Materials.push_back(Rel.generic_string());
+			std::error_code RelativeEc;
+			std::filesystem::path Rel = std::filesystem::relative(FPaths::ToPath(AbsPath), Root, RelativeEc);
+			if (RelativeEc || Rel.empty())
+			{
+				Rel = FPaths::ToPath(AbsPath);
+			}
+
+			FString RelativePath = FPaths::FromPath(Rel);
+			std::replace(RelativePath.begin(), RelativePath.end(), '\\', '/');
+			Materials.push_back(RelativePath);
 		}
 		Json["Materials"] = Materials;
 	}
@@ -60,7 +69,7 @@ void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCamer
 
 	Json["Primitives"] = Primitives;
 	Json["NextUUID"] = FObjectFactory::GetLastUUID();
-	std::ofstream File(FilePath);
+	std::ofstream File(FPaths::ToPath(FilePath));
 	if (File.is_open())
 	{
 		File << std::setw(2) << Json << std::endl;
@@ -70,7 +79,7 @@ void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCamer
 bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device* Device,
                             FCameraSerializeData* OutCameraData)
 {
-	std::ifstream File(FilePath);
+	std::ifstream File(FPaths::ToPath(FilePath));
 	if (!File.is_open())
 	{
 		return false;
@@ -82,7 +91,7 @@ bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device
 	{
 		File >> Json;
 	}
-	catch (const std::exception& e)
+	catch (const std::exception&)
 	{
 		return false;
 	}

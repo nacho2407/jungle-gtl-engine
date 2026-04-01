@@ -31,6 +31,9 @@ public:
 
 	// FString → std::wstring 변환 (셰이더 로드 등 Win32 API용)
 	static std::wstring ToWide(const FString& Path);
+	static FString FromWide(const std::wstring& Path);
+	static std::filesystem::path ToPath(const FString& Path);
+	static FString FromPath(const std::filesystem::path& Path);
 
 	/**
 	 * Path 의 시작이 Root 와 동일한 경우 절대 경로로 판단하여 Root 경로를 제외한 상대 경로 반환
