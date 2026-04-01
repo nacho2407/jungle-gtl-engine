@@ -17,7 +17,9 @@ public:
 	void Serialize(const FString& Key, FVector& Value);
 	void Serialize(const FString& Key, FVector4& Value);
 	// 배열
+	void Serialize(const FString& Key, TArray<FArchive*>& SubArchives);
 	void SerializeUIntArray(const FString& Key, TArray<uint32>& Values);
+	void SerializeStringArray(const FString& Key, TArray<FString>& Values);
 
 	// 키 존재 여부
 	bool Contains(const FString& Key) const;

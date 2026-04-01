@@ -21,6 +21,8 @@ public:
 	FVector GetWorldLocation() const;
 	const FMatrix& GetWorldTransform() const;
 
+	void Serialize(FArchive& Ar) override;
+
 private:
 	void MarkTransformDirty();
 	void UpdateWorldTransform() const;

@@ -11,6 +11,7 @@
 #include <memory>
 
 struct FVertex;
+struct FRenderMesh;
 class FPixelShader;
 class FMaterial;
 class UScene;
@@ -18,6 +19,12 @@ class UScene;
 using FGUICallback = std::function<void()>;
 class FRenderer;
 using FPostRenderCallback = std::function<void(FRenderer*)>;
+
+struct FOutlineRenderItem
+{
+	FRenderMesh* Mesh = nullptr;
+	FMatrix WorldMatrix = FMatrix::Identity;
+};
 
 /**
  * 엔진의 핵심 렌더링 시스템
@@ -85,7 +92,7 @@ public:
 	// ─── 특수 효과 ───
 	/** 선택된 오브젝트 등의 아웃라인 렌더링 */
 	bool InitOutlineResources();
-	void RenderOutline(FRenderMesh* Mesh, const FMatrix& WorldMatrix, float OutlineScale = 1.05f);
+	void RenderOutlines(const TArray<FOutlineRenderItem>& Items);
 
 	// Texture 생성을 위해 따로 뺏음. - 추후 TextureManager 리펙토링이 완성되면 필요 없어질것.
 	bool CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV);
@@ -116,8 +123,11 @@ private:
 	bool CreateRenderTargetAndDepthStencil(int32 Width, int32 Height);
 	bool CreateConstantBuffers();
 	bool CreateSamplers();
+	bool EnsureOutlineMaskResources(uint32 Width, uint32 Height);
+	void ReleaseOutlineMaskResources();
 	void UpdateFrameConstantBuffer();
 	void UpdateObjectConstantBuffer(const FMatrix& WorldMatrix);
+	void UpdateOutlinePostConstantBuffer(const FVector4& OutlineColor, float OutlineThickness, float OutlineThreshold);
 	void ClearDepthBuffer();
 
 private:
@@ -132,6 +142,7 @@ private:
 	
 	ID3D11Buffer* FrameConstantBuffer = nullptr;
 	ID3D11Buffer* ObjectConstantBuffer = nullptr;
+	ID3D11Buffer* OutlinePostConstantBuffer = nullptr;
 	
 	FMatrix ViewMatrix;
 	FMatrix ProjectionMatrix;
@@ -155,8 +166,19 @@ private:
 
 	/** 아웃라인(스텐실) 리소스 */
 	ID3D11DepthStencilState* StencilWriteState = nullptr;
-	ID3D11DepthStencilState* StencilTestState = nullptr;
-	std::shared_ptr<FPixelShader> OutlinePS;
+	ID3D11DepthStencilState* StencilEqualState = nullptr;
+	ID3D11DepthStencilState* StencilNotEqualState = nullptr;
+	ID3D11BlendState* OutlineBlendState = nullptr;
+	ID3D11RasterizerState* OutlineRasterizerState = nullptr;
+	ID3D11SamplerState* OutlineSampler = nullptr;
+	ID3D11VertexShader* OutlinePostVS = nullptr;
+	ID3D11PixelShader* OutlineMaskPS = nullptr;
+	ID3D11PixelShader* OutlineSobelPS = nullptr;
+	ID3D11Texture2D* OutlineMaskTexture = nullptr;
+	ID3D11RenderTargetView* OutlineMaskRTV = nullptr;
+	ID3D11ShaderResourceView* OutlineMaskSRV = nullptr;
+	uint32 OutlineMaskWidth = 0;
+	uint32 OutlineMaskHeight = 0;
 
 	FGUICallback GUIInit;
 	FGUICallback GUIShutdown;

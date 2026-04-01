@@ -2,6 +2,8 @@
 #include "Object/Class.h"
 #include <algorithm>
 
+#include "Serializer/Archive.h"
+
 
 IMPLEMENT_RTTI(UTextComponent, UPrimitiveComponent)
 
@@ -29,6 +31,28 @@ void UTextComponent::SetText(const FString& InText)
 FRenderMesh* UTextComponent::GetRenderMesh() const
 {
 	return TextMesh.get();
+}
+
+void UTextComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+
+	if (Ar.IsSaving())
+	{
+		Ar.Serialize("Text", Text);
+		Ar.Serialize("TextColor", TextColor);
+		Ar.Serialize("Billboard", bBillboard);
+	}
+	else
+	{
+		Ar.Serialize("Text", Text);
+		Ar.Serialize("TextColor", TextColor);
+		Ar.Serialize("Billboard", bBillboard);
+
+		SetText(Text);
+		SetTextColor(TextColor);
+		SetBillboard(bBillboard);
+	}
 }
 
 FBoxSphereBounds UTextComponent::GetWorldBounds() const

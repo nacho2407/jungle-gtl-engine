@@ -15,6 +15,9 @@ public:
 	void OnPaint(SWidget& Painter) override;
 	bool OnMouseDown(int32 X, int32 Y) override;
 	bool HitTest(FPoint Point) const override;
+	void SetHeaderRect(const FRect& InRect);
+	FRect GetInteractiveRect() const;
+	bool HasOpenDropdown() const;
 
 private:
 	enum class EDropdownId
@@ -33,8 +36,6 @@ private:
 
 	EViewportLayout GetCurrentLayout() const;
 	FViewportEntry* GetFocusedEntry() const;
-	const FViewportEntry* GetAnchorEntry() const;
-	bool ComputeHeaderRect(FRect& OutRect) const;
 
 	void ApplyLayout(EViewportLayout NewLayout);
 	void ApplyViewportType(EViewportType NewType);
@@ -50,5 +51,4 @@ private:
 	SDropdown LayoutDropdown;
 	SDropdown TypeDropdown;
 	SDropdown ModeDropdown;
-	int32 HeaderHeight = 34;
 };

@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "imgui.h"
 #include <functional>
+#include "EditorDebugState.h"
 
 using FCommandHandler = std::function<void(const char*)>;
 
@@ -17,6 +18,7 @@ public:
 
 	void RegisterCommand(const char* Command);
 	void SetCommandHandler(FCommandHandler Handler) { CommandHandler = Handler; }
+	void SetDebugState(FDebugState* InDebugState) { DebugState = InDebugState; }
 
 private:
 	void ExecCommand(const char* CommandLine);
@@ -39,4 +41,5 @@ private:
 	bool              ScrollToBottom = false;
 
 	FCommandHandler   CommandHandler;
+	FDebugState*      DebugState = nullptr;
 };

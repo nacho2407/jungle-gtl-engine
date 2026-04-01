@@ -1,6 +1,7 @@
 #include "Engine.h"
 
 #include "Platform/Windows/WindowsWindow.h"
+#include "Asset/ObjManager.h"
 #include "Camera/Camera.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -306,6 +307,7 @@ void FEngine::ReleaseRuntime()
 
 	if (ObjManager)
 	{
+		FObjManager::ClearCache();
 		ObjManager->FlushKilledObjects();
 	}
 	ObjManager.reset();

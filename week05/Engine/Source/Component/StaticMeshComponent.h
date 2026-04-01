@@ -18,7 +18,7 @@ public:
 
 	// 현재는 일단 .obj파싱 용도로 사용 - 추후 직렬화?
 	// virtual void Serialize(FArchive& Ar) override;
-	void Serialize(FArchive& Ar);
+	void Serialize(FArchive& Ar) override;
 	FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const override;
 	FBoxSphereBounds GetLocalBounds() const override;
 

@@ -18,8 +18,7 @@
 #include "Viewport/EditorViewportClient.h"
 #include "Viewport/PreviewViewportClient.h"
 #include "World/World.h"
-#include "Slate/ViewportToolbar.h"
-#include "Slate/TransformWidget.h"
+#include "Slate/EditorViewportOverlay.h"
 
 namespace
 {
@@ -249,7 +248,7 @@ void FEditorEngine::FinalizeInitialize()
 	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
 	EditorUI.OnSlateReady();
 	CreateInitUI();
-	FObjManager::PreloadAllObjFiles(FPaths::MeshDir().string().c_str());
+	FObjManager::PreloadAllModelFiles(FPaths::MeshDir().string().c_str());
 }
 
 void FEditorEngine::PrepareFrame(float DeltaTime)
@@ -326,14 +325,10 @@ void FEditorEngine::ClearDebugDrawForFrame()
 
 void FEditorEngine::CreateInitUI()
 {
-	std::unique_ptr<SViewportToolbarWidget> Toolbar = std::make_unique<SViewportToolbarWidget>(this);
-	SWidget* RawToolbar = SlateApplication->CreateWidget(std::move(Toolbar));
-	SlateApplication->AddOverlayWidget(RawToolbar);
-
 	auto* RawEditorVP = static_cast<FEditorViewportClient*>(ViewportClient.get());
-	std::unique_ptr<FTransformWidget> Transform = std::make_unique<FTransformWidget>(this, RawEditorVP);
-	SWidget* RawTransform = SlateApplication->CreateWidget(std::move(Transform));
-	SlateApplication->AddOverlayWidget(RawTransform);
+	std::unique_ptr<SEditorViewportOverlay> Overlay = std::make_unique<SEditorViewportOverlay>(this, &EditorUI, RawEditorVP);
+	SWidget* RawOverlay = SlateApplication->CreateWidget(std::move(Overlay));
+	SlateApplication->AddOverlayWidget(RawOverlay);
 }
 
 bool FEditorEngine::InitEditorPreview()

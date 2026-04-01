@@ -5,6 +5,7 @@
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
+#include "Object/ObjectIterator.h"
 #include "Renderer/MeshData.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/Material.h"
@@ -161,6 +162,47 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 			}
 			if (UStaticMeshComponent* MeshComp = SelectedActor->GetComponentByClass<UStaticMeshComponent>())
 			{
+				if (ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					ImGui::Indent(8.0f);
+
+					// 1. 현재 컴포넌트에 할당된 메쉬 정보 가져오기
+					UStaticMesh* CurrentMesh = MeshComp->GetStaticMesh();
+					std::string CurrentMeshName = CurrentMesh ? CurrentMesh->GetAssetPathFileName() : "None";
+
+					ImGui::Text("Mesh Asset:");
+					ImGui::SameLine();
+
+					ImGui::PushItemWidth(200.f);
+					if (ImGui::BeginCombo("##StaticMeshAssign", CurrentMeshName.c_str()))
+					{
+						// 2. TObjectIterator를 사용하여 로드된 모든 UStaticMesh를 순회
+						for (TObjectIterator<UStaticMesh> It; It; ++It)
+						{
+							UStaticMesh* MeshAsset = It.Get();
+							if (!MeshAsset) continue;
+
+							std::string MeshName = MeshAsset->GetAssetPathFileName();
+							bool bSelected = (CurrentMesh == MeshAsset);
+
+							if (ImGui::Selectable(MeshName.c_str(), bSelected))
+							{
+								// 3. 선택 시 새로운 메쉬 할당
+								MeshComp->SetStaticMesh(MeshAsset);
+							}
+
+							if (bSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::PopItemWidth();
+
+					ImGui::Unindent(8.0f);
+				}
+
 				if (ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::Indent(8.0f);
@@ -324,7 +366,6 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 									}
 									ImGui::PopID();
 
-									// 기존에 밖으로 꺼내져 있던 텍스처 미리보기 렌더링(64x64) 코드는 삭제했습니다!
 								}
 							}
 							ImGui::PopID(); // PushID(i)에 대한 Pop

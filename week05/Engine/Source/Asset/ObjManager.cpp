@@ -13,6 +13,8 @@
 #include "Debug/EngineLog.h"
 #include "Math/MathUtility.h"
 #include <map>
+
+#include "Object/ObjectFactory.h"
 #include "Renderer/Material.h"
 #include "Renderer/MaterialManager.h"
 #include "Renderer/Renderer.h"
@@ -27,6 +29,155 @@ namespace
 	constexpr uint32 GModelVersionLegacy = 1;
 	constexpr uint32 GModelVersionEmbeddedMaterials = 2;
 	constexpr uint32 GModelVersion = GModelVersionEmbeddedMaterials;
+
+	FString NormalizeSlashes(FString Path)
+	{
+		std::replace(Path.begin(), Path.end(), '\\', '/');
+		return Path;
+	}
+	FString GetStandardizedMeshPath(const FString& InPath)
+	{
+		FString Path = NormalizeSlashes(InPath);
+		if (Path.find('/') == std::string::npos)
+		{
+			Path = "Assets/Meshes/" + Path;
+		}
+		Path = FPaths::ToRelativePath(Path);
+
+		return NormalizeSlashes(Path);
+	}
+
+	FString BuildObjCacheKey(const FString& PathFileName, const FObjLoadOptions& LoadOptions)
+	{
+		const FString StandardizedPath = GetStandardizedMeshPath(PathFileName);
+		if (LoadOptions.bUseLegacyObjConversion)
+		{
+			return StandardizedPath + "|OBJ|LEGACY";
+		}
+
+		auto AxisToken = [](EObjImportAxis Axis) -> const char*
+		{
+			switch (Axis)
+			{
+			case EObjImportAxis::PosX: return "+X";
+			case EObjImportAxis::NegX: return "-X";
+			case EObjImportAxis::PosY: return "+Y";
+			case EObjImportAxis::NegY: return "-Y";
+			case EObjImportAxis::PosZ: return "+Z";
+			case EObjImportAxis::NegZ: return "-Z";
+			default: return "+X";
+			}
+		};
+
+		return StandardizedPath + "|OBJ|F=" + AxisToken(LoadOptions.ForwardAxis) + "|U=" + AxisToken(LoadOptions.UpAxis);
+	}
+
+	int32 GetAxisBaseIndex(EObjImportAxis Axis)
+	{
+		switch (Axis)
+		{
+		case EObjImportAxis::PosX:
+		case EObjImportAxis::NegX:
+			return 0;
+		case EObjImportAxis::PosY:
+		case EObjImportAxis::NegY:
+			return 1;
+		case EObjImportAxis::PosZ:
+		case EObjImportAxis::NegZ:
+			return 2;
+		default:
+			return 0;
+		}
+	}
+
+	float GetAxisSign(EObjImportAxis Axis)
+	{
+		switch (Axis)
+		{
+		case EObjImportAxis::NegX:
+		case EObjImportAxis::NegY:
+		case EObjImportAxis::NegZ:
+			return -1.0f;
+		default:
+			return 1.0f;
+		}
+	}
+
+	EObjImportAxis GetPositiveAxisByBaseIndex(int32 BaseIndex)
+	{
+		switch (BaseIndex)
+		{
+		case 0: return EObjImportAxis::PosX;
+		case 1: return EObjImportAxis::PosY;
+		case 2: return EObjImportAxis::PosZ;
+		default: return EObjImportAxis::PosX;
+		}
+	}
+
+	EObjImportAxis GetRemainingPositiveAxis(EObjImportAxis ForwardAxis, EObjImportAxis UpAxis)
+	{
+		const int32 ForwardBaseIndex = GetAxisBaseIndex(ForwardAxis);
+		const int32 UpBaseIndex = GetAxisBaseIndex(UpAxis);
+		for (int32 BaseIndex = 0; BaseIndex < 3; ++BaseIndex)
+		{
+			if (BaseIndex != ForwardBaseIndex && BaseIndex != UpBaseIndex)
+			{
+				return GetPositiveAxisByBaseIndex(BaseIndex);
+			}
+		}
+
+		return EObjImportAxis::PosY;
+	}
+
+	float GetVectorComponentForAxis(const FVector& Vector, EObjImportAxis Axis)
+	{
+		switch (Axis)
+		{
+		case EObjImportAxis::PosX: return Vector.X;
+		case EObjImportAxis::NegX: return -Vector.X;
+		case EObjImportAxis::PosY: return Vector.Y;
+		case EObjImportAxis::NegY: return -Vector.Y;
+		case EObjImportAxis::PosZ: return Vector.Z;
+		case EObjImportAxis::NegZ: return -Vector.Z;
+		default: return Vector.X;
+		}
+	}
+
+	FVector ConvertObjVectorToEngineBasis(const FVector& Vector, const FObjLoadOptions& LoadOptions)
+	{
+		if (LoadOptions.bUseLegacyObjConversion)
+		{
+			FVector Converted = Vector;
+			Converted.Y = -Converted.Y;
+			return Converted;
+		}
+
+		const EObjImportAxis RightAxis = GetRemainingPositiveAxis(LoadOptions.ForwardAxis, LoadOptions.UpAxis);
+		return FVector(
+			GetVectorComponentForAxis(Vector, LoadOptions.ForwardAxis),
+			GetVectorComponentForAxis(Vector, RightAxis),
+			GetVectorComponentForAxis(Vector, LoadOptions.UpAxis));
+	}
+
+	int32 GetObjConversionDeterminantSign(const FObjLoadOptions& LoadOptions)
+	{
+		if (LoadOptions.bUseLegacyObjConversion)
+		{
+			return -1;
+		}
+
+		const EObjImportAxis RightAxis = GetRemainingPositiveAxis(LoadOptions.ForwardAxis, LoadOptions.UpAxis);
+		float Matrix[3][3] = {};
+		Matrix[0][GetAxisBaseIndex(LoadOptions.ForwardAxis)] = GetAxisSign(LoadOptions.ForwardAxis);
+		Matrix[1][GetAxisBaseIndex(RightAxis)] = GetAxisSign(RightAxis);
+		Matrix[2][GetAxisBaseIndex(LoadOptions.UpAxis)] = GetAxisSign(LoadOptions.UpAxis);
+
+		const float Determinant =
+			Matrix[0][0] * (Matrix[1][1] * Matrix[2][2] - Matrix[1][2] * Matrix[2][1]) -
+			Matrix[0][1] * (Matrix[1][0] * Matrix[2][2] - Matrix[1][2] * Matrix[2][0]) +
+			Matrix[0][2] * (Matrix[1][0] * Matrix[2][1] - Matrix[1][1] * Matrix[2][0]);
+		return (Determinant < 0.0f) ? -1 : 1;
+	}
 
 	FString WideToUtf8(const std::wstring& WideString)
 	{
@@ -363,10 +514,12 @@ namespace
 		std::unique_ptr<FStaticMesh> RawData,
 		const TArray<FString>& MaterialSlotNames)
 	{
-		RawData->PathFileName = PathFileName;
+		FString JustFileName = std::filesystem::path(PathFileName).filename().string();
+
+		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
 
-		UStaticMesh* NewAsset = new UStaticMesh();
+		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		NewAsset->SetStaticMeshAsset(RawData.release());
 
 		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
@@ -400,10 +553,12 @@ namespace
 		std::unique_ptr<FStaticMesh> RawData,
 		const TArray<FModelMaterialInfo>& MaterialInfos)
 	{
-		RawData->PathFileName = PathFileName;
+		FString JustFileName = std::filesystem::path(PathFileName).filename().string();
+
+		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
 
-		UStaticMesh* NewAsset = new UStaticMesh();
+		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
 		NewAsset->SetStaticMeshAsset(RawData.release());
 
 		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
@@ -454,6 +609,7 @@ namespace
 		TArray<FVector> TempPositions;
 		TArray<FVector2> TempUVs;
 		TArray<FVector> TempNormals;
+		const FObjLoadOptions& LoadOptions;
 
 		struct FIndex
 		{
@@ -473,6 +629,13 @@ namespace
 
 		uint32 CurrentSectionStartIndex = 0;
 		int32 CurrentMaterialIndex = -1;
+
+		FObjParserContext(FStaticMesh* InOutMesh, TArray<FString>& InOutMaterialNames, const FObjLoadOptions& InLoadOptions)
+			: OutMesh(InOutMesh)
+			, OutMaterialNames(InOutMaterialNames)
+			, LoadOptions(InLoadOptions)
+		{
+		}
 
 		void CloseCurrentSection()
 		{
@@ -563,9 +726,18 @@ namespace
 
 			for (size_t i = 1; i + 1 < FaceIndices.size(); ++i)
 			{
-				OutMesh->Indices.push_back(FaceIndices[0]);
-				OutMesh->Indices.push_back(FaceIndices[i + 1]);
-				OutMesh->Indices.push_back(FaceIndices[i]);
+				if (GetObjConversionDeterminantSign(LoadOptions) < 0)
+				{
+					OutMesh->Indices.push_back(FaceIndices[0]);
+					OutMesh->Indices.push_back(FaceIndices[i + 1]);
+					OutMesh->Indices.push_back(FaceIndices[i]);
+				}
+				else
+				{
+					OutMesh->Indices.push_back(FaceIndices[0]);
+					OutMesh->Indices.push_back(FaceIndices[i]);
+					OutMesh->Indices.push_back(FaceIndices[i + 1]);
+				}
 			}
 		}
 	};
@@ -573,15 +745,16 @@ namespace
 
 UStaticMesh* FObjManager::LoadStaticMeshAsset(const FString& PathFileName)
 {
-	const FString Extension = GetNormalizedExtension(PathFileName);
-	if (Extension == ".model")
+	FString StandardizedPath = GetStandardizedMeshPath(PathFileName);
+	const FString Extension = GetNormalizedExtension(StandardizedPath);
+	if (Extension == ".obj" || Extension.empty())
 	{
-		return LoadModelStaticMeshAsset(PathFileName);
+		return LoadObjStaticMeshAsset(StandardizedPath);
 	}
 
-	if (Extension.empty() || Extension == ".obj")
+	if (Extension == ".model")
 	{
-		return LoadObjStaticMeshAsset(PathFileName);
+		return LoadModelStaticMeshAsset(StandardizedPath);
 	}
 
 	UE_LOG("[FObjManager] Unsupported static mesh extension: %s", PathFileName.c_str());
@@ -590,7 +763,14 @@ UStaticMesh* FObjManager::LoadStaticMeshAsset(const FString& PathFileName)
 
 UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 {
-	auto It = ObjStaticMeshMap.find(PathFileName);
+	return LoadObjStaticMeshAsset(PathFileName, FObjLoadOptions{});
+}
+
+UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName, const FObjLoadOptions& LoadOptions)
+{
+	const FString CacheKey = BuildObjCacheKey(PathFileName, LoadOptions);
+
+	auto It = ObjStaticMeshMap.find(CacheKey);
 	if (It != ObjStaticMeshMap.end())
 	{
 		return It->second;
@@ -598,47 +778,21 @@ UStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
 
 	auto RawData = std::make_unique<FStaticMesh>();
 	TArray<FString> FoundMaterials;
-	if (!ParseObjFile(PathFileName, RawData.get(), FoundMaterials))
+	if (!ParseObjFile(PathFileName, RawData.get(), FoundMaterials, LoadOptions))
 	{
 		return nullptr;
 	}
 
-/*<<<<<<< HEAD
-	RawData->UpdateLocalBound();
-
-	UStaticMesh* NewAsset = new UStaticMesh();
-	NewAsset->SetStaticMeshAsset(RawData.release());
-
-	NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
-	NewAsset->LocalBounds.Center = NewAsset->GetRenderData()->GetCenterCoord();
-	NewAsset->LocalBounds.BoxExtent = (NewAsset->GetRenderData()->GetMaxCoord() - NewAsset->GetRenderData()->GetMinCoord()) * 0.5f;
-
-	for (const FString& MatName : FoundMaterials)
-	{
-		auto Material = FMaterialManager::Get().FindByName(MatName);
-
-		if (!Material)
-		{
-			Material = FMaterialManager::Get().FindByName("M_Default");
-		}
-
-		NewAsset->AddDefaultMaterial(Material);
-	}
-
-	if (FoundMaterials.empty())
-	{
-		NewAsset->AddDefaultMaterial(FMaterialManager::Get().FindByName("M_Default"));
-	}
-
-=======*/
 	UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), FoundMaterials);
-	ObjStaticMeshMap[PathFileName] = NewAsset;
+	ObjStaticMeshMap[CacheKey] = NewAsset;
 	return NewAsset;
 }
 
 UStaticMesh* FObjManager::LoadModelStaticMeshAsset(const FString& PathFileName)
 {
-	auto It = ObjStaticMeshMap.find(PathFileName);
+	FString StandardizedPath = GetStandardizedMeshPath(PathFileName);
+
+	auto It = ObjStaticMeshMap.find(StandardizedPath);
 	if (It != ObjStaticMeshMap.end())
 	{
 		return It->second;
@@ -749,7 +903,7 @@ UStaticMesh* FObjManager::LoadModelStaticMeshAsset(const FString& PathFileName)
 	if (Version == GModelVersionLegacy)
 	{
 		UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), MaterialSlotNames);
-		ObjStaticMeshMap[PathFileName] = NewAsset;
+		ObjStaticMeshMap[StandardizedPath] = NewAsset;
 		return NewAsset;
 	}
 
@@ -772,7 +926,7 @@ UStaticMesh* FObjManager::LoadModelStaticMeshAsset(const FString& PathFileName)
 	}
 
 	UStaticMesh* NewAsset = FinalizeStaticMeshAsset(PathFileName, std::move(RawData), MaterialInfos);
-	ObjStaticMeshMap[PathFileName] = NewAsset;
+	ObjStaticMeshMap[StandardizedPath] = NewAsset;
 	return NewAsset;
 }
 
@@ -1040,34 +1194,6 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			std::string MaterialName;
 			SS >> MaterialName;
 
-/*<<<<<<< HEAD
-			CurrentMaterial = std::make_shared<FMaterial>();
-			CurrentMaterial->SetOriginName(MaterialName.c_str());
-
-			std::wstring VSPath = FPaths::ShaderDir() / L"VertexShader.hlsl";
-			std::wstring PSPath = FPaths::ShaderDir() / L"ColorPixelShader.hlsl";
-			CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
-			CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
-
-			auto DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
-			CurrentMaterial->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
-			CurrentMaterial->SetRasterizerState(DefaultTexMat->GetRasterizerState());
-			CurrentMaterial->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
-			CurrentMaterial->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
-
-			int32 SlotIndex = CurrentMaterial->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
-			if (SlotIndex >= 0)
-			{
-				CurrentMaterial->RegisterParameter("BaseColor", SlotIndex, 0, 16);
-				float White[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(White, sizeof(White));
-
-				CurrentMaterial->RegisterParameter("UVScrollSpeed", SlotIndex, 16, 16);
-				float DefaultScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				CurrentMaterial->GetConstantBuffer(SlotIndex)->SetData(DefaultScroll, sizeof(DefaultScroll), 16);
-			}
-
-=======*/
 			CurrentMaterial = CreateImportedMaterialTemplate(MaterialName.c_str());
 			FMaterialManager::Get().Register(MaterialName.c_str(), CurrentMaterial);
 		}
@@ -1089,19 +1215,6 @@ bool FObjManager::ParseMtlFile(const FString& MtlFIlePath)
 			const std::filesystem::path TexturePath = ResolveTextureReferencePath(FilePath, TextureReference);
 			if (!TryLoadTextureIntoMaterial(CurrentMaterial, TexturePath, "[MTL Parser] Auto-loaded texture-backed pixel shader:"))
 			{
-/*<<<<<<< HEAD
-				auto MaterialTexture = std::make_shared<FMaterialTexture>();
-				MaterialTexture->TextureSRV = NewSRV;
-				CurrentMaterial->SetMaterialTexture(MaterialTexture);
-
-				std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
-				CurrentMaterial->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
-
-				std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
-				CurrentMaterial->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
-
-				UE_LOG("[MTL 파서] %s 텍스처 자동 로드 및 장착 완료!", TexPSPath.c_str());
-=======*/
 				UE_LOG("[MTL Parser] Failed to resolve texture '%s' referenced by '%s'.",
 					TextureReference.c_str(),
 					AbsolutePath.c_str());
@@ -1135,10 +1248,61 @@ void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
 	}
 }
 
-bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames)
+void FObjManager::PreloadAllModelFiles(const FString& DirectoryPath)
+{
+	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
+	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	// 폴더가 존재하는지 확인
+	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
+	{
+		UE_LOG("[FObjManager] Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
+	{
+		if (Entry.is_regular_file() && GetNormalizedExtension(Entry.path().string()) == ".model")
+		{
+			std::string FullFilePath = Entry.path().string();
+
+			UStaticMesh* LoadedMesh = LoadModelStaticMeshAsset(FullFilePath.c_str());
+		}
+	}
+	PreloadAllMtlFiles(FPaths::MaterialDir().string().c_str());
+}
+
+void FObjManager::PreloadAllMtlFiles(const FString& DirectoryPath)
+{
+	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
+	const std::filesystem::path DirPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
+	{
+		UE_LOG("[FObjManager] MTL Preload 실패: 폴더를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
+		return;
+	}
+
+	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
+	{
+		if (Entry.is_regular_file() && GetNormalizedExtension(Entry.path().string()) == ".mtl")
+		{
+			std::string FullFilePath = Entry.path().string();
+			ParseMtlFile(FullFilePath.c_str());
+		}
+	}
+}
+bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TArray<FString>& OutMaterialNames, const FObjLoadOptions& LoadOptions)
 {
 	const FString AbsolutePath = FPaths::ToAbsolutePath(FilePath);
 	const std::filesystem::path ObjPath = std::filesystem::path(FPaths::ToWide(AbsolutePath)).lexically_normal();
+
+	if (!LoadOptions.bUseLegacyObjConversion &&
+		GetAxisBaseIndex(LoadOptions.ForwardAxis) == GetAxisBaseIndex(LoadOptions.UpAxis))
+	{
+		UE_LOG("[FObjManager] Invalid OBJ axis conversion pair for file: %s", AbsolutePath.c_str());
+		return false;
+	}
 
 	std::ifstream File(ObjPath);
 	if (!File.is_open())
@@ -1147,7 +1311,7 @@ bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TA
 		return false;
 	}
 
-	FObjParserContext Context{ OutMesh, OutMaterialNames };
+	FObjParserContext Context(OutMesh, OutMaterialNames, LoadOptions);
 	std::string Line;
 
 	while (std::getline(File, Line))
@@ -1181,8 +1345,7 @@ bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TA
 		{
 			FVector Position;
 			SS >> Position.X >> Position.Y >> Position.Z;
-			Position.Y = -Position.Y;
-			Context.TempPositions.push_back(Position);
+			Context.TempPositions.push_back(ConvertObjVectorToEngineBasis(Position, LoadOptions));
 		}
 		else if (Type == "vt")
 		{
@@ -1195,7 +1358,7 @@ bool FObjManager::ParseObjFile(const FString& FilePath, FStaticMesh* OutMesh, TA
 		{
 			FVector Normal;
 			SS >> Normal.X >> Normal.Y >> Normal.Z;
-			Context.TempNormals.push_back(Normal);
+			Context.TempNormals.push_back(ConvertObjVectorToEngineBasis(Normal, LoadOptions));
 		}
 	}
 

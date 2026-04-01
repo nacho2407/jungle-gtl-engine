@@ -1,5 +1,6 @@
 #include "Object/Object.h"
 #include "Object/Class.h"
+#include "Memory/MemoryBase.h"
 
 // 조건 1: 전역 오브젝트 배열 정의
 static TArray<UObject*> GUObjectArray;
@@ -24,7 +25,13 @@ UObject::UObject(const FString& InName, UObject* InOuter)
 	: Name(std::move(InName)), Outer(InOuter)
 {
 	// UUID, InternalIndex는 FObjectFactory::ConstructObject에서 주입
-	ObjectSize = LastNewSize;
+	// this 앞에 붙은 FAllocHeader에서 직접 읽어 정확한 크기를 얻음
+	// (LastNewSize는 멤버 초기화 중 다른 할당에 의해 덮어써질 수 있음)
+	const FAllocHeader* Header = reinterpret_cast<const FAllocHeader*>(
+		reinterpret_cast<const uint8*>(this) - HEADER_STRIDE);
+	ObjectSize = (Header->MagicNumber == MALLOC_MAGIC)
+		? static_cast<uint32>(Header->Size)
+		: LastNewSize;
 }
 
 UObject::~UObject() 

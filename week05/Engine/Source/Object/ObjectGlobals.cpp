@@ -1,5 +1,6 @@
 #include "ObjectGlobals.h"
 #include "Memory/MemoryBase.h"
+#include "Object/Object.h"
 
 ENGINE_API FMalloc* GetGMalloc()
 {
@@ -9,6 +10,7 @@ ENGINE_API FMalloc* GetGMalloc()
 
 void* operator new(size_t Size)
 {
+	UObject::LastNewSize = static_cast<uint32>(Size);
 	if (GetGMalloc())
 	{
 		return GetGMalloc()->Malloc(Size);

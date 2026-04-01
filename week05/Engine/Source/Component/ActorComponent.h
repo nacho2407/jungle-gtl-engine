@@ -1,6 +1,7 @@
 #pragma once
 #include "Object/Object.h"
 
+class FArchive;
 class AActor;
 
 class ENGINE_API UActorComponent : public UObject
@@ -21,6 +22,8 @@ public:
 	bool HasBegunPlay() const { return bBegunPlay; }
 	bool CanTick() const { return bCanEverTick && bTickEnabled; }
 	void SetComponentTickEnabled(bool bEnabled) { bTickEnabled = bEnabled; }
+
+	virtual void Serialize(FArchive& Ar);
 
 protected:
 	TObjectPtr<AActor> Owner;

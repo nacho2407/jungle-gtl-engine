@@ -1,23 +1,16 @@
 #pragma once
 
+#include "Asset/ObjManager.h"
 #include "Core/Engine.h"
 
 class AStaticMeshActor;
+class FMaterial;
 class FObjViewerShell;
 class FObjViewerViewportClient;
 class FWindowsWindow;
 class UStaticMesh;
 class USceneComponent;
-
-enum class EObjImportAxis : uint8_t
-{
-	PosX,
-	NegX,
-	PosY,
-	NegY,
-	PosZ,
-	NegZ
-};
+struct FDynamicMesh;
 
 enum class EObjImportPreset : uint8_t
 {
@@ -67,6 +60,26 @@ struct FObjViewerModelState
 	FObjImportSummary LastImportSummary;
 };
 
+struct FObjViewerGridSettings
+{
+	bool bVisible = true;
+	float GridSize = 10.0f;
+	float LineThickness = 1.0f;
+};
+
+enum class EObjViewerNormalVisualizationMode : uint8_t
+{
+	Vertex,
+	Face
+};
+
+struct FObjViewerNormalSettings
+{
+	bool bVisible = false;
+	EObjViewerNormalVisualizationMode Mode = EObjViewerNormalVisualizationMode::Vertex;
+	float LengthScale = 0.05f;
+};
+
 class FObjViewerEngine : public FEngine
 {
 public:
@@ -87,6 +100,12 @@ public:
 
 	bool HasLoadedModel() const { return ModelState.bLoaded && ModelState.Mesh != nullptr; }
 	const FObjViewerModelState& GetModelState() const { return ModelState; }
+	const FObjViewerGridSettings& GetGridSettings() const { return GridSettings; }
+	FObjViewerGridSettings& GetMutableGridSettings() { return GridSettings; }
+	const FObjViewerNormalSettings& GetNormalSettings() const { return NormalSettings; }
+	FObjViewerNormalSettings& GetMutableNormalSettings() { return NormalSettings; }
+	bool IsWireframeEnabled() const { return bWireframeEnabled; }
+	void SetWireframeEnabled(bool bEnabled) { bWireframeEnabled = bEnabled; }
 	FObjViewerShell& GetShell() const;
 
 protected:
@@ -99,6 +118,10 @@ protected:
 
 private:
 	void InitializeViewerCamera() const;
+	void CreateGridResources();
+	void ApplyWireframeOverride(FRenderCommandQueue& Queue) const;
+	void AppendNormalVisualizationDebugDraw();
+	void AppendGridRenderCommand(FRenderCommandQueue& Queue) const;
 	void UpdateLoadedModelState(
 		const FString& FilePath,
 		const FObjImportSummary& ImportOptions,
@@ -108,5 +131,12 @@ private:
 	FWorldContext* ViewerWorldContext = nullptr;
 	FWindowsWindow* MainWindow = nullptr;
 	FObjViewerModelState ModelState;
+	FObjViewerGridSettings GridSettings;
+	FObjViewerNormalSettings NormalSettings;
+	std::unique_ptr<FDynamicMesh> GridMesh;
+	std::shared_ptr<FMaterial> GridMaterial;
+	bool bWireframeEnabled = false;
+	const FString WireframeMaterialName = "M_Wireframe";
+	std::shared_ptr<FMaterial> WireframeMaterial = nullptr;
 	std::unique_ptr<FObjViewerShell> ViewerShell;
 };

@@ -141,23 +141,13 @@ void FMaterial::RegisterParameter(const FString& ParamName, int32 BufferIndex, u
 bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uint32 DataSize)
 {
 	auto It = ParameterMap.find(ParamName);
-	if (It == ParameterMap.end())
-	{
-		return false;
-	}
+	if (It == ParameterMap.end()) { return false; }
 
 	const FMaterialParameterInfo& Info = It->second;
-	if (DataSize > Info.Size)
-	{
-		return false;
-	}
 
+	uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
 	FMaterialConstantBuffer* CB = GetConstantBuffer(Info.BufferIndex);
-	if (!CB)
-	{
-		return false;
-	}
-
+	if (!CB) return false;
 	CB->SetData(Data, DataSize, Info.Offset);
 	return true;
 }
@@ -168,7 +158,6 @@ bool FMaterial::GetParameterData(const FString& ParamName, void* OutData, uint32
 	if (It == ParameterMap.end()) return false;
 
 	const FMaterialParameterInfo& Info = It->second;
-	if (DataSize > Info.Size) return false;
 
 	if (Info.BufferIndex < 0 || Info.BufferIndex >= static_cast<int32>(ConstantBuffers.size())) return false;
 
