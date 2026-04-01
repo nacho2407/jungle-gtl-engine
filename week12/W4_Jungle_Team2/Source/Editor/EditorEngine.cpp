@@ -45,6 +45,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// Slate 초기화
 	FSlateApplication::Get().Initialize();
+	// Make Viewport Layout ( SplitterV -> 2 * SplitterH)
+	ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
