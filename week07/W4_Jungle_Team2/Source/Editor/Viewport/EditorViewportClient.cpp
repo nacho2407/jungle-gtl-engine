@@ -14,6 +14,7 @@
 #include "Runtime/SceneView.h"
 #include "EditorUtils.h"
 #include "Math/Vector4.h"
+#include "Slate/SWidget.h"
 #include <algorithm>
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
@@ -308,27 +309,33 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 	if (InputSystem::Get().GetKeyDown(VK_MBUTTON))
 	{
-		bMiddleMousePanning = true;
-		bFirstMouseMoveAfterPanStart = true;
-		NavigationController.BeginPanning();
-
-		if (bIsCursorVisible)
+		if(ViewportType == EVT_Perspective)
 		{
-			for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
-			bIsCursorVisible = false;
+			bMiddleMousePanning = true;
+			bFirstMouseMoveAfterPanStart = true;
+			NavigationController.BeginPanning();
+
+			if (bIsCursorVisible)
+			{
+				for (int32 Cnt = 0; ShowCursor(FALSE) >= 0 && Cnt < 10; ++Cnt) {}
+				bIsCursorVisible = false;
+			}
 		}
 	}
 
 	if (InputSystem::Get().GetKeyUp(VK_MBUTTON) && bMiddleMousePanning)
 	{
-		bMiddleMousePanning = false;
-		NavigationController.EndPanning();
-		NavigationController.ResetTargetLocation();
-
-		if (!bIsCursorVisible)
+		if (ViewportType == EVT_Perspective)
 		{
-			for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
-			bIsCursorVisible = true;
+			bMiddleMousePanning = false;
+			NavigationController.EndPanning();
+			NavigationController.ResetTargetLocation();
+
+			if (!bIsCursorVisible)
+			{
+				for (int32 Cnt = 0; ShowCursor(TRUE) < 0 && Cnt < 10; ++Cnt) {}
+				bIsCursorVisible = true;
+			}
 		}
 	}
 
