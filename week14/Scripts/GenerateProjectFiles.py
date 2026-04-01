@@ -1,6 +1,6 @@
 """
 GenerateProjectFiles.py — Auto-generate .vcxproj, .vcxproj.filters
-for CraftonEngine from the on-disk folder structure.
+for KraftonEngine from the on-disk folder structure.
 
 Usage:
     python Scripts/GenerateProjectFiles.py
@@ -16,7 +16,7 @@ from pathlib import Path
 # ──────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 
-PROJECT_NAME = "CraftonEngine"
+PROJECT_NAME = "KraftonEngine"
 PROJECT_DIR = ROOT / PROJECT_NAME
 PROJECT_GUID = "{55068e81-c0a0-49f9-ab7b-54aea968722b}"
 ROOT_NAMESPACE = "Week2"
@@ -56,6 +56,8 @@ SHADER_EXTS = {".hlsl", ".hlsli"}
 NATVIS_EXTS = {".natvis"}
 NONE_EXTS = {".natstepfilter", ".config"}
 
+RC_EXTS = {".rc"}
+
 # Root-level files to include (relative to project dir)
 ROOT_FILES = ["main.cpp"]
 
@@ -86,7 +88,7 @@ NS = "http://schemas.microsoft.com/developer/msbuild/2003"
 # ──────────────────────────────────────────────
 def scan_files(project_dir: Path) -> dict[str, list[str]]:
     """Scan directories and collect files grouped by type."""
-    result = {"ClCompile": [], "ClInclude": [], "FxCompile": [], "Natvis": [], "None": []}
+    result = {"ClCompile": [], "ClInclude": [], "FxCompile": [], "ResourceCompile": [], "Natvis": [], "None": []}
 
     # Scan source/header directories
     for scan_dir in SCAN_DIRS:
@@ -129,6 +131,11 @@ def scan_files(project_dir: Path) -> dict[str, list[str]]:
         full = project_dir / root_file
         if full.exists():
             result["ClCompile"].append(root_file.replace("/", "\\"))
+
+    # Add root-level .rc files
+    for f in sorted(project_dir.glob("*.rc")):
+        rel_str = f.name
+        result["ResourceCompile"].append(rel_str)
 
     return result
 
@@ -309,6 +316,12 @@ def generate_vcxproj(files: dict[str, list[str]]):
                     cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
                     ET.SubElement(elem, "ExcludedFromBuild", Condition=cond).text = "true"
 
+    # ResourceCompile items (.rc)
+    if files["ResourceCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["ResourceCompile"]:
+            ET.SubElement(ig, "ResourceCompile", Include=f)
+
     # Natvis items
     if files["Natvis"]:
         ig = ET.SubElement(proj, "ItemGroup")
@@ -397,6 +410,15 @@ def generate_filters(files: dict[str, list[str]]):
             if filt:
                 ET.SubElement(elem, "Filter").text = filt
 
+    # ResourceCompile items with filters
+    if files["ResourceCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["ResourceCompile"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "ResourceCompile", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
     # None items with filters
     if files["None"]:
         ig = ET.SubElement(proj, "ItemGroup")
@@ -480,6 +502,7 @@ def main():
     print(f"  ClCompile:  {len(files['ClCompile'])} files")
     print(f"  ClInclude:  {len(files['ClInclude'])} files")
     print(f"  FxCompile:  {len(files['FxCompile'])} files")
+    print(f"  RC:         {len(files['ResourceCompile'])} files")
     print(f"  Natvis:     {len(files['Natvis'])} files")
     print(f"  None:       {len(files['None'])} files")
 
