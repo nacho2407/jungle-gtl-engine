@@ -1391,12 +1391,42 @@ void FEditor::DrawAboutPopup()
             ImGui::PopStyleColor();
             ImGui::Unindent();
             ImGui::Spacing();
-        }
+            }
 
-        ImGui::Spacing();
+            ImGui::Spacing();
+            ImGui::SeparatorText("Second Contributors");
+            ImGui::Spacing();
 
-        if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr &&
-            AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
+         static const std::array<FWString, 4> SecondContributorNames = {
+             L"\uAE40\uAE30\uD6C8", // 김기훈
+             L"\uAE40\uD615\uB3C4", // 김형도
+             L"\uAE40\uD615\uC900", // 김형준
+             L"\uC7A5\uBBFC\uC900", // 장민준
+         };
+
+         static const std::array<FWString, 4> SecondContributorSummaries = {
+             L"Editor UI & Tools, Material editing and UV scroll",
+             L"OBJ parser, Binary mesh serialization and Material editing",
+             L"Multi-viewport architecture, Camera systems and Viewer core",
+             L"Stat overlay (FPS/Memory), Console engine and Timer management",
+         };
+
+            for (size_t i = 0; i < SecondContributorNames.size(); ++i)
+            {
+            const FString NameUtf8 = WideToUtf8(SecondContributorNames[i]);
+            const FString SummaryUtf8 = WideToUtf8(SecondContributorSummaries[i]);
+            ImGui::BulletText("%s", NameUtf8.c_str());
+            ImGui::Indent();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(185, 185, 190, 255));
+            ImGui::TextWrapped("%s", SummaryUtf8.c_str());
+            ImGui::PopStyleColor();
+            ImGui::Unindent();
+            ImGui::Spacing();
+            }
+
+            ImGui::Spacing();
+
+            if (AboutImageResource != nullptr && AboutImageResource->GetSRV() != nullptr &&            AboutImageResource->Width > 0 && AboutImageResource->Height > 0)
         {
             ImGui::Spacing();
             ImGui::Separator();
