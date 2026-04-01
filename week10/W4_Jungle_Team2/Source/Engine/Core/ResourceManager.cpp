@@ -13,6 +13,7 @@
 #include "UI/EditorConsoleWidget.h"
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
+#include "Render/Scene/RenderCommand.h"
 
 #pragma region __BINARY__
 
@@ -90,6 +91,7 @@ void FResourceManager::PreloadStaticMeshes()
 
 #pragma endregion
 
+
 namespace ResourceKey
 {
 	constexpr const char* Font = "Font";
@@ -101,111 +103,97 @@ namespace ResourceKey
 	constexpr const char* Rows = "Rows";
 	constexpr const char* Preload = "Preload";
 	constexpr const char* NormalizeToUnitCube = "NormalizeToUnitCube";
+	constexpr const char* Type = "Type";
 }
 
-void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
+//	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
+void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device* Device)
 {
-	using namespace json;
+	//	초기화
+	ObjFilePaths.clear();
+	FontFilePaths.clear();
+	TextureFilePaths.clear();
+	MaterialFilePaths.clear();
+	ParticleFilePaths.clear();
+	StaticMeshRegistry.clear();
 
-	std::ifstream File(std::filesystem::path(FPaths::ToWide(Path)));
-	if (!File.is_open())
+	namespace fs = std::filesystem;
+	
+	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
+	
+	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
+
+	if (!fs::exists(RootPath) || !fs::is_directory(RootPath))
 	{
+		UE_LOG("[ResourceManager] Fatal Error : Root Directory Error");
 		return;
 	}
 
-	FString Content((std::istreambuf_iterator<char>(File)),
-	                std::istreambuf_iterator<char>());
-
-	InitializeDefaultResources(InDevice);
-
-	JSON Root = JSON::Load(Content);
-
-	// Font — { "Name": { "Path": "...", "Columns": 16, "Rows": 16 } }
-	if (Root.hasKey(ResourceKey::Font))
+	for (const auto& Entry : fs::recursive_directory_iterator(RootPath))
 	{
-		JSON FontSection = Root[ResourceKey::Font];
-		for (auto& Pair : FontSection.ObjectRange())
+		if (!Entry.is_regular_file())
 		{
-			JSON Entry = Pair.second;
-			FFontResource Resource;
-			Resource.Name = FName(Pair.first.c_str());
-			Resource.Path = Entry[ResourceKey::Path].ToString();
-			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-			Resource.SRV = nullptr;
-			FontResources[Pair.first] = Resource;
+			continue;
 		}
-	}
 
-	// StaticMesh — { "Name": { "Path": "Asset/Mesh/xxx.obj" } }
-	// StaticMesh — { "Name": { "Path": "...", "Preload": true, "NormalizeToUnitCube": true } }
-	if (Root.hasKey(ResourceKey::StaticMesh))
-	{
-		JSON StaticMeshSection = Root[ResourceKey::StaticMesh];
-		for (auto& Pair : StaticMeshSection.ObjectRange())
+		const fs::path& FilePath = Entry.path();
+		const std::wstring Extension = FilePath.extension().wstring();
+
+		if (Extension == L".meta")
 		{
-			JSON Entry = Pair.second;
-			if (!Entry.hasKey(ResourceKey::Path))
-			{
-				continue;
-			}
+			continue;
+		}
+		
+		const FString RelativePath = FPaths::ToString(fs::relative(FilePath, ProjectRootPath));
+
+		if (Extension == L".obj")
+		{
+			ObjFilePaths.push_back(RelativePath);
 
 			FStaticMeshResource Resource;
-			Resource.Name = Pair.first;
-			Resource.Path = Entry[ResourceKey::Path].ToString();
-			Resource.bPreload = Entry.hasKey(ResourceKey::Preload)
-				? Entry[ResourceKey::Preload].ToBool()
-				: false;
-			Resource.bNormalizeToUnitCube = Entry.hasKey(ResourceKey::NormalizeToUnitCube)
-				? Entry[ResourceKey::NormalizeToUnitCube].ToBool()
-				: false;
-
-			StaticMeshRegistry[Pair.first] = Resource;
+			Resource.Name = RelativePath;
+			Resource.Path = RelativePath;
+			Resource.bPreload = false;
+			Resource.bNormalizeToUnitCube = false;
+			StaticMeshRegistry[Resource.Name] = Resource;
 		}
-	}
-
-	// Material — { "Name": { "Path": "Asset/Material/xxx.mtl" } }
-	if (Root.hasKey(ResourceKey::Material))
-	{
-		JSON MaterialSection = Root[ResourceKey::Material];
-		for (auto& Pair : MaterialSection.ObjectRange())
+		else if (Extension == L".mtl")
 		{
-			JSON Entry = Pair.second;
-			if (!Entry.hasKey(ResourceKey::Path))
-			{
-				continue;
-			}
-
-			FString MtlPath = Entry[ResourceKey::Path].ToString();
-			if (!LoadMaterial(MtlPath))
-			{
-				UE_LOG("Failed to load material from Resource.ini: %s", MtlPath.c_str());
-			}
+			MaterialFilePaths.push_back(RelativePath);
+			LoadMaterial(RelativePath);
 		}
-	}
-
-	// Particle — { "Name": { "Path": "...", "Columns": 6, "Rows": 6 } }
-	if (Root.hasKey(ResourceKey::Particle))
-	{
-		JSON ParticleSection = Root[ResourceKey::Particle];
-		for (auto& Pair : ParticleSection.ObjectRange())
+		else if (
+			Extension == L".png" ||
+			Extension == L".dds" ||
+			Extension == L".jpg" ||
+			Extension == L".jpeg")
 		{
-			JSON Entry = Pair.second;
-			FParticleResource Resource;
-			Resource.Name = FName(Pair.first.c_str());
-			Resource.Path = Entry[ResourceKey::Path].ToString();
-			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-			Resource.SRV = nullptr;
-			ParticleResources[Pair.first] = Resource;
+			const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
+
+			if (Meta.Type == EAssetMetaType::Font)
+			{
+				FontFilePaths.push_back(RelativePath);
+				RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+			}
+			else if (Meta.Type == EAssetMetaType::Particle)
+			{
+				ParticleFilePaths.push_back(RelativePath);
+				RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+			}
+			else
+			{
+				TextureFilePaths.push_back(RelativePath);
+			}
 		}
 	}
 
-	// Material 로딩 이후 StaticMesh Preload를 수행해야 SlotName->Material resolve가 가능합니다.
+	//	TODO : Material, Texture Load
+
+	InitializeDefaultResources(Device);
+
 	PreloadStaticMeshes();
 
-
-	if (LoadGPUResources(InDevice))
+	if (LoadGPUResources(Device))
 	{
 		UE_LOG("Complete Load Resources!");
 	}
@@ -214,6 +202,347 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 		UE_LOG("Failed to Load Resources...");
 	}
 }
+
+void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
+{
+	namespace fs = std::filesystem;
+
+	ObjFilePaths.clear();
+	FontFilePaths.clear();
+	TextureFilePaths.clear();
+	MaterialFilePaths.clear();
+	ParticleFilePaths.clear();
+	StaticMeshRegistry.clear();
+
+	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
+	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
+
+	if (!fs::exists(RootPath) || !fs::is_directory(RootPath))
+	{
+		UE_LOG("[ResourceManager] Refresh Failed : Root Directory Error");
+		return;
+	}
+
+	try
+	{
+		for (const auto& Entry : fs::recursive_directory_iterator(RootPath, fs::directory_options::skip_permission_denied))
+		{
+			if (!Entry.is_regular_file())
+			{
+				continue;
+			}
+
+			const fs::path& FilePath = Entry.path();
+			const std::wstring Extension = FilePath.extension().wstring();
+
+			if (Extension == L".meta" || Extension == L".bin")
+			{
+				continue;
+			}
+
+			const FString RelativePath = FPaths::ToString(fs::relative(FilePath, ProjectRootPath));
+
+			if (Extension == L".obj")
+			{
+				ObjFilePaths.push_back(RelativePath);
+
+				FStaticMeshResource Resource;
+				Resource.Name = RelativePath;
+				Resource.Path = RelativePath;
+				Resource.bPreload = false;
+				Resource.bNormalizeToUnitCube = false;
+				StaticMeshRegistry[Resource.Name] = Resource;
+			}
+			else if (Extension == L".mtl")
+			{
+				MaterialFilePaths.push_back(RelativePath);
+
+				// 기존 MaterialRegistry는 지우지 않고 갱신/추가만 한다.
+				// 이미 로드된 StaticMesh가 Material 포인터를 들고 있을 수 있어서 clear는 위험함.
+				LoadMaterial(RelativePath);
+			}
+			else if (
+				Extension == L".png" ||
+				Extension == L".dds" ||
+				Extension == L".jpg" ||
+				Extension == L".jpeg")
+			{
+				const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
+
+				if (Meta.Type == EAssetMetaType::Font)
+				{
+					FontFilePaths.push_back(RelativePath);
+					RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+				}
+				else if (Meta.Type == EAssetMetaType::Particle)
+				{
+					ParticleFilePaths.push_back(RelativePath);
+					RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+				}
+				else
+				{
+					TextureFilePaths.push_back(RelativePath);
+				}
+			}
+		}
+	}
+	catch (const std::exception& Ex)
+	{
+		UE_LOG("[ResourceManager] Refresh Exception: %s", Ex.what());
+	}
+
+	UE_LOG("[ResourceManager] Asset Refresh Complete");
+}
+
+void FResourceManager::DeleteAllCacheFiles()
+{
+	namespace fs = std::filesystem;
+
+	const fs::path BinRootPath = fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin";
+
+	if (!fs::exists(BinRootPath) || !fs::is_directory(BinRootPath))
+	{
+		return;
+	}
+
+	for (const auto& Entry : fs::recursive_directory_iterator(BinRootPath))
+	{
+		if (!Entry.is_regular_file())
+		{
+			continue;
+		}
+
+		const fs::path& FilePath = Entry.path();
+		if (FilePath.extension() == L".bin")
+		{
+			std::error_code Ec;
+			fs::remove(FilePath, Ec);
+		}
+	}
+
+	// 빈 디렉토리 정리
+	for (auto It = fs::recursive_directory_iterator(BinRootPath);
+		 It != fs::recursive_directory_iterator();
+		 ++It)
+	{
+		std::error_code Ec;
+		if (It->is_directory(Ec) && fs::is_empty(It->path(), Ec))
+		{
+			fs::remove(It->path(), Ec);
+		}
+	}
+
+	UE_LOG("[ResourceManager] All mesh cache files removed");
+}
+
+FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const
+{
+	namespace fs = std::filesystem;
+	using namespace json;
+
+	FTextureAssetMeta Meta;
+
+	fs::path MetaPath = FilePath;
+	MetaPath.replace_extension(L".meta");
+
+	// 1. meta 파일 존재 → 로드
+	if (fs::exists(MetaPath))
+	{
+		std::ifstream MetaFile(MetaPath);
+		if (MetaFile.is_open())
+		{
+			FString Content((std::istreambuf_iterator<char>(MetaFile)),
+			                std::istreambuf_iterator<char>());
+
+			JSON Root = JSON::Load(Content);
+			if (Root.JSONType() == JSON::Class::Object)
+			{
+				if (Root.hasKey(ResourceKey::Type))
+				{
+					const FString TypeStr = Root[ResourceKey::Type].ToString();
+					if (TypeStr == "Font")
+					{
+						Meta.Type = EAssetMetaType::Font;
+					}
+					else if (TypeStr == "Particle")
+					{
+						Meta.Type = EAssetMetaType::Particle;
+					}
+				}
+
+				if (Root.hasKey(ResourceKey::Columns))
+				{
+					Meta.Columns = std::max(1, static_cast<int32>(Root[ResourceKey::Columns].ToInt()));
+				}
+
+				if (Root.hasKey(ResourceKey::Rows))
+				{
+					Meta.Rows = std::max(1, static_cast<int32>(Root[ResourceKey::Rows].ToInt()));
+				}
+			}
+		}
+
+		return Meta;
+	}
+
+	// 2. 없으면 기본 생성
+	const std::wstring ParentDir = FilePath.parent_path().filename().wstring();
+
+	if (ParentDir == L"Font")
+	{
+		Meta.Type = EAssetMetaType::Font;
+	}
+	else if (ParentDir == L"Particle")
+	{
+		Meta.Type = EAssetMetaType::Particle;
+	}
+	else
+	{
+		Meta.Type = EAssetMetaType::None;
+	}
+
+	Meta.Columns = 1;
+	Meta.Rows = 1;
+
+	// 3. meta 파일 생성
+	JSON Root = JSON::Make(JSON::Class::Object);
+	
+	if (Meta.Type == EAssetMetaType::Font)
+	{
+		Root[ResourceKey::Type] = "Font";
+	}
+	else if (Meta.Type == EAssetMetaType::Particle)
+	{
+		Root[ResourceKey::Type] = "Particle";
+	}
+	else
+	{
+		Root[ResourceKey::Type] = "None";
+	}
+	
+	Root[ResourceKey::Columns] = Meta.Columns;
+	Root[ResourceKey::Rows] = Meta.Rows;
+
+	std::ofstream OutFile(MetaPath);
+	if (OutFile.is_open())
+	{
+		OutFile << Root.dump();
+	}
+
+	return Meta;
+}
+
+// void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
+// {
+// 	using namespace json;
+//
+// 	std::ifstream File(std::filesystem::path(FPaths::ToWide(Path)));
+// 	if (!File.is_open())
+// 	{
+// 		return;
+// 	}
+//
+// 	FString Content((std::istreambuf_iterator<char>(File)),
+// 	                std::istreambuf_iterator<char>());
+//
+// 	InitializeDefaultResources(InDevice);
+//
+// 	JSON Root = JSON::Load(Content);
+//
+// 	// Font — { "Name": { "Path": "...", "Columns": 16, "Rows": 16 } }
+// 	if (Root.hasKey(ResourceKey::Font))
+// 	{
+// 		JSON FontSection = Root[ResourceKey::Font];
+// 		for (auto& Pair : FontSection.ObjectRange())
+// 		{
+// 			JSON Entry = Pair.second;
+// 			FFontResource Resource;
+// 			Resource.Name = FName(Pair.first.c_str());
+// 			Resource.Path = Entry[ResourceKey::Path].ToString();
+// 			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
+// 			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
+// 			Resource.SRV = nullptr;
+// 			FontResources[Pair.first] = Resource;
+// 		}
+// 	}
+//
+// 	// StaticMesh — { "Name": { "Path": "Asset/Mesh/xxx.obj" } }
+// 	// StaticMesh — { "Name": { "Path": "...", "Preload": true, "NormalizeToUnitCube": true } }
+// 	if (Root.hasKey(ResourceKey::StaticMesh))
+// 	{
+// 		JSON StaticMeshSection = Root[ResourceKey::StaticMesh];
+// 		for (auto& Pair : StaticMeshSection.ObjectRange())
+// 		{
+// 			JSON Entry = Pair.second;
+// 			if (!Entry.hasKey(ResourceKey::Path))
+// 			{
+// 				continue;
+// 			}
+//
+// 			FStaticMeshResource Resource;
+// 			Resource.Name = Pair.first;
+// 			Resource.Path = Entry[ResourceKey::Path].ToString();
+// 			Resource.bPreload = Entry.hasKey(ResourceKey::Preload)
+// 				                    ? Entry[ResourceKey::Preload].ToBool()
+// 				                    : false;
+// 			Resource.bNormalizeToUnitCube = Entry.hasKey(ResourceKey::NormalizeToUnitCube)
+// 				                                ? Entry[ResourceKey::NormalizeToUnitCube].ToBool()
+// 				                                : false;
+//
+// 			StaticMeshRegistry[Pair.first] = Resource;
+// 		}
+// 	}
+//
+// 	// Material — { "Name": { "Path": "Asset/Material/xxx.mtl" } }
+// 	if (Root.hasKey(ResourceKey::Material))
+// 	{
+// 		JSON MaterialSection = Root[ResourceKey::Material];
+// 		for (auto& Pair : MaterialSection.ObjectRange())
+// 		{
+// 			JSON Entry = Pair.second;
+// 			if (!Entry.hasKey(ResourceKey::Path))
+// 			{
+// 				continue;
+// 			}
+//
+// 			FString MtlPath = Entry[ResourceKey::Path].ToString();
+// 			if (!LoadMaterial(MtlPath))
+// 			{
+// 				UE_LOG("Failed to load material from Resource.ini: %s", MtlPath.c_str());
+// 			}
+// 		}
+// 	}
+//
+// 	// Particle — { "Name": { "Path": "...", "Columns": 6, "Rows": 6 } }
+// 	if (Root.hasKey(ResourceKey::Particle))
+// 	{
+// 		JSON ParticleSection = Root[ResourceKey::Particle];
+// 		for (auto& Pair : ParticleSection.ObjectRange())
+// 		{
+// 			JSON Entry = Pair.second;
+// 			FParticleResource Resource;
+// 			Resource.Name = FName(Pair.first.c_str());
+// 			Resource.Path = Entry[ResourceKey::Path].ToString();
+// 			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
+// 			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
+// 			Resource.SRV = nullptr;
+// 			ParticleResources[Pair.first] = Resource;
+// 		}
+// 	}
+//
+// 	// Material 로딩 이후 StaticMesh Preload를 수행해야 SlotName->Material resolve가 가능합니다.
+// 	PreloadStaticMeshes();
+//
+//
+// 	if (LoadGPUResources(InDevice))
+// 	{
+// 		UE_LOG("Complete Load Resources!");
+// 	}
+// 	else
+// 	{
+// 		UE_LOG("Failed to Load Resources...");
+// 	}
+// }
 
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 {
@@ -252,10 +581,10 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 	for (auto& [Name, Mat] : MaterialRegistry)
 	{
-		if (Mat.bHasDiffuseTexture  && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath,  Device);
-		if (Mat.bHasAmbientTexture  && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath,  Device);
+		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty()) LoadTexture(Mat.DiffuseTexPath, Device);
+		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty()) LoadTexture(Mat.AmbientTexPath, Device);
 		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, Device);
-		if (Mat.bHasBumpTexture     && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath,     Device);
+		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty()) LoadTexture(Mat.BumpTexPath, Device);
 	}
 
 	return true;
@@ -266,17 +595,17 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	if (!Device || DefaultWhiteSRV) return;
 
 	D3D11_TEXTURE2D_DESC Desc = {};
-	Desc.Width            = 1;
-	Desc.Height           = 1;
-	Desc.MipLevels        = 1;
-	Desc.ArraySize        = 1;
-	Desc.Format           = DXGI_FORMAT_R8G8B8A8_UNORM;
+	Desc.Width = 1;
+	Desc.Height = 1;
+	Desc.MipLevels = 1;
+	Desc.ArraySize = 1;
+	Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	Desc.SampleDesc.Count = 1;
-	Desc.Usage            = D3D11_USAGE_IMMUTABLE;
-	Desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
+	Desc.Usage = D3D11_USAGE_IMMUTABLE;
+	Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
-	D3D11_SUBRESOURCE_DATA InitData = { &WhitePixel, 4, 0 };
+	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
 
 	Device->CreateTexture2D(&Desc, &InitData, &DefaultWhiteTexture);
 	if (DefaultWhiteTexture)
@@ -324,8 +653,16 @@ void FResourceManager::ReleaseGPUResources()
 	StaticMeshMap.clear();
 	StaticMeshRegistry.clear();
 
-	if (DefaultWhiteSRV)     { DefaultWhiteSRV->Release();     DefaultWhiteSRV     = nullptr; }
-	if (DefaultWhiteTexture) { DefaultWhiteTexture->Release();  DefaultWhiteTexture = nullptr; }
+	if (DefaultWhiteSRV)
+	{
+		DefaultWhiteSRV->Release();
+		DefaultWhiteSRV = nullptr;
+	}
+	if (DefaultWhiteTexture)
+	{
+		DefaultWhiteTexture->Release();
+		DefaultWhiteTexture = nullptr;
+	}
 }
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
@@ -363,16 +700,9 @@ const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) con
 	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
 }
 
-
 TArray<FString> FResourceManager::GetMaterialNames() const
 {
-	TArray<FString> Names;
-	Names.reserve(MaterialRegistry.size());
-	for (const auto& [Name, None] : MaterialRegistry)
-	{
-		Names.push_back(Name);
-	}
-	return Names;
+	return MaterialFilePaths;
 }
 
 FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
@@ -421,14 +751,25 @@ FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Devi
 // --- Font ---
 FFontResource* FResourceManager::FindFont(const FName& FontName)
 {
+	if (FontResources.empty())
+	{
+		return nullptr;
+	}
+	
 	auto It = FontResources.find(FontName.ToString());
-	return (It != FontResources.end()) ? &It->second : nullptr;
+	return (It != FontResources.end()) ? &It->second : &FontResources.begin()->second;
 }
 
 const FFontResource* FResourceManager::FindFont(const FName& FontName) const
 {
+	if (FontResources.empty())
+	{
+		return nullptr;
+	}
+	
+	//	Default인 경우 첫 Font Resource로 Fallback (반드시 하나 이상의 Font는 Upload
 	auto It = FontResources.find(FontName.ToString());
-	return (It != FontResources.end()) ? &It->second : nullptr;
+	return (It != FontResources.end()) ? &It->second : &FontResources.begin()->second;
 }
 
 void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns, uint32 Rows)
@@ -445,14 +786,25 @@ void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath
 // --- Particle ---
 FParticleResource* FResourceManager::FindParticle(const FName& ParticleName)
 {
+	//	마찬가지로 하나 이상의 Particle을 무조건 가지고 있어야 함.
+	if (ParticleResources.empty())
+	{
+		return nullptr;
+	}
+	
 	auto It = ParticleResources.find(ParticleName.ToString());
-	return (It != ParticleResources.end()) ? &It->second : nullptr;
+	return (It != ParticleResources.end()) ? &It->second : &ParticleResources.begin()->second;
 }
 
 const FParticleResource* FResourceManager::FindParticle(const FName& ParticleName) const
 {
+	if (ParticleResources.empty())
+	{
+		return nullptr;
+	}
+	
 	auto It = ParticleResources.find(ParticleName.ToString());
-	return (It != ParticleResources.end()) ? &It->second : nullptr;
+	return (It != ParticleResources.end()) ? &It->second : &ParticleResources.begin()->second;
 }
 
 void FResourceManager::RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows)
@@ -468,24 +820,12 @@ void FResourceManager::RegisterParticle(const FName& ParticleName, const FString
 
 TArray<FString> FResourceManager::GetFontNames() const
 {
-	TArray<FString> Names;
-	Names.reserve(FontResources.size());
-	for (const auto& [Key, _] : FontResources)
-	{
-		Names.push_back(Key);
-	}
-	return Names;
+	return FontFilePaths;
 }
 
 TArray<FString> FResourceManager::GetParticleNames() const
 {
-	TArray<FString> Names;
-	Names.reserve(ParticleResources.size());
-	for (const auto& [Key, _] : ParticleResources)
-	{
-		Names.push_back(Key);
-	}
-	return Names;
+	return ParticleFilePaths;
 }
 
 UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
@@ -544,7 +884,8 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 
 		if (LoadedMeshData == nullptr)
 		{
-			UE_LOG("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", Path.c_str(), BinaryLoadSec, ObjLoadSec);
+			UE_LOG("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", Path.c_str(), BinaryLoadSec,
+			       ObjLoadSec);
 			return nullptr;
 		}
 
@@ -579,7 +920,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	UStaticMesh* LoadedMesh = new UStaticMesh();
 	LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
 
-	StaticMeshMap.insert({ Path, LoadedMesh });
+	StaticMeshMap.insert({Path, LoadedMesh});
 	return LoadedMesh;
 }
 
@@ -596,23 +937,7 @@ UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 
 TArray<FString> FResourceManager::GetStaticMeshPaths() const
 {
-	TArray<FString> Paths;
-	Paths.reserve(StaticMeshRegistry.size() + StaticMeshMap.size());
-
-	for (const auto& Pair : StaticMeshRegistry)
-	{
-		Paths.push_back(Pair.second.Path);
-	}
-
-	for (const auto& Pair : StaticMeshMap)
-	{
-		if (std::find(Paths.begin(), Paths.end(), Pair.first) == Paths.end())
-		{
-			Paths.push_back(Pair.first);
-		}
-	}
-
-	return Paths;
+	return ObjFilePaths;
 }
 
 size_t FResourceManager::GetMaterialMemorySize() const
