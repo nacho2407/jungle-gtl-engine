@@ -2,36 +2,38 @@
   "ClassName" : "UWorld",
   "Name" : "紧",
   "PerspectiveCamera" : {
-    "FOV" : 84.000000,
+    "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [4.115130, -2.183203, 2.481685],
+    "Location" : [4.981979, 8.190558, 7.645323],
     "NearClip" : 0.100000,
-    "Rotation" : [-18.553680, 136.001343, -17.080139]
+    "Rotation" : [-26.340881, -125.483658, 31.899591]
   },
   "Primitives" : {
     "0" : {
-      "Location" : [0.000000, 11.818798, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Font" : "Default",
+      "Font Size" : 1.000000,
+      "Location" : [-5.645803, 0.000000, 0.000000],
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
-      "Scroll U" : 0.000000,
-      "Scroll V" : 0.000000,
-      "Type" : "StaticMeshComp",
+      "Text" : "TextRender",
+      "Type" : "UTextRenderComponent",
       "Visible" : true
     },
     "1" : {
-      "Location" : [-3.346476, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Asset\\Mesh\\MultiMaterialCube\\MultiMaterialCube.obj",
+      "Height" : 2.000000,
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Particle" : "Explosion",
+      "Play Rate" : 30.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
-      "Scroll U" : 0.000000,
-      "Scroll V" : 0.000000,
-      "Type" : "StaticMeshComp",
-      "Visible" : true
+      "Type" : "USubUVComponent",
+      "Visible" : true,
+      "Width" : 2.000000,
+      "bLoop" : true
     },
     "2" : {
-      "Location" : [0.000000, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Asset\\Mesh\\Lumine\\LumineModel.obj",
+      "Location" : [2.609532, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Scroll U" : 0.000000,
