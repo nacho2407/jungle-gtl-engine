@@ -18,7 +18,6 @@ public:
 	static std::wstring SettingsDir();    // Settings/
 
 	// 주요 파일 경로
-	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ResourceFilePath();  // Settings/Resource.ini
 
