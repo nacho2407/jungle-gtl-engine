@@ -457,4 +457,5 @@ W4_Jungle_Team2/Build/
 
 # Asset 파일 살리기 - obj 등 (Bin 폴더 내의 파일은 무시)
 !W4_Jungle_Team2/Asset/Mesh/**
+!W4_Jungle_Team2/Asset/**/*.meta
 W4_Jungle_Team2/Asset/Mesh/Bin/
