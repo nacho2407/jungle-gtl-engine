@@ -18,7 +18,7 @@ public:
 	// SideLT / SideRB 를 먼저 검사하고, 그 사이 바 영역이면 this 반환
 	SWidget* HitTest(int32 X, int32 Y) override;
 
-	void UpdateCildRect() override { }
+	void UpdateChildRect() override { }
 
 	/*
 	 * 마우스 좌표로부터 새 SplitRatio 를 계산합니다.

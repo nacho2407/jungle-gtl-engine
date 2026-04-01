@@ -322,29 +322,8 @@ bool FBinarySerializer::ReadIndexArray(std::ifstream& In, TArray<uint32>& OutArr
 	return true;
 }
 
-/*
- *	[중요]
- *	- 아래 3개는 반드시 네 실제 타입 멤버에 맞춰 작성해야 한다.
- *	- 지금은 "padding 제거 + 멤버 단위 serialize" 구조를 보여주기 위한 골격이다.
- *	- 즉, 여기를 채워야 진짜로 raw struct write에서 완전히 벗어난다.
- */
 void FBinarySerializer::WriteVertices(std::ofstream& Out, const FStaticMesh& Data)
 {
-	/*
-	 *	예시)
-	 *	WriteUInt32LE(Out, static_cast<uint32>(Data.Vertices.size()));
-	 *	for (const auto& Vertex : Data.Vertices)
-	 *	{
-	 *		WriteFloatLE(Out, Vertex.Position.X);
-	 *		WriteFloatLE(Out, Vertex.Position.Y);
-	 *		WriteFloatLE(Out, Vertex.Position.Z);
-	 *		WriteFloatLE(Out, Vertex.Normal.X);
-	 *		WriteFloatLE(Out, Vertex.Normal.Y);
-	 *		WriteFloatLE(Out, Vertex.Normal.Z);
-	 *		WriteFloatLE(Out, Vertex.UV.X);
-	 *		WriteFloatLE(Out, Vertex.UV.Y);
-	 *	}
-	 */
 
 	uint32 Count = static_cast<uint32>(Data.Vertices.size());
 	WriteUInt32LE(Out, Count);
@@ -432,16 +411,6 @@ void FBinarySerializer::WriteSections(std::ofstream& Out, const FStaticMesh& Dat
 	uint32 Count = static_cast<uint32>(Data.Sections.size());
 	WriteUInt32LE(Out, Count);
 
-	/*
-	 *	예시)
-	 *	for (const auto& Section : Data.Sections)
-	 *	{
-	 *		WriteUInt32LE(Out, Section.StartIndex);
-	 *		WriteUInt32LE(Out, Section.IndexCount);
-	 *		WriteUInt32LE(Out, Section.MaterialIndex);
-	 *	}
-	 */
-
 	for (const FStaticMeshSection& Section : Data.Sections)
 	{
 		WriteUInt32LE(Out, Section.StartIndex);
@@ -481,15 +450,6 @@ bool FBinarySerializer::ReadSections(std::ifstream& In, FStaticMesh& OutData, ui
 
 void FBinarySerializer::WriteBounds(std::ofstream& Out, const FStaticMesh& Data)
 {
-	/*
-	 *	예시)
-	 *	WriteFloatLE(Out, Data.LocalBounds.Min.X);
-	 *	WriteFloatLE(Out, Data.LocalBounds.Min.Y);
-	 *	WriteFloatLE(Out, Data.LocalBounds.Min.Z);
-	 *	WriteFloatLE(Out, Data.LocalBounds.Max.X);
-	 *	WriteFloatLE(Out, Data.LocalBounds.Max.Y);
-	 *	WriteFloatLE(Out, Data.LocalBounds.Max.Z);
-	 */
 
 	WriteFloatLE(Out, Data.LocalBounds.Min.X);
 	WriteFloatLE(Out, Data.LocalBounds.Min.Y);
@@ -502,15 +462,6 @@ void FBinarySerializer::WriteBounds(std::ofstream& Out, const FStaticMesh& Data)
 
 bool FBinarySerializer::ReadBounds(std::ifstream& In, FStaticMesh& OutData) const
 {
-	/*
-	 *	예시)
-	 *	ReadFloatLE(In, OutData.LocalBounds.Min.X);
-	 *	ReadFloatLE(In, OutData.LocalBounds.Min.Y);
-	 *	ReadFloatLE(In, OutData.LocalBounds.Min.Z);
-	 *	ReadFloatLE(In, OutData.LocalBounds.Max.X);
-	 *	ReadFloatLE(In, OutData.LocalBounds.Max.Y);
-	 *	ReadFloatLE(In, OutData.LocalBounds.Max.Z);
-	 */
 
 	return ReadFloatLE(In, OutData.LocalBounds.Min.X)
 		&& ReadFloatLE(In, OutData.LocalBounds.Min.Y)

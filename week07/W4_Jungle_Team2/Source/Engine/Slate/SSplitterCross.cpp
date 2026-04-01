@@ -1,4 +1,4 @@
-#include "SSplitterCross.h"
+﻿#include "SSplitterCross.h"
 #include "SSplitterV.h"
 #include "SSplitterH.h"
 #include "SSplitter.h"
@@ -40,18 +40,18 @@ bool SSplitterCross::OnMouseMove(int32 X, int32 Y)
     // 상하 비율 업데이트 (SSplitterV)
     const float NewVRatio = SplitterV->ComputeNewRatio(X, Y);
     SplitterV->SetSplitRatio(NewVRatio);
-    SplitterV->UpdateCildRect();
+    SplitterV->UpdateChildRect();
 
     // 좌우 비율 업데이트 (SSplitterH + LinkedSplitter)
     const float NewHRatio = SplitterH->ComputeNewRatio(X, Y);
     SplitterH->SetSplitRatio(NewHRatio);
-    SplitterH->UpdateCildRect();
+    SplitterH->UpdateChildRect();
 
     SSplitter* Linked = SplitterH->GetLinkedSplitter();
     if (Linked)
     {
         Linked->SetSplitRatio(NewHRatio);
-        Linked->UpdateCildRect();
+        Linked->UpdateChildRect();
     }
 
     return true;

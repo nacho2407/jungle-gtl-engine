@@ -33,7 +33,7 @@ bool FSlateApplication::OnMouseMove(void* hwnd, int32 X, int32 Y)
 	if (CapturedWidget)
 	{
 		CapturedWidget->OnMouseMove(X, Y);
-		return false;
+		return true;
 	}
 
 	// 드래그 중이 아니면 HitTest 로 호버 위젯을 갱신합니다.
