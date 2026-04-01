@@ -52,12 +52,14 @@ bool FFileUtils::LoadFileToLines(const FString& FileName, TArray<FString>& OutLi
 	return true;
 }
 
-// 하위 폴더를 검색하여 타겟 파일의 전체(또는 상대) 경로를 찾는 함수
+/* 
+// 하위 폴더를 검색하여 타겟 파일의 SearchRootPath 기준 상대 경로를 찾는 함수
 
-/* [사용 예시] FoundPath에 "Asset/Mesh/Nature/Lowpoly tree.mtl" 같은 실제 경로가 들어오게 됩니다.
-FString FoundPath;
-FFileUtils::FindFileRecursively("Asset", "Lowpoly tree.mtl", FoundPath)
-
+[사용 예시]
+- 탐색 시작 폴더 (SearchRootPath): D:/DownloadedAssets/Nature
+- 타겟 파일 이름 (TargetFileName): tree.mtl
+- 실제 파일 위치 (Entry.path()): D:/DownloadedAssets/Nature/Trees/Lowpoly/tree.mtl
+- 반환되는 결과 (OutFoundPath): Trees/Lowpoly/tree.mtl
 */
 bool FFileUtils::FindFileRecursively(const FString& SearchRootPath, const FString& TargetFileName, FString& OutFoundPath)
 {
@@ -73,8 +75,9 @@ bool FFileUtils::FindFileRecursively(const FString& SearchRootPath, const FStrin
 	{
 		if (Entry.is_regular_file() && Entry.path().filename() == TargetName)
 		{
-			OutFoundPath = FPaths::ToUtf8(Entry.path().generic_wstring());
-			return true;
+            std::filesystem::path RelPath = std::filesystem::relative(Entry.path(), RootPath);
+            OutFoundPath = FPaths::ToUtf8(RelPath.generic_wstring());
+            return true;
 		}
 	}
 
