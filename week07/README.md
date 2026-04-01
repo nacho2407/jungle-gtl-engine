@@ -1,293 +1,333 @@
-# DirectX 11 3D Editor Engine
+# GameTechLab W4_Jungle_Team2
 
-DirectX 11과 ImGui 기반의 실시간 3D 씬 에디터 엔진입니다.
-Actor/Component 아키텍처 위에 WYSIWYG 씬 편집, 레이캐스팅 오브젝트 선택, 멀티씬 관리, JSON 직렬화를 지원합니다.
+Windows 환경에서 동작하는 `Win32 + DirectX 11 + ImGui` 기반의 3D 에디터/엔진 프로젝트입니다.  
+이번 리포지토리에는 두 가지 실행 형태가 함께 들어 있습니다.
 
-> Jungle Week4 — Team2
+- `Editor` 모드: 씬 편집, 다중 뷰포트, 선택/기즈모, 씬 저장 및 복원
+- `ObjViewer` 모드: `.obj` 메시를 빠르게 검토하기 위한 전용 뷰어
 
----
+이 문서는 코드와 첨부 발표 자료를 기준으로, 실제 구현이 확인된 기능만 정리한 설명문서입니다.
 
-## 목차
+## 프로젝트 개요
 
-- [빌드 및 실행](#빌드-및-실행)
-- [프로젝트 구조](#프로젝트-구조)
-- [아키텍처 개요](#아키텍처-개요)
-  - [오브젝트 시스템 (UObject, RTTI, FName)](#오브젝트-시스템)
-  - [렌더링 파이프라인](#렌더링-파이프라인)
-  - [에디터](#에디터)
-  - [입력 시스템](#입력-시스템)
-  - [직렬화](#직렬화)
-- [셰이더](#셰이더)
-- [에셋](#에셋)
-- [주요 기능 요약](#주요-기능-요약)
+이 프로젝트는 단순 렌더링 데모가 아니라, 다음 요소를 직접 구현한 소형 편집기 엔진에 가깝습니다.
 
----
+- 커스텀 `UObject` 계층과 RTTI
+- `FName` 기반 이름 관리
+- 월드/액터/컴포넌트 구조
+- DirectX 11 렌더링 파이프라인
+- ImGui 기반 편집 UI
+- OBJ/MTL 로더와 정적 메시 렌더링
+- JSON 씬 저장/복원
+- OBJ 바이너리 베이킹 및 캐시 로딩
 
-## 빌드 및 실행
+## 핵심 기능
 
-### 요구사항
+### 1. 에디터 모드
 
-- Visual Studio 2022 (v143 툴셋)
-- Windows SDK (DirectX 11 포함)
-- 패키지 매니저 불필요 — 모든 의존성(ImGui, SimpleJSON, DirectXTK)이 프로젝트에 포함되어 있음
+에디터 모드는 씬을 직접 배치하고 편집하는 데 초점이 맞춰져 있습니다.
 
-### 빌드
+- 4분할 뷰포트 지원
+  - 좌상단 `Perspective`
+  - 우상단 `Top`
+  - 좌하단 `Front`
+  - 우하단 `Right`
+- 스플리터 드래그로 뷰포트 크기 조절
+- 1개 뷰포트 전체화면 모드와 4분할 모드 전환
+- 뷰포트별 호버/포커스 상태 관리
+- 뷰포트 설정 저장
+  - 스플리터 비율
+  - 활성 뷰포트 수
+  - 단일 뷰포트 인덱스
 
-```bash
-# MSBuild (x64 Debug)
-msbuild W4_Jungle_Team2.sln /p:Configuration=Debug /p:Platform=x64
+### 2. 카메라와 뷰포트 조작
 
-# 또는 Visual Studio에서 솔루션 열어 빌드
-```
+- Perspective 뷰 카메라 이동 및 회전
+- Orthographic 뷰 지원
+- 직교 뷰에서 팬/줌 조작
+- 마우스 휠 기반 FOV 또는 Ortho Height 조절
+- 포커스된 뷰포트 기준 이동 속도 조절
+- Perspective 카메라 상태 저장/복원
+  - 위치
+  - 회전
+  - FOV
+  - Near/Far Clip
 
-| 구성 | 플랫폼 | C++ 표준 | 서브시스템 |
-|------|--------|---------|-----------|
-| Debug | x64 | C++20 | Windows |
-| Release | x64 | C++20 | Windows |
-| Debug | Win32 | C++17 | Console |
+### 3. 씬 편집 기능
 
-출력 경로: `W4_Jungle_Team2/Bin/<Configuration>/W4_Jungle_Team2.exe`
+- 월드의 액터 목록 표시
+- 선택된 액터/컴포넌트의 속성 편집
+- 프로퍼티 위젯 자동 렌더링
+- 액터 선택
+  - 단일 선택
+  - `Shift` 추가 선택
+  - `Ctrl` 토글 선택
+- 박스 선택
+- 기즈모 기반 편집
+  - Translate
+  - Rotate
+  - Scale
+- 기즈모 월드/로컬 모드 전환
+- 선택 액터 삭제
 
-### 릴리스 패키징
+### 4. 에디터 UI
 
-`ReleaseBuild.bat`을 실행하면 `ReleaseBuild/` 폴더에 실행파일, 셰이더, 에셋이 복사됩니다.
+ImGui 기반으로 아래 패널들이 분리되어 있습니다.
 
----
+- `Scene Manager`
+  - 액터 아웃라이너
+  - 씬 저장/불러오기
+- `Property`
+  - 선택 오브젝트의 속성 수정
+  - StaticMesh 경로 콤보 선택
+- `Material Editor`
+  - StaticMesh의 섹션별 머티리얼 확인
+  - 슬롯별 머티리얼 교체
+  - 색상/스칼라/텍스처 정보 확인
+- `Console`
+  - stat 명령 처리
+- `Stat Profiler`
+  - CPU/GPU 통계 테이블
+- `Viewport Settings`
+  - Show Flags
+  - Grid 설정
+  - 카메라 이동 속도
 
-## 프로젝트 구조
+### 5. StaticMesh 렌더링
 
-```
+이번 주차에서 가장 큰 변화 중 하나는 OBJ 기반 정적 메시 렌더링입니다.
+
+- `UStaticMesh`와 `UStaticMeshComponent` 추가
+- OBJ를 렌더링용 정적 메시 데이터로 변환
+- 섹션 단위 인덱스 관리
+- 섹션별 머티리얼 슬롯 연결
+- 로컬/월드 AABB 계산
+- 메시 단위 레이캐스트
+- 프로퍼티 창에서 StaticMesh 에셋 지정 가능
+
+### 6. OBJ / MTL 파이프라인
+
+OBJ 로더는 텍스트 파일을 바로 렌더링하지 않고, 중간 데이터를 거쳐 최종 메시로 변환합니다.
+
+- OBJ 파싱 지원 항목
+  - `v`
+  - `vt`
+  - `vn`
+  - `mtllib`
+  - `usemtl`
+  - `f`
+- Raw 데이터에서 Cooked StaticMesh로 변환
+- 머티리얼 이름 기준 슬롯 생성
+- 로컬 바운드 계산
+- 로딩 옵션에 따라 단위 큐브 기준 정규화 가능
+
+MTL 파서는 다음 정보를 읽습니다.
+
+- `newmtl`
+- `Ka`
+- `Kd`
+- `Ks`
+- `Ke`
+- `Ns`
+- `d`
+- `illum`
+- `map_Kd`
+- `map_Ka`
+- `map_Ks`
+- `map_bump` / `bump`
+
+텍스처 경로는 파싱 시점에 정규화되고, 렌더링 시 SRV로 연결됩니다.
+
+### 7. 다중 재질 처리
+
+정적 메시 하나에 여러 재질을 연결할 수 있습니다.
+
+- `usemtl` 기준 슬롯 생성
+- 섹션별 `MaterialSlotIndex` 유지
+- 메시 컴포넌트의 override material 배열 보유
+- Material Editor에서 섹션별 머티리얼 교체 가능
+- 머티리얼이 없으면 기본 재질/기본 흰색 텍스처로 대체
+
+즉, "머티리얼 에디터"라기보다 "섹션별 머티리얼 확인 및 교체 UI"에 가깝습니다.
+
+### 8. 렌더링 파이프라인
+
+렌더링은 수집과 실행이 분리된 구조입니다.
+
+- `RenderCollector`
+  - 월드, 선택 오브젝트, 그리드, 기즈모 수집
+- `RenderBus`
+  - 패스별 커맨드 정리
+- `Renderer`
+  - 실제 GPU 상태 설정 및 드로우
+
+에디터 렌더링에서 확인되는 요소는 다음과 같습니다.
+
+- 일반 오브젝트 렌더링
+- StaticMesh 렌더링
+- Grid 렌더링
+- Billboard Text 렌더링
+- SubUV 렌더링
+- 기즈모 렌더링
+- 선택 마스크 + 포스트프로세스 아웃라인
+
+View Mode는 다음을 지원합니다.
+
+- `Lit`
+- `Unlit`
+- `Wireframe`
+
+Show Flags는 다음을 제어합니다.
+
+- Primitives
+- BillboardText
+- Grid
+- Gizmo
+- Bounding Volume
+
+### 9. 선택, 피킹, 아웃라인
+
+- 마우스 클릭 기반 선택
+- 메시 레이캐스트 기반 피킹
+- 선택 오브젝트 스텐실 마스크 렌더링
+- 후처리 아웃라인 표시
+- 선택 상태에 맞춰 기즈모 자동 동기화
+
+### 10. 씬 저장 및 복원
+
+씬은 `.Scene` 확장자의 JSON 파일로 저장됩니다.
+
+저장되는 정보:
+
+- 월드 타입
+- 액터/컴포넌트 계층
+- 컴포넌트 프로퍼티
+- StaticMesh 경로
+- Perspective 카메라 상태
+
+즉, 편집 결과를 다시 열 수 있는 최소 단위의 씬 직렬화가 구현되어 있습니다.
+
+### 11. 리소스 관리와 캐시
+
+리소스 매니저는 에셋 검색, 로딩, 캐시를 담당합니다.
+
+- 메시 경로 스캔
+- 머티리얼 파일 스캔
+- 텍스처 스캔
+- 로드된 StaticMesh 캐시
+- 머티리얼 레지스트리 유지
+
+StaticMesh 로드는 다음 순서로 진행됩니다.
+
+1. 메모리 캐시 확인
+2. 대응하는 바이너리 파일 유효성 검사
+3. 유효하면 바이너리 로드
+4. 실패하면 OBJ 파싱
+5. OBJ 파싱 성공 시 바이너리 저장
+
+### 12. OBJ 바이너리 베이킹
+
+텍스트 OBJ를 매번 다시 파싱하지 않도록 바이너리 캐시를 생성합니다.
+
+- 전용 헤더 사용
+  - Magic Number
+  - Version
+  - Vertex/Index/Section/Slot count
+  - 원본 파일 수정 시간
+- 원본 OBJ 수정 시간이 바뀌면 바이너리 무효화
+- 재로드 시 바이너리 우선 사용
+
+캐시 파일은 `Asset/Mesh/Bin` 아래에 `.bin` 형태로 저장됩니다.
+
+### 13. ObjViewer 모드
+
+프로젝트에는 별도 `ObjViewer` 빌드 구성이 포함되어 있습니다.
+
+- `IS_OBJ_VIEWER=1` 전처리 매크로 사용
+- 전용 엔진 클래스 `UObjViewerEngine`
+- 파일 다이얼로그로 `.obj` 선택 로드
+- 미리보기용 `UStaticMeshComponent` 사용
+- 카메라 리셋 기능
+- 우측 패널에 기본 메시 통계 표시
+
+ObjViewer는 "에디터 전체 기능"이 아니라, 모델 확인에 집중한 별도 실행 모드입니다.
+
+## 엔진 구조
+
+### 객체 시스템
+
+- `UObject` 기반 공통 객체 시스템
+- `DECLARE_CLASS`, `DEFINE_CLASS` 기반 커스텀 RTTI
+- `IsA<T>()`, `Cast<T>()` 지원
+- `UObjectManager`를 통한 생성/파괴 관리
+- UUID와 내부 인덱스 보유
+
+### 이름 시스템
+
+- `FName` 이름 풀 사용
+- Display 이름과 Comparison 이름을 분리 저장
+- 비교 시 소문자 기반 인덱스 비교
+
+즉, 표시용 문자열과 비교용 문자열을 나눠 관리하는 방식입니다.
+
+### 객체 순회
+
+- `TObjectIterator<T>` 구현
+- 글로벌 UObject 배열을 순회하며 타입이 맞는 객체만 반환
+
+## 폴더 개요
+
+```text
 W4_Jungle_Team2/
-├── Source/
-│   ├── Engine/                     # 엔진 코어
-│   │   ├── Object/                 # UObject, RTTI, FName, ObjectFactory
-│   │   ├── Core/                   # InputSystem, Timer, ResourceManager, Stats
-│   │   ├── Math/                   # FVector, FMatrix, FTransform
-│   │   ├── Runtime/                # EngineLoop, WindowsApplication, Launch
-│   │   ├── GameFramework/          # AActor, UWorld, WorldContext
-│   │   ├── Component/              # Scene/Primitive/Camera/Billboard/Gizmo/SubUV
-│   │   ├── Serialization/          # SceneSaveManager (JSON)
-│   │   └── Render/
-│   │       ├── Device/             # D3DDevice (스왑체인, 래스터라이저, 뎁스)
-│   │       ├── Scene/              # RenderCollector, RenderBus, RenderCommand
-│   │       ├── Renderer/           # Renderer, IRenderPipeline
-│   │       ├── Resource/           # Buffer, Shader, VertexTypes
-│   │       ├── Mesh/               # MeshManager
-│   │       └── (Batchers)          # LineBatcher, FontBatcher, SubUVBatcher
-│   │
-│   └── Editor/                     # 에디터 전용
-│       ├── EditorEngine            # UEngine 상속, 메인 에디터 런타임
-│       ├── Viewport/               # 뷰포트 클라이언트, 카메라, Picking
-│       ├── Selection/              # SelectionManager (다중선택 + Gizmo)
-│       ├── Settings/               # EditorSettings (Save/Load)
-│       └── UI/                     # ImGui 위젯들
-│           ├── EditorMainPanel
-│           ├── EditorPropertyWidget
-│           ├── EditorSceneWidget
-│           ├── EditorViewportOverlayWidget
-│           ├── EditorConsoleWidget
-│           ├── EditorControlWidget
-│           └── EditorStatWidget
-│
-├── Shaders/                        # HLSL 셰이더 (8개, 런타임 컴파일)
-├── Asset/                          # 폰트 아틀라스, 파티클 텍스쳐, 기본 씬
-├── Saves/                          # 사용자 씬 파일 (.Scene)
-├── Settings/                       # 에디터 설정 (editor.ini)
-└── ThirdParty/                     # ImGui, SimpleJSON
+├─ W4_Jungle_Team2/
+│  ├─ Source/
+│  │  ├─ Engine/
+│  │  │  ├─ Asset/
+│  │  │  ├─ Component/
+│  │  │  ├─ Core/
+│  │  │  ├─ GameFramework/
+│  │  │  ├─ Math/
+│  │  │  ├─ Object/
+│  │  │  ├─ Render/
+│  │  │  ├─ Runtime/
+│  │  │  ├─ Serialization/
+│  │  │  └─ Slate/
+│  │  ├─ Editor/
+│  │  └─ Misc/ObjViewer/
+│  ├─ Asset/
+│  ├─ Shaders/
+│  ├─ Settings/
+│  └─ Bin/
+└─ W4_Jungle_Team2.sln
 ```
 
-### 인클루드 경로
+## 실행과 빌드
 
-프로젝트는 `Source/Engine`, `Source`, `Source/Editor`, `ThirdParty`, `ThirdParty/ImGui`를 인클루드 경로로 사용합니다.
-헤더는 이 루트들로부터의 상대 경로로 포함합니다.
+### 권장 환경
 
-```cpp
-#include "Engine/Core/InputSystem.h"     // Source/Engine 기준
-#include "Editor/EditorEngine.h"          // Source/Editor 기준
-#include "ImGui/imgui.h"                  // ThirdParty/ImGui 기준
-```
+- Windows
+- Visual Studio 2022
+- DirectX 11 지원 환경
 
----
+### 솔루션
 
-## 아키텍처 개요
+- 솔루션 파일: `W4_Jungle_Team2.sln`
 
-### 오브젝트 시스템
+### 주요 빌드 구성
 
-커스텀 RTTI와 오브젝트 관리를 자체 구현합니다.
+- `Debug | x64`
+- `Release | x64`
+- `ObjViewer | x64`
 
-**UObject 상속 계층:**
+`ObjViewer` 구성은 전용 모델 뷰어 모드입니다.
 
-```
-UObject
-├── AActor                           # 씬에 배치되는 엔티티, 컴포넌트 소유
-│   ├── ACubeActor
-│   ├── ASphereActor
-│   └── APlaneActor
-├── UActorComponent
-│   └── USceneComponent              # Transform 계층 (부모-자식)
-│       ├── UCameraComponent
-│       └── UPrimitiveComponent      # 렌더링 + 충돌
-│           ├── UCubeComponent
-│           ├── USphereComponent
-│           ├── UPlaneComponent
-│           ├── UGizmoComponent
-│           └── UBillboardComponent
-│               ├── UTextRenderComponent
-│               └── USubUVComponent
-├── UWorld
-└── UEngine
-    └── UEditorEngine
-```
+## 문서 범위에서 제외한 것
 
-**RTTI**: `DECLARE_CLASS` / `DEFINE_CLASS` 매크로로 `FTypeInfo` 체인을 생성하며, `IsA<T>()`, `Cast<T>()`를 지원합니다.
+아래 항목은 발표자료에 언급되더라도, 이 문서에서는 과장하지 않기 위해 표현을 낮추거나 일반화했습니다.
 
-**FName**: 문자열 풀(Pool)에 저장하고 인덱스로 비교하는 경량 문자열 시스템입니다. 대소문자를 무시합니다.
+- 범용 게임 엔진 수준의 완성도
+- 범용 머티리얼 에디터
+- 모든 OBJ/MTL 조합에 대한 완전 호환
+- 고급 메시 최적화 기능 전반
 
-**UObjectManager**: 싱글턴으로 오브젝트 생성/소멸을 관리하며, `ClassName_N` 형식의 자동 네이밍을 제공합니다.
-
----
-
-### 렌더링 파이프라인
-
-커맨드 버퍼 패턴을 사용하는 멀티패스 렌더링 파이프라인입니다.
-
-```
-CollectWorld ──→ RenderBus ──→ GetAlignedCommands ──→ PrepareBatchers ──→ Render ──→ Present
- (씬 순회)       (패스별 큐)      (SRV 정렬)           (Batcher 수집)      (GPU 제출)
-```
-
-**3단계 실행 흐름:**
-
-| 단계 | 담당 클래스 | 역할 |
-|------|------------|------|
-| Collect | RenderCollector | 씬의 모든 Actor/Component를 순회하며 FRenderCommand 생성 |
-| Transport | RenderBus | 커맨드를 패스별로 분류·저장 |
-| Execute | Renderer | FPassRenderState 룩업 테이블로 GPU 상태 적용 후 드로우 |
-
-**렌더 패스 (ERenderPass):**
-
-Opaque → Font → SubUV → Translucent → StencilMask → Outline → Editor → Grid → DepthLess
-
-**데이터 주도 설계:**
-
-- `FPassRenderState`: 패스별 렌더 상태(DepthStencil, Blend, Rasterizer, Topology)를 룩업 테이블로 관리. 새 패스 추가 시 테이블에 한 줄만 추가.
-- `bWireframeAware` 플래그로 패스 수준에서 Wireframe 모드 전환 제어.
-
-**Batcher 시스템:**
-
-| Batcher | 용도 | 특징 |
-|---------|------|------|
-| LineBatcher | 디버그 라인, 그리드, AABB | 모든 라인을 하나의 VB/IB로 통합 |
-| FontBatcher | Billboard 텍스트 렌더링 | Font Atlas UV 계산, Screen-Aligned Quad |
-| SubUVBatcher | 스프라이트 애니메이션 | SRV별 배치 드로우, DrawIndexed offset 기법 |
-
-각 Batcher는 자체 셰이더/샘플러를 소유하며, Renderer는 `Flush()`만 호출합니다.
-
----
-
-### 에디터
-
-`UEditorEngine`이 `UEngine`을 상속하여 에디터 전용 기능을 추가합니다.
-
-**뷰포트 기능:**
-
-- Ray-Triangle Intersection 기반 오브젝트 피킹 (클릭 선택)
-- Stencil 기반 Selection Outline (2-pass: StencilWrite → StencilOutline)
-- Gizmo 트랜스폼 조작 (Translate / Rotate / Scale)
-- 카메라 WASD/QE 이동, 우클릭 회전
-
-**UI (ImGui 기반):**
-
-- Scene Widget — 씬 계층 트리뷰
-- Property Widget — 선택된 오브젝트의 프로퍼티 편집
-- Viewport Overlay — View Mode(Lit/Unlit/Wireframe), Show Flags, 그리드/카메라 설정
-- Console Widget — 디버그 콘솔
-- Stat Widget — GPU/CPU 프로파일링 정보
-
-**Show Flags**: Primitives, Grid, Gizmo, BillboardText, BoundingVolume 토글을 지원하며, `EditorSettings`를 통해 JSON으로 저장/복원합니다.
-
----
-
-### 입력 시스템
-
-`InputSystem`은 싱글턴으로 매 프레임 `GetAsyncKeyState()`를 폴링합니다.
-
-- 키보드: `GetKey()`, `GetKeyDown()`, `GetKeyUp()` (프레임 단위 엣지 검출)
-- 마우스: 위치, 델타, 드래그 상태 머신 (threshold 기반)
-- 스크롤: `WM_MOUSEWHEEL` 메시지 기반
-- 포커스 가드: 윈도우 포커스가 없으면 모든 입력 차단
-- ImGui 연동: `bUsingKeyboard` / `bUsingMouse` 플래그로 UI 입력 우선
-
----
-
-### 직렬화
-
-`FSceneSaveManager`가 `.Scene` 파일(JSON)을 읽고 씁니다.
-
-저장 내용: Actor 계층, Component 구성, Transform, 카메라 상태, 씬 메타데이터
-
-```json
-{
-  "Actors": [{
-    "ClassName": "ACubeActor",
-    "RootComponent": {
-      "ClassName": "UCubeComponent",
-      "Properties": { "Location": [0, 0, 0], "Scale": [1, 1, 1] },
-      "Children": [...]
-    }
-  }],
-  "ClassName": "UWorld",
-  "Version": 2
-}
-```
-
-JSON 파싱에 `SimpleJSON/json.hpp`를 사용합니다.
-
----
-
-## 셰이더
-
-`Shaders/` 디렉토리에 8개의 HLSL 파일이 있으며, 런타임에 컴파일됩니다.
-
-| 셰이더 | 용도 |
-|--------|------|
-| Common.hlsl | 공통 유틸리티 (상수 버퍼, 구조체) |
-| Primitive.hlsl | 기본 프리미티브 렌더링 |
-| Outline.hlsl | 선택 오브젝트 아웃라인 |
-| ShaderLine.hlsl | 디버그 라인/그리드 |
-| ShaderFont.hlsl | Billboard 텍스트 |
-| ShaderSubUV.hlsl | SubUV 스프라이트 애니메이션 |
-| Editor.hlsl | 에디터 전용 시각화 |
-| Gizmo.hlsl | 트랜스폼 기즈모 |
-
----
-
-## 에셋
-
-```
-Asset/
-├── Font/
-│   └── FontAtlas.dds          # 폰트 텍스쳐 아틀라스 (ASCII)
-├── Particle/
-│   ├── Effect.dds             # 이펙트 파티클 스프라이트 시트
-│   └── Explosion.dds          # 폭발 파티클 스프라이트 시트
-└── Scene/
-    └── Default.Scene          # 기본 씬 템플릿
-```
-
----
-
-## 주요 기능 요약
-
-| 카테고리 | 기능 |
-|---------|------|
-| **렌더링** | 멀티패스 파이프라인, 데이터 주도 렌더 상태, Batcher 시스템 |
-| **텍스트** | Font Atlas 기반 Billboard Text, Screen-Aligned Quad |
-| **파티클** | SubUV 스프라이트 애니메이션, SRV별 배치 드로우 |
-| **에디터** | WYSIWYG 씬 편집, ImGui UI, Show Flags, View Mode |
-| **선택** | Ray-Triangle 피킹, Stencil Outline, 다중선택(Shift/Ctrl) |
-| **기즈모** | Translate/Rotate/Scale, Screen-space 스케일링 |
-| **오브젝트** | UObject RTTI, FName 문자열 풀, UUID |
-| **직렬화** | JSON 씬 파일, 에디터 설정 Save/Load |
-| **디버그** | Batch Line 렌더링, AABB 바운딩 박스, GPU 프로파일러 |
-| **그리드** | 동적 중심/범위 계산, 2차 감쇠 페이드, 축 라인 |
+현재 리포지토리 기준으로는 "에디터 기능을 갖춘 DirectX 11 기반 학습용 3D 엔진/도구 프로젝트"로 보는 것이 가장 정확합니다.
