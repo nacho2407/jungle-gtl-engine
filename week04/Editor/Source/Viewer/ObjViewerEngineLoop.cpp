@@ -203,7 +203,8 @@ bool FObjViewerEngineLoop::RunFrameOnce()
         }
         else
         {
-            Item.World = FMatrix::Identity;
+            //Item.World = FMatrix::Identity;
+            Item.World = FMatrix::MakeScale(ModelScale * AbsoluteScale) * Item.World;
         }
 
         Item.RenderResource = LoadedMesh->GetRenderResource();
@@ -244,7 +245,7 @@ void FObjViewerEngineLoop::UpdateOrbitCamera()
     SceneView.SetProjectionMatrix(Camera->GetProjectionMatrix());
     SceneView.SetViewLocation(Camera->GetLocation());
     SceneView.SetViewRect({ 0, 0, CachedW, CachedH });
-    SceneView.SetClipPlanes(0.1f, 2000.f);
+    SceneView.SetClipPlanes(0.1f, 3000.f);
 }
 
 void FObjViewerEngineLoop::FitCameraToMesh()
@@ -252,8 +253,15 @@ void FObjViewerEngineLoop::FitCameraToMesh()
     if (!LoadedMesh || !LoadedMesh->GetRenderResource()) return;
 
     const auto& BB       = LoadedMesh->GetRenderResource()->BoundingBox;
-    const FVector Center = (BB.Max + BB.Min) * 0.5f;
-    const float Diagonal = (BB.Max - BB.Min).Size();
+
+    // Normalize extreme sizes to fit the camera
+    if (BB.Max.Size() > 10000)
+    {
+        AbsoluteScale = 1 / BB.Max.Size();
+    }
+
+    const FVector Center = (BB.Max + BB.Min) * 0.5f * AbsoluteScale;
+    const float Diagonal = (BB.Max - BB.Min).Size() * AbsoluteScale;
 
     NavController.SetOrbitPivot(Center);
     NavController.SetOrbitRadius(Diagonal * 1.5f + 0.1f);
@@ -310,6 +318,8 @@ void FObjViewerEngineLoop::DrawUI()
     In.CurrentViewMode  = ViewMode;
     In.SelectedCullMode = CullMode;
     In.bConvertCoords   = bConvertCoords;
+    In.ModelScale       = ModelScale;
+    In.AbsoluteScale    = AbsoluteScale;
 
     const ViewerUI::FViewerUIOutput Out = ImGuiLayer.Draw(In);
     if (Out.bOpenRequested)
@@ -317,6 +327,11 @@ void FObjViewerEngineLoop::DrawUI()
     ViewMode       = Out.SelectedViewMode;
     CullMode       = Out.SelectedCullMode;
     bConvertCoords = Out.bConvertCoords;
+    if (Out.bIsScaleChanged)
+    {
+        ModelScale    = Out.ModelScale;
+        AbsoluteScale = Out.AbsoluteScale;
+    }
 
     if (Out.CameraCommand != ViewerUI::ECC_None)
     {
@@ -326,8 +341,8 @@ void FObjViewerEngineLoop::DrawUI()
         if (LoadedMesh && LoadedMesh->GetRenderResource())
         {
             const auto& BB = LoadedMesh->GetRenderResource()->BoundingBox;
-            NavController.SetOrbitPivot((BB.Max + BB.Min) * 0.5f);
-            NavController.SetOrbitRadius((BB.Max - BB.Min).Size() * 1.5f + 0.1f);
+            NavController.SetOrbitPivot((BB.Max + BB.Min) * 0.5f * AbsoluteScale);
+            NavController.SetOrbitRadius(((BB.Max - BB.Min).Size() * 1.5f + 0.1f) * AbsoluteScale);
         }
 
         switch (Out.CameraCommand)
@@ -338,7 +353,7 @@ void FObjViewerEngineLoop::DrawUI()
         case ViewerUI::ECC_Right:   TargetPitch =   0.f; TargetYaw =  -90.f; break;
         case ViewerUI::ECC_Up:      TargetPitch = -89.f; TargetYaw =    0.f; break;
         case ViewerUI::ECC_Bottom:  TargetPitch =  89.f; TargetYaw =    0.f; break;
-        default:                                                               break;
+        default:                                                             break;
         }
         Slerping = 0.f; // RunFrameOnce drives the animation from here
     }
