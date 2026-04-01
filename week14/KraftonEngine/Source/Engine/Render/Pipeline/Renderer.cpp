@@ -73,7 +73,7 @@ void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 			Bus.GetShowFlags(),
 			Entry.Grid.GridSpacing,
 			Entry.Grid.GridHalfLineCount,
-			CameraPos, CameraFwd, Bus.IsOrtho());
+			CameraPos, CameraFwd, Bus.IsFixedOrtho());
 	}
 
 	// --- Font 패스: 월드 공간 텍스트 → FontBatcher ---
