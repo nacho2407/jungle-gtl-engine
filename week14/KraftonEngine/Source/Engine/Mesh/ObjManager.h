@@ -19,6 +19,12 @@ struct FMeshAssetListItem
 	FString FullPath;
 };
 
+struct FMaterialAssetListItem
+{
+	FString DisplayName;
+	FString FullPath;
+};
+
 // 에셋 로드/캐싱 관리자
 class FObjManager
 {
@@ -27,6 +33,7 @@ class FObjManager
 	static TMap<FString, UMaterial*> MaterialCache;
 	static TArray<FMeshAssetListItem> AvailableMeshFiles;
 	static TArray<FMeshAssetListItem> AvailableObjFiles;
+	static TArray< FMaterialAssetListItem> AvailableMaterialFiles;
 
 
 public:
@@ -39,6 +46,8 @@ public:
 	static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
 	static void ScanObjSourceFiles();
 	static const TArray<FMeshAssetListItem>& GetAvailableObjFiles();
+	static void ScanMaterialAssets();
+	static const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles();
 
 private:
 	static bool LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
