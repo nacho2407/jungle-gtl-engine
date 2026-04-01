@@ -14,8 +14,8 @@ IMPLEMENT_RTTI(ASkySphereActor, AActor)
 
 void ASkySphereActor::PostSpawnInitialize()
 {
-	std::filesystem::path SkyPath = FPaths::MeshDir() / "SkySphere.obj";
-	UStaticMesh* SkyMesh = FObjManager::LoadObjStaticMeshAsset(FPaths::FromPath(SkyPath));
+	std::filesystem::path SkyPath = FPaths::MeshDir() / "SkySphere.Model";
+	UStaticMesh* SkyMesh = FObjManager::LoadModelStaticMeshAsset(FPaths::FromPath(SkyPath));
 
 	SkySphereComponent = FObjectFactory::ConstructObject<USkyComponent>(this);
 	SkySphereComponent->SetStaticMesh(SkyMesh);
