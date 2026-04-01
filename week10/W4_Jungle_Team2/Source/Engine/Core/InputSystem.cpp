@@ -11,13 +11,20 @@ void InputSystem::Tick()
             PrevStates[i] = CurrentStates[i];
             CurrentStates[i] = false;
         }
+
         bLeftDragJustStarted = false;
+		bMiddleDragJustStarted = false;
         bRightDragJustStarted = false;
+
         bLeftDragJustEnded = bLeftDragging;
+		bMiddleDragJustEnded = bMiddleDragging;
         bRightDragJustEnded = bRightDragging;
+
         bLeftDragging = false;
+		bMiddleDragging = false;
         bRightDragging = false;
         bLeftDragCandidate = false;
+		bMiddleDragCandidate = false;
         bRightDragCandidate = false;
         PrevScrollDelta = ScrollDelta;
         ScrollDelta = 0;
@@ -40,8 +47,10 @@ void InputSystem::Tick()
     }
 
     bLeftDragJustStarted = false;
+	bMiddleDragJustStarted = false;
     bRightDragJustStarted = false;
     bLeftDragJustEnded = false;
+	bMiddleDragJustEnded = false;
     bRightDragJustEnded = false;
 
     PrevScrollDelta = ScrollDelta;
@@ -55,6 +64,13 @@ void InputSystem::Tick()
         bLeftDragCandidate = true;
         LeftMouseDownPos = MousePos;
     }
+
+	if (GetKeyDown(VK_MBUTTON))
+	{
+		bMiddleDragCandidate = true;
+		MiddleMouseDownPos = MousePos;
+	}
+
     if (GetKeyDown(VK_RBUTTON))
     {
         bRightDragCandidate = true;
@@ -73,6 +89,19 @@ void InputSystem::Tick()
         bLeftDragging = false;
         bLeftDragCandidate = false;
     }
+
+	// Middle drag
+	if (!bMiddleDragging && IsDraggingMiddle())
+	{
+		FilterDragThreshold(bMiddleDragCandidate, bMiddleDragging, bMiddleDragJustStarted,
+			MiddleMouseDownPos, MiddleDragStartPos);
+	}
+	else if (GetKeyUp(VK_MBUTTON))
+	{
+		if (bMiddleDragging) bMiddleDragJustEnded = true;
+		bMiddleDragging = false;
+		bMiddleDragCandidate = false;
+	}
 
     // Right drag
     if (!bRightDragging && IsDraggingRight())
@@ -115,18 +144,32 @@ POINT InputSystem::GetLeftDragVector() const
     return V;
 }
 
-POINT InputSystem::GetRightDragVector() const
-{
-    POINT V;
-    V.x = MousePos.x - RightDragStartPos.x;
-    V.y = MousePos.y - RightDragStartPos.y;
-    return V;
-}
-
 float InputSystem::GetLeftDragDistance() const
 {
     POINT V = GetLeftDragVector();
     return std::sqrt((float)(V.x * V.x + V.y * V.y));
+}
+
+POINT InputSystem::GetMiddleDragVector() const
+{
+	POINT V;
+	V.x = MousePos.x - MiddleDragStartPos.x;
+	V.y = MousePos.y - MiddleDragStartPos.y;
+	return V;
+}
+
+float InputSystem::GetMiddleDragDistance() const
+{
+	POINT V = GetMiddleDragVector();
+	return std::sqrt((float)V.x * V.x + V.y * V.y);
+}
+
+POINT InputSystem::GetRightDragVector() const
+{
+	POINT V;
+	V.x = MousePos.x - RightDragStartPos.x;
+	V.y = MousePos.y - RightDragStartPos.y;
+	return V;
 }
 
 float InputSystem::GetRightDragDistance() const
