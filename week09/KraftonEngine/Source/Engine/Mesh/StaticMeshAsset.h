@@ -8,6 +8,7 @@
 #include "Engine/Object/FName.h"
 #include "Engine/Mesh/ObjManager.h"
 #include "Materials/Material.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 #include <memory>
 
 // Cooked Data 내부용 정점
@@ -62,6 +63,7 @@ struct FStaticMaterial
 			if (!MatPath.empty())
 			{
 				// 저장된 경로를 이용해 별도의 bin 파일에서 로드
+				UE_LOG("Archive Loading Material: %s;", MatPath.c_str());
 				Mat.MaterialInterface = FObjManager::GetOrLoadMaterial(MatPath);
 			}
 			else

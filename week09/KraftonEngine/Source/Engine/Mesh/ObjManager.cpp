@@ -2,6 +2,7 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/ObjImporter.h"
 #include "Materials/Material.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include <filesystem>
@@ -306,15 +307,20 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 {
+	std::filesystem::path FullPath = FPaths::ToWide(MaterialName);
+	FString FileNameOnly = FPaths::ToUtf8(FullPath.stem().wstring());
+
 	// 1. 캐시(RAM)에 이미 있는지 검사
-	if (MaterialCache.contains(MaterialName))
+	if (MaterialCache.contains(FileNameOnly))
 	{
-		return MaterialCache[MaterialName];
+		UE_LOG("Cached MaterialName: %s;", FileNameOnly.c_str());
+		return MaterialCache[FileNameOnly];
 	}
 
 	// 2. 캐시에 없다면 빈 객체 생성
 	UMaterial* NewMaterial = UObjectManager::Get().CreateObject<UMaterial>();
 	FString MatPath = MaterialName;
+	UE_LOG("Cache Missed MaterialName: %s;", FileNameOnly.c_str());
 
 	// 3. 하드디스크(.bin)에 있다면 로드
 
@@ -328,6 +334,6 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 	}
 
 	// 4. 캐시에 등록 후 반환
-	MaterialCache[MaterialName] = NewMaterial;
+	MaterialCache[FileNameOnly] = NewMaterial;
 	return NewMaterial;
 }
