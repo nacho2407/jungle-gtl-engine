@@ -8,6 +8,7 @@
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
+#include "Editor/UI/EditorToolbarWidget.h"
 
 class FRenderer;
 class UEditorEngine;
@@ -36,4 +37,12 @@ private:
 	FEditorMaterialWidget MaterialWidget;
 	FEditorViewportOverlayWidget ViewportOverlayWidget;
 	FEditorStatWidget StatWidget;
+	FEditorToolbarWidget ToolbarWidget;
+
+	bool bShowConsole = true;
+	bool bShowControl = true;
+	bool bShowProperty = true;
+	bool bShowSceneManager = true;
+	bool bShowMaterialEditor = true;
+	bool bShowStatProfiler = true;
 };

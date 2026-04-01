@@ -42,27 +42,10 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.PrepareBatchers(Bus);
 	Renderer.BeginFrame();
 
-	// TODO-VIEWER: Slate 구조를 개편한 뒤 코드 수정하기 (주입된 정보를 바탕으로 화면 조정)
-	D3D11_VIEWPORT D3DViewport = GetD3DViewport();
-	ID3D11DeviceContext* Context = Renderer.GetFD3DDevice().GetDeviceContext();
-    Context->RSSetViewports(1, &D3DViewport);
+	auto& VC = Engine->GetViewportClient();
+	Renderer.GetFD3DDevice().SetSubViewport(VC.GetViewportX(),VC.GetViewportY(), VC.GetViewportWidth(), VC.GetViewportHeight());
 
 	Renderer.Render(Bus);
 	Engine->RenderUI(DeltaTime);
 	Renderer.EndFrame();
-}
-
-// TODO-VIEWER: Slate 구조를 개편한 뒤 코드 수정하기
-D3D11_VIEWPORT FObjViewerRenderPipeline::GetD3DViewport() const
-{
-    auto& VC = Engine->GetViewportClient();
-    D3D11_VIEWPORT D3DViewport;
-    D3DViewport.TopLeftX = VC.GetViewportX();
-    D3DViewport.TopLeftY = VC.GetViewportY();
-    D3DViewport.Width    = VC.GetViewportWidth();
-    D3DViewport.Height   = VC.GetViewportHeight();
-    D3DViewport.MinDepth = 0.0f;
-    D3DViewport.MaxDepth = 1.0f;
-    
-    return D3DViewport;
 }

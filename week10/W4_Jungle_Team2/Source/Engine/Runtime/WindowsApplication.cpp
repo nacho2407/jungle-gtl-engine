@@ -4,6 +4,7 @@
 
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Slate/SlateApplication.h"
+#include "Slate/SWidget.h"
 
 // ImGui Win32 메시지 핸들러
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
@@ -52,11 +53,11 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 	{
 		const int32 MX = GET_X_LPARAM(lParam);
 		const int32 MY = GET_Y_LPARAM(lParam);
-		if(ShouldRouteToSlate(MX, MY))
+		if (ShouldRouteToSlate(MX, MY) && SlateApplication.OnMouseMove((void*)hWnd, MX, MY))
 		{
-			SlateApplication.OnMouseMove((void*)hWnd, MX, MY);
+			return 0;
 		}
-		return 0;
+		break;
 	}
 	case WM_LBUTTONDOWN:
 	case WM_RBUTTONDOWN:
@@ -68,7 +69,7 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 		{
 			SlateApplication.OnMouseButtonDown((void*)hWnd, 0, MX, MY);
 		}
-		return 0;
+		break;
 	}
 	case WM_LBUTTONUP:
 	case WM_RBUTTONUP:
@@ -80,7 +81,7 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 		{
 			SlateApplication.OnMouseButtonUp((void*)hWnd, 0, MX, MY);
 		}
-		return 0;
+		break;
 	}
 	case WM_MOUSEWHEEL:
 		InputSystem::Get().AddScrollDelta(GET_WHEEL_DELTA_WPARAM(wParam));

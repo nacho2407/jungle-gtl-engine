@@ -92,6 +92,16 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	SceneWidget.Initialize(InEditorEngine);
 	ViewportOverlayWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
+	ToolbarWidget.Initialize(InEditorEngine);
+	ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
+	ToolbarWidget.SetSceneWidget(&SceneWidget);
+	ToolbarWidget.SetPanelVisibilityRefs(
+		&bShowConsole,
+		&bShowControl,
+		&bShowProperty,
+		&bShowSceneManager,
+		&bShowMaterialEditor,
+		&bShowStatProfiler);
 }
  
 void FEditorMainPanel::Release()
@@ -108,15 +118,16 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui::NewFrame();
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+	ToolbarWidget.Render(DeltaTime);
 
 	RenderViewportHostWindow();
 
-	ConsoleWidget.Render(DeltaTime);
-	ControlWidget.Render(DeltaTime);
-	MaterialWidget.Render(DeltaTime);
-	PropertyWidget.Render(DeltaTime);
-	SceneWidget.Render(DeltaTime);
-	StatWidget.Render(DeltaTime);
+	if (bShowConsole) ConsoleWidget.Render(DeltaTime);
+	if (bShowControl) ControlWidget.Render(DeltaTime);
+	if (bShowMaterialEditor) MaterialWidget.Render(DeltaTime);
+	if (bShowProperty) PropertyWidget.Render(DeltaTime);
+	if (bShowSceneManager) SceneWidget.Render(DeltaTime);
+	if (bShowStatProfiler) StatWidget.Render(DeltaTime);
 	ViewportOverlayWidget.Render(DeltaTime);
 
 	ImGui::Render();

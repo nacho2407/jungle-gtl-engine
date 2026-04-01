@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "SSplitter.h"
 /*
 * 수평 분할 Splitter
@@ -6,7 +6,7 @@
 class SSplitterH : public SSplitter
 {
 public:
-	void  UpdateCildRect()                       override;
+	void  UpdateChildRect()                       override;
 
 	// X 축 기준: 마우스 X 위치 → 좌우 분할 비율
 	float ComputeNewRatio(int32 X, int32 Y) const override;

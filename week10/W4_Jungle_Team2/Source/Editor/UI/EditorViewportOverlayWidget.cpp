@@ -49,7 +49,10 @@ static const char* GetViewModeName(EViewMode Mode)
 
 void FEditorViewportOverlayWidget::Render(float DeltaTime)
 {
-	RenderViewportSettings(DeltaTime);
+	if (bShowViewportSettings)
+	{
+		RenderViewportSettings(DeltaTime);
+	}
 	RenderDebugStats(DeltaTime);
 	RenderSplitterBar();
 	RenderBoxSelectionOverlay();
@@ -179,11 +182,13 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 // 스플리터 바 시각화
 void FEditorViewportOverlayWidget::RenderSplitterBar()
 {
-	 // Caputre 중인 Widget이 있다면 SplitterBar 하이라이트를 비활성화 합니다.
-	 if (FSlateApplication::Get().GetCapturedWidget()) return;
 
-	 bool bIsHodingGizmo = EditorEngine->GetGizmo()->IsHolding();
-	 // 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
+	 // Capture 중이거나 middle dragging 중이라면 하이라이트를 하지 않습니다.
+	if (FSlateApplication::Get().GetCapturedWidget() || InputSystem::Get().GetMiddleDragging())
+		 return;
+	// 우클릭 + 기즈모 홀딩 중에는 하이라이트를 표시하지 않음
+	bool bIsHodingGizmo = EditorEngine->GetGizmo()->IsHolding();
+
 	 if (bIsHodingGizmo || InputSystem::Get().GetRightDragging())
 	 {
 		 return;
@@ -208,7 +213,6 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 		SSplitterCross* Cross = ViewportLayout.GetCrossWidget();
 		constexpr ImU32 CrossHoverColor = IM_COL32(140, 180, 255, 255);
 
-		// 교차점 핸들 호버 시 전체 바를 황금색으로 표시합니다.
 		const bool bCrossHovered = (Cross && Cross == Hovered);
 
 		SSplitter* Splitters[] = {
@@ -298,12 +302,36 @@ void FEditorViewportOverlayWidget::RenderShortcutsWindow()
 		return;
 	}
 
-	if (!ImGui::Begin("Shortcuts", &bShowShortcutsWindow))
+	ImGui::OpenPopup("Shortcuts##Modal");
+	ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0.0f, 0.0f, 0.0f, 0.55f));
+	ImGui::SetNextWindowSize(ImVec2(760.0f, 560.0f), ImGuiCond_Appearing);
+
+	if (!ImGui::BeginPopupModal("Shortcuts##Modal", &bShowShortcutsWindow, ImGuiWindowFlags_NoResize))
 	{
-		ImGui::End();
+		ImGui::PopStyleColor();
 		return;
 	}
 
+	if (!bShowShortcutsWindow)
+	{
+		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+		ImGui::PopStyleColor();
+		return;
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+	{
+		bShowShortcutsWindow = false;
+		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+		ImGui::PopStyleColor();
+		return;
+	}
+
+	ImGui::TextUnformatted("Shortcuts");
+
+	ImGui::Separator();
 	ImGui::Text("현재 코드상 실제로 동작하는 에디터 단축키만 정리했습니다.");
 
 	auto DrawShortcutTable = [](const char* Header, std::initializer_list<std::pair<const char*, const char*>> Rows)
@@ -367,6 +395,6 @@ void FEditorViewportOverlayWidget::RenderShortcutsWindow()
 
 	ImGui::Spacing();
 	ImGui::TextUnformatted("참고: ImGui 입력창이 키보드를 잡고 있을 때는 일부 단축키가 동작하지 않습니다.");
-
-	ImGui::End();
+	ImGui::EndPopup();
+	ImGui::PopStyleColor();
 }
