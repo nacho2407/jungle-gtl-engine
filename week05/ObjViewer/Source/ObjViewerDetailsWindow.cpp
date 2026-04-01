@@ -38,6 +38,16 @@ namespace
 		}
 	}
 
+	const char* GetNormalModeLabel(EObjViewerNormalVisualizationMode Mode)
+	{
+		switch (Mode)
+		{
+		case EObjViewerNormalVisualizationMode::Vertex: return "Vertex";
+		case EObjViewerNormalVisualizationMode::Face: return "Face";
+		default: return "Vertex";
+		}
+	}
+
 	void DrawVector3(const char* Label, const FVector& Value)
 	{
 		ImGui::Text("%s", Label);
@@ -155,6 +165,48 @@ void FObjViewerDetailsWindow::Render(FObjViewerEngine* Engine)
 		ImGui::Text("Uniform Scale");
 		ImGui::SameLine(120.0f);
 		ImGui::Text("%.2f", State.LastImportSummary.UniformScale);
+	}
+
+	if (ImGui::CollapsingHeader("Viewport", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		bool bWireframeEnabled = Engine->IsWireframeEnabled();
+		if (ImGui::Checkbox("Show Wireframe", &bWireframeEnabled))
+		{
+			Engine->SetWireframeEnabled(bWireframeEnabled);
+		}
+
+		FObjViewerNormalSettings& NormalSettings = Engine->GetMutableNormalSettings();
+		ImGui::Checkbox("Show Normals", &NormalSettings.bVisible);
+		if (ImGui::BeginCombo("Normal Mode", GetNormalModeLabel(NormalSettings.Mode)))
+		{
+			constexpr EObjViewerNormalVisualizationMode Modes[] =
+			{
+				EObjViewerNormalVisualizationMode::Vertex,
+				EObjViewerNormalVisualizationMode::Face
+			};
+
+			for (EObjViewerNormalVisualizationMode Candidate : Modes)
+			{
+				const bool bSelected = Candidate == NormalSettings.Mode;
+				if (ImGui::Selectable(GetNormalModeLabel(Candidate), bSelected))
+				{
+					NormalSettings.Mode = Candidate;
+				}
+
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+		ImGui::SliderFloat("Normal Length", &NormalSettings.LengthScale, 0.005f, 0.25f, "%.3f");
+
+		FObjViewerGridSettings& GridSettings = Engine->GetMutableGridSettings();
+		ImGui::Checkbox("Show Grid", &GridSettings.bVisible);
+		ImGui::SliderFloat("Grid Size", &GridSettings.GridSize, 1.0f, 100.0f, "%.1f");
+		ImGui::SliderFloat("Line Thickness", &GridSettings.LineThickness, 0.1f, 5.0f, "%.2f");
 	}
 
 	if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))

@@ -74,12 +74,15 @@ namespace
 		switch (ImportOptions.SourcePreset)
 		{
 		case EObjImportPreset::Auto:
+			ImportOptions.ForwardAxis = EObjImportAxis::PosX;
+			ImportOptions.UpAxis = EObjImportAxis::PosZ;
+			break;
 		case EObjImportPreset::Unreal:
 			ImportOptions.ForwardAxis = EObjImportAxis::PosX;
 			ImportOptions.UpAxis = EObjImportAxis::PosZ;
 			break;
 		case EObjImportPreset::Blender:
-			ImportOptions.ForwardAxis = EObjImportAxis::NegY;
+			ImportOptions.ForwardAxis = EObjImportAxis::PosY;
 			ImportOptions.UpAxis = EObjImportAxis::PosZ;
 			break;
 		case EObjImportPreset::Maya:
@@ -171,7 +174,6 @@ namespace
 
 		return bChanged;
 	}
-
 	bool IsViewportMouseMessage(UINT Msg)
 	{
 		switch (Msg)
@@ -674,6 +676,22 @@ void FObjViewerShell::DrawMenuBar()
 			Engine->ResetViewerCamera();
 		}
 
+		if (Engine)
+		{
+			ImGui::Separator();
+			bool bWireframeEnabled = Engine->IsWireframeEnabled();
+			if (ImGui::MenuItem("Show Wireframe", nullptr, &bWireframeEnabled))
+			{
+				Engine->SetWireframeEnabled(bWireframeEnabled);
+			}
+
+			FObjViewerNormalSettings& NormalSettings = Engine->GetMutableNormalSettings();
+			ImGui::MenuItem("Show Normals", nullptr, &NormalSettings.bVisible);
+
+			FObjViewerGridSettings& GridSettings = Engine->GetMutableGridSettings();
+			ImGui::MenuItem("Show Grid", nullptr, &GridSettings.bVisible);
+		}
+
 		ImGui::EndMenu();
 	}
 
@@ -723,6 +741,20 @@ void FObjViewerShell::DrawToolbarWindow()
 	if (ImGui::Button("Reset Camera") && Engine)
 	{
 		Engine->ResetViewerCamera();
+	}
+
+	if (Engine)
+	{
+		ImGui::SameLine();
+		bool bWireframeEnabled = Engine->IsWireframeEnabled();
+		if (ImGui::Checkbox("Wireframe", &bWireframeEnabled))
+		{
+			Engine->SetWireframeEnabled(bWireframeEnabled);
+		}
+
+		ImGui::SameLine();
+		FObjViewerNormalSettings& NormalSettings = Engine->GetMutableNormalSettings();
+		ImGui::Checkbox("Normals", &NormalSettings.bVisible);
 	}
 
 	ImGui::End();
