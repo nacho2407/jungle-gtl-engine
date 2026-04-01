@@ -559,6 +559,15 @@ void FWindowOverlayManager::SetViewportLayout(EViewportLayout Layout)
     HSplitRatio    = 0.5f;
     ResetViewportDimension();
     ResetViewOrientation();
+
+    if (!ViewportPanels.empty() && ViewportPanels.front())
+    {
+        LastFocusedPanel = ViewportPanels.front();
+    }
+    else
+    {
+        LastFocusedPanel = nullptr;
+    }
 }
 
 void FWindowOverlayManager::SetNavigationValues(float MoveSpeed, float RotationSpeed)

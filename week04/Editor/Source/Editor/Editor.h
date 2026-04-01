@@ -114,7 +114,6 @@ class FEditor
 
     FScene*                      GetScene() const { return CurScene; }
     FEditorViewportClient&       GetViewportClient() { return ViewportClient; }
-    const FEditorViewportClient& GetViewportClient() const { return ViewportClient; }
     FWindowOverlayManager*       GetWindowOverlayManager() { return WindowOverlayManager; }
     class FPanelManager*         GetPanelManager() const { return PanelManager; }
 

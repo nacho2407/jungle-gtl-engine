@@ -37,12 +37,6 @@ bool FRendererModule::StartupModule(HWND hWnd)
         return false;
     }
 
-    if (!OutlineRenderer.Initialize(&RHI))
-    {
-        ShutdownModule();
-        return false;
-    }
-
     if (!SelectionMaskRenderer.Initialize(&RHI))
     {
         ShutdownModule();
@@ -109,7 +103,6 @@ void FRendererModule::ShutdownModule()
     LineRenderer.Shutdown();
     PostProcessOutlineRenderer.Shutdown();
     SelectionMaskRenderer.Shutdown();
-    OutlineRenderer.Shutdown();
     MeshBatchRenderer.Shutdown();
     StaticMeshRenderer.Shutdown();
     WidgetRenderer.Shutdown();

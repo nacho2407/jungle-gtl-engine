@@ -6,7 +6,6 @@
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/D3D11/D3D11MeshBatchRenderer.h"
 #include "Renderer/D3D11/D3D11ObjectIdRenderer.h"
-#include "Renderer/D3D11/D3D11OutlineRenderer.h"
 #include "Renderer/D3D11/D3D11PostProcessOutlineRenderer.h"
 #include "Renderer/D3D11/D3D11SelectionMaskRenderer.h"
 #include "Renderer/D3D11/D3D11RHI.h"
@@ -64,7 +63,6 @@ class ENGINE_API FRendererModule
     float     Time = 0.0f; // 누적 시간 추가
 
     FD3D11MeshBatchRenderer  MeshBatchRenderer;
-    FD3D11OutlineRenderer    OutlineRenderer;
     FD3D11PostProcessOutlineRenderer PostProcessOutlineRenderer;
     FD3D11SelectionMaskRenderer SelectionMaskRenderer; // outline 계산에 필요한 마스크 렌더러
     FD3D11LineBatchRenderer  LineRenderer;
