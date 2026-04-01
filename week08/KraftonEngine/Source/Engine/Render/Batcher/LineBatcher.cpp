@@ -1,6 +1,6 @@
 ﻿#include "LineBatcher.h"
 #include "Core/EngineTypes.h"
-#include "Math/Utils.h"
+#include "Math/MathUtils.h"
 
 #include <algorithm>
 #include <cmath>
