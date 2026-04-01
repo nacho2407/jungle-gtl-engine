@@ -1,7 +1,7 @@
-#include "SSplitterV.h"
+﻿#include "SSplitterV.h"
 #include "SSplitterCross.h"
 
-void SSplitterV::UpdateCildRect()
+void SSplitterV::UpdateChildRect()
 {
 	if (!GetSideLT() || !GetSideRB()) return;
 
@@ -15,8 +15,8 @@ void SSplitterV::UpdateCildRect()
 	GetSideRB()->SetRect({ R.X, SplitY + HalfBar, R.Width, R.Y + R.Height - SplitY - HalfBar   });
 
 	// 자식이 SSplitter라면 재귀 (SSplitter가 아니라면 빈 함수 출력)
-	GetSideLT()->UpdateCildRect();
-	GetSideRB()->UpdateCildRect();
+	GetSideLT()->UpdateChildRect();
+	GetSideRB()->UpdateChildRect();
 }
 
 FRect SSplitterV::GetBarRect() const
