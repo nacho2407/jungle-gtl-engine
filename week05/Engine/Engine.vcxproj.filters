@@ -887,6 +887,7 @@
     <ClInclude Include="ThirdParty\nlohmann\json.hpp">
       <Filter>ThirdParty\nlohmann</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Object\ObjectIterator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

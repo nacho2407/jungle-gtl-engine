@@ -1,0 +1,205 @@
+{
+  "Materials": [
+    "Assets/Materials/M_Water.json",
+    "Assets/Materials/M_BlueColor.json",
+    "Assets/Materials/M_Gizmos.json",
+    "Assets/Materials/M_GreenColor.json",
+    "Assets/Materials/M_Wireframe.json",
+    "Assets/Materials/M_RedColor.json",
+    "Assets/Materials/M_Sky.json",
+    "Assets/Materials/M_TintYellow.json"
+  ],
+  "NextUUID": 33,
+  "PerspectiveCamera": {
+    "FOV": 60.0,
+    "FarClip": 10000.0,
+    "Location": [
+      -12.136555671691895,
+      -38.27986145019531,
+      52.762203216552734
+    ],
+    "NearClip": 0.0010000000474974513,
+    "Rotation": [
+      -40.40009689331055,
+      138.39967346191406,
+      0.0
+    ]
+  },
+  "Primitives": {
+    "0": {
+      "Class": "AActor",
+      "Components": [
+        {
+          "Billboard": true,
+          "Class": "UUUIDBillboardComponent",
+          "Location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Text": "Text",
+          "TextColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 24
+        },
+        {
+          "Class": "UStaticMeshComponent",
+          "Location": [
+            10.0,
+            0.0,
+            5.0
+          ],
+          "Materials": [
+            "M_Water"
+          ],
+          "ObjStaticMeshAsset": "PrimitivePlane.obj",
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            10.0,
+            10.0,
+            1.0
+          ],
+          "UUID": 25
+        }
+      ],
+      "RootComponentUUID": 25,
+      "UUID": 23
+    },
+    "1": {
+      "Class": "AActor",
+      "Components": [
+        {
+          "Billboard": true,
+          "Class": "UUUIDBillboardComponent",
+          "Location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Text": "Text",
+          "TextColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 27
+        },
+        {
+          "Class": "UStaticMeshComponent",
+          "Location": [
+            -23.445627212524414,
+            -29.356475830078125,
+            43.91073989868164
+          ],
+          "Materials": [
+            "Pikachu",
+            "PikachuMouth",
+            "PikachuEye",
+            "PikachuHoho"
+          ],
+          "ObjStaticMeshAsset": "Pikachu.Model",
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 28
+        }
+      ],
+      "RootComponentUUID": 28,
+      "UUID": 26
+    },
+    "2": {
+      "Class": "AActor",
+      "Components": [
+        {
+          "Billboard": true,
+          "Class": "UUUIDBillboardComponent",
+          "Location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Text": "Text",
+          "TextColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 31
+        },
+        {
+          "Class": "UStaticMeshComponent",
+          "Location": [
+            -21.4603214263916,
+            -35.46773910522461,
+            45.6245231628418
+          ],
+          "Materials": [
+            "SquirtleBody",
+            "SquirtleEye"
+          ],
+          "ObjStaticMeshAsset": "Squirtle.Model",
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 32
+        }
+      ],
+      "RootComponentUUID": 32,
+      "UUID": 30
+    }
+  }
+}

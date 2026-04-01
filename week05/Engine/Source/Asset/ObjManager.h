@@ -23,6 +23,8 @@ public:
 	static bool BuildModelMaterialInfosFromObj(const FString& ObjFilePath, const FString& ModelFilePath, const TArray<FString>& MaterialSlotNames, TArray<FModelMaterialInfo>& OutMaterialInfos);
 	static bool ParseMtlFile(const FString& MtlFIlePath);
 	static void PreloadAllObjFiles(const FString& DirecttoryPath);
+	static void PreloadAllModelFiles(const FString& DirectoryPath);
+	static void PreloadAllMtlFiles(const FString& DirectoryPath);
 
 	static void ClearCache();
 

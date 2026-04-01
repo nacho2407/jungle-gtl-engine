@@ -73,6 +73,7 @@
     <ClInclude Include="Source\Object\Object.h" />
     <ClInclude Include="Source\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Object\ObjectGlobals.h" />
+    <ClInclude Include="Source\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Object\ObjectManager.h" />
     <ClInclude Include="Source\Object\ObjectTypes.h" />
     <ClInclude Include="Source\Physics\PhysicsManager.h" />
