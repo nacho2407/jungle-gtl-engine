@@ -89,6 +89,7 @@ void FViewerImGui::DrawControlPanel(const FViewerUIInput& Input, FViewerUIOutput
                  ImGuiWindowFlags_NoSavedSettings);
 
     DrawViewModePanel(Input.CurrentViewMode, Out);
+    DrawCullModePanel(Input.SelectedCullMode, Out);
 
     ImGui::Separator();
 
@@ -114,6 +115,17 @@ void FViewerImGui::DrawViewModePanel(EViewModeIndex Current, FViewerUIOutput& Ou
     if (ImGui::Combo("##Shading", &Selected, ViewModeLabels, IM_ARRAYSIZE(ViewModeLabels)))
         Current = static_cast<EViewModeIndex>(Selected);
     Out.SelectedViewMode = Current;
+}
+
+void FViewerImGui::DrawCullModePanel(ERasterizerCullMode CullMode, FViewerUIOutput& Out) 
+{
+    ImGui::TextUnformatted("Cull Mode");
+    int Selected = static_cast<int>(CullMode);
+    if (ImGui::Combo("##CullMode", &Selected, CullModeLabels, IM_ARRAYSIZE(CullModeLabels)))
+    {
+        CullMode = static_cast<ERasterizerCullMode>(Selected);
+    }
+    Out.SelectedCullMode = CullMode;
 }
 
 void FViewerImGui::DrawCameraPanel(FViewerUIOutput& Out)

@@ -362,7 +362,7 @@ namespace
                 {
                     ImGui::TextUnformatted("UV Scroll Speed");
                     ImGui::PushID("UVScrollSpeed");
-                    
+                      
                     float SpeedX = Data->UVScrollSpeed.X;
                     float SpeedY = Data->UVScrollSpeed.Y;
 

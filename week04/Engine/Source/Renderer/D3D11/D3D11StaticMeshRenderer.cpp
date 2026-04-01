@@ -239,15 +239,26 @@ bool FD3D11StaticMeshRenderer::CreateStates()
 
     {
         D3D11_RASTERIZER_DESC Desc = {};
-        Desc.FillMode = D3D11_FILL_SOLID;
-        Desc.CullMode = D3D11_CULL_BACK;
+        Desc.FillMode              = D3D11_FILL_SOLID;
         Desc.FrontCounterClockwise = FALSE;
-        Desc.DepthClipEnable = TRUE;
+        Desc.DepthClipEnable       = TRUE;
 
+        Desc.CullMode = D3D11_CULL_BACK;
         if (FAILED(Device->CreateRasterizerState(&Desc, SolidRasterizerState.GetAddressOf())))
             return false;
 
+#if IS_OBJ_VIEWER
+        Desc.CullMode = D3D11_CULL_NONE;
+        if (FAILED(Device->CreateRasterizerState(&Desc, SolidNoneRasterizerState.GetAddressOf())))
+            return false;
+
+        Desc.CullMode = D3D11_CULL_FRONT;
+        if (FAILED(Device->CreateRasterizerState(&Desc, SolidFrontRasterizerState.GetAddressOf())))
+            return false;
+#endif
+
         Desc.FillMode = D3D11_FILL_WIREFRAME;
+        Desc.CullMode = D3D11_CULL_BACK;
         if (FAILED(Device->CreateRasterizerState(&Desc, WireframeRasterizerState.GetAddressOf())))
             return false;
     }
@@ -290,8 +301,18 @@ void FD3D11StaticMeshRenderer::BindPipeline()
 
 void FD3D11StaticMeshRenderer::BindSolidRasterizer()
 {
-    if (RHI)
-        RHI->SetRasterizerState(SolidRasterizerState.Get());
+    if (!RHI) return;
+
+    ID3D11RasterizerState* State = SolidRasterizerState.Get();
+    #if IS_OBJ_VIEWER
+    switch (CurrentPassParams.CullMode)
+    {
+    case ERasterizerCullMode::CULL_None:  State = SolidNoneRasterizerState.Get();  break;
+    case ERasterizerCullMode::CULL_Front: State = SolidFrontRasterizerState.Get(); break;
+    default:                                                                        break;
+    }
+    #endif
+    RHI->SetRasterizerState(State);
 }
 
 void FD3D11StaticMeshRenderer::BindWireframeRasterizer()
