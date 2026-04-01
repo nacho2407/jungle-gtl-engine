@@ -13,4 +13,5 @@ public:
 	static bool FileExists ( const FString& FileName );
 	static bool LoadFileToString(const FString& FileName, FString& OutText);
 	static bool LoadFileToLines(const FString& FileName, TArray<FString>& OutLines);
+	static bool FindFileRecursively(const FString& SearchRootPath, const FString& TargetFileName, FString& OutFoundPath);
 };
