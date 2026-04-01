@@ -128,7 +128,8 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h" />
-    <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11PostProcessOutlineRenderer.h" />
+    <ClInclude Include="Source\Renderer\D3D11\D3D11SelectionMaskRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.h" />
     <ClInclude Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.h" />
@@ -250,7 +251,8 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11LineBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11MeshBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11PostProcessOutlineRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\D3D11\D3D11SelectionMaskRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11SpriteBatchRenderer.cpp" />
     <ClCompile Include="Source\Renderer\D3D11\D3D11StaticMeshRenderer.cpp" />

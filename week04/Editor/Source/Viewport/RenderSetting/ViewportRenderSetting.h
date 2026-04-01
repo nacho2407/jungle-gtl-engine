@@ -20,6 +20,12 @@ public:
         bShowSelectionOutline = bInShowSelectionOutline;
     }
 
+    bool IsSelectionOutlineOcclusionEnabled() const { return bEnableSelectionOutlineOcclusion; }
+    void SetSelectionOutlineOcclusionEnabled(bool bInEnableSelectionOutlineOcclusion)
+    {
+        bEnableSelectionOutlineOcclusion = bInEnableSelectionOutlineOcclusion;
+    }
+
     bool IsWorldAxesVisible() const { return bShowWorldAxes; }
     void SetWorldAxesVisible(bool bInShowWorldAxes) { bShowWorldAxes = bInShowWorldAxes; }
 
@@ -64,6 +70,7 @@ private:
     bool           bShowWorldAxes = true;
     bool           bShowGizmo = true;
     bool           bShowSelectionOutline = true;
+    bool           bEnableSelectionOutlineOcclusion = true;
     bool           bShowObjectLabels = true;
     bool           bShowUUIDLabels = true;
     bool           bShowScenePrimitives = true;

@@ -315,7 +315,10 @@
     <ClCompile Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\D3D11\D3D11OutlineRenderer.cpp">
+    <ClCompile Include="Source\Renderer\D3D11\D3D11PostProcessOutlineRenderer.cpp">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\D3D11\D3D11SelectionMaskRenderer.cpp">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11RHI.cpp">
@@ -710,7 +713,10 @@
     <ClInclude Include="Source\Renderer\D3D11\D3D11ObjectIdRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\D3D11\D3D11OutlineRenderer.h">
+    <ClInclude Include="Source\Renderer\D3D11\D3D11PostProcessOutlineRenderer.h">
+      <Filter>Source\Renderer\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\D3D11\D3D11SelectionMaskRenderer.h">
       <Filter>Source\Renderer\D3D11</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\D3D11\D3D11RHI.h">
