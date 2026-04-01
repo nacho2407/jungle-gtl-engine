@@ -566,6 +566,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			BinaryPath.c_str());
 	}
 
+	// Materail 연결
 	TArray<FStaticMeshMaterialSlot> MaterialSlots;
 	MaterialSlots.reserve(LoadedMeshData->SlotNames.size());
 	for (const FString& SlotName : LoadedMeshData->SlotNames)
