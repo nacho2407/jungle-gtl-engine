@@ -534,13 +534,29 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			ImGui::BeginGroup();
 			
 			ImGui::SetNextItemWidth(-1);
-			if (ImGui::BeginCombo("##Mat", Val->c_str()))
+
+			FString Preview = (Val->empty() || *Val == "None") ? "None" : GetStemFromPath(*Val);
+			if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 			{
-				for (TObjectIterator<UMaterial> It; It; ++It)
+				bool bSelectedNone = (*Val == "None" || Val->empty());
+				if (ImGui::Selectable("None", bSelectedNone))
 				{
-					if (!*It) continue;
-					FString Path = (*It)->GetAssetPathFileName();
-					if (ImGui::Selectable(Path.c_str(), *Val == Path)) { *Val = Path; bChanged = true; }
+					*Val = "None";
+					bChanged = true;
+				}
+				if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+				// 추가된 FObjManager 스캔 함수 사용
+				const TArray<FMaterialAssetListItem>& MatFiles = FObjManager::GetAvailableMaterialFiles();
+				for (const FMaterialAssetListItem& Item : MatFiles)
+				{
+					bool bSelected = (*Val == Item.FullPath);
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						*Val = Item.FullPath;
+						bChanged = true;
+					}
+					if (bSelected) ImGui::SetItemDefaultFocus();
 				}
 				ImGui::EndCombo();
 			}
@@ -556,19 +572,19 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 			ImGui::EndGroup();
 		}
-		else
-		{
-			if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
-			{
-				for (TObjectIterator<UMaterial> It; It; ++It)
-				{
-					if (!*It) continue;
-					FString Path = (*It)->GetAssetPathFileName();
-					if (ImGui::Selectable(Path.c_str(), *Val == Path)) { *Val = Path; bChanged = true; }
-				}
-				ImGui::EndCombo();
-			}
-		}
+		//else
+		//{
+		//	if (ImGui::BeginCombo(Prop.Name.c_str(), Val->c_str()))
+		//	{
+		//		for (TObjectIterator<UMaterial> It; It; ++It)
+		//		{
+		//			if (!*It) continue;
+		//			FString Path = (*It)->GetAssetPathFileName();
+		//			if (ImGui::Selectable(Path.c_str(), *Val == Path)) { *Val = Path; bChanged = true; }
+		//		}
+		//		ImGui::EndCombo();
+		//	}
+		//}
 		break;
 	}
 	case EPropertyType::Name:
