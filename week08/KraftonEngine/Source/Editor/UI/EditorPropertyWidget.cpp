@@ -487,7 +487,14 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
 		if (*Val == "None") Preview = "None";
 
-		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview.c_str()))
+		ImGui::Text("%s", Prop.Name.c_str());
+		ImGui::SameLine(120);
+
+		float ButtonWidth = ImGui::CalcTextSize("Import OBJ").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		float Spacing = ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+
+		if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
 		{
 			bool bSelectedNone = (*Val == "None");
 			if (ImGui::Selectable("None", bSelectedNone))
@@ -515,6 +522,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 		// .obj 임포트 버튼
 		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
 		if (ImGui::Button("Import OBJ"))
 		{
 			FString ObjPath = OpenObjFileDialog();
