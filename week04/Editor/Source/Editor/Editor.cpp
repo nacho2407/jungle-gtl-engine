@@ -1408,7 +1408,7 @@ void FEditor::DrawAboutPopup()
              L"Editor UI & Tools, Material editing and UV scroll",
              L"OBJ parser, Binary mesh serialization and Material editing",
              L"Multi-viewport architecture, Camera systems and Viewer core",
-             L"Stat overlay (FPS/Memory), Console engine and Timer management",
+             L"Stat overlay, Object iterator, Memory tracker, Postprocess Outline",
          };
 
             for (size_t i = 0; i < SecondContributorNames.size(); ++i)
