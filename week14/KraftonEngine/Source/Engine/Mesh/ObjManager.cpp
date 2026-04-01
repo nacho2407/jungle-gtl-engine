@@ -167,12 +167,14 @@ const TArray<FMeshAssetListItem>& FObjManager::GetAvailableObjFiles()
 
 UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice)
 {
+	FString CacheKey = GetBinaryFilePath(PathFileName);
+
 	// 옵션이 다를 수 있으므로 기존 캐시 무효화
-	StaticMeshCache.erase(PathFileName);
+	StaticMeshCache.erase(CacheKey);
 
 	UStaticMesh* StaticMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 
-	FString BinPath = GetBinaryFilePath(PathFileName);
+	FString BinPath = CacheKey;
 
 	// 항상 리빌드 (옵션이 달라질 수 있음)
 	FStaticMesh* NewMeshAsset = new FStaticMesh();
@@ -212,7 +214,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 	}
 
 	StaticMesh->InitResources(InDevice);
-	StaticMeshCache[PathFileName] = StaticMesh;
+	StaticMeshCache[CacheKey] = StaticMesh;
 
 	// 리프레시
 	ScanMeshAssets();
@@ -226,7 +228,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	FString CacheKey = GetBinaryFilePath(PathFileName);
 
 	// 캐시 확인 (O(1) 룩업)
-	auto It = StaticMeshCache.find(PathFileName);
+	auto It = StaticMeshCache.find(CacheKey);
 	if (It != StaticMeshCache.end())
 	{
 		return It->second;
@@ -379,7 +381,7 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 		{
 			NewMaterial->Serialize(Writer);
 		}
-		
+
 	}
 
 	// 4. 캐시에 등록 후 반환
