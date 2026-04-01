@@ -268,23 +268,19 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				// UI 콤보박스는 이미 로드된 머티리얼 목록을 보여주므로, 
-				// TObjectIterator를 통해 메모리에 있는 해당 경로의 머티리얼을 찾습니다.
-				UMaterial* FoundMat = nullptr;
-				for (TObjectIterator<UMaterial> It; It; ++It)
-				{
-					if ((*It)->GetAssetPathFileName() == NewMatPath)
-					{
-						FoundMat = *It;
-						break;
-					}
-				}
+				UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(NewMatPath);
 
-				if (FoundMat)
+				if (LoadedMat)
 				{
-					// 찾은 머티리얼을 해당 슬롯에 적용합니다.
-					// 머티리얼의 수명/소유권은 에셋/오브젝트 시스템에서 관리하며, 여기서는 포인터만 참조합니다.
-					SetMaterial(Index, FoundMat);
+					if (!LoadedMat->DiffuseTexture && !LoadedMat->DiffuseTextureFilePath.empty())
+					{
+						// GEngine을 통해 전역 Device를 가져와서 텍스처를 생성합니다.
+						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+						LoadedMat->DiffuseTexture = UTexture2D::LoadFromFile(LoadedMat->DiffuseTextureFilePath, Device);
+					}
+
+					// 로드되거나 찾아진 머티리얼을 슬롯에 적용
+					SetMaterial(Index, LoadedMat);
 				}
 			}
 		}
