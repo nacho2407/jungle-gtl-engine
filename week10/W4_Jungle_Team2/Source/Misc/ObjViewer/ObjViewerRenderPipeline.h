@@ -13,6 +13,7 @@ public:
 	~FObjViewerRenderPipeline() override;
 
 	void Execute(float DeltaTime, FRenderer& Renderer) override;
+	void TransferViewportData(FRenderer& Renderer);
 
 private:
 	UObjViewerEngine* Engine = nullptr;
