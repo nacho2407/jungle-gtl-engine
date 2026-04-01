@@ -15,7 +15,11 @@ UTexture2D::~UTexture2D()
 {
 	if (SRV)
 	{
-		MemoryStats::SubTextureMemory(Width * Height * 4); // 대략적인 메모리 사용량 계산 (RGBA8 기준)
+		if (TrackedTextureMemory > 0)
+		{
+			MemoryStats::SubTextureMemory(TrackedTextureMemory);
+			TrackedTextureMemory = 0;
+		}
 
 		SRV->Release();
 		SRV = nullptr;
@@ -71,6 +75,8 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 	// 텍스처 크기 추출
 	if (Resource)
 	{
+		TrackedTextureMemory = MemoryStats::CalculateTextureMemory(Resource);
+
 		ID3D11Texture2D* Tex2D = nullptr;
 		if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&Tex2D)))
 		{
@@ -79,8 +85,11 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 			Width = Desc.Width;
 			Height = Desc.Height;
 			Tex2D->Release();
+		}
 
-			MemoryStats::AddTextureMemory(Width * Height * 4); // 로드 시 추적 등록. RGBA8 = 픽셀당 4 bytes
+		if (TrackedTextureMemory > 0)
+		{
+			MemoryStats::AddTextureMemory(TrackedTextureMemory);
 		}
 		Resource->Release();
 	}
