@@ -142,7 +142,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 {
 	OutObjInfo = FObjInfo();
 
-	std::ifstream File(ObjFilePath, std::ios::binary | std::ios::ate);
+	std::ifstream File(FPaths::ToWide(ObjFilePath), std::ios::binary | std::ios::ate);
 	if (!File.is_open())
 	{
 		UE_LOG("Failed to open OBJ file: %s", ObjFilePath.c_str());
@@ -159,6 +159,12 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 	}
 
 	std::string_view FileView(Buffer.data(), Buffer.size());
+
+	// UTF-8 BOM 스킵
+	if (FileView.size() >= 3 && FileView[0] == '\xEF' && FileView[1] == '\xBB' && FileView[2] == '\xBF')
+	{
+		FileView.remove_prefix(3);
+	}
 
 	TArray<FRawFaceVertex> FaceVertices;
 	FaceVertices.reserve(6); // Heuristic
@@ -300,7 +306,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>& OutMtlInfos)
 {
 	OutMtlInfos.clear();
-	std::ifstream File(MtlFilePath, std::ios::binary | std::ios::ate);
+	std::ifstream File(FPaths::ToWide(MtlFilePath), std::ios::binary | std::ios::ate);
 
 	if (!File.is_open())
 	{
@@ -318,6 +324,12 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 	}
 
 	std::string_view FileView(Buffer.data(), Buffer.size());
+
+	// UTF-8 BOM 스킵
+	if (FileView.size() >= 3 && FileView[0] == '\xEF' && FileView[1] == '\xBB' && FileView[2] == '\xBF')
+	{
+		FileView.remove_prefix(3);
+	}
 
 	while (!FileView.empty())
 	{
