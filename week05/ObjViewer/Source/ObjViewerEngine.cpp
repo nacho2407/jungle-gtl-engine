@@ -22,8 +22,11 @@
 #include "Math/Frustum.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Material.h"
+#include "Renderer/MaterialManager.h"
 #include "Renderer/MeshData.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/RenderStateManager.h"
+#include "Renderer/ShaderMap.h"
 #include "Scene/Scene.h"
 #include "World/World.h"
 
@@ -83,35 +86,6 @@ namespace
 		return false;
 	}
 
-	FVector GetAxisVector(EObjImportAxis Axis)
-	{
-		switch (Axis)
-		{
-		case EObjImportAxis::PosX: return FVector::ForwardVector;
-		case EObjImportAxis::NegX: return -FVector::ForwardVector;
-		case EObjImportAxis::PosY: return FVector::RightVector;
-		case EObjImportAxis::NegY: return -FVector::RightVector;
-		case EObjImportAxis::PosZ: return FVector::UpVector;
-		case EObjImportAxis::NegZ: return -FVector::UpVector;
-		default: return FVector::ForwardVector;
-		}
-	}
-
-	FQuat MakeImportRotation(const FObjImportSummary& ImportOptions)
-	{
-		const FVector Forward = GetAxisVector(ImportOptions.ForwardAxis).GetSafeNormal();
-		const FVector Up = GetAxisVector(ImportOptions.UpAxis).GetSafeNormal();
-		const FVector Right = FVector::CrossProduct(Up, Forward).GetSafeNormal();
-		if (Forward.IsNearlyZero() || Up.IsNearlyZero() || Right.IsNearlyZero())
-		{
-			return FQuat::Identity;
-		}
-
-		FMatrix SourceToTarget = FMatrix::Identity;
-		SourceToTarget.SetAxes(Forward, Right, Up);
-		return FQuat(SourceToTarget).GetNormalized();
-	}
-
 	float GetMaxAbsScale(const FVector& Scale)
 	{
 		const float AbsX = std::fabs(Scale.X);
@@ -154,7 +128,7 @@ namespace
 		return MaterialSlotNames;
 	}
 
-	FStaticMesh BuildBakedMeshCopy(const FStaticMesh& SourceMesh, const FQuat& ImportRotation, float UniformScale)
+	FStaticMesh BuildBakedMeshCopy(const FStaticMesh& SourceMesh, float UniformScale)
 	{
 		const float BakedScale = (std::max)(UniformScale, 0.01f);
 
@@ -167,10 +141,10 @@ namespace
 
 		for (FVertex& Vertex : BakedMesh.Vertices)
 		{
-			Vertex.Position = ImportRotation.RotateVector(Vertex.Position * BakedScale);
+			Vertex.Position = Vertex.Position * BakedScale;
 			if (!Vertex.Normal.IsNearlyZero())
 			{
-				Vertex.Normal = ImportRotation.RotateVector(Vertex.Normal).GetSafeNormal();
+				Vertex.Normal = Vertex.Normal.GetSafeNormal();
 			}
 		}
 
@@ -192,6 +166,32 @@ namespace
 		}
 
 		return RootComponent->GetWorldTransform().TransformPosition(ModelState.BoundsCenter);
+	}
+
+	float GetDisplayedBoundsRadius(const FObjViewerModelState& ModelState)
+	{
+		float Radius = ModelState.BoundsRadius;
+		if (ModelState.DisplayActor)
+		{
+			if (USceneComponent* RootComponent = ModelState.DisplayActor->GetRootComponent())
+			{
+				Radius *= GetMaxAbsScale(RootComponent->GetRelativeTransform().GetScale3D());
+			}
+		}
+
+		return Radius;
+	}
+
+	FVector4 GetNormalVisualizationColor(EObjViewerNormalVisualizationMode Mode)
+	{
+		switch (Mode)
+		{
+		case EObjViewerNormalVisualizationMode::Face:
+			return FVector4(1.0f, 0.55f, 0.1f, 1.0f);
+		case EObjViewerNormalVisualizationMode::Vertex:
+		default:
+			return FVector4(0.15f, 0.85f, 1.0f, 1.0f);
+		}
 	}
 }
 
@@ -238,17 +238,21 @@ bool FObjViewerEngine::LoadModelFromFile(const FString& FilePath, const FObjImpo
 		return false;
 	}
 
-	UStaticMesh* LoadedMesh = FObjManager::LoadObjStaticMeshAsset(FilePath);
+	FObjImportSummary AppliedImportOptions = ImportOptions;
+	AppliedImportOptions.bReplaceCurrentModel = true;
+	AppliedImportOptions.UniformScale = (std::max)(AppliedImportOptions.UniformScale, 0.01f);
+
+	FObjLoadOptions LoadOptions;
+	LoadOptions.bUseLegacyObjConversion = false;
+	LoadOptions.ForwardAxis = AppliedImportOptions.ForwardAxis;
+	LoadOptions.UpAxis = AppliedImportOptions.UpAxis;
+
+	UStaticMesh* LoadedMesh = FObjManager::LoadObjStaticMeshAsset(FilePath, LoadOptions);
 	if (!LoadedMesh)
 	{
 		UE_LOG("[ObjViewer] Failed to load OBJ: %s", FilePath.c_str());
 		return false;
 	}
-
-	FObjImportSummary AppliedImportOptions = ImportOptions;
-	AppliedImportOptions.bReplaceCurrentModel = true;
-	AppliedImportOptions.UniformScale = (std::max)(AppliedImportOptions.UniformScale, 0.01f);
-	const FQuat ImportRotation = MakeImportRotation(AppliedImportOptions);
 
 	if (AppliedImportOptions.bReplaceCurrentModel || !HasLoadedModel())
 	{
@@ -274,7 +278,6 @@ bool FObjViewerEngine::LoadModelFromFile(const FString& FilePath, const FObjImpo
 	if (USceneComponent* RootComponent = DisplayActor->GetRootComponent())
 	{
 		FTransform Transform = RootComponent->GetRelativeTransform();
-		Transform.SetRotation(ImportRotation);
 		Transform.SetScale3D(FVector(
 			AppliedImportOptions.UniformScale,
 			AppliedImportOptions.UniformScale,
@@ -282,18 +285,16 @@ bool FObjViewerEngine::LoadModelFromFile(const FString& FilePath, const FObjImpo
 
 		const FVector ScaledCenter = LoadedMesh->LocalBounds.Center * AppliedImportOptions.UniformScale;
 		const FVector ScaledExtent = LoadedMesh->LocalBounds.BoxExtent * AppliedImportOptions.UniformScale;
-		const FVector RotatedCenter = ImportRotation.RotateVector(ScaledCenter);
-		const FVector RotatedExtent = FMatrix::Abs(ImportRotation.ToMatrix()).TransformVector(ScaledExtent);
 		FVector Translation = FVector::ZeroVector;
 
 		if (AppliedImportOptions.bCenterToOrigin)
 		{
-			Translation = -RotatedCenter;
+			Translation = -ScaledCenter;
 		}
 
 		if (AppliedImportOptions.bPlaceOnGround)
 		{
-			const float BottomZ = (RotatedCenter.Z + Translation.Z) - RotatedExtent.Z;
+			const float BottomZ = (ScaledCenter.Z + Translation.Z) - ScaledExtent.Z;
 			Translation.Z -= BottomZ;
 		}
 
@@ -318,10 +319,8 @@ bool FObjViewerEngine::ExportLoadedModelAsModel(const FString& FilePath) const
 		return false;
 	}
 
-	const FQuat ImportRotation = MakeImportRotation(ModelState.LastImportSummary);
 	FStaticMesh BakedMesh = BuildBakedMeshCopy(
 		*ModelState.Mesh->GetRenderData(),
-		ImportRotation,
 		ModelState.LastImportSummary.UniformScale);
 	const TArray<FString> MaterialSlotNames = BuildMaterialSlotNames(ModelState.Mesh);
 	TArray<FModelMaterialInfo> MaterialInfos;
@@ -457,6 +456,8 @@ bool FObjViewerEngine::InitializeWorlds(int32 Width, int32 Height)
 
 bool FObjViewerEngine::InitializeMode()
 {
+	WireframeMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName);
+	CreateGridResources();
 	return true;
 }
 
@@ -516,6 +517,7 @@ void FObjViewerEngine::RenderFrame()
 	UScene* Scene = GetViewportClient() ? GetViewportClient()->ResolveScene(this) : GetActiveScene();
 	FShowFlags ViewerShowFlags;
 	ViewerShowFlags.SetFlag(EEngineShowFlags::SF_UUID, false);
+	ViewerShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, NormalSettings.bVisible);
 	if (Scene && ActiveWorld)
 	{
 		UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
@@ -535,9 +537,12 @@ void FObjViewerEngine::RenderFrame()
 				const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
 				ViewportClient->BuildRenderCommands(this, Scene, Frustum, ViewerShowFlags, CameraPosition, Queue);
 			}
+			ApplyWireframeOverride(Queue);
+			AppendGridRenderCommand(Queue);
 
 			Renderer->SubmitCommands(Queue);
 			Renderer->ExecuteCommands();
+			AppendNormalVisualizationDebugDraw();
 			GetDebugDrawManager().Flush(Renderer, ViewerShowFlags, ActiveWorld);
 		}
 	}
@@ -572,6 +577,192 @@ void FObjViewerEngine::InitializeViewerCamera() const
 	}
 
 	ActiveCamera->SetFov(50.0f);
+}
+
+void FObjViewerEngine::CreateGridResources()
+{
+	FRenderer* Renderer = GetRenderer();
+	if (Renderer == nullptr || GridMesh || GridMaterial)
+	{
+		return;
+	}
+
+	ID3D11Device* Device = Renderer->GetDevice();
+	if (Device == nullptr)
+	{
+		return;
+	}
+
+	constexpr int32 GridVertexCount = 42;
+
+	GridMesh = std::make_unique<FDynamicMesh>();
+	GridMesh->Topology = EMeshTopology::EMT_TriangleList;
+	for (int32 Index = 0; Index < GridVertexCount; ++Index)
+	{
+		FVertex Vertex;
+		GridMesh->Vertices.push_back(Vertex);
+		GridMesh->Indices.push_back(Index);
+	}
+	GridMesh->CreateVertexAndIndexBuffer(Device);
+
+	std::wstring ShaderDirW = FPaths::ShaderDir();
+	std::wstring VSPath = ShaderDirW + L"AxisVertexShader.hlsl";
+	std::wstring PSPath = ShaderDirW + L"AxisPixelShader.hlsl";
+	auto VS = FShaderMap::Get().GetOrCreateVertexShader(Device, VSPath.c_str());
+	auto PS = FShaderMap::Get().GetOrCreatePixelShader(Device, PSPath.c_str());
+
+	GridMaterial = std::make_shared<FMaterial>();
+	GridMaterial->SetOriginName("M_ObjViewerGrid");
+	GridMaterial->SetVertexShader(VS);
+	GridMaterial->SetPixelShader(PS);
+
+	FRasterizerStateOption RasterizerOption;
+	RasterizerOption.FillMode = D3D11_FILL_SOLID;
+	RasterizerOption.CullMode = D3D11_CULL_NONE;
+	auto RS = Renderer->GetRenderStateManager()->GetOrCreateRasterizerState(RasterizerOption);
+	GridMaterial->SetRasterizerOption(RasterizerOption);
+	GridMaterial->SetRasterizerState(RS);
+
+	FDepthStencilStateOption DepthStencilOption;
+	DepthStencilOption.DepthEnable = true;
+	DepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthStencilOption);
+	GridMaterial->SetDepthStencilOption(DepthStencilOption);
+	GridMaterial->SetDepthStencilState(DSS);
+
+	int32 SlotIndex = GridMaterial->CreateConstantBuffer(Device, 64);
+	if (SlotIndex < 0)
+	{
+		return;
+	}
+
+	GridMaterial->RegisterParameter("GridSize", SlotIndex, 0, 4);
+	GridMaterial->RegisterParameter("LineThickness", SlotIndex, 4, 4);
+	GridMaterial->RegisterParameter("GridAxisU", SlotIndex, 16, 12);
+	GridMaterial->RegisterParameter("GridAxisV", SlotIndex, 32, 12);
+	GridMaterial->RegisterParameter("ViewForward", SlotIndex, 48, 12);
+
+	const FVector DefaultGridAxisU = FVector::ForwardVector;
+	const FVector DefaultGridAxisV = FVector::RightVector;
+	const FVector DefaultViewForward = FVector::ForwardVector;
+	GridMaterial->SetParameterData("GridSize", &GridSettings.GridSize, 4);
+	GridMaterial->SetParameterData("LineThickness", &GridSettings.LineThickness, 4);
+	GridMaterial->SetParameterData("GridAxisU", &DefaultGridAxisU, sizeof(FVector));
+	GridMaterial->SetParameterData("GridAxisV", &DefaultGridAxisV, sizeof(FVector));
+	GridMaterial->SetParameterData("ViewForward", &DefaultViewForward, sizeof(FVector));
+}
+
+void FObjViewerEngine::ApplyWireframeOverride(FRenderCommandQueue& Queue) const
+{
+	if (!bWireframeEnabled || !WireframeMaterial)
+	{
+		return;
+	}
+
+	for (FRenderCommand& Command : Queue.Commands)
+	{
+		if (Command.RenderLayer != ERenderLayer::Overlay)
+		{
+			Command.Material = WireframeMaterial.get();
+		}
+	}
+}
+
+void FObjViewerEngine::AppendNormalVisualizationDebugDraw()
+{
+	if (!NormalSettings.bVisible || !HasLoadedModel() || ModelState.Mesh == nullptr || ModelState.Mesh->GetRenderData() == nullptr)
+	{
+		return;
+	}
+
+	AStaticMeshActor* DisplayActor = ModelState.DisplayActor;
+	if (DisplayActor == nullptr)
+	{
+		return;
+	}
+
+	USceneComponent* RootComponent = DisplayActor->GetRootComponent();
+	if (RootComponent == nullptr)
+	{
+		return;
+	}
+
+	const FStaticMesh* RenderData = ModelState.Mesh->GetRenderData();
+	const FMatrix& WorldMatrix = RootComponent->GetWorldTransform();
+	const float NormalLength = (std::max)(GetDisplayedBoundsRadius(ModelState) * NormalSettings.LengthScale, 0.001f);
+	const FVector4 NormalColor = GetNormalVisualizationColor(NormalSettings.Mode);
+	FDebugDrawManager& DebugDrawManager = GetDebugDrawManager();
+
+	if (NormalSettings.Mode == EObjViewerNormalVisualizationMode::Face)
+	{
+		for (size_t Index = 0; Index + 2 < RenderData->Indices.size(); Index += 3)
+		{
+			const uint32 Index0 = RenderData->Indices[Index];
+			const uint32 Index1 = RenderData->Indices[Index + 1];
+			const uint32 Index2 = RenderData->Indices[Index + 2];
+			if (Index0 >= RenderData->Vertices.size() || Index1 >= RenderData->Vertices.size() || Index2 >= RenderData->Vertices.size())
+			{
+				continue;
+			}
+
+			const FVector WorldPosition0 = WorldMatrix.TransformPosition(RenderData->Vertices[Index0].Position);
+			const FVector WorldPosition1 = WorldMatrix.TransformPosition(RenderData->Vertices[Index1].Position);
+			const FVector WorldPosition2 = WorldMatrix.TransformPosition(RenderData->Vertices[Index2].Position);
+			const FVector FaceNormal = FVector::CrossProduct(WorldPosition1 - WorldPosition0, WorldPosition2 - WorldPosition0).GetSafeNormal();
+			if (FaceNormal.IsNearlyZero())
+			{
+				continue;
+			}
+
+			const FVector FaceCenter = (WorldPosition0 + WorldPosition1 + WorldPosition2) / 3.0f;
+			DebugDrawManager.DrawLine(FaceCenter, FaceCenter + (FaceNormal * NormalLength), NormalColor);
+		}
+
+		return;
+	}
+
+	for (const FVertex& Vertex : RenderData->Vertices)
+	{
+		if (Vertex.Normal.IsNearlyZero())
+		{
+			continue;
+		}
+
+		const FVector WorldStart = WorldMatrix.TransformPosition(Vertex.Position);
+		const FVector WorldNormal = WorldMatrix.TransformVector(Vertex.Normal).GetSafeNormal();
+		if (WorldNormal.IsNearlyZero())
+		{
+			continue;
+		}
+
+		DebugDrawManager.DrawLine(WorldStart, WorldStart + (WorldNormal * NormalLength), NormalColor);
+	}
+}
+
+void FObjViewerEngine::AppendGridRenderCommand(FRenderCommandQueue& Queue) const
+{
+	if (!GridSettings.bVisible || !GridMesh || !GridMaterial)
+	{
+		return;
+	}
+
+	const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
+	const FVector GridAxisU = FVector::ForwardVector;
+	const FVector GridAxisV = FVector::RightVector;
+	const FVector ViewForward = ViewInverse.GetForwardVector().GetSafeNormal();
+
+	GridMaterial->SetParameterData("GridSize", &GridSettings.GridSize, 4);
+	GridMaterial->SetParameterData("LineThickness", &GridSettings.LineThickness, 4);
+	GridMaterial->SetParameterData("GridAxisU", &GridAxisU, sizeof(FVector));
+	GridMaterial->SetParameterData("GridAxisV", &GridAxisV, sizeof(FVector));
+	GridMaterial->SetParameterData("ViewForward", &ViewForward, sizeof(FVector));
+
+	FRenderCommand GridCommand;
+	GridCommand.RenderMesh = GridMesh.get();
+	GridCommand.Material = GridMaterial.get();
+	GridCommand.WorldMatrix = FMatrix::Identity;
+	GridCommand.RenderLayer = ERenderLayer::Default;
+	Queue.AddCommand(GridCommand);
 }
 
 void FObjViewerEngine::UpdateLoadedModelState(
