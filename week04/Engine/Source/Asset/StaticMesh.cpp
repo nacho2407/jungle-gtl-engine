@@ -3,54 +3,31 @@
 #include "Asset/AssetManager.h"
 #include "CoreUObject/Object.h"
 
-#include <filesystem>
 
 namespace Engine::Asset
 {
-    void UStaticMesh::Initialize(const FSourceRecord& InSource, std::shared_ptr<FStaticMeshResource> InResource)
+    void UStaticMesh::Initialize(const FSourceRecord& InSource,
+                                 std::shared_ptr<FStaticMesh> InResource)
     {
         InitializeAssetMetadata(InSource);
-        RenderResource = InResource;
-
-        // 경로에서 파일 이름 추출
-        std::filesystem::path FilePath(InSource.NormalizedPath);
-        FString ExtractedName = FilePath.filename().string().c_str();
-        SetAssetName(ExtractedName);
-        Name = ExtractedName.c_str();
+        MeshResource = InResource;
     }
 
     void UStaticMesh::InitializeMaterialSlots(uint32 NumSlots)
     {
-        MaterialSlots.resize(NumSlots);
+        MaterialSlots.resize(NumSlots, nullptr);
     }
 
-    const FMaterialSlot* UStaticMesh::GetMaterialSlot(uint32 Index) const
+    const UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
     {
-        return (Index < MaterialSlots.size()) ? &MaterialSlots[Index] : nullptr;
+        return (Index < MaterialSlots.size()) ? MaterialSlots[Index] : nullptr;
     }
 
-    FMaterialSlot* UStaticMesh::GetMaterialSlot(uint32 Index)
-    {
-        return (Index < MaterialSlots.size()) ? &MaterialSlots[Index] : nullptr;
-    }
-
-    UMaterialInterface* UStaticMesh::GetMaterial(uint32 Index) const
-    {
-        return (Index < MaterialSlots.size()) ? MaterialSlots[Index].Material : nullptr;
-    }
-
-    const FString& UStaticMesh::GetSubMaterialName(uint32 Index) const
-    {
-        static const FString EmptyString = "";
-        return (Index < MaterialSlots.size()) ? MaterialSlots[Index].SubMaterialName : EmptyString;
-    }
-
-    void UStaticMesh::SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial, const FString& InSubMaterialName)
+    void UStaticMesh::SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial)
     {
         if (Index < MaterialSlots.size())
         {
-            MaterialSlots[Index].Material = InMaterial;
-            MaterialSlots[Index].SubMaterialName = InSubMaterialName;
+            MaterialSlots[Index] = InMaterial;
         }
     }
 

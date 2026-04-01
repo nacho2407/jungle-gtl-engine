@@ -5,7 +5,7 @@
 #include "Renderer/RenderAsset/TextureResource.h"
 #include <memory>
 
-struct FMaterialData
+struct FMaterial
 {
     FVector AmbientColor = {0.2f, 0.2f, 0.2f};  // Ka
     FVector DiffuseColor = {0.8f, 0.8f, 0.8f};  // Kd
@@ -31,17 +31,4 @@ struct FMaterialData
     FTextureResource* NormalTexture = nullptr;
 
     FVector2 UVScrollSpeed = {0.0f, 0.0f}; // UV 스크롤 속도 추가
-};
-
-struct FMaterialResource
-{
-    TMap<FString, FMaterialData> Materials;
-
-    const FMaterialData* GetMaterial(const FString& Name) const
-    {
-        auto It = Materials.find(Name);
-        return It != Materials.end() ? &It->second : nullptr;
-    }
-      
-    void Reset() { Materials.clear(); }
 };

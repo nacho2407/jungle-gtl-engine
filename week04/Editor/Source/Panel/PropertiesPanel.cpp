@@ -355,21 +355,21 @@ namespace
         // --- 머티리얼 세부 속성 조절 UI 추가 ---
         if (CurrentMat && CurrentMat->IsValidLowLevel())
         {
-            if (auto* Mat = Cast<Engine::Asset::UMaterial>(CurrentMat))
+            if (auto* SubMat = Cast<Engine::Asset::UMaterial>(CurrentMat))
             {
-                FString SubMatName = MeshComp->GetSubMaterialName(SlotIndex);
-                if (auto* Data = Mat->GetMaterialDataMutable(SubMatName))
+                if (auto* Data = SubMat->GetMaterialDataMutable())
                 {
                     ImGui::Indent(20.0f);
-                    
+
                     ImGui::TextUnformatted("UV Scroll Speed");
                     ImGui::PushID("UVScrollSpeed");
-                    
+
                     float SpeedX = Data->UVScrollSpeed.X;
                     float SpeedY = Data->UVScrollSpeed.Y;
 
                     ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("X:"); ImGui::SameLine();
+                    ImGui::TextUnformatted("X:");
+                    ImGui::SameLine();
                     ImGui::SetNextItemWidth(70.0f);
                     if (ImGui::DragFloat("##X", &SpeedX, 0.001f, -10.0f, 10.0f, "%.3f"))
                     {
@@ -379,7 +379,8 @@ namespace
 
                     ImGui::SameLine(150.0f);
                     ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Y:"); ImGui::SameLine();
+                    ImGui::TextUnformatted("Y:");
+                    ImGui::SameLine();
                     ImGui::SetNextItemWidth(70.0f);
                     if (ImGui::DragFloat("##Y", &SpeedY, 0.001f, -10.0f, 10.0f, "%.3f"))
                     {

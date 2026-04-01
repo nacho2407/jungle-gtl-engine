@@ -90,24 +90,12 @@ FTextureLoader::FTextureLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
 
 bool FTextureLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Params) const
 {
-    if (Path.empty())
-    {
-        return false;
-    }
-
     if (Params.ExplicitType != EAssetType::Unknown && Params.ExplicitType != EAssetType::Texture)
     {
         return false;
     }
 
-    const std::filesystem::path FilePath(Path);
-    FWString                    Extension = FilePath.extension().native();
-
-    std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-                   [](wchar_t Ch) { return static_cast<wchar_t>(std::towlower(Ch)); });
-
-    return Extension == L".png" || Extension == L".jpg" || Extension == L".jpeg" ||
-           Extension == L".bmp";
+    return HasExtension(Path, {L".png", L".jpg", L".jpeg", L".bmp"});
 }
 
 EAssetType FTextureLoader::GetAssetType() const { return EAssetType::Texture; }

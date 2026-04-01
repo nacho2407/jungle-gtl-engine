@@ -34,9 +34,6 @@ namespace Engine::Component
         // 에디터 및 외부 시스템에서 접근할 수 있도록 경로 관련 함수를 제공합니다.
         FString         GetMeshPath() const;
         void            SetMeshPath(const FString& InPath);
-        FString         GetSubMaterialName(uint32 Index) const override;
-        void            SetSubMaterialName(uint32 Index, const FString& InSubMaterialName);
-        TArray<FString> GetAvailableSubMaterialNames() const;
 
         virtual bool ShouldShowInDetailsTree() const override { return true; }
 
@@ -50,7 +47,6 @@ namespace Engine::Component
 
       private:
         Asset::UStaticMesh* StaticMesh = nullptr;
-        TArray<FString>     OverrideSubMaterialNames;
         FString             PendingMeshPath = ""; // 아직 로드되지 않은 에셋 경로
     };
 } // namespace Engine::Component

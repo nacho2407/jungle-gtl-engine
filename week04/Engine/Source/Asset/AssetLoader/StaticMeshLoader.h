@@ -11,20 +11,16 @@ class ENGINE_API FStaticMeshLoader : public IAssetLoader
 {
   public:
     explicit FStaticMeshLoader(FD3D11RHI* InRHI, UAssetManager* InAssetManager);
+    ~FStaticMeshLoader() = default;
 
     bool       CanLoad(const FWString& Path, const FAssetLoadParams& Params) const override;
     EAssetType GetAssetType() const override;
-    uint64     MakeBuildSignature(const FAssetLoadParams& Params) const override;
     UAsset*    LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params) override;
 
   private:
-    bool ParseObjText(const FSourceRecord& Source, FStaticMeshResource& OutMesh,
+    bool ParseObjText(const FSourceRecord& Source, FStaticMesh& OutMesh,
                       TArray<FMeshVertexPNCT>& OutVertices) const;
-    bool CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices,
-                       FStaticMeshResource&           OutMesh) const;
-
-    // 문자열 유틸리티
-    FString WidePathToUtf8(const FWString& Path) const;
+    bool CreateBuffers(const TArray<FMeshVertexPNCT>& InVertices, FStaticMesh& OutMesh) const;
 
   private:
     FD3D11RHI*     RHI = nullptr;

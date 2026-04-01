@@ -10,7 +10,7 @@ struct FSubMesh
     uint32  IndexCount = 0;
 };
 
-struct FStaticMeshResource
+struct FStaticMesh
 {
     // --- GPU 렌더링용 데이터 (VRAM) ---
     TComPtr<ID3D11Buffer> VertexBuffer;

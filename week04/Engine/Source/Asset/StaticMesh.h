@@ -7,15 +7,9 @@ namespace Engine::Asset
 {
     class UMaterialInterface;
 
-    struct FMaterialSlot
-    {
-        UMaterialInterface* Material = nullptr;
-        FString             SubMaterialName;
-    };
-
     /**
      * @brief 정적 메시(Static Mesh) 리소스를 관리하는 에셋 클래스입니다.
-     * 언리얼 엔진의 UStaticMesh 구조를 모방하며, 실제 데이터는 FStaticMeshResource가 소유합니다.
+     * 언리얼 엔진의 UStaticMesh 구조를 모방하며, 실제 데이터는 FStaticMesh가 소유합니다.
      */
     class ENGINE_API UStaticMesh : public UStreamableRenderAsset
     {
@@ -25,29 +19,24 @@ namespace Engine::Asset
         virtual ~UStaticMesh() override = default;
 
         /** 에셋 로더로부터 리소스를 주입받아 초기화합니다. */
-        void Initialize(const FSourceRecord& InSource, std::shared_ptr<FStaticMeshResource> InResource);
+        void Initialize(const FSourceRecord& InSource, std::shared_ptr<FStaticMesh> InResource);
 
         /** 렌더링 리소스 접근 */
-        const FStaticMeshResource* GetRenderResource() const { return RenderResource.get(); }
-        FStaticMeshResource*       GetRenderResource() { return RenderResource.get(); }
+        const FStaticMesh* GetRenderResource() const { return MeshResource.get(); }
+        FStaticMesh*       GetRenderResource() { return MeshResource.get(); }
 
         /** 머티리얼 슬롯 관리 */
-        void InitializeMaterialSlots(uint32 NumSlots);
-        const FMaterialSlot* GetMaterialSlot(uint32 Index) const;
-        FMaterialSlot*       GetMaterialSlot(uint32 Index);
-        UMaterialInterface*  GetMaterial(uint32 Index) const;
-        const FString&       GetSubMaterialName(uint32 Index) const;
-        void SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial, const FString& InSubMaterialName);
+        void                      InitializeMaterialSlots(uint32 NumSlots);
+        const UMaterialInterface* GetMaterial(uint32 Index) const;
+        void                      SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial);
 
-        TArray<FMaterialSlot>& GetMaterialSlots() { return MaterialSlots; }
-        const TArray<FMaterialSlot>& GetMaterialSlots() const { return MaterialSlots; }
-        uint32 GetNumSections() const { return static_cast<uint32>(MaterialSlots.size()); }
+        const TArray<UMaterialInterface*>& GetMaterialSlots() const { return MaterialSlots; }
+        TArray<UMaterialInterface*>&       GetMaterialSlots() { return MaterialSlots; }
 
-      public:
-        bool bIsBaked = false;
+        uint32 GetMaterialSlotsSize() const { return static_cast<uint32>(MaterialSlots.size()); }
 
       private:
-        std::shared_ptr<FStaticMeshResource> RenderResource;
-        TArray<FMaterialSlot>                MaterialSlots;
+        std::shared_ptr<FStaticMesh> MeshResource;
+        TArray<UMaterialInterface*>  MaterialSlots;
     };
 } // namespace Engine::Asset

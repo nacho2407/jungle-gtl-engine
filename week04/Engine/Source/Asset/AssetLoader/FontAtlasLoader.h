@@ -16,7 +16,6 @@ class ENGINE_API FFontAtlasLoader : public IAssetLoader
 
     bool       CanLoad(const FWString& Path, const FAssetLoadParams& Params) const override;
     EAssetType GetAssetType() const override;
-    uint64     MakeBuildSignature(const FAssetLoadParams& Params) const override;
     UAsset*    LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params) override;
 
   private:

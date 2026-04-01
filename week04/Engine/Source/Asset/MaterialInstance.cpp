@@ -3,37 +3,32 @@
 
 namespace Engine::Asset
 {
-    const FMaterialData* UMaterialInstance::GetMaterialData(const FString& SubMaterialName) const
+    const FMaterial* UMaterialInstance::GetMaterialData() const
     {
         // 1. 자신의 오버라이드 맵에서 먼저 찾습니다.
-        auto It = OverriddenData.find(SubMaterialName);
-        if (It != OverriddenData.end())
+        if (bHasOverride)
         {
-            return &It->second;
+            return &OverriddenData;
         }
 
         // 2. 없으면 부모에게 위임합니다.
         if (Parent)
         {
-            return Parent->GetMaterialData(SubMaterialName);
+            return Parent->GetMaterialData();
         }
 
         return nullptr;
     }
 
-    void UMaterialInstance::SetMaterialDataOverride(const FString& SubMaterialName, const FMaterialData& NewData)
+    void UMaterialInstance::SetMaterialDataOverride(const FMaterial& NewData)
     {
-        OverriddenData[SubMaterialName] = NewData;
+        OverriddenData = NewData;
+        bHasOverride = true;
     }
 
-    void UMaterialInstance::ClearMaterialDataOverride(const FString& SubMaterialName)
+    void UMaterialInstance::ClearMaterialDataOverride()
     {
-        OverriddenData.erase(SubMaterialName);
-    }
-
-    void UMaterialInstance::ClearAllOverrides()
-    {
-        OverriddenData.clear();
+        bHasOverride = false;
     }
 
     REGISTER_CLASS(Engine::Asset, UMaterialInstance)

@@ -19,6 +19,19 @@ enum class EAssetType : uint8
     StaticMesh
 };
 
+struct FAssetId
+{
+    EAssetType Type = EAssetType::Unknown;
+    FString    PackageName;
+    FString    ObjectName;
+};
+
+inline bool operator==(const FAssetId& Lhs, const FAssetId& Rhs)
+{
+    return Lhs.Type == Rhs.Type && Lhs.PackageName == Rhs.PackageName &&
+           Lhs.ObjectName == Rhs.ObjectName;
+}
+
 struct FSourceRecord
 {
     FWString      NormalizedPath; // 캐시의 1차 키 Source 조회용
@@ -120,6 +133,21 @@ struct FAssetKeyHasher
     }
 };
 
+struct FAssetIdHasher
+{
+    size_t operator()(const FAssetId& Id) const noexcept
+    {
+        const size_t H1 = std::hash<int>{}(static_cast<int>(Id.Type));
+        const size_t H2 = std::hash<FString>{}(Id.PackageName);
+        const size_t H3 = std::hash<FString>{}(Id.ObjectName);
+
+        size_t Result = H1;
+        Result ^= H2 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+        Result ^= H3 + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+        return Result;
+    }
+};
+
 struct FTextureBuildKeyHasher
 {
     size_t operator()(const FTextureBuildKey& Key) const noexcept
@@ -161,6 +189,10 @@ public:
 
     void    RegisterLoader(IAssetLoader* Loader);
     UAsset* Load(const FWString& Path, const FAssetLoadParams& Params = {});
+    UAsset* RegisterAssetById(const FAssetId& Id, UAsset* Asset);
+    UAsset* FindAssetById(const FAssetId& Id) const;
+    bool    UnregisterAssetById(const FAssetId& Id);
+    UAsset* FindLoadedAsset(const FAssetKey& Key) const;
     void    Invalidate(const FWString& Path);
     void    Clear();
 
@@ -173,4 +205,5 @@ private:
     FSourceCache                                              SourceCache;
     TArray<IAssetLoader*>                                     Loaders;
     TMap<FAssetKey, std::unique_ptr<UAsset>, FAssetKeyHasher> LoadedAssets;
+    TMap<FAssetId, std::unique_ptr<UAsset>, FAssetIdHasher>   AssetIdAssets;
 };

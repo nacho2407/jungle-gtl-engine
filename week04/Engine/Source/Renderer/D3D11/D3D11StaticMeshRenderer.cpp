@@ -111,7 +111,7 @@ void FD3D11StaticMeshRenderer::Flush()
     // 각 모델별 순회 렌더링
     for (const FStaticMeshRenderItem& DrawItem : StaticMeshDraws)
     {
-        const FStaticMeshResource* Resource = DrawItem.RenderResource;
+        const FStaticMesh* Resource = DrawItem.RenderResource;
         if (Resource->VertexBuffer == nullptr || Resource->IndexBuffer == nullptr)
         {
             continue;
@@ -141,14 +141,14 @@ void FD3D11StaticMeshRenderer::Flush()
         {
             const FSubMesh& Sub = Resource->SubMeshes[i];
 
-            const FMaterialData* MaterialData = nullptr;
+            const FMaterial* MaterialData = nullptr;
 
-            if (i < DrawItem.MaterialBindings.size())
+            if (i < DrawItem.Materials.size())
             {
-                const FStaticMeshMaterialBinding& Binding = DrawItem.MaterialBindings[i];
-                if (Binding.Material != nullptr)
+                Engine::Asset::UMaterialInterface* Material = DrawItem.Materials[i];
+                if (Material != nullptr)
                 {
-                    MaterialData = Binding.Material->GetMaterialData(Binding.SubMaterialName);
+                    MaterialData = Material->GetMaterialData();
                 }
             }
 
@@ -300,7 +300,7 @@ void FD3D11StaticMeshRenderer::BindWireframeRasterizer()
         RHI->SetRasterizerState(WireframeRasterizerState.Get());
 }
 
-void FD3D11StaticMeshRenderer::BindMaterial(const FMaterialData* InMaterialData)
+void FD3D11StaticMeshRenderer::BindMaterial(const FMaterial* InMaterialData)
 {
     if (RHI == nullptr)
     {

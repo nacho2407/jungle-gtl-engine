@@ -1,76 +1,46 @@
 #include "Asset/Material.h"
-#include "Asset/Asset.h"
-#include "Asset/AssetManager.h"
-#include "CoreUObject/Object.h"
-#include "Renderer/RenderAsset/MaterialResource.h"
-#include <filesystem>
+#include "Core/CoreMinimal.h"
 
 namespace Engine::Asset
 {
-    void UMaterial::Initialize(const FSourceRecord& InSource, std::shared_ptr<::FMaterialResource> InResource)
+    void UMaterial::Initialize(const FSourceRecord& InSource, const FMaterial& InMaterial,
+                               const FString& InMaterialName)
     {
         InitializeAssetMetadata(InSource);
-        Resource = InResource;
-
-        // 경로에서 파일 이름 추출 (예: "C:/Data/stone.mtl" -> "stone.mtl")
-        std::filesystem::path FilePath(InSource.NormalizedPath);
-        FString ExtractedName = FilePath.filename().string().c_str();
-
-        // 에셋 이름 및 UObject 이름 설정
-        SetAssetName(ExtractedName);
-        Name = ExtractedName.c_str();
-    }
-
-    const FMaterialData* UMaterial::GetMaterialData(const FString& SubMaterialName) const
-    {
-        if (Resource)
+        MaterialData = InMaterial;
+        if (!InMaterialName.empty())
         {
-            auto It = Resource->Materials.find(SubMaterialName);
-            if (It != Resource->Materials.end())
-            {
-                return &It->second;
-            }
+            MaterialName = InMaterialName;
         }
-        return nullptr;
-    }
-
-    FMaterialData* UMaterial::GetMaterialDataMutable(const FString& SubMaterialName)
-    {
-        if (Resource)
+        else
         {
-            auto It = Resource->Materials.find(SubMaterialName);
-            if (It != Resource->Materials.end())
-            {
-                return &It->second;
-            }
-        }
-        return nullptr;
-    }
-
-    void UMaterial::SetUVScrollSpeed(const FString& SubMaterialName, const FVector2& NewSpeed)
-    {
-        FMaterialData* Data = GetMaterialDataMutable(SubMaterialName);
-        if (Data)
-        {
-            Data->UVScrollSpeed = NewSpeed;
+            MaterialName = GetAssetName();
+            if (MaterialName.empty())
+                MaterialName = "NoName";
         }
     }
 
-    void UMaterial::AddTextureDependency(UTexture2DAsset* InTexture)
+    void UMaterial::SetTextureDependency(EMaterialTextureSlot Slot, UTexture2DAsset* InTexture)
     {
-        if (InTexture && !HasTextureDependency(InTexture))
+        if (InTexture)
         {
-            ReferencedTextures.push_back(InTexture);
+            ReferencedTextures.insert_or_assign(Slot, InTexture);
+        }
+        else
+        {
+            ReferencedTextures.erase(Slot);
         }
     }
 
-    bool UMaterial::HasTextureDependency(const UTexture2DAsset* InTexture) const
+    UTexture2DAsset* UMaterial::GetTextureDependency(EMaterialTextureSlot Slot) const
     {
-        for (const auto* Tex : ReferencedTextures)
-        {
-            if (Tex == InTexture) return true;
-        }
-        return false;
+        auto It = ReferencedTextures.find(Slot);
+        return (It != ReferencedTextures.end()) ? It->second : nullptr;
+    }
+
+    bool UMaterial::HasTextureDependency(EMaterialTextureSlot Slot) const
+    {
+        return ReferencedTextures.find(Slot) != ReferencedTextures.end();
     }
 
     REGISTER_CLASS(Engine::Asset, UMaterial)

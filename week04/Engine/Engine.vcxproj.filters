@@ -380,6 +380,7 @@
     </ClCompile>
     <ClCompile Include="Source\Renderer\D3D11\D3D11WidgetRenderer.cpp" />
     <ClCompile Include="Source\Renderer\Text\TextLayout.cpp" />
+    <ClCompile Include="Source\Asset\MaterialLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resources\Mesh\Cone.h">
@@ -844,6 +845,7 @@
     <ClInclude Include="Source\Renderer\SceneRenderData.h" />
     <ClInclude Include="Source\Renderer\Text\TextLayout.h" />
     <ClInclude Include="Source\Renderer\TrackedMemoryStats.h" />
+    <ClInclude Include="Source\Asset\MaterialLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -203,10 +203,7 @@ bool FObjViewerEngineLoop::RunFrameOnce()
         for (uint32 i = 0; i < LoadedMesh->GetNumSections(); ++i)
         {
             const auto* Slot = LoadedMesh->GetMaterialSlot(i);
-            FStaticMeshMaterialBinding Binding;
-            Binding.Material        = Slot ? Slot->Material        : nullptr;
-            Binding.SubMaterialName = Slot ? Slot->SubMaterialName : FString{};
-            Item.MaterialBindings.push_back(Binding);
+            Item.Materials.push_back(Slot ? Slot->Material : nullptr);
         }
         FrameData.StaticMeshes.push_back(std::move(Item));
     }

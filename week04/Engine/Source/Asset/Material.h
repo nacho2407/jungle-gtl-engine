@@ -1,19 +1,16 @@
 #pragma once
 
 #include "Asset/MaterialInterface.h"
+#include "Renderer/RenderAsset/MaterialResource.h"
 #include "Asset/Texture2DAsset.h"
-#include "Source/Renderer/RenderAsset/MaterialResource.h"
-#include <memory>
 
-struct FMaterialResource;
-struct FMaterialData;
+#include <functional>
+
+struct FSourceRecord;
 
 namespace Engine::Asset
 {
-    /**
-     * @brief 빛과 표면의 상호작용을 결정하는 물리 기반 머티리얼 에셋입니다.
-     * OBJ와 연동된 MTL 파일의 모든 재질 정보를 관리합니다.
-     */
+    //@brief Material library 안의 특정 material을 직접 가리키는 에셋.
     class ENGINE_API UMaterial : public UMaterialInterface
     {
         DECLARE_RTTI(UMaterial, UMaterialInterface)
@@ -21,25 +18,49 @@ namespace Engine::Asset
         UMaterial() = default;
         virtual ~UMaterial() override = default;
 
-        void                         Initialize(const FSourceRecord&                 InSource,
-                                                std::shared_ptr<::FMaterialResource> InResource);
-        virtual const FMaterialData* GetMaterialData(const FString& SubMaterialName) const override;
-        
-        // 데이터 수정을 위한 비-const 버전 추가
-        FMaterialData* GetMaterialDataMutable(const FString& SubMaterialName);
-        void SetUVScrollSpeed(const FString& SubMaterialName, const FVector2& NewSpeed);
+        void Initialize(const FSourceRecord& InSource, const FMaterial& InMaterial,
+                        const FString& InMaterialName);
 
-        TArray<UTexture2DAsset*>&       GetReferencedTextures() { return ReferencedTextures; }
-        const TArray<UTexture2DAsset*>& GetReferencedTextures() const { return ReferencedTextures; }
-        void                            AddTextureDependency(UTexture2DAsset* InTexture);
-        bool HasTextureDependency(const UTexture2DAsset* InTexture) const;
+        virtual const FMaterial* GetMaterialData() const override { return &MaterialData; }
+        FMaterial*               GetMaterialDataMutable() { return &MaterialData; }
+        const FString&           GetMaterialName() const { return MaterialName; }
 
-        virtual const FString GetMaterialLibraryName() const { return MaterialLibraryName; }
-        void SetMaterialLibraryName(const FString& InName) { MaterialLibraryName = InName; }
+        // Texture 종속성 관련 함수
+        enum class EMaterialTextureSlot : uint8
+        {
+            Diffuse,
+            Ambient,
+            Specular,
+            Normal
+        };
+
+        struct FMaterialTextureSlotHasher
+        {
+            size_t operator()(EMaterialTextureSlot Slot) const noexcept
+            {
+                return std::hash<uint8>{}(static_cast<uint8>(Slot));
+            }
+        };
+
+        void SetTextureDependency(EMaterialTextureSlot Slot, UTexture2DAsset* InTexture);
+        UTexture2DAsset* GetTextureDependency(EMaterialTextureSlot Slot) const;
+        bool HasTextureDependency(EMaterialTextureSlot Slot) const;
+        void ClearTextureDependencies() { ReferencedTextures.clear(); }
+        TMap<EMaterialTextureSlot, UTexture2DAsset*, FMaterialTextureSlotHasher>&
+        GetReferencedTextures()
+        {
+            return ReferencedTextures;
+        }
+        const TMap<EMaterialTextureSlot, UTexture2DAsset*, FMaterialTextureSlotHasher>&
+        GetReferencedTextures() const
+        {
+            return ReferencedTextures;
+        }
 
       private:
-        FString                              MaterialLibraryName{"Default"};
-        std::shared_ptr<::FMaterialResource> Resource;
-        TArray<UTexture2DAsset*>             ReferencedTextures;
+        FMaterial                MaterialData;
+        FString                  MaterialName;
+        TMap<EMaterialTextureSlot, UTexture2DAsset*, FMaterialTextureSlotHasher>
+            ReferencedTextures;
     };
 } // namespace Engine::Asset

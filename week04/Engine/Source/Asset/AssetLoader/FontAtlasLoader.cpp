@@ -151,47 +151,21 @@ namespace
         return true;
     }
 
-    FString WidePathToUtf8(const FWString& Path)
-    {
-        const std::filesystem::path FilePath(Path);
-        const std::u8string         Utf8Path = FilePath.u8string();
-        return FString(reinterpret_cast<const char*>(Utf8Path.data()), Utf8Path.size());
-    }
 } // namespace
 
 FFontAtlasLoader::FFontAtlasLoader(FD3D11RHI* InRHI) : RHI(InRHI) {}
 
 bool FFontAtlasLoader::CanLoad(const FWString& Path, const FAssetLoadParams& Params) const
 {
-    if (Path.empty())
-    {
-        return false;
-    }
-
     if (Params.ExplicitType != EAssetType::Unknown && Params.ExplicitType != EAssetType::Font)
     {
         return false;
     }
 
-    const std::filesystem::path FilePath(Path);
-    FWString                    Extension = FilePath.extension().native();
-    std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-                   [](wchar_t Ch) { return static_cast<wchar_t>(std::towlower(Ch)); });
-
-    return Extension == L".font" || Extension == L".json";
+    return HasExtension(Path, {L".font", L".json"});
 }
 
 EAssetType FFontAtlasLoader::GetAssetType() const { return EAssetType::Font; }
-
-uint64 FFontAtlasLoader::MakeBuildSignature(const FAssetLoadParams& Params) const
-{
-    (void)Params;
-
-    uint64 Hash = 14695981039346656037ull;
-    Hash ^= static_cast<uint64>(GetAssetType());
-    Hash *= 1099511628211ull;
-    return Hash;
-}
 
 UAsset* FFontAtlasLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoadParams& Params)
 {

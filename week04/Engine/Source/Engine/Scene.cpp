@@ -194,7 +194,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                  if (!IsFlagSet(InShowFlags, ESceneShowFlags::SF_Primitives)) continue;
 
                 Engine::Asset::UStaticMesh* StaticMeshAsset = StaticMeshComp->GetStaticMesh();
-                const FStaticMeshResource*  Resource =
+                const FStaticMesh*  Resource =
                     (StaticMeshAsset != nullptr) ? StaticMeshAsset->GetRenderResource() : nullptr;
 
                 if (StaticMeshAsset == nullptr || Resource == nullptr)
@@ -217,10 +217,7 @@ void FScene::BuildRenderData(FSceneFrameRenderData& OutRenderData, ESceneShowFla
                 uint32 NumSubMeshes = static_cast<uint32>(SubMeshCount);
                 for (uint32 i = 0; i < NumSubMeshes; ++i)
                 {
-                    FStaticMeshMaterialBinding Binding = {};
-                    Binding.Material = StaticMeshComp->GetMaterial(i);
-                    Binding.SubMaterialName = StaticMeshComp->GetSubMaterialName(i);
-                    MeshItem.MaterialBindings.push_back(Binding);
+                    MeshItem.Materials.push_back(StaticMeshComp->GetMaterial(i));
                 }
 
                 // 4. 상태 및 피킹 데이터

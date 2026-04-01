@@ -38,11 +38,6 @@ namespace Engine::Component
         return static_cast<uint32>(OverrideMaterials.size());
     }
 
-    FString UMeshComponent::GetSubMaterialName(uint32 Index) const
-    {
-        return "";
-    }
-
     void UMeshComponent::DescribeProperties(FComponentPropertyBuilder& Builder)
     {
         UPrimitiveComponent::DescribeProperties(Builder);

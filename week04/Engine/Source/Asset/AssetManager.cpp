@@ -317,6 +317,34 @@ UAsset* UAssetManager::Load(const FWString& Path, const FAssetLoadParams& Params
     return NewAsset;
 }
 
+UAsset* UAssetManager::RegisterAssetById(const FAssetId& Id, UAsset* Asset)
+{
+    if (Asset == nullptr)
+    {
+        return nullptr;
+    }
+
+    AssetIdAssets.insert_or_assign(Id, std::unique_ptr<UAsset>(Asset));
+    return Asset;
+}
+
+UAsset* UAssetManager::FindAssetById(const FAssetId& Id) const
+{
+    auto It = AssetIdAssets.find(Id);
+    return (It != AssetIdAssets.end()) ? It->second.get() : nullptr;
+}
+
+bool UAssetManager::UnregisterAssetById(const FAssetId& Id)
+{
+    return AssetIdAssets.erase(Id) > 0;
+}
+
+UAsset* UAssetManager::FindLoadedAsset(const FAssetKey& Key) const
+{
+    auto It = LoadedAssets.find(Key);
+    return (It != LoadedAssets.end()) ? It->second.get() : nullptr;
+}
+
 void UAssetManager::Invalidate(const FWString& Path)
 {
     const FWString NormalizedPath = NormalizeAssetPath(Path);
@@ -338,12 +366,26 @@ void UAssetManager::Invalidate(const FWString& Path)
             ++It;
         }
     }
+
+    for (auto It = AssetIdAssets.begin(); It != AssetIdAssets.end();)
+    {
+        const UAsset* Asset = It->second.get();
+        if (Asset != nullptr && Asset->GetPath() == NormalizedPath)
+        {
+            It = AssetIdAssets.erase(It);
+        }
+        else
+        {
+            ++It;
+        }
+    }
 }
 
 void UAssetManager::Clear()
 {
     SourceCache.Clear();
     LoadedAssets.clear();
+    AssetIdAssets.clear();
 }
 
 IAssetLoader* UAssetManager::FindLoader(const FWString& Path, const FAssetLoadParams& Params) const

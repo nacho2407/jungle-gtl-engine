@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Asset/Asset.h"
-#include "Renderer/RenderAsset/MaterialResource.h" // FMaterialData 구조체 사용을 위해 포함
+#include "Renderer/RenderAsset/MaterialResource.h" // FMaterial 구조체 사용을 위해 포함
 
 namespace Engine::Asset
 {
@@ -15,8 +15,6 @@ namespace Engine::Asset
         DECLARE_RTTI(UMaterialInterface, UAsset)
 
         UMaterialInterface() = default;
-
-        // 가상 소멸자 (LNK 에러 방지를 위해 = default 명시)
         virtual ~UMaterialInterface() = default;
 
         // ------------------------------------------------------------------------
@@ -25,8 +23,7 @@ namespace Engine::Asset
         // - UMaterialAsset: 자신이 들고 있는 Resource 맵에서 찾아 반환
         // - UMaterialInstance: 오버라이드된 데이터가 있으면 덮어씌워서 반환, 없으면 부모에게 요청
         // ------------------------------------------------------------------------
-        virtual const FMaterialData* GetMaterialData(const FString& SubMaterialName) const = 0;
-        virtual const FString        GetMaterialLibraryName() const = 0;
+        virtual const FMaterial* GetMaterialData() const = 0;
 
         // 공통 직렬화 인터페이스
         virtual void Serialize(class FArchive& Ar) {}

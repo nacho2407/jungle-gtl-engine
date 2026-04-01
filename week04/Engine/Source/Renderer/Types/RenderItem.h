@@ -73,16 +73,11 @@ enum class ETextLayoutMode : uint8
 };
 
 
-struct FStaticMeshMaterialBinding
-{
-    Engine::Asset::UMaterialInterface* Material = nullptr;
-    FString                            SubMaterialName;
-};
 struct FStaticMeshRenderItem
 {
     FMatrix World = FMatrix::Identity;
-    const FStaticMeshResource* RenderResource = nullptr;
-    TArray<FStaticMeshMaterialBinding>         MaterialBindings;
+    const FStaticMesh* RenderResource = nullptr;
+    TArray<Engine::Asset::UMaterialInterface*> Materials;
     Geometry::FAABB                            WorldAABB;
     FRenderItemState                           State;
 };

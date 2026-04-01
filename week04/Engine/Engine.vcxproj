@@ -15,6 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Asset\MaterialLibrary.h" />
     <ClInclude Include="Source\Core\Runtime\Slate\SWidget.h" />
     <ClInclude Include="Source\Core\Runtime\Slate\Window\SWindow.h" />
     <ClInclude Include="Source\Core\Runtime\Slate\Window\SSplitter.h" />
@@ -194,6 +195,7 @@
     <ClCompile Include="Source\Asset\Material.cpp" />
     <ClCompile Include="Source\Asset\MaterialInstance.cpp" />
     <ClCompile Include="Source\Asset\MaterialInterface.cpp" />
+    <ClCompile Include="Source\Asset\MaterialLibrary.cpp" />
     <ClCompile Include="Source\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Asset\StreamableRenderAsset.cpp" />
     <ClCompile Include="Source\Asset\SubUVAtlasAsset.cpp" />
