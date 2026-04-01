@@ -130,9 +130,8 @@ void FD3D11StaticMeshRenderer::Flush()
         // 2. 해당 모델의 VBO / IBO 바인딩
         const UINT    Stride = Resource->VertexStride;
         const UINT    Offset = 0;
-        ID3D11Buffer* VertexBuffer = Resource->VertexBuffer.Get();
 
-        RHI->SetVertexBuffer(0, VertexBuffer, Stride, Offset);
+        RHI->SetVertexBuffer(0, Resource->VertexBuffer.Get(), Stride, Offset);
         // 인덱스 타입이 uint32인 경우 DXGI_FORMAT_R32_UINT를 사용 (uint16인 경우 R16_UINT)
         RHI->SetIndexBuffer(Resource->IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 

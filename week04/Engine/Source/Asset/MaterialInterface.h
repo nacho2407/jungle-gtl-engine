@@ -26,6 +26,7 @@ namespace Engine::Asset
         // - UMaterialInstance: 오버라이드된 데이터가 있으면 덮어씌워서 반환, 없으면 부모에게 요청
         // ------------------------------------------------------------------------
         virtual const FMaterialData* GetMaterialData(const FString& SubMaterialName) const = 0;
+        virtual const FString        GetMaterialLibraryName() const = 0;
 
         // 공통 직렬화 인터페이스
         virtual void Serialize(class FArchive& Ar) {}

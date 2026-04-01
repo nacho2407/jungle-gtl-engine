@@ -274,10 +274,17 @@ void FEditorEngineLoop::ShutDown()
         Editor->SetRuntimeServices(nullptr, nullptr);
     }
 
-     delete StaticMeshLoader;
+    if (Editor != nullptr)
+    {
+        Editor->Release();
+        delete Editor;
+        Editor = nullptr;
+    }
+
+    delete StaticMeshLoader;
     StaticMeshLoader = nullptr;
 
-     delete MaterialLoader;
+    delete MaterialLoader;
     MaterialLoader = nullptr;
 
     delete FontAssetLoader;
@@ -299,13 +306,6 @@ void FEditorEngineLoop::ShutDown()
         Renderer = nullptr;
     }
 
-    if (Editor != nullptr)
-    {
-        Editor->Release();
-        delete Editor;
-        Editor = nullptr;
-    }
-
     if (Application != nullptr)
     {
         Application->DestroyApplicationWindow();
@@ -315,6 +315,8 @@ void FEditorEngineLoop::ShutDown()
 
     delete InputSystem;
     InputSystem = nullptr;
+
+     Engine::Core::Misc::FNameSubsystem::Shutdown();
 }
 
 void FEditorEngineLoop::Tick()

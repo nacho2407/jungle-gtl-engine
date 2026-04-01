@@ -7,11 +7,73 @@
 #include <sstream>
 #include <cwctype>
 #include <algorithm>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 namespace fs = std::filesystem;
 
 namespace
 {
+    FWString NarrowPathToWidePath(const FString& NarrowPath)
+    {
+        if (NarrowPath.empty())
+        {
+            return {};
+        }
+
+        auto ConvertWithCodePage = [&](UINT CodePage, DWORD Flags) -> FWString
+        {
+            const int32 RequiredChars =
+                MultiByteToWideChar(CodePage, Flags, NarrowPath.data(),
+                                    static_cast<int>(NarrowPath.size()), nullptr, 0);
+            if (RequiredChars <= 0)
+            {
+                return {};
+            }
+
+            FWString WidePath(static_cast<size_t>(RequiredChars), L'\0');
+            const int32 ConvertedChars =
+                MultiByteToWideChar(CodePage, Flags, NarrowPath.data(),
+                                    static_cast<int>(NarrowPath.size()), WidePath.data(),
+                                    RequiredChars);
+            if (ConvertedChars <= 0)
+            {
+                return {};
+            }
+
+            return WidePath;
+        };
+
+        FWString WidePath = ConvertWithCodePage(CP_UTF8, MB_ERR_INVALID_CHARS);
+        if (!WidePath.empty())
+        {
+            return WidePath;
+        }
+
+        WidePath = ConvertWithCodePage(CP_ACP, 0);
+        if (!WidePath.empty())
+        {
+            return WidePath;
+        }
+
+        return ConvertWithCodePage(CP_OEMCP, 0);
+    }
+
+    bool IsAbsoluteWidePath(const FWString& Path)
+    {
+        if (Path.size() >= 2 && Path[1] == L':')
+        {
+            return true;
+        }
+
+        return Path.size() >= 2 && Path[0] == L'\\' && Path[1] == L'\\';
+    }
+
+    void NormalizePathSeparators(FWString& Path)
+    {
+        std::replace(Path.begin(), Path.end(), L'/', L'\\');
+    }
+
     std::string_view TrimView(std::string_view View)
     {
         const size_t Begin = View.find_first_not_of(" \t\r");
@@ -101,6 +163,11 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
     Engine::Asset::UMaterial* NewMatAsset = new Engine::Asset::UMaterial();
     NewMatAsset->Initialize(Source, MatResource);
 
+    const std::filesystem::path MtlPath(Source.NormalizedPath);
+    const FWString LibraryNameWide = MtlPath.stem().native();
+    const FString  LibraryName = WidePathToUtf8(LibraryNameWide);
+    NewMatAsset->SetMaterialLibraryName(LibraryName);
+
     if (AssetManager)
     {
         // MTL 파일의 디렉토리 경로 추출 (텍스처 상대 경로 조합용)
@@ -119,8 +186,14 @@ UAsset* FMaterialLoader::LoadAsset(const FSourceRecord& Source, const FAssetLoad
                 }
 
                 // const fs::path TexturePath = fs::u8path(InMapPath);
-                const fs::path TexturePath(InMapPath);
-                const FWString WideTexPath = TexturePath.native();
+                const FWString WideTexPath = NarrowPathToWidePath(InMapPath);
+                if (WideTexPath.empty())
+                {
+                    UE_LOG(Asset, ELogVerbosity::Warning,
+                           "[MaterialLoader] Failed to decode %s texture path. RawPath=%s",
+                           LogName, InMapPath.c_str());
+                    return nullptr;
+                }
 
                 FAssetLoadParams TexParams;
                 TexParams.ExplicitType = EAssetType::Texture;
@@ -359,20 +432,30 @@ FWString FMaterialLoader::ResolveSiblingPath(const FWString& BaseFilePath,
     if (BaseFilePath.empty() || RelativePath.empty())
         return {};
 
-    const fs::path BasePath(BaseFilePath);
-    const fs::path Relative(RelativePath);
-
-    const fs::path CombinedPath =
-        Relative.is_absolute() ? Relative : (BasePath.parent_path() / Relative);
-
-    std::error_code ErrorCode;
-    fs::path        Normalized = fs::weakly_canonical(CombinedPath, ErrorCode);
-    if (ErrorCode)
+    const FWString RelativeWidePath = NarrowPathToWidePath(RelativePath);
+    if (RelativeWidePath.empty())
     {
-        Normalized = CombinedPath.lexically_normal();
+        return {};
     }
 
-    return Normalized.native();
+    FWString NormalizedRelative = RelativeWidePath;
+    NormalizePathSeparators(NormalizedRelative);
+
+    if (IsAbsoluteWidePath(NormalizedRelative))
+    {
+        return NormalizedRelative;
+    }
+
+    const fs::path BasePath(BaseFilePath);
+    FWString BaseDirectory = BasePath.parent_path().native();
+    NormalizePathSeparators(BaseDirectory);
+
+    if (!BaseDirectory.empty() && BaseDirectory.back() != L'\\')
+    {
+        BaseDirectory += L'\\';
+    }
+
+    return BaseDirectory + NormalizedRelative;
 }
 
 FString FMaterialLoader::WidePathToUtf8(const FWString& Path) const

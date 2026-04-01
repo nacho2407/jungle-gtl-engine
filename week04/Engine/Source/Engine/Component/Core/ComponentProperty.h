@@ -25,7 +25,8 @@ namespace Engine::Component
         String,
         Vector3,
         Color,
-        AssetPath
+        AssetPath,
+        MaterialSlot
     };
 
     struct FComponentPropertyOptions
@@ -63,6 +64,8 @@ namespace Engine::Component
 
         std::function<FColor()> ColorGetter;
         std::function<void(const FColor&)> ColorSetter;
+
+        std::function<TArray<FString>()> OptionsGetter;
     };
 
     // 컴포넌트 작성자는 builder에 속성을 한 번만 등록하면
@@ -187,6 +190,25 @@ namespace Engine::Component
             Descriptor.ExpectedAssetPathKind = Options.ExpectedAssetPathKind;
             Descriptor.StringGetter = std::move(Getter);
             Descriptor.StringSetter = std::move(Setter);
+            Properties.push_back(std::move(Descriptor));
+        }
+
+        void AddMaterialSlot(const FString& Key, const FWString& DisplayLabel,
+                             std::function<FString()> Getter,
+                             std::function<void(const FString&)> Setter,
+                             std::function<TArray<FString>()> OptionsGetter,
+                             const FComponentPropertyOptions& Options = {})
+        {
+            FComponentPropertyDescriptor Descriptor;
+            Descriptor.Key = Key;
+            Descriptor.DisplayLabel = DisplayLabel;
+            Descriptor.Type = EComponentPropertyType::MaterialSlot;
+            Descriptor.bExposeInDetails = Options.bExposeInDetails;
+            Descriptor.bSerializeInScene = Options.bSerializeInScene;
+            Descriptor.DragSpeed = Options.DragSpeed;
+            Descriptor.StringGetter = std::move(Getter);
+            Descriptor.StringSetter = std::move(Setter);
+            Descriptor.OptionsGetter = std::move(OptionsGetter);
             Properties.push_back(std::move(Descriptor));
         }
 

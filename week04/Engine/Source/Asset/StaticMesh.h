@@ -39,6 +39,7 @@ namespace Engine::Asset
         const FString&       GetSubMaterialName(uint32 Index) const;
         void SetMaterialSlot(uint32 Index, UMaterialInterface* InMaterial, const FString& InSubMaterialName);
 
+        TArray<FMaterialSlot>& GetMaterialSlots() { return MaterialSlots; }
         const TArray<FMaterialSlot>& GetMaterialSlots() const { return MaterialSlots; }
         uint32 GetNumSections() const { return static_cast<uint32>(MaterialSlots.size()); }
 
