@@ -51,6 +51,9 @@ void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionMa
 		ViewportClients[i].CreateCamera();
 		ViewportClients[i].ApplyCameraMode();
 	}
+
+	// Make Viewport Layout ( SplitterV -> 2 * SplitterH)
+	BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
 }
 
 void FViewportLayout::Shutdown()
