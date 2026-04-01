@@ -30,6 +30,18 @@ namespace Engine::Asset
         void ClearMaterialDataOverride(const FString& SubMaterialName);
         void ClearAllOverrides();
 
+        virtual const FString GetMaterialLibraryName() const
+        {
+            if (Parent)
+            {
+                return Parent->GetMaterialLibraryName();
+            }
+            else
+            {
+                return "None";
+            }
+        }
+
       private:
         UMaterialInterface* Parent = nullptr;
 

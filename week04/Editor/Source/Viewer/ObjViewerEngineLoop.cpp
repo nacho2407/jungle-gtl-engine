@@ -128,6 +128,8 @@ void FObjViewerEngineLoop::ShutDown()
         delete Application;
         Application = nullptr;
     }
+
+    Engine::Core::Misc::FNameSubsystem::Shutdown();
 }
 
 // ─── Frame ────────────────────────────────────────────────────────────────────

@@ -32,6 +32,7 @@ class ENGINE_API FRendererModule
   public:
     bool StartupModule(HWND hWnd);
     void ShutdownModule();
+    void ReportLiveObjects();
 
     void BeginFrame();
     void EndFrame();

@@ -6,6 +6,7 @@
 #include "Renderer/Types/PickResult.h"
 #include "SceneView.h"
 #include "Core/Runtime/Slate/Window/SWindow.h"
+#include <d3d11sdklayers.h>
 
 namespace
 {
@@ -126,8 +127,6 @@ bool FRendererModule::StartupModule(HWND hWnd)
 
 void FRendererModule::ShutdownModule()
 {
-    DebugDevice.Reset();
-
     ObjectIdRenderer.Shutdown();
     SpriteRenderer.Shutdown();
     TextRenderer.Shutdown();
@@ -137,6 +136,13 @@ void FRendererModule::ShutdownModule()
     StaticMeshRenderer.Shutdown();
     WidgetRenderer.Shutdown();
 
+    ReportLiveObjects();
+
+    RHI.Shutdown();
+}
+
+void FRendererModule::ReportLiveObjects()
+{
 #if defined(_DEBUG)
     if (DebugDevice != nullptr)
     {
@@ -144,8 +150,6 @@ void FRendererModule::ShutdownModule()
         DebugDevice.Reset();
     }
 #endif
-
-    RHI.Shutdown();
 }
 
 void FRendererModule::BeginFrame()
@@ -208,7 +212,7 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
     };
     RHI.SetViewport(VP);
 
-    if (HasScenePrimitives(InSceneRenderData))
+   /* if (HasScenePrimitives(InSceneRenderData))
     {
         FMeshPassParams ScenePassParams = {};
         ScenePassParams.SceneView = InSceneRenderData.SceneView;
@@ -230,10 +234,10 @@ void FRendererModule::RenderWorldPass(const FEditorRenderData& InEditorRenderDat
         }
 
         MeshBatchRenderer.EndFrame();
-    }
+    }*/
 
     // -------------------------------------------------------------------------
-    // [추가됨] 2. Static Mesh 렌더링
+    // Static Mesh 렌더링
     // -------------------------------------------------------------------------
     if (InSceneRenderData.SceneView != nullptr && !InSceneRenderData.StaticMeshes.empty())
     {

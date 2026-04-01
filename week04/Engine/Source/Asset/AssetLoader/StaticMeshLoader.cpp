@@ -10,8 +10,73 @@
 #include <cwctype>
 #include <algorithm>
 #include <string_view>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 namespace fs = std::filesystem;
+
+namespace
+{
+    FWString NarrowPathToWidePath(const FString& NarrowPath)
+    {
+        if (NarrowPath.empty())
+        {
+            return {};
+        }
+
+        auto ConvertWithCodePage = [&](UINT CodePage, DWORD Flags) -> FWString
+        {
+            const int32 RequiredChars =
+                MultiByteToWideChar(CodePage, Flags, NarrowPath.data(),
+                                    static_cast<int>(NarrowPath.size()), nullptr, 0);
+            if (RequiredChars <= 0)
+            {
+                return {};
+            }
+
+            FWString WidePath(static_cast<size_t>(RequiredChars), L'\0');
+            const int32 ConvertedChars =
+                MultiByteToWideChar(CodePage, Flags, NarrowPath.data(),
+                                    static_cast<int>(NarrowPath.size()), WidePath.data(),
+                                    RequiredChars);
+            if (ConvertedChars <= 0)
+            {
+                return {};
+            }
+
+            return WidePath;
+        };
+
+        FWString WidePath = ConvertWithCodePage(CP_UTF8, MB_ERR_INVALID_CHARS);
+        if (!WidePath.empty())
+        {
+            return WidePath;
+        }
+
+        WidePath = ConvertWithCodePage(CP_ACP, 0);
+        if (!WidePath.empty())
+        {
+            return WidePath;
+        }
+
+        return ConvertWithCodePage(CP_OEMCP, 0);
+    }
+
+    bool IsAbsoluteWidePath(const FWString& Path)
+    {
+        if (Path.size() >= 2 && Path[1] == L':')
+        {
+            return true;
+        }
+
+        return Path.size() >= 2 && Path[0] == L'\\' && Path[1] == L'\\';
+    }
+
+    void NormalizePathSeparators(FWString& Path)
+    {
+        std::replace(Path.begin(), Path.end(), L'/', L'\\');
+    }
+}
 
 FStaticMeshLoader::FStaticMeshLoader(FD3D11RHI* InRHI, UAssetManager* InAssetManager)
     : RHI(InRHI), AssetManager(InAssetManager)
@@ -94,9 +159,32 @@ UAsset* FStaticMeshLoader::LoadAsset(const FSourceRecord& Source, const FAssetLo
         const fs::path ObjFilePath(Source.NormalizedPath);
         const fs::path ObjDir = ObjFilePath.parent_path();
 
-        const fs::path MtlRelativePath(MeshResource->MaterialLibraryPath.c_str());
-        const fs::path FullMtlPath = ObjDir / MtlRelativePath;
-        FWString       WideMtlPath = FullMtlPath.wstring();
+        FWString MtlRelativeWidePath = NarrowPathToWidePath(MeshResource->MaterialLibraryPath);
+        if (MtlRelativeWidePath.empty())
+        {
+            UE_LOG(Asset, ELogVerbosity::Warning,
+                   "[StaticMeshLoader] Failed to decode mtllib path. RawPath=%s",
+                   MeshResource->MaterialLibraryPath.c_str());
+            return NewMeshAsset;
+        }
+
+        NormalizePathSeparators(MtlRelativeWidePath);
+
+        FWString WideMtlPath;
+        if (IsAbsoluteWidePath(MtlRelativeWidePath))
+        {
+            WideMtlPath = MtlRelativeWidePath;
+        }
+        else
+        {
+            FWString ObjDirectory = ObjDir.native();
+            NormalizePathSeparators(ObjDirectory);
+            if (!ObjDirectory.empty() && ObjDirectory.back() != L'\\')
+            {
+                ObjDirectory += L'\\';
+            }
+            WideMtlPath = ObjDirectory + MtlRelativeWidePath;
+        }
 
         FAssetLoadParams MatParams;
         MatParams.ExplicitType = EAssetType::Material;

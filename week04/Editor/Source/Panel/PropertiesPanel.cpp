@@ -396,6 +396,62 @@ namespace
         return bChanged;
     }
 
+    // bool DrawStaticMeshSubMaterialCombo(Engine::Component::UStaticMeshComponent* MeshComp,
+    //                                     uint32 SlotIndex)
+    // {
+    //     if (MeshComp == nullptr || !MeshComp->IsValidLowLevel())
+    //         return false;
+
+    //     Engine::Asset::UStaticMesh* StaticMesh = MeshComp->GetStaticMesh();
+    //     if (StaticMesh == nullptr)
+    //         return false;
+
+    //     const Engine::Asset::FMaterialSlot* CurrentSlot = StaticMesh->GetMaterialSlot(SlotIndex);
+    //     if (CurrentSlot == nullptr)
+    //         return false;
+
+    //     FString CurrentName =
+    //         CurrentSlot->SubMaterialName.empty() ? "None" : CurrentSlot->SubMaterialName;
+    //     std::string LabelId = "Material Slot " + std::to_string(SlotIndex + 1);
+
+    //     bool bChanged = false;
+    //     ImGui::TextUnformatted(LabelId.c_str());
+    //     ImGui::SameLine(140.0f);
+    //     ImGui::SetNextItemWidth(-1.0f);
+
+    //     FString PopupId = FString("##SubMatCombo_") + std::to_string(SlotIndex);
+    //     if (ImGui::BeginCombo(PopupId.c_str(), CurrentName.c_str()))
+    //     {
+    //         bool bNoneSelected = CurrentSlot->SubMaterialName.empty();
+    //         if (ImGui::Selectable("None", bNoneSelected))
+    //         {
+    //             StaticMesh->SetMaterialSlot(SlotIndex, CurrentSlot->Material, "");
+    //             bChanged = true;
+    //         }
+
+    //         const TArray<Engine::Asset::FMaterialSlot>& Slots = StaticMesh->GetMaterialSlots();
+    //         for (const auto& Slot : Slots)
+    //         {
+    //             if (Slot.SubMaterialName.empty())
+    //                 continue;
+
+    //             bool bSelected = (CurrentSlot->SubMaterialName == Slot.SubMaterialName);
+    //             if (ImGui::Selectable(Slot.SubMaterialName.c_str(), bSelected))
+    //             {
+    //                 StaticMesh->SetMaterialSlot(SlotIndex, CurrentSlot->Material,
+    //                                             Slot.SubMaterialName);
+    //                 bChanged = true;
+    //             }
+    //             if (bSelected)
+    //                 ImGui::SetItemDefaultFocus();
+    //         }
+
+    //         ImGui::EndCombo();
+    //     }
+
+    //     return bChanged;
+    // }
+
     bool DrawBoolPropertyRow(const char* LabelId, const char* DisplayLabel,
                              const Engine::Component::FComponentPropertyDescriptor& Descriptor)
     {
@@ -524,6 +580,52 @@ namespace
         return bChg;
     }
 
+    bool DrawMaterialSlotPropertyRow(const char* LabelId, const char* DisplayLabel,
+                                     const Engine::Component::FComponentPropertyDescriptor& Descriptor)
+    {
+        const FString CurrentValue = Descriptor.StringGetter ? Descriptor.StringGetter() : "";
+        TArray<FString> Options = Descriptor.OptionsGetter ? Descriptor.OptionsGetter()
+                                                           : TArray<FString>{};
+
+        ImGui::PushID(LabelId);
+        ImGui::TextUnformatted(DisplayLabel);
+        ImGui::SameLine(140.0f);
+        ImGui::SetNextItemWidth(-1.0f);
+
+        bool bChanged = false;
+        const FString ComboLabel = CurrentValue.empty() ? "None" : CurrentValue;
+        if (ImGui::BeginCombo("##Value", ComboLabel.c_str()))
+        {
+            bool bNoneSelected = CurrentValue.empty();
+            if (ImGui::Selectable("None", bNoneSelected))
+            {
+                if (Descriptor.StringSetter)
+                    Descriptor.StringSetter("");
+                bChanged = true;
+            }
+
+            for (int32 OptionIndex = 0; OptionIndex < static_cast<int32>(Options.size()); ++OptionIndex)
+            {
+                const FString& Name = Options[OptionIndex];
+                bool bSelected = (CurrentValue == Name);
+                ImGui::PushID(OptionIndex);
+                if (ImGui::Selectable(Name.c_str(), bSelected))
+                {
+                    if (Descriptor.StringSetter)
+                        Descriptor.StringSetter(Name);
+                    bChanged = true;
+                }
+                if (bSelected)
+                    ImGui::SetItemDefaultFocus();
+                ImGui::PopID();
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::PopID();
+        return bChanged;
+    }
+
     bool DrawComponentPropertyRow(const Engine::Component::FComponentPropertyDescriptor& Descriptor,
                                   TMap<FString, FString>* AssetPathEditBuffers,
                                   FEditorContext*         Context)
@@ -546,6 +648,9 @@ namespace
         case EComponentPropertyType::AssetPath:
             return DrawStringPropertyRow(Id, Label, Descriptor, true, AssetPathEditBuffers,
                                          Context);
+        case EComponentPropertyType::MaterialSlot:
+            return DrawMaterialSlotPropertyRow(Id, Label, Descriptor);
+        case EComponentPropertyType::Vector3:
             return DrawVectorPropertyRow(Id, Label, Descriptor);
         case EComponentPropertyType::Color:
             return DrawColorPropertyRow(Id, Label, Descriptor);
@@ -940,58 +1045,48 @@ void FPropertiesPanel::DrawTransformEditor(Engine::Component::USceneComponent* C
 
         bool bMod = false;
 
-        // 1. Properties 섹션 (먼저 노출)
-        Engine::Component::FComponentPropertyBuilder Builder;
-        TargetComp->DescribeProperties(Builder);
+    //if (TargetComp->IsA(Engine::Component::UMeshComponent::GetClass()))
+    //{
+    //    Engine::Component::UMeshComponent* MeshComp =
+    //        (Engine::Component::UMeshComponent*)TargetComp;
+    //    if (MeshComp->GetNumMaterials() > 0)
+    //    {
+    //        ImGui::TextUnformatted("Materials");
+    //        for (uint32 i = 0; i < MeshComp->GetNumMaterials(); ++i)
+    //        {
+    //            ImGui::PushID(i);
+    //            // if (auto* StaticMeshComp =
+    //            //         Cast<Engine::Component::UStaticMeshComponent>(MeshComp))
+    //            // {
+    //            //     if (DrawStaticMeshSubMaterialCombo(StaticMeshComp, i))
+    //            //         bMod = true;
+    //            // }
+    //            // else
+    //            // {
+    //            // }
+    //            if (DrawMaterialAssetCombo(MeshComp, i, GetContext()))
+    //                bMod = true;
+    //            ImGui::PopID();
+    //        }
+    //        ImGui::Separator();
+    //    }
+    //}
 
-        // 노출할 속성이 있는지 먼저 확인
-        bool bHasExposedProperties = false;
-        for (const auto& Desc : Builder.GetProperties())
+    Engine::Component::FComponentPropertyBuilder Builder;
+    TargetComp->DescribeProperties(Builder);
+    ImGui::TextUnformatted("Properties");
+    for (const auto& Desc : Builder.GetProperties())
+    {
+        if (!Desc.bExposeInDetails)
+            continue;
+        if (DrawComponentPropertyRow(Desc, &AssetPathEditBuffers, GetContext()))
         {
-            if (Desc.bExposeInDetails)
-            {
-                bHasExposedProperties = true;
-                break;
-            }
+            bMod = true;
+            if (Desc.Type == Engine::Component::EComponentPropertyType::AssetPath && GetContext() &&
+                GetContext()->AssetManager)
+                TargetComp->ResolveAssetReferences(GetContext()->AssetManager);
         }
-
-        if (bHasExposedProperties)
-        {
-            ImGui::TextUnformatted("Properties");
-            for (const auto& Desc : Builder.GetProperties())
-            {
-                if (!Desc.bExposeInDetails)
-                    continue;
-                if (DrawComponentPropertyRow(Desc, &AssetPathEditBuffers, GetContext()))
-                {
-                    bMod = true;
-                    if (Desc.Type == Engine::Component::EComponentPropertyType::AssetPath && GetContext() &&
-                        GetContext()->AssetManager)
-                        TargetComp->ResolveAssetReferences(GetContext()->AssetManager);
-                }
-            }
-            ImGui::Separator();
-        }
-
-        // 2. Materials 섹션 (나중에 노출)
-        if (TargetComp->IsA(Engine::Component::UMeshComponent::GetClass()))
-        {
-            Engine::Component::UMeshComponent* MeshComp =
-                (Engine::Component::UMeshComponent*)TargetComp;
-            if (MeshComp->GetNumMaterials() > 0)
-            {
-                ImGui::TextUnformatted("Materials");
-                for (uint32 i = 0; i < MeshComp->GetNumMaterials(); ++i)
-                {
-                    ImGui::PushID(i);
-                    if (DrawMaterialAssetCombo(MeshComp, i, GetContext()))
-                        bMod = true;
-                    ImGui::PopID();
-                }
-                ImGui::Separator();
-            }
-        }
-
-        if (bMod && GetContext() && GetContext()->Editor)
-            GetContext()->Editor->MarkSceneDirty();
     }
+    if (bMod && GetContext() && GetContext()->Editor)
+        GetContext()->Editor->MarkSceneDirty();
+}
