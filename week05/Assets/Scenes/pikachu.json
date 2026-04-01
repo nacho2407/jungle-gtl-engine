@@ -1,0 +1,148 @@
+{
+  "Materials": [
+    "Assets/Materials/M_Water.json",
+    "Assets/Materials/M_BlueColor.json",
+    "Assets/Materials/M_Gizmos.json",
+    "Assets/Materials/M_GreenColor.json",
+    "Assets/Materials/M_Wireframe.json",
+    "Assets/Materials/M_RedColor.json",
+    "Assets/Materials/M_Sky.json",
+    "Assets/Materials/M_TintYellow.json"
+  ],
+  "NextUUID": 27,
+  "PerspectiveCamera": {
+    "FOV": 60.0,
+    "FarClip": 10000.0,
+    "Location": [
+      4.616904258728027,
+      1.8531931638717651,
+      5.13645076751709
+    ],
+    "NearClip": 0.0010000000474974513,
+    "Rotation": [
+      -10.199994087219238,
+      -188.39947509765625,
+      0.0
+    ]
+  },
+  "Primitives": {
+    "0": {
+      "Class": "AActor",
+      "Components": [
+        {
+          "Billboard": true,
+          "Class": "UUUIDBillboardComponent",
+          "Location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Text": "Text",
+          "TextColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 21
+        },
+        {
+          "Class": "UStaticMeshComponent",
+          "Location": [
+            -6.949531078338623,
+            -1.8926210403442383,
+            0.7630500793457031
+          ],
+          "Materials": [
+            "Material_#60",
+            "Material_#61"
+          ],
+          "ObjStaticMeshAsset": "Squirtle.Model",
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 22
+        }
+      ],
+      "RootComponentUUID": 22,
+      "UUID": 20
+    },
+    "1": {
+      "Class": "AActor",
+      "Components": [
+        {
+          "Billboard": true,
+          "Class": "UUUIDBillboardComponent",
+          "Location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Text": "Text",
+          "TextColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 25
+        },
+        {
+          "Class": "UStaticMeshComponent",
+          "Location": [
+            -6.7733683586120605,
+            4.42314338684082,
+            0.9338774681091309
+          ],
+          "Materials": [
+            "Pikachu",
+            "PikachuMouth",
+            "PikachuEye",
+            "PikachuHoho"
+          ],
+          "ObjStaticMeshAsset": "Pikachu.Model",
+          "Rotation": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "UUID": 26
+        }
+      ],
+      "RootComponentUUID": 26,
+      "UUID": 24
+    }
+  }
+}
