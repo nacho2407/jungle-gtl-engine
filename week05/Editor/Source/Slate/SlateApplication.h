@@ -50,6 +50,8 @@ class FSlateApplication
 	void SyncViewportRects();
 	int32 FindActiveViewportIndexById(FViewportId ViewportId) const;
 	void ToggleViewportMaximize(FViewportId ViewportId);
+	SWidget* FindTopOverlayWidgetAt(FPoint Point) const;
+	void BringOverlayWidgetToFront(SWidget* Widget);
 
 public:
 	void Initialize(const FRect& Area, FViewport* VPs[], int32 Count);

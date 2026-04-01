@@ -57,29 +57,6 @@ namespace
 
 		return true;
 	}
-
-	static FDynamicMesh* EnsureBatchMesh(std::unique_ptr<FDynamicMesh>& InOutMesh, EMeshTopology Topology)
-	{
-		if (!InOutMesh)
-		{
-			InOutMesh = std::make_unique<FDynamicMesh>();
-			InOutMesh->Topology = Topology;
-			InOutMesh->bIsDirty = true;
-		}
-		return InOutMesh.get();
-	}
-
-	static void ResetBatchMesh(FDynamicMesh* Mesh)
-	{
-		if (!Mesh)
-		{
-			return;
-		}
-
-		Mesh->Vertices.clear();
-		Mesh->Indices.clear();
-		Mesh->bIsDirty = true;
-	}
 }
 
 FPainter::FPainter(FRenderer* InRenderer)
@@ -117,12 +94,72 @@ void FPainter::SetScreenSize(int32 Width, int32 Height)
 	);
 }
 
+FDynamicMesh* FPainter::CreateFrameMesh(EMeshTopology Topology)
+{
+	auto Mesh = std::make_unique<FDynamicMesh>();
+	Mesh->Topology = Topology;
+	Mesh->bIsDirty = true;
+
+	FDynamicMesh* RawMesh = Mesh.get();
+	FrameMeshes.push_back(std::move(Mesh));
+	return RawMesh;
+}
+
+FDynamicMaterial* FPainter::GetOrCreateFontMaterial(uint32 Color)
+{
+	if (!Renderer)
+	{
+		return nullptr;
+	}
+
+	auto MatIt = FontMaterialByColor.find(Color);
+	if (MatIt != FontMaterialByColor.end())
+	{
+		return MatIt->second.get();
+	}
+
+	auto Material = Renderer->GetTextRenderer().GetFontMaterial()->CreateDynamicMaterial();
+	if (!Material)
+	{
+		return nullptr;
+	}
+
+	const FVector4 C = ToColor(Color);
+	Material->SetVectorParameter("TextColor", C);
+
+	FDepthStencilStateOption DepthOpt = Material->GetDepthStencilOption();
+	DepthOpt.DepthEnable = false;
+	DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
+	Material->SetDepthStencilOption(DepthOpt);
+	Material->SetDepthStencilState(DSS);
+
+	FDynamicMaterial* RawMaterial = Material.get();
+	FontMaterialByColor[Color] = std::move(Material);
+	return RawMaterial;
+}
+
+void FPainter::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material)
+{
+	if (!Mesh || !Material || Mesh->Vertices.empty())
+	{
+		return;
+	}
+
+	FRenderCommand Command;
+	Command.RenderMesh = Mesh;
+	Command.Material = Material;
+	Command.WorldMatrix = FMatrix::Identity;
+	Command.RenderLayer = ERenderLayer::UI;
+	UIQueue.AddCommand(Command);
+}
+
 void FPainter::DrawRect(FRect InRect, uint32 Color)
 {
 	if (!Renderer || !InRect.IsValid()) return;
 
-	FDynamicMesh* Batch = EnsureBatchMesh(UiLineBatchMesh, EMeshTopology::EMT_LineList);
-	if (!Batch) return;
+	FDynamicMesh* Mesh = CreateFrameMesh(EMeshTopology::EMT_LineList);
+	if (!Mesh) return;
 
 	const FVector4 C = ToColor(Color);
 	auto V = [&](float X, float Y)
@@ -135,34 +172,35 @@ void FPainter::DrawRect(FRect InRect, uint32 Color)
 			return Out;
 		};
 
-	const uint32 Base = static_cast<uint32>(Batch->Vertices.size());
+	const uint32 Base = static_cast<uint32>(Mesh->Vertices.size());
 
-	Batch->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
-	Batch->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
-	Batch->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
-	Batch->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
 
-	Batch->Indices.push_back(Base + 0);
-	Batch->Indices.push_back(Base + 1);
+	Mesh->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 1);
 
-	Batch->Indices.push_back(Base + 1);
-	Batch->Indices.push_back(Base + 2);
+	Mesh->Indices.push_back(Base + 1);
+	Mesh->Indices.push_back(Base + 2);
 
-	Batch->Indices.push_back(Base + 2);
-	Batch->Indices.push_back(Base + 3);
+	Mesh->Indices.push_back(Base + 2);
+	Mesh->Indices.push_back(Base + 3);
 
-	Batch->Indices.push_back(Base + 3);
-	Batch->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 3);
+	Mesh->Indices.push_back(Base + 0);
 
-	Batch->bIsDirty = true;
+	Mesh->bIsDirty = true;
+	EnqueueMesh(Mesh, UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial());
 }
 
 void FPainter::DrawRectFilled(FRect InRect, uint32 Color)
 {
 	if (!Renderer || !InRect.IsValid()) return;
 
-	FDynamicMesh* Batch = EnsureBatchMesh(UiFilledBatchMesh, EMeshTopology::EMT_TriangleList);
-	if (!Batch) return;
+	FDynamicMesh* Mesh = CreateFrameMesh(EMeshTopology::EMT_TriangleList);
+	if (!Mesh) return;
 
 	const FVector4 C = ToColor(Color);
 	auto V = [&](float X, float Y)
@@ -175,71 +213,34 @@ void FPainter::DrawRectFilled(FRect InRect, uint32 Color)
 			return Out;
 		};
 
-	const uint32 Base = static_cast<uint32>(Batch->Vertices.size());
+	const uint32 Base = static_cast<uint32>(Mesh->Vertices.size());
 
-	Batch->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
-	Batch->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
-	Batch->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
-	Batch->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
+	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
+	Mesh->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
 
-	Batch->Indices.push_back(Base + 0);
-	Batch->Indices.push_back(Base + 1);
-	Batch->Indices.push_back(Base + 2);
+	Mesh->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 1);
+	Mesh->Indices.push_back(Base + 2);
 
-	Batch->Indices.push_back(Base + 0);
-	Batch->Indices.push_back(Base + 2);
-	Batch->Indices.push_back(Base + 3);
+	Mesh->Indices.push_back(Base + 0);
+	Mesh->Indices.push_back(Base + 2);
+	Mesh->Indices.push_back(Base + 3);
 
-	Batch->bIsDirty = true;
+	Mesh->bIsDirty = true;
+	EnqueueMesh(Mesh, UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial());
 }
 
 void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
 {
 	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return;
 
-	FDynamicMaterial* FontMat = nullptr;
-	auto MatIt = FontMaterialByColor.find(Color);
-	if (MatIt == FontMaterialByColor.end())
-	{
-		auto M = Renderer->GetTextRenderer().GetFontMaterial()->CreateDynamicMaterial();
-		if (!M)
-		{
-			return;
-		}
-
-		const FVector4 C = ToColor(Color);
-		M->SetVectorParameter("TextColor", C);
-
-		FDepthStencilStateOption DepthOpt = M->GetDepthStencilOption();
-		DepthOpt.DepthEnable = false;
-		DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
-		M->SetDepthStencilOption(DepthOpt);
-		M->SetDepthStencilState(DSS);
-
-		FontMat = M.get();
-		FontMaterialByColor[Color] = std::move(M);
-	}
-	else
-	{
-		FontMat = MatIt->second.get();
-	}
-
+	FDynamicMaterial* FontMat = GetOrCreateFontMaterial(Color);
 	if (!FontMat) return;
 
-	auto MeshIt = TextBatchMeshByColor.find(Color);
-	if (MeshIt == TextBatchMeshByColor.end())
-	{
-		auto NewBatch = std::make_unique<FDynamicMesh>();
-		NewBatch->Topology = InOutMesh->Topology;
-		NewBatch->bIsDirty = true;
-		MeshIt = TextBatchMeshByColor.emplace(Color, std::move(NewBatch)).first;
-	}
-
-	FDynamicMesh* Batch = MeshIt->second.get();
-	if (!Batch) return;
-
-	const uint32 Base = static_cast<uint32>(Batch->Vertices.size());
+	FDynamicMesh* Mesh = CreateFrameMesh(InOutMesh->Topology);
+	if (!Mesh) return;
 
 	for (const FVertex& Src : InOutMesh->Vertices)
 	{
@@ -249,15 +250,16 @@ void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float Font
 			(float)Point.Y + Src.Position.Y * FontSize,
 			0.0f
 		);
-		Batch->Vertices.push_back(Dst);
+		Mesh->Vertices.push_back(Dst);
 	}
 
 	for (const auto& Idx : InOutMesh->Indices)
 	{
-		Batch->Indices.push_back(Base + static_cast<uint32>(Idx));
+		Mesh->Indices.push_back(static_cast<uint32>(Idx));
 	}
 
-	Batch->bIsDirty = true;
+	Mesh->bIsDirty = true;
+	EnqueueMesh(Mesh, FontMat);
 }
 
 FVector2 FPainter::MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
@@ -281,59 +283,11 @@ void FPainter::Flush()
 	UIQueue.ViewMatrix = FMatrix::Identity;
 	UIQueue.ProjectionMatrix = OrthoProj;
 
-	if (UiLineBatchMesh && !UiLineBatchMesh->Vertices.empty() && !UiLineBatchMesh->Indices.empty())
+	if (!UIQueue.Commands.empty())
 	{
-		FRenderCommand Command;
-		Command.RenderMesh = UiLineBatchMesh.get();
-		Command.Material = UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial();
-		Command.WorldMatrix = FMatrix::Identity;
-		Command.RenderLayer = ERenderLayer::UI;
-		UIQueue.AddCommand(Command);
+		Renderer->SubmitCommands(UIQueue);
+		Renderer->ExecuteCommands();
 	}
-
-	if (UiFilledBatchMesh && !UiFilledBatchMesh->Vertices.empty() && !UiFilledBatchMesh->Indices.empty())
-	{
-		FRenderCommand Command;
-		Command.RenderMesh = UiFilledBatchMesh.get();
-		Command.Material = UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial();
-		Command.WorldMatrix = FMatrix::Identity;
-		Command.RenderLayer = ERenderLayer::UI;
-		UIQueue.AddCommand(Command);
-	}
-
-	for (auto& Pair : TextBatchMeshByColor)
-	{
-		const uint32 Color = Pair.first;
-		std::unique_ptr<FDynamicMesh>& MeshPtr = Pair.second;
-
-		if (!MeshPtr || MeshPtr->Vertices.empty() || MeshPtr->Indices.empty())
-		{
-			continue;
-		}
-
-		auto MatIt = FontMaterialByColor.find(Color);
-		if (MatIt == FontMaterialByColor.end() || !MatIt->second)
-		{
-			continue;
-		}
-
-		FRenderCommand Command;
-		Command.RenderMesh = MeshPtr.get();
-		Command.Material = MatIt->second.get();
-		Command.WorldMatrix = FMatrix::Identity;
-		Command.RenderLayer = ERenderLayer::UI;
-		UIQueue.AddCommand(Command);
-	}
-
-	Renderer->SubmitCommands(UIQueue);
-	Renderer->ExecuteCommands();
 	UIQueue.Clear();
-
-	::ResetBatchMesh(UiLineBatchMesh.get());
-	::ResetBatchMesh(UiFilledBatchMesh.get());
-
-	for (auto& Pair : TextBatchMeshByColor)
-	{
-		::ResetBatchMesh(Pair.second.get());
-	}
+	FrameMeshes.clear();
 }

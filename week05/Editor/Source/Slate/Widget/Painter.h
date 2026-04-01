@@ -22,13 +22,14 @@ public:
 	void Flush();
 
 private:
+	FDynamicMesh* CreateFrameMesh(EMeshTopology Topology);
+	FDynamicMaterial* GetOrCreateFontMaterial(uint32 Color);
+	void EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material);
+
 	FRenderer* Renderer;
 	FMatrix OrthoProj;
 	FRenderCommandQueue UIQueue;
 	std::unique_ptr<FDynamicMaterial> UiColorMaterial;
 	TMap<uint32, std::unique_ptr<FDynamicMaterial>> FontMaterialByColor;
 	TArray<std::unique_ptr<FDynamicMesh>> FrameMeshes;
-	std::unique_ptr<FDynamicMesh> UiLineBatchMesh;
-	std::unique_ptr<FDynamicMesh> UiFilledBatchMesh;
-	TMap<uint32, std::unique_ptr<FDynamicMesh>> TextBatchMeshByColor;
 };

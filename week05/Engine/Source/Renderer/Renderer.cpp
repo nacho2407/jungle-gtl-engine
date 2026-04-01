@@ -329,7 +329,8 @@ void FRenderer::ClearCommandList()
 {
 	PrevCommandCount = CommandList.size();
 	CommandList.clear();
-	CommandList.reserve(PrevCommandCount);	
+	CommandList.reserve(PrevCommandCount);
+	NextSubmissionOrder = 0;
 }
 
 void FRenderer::EndFrame()
@@ -367,6 +368,7 @@ void FRenderer::AddCommand(const FRenderCommand& Command)
 	FRenderCommand& Added = CommandList.back();
 	if (!Added.Material) Added.Material = DefaultMaterial.get();
 	Added.SortKey = FRenderCommand::MakeSortKey(Added.Material, Added.RenderMesh);
+	Added.SubmissionOrder = NextSubmissionOrder++;
 }
 
 void FRenderer::ExecuteCommands()
@@ -374,6 +376,7 @@ void FRenderer::ExecuteCommands()
 	std::sort(CommandList.begin(), CommandList.end(),
 		[](const FRenderCommand& A, const FRenderCommand& B) {
 			if (A.RenderLayer != B.RenderLayer) return A.RenderLayer < B.RenderLayer;
+			if (A.RenderLayer == ERenderLayer::UI) return A.SubmissionOrder < B.SubmissionOrder;
 			return A.SortKey < B.SortKey;
 		});
 
