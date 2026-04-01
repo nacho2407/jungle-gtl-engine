@@ -5,9 +5,12 @@
 #include "Editor/EditorContext.h"
 #include "Engine/Component/Core/PrimitiveComponent.h"
 #include "Engine/Component/Core/SceneComponent.h"
+#include "Engine/Component/Text/AtlasTextComponent.h"
+#include "Engine/Component/Text/UUIDComponent.h"
 #include "Engine/Game/Actor.h"
 #include "Core/Geometry/Primitives/Ray.h"
 #include "Engine/Component/Mesh/QuadComponent.h"
+#include "Renderer/Text/TextLayout.h"
 #include "Renderer/Types/VertexTypes.h"
 
 void FViewportSelectionController::ClickSelect(int32 MouseX, int32 MouseY, ESelectionMode Mode)
@@ -255,6 +258,79 @@ AActor* FViewportSelectionController::PickActor(int32 MouseX, int32 MouseY) cons
         {
             if (PrimitiveComponent == nullptr)
             {
+                return;
+            }
+
+            if (auto* TextComponent =
+                    dynamic_cast<Engine::Component::UAtlasTextComponent*>(PrimitiveComponent))
+            {
+                if (dynamic_cast<Engine::Component::UUUIDComponent*>(TextComponent) != nullptr)
+                {
+                    return;
+                }
+
+                if (TextComponent->GetText().empty())
+                {
+                    return;
+                }
+
+                FTextRenderItem TextItem = {};
+                TextItem.FontResource = TextComponent->GetFontResource();
+                TextItem.Text = TextComponent->GetText();
+                TextItem.Color = TextComponent->GetColor();
+                TextItem.Placement.Mode = TextComponent->GetBillboard()
+                                              ? ERenderPlacementMode::WorldBillboard
+                                              : ERenderPlacementMode::World;
+                TextItem.Placement.World = TextComponent->GetRenderPlacementWorld(*Actor);
+                TextItem.Placement.WorldOffset = TextComponent->GetRenderPlacementOffset(*Actor);
+                TextItem.TextScale = TextComponent->GetTextScale();
+                TextItem.LetterSpacing = TextComponent->GetLetterSpacing();
+                TextItem.LineSpacing = TextComponent->GetLineSpacing();
+
+                const FTextWorldGeometry WorldGeometry =
+                    BuildTextWorldGeometry(TextItem, ViewportCamera->GetViewMatrix());
+                if (!WorldGeometry.bHasWorldAABB)
+                {
+                    return;
+                }
+
+                float AABBHitT = 0.0f;
+                if (!Geometry::IntersectRayAABB(PickRay, WorldGeometry.WorldAABB, AABBHitT))
+                {
+                    return;
+                }
+
+                bool  bHitGlyph = false;
+                float ClosestGlyphT = FLT_MAX;
+
+                for (const FTextWorldQuad& Quad : WorldGeometry.GlyphQuads)
+                {
+                    const FVector V0 = Quad.BottomLeft;
+                    const FVector V1 = Quad.BottomLeft + Quad.Right;
+                    const FVector V2 = Quad.BottomLeft + Quad.Right + Quad.Up;
+                    const FVector V3 = Quad.BottomLeft + Quad.Up;
+
+                    float TriangleHitT = 0.0f;
+                    if (Geometry::IntersectRayTriangle(PickRay, V0, V1, V2, TriangleHitT) &&
+                        TriangleHitT >= 0.0f && TriangleHitT < ClosestGlyphT)
+                    {
+                        ClosestGlyphT = TriangleHitT;
+                        bHitGlyph = true;
+                    }
+
+                    if (Geometry::IntersectRayTriangle(PickRay, V0, V2, V3, TriangleHitT) &&
+                        TriangleHitT >= 0.0f && TriangleHitT < ClosestGlyphT)
+                    {
+                        ClosestGlyphT = TriangleHitT;
+                        bHitGlyph = true;
+                    }
+                }
+
+                if (bHitGlyph && ClosestGlyphT < ActorClosestT)
+                {
+                    ActorClosestT = ClosestGlyphT;
+                    bActorHit = true;
+                }
                 return;
             }
 

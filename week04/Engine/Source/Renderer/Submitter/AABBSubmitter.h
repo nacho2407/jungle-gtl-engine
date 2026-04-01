@@ -6,6 +6,7 @@ class FD3D11LineBatchRenderer;
 class FSceneView;
 struct FPrimitiveRenderItem;
 struct FStaticMeshRenderItem;
+struct FTextRenderItem;
 
 class FAABBSubmitter
 {
@@ -30,4 +31,6 @@ class FAABBSubmitter
                                       const FPrimitiveRenderItem& InItem);
     static void SubmitStaticMeshBounds(FD3D11LineBatchRenderer&     InLineRenderer,
                                        const FStaticMeshRenderItem& InItem);
+    static void SubmitTextBounds(FD3D11LineBatchRenderer& InLineRenderer, const FSceneView& InSceneView,
+                                 const FTextRenderItem&  InItem);
 };

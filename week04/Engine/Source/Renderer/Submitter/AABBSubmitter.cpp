@@ -5,6 +5,7 @@
 #include "Renderer/D3D11/D3D11LineBatchRenderer.h"
 #include "Renderer/RenderAsset/FontResource.h"
 #include "Renderer/SceneView.h"
+#include "Renderer/Text/TextLayout.h"
 
 namespace
 {
@@ -69,6 +70,10 @@ void FAABBSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
     for (const FStaticMeshRenderItem& Item : InSceneRenderData.StaticMeshes)
     {
         SubmitStaticMeshBounds(InLineRenderer, Item);
+    }
+    for (const FTextRenderItem& Item : InSceneRenderData.Texts)
+    {
+        SubmitTextBounds(InLineRenderer, *InSceneRenderData.SceneView, Item);
     }
 }
 
@@ -185,4 +190,24 @@ void FAABBSubmitter::SubmitStaticMeshBounds(FD3D11LineBatchRenderer&     InLineR
                                             const FStaticMeshRenderItem& InItem)
 {
     SubmitWorldAABB(InLineRenderer, InItem.WorldAABB, InItem.State);
+}
+
+void FAABBSubmitter::SubmitTextBounds(FD3D11LineBatchRenderer& InLineRenderer,
+                                      const FSceneView& InSceneView, const FTextRenderItem& InItem)
+{
+    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds || InItem.Text.empty() ||
+        InItem.bExcludeFromOutline)
+    {
+        return;
+    }
+
+    const FTextWorldGeometry WorldGeometry =
+        BuildTextWorldGeometry(InItem, InSceneView.GetViewMatrix());
+    if (!WorldGeometry.bHasWorldAABB)
+    {
+        return;
+    }
+
+    SubmitBox(InLineRenderer, WorldGeometry.WorldAABB.Min, WorldGeometry.WorldAABB.Max,
+              ResolveBoundsColor(InItem.State));
 }
