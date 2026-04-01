@@ -324,7 +324,6 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 									}
 									ImGui::PopID();
 
-									// 기존에 밖으로 꺼내져 있던 텍스처 미리보기 렌더링(64x64) 코드는 삭제했습니다!
 								}
 							}
 							ImGui::PopID(); // PushID(i)에 대한 Pop
