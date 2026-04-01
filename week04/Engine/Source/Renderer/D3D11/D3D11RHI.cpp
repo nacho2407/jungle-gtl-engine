@@ -271,8 +271,6 @@ bool FD3D11RHI::CreateVertexShaderAndInputLayout(
         return false;
     }
 
-    GMemoryTracker.AddVertexShaderBlobBytes(static_cast<uint64>(VSBlob->GetBufferSize()));
-
     return true;
 }
 
@@ -397,8 +395,6 @@ bool FD3D11RHI::CreatePixelShader(const wchar_t* InFilePath, const char* InEntry
 
         return false;
     }
-
-    GMemoryTracker.AddPixelShaderBlobBytes(static_cast<uint64>(PSBlob->GetBufferSize()));
 
     return true;
 }

@@ -242,6 +242,10 @@ void FD3D11SelectionMaskRenderer::Shutdown()
     AlphaBlendState.Reset();
     SamplerState.Reset();
 
+    GMemoryTracker.RemoveIndexBufferBytes(DynamicTextIndexBuffer.Get());
+    GMemoryTracker.RemoveVertexBufferBytes(DynamicTextVertexBuffer.Get());
+    GMemoryTracker.RemoveIndexBufferBytes(DynamicSpriteIndexBuffer.Get());
+    GMemoryTracker.RemoveVertexBufferBytes(DynamicSpriteVertexBuffer.Get());
     DynamicTextIndexBuffer.Reset();
     DynamicTextVertexBuffer.Reset();
     DynamicSpriteIndexBuffer.Reset();

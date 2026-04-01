@@ -528,8 +528,6 @@ FMemoryStatData FEditorViewportClient::CollectMemoryStatData() const
     Data.Rows.push_back({"Tracked Depth Stencil Memory", FormatBytes(Snapshot.TrackedGpu.DepthStencilBytes)});
     Data.Rows.push_back({"Tracked Vertex Buffer Memory", FormatBytes(Snapshot.TrackedGpu.VertexBufferBytes)});
     Data.Rows.push_back({"Tracked Index Buffer Memory", FormatBytes(Snapshot.TrackedGpu.IndexBufferBytes)});
-    Data.Rows.push_back({"Tracked Vertex Shader Memory", FormatBytes(Snapshot.TrackedGpu.VertexShaderBlobBytes)});
-    Data.Rows.push_back({"Tracked Pixel Shader Memory", FormatBytes(Snapshot.TrackedGpu.PixelShaderBlobBytes)});
 
     Data.Rows.push_back({"Tracked Total GPU Memory", FormatBytes(Snapshot.TrackedGpu.TotalTrackedGpuBytes())});
 
