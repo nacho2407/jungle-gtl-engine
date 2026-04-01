@@ -91,6 +91,7 @@ public:
 	void ReleaseGPUResources();
 
 	// --- Material ---
+	void LoadMaterialFromPath(const FString& FilePath);
 	bool LoadMaterial(const FString& MtlFilePath);
 	FMaterial* FindMaterial(const FString& MaterialName);
 	const FMaterial* FindMaterial(const FString& MaterialName) const;
@@ -129,6 +130,8 @@ private:
 
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
+
+	ID3D11Device* CahcedDevice = { nullptr };
 
 	FObjLoader ObjLoader;
 	FFontAtlasLoader FontLoader;
