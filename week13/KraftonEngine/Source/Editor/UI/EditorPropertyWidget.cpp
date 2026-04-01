@@ -391,7 +391,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	}
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32 Index)
+bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32& Index)
 {
 	ImGui::PushID(Index);
 	FPropertyDescriptor& Prop = Props[Index];
