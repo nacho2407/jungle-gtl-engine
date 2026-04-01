@@ -18,6 +18,32 @@
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
 
+// ---- JSON vector helpers ---------------------------------------------------
+
+static void WriteVec3(json::JSON& Obj, const char* Key, const FVector& V)
+{
+	json::JSON arr = json::Array();
+	arr.append(static_cast<double>(V.X));
+	arr.append(static_cast<double>(V.Y));
+	arr.append(static_cast<double>(V.Z));
+	Obj[Key] = arr;
+}
+
+static FVector ReadVec3(json::JSON& Arr)
+{
+	FVector out(0, 0, 0);
+	int i = 0;
+	for (auto& e : Arr.ArrayRange()) {
+		if      (i == 0) out.X = static_cast<float>(e.ToFloat());
+		else if (i == 1) out.Y = static_cast<float>(e.ToFloat());
+		else if (i == 2) out.Z = static_cast<float>(e.ToFloat());
+		++i;
+	}
+	return out;
+}
+
+// ---------------------------------------------------------------------------
+
 namespace SceneKeys
 {
 	static constexpr const char* Version = "Version";
@@ -54,7 +80,7 @@ static EWorldType StringToWorldType(const string& Str)
 // Save
 // ============================================================
 
-void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext& WorldContext)
+void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext& WorldContext, UCameraComponent* PerspectiveCam)
 {
 	using namespace json;
 
@@ -68,7 +94,7 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 	std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
 	std::filesystem::create_directories(SceneDir);
 
-	JSON Root = SerializeWorld(WorldContext.World, WorldContext);
+	JSON Root = SerializeWorld(WorldContext.World, WorldContext, PerspectiveCam);
 	Root[SceneKeys::Version] = 2;
 	Root[SceneKeys::Name] = FinalName;
 
@@ -80,7 +106,7 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 	}
 }
 
-json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext& Ctx)
+json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext& Ctx, UCameraComponent* PerspectiveCam)
 {
 	using namespace json;
 	JSON w = json::Object();
@@ -161,10 +187,10 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	}
 	w[SceneKeys::Actors] = Actors;
 
-	// ---- Camera: serialize active camera if present ----
-	JSON cam = SerializeCamera(World);
+	// ---- Perspective camera ----
+	JSON cam = SerializeCamera(PerspectiveCam);
 	if (cam.size() > 0) {
-		w["Camera"] = cam;
+		w["PerspectiveCamera"] = cam;
 	}
 
 	return w;
@@ -223,37 +249,8 @@ json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
 	TArray<FPropertyDescriptor> Descriptors;
 	Comp->GetEditableProperties(Descriptors);
 
-	// Special-case UStaticMeshComponent: expose material overrides and UVScrolls as arrays
-	if (Comp->IsA<UStaticMeshComponent>()) {
-		JSON materials = json::Array();
-		JSON uvscrolls = json::Array();
-
-		for (const auto& Prop : Descriptors) {
-			// Collect Element N and UVScroll N into arrays instead of numbered keys
-			if (Prop.Name == "Static Mesh") {
-				// Static Mesh is stored in the top-level Primitives block; avoid duplicating it here.
-				continue;
-			}
-			if (Prop.Name.rfind("Element ", 0) == 0) {
-				// Material path
-				FString* Val = static_cast<FString*>(Prop.ValuePtr);
-				materials.append(JSON(*Val));
-				continue;
-			}
-			if (Prop.Name.rfind("UVScroll ", 0) == 0) {
-				uint8_t* Val = static_cast<uint8_t*>(Prop.ValuePtr);
-				uvscrolls.append(JSON(static_cast<bool>(*Val != 0)));
-				continue;
-			}
-			props[Prop.Name] = SerializePropertyValue(Prop);
-		}
-
-		props["OverrideMaterials"] = materials;
-		props["OverrideUVScrolls"] = uvscrolls;
-		return props;
-	}
-
 	for (const auto& Prop : Descriptors) {
+		if (Prop.Name == "Static Mesh") continue; // Primitives 블록에 이미 저장됨
 		props[Prop.Name] = SerializePropertyValue(Prop);
 	}
 	return props;
@@ -292,8 +289,15 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	}
 	case EPropertyType::String:
 	case EPropertyType::StaticMeshRef:
-	case EPropertyType::Material:
 		return JSON(*static_cast<FString*>(Prop.ValuePtr));
+
+	case EPropertyType::MaterialSlot: {
+		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(Prop.ValuePtr);
+		JSON obj = json::Object();
+		obj["Path"]      = JSON(Slot->Path);
+		obj["UVScroll"]  = JSON(static_cast<bool>(Slot->bUVScroll != 0));
+		return obj;
+	}
 
 	case EPropertyType::ByteBool:
 		return JSON(static_cast<bool>(*static_cast<uint8_t*>(Prop.ValuePtr) != 0));
@@ -306,56 +310,23 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	}
 }
 
-// ---- Camera + Primitives helpers ----
+// ---- Camera helpers ----
 
-json::JSON FSceneSaveManager::SerializeCamera(UWorld* World)
+json::JSON FSceneSaveManager::SerializeCamera(UCameraComponent* Cam)
 {
 	using namespace json;
 	JSON cam = json::Object();
+	if (!Cam) return cam;
 
-	for (AActor* Actor : World->GetActors()) {
-		if (!Actor) continue;
-		for (UActorComponent* Comp : Actor->GetComponents()) {
-			if (!Comp) continue;
-			if (!Comp->IsA<UCameraComponent>()) continue;
+	const FMatrix& M = Cam->GetWorldMatrix();
+	WriteVec3(cam, "Location", M.GetLocation());
+	WriteVec3(cam, "Rotation", M.GetEuler());
 
-			UCameraComponent* C = static_cast<UCameraComponent*>(Comp);
-			const FMatrix& M = C->GetWorldMatrix();
-			FVector loc = M.GetLocation();
-			FVector rot = M.GetEuler();
-			FVector scale = M.GetScale();
+	const FCameraState& S = Cam->GetCameraState();
+	cam["FOV"]      = static_cast<double>(S.FOV);
+	cam["NearClip"] = static_cast<double>(S.NearZ);
+	cam["FarClip"]  = static_cast<double>(S.FarZ);
 
-			JSON locArr = json::Array();
-			locArr.append(static_cast<double>(loc.X));
-			locArr.append(static_cast<double>(loc.Y));
-			locArr.append(static_cast<double>(loc.Z));
-			cam["Location"] = locArr;
-
-			JSON rotArr = json::Array();
-			rotArr.append(static_cast<double>(rot.X));
-			rotArr.append(static_cast<double>(rot.Y));
-			rotArr.append(static_cast<double>(rot.Z));
-			cam["Rotation"] = rotArr;
-
-			JSON scaleArr = json::Array();
-			scaleArr.append(static_cast<double>(scale.X));
-			scaleArr.append(static_cast<double>(scale.Y));
-			scaleArr.append(static_cast<double>(scale.Z));
-			cam["Scale"] = scaleArr;
-
-			const FCameraState& S = C->GetCameraState();
-			JSON state = json::Object();
-			state["FOV"] = static_cast<double>(S.FOV);
-			state["AspectRatio"] = static_cast<double>(S.AspectRatio);
-			state["NearZ"] = static_cast<double>(S.NearZ);
-			state["FarZ"] = static_cast<double>(S.FarZ);
-			state["OrthoWidth"] = static_cast<double>(S.OrthoWidth);
-			state["bIsOrthogonal"] = S.bIsOrthogonal;
-			cam["State"] = state;
-
-			return cam; // first found camera
-		}
-	}
 	return cam;
 }
 
@@ -405,46 +376,24 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 	}
 }
 
-void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, UWorld* World)
+void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, FPerspectiveCameraData& OutCam)
 {
 	using namespace json;
 	if (CameraJSON.JSONType() == JSON::Class::Null) return;
 
-	UCameraComponent* Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
-	if (!Camera) return;
-
-	if (CameraJSON.hasKey("Location")) {
-		auto l = CameraJSON["Location"];
-		int i = 0; float x=0,y=0,z=0;
-		for (auto& e : l.ArrayRange()) { if (i==0) x = static_cast<float>(e.ToFloat()); else if (i==1) y = static_cast<float>(e.ToFloat()); else if (i==2) z = static_cast<float>(e.ToFloat()); i++; }
-		Camera->SetWorldLocation(FVector(x,y,z));
-	}
-	if (CameraJSON.hasKey("Rotation")) {
-		auto r = CameraJSON["Rotation"];
-		int i=0; float rx=0,ry=0,rz=0;
-		for (auto& e : r.ArrayRange()) { if (i==0) rx = static_cast<float>(e.ToFloat()); else if (i==1) ry = static_cast<float>(e.ToFloat()); else if (i==2) rz = static_cast<float>(e.ToFloat()); i++; }
-		Camera->SetRelativeRotation(FVector(rx,ry,rz));
-	}
-	if (CameraJSON.hasKey("State")) {
-		auto s = CameraJSON["State"];
-		FCameraState cs;
-		if (s.hasKey("FOV")) cs.FOV = static_cast<float>(s["FOV"].ToFloat());
-		if (s.hasKey("AspectRatio")) cs.AspectRatio = static_cast<float>(s["AspectRatio"].ToFloat());
-		if (s.hasKey("NearZ")) cs.NearZ = static_cast<float>(s["NearZ"].ToFloat());
-		if (s.hasKey("FarZ")) cs.FarZ = static_cast<float>(s["FarZ"].ToFloat());
-		if (s.hasKey("OrthoWidth")) cs.OrthoWidth = static_cast<float>(s["OrthoWidth"].ToFloat());
-		if (s.hasKey("bIsOrthogonal")) cs.bIsOrthogonal = s["bIsOrthogonal"].ToBool();
-		Camera->SetCameraState(cs);
-	}
-
-	World->SetActiveCamera(Camera);
+	if (CameraJSON.hasKey("Location")) OutCam.Location = ReadVec3(CameraJSON["Location"]);
+	if (CameraJSON.hasKey("Rotation")) OutCam.Rotation = ReadVec3(CameraJSON["Rotation"]);
+	if (CameraJSON.hasKey("FOV"))      OutCam.FOV      = static_cast<float>(CameraJSON["FOV"].ToFloat());
+	if (CameraJSON.hasKey("NearClip")) OutCam.NearClip = static_cast<float>(CameraJSON["NearClip"].ToFloat());
+	if (CameraJSON.hasKey("FarClip"))  OutCam.FarClip  = static_cast<float>(CameraJSON["FarClip"].ToFloat());
+	OutCam.bValid = true;
 }
 
 // ============================================================
 // Load
 // ============================================================
 
-void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext)
+void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext, FPerspectiveCameraData& OutCam)
 {
 	using json::JSON;
 	std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
@@ -481,9 +430,13 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		DeserializePrimitives(Prims, World, CreatedFromPrimitives);
 	}
 
-	if (root.hasKey("Camera")) {
-		auto Cam = root["Camera"];
-		DeserializeCamera(Cam, World);
+	// "PerspectiveCamera" 우선, 구버전 "Camera" 키도 지원
+	const char* CamKey = root.hasKey("PerspectiveCamera") ? "PerspectiveCamera"
+	                   : root.hasKey("Camera")            ? "Camera"
+	                   : nullptr;
+	if (CamKey) {
+		auto Cam = root[CamKey];
+		DeserializeCamera(Cam, OutCam);
 	}
 
 	// Deserialize Actors
@@ -610,29 +563,6 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 	TArray<FPropertyDescriptor> Descriptors;
 	Comp->GetEditableProperties(Descriptors);
 
-	// If this is a UStaticMeshComponent and arrays are present, map them into Element N / UVScroll N descriptors
-	if (Comp->IsA<UStaticMeshComponent>()) {
-		auto mapArrayToDescriptors = [&](const char* ArrayKey, const char* Prefix) {
-			if (!PropsJSON.hasKey(ArrayKey)) return;
-			auto arr = PropsJSON[ArrayKey];
-			int idx = 0;
-			for (auto& e : arr.ArrayRange()) {
-				string dname = string(Prefix) + std::to_string(idx);
-				for (auto& Prop : Descriptors) {
-					if (Prop.Name == dname) {
-						DeserializePropertyValue(Prop, const_cast<json::JSON&>(e));
-						Comp->PostEditProperty(Prop.Name.c_str());
-						break;
-					}
-				}
-				idx++;
-			}
-		};
-
-		mapArrayToDescriptors("OverrideMaterials", "Element ");
-		mapArrayToDescriptors("OverrideUVScrolls", "UVScroll ");
-	}
-
 	for (auto& Prop : Descriptors) {
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
 		auto Value = PropsJSON[Prop.Name.c_str()];
@@ -641,7 +571,7 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 	}
 
 	// 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음
-	// (예: SetStaticMesh → OverrideMaterialPaths 생성 → "Element N" 디스크립터 추가)
+	// (예: SetStaticMesh → MaterialSlots 생성 → "Element N" 디스크립터 추가)
 	TArray<FPropertyDescriptor> Descriptors2;
 	Comp->GetEditableProperties(Descriptors2);
 
@@ -693,9 +623,15 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	}
 	case EPropertyType::String:
 	case EPropertyType::StaticMeshRef:
-	case EPropertyType::Material:
 		*static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
 		break;
+
+	case EPropertyType::MaterialSlot: {
+		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
+		if (Value.hasKey("Path"))     Slot->Path      = Value["Path"].ToString();
+		if (Value.hasKey("UVScroll")) Slot->bUVScroll = Value["UVScroll"].ToBool() ? 1 : 0;
+		break;
+	}
 
 	case EPropertyType::Name:
 		*static_cast<FName*>(Prop.ValuePtr) = FName(Value.ToString());
