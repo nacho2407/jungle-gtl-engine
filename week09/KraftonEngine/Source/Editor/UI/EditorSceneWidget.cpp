@@ -1,8 +1,10 @@
 ﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Core/Common.h"
 #include "GameFramework/WorldContext.h"
+#include "Component/CameraComponent.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
@@ -61,7 +63,19 @@ void FEditorSceneWidget::Render(float DeltaTime)
 	if (ImGui::Button("Save Scene"))
 	{
 		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
-		if (Ctx) FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx);
+		if (Ctx)
+		{
+			UCameraComponent* PerspectiveCam = nullptr;
+			for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+			{
+				if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective)
+				{
+					PerspectiveCam = VC->GetCamera();
+					break;
+				}
+			}
+			FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx, PerspectiveCam);
+		}
 		SceneSaveNotificationTimer = NotificationTimer;
 		RefreshSceneFileList();
 	}
@@ -101,13 +115,37 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 			EditorEngine->ClearScene();
 			FWorldContext LoadCtx;
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx);
+			FPerspectiveCameraData CamData;
+			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
 			if (LoadCtx.World)
 			{
 				EditorEngine->GetWorldList().push_back(LoadCtx);
 				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
 			}
 			EditorEngine->ResetViewport();
+
+			// ResetViewport()가 카메라를 기본값으로 초기화하므로 그 이후에 복원
+			if (CamData.bValid)
+			{
+				for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+				{
+					if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective)
+					{
+						if (UCameraComponent* Cam = VC->GetCamera())
+						{
+							Cam->SetWorldLocation(CamData.Location);
+							Cam->SetRelativeRotation(CamData.Rotation);
+							FCameraState CS = Cam->GetCameraState();
+							CS.FOV   = CamData.FOV;
+							CS.NearZ = CamData.NearClip;
+							CS.FarZ  = CamData.FarClip;
+							Cam->SetCameraState(CS);
+						}
+						break;
+					}
+				}
+			}
+
 			SceneLoadNotificationTimer = NotificationTimer;
 		}
 		if (SceneLoadNotificationTimer > 0.0f)

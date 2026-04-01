@@ -4,8 +4,10 @@
 
 #include <fstream>
 #include <filesystem>
+#include <d3d11.h>
 #include "DDSTextureLoader.h"
 #include "UI/EditorConsoleWidget.h"
+#include "Profiling/MemoryStats.h"
 
 namespace ResourceKey
 {
@@ -84,6 +86,17 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 	auto LoadSRV = [&](FTextureAtlasResource& Resource) -> bool
 	{
+		if (Resource.SRV)
+		{
+			if (Resource.TrackedMemoryBytes > 0)
+			{
+				MemoryStats::SubTextureMemory(Resource.TrackedMemoryBytes);
+				Resource.TrackedMemoryBytes = 0;
+			}
+			Resource.SRV->Release();
+			Resource.SRV = nullptr;
+		}
+
 		std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Resource.Path));
 		HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
 			Device,
@@ -96,7 +109,25 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 			nullptr,
 			&Resource.SRV
 		);
-		return SUCCEEDED(hr);
+		if (FAILED(hr) || !Resource.SRV)
+		{
+			return false;
+		}
+
+		ID3D11Resource* TextureResource = nullptr;
+		Resource.SRV->GetResource(&TextureResource);
+		Resource.TrackedMemoryBytes = MemoryStats::CalculateTextureMemory(TextureResource);
+		if (TextureResource)
+		{
+			TextureResource->Release();
+		}
+
+		if (Resource.TrackedMemoryBytes > 0)
+		{
+			MemoryStats::AddTextureMemory(Resource.TrackedMemoryBytes);
+		}
+
+		return true;
 	};
 
 	for (auto& [Key, Resource] : FontResources)
@@ -116,10 +147,20 @@ void FResourceManager::ReleaseGPUResources()
 {
 	for (auto& [Key, Resource] : FontResources)
 	{
+		if (Resource.TrackedMemoryBytes > 0)
+		{
+			MemoryStats::SubTextureMemory(Resource.TrackedMemoryBytes);
+			Resource.TrackedMemoryBytes = 0;
+		}
 		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
 	}
 	for (auto& [Key, Resource] : ParticleResources)
 	{
+		if (Resource.TrackedMemoryBytes > 0)
+		{
+			MemoryStats::SubTextureMemory(Resource.TrackedMemoryBytes);
+			Resource.TrackedMemoryBytes = 0;
+		}
 		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
 	}
 }

@@ -9,7 +9,7 @@ IMPLEMENT_CLASS(AStaticMeshActor, AActor)
 
 void AStaticMeshActor::InitDefaultComponents(const FString& UStaticMeshFileName)
 {
-	StaticMeshComponent = AddComponent<UStaticMeshComp>();
+	StaticMeshComponent = AddComponent<UStaticMeshComponent>();
 	SetRootComponent(StaticMeshComponent);
 
 	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();

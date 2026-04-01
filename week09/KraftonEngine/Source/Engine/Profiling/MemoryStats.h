@@ -1,59 +1,62 @@
 ﻿#pragma once
 #include "Core/CoreTypes.h"
 
+struct ID3D11Resource;
+
 class MemoryStats
 {
 public:
-	static void OnAllocated(uint32 Size)
+	static void OnAllocated(uint64 Size)
 	{
 		TotalAllocationBytes += Size;
 		TotalAllocationCount++;
 	}
 
-	static void OnDeallocated(uint32 Size)
+	static void OnDeallocated(uint64 Size)
 	{
 		TotalAllocationBytes -= Size;
 		TotalAllocationCount--;
 	}
 
-	static void AddPixelShaderMemory(uint32 Size) { PixelShaderMemory += Size; }
-	static void SubPixelShaderMemory(uint32 Size) { PixelShaderMemory -= Size; }
+	static void AddPixelShaderMemory(uint64 Size) { PixelShaderMemory += Size; }
+	static void SubPixelShaderMemory(uint64 Size) { PixelShaderMemory -= Size; }
 
-	static void AddVertexShaderMemory(uint32 Size) { VertexShaderMemory += Size; }
-	static void SubVertexShaderMemory(uint32 Size) { VertexShaderMemory -= Size; }
+	static void AddVertexShaderMemory(uint64 Size) { VertexShaderMemory += Size; }
+	static void SubVertexShaderMemory(uint64 Size) { VertexShaderMemory -= Size; }
 
 	// Texture
-	static void AddTextureMemory(uint32 Size) { TextureMemory += Size; }
-	static void SubTextureMemory(uint32 Size) { TextureMemory -= Size; }
+	static void AddTextureMemory(uint64 Size) { TextureMemory += Size; }
+	static void SubTextureMemory(uint64 Size) { TextureMemory -= Size; }
 
 	// GPU Buffer
-	static void AddVertexBufferMemory(uint32 Size) { VertexBufferMemory += Size; }
-	static void SubVertexBufferMemory(uint32 Size) { VertexBufferMemory -= Size; }
+	static void AddVertexBufferMemory(uint64 Size) { VertexBufferMemory += Size; }
+	static void SubVertexBufferMemory(uint64 Size) { VertexBufferMemory -= Size; }
 
-	static void AddIndexBufferMemory(uint32 Size) { IndexBufferMemory += Size; }
-	static void SubIndexBufferMemory(uint32 Size) { IndexBufferMemory -= Size; }
+	static void AddIndexBufferMemory(uint64 Size) { IndexBufferMemory += Size; }
+	static void SubIndexBufferMemory(uint64 Size) { IndexBufferMemory -= Size; }
 
 	// StaticMesh CPU
-	static void AddStaticMeshCPUMemory(uint32 Size) { StaticMeshCPUMemory += Size; }
-	static void SubStaticMeshCPUMemory(uint32 Size) { StaticMeshCPUMemory -= Size; }
+	static void AddStaticMeshCPUMemory(uint64 Size) { StaticMeshCPUMemory += Size; }
+	static void SubStaticMeshCPUMemory(uint64 Size) { StaticMeshCPUMemory -= Size; }
 
-	static uint32 GetTotalAllocationBytes() { return TotalAllocationBytes; }
+	static uint64 GetTotalAllocationBytes() { return TotalAllocationBytes; }
 	static uint32 GetTotalAllocationCount() { return TotalAllocationCount; }
-	static uint32 GetPixelShaderMemory() { return PixelShaderMemory; }
-	static uint32 GetVertexShaderMemory() { return VertexShaderMemory; }
-	static uint32 GetTextureMemory() { return TextureMemory; }
-	static uint32 GetVertexBufferMemory() { return VertexBufferMemory; }
-	static uint32 GetIndexBufferMemory() { return IndexBufferMemory; }
-	static uint32 GetStaticMeshCPUMemory() { return StaticMeshCPUMemory; }
+	static uint64 GetPixelShaderMemory() { return PixelShaderMemory; }
+	static uint64 GetVertexShaderMemory() { return VertexShaderMemory; }
+	static uint64 GetTextureMemory() { return TextureMemory; }
+	static uint64 GetVertexBufferMemory() { return VertexBufferMemory; }
+	static uint64 GetIndexBufferMemory() { return IndexBufferMemory; }
+	static uint64 GetStaticMeshCPUMemory() { return StaticMeshCPUMemory; }
 
+	static uint64 CalculateTextureMemory(ID3D11Resource* Resource);
 
 private:
-	static uint32 TotalAllocationBytes;
+	static uint64 TotalAllocationBytes;
 	static uint32 TotalAllocationCount;
-	static uint32 PixelShaderMemory;
-	static uint32 VertexShaderMemory;
-	static uint32 TextureMemory;
-	static uint32 VertexBufferMemory;
-	static uint32 IndexBufferMemory;
-	static uint32 StaticMeshCPUMemory;
+	static uint64 PixelShaderMemory;
+	static uint64 VertexShaderMemory;
+	static uint64 TextureMemory;
+	static uint64 VertexBufferMemory;
+	static uint64 IndexBufferMemory;
+	static uint64 StaticMeshCPUMemory;
 };

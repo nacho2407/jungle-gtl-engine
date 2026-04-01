@@ -47,37 +47,37 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %u bytes", MemoryStats::GetPixelShaderMemory());
+			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetPixelShaderMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %u bytes", MemoryStats::GetVertexShaderMemory());
+			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetVertexShaderMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %u bytes", MemoryStats::GetTextureMemory());
+			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetVertexBufferMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %u bytes", MemoryStats::GetVertexBufferMemory());
+			snprintf(Buffer, sizeof(Buffer), "IndexBuffer Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetIndexBufferMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "IndexBuffer Memory : %u bytes", MemoryStats::GetIndexBufferMemory());
+			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetStaticMeshCPUMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %u bytes", MemoryStats::GetStaticMeshCPUMemory());
+			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %llu bytes", static_cast<unsigned long long>(MemoryStats::GetTextureMemory()));
 			Group.Lines.push_back(FString(Buffer));
 		}
 
