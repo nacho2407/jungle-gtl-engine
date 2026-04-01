@@ -215,6 +215,7 @@ bool FObjViewerEngineLoop::RunFrameOnce()
     RenderData.SceneView      = &SceneView;
     RenderData.bShowGrid      = false;
     RenderData.bShowWorldAxes = true;
+    RenderData.CullMode       = CullMode;
 
     Renderer->BeginFrame();
     Renderer->SetSceneFrameData(std::move(FrameData));
@@ -296,15 +297,17 @@ void FObjViewerEngineLoop::OpenFileDialog()
 void FObjViewerEngineLoop::DrawUI()
 {
     ViewerUI::FViewerUIInput In;
-    In.MeshName        = LoadedMesh ? LoadedMeshName.c_str() : nullptr;
-    In.FPS             = FPS;
-    In.CurrentViewMode = ViewMode;
-    In.bConvertCoords  = bConvertCoords;
+    In.MeshName         = LoadedMesh ? LoadedMeshName.c_str() : nullptr;
+    In.FPS              = FPS;
+    In.CurrentViewMode  = ViewMode;
+    In.SelectedCullMode = CullMode;
+    In.bConvertCoords   = bConvertCoords;
 
     const ViewerUI::FViewerUIOutput Out = ImGuiLayer.Draw(In);
     if (Out.bOpenRequested)
         OpenFileDialog();
     ViewMode       = Out.SelectedViewMode;
+    CullMode       = Out.SelectedCullMode;
     bConvertCoords = Out.bConvertCoords;
 
     if (Out.CameraCommand != ViewerUI::ECC_None)
