@@ -45,6 +45,14 @@ public:
     POINT GetLeftDragVector() const;
     float GetLeftDragDistance() const;
 
+	// Middle drag
+	bool IsDraggingMiddle() const { return GetKey(VK_MBUTTON) && MouseMoved(); }
+	bool GetMiddleDragStart() const { return bMiddleDragJustStarted; }
+	bool GetMiddleDragging() const { return bMiddleDragging; }
+	bool GetMiddleDragEnd() const { return bMiddleDragJustEnded; }
+	POINT GetMiddleDragVector() const;
+	float GetMiddleDragDistance() const;
+
     // Right drag
     bool IsDraggingRight() const { return GetKey(VK_RBUTTON) && MouseMoved(); }
     bool GetRightDragStart() const { return bRightDragJustStarted; }
@@ -76,18 +84,24 @@ private:
     POINT PrevMousePos = { 0, 0 };
 
     bool bLeftDragCandidate = false;
+    bool bMiddleDragCandidate = false;
     bool bRightDragCandidate = false;
     bool bLeftDragging = false;
+    bool bMiddleDragging = false;
     bool bRightDragging = false;
 
     bool bLeftDragJustStarted = false;
+    bool bMiddleDragJustStarted = false;
     bool bRightDragJustStarted = false;
     bool bLeftDragJustEnded = false;
+    bool bMiddleDragJustEnded = false;
     bool bRightDragJustEnded = false;
 
     // Drag origin
     POINT LeftDragStartPos = { 0, 0 };
     POINT LeftMouseDownPos = { 0, 0 };
+	POINT MiddleDragStartPos = { 0, 0 };
+    POINT MiddleMouseDownPos = { 0, 0 };
     POINT RightDragStartPos = { 0, 0 };
     POINT RightMouseDownPos = { 0, 0 };
 
