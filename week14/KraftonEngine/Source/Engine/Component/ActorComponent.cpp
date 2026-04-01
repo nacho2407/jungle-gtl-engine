@@ -20,14 +20,8 @@ void UActorComponent::Deactivate()
 	bCanEverTick = false;
 }
 
-void UActorComponent::ExecuteTick(float DeltaTime)
+void UActorComponent::TickComponent(float DeltaTime)
 {
-	if (bCanEverTick == false || bIsActive == false)
-	{
-		return;
-	}
-
-	TickComponent(DeltaTime);
 }
 
 void UActorComponent::SetActive(bool bNewActive)
@@ -54,4 +48,14 @@ void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
 	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, &bAutoActivate });
 	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, &bCanEverTick });
+}
+
+void UActorComponent::Tick(float DeltaTime)
+{
+	if (bCanEverTick == false || bIsActive == false)
+	{
+		return;
+	}
+
+	TickComponent(DeltaTime);
 }

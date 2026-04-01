@@ -4,15 +4,6 @@
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
-// SubUV 파티클 스프라이트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
-// PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
-// MeshBuffer를 사용하지 않으며, SubUVBatcher가 드로우콜을 처리합니다.
-//
-// 사용 예:
-//   USubUVComponent* Comp = Actor->AddComponent<USubUVComponent>();
-//   Comp->SetParticle(FName("Explosion"));
-//   Comp->SetFrameIndex(CurrentFrame);
-//   Comp->SetSpriteSize(2.0f, 2.0f);
 class USubUVComponent : public UBillboardComponent
 {
 public:
@@ -49,6 +40,7 @@ public:
 
 	void CollectRender(FRenderBus& Bus) const override;
 	void UpdateWorldAABB() const override;
+
 protected:
 	void TickComponent(float DeltaTime) override;
 

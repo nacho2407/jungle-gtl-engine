@@ -9,9 +9,9 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Texture/Texture2D.h"
 
-IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
+IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
 
-void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
+void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 {
 	StaticMesh = InMesh;
 	if (InMesh)
@@ -44,7 +44,7 @@ void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 	CacheLocalBounds();
 }
 
-void UStaticMeshComp::CacheLocalBounds()
+void UStaticMeshComponent::CacheLocalBounds()
 {
 	bHasValidBounds = false;
 	if (!StaticMesh) return;
@@ -68,12 +68,12 @@ void UStaticMeshComp::CacheLocalBounds()
 	bHasValidBounds = true;
 }
 
-UStaticMesh* UStaticMeshComp::GetStaticMesh() const
+UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
 	return StaticMesh;
 }
 
-void UStaticMeshComp::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
+void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 {
 	// 인덱스가 배열 범위를 벗어나지 않는지 안전 검사 (IsValidIndex 등 사용)
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
@@ -82,7 +82,7 @@ void UStaticMeshComp::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 	}
 }
 
-UMaterial* UStaticMeshComp::GetMaterial(int32 ElementIndex) const
+UMaterial* UStaticMeshComponent::GetMaterial(int32 ElementIndex) const
 {
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
 	{
@@ -91,7 +91,7 @@ UMaterial* UStaticMeshComp::GetMaterial(int32 ElementIndex) const
 	return nullptr;
 }
 
-void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
+void UStaticMeshComponent::CollectRender(FRenderBus& Bus) const
 {
 	if (!Bus.GetShowFlags().bPrimitives) return;
 	FMeshBuffer* Buffer = GetMeshBuffer();
@@ -138,7 +138,7 @@ void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
 	Bus.AddCommand(ERenderPass::Opaque, Cmd);
 }
 
-void UStaticMeshComp::CollectSelection(FRenderBus& Bus) const
+void UStaticMeshComponent::CollectSelection(FRenderBus& Bus) const
 {
 	FMeshBuffer* Buffer = GetMeshBuffer();
 	if (!Buffer || !Buffer->IsValid()) return;
@@ -161,7 +161,7 @@ void UStaticMeshComp::CollectSelection(FRenderBus& Bus) const
 	}
 }
 
-FMeshBuffer* UStaticMeshComp::GetMeshBuffer() const
+FMeshBuffer* UStaticMeshComponent::GetMeshBuffer() const
 {
 	if (!StaticMesh) return nullptr;
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
@@ -169,7 +169,7 @@ FMeshBuffer* UStaticMeshComp::GetMeshBuffer() const
 	return Asset->RenderBuffer.get();
 }
 
-void UStaticMeshComp::UpdateWorldAABB() const
+void UStaticMeshComponent::UpdateWorldAABB() const
 {
 	if (!bHasValidBounds)
 	{
@@ -193,7 +193,7 @@ void UStaticMeshComp::UpdateWorldAABB() const
 	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
 }
 
-bool UStaticMeshComp::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
+bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
 	if (!StaticMesh) return false;
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
@@ -213,16 +213,16 @@ bool UStaticMeshComp::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResu
 	return bHit;
 }
 
-void UStaticMeshComp::Serialize(bool bIsLoading, json::JSON& Handle)
+void UStaticMeshComponent::Serialize(bool bIsLoading, json::JSON& Handle)
 {
 	/*if (bIsLoading)
 	{
-		FString AssetName; 
-		
+		FString AssetName;
+
 	}*/
 }
 
-void UStaticMeshComp::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
@@ -234,7 +234,7 @@ void UStaticMeshComp::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	}
 }
 
-void UStaticMeshComp::PostEditProperty(const char* PropertyName)
+void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	if (strcmp(PropertyName, "Static Mesh") == 0)
 	{

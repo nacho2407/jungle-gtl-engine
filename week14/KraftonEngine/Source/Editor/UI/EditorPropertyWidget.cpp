@@ -509,9 +509,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		FString* Val = static_cast<FString*>(Prop.ValuePtr);
 		int32 ElementIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
 
-		if (ElementIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComp>())
+		if (ElementIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComponent>())
 		{
-			UStaticMeshComp* StaticMeshComp = static_cast<UStaticMeshComp*>(SelectedComponent);
+			UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(SelectedComponent);
 			FString SlotName = "None";
 			if (StaticMeshComp->GetStaticMesh() && ElementIdx < StaticMeshComp->GetStaticMesh()->GetStaticMaterials().size())
 				SlotName = StaticMeshComp->GetStaticMesh()->GetStaticMaterials()[ElementIdx].MaterialSlotName;
@@ -519,7 +519,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			// Left Column: [Element N] / [SlotName]
 			ImGui::BeginGroup();
 			ImGui::Text("Element %d", ElementIdx);
-			
+
 			// SlotName 표시 (TextDisabled 스타일 적용)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 			ImGui::TextUnformatted(SlotName.c_str());
@@ -532,7 +532,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 			// Right Column: [Material Combo] / [Scroll Checkbox]
 			ImGui::BeginGroup();
-			
+
 			ImGui::SetNextItemWidth(-1);
 			if (ImGui::BeginCombo("##Mat", Val->c_str()))
 			{
