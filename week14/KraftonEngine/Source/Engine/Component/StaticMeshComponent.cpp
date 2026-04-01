@@ -9,9 +9,9 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Texture/Texture2D.h"
 
-IMPLEMENT_CLASS(UStaticMeshComp, UMeshComponent)
+IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
 
-void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
+void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 {
 	StaticMesh = InMesh;
 	if (InMesh)
@@ -20,31 +20,29 @@ void UStaticMeshComp::SetStaticMesh(UStaticMesh* InMesh)
 		const TArray<FStaticMaterial>& DefaultMaterials = StaticMesh->GetStaticMaterials();
 
 		OverrideMaterials.resize(DefaultMaterials.size());
-		OverrideMaterialPaths.resize(DefaultMaterials.size()); // 경로 배열도 사이즈 맞춤
-		OverrideUVScrolls.resize(DefaultMaterials.size());
+		MaterialSlots.resize(DefaultMaterials.size());
 
-		for (int32 i = 0; i < DefaultMaterials.size(); ++i)
+		for (int32 i = 0; i < (int32)DefaultMaterials.size(); ++i)
 		{
-			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
-			OverrideUVScrolls[i] = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
+			OverrideMaterials[i]        = DefaultMaterials[i].MaterialInterface;
+			MaterialSlots[i].bUVScroll  = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
 
 			if (OverrideMaterials[i])
-				OverrideMaterialPaths[i] = OverrideMaterials[i]->GetAssetPathFileName();
+				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
 			else
-				OverrideMaterialPaths[i] = "None";
+				MaterialSlots[i].Path = "None";
 		}
 	}
 	else
 	{
 		StaticMeshPath = "None";
 		OverrideMaterials.clear();
-		OverrideMaterialPaths.clear();
-		OverrideUVScrolls.clear();
+		MaterialSlots.clear();
 	}
 	CacheLocalBounds();
 }
 
-void UStaticMeshComp::CacheLocalBounds()
+void UStaticMeshComponent::CacheLocalBounds()
 {
 	bHasValidBounds = false;
 	if (!StaticMesh) return;
@@ -68,12 +66,12 @@ void UStaticMeshComp::CacheLocalBounds()
 	bHasValidBounds = true;
 }
 
-UStaticMesh* UStaticMeshComp::GetStaticMesh() const
+UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
 	return StaticMesh;
 }
 
-void UStaticMeshComp::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
+void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 {
 	// 인덱스가 배열 범위를 벗어나지 않는지 안전 검사 (IsValidIndex 등 사용)
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
@@ -82,7 +80,7 @@ void UStaticMeshComp::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 	}
 }
 
-UMaterial* UStaticMeshComp::GetMaterial(int32 ElementIndex) const
+UMaterial* UStaticMeshComponent::GetMaterial(int32 ElementIndex) const
 {
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
 	{
@@ -91,7 +89,7 @@ UMaterial* UStaticMeshComp::GetMaterial(int32 ElementIndex) const
 	return nullptr;
 }
 
-void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
+void UStaticMeshComponent::CollectRender(FRenderBus& Bus) const
 {
 	if (!Bus.GetShowFlags().bPrimitives) return;
 	FMeshBuffer* Buffer = GetMeshBuffer();
@@ -125,9 +123,9 @@ void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
 						Draw.DiffuseColor = Mat->DiffuseColor;
 					}
 
-					if (i < OverrideUVScrolls.size())
+					if (i < (int32)MaterialSlots.size())
 					{
-						Draw.bIsUVScroll = OverrideUVScrolls[i];
+						Draw.bIsUVScroll = MaterialSlots[i].bUVScroll;
 					}
 					break;
 				}
@@ -138,7 +136,7 @@ void UStaticMeshComp::CollectRender(FRenderBus& Bus) const
 	Bus.AddCommand(ERenderPass::Opaque, Cmd);
 }
 
-void UStaticMeshComp::CollectSelection(FRenderBus& Bus) const
+void UStaticMeshComponent::CollectSelection(FRenderBus& Bus) const
 {
 	FMeshBuffer* Buffer = GetMeshBuffer();
 	if (!Buffer || !Buffer->IsValid()) return;
@@ -161,7 +159,7 @@ void UStaticMeshComp::CollectSelection(FRenderBus& Bus) const
 	}
 }
 
-FMeshBuffer* UStaticMeshComp::GetMeshBuffer() const
+FMeshBuffer* UStaticMeshComponent::GetMeshBuffer() const
 {
 	if (!StaticMesh) return nullptr;
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
@@ -169,7 +167,7 @@ FMeshBuffer* UStaticMeshComp::GetMeshBuffer() const
 	return Asset->RenderBuffer.get();
 }
 
-void UStaticMeshComp::UpdateWorldAABB() const
+void UStaticMeshComponent::UpdateWorldAABB() const
 {
 	if (!bHasValidBounds)
 	{
@@ -193,7 +191,7 @@ void UStaticMeshComp::UpdateWorldAABB() const
 	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
 }
 
-bool UStaticMeshComp::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
+bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
 	if (!StaticMesh) return false;
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
@@ -213,28 +211,31 @@ bool UStaticMeshComp::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResu
 	return bHit;
 }
 
-void UStaticMeshComp::Serialize(bool bIsLoading, json::JSON& Handle)
+void UStaticMeshComponent::Serialize(bool bIsLoading, json::JSON& Handle)
 {
 	/*if (bIsLoading)
 	{
-		FString AssetName; 
-		
+		FString AssetName;
+
 	}*/
 }
 
-void UStaticMeshComp::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
 
-	for (int32 i = 0; i < OverrideMaterialPaths.size(); ++i)
+	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
 	{
-		OutProps.push_back({ "Element " + std::to_string(i), EPropertyType::Material, &OverrideMaterialPaths[i] });
-		OutProps.push_back({ "UVScroll " + std::to_string(i), EPropertyType::ByteBool, &OverrideUVScrolls[i] });
+		FPropertyDescriptor Desc;
+		Desc.Name     = "Element " + std::to_string(i);
+		Desc.Type     = EPropertyType::MaterialSlot;
+		Desc.ValuePtr = &MaterialSlots[i];
+		OutProps.push_back(Desc);
 	}
 }
 
-void UStaticMeshComp::PostEditProperty(const char* PropertyName)
+void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	if (strcmp(PropertyName, "Static Mesh") == 0)
 	{
@@ -257,9 +258,9 @@ void UStaticMeshComp::PostEditProperty(const char* PropertyName)
 		int32 Index = atoi(&PropertyName[8]);
 
 		// 인덱스 범위 유효성 검사
-		if (Index >= 0 && Index < OverrideMaterialPaths.size())
+		if (Index >= 0 && Index < (int32)MaterialSlots.size())
 		{
-			FString NewMatPath = OverrideMaterialPaths[Index];
+			FString NewMatPath = MaterialSlots[Index].Path;
 
 			if (NewMatPath == "None" || NewMatPath.empty())
 			{

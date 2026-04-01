@@ -8,7 +8,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
-#include "Math/Utils.h"
+#include "Math/MathUtils.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
 #include "WICTextureLoader.h"
@@ -186,6 +186,19 @@ void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 		VC->CreateCamera();
 		VC->SetWorld(InWorld);
 		VC->ResetCamera();
+
+		// 카메라 재생성 후 현재 뷰포트 크기로 AspectRatio 동기화
+		if (FViewport* VP = VC->GetViewport())
+		{
+			UCameraComponent* Cam = VC->GetCamera();
+			if (Cam && VP->GetWidth() > 0 && VP->GetHeight() > 0)
+			{
+				Cam->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+			}
+		}
+
+		// 기존 뷰포트 타입(Ortho 방향 등)을 새 카메라에 재적용
+		VC->SetViewportType(VC->GetRenderOptions().ViewportType);
 	}
 	if (ActiveViewportClient && InWorld)
 		InWorld->SetActiveCamera(ActiveViewportClient->GetCamera());
@@ -771,11 +784,11 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			if (ImGui::BeginPopup(GizmoPopupID))
 			{
 				int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-				if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(UGizmoComponent::Translate)))
+				if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
 					Gizmo->SetTranslateMode();
-				if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(UGizmoComponent::Rotate)))
+				if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
 					Gizmo->SetRotateMode();
-				if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(UGizmoComponent::Scale)))
+				if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
 					Gizmo->SetScaleMode();
 				ImGui::EndPopup();
 			}

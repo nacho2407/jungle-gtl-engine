@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Core/CoreTypes.h"
@@ -35,6 +35,7 @@ private:
 	ID3D11ShaderResourceView* SRV = nullptr;
 	uint32 Width = 0;
 	uint32 Height = 0;
+	uint64 TrackedTextureMemory = 0;
 
 	// path → UTexture2D* 캐시 (소유권은 UObjectManager)
 	static std::map<FString, UTexture2D*> TextureCache;

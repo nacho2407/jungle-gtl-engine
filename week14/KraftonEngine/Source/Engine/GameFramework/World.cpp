@@ -11,6 +11,20 @@ UWorld::~UWorld()
 	}
 }
 
+void UWorld::DestroyActor(AActor* Actor)
+{
+	// remove and clean up
+	if (!Actor) return;
+	Actor->EndPlay();
+	// Remove from actor list
+	auto it = std::find(Actors.begin(), Actors.end(), Actor);
+	if (it != Actors.end())
+		Actors.erase(it);
+
+	// Mark for garbage collection
+	UObjectManager::Get().DestroyObject(Actor);
+}
+
 void UWorld::InitWorld()
 {
 

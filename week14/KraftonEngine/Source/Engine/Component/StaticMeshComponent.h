@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/MeshComponent.h"
+#include "Core/PropertyTypes.h"
 #include "Mesh/ObjManager.h"
 #include "Mesh/StaticMesh.h"
 
@@ -8,14 +9,14 @@ class UMaterial;
 
 namespace json { class JSON; }
 
-// UStaticMeshComp — 월드 배치 컴포넌트
-class UStaticMeshComp : public UMeshComponent
+// UStaticMeshComponent — 월드 배치 컴포넌트
+class UStaticMeshComponent : public UMeshComponent
 {
 public:
-	DECLARE_CLASS(UStaticMeshComp, UMeshComponent)
+	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
 
-	UStaticMeshComp() = default;
-	~UStaticMeshComp() override = default;
+	UStaticMeshComponent() = default;
+	~UStaticMeshComponent() override = default;
 
 	FMeshBuffer* GetMeshBuffer() const override;
 	void CollectRender(FRenderBus& Bus) const override;
@@ -44,8 +45,7 @@ private:
 	UStaticMesh* StaticMesh = nullptr;
 	FString StaticMeshPath = "None";
 	TArray<UMaterial*> OverrideMaterials;
-	TArray<FString> OverrideMaterialPaths;
-	TArray<uint8> OverrideUVScrolls;
+	TArray<FMaterialSlot> MaterialSlots; // 경로 + UVScroll 묶음
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
 	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };

@@ -29,10 +29,12 @@ void UBillboardComponent::CollectSelection(FRenderBus& Bus) const
 
 void UBillboardComponent::TickComponent(float DeltaTime)
 {
-	FVector WorldLocation = GetWorldLocation();
+	if (!GetOwner() || !GetOwner()->GetWorld()) return;
 
 	const UCameraComponent* ActiveCamera = GetOwner()->GetWorld()->GetActiveCamera();
+	if (!ActiveCamera) return;
 
+	FVector WorldLocation = GetWorldLocation();
 	FVector CameraForward = ActiveCamera->GetForwardVector().Normalized();
 	FVector Forward = CameraForward * -1;
 	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
