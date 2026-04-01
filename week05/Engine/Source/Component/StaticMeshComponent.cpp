@@ -74,7 +74,6 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 
 			if (!MeshFileName.empty())
 			{
-				UE_LOG("여기 들어옴?");
 				UStaticMesh* LoadedMesh = FObjManager::LoadStaticMeshAsset(MeshFileName);
 				SetStaticMesh(LoadedMesh);
 			}
