@@ -34,4 +34,5 @@ private:
 
     // 선택 액터가 바뀔 때 상태 초기화를 위한 추적용
     UStaticMesh* LastMeshAsset = nullptr;
+    UStaticMeshComponent* LastMeshComp = nullptr;
 };
