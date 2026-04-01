@@ -99,6 +99,10 @@ ScaffoldingReadMe.txt
 # StyleCop
 StyleCopReport.xml
 
+# Mesh cache (binary)
+*.bin
+*.mbin
+
 # Files built by Visual Studio
 *_i.c
 *_p.c

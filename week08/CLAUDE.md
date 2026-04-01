@@ -10,13 +10,13 @@ DirectX 11 3D scene editor engine built with C++ and ImGui. Actor/Component arch
 
 ```bash
 # Build (x64 Debug) via MSBuild
-msbuild CraftonEngine.sln /p:Configuration=Debug /p:Platform=x64
+msbuild KraftonEngine.sln /p:Configuration=Debug /p:Platform=x64
 
 # Build (x64 Release)
-msbuild CraftonEngine.sln /p:Configuration=Release /p:Platform=x64
+msbuild KraftonEngine.sln /p:Configuration=Release /p:Platform=x64
 
 # Build OBJ Viewer (x64) — standalone mesh preview tool
-msbuild CraftonEngine.sln /p:Configuration=ObjViewDebug /p:Platform=x64
+msbuild KraftonEngine.sln /p:Configuration=ObjViewDebug /p:Platform=x64
 
 # Regenerate project files after adding/removing source files
 python Scripts/GenerateProjectFiles.py
@@ -25,7 +25,7 @@ python Scripts/GenerateProjectFiles.py
 ./ReleaseBuild.bat
 ```
 
-Output: `CraftonEngine/Bin/<Configuration>/CraftonEngine.exe`
+Output: `KraftonEngine/Bin/<Configuration>/KraftonEngine.exe`
 
 Build configurations: `Debug`, `Release`, `ObjViewDebug` (x64/x86). ObjViewDebug defines `IS_OBJ_VIEWER=1` and excludes most Editor sources, launching `UObjViewerEngine` instead of `UEditorEngine`.
 
@@ -67,14 +67,14 @@ Standalone mesh preview mode (`Source/ObjViewer/`). `UObjViewerEngine` subclasse
 - Include paths root at: `Source/Engine`, `Source`, `Source/Editor`, `Source/ObjViewer`, `ThirdParty`, `ThirdParty/ImGui`
 - Headers use relative paths from these roots: `#include "Engine/Core/InputSystem.h"`
 - Naming: `F` prefix for structs/data types (FVector, FName), `U` for UObject derivatives, `A` for Actors, `E` for enums
-- HLSL shaders in `CraftonEngine/Shaders/` are compiled at runtime
+- HLSL shaders in `KraftonEngine/Shaders/` are compiled at runtime
 
 ## Key Source Layout
 
-- `CraftonEngine/Source/Engine/` — core engine (Object, Math, Render, GameFramework, Component, Serialization, Core, Runtime)
-- `CraftonEngine/Source/Editor/` — editor layer (UI widgets, viewport, selection, settings)
-- `CraftonEngine/Source/ObjViewer/` — standalone mesh viewer (ObjViewerEngine, Panel, RenderPipeline, ViewportClient)
-- `CraftonEngine/Shaders/` — 8 HLSL files + `Common/` subdirectory (`ConstantBuffers.hlsl`, `Functions.hlsl`, `VertexLayouts.hlsl`)
-- `CraftonEngine/ThirdParty/` — ImGui and SimpleJSON (vendored)
-- `CraftonEngine/Asset/` — font atlas, particle textures, default scene, MeshCache (prebuilt .bin meshes), StaticMesh
-- `CraftonEngine/Data/` — mesh source files (.obj, .mtl, textures) organized by model name
+- `KraftonEngine/Source/Engine/` — core engine (Object, Math, Render, GameFramework, Component, Serialization, Core, Runtime)
+- `KraftonEngine/Source/Editor/` — editor layer (UI widgets, viewport, selection, settings)
+- `KraftonEngine/Source/ObjViewer/` — standalone mesh viewer (ObjViewerEngine, Panel, RenderPipeline, ViewportClient)
+- `KraftonEngine/Shaders/` — 8 HLSL files + `Common/` subdirectory (`ConstantBuffers.hlsl`, `Functions.hlsl`, `VertexLayouts.hlsl`)
+- `KraftonEngine/ThirdParty/` — ImGui and SimpleJSON (vendored)
+- `KraftonEngine/Asset/` — font atlas, particle textures, default scene, MeshCache (prebuilt .bin meshes), StaticMesh
+- `KraftonEngine/Data/` — mesh source files (.obj, .mtl, textures) organized by model name
