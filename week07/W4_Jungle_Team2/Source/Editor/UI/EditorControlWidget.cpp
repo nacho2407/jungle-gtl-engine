@@ -127,7 +127,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 	SEPARATOR();
 
 	// Gizmo Space / Mode
-	static int32 SelectedSpace = 0;
+	int32 SelectedSpace = EditorEngine->GetGizmo()->IsWorldSpace() ? 0 : 1;
 	if (ImGui::RadioButton("World", &SelectedSpace, 0))
 	{
 		EditorEngine->GetGizmo()->SetWorldSpace(true);
