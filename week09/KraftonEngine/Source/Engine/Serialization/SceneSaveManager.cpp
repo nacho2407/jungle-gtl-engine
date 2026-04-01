@@ -98,9 +98,9 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 
 		for (UActorComponent* Comp : Actor->GetComponents()) {
 			if (!Comp) continue;
-			if (!Comp->IsA<UStaticMeshComp>()) continue;
+			if (!Comp->IsA<UStaticMeshComponent>()) continue;
 
-			UStaticMeshComp* S = static_cast<UStaticMeshComp*>(Comp);
+			UStaticMeshComponent* S = static_cast<UStaticMeshComponent*>(Comp);
 
 			JSON p = json::Object();
 
@@ -223,8 +223,8 @@ json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
 	TArray<FPropertyDescriptor> Descriptors;
 	Comp->GetEditableProperties(Descriptors);
 
-	// Special-case UStaticMeshComp: expose material overrides and UVScrolls as arrays
-	if (Comp->IsA<UStaticMeshComp>()) {
+	// Special-case UStaticMeshComponent: expose material overrides and UVScrolls as arrays
+	if (Comp->IsA<UStaticMeshComponent>()) {
 		JSON materials = json::Array();
 		JSON uvscrolls = json::Array();
 
@@ -610,8 +610,8 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 	TArray<FPropertyDescriptor> Descriptors;
 	Comp->GetEditableProperties(Descriptors);
 
-	// If this is a UStaticMeshComp and arrays are present, map them into Element N / UVScroll N descriptors
-	if (Comp->IsA<UStaticMeshComp>()) {
+	// If this is a UStaticMeshComponent and arrays are present, map them into Element N / UVScroll N descriptors
+	if (Comp->IsA<UStaticMeshComponent>()) {
 		auto mapArrayToDescriptors = [&](const char* ArrayKey, const char* Prefix) {
 			if (!PropsJSON.hasKey(ArrayKey)) return;
 			auto arr = PropsJSON[ArrayKey];
