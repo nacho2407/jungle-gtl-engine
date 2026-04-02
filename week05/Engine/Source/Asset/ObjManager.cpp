@@ -519,7 +519,7 @@ namespace
 		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
 
-		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>(nullptr, JustFileName);
 		NewAsset->SetStaticMeshAsset(RawData.release());
 
 		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();
@@ -558,7 +558,7 @@ namespace
 		RawData->PathFileName = JustFileName;
 		RawData->UpdateLocalBound();
 
-		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>();
+		UStaticMesh* NewAsset = FObjectFactory::ConstructObject<UStaticMesh>(nullptr, JustFileName);
 		NewAsset->SetStaticMeshAsset(RawData.release());
 
 		NewAsset->LocalBounds.Radius = NewAsset->GetRenderData()->GetLocalBoundRadius();

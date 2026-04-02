@@ -250,7 +250,6 @@ void AActor::Serialize(FArchive& Ar)
 						if (!TargetComponent)
 						{
 							UObject* NewObject = FObjectFactory::ConstructObject(ComponentClass, this);
-							UE_LOG("Class Name: %s", NewObject->GetClass()->GetName());
 							TargetComponent = static_cast<UActorComponent*>(NewObject);
 
 							if (TargetComponent)

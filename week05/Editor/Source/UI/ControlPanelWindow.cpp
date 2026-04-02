@@ -253,7 +253,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 				NewActor = Scene->SpawnActor<AActor>(Name);
 				if (NewActor)
 				{
-					UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>();
+					UStaticMeshComponent* MeshComp = FObjectFactory::ConstructObject<UStaticMeshComponent>(nullptr, "StaticMeshComponent");
 
 					std::filesystem::path ModelPath = FPaths::MeshDir() / "cube-tex.obj";
 					FString FullPath = FPaths::FromPath(ModelPath);

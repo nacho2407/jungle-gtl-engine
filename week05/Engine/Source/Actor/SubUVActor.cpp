@@ -9,7 +9,7 @@ IMPLEMENT_RTTI(ASubUVActor, AActor)
 
 void ASubUVActor::PostSpawnInitialize()
 {
-	SubUVComponent = FObjectFactory::ConstructObject<USubUVComponent>(this);
+	SubUVComponent = FObjectFactory::ConstructObject<USubUVComponent>(this, "SubUVComponent");
 	AddOwnedComponent(SubUVComponent);
 
 	AActor::PostSpawnInitialize();
