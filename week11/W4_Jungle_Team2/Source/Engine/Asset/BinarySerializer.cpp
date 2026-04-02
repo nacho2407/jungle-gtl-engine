@@ -474,7 +474,7 @@ bool FBinarySerializer::ReadBounds(std::ifstream& In, FStaticMesh& OutData) cons
 //	보내는 순서와 읽는 순서는 동일 (Header + Body 순서를 고정 -> protocol의 정의)
 bool FBinarySerializer::SaveStaticMesh(const FString& BinaryPath, const FString& SourcePath, const FStaticMesh& Data)
 {
-	std::ofstream Out(BinaryPath, std::ios::binary);
+	std::ofstream Out(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
 	if (!Out.is_open())
 	{
 		return false;
