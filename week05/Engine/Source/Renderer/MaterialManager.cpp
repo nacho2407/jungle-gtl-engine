@@ -10,11 +10,11 @@
 #include "Renderer/Renderer.h"
 #include <fstream>
 
-// ??? HLSL cbuffer ?⑦궧 ?좏떥 ???
+// HLSL cbuffer 레이아웃을 계산할 때 사용하는 보조 함수들이다.
 
 namespace
 {
-	// ??낅퀎 諛붿씠???ш린
+	// 타입 문자열을 바이트 크기로 변환한다.
 	uint32 GetTypeSize(const FString& Type)
 	{
 		if (Type == "float")    return 4;
@@ -25,14 +25,14 @@ namespace
 		return 0;
 	}
 
-	// ??낅퀎 ?뺣젹 (HLSL ?⑦궧 猷? 16諛붿씠??寃쎄퀎瑜??섏쓣 ???놁쓬)
+	// HLSL cbuffer 규칙에 맞춰 16바이트 경계를 넘지 않도록 오프셋을 정렬한다.
 	uint32 AlignOffset(uint32 Offset, uint32 TypeSize)
 	{
-		// 16諛붿씠??寃쎄퀎 ???⑥? 怨듦컙
+		// 현재 16바이트 블록에서 남은 공간을 계산한다.
 		uint32 BoundaryStart = (Offset / 16) * 16;
 		uint32 Remaining = BoundaryStart + 16 - Offset;
 
-		// ?⑥? 怨듦컙???ㅼ뼱媛吏 ?딆쑝硫??ㅼ쓬 16諛붿씠??寃쎄퀎濡?
+		// 현재 블록에 담을 수 없으면 다음 16바이트 경계로 넘긴다.
 		if (TypeSize > Remaining)
 		{
 			return BoundaryStart + 16;
@@ -40,14 +40,14 @@ namespace
 		return Offset;
 	}
 
-	// ?꾩껜 ?곸닔 踰꾪띁 ?ш린瑜?16諛붿씠?몃줈 ?뺣젹
+	// 상수 버퍼 전체 크기도 16바이트 배수로 맞춘다.
 	uint32 AlignBufferSize(uint32 Size)
 	{
 		return (Size + 15) & ~15;
 	}
 }
 
-// ??? FMaterialManager ???
+// FMaterialManager 구현
 
 FMaterialManager& FMaterialManager::Get()
 {
@@ -57,7 +57,7 @@ FMaterialManager& FMaterialManager::Get()
 
 void FMaterialManager::LoadAllMaterials(ID3D11Device* InDevice, FRenderStateManager* InStateManager)
 {
-	// 寃쎈줈 ?댁쓽 紐⑤뱺 癒명떚由ъ뼹 JSON ?뚯씪 媛?몄삤湲?
+	// Material 디렉터리를 순회하며 JSON 머티리얼 파일을 미리 로드한다.
 	namespace fs = std::filesystem;
 	auto MaterialDir = FPaths::MaterialDir();
 	try {
@@ -67,7 +67,7 @@ void FMaterialManager::LoadAllMaterials(ID3D11Device* InDevice, FRenderStateMana
 			return;
 		}
 
-		// ?꾨? 罹먯떆???깅줉
+		// 모든 JSON 파일을 찾아 순차적으로 적재한다.
 		for (const auto& entry : fs::directory_iterator(MaterialDir)) {
 			if (entry.is_regular_file() && entry.path().extension() == ".json") {
 				FString FilePath = FPaths::FromPath(entry.path());
@@ -86,14 +86,14 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 	const FString& InFilePath
 )
 {
-	// 寃쎈줈 罹먯떆 ?뺤씤
+	// 동일한 경로를 다시 요청하면 캐시를 재사용한다.
 	auto It = PathCache.find(InFilePath);
 	if (It != PathCache.end())
 	{
 		return It->second;
 	}
 
-	// JSON ?뚯씪 濡쒕뱶
+	// JSON 파일을 열고 파싱한다.
 	std::ifstream File(FPaths::ToPath(InFilePath));
 	if (!File.is_open())
 	{
@@ -110,10 +110,10 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		return nullptr;
 	}
 
-	// Material ?앹꽦
+	// Material 객체를 생성한다.
 	auto Mat = std::make_shared<FMaterial>();
 
-	// ?곗씠??濡쒕뱶 (?꾨줈?앺듃 猷⑦듃 湲곗? ?곷? 寃쎈줈)
+	// 셰이더 경로를 읽어 필요한 버텍스/픽셀 셰이더를 연결한다.
 	if (Json.contains("VertexShader"))
 	{
 		FString VSRelPath = Json["VertexShader"].get<FString>();
@@ -131,7 +131,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 	}
 
 
-	// Render State 濡쒕뱶
+	// Render State를 JSON 설정에 맞춰 구성한다.
 	if (Json.contains("RenderState"))
 	{
 		auto RenderStatesJson = Json["RenderState"];
@@ -146,7 +146,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 			rasterizerOption.CullMode = RenderStatesJson["CullMode"].get<D3D11_CULL_MODE>();
 		}
 		auto RasterizerState = InStateManager->GetOrCreateRasterizerState(rasterizerOption);
-		Mat->SetRasterizerOption(rasterizerOption);	// ?붾쾭源낆슜 ?뺣낫 ?쎌엯
+		Mat->SetRasterizerOption(rasterizerOption);	// 머티리얼이 선택한 래스터라이저 옵션도 함께 보관한다.
 		Mat->SetRasterizerState(RasterizerState);
 
 
@@ -158,7 +158,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		}
 		else
 		{
-			depthStencilOption.DepthEnable = true;	// 湲곕낯媛?
+			depthStencilOption.DepthEnable = true;	// 기본값은 깊이 테스트 사용
 		}
 		if (RenderStatesJson.contains("DepthWrite"))
 		{
@@ -166,7 +166,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		}
 		else
 		{
-			depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // 湲곕낯媛?
+			depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // 기본값은 깊이 쓰기 허용
 		}
 		if (RenderStatesJson.contains("StencilEnable"))
 		{
@@ -174,7 +174,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		}
 		else
 		{
-			depthStencilOption.StencilEnable = false; // 湲곕낯媛?
+			depthStencilOption.StencilEnable = false; // 기본값은 스텐실 비활성화
 		}
 		if (RenderStatesJson.contains("StencilReadMask"))
 		{
@@ -184,7 +184,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		{
 			depthStencilOption.StencilWriteMask = RenderStatesJson["StencilWriteMask"].get<uint8>();
 		}
-		//DepthTest: true, DepthFunc: Less -> 湲곕낯 硫붿떆媛 ?대? 媛숈? 源딆씠瑜?湲곕줉?대넃??-> ?섏씠?쇱씠?멸? "??媛源뚯슫媛?" 鍮꾧탳 -> 媛숈? 源딆씠?덇퉴 ?듦낵 紐삵븿 -> ??洹몃젮吏?
+		// 문자열로 저장된 깊이 비교 함수를 D3D11 비교 함수 enum으로 변환한다.
 		if (RenderStatesJson.contains("DepthFunc"))
 		{
 			FString Func = RenderStatesJson["DepthFunc"].get<std::string>();
@@ -199,14 +199,14 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		Mat->SetDepthStencilOption(depthStencilOption);
 		Mat->SetDepthStencilState(DepthStencilState);
 
-		// DepthBias ?깆쓽 異붽? ?듭뀡??吏?먰븯?ㅻ㈃ ?ш린??異붽?
+		// DepthBias 같은 추가 상태 옵션이 필요해지면 여기서 확장한다.
 	}
 
 	if (Json.contains("Textures"))
 	{
 		auto TexturesJson = Json["Textures"];
 
-		// "Diffuse" ?щ’ ?띿뒪泥??뺤씤
+		// "Diffuse" 슬롯에 지정된 텍스처를 머티리얼 텍스처로 로드한다.
 		if (TexturesJson.contains("Diffuse"))
 		{
 			FString TexRelPath = TexturesJson["Diffuse"].get<FString>();
@@ -219,7 +219,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 				FullTexPath,
 				&NewSRV))
 			{
-				// FMaterialTexture 援ъ“泥??앹꽦 諛??μ갑
+				// FMaterialTexture 래퍼를 만들어 머티리얼에 연결한다.
 				auto MatTexture = std::make_shared<FMaterialTexture>();
 				MatTexture->TextureSRV = NewSRV;
 				Mat->SetMaterialTexture(MatTexture);
@@ -228,7 +228,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		}
 	}
 
-	// ?곸닔 踰꾪띁 濡쒕뱶
+	// 상수 버퍼 정의를 읽어 머티리얼 파라미터를 구성한다.
 	if (Json.contains("ConstantBuffers"))
 	{
 		for (auto& CBJson : Json["ConstantBuffers"])
@@ -240,7 +240,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 
 			auto& Params = CBJson["Parameters"];
 
-			// 1李? ?ㅽ봽??怨꾩궛 + 珥??ш린 ?곗텧
+			// 1단계: 파라미터 타입과 정렬 규칙을 적용해 레이아웃을 계산한다.
 			struct FParamInfo
 			{
 				FString Name;
@@ -281,7 +281,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 
 			uint32 BufferSize = AlignBufferSize(CurrentOffset);
 
-			// 2李? ?곸닔 踰꾪띁 ?앹꽦
+			// 2단계: 계산된 크기로 상수 버퍼를 생성한다.
 			int32 SlotIndex = Mat->CreateConstantBuffer(InDevice, BufferSize);
 			if (SlotIndex < 0)
 			{
@@ -290,7 +290,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 
 			FMaterialConstantBuffer* CB = Mat->GetConstantBuffer(SlotIndex);
 
-			// ?뚮씪誘명꽣 ?대쫫 ?깅줉
+			// 이름이 있는 파라미터는 런타임 조회를 위해 등록한다.
 			for (auto& Info : ParamList)
 			{
 				if (!Info.Name.empty())
@@ -299,7 +299,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 				}
 			}
 
-			// 3李? 珥덇린媛?湲곕줉
+			// 3단계: 초기값이 있는 파라미터는 상수 버퍼에 바로 기록한다.
 			for (auto& Info : ParamList)
 			{
 				if (Info.Value.is_null())
@@ -352,7 +352,7 @@ std::shared_ptr<FMaterial> FMaterialManager::LoadFromFile(
 		}
 	}
 
-	// 罹먯떆 ?깅줉
+	// 경로 캐시에 등록한다.
 	PathCache[InFilePath] = Mat;
 
 	if (Json.contains("Name"))

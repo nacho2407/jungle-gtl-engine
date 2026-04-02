@@ -1231,10 +1231,10 @@ void FObjManager::PreloadAllObjFiles(const FString& DirectoryPath)
 	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
 	const std::filesystem::path DirPath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
-	// ?대뜑媛 議댁옱?섎뒗吏 ?뺤씤
+	// 전달된 경로가 실제 디렉터리인지 확인한다.
 	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
 	{
-		UE_LOG("[FObjManager] Preload ?ㅽ뙣: ?대뜑瑜?李얠쓣 ???놁뒿?덈떎. (%s)", AbsolutePath.c_str());
+		UE_LOG("[FObjManager] Preload 실패: 디렉터리를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
 		return;
 	}
 
@@ -1254,10 +1254,10 @@ void FObjManager::PreloadAllModelFiles(const FString& DirectoryPath)
 	const FString AbsolutePath = FPaths::ToAbsolutePath(DirectoryPath);
 	const std::filesystem::path DirPath = FPaths::ToPath(AbsolutePath).lexically_normal();
 
-	// ?대뜑媛 議댁옱?섎뒗吏 ?뺤씤
+	// 전달된 경로가 실제 디렉터리인지 확인한다.
 	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
 	{
-		UE_LOG("[FObjManager] Preload ?ㅽ뙣: ?대뜑瑜?李얠쓣 ???놁뒿?덈떎. (%s)", AbsolutePath.c_str());
+		UE_LOG("[FObjManager] Preload 실패: 디렉터리를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
 		return;
 	}
 
@@ -1280,7 +1280,7 @@ void FObjManager::PreloadAllMtlFiles(const FString& DirectoryPath)
 
 	if (!std::filesystem::exists(DirPath) || !std::filesystem::is_directory(DirPath))
 	{
-		UE_LOG("[FObjManager] MTL Preload ?ㅽ뙣: ?대뜑瑜?李얠쓣 ???놁뒿?덈떎. (%s)", AbsolutePath.c_str());
+		UE_LOG("[FObjManager] MTL Preload 실패: 디렉터리를 찾을 수 없습니다. (%s)", AbsolutePath.c_str());
 		return;
 	}
 
