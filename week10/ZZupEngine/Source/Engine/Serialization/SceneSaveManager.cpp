@@ -252,9 +252,11 @@ json::JSON FSceneSaveManager::SerializeCameraState(const FEditorCameraState* Cam
 			static_cast<double>(CameraState->Rotation.Pitch),
 			static_cast<double>(CameraState->Rotation.Yaw),
 			static_cast<double>(CameraState->Rotation.Roll));
-		Cam[SceneKeys::FOV] = static_cast<double>(CameraState->FOV);
-		Cam[SceneKeys::NearClip] = static_cast<double>(CameraState->NearClip);
-		Cam[SceneKeys::FarClip] = static_cast<double>(CameraState->FarClip);
+		
+		Cam[SceneKeys::FOV] = Array(static_cast<double>(CameraState->FOV));
+		Cam[SceneKeys::NearClip] = Array(static_cast<double>(CameraState->NearClip));
+		Cam[SceneKeys::FarClip] = Array(static_cast<double>(CameraState->FarClip));
+		
 		return Cam;
 	}
 	return nullptr;
@@ -446,12 +448,14 @@ void FSceneSaveManager::DeserializeCameraState(json::JSON& root, FEditorCameraSt
 				static_cast<float>(Rot[1].ToFloat()),  // Yaw
 				static_cast<float>(Rot[2].ToFloat())); // Roll
 		}
+		
+		// 수정: FOV, NearClip, FarClip이 배열([ ]) 형태로 들어오므로 0번째 인덱스로 접근
 		if (Cam.hasKey(SceneKeys::FOV))
-			OutCameraState->FOV = static_cast<float>(Cam[SceneKeys::FOV].ToFloat());
+			OutCameraState->FOV = static_cast<float>(Cam[SceneKeys::FOV][0].ToFloat());
 		if (Cam.hasKey(SceneKeys::NearClip))
-			OutCameraState->NearClip = static_cast<float>(Cam[SceneKeys::NearClip].ToFloat());
+			OutCameraState->NearClip = static_cast<float>(Cam[SceneKeys::NearClip][0].ToFloat());
 		if (Cam.hasKey(SceneKeys::FarClip))
-			OutCameraState->FarClip = static_cast<float>(Cam[SceneKeys::FarClip].ToFloat());
+			OutCameraState->FarClip = static_cast<float>(Cam[SceneKeys::FarClip][0].ToFloat());
 
 		OutCameraState->bValid = true;
 	}

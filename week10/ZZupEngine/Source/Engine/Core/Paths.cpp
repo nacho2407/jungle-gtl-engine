@@ -1,5 +1,4 @@
 ﻿#include "Engine/Core/Paths.h"
-
 #include <filesystem>
 
 std::wstring FPaths::RootDir()
@@ -7,20 +6,24 @@ std::wstring FPaths::RootDir()
 	static std::wstring Cached;
 	if (Cached.empty())
 	{
-		// exe 옆에 Shaders/ 가 있으면 배포 환경, 없으면 개발 환경 (CWD 사용)
 		WCHAR Buffer[MAX_PATH];
 		GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
 		std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
-		ExeDir /= "Test";
 
- 		if (std::filesystem::exists(ExeDir / L"Shaders"))
+		// 1. 배포 환경: exe 파일과 같은 폴더에 바로 Shaders/ 가 있는 경우
+		if (std::filesystem::exists(ExeDir / L"Shaders"))
 		{
-			// 배포: exe와 리소스가 같은 디렉터리
 			Cached = ExeDir.generic_wstring() + L"/";
 		}
+		// 2. 솔루션(개발) 환경: exe가 Bin/ObjViewer/ 또는 Bin/Debug/ 등에 있는 경우
+		else if (std::filesystem::exists(ExeDir / L".." / L".." / L"Shaders"))
+		{
+			// lexically_normal()을 사용해 "../../" 등 지저분한 경로를 깔끔하게 정리합니다.
+			Cached = (ExeDir / L".." / L"..").lexically_normal().generic_wstring() + L"/";
+		}
+		// 3. VS에서 직접 실행하여 작업 디렉터리(CWD)가 프로젝트 루트로 정상 지정된 경우 (Fallback)
 		else
 		{
-			// 개발: CWD(= $(ProjectDir))에 리소스가 있음
 			Cached = std::filesystem::current_path().generic_wstring() + L"/";
 		}
 	}
