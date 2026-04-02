@@ -54,8 +54,7 @@ FString FResourceManager::MakeStaticMeshBinaryPath(const FString& SourcePath) co
 	BinaryFileName += ".bin";
 
 	fs::path BinaryPath = BinDir / BinaryFileName;
-	// 이곳 수정
-	return FPaths::ToUtf8(BinaryPath.generic_wstring());
+	return FPaths::ToString(BinaryPath.wstring());
 }
 
 bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const

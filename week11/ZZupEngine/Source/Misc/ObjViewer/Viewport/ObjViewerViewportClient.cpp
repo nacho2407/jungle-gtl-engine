@@ -195,46 +195,46 @@ void FObjViewerViewportClient::TickInput(float DeltaTime)
 	// Mouse sensitivity is degrees per pixel (do not multiply by DeltaTime)
 	float MouseRotationSpeed = 0.5f * RotateSensitivity;
 	if (bIsOrbiting && InputSystem::Get().GetRightDragging())
-{
-    float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-    float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+	{
+		float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
+		float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
 
-    // 1. Quat -> Rotator 역변환의 부작용을 피하기 위해, Forward 벡터에서 직접 Pitch/Yaw 추출
-    FVector Forward = Camera->GetForwardVector().GetSafeNormal();
-    float CurrentPitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.0f, 1.0f)));
-    float CurrentYaw = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
+		// 1. Quat -> Rotator 역변환의 부작용을 피하기 위해, Forward 벡터에서 직접 Pitch/Yaw 추출
+		FVector Forward = Camera->GetForwardVector().GetSafeNormal();
+		float CurrentPitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.0f, 1.0f)));
+		float CurrentYaw = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
 
-    // 2. 마우스 입력값 적용 및 제한 (Clamp)
-    float TargetPitch = MathUtil::Clamp(CurrentPitch - DeltaY * MouseRotationSpeed, -89.0f, 89.0f);
-    float TargetYaw = CurrentYaw + DeltaX * MouseRotationSpeed;
+		// 2. 마우스 입력값 적용 및 제한 (Clamp)
+		float TargetPitch = MathUtil::Clamp(CurrentPitch - DeltaY * MouseRotationSpeed, -89.0f, 89.0f);
+		float TargetYaw = CurrentYaw + DeltaX * MouseRotationSpeed;
 
-    // 3. 구면 좌표계를 다시 방향 벡터(NewForward)로 변환
-    float PitchRad = MathUtil::DegreesToRadians(TargetPitch);
-    float YawRad = MathUtil::DegreesToRadians(TargetYaw);
+		// 3. 구면 좌표계를 다시 방향 벡터(NewForward)로 변환
+		float PitchRad = MathUtil::DegreesToRadians(TargetPitch);
+		float YawRad = MathUtil::DegreesToRadians(TargetYaw);
     
-    FVector NewForward(
-        std::cos(PitchRad) * std::cos(YawRad),
-        std::cos(PitchRad) * std::sin(YawRad),
-        std::sin(PitchRad)
-    );
-    NewForward = NewForward.GetSafeNormal();
+		FVector NewForward(
+			std::cos(PitchRad) * std::cos(YawRad),
+			std::cos(PitchRad) * std::sin(YawRad),
+			std::sin(PitchRad)
+		);
+		NewForward = NewForward.GetSafeNormal();
 
-    // 4. 새로운 방향을 기반으로 직교하는 Right, Up 벡터 계산
-    FVector NewRight = FVector::CrossProduct(FVector::UpVector, NewForward).GetSafeNormal();
-    if (NewRight.IsNearlyZero()) { NewRight = Camera->GetRightVector(); }
-    FVector NewUp = FVector::CrossProduct(NewForward, NewRight).GetSafeNormal();
+		// 4. 새로운 방향을 기반으로 직교하는 Right, Up 벡터 계산
+		FVector NewRight = FVector::CrossProduct(FVector::UpVector, NewForward).GetSafeNormal();
+		if (NewRight.IsNearlyZero()) { NewRight = Camera->GetRightVector(); }
+		FVector NewUp = FVector::CrossProduct(NewForward, NewRight).GetSafeNormal();
 
-    // 5. 회전 행렬을 통해 아주 깨끗한 Quaternion 생성
-    FMatrix RotMat = FMatrix::Identity;
-    RotMat.SetAxes(NewForward, NewRight, NewUp);
+		// 5. 회전 행렬을 통해 아주 깨끗한 Quaternion 생성
+		FMatrix RotMat = FMatrix::Identity;
+		RotMat.SetAxes(NewForward, NewRight, NewUp);
 
-    FQuat NewRotation(RotMat);
-    NewRotation.Normalize();
+		FQuat NewRotation(RotMat);
+		NewRotation.Normalize();
 
-    // 6. 카메라에 최종 적용
-    Camera->SetRotation(NewRotation);
-    Camera->SetLocation(OrbitPivot - NewForward * OrbitDistance);
-}
+		// 6. 카메라에 최종 적용
+		Camera->SetRotation(NewRotation);
+		Camera->SetLocation(OrbitPivot - NewForward * OrbitDistance);
+	}
 
 	if (InputSystem::Get().GetKeyDown('O'))
 	{
