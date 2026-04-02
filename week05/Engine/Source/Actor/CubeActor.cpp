@@ -13,7 +13,7 @@ void ACubeActor::PostSpawnInitialize()
 	UStaticMesh* CubeMesh = nullptr;
 	CubeMesh = FObjManager::LoadModelStaticMeshAsset(FPaths::FromPath(FPaths::MeshDir() / "PrimitiveBox.Model"));
 
-	CubeMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
+	CubeMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this, "StaticMeshComponent");
 	CubeMeshComponent->SetStaticMesh(CubeMesh);
 
 	AddOwnedComponent(CubeMeshComponent);

@@ -13,7 +13,7 @@ void ASphereActor::PostSpawnInitialize()
 	UStaticMesh* SphereMesh = nullptr;
 	SphereMesh = FObjManager::LoadModelStaticMeshAsset(FPaths::FromPath(FPaths::MeshDir() / "PrimitiveSphere.Model"));
 
-	SphereMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
+	SphereMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this, "StaticMeshComponent");
 	SphereMeshComponent->SetStaticMesh(SphereMesh);
 
 	AddOwnedComponent(SphereMeshComponent);

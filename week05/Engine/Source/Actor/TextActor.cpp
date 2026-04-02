@@ -9,7 +9,7 @@ IMPLEMENT_RTTI(ATextActor, AActor)
 
 void ATextActor::PostSpawnInitialize()
 {
-	TextComponent = FObjectFactory::ConstructObject<UTextComponent>(this);
+	TextComponent = FObjectFactory::ConstructObject<UTextComponent>(this, "TextComponent");
 	AddOwnedComponent(TextComponent);
 
 	AActor::PostSpawnInitialize();

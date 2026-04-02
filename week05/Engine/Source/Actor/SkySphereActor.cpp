@@ -17,7 +17,7 @@ void ASkySphereActor::PostSpawnInitialize()
 	std::filesystem::path SkyPath = FPaths::MeshDir() / "SkySphere.Model";
 	UStaticMesh* SkyMesh = FObjManager::LoadModelStaticMeshAsset(FPaths::FromPath(SkyPath));
 
-	SkySphereComponent = FObjectFactory::ConstructObject<USkyComponent>(this);
+	SkySphereComponent = FObjectFactory::ConstructObject<USkyComponent>(this, "SkySphereComponent");
 	SkySphereComponent->SetStaticMesh(SkyMesh);
 
 	AddOwnedComponent(SkySphereComponent);
