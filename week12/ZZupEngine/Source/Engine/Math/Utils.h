@@ -23,6 +23,11 @@ namespace MathUtil
 		return Abs(Value) <= Tolerance;
 	}
 
+	static constexpr bool IsNearlyEqual(float A, float B, float Tolerance = Epsilon)
+	{
+		return Abs(A - B) <= Tolerance;
+	}
+
 	template <typename T> static inline T Clamp(const T Value, const T Min, const T Max)
 	{
 		return (Value < Min) ? Min : (Value > Max) ? Max : Value;

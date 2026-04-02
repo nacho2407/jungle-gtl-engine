@@ -52,6 +52,12 @@ public:
 	/** Unit Z axis vector (0,0,1) */
 	static const FVector ZAxisVector;
 
+	static inline FVector Zero() { return ZeroVector; }
+	static inline FVector One() { return OneVector; }
+	static inline FVector UnitX() { return XAxisVector; }
+	static inline FVector UnitY() { return YAxisVector; }
+	static inline FVector UnitZ() { return ZAxisVector; }
+
 	//======================================//
 	//				constructor				//
 	//======================================//
