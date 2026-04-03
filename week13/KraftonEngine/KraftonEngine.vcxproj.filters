@@ -347,6 +347,9 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\StaticMeshSceneProxy.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\TextRenderSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
@@ -690,6 +693,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\StaticMeshSceneProxy.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">

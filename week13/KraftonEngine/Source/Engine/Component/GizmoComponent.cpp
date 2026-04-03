@@ -1,18 +1,44 @@
 ﻿#include "GizmoComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Math/Quat.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Collision/RayUtils.h"
 #include "Render/Pipeline/GizmoSceneProxy.h"
+#include "Render/Pipeline/FScene.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
 FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
 {
-	return new FGizmoSceneProxy(this);
+	return new FGizmoSceneProxy(this, false); // Outer
+}
+
+void UGizmoComponent::CreateRenderState()
+{
+	if (SceneProxy) return;
+	if (!Owner || !Owner->GetWorld()) return;
+	FScene& Scene = Owner->GetWorld()->GetScene();
+
+	// Outer 프록시 (기본 경로)
+	SceneProxy = Scene.AddPrimitive(this);
+
+	// Inner 프록시 (별도 등록)
+	InnerProxy = new FGizmoSceneProxy(this, true);
+	Scene.RegisterProxy(InnerProxy);
+}
+
+void UGizmoComponent::DestroyRenderState()
+{
+	if (Owner && Owner->GetWorld())
+	{
+		FScene& Scene = Owner->GetWorld()->GetScene();
+		if (InnerProxy) { Scene.RemovePrimitive(InnerProxy); InnerProxy = nullptr; }
+	}
+	UPrimitiveComponent::DestroyRenderState();
 }
 
 #include <cmath>
@@ -525,43 +551,4 @@ FMeshBuffer* UGizmoComponent::GetMeshBuffer() const
 		break;
 	}
 	return &FMeshBufferManager::Get().GetMeshBuffer(Shape);
-}
-
-void UGizmoComponent::CollectRender(FRenderBus& Bus) const
-{
-	if (!Bus.GetShowFlags().bGizmo) return;
-	if (!IsVisible()) return;
-
-	FMeshBuffer* GizmoMesh = GetMeshBuffer();
-
-	// Per-viewport 스케일 계산 — 활성 뷰포트의 스케일과 독립
-	const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
-	float PerViewScale = const_cast<UGizmoComponent*>(this)->ComputeScreenSpaceScale(
-		CameraPos, Bus.IsOrtho(), Bus.GetOrthoWidth());
-
-	// WorldMatrix를 per-viewport 스케일로 재구성 (S * R * T)
-	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(FVector(PerViewScale, PerViewScale, PerViewScale))
-		* FMatrix::MakeRotationEuler(GetRelativeRotation().ToVector())
-		* FMatrix::MakeTranslationMatrix(GetWorldLocation());
-
-	auto CreateGizmoCmd = [&](bool bInner) {
-		FRenderCommand Cmd = {};
-		Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
-		Cmd.MeshBuffer = GizmoMesh;
-		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
-
-		auto& G = Cmd.ExtraCB.Bind<FGizmoConstants>(
-			FConstantBufferPool::Get().GetBuffer(ECBSlot::Gizmo, sizeof(FGizmoConstants)), ECBSlot::Gizmo);
-		G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		G.bIsInnerGizmo = bInner ? 1 : 0;
-		G.bClicking = bIsHolding ? 1 : 0;
-		G.SelectedAxis = SelectedAxis >= 0 ? (uint32)SelectedAxis : 0xffffffffu;
-		G.HoveredAxisOpacity = 0.7f;
-		G.AxisMask = AxisMask;
-
-		return Cmd;
-		};
-
-	Bus.AddCommand(ERenderPass::GizmoOuter, CreateGizmoCmd(false));
-	Bus.AddCommand(ERenderPass::GizmoInner, CreateGizmoCmd(true));
 }
