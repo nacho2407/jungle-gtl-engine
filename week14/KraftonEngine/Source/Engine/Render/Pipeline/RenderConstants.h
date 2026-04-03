@@ -11,9 +11,8 @@
 class FShader;
 
 /*
-	Constants Buffer에 사용될 구조체와
-	에 담길 RenderCommand 구조체를 정의하고 있습니다.
-	RenderCommand는 Renderer에서 Draw Call을 1회 수행하기 위해 필요한 정보를 담고 있습니다.
+	GPU Constant Buffer 구조체, Batcher Entry, 섹션별 드로우 정보 등
+	렌더링에 필요한 데이터 타입을 정의합니다.
 */
 
 // HLSL Common.hlsl과 1:1 대응하는 CB 슬롯 정의
@@ -191,15 +190,3 @@ struct FMeshSectionDraw
 	bool bIsUVScroll = false;
 };
 
-struct FRenderCommand
-{
-	FMeshBuffer* MeshBuffer = nullptr;
-	FShader* Shader = nullptr;
-	FPerObjectConstants PerObjectConstants = {};	// b1 (공통)
-
-	// StaticMesh 섹션별 드로우 정보
-	TArray<FMeshSectionDraw> SectionDraws;
-
-	// GPU CB 바인딩 — ExtraCB.Data를 지정 슬롯의 CB에 업로드 (Gizmo, Outline 등)
-	FConstantBufferBinding ExtraCB;
-};

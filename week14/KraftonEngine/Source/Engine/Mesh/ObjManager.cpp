@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <algorithm>
 
-std::map<FString, UStaticMesh*> FObjManager::StaticMeshCache;
+TMap<FString, UStaticMesh*> FObjManager::StaticMeshCache;
 TMap<FString, UMaterial*> FObjManager::MaterialCache;
 TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
