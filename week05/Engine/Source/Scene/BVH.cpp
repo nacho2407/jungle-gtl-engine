@@ -179,7 +179,7 @@ void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, 
 		for (int32 Index = 0; Index < Node->primCount; ++Index)
 		{
 			const PrimRef& Ref = PrimitiveRefs[Node->firstPrimOffset + Index];
-			if (Ref.primitive)
+			if (Ref.primitive && Frustum.IsVisible(ToSphereBounds(Ref.bounds)))
 			{
 				OutPrimitives.push_back(Ref.primitive);
 			}

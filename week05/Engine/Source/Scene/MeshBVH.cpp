@@ -93,13 +93,13 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 	}
 
 	TArray<FBucket> Buckets(NUM_BUCKETS);
-
 	for (int32 i = Start; i < End; ++i)
 	{
-		float t = (GetAxis(Triangles[i].Centroid, Axis) - CentroidMin) / (CentroidMax - CentroidMin);
+		const FTriangleRef& Triangle = Triangles[TriangleIndices[i]];
+		const float t = (GetAxis(Triangle.Centroid, Axis) - CentroidMin) / (CentroidMax - CentroidMin);
 		const int32 b = std::clamp((int32)(t * NUM_BUCKETS), 0, NUM_BUCKETS - 1);
 		Buckets[b].Count++;
-		Buckets[b].Bounds.expand(Triangles[i].Bounds);
+		Buckets[b].Bounds.expand(Triangle.Bounds);
 	}
 
 	float BestCost = std::numeric_limits<float>::max();
@@ -115,22 +115,30 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
 	}
 
+	if (BestSplit < 0)
+	{
+		Node.FirstTriangle = Start;
+		Node.TriangleCount = Count;
+		Nodes[NodeIndex] = Node;
+		return NodeIndex;
+	}
+
 	float SplitPos = CentroidMin + (CentroidMax - CentroidMin) * ((float)BestSplit / NUM_BUCKETS);
 
 	auto MidIt = std::partition(
-		Triangles.begin() + Start,
-		Triangles.begin() + End,
-		[Axis, SplitPos](const FTriangleRef& P)
+		TriangleIndices.begin() + Start,
+		TriangleIndices.begin() + End,
+		[this, Axis, SplitPos](const int32 TriangleIndex)
 		{
-			return GetAxis(P.Centroid, Axis) < SplitPos;
+			return GetAxis(Triangles[TriangleIndex].Centroid, Axis) < SplitPos;
 		}
 	);
 
-	int32 Mid = (int32)(MidIt - Triangles.begin());
+	int32 Mid = (int32)(MidIt - TriangleIndices.begin());
 
 	if (Mid == Start || Mid == End)
 	{
-		int32 Mid = Start + Count / 2;
+		Mid = Start + Count / 2;
 		std::nth_element(
 			TriangleIndices.begin() + Start,
 			TriangleIndices.begin() + Mid,
