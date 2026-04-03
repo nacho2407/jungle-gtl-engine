@@ -16,7 +16,7 @@ void FSlateApplication::Initialize(const FRect& Area, FViewport* VPs[], int32 Co
 	}
 
 	AreaRect = Area;
-	SetLayout(EViewportLayout::FourGrid);
+	SetLayout(EViewportLayout::Single);
 }
 
 void FSlateApplication::ResetPools()

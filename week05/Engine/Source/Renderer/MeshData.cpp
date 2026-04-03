@@ -1,6 +1,7 @@
 #include "MeshData.h"
 #include "Object/Class.h"
 #include "Vertex.h"
+#include "Scene/MeshBVH.h"
 
 bool FStaticMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context)
 {
@@ -134,9 +135,46 @@ bool FDynamicMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11Device
 }
 
 IMPLEMENT_RTTI(UStaticMesh, UObject)
+UStaticMesh::~UStaticMesh()
+{
+	if (StaticMeshAsset)
+	{
+		delete StaticMeshAsset;
+		StaticMeshAsset = nullptr;
+	}
+}
+
+void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InStaticMesh)
+{
+	StaticMeshAsset = InStaticMesh;
+	TriangleBVH.reset();
+}
+
 const FString& UStaticMesh::GetAssetPathFileName() const
 {
 	if (StaticMeshAsset) return StaticMeshAsset->PathFileName;
 	static FString EmptyPath = "";
 	return EmptyPath;
+}
+
+void UStaticMesh::BuildAccelerationStructureIfNeeded() const
+{
+	if (TriangleBVH || !StaticMeshAsset)
+	{
+		return;
+	}
+
+	TriangleBVH = std::make_unique<FMeshBVH>();
+	TriangleBVH->Build(*StaticMeshAsset);
+}
+
+bool UStaticMesh::IntersectLocalRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const
+{
+	BuildAccelerationStructureIfNeeded();
+	if (!TriangleBVH || !TriangleBVH->IsValid())
+	{
+		return false;
+	}
+
+	return TriangleBVH->IntersectRay(RayOrigin, RayDirection, OutDistance);
 }
