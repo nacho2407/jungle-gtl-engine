@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
-#include "Render/Pipeline/RenderCommand.h"
+#include "Render/Pipeline/RenderConstants.h"
 
 class UEditorEngine;
 
@@ -34,9 +34,11 @@ public:
 	void ShowFPS(bool bEnable = true) { bShowFPS = bEnable; }
 	void ShowPickingTime(bool bEnable = true) { bShowPickingTime = bEnable; }
 	void ShowMemory(bool bEnable = true) { bShowMemory = bEnable; }
+	void RecordPickingAttempt(double ElapsedMs);
 	void HideAll()
 	{
 		bShowFPS = false;
+		bShowPickingTime = false;
 		bShowMemory = false;
 	}
 
@@ -48,8 +50,11 @@ public:
 
 private:
 	bool bShowFPS = false;	// 260403 이번 경연 동안 fps는 항상 보이도록 설정.
-	bool bShowPickingTime = false;
+	bool bShowPickingTime = false; // WM_LBUTTONDOWN , VK_LBUTTON 입력 시점이 아닌 오브젝트 충돌 판정에 걸린 시간을 측정합니다.
 	bool bShowMemory = false;
+	double LastPickingTimeMs = 0.0;
+	double AccumulatedPickingTimeMs = 0.0;
+	uint32 PickingAttemptCount = 0;
 
 	FOverlayStatLayout Layout;
 };

@@ -8,8 +8,15 @@
 #include "Engine/Runtime/Engine.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Texture/Texture2D.h"
+#include "Render/Proxy/StaticMeshSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
+
+FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
+{
+	return new FStaticMeshSceneProxy(this);
+}
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 {
@@ -24,8 +31,8 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 
 		for (int32 i = 0; i < (int32)DefaultMaterials.size(); ++i)
 		{
-			OverrideMaterials[i]        = DefaultMaterials[i].MaterialInterface;
-			MaterialSlots[i].bUVScroll  = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
+			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
+			MaterialSlots[i].bUVScroll = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
 
 			if (OverrideMaterials[i])
 				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
@@ -40,6 +47,8 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 		MaterialSlots.clear();
 	}
 	CacheLocalBounds();
+	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
 }
 
 void UStaticMeshComponent::CacheLocalBounds()
@@ -77,6 +86,9 @@ void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial
 	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
 	{
 		OverrideMaterials[ElementIndex] = InMaterial;
+
+		// 프록시에 Material dirty 전파
+		MarkProxyDirty(EDirtyFlag::Material);
 	}
 }
 
@@ -87,73 +99,6 @@ UMaterial* UStaticMeshComponent::GetMaterial(int32 ElementIndex) const
 		return OverrideMaterials[ElementIndex];
 	}
 	return nullptr;
-}
-
-void UStaticMeshComponent::CollectRender(FRenderBus& Bus) const
-{
-	if (!Bus.GetShowFlags().bPrimitives) return;
-	FMeshBuffer* Buffer = GetMeshBuffer();
-	if (!Buffer || !Buffer->IsValid()) return;
-
-	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
-	Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
-	Cmd.MeshBuffer = Buffer;
-
-	if (StaticMesh && StaticMesh->GetStaticMeshAsset())
-	{
-		const auto& Sections = StaticMesh->GetStaticMeshAsset()->Sections;
-		const auto& Slots = StaticMesh->GetStaticMaterials();
-
-		for (const FStaticMeshSection& Section : Sections)
-		{
-			FMeshSectionDraw Draw;
-			Draw.FirstIndex = Section.FirstIndex;
-			Draw.IndexCount = Section.NumTriangles * 3;
-
-			int32 i = Section.MaterialIndex;
-			if (i >= 0 && i < (int32)Slots.size())
-			{
-				if (i < (int32)OverrideMaterials.size() && OverrideMaterials[i])
-				{
-					auto& Mat = OverrideMaterials[i];
-					if (Mat->DiffuseTexture)
-						Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
-					Draw.DiffuseColor = Mat->DiffuseColor;
-				}
-
-				if (i < (int32)MaterialSlots.size())
-				{
-					Draw.bIsUVScroll = MaterialSlots[i].bUVScroll;
-				}
-			}
-			Cmd.SectionDraws.push_back(Draw);
-		}
-	}
-	Bus.AddCommand(ERenderPass::Opaque, Cmd);
-}
-
-void UStaticMeshComponent::CollectSelection(FRenderBus& Bus) const
-{
-	FMeshBuffer* Buffer = GetMeshBuffer();
-	if (!Buffer || !Buffer->IsValid()) return;
-
-	// SelectionMask: 스텐실에 선택 오브젝트 마킹
-	FRenderCommand MaskCmd = {};
-	MaskCmd.MeshBuffer = Buffer;
-	MaskCmd.PerObjectConstants = FPerObjectConstants{ GetWorldMatrix() };
-	MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
-	Bus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-
-	if (Bus.GetShowFlags().bBoundingVolume)
-	{
-		FAABBEntry Entry = {};
-		FBoundingBox Box = GetWorldBoundingBox();
-		Entry.AABB.Min = Box.Min;
-		Entry.AABB.Max = Box.Max;
-		Entry.AABB.Color = FColor::White();
-		Bus.AddAABBEntry(std::move(Entry));
-	}
 }
 
 FMeshBuffer* UStaticMeshComponent::GetMeshBuffer() const
@@ -186,6 +131,7 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
 	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
+	bWorldAABBDirty = false;
 }
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
@@ -195,7 +141,8 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	if (!Asset || Asset->Vertices.empty() || Asset->Indices.empty()) return false;
 
 	bool bHit = FRayUtils::RaycastTriangles(
-		Ray, CachedWorldMatrix,
+		Ray, GetWorldMatrix(),
+		GetWorldInverseMatrix(),
 		&Asset->Vertices[0].pos,
 		sizeof(FNormalVertex),
 		Asset->Indices,
@@ -210,11 +157,6 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 
 void UStaticMeshComponent::Serialize(bool bIsLoading, json::JSON& Handle)
 {
-	/*if (bIsLoading)
-	{
-		FString AssetName;
-
-	}*/
 }
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -225,8 +167,8 @@ void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
 	{
 		FPropertyDescriptor Desc;
-		Desc.Name     = "Element " + std::to_string(i);
-		Desc.Type     = EPropertyType::MaterialSlot;
+		Desc.Name = "Element " + std::to_string(i);
+		Desc.Type = EPropertyType::MaterialSlot;
 		Desc.ValuePtr = &MaterialSlots[i];
 		OutProps.push_back(Desc);
 	}
@@ -247,6 +189,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			SetStaticMesh(Loaded);
 		}
 		CacheLocalBounds();
+		MarkWorldBoundsDirty();
 	}
 
 	if (strncmp(PropertyName, "Element ", 8) == 0)

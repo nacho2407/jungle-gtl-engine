@@ -7,6 +7,7 @@
 #include "Render/Types/RenderTypes.h"
 
 #include "Render/Pipeline/RenderBus.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/ShaderManager.h"
@@ -53,14 +54,10 @@ private:
 	void InitializePassBatchers();
 
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
-	void BindCommand(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
-
-	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
-	void DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRenderCommand& Cmd);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
-	// 기본 패스 실행기 — BindCommand + DrawCommand 루프
-	void ExecuteDefaultPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	// 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회, 필드 직접 접근
+	void ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context);
 
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
@@ -76,7 +73,8 @@ private:
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
 
-	// SubUV 정렬용 멤버 버퍼 (재할당 방지)
+	// 정렬용 멤버 버퍼 (재할당 방지)
+	TArray<const FPrimitiveSceneProxy*> SortedProxyBuffer;
 	TArray<FSubUVEntry> SortedSubUVBuffer;
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];

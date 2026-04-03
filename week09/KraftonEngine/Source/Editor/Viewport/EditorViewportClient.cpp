@@ -1,8 +1,10 @@
 ﻿#include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Input/InputSystem.h"
+#include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/CameraComponent.h"
@@ -305,39 +307,19 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
+	FScopeCycleCounter PickCounter;
+
 	FHitResult HitResult{};
+	//먼저 Ray와 기즈모의 충돌을 감지하고 
 	if (FRayUtils::RaycastComponent(Gizmo, Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
 	}
 	else
 	{
+		// 기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
 		AActor* BestActor = nullptr;
-		float ClosestDistance = FLT_MAX;
-
-		for (AActor* Actor : World->GetActors())
-		{
-			if (!Actor || !Actor->GetRootComponent()) {
-				continue;
-			}
-			//USceneComponent* RootComp = Actor->GetRootComponent();
-			//if (!RootComp->IsA<UPrimitiveComponent>()) continue;
-
-			for (auto* primitive : Actor->GetPrimitiveComponents())
-			{
-				UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(primitive);
-
-				HitResult = {};
-				if (FRayUtils::RaycastComponent(PrimitiveComp, Ray, HitResult))
-				{
-					if (HitResult.Distance < ClosestDistance)
-					{
-						ClosestDistance = HitResult.Distance;
-						BestActor = Actor;
-					}
-				}
-			}
-		}
+		World->RaycastPrimitives(Ray, HitResult, BestActor);
 
 		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 
@@ -359,6 +341,13 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 				SelectionManager->Select(BestActor);
 			}
 		}
+	}
+
+	if (OverlayStatSystem)
+	{
+		const uint64 PickCycles = PickCounter.Finish();
+		const double ElapsedMs = FPlatformTime::ToMilliseconds(PickCycles);
+		OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
 	}
 }
 

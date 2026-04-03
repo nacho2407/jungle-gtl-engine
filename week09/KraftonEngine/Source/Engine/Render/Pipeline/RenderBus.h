@@ -1,10 +1,11 @@
 ﻿#pragma once
 #include "Core/CoreTypes.h"
-#include "Render/Pipeline/RenderCommand.h"
+#include "Render/Pipeline/RenderConstants.h"
 #include "Render/Types/ViewTypes.h"
 
 class UCameraComponent;
 class FViewport;
+class FPrimitiveSceneProxy;
 
 
 class FRenderBus
@@ -12,10 +13,9 @@ class FRenderBus
 public:
 	void Clear();
 
-	// Mesh 패스용 (Opaque, StencilMask, Outline, Gizmo, Translucent)
-	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
-	void AddCommand(ERenderPass Pass, FRenderCommand&& InCommand);
-	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
+	// 프록시 직접 제출 — 포인터만 저장, 데이터는 프록시 소유
+	void AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy);
+	const TArray<const FPrimitiveSceneProxy*>& GetProxies(ERenderPass Pass) const;
 
 	// Batcher 패스용 — 타입 안전한 전용 큐
 	void AddFontEntry(FFontEntry&& Entry);
@@ -58,8 +58,8 @@ public:
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
 
 private:
-	// Mesh 패스 큐
-	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
+	// 프록시 패스 큐 — 포인터만 저장, 데이터는 프록시 소유
+	TArray<const FPrimitiveSceneProxy*> ProxyQueues[(uint32)ERenderPass::MAX];
 
 	// Batcher 패스 큐
 	TArray<FFontEntry>  FontEntries;

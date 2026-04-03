@@ -3,10 +3,35 @@
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Render/Resource/ShaderManager.h"
 #include "Core/CollisionTypes.h"
+#include "Render/Proxy/FScene.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "GameFramework/World.h"
+
+#include <cmath>
+#include <cstring>
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
+
+void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
+{
+	if (!SceneProxy || !Owner || !Owner->GetWorld()) return;
+	Owner->GetWorld()->GetScene().MarkProxyDirty(SceneProxy, Flag);
+}
+
+void UPrimitiveComponent::SetVisibility(bool bNewVisible)
+{
+	if (bIsVisible == bNewVisible) return;
+	bIsVisible = bNewVisible;
+	MarkProxyDirty(EDirtyFlag::Visibility);
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UWorld* World = OwnerActor->GetWorld())
+		{
+			World->MarkPickingBVHDirty();
+		}
+	}
+}
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
@@ -14,46 +39,38 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
 }
 
-void UPrimitiveComponent::CollectRender(FRenderBus& Bus) const
+void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
-	if (!Bus.GetShowFlags().bPrimitives) return;
-	FMeshBuffer* Buffer = GetMeshBuffer();
-	if (!Buffer || !Buffer->IsValid()) return;
-
-	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
-	Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Cmd.MeshBuffer = Buffer;
-	Bus.AddCommand(ERenderPass::Opaque, Cmd);
-}
-
-void UPrimitiveComponent::CollectSelection(FRenderBus& Bus) const
-{
-	FMeshBuffer* Buffer = GetMeshBuffer();
-	if (!Buffer || !Buffer->IsValid()) return;
-	if (!SupportsOutline()) return;
-
-	// SelectionMask: 스텐실에 선택 오브젝트 마킹 (PostProcess에서 edge detection)
-	FRenderCommand MaskCmd = {};
-	MaskCmd.MeshBuffer = Buffer;
-	MaskCmd.PerObjectConstants = FPerObjectConstants{ GetWorldMatrix() };
-	MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Bus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-
-	if (Bus.GetShowFlags().bBoundingVolume)
+	if (strcmp(PropertyName, "Visible") == 0)
 	{
-		FAABBEntry Entry = {};
-		FBoundingBox Box = GetWorldBoundingBox();
-		Entry.AABB.Min = Box.Min;
-		Entry.AABB.Max = Box.Max;
-		Entry.AABB.Color = FColor::White();
-		Bus.AddAABBEntry(std::move(Entry));
+		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시/BVH 갱신만 전파한다.
+		MarkProxyDirty(EDirtyFlag::Visibility);
+		if (AActor* OwnerActor = GetOwner())
+		{
+			if (UWorld* World = OwnerActor->GetWorld())
+			{
+				World->MarkPickingBVHDirty();
+			}
+		}
 	}
 }
 
 FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 {
+	EnsureWorldAABBUpdated();
 	return FBoundingBox(WorldAABBMinLocation, WorldAABBMaxLocation);
+}
+
+void UPrimitiveComponent::MarkWorldBoundsDirty()
+{
+	bWorldAABBDirty = true;
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UWorld* World = OwnerActor->GetWorld())
+		{
+			World->MarkPickingBVHDirty();
+		}
+	}
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const
@@ -69,6 +86,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 	FVector WorldCenter = GetWorldLocation();
 	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+	bWorldAABBDirty = false;
 }
 
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
@@ -77,7 +95,8 @@ bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHit
 	if (!Data || Data->Indices.empty()) return false;
 
 	bool bHit = FRayUtils::RaycastTriangles(
-		Ray, CachedWorldMatrix,
+		Ray, GetWorldMatrix(),
+		GetWorldInverseMatrix(),
 		&Data->Vertices[0].Position,
 		sizeof(FVertex),
 		Data->Indices,
@@ -94,4 +113,59 @@ void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
 	UpdateWorldAABB();
+
+	// 프록시가 등록된 경우 Transform dirty 전파 (FScene DirtySet에도 등록)
+	MarkProxyDirty(EDirtyFlag::Transform);
+}
+
+// --- 프록시 팩토리 ---
+FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
+{
+	// 기본 PrimitiveComponent용 프록시
+	return new FPrimitiveSceneProxy(this);
+}
+
+// --- 렌더 상태 관리 (UE RegisterComponent 대응) ---
+void UPrimitiveComponent::CreateRenderState()
+{
+	if (SceneProxy) return; // 이미 등록됨
+
+	// Owner → World → FScene 경로로 접근
+	if (!Owner || !Owner->GetWorld()) return;
+	FScene& Scene = Owner->GetWorld()->GetScene();
+	SceneProxy = Scene.AddPrimitive(this);
+}
+
+void UPrimitiveComponent::DestroyRenderState()
+{
+	if (!SceneProxy) return;
+
+	if (Owner && Owner->GetWorld())
+	{
+		FScene& Scene = Owner->GetWorld()->GetScene();
+		Scene.RemovePrimitive(SceneProxy);
+	}
+	SceneProxy = nullptr;
+}
+
+void UPrimitiveComponent::MarkRenderStateDirty()
+{
+	// 프록시 파괴 후 재생성 — 메시 교체 등 큰 변경 시 사용
+	DestroyRenderState();
+	CreateRenderState();
+}
+
+
+void UPrimitiveComponent::OnTransformDirty()
+{
+	MarkWorldBoundsDirty();
+}
+
+void UPrimitiveComponent::EnsureWorldAABBUpdated() const
+{
+	GetWorldMatrix();
+	if (bWorldAABBDirty)
+	{
+		UpdateWorldAABB();
+	}
 }
