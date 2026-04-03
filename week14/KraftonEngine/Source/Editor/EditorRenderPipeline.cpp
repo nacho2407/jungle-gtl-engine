@@ -78,17 +78,29 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetViewportType(Opts.ViewportType);
 
 	// 2. RenderCommand(DefaultPass), Entry(Batcher)를 ERenderPass별로 수집
-	const bool bIsActiveViewport = VC == Editor->GetActiveViewport();
-	const TArray<AActor*>& SelectedActors = Editor->GetSelectionManager().GetSelectedActors();
+	{
+		SCOPE_STAT("Collector.CollectWorld");
+		const TArray<AActor*>& SelectedActors = Editor->GetSelectionManager().GetSelectedActors();
+		Collector.CollectWorld(World, SelectedActors, Bus);
+	}
 
-	Collector.CollectWorld(World, SelectedActors, Bus);
-	Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
-	Collector.CollectGizmo(Editor->GetGizmo(), Opts.ViewportType, Bus);
-	Collector.CollectOverlayText(bIsActiveViewport, Editor->GetOverlayStatSystem(), *Editor, Bus);
+	{
+		SCOPE_STAT("Collector.Other");
+		const bool bIsActiveViewport = VC == Editor->GetActiveViewport();
+		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
+		Collector.CollectGizmo(Editor->GetGizmo(), Opts.ViewportType, Bus);
+		Collector.CollectOverlayText(bIsActiveViewport, Editor->GetOverlayStatSystem(), *Editor, Bus);
+	}
 
 	// 3. Bus에 담긴 커맨드와 엔트리를 기반으로 렌더러에 배치
-	Renderer.PrepareBatchers(Bus);
+	{
+		SCOPE_STAT("PrepareBatcher");
+		Renderer.PrepareBatchers(Bus);
+	}
 
 	// 4. Bus에 담긴 커맨드와 엔트리를 기반으로 GPU 드로우 콜 실행
-	Renderer.Render(Bus);
+	{
+		SCOPE_STAT("Renderer.Render");
+		Renderer.Render(Bus);
+	}
 }
