@@ -20,25 +20,31 @@ FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
 void UGizmoComponent::CreateRenderState()
 {
 	if (SceneProxy) return;
-	if (!Owner || !Owner->GetWorld()) return;
-	FScene& Scene = Owner->GetWorld()->GetScene();
+
+	FScene* Scene = RegisteredScene;
+	if (!Scene && Owner && Owner->GetWorld())
+		Scene = &Owner->GetWorld()->GetScene();
+	if (!Scene) return;
 
 	// Outer 프록시 (기본 경로)
-	SceneProxy = Scene.AddPrimitive(this);
+	SceneProxy = Scene->AddPrimitive(this);
 
 	// Inner 프록시 (별도 등록)
 	InnerProxy = new FGizmoSceneProxy(this, true);
-	Scene.RegisterProxy(InnerProxy);
+	Scene->RegisterProxy(InnerProxy);
 }
 
 void UGizmoComponent::DestroyRenderState()
 {
-	if (Owner && Owner->GetWorld())
+	FScene* Scene = RegisteredScene;
+	if (!Scene && Owner && Owner->GetWorld())
+		Scene = &Owner->GetWorld()->GetScene();
+
+	if (Scene)
 	{
-		FScene& Scene = Owner->GetWorld()->GetScene();
-		if (InnerProxy) { Scene.RemovePrimitive(InnerProxy); InnerProxy = nullptr; }
+		if (InnerProxy) { Scene->RemovePrimitive(InnerProxy); InnerProxy = nullptr; }
+		if (SceneProxy) { Scene->RemovePrimitive(SceneProxy); SceneProxy = nullptr; }
 	}
-	UPrimitiveComponent::DestroyRenderState();
 }
 
 #include <cmath>

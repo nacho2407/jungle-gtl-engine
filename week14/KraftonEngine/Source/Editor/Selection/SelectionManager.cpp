@@ -13,6 +13,22 @@ void FSelectionManager::Init()
 	Gizmo->Deactivate();
 }
 
+void FSelectionManager::SetWorld(UWorld* InWorld)
+{
+	// 기존 Scene에서 Gizmo 프록시 해제
+	if (Gizmo && World)
+		Gizmo->DestroyRenderState();
+
+	World = InWorld;
+
+	// 새 Scene에 Gizmo 프록시 등록
+	if (Gizmo && World)
+	{
+		Gizmo->SetScene(&World->GetScene());
+		Gizmo->CreateRenderState();
+	}
+}
+
 void FSelectionManager::Shutdown()
 {
 	ClearSelection();
