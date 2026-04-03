@@ -9,23 +9,36 @@
 #include "Render/Pipeline/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
 
+#include <cstring>
+
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
+
+void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
+{
+	if (!SceneProxy || !Owner || !Owner->GetWorld()) return;
+	Owner->GetWorld()->GetScene().MarkProxyDirty(SceneProxy, Flag);
+}
 
 void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 {
 	if (bIsVisible == bNewVisible) return;
 	bIsVisible = bNewVisible;
-
-	if (SceneProxy)
-	{
-		SceneProxy->MarkDirty(EDirtyFlag::Visibility);
-	}
+	MarkProxyDirty(EDirtyFlag::Visibility);
 }
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+}
+
+void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
+{
+	if (strcmp(PropertyName, "Visible") == 0)
+	{
+		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시 dirty 전파
+		MarkProxyDirty(EDirtyFlag::Visibility);
+	}
 }
 
 void UPrimitiveComponent::CollectRender(FRenderBus& Bus) const
@@ -109,11 +122,8 @@ void UPrimitiveComponent::UpdateWorldMatrix() const
 	USceneComponent::UpdateWorldMatrix();
 	UpdateWorldAABB();
 
-	// 프록시가 등록된 경우 Transform dirty 전파
-	if (SceneProxy)
-	{
-		SceneProxy->MarkDirty(EDirtyFlag::Transform);
-	}
+	// 프록시가 등록된 경우 Transform dirty 전파 (FScene DirtySet에도 등록)
+	MarkProxyDirty(EDirtyFlag::Transform);
 }
 
 // --- 프록시 팩토리 ---

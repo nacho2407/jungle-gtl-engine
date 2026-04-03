@@ -155,6 +155,15 @@ FVector AActor::GetActorForward() const
 	return FVector(0, 0, 1);
 }
 
+void AActor::SetVisible(bool Visible)
+{
+	bVisible = Visible;
+	for (UPrimitiveComponent* Prim : GetPrimitiveComponents())
+	{
+		Prim->SetVisibility(Visible);
+	}
+}
+
 const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 {
 	if (bPrimitiveCacheDirty)
