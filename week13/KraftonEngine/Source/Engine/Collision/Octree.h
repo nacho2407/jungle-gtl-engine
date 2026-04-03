@@ -2,6 +2,7 @@
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Math/Vector.h"
 #include "Component/PrimitiveComponent.h"
+#include "Engine/Math/ConvexVolume.h"
 #include <memory>
 
 constexpr int32 MAX_DEPTH = 5;
@@ -35,7 +36,7 @@ public:
 	TArray<UPrimitiveComponent*> FindNearestPrimitiveList(const FVector& Pos, const FVector& QueryExtent, uint32 Count);
 
 	void QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent*>& OutPrimitives) const;
-	void QueryFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
 	void Reset(const FBoundingBox& InBounds, uint32 InDepth = 0);
