@@ -121,6 +121,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 			{
 				EditorEngine->GetWorldList().push_back(LoadCtx);
 				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
+				EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
 			}
 			EditorEngine->ResetViewport();
 
