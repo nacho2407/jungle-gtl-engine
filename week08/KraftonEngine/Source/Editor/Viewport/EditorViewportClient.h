@@ -15,11 +15,13 @@ class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
 class FViewport;
+class FOverlayStatSystem;
 
 class FEditorViewportClient : public FViewportClient
 {
 public:
 	void Initialize(FWindowsWindow* InWindow);
+	void SetOverlayStatSystem(FOverlayStatSystem* InOverlayStatSystem) { OverlayStatSystem = InOverlayStatSystem; }
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
@@ -69,6 +71,7 @@ private:
 	FViewport* Viewport = nullptr;
 	SWindow* LayoutWindow = nullptr;
 	FWindowsWindow* Window = nullptr;
+	FOverlayStatSystem* OverlayStatSystem = nullptr;
 	UWorld* World = nullptr;
 	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
