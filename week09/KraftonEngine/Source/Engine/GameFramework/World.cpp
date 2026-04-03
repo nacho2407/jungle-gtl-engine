@@ -2,6 +2,8 @@
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Collision/RayUtils.h"
+#include "Engine/Math/ConvexVolume.h"
+#include "Engine/Component/CameraComponent.h"
 #include <algorithm>
 
 IMPLEMENT_CLASS(UWorld, UObject)
@@ -271,6 +273,24 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
     }
 }
 
+void UWorld::UpdateVisibleActors()
+{
+	VisiblePrimitives.clear();
+	VisibleActors.clear();
+
+	FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
+
+	Octree->QueryFrustum(ConvexVolume, VisiblePrimitives);
+
+	for (UPrimitiveComponent* Primitive : VisiblePrimitives)
+	{
+		if (AActor* Owner = Primitive->GetOwner())
+		{
+			VisibleActors.push_back(Owner);
+		}
+	}
+}
+
 void UWorld::InitWorld()
 {
 	 Octree = new FOctree(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)), 0);
@@ -291,7 +311,8 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
-	for (AActor* Actor : Actors)
+	UpdateVisibleActors();
+	for (AActor* Actor : VisibleActors)
 	{
 		if (Actor)
 		{
