@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
-#include "Render/Pipeline/RenderCommand.h"
+#include "Render/Pipeline/RenderConstants.h"
 
 class UEditorEngine;
 
