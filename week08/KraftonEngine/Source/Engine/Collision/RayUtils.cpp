@@ -60,6 +60,7 @@ bool FRayUtils::IntersectTriangle(const FVector& RayOrigin, const FVector& RayDi
 bool FRayUtils::RaycastTriangles(
 	const FRay& WorldRay,
 	const FMatrix& WorldMatrix,
+	const FMatrix& InverseWorldMatrix,
 	const void* PositionData,
 	uint32 PositionStride,
 	const TArray<uint32>& Indices,
@@ -67,7 +68,8 @@ bool FRayUtils::RaycastTriangles(
 {
 	if (!PositionData || Indices.empty()) return false;
 
-	FMatrix invWorld = WorldMatrix.GetInverse();
+	//FMatrix invWorld = WorldMatrix.GetInverse(); //Get으로 표기되어 있으나 내부적으로 실시간 계산
+	FMatrix invWorld = InverseWorldMatrix;
 	FVector localOrigin = invWorld.TransformPositionWithW(WorldRay.Origin);
 	FVector localDir = invWorld.TransformVector(WorldRay.Direction);
 	localDir.Normalize();
