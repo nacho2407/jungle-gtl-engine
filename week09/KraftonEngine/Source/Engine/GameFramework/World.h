@@ -4,6 +4,7 @@
 #include "Core/CollisionTypes.h"
 #include "GameFramework/AActor.h"
 #include "Render/Proxy/FScene.h"
+#include <Collision/Octree.h>
 
 class UCameraComponent;
 class UPrimitiveComponent;
@@ -39,7 +40,11 @@ public:
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
 	const FScene& GetScene() const { return Scene; }
-
+	
+	FOctree* GetOctree() { return Octree; }
+	void InsertActorToOctree(AActor* actor);
+	void RemoveActorToOctree(AActor* actor);
+	void UpdateActorInOctree(AActor* actor);
 private:
 	struct FPickingBVHLeaf
 	{
@@ -70,6 +75,8 @@ private:
 	mutable TArray<FPickingBVHLeaf> PickingLeaves;
 	mutable TArray<FPickingBVHNode> PickingNodes;
 	FScene Scene;
+
+	FOctree* Octree;
 };
 
 template<typename T>
