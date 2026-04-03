@@ -66,9 +66,9 @@ public:
 	void Deactivate() override;
 
 	FMeshBuffer* GetMeshBuffer() const override;
-	void CollectRender(FRenderBus& Bus) const override;
-	void CollectSelection(FRenderBus& Bus) const override {}  // Gizmo는 선택 이펙트 없음
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
+	void CreateRenderState() override;
+	void DestroyRenderState() override;
 
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
@@ -98,4 +98,5 @@ private:
 	bool bPressedOnHandle = false;
 	const FMeshData* MeshData = nullptr;
 	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — 기본 전부 표시
+	FPrimitiveSceneProxy* InnerProxy = nullptr;	// GizmoInner 전용 프록시
 };

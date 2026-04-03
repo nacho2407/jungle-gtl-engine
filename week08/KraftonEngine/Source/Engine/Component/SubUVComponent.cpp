@@ -7,8 +7,16 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
+#include "Render/Pipeline/BillboardSceneProxy.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
+
+FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
+{
+	FBillboardSceneProxy* Proxy = new FBillboardSceneProxy(this);
+	Proxy->bBatcherRendered = true; // SubUVBatcher 경유 렌더링
+	return Proxy;
+}
 
 void USubUVComponent::CollectRender(FRenderBus& Bus) const
 {

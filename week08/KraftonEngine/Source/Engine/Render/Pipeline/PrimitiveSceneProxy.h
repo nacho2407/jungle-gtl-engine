@@ -8,6 +8,7 @@
 class UPrimitiveComponent;
 class FShader;
 class FMeshBuffer;
+class FRenderBus;
 
 // ============================================================
 // FPrimitiveSceneProxy — UPrimitiveComponent의 렌더 데이터 미러 (기본 클래스)
@@ -40,6 +41,10 @@ public:
 	// --- 변경 추적 ---
 	EDirtyFlag DirtyFlags = EDirtyFlag::All;
 
+	// --- Per-viewport 갱신 (bPerViewportUpdate=true 프록시만) ---
+	// 매 프레임, 각 뷰포트의 카메라 데이터로 프록시 상태를 갱신
+	virtual void UpdatePerViewport(const FRenderBus& Bus) {}
+
 	// --- 가시성·선택 ---
 	bool bVisible  = true;
 	bool bSelected = false;
@@ -60,4 +65,8 @@ public:
 
 	// 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)
 	bool bPerViewportUpdate = false;
+
+	// true면 렌더링은 Batcher(Font/SubUV)가 담당 — CollectRender 호출 유지
+	// false면 프록시가 직접 ProxyQueue에 제출
+	bool bBatcherRendered = false;
 };

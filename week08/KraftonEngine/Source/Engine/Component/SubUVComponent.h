@@ -38,6 +38,7 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 	void CollectRender(FRenderBus& Bus) const override;
 	void UpdateWorldAABB() const override;
 

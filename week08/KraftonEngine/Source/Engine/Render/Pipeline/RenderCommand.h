@@ -191,15 +191,4 @@ struct FMeshSectionDraw
 	bool bIsUVScroll = false;
 };
 
-struct FRenderCommand
-{
-	FMeshBuffer* MeshBuffer = nullptr;
-	FShader* Shader = nullptr;
-	FPerObjectConstants PerObjectConstants = {};	// b1 (공통)
-
-	// StaticMesh 섹션별 드로우 정보
-	TArray<FMeshSectionDraw> SectionDraws;
-
-	// GPU CB 바인딩 — ExtraCB.Data를 지정 슬롯의 CB에 업로드 (Gizmo, Outline 등)
-	FConstantBufferBinding ExtraCB;
-};
+// FRenderCommand — 삭제됨. 모든 렌더 데이터는 FPrimitiveSceneProxy가 소유.

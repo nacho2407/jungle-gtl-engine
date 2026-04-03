@@ -19,7 +19,6 @@ public:
 
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
 	const FMeshData* GetMeshData() const override { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad); }
-	void CollectSelection(FRenderBus& Bus) const override;
 
 protected:
 	bool bIsBillboard = true;

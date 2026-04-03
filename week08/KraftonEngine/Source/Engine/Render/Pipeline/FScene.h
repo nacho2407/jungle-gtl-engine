@@ -21,6 +21,9 @@ public:
 	// Component의 CreateSceneProxy()를 호출하여 구체 프록시 생성 후 등록
 	FPrimitiveSceneProxy* AddPrimitive(UPrimitiveComponent* Component);
 
+	// 이미 생성된 프록시를 직접 등록 (Gizmo Inner 등 추가 프록시용)
+	void RegisterProxy(FPrimitiveSceneProxy* Proxy);
+
 	// Component가 EndPlay 또는 소멸 시 호출
 	void RemovePrimitive(FPrimitiveSceneProxy* Proxy);
 

@@ -1,4 +1,4 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
@@ -32,7 +32,7 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, ELevelViewportType V
 	if (!Gizmo) return;
 
 	Gizmo->UpdateAxisMask(ViewportType);
-	Gizmo->CollectRender(RenderBus);
+	// Gizmo 렌더링은 프록시 경로로 처리 (CollectFromScene에서 UpdatePerViewport)
 }
 
 void FRenderCollector::CollectOverlayText(bool bActive, const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
@@ -56,7 +56,7 @@ void FRenderCollector::CollectOverlayText(bool bActive, const FOverlayStatSystem
 }
 
 // ============================================================
-// FScene 프록시 기반 수집
+// FScene 프록시 기반 수집 — FRenderCommand 생성 없음
 // ============================================================
 void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 {
@@ -65,29 +65,40 @@ void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 	for (FPrimitiveSceneProxy* Proxy : Scene.GetAllProxies())
 	{
 		if (!Proxy) continue;
-		if (!Proxy->bVisible) continue;
 		if (!Proxy->Owner) continue;
 
-		// per-viewport 프록시(Gizmo, Billboard)는 기존 경로로 폴백
+		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
 		{
-			Proxy->Owner->CollectRender(RenderBus);
+			Proxy->UpdatePerViewport(RenderBus);
+			if (!Proxy->bVisible) continue;
 
-			if (Proxy->bSelected)
+			// Batcher 경유 렌더링 (Font, SubUV): CollectRender로 Entry 생성
+			if (Proxy->bBatcherRendered)
+				Proxy->Owner->CollectRender(RenderBus);
+			else
+				RenderBus.AddProxy(Proxy->Pass, Proxy);
+
+			// Selection
+			if (Proxy->bSelected && Proxy->Owner->SupportsOutline())
 			{
-				Proxy->Owner->CollectSelection(RenderBus);
+				RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
+				// Billboard 계열은 AABB 제외
 			}
 			continue;
 		}
+
+		// 일반 프록시
+		if (!Proxy->bVisible) continue;
 
 		// Actor 가시성 체크
 		AActor* OwnerActor = Proxy->Owner->GetOwner();
 		if (OwnerActor && !OwnerActor->IsVisible()) continue;
 
-		// 프록시 포인터를 패스 큐에 직접 제출 (FRenderCommand 복사 없음)
+		// 프록시 포인터를 패스 큐에 직접 제출
 		RenderBus.AddProxy(Proxy->Pass, Proxy);
 
-		// 선택된 오브젝트 → SelectionMask에 같은 프록시 제출 (FRenderCommand 생성 없음)
+		// 선택된 오브젝트 → SelectionMask에 같은 프록시 제출
 		if (Proxy->bSelected)
 		{
 			RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
