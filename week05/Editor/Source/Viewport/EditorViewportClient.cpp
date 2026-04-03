@@ -33,13 +33,13 @@ void FEditorViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 	}
 
 	EditorUI.Initialize(EditorEngine);
-	EditorUI.AttachToRenderer(Renderer);
+	//EditorUI.AttachToRenderer(Renderer); GameGem
 
 	BlitRenderer.Initialize(Renderer->GetDevice());
 
 	// Cache wireframe material for wireframe view mode.
-	WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName);
-	CreateGridResource(Renderer);
+	//WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName); GameGem
+	//CreateGridResource(Renderer); GameGem
 }
 
 void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)

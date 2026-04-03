@@ -269,6 +269,7 @@ void FSlateApplication::Paint(SWidget& Painter)
 	{
 		for (int i = 0; i < ActiveViewportCount; i++)
 		{
+			break; // GameGem
 			if (!Viewports[i] || Viewports[i]->Id != FocusedViewportId)
 			{
 				continue;

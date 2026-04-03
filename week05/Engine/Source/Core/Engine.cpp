@@ -519,7 +519,8 @@ void FEngine::RenderFrame()
 
 	if (ActiveViewportClient)
 	{
-		const FVector CameraPosition = CommandQueue.ViewMatrix.GetInverse().GetTranslation();
+		const FMatrix ViewInverse = CommandQueue.ViewMatrix.GetInverse();
+		const FVector CameraPosition = ViewInverse.GetTranslation();
 		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue);
 	}
 
