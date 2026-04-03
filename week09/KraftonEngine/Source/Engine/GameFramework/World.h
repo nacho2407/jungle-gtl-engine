@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
+#include "Collision/Octree.h"
 
 class UCameraComponent;
 
@@ -28,7 +29,8 @@ public:
 	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
 	void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }
 	UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
-
+	
+	FOctree Octree;
 private:
 	TArray<AActor*> Actors;
 	UCameraComponent* ActiveCamera = nullptr;
