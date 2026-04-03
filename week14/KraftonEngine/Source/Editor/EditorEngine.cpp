@@ -116,6 +116,7 @@ void UEditorEngine::NewScene()
 void UEditorEngine::ClearScene()
 {
 	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(nullptr);
 
 	for (FWorldContext& Ctx : WorldList)
 	{
