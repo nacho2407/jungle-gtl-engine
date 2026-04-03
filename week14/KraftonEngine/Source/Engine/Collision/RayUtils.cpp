@@ -113,8 +113,6 @@ bool FRayUtils::RaycastComponent(UPrimitiveComponent* Component, const FRay& Ray
 	if (!Component || !Component->IsVisible())
 		return false;
 
-	Component->UpdateWorldAABB();
-
 	FBoundingBox AABB = Component->GetWorldBoundingBox();
 	if (!CheckRayAABB(Ray, AABB.Min, AABB.Max))
 		return false;

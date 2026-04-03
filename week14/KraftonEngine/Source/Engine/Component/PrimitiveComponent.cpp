@@ -8,6 +8,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
 
+#include <cmath>
 #include <cstring>
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
@@ -23,6 +24,13 @@ void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 	if (bIsVisible == bNewVisible) return;
 	bIsVisible = bNewVisible;
 	MarkProxyDirty(EDirtyFlag::Visibility);
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UWorld* World = OwnerActor->GetWorld())
+		{
+			World->MarkPickingBVHDirty();
+		}
+	}
 }
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -35,14 +43,34 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
 	if (strcmp(PropertyName, "Visible") == 0)
 	{
-		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시 dirty 전파
+		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시/BVH 갱신만 전파한다.
 		MarkProxyDirty(EDirtyFlag::Visibility);
+		if (AActor* OwnerActor = GetOwner())
+		{
+			if (UWorld* World = OwnerActor->GetWorld())
+			{
+				World->MarkPickingBVHDirty();
+			}
+		}
 	}
 }
 
 FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 {
+	EnsureWorldAABBUpdated();
 	return FBoundingBox(WorldAABBMinLocation, WorldAABBMaxLocation);
+}
+
+void UPrimitiveComponent::MarkWorldBoundsDirty()
+{
+	bWorldAABBDirty = true;
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UWorld* World = OwnerActor->GetWorld())
+		{
+			World->MarkPickingBVHDirty();
+		}
+	}
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const
@@ -58,6 +86,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 	FVector WorldCenter = GetWorldLocation();
 	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+	bWorldAABBDirty = false;
 }
 
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
@@ -124,4 +153,19 @@ void UPrimitiveComponent::MarkRenderStateDirty()
 	// 프록시 파괴 후 재생성 — 메시 교체 등 큰 변경 시 사용
 	DestroyRenderState();
 	CreateRenderState();
+}
+
+
+void UPrimitiveComponent::OnTransformDirty()
+{
+	MarkWorldBoundsDirty();
+}
+
+void UPrimitiveComponent::EnsureWorldAABBUpdated() const
+{
+	GetWorldMatrix();
+	if (bWorldAABBDirty)
+	{
+		UpdateWorldAABB();
+	}
 }

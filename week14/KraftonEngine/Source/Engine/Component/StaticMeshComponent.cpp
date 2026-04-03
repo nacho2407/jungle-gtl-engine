@@ -48,6 +48,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 	}
 	CacheLocalBounds();
 	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
 }
 
 void UStaticMeshComponent::CacheLocalBounds()
@@ -130,6 +131,7 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
 	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
+	bWorldAABBDirty = false;
 }
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
@@ -187,6 +189,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			SetStaticMesh(Loaded);
 		}
 		CacheLocalBounds();
+		MarkWorldBoundsDirty();
 	}
 
 	if (strncmp(PropertyName, "Element ", 8) == 0)
