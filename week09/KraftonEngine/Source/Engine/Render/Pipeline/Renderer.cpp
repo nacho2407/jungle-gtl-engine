@@ -199,14 +199,14 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 			const auto& Proxies = InRenderBus.GetProxies(CurPass);
 			if (!Proxies.empty())
 			{
-				ExecuteProxyPass(Proxies, InRenderBus, Context);
+				ExecutePass(Proxies, Context);
 			}
 
 			// 기존 FRenderCommand 경로 (Selection, bPerViewportUpdate 폴백 등)
 			const auto& Commands = InRenderBus.GetCommands(CurPass);
 			if (!Commands.empty())
 			{
-				ExecuteDefaultPass(Commands, InRenderBus, Context);
+				ExecutePass(Commands, Context);
 			}
 		}
 	}
@@ -292,123 +292,18 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 }
 
 // ============================================================
-// 기본 패스 실행기 — 2-pass 링 버퍼 (Write → Unmap → Draw)
+// 통합 패스 실행기 — FRenderCommand / FPrimitiveSceneProxy* 공용
+// 두 타입이 동일 필드명(Shader, MeshBuffer, PerObjectConstants, SectionDraws, ExtraCB) 공유
 // ============================================================
-// 기본 패스 실행기 — 중복 상태 바인딩 스킵
-void FRenderer::ExecuteDefaultPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context)
-{
-	// 이전 프레임/패스 상태를 무효화
-	FShader*     LastShader     = nullptr;
-	FMeshBuffer* LastMeshBuffer = nullptr;
-	bool         bSamplerBound  = false;
-	ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull); // sentinel
-	int32        LastUVScroll   = -1; // sentinel: 0 or 1
-
-	for (const auto& Cmd : Commands)
-	{
-		// --- 셰이더 바인딩 (변경 시에만) ---
-		if (Cmd.Shader && Cmd.Shader != LastShader)
-		{
-			Cmd.Shader->Bind(Context);
-			LastShader = Cmd.Shader;
-		}
-
-		// --- PerObject CB 업데이트 (매 오브젝트 필수 — 트랜스폼이 다르므로) ---
-		Resources.PerObjectConstantBuffer.Update(Context, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
-		{
-			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
-		}
-
-		// --- Extra CB (Gizmo, Outline 등 — 있을 때만) ---
-		if (Cmd.ExtraCB.Buffer)
-		{
-			Cmd.ExtraCB.Buffer->Update(Context, Cmd.ExtraCB.Data, Cmd.ExtraCB.Size);
-			ID3D11Buffer* cb = Cmd.ExtraCB.Buffer->GetBuffer();
-			Context->VSSetConstantBuffers(Cmd.ExtraCB.Slot, 1, &cb);
-			Context->PSSetConstantBuffers(Cmd.ExtraCB.Slot, 1, &cb);
-		}
-
-		// --- StaticMesh 섹션별 드로우 ---
-		if (!Cmd.SectionDraws.empty())
-		{
-			if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid()) continue;
-
-			// VB/IB 바인딩 (동일 메시면 스킵)
-			if (Cmd.MeshBuffer != LastMeshBuffer)
-			{
-				uint32 offset = 0;
-				ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-				if (!vertexBuffer) continue;
-				uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-				Context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-				ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-				if (!indexBuffer) continue;
-				Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-				LastMeshBuffer = Cmd.MeshBuffer;
-			}
-
-			// Sampler (패스 내 1회만)
-			if (!bSamplerBound)
-			{
-				Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
-				bSamplerBound = true;
-			}
-
-			for (const FMeshSectionDraw& Section : Cmd.SectionDraws)
-			{
-				if (Section.IndexCount == 0) continue;
-
-				// SRV 바인딩 (변경 시에만)
-				if (Section.DiffuseSRV != LastSRV)
-				{
-					ID3D11ShaderResourceView* srv = Section.DiffuseSRV;
-					Context->PSSetShaderResources(0, 1, &srv);
-					LastSRV = Section.DiffuseSRV;
-				}
-
-				// PerObject CB — DiffuseColor 반영
-				FPerObjectConstants SectionConstants = Cmd.PerObjectConstants;
-				SectionConstants.Color = Section.DiffuseColor;
-				Resources.PerObjectConstantBuffer.Update(Context, &SectionConstants, sizeof(FPerObjectConstants));
-
-				// Material CB — UVScroll (변경 시에만)
-				int32 curUVScroll = Section.bIsUVScroll ? 1 : 0;
-				if (curUVScroll != LastUVScroll)
-				{
-					FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
-					FMaterialConstants MatConstants = {};
-					MatConstants.bIsUVScroll = curUVScroll;
-					MaterialCB->Update(Context, &MatConstants, sizeof(MatConstants));
-					ID3D11Buffer* b4 = MaterialCB->GetBuffer();
-					Context->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
-					LastUVScroll = curUVScroll;
-				}
-
-				Context->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
-			}
-		}
-		else
-		{
-			LastMeshBuffer = nullptr; // DrawCommand가 VB/IB를 바인딩하므로 캐시 무효화
-			DrawCommand(Context, Cmd);
-		}
-	}
-
-	// SRV 언바인딩
-	if (LastSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull))
-	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
-		Context->PSSetShaderResources(0, 1, &nullSRV);
-	}
+namespace {
+	// TArray<FRenderCommand> → const FRenderCommand&
+	// TArray<const FPrimitiveSceneProxy*> → const FPrimitiveSceneProxy&
+	inline const FRenderCommand& Resolve(const FRenderCommand& Item) { return Item; }
+	inline const FPrimitiveSceneProxy& Resolve(const FPrimitiveSceneProxy* Item) { return *Item; }
 }
 
-// ============================================================
-// 프록시 직접 실행기 — 프록시 필드를 직접 읽어 GPU 제출 (FRenderCommand 복사 제거)
-// ============================================================
-void FRenderer::ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Proxies, const FRenderBus& Bus, ID3D11DeviceContext* Context)
+template<typename TItem>
+void FRenderer::ExecutePass(const TArray<TItem>& Items, ID3D11DeviceContext* Context)
 {
 	FShader*     LastShader     = nullptr;
 	FMeshBuffer* LastMeshBuffer = nullptr;
@@ -416,49 +311,52 @@ void FRenderer::ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Prox
 	ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 	int32        LastUVScroll   = -1;
 
-	for (const FPrimitiveSceneProxy* Proxy : Proxies)
+	for (const auto& RawItem : Items)
 	{
-		if (!Proxy->MeshBuffer || !Proxy->MeshBuffer->IsValid()) continue;
+		const auto& Item = Resolve(RawItem);
+
+		if (!Item.MeshBuffer || !Item.MeshBuffer->IsValid()) continue;
 
 		// --- 셰이더 바인딩 (변경 시에만) ---
-		if (Proxy->Shader && Proxy->Shader != LastShader)
+		if (Item.Shader && Item.Shader != LastShader)
 		{
-			Proxy->Shader->Bind(Context);
-			LastShader = Proxy->Shader;
+			Item.Shader->Bind(Context);
+			LastShader = Item.Shader;
 		}
 
 		// --- PerObject CB 업데이트 ---
-		Resources.PerObjectConstantBuffer.Update(Context, &Proxy->PerObjectConstants, sizeof(FPerObjectConstants));
+		Resources.PerObjectConstantBuffer.Update(Context, &Item.PerObjectConstants, sizeof(FPerObjectConstants));
 		{
 			ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
 		}
 
-		// --- Extra CB ---
-		if (Proxy->ExtraCB.Buffer)
+		// --- Extra CB (Gizmo 등 — 있을 때만) ---
+		if (Item.ExtraCB.Buffer)
 		{
-			Proxy->ExtraCB.Buffer->Update(Context, Proxy->ExtraCB.Data, Proxy->ExtraCB.Size);
-			ID3D11Buffer* cb = Proxy->ExtraCB.Buffer->GetBuffer();
-			Context->VSSetConstantBuffers(Proxy->ExtraCB.Slot, 1, &cb);
-			Context->PSSetConstantBuffers(Proxy->ExtraCB.Slot, 1, &cb);
+			Item.ExtraCB.Buffer->Update(Context, Item.ExtraCB.Data, Item.ExtraCB.Size);
+			ID3D11Buffer* cb = Item.ExtraCB.Buffer->GetBuffer();
+			Context->VSSetConstantBuffers(Item.ExtraCB.Slot, 1, &cb);
+			Context->PSSetConstantBuffers(Item.ExtraCB.Slot, 1, &cb);
 		}
 
-		// --- StaticMesh 섹션별 드로우 ---
-		if (!Proxy->SectionDraws.empty())
+		// --- 섹션별 드로우 (StaticMesh) ---
+		if (!Item.SectionDraws.empty())
 		{
-			if (Proxy->MeshBuffer != LastMeshBuffer)
+			// VB/IB 바인딩 (동일 메시면 스킵)
+			if (Item.MeshBuffer != LastMeshBuffer)
 			{
 				uint32 offset = 0;
-				ID3D11Buffer* vertexBuffer = Proxy->MeshBuffer->GetVertexBuffer().GetBuffer();
+				ID3D11Buffer* vertexBuffer = Item.MeshBuffer->GetVertexBuffer().GetBuffer();
 				if (!vertexBuffer) continue;
-				uint32 stride = Proxy->MeshBuffer->GetVertexBuffer().GetStride();
+				uint32 stride = Item.MeshBuffer->GetVertexBuffer().GetStride();
 				Context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
-				ID3D11Buffer* indexBuffer = Proxy->MeshBuffer->GetIndexBuffer().GetBuffer();
+				ID3D11Buffer* indexBuffer = Item.MeshBuffer->GetIndexBuffer().GetBuffer();
 				if (!indexBuffer) continue;
 				Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-				LastMeshBuffer = Proxy->MeshBuffer;
+				LastMeshBuffer = Item.MeshBuffer;
 			}
 
 			if (!bSamplerBound)
@@ -467,7 +365,7 @@ void FRenderer::ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Prox
 				bSamplerBound = true;
 			}
 
-			for (const FMeshSectionDraw& Section : Proxy->SectionDraws)
+			for (const FMeshSectionDraw& Section : Item.SectionDraws)
 			{
 				if (Section.IndexCount == 0) continue;
 
@@ -478,7 +376,7 @@ void FRenderer::ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Prox
 					LastSRV = Section.DiffuseSRV;
 				}
 
-				FPerObjectConstants SectionConstants = Proxy->PerObjectConstants;
+				FPerObjectConstants SectionConstants = Item.PerObjectConstants;
 				SectionConstants.Color = Section.DiffuseColor;
 				Resources.PerObjectConstantBuffer.Update(Context, &SectionConstants, sizeof(FPerObjectConstants));
 
@@ -499,23 +397,23 @@ void FRenderer::ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Prox
 		}
 		else
 		{
-			// 비-섹션 메시 (기본 Primitive)
+			// 비-섹션 메시 (기본 Primitive) — VB/IB 직접 바인딩 + Draw
 			LastMeshBuffer = nullptr;
 
 			uint32 offset = 0;
-			ID3D11Buffer* vertexBuffer = Proxy->MeshBuffer->GetVertexBuffer().GetBuffer();
+			ID3D11Buffer* vertexBuffer = Item.MeshBuffer->GetVertexBuffer().GetBuffer();
 			if (!vertexBuffer) continue;
 
-			uint32 vertexCount = Proxy->MeshBuffer->GetVertexBuffer().GetVertexCount();
-			uint32 stride = Proxy->MeshBuffer->GetVertexBuffer().GetStride();
+			uint32 vertexCount = Item.MeshBuffer->GetVertexBuffer().GetVertexCount();
+			uint32 stride = Item.MeshBuffer->GetVertexBuffer().GetStride();
 			if (vertexCount == 0 || stride == 0) continue;
 
 			Context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
-			ID3D11Buffer* indexBuffer = Proxy->MeshBuffer->GetIndexBuffer().GetBuffer();
+			ID3D11Buffer* indexBuffer = Item.MeshBuffer->GetIndexBuffer().GetBuffer();
 			if (indexBuffer)
 			{
-				uint32 indexCount = Proxy->MeshBuffer->GetIndexBuffer().GetIndexCount();
+				uint32 indexCount = Item.MeshBuffer->GetIndexBuffer().GetIndexCount();
 				Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 				Context->DrawIndexed(indexCount, 0, 0);
 			}
@@ -532,6 +430,10 @@ void FRenderer::ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Prox
 		Context->PSSetShaderResources(0, 1, &nullSRV);
 	}
 }
+
+// 명시적 템플릿 인스턴스화
+template void FRenderer::ExecutePass<FRenderCommand>(const TArray<FRenderCommand>&, ID3D11DeviceContext*);
+template void FRenderer::ExecutePass<const FPrimitiveSceneProxy*>(const TArray<const FPrimitiveSceneProxy*>&, ID3D11DeviceContext*);
 
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
 {
@@ -550,117 +452,6 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 }
 
 // ============================================================
-// 커맨드 바인딩 — 셰이더 + PerObject CB + Extra CB (데이터 드리븐)
-// ============================================================
-void FRenderer::BindCommand(const FRenderCommand& InCmd, ID3D11DeviceContext* Context)
-{
-	// 커맨드가 지정한 셰이더 바인딩
-	if (InCmd.Shader)
-	{
-		InCmd.Shader->Bind(Context);
-	}
-
-	// 공통 PerObject CB
-	Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
-	{
-		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
-	}
-
-	// Extra CB — ExtraCB.Data를 지정 슬롯에 업로드
-	if (InCmd.ExtraCB.Buffer)
-	{
-		InCmd.ExtraCB.Buffer->Update(Context, InCmd.ExtraCB.Data, InCmd.ExtraCB.Size);
-		ID3D11Buffer* cb = InCmd.ExtraCB.Buffer->GetBuffer();
-		Context->VSSetConstantBuffers(InCmd.ExtraCB.Slot, 1, &cb);
-		Context->PSSetConstantBuffers(InCmd.ExtraCB.Slot, 1, &cb);
-	}
-}
-
-void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand)
-{
-	if (InCommand.MeshBuffer == nullptr || !InCommand.MeshBuffer->IsValid())
-	{
-		return;
-	}
-
-	uint32 offset = 0;
-	ID3D11Buffer* vertexBuffer = InCommand.MeshBuffer->GetVertexBuffer().GetBuffer();
-	if (vertexBuffer == nullptr)
-	{
-		return;
-	}
-
-	uint32 vertexCount = InCommand.MeshBuffer->GetVertexBuffer().GetVertexCount();
-	uint32 stride = InCommand.MeshBuffer->GetVertexBuffer().GetStride();
-	if (vertexCount == 0 || stride == 0)
-	{
-		return;
-	}
-
-	InDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-	ID3D11Buffer* indexBuffer = InCommand.MeshBuffer->GetIndexBuffer().GetBuffer();
-	if (indexBuffer != nullptr)
-	{
-		uint32 indexCount = InCommand.MeshBuffer->GetIndexBuffer().GetIndexCount();
-		InDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-		InDeviceContext->DrawIndexed(indexCount, 0, 0);
-	}
-	else
-	{
-		InDeviceContext->Draw(vertexCount, 0);
-	}
-}
-
-void FRenderer::DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRenderCommand& Cmd)
-{
-	if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid()) return;
-
-	// 버텍스 버퍼 바인딩 (한 번만)
-	uint32 offset = 0;
-	ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-	if (!vertexBuffer) return;
-	uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-	Context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-	ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-	if (!indexBuffer) return;
-	Context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// StaticMeshShader가 s0에 SamplerState를 요구
-	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
-
-	for (const FMeshSectionDraw& Section : Cmd.SectionDraws)
-	{
-		if (Section.IndexCount == 0) continue;
-
-		// 섹션별 SRV 바인딩 (t0)
-		ID3D11ShaderResourceView* srv = Section.DiffuseSRV;
-		Context->PSSetShaderResources(0, 1, &srv);
-
-		// 섹션별 DiffuseColor를 PrimitiveColor(b1)에 반영
-		FPerObjectConstants SectionConstants = Cmd.PerObjectConstants;
-		SectionConstants.Color = Section.DiffuseColor;
-		Resources.PerObjectConstantBuffer.Update(Context, &SectionConstants, sizeof(FPerObjectConstants));
-
-		// UVScroll (b4) 업데이트
-		FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
-		FMaterialConstants MatConstants = {};
-		MatConstants.bIsUVScroll = Section.bIsUVScroll ? 1 : 0;
-		MaterialCB->Update(Context, &MatConstants, sizeof(MatConstants));
-		ID3D11Buffer* b4 = MaterialCB->GetBuffer();
-		Context->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
-
-		Context->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
-	}
-
-	// SRV 언바인딩 (다음 드로우에 영향 방지)
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Context->PSSetShaderResources(0, 1, &nullSRV);
-}
-
-// ============================================================
 // PostProcess Outline — DSV unbind → StencilSRV bind → Fullscreen Draw
 // ============================================================
 void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context)
@@ -671,7 +462,7 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 	if (!StencilSRV || !RTV) return;
 
 	// SelectionMask 큐가 비어 있으면 선택된 오브젝트 없음 → 스킵
-	if (Bus.GetCommands(ERenderPass::SelectionMask).empty()) return;
+	if (Bus.GetCommands(ERenderPass::SelectionMask).empty() && Bus.GetProxies(ERenderPass::SelectionMask).empty()) return;
 
 	// 1) DSV 언바인딩 (StencilSRV와 동시 바인딩 불가)
 	Context->OMSetRenderTargets(1, &RTV, nullptr);

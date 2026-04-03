@@ -7,6 +7,7 @@
 #include "Editor/EditorEngine.h"
 #include "Render/Pipeline/FScene.h"
 #include "Render/Pipeline/PrimitiveSceneProxy.h"
+#include "Component/PrimitiveComponent.h"
 
 void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 {
@@ -86,10 +87,20 @@ void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 		// 프록시 포인터를 패스 큐에 직접 제출 (FRenderCommand 복사 없음)
 		RenderBus.AddProxy(Proxy->Pass, Proxy);
 
-		// 선택된 오브젝트 → SelectionMask 제출
+		// 선택된 오브젝트 → SelectionMask에 같은 프록시 제출 (FRenderCommand 생성 없음)
 		if (Proxy->bSelected)
 		{
-			Proxy->Owner->CollectSelection(RenderBus);
+			RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
+
+			if (RenderBus.GetShowFlags().bBoundingVolume)
+			{
+				FBoundingBox Box = Proxy->Owner->GetWorldBoundingBox();
+				FAABBEntry Entry = {};
+				Entry.AABB.Min = Box.Min;
+				Entry.AABB.Max = Box.Max;
+				Entry.AABB.Color = FColor::White();
+				RenderBus.AddAABBEntry(std::move(Entry));
+			}
 		}
 	}
 }
