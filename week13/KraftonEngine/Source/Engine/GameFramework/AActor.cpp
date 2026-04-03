@@ -10,6 +10,7 @@ AActor::~AActor()
 {
 	for (auto* Comp : OwnedComponents)
 	{
+		Comp->DestroyRenderState();
 		UObjectManager::Get().DestroyObject(Comp);
 	}
 
@@ -33,6 +34,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 	Comp->SetOwner(this);
 	OwnedComponents.push_back(Comp);
 	bPrimitiveCacheDirty = true;
+	Comp->CreateRenderState();
 	return Comp;
 }
 
@@ -45,12 +47,15 @@ void AActor::RegisterComponent(UActorComponent* Comp)
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
+		Comp->CreateRenderState();
 	}
 }
 
 void AActor::RemoveComponent(UActorComponent* Component)
 {
 	if (!Component) return;
+
+	Component->DestroyRenderState();
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
 	if (it != OwnedComponents.end()) {

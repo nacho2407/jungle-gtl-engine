@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
+#include "Render/Pipeline/FScene.h"
 
 class UCameraComponent;
 
@@ -29,10 +30,15 @@ public:
 	void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }
 	UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
 
+	// FScene — 렌더 프록시 관리자
+	FScene& GetScene() { return Scene; }
+	const FScene& GetScene() const { return Scene; }
+
 private:
 	TArray<AActor*> Actors;
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
+	FScene Scene;
 };
 
 template<typename T>

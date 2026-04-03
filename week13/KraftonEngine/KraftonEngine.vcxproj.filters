@@ -320,7 +320,19 @@
     <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\BillboardSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\FScene.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\GizmoSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\PrimitiveSceneProxy.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderBus.cpp">
@@ -330,6 +342,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\StaticMeshSceneProxy.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
@@ -638,10 +653,22 @@
     <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\BillboardSceneProxy.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\FScene.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\GizmoSceneProxy.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\PrimitiveSceneProxy.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderBus.h">
@@ -657,6 +684,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\StaticMeshSceneProxy.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
