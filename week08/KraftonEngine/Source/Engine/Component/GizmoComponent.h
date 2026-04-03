@@ -7,6 +7,7 @@
 
 class AActor;
 class FPrimitiveSceneProxy;
+class FScene;
 
 enum EGizmoMode
 {
@@ -70,6 +71,9 @@ public:
 	void CreateRenderState() override;
 	void DestroyRenderState() override;
 
+	// Actor 없이 독립 생성된 Gizmo용 — 외부에서 Scene을 직접 지정
+	void SetScene(FScene* InScene) { RegisteredScene = InScene; }
+
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
 
@@ -99,4 +103,5 @@ private:
 	const FMeshData* MeshData = nullptr;
 	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — 기본 전부 표시
 	FPrimitiveSceneProxy* InnerProxy = nullptr;	// GizmoInner 전용 프록시
+	FScene* RegisteredScene = nullptr;			// Actor 없이 독립 생성 시 사용
 };
