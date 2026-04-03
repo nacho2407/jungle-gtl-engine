@@ -52,6 +52,7 @@ public:
 	bool bVisible  = true;
 	bool bSelected = false;
 	bool bSupportsOutline = true;
+	bool bFrustumCulled = false;	// Frustum culling 결과 — true면 화면 밖
 
 	// --- 렌더 패스 ---
 	ERenderPass Pass = ERenderPass::Opaque;

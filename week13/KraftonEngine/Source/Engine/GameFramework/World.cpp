@@ -278,12 +278,22 @@ void UWorld::UpdateVisibleActors()
 	VisiblePrimitives.clear();
 	VisibleActors.clear();
 
+	// 모든 프록시를 컬링 상태로 초기화
+	for (FPrimitiveSceneProxy* Proxy : Scene.GetAllProxies())
+	{
+		if (Proxy) Proxy->bFrustumCulled = true;
+	}
+
 	FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
 
 	Octree->QueryFrustum(ConvexVolume, VisiblePrimitives);
 
+	// 보이는 primitive의 프록시만 컬링 해제
 	for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 	{
+		if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+			Proxy->bFrustumCulled = false;
+
 		if (AActor* Owner = Primitive->GetOwner())
 		{
 			VisibleActors.push_back(Owner);
