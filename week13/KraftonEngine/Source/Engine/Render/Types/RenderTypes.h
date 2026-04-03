@@ -44,3 +44,22 @@ enum class ERenderPass : uint32
 	OverlayFont,
 	MAX
 };
+
+inline const char* GetRenderPassName(ERenderPass Pass)
+{
+	static const char* Names[] = {
+		"RenderPass::Opaque",
+		"RenderPass::Font",
+		"RenderPass::SubUV",
+		"RenderPass::Translucent",
+		"RenderPass::SelectionMask",
+		"RenderPass::Editor",
+		"RenderPass::Grid",
+		"RenderPass::PostProcess",
+		"RenderPass::GizmoOuter",
+		"RenderPass::GizmoInner",
+		"RenderPass::OverlayFont",
+	};
+	static_assert(ARRAYSIZE(Names) == (uint32)ERenderPass::MAX, "Names must match ERenderPass entries");
+	return Names[(uint32)Pass];
+}

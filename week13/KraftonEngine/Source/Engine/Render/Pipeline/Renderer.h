@@ -73,7 +73,8 @@ private:
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
 
-	// SubUV 정렬용 멤버 버퍼 (재할당 방지)
+	// 정렬용 멤버 버퍼 (재할당 방지)
+	TArray<const FPrimitiveSceneProxy*> SortedProxyBuffer;
 	TArray<FSubUVEntry> SortedSubUVBuffer;
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
