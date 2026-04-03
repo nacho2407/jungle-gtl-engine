@@ -62,9 +62,8 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	Bus.SetRenderSettings(EViewMode::Lit, ShowFlags);
 	Bus.SetViewportInfo(VP);
 
-	// 월드 수집 (선택 액터 없음)
-	TArray<AActor*> EmptySelection;
-	Collector.CollectWorld(World, EmptySelection, Bus);
+	// 월드 수집
+	Collector.CollectWorld(World, Bus);
 
 	// GPU 렌더
 	Renderer.PrepareBatchers(Bus);
