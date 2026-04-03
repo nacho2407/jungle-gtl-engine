@@ -1,4 +1,4 @@
-﻿#include "Render/Pipeline/StaticMeshSceneProxy.h"
+﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"

@@ -5,8 +5,8 @@
 #include "Component/GizmoComponent.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/EditorEngine.h"
-#include "Render/Pipeline/FScene.h"
-#include "Render/Pipeline/PrimitiveSceneProxy.h"
+#include "Render/Proxy/FScene.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
 
 void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)

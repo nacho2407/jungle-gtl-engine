@@ -1,4 +1,4 @@
-#include "Render/Pipeline/BillboardSceneProxy.h"
+#include "Render/Proxy/BillboardSceneProxy.h"
 #include "Component/BillboardComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Pipeline/RenderBus.h"

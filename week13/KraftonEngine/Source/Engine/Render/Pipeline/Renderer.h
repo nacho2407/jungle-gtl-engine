@@ -7,7 +7,7 @@
 #include "Render/Types/RenderTypes.h"
 
 #include "Render/Pipeline/RenderBus.h"
-#include "Render/Pipeline/PrimitiveSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/ShaderManager.h"

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Pipeline/PrimitiveSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include <unordered_set>
 
 class UPrimitiveComponent;

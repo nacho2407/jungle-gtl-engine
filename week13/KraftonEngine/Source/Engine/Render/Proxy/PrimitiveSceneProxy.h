@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Pipeline/DirtyFlag.h"
+#include "Render/Proxy/DirtyFlag.h"
 #include "Render/Pipeline/RenderCommand.h"
 #include "Render/Types/RenderTypes.h"
 
