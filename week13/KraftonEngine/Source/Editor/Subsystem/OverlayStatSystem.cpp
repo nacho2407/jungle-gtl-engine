@@ -17,12 +17,24 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 		const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "FPS : %.1f", FPS);
+			snprintf(Buffer, sizeof(Buffer), "FPS : %.1f (%.2f ms)", FPS, MS);
 			Group.Lines.push_back(FString(Buffer));
 		}
+
+		Groups.push_back(std::move(Group));
+	}
+
+	if (bShowPickingTime)
+	{
+		FOverlayStatGroup Group;
+
+		int32 PickingTimeMS = 0;
+		int32 NumAttempts = 0;
+		int32 AccumulatedTime = 0;
+
 		{
 			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Frame Time : %.2f ms", MS);
+			snprintf(Buffer, sizeof(Buffer), "Picking Time %d ms : Num Attempts %d : Accumulated Time %d ms", PickingTimeMS, NumAttempts, AccumulatedTime);
 			Group.Lines.push_back(FString(Buffer));
 		}
 
