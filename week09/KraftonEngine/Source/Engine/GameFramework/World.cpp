@@ -32,6 +32,12 @@ void UWorld::DestroyActor(AActor* Actor)
 
 void UWorld::AddActor(AActor* Actor)
 {
+	if (!Actor)
+	{
+		return;
+	}
+
+	Actor->SetWorld(this);
 	Actors.push_back(Actor);
 	MarkPickingBVHDirty();
 }
@@ -155,7 +161,6 @@ int32 UWorld::BuildPickingBVHRecursive(int32 Start, int32 End) const
 {
 	const int32 NodeIndex = static_cast<int32>(PickingNodes.size());
 	PickingNodes.emplace_back();
-	FPickingBVHNode& Node = PickingNodes.back();
 
 	FBoundingBox Bounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
@@ -164,14 +169,14 @@ int32 UWorld::BuildPickingBVHRecursive(int32 Start, int32 End) const
 		Bounds.Expand(LeafBounds.Min);
 		Bounds.Expand(LeafBounds.Max);
 	}
-	Node.Bounds = Bounds;
+	PickingNodes[NodeIndex].Bounds = Bounds;
 
 	constexpr int32 MaxLeafSize = 8;
 	const int32 LeafCount = End - Start;
 	if (LeafCount <= MaxLeafSize)
 	{
-		Node.FirstLeaf = Start;
-		Node.LeafCount = LeafCount;
+		PickingNodes[NodeIndex].FirstLeaf = Start;
+		PickingNodes[NodeIndex].LeafCount = LeafCount;
 		return NodeIndex;
 	}
 
@@ -212,8 +217,8 @@ int32 UWorld::BuildPickingBVHRecursive(int32 Start, int32 End) const
 			return CenterA.X < CenterB.X;
 		});
 
-	Node.LeftChild = BuildPickingBVHRecursive(Start, Mid);
-	Node.RightChild = BuildPickingBVHRecursive(Mid, End);
+	PickingNodes[NodeIndex].LeftChild = BuildPickingBVHRecursive(Start, Mid);
+	PickingNodes[NodeIndex].RightChild = BuildPickingBVHRecursive(Mid, End);
 	return NodeIndex;
 }
 

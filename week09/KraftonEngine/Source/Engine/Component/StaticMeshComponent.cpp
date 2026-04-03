@@ -250,6 +250,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			SetStaticMesh(Loaded);
 		}
 		CacheLocalBounds();
+		MarkWorldBoundsDirty();
 	}
 
 	if (strncmp(PropertyName, "Element ", 8) == 0)
