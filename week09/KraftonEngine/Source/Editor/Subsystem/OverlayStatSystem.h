@@ -37,6 +37,7 @@ public:
 	void HideAll()
 	{
 		bShowFPS = false;
+		bShowPickingTime = false;
 		bShowMemory = false;
 	}
 

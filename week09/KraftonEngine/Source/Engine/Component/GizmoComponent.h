@@ -6,6 +6,7 @@
 #include "Render/Types/ViewTypes.h"
 
 class AActor;
+class FPrimitiveSceneProxy;
 
 enum EGizmoMode
 {
@@ -67,6 +68,7 @@ public:
 	FMeshBuffer* GetMeshBuffer() const override;
 	void CollectRender(FRenderBus& Bus) const override;
 	void CollectSelection(FRenderBus& Bus) const override {}  // Gizmo는 선택 이펙트 없음
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);

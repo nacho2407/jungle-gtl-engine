@@ -5,8 +5,22 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Core/CollisionTypes.h"
+#include "Render/Pipeline/FScene.h"
+#include "Render/Pipeline/PrimitiveSceneProxy.h"
+#include "GameFramework/World.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
+
+void UPrimitiveComponent::SetVisibility(bool bNewVisible)
+{
+	if (bIsVisible == bNewVisible) return;
+	bIsVisible = bNewVisible;
+
+	if (SceneProxy)
+	{
+		SceneProxy->MarkDirty(EDirtyFlag::Visibility);
+	}
+}
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
@@ -94,4 +108,47 @@ void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
 	UpdateWorldAABB();
+
+	// 프록시가 등록된 경우 Transform dirty 전파
+	if (SceneProxy)
+	{
+		SceneProxy->MarkDirty(EDirtyFlag::Transform);
+	}
+}
+
+// --- 프록시 팩토리 ---
+FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
+{
+	// 기본 PrimitiveComponent용 프록시
+	return new FPrimitiveSceneProxy(this);
+}
+
+// --- 렌더 상태 관리 (UE RegisterComponent 대응) ---
+void UPrimitiveComponent::CreateRenderState()
+{
+	if (SceneProxy) return; // 이미 등록됨
+
+	// Owner → World → FScene 경로로 접근
+	if (!Owner || !Owner->GetWorld()) return;
+	FScene& Scene = Owner->GetWorld()->GetScene();
+	SceneProxy = Scene.AddPrimitive(this);
+}
+
+void UPrimitiveComponent::DestroyRenderState()
+{
+	if (!SceneProxy) return;
+
+	if (Owner && Owner->GetWorld())
+	{
+		FScene& Scene = Owner->GetWorld()->GetScene();
+		Scene.RemovePrimitive(SceneProxy);
+	}
+	SceneProxy = nullptr;
+}
+
+void UPrimitiveComponent::MarkRenderStateDirty()
+{
+	// 프록시 파괴 후 재생성 — 메시 교체 등 큰 변경 시 사용
+	DestroyRenderState();
+	CreateRenderState();
 }

@@ -6,8 +6,14 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Collision/RayUtils.h"
+#include "Render/Pipeline/GizmoSceneProxy.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
+
+FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
+{
+	return new FGizmoSceneProxy(this);
+}
 
 #include <cmath>
 UGizmoComponent::UGizmoComponent()
