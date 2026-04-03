@@ -76,12 +76,14 @@ void USceneComponent::SetParent(USceneComponent* NewParent)
 	ParentComponent = NewParent;
 	if (ParentComponent)
 	{
-
 		if (ParentComponent->ContainsChild(this) == false)
 		{
 			ParentComponent->ChildComponents.push_back(this);
 		}
 	}
+
+	// 부모 변경 시 자신 및 하위 자식의 월드 행렬을 갱신하도록 dirty 마킹
+	MarkTransformDirty();
 }
 
 void USceneComponent::AddChild(USceneComponent* NewChild)
@@ -205,10 +207,16 @@ void USceneComponent::SetRelativeScale(const FVector& NewScale)
 void USceneComponent::MarkTransformDirty()
 {
 	bTransformDirty = true;
+	bInverseWorldDirty = true;
+	OnTransformDirty();
 	for (auto* Child : ChildComponents)
 	{
 		Child->MarkTransformDirty();
 	}
+}
+
+void USceneComponent::OnTransformDirty()
+{
 }
 
 FRotator& USceneComponent::GetCachedEditRotator()
@@ -245,6 +253,18 @@ const FMatrix& USceneComponent::GetWorldMatrix() const
 	}
 
 	return CachedWorldMatrix;
+}
+
+const FMatrix& USceneComponent::GetWorldInverseMatrix() const
+{
+	GetWorldMatrix();
+
+	if (bInverseWorldDirty == true)
+	{
+		CachedInverseWorldMatrix = CachedWorldMatrix.GetInverse();
+		bInverseWorldDirty = false;
+	}
+	return CachedInverseWorldMatrix;
 }
 
 void USceneComponent::SetWorldLocation(FVector NewWorldLocation)

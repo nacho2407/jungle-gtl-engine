@@ -35,11 +35,13 @@ public:
 	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
 	virtual void SetRelativeScale(const FVector& NewScale);
 	void MarkTransformDirty();
+	virtual void OnTransformDirty();
 	void ApplyCachedEditRotator();
 	FRotator& GetCachedEditRotator();	// 에디터 UI용 Euler 캐시 접근
 	// Quat을 직접 세팅하면서 Euler 캐시도 함께 지정 (짐벌락 방지)
 	void SetRelativeRotationWithEulerHint(const FQuat& NewQuat, const FRotator& EulerHint);
 	const FMatrix& GetWorldMatrix() const;
+	const FMatrix& GetWorldInverseMatrix() const;
 	void SetWorldLocation(FVector NewWorldLocation);
 	FVector GetWorldLocation() const;
 	FVector GetWorldScale() const;
@@ -62,12 +64,17 @@ protected:
 	USceneComponent* ParentComponent = nullptr;
 	TArray<USceneComponent*> ChildComponents;
 
-	mutable FMatrix CachedWorldMatrix{};
 
 	mutable bool bTransformDirty = true;
 
 	FTransform RelativeTransform;
 	mutable FRotator CachedEditRotator;	// 에디터 프로퍼티 바인딩용 (Euler 캐시)
 	mutable bool bCachedEulerDirty = true;	// Quat가 외부에서 변경됐을 때만 Euler 재계산
+
+	//world matrix caching
+	mutable FMatrix CachedWorldMatrix{};
+	//inverse world matrix caching
+	mutable FMatrix CachedInverseWorldMatrix{};
+	mutable bool bInverseWorldDirty = true;
 };
 

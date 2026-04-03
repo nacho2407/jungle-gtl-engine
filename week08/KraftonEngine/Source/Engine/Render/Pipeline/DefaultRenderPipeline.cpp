@@ -28,7 +28,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Bus.SetCameraInfo(Camera);
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
-		Collector.CollectWorld(World, {}, Bus);
+		Collector.CollectWorld(World, Bus);
 	}
 
 	Renderer.PrepareBatchers(Bus);

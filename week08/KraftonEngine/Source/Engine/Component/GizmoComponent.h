@@ -6,6 +6,8 @@
 #include "Render/Types/ViewTypes.h"
 
 class AActor;
+class FPrimitiveSceneProxy;
+class FScene;
 
 enum EGizmoMode
 {
@@ -56,7 +58,7 @@ public:
 	inline void SetRotateMode() { UpdateGizmoMode(EGizmoMode::Rotate); }
 	inline void SetScaleMode() { UpdateGizmoMode(EGizmoMode::Scale); }
 	void UpdateGizmoTransform();
-	float ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
+	float ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f) const;
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
 
@@ -65,8 +67,12 @@ public:
 	void Deactivate() override;
 
 	FMeshBuffer* GetMeshBuffer() const override;
-	void CollectRender(FRenderBus& Bus) const override;
-	void CollectSelection(FRenderBus& Bus) const override {}  // Gizmo는 선택 이펙트 없음
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
+	void CreateRenderState() override;
+	void DestroyRenderState() override;
+
+	// Actor 없이 독립 생성된 Gizmo용 — 외부에서 Scene을 직접 지정
+	void SetScene(FScene* InScene) { RegisteredScene = InScene; }
 
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
@@ -96,4 +102,6 @@ private:
 	bool bPressedOnHandle = false;
 	const FMeshData* MeshData = nullptr;
 	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — 기본 전부 표시
+	FPrimitiveSceneProxy* InnerProxy = nullptr;	// GizmoInner 전용 프록시
+	FScene* RegisteredScene = nullptr;			// Actor 없이 독립 생성 시 사용
 };
