@@ -25,10 +25,14 @@ class FOverlayStatSystem
 public:
 	FOverlayStatSystem()
 	{
-		bShowFPS = true;	// 260403 이번 경연 동안 fps는 항상 보이도록 설정.
+#if FPS_OPTIMIZATION
+		ShowFPS();
+		ShowPickingTime();
+#endif
 	}
 
 	void ShowFPS(bool bEnable = true) { bShowFPS = bEnable; }
+	void ShowPickingTime(bool bEnable = true) { bShowPickingTime = bEnable; }
 	void ShowMemory(bool bEnable = true) { bShowMemory = bEnable; }
 	void HideAll()
 	{
@@ -44,6 +48,7 @@ public:
 
 private:
 	bool bShowFPS = false;	// 260403 이번 경연 동안 fps는 항상 보이도록 설정.
+	bool bShowPickingTime = false;
 	bool bShowMemory = false;
 
 	FOverlayStatLayout Layout;

@@ -548,6 +548,9 @@
     <ClInclude Include="Source\Engine\Materials\Material.h">
       <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Math\MathUtils.h">
+      <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Math\Matrix.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
@@ -558,9 +561,6 @@
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Transform.h">
-      <Filter>Source\Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Math\MathUtils.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Vector.h">

@@ -28,6 +28,8 @@ mono_crash.*
 [Rr]elease/
 [Rr]eleases/
 ObjView*Debug/
+FPSOptimization/
+**/Build/
 
 [Dd]ebug/x64/
 [Dd]ebugPublic/x64/
