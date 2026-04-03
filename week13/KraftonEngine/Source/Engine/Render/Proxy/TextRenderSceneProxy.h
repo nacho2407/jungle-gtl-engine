@@ -15,7 +15,9 @@ public:
 	FTextRenderSceneProxy(UTextRenderComponent* InComponent);
 
 	void UpdatePerViewport(const FRenderBus& Bus) override;
+	void CollectEntries(FRenderBus& Bus) override;
 
 private:
 	UTextRenderComponent* GetTextRenderComponent() const;
+	FMatrix CachedBillboardMatrix;
 };

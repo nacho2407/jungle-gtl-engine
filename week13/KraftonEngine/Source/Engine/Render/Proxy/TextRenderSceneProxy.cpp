@@ -17,7 +17,7 @@ UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 }
 
 // ============================================================
-// UpdatePerViewport — SelectionMask용 아웃라인 행렬 계산
+// UpdatePerViewport — 빌보드 행렬 계산 + SelectionMask용 아웃라인
 // ============================================================
 void FTextRenderSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 {
@@ -39,14 +39,30 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	bVisible = TextComp->IsVisible();
 	if (!bVisible) return;
 
-	// 빌보드 행렬
+	// 빌보드 행렬 (CollectEntries에서도 사용)
 	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
-	FMatrix PerViewBillboard = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale())
+	CachedBillboardMatrix = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale())
 		* RotMatrix * FMatrix::MakeTranslationMatrix(TextComp->GetWorldLocation());
 
 	// SelectionMask용 아웃라인 행렬 (텍스트 너비·높이 반영)
-	FMatrix OutlineMatrix = TextComp->CalculateOutlineMatrix(PerViewBillboard);
+	FMatrix OutlineMatrix = TextComp->CalculateOutlineMatrix(CachedBillboardMatrix);
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(OutlineMatrix);
+}
+
+// ============================================================
+// CollectEntries — FontBatcher용 FFontEntry 생성
+// ============================================================
+void FTextRenderSceneProxy::CollectEntries(FRenderBus& Bus)
+{
+	UTextRenderComponent* TextComp = GetTextRenderComponent();
+
+	FFontEntry Entry = {};
+	Entry.PerObject = FPerObjectConstants{ CachedBillboardMatrix };
+	Entry.PerObject.Color = TextComp->GetColor();
+	Entry.Font.Text = TextComp->GetText();
+	Entry.Font.Font = TextComp->GetFont();
+	Entry.Font.Scale = TextComp->GetFontSize();
+	Bus.AddFontEntry(std::move(Entry));
 }
