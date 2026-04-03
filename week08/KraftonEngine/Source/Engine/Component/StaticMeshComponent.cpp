@@ -195,8 +195,8 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	if (!Asset || Asset->Vertices.empty() || Asset->Indices.empty()) return false;
 
 	bool bHit = FRayUtils::RaycastTriangles(
-		Ray, CachedWorldMatrix,
-		CachedInverseWorldMatrix,
+		Ray, GetWorldMatrix(),
+		GetWorldInverseMatrix(),
 		&Asset->Vertices[0].pos,
 		sizeof(FNormalVertex),
 		Asset->Indices,
