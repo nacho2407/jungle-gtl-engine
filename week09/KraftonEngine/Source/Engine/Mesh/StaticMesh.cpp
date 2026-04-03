@@ -35,6 +35,23 @@ void UStaticMesh::Serialize(FArchive& Ar)
 
 	// 2. 머티리얼 데이터 직렬화 (필수!)
 	Ar << StaticMaterials;
+
+	// 3. 로딩 시 Section → MaterialIndex 매핑 캐싱 (매 프레임 문자열 비교 방지)
+	if (Ar.IsLoading())
+	{
+		for (FStaticMeshSection& Section : StaticMeshAsset->Sections)
+		{
+			Section.MaterialIndex = -1;
+			for (int32 i = 0; i < (int32)StaticMaterials.size(); ++i)
+			{
+				if (StaticMaterials[i].MaterialSlotName == Section.MaterialSlotName)
+				{
+					Section.MaterialIndex = i;
+					break;
+				}
+			}
+		}
+	}
 }
 
 void UStaticMesh::InitResources(ID3D11Device* InDevice)
@@ -88,6 +105,23 @@ const FString& UStaticMesh::GetAssetPathFileName() const
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 {
 	StaticMeshAsset = InMesh;
+
+	// Section → MaterialIndex 캐싱 갱신
+	if (StaticMeshAsset)
+	{
+		for (FStaticMeshSection& Section : StaticMeshAsset->Sections)
+		{
+			Section.MaterialIndex = -1;
+			for (int32 i = 0; i < (int32)StaticMaterials.size(); ++i)
+			{
+				if (StaticMaterials[i].MaterialSlotName == Section.MaterialSlotName)
+				{
+					Section.MaterialIndex = i;
+					break;
+				}
+			}
+		}
+	}
 }
 
 FStaticMesh* UStaticMesh::GetStaticMeshAsset() const

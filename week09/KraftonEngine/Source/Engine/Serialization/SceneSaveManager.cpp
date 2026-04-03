@@ -34,7 +34,7 @@ static FVector ReadVec3(json::JSON& Arr)
 	FVector out(0, 0, 0);
 	int i = 0;
 	for (auto& e : Arr.ArrayRange()) {
-		if      (i == 0) out.X = static_cast<float>(e.ToFloat());
+		if (i == 0) out.X = static_cast<float>(e.ToFloat());
 		else if (i == 1) out.Y = static_cast<float>(e.ToFloat());
 		else if (i == 2) out.Z = static_cast<float>(e.ToFloat());
 		++i;
@@ -302,8 +302,8 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	case EPropertyType::MaterialSlot: {
 		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(Prop.ValuePtr);
 		JSON obj = json::Object();
-		obj["Path"]      = JSON(Slot->Path);
-		obj["UVScroll"]  = JSON(static_cast<bool>(Slot->bUVScroll != 0));
+		obj["Path"] = JSON(Slot->Path);
+		obj["UVScroll"] = JSON(static_cast<bool>(Slot->bUVScroll != 0));
 		return obj;
 	}
 
@@ -331,9 +331,9 @@ json::JSON FSceneSaveManager::SerializeCamera(UCameraComponent* Cam)
 	WriteVec3(cam, "Rotation", M.GetEuler());
 
 	const FCameraState& S = Cam->GetCameraState();
-	cam["FOV"]      = static_cast<double>(S.FOV);
+	cam["FOV"] = static_cast<double>(S.FOV);
 	cam["NearClip"] = static_cast<double>(S.NearZ);
-	cam["FarClip"]  = static_cast<double>(S.FarZ);
+	cam["FarClip"] = static_cast<double>(S.FarZ);
 
 	return cam;
 }
@@ -362,21 +362,21 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 			auto locjson = Entry["Location"];
 			float lx = 0, ly = 0, lz = 0;
 			int i = 0;
-			for (auto& e : locjson.ArrayRange()) { if (i==0) lx = static_cast<float>(e.ToFloat()); else if (i==1) ly = static_cast<float>(e.ToFloat()); else if (i==2) lz = static_cast<float>(e.ToFloat()); i++; }
+			for (auto& e : locjson.ArrayRange()) { if (i == 0) lx = static_cast<float>(e.ToFloat()); else if (i == 1) ly = static_cast<float>(e.ToFloat()); else if (i == 2) lz = static_cast<float>(e.ToFloat()); i++; }
 			Actor->SetActorLocation(FVector(lx, ly, lz));
 		}
 		if (Entry.hasKey("Rotation")) {
 			auto rotjson = Entry["Rotation"];
 			float rx = 0, ry = 0, rz = 0;
 			int i = 0;
-			for (auto& e : rotjson.ArrayRange()) { if (i==0) rx = static_cast<float>(e.ToFloat()); else if (i==1) ry = static_cast<float>(e.ToFloat()); else if (i==2) rz = static_cast<float>(e.ToFloat()); i++; }
+			for (auto& e : rotjson.ArrayRange()) { if (i == 0) rx = static_cast<float>(e.ToFloat()); else if (i == 1) ry = static_cast<float>(e.ToFloat()); else if (i == 2) rz = static_cast<float>(e.ToFloat()); i++; }
 			Actor->SetActorRotation(FVector(rx, ry, rz));
 		}
 		if (Entry.hasKey("Scale")) {
 			auto sjson = Entry["Scale"];
 			float sx = 1, sy = 1, sz = 1;
 			int i = 0;
-			for (auto& e : sjson.ArrayRange()) { if (i==0) sx = static_cast<float>(e.ToFloat()); else if (i==1) sy = static_cast<float>(e.ToFloat()); else if (i==2) sz = static_cast<float>(e.ToFloat()); i++; }
+			for (auto& e : sjson.ArrayRange()) { if (i == 0) sx = static_cast<float>(e.ToFloat()); else if (i == 1) sy = static_cast<float>(e.ToFloat()); else if (i == 2) sz = static_cast<float>(e.ToFloat()); i++; }
 			Actor->SetActorScale(FVector(sx, sy, sz));
 		}
 
@@ -391,9 +391,18 @@ void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, FPerspectiveCa
 
 	if (CameraJSON.hasKey("Location")) OutCam.Location = ReadVec3(CameraJSON["Location"]);
 	if (CameraJSON.hasKey("Rotation")) OutCam.Rotation = ReadVec3(CameraJSON["Rotation"]);
-	if (CameraJSON.hasKey("FOV"))      OutCam.FOV      = static_cast<float>(CameraJSON["FOV"].ToFloat());
-	if (CameraJSON.hasKey("NearClip")) OutCam.NearClip = static_cast<float>(CameraJSON["NearClip"].ToFloat());
-	if (CameraJSON.hasKey("FarClip"))  OutCam.FarClip  = static_cast<float>(CameraJSON["FarClip"].ToFloat());
+	if (CameraJSON.hasKey("FOV")) {
+		auto& Val = CameraJSON["FOV"];
+		OutCam.FOV = static_cast<float>(Val.JSONType() == JSON::Class::Array ? Val[0].ToFloat() : Val.ToFloat());
+	}
+	if (CameraJSON.hasKey("NearClip")) {
+		auto& Val = CameraJSON["NearClip"];
+		OutCam.NearClip = static_cast<float>(Val.JSONType() == JSON::Class::Array ? Val[0].ToFloat() : Val.ToFloat());
+	}
+	if (CameraJSON.hasKey("FarClip")) {
+		auto& Val = CameraJSON["FarClip"];
+		OutCam.FarClip = static_cast<float>(Val.JSONType() == JSON::Class::Array ? Val[0].ToFloat() : Val.ToFloat());
+	}
 	OutCam.bValid = true;
 }
 
@@ -416,6 +425,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	JSON root = JSON::Load(FileContent);
 
 	string ClassName = root[SceneKeys::ClassName].ToString();
+	ClassName = ClassName.empty() ? "UWorld" : ClassName; // Default to "World" if ClassName is missing
 	UObject* WorldObj = FObjectFactory::Get().Create(ClassName);
 	if (!WorldObj || !WorldObj->IsA<UWorld>()) return;
 
@@ -440,64 +450,68 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
 	// "PerspectiveCamera" 우선, 구버전 "Camera" 키도 지원
 	const char* CamKey = root.hasKey("PerspectiveCamera") ? "PerspectiveCamera"
-	                   : root.hasKey("Camera")            ? "Camera"
-	                   : nullptr;
+		: root.hasKey("Camera") ? "Camera"
+		: nullptr;
 	if (CamKey) {
 		auto Cam = root[CamKey];
 		DeserializeCamera(Cam, OutCam);
 	}
 
 	// Deserialize Actors
-	for (auto& ActorJSON : root[SceneKeys::Actors].ArrayRange()) {
-		string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
-		// If this actor references a PrimitiveKey and that primitive already created an actor,
-		// prefer the primitive-created actor and update it instead of creating a duplicate.
-		AActor* Actor = nullptr;
-		if (ActorJSON.hasKey("PrimitiveKey")) {
-			string pk = ActorJSON["PrimitiveKey"].ToString();
-			auto it = CreatedFromPrimitives.find(pk);
-			if (it != CreatedFromPrimitives.end()) {
-				Actor = it->second;
+	if (root.hasKey(SceneKeys::Actors))
+	{
+		for (auto& ActorJSON : root[SceneKeys::Actors].ArrayRange()) {
+			string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
+			// If this actor references a PrimitiveKey and that primitive already created an actor,
+			// prefer the primitive-created actor and update it instead of creating a duplicate.
+			AActor* Actor = nullptr;
+			if (ActorJSON.hasKey("PrimitiveKey")) {
+				string pk = ActorJSON["PrimitiveKey"].ToString();
+				auto it = CreatedFromPrimitives.find(pk);
+				if (it != CreatedFromPrimitives.end()) {
+					Actor = it->second;
+				}
 			}
-		}
 
-		if (!Actor) {
-			UObject* ActorObj = FObjectFactory::Get().Create(ActorClass);
-			if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
-			Actor = static_cast<AActor*>(ActorObj);
-			Actor->SetWorld(World);
-			World->AddActor(Actor);
-		}
-
-		if (ActorJSON.hasKey(SceneKeys::Visible)) {
-			Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
-		}
-
-		// RootComponent 트리 복원
-		if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
-			auto RootJSON = ActorJSON[SceneKeys::RootComponent];
-			if (Actor->GetRootComponent()) {
-				// Merge properties into existing root component created by primitives
-				DeserializeSceneComponentIntoExisting(Actor->GetRootComponent(), RootJSON, Actor);
-			} else {
-				USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor);
-				if (Root) Actor->SetRootComponent(Root);
+			if (!Actor) {
+				UObject* ActorObj = FObjectFactory::Get().Create(ActorClass);
+				if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
+				Actor = static_cast<AActor*>(ActorObj);
+				Actor->SetWorld(World);
+				World->AddActor(Actor);
 			}
-		}
 
-		// Non-scene components 복원
-		if (ActorJSON.hasKey(SceneKeys::NonSceneComponents)) {
-			for (auto& CompJSON : ActorJSON[SceneKeys::NonSceneComponents].ArrayRange()) {
-				string CompClass = CompJSON[SceneKeys::ClassName].ToString();
-				UObject* CompObj = FObjectFactory::Get().Create(CompClass);
-				if (!CompObj || !CompObj->IsA<UActorComponent>()) continue;
+			if (ActorJSON.hasKey(SceneKeys::Visible)) {
+				Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
+			}
 
-				UActorComponent* Comp = static_cast<UActorComponent*>(CompObj);
-				Actor->RegisterComponent(Comp);
+			// RootComponent 트리 복원
+			if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
+				auto RootJSON = ActorJSON[SceneKeys::RootComponent];
+				if (Actor->GetRootComponent()) {
+					// Merge properties into existing root component created by primitives
+					DeserializeSceneComponentIntoExisting(Actor->GetRootComponent(), RootJSON, Actor);
+				}
+				else {
+					USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor);
+					if (Root) Actor->SetRootComponent(Root);
+				}
+			}
 
-				if (CompJSON.hasKey(SceneKeys::Properties)) {
-					auto PropsJSON = CompJSON[SceneKeys::Properties];
-					DeserializeProperties(Comp, PropsJSON);
+			// Non-scene components 복원
+			if (ActorJSON.hasKey(SceneKeys::NonSceneComponents)) {
+				for (auto& CompJSON : ActorJSON[SceneKeys::NonSceneComponents].ArrayRange()) {
+					string CompClass = CompJSON[SceneKeys::ClassName].ToString();
+					UObject* CompObj = FObjectFactory::Get().Create(CompClass);
+					if (!CompObj || !CompObj->IsA<UActorComponent>()) continue;
+
+					UActorComponent* Comp = static_cast<UActorComponent*>(CompObj);
+					Actor->RegisterComponent(Comp);
+
+					if (CompJSON.hasKey(SceneKeys::Properties)) {
+						auto PropsJSON = CompJSON[SceneKeys::Properties];
+						DeserializeProperties(Comp, PropsJSON);
+					}
 				}
 			}
 		}
@@ -557,7 +571,8 @@ void FSceneSaveManager::DeserializeSceneComponentIntoExisting(USceneComponent* E
 		for (auto& ChildJSON : ChildrenJSON.ArrayRange()) {
 			if (idx < ExistingChildren.size()) {
 				DeserializeSceneComponentIntoExisting(ExistingChildren[idx], const_cast<json::JSON&>(ChildJSON), Owner);
-			} else {
+			}
+			else {
 				USceneComponent* NewChild = DeserializeSceneComponentTree(const_cast<json::JSON&>(ChildJSON), Owner);
 				if (NewChild) NewChild->AttachToComponent(Existing);
 			}
@@ -645,7 +660,7 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 
 	case EPropertyType::MaterialSlot: {
 		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
-		if (Value.hasKey("Path"))     Slot->Path      = Value["Path"].ToString();
+		if (Value.hasKey("Path"))     Slot->Path = Value["Path"].ToString();
 		if (Value.hasKey("UVScroll")) Slot->bUVScroll = Value["UVScroll"].ToBool() ? 1 : 0;
 		break;
 	}
