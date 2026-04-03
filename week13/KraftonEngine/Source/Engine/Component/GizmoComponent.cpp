@@ -231,6 +231,7 @@ bool UGizmoComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResu
 
 	bool bHit = FRayUtils::RaycastTriangles(
 		Ray, CachedWorldMatrix,
+		CachedInverseWorldMatrix,
 		&MeshData->Vertices[0].Position,
 		sizeof(FVertex),
 		MeshData->Indices,
