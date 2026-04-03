@@ -33,7 +33,7 @@ public:
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 
-	void SetWorld(UWorld* InWorld) { World = InWorld; }
+	void SetWorld(UWorld* InWorld);
 
 private:
 	void SyncGizmo();
