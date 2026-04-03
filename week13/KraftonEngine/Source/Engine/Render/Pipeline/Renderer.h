@@ -54,17 +54,12 @@ private:
 	void InitializePassBatchers();
 
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
-	void BindCommand(const FRenderCommand& InCmd, ID3D11DeviceContext* Context);
-
-	void DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderCommand& InCommand);
-	void DrawStaticMeshSections(ID3D11DeviceContext* Context, const FRenderCommand& Cmd);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
-	// 기본 패스 실행기 — BindCommand + DrawCommand 루프
-	void ExecuteDefaultPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
-
-	// 프록시 직접 실행기 — FRenderCommand 복사 없이 프록시 필드를 직접 읽어 GPU 제출
-	void ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Proxies, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	// 통합 패스 실행기 — FRenderCommand 또는 FPrimitiveSceneProxy* 순회
+	// 두 타입이 동일 필드명(Shader, MeshBuffer, PerObjectConstants, SectionDraws, ExtraCB)을 공유
+	template<typename TItem>
+	void ExecutePass(const TArray<TItem>& Items, ID3D11DeviceContext* Context);
 
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
