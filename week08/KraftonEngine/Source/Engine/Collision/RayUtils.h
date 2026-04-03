@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/RayTypes.h"
@@ -23,6 +23,7 @@ struct FRayUtils
 	static bool RaycastTriangles(
 		const FRay& WorldRay,
 		const FMatrix& WorldMatrix,
+		const FMatrix& InverseWorldMatrix,
 		const void* PositionData,
 		uint32 PositionStride,
 		const TArray<uint32>& Indices,

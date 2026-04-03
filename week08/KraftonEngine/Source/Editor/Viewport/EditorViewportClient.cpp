@@ -1,8 +1,10 @@
 ﻿#include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Input/InputSystem.h"
+#include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/CameraComponent.h"
@@ -305,13 +307,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
+	FScopeCycleCounter PickCounter;
+
 	FHitResult HitResult{};
+	//먼저 Ray와 기즈모의 충돌을 감지하고 
 	if (FRayUtils::RaycastComponent(Gizmo, Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
 	}
 	else
 	{
+		//기즈모와 충돌하지 않았다면 모든 actor와 확인해봄
 		AActor* BestActor = nullptr;
 		float ClosestDistance = FLT_MAX;
 
@@ -359,6 +365,13 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 				SelectionManager->Select(BestActor);
 			}
 		}
+	}
+
+	if (OverlayStatSystem)
+	{
+		const uint64 PickCycles = PickCounter.Finish();
+		const double ElapsedMs = FPlatformTime::ToMilliseconds(PickCycles);
+		OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
 	}
 }
 
