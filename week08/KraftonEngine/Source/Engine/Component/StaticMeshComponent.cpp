@@ -40,6 +40,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 		MaterialSlots.clear();
 	}
 	CacheLocalBounds();
+	MarkWorldBoundsDirty();
 }
 
 void UStaticMeshComponent::CacheLocalBounds()
@@ -186,6 +187,7 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
 	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
+	bWorldAABBDirty = false;
 }
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
