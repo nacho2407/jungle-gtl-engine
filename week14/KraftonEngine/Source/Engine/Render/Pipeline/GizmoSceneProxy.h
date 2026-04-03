@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Pipeline/PrimitiveSceneProxy.h"
 
@@ -7,16 +7,18 @@ class UGizmoComponent;
 // ============================================================
 // FGizmoSceneProxy — UGizmoComponent 전용 프록시
 // ============================================================
-// Gizmo 셰이더 + 모드별 메시 + ExtraCB(FGizmoConstants) 캐싱.
-// bPerViewportUpdate = true (화면 크기 대비 스케일링 필요).
+// 하나의 GizmoComponent에서 Outer/Inner 2개의 프록시를 생성.
+// bPerViewportUpdate = true — 매 프레임 카메라 거리 기반 스케일 + ExtraCB 갱신.
 class FGizmoSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-	FGizmoSceneProxy(UGizmoComponent* InComponent);
+	FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner = false);
 
 	void UpdateMesh() override;
 	void UpdateMaterial() override;
+	void UpdatePerViewport(const FRenderBus& Bus) override;
 
 private:
 	UGizmoComponent* GetGizmoComponent() const;
+	bool bIsInner = false;
 };

@@ -3,7 +3,6 @@
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Render/Resource/ShaderManager.h"
 #include "Core/CollisionTypes.h"
 #include "Render/Pipeline/FScene.h"
 #include "Render/Pipeline/PrimitiveSceneProxy.h"
@@ -38,43 +37,6 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	{
 		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시 dirty 전파
 		MarkProxyDirty(EDirtyFlag::Visibility);
-	}
-}
-
-void UPrimitiveComponent::CollectRender(FRenderBus& Bus) const
-{
-	if (!Bus.GetShowFlags().bPrimitives) return;
-	FMeshBuffer* Buffer = GetMeshBuffer();
-	if (!Buffer || !Buffer->IsValid()) return;
-
-	FRenderCommand Cmd = {};
-	Cmd.PerObjectConstants = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
-	Cmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Cmd.MeshBuffer = Buffer;
-	Bus.AddCommand(ERenderPass::Opaque, Cmd);
-}
-
-void UPrimitiveComponent::CollectSelection(FRenderBus& Bus) const
-{
-	FMeshBuffer* Buffer = GetMeshBuffer();
-	if (!Buffer || !Buffer->IsValid()) return;
-	if (!SupportsOutline()) return;
-
-	// SelectionMask: 스텐실에 선택 오브젝트 마킹 (PostProcess에서 edge detection)
-	FRenderCommand MaskCmd = {};
-	MaskCmd.MeshBuffer = Buffer;
-	MaskCmd.PerObjectConstants = FPerObjectConstants{ GetWorldMatrix() };
-	MaskCmd.Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Bus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-
-	if (Bus.GetShowFlags().bBoundingVolume)
-	{
-		FAABBEntry Entry = {};
-		FBoundingBox Box = GetWorldBoundingBox();
-		Entry.AABB.Min = Box.Min;
-		Entry.AABB.Max = Box.Max;
-		Entry.AABB.Color = FColor::White();
-		Bus.AddAABBEntry(std::move(Entry));
 	}
 }
 

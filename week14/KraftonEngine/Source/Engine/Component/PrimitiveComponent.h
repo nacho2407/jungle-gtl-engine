@@ -24,9 +24,8 @@ public:
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual const FMeshData* GetMeshData() const { return nullptr; }
 
-	// 렌더 데이터 수집 — 각 컴포넌트가 자신의 렌더 엔트리를 RenderBus에 직접 추가
-	virtual void CollectRender(FRenderBus& Bus) const;
-	virtual void CollectSelection(FRenderBus& Bus) const;
+	// Batcher 렌더 데이터 수집 (Font, SubUV 등 bBatcherRendered 전용)
+	virtual void CollectRender(FRenderBus& Bus) const {}
 
 	void SetVisibility(bool bNewVisible);
 	inline bool IsVisible() const { return bIsVisible; }

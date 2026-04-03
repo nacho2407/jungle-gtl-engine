@@ -56,10 +56,8 @@ private:
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
-	// 통합 패스 실행기 — FRenderCommand 또는 FPrimitiveSceneProxy* 순회
-	// 두 타입이 동일 필드명(Shader, MeshBuffer, PerObjectConstants, SectionDraws, ExtraCB)을 공유
-	template<typename TItem>
-	void ExecutePass(const TArray<TItem>& Items, ID3D11DeviceContext* Context);
+	// 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회, 필드 직접 접근
+	void ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context);
 
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
