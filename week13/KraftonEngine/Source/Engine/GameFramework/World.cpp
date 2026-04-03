@@ -27,7 +27,7 @@ void UWorld::DestroyActor(AActor* Actor)
 
 void UWorld::InitWorld()
 {
-
+	Octree = FOctree(FBoundingBox(FVector(-1000, -1000, -1000), FVector(1000, 1000, 1000)), 0);
 }
 
 void UWorld::BeginPlay()
@@ -45,12 +45,14 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
+
 	for (AActor* Actor : Actors)
 	{
 		if (Actor)
 		{
 			Actor->Tick(DeltaTime);
 		}
+		
 	}
 }
 
