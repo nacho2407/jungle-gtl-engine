@@ -393,7 +393,10 @@ void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, FPerspectiveCa
 	if (CameraJSON.hasKey("Rotation")) OutCam.Rotation = ReadVec3(CameraJSON["Rotation"]);
 	if (CameraJSON.hasKey("FOV")) {
 		auto& Val = CameraJSON["FOV"];
-		OutCam.FOV = static_cast<float>(Val.JSONType() == JSON::Class::Array ? Val[0].ToFloat() : Val.ToFloat());
+		float fov = static_cast<float>(Val.JSONType() == JSON::Class::Array ? Val[0].ToFloat() : Val.ToFloat());
+		// 엔진 내부는 라디안 — π(~3.14)를 넘으면 degree로 간주하고 변환
+		if (fov > 3.14159265f) fov *= (3.14159265f / 180.0f);
+		OutCam.FOV = fov;
 	}
 	if (CameraJSON.hasKey("NearClip")) {
 		auto& Val = CameraJSON["NearClip"];
