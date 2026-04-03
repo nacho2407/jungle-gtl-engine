@@ -20,6 +20,7 @@ public:
 	void DestroyActor(AActor* Actor);
 	void AddActor(AActor* Actor);
 	void MarkPickingBVHDirty();
+	void BuildPickingBVHNow() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return Actors; }

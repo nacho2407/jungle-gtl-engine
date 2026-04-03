@@ -121,6 +121,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 			{
 				EditorEngine->GetWorldList().push_back(LoadCtx);
 				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
+				LoadCtx.World->BuildPickingBVHNow(); //씬 로드 후에 BVH 구축
 			}
 			EditorEngine->ResetViewport();
 

@@ -47,6 +47,11 @@ void UWorld::MarkPickingBVHDirty()
 	bPickingBVHDirty = true;
 }
 
+void UWorld::BuildPickingBVHNow() const
+{
+	RebuildPickingBVH();
+}
+
 bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
 	EnsurePickingBVH();
