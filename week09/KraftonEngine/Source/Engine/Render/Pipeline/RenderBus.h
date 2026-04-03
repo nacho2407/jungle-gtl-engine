@@ -13,12 +13,7 @@ class FRenderBus
 public:
 	void Clear();
 
-	// Mesh 패스용 (Opaque, StencilMask, Outline, Gizmo, Translucent)
-	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
-	void AddCommand(ERenderPass Pass, FRenderCommand&& InCommand);
-	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
-
-	// 프록시 직접 제출 — FRenderCommand 복사 없이 포인터만 저장
+	// 프록시 직접 제출 — 포인터만 저장, 데이터는 프록시 소유
 	void AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy);
 	const TArray<const FPrimitiveSceneProxy*>& GetProxies(ERenderPass Pass) const;
 
@@ -63,9 +58,6 @@ public:
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
 
 private:
-	// Mesh 패스 큐
-	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
-
 	// 프록시 패스 큐 — 포인터만 저장, 데이터는 프록시 소유
 	TArray<const FPrimitiveSceneProxy*> ProxyQueues[(uint32)ERenderPass::MAX];
 

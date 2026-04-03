@@ -307,6 +307,7 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\TextRenderSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
@@ -424,6 +425,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCommand.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\TextRenderSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />

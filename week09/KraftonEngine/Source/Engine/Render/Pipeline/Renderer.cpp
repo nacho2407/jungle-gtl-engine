@@ -195,18 +195,10 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		}
 		else
 		{
-			// 프록시 직접 렌더 (FRenderCommand 복사 없음)
 			const auto& Proxies = InRenderBus.GetProxies(CurPass);
 			if (!Proxies.empty())
 			{
 				ExecutePass(Proxies, Context);
-			}
-
-			// 기존 FRenderCommand 경로 (Selection, bPerViewportUpdate 폴백 등)
-			const auto& Commands = InRenderBus.GetCommands(CurPass);
-			if (!Commands.empty())
-			{
-				ExecutePass(Commands, Context);
 			}
 		}
 	}
@@ -292,18 +284,9 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 }
 
 // ============================================================
-// 통합 패스 실행기 — FRenderCommand / FPrimitiveSceneProxy* 공용
-// 두 타입이 동일 필드명(Shader, MeshBuffer, PerObjectConstants, SectionDraws, ExtraCB) 공유
+// 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회
 // ============================================================
-namespace {
-	// TArray<FRenderCommand> → const FRenderCommand&
-	// TArray<const FPrimitiveSceneProxy*> → const FPrimitiveSceneProxy&
-	inline const FRenderCommand& Resolve(const FRenderCommand& Item) { return Item; }
-	inline const FPrimitiveSceneProxy& Resolve(const FPrimitiveSceneProxy* Item) { return *Item; }
-}
-
-template<typename TItem>
-void FRenderer::ExecutePass(const TArray<TItem>& Items, ID3D11DeviceContext* Context)
+void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context)
 {
 	FShader*     LastShader     = nullptr;
 	FMeshBuffer* LastMeshBuffer = nullptr;
@@ -311,9 +294,9 @@ void FRenderer::ExecutePass(const TArray<TItem>& Items, ID3D11DeviceContext* Con
 	ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 	int32        LastUVScroll   = -1;
 
-	for (const auto& RawItem : Items)
+	for (const FPrimitiveSceneProxy* RawItem : Proxies)
 	{
-		const auto& Item = Resolve(RawItem);
+		const FPrimitiveSceneProxy& Item = *RawItem;
 
 		if (!Item.MeshBuffer || !Item.MeshBuffer->IsValid()) continue;
 
@@ -431,10 +414,6 @@ void FRenderer::ExecutePass(const TArray<TItem>& Items, ID3D11DeviceContext* Con
 	}
 }
 
-// 명시적 템플릿 인스턴스화
-template void FRenderer::ExecutePass<FRenderCommand>(const TArray<FRenderCommand>&, ID3D11DeviceContext*);
-template void FRenderer::ExecutePass<const FPrimitiveSceneProxy*>(const TArray<const FPrimitiveSceneProxy*>&, ID3D11DeviceContext*);
-
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
 {
 	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
@@ -462,7 +441,7 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 	if (!StencilSRV || !RTV) return;
 
 	// SelectionMask 큐가 비어 있으면 선택된 오브젝트 없음 → 스킵
-	if (Bus.GetCommands(ERenderPass::SelectionMask).empty() && Bus.GetProxies(ERenderPass::SelectionMask).empty()) return;
+	if (Bus.GetProxies(ERenderPass::SelectionMask).empty()) return;
 
 	// 1) DSV 언바인딩 (StencilSRV와 동시 바인딩 불가)
 	Context->OMSetRenderTargets(1, &RTV, nullptr);
