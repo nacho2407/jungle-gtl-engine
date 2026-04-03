@@ -76,12 +76,14 @@ void USceneComponent::SetParent(USceneComponent* NewParent)
 	ParentComponent = NewParent;
 	if (ParentComponent)
 	{
-
 		if (ParentComponent->ContainsChild(this) == false)
 		{
 			ParentComponent->ChildComponents.push_back(this);
 		}
 	}
+
+	// 부모 변경 시 자신 및 하위 자식의 월드 행렬을 갱신하도록 dirty 마킹
+	MarkTransformDirty();
 }
 
 void USceneComponent::AddChild(USceneComponent* NewChild)

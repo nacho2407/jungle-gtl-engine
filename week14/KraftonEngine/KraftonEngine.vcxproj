@@ -413,6 +413,7 @@
     <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\BillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\DirtyFlag.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\FScene.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\GizmoSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />

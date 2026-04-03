@@ -8,6 +8,7 @@
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
 #include "Render/Types/VertexTypes.h"
+#include "Render/Pipeline/DirtyFlag.h"
 
 class FPrimitiveSceneProxy;
 class FScene;
@@ -18,6 +19,7 @@ public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual const FMeshData* GetMeshData() const { return nullptr; }
@@ -50,6 +52,9 @@ public:
 	virtual FPrimitiveSceneProxy* CreateSceneProxy();
 
 	FPrimitiveSceneProxy* GetSceneProxy() const { return SceneProxy; }
+
+	// FScene의 DirtyProxies에 등록까지 수행하는 헬퍼
+	void MarkProxyDirty(EDirtyFlag Flag) const;
 
 protected:
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };

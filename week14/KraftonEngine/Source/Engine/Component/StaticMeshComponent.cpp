@@ -87,10 +87,7 @@ void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial
 		OverrideMaterials[ElementIndex] = InMaterial;
 
 		// 프록시에 Material dirty 전파
-		if (SceneProxy)
-		{
-			SceneProxy->MarkDirty(EDirtyFlag::Material);
-		}
+		MarkProxyDirty(EDirtyFlag::Material);
 	}
 }
 
