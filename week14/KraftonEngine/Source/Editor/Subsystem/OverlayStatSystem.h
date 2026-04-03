@@ -23,6 +23,11 @@ struct FOverlayStatLayout
 class FOverlayStatSystem
 {
 public:
+	FOverlayStatSystem()
+	{
+		bShowFPS = true;	// 260403 이번 경연 동안 fps는 항상 보이도록 설정.
+	}
+
 	void ShowFPS(bool bEnable = true) { bShowFPS = bEnable; }
 	void ShowMemory(bool bEnable = true) { bShowMemory = bEnable; }
 	void HideAll()
@@ -38,7 +43,7 @@ public:
 	TArray<FOverlayStatLine> BuildLines(const UEditorEngine& Editor) const;
 
 private:
-	bool bShowFPS = false;
+	bool bShowFPS = false;	// 260403 이번 경연 동안 fps는 항상 보이도록 설정.
 	bool bShowMemory = false;
 
 	FOverlayStatLayout Layout;
