@@ -2,7 +2,6 @@
 #include "RenderBus.h"
 
 class UWorld;
-class AActor;
 class UGizmoComponent;
 class FOverlayStatSystem;
 class UEditorEngine;
@@ -18,9 +17,6 @@ public:
 	void CollectOverlayText(bool bActive, const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus);
 
 private:
-	void CollectFromActor(AActor* Actor, bool bSelected, FRenderBus& RenderBus);
-
-	// FScene 프록시 기반 수집 — CollectFromActor 대체
 	void CollectFromScene(FScene& Scene, FRenderBus& RenderBus);
 	void SubmitProxy(const FPrimitiveSceneProxy* Proxy, FRenderBus& RenderBus);
 };
