@@ -68,10 +68,8 @@ bool FRayUtils::RaycastTriangles(
 {
 	if (!PositionData || Indices.empty()) return false;
 
-	//FMatrix invWorld = WorldMatrix.GetInverse(); //Get으로 표기되어 있으나 내부적으로 실시간 계산
-	FMatrix invWorld = InverseWorldMatrix;
-	FVector localOrigin = invWorld.TransformPositionWithW(WorldRay.Origin);
-	FVector localDir = invWorld.TransformVector(WorldRay.Direction);
+	FVector localOrigin = InverseWorldMatrix.TransformPositionWithW(WorldRay.Origin);
+	FVector localDir = InverseWorldMatrix.TransformVector(WorldRay.Direction);
 	localDir.Normalize();
 
 	bool bHit = false;
