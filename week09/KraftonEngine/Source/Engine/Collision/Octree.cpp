@@ -1,9 +1,10 @@
 ﻿#include "Octree.h"
 #include <Collision/RayUtils.h>
 #include <algorithm>
+#include <UI/EditorConsoleWidget.h>
 
 FOctree::FOctree() 
-    : Children(nullptr), Depth(0)
+    : BoundOctree(), Depth(0)
 {
 }
 
@@ -14,10 +15,13 @@ FOctree::FOctree(const FBoundingBox& BoundOctree, const uint32& depth)
 
 FOctree::~FOctree()
 {
-    delete[] Children;
-    Children = nullptr;
-
 	PrimitiveList.clear();
+
+    for (FOctree* Child : Children)
+    {
+        delete Child;
+    }
+    Children.clear();
 }
 
 bool FOctree::Insert(UPrimitiveComponent* primitivie)
@@ -30,6 +34,7 @@ bool FOctree::Insert(UPrimitiveComponent* primitivie)
 	
 	//자식노드가 없으면
 	if (IsLeaf()) {
+
 		//아직 더 자를 수 있으면 자르고 해당 값을 넣는다.
 		if (PrimitiveList.size() < MAX_SIZE || Depth == MAX_DEPTH)
 		{
@@ -39,11 +44,11 @@ bool FOctree::Insert(UPrimitiveComponent* primitivie)
 		SubDivide();
 	}// 자식노드가 있으면
 		
-	for (int i = 0; i < 8; ++i)
+	for (FOctree* Child : Children)
 	{
-		if (Children[i].BoundOctree.IsContains(PrimBox))
+		if (Child && Child->GetBounds().IsContains(PrimBox))
 		{
-			return Children[i].Insert(primitivie);
+			return Child->Insert(primitivie);
 		}
 	}
 	PrimitiveList.push_back(primitivie);
@@ -68,7 +73,7 @@ bool FOctree::Remove(const UPrimitiveComponent* Primitive)
 
     for (int i = 0; i < 8; ++i)
     {
-        if (Children[i].Remove(Primitive))
+        if (Children[i]->Remove(Primitive))
         {
             TryMerge();
             return true;
@@ -84,7 +89,7 @@ void FOctree::TryMerge()
 
 	for (int Index = 0; Index < 8; ++Index)
 	{
-		if (!Children[Index].IsLeaf())
+		if (!Children[Index]->IsLeaf())
 		{
 			return; // 하나라도 리프가 아니면 합치지 않음
 		}
@@ -93,42 +98,42 @@ void FOctree::TryMerge()
 	uint32 TotalPrimitives = PrimitiveList.size();
 	for (int Index = 0; Index < 8; ++Index)
 	{
-		TotalPrimitives += Children[Index].PrimitiveList.size();
+		TotalPrimitives += Children[Index]->PrimitiveList.size();
 	}
 
-	// 프리미티브 총 개수가 최대치보다 작으면 합치기 수행
-	if (TotalPrimitives <= MAX_SIZE)
-	{
-		for (int Index = 0; Index < 8; ++Index)
-		{
-			PrimitiveList.insert(PrimitiveList.end(), Children[Index].PrimitiveList.begin(), Children[Index].PrimitiveList.end());
-		}
-
-		// 모든 자식 노드를 메모리에서 해제
-		delete[] Children;
-		Children = nullptr;
-	}
+    if (TotalPrimitives <= MAX_SIZE)
+    {
+        for (FOctree* Child : Children)
+        {
+            PrimitiveList.insert(PrimitiveList.end(),
+                Child->PrimitiveList.begin(),
+                Child->PrimitiveList.end());
+            delete Child;
+        }
+        Children.clear();
+    }
 }
 
 void FOctree::SubDivide()
 { 
 	if (!IsLeaf())
         return;
-
-    Children = new FOctree[8];
+		
+    Children.resize(8, nullptr);
 
     const FVector Center = BoundOctree.GetCenter();
     const FVector Min = BoundOctree.Min;
     const FVector Max = BoundOctree.Max;
-
-	Children[0] = FOctree(FBoundingBox(FVector(Min.X, Center.Y, Min.Z), FVector(Center.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Left
-	Children[1] = FOctree(FBoundingBox(FVector(Center.X, Center.Y, Min.Z), FVector(Max.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Right
-	Children[2] = FOctree(FBoundingBox(FVector(Min.X, Center.Y, Center.Z), FVector(Center.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Left
-	Children[3] = FOctree(FBoundingBox(FVector(Center.X, Center.Y, Center.Z), FVector(Max.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Right
-	Children[4] = FOctree(FBoundingBox(FVector(Min.X, Min.Y, Min.Z), FVector(Center.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Left
-	Children[5] = FOctree(FBoundingBox(FVector(Center.X, Min.Y, Min.Z), FVector(Max.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Right
-	Children[6] = FOctree(FBoundingBox(FVector(Min.X, Min.Y, Center.Z), FVector(Center.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Left
-	Children[7] = FOctree(FBoundingBox(FVector(Center.X, Min.Y, Center.Z), FVector(Max.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Right
+	
+	
+	Children[0] = new FOctree(FBoundingBox(FVector(Min.X, Center.Y, Min.Z), FVector(Center.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Left
+	Children[1] = new FOctree(FBoundingBox(FVector(Center.X, Center.Y, Min.Z), FVector(Max.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Right
+	Children[2] = new FOctree(FBoundingBox(FVector(Min.X, Center.Y, Center.Z), FVector(Center.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Left
+	Children[3] = new FOctree(FBoundingBox(FVector(Center.X, Center.Y, Center.Z), FVector(Max.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Right
+	Children[4] = new FOctree(FBoundingBox(FVector(Min.X, Min.Y, Min.Z), FVector(Center.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Left
+	Children[5] = new FOctree(FBoundingBox(FVector(Center.X, Min.Y, Min.Z), FVector(Max.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Right
+	Children[6] = new FOctree(FBoundingBox(FVector(Min.X, Min.Y, Center.Z), FVector(Center.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Left
+	Children[7] = new FOctree(FBoundingBox(FVector(Center.X, Min.Y, Center.Z), FVector(Max.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Right
 
 	TArray<UPrimitiveComponent*> primitivesToMove = PrimitiveList;
 	PrimitiveList.clear();
@@ -156,7 +161,7 @@ bool FOctree::HasPrimitive(const UPrimitiveComponent* Primitive)
 
     for (int i = 0; i < 8; ++i)
     {
-        if (Children[i].HasPrimitive(Primitive))
+        if (Children[i]->HasPrimitive(Primitive))
         {
             return true;
         }
@@ -173,14 +178,9 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitiveList)
 	{
 		for (int Index = 0; Index < 8; ++Index)
 		{
-			Children[Index].GetAllPrimitives(OutPrimitiveList);
+			Children[Index]->GetAllPrimitives(OutPrimitiveList);
 		}
 	}
-}
-
-UPrimitiveComponent* FOctree::FindNearestPrimitive(const FVector& Pos)
-{
-	return nullptr;
 }
 
 TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitiveList(const FVector& Pos, const FVector& QueryExtent, uint32 Count)
@@ -223,7 +223,7 @@ void FOctree::QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent
 
     for (int i = 0; i < 8; ++i)
     {
-        Children[i].QueryAABB(QueryBox, OutPrimitives);
+        Children[i]->QueryAABB(QueryBox, OutPrimitives);
     }
 }
 
@@ -246,14 +246,18 @@ void FOctree::QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimiti
 
     for (int i = 0; i < 8; ++i)
     {
-        Children[i].QueryRay(Ray, OutPrimitives);
+        Children[i]->QueryRay(Ray, OutPrimitives);
     }
 }
 
 void FOctree::Reset(const FBoundingBox& InBounds, uint32 InDepth)
 {
-    delete[] Children;
-    Children = nullptr;
+	 for (FOctree* Child : Children)
+    {
+        delete Child;
+    }
+    Children.clear();
+
     PrimitiveList.clear();
     BoundOctree = InBounds;
     Depth = InDepth;
