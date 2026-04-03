@@ -1,6 +1,7 @@
 ﻿#include "SubUVBatcher.h"
 
 #include "Core/CoreTypes.h"
+#include "Profiling/Stats.h"
 #include "Render/Resource/ShaderManager.h"
 
 void FSubUVBatcher::Create(ID3D11Device* InDevice)
@@ -105,6 +106,7 @@ void FSubUVBatcher::DrawBatch(ID3D11DeviceContext* Context)
         if (!Batch.SRV || Batch.IndexCount == 0) continue;
         Context->PSSetShaderResources(0, 1, &Batch.SRV);
         Context->DrawIndexed(Batch.IndexCount, Batch.IndexStart, Batch.BaseVertex);
+        FDrawCallStats::Increment();
     }
 }
 

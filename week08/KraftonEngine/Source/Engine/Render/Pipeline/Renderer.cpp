@@ -163,6 +163,7 @@ void FRenderer::BeginFrame()
 //	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
 void FRenderer::Render(const FRenderBus& InRenderBus)
 {
+	FDrawCallStats::Reset();
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
 
@@ -374,6 +375,7 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 				}
 
 				Context->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
+				FDrawCallStats::Increment();
 			}
 		}
 		else
@@ -406,6 +408,7 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 				Context->DrawIndexed(indexCount, 0, 0);
 			else
 				Context->Draw(Item.MeshBuffer->GetVertexBuffer().GetVertexCount(), 0);
+			FDrawCallStats::Increment();
 		}
 	}
 
@@ -468,6 +471,7 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 	Context->IASetInputLayout(nullptr);
 	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 	Context->Draw(3, 0);
+	FDrawCallStats::Increment();
 
 	// 6) StencilSRV 언바인딩
 	ID3D11ShaderResourceView* nullSRV = nullptr;
