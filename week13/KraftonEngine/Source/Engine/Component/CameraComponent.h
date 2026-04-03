@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "Engine/Core/RayTypes.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Matrix.h"
 #include "Math/MathUtils.h"
 #include "Math/Vector.h"
+#include "Math/ConvexVolume.h"
 
 struct FCameraState
 {
@@ -37,6 +38,7 @@ public:
 
 	FMatrix GetViewMatrix() const;
 	FMatrix GetProjectionMatrix() const;
+	FConvexVolume GetConvexVolume() const;
 
 	float GetFOV() const { return CameraState.FOV; }
 	float GetNearPlane() const { return CameraState.NearZ; }
