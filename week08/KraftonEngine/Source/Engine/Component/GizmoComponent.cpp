@@ -7,8 +7,8 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Collision/RayUtils.h"
-#include "Render/Pipeline/GizmoSceneProxy.h"
-#include "Render/Pipeline/FScene.h"
+#include "Render/Proxy/GizmoSceneProxy.h"
+#include "Render/Proxy/FScene.h"
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 

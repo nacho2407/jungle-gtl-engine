@@ -6,7 +6,7 @@
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Pipeline/TextRenderSceneProxy.h"
+#include "Render/Proxy/TextRenderSceneProxy.h"
 
 IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
 

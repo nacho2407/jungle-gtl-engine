@@ -1,7 +1,7 @@
 ﻿#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
-#include "Render/Pipeline/BillboardSceneProxy.h"
+#include "Render/Proxy/BillboardSceneProxy.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
