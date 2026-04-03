@@ -6,7 +6,6 @@ class UGizmoComponent;
 class FOverlayStatSystem;
 class UEditorEngine;
 class FScene;
-class FPrimitiveSceneProxy;
 enum class ELevelViewportType : uint8;
 
 class FRenderCollector {
@@ -18,5 +17,4 @@ public:
 
 private:
 	void CollectFromScene(FScene& Scene, FRenderBus& RenderBus);
-	void SubmitProxy(const FPrimitiveSceneProxy* Proxy, FRenderBus& RenderBus);
 };

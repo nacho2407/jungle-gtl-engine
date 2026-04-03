@@ -7,6 +7,7 @@ void FRenderBus::Clear()
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		PassQueues[i].clear();
+		ProxyQueues[i].clear();
 	}
 
 	FontEntries.clear();
@@ -33,6 +34,16 @@ void FRenderBus::AddCommand(ERenderPass Pass, FRenderCommand&& InCommand)
 const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 {
 	return PassQueues[(uint32)Pass];
+}
+
+void FRenderBus::AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy)
+{
+	ProxyQueues[(uint32)Pass].push_back(Proxy);
+}
+
+const TArray<const FPrimitiveSceneProxy*>& FRenderBus::GetProxies(ERenderPass Pass) const
+{
+	return ProxyQueues[(uint32)Pass];
 }
 
 void FRenderBus::AddFontEntry(FFontEntry&& Entry)

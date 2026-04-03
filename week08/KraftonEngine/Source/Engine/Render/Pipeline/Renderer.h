@@ -7,6 +7,7 @@
 #include "Render/Types/RenderTypes.h"
 
 #include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/PrimitiveSceneProxy.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/ShaderManager.h"
@@ -61,6 +62,9 @@ private:
 
 	// 기본 패스 실행기 — BindCommand + DrawCommand 루프
 	void ExecuteDefaultPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+
+	// 프록시 직접 실행기 — FRenderCommand 복사 없이 프록시 필드를 직접 읽어 GPU 제출
+	void ExecuteProxyPass(const TArray<const FPrimitiveSceneProxy*>& Proxies, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
