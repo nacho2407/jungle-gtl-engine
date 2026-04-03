@@ -5,6 +5,8 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Core/CollisionTypes.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
@@ -53,7 +55,37 @@ void UPrimitiveComponent::CollectSelection(FRenderBus& Bus) const
 
 FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 {
+	EnsureWorldAABBUpdated();
 	return FBoundingBox(WorldAABBMinLocation, WorldAABBMaxLocation);
+}
+
+void UPrimitiveComponent::SetVisibility(bool bVisible)
+{
+	if (bIsVisible == bVisible)
+	{
+		return;
+	}
+
+	bIsVisible = bVisible;
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UWorld* World = OwnerActor->GetWorld())
+		{
+			World->MarkPickingBVHDirty();
+		}
+	}
+}
+
+void UPrimitiveComponent::MarkWorldBoundsDirty()
+{
+	bWorldAABBDirty = true;
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (UWorld* World = OwnerActor->GetWorld())
+		{
+			World->MarkPickingBVHDirty();
+		}
+	}
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const
@@ -69,6 +101,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 	FVector WorldCenter = GetWorldLocation();
 	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+	bWorldAABBDirty = false;
 }
 
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
@@ -94,5 +127,18 @@ bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHit
 void UPrimitiveComponent::UpdateWorldMatrix() const
 {
 	USceneComponent::UpdateWorldMatrix();
-	UpdateWorldAABB();
+}
+
+void UPrimitiveComponent::OnTransformDirty()
+{
+	MarkWorldBoundsDirty();
+}
+
+void UPrimitiveComponent::EnsureWorldAABBUpdated() const
+{
+	GetWorldMatrix();
+	if (bWorldAABBDirty)
+	{
+		UpdateWorldAABB();
+	}
 }

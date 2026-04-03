@@ -24,11 +24,12 @@ public:
 	virtual void CollectRender(FRenderBus& Bus) const;
 	virtual void CollectSelection(FRenderBus& Bus) const;
 
-	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
+	void SetVisibility(bool bVisible);
 	inline bool IsVisible() const { return bIsVisible; }
 
 	// 월드 공간 AABB를 FBoundingBox로 반환 (파트 B LineBatcher와의 인터페이스)
 	FBoundingBox GetWorldBoundingBox() const;
+	void MarkWorldBoundsDirty();
 
 	//Collision
 	virtual void UpdateWorldAABB() const;
@@ -38,8 +39,12 @@ public:
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
+	void OnTransformDirty() override;
+	void EnsureWorldAABBUpdated() const;
+
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
+	mutable bool bWorldAABBDirty = true;
 	bool bIsVisible = true;
 };
