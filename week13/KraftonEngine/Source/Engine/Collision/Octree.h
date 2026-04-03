@@ -25,10 +25,10 @@ public:
 
 	bool HasPrimitive(const UPrimitiveComponent* p);
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPremitive);
-	inline bool IsLeaf() const { return Children == nullptr; }
+	inline bool IsLeaf() const { return Children.empty(); }
 
 	const FBoundingBox& GetBounds() const { return BoundOctree; }
-	const FOctree* GetChildren() const { return Children; }
+	const TArray<FOctree*>& GetChildren() const { return Children; }
 
 	// 근접 쿼리 - 프리미티브 반환
 	UPrimitiveComponent* FindNearestPrimitive(const FVector& Pos);
@@ -42,7 +42,7 @@ public:
 private:
 	FBoundingBox BoundOctree;
 
-	FOctree* Children = nullptr;
+	TArray<FOctree*> Children;
 	TArray<UPrimitiveComponent*> PrimitiveList;
 
 	uint32 Depth;

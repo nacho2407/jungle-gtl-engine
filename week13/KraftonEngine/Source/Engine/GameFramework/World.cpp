@@ -21,13 +21,55 @@ void UWorld::DestroyActor(AActor* Actor)
 	if (it != Actors.end())
 		Actors.erase(it);
 
+	RemoveActorToOctree(Actor);
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
 }
 
 void UWorld::InitWorld()
 {
-	Octree = FOctree(FBoundingBox(FVector(-1000, -1000, -1000), FVector(1000, 1000, 1000)), 0);
+	 Octree = new FOctree(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)), 0);
+}
+
+void UWorld::InsertActorToOctree(AActor* Actor)
+{
+    if (!Actor) return;
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim || !Prim->IsVisible()) continue;
+        Prim->UpdateWorldMatrix();
+        Octree->Insert(Prim);
+    }
+}
+
+void UWorld::RemoveActorToOctree(AActor* Actor)
+{
+    if (!Actor) return;
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim) continue;
+        Octree->Remove(Prim);
+    }
+}
+
+void UWorld::UpdateActorInOctree(AActor* Actor)
+{
+    if (!Actor) return;
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim) continue;
+
+        Octree->Remove(Prim);
+        Prim->UpdateWorldMatrix();
+
+        if (Prim->IsVisible())
+        {
+            Octree->Insert(Prim);
+        }
+    }
 }
 
 void UWorld::BeginPlay()

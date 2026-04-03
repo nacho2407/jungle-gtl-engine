@@ -43,6 +43,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+				World->InsertActorToOctree(Actor);
 				break;
 			}
 			case 1: // Sphere
@@ -50,6 +51,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
+				World->InsertActorToOctree(Actor);
 				break;
 			}
 			}

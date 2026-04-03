@@ -341,6 +341,7 @@ json::JSON FSceneSaveManager::SerializeCamera(UCameraComponent* Cam)
 void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors)
 {
 	using namespace json;
+	World->InitWorld();
 	for (auto it = Primitives.ObjectRange().begin(); it != Primitives.ObjectRange().end(); ++it) {
 		const auto& kv = *it;
 		const string& Key = kv.first;
@@ -379,7 +380,8 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 			for (auto& e : sjson.ArrayRange()) { if (i == 0) sx = static_cast<float>(e.ToFloat()); else if (i == 1) sy = static_cast<float>(e.ToFloat()); else if (i == 2) sz = static_cast<float>(e.ToFloat()); i++; }
 			Actor->SetActorScale(FVector(sx, sy, sz));
 		}
-
+		
+		World->InsertActorToOctree(Actor);
 		// Material/UV overrides are applied later when deserializing the Actor's RootComponent properties
 	}
 }
