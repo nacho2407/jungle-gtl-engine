@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+uint32 FDrawCallStats::Count = 0;
+
 FStatManager::FStatManager()
 {
 	QueryPerformanceFrequency(&Frequency);

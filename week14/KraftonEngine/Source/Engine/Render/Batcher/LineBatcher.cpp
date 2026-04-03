@@ -1,5 +1,6 @@
 ﻿#include "LineBatcher.h"
 #include "Core/EngineTypes.h"
+#include "Profiling/Stats.h"
 #include "Math/MathUtils.h"
 
 #include <algorithm>
@@ -253,6 +254,7 @@ void FLineBatcher::DrawBatch(ID3D11DeviceContext* Context)
 	VB.Bind(Context);
 	IB.Bind(Context);
 	Context->DrawIndexed(IndexCount, 0, 0);
+	FDrawCallStats::Increment();
 }
 
 uint32 FLineBatcher::GetLineCount() const
