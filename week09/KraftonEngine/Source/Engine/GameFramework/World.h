@@ -4,6 +4,7 @@
 #include "Core/CollisionTypes.h"
 #include "GameFramework/AActor.h"
 #include "Render/Proxy/FScene.h"
+#include "Math/ConvexVolume.h"
 #include <Collision/Octree.h>
 
 class UCameraComponent;
@@ -25,6 +26,7 @@ public:
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
+	void UpdateVisibleActors();
 
 	void InitWorld();      // Set up the world before gameplay begins
 	void BeginPlay();      // Triggers BeginPlay on all actors
@@ -69,6 +71,9 @@ private:
 	int32 BuildPickingBVHRecursive(int32 Start, int32 End) const;
 
 	TArray<AActor*> Actors;
+	TArray<AActor*> VisibleActors;
+	TArray<UPrimitiveComponent*> VisiblePrimitives;
+
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
 	mutable bool bPickingBVHDirty = true;
