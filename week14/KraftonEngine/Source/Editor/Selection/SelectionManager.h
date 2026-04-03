@@ -4,6 +4,7 @@
 
 class AActor;
 class UGizmoComponent;
+class UWorld;
 
 class FSelectionManager
 {
@@ -32,9 +33,13 @@ public:
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 
+	void SetWorld(UWorld* InWorld) { World = InWorld; }
+
 private:
 	void SyncGizmo();
+	void SetActorProxiesSelected(AActor* Actor, bool bSelected);
 
 	TArray<AActor*> SelectedActors;
 	UGizmoComponent* Gizmo = nullptr;
+	UWorld* World = nullptr;
 };
