@@ -29,12 +29,17 @@ public:
 	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
 	void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }
 	UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
+
+	FOctree* GetOctree() { return Octree; }
+	void InsertActorToOctree(AActor* actor);
+	void RemoveActorToOctree(AActor* actor);
+	void UpdateActorInOctree(AActor* actor);
 	
-	FOctree Octree;
 private:
 	TArray<AActor*> Actors;
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
+	FOctree* Octree;
 };
 
 template<typename T>
