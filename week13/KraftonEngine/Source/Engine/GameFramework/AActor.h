@@ -67,7 +67,7 @@ public:
 	UWorld* GetWorld() const { return OwningWorld; }
 
 	bool IsVisible() const { return bVisible; }
-	void SetVisible(bool Visible) { bVisible = Visible; }
+	void SetVisible(bool Visible);
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
