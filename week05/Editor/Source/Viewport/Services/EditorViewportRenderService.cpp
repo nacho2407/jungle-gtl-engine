@@ -19,9 +19,8 @@
 
 namespace
 {
-	void BuildGridVectors(const FRenderCommandQueue& Queue, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
+	void BuildGridVectors(const FMatrix& ViewInverse, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
 	{
-		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 		OutViewForward = ViewInverse.GetForwardVector().GetSafeNormal();
 
 		if (LocalState.ProjectionType == EViewportType::Perspective)
@@ -109,7 +108,8 @@ void FEditorViewportRenderService::RenderAll(
 
 		FFrustum Frustum;
 		Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
-		const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
+		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
+		const FVector CameraPosition = ViewInverse.GetTranslation();
 		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
@@ -128,7 +128,7 @@ void FEditorViewportRenderService::RenderAll(
 			FVector GridAxisU = FVector::ForwardVector;
 			FVector GridAxisV = FVector::RightVector;
 			FVector ViewForward = FVector::ForwardVector;
-			BuildGridVectors(Queue, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
+			BuildGridVectors(ViewInverse, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
 
 			GridMaterial->SetParameterData("GridSize", &Entry.LocalState.GridSize, 4);
 			GridMaterial->SetParameterData("LineThickness", &Entry.LocalState.LineThickness, 4);

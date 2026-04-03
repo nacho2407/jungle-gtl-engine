@@ -125,7 +125,8 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 	FFrustum Frustum;
 	Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-	const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
+	const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
+	const FVector CameraPosition = ViewInverse.GetTranslation();
 	BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
 	Renderer->SubmitCommands(Queue);
 	Renderer->ExecuteCommands();

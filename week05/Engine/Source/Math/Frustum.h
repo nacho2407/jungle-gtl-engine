@@ -10,7 +10,7 @@ struct FPlane4
 
 	void Normalize()
 	{
-		float Len = std::sqrt(A * A + B * B + C * C);
+		const float Len = std::sqrt(A * A + B * B + C * C);
 		if (Len > 0.0f)
 		{
 			A /= Len;

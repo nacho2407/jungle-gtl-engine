@@ -33,6 +33,7 @@ void SEditorViewportOverlay::OnPaint(SWidget& Painter)
 	if (ShouldShowFPS())
 	{
 		FpsWidget.Paint(Painter);
+		return; // GameGem
 	}
 	Transform.Paint(Painter);
 	Toolbar.Paint(Painter);
@@ -143,7 +144,8 @@ bool SEditorViewportOverlay::ComputeViewportBounds(FRect& OutRect) const
 
 bool SEditorViewportOverlay::ShouldShowFPS() const
 {
-	return EditorUI && EditorUI->GetDebugState().FPS;
+	//return EditorUI && EditorUI->GetDebugState().FPS; GameGem
+	return true;
 }
 
 FRect SEditorViewportOverlay::GetInteractiveRect() const
