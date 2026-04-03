@@ -13,7 +13,17 @@ FBoxSphereBounds UPrimitiveComponent::GetLocalBounds() const
 
 void UPrimitiveComponent::UpdateBounds()
 {
-	Bounds = CalcBounds(GetWorldTransform());
+	bBoundsDirty = true;
+}
+
+FBoxSphereBounds UPrimitiveComponent::GetWorldBounds() const
+{
+	if (bBoundsDirty)
+	{
+		Bounds = CalcBounds(GetWorldTransform());
+		bBoundsDirty = false;
+	}
+	return Bounds;
 }
 
 FBoxSphereBounds UPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) const

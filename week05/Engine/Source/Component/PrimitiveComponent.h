@@ -24,9 +24,8 @@ class ENGINE_API UPrimitiveComponent : public USceneComponent
 public:
 	DECLARE_RTTI(UPrimitiveComponent, USceneComponent)
 
-	// virtual FBoxSphereBounds GetWorldBounds() const { return Bounds; };
-	virtual FBoxSphereBounds GetWorldBounds() const { return CalcBounds(GetWorldTransform()); }
-	virtual void UpdateBounds();
+	virtual FBoxSphereBounds GetWorldBounds() const;
+	virtual void UpdateBounds() override;
 	virtual FBoxSphereBounds GetLocalBounds() const;
 	virtual FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const;
 
@@ -36,6 +35,7 @@ public:
 	virtual FRenderMesh* GetRenderMesh() const { return nullptr; }
 
 protected:
-	FBoxSphereBounds Bounds;
+	mutable FBoxSphereBounds Bounds;
+	mutable bool bBoundsDirty = true;
 	bool bDrawDebugBounds = true;
 };
