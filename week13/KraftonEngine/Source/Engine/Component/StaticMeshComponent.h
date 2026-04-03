@@ -6,6 +6,7 @@
 #include "Mesh/StaticMesh.h"
 
 class UMaterial;
+class FPrimitiveSceneProxy;
 
 namespace json { class JSON; }
 
@@ -19,10 +20,11 @@ public:
 	~UStaticMeshComponent() override = default;
 
 	FMeshBuffer* GetMeshBuffer() const override;
-	void CollectRender(FRenderBus& Bus) const override;
-	void CollectSelection(FRenderBus& Bus) const override;
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 	void UpdateWorldAABB() const override;
+
+	// 구체 프록시 생성 (FStaticMeshSceneProxy)
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UStaticMesh* GetStaticMesh() const;

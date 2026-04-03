@@ -1,12 +1,32 @@
 ﻿#include "Editor/Selection/SelectionManager.h"
 #include "Object/Object.h"
 #include "Component/GizmoComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Render/Proxy/FScene.h"
 
 void FSelectionManager::Init()
 {
 	Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
 	Gizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
 	Gizmo->Deactivate();
+}
+
+void FSelectionManager::SetWorld(UWorld* InWorld)
+{
+	// 기존 Scene에서 Gizmo 프록시 해제
+	if (Gizmo && World)
+		Gizmo->DestroyRenderState();
+
+	World = InWorld;
+
+	// 새 Scene에 Gizmo 프록시 등록
+	if (Gizmo && World)
+	{
+		Gizmo->SetScene(&World->GetScene());
+		Gizmo->CreateRenderState();
+	}
 }
 
 void FSelectionManager::Shutdown()
@@ -22,10 +42,15 @@ void FSelectionManager::Shutdown()
 
 void FSelectionManager::Select(AActor* Actor)
 {
+	// 기존 선택 해제
+	for (AActor* Prev : SelectedActors)
+		SetActorProxiesSelected(Prev, false);
+
 	SelectedActors.clear();
 	if (Actor)
 	{
 		SelectedActors.push_back(Actor);
+		SetActorProxiesSelected(Actor, true);
 	}
 	SyncGizmo();
 }
@@ -66,12 +91,17 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 	int32 Lo = std::min(AnchorIdx, ClickedIdx);
 	int32 Hi = std::max(AnchorIdx, ClickedIdx);
 
+	// 기존 선택 해제
+	for (AActor* Prev : SelectedActors)
+		SetActorProxiesSelected(Prev, false);
+
 	SelectedActors.clear();
 	for (int32 i = Lo; i <= Hi; ++i)
 	{
 		if (ActorList[i])
 		{
 			SelectedActors.push_back(ActorList[i]);
+			SetActorProxiesSelected(ActorList[i], true);
 		}
 	}
 	SyncGizmo();
@@ -84,11 +114,13 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
 	if (It != SelectedActors.end())
 	{
+		SetActorProxiesSelected(Actor, false);
 		SelectedActors.erase(It);
 	}
 	else
 	{
 		SelectedActors.push_back(Actor);
+		SetActorProxiesSelected(Actor, true);
 	}
 	SyncGizmo();
 }
@@ -98,6 +130,7 @@ void FSelectionManager::Deselect(AActor* Actor)
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
 	if (It != SelectedActors.end())
 	{
+		SetActorProxiesSelected(Actor, false);
 		SelectedActors.erase(It);
 	}
 	SyncGizmo();
@@ -105,8 +138,25 @@ void FSelectionManager::Deselect(AActor* Actor)
 
 void FSelectionManager::ClearSelection()
 {
+	for (AActor* Actor : SelectedActors)
+		SetActorProxiesSelected(Actor, false);
+
 	SelectedActors.clear();
 	SyncGizmo();
+}
+
+void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
+{
+	if (!Actor || !World) return;
+
+	FScene& Scene = World->GetScene();
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
+		{
+			Scene.SetProxySelected(Proxy, bSelected);
+		}
+	}
 }
 
 void FSelectionManager::SyncGizmo()

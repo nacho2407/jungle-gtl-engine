@@ -3,6 +3,9 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
+#include "GameFramework/World.h"
+
+#include <algorithm>
 
 IMPLEMENT_CLASS(AActor, UObject)
 
@@ -10,6 +13,7 @@ AActor::~AActor()
 {
 	for (auto* Comp : OwnedComponents)
 	{
+		Comp->DestroyRenderState();
 		UObjectManager::Get().DestroyObject(Comp);
 	}
 
@@ -33,6 +37,8 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 	Comp->SetOwner(this);
 	OwnedComponents.push_back(Comp);
 	bPrimitiveCacheDirty = true;
+	Comp->CreateRenderState();
+	MarkPickingDirty();
 	return Comp;
 }
 
@@ -45,6 +51,8 @@ void AActor::RegisterComponent(UActorComponent* Comp)
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
+		MarkPickingDirty();
+		Comp->CreateRenderState();
 	}
 }
 
@@ -52,10 +60,13 @@ void AActor::RemoveComponent(UActorComponent* Component)
 {
 	if (!Component) return;
 
+	Component->DestroyRenderState();
+
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
 	if (it != OwnedComponents.end()) {
 		OwnedComponents.erase(it);
 		bPrimitiveCacheDirty = true;
+		MarkPickingDirty();
 	}
 
 	// RootComponent가 제거되면 nullptr로
@@ -69,6 +80,35 @@ void AActor::SetRootComponent(USceneComponent* Comp)
 {
 	if (!Comp) return;
 	RootComponent = Comp;
+}
+
+void AActor::SetVisible(bool Visible)
+{
+	if (bVisible == Visible)
+	{
+		return;
+	}
+
+	bVisible = Visible;
+	if (OwningWorld)
+	{
+		OwningWorld->MarkPickingBVHDirty();
+	}
+	for (UPrimitiveComponent* Prim : GetPrimitiveComponents())
+	{
+		if (Prim)
+		{
+			Prim->MarkProxyDirty(EDirtyFlag::Visibility);
+		}
+	}
+}
+
+void AActor::MarkPickingDirty()
+{
+	if (OwningWorld)
+	{
+		OwningWorld->MarkPickingBVHDirty();
+	}
 }
 
 FVector AActor::GetActorLocation() const

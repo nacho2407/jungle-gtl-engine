@@ -2,12 +2,15 @@
 #include "PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 
+class FPrimitiveSceneProxy;
+
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
 	void TickComponent(float DeltaTime) override;
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
 
@@ -16,7 +19,6 @@ public:
 
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
 	const FMeshData* GetMeshData() const override { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad); }
-	void CollectSelection(FRenderBus& Bus) const override;
 
 protected:
 	bool bIsBillboard = true;

@@ -34,6 +34,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// Selection & Gizmo
 	SelectionManager.Init();
+	SelectionManager.SetWorld(GetWorld());
 
 	// 뷰포트 레이아웃 초기화 + 저장된 설정 복원
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
@@ -107,6 +108,7 @@ void UEditorEngine::NewScene()
 	ClearScene();
 	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
 	SetActiveWorld(Ctx.ContextHandle);
+	SelectionManager.SetWorld(GetWorld());
 
 	ResetViewport();
 }
@@ -114,6 +116,7 @@ void UEditorEngine::NewScene()
 void UEditorEngine::ClearScene()
 {
 	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(nullptr);
 
 	for (FWorldContext& Ctx : WorldList)
 	{

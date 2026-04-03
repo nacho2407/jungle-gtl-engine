@@ -1,24 +1,19 @@
 #include "RenderCollector.h"
 
 #include "GameFramework/World.h"
-#include "GameFramework/AActor.h"
-#include "Component/PrimitiveComponent.h"
-#include "Component/GizmoComponent.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/EditorEngine.h"
+#include "Render/Proxy/FScene.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 
-#include <algorithm>
-
-void FRenderCollector::CollectWorld(UWorld* World, const TArray<AActor*>& SelectedActors, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 {
 	if (!World) return;
 
-	for (AActor* Actor : World->GetActors())
-	{
-		if (!Actor) continue;
-		bool bSelected = std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end();
-		CollectFromActor(Actor, bSelected, RenderBus);
-	}
+	// 프록시 기반 수집: FScene에서 캐싱된 렌더 데이터를 직접 제출
+	FScene& Scene = World->GetScene();
+	Scene.UpdateDirtyProxies();
+	CollectFromScene(Scene, RenderBus);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
@@ -29,18 +24,8 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 	RenderBus.AddGridEntry(std::move(Entry));
 }
 
-void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, ELevelViewportType ViewportType, FRenderBus& RenderBus)
+void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
 {
-	if (!Gizmo) return;
-
-	Gizmo->UpdateAxisMask(ViewportType);
-	Gizmo->CollectRender(RenderBus);
-}
-
-void FRenderCollector::CollectOverlayText(bool bActive, const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
-{
-	if (!bActive) return;
-
 	const TArray<FOverlayStatLine> Lines = OverlaySystem.BuildLines(Editor);
 	const float TextScale = OverlaySystem.GetLayout().TextScale;
 
@@ -57,19 +42,45 @@ void FRenderCollector::CollectOverlayText(bool bActive, const FOverlayStatSystem
 	}
 }
 
-void FRenderCollector::CollectFromActor(AActor* Actor, bool bSelected, FRenderBus& RenderBus)
+// ============================================================
+// FScene 프록시 기반 수집 — Owner 참조 없이 프록시 데이터만 사용
+// ============================================================
+void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 {
-	if (!Actor->IsVisible()) return;
+	if (!RenderBus.GetShowFlags().bPrimitives) return;
 
-	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+	const bool bShowBoundingVolume = RenderBus.GetShowFlags().bBoundingVolume;
+
+	for (FPrimitiveSceneProxy* Proxy : Scene.GetAllProxies())
 	{
-		if (!Primitive->IsVisible()) continue;
+		if (!Proxy) continue;
 
-		Primitive->CollectRender(RenderBus);
+		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
+		if (Proxy->bPerViewportUpdate)
+			Proxy->UpdatePerViewport(RenderBus);
 
-		if (bSelected)
+		if (!Proxy->bVisible) continue;
+
+		// Batcher 경유 렌더링 (Font, SubUV)
+		if (Proxy->bBatcherRendered)
+			Proxy->CollectEntries(RenderBus);
+		else
+			RenderBus.AddProxy(Proxy->Pass, Proxy);
+
+		// 선택된 오브젝트
+		if (Proxy->bSelected)
 		{
-			Primitive->CollectSelection(RenderBus);
+			if (Proxy->bSupportsOutline)
+				RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
+
+			if (bShowBoundingVolume)
+			{
+				FAABBEntry Entry = {};
+				Entry.AABB.Min = Proxy->CachedBounds.Min;
+				Entry.AABB.Max = Proxy->CachedBounds.Max;
+				Entry.AABB.Color = FColor::White();
+				RenderBus.AddAABBEntry(std::move(Entry));
+			}
 		}
 	}
 }
