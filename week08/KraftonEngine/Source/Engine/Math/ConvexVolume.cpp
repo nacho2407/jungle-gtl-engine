@@ -33,7 +33,7 @@ bool FConvexVolume::IntersectAABB(const FBoundingBox& Box) const
 		if (P.Y >= 0) PVertex.Y = Box.Max.Y;
 		if (P.Z >= 0) PVertex.Z = Box.Max.Z;
 
-		if (P.Dot(PVertex) + P.Length() < 0)
+		if (P.Dot(PVertex) < 0)
 			return false;
 	}
 	return true;
