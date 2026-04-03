@@ -46,6 +46,13 @@ FMatrix UCameraComponent::GetProjectionMatrix() const
 	}
 }
 
+FConvexVolume UCameraComponent::GetConvexVolume() const
+{
+	FConvexVolume ConvexVolume;
+	ConvexVolume.UpdateFromMatrix(GetViewMatrix() * GetProjectionMatrix());
+	return ConvexVolume;
+}
+
 void UCameraComponent::LookAt(const FVector& Target)
 {
 	FVector Position = GetWorldLocation();
