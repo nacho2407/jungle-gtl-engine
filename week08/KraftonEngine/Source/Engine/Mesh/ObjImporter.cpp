@@ -606,6 +606,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		if (FaceStarts.empty()) continue;
 
 		FStaticMeshSection NewSection;
+		NewSection.MaterialIndex = static_cast<int32>(MaterialIndex);
 		NewSection.MaterialSlotName = OutMaterials[MaterialIndex].MaterialSlotName;
 		NewSection.FirstIndex = static_cast<uint32>(OutMesh.Indices.size());
 		NewSection.NumTriangles = static_cast<uint32>(FaceStarts.size());

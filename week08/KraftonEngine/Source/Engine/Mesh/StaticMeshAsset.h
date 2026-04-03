@@ -23,7 +23,7 @@ struct FNormalVertex
 
 struct FStaticMeshSection
 {
-	//int32 MaterialIndex; // Index into UStaticMesh's FStaticMaterial array.
+	int32 MaterialIndex = -1; // Index into UStaticMesh's FStaticMaterial array. Cached to avoid per-frame string comparison.
 	FString MaterialSlotName;
 	uint32 FirstIndex;
 	uint32 NumTriangles;

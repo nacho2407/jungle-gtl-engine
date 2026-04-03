@@ -12,7 +12,7 @@
 #if defined(_DEBUG) || defined(DEBUG)
 #define STATS 1
 #else
-#define STATS 0
+#define STATS 1
 #endif
 #endif
 
@@ -22,9 +22,9 @@ struct FStatEntry
 	const char* Name = nullptr;
 	uint32 CallCount = 0;
 	double TotalTime = 0.0;		// seconds
-	double MaxTime   = 0.0;
-	double MinTime   = DBL_MAX;
-	double LastTime  = 0.0;
+	double MaxTime = 0.0;
+	double MinTime = DBL_MAX;
+	double LastTime = 0.0;
 
 	double GetAvgTime() const { return CallCount > 0 ? TotalTime / CallCount : 0.0; }
 };

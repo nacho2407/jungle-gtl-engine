@@ -39,7 +39,7 @@ private:
 	~FGPUProfiler() = default;
 
 	static const uint32 MAX_TIMESTAMPS = 64;
-	static const uint32 FRAME_COUNT = 3;
+	static const uint32 FRAME_COUNT = 5;
 
 	struct FTimestampPair
 	{
