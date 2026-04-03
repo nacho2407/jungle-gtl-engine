@@ -81,7 +81,6 @@ public:
 	ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
-	void CollectRender(FRenderBus& Bus) const override;
 
 	//Collision
 	void UpdateWorldAABB() const override;

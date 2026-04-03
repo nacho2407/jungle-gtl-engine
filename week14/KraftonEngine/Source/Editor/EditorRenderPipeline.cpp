@@ -4,6 +4,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
+#include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
@@ -77,27 +78,27 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetViewportInfo(VP);
 	Bus.SetViewportType(Opts.ViewportType);
 
-	// 2. RenderCommand(DefaultPass), Entry(Batcher)를 ERenderPass별로 수집
+	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
 	{
-		SCOPE_STAT("Collector.CollectWorld");
+		SCOPE_STAT("Collector");
 		Collector.CollectWorld(World, Bus);
-	}
 
-	{
-		SCOPE_STAT("Collector.Other");
-		const bool bIsActiveViewport = VC == Editor->GetActiveViewport();
+		if (UGizmoComponent* Gizmo = Editor->GetGizmo())
+			Gizmo->UpdateAxisMask(Opts.ViewportType);
+
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
-		Collector.CollectGizmo(Editor->GetGizmo(), Opts.ViewportType, Bus);
-		Collector.CollectOverlayText(bIsActiveViewport, Editor->GetOverlayStatSystem(), *Editor, Bus);
+
+		if (VC == Editor->GetActiveViewport())
+			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Bus);
 	}
 
-	// 3. Bus에 담긴 커맨드와 엔트리를 기반으로 렌더러에 배치
+	// 3. Batcher 준비
 	{
 		SCOPE_STAT("PrepareBatcher");
 		Renderer.PrepareBatchers(Bus);
 	}
 
-	// 4. Bus에 담긴 커맨드와 엔트리를 기반으로 GPU 드로우 콜 실행
+	// 4. GPU 드로우 콜 실행
 	{
 		SCOPE_STAT("Renderer.Render");
 		Renderer.Render(Bus);

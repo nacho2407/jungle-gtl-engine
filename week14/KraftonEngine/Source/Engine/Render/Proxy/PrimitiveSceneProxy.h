@@ -28,6 +28,9 @@ public:
 	virtual void UpdateVisibility();
 	virtual void UpdateMesh();
 
+	// --- Batcher Entry 수집 (bBatcherRendered 프록시가 오버라이드) ---
+	virtual void CollectEntries(FRenderBus& Bus) {}
+
 	// --- Dirty 관리 ---
 	void MarkDirty(EDirtyFlag Flag) { DirtyFlags |= Flag; }
 	void ClearDirty(EDirtyFlag Flag) { DirtyFlags &= ~Flag; }
@@ -48,6 +51,7 @@ public:
 	// --- 가시성·선택 ---
 	bool bVisible  = true;
 	bool bSelected = false;
+	bool bSupportsOutline = true;
 
 	// --- 렌더 패스 ---
 	ERenderPass Pass = ERenderPass::Opaque;
@@ -56,6 +60,7 @@ public:
 	FShader*     Shader     = nullptr;
 	FMeshBuffer* MeshBuffer = nullptr;
 	FPerObjectConstants PerObjectConstants = {};
+	FBoundingBox CachedBounds;
 
 	// 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
 	TArray<FMeshSectionDraw> SectionDraws;

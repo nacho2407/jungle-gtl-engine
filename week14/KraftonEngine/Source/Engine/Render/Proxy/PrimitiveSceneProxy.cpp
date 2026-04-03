@@ -1,5 +1,6 @@
 ﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
 #include "Render/Resource/ShaderManager.h"
 
 // ============================================================
@@ -8,11 +9,13 @@
 FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 	: Owner(InComponent)
 {
+	bSupportsOutline = Owner->SupportsOutline();
 }
 
 void FPrimitiveSceneProxy::UpdateTransform()
 {
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(Owner->GetWorldMatrix());
+	CachedBounds = Owner->GetWorldBoundingBox();
 }
 
 void FPrimitiveSceneProxy::UpdateMaterial()
@@ -23,6 +26,12 @@ void FPrimitiveSceneProxy::UpdateMaterial()
 void FPrimitiveSceneProxy::UpdateVisibility()
 {
 	bVisible = Owner->IsVisible();
+	if (bVisible)
+	{
+		AActor* OwnerActor = Owner->GetOwner();
+		if (OwnerActor && !OwnerActor->IsVisible())
+			bVisible = false;
+	}
 }
 
 void FPrimitiveSceneProxy::UpdateMesh()
