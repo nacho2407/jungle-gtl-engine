@@ -15,13 +15,13 @@ class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
 class FViewport;
-class UEditorEngine;
+class FOverlayStatSystem;
 
 class FEditorViewportClient : public FViewportClient
 {
 public:
 	void Initialize(FWindowsWindow* InWindow);
-	void SetEditor(UEditorEngine* InEditor) { Editor = InEditor; }
+	void SetOverlayStatSystem(FOverlayStatSystem* InOverlayStatSystem) { OverlayStatSystem = InOverlayStatSystem; }
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
@@ -71,7 +71,7 @@ private:
 	FViewport* Viewport = nullptr;
 	SWindow* LayoutWindow = nullptr;
 	FWindowsWindow* Window = nullptr;
-	UEditorEngine* Editor = nullptr;
+	FOverlayStatSystem* OverlayStatSystem = nullptr;
 	UWorld* World = nullptr;
 	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
