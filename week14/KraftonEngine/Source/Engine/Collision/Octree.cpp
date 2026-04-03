@@ -263,24 +263,26 @@ void FOctree::Reset(const FBoundingBox& InBounds, uint32 InDepth)
     Depth = InDepth;
 }
 
-//void FOctree::QueryFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
-//{
-//    if (!Frustum.Intersects(BoundOctree))
-//        return;
-//
-//    for (UPrimitiveComponent* Primitive : PrimitiveList)
-//    {
-//        if (Primitive && Frustum.Intersects(Primitive->GetWorldBoundingBox()))
-//        {
-//            OutPrimitives.push_back(Primitive);
-//        }
-//    }
-//
-//    if (IsLeaf())
-//        return;
-//
-//    for (int i = 0; i < 8; ++i)
-//    {
-//        Children[i].QueryFrustum(Frustum, OutPrimitives);
-//    }
-//}
+void FOctree::QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (!ConvexVolume.IntersectAABB(BoundOctree))
+		return;
+
+
+	for (UPrimitiveComponent* Primitive : PrimitiveList)
+	{
+		if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
+		{
+			OutPrimitives.push_back(Primitive);
+		}
+	}
+
+
+	if (IsLeaf())
+		return;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		Children[i]->QueryFrustum(ConvexVolume, OutPrimitives);
+	}
+}
