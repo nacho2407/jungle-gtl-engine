@@ -7,29 +7,13 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
-#include "Render/Proxy/BillboardSceneProxy.h"
+#include "Render/Proxy/SubUVSceneProxy.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
 FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 {
-	FBillboardSceneProxy* Proxy = new FBillboardSceneProxy(this);
-	Proxy->bBatcherRendered = true; // SubUVBatcher 경유 렌더링
-	return Proxy;
-}
-
-void USubUVComponent::CollectRender(FRenderBus& Bus) const
-{
-	const FParticleResource* Particle = GetParticle();
-	if (!Particle || !Particle->IsLoaded()) return;
-
-	FSubUVEntry Entry = {};
-	Entry.PerObject = FPerObjectConstants::FromWorldMatrix(GetWorldMatrix());
-	Entry.SubUV.Particle = Particle;
-	Entry.SubUV.FrameIndex = GetFrameIndex();
-	Entry.SubUV.Width = GetWidth();
-	Entry.SubUV.Height = GetHeight();
-	Bus.AddSubUVEntry(std::move(Entry));
+	return new FSubUVSceneProxy(this);
 }
 
 USubUVComponent::USubUVComponent()

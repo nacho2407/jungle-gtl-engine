@@ -467,7 +467,7 @@ void UGizmoComponent::UpdateGizmoTransform()
 	}
 }
 
-float UGizmoComponent::ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth)
+float UGizmoComponent::ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth) const
 {
 	float NewScale;
 	if (bIsOrtho)
