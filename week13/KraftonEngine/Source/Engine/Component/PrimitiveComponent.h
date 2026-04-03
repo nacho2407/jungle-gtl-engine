@@ -29,6 +29,7 @@ public:
 
 	// 월드 공간 AABB를 FBoundingBox로 반환 (파트 B LineBatcher와의 인터페이스)
 	FBoundingBox GetWorldBoundingBox() const;
+	void MarkWorldBoundsDirty();
 
 	//Collision
 	virtual void UpdateWorldAABB() const;
@@ -53,9 +54,13 @@ public:
 	void MarkProxyDirty(EDirtyFlag Flag) const;
 
 protected:
+	void OnTransformDirty() override;
+	void EnsureWorldAABBUpdated() const;
+
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
+	mutable bool bWorldAABBDirty = true;
 	bool bIsVisible = true;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 };
