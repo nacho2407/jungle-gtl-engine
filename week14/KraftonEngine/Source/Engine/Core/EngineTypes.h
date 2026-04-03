@@ -59,6 +59,29 @@ struct FBoundingBox
 
 	// 유효 여부 (Min < Max)
 	bool IsValid() const;
+
+	//완전히 포함한다
+	bool IsContains(const FBoundingBox& Other) const
+	{
+		return (Other.Min.X >= Min.X && Other.Max.X <= Max.X) &&
+			(Other.Min.Y >= Min.Y && Other.Max.Y <= Max.Y) &&
+			(Other.Min.Z >= Min.Z && Other.Max.Z <= Max.Z);
+	}
+
+	//일부분 겹친다
+	bool IsIntersected(const FBoundingBox& Other) const
+	{
+		return (Min.X <= Other.Max.X && Max.X >= Other.Min.X) &&
+			(Min.Y <= Other.Max.Y && Max.Y >= Other.Min.Y) &&
+			(Min.Z <= Other.Max.Z && Max.Z >= Other.Min.Z);
+	}
+
+	float GetCenterDistanceSquared(const FVector& Pos) const
+	{
+		FVector Center = GetCenter();
+		FVector Diff = Center - Pos;
+		return Diff.Dot(Diff);
+	}
 };
 
 // ============================================================
