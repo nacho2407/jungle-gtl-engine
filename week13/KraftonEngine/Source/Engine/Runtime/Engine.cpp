@@ -85,6 +85,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEngine::WorldTick(float DeltaTime)
 {
+	SCOPE_STAT("UEngine::WorldTick");
 	UWorld* World = GetWorld();
 	if (World)
 	{
