@@ -9,9 +9,111 @@
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Renderer/MeshData.h"
-#include <limits>
 #include "Component/SkyComponent.h"
 #include "Viewport/Viewport.h"
+
+#include <limits>
+#include <algorithm>
+
+namespace
+{
+	static FVector TransformPointRowVector(const FVector& P, const FMatrix& M)
+	{
+		// row-vector 규약:
+		// [x y z 1] * M
+		return {
+			P.X * M.M[0][0] + P.Y * M.M[1][0] + P.Z * M.M[2][0] + M.M[3][0],
+			P.X * M.M[0][1] + P.Y * M.M[1][1] + P.Z * M.M[2][1] + M.M[3][1],
+			P.X * M.M[0][2] + P.Y * M.M[1][2] + P.Z * M.M[2][2] + M.M[3][2]
+		};
+	}
+
+	static FVector TransformVectorRowVector(const FVector& V, const FMatrix& M)
+	{
+		// row-vector 규약:
+		// [x y z 0] * M
+		return {
+			V.X * M.M[0][0] + V.Y * M.M[1][0] + V.Z * M.M[2][0],
+			V.X * M.M[0][1] + V.Y * M.M[1][1] + V.Z * M.M[2][1],
+			V.X * M.M[0][2] + V.Y * M.M[1][2] + V.Z * M.M[2][2]
+		};
+	}
+
+	static bool RayIntersectsSphere(const FRay& Ray, const FVector& Center, float Radius, float& OutT)
+	{
+		// Ray.Direction은 normalized 상태라고 가정
+		const FVector M = Ray.Origin - Center;
+		const float B = FVector::DotProduct(M, Ray.Direction);
+		const float C = FVector::DotProduct(M, M) - Radius * Radius;
+
+		// 시작점이 sphere 바깥이고, 반대 방향이면 miss
+		if (C > 0.0f && B > 0.0f)
+		{
+			return false;
+		}
+
+		const float Discriminant = B * B - C;
+		if (Discriminant < 0.0f)
+		{
+			return false;
+		}
+
+		float T = -B - sqrt(Discriminant);
+
+		// origin이 sphere 내부면 0으로 처리
+		if (T < 0.0f)
+		{
+			T = 0.0f;
+		}
+
+		OutT = T;
+		return true;
+	}
+
+	static bool RayIntersectsAABB(const FRay& Ray, const FVector& BoxMin, const FVector& BoxMax, float& OutTNear, float& OutTFar)
+	{
+		constexpr float Epsilon = 1.0e-8f;
+
+		float TNear = 0.0f;
+		float TFar = (std::numeric_limits<float>::max)();
+
+		auto TestAxis = [&](float Origin, float Dir, float MinV, float MaxV) -> bool
+			{
+				// 평행이면 origin이 slab 안에 있어야 함
+				if (abs(Dir) < Epsilon)
+				{
+					return (Origin >= MinV && Origin <= MaxV);
+				}
+
+				const float InvDir = 1.0f / Dir;
+				float T1 = (MinV - Origin) * InvDir;
+				float T2 = (MaxV - Origin) * InvDir;
+
+				if (T1 > T2)
+				{
+					std::swap(T1, T2);
+				}
+
+				TNear = (std::max)(TNear, T1);
+				TFar = (std::min)(TFar, T2);
+
+				return TNear <= TFar;
+			};
+
+		if (!TestAxis(Ray.Origin.X, Ray.Direction.X, BoxMin.X, BoxMax.X)) return false;
+		if (!TestAxis(Ray.Origin.Y, Ray.Direction.Y, BoxMin.Y, BoxMax.Y)) return false;
+		if (!TestAxis(Ray.Origin.Z, Ray.Direction.Z, BoxMin.Z, BoxMax.Z)) return false;
+
+		if (TFar < 0.0f)
+		{
+			return false;
+		}
+
+		OutTNear = TNear;
+		OutTFar = TFar;
+		return true;
+	}
+}
 
 FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 ScreenY) const
 {
@@ -31,7 +133,8 @@ FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 	const FMatrix ViewMatrix = Entry.LocalState.BuildViewMatrix();
 	const FMatrix ProjMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 	const FMatrix ViewInverse = ViewMatrix.GetInverse();
-	//Ndc convert missing center pixel lerp (0.5) Half-pixel offset added
+
+	// 픽셀 중심 기준 half-pixel offset
 	const float NdcX = (2.0f * (ScreenX + 0.5f) / Rect.Width) - 1.0f;
 	const float NdcY = 1.0f - (2.0f * (ScreenY + 0.5f) / Rect.Height);
 
@@ -102,8 +205,8 @@ FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 }
 
 bool FPicker::RayTriangleIntersect(const FRay& Ray,
-								   const FVector& V0, const FVector& V1, const FVector& V2,
-								   float& OutDistance) const
+	const FVector& V0, const FVector& V1, const FVector& V2,
+	float& OutDistance) const
 {
 	constexpr float Epsilon = 1.e-6f;
 
@@ -146,56 +249,75 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 
 AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY) const
 {
-	if (!Entry)
+	if (!Scene || !Entry)
 	{
 		return nullptr;
 	}
-	
-	const FRay Ray = ScreenToRay(*Entry, ScreenX, ScreenY);
+
+	const FRay WorldRay = ScreenToRay(*Entry, ScreenX, ScreenY);
 
 	AActor* ClosestActor = nullptr;
 	float ClosestDistance = (std::numeric_limits<float>::max)();
 
 	for (AActor* Actor : Scene->GetActors())
 	{
-		// 액터가 파괴 대기 중이거나 보이지 않으면 패스
 		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
 		{
 			continue;
 		}
 
-
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
 			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass())) continue;
 
-			// ─── 1. 피킹 제외 대상 (UUID 이름표, 하늘) ───
+			// 피킹 제외 대상
 			if (Component->IsA(UUUIDBillboardComponent::StaticClass())) continue;
 			if (Component->IsA(USkyComponent::StaticClass())) continue;
 
 			UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(Component);
+			const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
 
-			// ─── 2. 바운딩 스피어(구형) 기반 피킹 (Text, SubUV) ───
+			// 1) world sphere broad phase
+			float SphereT = 0.0f;
+			if (!RayIntersectsSphere(WorldRay, Bounds.Center, Bounds.Radius, SphereT))
+			{
+				continue;
+			}
+
+			if (SphereT > ClosestDistance)
+			{
+				continue;
+			}
+
+			// Text / SubUV는 sphere만으로 처리
 			if (PrimComp->IsA(USubUVComponent::StaticClass()) || PrimComp->IsA(UTextComponent::StaticClass()))
 			{
-				const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
-				FVector ToCenter = Bounds.Center - Ray.Origin;
-				float T = FVector::DotProduct(ToCenter, Ray.Direction);
-				if (T < 0.0f) continue;
-
-				const FVector ClosestPoint = Ray.Origin + Ray.Direction * T;
-				const float DistSq = (ClosestPoint - Bounds.Center).SizeSquared();
-				const float RadiusSq = Bounds.Radius * Bounds.Radius;
-
-				if (DistSq <= RadiusSq && T < ClosestDistance)
+				if (SphereT < ClosestDistance)
 				{
-					ClosestDistance = T;
+					ClosestDistance = SphereT;
 					ClosestActor = Actor;
 				}
 				continue;
 			}
 
-			// ─── 3. 정점 기반(폴리곤 단위) 정밀 피킹 (StaticMesh 등 일반 도형) ───
+			// 2) world AABB broad phase
+			const FVector BoxMin = Bounds.Center - Bounds.BoxExtent;
+			const FVector BoxMax = Bounds.Center + Bounds.BoxExtent;
+
+			float BoxNear = 0.0f;
+			float BoxFar = 0.0f;
+			if (!RayIntersectsAABB(WorldRay, BoxMin, BoxMax, BoxNear, BoxFar))
+			{
+				continue;
+			}
+
+			const float BoundsHitT = (BoxNear >= 0.0f) ? BoxNear : BoxFar;
+			if (BoundsHitT > ClosestDistance)
+			{
+				continue;
+			}
+
+			// 3) StaticMesh는 local ray로 정밀 검사
 			if (PrimComp->IsA(UStaticMeshComponent::StaticClass()))
 			{
 				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(PrimComp);
@@ -205,6 +327,16 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 				if (!Mesh || Mesh->Vertices.empty() || Mesh->Indices.empty()) continue;
 
 				const FMatrix World = SMC->GetWorldTransform();
+				const FMatrix InvWorld = World.GetInverse();
+
+				FRay LocalRay;
+				LocalRay.Origin = TransformPointRowVector(WorldRay.Origin, InvWorld);
+				LocalRay.Direction = TransformVectorRowVector(WorldRay.Direction, InvWorld).GetSafeNormal();
+
+				if (LocalRay.Direction.IsZero())
+				{
+					continue;
+				}
 
 				for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
 				{
@@ -213,29 +345,34 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 					const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
 					const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;
 
-					const FVector W0 = {
-						P0.X * World.M[0][0] + P0.Y * World.M[1][0] + P0.Z * World.M[2][0] + World.M[3][0],
-						P0.X * World.M[0][1] + P0.Y * World.M[1][1] + P0.Z * World.M[2][1] + World.M[3][1],
-						P0.X * World.M[0][2] + P0.Y * World.M[1][2] + P0.Z * World.M[2][2] + World.M[3][2]
-					};
-					const FVector W1 = {
-						P1.X * World.M[0][0] + P1.Y * World.M[1][0] + P1.Z * World.M[2][0] + World.M[3][0],
-						P1.X * World.M[0][1] + P1.Y * World.M[1][1] + P1.Z * World.M[2][1] + World.M[3][1],
-						P1.X * World.M[0][2] + P1.Y * World.M[1][2] + P1.Z * World.M[2][2] + World.M[3][2]
-					};
-					const FVector W2 = {
-						P2.X * World.M[0][0] + P2.Y * World.M[1][0] + P2.Z * World.M[2][0] + World.M[3][0],
-						P2.X * World.M[0][1] + P2.Y * World.M[1][1] + P2.Z * World.M[2][1] + World.M[3][1],
-						P2.X * World.M[0][2] + P2.Y * World.M[1][2] + P2.Z * World.M[2][2] + World.M[3][2]
-					};
-
-					float Distance = 0.0f;
-					if (RayTriangleIntersect(Ray, W0, W1, W2, Distance) && Distance < ClosestDistance)
+					float LocalDistance = 0.0f;
+					if (!RayTriangleIntersect(LocalRay, P0, P1, P2, LocalDistance))
 					{
-						ClosestDistance = Distance;
+						continue;
+					}
+
+					// local hit point -> world hit point
+					const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
+					const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
+
+					// 비교는 반드시 월드 거리로
+					const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
+
+					if (WorldDistance < ClosestDistance)
+					{
+						ClosestDistance = WorldDistance;
 						ClosestActor = Actor;
 					}
 				}
+
+				continue;
+			}
+
+			// StaticMesh가 아닌 일반 Primitive는 bounds hit만으로 선택
+			if (BoundsHitT < ClosestDistance)
+			{
+				ClosestDistance = BoundsHitT;
+				ClosestActor = Actor;
 			}
 		}
 	}

@@ -7,6 +7,35 @@
 #include "Serializer/SceneSerializer.h"
 #include "Core/Paths.h"
 #include "Actor/Actor.h"
+#include <filesystem>
+#include <initializer_list>
+
+namespace
+{
+	bool TryLoadSceneFromCandidates(UScene* Scene, ID3D11Device* Device, const std::initializer_list<std::filesystem::path>& CandidatePaths)
+	{
+		if (!Scene || !Device)
+		{
+			return false;
+		}
+
+		for (const std::filesystem::path& CandidatePath : CandidatePaths)
+		{
+			if (!std::filesystem::exists(CandidatePath))
+			{
+				continue;
+			}
+
+			if (FSceneSerializer::Load(Scene, FPaths::FromPath(CandidatePath), Device))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
 IMPLEMENT_RTTI(UWorld, UObject)
 
 UWorld::~UWorld()
@@ -37,7 +66,11 @@ void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 
 	if (Device)
 	{
-		FSceneSerializer::Load(PersistentLevel, FPaths::FromPath(FPaths::SceneDir() / "DefaultScene.json"), Device);
+		const std::filesystem::path SceneDir = FPaths::SceneDir();
+		TryLoadSceneFromCandidates(PersistentLevel, Device, {
+			SceneDir / "DefaultScene.json",
+			SceneDir / "Default.scene"
+		});
 	}
 }
 
@@ -134,7 +167,11 @@ UScene* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Devic
 
 	if (Device)
 	{
-		FSceneSerializer::Load(NewLevel, FPaths::FromPath(FPaths::SceneDir() / FPaths::ToPath(LevelName + ".json")), Device);
+		const std::filesystem::path SceneDir = FPaths::SceneDir();
+		TryLoadSceneFromCandidates(NewLevel, Device, {
+			SceneDir / FPaths::ToPath(LevelName + ".json"),
+			SceneDir / FPaths::ToPath(LevelName + ".scene")
+		});
 	}
 	StreamingLevels.push_back(NewLevel);
 

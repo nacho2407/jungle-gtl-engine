@@ -18,6 +18,17 @@
 
 namespace
 {
+	bool HasSceneAssetExtension(const FString& FilePath)
+	{
+		FString Extension = FPaths::FromPath(FPaths::ToPath(FilePath).extension());
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char Ch)
+		{
+			return static_cast<char>(std::tolower(Ch));
+		});
+
+		return Extension == ".json" || Extension == ".scene";
+	}
+
 	bool HasStaticMeshAssetExtension(const FString& FilePath)
 	{
 		FString Extension = FPaths::FromPath(FPaths::ToPath(FilePath).extension());
@@ -36,7 +47,7 @@ void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 	const FString& FilePath) const
 {
 	FEditorEngine* Engine = EditorUI.GetEngine();
-	if (!Engine || !FilePath.ends_with(".json"))
+	if (!Engine || !HasSceneAssetExtension(FilePath))
 	{
 		return;
 	}

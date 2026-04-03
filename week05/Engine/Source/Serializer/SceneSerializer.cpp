@@ -15,9 +15,226 @@
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
+
+namespace
+{
+	using json = nlohmann::json;
+
+	bool TryReadFloat(const json& Value, float& OutValue)
+	{
+		try
+		{
+			if (Value.is_number())
+			{
+				OutValue = Value.get<float>();
+				return true;
+			}
+
+			if (Value.is_array() && !Value.empty() && Value[0].is_number())
+			{
+				OutValue = Value[0].get<float>();
+				return true;
+			}
+		}
+		catch (const std::exception&)
+		{
+		}
+
+		return false;
+	}
+
+	bool TryReadVector3(const json& Value, FVector& OutValue)
+	{
+		if (!Value.is_array() || Value.size() < 3)
+		{
+			return false;
+		}
+
+		try
+		{
+			OutValue = {
+				Value[0].get<float>(),
+				Value[1].get<float>(),
+				Value[2].get<float>()
+			};
+			return true;
+		}
+		catch (const std::exception&)
+		{
+		}
+
+		return false;
+	}
+
+	void LoadCameraDataFromJson(const json& RootJson, FCameraSerializeData* OutCameraData)
+	{
+		if (!OutCameraData || !RootJson.contains("PerspectiveCamera") || !RootJson["PerspectiveCamera"].is_object())
+		{
+			return;
+		}
+
+		const json& CameraJson = RootJson["PerspectiveCamera"];
+		FVector Location = OutCameraData->Location;
+		FVector RotationEuler(OutCameraData->Rotation.Pitch, OutCameraData->Rotation.Yaw, OutCameraData->Rotation.Roll);
+		float FOV = OutCameraData->FOV;
+		float NearClip = OutCameraData->NearClip;
+		float FarClip = OutCameraData->FarClip;
+		bool bReadAnyValue = false;
+
+		if (CameraJson.contains("Location"))
+		{
+			bReadAnyValue |= TryReadVector3(CameraJson["Location"], Location);
+		}
+		if (CameraJson.contains("Rotation"))
+		{
+			bReadAnyValue |= TryReadVector3(CameraJson["Rotation"], RotationEuler);
+		}
+		if (CameraJson.contains("FOV"))
+		{
+			bReadAnyValue |= TryReadFloat(CameraJson["FOV"], FOV);
+		}
+		if (CameraJson.contains("NearClip"))
+		{
+			bReadAnyValue |= TryReadFloat(CameraJson["NearClip"], NearClip);
+		}
+		if (CameraJson.contains("FarClip"))
+		{
+			bReadAnyValue |= TryReadFloat(CameraJson["FarClip"], FarClip);
+		}
+
+		if (!bReadAnyValue)
+		{
+			return;
+		}
+
+		OutCameraData->Location = Location;
+		OutCameraData->Rotation = FRotator(RotationEuler.X, RotationEuler.Y, RotationEuler.Z);
+		OutCameraData->FOV = FOV;
+		OutCameraData->NearClip = NearClip;
+		OutCameraData->FarClip = FarClip;
+		OutCameraData->bValid = true;
+	}
+
+	bool IsLegacyStaticMeshPrimitiveJson(const json& PrimitiveJson)
+	{
+		if (!PrimitiveJson.is_object())
+		{
+			return false;
+		}
+
+		if (PrimitiveJson.contains("Class") || PrimitiveJson.contains("Components"))
+		{
+			return false;
+		}
+
+		if (PrimitiveJson.contains("ObjStaticMeshAsset"))
+		{
+			return true;
+		}
+
+		if (!PrimitiveJson.contains("Type"))
+		{
+			return false;
+		}
+
+		try
+		{
+			return PrimitiveJson["Type"].get<FString>() == "StaticMeshComp";
+		}
+		catch (const std::exception&)
+		{
+			return false;
+		}
+	}
+
+	json BuildModernActorJsonFromLegacyPrimitive(const json& LegacyPrimitiveJson)
+	{
+		json ComponentJson;
+		ComponentJson["Class"] = "UStaticMeshComponent";
+
+		if (LegacyPrimitiveJson.contains("Location"))
+		{
+			ComponentJson["Location"] = LegacyPrimitiveJson["Location"];
+		}
+		if (LegacyPrimitiveJson.contains("Rotation"))
+		{
+			ComponentJson["Rotation"] = LegacyPrimitiveJson["Rotation"];
+		}
+		if (LegacyPrimitiveJson.contains("Scale"))
+		{
+			ComponentJson["Scale"] = LegacyPrimitiveJson["Scale"];
+		}
+		if (LegacyPrimitiveJson.contains("ObjStaticMeshAsset"))
+		{
+			ComponentJson["ObjStaticMeshAsset"] = LegacyPrimitiveJson["ObjStaticMeshAsset"];
+		}
+		if (LegacyPrimitiveJson.contains("Materials"))
+		{
+			ComponentJson["Materials"] = LegacyPrimitiveJson["Materials"];
+		}
+
+		json ActorJson;
+		ActorJson["Class"] = "AStaticMeshActor";
+		ActorJson["Components"] = json::array({ ComponentJson });
+		return ActorJson;
+	}
+
+	bool DeserializeActorFromJson(UScene* Scene, const json& ActorJson, int32 ActorIndex)
+	{
+		if (!Scene || !ActorJson.is_object())
+		{
+			return false;
+		}
+
+		FString ClassName;
+		try
+		{
+			ClassName = ActorJson.value("Class", "");
+		}
+		catch (const std::exception&)
+		{
+			return false;
+		}
+
+		if (ClassName.empty())
+		{
+			return false;
+		}
+
+		UClass* ActorClass = UClass::FindClass(ClassName);
+		if (!ActorClass)
+		{
+			return false;
+		}
+
+		const FString ActorName = ClassName + "_" + std::to_string(ActorIndex);
+		AActor* Actor = static_cast<AActor*>(FObjectFactory::ConstructObject(ActorClass, Scene, ActorName));
+		if (!Actor)
+		{
+			return false;
+		}
+
+		Scene->RegisterActor(Actor);
+		Actor->PostSpawnInitialize();
+
+		try
+		{
+			FArchive Ar(false);
+			*static_cast<json*>(Ar.GetRawJson()) = ActorJson;
+			Actor->Serialize(Ar);
+			return true;
+		}
+		catch (const std::exception&)
+		{
+			Scene->DestroyActor(Actor);
+			return false;
+		}
+	}
+}
+
 void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCameraSerializeData& CameraData)
 {
-	nlohmann::json Json;
+	json Json;
 	if (CameraData.bValid)
 	{
 		Json["PerspectiveCamera"]["Location"]  = { CameraData.Location.X, CameraData.Location.Y, CameraData.Location.Z };
@@ -51,7 +268,7 @@ void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCamer
 	}
 
 	// Primitives
-	nlohmann::json Primitives;
+	json Primitives;
 	int32 Index = 0;
 	for (AActor* Actor : Scene->GetActors())
 	{
@@ -61,7 +278,7 @@ void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCamer
 			continue;
 		FArchive Ar(true);
 		Actor->Serialize(Ar);
-		nlohmann::json& ActorJson 
+		json& ActorJson 
 			= *static_cast<nlohmann::json*>(Ar.GetRawJson());
 		Primitives[std::to_string(Index)] = ActorJson;
 		Index++;
@@ -85,7 +302,7 @@ bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device
 		return false;
 	}
 
-	nlohmann::json Json;
+	json Json;
 
 	try
 	{
@@ -96,84 +313,28 @@ bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device
 		return false;
 	}
 
-	if (!Json.contains("Primitives"))
+	if (!Json.contains("Primitives") || !Json["Primitives"].is_object())
 		return false;
 
 	if (OutCameraData)
 	{
-		if (Json.contains("PerspectiveCamera"))
-		{
-			auto& Cam = Json["PerspectiveCamera"];
-			if (Cam.contains("Location"))
-			{
-				auto& L = Cam["Location"];
-				OutCameraData->Location = { L[0].get<float>(), L[1].get<float>(), L[2].get<float>() };
-			}
-			if (Cam.contains("Rotation"))
-			{
-				auto& R = Cam["Rotation"];
-				OutCameraData->Rotation = FRotator(R[0].get<float>(), R[1].get<float>(), R[2].get<float>());
-			}
-			if (Cam.contains("FOV"))      OutCameraData->FOV      = Cam["FOV"].get<float>();
-			if (Cam.contains("NearClip")) OutCameraData->NearClip = Cam["NearClip"].get<float>();
-			if (Cam.contains("FarClip"))  OutCameraData->FarClip  = Cam["FarClip"].get<float>();
-			OutCameraData->bValid = true;
-		}
+		LoadCameraDataFromJson(Json, OutCameraData);
 	}
 
 	int32 ActorIndex = 0;
 	for (auto& [Key, Value] : Json["Primitives"].items())
 	{
-		FString ClassName = Value.value("Class","");
-		UClass* ActorClass = UClass::FindClass(ClassName);
-		if (!ActorClass)
+		const json* ActorJson = &Value;
+		json LegacyActorJson;
+		if (IsLegacyStaticMeshPrimitiveJson(Value))
 		{
-			ActorIndex++;
-			continue;
-		}
-		const FString ActorName = ClassName + "_" + std::to_string(ActorIndex);
-		AActor* Actor = static_cast<AActor*>(FObjectFactory::ConstructObject(ActorClass, Scene, ActorName));
-		if (!Actor)
-		{
-			ActorIndex++;
-			continue;
+			LegacyActorJson = BuildModernActorJsonFromLegacyPrimitive(Value);
+			ActorJson = &LegacyActorJson;
 		}
 
-		Scene->RegisterActor(Actor);
-		Actor->PostSpawnInitialize();
-		FArchive Ar(false);// loading
-		*static_cast<nlohmann::json*>(Ar.GetRawJson()) = Value;
-		Actor->Serialize(Ar);
-
-		/*if (Value.contains("Material"))
-		{
-			const FString MaterialName = Value["Material"].get<FString>();
-			const std::shared_ptr<FMaterial> Material = FMaterialManager::Get().FindByName(MaterialName);
-			if (Material)
-			{
-				if (UPrimitiveComponent* PrimitiveComponent = Actor->GetComponentByClass<UPrimitiveComponent>())
-				{
-					PrimitiveComponent->SetMaterial(Material.get());
-				}
-			}
-		}
-
-		if (Value.contains("PrimitiveFileName"))
-		{
-			if (Actor->IsA(AObjActor::StaticClass()))
-			{
-				const FString PrimitiveFileName = Value["PrimitiveFileName"].get<FString>();
-				if (PrimitiveFileName != "")
-				{
-					AObjActor* ObjActor = static_cast<AObjActor*>(Actor);
-					if (ObjActor)
-						ObjActor->LoadObj(Device, PrimitiveFileName);
-				}
-			}
-		}*/
+		DeserializeActorFromJson(Scene, *ActorJson, ActorIndex);
 
 		++ActorIndex;
-
 	}
 	if (Json.contains("NextUUID"))
 	{

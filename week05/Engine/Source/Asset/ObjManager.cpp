@@ -38,7 +38,11 @@ namespace
 	FString GetStandardizedMeshPath(const FString& InPath)
 	{
 		FString Path = NormalizeSlashes(InPath);
-		if (Path.find('/') == std::string::npos)
+		if (Path.starts_with("Data/"))
+		{
+			Path = "Assets/Meshes/" + Path;
+		}
+		else if (Path.find('/') == std::string::npos)
 		{
 			Path = "Assets/Meshes/" + Path;
 		}

@@ -3,6 +3,7 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 {
+	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 	// Windows 런처에 넘길 에디터 실행 설정을 구성한다.
 	FEngineLaunchConfig Config;
 	Config.Title = L"Jungle Editor";

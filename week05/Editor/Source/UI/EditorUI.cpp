@@ -39,15 +39,15 @@ enum class EFileDialogType
 std::string GetFilePathUsingDialog(EFileDialogType Type)
 {
 	wchar_t FileName[MAX_PATH] = L"";
-	const std::filesystem::path ContentDir = FPaths::ContentDir();
+	const std::filesystem::path SceneDir = FPaths::SceneDir();
 
 	OPENFILENAMEW Ofn = {};
 	Ofn.lStructSize = sizeof(OPENFILENAMEW);
-	Ofn.lpstrFilter = L"Scene Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
+	Ofn.lpstrFilter = L"Scene Files (*.json;*.scene)\0*.json;*.scene\0All Files (*.*)\0*.*\0";
 	Ofn.lpstrFile = FileName;
 	Ofn.nMaxFile = MAX_PATH;
 	Ofn.lpstrDefExt = L"json";
-	Ofn.lpstrInitialDir = ContentDir.c_str();
+	Ofn.lpstrInitialDir = SceneDir.c_str();
 
 	if (Type == EFileDialogType::Save)
 	{
