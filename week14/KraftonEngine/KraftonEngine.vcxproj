@@ -416,8 +416,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollectorContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderCommand.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Render/Resource/Buffer.h"
-#include "Render/Pipeline/RenderCommand.h"
+#include "Render/Pipeline/RenderConstants.h"
 
 /*
 	공용 Constant Buffer를 관리하는 구조체입니다.
