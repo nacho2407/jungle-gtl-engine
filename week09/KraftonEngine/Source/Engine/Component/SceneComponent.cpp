@@ -250,9 +250,12 @@ const FMatrix& USceneComponent::GetWorldMatrix() const
 
 const FMatrix& USceneComponent::GetWorldInverseMatrix() const
 {
-	if (bTransformDirty == true)
+	GetWorldMatrix();
+
+	if (bInverseWorldDirty == true)
 	{
 		CachedInverseWorldMatrix = CachedWorldMatrix.GetInverse();
+		bInverseWorldDirty = false;
 	}
 	return CachedInverseWorldMatrix;
 }

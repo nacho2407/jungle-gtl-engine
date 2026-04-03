@@ -77,8 +77,8 @@ bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHit
 	if (!Data || Data->Indices.empty()) return false;
 
 	bool bHit = FRayUtils::RaycastTriangles(
-		Ray, CachedWorldMatrix,
-		CachedInverseWorldMatrix,
+		Ray, GetWorldMatrix(),
+		GetWorldInverseMatrix(),
 		&Data->Vertices[0].Position,
 		sizeof(FVertex),
 		Data->Indices,
