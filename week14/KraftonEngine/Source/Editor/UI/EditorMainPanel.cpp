@@ -54,10 +54,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
+#ifndef FPS_OPTIMIZATION
 	ConsoleWidget.Render(DeltaTime);
 	ControlWidget.Render(DeltaTime);
-	SceneWidget.Render(DeltaTime);
 	PropertyWidget.Render(DeltaTime);
+#endif
+	SceneWidget.Render(DeltaTime);
 	StatWidget.Render(DeltaTime);
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 
