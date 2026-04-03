@@ -6,15 +6,21 @@ class AActor;
 class UGizmoComponent;
 class FOverlayStatSystem;
 class UEditorEngine;
+class FScene;
+class FPrimitiveSceneProxy;
 enum class ELevelViewportType : uint8;
 
 class FRenderCollector {
 public:
-	void CollectWorld(UWorld* World, const TArray<AActor*>& SelectedActors, FRenderBus& RenderBus);
+	void CollectWorld(UWorld* World, FRenderBus& RenderBus);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus);
 	void CollectGizmo(UGizmoComponent* Gizmo, ELevelViewportType ViewportType, FRenderBus& RenderBus);
 	void CollectOverlayText(bool bActive, const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus);
 
 private:
 	void CollectFromActor(AActor* Actor, bool bSelected, FRenderBus& RenderBus);
+
+	// FScene 프록시 기반 수집 — CollectFromActor 대체
+	void CollectFromScene(FScene& Scene, FRenderBus& RenderBus);
+	void SubmitProxy(const FPrimitiveSceneProxy* Proxy, FRenderBus& RenderBus);
 };

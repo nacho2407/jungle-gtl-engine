@@ -80,8 +80,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// 2. RenderCommand(DefaultPass), Entry(Batcher)를 ERenderPass별로 수집
 	{
 		SCOPE_STAT("Collector.CollectWorld");
-		const TArray<AActor*>& SelectedActors = Editor->GetSelectionManager().GetSelectedActors();
-		Collector.CollectWorld(World, SelectedActors, Bus);
+		Collector.CollectWorld(World, Bus);
 	}
 
 	{
