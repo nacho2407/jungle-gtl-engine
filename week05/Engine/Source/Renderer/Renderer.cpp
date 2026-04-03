@@ -372,7 +372,6 @@ void FRenderer::BeginFrame()
 
 void FRenderer::ClearCommandList()
 {
-	PrevCommandCount = CommandList.size();
 	CommandList.clear();
 	CommandList.reserve(PrevCommandCount);
 	NextSubmissionOrder = 0;
@@ -435,6 +434,7 @@ void FRenderer::ExecuteCommands()
 	
 	if (PostRenderCallback) PostRenderCallback(this);
 
+	PrevCommandCount = CommandList.size();
 	ClearCommandList();
 }
 
@@ -443,6 +443,8 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 	FMaterial* CurrentMaterial = nullptr;
 	FRenderMesh* CurrentMeshPtr = nullptr; // 狩?void* ?먯꽌 FRenderMesh* 濡?蹂寃?
 	D3D11_PRIMITIVE_TOPOLOGY CurrentMeshTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+	FMatrix CurrentWorldMatrix = FMatrix::Identity;
+	bool bHasCurrentWorldMatrix = false;
 
 	ID3D11ShaderResourceView* FontSRV = TextRenderer.GetAtlasSRV();
 	ID3D11SamplerState* FontSampler = TextRenderer.GetAtlasSampler();
@@ -457,7 +459,7 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 	RenderStateManager->RebindState();
 	for (; it != CommandList.end(); it++)
 	{
-		auto Cmd = *it;
+		const FRenderCommand& Cmd = *it;
 		if (Cmd.RenderLayer != InRenderLayer) return;
 
 		if (!Cmd.RenderMesh) continue;
@@ -541,7 +543,12 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 				CurrentMeshTopology = DesiredTopology;
 			}
 
-			UpdateObjectConstantBuffer(Cmd.WorldMatrix);
+			if (!bHasCurrentWorldMatrix || Cmd.WorldMatrix != CurrentWorldMatrix)
+			{
+				UpdateObjectConstantBuffer(Cmd.WorldMatrix);
+				CurrentWorldMatrix = Cmd.WorldMatrix;
+				bHasCurrentWorldMatrix = true;
+			}
 
 			if (!Cmd.RenderMesh->Indices.empty())
 			{

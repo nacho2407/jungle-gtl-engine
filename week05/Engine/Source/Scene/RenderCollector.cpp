@@ -210,7 +210,11 @@ void FSceneRenderCollector::FrustrumCull(
 			continue;
 		}
 
-		AActor* OwnerActor = PrimitiveComponent->GetOwner();
+		AActor* OwnerActor = PrimitiveComponent->GetTypedOuter<AActor>();
+		if (!OwnerActor)
+		{
+			OwnerActor = PrimitiveComponent->GetOwner();
+		}
 		if (!OwnerActor || OwnerActor->IsPendingDestroy() || !OwnerActor->IsVisible())
 		{
 			continue;
