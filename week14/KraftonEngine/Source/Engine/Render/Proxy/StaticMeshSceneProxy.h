@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Render/Pipeline/PrimitiveSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 
 class UStaticMeshComponent;
 

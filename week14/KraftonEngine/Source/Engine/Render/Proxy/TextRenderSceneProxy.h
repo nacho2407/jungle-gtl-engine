@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/Pipeline/BillboardSceneProxy.h"
+#include "Render/Proxy/BillboardSceneProxy.h"
 
 class UTextRenderComponent;
 

@@ -1,4 +1,4 @@
-﻿#include "Render/Pipeline/PrimitiveSceneProxy.h"
+﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Resource/ShaderManager.h"
 

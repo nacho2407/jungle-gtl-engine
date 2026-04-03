@@ -1,4 +1,4 @@
-#include "Render/Pipeline/TextRenderSceneProxy.h"
+#include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
 #include "Render/Pipeline/RenderBus.h"
 

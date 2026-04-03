@@ -8,7 +8,7 @@
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
 #include "Render/Types/VertexTypes.h"
-#include "Render/Pipeline/DirtyFlag.h"
+#include "Render/Proxy/DirtyFlag.h"
 
 class FPrimitiveSceneProxy;
 class FScene;
