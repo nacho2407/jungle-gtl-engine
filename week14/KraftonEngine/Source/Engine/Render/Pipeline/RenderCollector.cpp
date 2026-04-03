@@ -83,8 +83,8 @@ void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 		AActor* OwnerActor = Proxy->Owner->GetOwner();
 		if (OwnerActor && !OwnerActor->IsVisible()) continue;
 
-		// 프록시 캐싱 데이터 → FRenderCommand 제출
-		SubmitProxy(Proxy, RenderBus);
+		// 프록시 포인터를 패스 큐에 직접 제출 (FRenderCommand 복사 없음)
+		RenderBus.AddProxy(Proxy->Pass, Proxy);
 
 		// 선택된 오브젝트 → SelectionMask 제출
 		if (Proxy->bSelected)
@@ -92,21 +92,4 @@ void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 			Proxy->Owner->CollectSelection(RenderBus);
 		}
 	}
-}
-
-// ============================================================
-// SubmitProxy — 프록시 캐싱 데이터를 FRenderCommand로 변환하여 Bus에 제출
-// ============================================================
-void FRenderCollector::SubmitProxy(const FPrimitiveSceneProxy* Proxy, FRenderBus& RenderBus)
-{
-	if (!Proxy->MeshBuffer) return;
-
-	FRenderCommand Cmd = {};
-	Cmd.Shader = Proxy->Shader;
-	Cmd.MeshBuffer = Proxy->MeshBuffer;
-	Cmd.PerObjectConstants = Proxy->PerObjectConstants;
-	Cmd.SectionDraws = Proxy->SectionDraws;
-	Cmd.ExtraCB = Proxy->ExtraCB;
-
-	RenderBus.AddCommand(Proxy->Pass, Cmd);
 }
