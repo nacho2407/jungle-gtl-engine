@@ -205,6 +205,7 @@ void USceneComponent::SetRelativeScale(const FVector& NewScale)
 void USceneComponent::MarkTransformDirty()
 {
 	bTransformDirty = true;
+	bInverseWorldDirty = true;
 	for (auto* Child : ChildComponents)
 	{
 		Child->MarkTransformDirty();
@@ -245,6 +246,15 @@ const FMatrix& USceneComponent::GetWorldMatrix() const
 	}
 
 	return CachedWorldMatrix;
+}
+
+const FMatrix& USceneComponent::GetWorldInverseMatrix() const
+{
+	if (bTransformDirty == true)
+	{
+		CachedInverseWorldMatrix = CachedWorldMatrix.GetInverse();
+	}
+	return CachedInverseWorldMatrix;
 }
 
 void USceneComponent::SetWorldLocation(FVector NewWorldLocation)
