@@ -38,8 +38,8 @@ void FEditorViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 	BlitRenderer.Initialize(Renderer->GetDevice());
 
 	// Cache wireframe material for wireframe view mode.
-	//WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName); GameGem
-	//CreateGridResource(Renderer); GameGem
+	WireFrameMaterial = FMaterialManager::Get().FindByName(WireframeMaterialName);
+	CreateGridResource(Renderer);
 }
 
 void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)

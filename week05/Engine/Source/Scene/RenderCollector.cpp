@@ -1,27 +1,40 @@
 #include "RenderCollector.h"
-#include "Component/UUIDBillboardComponent.h"
-#include "Renderer/RenderCommand.h"
+
 #include "Actor/Actor.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Core/Engine.h"
 #include "Component/TextComponent.h"
-#include "Debug/EngineLog.h"
-#include "Renderer/Renderer.h"
-#include "Renderer/TextMeshBuilder.h"
-#include "Renderer/SubUVRenderer.h"
+#include "Component/UUIDBillboardComponent.h"
+#include "Core/Engine.h"
 #include "Renderer/Material.h"
 #include "Renderer/MeshData.h"
+#include "Renderer/RenderCommand.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/SubUVRenderer.h"
+#include "Renderer/TextMeshBuilder.h"
+#include "Scene/Scene.h"
 
-void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors, const FFrustum& Frustum,
-	const FShowFlags& ShowFlags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
+void FSceneRenderCollector::CollectRenderCommands(
+	UScene* Scene,
+	const FFrustum& Frustum,
+	const FShowFlags& ShowFlags,
+	const FVector& CameraPosition,
+	FRenderCommandQueue& OutQueue)
 {
-	// ⭐ UActorComponent가 아니라 UPrimitiveComponent로 바로 받습니다!
+	if (!Scene)
+	{
+		return;
+	}
+
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
-	FrustrumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
+	FrustrumCull(Scene, Frustum, ShowFlags, VisiblePrimitives);
 
 	FRenderer* Renderer = GEngine ? GEngine->GetRenderer() : nullptr;
-	if (!Renderer) return;
+	if (!Renderer)
+	{
+		return;
+	}
 
 	FTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
 	FSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
@@ -29,7 +42,10 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 	for (UPrimitiveComponent* Comp : VisiblePrimitives)
 	{
-		if (!Comp) continue;
+		if (!Comp)
+		{
+			continue;
+		}
 
 		if (Comp->IsA(UTextComponent::StaticClass()))
 		{
@@ -159,9 +175,17 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 	}
 }
 
-void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FFrustum& Frustum,
-	const FShowFlags& ShowFlags, TArray<UPrimitiveComponent*>& OutVisible)
+void FSceneRenderCollector::FrustrumCull(
+	UScene* Scene,
+	const FFrustum& Frustum,
+	const FShowFlags& ShowFlags,
+	TArray<UPrimitiveComponent*>& OutVisible)
 {
+	if (!Scene)
+	{
+		return;
+	}
+
 	const bool bShowUUID = ShowFlags.HasFlag(EEngineShowFlags::SF_UUID);
 	const bool bShowBillboard = ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard);
 	const bool bShowText = ShowFlags.HasFlag(EEngineShowFlags::SF_Text);
@@ -175,55 +199,65 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 	const auto* SubUVClass = USubUVComponent::StaticClass();
 	const auto* TextClass = UTextComponent::StaticClass();
 
-	for (AActor* Actor : Actors)
+	TArray<UPrimitiveComponent*> CandidatePrimitives;
+	Scene->QueryPrimitivesByFrustum(Frustum, CandidatePrimitives);
+	OutVisible.reserve(OutVisible.size() + CandidatePrimitives.size());
+
+	for (UPrimitiveComponent* PrimitiveComponent : CandidatePrimitives)
 	{
-		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible()) continue;
-		if (!Actor->IsVisible()) continue;
-
-		for (UActorComponent* Component : Actor->GetComponents())
+		if (!PrimitiveComponent || PrimitiveComponent->IsPendingKill())
 		{
-			if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-
-			const bool bIsUUID = PrimitiveComponent->IsA(UUIDBillboardClass);
-			const bool bIsSubUV = PrimitiveComponent->IsA(SubUVClass);
-			const bool bIsText = PrimitiveComponent->IsA(TextClass);
-
-			if (bIsUUID)
-			{
-				if (!bShowUUID)
-				{
-					continue;
-				}
-			}
-			else if (bIsSubUV)
-			{
-				if (!bShowBillboard)
-				{
-					continue;
-				}
-			}
-			else if (bIsText)
-			{
-				if (!bShowText)
-				{
-					continue;
-				}
-			}
-			else
-			{
-				if (!bShowPrimitives)
-				{
-					continue;
-				}
-
-				if (!PrimitiveComponent->GetRenderMesh())
-				{
-					continue;
-				}
-			}
-			if (Frustum.IsVisible(PrimitiveComponent->GetWorldBounds()))
-				OutVisible.push_back(PrimitiveComponent);
+			continue;
 		}
+
+		AActor* OwnerActor = PrimitiveComponent->GetTypedOuter<AActor>();
+		if (!OwnerActor)
+		{
+			OwnerActor = PrimitiveComponent->GetOwner();
+		}
+		if (!OwnerActor || OwnerActor->IsPendingDestroy() || !OwnerActor->IsVisible())
+		{
+			continue;
+		}
+
+		const bool bIsUUID = PrimitiveComponent->IsA(UUIDBillboardClass);
+		const bool bIsSubUV = PrimitiveComponent->IsA(SubUVClass);
+		const bool bIsText = PrimitiveComponent->IsA(TextClass);
+
+		if (bIsUUID)
+		{
+			if (!bShowUUID)
+			{
+				continue;
+			}
+		}
+		else if (bIsSubUV)
+		{
+			if (!bShowBillboard)
+			{
+				continue;
+			}
+		}
+		else if (bIsText)
+		{
+			if (!bShowText)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if (!bShowPrimitives)
+			{
+				continue;
+			}
+
+			if (!PrimitiveComponent->GetRenderMesh())
+			{
+				continue;
+			}
+		}
+
+		OutVisible.push_back(PrimitiveComponent);
 	}
 }

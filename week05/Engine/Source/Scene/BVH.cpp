@@ -1,0 +1,234 @@
+#include "BVH.h"
+#include "Component/PrimitiveComponent.h"
+#include "Math/Frustum.h"
+#include <algorithm>
+
+namespace
+{
+	FBoxSphereBounds ToSphereBounds(const FAABB& InBounds)
+	{
+		const FVector Center = (InBounds.PMin + InBounds.PMax) * 0.5f;
+		const FVector Extent = (InBounds.PMax - InBounds.PMin) * 0.5f;
+		return { Center, Extent.Size(), Extent };
+	}
+}
+
+BVH::~BVH()
+{
+	Reset();
+}
+
+void BVH::Reset()
+{
+	DestroyNode(Root);
+	Root = nullptr;
+	PrimitiveRefs.clear();
+}
+
+void BVH::DestroyNode(BuildNode* Node)
+{
+	if (!Node) return;
+
+	DestroyNode(Node->Left);
+	DestroyNode(Node->Right);
+	delete Node;
+}
+
+void BVH::Build(const TArray<UPrimitiveComponent*>& InPrimitives)
+{
+	Reset();
+
+	PrimitiveRefs.reserve(InPrimitives.size());
+	for (UPrimitiveComponent* Primitive : InPrimitives)
+	{
+		if (!Primitive || Primitive->IsPendingKill())
+		{
+			continue;
+		}
+
+		const FBoxSphereBounds WorldBounds = Primitive->GetWorldBounds();
+		const FVector Min = WorldBounds.Center - WorldBounds.BoxExtent;
+		const FVector Max = WorldBounds.Center + WorldBounds.BoxExtent;
+
+		FPrimRef Ref;
+		Ref.Bounds = FAABB(Min, Max);
+		Ref.Centroid = Ref.Bounds.Centroid();
+		Ref.Primitive = Primitive;
+		PrimitiveRefs.push_back(Ref);
+	}
+
+	if (PrimitiveRefs.empty())
+	{
+		return;
+	}
+
+	Root = BuildRecursive(0, static_cast<int32>(PrimitiveRefs.size()));
+}
+
+BuildNode* BVH::BuildRecursive(int32 Start, int32 End)
+{
+	BuildNode* Node = new BuildNode();
+	const int32 Count = End - Start;
+
+	FAABB NodeBounds;
+	FAABB CentroidBounds;
+	for (int32 Index = Start; Index < End; ++Index)
+	{
+		NodeBounds.Expand(PrimitiveRefs[Index].Bounds);
+		CentroidBounds.Expand(PrimitiveRefs[Index].Centroid);
+	}
+
+	Node->Bounds = NodeBounds;
+
+	if (Count <= MaxPrimitivesPerLeaf)
+	{
+		Node->FirstPrimOffset = Start;
+		Node->PrimCount = Count;
+		return Node;
+	}
+
+	const int32 Axis = CentroidBounds.MaxExtentAxis();
+	const float CentroidMin = GetAxis(CentroidBounds.PMin, Axis);
+	const float CentroidMax = GetAxis(CentroidBounds.PMax, Axis);
+
+	if (std::fabs(CentroidMax - CentroidMin) < 1e-5f)
+	{
+		Node->FirstPrimOffset = Start;
+		Node->PrimCount = Count;
+		return Node;
+	}
+
+
+	TArray<FBucket> Buckets(NUM_BUCKETS);
+
+	for (int32 i = Start; i < End; ++i)
+	{
+		float t = (GetAxis(PrimitiveRefs[i].Centroid, Axis) - CentroidMin) / (CentroidMax - CentroidMin);
+		int b = std::clamp((int32)(t * NUM_BUCKETS), 0, NUM_BUCKETS - 1);
+		Buckets[b].Count++;
+		Buckets[b].Bounds.Expand(PrimitiveRefs[i].Bounds);
+	}
+
+	float BestCost = std::numeric_limits<float>::max();
+	int32 BestSplit = -1;
+	const float ParentArea = NodeBounds.SurfaceArea();
+
+	for (int32 i = 1; i < NUM_BUCKETS; ++i)
+	{
+		FAABB L, R;
+		int32 NL = 0, NR = 0;
+		for (int32 j = 0; j < i; ++j) { L.Expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
+		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.Expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
+
+		float Cost = 1.0f;
+		if (ParentArea > 1e-8f)
+		{
+			Cost += (L.SurfaceArea() * NL + R.SurfaceArea() * NR) / ParentArea;
+		}
+
+		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
+	}
+
+	if (BestSplit < 0)
+	{
+		Node->FirstPrimOffset = Start;
+		Node->PrimCount = Count;
+		return Node;
+	}
+
+	float SplitPos = CentroidMin + (CentroidMax - CentroidMin) * ((float)BestSplit / NUM_BUCKETS);
+
+	auto MidIt = std::partition(
+		PrimitiveRefs.begin() + Start,
+		PrimitiveRefs.begin() + End,
+		[Axis, SplitPos](const FPrimRef& P)
+		{
+			return GetAxis(P.Centroid, Axis) < SplitPos;
+		}
+	);
+
+
+	int32 Mid = (int32)(MidIt - PrimitiveRefs.begin());
+
+	if (Mid == Start || Mid == End)
+	{
+		Mid = Start + Count / 2;
+		std::nth_element(
+			PrimitiveRefs.begin() + Start,
+			PrimitiveRefs.begin() + Mid,
+			PrimitiveRefs.begin() + End,
+			[Axis](const FPrimRef& A, const FPrimRef& B)
+			{
+				return GetAxis(A.Centroid, Axis) < GetAxis(B.Centroid, Axis);
+			});
+	}
+
+
+	Node->SplitAxis = Axis;
+	Node->Left = BuildRecursive(Start, Mid);
+	Node->Right = BuildRecursive(Mid, End);
+	return Node;
+}
+
+void BVH::QueryFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	QueryFrustumRecursive(Root, Frustum, OutPrimitives);
+}
+
+void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (!Node)
+	{
+		return;
+	}
+
+	if (!Frustum.IsVisible(ToSphereBounds(Node->Bounds)))
+	{
+		return;
+	}
+
+	if (Node->IsLeaf())
+	{
+		for (int32 Index = 0; Index < Node->PrimCount; ++Index)
+		{
+			const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
+			if (Ref.Primitive && Frustum.IsVisible(ToSphereBounds(Ref.Bounds)))
+			{
+				OutPrimitives.push_back(Ref.Primitive);
+			}
+		}
+		return;
+	}
+
+	QueryFrustumRecursive(Node->Left, Frustum, OutPrimitives);
+	QueryFrustumRecursive(Node->Right, Frustum, OutPrimitives);
+}
+
+void BVH::QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	QueryRayRecursive(Root, InRay, MaxDistance, OutPrimitives);
+}
+
+void BVH::QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (!Node || !Node->Bounds.Intersect(InRay, MaxDistance))
+	{
+		return;
+	}
+
+	if (Node->IsLeaf())
+	{
+		for (int32 Index = 0; Index < Node->PrimCount; ++Index)
+		{
+			const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
+			if (Ref.Primitive)
+			{
+				OutPrimitives.push_back(Ref.Primitive);
+			}
+		}
+		return;
+	}
+
+	QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
+	QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
+}
