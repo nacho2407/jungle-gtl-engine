@@ -1,0 +1,19 @@
+{
+  "NextUUID" : 50003,
+  "PerspectiveCamera" : {
+    "FOV" : 60.000000,
+    "FarClip" : 100.000000,
+    "Location" : [-28.107929, -27.869390, 25.837776],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 0.926283, 0.770000]
+  },
+  "Primitives" : {
+    "10" : {
+      "Location" : [-25.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/apple_mid.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+}
+}

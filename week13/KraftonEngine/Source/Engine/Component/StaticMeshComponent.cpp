@@ -111,23 +111,20 @@ void UStaticMeshComponent::CollectRender(FRenderBus& Bus) const
 			Draw.FirstIndex = Section.FirstIndex;
 			Draw.IndexCount = Section.NumTriangles * 3;
 
-			for (int32 i = 0; i < Slots.size(); ++i)
+			int32 i = Section.MaterialIndex;
+			if (i >= 0 && i < (int32)Slots.size())
 			{
-				if (Slots[i].MaterialSlotName == Section.MaterialSlotName)
+				if (i < (int32)OverrideMaterials.size() && OverrideMaterials[i])
 				{
-					if (i < OverrideMaterials.size() && OverrideMaterials[i])
-					{
-						auto& Mat = OverrideMaterials[i];
-						if (Mat->DiffuseTexture)
-							Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
-						Draw.DiffuseColor = Mat->DiffuseColor;
-					}
+					auto& Mat = OverrideMaterials[i];
+					if (Mat->DiffuseTexture)
+						Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
+					Draw.DiffuseColor = Mat->DiffuseColor;
+				}
 
-					if (i < (int32)MaterialSlots.size())
-					{
-						Draw.bIsUVScroll = MaterialSlots[i].bUVScroll;
-					}
-					break;
+				if (i < (int32)MaterialSlots.size())
+				{
+					Draw.bIsUVScroll = MaterialSlots[i].bUVScroll;
 				}
 			}
 			Cmd.SectionDraws.push_back(Draw);
