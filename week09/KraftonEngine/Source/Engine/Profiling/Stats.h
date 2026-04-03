@@ -72,6 +72,15 @@ private:
 	LARGE_INTEGER StartTime;
 };
 
+// --- Draw Call Counter ---
+struct FDrawCallStats
+{
+	static uint32 Count;
+	static void Reset() { Count = 0; }
+	static void Increment() { ++Count; }
+	static uint32 Get() { return Count; }
+};
+
 // --- SCOPE_STAT 매크로 ---
 #if STATS
 #define SCOPE_STAT_CONCAT2(a, b) a##b

@@ -56,11 +56,17 @@ void FEditorStatWidget::Render(float DeltaTime)
 	{
 		if (ImGui::Button("Pause"))
 		{
+			FrozenDrawCalls = FDrawCallStats::Get();
 			FrozenCPUEntries = FStatManager::Get().GetSnapshot();
 			FrozenGPUEntries = FGPUProfiler::Get().GetGPUSnapshot();
 			bPaused = true;
 		}
 	}
+
+	// --- Draw Call Count ---
+	uint32 DrawCalls = bPaused ? FrozenDrawCalls : FDrawCallStats::Get();
+	ImGui::Text("Draw Calls: %u", DrawCalls);
+	ImGui::Separator();
 
 	// --- CPU Stats ---
 	const TArray<FStatEntry>& CPUSource = bPaused ? FrozenCPUEntries : FStatManager::Get().GetSnapshot();

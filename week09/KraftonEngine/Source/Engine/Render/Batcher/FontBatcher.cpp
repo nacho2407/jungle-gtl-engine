@@ -1,6 +1,7 @@
 ﻿#include "FontBatcher.h"
 
 #include "Core/CoreTypes.h"
+#include "Profiling/Stats.h"
 #include "Resource/ResourceManager.h"
 #include "Render/Resource/ShaderManager.h"
 
@@ -260,6 +261,7 @@ void FFontBatcher::DrawBatch(ID3D11DeviceContext* Context, const FFontResource* 
 	Context->PSSetSamplers(0, 1, &SamplerState);
 
 	Context->DrawIndexed(IndexCount, 0, 0);
+	FDrawCallStats::Increment();
 }
 
 void FFontBatcher::DrawScreenBatch(ID3D11DeviceContext* Context, const FFontResource* Resource)
@@ -289,6 +291,7 @@ void FFontBatcher::DrawScreenBatch(ID3D11DeviceContext* Context, const FFontReso
 	Context->PSSetSamplers(0, 1, &SamplerState);
 
 	Context->DrawIndexed(IndexCount, 0, 0);
+	FDrawCallStats::Increment();
 }
 
 void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const

@@ -16,6 +16,7 @@ private:
 	int GPUSortColumn = 2;
 	bool bGPUSortDescending = true;
 	bool bPaused = false;
+	uint32 FrozenDrawCalls = 0;
 	TArray<FStatEntry> FrozenCPUEntries;
 	TArray<FStatEntry> FrozenGPUEntries;
 };
