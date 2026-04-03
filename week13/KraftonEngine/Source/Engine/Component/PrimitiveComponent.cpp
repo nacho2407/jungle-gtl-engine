@@ -7,6 +7,7 @@
 #include "Core/CollisionTypes.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include <cstring>
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
@@ -14,6 +15,22 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+}
+
+void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
+{
+	USceneComponent::PostEditProperty(PropertyName);
+
+	if (strcmp(PropertyName, "Visible") == 0)
+	{
+		if (AActor* OwnerActor = GetOwner())
+		{
+			if (UWorld* World = OwnerActor->GetWorld())
+			{
+				World->MarkPickingBVHDirty();
+			}
+		}
+	}
 }
 
 void UPrimitiveComponent::CollectRender(FRenderBus& Bus) const

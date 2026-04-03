@@ -16,6 +16,7 @@ public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual const FMeshData* GetMeshData() const { return nullptr; }

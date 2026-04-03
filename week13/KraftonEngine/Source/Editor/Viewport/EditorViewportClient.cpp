@@ -317,33 +317,9 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	}
 	else
 	{
-		//기즈모와 충돌하지 않았다면 모든 actor와 확인해봄
+		// 기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
 		AActor* BestActor = nullptr;
-		float ClosestDistance = FLT_MAX;
-
-		for (AActor* Actor : World->GetActors())
-		{
-			if (!Actor || !Actor->GetRootComponent()) {
-				continue;
-			}
-			//USceneComponent* RootComp = Actor->GetRootComponent();
-			//if (!RootComp->IsA<UPrimitiveComponent>()) continue;
-
-			for (auto* primitive : Actor->GetPrimitiveComponents())
-			{
-				UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(primitive);
-
-				HitResult = {};
-				if (FRayUtils::RaycastComponent(PrimitiveComp, Ray, HitResult))
-				{
-					if (HitResult.Distance < ClosestDistance)
-					{
-						ClosestDistance = HitResult.Distance;
-						BestActor = Actor;
-					}
-				}
-			}
-		}
+		World->RaycastPrimitives(Ray, HitResult, BestActor);
 
 		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 

@@ -28,6 +28,8 @@ public:
 		T* Comp = UObjectManager::Get().CreateObject<T>();
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
+		bPrimitiveCacheDirty = true;
+		MarkPickingDirty();
 		return Comp;
 	}
 
@@ -65,11 +67,13 @@ public:
 	UWorld* GetWorld() const { return OwningWorld; }
 
 	bool IsVisible() const { return bVisible; }
-	void SetVisible(bool Visible) { bVisible = Visible; }
+	void SetVisible(bool Visible);
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
 protected:
+	void MarkPickingDirty();
+
 	USceneComponent* RootComponent = nullptr;
 	UWorld* OwningWorld = nullptr;
 
