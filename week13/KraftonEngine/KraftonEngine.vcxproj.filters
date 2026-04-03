@@ -671,10 +671,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollectorContext.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderCommand.h">
+    <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h">

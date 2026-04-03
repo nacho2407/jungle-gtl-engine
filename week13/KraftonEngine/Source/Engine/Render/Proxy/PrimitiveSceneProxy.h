@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
-#include "Render/Pipeline/RenderCommand.h"
+#include "Render/Pipeline/RenderConstants.h"
 #include "Render/Types/RenderTypes.h"
 
 class UPrimitiveComponent;
