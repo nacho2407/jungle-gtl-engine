@@ -19,7 +19,7 @@ public:
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay() {}
 
-	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.
+	// 컴포넌트 생성 + Owner 설정 + 등록 + 렌더 상태 생성
 	template<typename T>
 	T* AddComponent() {
 		static_assert(std::is_base_of_v<UActorComponent, T>,
@@ -28,6 +28,8 @@ public:
 		T* Comp = UObjectManager::Get().CreateObject<T>();
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
+		bPrimitiveCacheDirty = true;
+		Comp->CreateRenderState();
 		return Comp;
 	}
 

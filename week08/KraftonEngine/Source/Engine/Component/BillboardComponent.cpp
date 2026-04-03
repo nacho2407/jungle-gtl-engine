@@ -2,8 +2,14 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Resource/ShaderManager.h"
+#include "Render/Pipeline/BillboardSceneProxy.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
+
+FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
+{
+	return new FBillboardSceneProxy(this);
+}
 
 void UBillboardComponent::CollectSelection(FRenderBus& Bus) const
 {

@@ -9,6 +9,8 @@
 #include "Core/EngineTypes.h"
 #include "Render/Types/VertexTypes.h"
 
+class FPrimitiveSceneProxy;
+class FScene;
 
 class UPrimitiveComponent : public USceneComponent
 {
@@ -24,7 +26,7 @@ public:
 	virtual void CollectRender(FRenderBus& Bus) const;
 	virtual void CollectSelection(FRenderBus& Bus) const;
 
-	inline void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
+	void SetVisibility(bool bNewVisible);
 	inline bool IsVisible() const { return bIsVisible; }
 
 	// 월드 공간 AABB를 FBoundingBox로 반환 (파트 B LineBatcher와의 인터페이스)
@@ -37,9 +39,22 @@ public:
 
 	virtual bool SupportsOutline() const { return true; }
 
+	// --- 렌더 상태 관리 ---
+	void CreateRenderState() override;
+	void DestroyRenderState() override;
+
+	// 프록시 전체 재생성 (메시 교체 등 큰 변경 시 사용)
+	void MarkRenderStateDirty();
+
+	// 서브클래스가 오버라이드하여 자신에 맞는 구체 프록시를 생성
+	virtual FPrimitiveSceneProxy* CreateSceneProxy();
+
+	FPrimitiveSceneProxy* GetSceneProxy() const { return SceneProxy; }
+
 protected:
 	FVector LocalExtents = { 0.5f, 0.5f, 0.5f };
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
 	bool bIsVisible = true;
+	FPrimitiveSceneProxy* SceneProxy = nullptr;
 };

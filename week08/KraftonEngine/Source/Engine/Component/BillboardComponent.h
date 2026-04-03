@@ -2,12 +2,15 @@
 #include "PrimitiveComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 
+class FPrimitiveSceneProxy;
+
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
 	void TickComponent(float DeltaTime) override;
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
 
