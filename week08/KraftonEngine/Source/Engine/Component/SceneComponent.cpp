@@ -208,10 +208,15 @@ void USceneComponent::MarkTransformDirty()
 {
 	bTransformDirty = true;
 	bInverseWorldDirty = true;
+	OnTransformDirty();
 	for (auto* Child : ChildComponents)
 	{
 		Child->MarkTransformDirty();
 	}
+}
+
+void USceneComponent::OnTransformDirty()
+{
 }
 
 FRotator& USceneComponent::GetCachedEditRotator()

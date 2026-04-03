@@ -30,6 +30,7 @@ public:
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
 		Comp->CreateRenderState();
+		MarkPickingDirty();
 		return Comp;
 	}
 
@@ -72,6 +73,8 @@ public:
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
 protected:
+	void MarkPickingDirty();
+
 	USceneComponent* RootComponent = nullptr;
 	UWorld* OwningWorld = nullptr;
 
