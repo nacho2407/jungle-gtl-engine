@@ -98,7 +98,7 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 
 	// LevelViewportClient 생성 (단일 뷰포트)
 	auto* LevelVC = new FLevelEditorViewportClient();
-	LevelVC->SetEditor(Editor);
+	LevelVC->SetOverlayStatSystem(&Editor->GetOverlayStatSystem());
 	LevelVC->SetSettings(&FEditorSettings::Get());
 	LevelVC->Initialize(Window);
 	LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
@@ -224,7 +224,7 @@ void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
 		int32 Idx = static_cast<int32>(LevelViewportClients.size());
 
 		auto* LevelVC = new FLevelEditorViewportClient();
-		LevelVC->SetEditor(Editor);
+		LevelVC->SetOverlayStatSystem(&Editor->GetOverlayStatSystem());
 		LevelVC->SetSettings(&FEditorSettings::Get());
 		LevelVC->Initialize(Window);
 		LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());

@@ -1,7 +1,7 @@
 ﻿#include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/UI/EditorConsoleWidget.h"
-#include "Editor/EditorEngine.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Profiling/PlatformTime.h"
@@ -367,11 +367,11 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 		}
 	}
 
-	if (Editor)
+	if (OverlayStatSystem)
 	{
 		const uint64 PickCycles = PickCounter.Finish();
 		const double ElapsedMs = FPlatformTime::ToMilliseconds(PickCycles);
-		Editor->GetOverlayStatSystem().RecordPickingAttempt(ElapsedMs);
+		OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
 	}
 }
 
