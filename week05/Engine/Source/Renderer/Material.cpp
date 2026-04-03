@@ -63,11 +63,18 @@ bool FMaterialConstantBuffer::Create(ID3D11Device* Device, uint32 InSize)
 
 void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Offset)
 {
-	if (!CPUData || Offset + InSize > Size)
+	if (!CPUData || !Data || Offset + InSize > Size)
 	{
 		return;
 	}
-	memcpy(CPUData + Offset, Data, InSize);
+
+	uint8* Dest = CPUData + Offset;
+	if (memcmp(Dest, Data, InSize) == 0)
+	{
+		return;
+	}
+
+	memcpy(Dest, Data, InSize);
 	bDirty = true;
 }
 
@@ -148,7 +155,7 @@ bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uin
 	uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
 	FMaterialConstantBuffer* CB = GetConstantBuffer(Info.BufferIndex);
 	if (!CB) return false;
-	CB->SetData(Data, DataSize, Info.Offset);
+	CB->SetData(Data, CopySize, Info.Offset);
 	return true;
 }
 

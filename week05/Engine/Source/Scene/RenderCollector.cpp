@@ -25,12 +25,12 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 	FTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
 	FSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
+	OutQueue.Commands.reserve(OutQueue.Commands.size() + VisiblePrimitives.size());
 
 	for (UPrimitiveComponent* Comp : VisiblePrimitives)
 	{
 		if (!Comp) continue;
 
-		// ─── 1. 텍스트 컴포넌트 ───
 		if (Comp->IsA(UTextComponent::StaticClass()))
 		{
 			UTextComponent* TextComp = static_cast<UTextComponent*>(Comp);
@@ -60,15 +60,8 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 						FRenderCommand Command;
 						Command.RenderMesh = TextMesh;
 						Command.Material = FontMat;
-
-						if (!Comp->IsA(UUUIDBillboardComponent::StaticClass()))
-						{
-							Command.RenderLayer = ERenderLayer::Default;
-						}
-						else
-						{
-							Command.RenderLayer = ERenderLayer::Overlay;
-						}
+						Command.RenderLayer =
+							Comp->IsA(UUUIDBillboardComponent::StaticClass()) ? ERenderLayer::Overlay : ERenderLayer::Default;
 
 						const FVector WorldPos = TextComp->GetRenderWorldPosition();
 						const FVector Scale = TextComp->GetRenderWorldScale();
@@ -92,7 +85,6 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 			continue;
 		}
 
-		// ─── 2. SubUV 스프라이트 컴포넌트 ───
 		if (Comp->IsA(USubUVComponent::StaticClass()))
 		{
 			USubUVComponent* SubUVComponent = static_cast<USubUVComponent*>(Comp);
@@ -104,8 +96,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 				SubUVRenderer.UpdateAnimationParams(
 					SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
 					SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),
-					SubUVComponent->GetFPS(), TotalTime, SubUVComponent->IsLoop()
-				);
+					SubUVComponent->GetFPS(), TotalTime, SubUVComponent->IsLoop());
 
 				FMaterial* SubUVMat = SubUVRenderer.GetSubUVMaterial();
 				if (SubUVMat)
@@ -128,7 +119,6 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 			continue;
 		}
 
-		// ─── 3. 정적 메쉬 컴포넌트 (과거 프리미티브 대통합) ───
 		if (Comp->IsA(UStaticMeshComponent::StaticClass()))
 		{
 			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
@@ -136,7 +126,7 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 			if (TargetMesh)
 			{
-				int32 NumSections = TargetMesh->GetNumSection();
+				const int32 NumSections = TargetMesh->GetNumSection();
 				if (NumSections <= 0)
 				{
 					FRenderCommand Command;
@@ -144,24 +134,21 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 					Command.WorldMatrix = SMC->GetWorldTransform();
 					std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(0);
 					Command.Material = MatPtr ? MatPtr.get() : Renderer->GetDefaultMaterial();
-
 					OutQueue.AddCommand(Command);
 				}
 				else
 				{
-					for (int32 i = 0; i < NumSections; ++i)
+					for (int32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
 					{
-						const FMeshSection& Section = TargetMesh->Sections[i];
+						const FMeshSection& Section = TargetMesh->Sections[SectionIndex];
 
 						FRenderCommand Command;
 						Command.RenderMesh = TargetMesh;
 						Command.WorldMatrix = SMC->GetWorldTransform();
-
 						Command.IndexStart = Section.StartIndex;
 						Command.IndexCount = Section.IndexCount;
 
-						// 2. 인덱스(i)에 맞는 머티리얼을 꺼내서 주문서에 붙이기
-						std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(i);
+						std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(SectionIndex);
 						Command.Material = MatPtr ? MatPtr.get() : Renderer->GetDefaultMaterial();
 						OutQueue.AddCommand(Command);
 					}
@@ -175,6 +162,19 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FFrustum& Frustum,
 	const FShowFlags& ShowFlags, TArray<UPrimitiveComponent*>& OutVisible)
 {
+	const bool bShowUUID = ShowFlags.HasFlag(EEngineShowFlags::SF_UUID);
+	const bool bShowBillboard = ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard);
+	const bool bShowText = ShowFlags.HasFlag(EEngineShowFlags::SF_Text);
+	const bool bShowPrimitives = ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
+	if (!bShowUUID && !bShowBillboard && !bShowText && !bShowPrimitives)
+	{
+		return;
+	}
+
+	const auto* UUIDBillboardClass = UUUIDBillboardComponent::StaticClass();
+	const auto* SubUVClass = USubUVComponent::StaticClass();
+	const auto* TextClass = UTextComponent::StaticClass();
+
 	for (AActor* Actor : Actors)
 	{
 		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible()) continue;
@@ -183,41 +183,47 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
 			if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
-
 			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
 
-			const bool bIsUUID = PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass());
-			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-			const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
-			// ─── ShowFlags에 따른 필터링 ───
+			const bool bIsUUID = PrimitiveComponent->IsA(UUIDBillboardClass);
+			const bool bIsSubUV = PrimitiveComponent->IsA(SubUVClass);
+			const bool bIsText = PrimitiveComponent->IsA(TextClass);
+
 			if (bIsUUID)
 			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID)) continue;
+				if (!bShowUUID)
+				{
+					continue;
+				}
 			}
 			else if (bIsSubUV)
 			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
+				if (!bShowBillboard)
 				{
 					continue;
 				}
 			}
 			else if (bIsText)
 			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text))
+				if (!bShowText)
 				{
 					continue;
 				}
 			}
 			else
 			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
-				if (!PrimitiveComponent->GetRenderMesh()) continue;
-			}
+				if (!bShowPrimitives)
+				{
+					continue;
+				}
 
-			if (Frustum.IsVisible(PrimitiveComponent->GetWorldBounds()))
-			{
-				OutVisible.push_back(PrimitiveComponent);
+				if (!PrimitiveComponent->GetRenderMesh())
+				{
+					continue;
+				}
 			}
+			if (Frustum.IsVisible(PrimitiveComponent->GetWorldBounds()))
+				OutVisible.push_back(PrimitiveComponent);
 		}
 	}
 }
