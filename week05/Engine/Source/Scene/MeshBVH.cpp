@@ -92,15 +92,54 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
-	const int32 Mid = Start + Count / 2;
-	std::nth_element(
-		TriangleIndices.begin() + Start,
-		TriangleIndices.begin() + Mid,
-		TriangleIndices.begin() + End,
-		[this, Axis](const int32 A, const int32 B)
+	TArray<FBucket> Buckets(NUM_BUCKETS);
+
+	for (int32 i = Start; i < End; ++i)
+	{
+		float t = (GetAxis(Triangles[i].Centroid, Axis) - CentroidMin) / (CentroidMax - CentroidMin);
+		const int32 b = std::clamp((int32)(t * NUM_BUCKETS), 0, NUM_BUCKETS - 1);
+		Buckets[b].Count++;
+		Buckets[b].Bounds.expand(Triangles[i].Bounds);
+	}
+
+	float BestCost = std::numeric_limits<float>::max();
+	int32 BestSplit = -1;
+
+	for (int32 i = 1; i < NUM_BUCKETS; ++i)
+	{
+		AABB L, R;
+		int32 NL = 0, NR = 0;
+		for (int32 j = 0; j < i; ++j) { L.expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
+		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
+		const float Cost = 1.0f + L.surfaceArea() * NL + R.surfaceArea() * NR;
+		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
+	}
+
+	float SplitPos = CentroidMin + (CentroidMax - CentroidMin) * ((float)BestSplit / NUM_BUCKETS);
+
+	auto MidIt = std::partition(
+		Triangles.begin() + Start,
+		Triangles.begin() + End,
+		[Axis, SplitPos](const FTriangleRef& P)
 		{
-			return GetAxis(Triangles[A].Centroid, Axis) < GetAxis(Triangles[B].Centroid, Axis);
-		});
+			return GetAxis(P.Centroid, Axis) < SplitPos;
+		}
+	);
+
+	int32 Mid = (int32)(MidIt - Triangles.begin());
+
+	if (Mid == Start || Mid == End)
+	{
+		int32 Mid = Start + Count / 2;
+		std::nth_element(
+			TriangleIndices.begin() + Start,
+			TriangleIndices.begin() + Mid,
+			TriangleIndices.begin() + End,
+			[this, Axis](const int32 A, const int32 B)
+			{
+				return GetAxis(Triangles[A].Centroid, Axis) < GetAxis(Triangles[B].Centroid, Axis);
+			});
+	}
 
 	Node.SplitAxis = Axis;
 	Node.LeftChild = BuildRecursive(Start, Mid);
