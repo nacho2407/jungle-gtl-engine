@@ -1,8 +1,12 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
+#include "Core/RayTypes.h"
+#include "Core/CollisionTypes.h"
+#include "Core/EngineTypes.h"
 
 class UCameraComponent;
+class UPrimitiveComponent;
 
 class UWorld : public UObject {
 public:
@@ -14,9 +18,11 @@ public:
 	template<typename T>
 	T* SpawnActor();
 	void DestroyActor(AActor* Actor);
+	void AddActor(AActor* Actor);
+	void MarkPickingBVHDirty();
+	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
-	void AddActor(AActor* Actor) { Actors.push_back(Actor); }
 
 	void InitWorld();      // Set up the world before gameplay begins
 	void BeginPlay();      // Triggers BeginPlay on all actors
@@ -30,9 +36,34 @@ public:
 	UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
 
 private:
+	struct FPickingBVHLeaf
+	{
+		FBoundingBox Bounds;
+		UPrimitiveComponent* Primitive = nullptr;
+		AActor* Owner = nullptr;
+	};
+
+	struct FPickingBVHNode
+	{
+		FBoundingBox Bounds;
+		int32 LeftChild = -1;
+		int32 RightChild = -1;
+		int32 FirstLeaf = 0;
+		int32 LeafCount = 0;
+
+		bool IsLeaf() const { return LeftChild < 0 && RightChild < 0; }
+	};
+
+	void EnsurePickingBVH() const;
+	void RebuildPickingBVH() const;
+	int32 BuildPickingBVHRecursive(int32 Start, int32 End) const;
+
 	TArray<AActor*> Actors;
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
+	mutable bool bPickingBVHDirty = true;
+	mutable TArray<FPickingBVHLeaf> PickingLeaves;
+	mutable TArray<FPickingBVHNode> PickingNodes;
 };
 
 template<typename T>
@@ -45,6 +76,6 @@ inline T* UWorld::SpawnActor()
 	{
 		Actor->BeginPlay();
 	}
-	Actors.push_back(Actor);
+	AddActor(Actor);
 	return Actor;
 }

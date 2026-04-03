@@ -35,6 +35,7 @@ public:
 	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
 	virtual void SetRelativeScale(const FVector& NewScale);
 	void MarkTransformDirty();
+	virtual void OnTransformDirty();
 	void ApplyCachedEditRotator();
 	FRotator& GetCachedEditRotator();	// 에디터 UI용 Euler 캐시 접근
 	// Quat을 직접 세팅하면서 Euler 캐시도 함께 지정 (짐벌락 방지)
