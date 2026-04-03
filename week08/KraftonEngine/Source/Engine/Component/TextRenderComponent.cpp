@@ -15,30 +15,6 @@ FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
 	return new FTextRenderSceneProxy(this);
 }
 
-void UTextRenderComponent::CollectRender(FRenderBus& Bus) const
-{
-	if (!Bus.GetShowFlags().bBillboardText) return;
-
-	const FFontResource* Font = GetFont();
-	if (!Font || !Font->IsLoaded()) return;
-	if (Text.empty()) return;
-
-	// 현재 뷰포트 카메라 기준 빌보드 행렬
-	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
-	FMatrix RotMatrix;
-	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
-	FMatrix PerViewBillboard = FMatrix::MakeScaleMatrix(GetWorldScale())
-		* RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
-
-	FFontEntry Entry = {};
-	Entry.PerObject = FPerObjectConstants{ PerViewBillboard };
-	Entry.PerObject.Color = GetColor();
-	Entry.Font.Text = Text;
-	Entry.Font.Font = Font;
-	Entry.Font.Scale = GetFontSize();
-	Bus.AddFontEntry(std::move(Entry));
-}
-
 void UTextRenderComponent::SetFont(const FName& InFontName)
 {
 	FontName = InFontName;

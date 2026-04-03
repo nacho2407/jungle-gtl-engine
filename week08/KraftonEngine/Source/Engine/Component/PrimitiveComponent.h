@@ -2,7 +2,6 @@
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
-#include "Render/Pipeline/RenderBus.h"
 #include "Render/Types/RenderTypes.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
@@ -12,6 +11,7 @@
 
 class FPrimitiveSceneProxy;
 class FScene;
+class FMeshBuffer;
 
 class UPrimitiveComponent : public USceneComponent
 {
@@ -23,9 +23,6 @@ public:
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual const FMeshData* GetMeshData() const { return nullptr; }
-
-	// Batcher 렌더 데이터 수집 (Font, SubUV 등 bBatcherRendered 전용)
-	virtual void CollectRender(FRenderBus& Bus) const {}
 
 	void SetVisibility(bool bNewVisible);
 	inline bool IsVisible() const { return bIsVisible; }

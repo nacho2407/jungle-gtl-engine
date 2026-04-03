@@ -57,7 +57,7 @@ public:
 	inline void SetRotateMode() { UpdateGizmoMode(EGizmoMode::Rotate); }
 	inline void SetScaleMode() { UpdateGizmoMode(EGizmoMode::Scale); }
 	void UpdateGizmoTransform();
-	float ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
+	float ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f) const;
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
 

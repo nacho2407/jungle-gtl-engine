@@ -307,6 +307,7 @@
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp" />
@@ -424,6 +425,7 @@
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h" />
