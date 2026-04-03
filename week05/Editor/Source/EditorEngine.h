@@ -92,4 +92,9 @@ private:
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
 
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
+
+public:
+	double LastPickTime = 0;
+	uint16 TotalPickCount = 0;
+	double TotalPickTime = 0;
 };

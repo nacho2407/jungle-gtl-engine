@@ -247,6 +247,7 @@
     <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h" />
     <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h" />
     <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h" />
+    <ClInclude Include="Source\Picking\WindowsPlatformTime.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="ThirdParty\imgui\imgui_impl_dx11.h" />

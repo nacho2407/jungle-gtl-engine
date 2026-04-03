@@ -91,12 +91,10 @@ void SEditorViewportOverlay::UpdateLayout() const
 
 	FpsWidget.Refresh();
 	const int32 FpsWidth = FpsWidget.GetDesiredWidth();
-	const int32 FpsX = Transform.Rect.IsValid()
-		? Transform.Rect.X
-		: ViewportBounds.X + ViewportBounds.Width - FpsWidth;
-	const int32 FpsY = Transform.Rect.IsValid()
-		? Transform.Rect.Y + Transform.Rect.Height + OverlaySpacing
-		: ViewportBounds.Y + OverlayRowHeight + OverlaySpacing;
+	const int32 FpsRight = ViewportBounds.X + ViewportBounds.Width - Transform.GetRightPadding();
+	const int32 FpsX = FpsRight - FpsWidth;
+	const int32 FpsY = ViewportBounds.Y + OverlaySpacing;
+
 	FpsWidget.SetWidgetRect({ FpsX, FpsY, FpsWidth, OverlayRowHeight });
 }
 

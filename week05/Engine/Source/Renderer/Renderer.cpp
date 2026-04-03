@@ -346,6 +346,7 @@ void FRenderer::SetConstantBuffers()
 void FRenderer::BeginFrame()
 {
 	if (GUINewFrame) GUINewFrame();
+	FrameDrawCallCount = 0;
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	if (RenderTargetView) DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
@@ -557,10 +558,12 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 
 				FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
 
+				++FrameDrawCallCount;
 				DeviceContext->DrawIndexed(DrawCount, StartLocation, 0);
 			}
 			else
 			{
+				++FrameDrawCallCount;
 				DeviceContext->Draw(static_cast<UINT>(Cmd.RenderMesh->Vertices.size()), 0);
 			}
 		}
@@ -988,10 +991,12 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 		UpdateObjectConstantBuffer(Item.WorldMatrix);
 		if (!Item.Mesh->Indices.empty())
 		{
+			++FrameDrawCallCount;
 			DeviceContext->DrawIndexed(static_cast<UINT>(Item.Mesh->Indices.size()), 0, 0);
 		}
 		else
 		{
+			++FrameDrawCallCount;
 			DeviceContext->Draw(static_cast<UINT>(Item.Mesh->Vertices.size()), 0);
 		}
 	}
@@ -1006,6 +1011,7 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->VSSetShader(OutlinePostVS, nullptr, 0);
 	DeviceContext->PSSetShader(OutlineMaskPS, nullptr, 0);
+	++FrameDrawCallCount;
 	DeviceContext->Draw(3, 0);
 
 	DeviceContext->OMSetRenderTargets(1, &BoundRTV, BoundDSV);
@@ -1016,6 +1022,7 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	UpdateOutlinePostConstantBuffer(FVector4(1.0f, 0.5f, 0.0f, 1.0f), 2.0f, 0.1f);
 	DeviceContext->PSSetShaderResources(0, 1, &OutlineMaskSRV);
 	DeviceContext->PSSetSamplers(0, 1, &OutlineSampler);
+	++FrameDrawCallCount;
 	DeviceContext->Draw(3, 0);
 
 	DeviceContext->PSSetShaderResources(0, 1, &NullSRV);
@@ -1074,6 +1081,7 @@ void FRenderer::ExecuteLineCommands()
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &Offset);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	UpdateObjectConstantBuffer(FMatrix::Identity);
+	++FrameDrawCallCount;
 	DeviceContext->Draw(static_cast<UINT>(LineVertices.size()), 0);
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
 	LineVertices.clear();
