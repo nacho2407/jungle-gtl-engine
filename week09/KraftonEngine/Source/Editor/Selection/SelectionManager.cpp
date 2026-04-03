@@ -4,7 +4,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Render/Pipeline/FScene.h"
+#include "Render/Proxy/FScene.h"
 
 void FSelectionManager::Init()
 {
