@@ -12,6 +12,8 @@ UWorld::~UWorld()
 	{
 		EndPlay();
 	}
+
+	delete Octree;
 }
 
 void UWorld::DestroyActor(AActor* Actor)
@@ -227,9 +229,51 @@ int32 UWorld::BuildPickingBVHRecursive(int32 Start, int32 End) const
 	return NodeIndex;
 }
 
+
+void UWorld::InsertActorToOctree(AActor* Actor)
+{
+    if (!Actor) return;
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim || !Prim->IsVisible()) continue;
+        Prim->UpdateWorldMatrix();
+        Octree->Insert(Prim);
+    }
+}
+
+void UWorld::RemoveActorToOctree(AActor* Actor)
+{
+    if (!Actor) return;
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim) continue;
+        Octree->Remove(Prim);
+    }
+}
+
+void UWorld::UpdateActorInOctree(AActor* Actor)
+{
+    if (!Actor) return;
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim) continue;
+
+        Octree->Remove(Prim);
+        Prim->UpdateWorldMatrix();
+
+        if (Prim->IsVisible())
+        {
+            Octree->Insert(Prim);
+        }
+    }
+}
+
 void UWorld::InitWorld()
 {
-
+	 Octree = new FOctree(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)), 0);
 }
 
 void UWorld::BeginPlay()
