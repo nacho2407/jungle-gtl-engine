@@ -33,9 +33,9 @@ void FMeshBVH::Build(const FRenderMesh& Mesh)
 		Triangle.V1 = Mesh.Vertices[I1].Position;
 		Triangle.V2 = Mesh.Vertices[I2].Position;
 		Triangle.Centroid = (Triangle.V0 + Triangle.V1 + Triangle.V2) / 3.0f;
-		Triangle.Bounds = AABB(Triangle.V0, Triangle.V0);
-		Triangle.Bounds.expand(Triangle.V1);
-		Triangle.Bounds.expand(Triangle.V2);
+		Triangle.Bounds = FAABB(Triangle.V0, Triangle.V0);
+		Triangle.Bounds.Expand(Triangle.V1);
+		Triangle.Bounds.Expand(Triangle.V2);
 		Triangles.push_back(Triangle);
 	}
 
@@ -62,13 +62,13 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 	FNode Node;
 	const int32 Count = End - Start;
 
-	AABB NodeBounds;
-	AABB CentroidBounds;
+	FAABB NodeBounds;
+	FAABB CentroidBounds;
 	for (int32 Index = Start; Index < End; ++Index)
 	{
 		const FTriangleRef& Triangle = Triangles[TriangleIndices[Index]];
-		NodeBounds.expand(Triangle.Bounds);
-		CentroidBounds.expand(Triangle.Centroid);
+		NodeBounds.Expand(Triangle.Bounds);
+		CentroidBounds.Expand(Triangle.Centroid);
 	}
 	Node.Bounds = NodeBounds;
 
@@ -80,9 +80,9 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
-	const int32 Axis = CentroidBounds.maxExtentAxis();
-	const float CentroidMin = GetAxis(CentroidBounds.pMin, Axis);
-	const float CentroidMax = GetAxis(CentroidBounds.pMax, Axis);
+	const int32 Axis = CentroidBounds.MaxExtentAxis();
+	const float CentroidMin = GetAxis(CentroidBounds.PMin, Axis);
+	const float CentroidMax = GetAxis(CentroidBounds.PMax, Axis);
 
 	if (std::fabs(CentroidMax - CentroidMin) < 1e-5f)
 	{
@@ -99,7 +99,7 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 		const float t = (GetAxis(Triangle.Centroid, Axis) - CentroidMin) / (CentroidMax - CentroidMin);
 		const int32 b = std::clamp((int32)(t * NUM_BUCKETS), 0, NUM_BUCKETS - 1);
 		Buckets[b].Count++;
-		Buckets[b].Bounds.expand(Triangle.Bounds);
+		Buckets[b].Bounds.Expand(Triangle.Bounds);
 	}
 
 	float BestCost = std::numeric_limits<float>::max();
@@ -107,11 +107,11 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 
 	for (int32 i = 1; i < NUM_BUCKETS; ++i)
 	{
-		AABB L, R;
+		FAABB L, R;
 		int32 NL = 0, NR = 0;
-		for (int32 j = 0; j < i; ++j) { L.expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
-		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
-		const float Cost = 1.0f + L.surfaceArea() * NL + R.surfaceArea() * NR;
+		for (int32 j = 0; j < i; ++j) { L.Expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
+		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.Expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
+		const float Cost = 1.0f + L.SurfaceArea() * NL + R.SurfaceArea() * NR;
 		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
 	}
 
@@ -163,7 +163,7 @@ bool FMeshBVH::IntersectRayTriangle(const Ray& InRay, const FTriangleRef& Triang
 	const FVector Edge1 = Triangle.V1 - Triangle.V0;
 	const FVector Edge2 = Triangle.V2 - Triangle.V0;
 
-	const FVector H = FVector::CrossProduct(InRay.d, Edge2);
+	const FVector H = FVector::CrossProduct(InRay.D, Edge2);
 	const float A = FVector::DotProduct(Edge1, H);
 	if (A <= Epsilon)
 	{
@@ -171,7 +171,7 @@ bool FMeshBVH::IntersectRayTriangle(const Ray& InRay, const FTriangleRef& Triang
 	}
 
 	const float F = 1.0f / A;
-	const FVector S = InRay.o - Triangle.V0;
+	const FVector S = InRay.O - Triangle.V0;
 	const float U = F * FVector::DotProduct(S, H);
 	if (U < 0.0f || U > 1.0f)
 	{
@@ -179,7 +179,7 @@ bool FMeshBVH::IntersectRayTriangle(const Ray& InRay, const FTriangleRef& Triang
 	}
 
 	const FVector Q = FVector::CrossProduct(S, Edge1);
-	const float V = F * FVector::DotProduct(InRay.d, Q);
+	const float V = F * FVector::DotProduct(InRay.D, Q);
 	if (V < 0.0f || U + V > 1.0f)
 	{
 		return false;
@@ -220,7 +220,7 @@ bool FMeshBVH::IntersectRay(const FVector& RayOrigin, const FVector& RayDirectio
 		Stack.pop_back();
 
 		const FNode& Node = Nodes[NodeIndex];
-		if (!Node.Bounds.intersect(LocalRay, ClosestDistance))
+		if (!Node.Bounds.Intersect(LocalRay, ClosestDistance))
 		{
 			continue;
 		}

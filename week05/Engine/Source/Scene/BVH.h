@@ -45,88 +45,88 @@ static inline float GetAxis(const FVector& V, int Axis)
 
 struct Ray
 {
-	FVector o = FVector(0.0f, 0.0f, 0.0f);
-	FVector d = FVector(1.0f, 0.0f, 0.0f);
-	FVector invD = FVector(0.0f, 0.0f, 0.0f);
-	int dirIsNeg[3] = { 0, 0, 0 };
+	FVector O = FVector(0.0f, 0.0f, 0.0f);
+	FVector D = FVector(1.0f, 0.0f, 0.0f);
+	FVector InvD = FVector(0.0f, 0.0f, 0.0f);
+	int DirIsNeg[3] = { 0, 0, 0 };
 
 	Ray() = default;
 
 	Ray(const FVector& InO, const FVector& InD)
-		: o(InO), d(InD)
+		: O(InO), D(InD)
 	{
 		constexpr float Huge = std::numeric_limits<float>::max();
 		const float Eps = 1e-8f;
 
-		invD.X = (std::fabs(d.X) < Eps) ? Huge : 1.0f / d.X;
-		invD.Y = (std::fabs(d.Y) < Eps) ? Huge : 1.0f / d.Y;
-		invD.Z = (std::fabs(d.Z) < Eps) ? Huge : 1.0f / d.Z;
+		InvD.X = (std::fabs(D.X) < Eps) ? Huge : 1.0f / D.X;
+		InvD.Y = (std::fabs(D.Y) < Eps) ? Huge : 1.0f / D.Y;
+		InvD.Z = (std::fabs(D.Z) < Eps) ? Huge : 1.0f / D.Z;
 
-		dirIsNeg[0] = invD.X < 0.0f;
-		dirIsNeg[1] = invD.Y < 0.0f;
-		dirIsNeg[2] = invD.Z < 0.0f;
+		DirIsNeg[0] = InvD.X < 0.0f;
+		DirIsNeg[1] = InvD.Y < 0.0f;
+		DirIsNeg[2] = InvD.Z < 0.0f;
 	}
 };
 
-struct AABB
+struct FAABB
 {
-	FVector pMin;
-	FVector pMax;
+	FVector PMin;
+	FVector PMax;
 
-	AABB()
+	FAABB()
 	{
 		constexpr float MaxF = std::numeric_limits<float>::max();
-		pMin = FVector(MaxF, MaxF, MaxF);
-		pMax = FVector(-MaxF, -MaxF, -MaxF);
+		PMin = FVector(MaxF, MaxF, MaxF);
+		PMax = FVector(-MaxF, -MaxF, -MaxF);
 	}
 
-	AABB(const FVector& InMin, const FVector& InMax)
-		: pMin(InMin), pMax(InMax)
+	FAABB(const FVector& InMin, const FVector& InMax)
+		: PMin(InMin), PMax(InMax)
 	{
 	}
 
-	void expand(const AABB& b)
+	void Expand(const FAABB& b)
 	{
-		pMin = VecMin(pMin, b.pMin);
-		pMax = VecMax(pMax, b.pMax);
+		PMin = VecMin(PMin, b.PMin);
+		PMax = VecMax(PMax, b.PMax);
 	}
 
-	void expand(const FVector& p)
+	void Expand(const FVector& p)
 	{
-		pMin = VecMin(pMin, p);
-		pMax = VecMax(pMax, p);
+		PMin = VecMin(PMin, p);
+		PMax = VecMax(PMax, p);
 	}
 
-	FVector centroid() const
+	FVector Centroid() const
 	{
-		return (pMin + pMax) * 0.5f;
+		return (PMin + PMax) * 0.5f;
 	}
 
-	float surfaceArea() const
+	float SurfaceArea() const
 	{
-		const FVector e = pMax - pMin;
+		const FVector e = PMax - PMin;
 		return 2.0f * (e.X * e.Y + e.X * e.Z + e.Y * e.Z);
 	}
 
-	int maxExtentAxis() const
+	int MaxExtentAxis() const
 	{
-		const FVector e = pMax - pMin;
+		const FVector e = PMax - PMin;
 		if (e.X > e.Y && e.X > e.Z) return 0;
 		if (e.Y > e.Z) return 1;
 		return 2;
 	}
 
-	bool intersect(const Ray& ray, float tMax) const
+	bool Intersect(const Ray& ray, float tMax) const
 	{
 		float tmin = 0.0f;
 		float tmax = tMax;
 
 		for (int a = 0; a < 3; ++a)
 		{
-			float t0 = (GetAxis(pMin, a) - GetAxis(ray.o, a)) * GetAxis(ray.invD, a);
-			float t1 = (GetAxis(pMax, a) - GetAxis(ray.o, a)) * GetAxis(ray.invD, a);
+			float t0 = (GetAxis(PMin, a) - GetAxis(ray.O, a)) * GetAxis(ray.InvD, a);
+			float t1 = (GetAxis(PMax, a) - GetAxis(ray.O, a)) * GetAxis(ray.InvD, a);
 
-			if (GetAxis(ray.invD, a) < 0.0f)
+			if (GetAxis(ray.InvD, a) < 0.0f)
 			{
 				std::swap(t0, t1);
 			}
@@ -144,43 +144,43 @@ struct AABB
 	}
 };
 
-struct PrimRef
+struct FPrimRef
 {
-	AABB bounds;
-	FVector centroid = FVector(0.0f, 0.0f, 0.0f);
-	UPrimitiveComponent* primitive = nullptr;
+	FAABB Bounds;
+	FVector Centroid = FVector(0.0f, 0.0f, 0.0f);
+	UPrimitiveComponent* Primitive = nullptr;
 };
 
 struct BuildNode
 {
-	AABB bounds;
-	BuildNode* left = nullptr;
-	BuildNode* right = nullptr;
-	int firstPrimOffset = 0;
-	int primCount = 0;
-	int splitAxis = 0;
+	FAABB Bounds;
+	BuildNode* Left = nullptr;
+	BuildNode* Right = nullptr;
+	int FirstPrimOffset = 0;
+	int PrimCount = 0;
+	int SplitAxis = 0;
 
-	bool isLeaf() const { return primCount > 0; }
+	bool IsLeaf() const { return PrimCount > 0; }
 };
 
 struct LinearNode
 {
-	AABB bounds;
+	FAABB Bounds;
 
 	union
 	{
-		int primitivesOffset;
-		int secondChildOffset;
+		int PrimitivesOffset;
+		int SecondChildOffset;
 	};
 
-	uint16 primCount = 0;
-	uint16 axis = 0;
+	uint16 PrimCount = 0;
+	uint16 Axis = 0;
 };
 
 struct FBucket
 {
-	int   Count = 0;
-	AABB  Bounds;
+	int32   Count = 0;
+	FAABB  Bounds;
 };
 
 class BVH
@@ -199,11 +199,10 @@ private:
 	static constexpr int32 MaxPrimitivesPerLeaf = 8;
 
 	BuildNode* Root = nullptr;
-	TArray<PrimRef> PrimitiveRefs;
+	TArray<FPrimRef> PrimitiveRefs;
 
 	void DestroyNode(BuildNode* Node);
 	BuildNode* BuildRecursive(int32 Start, int32 End);
 	void QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
-	int32 ComputeSAH(int32 Start, int32 End, int32 Axis);
 };

@@ -19,12 +19,12 @@ private:
 		FVector V1 = FVector::ZeroVector;
 		FVector V2 = FVector::ZeroVector;
 		FVector Centroid = FVector::ZeroVector;
-		AABB Bounds;
+		FAABB Bounds;
 	};
 
 	struct FNode
 	{
-		AABB Bounds;
+		FAABB Bounds;
 		int32 LeftChild = -1;
 		int32 RightChild = -1;
 		int32 FirstTriangle = 0;
