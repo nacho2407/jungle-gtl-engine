@@ -27,7 +27,7 @@ void UWorld::DestroyActor(AActor* Actor)
 	if (it != Actors.end())
 		Actors.erase(it);
 
-	MarkPickingBVHDirty();
+	MarkWorldPrimitivePickingBVHDirty();
 	Partition.RemoveActor(Actor);
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
@@ -44,17 +44,17 @@ void UWorld::AddActor(AActor* Actor)
 	Actors.push_back(Actor);
 	
 	InsertActorToOctree(Actor);
-	MarkPickingBVHDirty();
+	MarkWorldPrimitivePickingBVHDirty();
 }
 
-void UWorld::MarkPickingBVHDirty()
+void UWorld::MarkWorldPrimitivePickingBVHDirty()
 {
-	PickingBVH.MarkDirty();
+	WorldPrimitivePickingBVH.MarkDirty();
 }
 
-void UWorld::BuildPickingBVHNow() const
+void UWorld::BuildWorldPrimitivePickingBVHNow() const
 {
-	PickingBVH.BuildNow(Actors);
+	WorldPrimitivePickingBVH.BuildNow(Actors);
 }
 
 void UWorld::WarmupPickingData() const
@@ -76,18 +76,18 @@ void UWorld::WarmupPickingData() const
 			UStaticMeshComponent* StaticMeshComponent = static_cast<UStaticMeshComponent*>(Primitive);
 			if (UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh())
 			{
-				StaticMesh->EnsureMeshPickingBVHBuilt();
+				StaticMesh->EnsureMeshTrianglePickingBVHBuilt();
 			}
 		}
 	}
 
-	BuildPickingBVHNow();
+	BuildWorldPrimitivePickingBVHNow();
 }
 
 bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
-	PickingBVH.EnsureBuilt(Actors);
-	return PickingBVH.Raycast(Ray, OutHitResult, OutActor);
+	WorldPrimitivePickingBVH.EnsureBuilt(Actors);
+	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
 }
 
 
@@ -179,5 +179,5 @@ void UWorld::EndPlay()
 	}
 
 	Actors.clear();
-	MarkPickingBVHDirty();
+	MarkWorldPrimitivePickingBVHDirty();
 }
