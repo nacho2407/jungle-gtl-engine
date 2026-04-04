@@ -1,4 +1,4 @@
-﻿#include "Collision/MeshTrianglePickingBVH.h"
+#include "Collision/MeshTrianglePickingBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <immintrin.h>
 
 namespace
 {
@@ -19,23 +20,15 @@ namespace
 	}
 }
 
-//void FMeshTrianglePickingBVH::MarkDirty()
-//{
-//	bDirty = true;
-//}
-
 /**
  * 메시의 모든 삼각형을 leaf로 수집하고, triangle 단위 BVH를 새로 빌드합니다.
- * 현재 구현에서는 static mesh asset이 고정된다고 보고 첫 빌드 시 전체 트리를 생성합니다.
- *
- * \param Mesh BVH를 구성할 원본 정적 메시 데이터
+ * 8분기 트리 구조를 사용하여 계층 깊이를 최적화합니다.
  */
 void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 {
 	TriangleLeaves.clear();
 	Nodes.clear();
 
-	// 삼각형이 하나도 없으면 트리를 만들 필요가 없습니다.
 	if (Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
 	{
 		return;
@@ -43,7 +36,6 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 
 	TriangleLeaves.reserve(Mesh.Indices.size() / 3);
 
-	// 메시의 각 삼각형을 leaf로 변환해 triangle 단위 AABB를 미리 계산합니다.
 	for (size_t Index = 0; Index + 2 < Mesh.Indices.size(); Index += 3)
 	{
 		const FVector& V0 = Mesh.Vertices[Mesh.Indices[Index]].pos;
@@ -64,8 +56,6 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 
 /**
  * mesh BVH가 아직 만들어지지 않았을 경우 빌드합니다.
- *
- * \param Mesh BVH 생성에 사용할 원본 정적 메시 데이터
  */
 void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 {
@@ -78,13 +68,7 @@ void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 
 /**
  * 로컬 공간 ray로 mesh BVH를 순회하면서 가장 가까운 삼각형 hit를 찾습니다.
- * 내부 노드에서는 AABB 교차만 검사하고, leaf에 도달했을 때만 실제 triangle 교차를 수행합니다.
- *
- * \param LocalOrigin 메시 로컬 공간 기준 ray 시작점
- * \param LocalDirection 메시 로컬 공간 기준 ray 방향
- * \param Mesh 교차 검사에 사용할 메시 데이터
- * \param OutHitResult 가장 가까운 hit 결과
- * \return 하나 이상의 삼각형과 교차하면 true
+ * 내부 노드 AABB 검사와 리프 노드 삼각형 교차 검사 모두 AVX2 SIMD를 사용합니다.
  */
 bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
@@ -100,12 +84,12 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
+	TArray<FTraversalEntry> NodeStack;
+	NodeStack.reserve(64);
+
 	FRay LocalRay;
 	LocalRay.Origin = LocalOrigin;
 	LocalRay.Direction = LocalDirection;
-
-	TArray<FTraversalEntry> NodeStack;
-	NodeStack.reserve(64);
 
 	float RootTMin = 0.0f;
 	float RootTMax = 0.0f;
@@ -114,12 +98,25 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
+	auto safe_inv = [](float d) {
+		return std::abs(d) > 1e-8f ? 1.0f / d : 1e30f;
+	};
+
+	__m256 ray_org_x = _mm256_set1_ps(LocalOrigin.X);
+	__m256 ray_org_y = _mm256_set1_ps(LocalOrigin.Y);
+	__m256 ray_org_z = _mm256_set1_ps(LocalOrigin.Z);
+	__m256 ray_dir_x = _mm256_set1_ps(LocalDirection.X);
+	__m256 ray_dir_y = _mm256_set1_ps(LocalDirection.Y);
+	__m256 ray_dir_z = _mm256_set1_ps(LocalDirection.Z);
+	__m256 inv_dir_x = _mm256_set1_ps(safe_inv(LocalDirection.X));
+	__m256 inv_dir_y = _mm256_set1_ps(safe_inv(LocalDirection.Y));
+	__m256 inv_dir_z = _mm256_set1_ps(safe_inv(LocalDirection.Z));
+
 	NodeStack.push_back({ 0, RootTMin });
 
 	float ClosestT = FLT_MAX;
 	bool bHit = false;
 
-	// 재귀 대신 명시적 스택으로 순회해 AABB에 걸리는 노드만 내려갑니다.
 	while (!NodeStack.empty())
 	{
 		const FTraversalEntry Entry = NodeStack.back();
@@ -134,60 +131,152 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		if (Node.IsLeaf())
 		{
-			// leaf 노드는 연속된 삼각형 구간을 보관하므로 작은 범위만 정밀 교차 검사하면 됩니다.
-			for (int32 LeafIndex = Node.FirstLeaf; LeafIndex < Node.FirstLeaf + Node.LeafCount; ++LeafIndex)
+			// 리프 노드의 삼각형 8개를 동시에 검사 (AVX2 Möller-Trumbore)
+			alignas(32) float v0x[8], v0y[8], v0z[8];
+			alignas(32) float v1x[8], v1y[8], v1z[8];
+			alignas(32) float v2x[8], v2y[8], v2z[8];
+			int32 indices[8];
+
+			int32 count = Node.LeafCount;
+			for (int32 i = 0; i < 8; ++i)
 			{
-				const FTriangleLeaf& Leaf = TriangleLeaves[LeafIndex];
-				const int32 TriangleStart = Leaf.TriangleStartIndex;
-
-				const FVector& V0 = Mesh.Vertices[Mesh.Indices[TriangleStart]].pos;
-				const FVector& V1 = Mesh.Vertices[Mesh.Indices[TriangleStart + 1]].pos;
-				const FVector& V2 = Mesh.Vertices[Mesh.Indices[TriangleStart + 2]].pos;
-
-				float T = 0.0f;
-				if (FRayUtils::IntersectTriangle(LocalOrigin, LocalDirection, V0, V1, V2, T) && T < ClosestT)
+				if (i < count)
 				{
-					ClosestT = T;
-					OutHitResult.bHit = true;
-					OutHitResult.Distance = T;
-					OutHitResult.FaceIndex = TriangleStart;
-					bHit = true;
+					const int32 triIdx = TriangleLeaves[Node.FirstLeaf + i].TriangleStartIndex;
+					indices[i] = triIdx;
+					const FVector& V0 = Mesh.Vertices[Mesh.Indices[triIdx]].pos;
+					const FVector& V1 = Mesh.Vertices[Mesh.Indices[triIdx + 1]].pos;
+					const FVector& V2 = Mesh.Vertices[Mesh.Indices[triIdx + 2]].pos;
+					v0x[i] = V0.X; v0y[i] = V0.Y; v0z[i] = V0.Z;
+					v1x[i] = V1.X; v1y[i] = V1.Y; v1z[i] = V1.Z;
+					v2x[i] = V2.X; v2y[i] = V2.Y; v2z[i] = V2.Z;
+				}
+				else
+				{
+					v0x[i] = v0y[i] = v0z[i] = 1e30f; // 멀리 보내기
+					v1x[i] = v1y[i] = v1z[i] = 1e30f;
+					v2x[i] = v2y[i] = v2z[i] = 1e30f;
+					indices[i] = -1;
+				}
+			}
+
+			__m256 V0x = _mm256_load_ps(v0x), V0y = _mm256_load_ps(v0y), V0z = _mm256_load_ps(v0z);
+			__m256 V1x = _mm256_load_ps(v1x), V1y = _mm256_load_ps(v1y), V1z = _mm256_load_ps(v1z);
+			__m256 V2x = _mm256_load_ps(v2x), V2y = _mm256_load_ps(v2y), V2z = _mm256_load_ps(v2z);
+
+			__m256 e1x = _mm256_sub_ps(V1x, V0x), e1y = _mm256_sub_ps(V1y, V0y), e1z = _mm256_sub_ps(V1z, V0z);
+			__m256 e2x = _mm256_sub_ps(V2x, V0x), e2y = _mm256_sub_ps(V2y, V0y), e2z = _mm256_sub_ps(V2z, V0z);
+
+			__m256 pvx = _mm256_sub_ps(_mm256_mul_ps(ray_dir_y, e2z), _mm256_mul_ps(ray_dir_z, e2y));
+			__m256 pvy = _mm256_sub_ps(_mm256_mul_ps(ray_dir_z, e2x), _mm256_mul_ps(ray_dir_x, e2z));
+			__m256 pvz = _mm256_sub_ps(_mm256_mul_ps(ray_dir_x, e2y), _mm256_mul_ps(ray_dir_y, e2x));
+
+			__m256 det = _mm256_add_ps(_mm256_mul_ps(e1x, pvx), _mm256_add_ps(_mm256_mul_ps(e1y, pvy), _mm256_mul_ps(e1z, pvz)));
+			__m256 abs_det = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), det);
+			__m256 inv_det = _mm256_div_ps(_mm256_set1_ps(1.0f), det);
+
+			__m256 tvx = _mm256_sub_ps(ray_org_x, V0x), tvy = _mm256_sub_ps(ray_org_y, V0y), tvz = _mm256_sub_ps(ray_org_z, V0z);
+			__m256 u = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(tvx, pvx), _mm256_add_ps(_mm256_mul_ps(tvy, pvy), _mm256_mul_ps(tvz, pvz))), inv_det);
+
+			__m256 qvx = _mm256_sub_ps(_mm256_mul_ps(tvy, e1z), _mm256_mul_ps(tvz, e1y));
+			__m256 qvy = _mm256_sub_ps(_mm256_mul_ps(tvz, e1x), _mm256_mul_ps(tvx, e1z));
+			__m256 qvz = _mm256_sub_ps(_mm256_mul_ps(tvx, e1y), _mm256_mul_ps(tvy, e1x));
+
+			__m256 v = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(ray_dir_x, qvx), _mm256_add_ps(_mm256_mul_ps(ray_dir_y, qvy), _mm256_mul_ps(ray_dir_z, qvz))), inv_det);
+			__m256 t = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(e2x, qvx), _mm256_add_ps(_mm256_mul_ps(e2y, qvy), _mm256_mul_ps(e2z, qvz))), inv_det);
+
+			__m256 zero = _mm256_setzero_ps();
+			__m256 one = _mm256_set1_ps(1.0f);
+			__m256 hit_mask = _mm256_and_ps(
+				_mm256_cmp_ps(abs_det, _mm256_set1_ps(1e-8f), _CMP_GT_OQ),
+				_mm256_and_ps(_mm256_cmp_ps(u, zero, _CMP_GE_OQ),
+				_mm256_and_ps(_mm256_cmp_ps(u, one, _CMP_LE_OQ),
+				_mm256_and_ps(_mm256_cmp_ps(v, zero, _CMP_GE_OQ),
+				_mm256_and_ps(_mm256_cmp_ps(_mm256_add_ps(u, v), one, _CMP_LE_OQ),
+				_mm256_and_ps(_mm256_cmp_ps(t, zero, _CMP_GT_OQ),
+				_mm256_cmp_ps(t, _mm256_set1_ps(ClosestT), _CMP_LT_OQ))))))
+			);
+
+			int mask = _mm256_movemask_ps(hit_mask);
+			if (mask != 0)
+			{
+				float TValues[8];
+				_mm256_storeu_ps(TValues, t);
+				for (int32 i = 0; i < 8; ++i)
+				{
+					if ((mask >> i) & 1)
+					{
+						if (TValues[i] < ClosestT)
+						{
+							ClosestT = TValues[i];
+							OutHitResult.bHit = true;
+							OutHitResult.Distance = TValues[i];
+							OutHitResult.FaceIndex = indices[i];
+							bHit = true;
+						}
+					}
 				}
 			}
 			continue;
 		}
 
-		float LeftTMin = 0.0f;
-		float LeftTMax = 0.0f;
-		const bool bHasLeft = Node.LeftChild >= 0 &&
-			FRayUtils::IntersectRayAABB(LocalRay, Nodes[Node.LeftChild].Bounds.Min, Nodes[Node.LeftChild].Bounds.Max, LeftTMin, LeftTMax) &&
-			LeftTMin <= ClosestT;
-		float RightTMin = 0.0f;
-		float RightTMax = 0.0f;
-		const bool bHasRight = Node.RightChild >= 0 &&
-			FRayUtils::IntersectRayAABB(LocalRay, Nodes[Node.RightChild].Bounds.Min, Nodes[Node.RightChild].Bounds.Max, RightTMin, RightTMax) &&
-			RightTMin <= ClosestT;
+		// 내부 노드 자식 8개 AABB 동시 검사 (Broad Phase와 동일 로직)
+		__m256 min_x = _mm256_loadu_ps(Node.ChildMinX);
+		__m256 min_y = _mm256_loadu_ps(Node.ChildMinY);
+		__m256 min_z = _mm256_loadu_ps(Node.ChildMinZ);
+		__m256 max_x = _mm256_loadu_ps(Node.ChildMaxX);
+		__m256 max_y = _mm256_loadu_ps(Node.ChildMaxY);
+		__m256 max_z = _mm256_loadu_ps(Node.ChildMaxZ);
 
-		if (bHasLeft && bHasRight)
+		__m256 t1_x = _mm256_mul_ps(_mm256_sub_ps(min_x, ray_org_x), inv_dir_x);
+		__m256 t2_x = _mm256_mul_ps(_mm256_sub_ps(max_x, ray_org_x), inv_dir_x);
+		__m256 t1_y = _mm256_mul_ps(_mm256_sub_ps(min_y, ray_org_y), inv_dir_y);
+		__m256 t2_y = _mm256_mul_ps(_mm256_sub_ps(max_y, ray_org_y), inv_dir_y);
+		__m256 t1_z = _mm256_mul_ps(_mm256_sub_ps(min_z, ray_org_z), inv_dir_z);
+		__m256 t2_z = _mm256_mul_ps(_mm256_sub_ps(max_z, ray_org_z), inv_dir_z);
+
+		__m256 t_min = _mm256_max_ps(_mm256_max_ps(_mm256_min_ps(t1_x, t2_x), _mm256_min_ps(t1_y, t2_y)), _mm256_min_ps(t1_z, t2_z));
+		__m256 t_max = _mm256_min_ps(_mm256_min_ps(_mm256_max_ps(t1_x, t2_x), _mm256_max_ps(t1_y, t2_y)), _mm256_max_ps(t1_z, t2_z));
+
+		__m256 node_hit_mask = _mm256_and_ps(
+			_mm256_cmp_ps(t_min, t_max, _CMP_LE_OQ),
+			_mm256_and_ps(
+				_mm256_cmp_ps(t_max, _mm256_setzero_ps(), _CMP_GE_OQ),
+				_mm256_cmp_ps(t_min, _mm256_set1_ps(ClosestT), _CMP_LT_OQ)
+			)
+		);
+
+		int node_mask = _mm256_movemask_ps(node_hit_mask);
+		if (node_mask == 0) continue;
+
+		FTraversalEntry ChildEntries[8];
+		int32 ChildEntryCount = 0;
+		float TMinValues[8];
+		_mm256_storeu_ps(TMinValues, t_min);
+
+		for (int32 i = 0; i < 8; ++i)
 		{
-			if (LeftTMin < RightTMin)
+			if ((node_mask >> i) & 1)
 			{
-				NodeStack.push_back({ Node.RightChild, RightTMin });
-				NodeStack.push_back({ Node.LeftChild, LeftTMin });
-			}
-			else
-			{
-				NodeStack.push_back({ Node.LeftChild, LeftTMin });
-				NodeStack.push_back({ Node.RightChild, RightTMin });
+				ChildEntries[ChildEntryCount++] = { Node.Children[i], TMinValues[i] };
 			}
 		}
-		else if (bHasLeft)
+
+		for (int32 I = 1; I < ChildEntryCount; ++I)
 		{
-			NodeStack.push_back({ Node.LeftChild, LeftTMin });
+			FTraversalEntry Key = ChildEntries[I];
+			int32 J = I - 1;
+			while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
+			{
+				ChildEntries[J + 1] = ChildEntries[J];
+				--J;
+			}
+			ChildEntries[J + 1] = Key;
 		}
-		else if (bHasRight)
+
+		for (int32 I = 0; I < ChildEntryCount; ++I)
 		{
-			NodeStack.push_back({ Node.RightChild, RightTMin });
+			NodeStack.push_back(ChildEntries[I]);
 		}
 	}
 
@@ -195,18 +284,13 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 }
 
 /**
- * 구간 내 triangle leaf들로부터 BVH 노드를 재귀적으로 구성합니다.
- *
- * \param Start leaf 구간 시작 인덱스
- * \param End leaf 구간 끝 다음 인덱스
- * \return 생성된 노드의 인덱스
+ * 구간 내 triangle leaf들로부터 BVH 노드를 재귀적으로 구성합니다. (8분기 버전)
  */
 int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.emplace_back();
 
-	// 현재 구간에 포함된 모든 삼각형 leaf를 감싸는 노드 bounds를 계산합니다.
 	FBoundingBox Bounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
@@ -224,7 +308,6 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
-	// centroid가 가장 넓게 퍼진 축을 고르고, 그 축의 median 기준으로 반씩 나눕니다.
 	FBoundingBox CentroidBounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
@@ -233,40 +316,50 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 
 	const FVector CentroidExtent = CentroidBounds.GetExtent();
 	int32 SplitAxis = 0;
-	if (CentroidExtent.Y > CentroidExtent.X && CentroidExtent.Y >= CentroidExtent.Z)
-	{
-		SplitAxis = 1;
-	}
-	else if (CentroidExtent.Z > CentroidExtent.X && CentroidExtent.Z > CentroidExtent.Y)
-	{
-		SplitAxis = 2;
-	}
+	if (CentroidExtent.Y > CentroidExtent.X && CentroidExtent.Y >= CentroidExtent.Z) SplitAxis = 1;
+	else if (CentroidExtent.Z > CentroidExtent.X && CentroidExtent.Z > CentroidExtent.Y) SplitAxis = 2;
 
-	const int32 Mid = Start + LeafCount / 2;
-	// 삼각형들을 SplitAxis을 기준으로 분할해 각기 파티션을 만듭니다.
-	std::nth_element(
+	std::sort(
 		TriangleLeaves.begin() + Start,
-		TriangleLeaves.begin() + Mid, //전체를 정렬하는 대신 Mid 위치만 일단 올바르도록 파티션 수행
 		TriangleLeaves.begin() + End,
-
-		//비교용 람다, SplitAxis에 따라 다른 축으로 비교
 		[SplitAxis](const FTriangleLeaf& A, const FTriangleLeaf& B)
 		{
 			const FVector CenterA = A.Bounds.GetCenter();
 			const FVector CenterB = B.Bounds.GetCenter();
-			if (SplitAxis == 1)
-			{
-				return CenterA.Y < CenterB.Y;
-			}
-			if (SplitAxis == 2)
-			{
-				return CenterA.Z < CenterB.Z;
-			}
+			if (SplitAxis == 1) return CenterA.Y < CenterB.Y;
+			if (SplitAxis == 2) return CenterA.Z < CenterB.Z;
 			return CenterA.X < CenterB.X;
 		}
 	);
 
-	Nodes[NodeIndex].LeftChild = BuildRecursive(Start, Mid);
-	Nodes[NodeIndex].RightChild = BuildRecursive(Mid, End);
+	const int32 DesiredChildren = std::min<int32>(8, LeafCount);
+	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
+	{
+		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
+		const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
+		if (RangeStart >= RangeEnd) continue;
+
+		const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
+		const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+		
+		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+		
+		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+		Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+		Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+		Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+		Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+		Nodes[NodeIndex].ChildCount++;
+	}
+
+	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
+	{
+		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
+		Nodes[NodeIndex].ChildMaxX[i] = -1e30f;
+	}
+
 	return NodeIndex;
 }
