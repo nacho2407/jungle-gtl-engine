@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Object/Object.h"
+#include "Collision/MeshPickingBVH.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Serialization/Archive.h"
 
@@ -26,8 +27,12 @@ public:
 	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
 	void InitResources(ID3D11Device* InDevice);
+	void MarkMeshPickingBVHDirty();
+	void EnsureMeshPickingBVHBuilt() const;
+	bool RaycastMeshBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const;
 	
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<FStaticMaterial> StaticMaterials; // 슬롯 이름과 머티리얼 인터페이스를 묶어서 저장하는 배열
+	mutable FMeshPickingBVH MeshPickingBVH;
 };
