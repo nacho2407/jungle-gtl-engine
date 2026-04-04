@@ -276,7 +276,7 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 						{
 							for (uint32 j = 0; j < NumSections; ++j)
 							{
-								if (std::shared_ptr<FMaterial> Mat = MeshComp->GetMaterial(j))
+								if (std::shared_ptr<FDynamicMaterial> Mat = MeshComp->GetOrCreateDynamicMaterial(j))
 								{
 									Mat->SetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
 								}
@@ -349,7 +349,10 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 								ImGui::PushID(i + 1000);
 								if (ImGui::ColorEdit4("Base Color", ColorArray))
 								{
-									CurrentMat->SetParameterData("BaseColor", ColorArray, sizeof(ColorArray));
+									if (std::shared_ptr<FDynamicMaterial> DynamicMat = MeshComp->GetOrCreateDynamicMaterial(i))
+									{
+										DynamicMat->SetParameterData("BaseColor", ColorArray, sizeof(ColorArray));
+									}
 								}
 								ImGui::PopID();
 
@@ -362,7 +365,10 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 									// 마찬가지로 UI 조작은 X, Y 2개만 합니다.
 									if (ImGui::DragFloat2("UV Scroll", SpeedArray, 0.001f, -5.0f, 5.0f, "%.2f"))
 									{
-										CurrentMat->SetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
+										if (std::shared_ptr<FDynamicMaterial> DynamicMat = MeshComp->GetOrCreateDynamicMaterial(i))
+										{
+											DynamicMat->SetParameterData("UVScrollSpeed", SpeedArray, sizeof(SpeedArray));
+										}
 									}
 									ImGui::PopID();
 

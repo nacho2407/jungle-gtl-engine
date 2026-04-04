@@ -252,6 +252,27 @@
     <ClCompile Include="Source\Renderer\MaterialManager.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\MaterialBindingCache.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\MeshPassProcessor.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\PassExecutor.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\SceneProxy.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\SceneRenderer.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\ViewInfo.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\MeshData.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
@@ -283,6 +304,9 @@
       <Filter>Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\SubUVRenderer.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\TextureLoader.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp">
@@ -515,6 +539,30 @@
     <ClInclude Include="Source\Renderer\MaterialManager.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\MaterialBindingCache.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\MeshPassProcessor.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\ObjectUniformStream.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\PassCommandQueues.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\PassExecutor.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneProxy.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneRenderer.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\ViewInfo.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\MeshData.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
@@ -549,6 +597,9 @@
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\SubUVRenderer.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\TextureLoader.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\TextMeshBuilder.h">
@@ -905,3 +956,5 @@
     <None Include="packages.config" />
   </ItemGroup>
 </Project>
+
+

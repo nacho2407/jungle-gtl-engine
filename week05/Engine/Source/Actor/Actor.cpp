@@ -60,6 +60,24 @@ void AActor::AddOwnedComponent(UActorComponent* InComponent)
 	{
 		RootComponent = static_cast<USceneComponent*>(InComponent);
 	}
+
+	// Components added after initial spawn (e.g., scene deserialize/runtime additions)
+	// still need registration and bounds update so render collection can see them.
+	const bool bActorInScene = (GetScene() != nullptr);
+	if (bActorInScene && !InComponent->IsRegistered())
+	{
+		InComponent->OnRegister();
+	}
+
+	if (bActorBegunPlay && !InComponent->HasBegunPlay())
+	{
+		InComponent->BeginPlay();
+	}
+
+	if (UPrimitiveComponent* PrimitiveComponent = dynamic_cast<UPrimitiveComponent*>(InComponent))
+	{
+		PrimitiveComponent->UpdateBounds();
+	}
 }
 
 void AActor::RemoveOwnedComponent(UActorComponent* InComponent)

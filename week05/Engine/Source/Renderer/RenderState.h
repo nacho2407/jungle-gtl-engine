@@ -52,11 +52,12 @@ struct FDepthStencilStateOption {
 
 	uint32 ToKey() const {
 		uint32 key = 0;
-		key |= (DepthEnable ? 1 : 0);									// 1 bit
-		key |= (static_cast<uint32>(DepthWriteMask) & 0x1) << 2;		// 1 bit
-		key |= (StencilEnable ? 1 : 0) << 3;							// 1 bit
-		key |= (static_cast<uint32>(StencilReadMask) & 0xFF) << 6;		// 8 bit
-		key |= (static_cast<uint32>(StencilWriteMask) & 0xFF) << 14;	// 8 bit
+		key |= (DepthEnable ? 1 : 0);                                  // bit 0      : DepthEnable
+		key |= (static_cast<uint32>(DepthWriteMask) & 0x1) << 1;       // bit 1      : DepthWriteMask
+		key |= (static_cast<uint32>(DepthFunc) & 0xF) << 2;            // bits 2-5   : DepthFunc
+		key |= (StencilEnable ? 1 : 0) << 6;                           // bit 6      : StencilEnable
+		key |= (static_cast<uint32>(StencilReadMask) & 0xFF) << 7;     // bits 7-14  : StencilReadMask
+		key |= (static_cast<uint32>(StencilWriteMask) & 0xFF) << 15;   // bits 15-22 : StencilWriteMask
 		return key;
 	}
 };
@@ -89,10 +90,14 @@ struct FBlendStateOption {
 
 	uint32 ToKey() const {
 		uint32 key = 0;
-		key |= (BlendEnable ? 1 : 0);
-		key |= (static_cast<uint32>(SrcBlend) & 0x1F) << 1;
-		key |= (static_cast<uint32>(DestBlend) & 0x1F) << 6;
-		key |= (static_cast<uint32>(BlendOp) & 0x7) << 11;
+		key |= (BlendEnable ? 1 : 0);                                      // bit 0      : BlendEnable
+		key |= (static_cast<uint32>(SrcBlend) & 0x1F) << 1;               // bits 1-5   : SrcBlend
+		key |= (static_cast<uint32>(DestBlend) & 0x1F) << 6;              // bits 6-10  : DestBlend
+		key |= (static_cast<uint32>(BlendOp) & 0x7) << 11;                // bits 11-13 : BlendOp
+		key |= (static_cast<uint32>(SrcBlendAlpha) & 0x1F) << 14;         // bits 14-18 : SrcBlendAlpha
+		key |= (static_cast<uint32>(DestBlendAlpha) & 0x1F) << 19;        // bits 19-23 : DestBlendAlpha
+		key |= (static_cast<uint32>(BlendOpAlpha) & 0x7) << 24;           // bits 24-26 : BlendOpAlpha
+		key |= (static_cast<uint32>(RenderTargetWriteMask) & 0xF) << 27;  // bits 27-30 : RenderTargetWriteMask
 		return key;
 	}
 };

@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "Renderer/RenderCommand.h"
 #include "Renderer/RenderStateManager.h"
-#include "Renderer/TextMeshBuilder.h"
 #include "Renderer/SubUVRenderer.h"
+#include "Renderer/TextMeshBuilder.h"
 #include "ShaderManager.h"
 #include <d3d11.h>
 #include <dxgi1_5.h>
@@ -17,16 +17,15 @@ struct FRenderMesh;
 class FPixelShader;
 class FMaterial;
 class UScene;
+class FSceneRenderer;
+class FPassExecutor;
+class FObjectUniformStream;
+class FMaterialBindingCache;
+struct FSceneFramePacket;
 
 using FGUICallback = std::function<void()>;
 class FRenderer;
 using FPostRenderCallback = std::function<void(FRenderer*)>;
-
-struct FOutlineRenderItem
-{
-	FRenderMesh* Mesh = nullptr;
-	FMatrix WorldMatrix = FMatrix::Identity;
-};
 
 /**
  * Direct3D 11 기반의 메인 렌더러다.
@@ -34,6 +33,9 @@ struct FOutlineRenderItem
  */
 class ENGINE_API FRenderer
 {
+	friend class FSceneRenderer;
+	friend class FPassExecutor;
+
 public:
 	FRenderer(HWND InHwnd, int32 InWidth, int32 InHeight);
 	~FRenderer();
@@ -84,7 +86,7 @@ public:
 
 	/** 게임/에디터가 수집한 렌더 커맨드를 내부 커맨드 리스트로 복사한다. */
 	void SubmitCommands(const FRenderCommandQueue& Queue);
-
+	void SubmitCommands(FRenderCommandQueue&& Queue);
 	/** 커맨드 리스트를 정렬하고 패스별로 GPU 드로우콜을 실행한다. */
 	void ExecuteCommands();
 
@@ -118,7 +120,8 @@ public:
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 	ID3D11RenderTargetView* GetRenderTargetView() const { return RenderTargetView; }
-	IDXGISwapChain* GetSwapChain() const { return SwapChain; };
+	ID3D11DepthStencilView* GetDepthStencilView() const;
+	IDXGISwapChain* GetSwapChain() const { return SwapChain; }
 	HWND GetHwnd() const { return Hwnd; }
 
 	FTextMeshBuilder& GetTextRenderer() { return TextRenderer; }
@@ -132,8 +135,6 @@ public:
 private:
 	/** 프레임/오브젝트 상수 버퍼를 셰이더 슬롯에 연결한다. */
 	void SetConstantBuffers();
-	/** 하나의 렌더 커맨드를 내부 리스트에 추가하고 정렬 키를 계산한다. */
-	void AddCommand(const FRenderCommand& Command);
 	/** 내부 커맨드 리스트를 비우고 다음 프레임용 예약 크기를 유지한다. */
 	void ClearCommandList();
 	/** D3D11 디바이스와 스왑체인을 생성한다. */
@@ -161,6 +162,11 @@ private:
 
 private:
 	std::unique_ptr<FRenderStateManager> RenderStateManager = nullptr;
+	std::unique_ptr<FSceneRenderer> SceneRenderer = nullptr;
+	std::unique_ptr<FPassExecutor> PassExecutor = nullptr;
+	std::unique_ptr<FObjectUniformStream> ObjectUniformStream = nullptr;
+	std::unique_ptr<FMaterialBindingCache> MaterialBindingCache = nullptr;
+	std::unique_ptr<FSceneFramePacket> CurrentFramePacket = nullptr;
 
 	HWND Hwnd = nullptr;
 	ID3D11Device* Device = nullptr;
@@ -173,8 +179,8 @@ private:
 	ID3D11Buffer* ObjectConstantBuffer = nullptr;
 	ID3D11Buffer* OutlinePostConstantBuffer = nullptr;
 
-	FMatrix ViewMatrix;
-	FMatrix ProjectionMatrix;
+	FMatrix ViewMatrix = FMatrix::Identity;
+	FMatrix ProjectionMatrix = FMatrix::Identity;
 	D3D11_VIEWPORT Viewport = {};
 
 	ID3D11RenderTargetView* SceneRenderTargetView = nullptr;
@@ -185,9 +191,8 @@ private:
 	bool bAllowTearing = false;
 
 	/** 이번 프레임에 실제 실행할 렌더 커맨드 리스트다. */
-	TArray<FRenderCommand> CommandList;
+	FRenderCommandQueue PendingCommandQueue;
 	size_t PrevCommandCount = 0;
-	uint64 NextSubmissionOrder = 0;
 	uint32 FrameDrawCallCount = 0;
 
 	/** 디버그 선 렌더링을 위한 임시 CPU/GPU 버퍼다. */
