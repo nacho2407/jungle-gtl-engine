@@ -30,19 +30,28 @@ void FEditorStatWidget::Render(float DeltaTime)
 			std::ostringstream oss;
 			auto FormatTable = [&](const char* Title, const TArray<FStatEntry>& Entries)
 			{
+				// 카테고리 기준 정렬
+				TArray<FStatEntry> Sorted = Entries;
+				std::sort(Sorted.begin(), Sorted.end(),
+					[](const FStatEntry& A, const FStatEntry& B)
+					{
+						int cmp = strcmp(A.Category, B.Category);
+						if (cmp != 0) return cmp < 0;
+						return A.TotalTime > B.TotalTime;
+					});
+
 				oss << "=== " << Title << " ===\n";
 				oss << "Category\tName\tCalls\tTotal(ms)\tAvg(ms)\tMax(ms)\tMin(ms)\tLast(ms)\n";
-				for (const FStatEntry& E : Entries)
+				for (const FStatEntry& E : Sorted)
 				{
 					if (E.CallCount == 0) continue;
-					double MinVal = E.MinTime == DBL_MAX ? 0.0 : E.MinTime;
 					oss << E.Category << "\t"
 						<< E.Name << "\t"
 						<< E.CallCount << "\t"
 						<< E.TotalTime * 1000.0 << "\t"
-						<< E.GetAvgTime() * 1000.0 << "\t"
+						<< E.AvgTime * 1000.0 << "\t"
 						<< E.MaxTime * 1000.0 << "\t"
-						<< MinVal * 1000.0 << "\t"
+						<< E.MinTime * 1000.0 << "\t"
 						<< E.LastTime * 1000.0 << "\n";
 				}
 				oss << "\n";
@@ -122,10 +131,9 @@ void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatE
 		case 1: return OutSortDescending ? (strcmp(A.Name, B.Name) > 0) : (strcmp(A.Name, B.Name) < 0);
 		case 2: ValA = (double)A.CallCount; ValB = (double)B.CallCount; break;
 		case 3: ValA = A.TotalTime;  ValB = B.TotalTime;  break;
-		case 4: ValA = A.GetAvgTime(); ValB = B.GetAvgTime(); break;
+		case 4: ValA = A.AvgTime;    ValB = B.AvgTime;    break;
 		case 5: ValA = A.MaxTime;    ValB = B.MaxTime;    break;
-		case 6: ValA = A.MinTime == DBL_MAX ? 0.0 : A.MinTime;
-				ValB = B.MinTime == DBL_MAX ? 0.0 : B.MinTime; break;
+		case 6: ValA = A.MinTime;    ValB = B.MinTime;    break;
 		case 7: ValA = A.LastTime;   ValB = B.LastTime;   break;
 		}
 		return OutSortDescending ? (ValA > ValB) : (ValA < ValB);
@@ -185,9 +193,9 @@ void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatE
 			ImGui::TableSetColumnIndex(1); ImGui::Text("%s", E.Name);
 			ImGui::TableSetColumnIndex(2); ImGui::Text("%u", E.CallCount);
 			ImGui::TableSetColumnIndex(3); ImGui::Text("%.3f", E.TotalTime * 1000.0);
-			ImGui::TableSetColumnIndex(4); ImGui::Text("%.3f", E.GetAvgTime() * 1000.0);
+			ImGui::TableSetColumnIndex(4); ImGui::Text("%.3f", E.AvgTime * 1000.0);
 			ImGui::TableSetColumnIndex(5); ImGui::Text("%.3f", E.MaxTime * 1000.0);
-			ImGui::TableSetColumnIndex(6); ImGui::Text("%.3f", E.MinTime == DBL_MAX ? 0.0 : E.MinTime * 1000.0);
+			ImGui::TableSetColumnIndex(6); ImGui::Text("%.3f", E.MinTime * 1000.0);
 			ImGui::TableSetColumnIndex(7); ImGui::Text("%.3f", E.LastTime * 1000.0);
 		}
 
