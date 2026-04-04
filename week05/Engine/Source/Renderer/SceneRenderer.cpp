@@ -78,7 +78,10 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRe
 	{
 		if (Command.SceneProxy)
 		{
-			Command.SceneProxy->AppendDrawCommands(Command, OutPacket.View, *Renderer, MeshPassProcessor, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
+			// SceneProxy의 역할을 Collect 수준으로 축소, MeshPassProcessor에서 수집한 정보 사용
+			MeshBatches.clear();
+			Command.SceneProxy->CollectMeshBatches(OutPacket.View, *Renderer, MeshBatches);
+			MeshPassProcessor.BuildMeshDrawCommands(MeshBatches, &Command, *Renderer, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
 		}
 		else
 		{
