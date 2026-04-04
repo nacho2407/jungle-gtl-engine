@@ -20,7 +20,6 @@ class UScene;
 class FSceneRenderer;
 class FPassExecutor;
 class FObjectUniformStream;
-class FMaterialBindingCache;
 struct FSceneRenderFrame;
 
 using FGUICallback = std::function<void()>;
@@ -163,7 +162,6 @@ private:
 	std::unique_ptr<FSceneRenderer> SceneRenderer = nullptr;
 	std::unique_ptr<FPassExecutor> PassExecutor = nullptr;
 	std::unique_ptr<FObjectUniformStream> ObjectUniformStream = nullptr;
-	std::unique_ptr<FMaterialBindingCache> MaterialBindingCache = nullptr;
 	std::unique_ptr<FSceneRenderFrame> CurrentFramePacket = nullptr;
 
 	HWND Hwnd = nullptr;

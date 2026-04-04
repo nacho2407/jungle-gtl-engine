@@ -1,10 +1,8 @@
 #include "Renderer/PassExecutor.h"
 
 #include <algorithm>
-#include <unordered_set>
 
 #include "Renderer/Material.h"
-#include "Renderer/MaterialBindingCache.h"
 #include "Renderer/ObjectUniformStream.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/Renderer.h"
@@ -73,19 +71,33 @@ namespace
 		RenderStateManager->BindState(RenderStateManager->GetOrCreateDepthStencilState(MakePassDepthState(RenderPass)));
 		RenderStateManager->BindState(RenderStateManager->GetOrCreateBlendState(MakePassBlendState(RenderPass)));
 	}
+
+	void ClearUnusedMaterialConstantBuffers(ID3D11DeviceContext* DeviceContext, uint32 PreviousCount, uint32 CurrentCount)
+	{
+		if (!DeviceContext || CurrentCount >= PreviousCount)
+		{
+			return;
+		}
+
+		ID3D11Buffer* NullBuffer = nullptr;
+		for (uint32 Index = CurrentCount; Index < PreviousCount; ++Index)
+		{
+			const UINT Slot = FMaterial::MaterialCBStartSlot + static_cast<UINT>(Index);
+			DeviceContext->VSSetConstantBuffers(Slot, 1, &NullBuffer);
+			DeviceContext->PSSetConstantBuffers(Slot, 1, &NullBuffer);
+		}
+	}
 }
 
 void FPassExecutor::Execute(const FSceneRenderFrame& Packet) const
 {
-	if (!Renderer || !Renderer->DeviceContext || !Renderer->ObjectUniformStream || !Renderer->MaterialBindingCache)
+	if (!Renderer || !Renderer->DeviceContext || !Renderer->ObjectUniformStream)
 	{
 		return;
 	}
 
 	UpdateUploadedMeshes(Packet);
 	Renderer->ObjectUniformStream->UploadFrame();
-	FlushDirtyMaterialConstantBuffers(Packet);
-	Renderer->MaterialBindingCache->Reset();
 	Renderer->RenderStateManager->RebindState();
 
 	Renderer->SetConstantBuffers();
@@ -100,41 +112,6 @@ void FPassExecutor::Execute(const FSceneRenderFrame& Packet) const
 	if (!Packet.OutlineItems.empty())
 	{
 		Renderer->RenderOutlines(Packet.OutlineItems);
-	}
-}
-
-void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneRenderFrame& Packet) const
-{
-	if (!Renderer || !Renderer->DeviceContext)
-	{
-		return;
-	}
-
-	auto UploadPassQueue = [&](const TArray<FMeshDrawCommand>& Commands)
-	{
-		std::unordered_set<FMaterial*> VisitedMaterials;
-		for (const FMeshDrawCommand& Command : Commands)
-		{
-			FMaterial* Material = Command.Material ? Command.Material : Renderer->GetDefaultMaterial();
-			if (!Material || !Material->HasDirtyConstantBuffers())
-			{
-				continue;
-			}
-			if (!VisitedMaterials.insert(Material).second)
-			{
-				continue;
-			}
-
-			for (FMaterialConstantBuffer& CB : Material->GetConstantBuffers())
-			{
-				CB.Upload(Renderer->DeviceContext);
-			}
-		}
-	};
-
-	for (ERenderPass RenderPass : GPassExecutionOrder)
-	{
-		UploadPassQueue(Packet.GetPassQueue(RenderPass));
 	}
 }
 
@@ -156,6 +133,8 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 		return;
 	}
 
+	FMaterial* CurrentMaterial = nullptr;
+	uint32 CurrentMaterialConstantBufferCount = 0;
 	FRenderMesh* CurrentMesh = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY CurrentTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
@@ -172,7 +151,17 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 			continue;
 		}
 
-		Material->Bind(Renderer->DeviceContext, Renderer->MaterialBindingCache.get());
+		if (Material != CurrentMaterial)
+		{
+			const uint32 PreviousMaterialConstantBufferCount = CurrentMaterialConstantBufferCount;
+			Material->Bind(Renderer->DeviceContext);
+			CurrentMaterialConstantBufferCount = static_cast<uint32>(Material->GetConstantBuffers().size());
+			ClearUnusedMaterialConstantBuffers(
+				Renderer->DeviceContext,
+				PreviousMaterialConstantBufferCount,
+				CurrentMaterialConstantBufferCount);
+			CurrentMaterial = Material;
+		}
 
 		if (CurrentMesh != Command.RenderMesh)
 		{

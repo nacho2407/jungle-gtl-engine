@@ -252,9 +252,6 @@
     <ClCompile Include="Source\Renderer\MaterialManager.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\MaterialBindingCache.cpp">
-      <Filter>Source\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
@@ -531,9 +528,6 @@
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\MaterialManager.h">
-      <Filter>Source\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\MaterialBindingCache.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\ObjectUniformStream.h">

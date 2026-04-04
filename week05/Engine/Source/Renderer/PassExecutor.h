@@ -19,7 +19,6 @@ public:
 
 private:
 	void UpdateUploadedMeshes(const FSceneRenderFrame& Packet) const;
-	void FlushDirtyMaterialConstantBuffers(const FSceneRenderFrame& Packet) const;
 	void ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) const;
 
 private:

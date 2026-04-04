@@ -4,7 +4,6 @@
 #include "ShaderMap.h"
 #include "ShaderResource.h"
 #include "Material.h"
-#include "MaterialBindingCache.h"
 #include "ObjectUniformStream.h"
 #include "PassExecutor.h"
 #include "MaterialManager.h"
@@ -263,7 +262,6 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	SetConstantBuffers();
 	ObjectUniformStream = std::make_unique<FObjectUniformStream>();
 	if (!ObjectUniformStream->Initialize(Device, DeviceContext, ObjectConstantBuffer)) return false;
-	MaterialBindingCache = std::make_unique<FMaterialBindingCache>();
 	SceneRenderer = std::make_unique<FSceneRenderer>(this);
 	PassExecutor = std::make_unique<FPassExecutor>(this);
 	CurrentFramePacket = std::make_unique<FSceneRenderFrame>();
@@ -919,10 +917,6 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	ShaderManager.Bind(DeviceContext);
 	SetConstantBuffers();
 	RenderStateManager->RebindState();
-	if (MaterialBindingCache)
-	{
-		MaterialBindingCache->Reset();
-	}
 
 	BoundRTV->Release();
 	BoundDSV->Release();
@@ -951,7 +945,7 @@ void FRenderer::ExecuteLineCommands()
 {
 	if (LineVertices.empty()) return;
 	ShaderManager.Bind(DeviceContext);
-	DefaultMaterial->Bind(DeviceContext, MaterialBindingCache.get());
+	DefaultMaterial->Bind(DeviceContext);
 	UINT Size = static_cast<UINT>(LineVertices.size() * sizeof(FVertex));
 	if (LineVertexBuffer && LineVertexBufferSize < Size) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
 	if (!LineVertexBuffer)
@@ -991,7 +985,6 @@ void FRenderer::Release()
 	CurrentFramePacket.reset();
 	SceneRenderer.reset();
 	PassExecutor.reset();
-	MaterialBindingCache.reset();
 	if (ObjectUniformStream)
 	{
 		ObjectUniformStream->Release();

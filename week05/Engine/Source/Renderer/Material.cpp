@@ -1,5 +1,4 @@
 #include "Material.h"
-#include "MaterialBindingCache.h"
 #include "Shader.h"
 #include <cstring>
 
@@ -32,9 +31,8 @@ void FMaterialTexture::Release()
 	bOwnsResources = true;
 }
 
-void FMaterialTexture::Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache)
+void FMaterialTexture::Bind(ID3D11DeviceContext* DeviceContext)
 {
-	(void)BindingCache;
 	DeviceContext->PSSetShaderResources(0, 1, &TextureSRV);
 	DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
@@ -140,38 +138,14 @@ uint64 FMaterial::GetSortId() const
 	return Key;
 }
 
-void FMaterial::AdvanceBindingRevision()
-{
-	++BindingRevision;
-	if (BindingRevision == 0)
-	{
-		BindingRevision = 1;
-	}
-}
-
-bool FMaterial::HasDirtyConstantBuffers() const
-{
-	for (const FMaterialConstantBuffer& ConstantBuffer : ConstantBuffers)
-	{
-		if (ConstantBuffer.bDirty)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void FMaterial::SetVertexShader(const std::shared_ptr<FVertexShader>& InVS)
 {
 	VertexShader = InVS;
-	AdvanceBindingRevision();
 }
 
 void FMaterial::SetPixelShader(const std::shared_ptr<FPixelShader>& InPS)
 {
 	PixelShader = InPS;
-	AdvanceBindingRevision();
 }
 
 void FMaterial::SetRasterizerOption(FRasterizerStateOption InOption)
@@ -207,7 +181,6 @@ void FMaterial::SetBlendState(const std::shared_ptr<FBlendState>& InState)
 void FMaterial::SetMaterialTexture(const std::shared_ptr<FMaterialTexture>& InTexture)
 {
 	MaterialTexture = InTexture;
-	AdvanceBindingRevision();
 }
 
 int32 FMaterial::CreateConstantBuffer(ID3D11Device* Device, uint32 InSize)
@@ -218,7 +191,6 @@ int32 FMaterial::CreateConstantBuffer(ID3D11Device* Device, uint32 InSize)
 		return -1;
 	}
 	ConstantBuffers.push_back(std::move(CB));
-	AdvanceBindingRevision();
 	return static_cast<int32>(ConstantBuffers.size() - 1);
 }
 
@@ -234,7 +206,6 @@ FMaterialConstantBuffer* FMaterial::GetConstantBuffer(int32 Index)
 void FMaterial::RegisterParameter(const FString& ParamName, int32 BufferIndex, uint32 Offset, uint32 Size)
 {
 	ParameterMap[ParamName] = { BufferIndex, Offset, Size };
-	AdvanceBindingRevision();
 }
 
 bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uint32 DataSize)
@@ -324,8 +295,6 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 		}
 		Dynamic->ConstantBuffers.push_back(std::move(NewCB));
 	}
-
-	Dynamic->BindingRevision = 1;
 	Device->Release();
 	return Dynamic;
 }
@@ -349,17 +318,42 @@ bool FDynamicMaterial::SetVector3Parameter(const FString& ParamName, const FVect
 	return SetParameterData(ParamName, Data, sizeof(Data));
 }
 
-void FMaterial::Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache)
+void FMaterial::Bind(ID3D11DeviceContext* DeviceContext)
 {
-	if (BindingCache)
+	if (!DeviceContext)
 	{
-		BindingCache->BindMaterial(DeviceContext, this);
 		return;
 	}
 
-	if (VertexShader) VertexShader->Bind(DeviceContext);
-	if (PixelShader) PixelShader->Bind(DeviceContext);
-	if (MaterialTexture) MaterialTexture->Bind(DeviceContext);
+	if (VertexShader)
+	{
+		VertexShader->Bind(DeviceContext);
+	}
+	else
+	{
+		DeviceContext->VSSetShader(nullptr, nullptr, 0);
+	}
+
+	if (PixelShader)
+	{
+		PixelShader->Bind(DeviceContext);
+	}
+	else
+	{
+		DeviceContext->PSSetShader(nullptr, nullptr, 0);
+	}
+
+	if (MaterialTexture)
+	{
+		MaterialTexture->Bind(DeviceContext);
+	}
+	else
+	{
+		ID3D11ShaderResourceView* NullTexture = nullptr;
+		ID3D11SamplerState* NullSampler = nullptr;
+		DeviceContext->PSSetShaderResources(0, 1, &NullTexture);
+		DeviceContext->PSSetSamplers(0, 1, &NullSampler);
+	}
 
 	for (int32 i = 0; i < static_cast<int32>(ConstantBuffers.size()); ++i)
 	{

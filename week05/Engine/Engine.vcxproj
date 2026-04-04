@@ -87,7 +87,6 @@
     <ClInclude Include="Source\Renderer\FontAtlas.h" />
     <ClInclude Include="Source\Renderer\Material.h" />
     <ClInclude Include="Source\Renderer\MaterialManager.h" />
-    <ClInclude Include="Source\Renderer\MaterialBindingCache.h" />
     <ClInclude Include="Source\Renderer\ObjectUniformStream.h" />
     <ClInclude Include="Source\Renderer\PassExecutor.h" />
     <ClInclude Include="Source\Renderer\SceneProxy.h" />
@@ -282,7 +281,6 @@
     <ClCompile Include="Source\Renderer\FontAtlas.cpp" />
     <ClCompile Include="Source\Renderer\Material.cpp" />
     <ClCompile Include="Source\Renderer\MaterialManager.cpp" />
-    <ClCompile Include="Source\Renderer\MaterialBindingCache.cpp" />
     <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp" />
     <ClCompile Include="Source\Renderer\PassExecutor.cpp" />
     <ClCompile Include="Source\Renderer\SceneProxy.cpp" />

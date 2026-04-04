@@ -7,7 +7,6 @@
 
 class FVertexShader;
 class FPixelShader;
-class FMaterialBindingCache;
 
 struct FMaterialTexture
 {
@@ -32,7 +31,7 @@ struct FMaterialTexture
 	ID3D11SamplerState* GetSamplerState() const { return SamplerState; }
 
 	void Release();
-	void Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache = nullptr);
+	void Bind(ID3D11DeviceContext* DeviceContext);
 };
 
 // 파라미터 이름 → 상수 버퍼 내 위치 매핑
@@ -111,9 +110,6 @@ public:
 	FMaterial& operator=(FMaterial&&) = default;
 
 	uint64 GetSortId() const;
-	uint32 GetBindingRevision() const { return BindingRevision; }
-	bool HasDirtyConstantBuffers() const;
-
 	// 에셋 원본 이름 (JSON에서 로드된 이름, 직렬화 시 사용)
 	void SetOriginName(const FString& InName) { OriginName = InName; }
 	const FString& GetOriginName() const { return OriginName; }
@@ -165,13 +161,11 @@ public:
 	std::unique_ptr<class FDynamicMaterial> CreateDynamicMaterial() const;
 
 	// 셰이더 바인딩 + Dirty 상수 버퍼 업로드 + 바인딩
-	void Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache = nullptr);
+	void Bind(ID3D11DeviceContext* DeviceContext);
 
 	void Release();
 
 protected:
-	void AdvanceBindingRevision();
-
 	// TODO: ShaderId가 실제 사용하는 쉐이더를 반영하도록 변경
 	// NOTE: GetSortId에서 비트 연산 쓰는 경우 ShaderId가 32bit를 전부 쓰면 안 됨
 	uint32 MaterialId = 0;
@@ -195,7 +189,6 @@ protected:
 
 	TArray<FMaterialConstantBuffer> ConstantBuffers;
 	TMap<FString, FMaterialParameterInfo> ParameterMap;
-	uint32 BindingRevision = 1;
 
 public:
 	static constexpr UINT MaterialCBStartSlot = 2; // b0=Frame, b1=Object, b2+=Material
