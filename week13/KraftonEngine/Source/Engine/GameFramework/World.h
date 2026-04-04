@@ -26,6 +26,7 @@ public:
 	void AddActor(AActor* Actor);
 	void MarkPickingBVHDirty();
 	void BuildPickingBVHNow() const;
+	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return Actors; }

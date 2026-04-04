@@ -305,9 +305,14 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 }
 
+/**
+ * Picking , 마우스 좌클릭 시 Gizmo 핸들과의 충돌을 우선적으로 검사하며 드래그 시작 여부 결정
+ * 
+ * \param Ray
+ */
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
-	FScopeCycleCounter PickCounter;
+	FScopeCycleCounter PickCounter; //시간측정용 카운터 시작
 
 	FHitResult HitResult{};
 	//먼저 Ray와 기즈모의 충돌을 감지하고 
@@ -317,7 +322,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	}
 	else
 	{
-		// 기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
+		//기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
 		AActor* BestActor = nullptr;
 		World->RaycastPrimitives(Ray, HitResult, BestActor);
 
