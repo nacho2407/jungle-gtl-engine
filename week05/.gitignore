@@ -448,3 +448,5 @@ Doxyfile
 
 # Mesh files
 !Assets/**/*.obj
+
+.codex/
