@@ -33,6 +33,16 @@ private:
 		FBoundingBox Bounds;
 		//최대 자식 분기는 8번. 이게 효율적인가?
 		int32 Children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+
+		// SIMD(AVX) 최적화를 위한 자식 노드들의 AABB 데이터 (SOA 구조)
+		// 부모 노드에 미리 모아두어 Raycast 시 Gather 오버헤드를 없앱니다.
+		float ChildMinX[8];
+		float ChildMinY[8];
+		float ChildMinZ[8];
+		float ChildMaxX[8];
+		float ChildMaxY[8];
+		float ChildMaxZ[8];
+
 		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
 		int32 LeafCount = 0;
