@@ -29,6 +29,7 @@ void FGizmoSceneProxy::UpdateMesh()
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
+	UpdateSortKey();
 }
 
 // ============================================================
@@ -48,6 +49,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	// 모드 변경 시 메시가 바뀌므로 매 프레임 갱신
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
+	UpdateSortKey();
 
 	// Per-viewport 스케일 계산
 	const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
