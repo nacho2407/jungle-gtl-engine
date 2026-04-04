@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Engine/Math/ConvexVolume.h"
 #include "Engine/Component/CameraComponent.h"
 #include <algorithm>
@@ -26,7 +27,7 @@ void UWorld::DestroyActor(AActor* Actor)
 	if (it != Actors.end())
 		Actors.erase(it);
 
-	MarkPickingBVHDirty();
+	MarkWorldPrimitivePickingBVHDirty();
 	Partition.RemoveActor(Actor);
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
@@ -43,23 +44,50 @@ void UWorld::AddActor(AActor* Actor)
 	Actors.push_back(Actor);
 	
 	InsertActorToOctree(Actor);
-	MarkPickingBVHDirty();
+	MarkWorldPrimitivePickingBVHDirty();
 }
 
-void UWorld::MarkPickingBVHDirty()
+void UWorld::MarkWorldPrimitivePickingBVHDirty()
 {
-	PickingBVH.MarkDirty();
+	WorldPrimitivePickingBVH.MarkDirty();
 }
 
-void UWorld::BuildPickingBVHNow() const
+void UWorld::BuildWorldPrimitivePickingBVHNow() const
 {
-	PickingBVH.BuildNow(Actors);
+	WorldPrimitivePickingBVH.BuildNow(Actors);
+}
+
+void UWorld::WarmupPickingData() const
+{
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor || !Actor->IsVisible())
+		{
+			continue;
+		}
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (!Primitive || !Primitive->IsVisible() || !Primitive->IsA<UStaticMeshComponent>())
+			{
+				continue;
+			}
+
+			UStaticMeshComponent* StaticMeshComponent = static_cast<UStaticMeshComponent*>(Primitive);
+			if (UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh())
+			{
+				StaticMesh->EnsureMeshTrianglePickingBVHBuilt();
+			}
+		}
+	}
+
+	BuildWorldPrimitivePickingBVHNow();
 }
 
 bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
-	PickingBVH.EnsureBuilt(Actors);
-	return PickingBVH.Raycast(Ray, OutHitResult, OutActor);
+	WorldPrimitivePickingBVH.EnsureBuilt(Actors);
+	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
 }
 
 
@@ -78,6 +106,33 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
     Partition.UpdateActor(Actor);
 }
 
+// ── LOD 거리 임계값 (제곱) ──
+static constexpr float LOD1_DIST_SQ = 12.0f * 12.0f;   // LOD0→LOD1
+static constexpr float LOD2_DIST_SQ = 30.0f * 30.0f;   // LOD1→LOD2
+// 히스테리시스: 더 상세한 LOD로 복귀하려면 10% 더 가까워야 함
+static constexpr float LOD1_BACK_SQ = 10.8f * 10.8f;    // LOD1→LOD0
+static constexpr float LOD2_BACK_SQ = 27.0f * 27.0f;    // LOD2→LOD1
+
+static uint32 SelectLOD(uint32 CurLOD, float DistSq)
+{
+	uint32 LOD = CurLOD;
+
+	// 멀어질 때 — 덜 상세한 LOD로
+	if (CurLOD == 0 && DistSq > LOD1_DIST_SQ)  LOD = 1;
+	if (CurLOD <= 1 && DistSq > LOD2_DIST_SQ)  LOD = 2;
+	// 가까워질 때 — 더 상세한 LOD로 (히스테리시스)
+	if (CurLOD == 2 && DistSq < LOD2_BACK_SQ)   LOD = 1;
+	if (CurLOD >= 1 && DistSq < LOD1_BACK_SQ)   LOD = 0;
+
+	return LOD;
+}
+
+static float DistanceSquared(const FVector& A, const FVector& B)
+{
+	const FVector D = A - B;
+	return D.X * D.X + D.Y * D.Y + D.Z * D.Z;
+}
+
 void UWorld::UpdateVisibleProxies()
 {
 	VisiblePrimitives.clear();
@@ -92,15 +147,24 @@ void UWorld::UpdateVisibleProxies()
 	{
 		SCOPE_STAT_CAT("BuildVisibleProxies", "1_WorldTick");
 
-		// NeverCull 프록시 (Gizmo 등) — 항상 visible
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
 			VisibleProxies.push_back(Proxy);
 
-		// Frustum 쿼리 결과 → VisibleProxies 구축
+		const FVector CameraPos = ActiveCamera->GetWorldLocation();
+		LOD_STATS_RESET();
+
 		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+			{
+				const FVector ProxyPos = Proxy->PerObjectConstants.Model.GetLocation();
+				const float DistSq = DistanceSquared(CameraPos, ProxyPos);
+
+				Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
+				LOD_STATS_RECORD(Proxy->CurrentLOD);
+
 				VisibleProxies.push_back(Proxy);
+			}
 		}
 	}
 }
@@ -129,12 +193,14 @@ void UWorld::Tick(float DeltaTime)
 	UpdateVisibleProxies();
 	DebugDrawQueue.Tick(DeltaTime);
 
-	// bNeedsTick인 Actor만 Tick (visibility 무관)
+#ifndef FPS_OPTIMIZATION
+	// 유효하게 돌아가는 로직이 billboardcomponent 뿐인 것에 비해 오버헤드가 꽤 커서 이번 기간동안 주석
 	for (AActor* Actor : Actors)
 	{
 		if (Actor && Actor->bNeedsTick)
 			Actor->Tick(DeltaTime);
 	}
+#endif
 }
 
 void UWorld::EndPlay()
@@ -151,5 +217,5 @@ void UWorld::EndPlay()
 	}
 
 	Actors.clear();
-	MarkPickingBVHDirty();
+	MarkWorldPrimitivePickingBVHDirty();
 }
