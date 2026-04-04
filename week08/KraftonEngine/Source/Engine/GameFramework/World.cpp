@@ -29,6 +29,10 @@ void UWorld::DestroyActor(AActor* Actor)
 
 	MarkWorldPrimitivePickingBVHDirty();
 	Partition.RemoveActor(Actor);
+
+	if (bOcclusionBVHBuilt)
+		OcclusionBVH.RemoveActor(Actor);
+
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
 }
@@ -42,9 +46,12 @@ void UWorld::AddActor(AActor* Actor)
 
 	Actor->SetWorld(this);
 	Actors.push_back(Actor);
-	
+
 	InsertActorToOctree(Actor);
 	MarkWorldPrimitivePickingBVHDirty();
+
+	if (bOcclusionBVHBuilt)
+		OcclusionBVH.AddActor(Actor);
 }
 
 void UWorld::MarkWorldPrimitivePickingBVHDirty()
@@ -119,24 +126,34 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 
 void UWorld::InsertActorToOctree(AActor* Actor)
 {
-    Partition.InsertActor(Actor);
+	Partition.InsertActor(Actor);
 }
 
 void UWorld::RemoveActorToOctree(AActor* Actor)
 {
-    Partition.RemoveActor(Actor);
+	Partition.RemoveActor(Actor);
 }
 
 void UWorld::UpdateActorInOctree(AActor* Actor)
 {
-    Partition.UpdateActor(Actor);
+	Partition.UpdateActor(Actor);
+
+	if (bOcclusionBVHBuilt)
+		OcclusionBVH.MarkDirty(Actor);
+}
+
+// ── Occlusion BVH ──
+void UWorld::BuildOcclusionBVH()
+{
+	OcclusionBVH.Build(Actors);
+	bOcclusionBVHBuilt = true;
 }
 
 // ── LOD 거리 임계값 (제곱) ──
-static constexpr float LOD1_DIST_SQ = 12.0f * 12.0f;   // LOD0→LOD1
+static constexpr float LOD1_DIST_SQ = 15.0f * 15.0f;   // LOD0→LOD1
 static constexpr float LOD2_DIST_SQ = 30.0f * 30.0f;   // LOD1→LOD2
 // 히스테리시스: 더 상세한 LOD로 복귀하려면 10% 더 가까워야 함
-static constexpr float LOD1_BACK_SQ = 10.8f * 10.8f;    // LOD1→LOD0
+static constexpr float LOD1_BACK_SQ = 13.5f * 13.5f;    // LOD1→LOD0
 static constexpr float LOD2_BACK_SQ = 27.0f * 27.0f;    // LOD2→LOD1
 
 static uint32 SelectLOD(uint32 CurLOD, float DistSq)
@@ -164,36 +181,24 @@ void UWorld::UpdateVisibleProxies()
 	VisiblePrimitives.clear();
 	VisibleProxies.clear();
 
-	{
-		SCOPE_STAT_CAT("FrustumCulling", "1_WorldTick");
-		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
- 		Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
-	}
-
-	// ViewProj 행렬 — 프레임당 1회만 계산
 	const FMatrix ViewProj = ActiveCamera->GetViewProjectionMatrix();
-
-	// BoundingBox 캐싱 — 두 루프에서 재사용
-	CachedBoxes.clear();
-	CachedBoxes.reserve(VisiblePrimitives.size());
+	const FVector CameraPos = ActiveCamera->GetWorldLocation();
 
 	{
-		SCOPE_STAT_CAT("OcclusionCulling", "1_WorldTick");
+		SCOPE_STAT_CAT("FrustumOcclusionCulling", "1_WorldTick");
+		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
 		OcclusionCulling.Clear();
-		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
+
+		if (bOcclusionBVHBuilt)
 		{
-			if (!Primitive)
-			{
-				CachedBoxes.push_back(FBoundingBox());
-				continue;
-			}
-
-			const FBoundingBox Box = Primitive->GetWorldBoundingBox();
-			CachedBoxes.push_back(Box);
-			const FVector Extent = Box.GetExtent();
-
-			if (Extent.X * Extent.Y * Extent.Z > 0.0002f)
-				OcclusionCulling.RasterizeOccluder(Box, ViewProj);
+			// BVH 기반: frustum + occlusion 통합 쿼리
+			OcclusionBVH.QueryFrustumOcclusion(
+				ConvexVolume, OcclusionCulling, ViewProj, CameraPos, VisiblePrimitives);
+		}
+		else
+		{
+			// BVH 미빌드 시 기존 Octree frustum 폴백
+			Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
 		}
 	}
 
@@ -203,17 +208,12 @@ void UWorld::UpdateVisibleProxies()
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
 			VisibleProxies.push_back(Proxy);
 
-		const FVector CameraPos = ActiveCamera->GetWorldLocation();
 		LOD_STATS_RESET();
 
-		// 보이는 primitive의 프록시만 컬링 해제
-		const size_t Count = VisiblePrimitives.size();
-		for (size_t i = 0; i < Count; ++i)
+		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 		{
-			if (OcclusionCulling.IsOccluded(CachedBoxes[i], ViewProj))
-				continue;
-
-			if (FPrimitiveSceneProxy* Proxy = VisiblePrimitives[i]->GetSceneProxy())
+			if (!Primitive) continue;
+			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
 			{
 				const FVector& ProxyPos = Proxy->CachedWorldPos;
 				const float DistSq = DistanceSquared(CameraPos, ProxyPos);
@@ -248,6 +248,11 @@ void UWorld::BeginPlay()
 void UWorld::Tick(float DeltaTime)
 {
 	Partition.FlushPrimitive();
+
+	// Occlusion BVH dirty 처리
+	if (bOcclusionBVHBuilt)
+		OcclusionBVH.Rebuild();
+
 	UpdateVisibleProxies();
 	DebugDrawQueue.Tick(DeltaTime);
 
@@ -275,5 +280,6 @@ void UWorld::EndPlay()
 	}
 
 	Actors.clear();
+	bOcclusionBVHBuilt = false;
 	MarkWorldPrimitivePickingBVHDirty();
 }
