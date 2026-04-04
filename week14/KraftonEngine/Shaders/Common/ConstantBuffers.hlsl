@@ -46,6 +46,7 @@ cbuffer MaterialBuffer : register(b4)
 {
     uint bIsUVScroll;
     float3 _matPad;
+    float4 SectionColor;
 }
 
 #endif // CONSTANT_BUFFERS_HLSL
