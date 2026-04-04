@@ -103,7 +103,7 @@ FTextSceneProxy::FTextSceneProxy(const UTextComponent* InComponent)
 	DisplayText = InComponent->GetDisplayText();
 	TextScale = InComponent->GetTextScale();
 	bBillboard = InComponent->IsBillboard();
-	RenderPass = InComponent->IsA(UUUIDBillboardComponent::StaticClass()) ? ERenderPass::NoDepth : ERenderPass::World;
+	RenderPass = InComponent->IsA(UUUIDBillboardComponent::StaticClass()) ? ERenderPass::NoDepth : ERenderPass::Alpha;
 
 	TextMesh = std::make_shared<FDynamicMesh>();
 	TextMesh->Topology = EMeshTopology::EMT_TriangleList;
@@ -242,6 +242,7 @@ void FSubUVSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Rend
 	MeshBatch.Material = Material;
 	MeshBatch.RenderMesh = SubUVMesh.get();
 	MeshBatch.WorldMatrix = WorldMatrix;
+	MeshBatch.RenderPass = ERenderPass::Alpha;
 	OutMeshBatches.push_back(MeshBatch);
 }
 

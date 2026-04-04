@@ -206,7 +206,7 @@ void FEditorViewportRenderService::RenderAll(
 		Queue.Reserve(ReserveHint);
 		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
-		Queue.bWorldWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe);
+		Queue.bOpaqueWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe);
 
 		FFrustum Frustum;
 		Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
@@ -220,7 +220,7 @@ void FEditorViewportRenderService::RenderAll(
 			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, Queue);
 		}
 
-		if (Queue.bWorldWireframe && WireFrameMaterial)
+		if (Queue.bOpaqueWireframe && WireFrameMaterial)
 		{
 			ApplyWireframe(Queue, WireFrameMaterial.get());
 		}
@@ -242,7 +242,7 @@ void FEditorViewportRenderService::RenderAll(
 			GridCommand.RenderMesh = GridMesh;
 			GridCommand.Material = GridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
-			GridCommand.RenderPass = ERenderPass::World;
+			GridCommand.RenderPass = ERenderPass::Alpha;
 			GridCommand.bOverrideRenderPass = true;
 			Queue.AddCommand(GridCommand);
 		}
@@ -298,7 +298,12 @@ void FEditorViewportRenderService::ApplyWireframe(FRenderCommandQueue& Queue, FM
 {
 	for (FRenderCommand& Command : Queue.Commands)
 	{
-		if (Command.RenderPass != ERenderPass::NoDepth)
+		if (Command.bOverrideRenderPass && Command.RenderPass != ERenderPass::Opaque)
+		{
+			continue;
+		}
+
+		if (!Command.bOverrideRenderPass || Command.RenderPass == ERenderPass::Opaque)
 		{
 			Command.Material = WireMaterial;
 		}

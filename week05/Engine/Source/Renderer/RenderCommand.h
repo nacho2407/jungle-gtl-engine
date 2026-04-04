@@ -11,7 +11,8 @@ class FPrimitiveSceneProxy;
 
 enum class ERenderPass : uint8
 {
-	World = 0,
+	Opaque = 0,
+	Alpha,
 	NoDepth,
 	UI,
 	Count,
@@ -28,7 +29,7 @@ struct ENGINE_API FRenderCommand
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;
 
-	ERenderPass RenderPass = ERenderPass::World;
+	ERenderPass RenderPass = ERenderPass::Opaque;
 	bool bOverrideRenderPass = false;
 };
 
@@ -46,7 +47,7 @@ struct ENGINE_API FRenderCommandQueue
 	FMatrix ViewMatrix = FMatrix::Identity;
 	FMatrix ProjectionMatrix = FMatrix::Identity;
 	FShowFlags ShowFlags;
-	bool bWorldWireframe = false;
+	bool bOpaqueWireframe = false;
 
 	void Reserve(size_t Count)
 	{
@@ -68,6 +69,6 @@ struct ENGINE_API FRenderCommandQueue
 	{
 		Commands.clear();
 		OutlineItems.clear();
-		bWorldWireframe = false;
+		bOpaqueWireframe = false;
 	}
 };

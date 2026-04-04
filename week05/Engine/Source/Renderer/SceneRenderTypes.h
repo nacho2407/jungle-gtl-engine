@@ -14,7 +14,7 @@ struct ENGINE_API FMeshRenderItem
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionIndex = 0;
-	ERenderPass RenderPass = ERenderPass::World;
+	ERenderPass RenderPass = ERenderPass::Opaque;
 };
 
 struct ENGINE_API FMeshDrawCommand

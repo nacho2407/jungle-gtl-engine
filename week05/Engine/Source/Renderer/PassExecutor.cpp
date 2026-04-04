@@ -12,7 +12,8 @@ namespace
 {
 	constexpr ERenderPass GPassExecutionOrder[] =
 	{
-		ERenderPass::World,
+		ERenderPass::Opaque,
+		ERenderPass::Alpha,
 		ERenderPass::NoDepth,
 		ERenderPass::UI,
 	};

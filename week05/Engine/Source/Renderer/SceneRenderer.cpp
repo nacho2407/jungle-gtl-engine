@@ -15,37 +15,60 @@ namespace
 	FRenderPassState MakeDefaultPassState(ERenderPass RenderPass)
 	{
 		FRenderPassState PassState = {};
-		PassState.RasterizerState.FillMode = D3D11_FILL_SOLID;
-		PassState.RasterizerState.CullMode = D3D11_CULL_NONE;
 
-		if (RenderPass == ERenderPass::World)
+		switch (RenderPass)
 		{
+		case ERenderPass::Opaque:
+			PassState.RasterizerState.FillMode = D3D11_FILL_SOLID;
+			PassState.RasterizerState.CullMode = D3D11_CULL_BACK;
 			PassState.DepthStencilState.DepthEnable = true;
 			PassState.DepthStencilState.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 			PassState.DepthStencilState.DepthFunc = D3D11_COMPARISON_LESS;
-		}
-		else
-		{
+			break;
+
+		case ERenderPass::Alpha:
+			PassState.RasterizerState.FillMode = D3D11_FILL_SOLID;
+			PassState.RasterizerState.CullMode = D3D11_CULL_NONE;
+			PassState.DepthStencilState.DepthEnable = true;
+			PassState.DepthStencilState.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			PassState.DepthStencilState.DepthFunc = D3D11_COMPARISON_LESS;
+			PassState.BlendState.BlendEnable = true;
+			PassState.BlendState.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+			PassState.BlendState.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+			PassState.BlendState.BlendOp = D3D11_BLEND_OP_ADD;
+			PassState.BlendState.SrcBlendAlpha = D3D11_BLEND_ONE;
+			PassState.BlendState.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+			PassState.BlendState.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			break;
+
+		case ERenderPass::NoDepth:
+		case ERenderPass::UI:
+			PassState.RasterizerState.FillMode = D3D11_FILL_SOLID;
+			PassState.RasterizerState.CullMode = D3D11_CULL_NONE;
 			PassState.DepthStencilState.DepthEnable = false;
 			PassState.DepthStencilState.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			PassState.BlendState.BlendEnable = true;
+			PassState.BlendState.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+			PassState.BlendState.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+			PassState.BlendState.BlendOp = D3D11_BLEND_OP_ADD;
+			PassState.BlendState.SrcBlendAlpha = D3D11_BLEND_ONE;
+			PassState.BlendState.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+			PassState.BlendState.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			break;
+
+		default:
+			break;
 		}
 
-		PassState.BlendState.BlendEnable = true;
-		PassState.BlendState.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-		PassState.BlendState.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		PassState.BlendState.BlendOp = D3D11_BLEND_OP_ADD;
-		PassState.BlendState.SrcBlendAlpha = D3D11_BLEND_ONE;
-		PassState.BlendState.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-		PassState.BlendState.BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		return PassState;
 	}
 
 	void ApplyQueuePassOverrides(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame)
 	{
-		if (Queue.bWorldWireframe)
+		if (Queue.bOpaqueWireframe)
 		{
-			FRenderPassState& WorldPassState = OutFrame.GetPassState(ERenderPass::World);
-			WorldPassState.RasterizerState.FillMode = D3D11_FILL_WIREFRAME;
+			FRenderPassState& OpaquePassState = OutFrame.GetPassState(ERenderPass::Opaque);
+			OpaquePassState.RasterizerState.FillMode = D3D11_FILL_WIREFRAME;
 		}
 	}
 
@@ -223,10 +246,10 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 		OutFrame.MeshUploads.erase(NewEnd, OutFrame.MeshUploads.end());
 	}
 
-	if (OutFrame.GetPassQueue(ERenderPass::World).size() > 1)
+	if (OutFrame.GetPassQueue(ERenderPass::Opaque).size() > 1)
 	{
-		TArray<FMeshDrawCommand>& WorldCommands = OutFrame.GetPassQueue(ERenderPass::World);
-		std::sort(WorldCommands.begin(), WorldCommands.end(), CompareDrawCommands);
+		TArray<FMeshDrawCommand>& OpaqueCommands = OutFrame.GetPassQueue(ERenderPass::Opaque);
+		std::sort(OpaqueCommands.begin(), OpaqueCommands.end(), CompareDrawCommands);
 	}
 }
 
@@ -255,6 +278,6 @@ void FSceneRenderer::AppendDirectRenderItem(const FRenderCommand& Command, TArra
 	RenderItem.WorldMatrix = Command.WorldMatrix;
 	RenderItem.IndexStart = Command.IndexStart;
 	RenderItem.IndexCount = Command.IndexCount;
-	RenderItem.RenderPass = Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::World;
+	RenderItem.RenderPass = Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::Opaque;
 	OutRenderItems.push_back(RenderItem);
 }
