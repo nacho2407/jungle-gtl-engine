@@ -49,12 +49,38 @@ void UWorld::AddActor(AActor* Actor)
 
 void UWorld::MarkWorldPrimitivePickingBVHDirty()
 {
+	if (DeferredPickingBVHUpdateDepth > 0)
+	{
+		bDeferredPickingBVHDirty = true;
+		return;
+	}
+
 	WorldPrimitivePickingBVH.MarkDirty();
 }
 
 void UWorld::BuildWorldPrimitivePickingBVHNow() const
 {
 	WorldPrimitivePickingBVH.BuildNow(Actors);
+}
+
+void UWorld::BeginDeferredPickingBVHUpdate()
+{
+	++DeferredPickingBVHUpdateDepth;
+}
+
+void UWorld::EndDeferredPickingBVHUpdate()
+{
+	if (DeferredPickingBVHUpdateDepth <= 0)
+	{
+		return;
+	}
+
+	--DeferredPickingBVHUpdateDepth;
+	if (DeferredPickingBVHUpdateDepth == 0 && bDeferredPickingBVHDirty)
+	{
+		bDeferredPickingBVHDirty = false;
+		BuildWorldPrimitivePickingBVHNow();
+	}
 }
 
 void UWorld::WarmupPickingData() const
