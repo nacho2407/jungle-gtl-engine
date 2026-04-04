@@ -3,7 +3,6 @@
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -247,11 +246,6 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 
 		AActor* Actor = PrimComp->GetOwner();
 		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
-		{
-			continue;
-		}
-
-		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()) || PrimComp->IsA(USkyComponent::StaticClass()))
 		{
 			continue;
 		}

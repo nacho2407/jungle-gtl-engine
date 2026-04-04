@@ -375,8 +375,16 @@ void FRenderer::BeginFrame()
 	FrameDrawCallCount = 0;
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	if (RenderTargetView) DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
-	if (DepthStencilView) DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	if (RenderTargetView)
+	{
+		DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
+	}
+
+	if (DepthStencilView)
+	{
+		DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
 
 	ID3D11RenderTargetView* ActiveRTV = RenderTargetView;
 	ID3D11DepthStencilView* ActiveDSV = DepthStencilView;

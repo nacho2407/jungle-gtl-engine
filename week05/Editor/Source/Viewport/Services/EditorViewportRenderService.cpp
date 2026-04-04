@@ -13,7 +13,6 @@
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -85,11 +84,6 @@ namespace
 
 		AActor* SelectedActor = EditorEngine->GetSelectedActor();
 		if (!SelectedActor || SelectedActor->IsPendingDestroy() || !SelectedActor->IsVisible())
-		{
-			return;
-		}
-
-		if (SelectedActor->GetComponentByClass<USkyComponent>() != nullptr)
 		{
 			return;
 		}
@@ -220,7 +214,7 @@ void FEditorViewportRenderService::RenderAll(
 		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
-		if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
+		if (GizmoTarget)
 		{
 			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, Queue);
 		}
@@ -265,10 +259,10 @@ void FEditorViewportRenderService::RenderAll(
 
 		Renderer->SubmitCommands(std::move(Queue));
 		Renderer->ExecuteCommands();
-		EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false);
-		Renderer->EndScenePass();
+		// EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false); // 지금 안씀 GameJam
+		Renderer->EndScenePass(); // 깡통 GameJam
 	}
-	EditorEngine->ClearDebugDrawForFrame();
+	// EditorEngine->ClearDebugDrawForFrame(); // 지금 안씀 GameJam
 
 	Renderer->BindSwapChainRTV();
 	if (!bUseDirectSingleViewportPath)

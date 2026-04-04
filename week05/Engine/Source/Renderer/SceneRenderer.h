@@ -9,13 +9,14 @@ class FRenderer;
 struct FRenderCommand;
 struct FRenderCommandQueue;
 
-struct ENGINE_API FLightSceneData
-{
-	FVector Position = FVector::ZeroVector;
-	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-	float Intensity = 1.0f;
-	float Padding[3] = {};
-};
+// GameJam
+//struct ENGINE_API FLightSceneData
+//{
+//	FVector Position = FVector::ZeroVector;
+//	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+//	float Intensity = 1.0f;
+//	float Padding[3] = {};
+//};
 
 struct ENGINE_API FSceneFramePacket
 {
@@ -24,7 +25,7 @@ struct ENGINE_API FSceneFramePacket
 	FPassCommandQueues PassCommandQueues;
 	TArray<FRenderMesh*> MeshUploads;
 	TArray<FOutlineRenderItem> OutlineItems;
-	TArray<FLightSceneData> Lights;
+	// TArray<FLightSceneData> Lights; GameJam
 
 	void Reset();
 	void Reserve(size_t InCommandCount);

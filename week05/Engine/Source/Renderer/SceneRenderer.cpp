@@ -16,7 +16,7 @@ void FSceneFramePacket::Reset()
 	PassCommandQueues.Reset();
 	MeshUploads.clear();
 	OutlineItems.clear();
-	Lights.clear();
+	// Lights.clear(); GameJam
 }
 
 void FSceneFramePacket::Reserve(size_t InCommandCount)

@@ -8,7 +8,6 @@
 #include "Actor/Actor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/CameraComponent.h"
-#include "Component/SkyComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Math/Frustum.h"
@@ -94,8 +93,7 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 			if (FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine))
 			{
 				AActor* SelectedActor = EditorEngine->GetSelectedActor();
-				if (SelectedActor && !SelectedActor->IsPendingDestroy() && SelectedActor->IsVisible() &&
-					SelectedActor->GetComponentByClass<USkyComponent>() == nullptr)
+				if (SelectedActor && !SelectedActor->IsPendingDestroy() && SelectedActor->IsVisible())
 				{
 					for (UActorComponent* Component : SelectedActor->GetComponents())
 					{
