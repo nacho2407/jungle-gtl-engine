@@ -140,6 +140,19 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
 	if (!Asset || Asset->Vertices.empty() || Asset->Indices.empty()) return false;
 
+	FVector LocalOrigin = GetWorldInverseMatrix().TransformPositionWithW(Ray.Origin);
+	FVector LocalDirection = GetWorldInverseMatrix().TransformVector(Ray.Direction);
+	LocalDirection.Normalize();
+
+	if (StaticMesh->RaycastMeshBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
+	{
+		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
+		const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
+		OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
+		OutHitResult.HitComponent = this;
+		return true;
+	}
+
 	bool bHit = FRayUtils::RaycastTriangles(
 		Ray, GetWorldMatrix(),
 		GetWorldInverseMatrix(),

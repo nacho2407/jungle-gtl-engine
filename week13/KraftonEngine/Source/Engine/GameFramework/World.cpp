@@ -4,6 +4,7 @@
 #include "Engine/Math/ConvexVolume.h"
 #include "Engine/Component/CameraComponent.h"
 #include <algorithm>
+#include "Profiling/Stats.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
 
@@ -13,6 +14,8 @@ UWorld::~UWorld()
 	{
 		EndPlay();
 	}
+
+	delete Octree;
 }
 
 void UWorld::DestroyActor(AActor* Actor)
@@ -27,7 +30,6 @@ void UWorld::DestroyActor(AActor* Actor)
 
 	MarkPickingBVHDirty();
 
-	Partition.RemoveActor(Actor);
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
 }
@@ -41,7 +43,6 @@ void UWorld::AddActor(AActor* Actor)
 
 	Actor->SetWorld(this);
 	Actors.push_back(Actor);
-	InsertActorToOctree(Actor);
 	MarkPickingBVHDirty();
 }
 
@@ -64,50 +65,74 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 
 void UWorld::InsertActorToOctree(AActor* Actor)
 {
-    Partition.InsertActor(Actor);
+	if (!Actor) return;
+
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (!Prim || !Prim->IsVisible()) continue;
+		Prim->UpdateWorldMatrix();
+		Octree->Insert(Prim);
+	}
 }
 
 void UWorld::RemoveActorToOctree(AActor* Actor)
 {
-    Partition.RemoveActor(Actor);
+	if (!Actor) return;
+
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (!Prim) continue;
+		Octree->Remove(Prim);
+	}
 }
 
 void UWorld::UpdateActorInOctree(AActor* Actor)
 {
-    Partition.UpdateActor(Actor);
+	if (!Actor) return;
+
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (!Prim) continue;
+
+		if (Prim->IsVisible())
+		{
+			Prim->UpdateWorldMatrix();
+			Octree->MarkDirty(Prim);
+		}
+	}
 }
 
-void UWorld::UpdateVisibleActors()
+void UWorld::UpdateVisibleProxies()
 {
 	VisiblePrimitives.clear();
-	VisibleActors.clear();
+	VisibleProxies.clear();
 
-	// 모든 프록시를 컬링 상태로 초기화
-	for (FPrimitiveSceneProxy* Proxy : Scene.GetAllProxies())
 	{
-		if (Proxy) Proxy->bFrustumCulled = true;
+		SCOPE_STAT_CAT("FrustumCulling", "1_WorldTick");
+		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
+		Octree->QueryFrustum(ConvexVolume, VisiblePrimitives);
 	}
 
-	FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
-
- 	Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
-
-	// 보이는 primitive의 프록시만 컬링 해제
-	for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 	{
-		if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-			Proxy->bFrustumCulled = false;
+		SCOPE_STAT_CAT("BuildVisibleProxies", "1_WorldTick");
 
-		if (AActor* Owner = Primitive->GetOwner())
+		// NeverCull 프록시 (Gizmo 등) — 항상 visible
+		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
+			VisibleProxies.push_back(Proxy);
+
+		// Frustum 쿼리 결과 → VisibleProxies 구축
+		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 		{
-			VisibleActors.push_back(Owner);
+			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+				VisibleProxies.push_back(Proxy);
 		}
 	}
 }
 
 void UWorld::InitWorld()
 {
-    Partition.Reset(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)));
+	delete Octree;
+	Octree = new FOctree(FBoundingBox(FVector(-40, -40, -40), FVector(40, 40, 40)), 0);
 }
 
 void UWorld::BeginPlay()
@@ -125,16 +150,16 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
-	Partition.FlushPrimitive();
-	UpdateVisibleActors();
+	if (Octree)
+		Octree->FlushDirty();
+	UpdateVisibleProxies();
 	DebugDrawQueue.Tick(DeltaTime);
 
-	for (AActor* Actor : VisibleActors)
+	// bNeedsTick인 Actor만 Tick (visibility 무관)
+	for (AActor* Actor : Actors)
 	{
-		if (Actor)
-		{
+		if (Actor && Actor->bNeedsTick)
 			Actor->Tick(DeltaTime);
-		}
 	}
 }
 

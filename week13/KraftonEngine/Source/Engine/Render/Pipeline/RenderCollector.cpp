@@ -12,10 +12,9 @@ void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 {
 	if (!World) return;
 
-	// 프록시 기반 수집: FScene에서 캐싱된 렌더 데이터를 직접 제출
-	FScene& Scene = World->GetScene();
-	Scene.UpdateDirtyProxies();
-	CollectFromScene(Scene, RenderBus);
+	// Dirty 프록시 갱신 후 visible 리스트만 순회
+	World->GetScene().UpdateDirtyProxies();
+	CollectVisibleProxies(World->GetVisibleProxies(), RenderBus);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
@@ -65,9 +64,9 @@ static const FColor OctreeDepthColors[] = {
 	FColor(255,   0,   0),	// 0: Red
 	FColor(255, 165,   0),	// 1: Orange
 	FColor(255, 255,   0),	// 2: Yellow
-	FColor(  0, 255,   0),	// 3: Green
-	FColor(  0, 255, 255),	// 4: Cyan
-	FColor(  0,   0, 255),	// 5: Blue
+	FColor(0, 255,   0),	// 3: Green
+	FColor(0, 255, 255),	// 4: Cyan
+	FColor(0,   0, 255),	// 5: Blue
 };
 
 void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& RenderBus, uint32 Depth)
@@ -117,24 +116,22 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 }
 
 // ============================================================
-// FScene 프록시 기반 수집 — Owner 참조 없이 프록시 데이터만 사용
+// Visible 프록시 수집 — UpdateVisibleProxies에서 구축한 dense 리스트만 순회
 // ============================================================
-void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
+void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus)
 {
 	if (!RenderBus.GetShowFlags().bPrimitives) return;
 
 	const bool bShowBoundingVolume = RenderBus.GetShowFlags().bBoundingVolume;
+	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
-	for (FPrimitiveSceneProxy* Proxy : Scene.GetAllProxies())
+	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
-		if (!Proxy) continue;
-
 		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
 			Proxy->UpdatePerViewport(RenderBus);
 
 		if (!Proxy->bVisible) continue;
-		if (Proxy->bFrustumCulled && !Proxy->bNeverCull) continue;
 
 		// Batcher 경유 렌더링 (Font, SubUV)
 		if (Proxy->bBatcherRendered)
