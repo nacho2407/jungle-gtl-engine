@@ -183,6 +183,31 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitiveList)
 	}
 }
 
+void FOctree::MarkDirty(UPrimitiveComponent* Primitive)
+{
+	if (!Primitive) return;
+
+    auto It = std::find(DirtyList.begin(), DirtyList.end(), Primitive);
+    if (It == DirtyList.end())
+    {
+        DirtyList.push_back(Primitive);
+    }
+}
+
+void FOctree::FlushDirty()
+{
+	for (UPrimitiveComponent* Primitive : DirtyList)
+    {
+        if (!Primitive) continue;
+
+        Primitive->UpdateWorldMatrix();
+        Remove(Primitive);
+        Insert(Primitive);
+    }
+
+    DirtyList.clear();
+}
+
 TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitiveList(const FVector& Pos, const FVector& QueryExtent, uint32 Count)
 {
     TArray<UPrimitiveComponent*> Candidates;

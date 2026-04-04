@@ -31,6 +31,9 @@ public:
 	const FBoundingBox& GetBounds() const { return BoundOctree; }
 	const TArray<FOctree*>& GetChildren() const { return Children; }
 
+    void MarkDirty(UPrimitiveComponent* Primitive);
+    void FlushDirty(); // 프레임 끝에 한 번만 처리
+
 	// 근접 쿼리 - 프리미티브 반환
 	UPrimitiveComponent* FindNearestPrimitive(const FVector& Pos);
 	TArray<UPrimitiveComponent*> FindNearestPrimitiveList(const FVector& Pos, const FVector& QueryExtent, uint32 Count);
@@ -45,6 +48,7 @@ private:
 
 	TArray<FOctree*> Children;
 	TArray<UPrimitiveComponent*> PrimitiveList;
+    TArray<UPrimitiveComponent*> DirtyList; // 이동한 객체 목록
 
 	uint32 Depth;
 };

@@ -263,12 +263,10 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
     {
         if (!Prim) continue;
 
-        Octree->Remove(Prim);
-        Prim->UpdateWorldMatrix();
-
         if (Prim->IsVisible())
         {
-            Octree->Insert(Prim);
+			Prim->UpdateWorldMatrix();
+			Octree->MarkDirty(Prim);
         }
     }
 }
@@ -286,7 +284,7 @@ void UWorld::UpdateVisibleActors()
 
 	FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
 
-	Octree->QueryFrustum(ConvexVolume, VisiblePrimitives);
+ 	Octree->QueryFrustum(ConvexVolume, VisiblePrimitives);
 
 	// 보이는 primitive의 프록시만 컬링 해제
 	for (UPrimitiveComponent* Primitive : VisiblePrimitives)
@@ -304,7 +302,7 @@ void UWorld::UpdateVisibleActors()
 void UWorld::InitWorld()
 {
 	delete Octree;
-	Octree = new FOctree(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)), 0);
+	Octree = new FOctree(FBoundingBox(FVector(-40, -40, -40), FVector(40, 40, 40)), 0);
 }
 
 void UWorld::BeginPlay()
@@ -322,6 +320,8 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
+    if (Octree)
+		Octree->FlushDirty();
 	UpdateVisibleActors();
 	for (AActor* Actor : VisibleActors)
 	{
