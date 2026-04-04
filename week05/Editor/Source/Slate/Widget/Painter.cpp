@@ -57,24 +57,52 @@ namespace
 
 		return true;
 	}
+
+	static void ApplyUiDepthState(FRenderer* Renderer, FMaterial& Material)
+	{
+		if (!Renderer)
+		{
+			return;
+		}
+
+		FDepthStencilStateOption DepthOpt = Material.GetDepthStencilOption();
+		DepthOpt.DepthEnable = false;
+		DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
+		Material.SetDepthStencilOption(DepthOpt);
+		Material.SetDepthStencilState(DSS);
+	}
 }
 
 FPainter::FPainter(FRenderer* InRenderer)
+	: Renderer(nullptr)
 {
-	Renderer = InRenderer;
+	SetRenderer(InRenderer);
+}
 
-	if (Renderer && Renderer->GetDefaultMaterial())
+void FPainter::SetRenderer(FRenderer* InRenderer)
+{
+	if (Renderer == InRenderer)
 	{
-		UiColorMaterial = Renderer->GetDefaultMaterial()->CreateDynamicMaterial();
-		if (UiColorMaterial)
-		{
-			FDepthStencilStateOption DepthOpt = UiColorMaterial->GetDepthStencilOption();
-			DepthOpt.DepthEnable = false;
-			DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-			auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
-			UiColorMaterial->SetDepthStencilOption(DepthOpt);
-			UiColorMaterial->SetDepthStencilState(DSS);
-		}
+		return;
+	}
+
+	Renderer = InRenderer;
+	UiColorMaterial.reset();
+	FontMaterialByColor.clear();
+	FrameMeshes.clear();
+	ActiveFrameMeshCount = 0;
+	UIQueue.Clear();
+
+	if (!Renderer || !Renderer->GetDefaultMaterial())
+	{
+		return;
+	}
+
+	UiColorMaterial = Renderer->GetDefaultMaterial()->CreateDynamicMaterial();
+	if (UiColorMaterial)
+	{
+		ApplyUiDepthState(Renderer, *UiColorMaterial);
 	}
 }
 
@@ -96,13 +124,18 @@ void FPainter::SetScreenSize(int32 Width, int32 Height)
 
 FDynamicMesh* FPainter::CreateFrameMesh(EMeshTopology Topology)
 {
-	auto Mesh = std::make_unique<FDynamicMesh>();
-	Mesh->Topology = Topology;
-	Mesh->bIsDirty = true;
+	if (ActiveFrameMeshCount >= FrameMeshes.size())
+	{
+		FrameMeshes.push_back(std::make_unique<FDynamicMesh>());
+	}
 
-	FDynamicMesh* RawMesh = Mesh.get();
-	FrameMeshes.push_back(std::move(Mesh));
-	return RawMesh;
+	FDynamicMesh* Mesh = FrameMeshes[ActiveFrameMeshCount++].get();
+	Mesh->Topology = Topology;
+	Mesh->Vertices.clear();
+	Mesh->Indices.clear();
+	Mesh->Sections.clear();
+	Mesh->bIsDirty = true;
+	return Mesh;
 }
 
 FDynamicMaterial* FPainter::GetOrCreateFontMaterial(uint32 Color)
@@ -126,13 +159,7 @@ FDynamicMaterial* FPainter::GetOrCreateFontMaterial(uint32 Color)
 
 	const FVector4 C = ToColor(Color);
 	Material->SetVectorParameter("TextColor", C);
-
-	FDepthStencilStateOption DepthOpt = Material->GetDepthStencilOption();
-	DepthOpt.DepthEnable = false;
-	DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
-	Material->SetDepthStencilOption(DepthOpt);
-	Material->SetDepthStencilState(DSS);
+	ApplyUiDepthState(Renderer, *Material);
 
 	FDynamicMaterial* RawMaterial = Material.get();
 	FontMaterialByColor[Color] = std::move(Material);
@@ -289,5 +316,5 @@ void FPainter::Flush()
 		Renderer->ExecuteCommands();
 	}
 	UIQueue.Clear();
-	FrameMeshes.clear();
+	ActiveFrameMeshCount = 0;
 }

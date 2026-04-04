@@ -123,6 +123,7 @@ namespace
 	}
 }
 
+FEditorViewportRenderService::~FEditorViewportRenderService() = default;
 
 void FEditorViewportRenderService::RenderAll(
 	FEngine* Engine,
@@ -278,13 +279,20 @@ void FEditorViewportRenderService::RenderAll(
 
 	if (FSlateApplication* Slate = EditorEngine->GetSlateApplication())
 	{
-		FPainter Painter(Renderer);
+		if (!SlatePainter)
+		{
+			SlatePainter = std::make_unique<FPainter>(Renderer);
+		}
+		else
+		{
+			SlatePainter->SetRenderer(Renderer);
+		}
 
 		RECT rc{};
 		::GetClientRect(Renderer->GetHwnd(), &rc);
-		Painter.SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
-		Slate->Paint(Painter);
-		Painter.Flush();
+		SlatePainter->SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
+		Slate->Paint(*SlatePainter);
+		SlatePainter->Flush();
 	}
 
 	EditorUI.Render();

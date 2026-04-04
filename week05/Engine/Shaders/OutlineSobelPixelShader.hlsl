@@ -40,19 +40,23 @@ float4 main(VSOutput Input) : SV_Target
 	float Height = 1.0f;
 	MaskTexture.GetDimensions(Width, Height);
 
+	// Use SV_Position-based UV so sampling is correct regardless of D3D11 viewport offset.
+	// (Viewport-interpolated UV covers only (0,0)-(1,1) of the viewport region, not the full texture.)
+	float2 UV = Input.Position.xy / float2(Width, Height);
+
 	float2 OffsetX = float2(OutlineThickness / Width, 0.0f);
 	float2 OffsetY = float2(0.0f, OutlineThickness / Height);
 
 	float Grid[9];
-	Grid[0] = SampleMask(Input.UV - OffsetX + OffsetY);
-	Grid[1] = SampleMask(Input.UV + OffsetY);
-	Grid[2] = SampleMask(Input.UV + OffsetX + OffsetY);
-	Grid[3] = SampleMask(Input.UV - OffsetX);
-	Grid[4] = SampleMask(Input.UV);
-	Grid[5] = SampleMask(Input.UV + OffsetX);
-	Grid[6] = SampleMask(Input.UV - OffsetX - OffsetY);
-	Grid[7] = SampleMask(Input.UV - OffsetY);
-	Grid[8] = SampleMask(Input.UV + OffsetX - OffsetY);
+	Grid[0] = SampleMask(UV - OffsetX + OffsetY);
+	Grid[1] = SampleMask(UV + OffsetY);
+	Grid[2] = SampleMask(UV + OffsetX + OffsetY);
+	Grid[3] = SampleMask(UV - OffsetX);
+	Grid[4] = SampleMask(UV);
+	Grid[5] = SampleMask(UV + OffsetX);
+	Grid[6] = SampleMask(UV - OffsetX - OffsetY);
+	Grid[7] = SampleMask(UV - OffsetY);
+	Grid[8] = SampleMask(UV + OffsetX - OffsetY);
 
 	float Sx = 0.0f;
 	float Sy = 0.0f;
