@@ -45,11 +45,11 @@ public:
 	}
 
 	void SetRenderer(FRenderer* InRenderer) { Renderer = InRenderer; }
-	void BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const;
+	void BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const;
 
 private:
-	void BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const;
-	void AppendLegacyRenderItem(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutRenderItems) const;
+	void BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const;
+	void AppendDirectRenderItem(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutRenderItems) const;
 
 private:
 	FRenderer* Renderer = nullptr;

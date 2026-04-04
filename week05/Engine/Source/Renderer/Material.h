@@ -3,13 +3,11 @@
 #include "CoreMinimal.h"
 #include "RenderState.h"
 #include <d3d11.h>
-#include <array>
 #include <memory>
 
 class FVertexShader;
 class FPixelShader;
 class FMaterialBindingCache;
-class FRenderStateManager;
 
 struct FMaterialTexture
 {
@@ -113,11 +111,8 @@ public:
 	FMaterial& operator=(FMaterial&&) = default;
 
 	uint64 GetSortId() const;
-	uint64 GetPipelineStateKey(bool bDisableCulling = false, bool bDisableDepthTest = false, bool bDisableDepthWrite = false) const;
 	uint32 GetBindingRevision() const { return BindingRevision; }
 	bool HasDirtyConstantBuffers() const;
-	FRasterizerState* ResolveRasterizerState(FRenderStateManager& RenderStateManager, bool bDisableCulling = false) const;
-	FDepthStencilState* ResolveDepthStencilState(FRenderStateManager& RenderStateManager, bool bDisableDepthTest = false, bool bDisableDepthWrite = false) const;
 
 	// 에셋 원본 이름 (JSON에서 로드된 이름, 직렬화 시 사용)
 	void SetOriginName(const FString& InName) { OriginName = InName; }
@@ -176,9 +171,6 @@ public:
 
 protected:
 	void AdvanceBindingRevision();
-	void InvalidatePipelineStateCache();
-	void InvalidateResolvedStateCache();
-	static uint32 MakePipelineStateVariantIndex(bool bDisableCulling, bool bDisableDepthTest, bool bDisableDepthWrite);
 
 	// TODO: ShaderId가 실제 사용하는 쉐이더를 반영하도록 변경
 	// NOTE: GetSortId에서 비트 연산 쓰는 경우 ShaderId가 32bit를 전부 쓰면 안 됨
@@ -203,12 +195,6 @@ protected:
 
 	TArray<FMaterialConstantBuffer> ConstantBuffers;
 	TMap<FString, FMaterialParameterInfo> ParameterMap;
-	mutable std::array<uint64, 8> PipelineStateKeyVariants = {};
-	mutable std::array<bool, 8> bPipelineStateKeyVariantValid = {};
-	mutable std::array<FRasterizerState*, 8> RasterizerStateVariants = {};
-	mutable std::array<bool, 8> bRasterizerStateVariantValid = {};
-	mutable std::array<FDepthStencilState*, 8> DepthStencilStateVariants = {};
-	mutable std::array<bool, 8> bDepthStencilStateVariantValid = {};
 	uint32 BindingRevision = 1;
 
 public:

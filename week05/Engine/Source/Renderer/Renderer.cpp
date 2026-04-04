@@ -458,7 +458,7 @@ void FRenderer::ExecuteCommands()
 		return;
 	}
 
-	SceneRenderer->BuildFramePacket(PendingCommandQueue, *CurrentFramePacket);
+	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentFramePacket);
 	ViewMatrix = CurrentFramePacket->View.ViewMatrix;
 	ProjectionMatrix = CurrentFramePacket->View.ProjectionMatrix;
 
