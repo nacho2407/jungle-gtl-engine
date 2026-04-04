@@ -46,6 +46,11 @@ FMatrix UCameraComponent::GetProjectionMatrix() const
 	}
 }
 
+FMatrix UCameraComponent::GetViewProjectionMatrix() const
+{
+	return GetViewMatrix() * GetProjectionMatrix();
+}
+
 FConvexVolume UCameraComponent::GetConvexVolume() const
 {
 	FConvexVolume ConvexVolume;
