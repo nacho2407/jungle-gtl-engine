@@ -7,6 +7,7 @@
 #include "Renderer/SubUVRenderer.h"
 #include "ShaderManager.h"
 #include <d3d11.h>
+#include <dxgi1_5.h>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -112,6 +113,7 @@ public:
 	FMaterial* GetDefaultTextureMaterial() const { return DefaultTextureMaterial.get(); }
 	/** 직전 프레임의 커맨드 개수를 반환해 다음 프레임 reserve 힌트로 사용한다. */
 	size_t GetPrevCommandCount() const { return PrevCommandCount; }
+	uint32 GetFrameDrawCallCount() const { return FrameDrawCallCount; }
 	std::unique_ptr<FRenderStateManager>& GetRenderStateManager() { return RenderStateManager; }
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
@@ -146,6 +148,8 @@ private:
 	bool EnsureOutlineMaskResources(uint32 Width, uint32 Height);
 	/** 외곽선 마스크 렌더 타깃 관련 자원을 해제한다. */
 	void ReleaseOutlineMaskResources();
+	/** 현재 시스템/드라이버가 DXGI tearing present를 지원하는지 검사한다. */
+	bool CheckTearingSupport() const;
 	/** 현재 View/Projection과 시간 정보를 프레임 상수 버퍼에 업로드한다. */
 	void UpdateFrameConstantBuffer();
 	/** 개별 오브젝트의 월드 행렬을 오브젝트 상수 버퍼에 업로드한다. */
@@ -178,11 +182,13 @@ private:
 	D3D11_VIEWPORT SceneViewport = {};
 	bool bUseSceneRenderTargetOverride = false;
 	bool bVSyncEnabled = false;
+	bool bAllowTearing = false;
 
 	/** 이번 프레임에 실제 실행할 렌더 커맨드 리스트다. */
 	TArray<FRenderCommand> CommandList;
 	size_t PrevCommandCount = 0;
 	uint64 NextSubmissionOrder = 0;
+	uint32 FrameDrawCallCount = 0;
 
 	/** 디버그 선 렌더링을 위한 임시 CPU/GPU 버퍼다. */
 	TArray<FVertex> LineVertices;

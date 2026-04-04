@@ -13,6 +13,8 @@
 #include "Viewport/Viewport.h"
 
 #include <algorithm>
+#include "WindowsPlatformTime.h"
+#include "EditorEngine.h"
 #include <cmath>
 #include <limits>
 
@@ -216,7 +218,7 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 	return false;
 }
 
-AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY) const
+AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY, FEditorEngine* Engine) const
 {
 	if (!Scene || !Entry)
 	{
@@ -224,6 +226,11 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 	}
 
 	const FRay WorldRay = ScreenToRay(*Entry, ScreenX, ScreenY);
+
+	TStatId MyStatId;
+
+	FScopeCycleCounter pickCounter(MyStatId);
+	++Engine->TotalPickCount;
 
 	AActor* ClosestActor = nullptr;
 	float ClosestDistance = (std::numeric_limits<float>::max)();
@@ -326,5 +333,7 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 		}
 	}
 
+	Engine->LastPickTime = pickCounter.FinishMilliseconds();
+	Engine->TotalPickTime += Engine->LastPickTime;
 	return ClosestActor;
 }

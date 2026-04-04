@@ -157,6 +157,8 @@ void FRenderer::ClearViewportCallbacks()
 
 bool FRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
 {
+	bAllowTearing = CheckTearingSupport();
+
 	DXGI_SWAP_CHAIN_DESC SwapChainDesc = {};
 	SwapChainDesc.BufferDesc.Width = Width;
 	SwapChainDesc.BufferDesc.Height = Height;
@@ -167,6 +169,7 @@ bool FRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
 	SwapChainDesc.OutputWindow = InHwnd;
 	SwapChainDesc.Windowed = TRUE;
 	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	SwapChainDesc.Flags = bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 	UINT CreateDeviceFlags = 0;
 #ifdef _DEBUG
@@ -188,6 +191,22 @@ bool FRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
 	}
 
 	return true;
+}
+
+bool FRenderer::CheckTearingSupport() const
+{
+	IDXGIFactory5* Factory5 = nullptr;
+	HRESULT Hr = CreateDXGIFactory1(__uuidof(IDXGIFactory5), reinterpret_cast<void**>(&Factory5));
+	if (FAILED(Hr) || !Factory5)
+	{
+		return false;
+	}
+
+	BOOL bSupported = FALSE;
+	Hr = Factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &bSupported, sizeof(bSupported));
+	Factory5->Release();
+
+	return SUCCEEDED(Hr) && bSupported == TRUE;
 }
 
 bool FRenderer::CreateRenderTargetAndDepthStencil(int32 Width, int32 Height)
@@ -346,6 +365,7 @@ void FRenderer::SetConstantBuffers()
 void FRenderer::BeginFrame()
 {
 	if (GUINewFrame) GUINewFrame();
+	FrameDrawCallCount = 0;
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	if (RenderTargetView) DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
@@ -388,7 +408,8 @@ void FRenderer::EndFrame()
 	if (GUIRender) GUIRender();
 
 	UINT SyncInterval = bVSyncEnabled ? 1 : 0;
-	HRESULT Hr = SwapChain->Present(SyncInterval, 0);
+	UINT PresentFlags = (!bVSyncEnabled && bAllowTearing) ? DXGI_PRESENT_ALLOW_TEARING : 0;
+	HRESULT Hr = SwapChain->Present(SyncInterval, PresentFlags);
 	if (Hr == DXGI_STATUS_OCCLUDED) bSwapChainOccluded = true;
 
 	if (GUIPostPresent) GUIPostPresent();
@@ -557,10 +578,12 @@ void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 
 				FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
 
+				++FrameDrawCallCount;
 				DeviceContext->DrawIndexed(DrawCount, StartLocation, 0);
 			}
 			else
 			{
+				++FrameDrawCallCount;
 				DeviceContext->Draw(static_cast<UINT>(Cmd.RenderMesh->Vertices.size()), 0);
 			}
 		}
@@ -988,10 +1011,12 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 		UpdateObjectConstantBuffer(Item.WorldMatrix);
 		if (!Item.Mesh->Indices.empty())
 		{
+			++FrameDrawCallCount;
 			DeviceContext->DrawIndexed(static_cast<UINT>(Item.Mesh->Indices.size()), 0, 0);
 		}
 		else
 		{
+			++FrameDrawCallCount;
 			DeviceContext->Draw(static_cast<UINT>(Item.Mesh->Vertices.size()), 0);
 		}
 	}
@@ -1006,6 +1031,7 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DeviceContext->VSSetShader(OutlinePostVS, nullptr, 0);
 	DeviceContext->PSSetShader(OutlineMaskPS, nullptr, 0);
+	++FrameDrawCallCount;
 	DeviceContext->Draw(3, 0);
 
 	DeviceContext->OMSetRenderTargets(1, &BoundRTV, BoundDSV);
@@ -1016,6 +1042,7 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	UpdateOutlinePostConstantBuffer(FVector4(1.0f, 0.5f, 0.0f, 1.0f), 2.0f, 0.1f);
 	DeviceContext->PSSetShaderResources(0, 1, &OutlineMaskSRV);
 	DeviceContext->PSSetSamplers(0, 1, &OutlineSampler);
+	++FrameDrawCallCount;
 	DeviceContext->Draw(3, 0);
 
 	DeviceContext->PSSetShaderResources(0, 1, &NullSRV);
@@ -1074,6 +1101,7 @@ void FRenderer::ExecuteLineCommands()
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &Offset);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	UpdateObjectConstantBuffer(FMatrix::Identity);
+	++FrameDrawCallCount;
 	DeviceContext->Draw(static_cast<UINT>(LineVertices.size()), 0);
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
 	LineVertices.clear();
@@ -1123,7 +1151,8 @@ void FRenderer::OnResize(int32 W, int32 H)
 	if (RenderTargetView) { RenderTargetView->Release(); RenderTargetView = nullptr; }
 	if (DepthStencilView) { DepthStencilView->Release(); DepthStencilView = nullptr; }
 	ReleaseOutlineMaskResources();
-	SwapChain->ResizeBuffers(0, W, H, DXGI_FORMAT_UNKNOWN, 0);
+	const UINT ResizeFlags = bAllowTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+	SwapChain->ResizeBuffers(0, W, H, DXGI_FORMAT_UNKNOWN, ResizeFlags);
 	CreateRenderTargetAndDepthStencil(W, H);
 	Viewport.Width = static_cast<float>(W); Viewport.Height = static_cast<float>(H);
 }
