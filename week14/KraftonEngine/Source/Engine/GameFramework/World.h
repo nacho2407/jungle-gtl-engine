@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
@@ -7,6 +7,7 @@
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/ConvexVolume.h"
+#include "Render/Culling/OcclusionCulling.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
@@ -68,6 +69,7 @@ private:
 	FDebugDrawQueue DebugDrawQueue;
 
 	FSpatialPartition Partition;
+	FOcclusionCulling OcclusionCulling;
 };
 
 template<typename T>
