@@ -341,7 +341,6 @@ json::JSON FSceneSaveManager::SerializeCamera(UCameraComponent* Cam)
 void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors)
 {
 	using namespace json;
-	World->InitWorld();
 	for (auto it = Primitives.ObjectRange().begin(); it != Primitives.ObjectRange().end(); ++it) {
 		const auto& kv = *it;
 		const string& Key = kv.first;
@@ -445,6 +444,8 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	FString ContextHandle = root.hasKey(SceneKeys::ContextHandle)
 		? root[SceneKeys::ContextHandle].ToString()
 		: ContextName;
+
+	World->InitWorld();
 
 	// Deserialize Primitives (top-level) and Camera first
 	std::unordered_map<string, AActor*> CreatedFromPrimitives;
