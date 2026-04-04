@@ -6,7 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
-#include "Math/ConvexVolume.h"
+#include "Render/Culling/ConvexVolume.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
