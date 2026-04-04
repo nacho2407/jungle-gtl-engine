@@ -234,6 +234,11 @@ void USceneComponent::SetRelativeScale(const FVector& NewScale)
 
 void USceneComponent::MarkTransformDirty()
 {
+	if (bTransformDirty && bInverseWorldDirty)
+	{
+		return; // 이미 dirty면 자식 재귀/부수효과를 다시 하지 않음
+	}
+
 	bTransformDirty = true;
 	bInverseWorldDirty = true;
 	OnTransformDirty();
