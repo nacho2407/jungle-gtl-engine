@@ -1,9 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "PrimitiveComponent.h"
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
 #include "Renderer/MeshData.h"
+
+class FPrimitiveSceneProxy;
 
 class ULineBatchComponent : public UPrimitiveComponent
 {
@@ -17,6 +19,7 @@ public:
 	void Clear();
 
 	virtual FRenderMesh* GetRenderMesh() const override { return LineMesh.get(); }
+	std::shared_ptr<FPrimitiveSceneProxy> CreateSceneProxy() const override;
 	virtual FBoxSphereBounds GetLocalBounds() const override;
 
 private:

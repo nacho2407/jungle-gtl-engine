@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -87,6 +87,14 @@
     <ClInclude Include="Source\Renderer\FontAtlas.h" />
     <ClInclude Include="Source\Renderer\Material.h" />
     <ClInclude Include="Source\Renderer\MaterialManager.h" />
+    <ClInclude Include="Source\Renderer\MaterialBindingCache.h" />
+    <ClInclude Include="Source\Renderer\MeshPassProcessor.h" />
+    <ClInclude Include="Source\Renderer\ObjectUniformStream.h" />
+    <ClInclude Include="Source\Renderer\PassCommandQueues.h" />
+    <ClInclude Include="Source\Renderer\PassExecutor.h" />
+    <ClInclude Include="Source\Renderer\SceneProxy.h" />
+    <ClInclude Include="Source\Renderer\SceneRenderer.h" />
+    <ClInclude Include="Source\Renderer\ViewInfo.h" />
     <ClInclude Include="Source\Renderer\MeshData.h" />
     <ClInclude Include="Source\Renderer\RenderCommand.h" />
     <ClInclude Include="Source\Renderer\RenderMesh.h" />
@@ -99,6 +107,7 @@
     <ClInclude Include="Source\Renderer\ShaderResource.h" />
     <ClInclude Include="Source\Renderer\ShaderType.h" />
     <ClInclude Include="Source\Renderer\SubUVRenderer.h" />
+    <ClInclude Include="Source\Renderer\TextureLoader.h" />
     <ClInclude Include="Source\Renderer\TextMeshBuilder.h" />
     <ClInclude Include="Source\Renderer\TextureVertex.h" />
     <ClInclude Include="Source\Renderer\Vertex.h" />
@@ -274,6 +283,13 @@
     <ClCompile Include="Source\Renderer\FontAtlas.cpp" />
     <ClCompile Include="Source\Renderer\Material.cpp" />
     <ClCompile Include="Source\Renderer\MaterialManager.cpp" />
+    <ClCompile Include="Source\Renderer\MaterialBindingCache.cpp" />
+    <ClCompile Include="Source\Renderer\MeshPassProcessor.cpp" />
+    <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp" />
+    <ClCompile Include="Source\Renderer\PassExecutor.cpp" />
+    <ClCompile Include="Source\Renderer\SceneProxy.cpp" />
+    <ClCompile Include="Source\Renderer\SceneRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\ViewInfo.cpp" />
     <ClCompile Include="Source\Renderer\MeshData.cpp" />
     <ClCompile Include="Source\Renderer\RenderCommand.cpp" />
     <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
@@ -285,6 +301,7 @@
     <ClCompile Include="Source\Renderer\ShaderMap.cpp" />
     <ClCompile Include="Source\Renderer\ShaderResource.cpp" />
     <ClCompile Include="Source\Renderer\SubUVRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\TextureLoader.cpp" />
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp" />
     <ClCompile Include="Source\Scene\BVH.cpp" />
     <ClCompile Include="Source\Scene\MeshBVH.cpp" />
@@ -328,6 +345,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <VCToolsVersion>14.42.34433</VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
@@ -407,6 +425,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -422,7 +441,7 @@
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>이 프로젝트는 이 컴퓨터에 없는 NuGet 패키지를 참조합니다. 해당 패키지를 다운로드하려면 NuGet 패키지 복원을 사용하십시오. 자세한 내용은 http://go.microsoft.com/fwlink/?LinkID=322105를 참조하십시오. 누락된 파일은 {0}입니다.</ErrorText>
+      <ErrorText>???꾨줈?앺듃????而댄벂?곗뿉 ?녿뒗 NuGet ?⑦궎吏瑜?李몄“?⑸땲?? ?대떦 ?⑦궎吏瑜??ㅼ슫濡쒕뱶?섎젮硫?NuGet ?⑦궎吏 蹂듭썝???ъ슜?섏떗?쒖삤. ?먯꽭???댁슜? http://go.microsoft.com/fwlink/?LinkID=322105瑜?李몄“?섏떗?쒖삤. ?꾨씫???뚯씪? {0}?낅땲??</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
   </Target>

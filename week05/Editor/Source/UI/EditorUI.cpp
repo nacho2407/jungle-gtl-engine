@@ -26,9 +26,6 @@
 #include "Serializer/SceneSerializer.h"
 #include "Core/ShowFlags.h"
 #include "Viewport/EditorViewportClient.h"
-#include "Component/SkyComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/UUIDBillboardComponent.h"
 
 enum class EFileDialogType
 {
@@ -276,52 +273,6 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			}
 		}
 	);
-
-	InRenderer->SetPostRenderCallback([this](FRenderer* Renderer)
-		{
-			if (!Engine)
-			{
-				return;
-			}
-	
-			AActor* Selected = Engine->GetSelectedActor();
-			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
-				&& Selected->GetComponentByClass<USkyComponent>() == nullptr
-				&& [&]() -> bool {
-				const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
-				if (ViewportRegistry.GetEntries().empty()) return true;
-				FSlateApplication* Slate = Engine->GetSlateApplication();
-				FViewportId VId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
-				const FViewportEntry* E = (VId != INVALID_VIEWPORT_ID)
-					? ViewportRegistry.FindEntryByViewportID(VId) : &ViewportRegistry.GetEntries().front();
-				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
-			}())
-			{
-				TArray<FOutlineRenderItem> OutlineItems;
-				for (UActorComponent* Component : Selected->GetComponents())
-				{
-					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
-					if (Component->IsA(UTextComponent::StaticClass())) continue;
-					if (Component->IsA(USubUVComponent::StaticClass())) continue;
-
-					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-					if (PrimitiveComponent->GetRenderMesh())
-					{
-						FOutlineRenderItem& Item = OutlineItems.emplace_back();
-						Item.Mesh = PrimitiveComponent->GetRenderMesh();
-						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
-					}
-				}
-
-				if (!OutlineItems.empty())
-				{
-					Renderer->RenderOutlines(OutlineItems);
-				}
-			}
-
-			const float AxisLength = 10000.0f;
-			const FVector Origin = { 0.0f, 0.0f, 0.0f };
-		});
 }
 
 void FEditorUI::OnSlateReady()

@@ -1,7 +1,15 @@
 #include "Material.h"
+#include "MaterialBindingCache.h"
 #include "Shader.h"
 #include <cstring>
 
+namespace
+{
+	uint64 HashCombine64(uint64 Seed, uint64 Value)
+	{
+		return Seed ^ (Value + 0x9e3779b97f4a7c15ull + (Seed << 6) + (Seed >> 2));
+	}
+}
 
 FMaterialTexture::~FMaterialTexture()
 {
@@ -10,22 +18,25 @@ FMaterialTexture::~FMaterialTexture()
 
 void FMaterialTexture::Release()
 {
-	if (TextureSRV)
+	if (bOwnsResources && TextureSRV)
 	{
 		TextureSRV->Release();
-		TextureSRV = nullptr;
 	}
+	TextureSRV = nullptr;
 
-	if (SamplerState)
+	if (bOwnsResources && SamplerState)
 	{
 		SamplerState->Release();
-		SamplerState = nullptr;
 	}
+	SamplerState = nullptr;
+	bOwnsResources = true;
 }
 
-void FMaterialTexture::Bind(ID3D11DeviceContext* DeviceContext)
+void FMaterialTexture::Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache)
 {
+	(void)BindingCache;
 	DeviceContext->PSSetShaderResources(0, 1, &TextureSRV);
+	DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
 
 // ─── FMaterialConstantBuffer ───
@@ -61,21 +72,22 @@ bool FMaterialConstantBuffer::Create(ID3D11Device* Device, uint32 InSize)
 	return true;
 }
 
-void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Offset)
+bool FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Offset)
 {
 	if (!CPUData || !Data || Offset + InSize > Size)
 	{
-		return;
+		return false;
 	}
 
 	uint8* Dest = CPUData + Offset;
 	if (memcmp(Dest, Data, InSize) == 0)
 	{
-		return;
+		return false;
 	}
 
 	memcpy(Dest, Data, InSize);
 	bDirty = true;
+	return true;
 }
 
 void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
@@ -117,7 +129,117 @@ FMaterial::~FMaterial()
 
 uint64 FMaterial::GetSortId() const
 {
-	return ShaderId;
+	return MaterialId;
+}
+
+uint32 FMaterial::MakePipelineStateVariantIndex(bool bDisableCulling, bool bDisableDepthTest, bool bDisableDepthWrite)
+{
+	return (bDisableCulling ? 1u : 0u) |
+		(bDisableDepthTest ? 1u << 1 : 0u) |
+		(bDisableDepthWrite ? 1u << 2 : 0u);
+}
+
+void FMaterial::AdvanceBindingRevision()
+{
+	++BindingRevision;
+	if (BindingRevision == 0)
+	{
+		BindingRevision = 1;
+	}
+}
+
+void FMaterial::InvalidatePipelineStateCache()
+{
+	bPipelineStateKeyVariantValid.fill(false);
+}
+
+uint64 FMaterial::GetPipelineStateKey(bool bDisableCulling, bool bDisableDepthTest, bool bDisableDepthWrite) const
+{
+	const uint32 VariantIndex = MakePipelineStateVariantIndex(bDisableCulling, bDisableDepthTest, bDisableDepthWrite);
+	if (bPipelineStateKeyVariantValid[VariantIndex])
+	{
+		return PipelineStateKeyVariants[VariantIndex];
+	}
+
+	FRasterizerStateOption EffectiveRasterizerOption = RasterizerOption;
+	if (bDisableCulling)
+	{
+		EffectiveRasterizerOption.CullMode = D3D11_CULL_NONE;
+	}
+
+	FDepthStencilStateOption EffectiveDepthStencilOption = DepthStencilOption;
+	if (bDisableDepthTest)
+	{
+		EffectiveDepthStencilOption.DepthEnable = false;
+	}
+	if (bDisableDepthWrite)
+	{
+		EffectiveDepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	}
+
+	uint64 Key = 1469598103934665603ull;
+	Key = HashCombine64(Key, reinterpret_cast<uint64>(VertexShader.get()));
+	Key = HashCombine64(Key, reinterpret_cast<uint64>(PixelShader.get()));
+	Key = HashCombine64(Key, EffectiveRasterizerOption.ToKey());
+	Key = HashCombine64(Key, EffectiveDepthStencilOption.ToKey());
+	Key = HashCombine64(Key, BlendOption.ToKey());
+
+	PipelineStateKeyVariants[VariantIndex] = Key;
+	bPipelineStateKeyVariantValid[VariantIndex] = true;
+	return Key;
+}
+
+void FMaterial::SetVertexShader(const std::shared_ptr<FVertexShader>& InVS)
+{
+	VertexShader = InVS;
+	InvalidatePipelineStateCache();
+	AdvanceBindingRevision();
+}
+
+void FMaterial::SetPixelShader(const std::shared_ptr<FPixelShader>& InPS)
+{
+	PixelShader = InPS;
+	InvalidatePipelineStateCache();
+	AdvanceBindingRevision();
+}
+
+void FMaterial::SetRasterizerOption(FRasterizerStateOption InOption)
+{
+	RasterizerOption = InOption;
+	InvalidatePipelineStateCache();
+}
+
+void FMaterial::SetRasterizerState(const std::shared_ptr<FRasterizerState>& InState)
+{
+	RasterizerState = InState;
+}
+
+void FMaterial::SetDepthStencilOption(FDepthStencilStateOption InOption)
+{
+	DepthStencilOption = InOption;
+	InvalidatePipelineStateCache();
+}
+
+void FMaterial::SetDepthStencilState(const std::shared_ptr<FDepthStencilState>& InState)
+{
+	DepthStencilState = InState;
+}
+
+void FMaterial::SetBlendOption(FBlendStateOption InOption)
+{
+	BlendOption = InOption;
+	InvalidatePipelineStateCache();
+}
+
+void FMaterial::SetBlendState(const std::shared_ptr<FBlendState>& InState)
+{
+	BlendState = InState;
+}
+
+void FMaterial::SetMaterialTexture(const std::shared_ptr<FMaterialTexture>& InTexture)
+{
+	MaterialTexture = InTexture;
+	AdvanceBindingRevision();
 }
 
 int32 FMaterial::CreateConstantBuffer(ID3D11Device* Device, uint32 InSize)
@@ -128,6 +250,7 @@ int32 FMaterial::CreateConstantBuffer(ID3D11Device* Device, uint32 InSize)
 		return -1;
 	}
 	ConstantBuffers.push_back(std::move(CB));
+	AdvanceBindingRevision();
 	return static_cast<int32>(ConstantBuffers.size() - 1);
 }
 
@@ -143,6 +266,7 @@ FMaterialConstantBuffer* FMaterial::GetConstantBuffer(int32 Index)
 void FMaterial::RegisterParameter(const FString& ParamName, int32 BufferIndex, uint32 Offset, uint32 Size)
 {
 	ParameterMap[ParamName] = { BufferIndex, Offset, Size };
+	AdvanceBindingRevision();
 }
 
 bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uint32 DataSize)
@@ -155,7 +279,10 @@ bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uin
 	uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
 	FMaterialConstantBuffer* CB = GetConstantBuffer(Info.BufferIndex);
 	if (!CB) return false;
-	CB->SetData(Data, CopySize, Info.Offset);
+	if (CB->SetData(Data, CopySize, Info.Offset))
+	{
+		AdvanceBindingRevision();
+	}
 	return true;
 }
 
@@ -216,7 +343,7 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 	Dynamic->RasterizerState = RasterizerState;
 	Dynamic->DepthStencilState = DepthStencilState;
 	Dynamic->BlendState = BlendState;
-	Dynamic->SetMaterialTexture(MaterialTexture);
+	Dynamic->MaterialTexture = MaterialTexture;
 
 	for (const auto& CB : ConstantBuffers)
 	{
@@ -232,6 +359,8 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 		Dynamic->ConstantBuffers.push_back(std::move(NewCB));
 	}
 
+	Dynamic->BindingRevision = 1;
+	Dynamic->InvalidatePipelineStateCache();
 	Device->Release();
 	return Dynamic;
 }
@@ -255,8 +384,14 @@ bool FDynamicMaterial::SetVector3Parameter(const FString& ParamName, const FVect
 	return SetParameterData(ParamName, Data, sizeof(Data));
 }
 
-void FMaterial::Bind(ID3D11DeviceContext* DeviceContext)
+void FMaterial::Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache)
 {
+	if (BindingCache)
+	{
+		BindingCache->BindMaterial(DeviceContext, this);
+		return;
+	}
+
 	if (VertexShader) VertexShader->Bind(DeviceContext);
 	if (PixelShader) PixelShader->Bind(DeviceContext);
 	if (MaterialTexture) MaterialTexture->Bind(DeviceContext);
@@ -278,6 +413,7 @@ void FMaterial::Release()
 	RasterizerState.reset();
 	DepthStencilState.reset();
 	BlendState.reset();
+	MaterialTexture.reset();
 	for (auto& CB : ConstantBuffers)
 	{
 		CB.Release();

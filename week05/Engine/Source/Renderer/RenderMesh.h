@@ -29,6 +29,7 @@ struct ENGINE_API FRenderMesh
 
 	virtual void Bind(ID3D11DeviceContext* Context);
 	virtual void Release();
+	bool NeedsBufferUpload() const;
 
 	void UpdateLocalBound();
 	float GetLocalBoundRadius() const { return LocalBoundRadius; }

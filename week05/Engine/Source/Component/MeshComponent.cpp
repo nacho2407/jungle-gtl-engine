@@ -17,6 +17,7 @@ void UMeshComponent::SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& 
 			Materials.resize(Index + 1, nullptr);
 		}
 		Materials[Index] = InMaterial;
+		MarkRenderStateDirty();
 	}
 }
 
@@ -57,6 +58,7 @@ void UMeshComponent::Serialize(FArchive& Ar)
 				}
 				else Materials.push_back(nullptr);
 			}
+			MarkRenderStateDirty();
 		}
 	}
 }

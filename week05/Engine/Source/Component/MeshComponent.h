@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "Component/PrimitiveComponent.h"
 
 class FMaterial;
+class FPrimitiveSceneProxy;
 
 class ENGINE_API UMeshComponent : public UPrimitiveComponent
 {

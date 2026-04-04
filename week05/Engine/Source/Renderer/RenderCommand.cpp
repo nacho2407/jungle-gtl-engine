@@ -4,7 +4,7 @@
 
 uint64 FRenderCommand::MakeSortKey(const FMaterial* InMaterial, const FRenderMesh* InMeshData)
 {
-	uint32 MatId = InMaterial ? InMaterial->GetSortId() : 0;
-	uint32 MeshId = InMeshData ? InMeshData->GetSortId() : 0;
-	return (static_cast<uint64>(MatId) << 32) | MeshId;
+	const uint64 MatId = InMaterial ? InMaterial->GetSortId() : 0ull;
+	const uint64 MeshId = InMeshData ? static_cast<uint64>(InMeshData->GetSortId()) : 0ull;
+	return (MatId << 32ull) | (MeshId & 0xFFFFFFFFull);
 }

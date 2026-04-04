@@ -4,19 +4,20 @@
 #include "ShaderMap.h"
 #include "ShaderResource.h"
 #include "Material.h"
+#include "MaterialBindingCache.h"
+#include "ObjectUniformStream.h"
+#include "PassExecutor.h"
 #include "MaterialManager.h"
+#include "TextureLoader.h"
 #include "Core/Paths.h"
 #include "RenderMesh.h"
+#include "SceneRenderer.h"
 #include <cassert>
 #include <algorithm>
-#include <fstream>
-#include <vector>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "Asset/ObjManager.h"
 #include "Core/Engine.h"
 #include "Debug/EngineLog.h"
-#include "ThirdParty/stb_image.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -241,6 +242,12 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 
 	if (!CreateConstantBuffers()) return false;
 	SetConstantBuffers();
+	ObjectUniformStream = std::make_unique<FObjectUniformStream>();
+	if (!ObjectUniformStream->Initialize(Device, DeviceContext, ObjectConstantBuffer)) return false;
+	MaterialBindingCache = std::make_unique<FMaterialBindingCache>();
+	SceneRenderer = std::make_unique<FSceneRenderer>(this);
+	PassExecutor = std::make_unique<FPassExecutor>(this);
+	CurrentFramePacket = std::make_unique<FSceneFramePacket>();
 
 	std::wstring ShaderDirW = FPaths::ShaderDir();
 	std::wstring VSPath = ShaderDirW + L"VertexShader.hlsl";
@@ -249,7 +256,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	if (!ShaderManager.LoadVertexShader(Device, VSPath.c_str())) return false;
 	if (!ShaderManager.LoadPixelShader(Device, PSPath.c_str())) return false;
 
-	/** 湲곕낯 Material ?앹꽦 */
+	/** 疫꿸퀡??Material ??밴쉐 */
 	{
 		auto VS = FShaderMap::Get().GetOrCreateVertexShader(Device, VSPath.c_str());
 		std::wstring ColorPSPath = ShaderDirW + L"ColorPixelShader.hlsl";
@@ -283,7 +290,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		FMaterialManager::Get().Register("M_Default", DefaultMaterial);
 	}
 
-	/** Texture ??Material ?앹꽦 */
+	/** Texture ??Material ??밴쉐 */
 	{
 		auto VS = FShaderMap::Get().GetOrCreateVertexShader(Device, VSPath.c_str());
 		std::wstring TexturePSPath = ShaderDirW + L"TexturePixelShader.hlsl";
@@ -369,13 +376,20 @@ void FRenderer::BeginFrame()
 	DeviceContext->RSSetViewports(1, &ActiveVP);
 
 	ClearCommandList();
+	if (CurrentFramePacket)
+	{
+		CurrentFramePacket->Reset();
+	}
+	if (ObjectUniformStream)
+	{
+		ObjectUniformStream->Reset();
+	}
 }
 
 void FRenderer::ClearCommandList()
 {
-	CommandList.clear();
-	CommandList.reserve(PrevCommandCount);
-	NextSubmissionOrder = 0;
+	PendingCommandQueue.Clear();
+	PendingCommandQueue.Reserve(PrevCommandCount);
 }
 
 void FRenderer::EndFrame()
@@ -397,176 +411,64 @@ void FRenderer::EndFrame()
 
 void FRenderer::SubmitCommands(const FRenderCommandQueue& Queue)
 {
+	PendingCommandQueue = Queue;
 	ViewMatrix = Queue.ViewMatrix;
 	ProjectionMatrix = Queue.ProjectionMatrix;
-
-	for (const auto& Cmd : Queue.Commands)
-	{
-		if (Cmd.RenderMesh) Cmd.RenderMesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
-		AddCommand(Cmd);
-	}
 }
 
-void FRenderer::AddCommand(const FRenderCommand& Command)
+void FRenderer::SubmitCommands(FRenderCommandQueue&& Queue)
 {
-	CommandList.push_back(Command);
-	FRenderCommand& Added = CommandList.back();
-	if (!Added.Material) Added.Material = DefaultMaterial.get();
-	Added.SortKey = FRenderCommand::MakeSortKey(Added.Material, Added.RenderMesh);
-	Added.SubmissionOrder = NextSubmissionOrder++;
+	PendingCommandQueue = std::move(Queue);
+	ViewMatrix = PendingCommandQueue.ViewMatrix;
+	ProjectionMatrix = PendingCommandQueue.ProjectionMatrix;
 }
 
 void FRenderer::ExecuteCommands()
 {
-	std::sort(CommandList.begin(), CommandList.end(),
-		[](const FRenderCommand& A, const FRenderCommand& B) {
-			if (A.RenderLayer != B.RenderLayer) return A.RenderLayer < B.RenderLayer;
-			if (A.RenderLayer == ERenderLayer::UI) return A.SubmissionOrder < B.SubmissionOrder;
-			return A.SortKey < B.SortKey;
-		});
+	if (!SceneRenderer || !PassExecutor || !CurrentFramePacket)
+	{
+		return;
+	}
+
+	SceneRenderer->BuildFramePacket(PendingCommandQueue, *CurrentFramePacket);
+	ViewMatrix = CurrentFramePacket->View.ViewMatrix;
+	ProjectionMatrix = CurrentFramePacket->View.ProjectionMatrix;
 
 	SetConstantBuffers();
 	UpdateFrameConstantBuffer();
+	PassExecutor->Execute(*CurrentFramePacket);
 
-	ExecuteRenderPass(ERenderLayer::Default);
-	ClearDepthBuffer();
-	ExecuteRenderPass(ERenderLayer::Overlay);
-	ExecuteRenderPass(ERenderLayer::UI);
-	
 	if (PostRenderCallback) PostRenderCallback(this);
 
-	PrevCommandCount = CommandList.size();
+	PrevCommandCount = PendingCommandQueue.Commands.size();
 	ClearCommandList();
 }
 
 void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
 {
-	FMaterial* CurrentMaterial = nullptr;
-	FRenderMesh* CurrentMeshPtr = nullptr; // 狩?void* ?먯꽌 FRenderMesh* 濡?蹂寃?
-	D3D11_PRIMITIVE_TOPOLOGY CurrentMeshTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-	FMatrix CurrentWorldMatrix = FMatrix::Identity;
-	bool bHasCurrentWorldMatrix = false;
-
-	ID3D11ShaderResourceView* FontSRV = TextRenderer.GetAtlasSRV();
-	ID3D11SamplerState* FontSampler = TextRenderer.GetAtlasSampler();
-	ID3D11ShaderResourceView* SubUVSRV = SubUVRenderer.GetTextureSRV();
-	ID3D11SamplerState* SubUVSampler = SubUVRenderer.GetSamplerState();
-
-	FRenderCommand toFind;
-	toFind.RenderLayer = InRenderLayer;
-	auto it = std::lower_bound(CommandList.begin(), CommandList.end(), toFind,
-		[](const FRenderCommand& A, const FRenderCommand& B) { return A.RenderLayer < B.RenderLayer; });
-
-	RenderStateManager->RebindState();
-	for (; it != CommandList.end(); it++)
+	if (!PassExecutor || !CurrentFramePacket)
 	{
-		const FRenderCommand& Cmd = *it;
-		if (Cmd.RenderLayer != InRenderLayer) return;
+		return;
+	}
 
-		if (!Cmd.RenderMesh) continue;
-
-		if (Cmd.Material != CurrentMaterial)
-		{
-			Cmd.Material->Bind(DeviceContext);
-
-			RenderStateManager->BindState(Cmd.Material->GetRasterizerState());
-			RenderStateManager->BindState(Cmd.Material->GetDepthStencilState());
-			RenderStateManager->BindState(Cmd.Material->GetBlendState());
-
-			CurrentMaterial = Cmd.Material;
-
-			if (CurrentMaterial->GetOriginName() == "M_Font")
-			{
-				DeviceContext->PSSetShaderResources(0, 1, &FontSRV);
-				DeviceContext->PSSetSamplers(0, 1, &FontSampler);
-			}
-			else if (CurrentMaterial->GetOriginName() == "M_SubUV")
-			{
-				DeviceContext->PSSetShaderResources(0, 1, &SubUVSRV);
-				DeviceContext->PSSetSamplers(0, 1, &SubUVSampler);
-			}
-			else
-			{
-				DeviceContext->PSSetSamplers(0, 1, &NormalSampler);
-			}
-		}
-
-		if (Cmd.Material)
-		{
-			if (Cmd.bDisableCulling)
-			{
-				FRasterizerStateOption RasterOpt = Cmd.Material->GetRasterizerOption();
-				RasterOpt.CullMode = D3D11_CULL_NONE;
-				auto OverrideRS = RenderStateManager->GetOrCreateRasterizerState(RasterOpt);
-				RenderStateManager->BindState(OverrideRS);
-			}
-			else
-			{
-				RenderStateManager->BindState(Cmd.Material->GetRasterizerState());
-			}
-
-			if (Cmd.bDisableDepthTest || Cmd.bDisableDepthWrite)
-			{
-				FDepthStencilStateOption DepthOpt = Cmd.Material->GetDepthStencilOption();
-				if (Cmd.bDisableDepthTest)
-				{
-					DepthOpt.DepthEnable = false;
-				}
-				if (Cmd.bDisableDepthWrite)
-				{
-					DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-				}
-				auto OverrideDSS = RenderStateManager->GetOrCreateDepthStencilState(DepthOpt);
-				RenderStateManager->BindState(OverrideDSS);
-			}
-			else
-			{
-				RenderStateManager->BindState(Cmd.Material->GetDepthStencilState());
-			}
-		}
-
-		if (Cmd.RenderMesh)
-		{
-			if (Cmd.RenderMesh->Vertices.empty() && Cmd.RenderMesh->Indices.empty()) continue;
-
-			FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
-
-			if (Cmd.RenderMesh != CurrentMeshPtr)
-			{
-				Cmd.RenderMesh->Bind(DeviceContext);
-				CurrentMeshPtr = Cmd.RenderMesh;
-			}
-
-			D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = (D3D11_PRIMITIVE_TOPOLOGY)Cmd.RenderMesh->Topology;
-			if (DesiredTopology != CurrentMeshTopology)
-			{
-				DeviceContext->IASetPrimitiveTopology(DesiredTopology);
-				CurrentMeshTopology = DesiredTopology;
-			}
-
-			if (!bHasCurrentWorldMatrix || Cmd.WorldMatrix != CurrentWorldMatrix)
-			{
-				UpdateObjectConstantBuffer(Cmd.WorldMatrix);
-				CurrentWorldMatrix = Cmd.WorldMatrix;
-				bHasCurrentWorldMatrix = true;
-			}
-
-			if (!Cmd.RenderMesh->Indices.empty())
-			{
-				UINT DrawCount = (Cmd.IndexCount > 0) ? Cmd.IndexCount : static_cast<UINT>(Cmd.RenderMesh->Indices.size());
-				UINT StartLocation = Cmd.IndexStart;
-
-				FString MatName = Cmd.Material ? Cmd.Material->GetOriginName() : "Unknown";
-
-				++FrameDrawCallCount;
-				DeviceContext->DrawIndexed(DrawCount, StartLocation, 0);
-			}
-			else
-			{
-				++FrameDrawCallCount;
-				DeviceContext->Draw(static_cast<UINT>(Cmd.RenderMesh->Vertices.size()), 0);
-			}
-		}
+	switch (InRenderLayer)
+	{
+	case ERenderLayer::Overlay:
+		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::Overlay);
+		break;
+	case ERenderLayer::UI:
+		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::UI);
+		break;
+	case ERenderLayer::OutlineMask:
+		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::OutlineMask);
+		break;
+	case ERenderLayer::OutlineComposite:
+		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::OutlineComposite);
+		break;
+	case ERenderLayer::Base:
+	default:
+		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::Base);
+		break;
 	}
 }
 
@@ -750,60 +652,12 @@ void FRenderer::UpdateOutlinePostConstantBuffer(const FVector4& OutlineColor, fl
 
 bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const char* FilePath, ID3D11ShaderResourceView** OutSRV)
 {
-	if (FilePath == nullptr)
-	{
-		return false;
-	}
-
-	return CreateTextureFromSTB(Device, FPaths::ToPath(FilePath), OutSRV);
+	return FTextureLoader::CreateTextureFromSTB(Device, FilePath, OutSRV);
 }
 
 bool FRenderer::CreateTextureFromSTB(ID3D11Device* Device, const std::filesystem::path& FilePath, ID3D11ShaderResourceView** OutSRV)
 {
-	if (Device == nullptr || OutSRV == nullptr || FilePath.empty())
-	{
-		return false;
-	}
-
-	std::ifstream File(FilePath, std::ios::binary | std::ios::ate);
-	if (!File.is_open())
-	{
-		return false;
-	}
-
-	const std::streamsize FileSize = File.tellg();
-	if (FileSize <= 0)
-	{
-		return false;
-	}
-
-	File.seekg(0, std::ios::beg);
-	std::vector<unsigned char> FileBytes(static_cast<size_t>(FileSize));
-	if (!File.read(reinterpret_cast<char*>(FileBytes.data()), FileSize))
-	{
-		return false;
-	}
-
-	int W = 0;
-	int H = 0;
-	int C = 0;
-	unsigned char* Data = stbi_load_from_memory(FileBytes.data(), static_cast<int>(FileBytes.size()), &W, &H, &C, 4);
-	if (!Data) return false;
-
-	D3D11_TEXTURE2D_DESC Desc = {};
-	Desc.Width = W; Desc.Height = H; Desc.MipLevels = 1; Desc.ArraySize = 1;
-	Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; Desc.SampleDesc.Count = 1;
-	Desc.Usage = D3D11_USAGE_DEFAULT; Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-	D3D11_SUBRESOURCE_DATA InitData = { Data, static_cast<UINT>(W * 4), 0 };
-	ID3D11Texture2D* Tex = nullptr;
-	HRESULT hr = Device->CreateTexture2D(&Desc, &InitData, &Tex);
-	stbi_image_free(Data);
-	if (FAILED(hr)) return false;
-
-	hr = Device->CreateShaderResourceView(Tex, nullptr, OutSRV);
-	Tex->Release();
-	return SUCCEEDED(hr);
+	return FTextureLoader::CreateTextureFromSTB(Device, FilePath, OutSRV);
 }
 
 bool FRenderer::InitOutlineResources()
@@ -975,9 +829,27 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	DeviceContext->OMSetRenderTargets(0, nullptr, BoundDSV);
 	DeviceContext->OMSetDepthStencilState(StencilWriteState, 1);
 
-	for (const FOutlineRenderItem& Item : Items)
+	TArray<uint32> ObjectAllocations;
+	if (ObjectUniformStream)
 	{
-		if (!Item.Mesh || !Item.Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext))
+		ObjectAllocations.reserve(Items.size());
+		for (const FOutlineRenderItem& Item : Items)
+		{
+			const uint32 AllocationIndex = ObjectUniformStream->AllocateWorldMatrix(Item.WorldMatrix);
+			ObjectAllocations.push_back(AllocationIndex);
+		}
+		ObjectUniformStream->UploadFrame();
+	}
+
+	for (size_t ItemIndex = 0; ItemIndex < Items.size(); ++ItemIndex)
+	{
+		const FOutlineRenderItem& Item = Items[ItemIndex];
+		if (!Item.Mesh)
+		{
+			continue;
+		}
+
+		if (Item.Mesh->NeedsBufferUpload() && !Item.Mesh->UpdateVertexAndIndexBuffer(Device, DeviceContext))
 		{
 			continue;
 		}
@@ -988,7 +860,15 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 			DeviceContext->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)Item.Mesh->Topology);
 		}
 
-		UpdateObjectConstantBuffer(Item.WorldMatrix);
+		if (ObjectUniformStream && ItemIndex < ObjectAllocations.size())
+		{
+			ObjectUniformStream->BindAllocation(ObjectAllocations[ItemIndex]);
+		}
+		else
+		{
+			UpdateObjectConstantBuffer(Item.WorldMatrix);
+		}
+
 		if (!Item.Mesh->Indices.empty())
 		{
 			++FrameDrawCallCount;
@@ -1034,6 +914,10 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	ShaderManager.Bind(DeviceContext);
 	SetConstantBuffers();
 	RenderStateManager->RebindState();
+	if (MaterialBindingCache)
+	{
+		MaterialBindingCache->Reset();
+	}
 
 	BoundRTV->Release();
 	BoundDSV->Release();
@@ -1062,7 +946,7 @@ void FRenderer::ExecuteLineCommands()
 {
 	if (LineVertices.empty()) return;
 	ShaderManager.Bind(DeviceContext);
-	DefaultMaterial->Bind(DeviceContext);
+	DefaultMaterial->Bind(DeviceContext, MaterialBindingCache.get());
 	UINT Size = static_cast<UINT>(LineVertices.size() * sizeof(FVertex));
 	if (LineVertexBuffer && LineVertexBufferSize < Size) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
 	if (!LineVertexBuffer)
@@ -1080,7 +964,16 @@ void FRenderer::ExecuteLineCommands()
 	UINT Stride = sizeof(FVertex), Offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &LineVertexBuffer, &Stride, &Offset);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	UpdateObjectConstantBuffer(FMatrix::Identity);
+	if (ObjectUniformStream)
+	{
+		const uint32 AllocationIndex = ObjectUniformStream->AllocateWorldMatrix(FMatrix::Identity);
+		ObjectUniformStream->UploadFrame();
+		ObjectUniformStream->BindAllocation(AllocationIndex);
+	}
+	else
+	{
+		UpdateObjectConstantBuffer(FMatrix::Identity);
+	}
 	++FrameDrawCallCount;
 	DeviceContext->Draw(static_cast<UINT>(LineVertices.size()), 0);
 	DeviceContext->OMSetDepthStencilState(nullptr, 0);
@@ -1090,6 +983,15 @@ void FRenderer::ExecuteLineCommands()
 void FRenderer::Release()
 {
 	ClearViewportCallbacks(); ClearSceneRenderTarget();
+	CurrentFramePacket.reset();
+	SceneRenderer.reset();
+	PassExecutor.reset();
+	MaterialBindingCache.reset();
+	if (ObjectUniformStream)
+	{
+		ObjectUniformStream->Release();
+		ObjectUniformStream.reset();
+	}
 	TextRenderer.Release(); SubUVRenderer.Release();
 	ShaderManager.Release(); FShaderMap::Get().Clear(); FMaterialManager::Get().Clear();
 	if (NormalSampler) NormalSampler->Release();
@@ -1135,3 +1037,4 @@ void FRenderer::OnResize(int32 W, int32 H)
 	CreateRenderTargetAndDepthStencil(W, H);
 	Viewport.Width = static_cast<float>(W); Viewport.Height = static_cast<float>(H);
 }
+

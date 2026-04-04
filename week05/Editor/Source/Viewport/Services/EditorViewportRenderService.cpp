@@ -12,13 +12,20 @@
 #include "UI/EditorUI.h"
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/TextComponent.h"
 #include "Asset/ObjManager.h"
 #include "Slate/Widget/Painter.h"
+#include <algorithm>
+#include <utility>
 
 namespace
 {
+	size_t GSceneCommandReserveHint = 2048;
+
 	void BuildGridVectors(const FMatrix& ViewInverse, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
 	{
 		OutViewForward = ViewInverse.GetForwardVector().GetSafeNormal();
@@ -32,6 +39,52 @@ namespace
 
 		OutGridAxisU = ViewInverse.GetRightVector().GetSafeNormal();
 		OutGridAxisV = ViewInverse.GetUpVector().GetSafeNormal();
+	}
+
+	void BuildOutlineItemsForViewport(FEditorEngine* EditorEngine, const FViewportEntry& Entry, FRenderCommandQueue& Queue)
+	{
+		if (!EditorEngine || !Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives))
+		{
+			return;
+		}
+
+		AActor* SelectedActor = EditorEngine->GetSelectedActor();
+		if (!SelectedActor || SelectedActor->IsPendingDestroy() || !SelectedActor->IsVisible())
+		{
+			return;
+		}
+
+		if (SelectedActor->GetComponentByClass<USkyComponent>() != nullptr)
+		{
+			return;
+		}
+
+		const TArray<UActorComponent*>& Components = SelectedActor->GetComponents();
+		Queue.OutlineItems.reserve(Queue.OutlineItems.size() + Components.size());
+
+		for (UActorComponent* Component : Components)
+		{
+			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
+			{
+				continue;
+			}
+			if (Component->IsA(UTextComponent::StaticClass()) || Component->IsA(USubUVComponent::StaticClass()))
+			{
+				continue;
+			}
+
+			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+			FRenderMesh* RenderMesh = PrimitiveComponent->GetRenderMesh();
+			if (!RenderMesh)
+			{
+				continue;
+			}
+
+			FOutlineRenderItem Item = {};
+			Item.Mesh = RenderMesh;
+			Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
+			Queue.OutlineItems.push_back(Item);
+		}
 	}
 }
 
@@ -102,7 +155,8 @@ void FEditorViewportRenderService::RenderAll(
 
 		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
 		FRenderCommandQueue Queue;
-		Queue.Reserve(Renderer->GetPrevCommandCount());
+		const size_t ReserveHint = (std::max)(Renderer->GetPrevCommandCount(), GSceneCommandReserveHint);
+		Queue.Reserve(ReserveHint);
 		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
 
@@ -144,7 +198,19 @@ void FEditorViewportRenderService::RenderAll(
 			Queue.AddCommand(GridCommand);
 		}
 
-		Renderer->SubmitCommands(Queue);
+		BuildOutlineItemsForViewport(EditorEngine, Entry, Queue);
+
+		const size_t QueueSize = Queue.Commands.size();
+		if (QueueSize > GSceneCommandReserveHint)
+		{
+			GSceneCommandReserveHint = QueueSize;
+		}
+		else
+		{
+			GSceneCommandReserveHint = (std::max)(QueueSize, GSceneCommandReserveHint * 7 / 8);
+		}
+
+		Renderer->SubmitCommands(std::move(Queue));
 		Renderer->ExecuteCommands();
 		EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false);
 		Renderer->EndScenePass();
