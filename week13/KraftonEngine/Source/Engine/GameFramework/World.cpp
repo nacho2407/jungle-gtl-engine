@@ -303,7 +303,8 @@ void UWorld::UpdateVisibleActors()
 
 void UWorld::InitWorld()
 {
-	 Octree = new FOctree(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)), 0);
+	delete Octree;
+	Octree = new FOctree(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)), 0);
 }
 
 void UWorld::BeginPlay()

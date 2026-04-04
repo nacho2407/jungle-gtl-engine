@@ -107,6 +107,7 @@ void UEditorEngine::NewScene()
 {
 	ClearScene();
 	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
+	Ctx.World->InitWorld();
 	SetActiveWorld(Ctx.ContextHandle);
 	SelectionManager.SetWorld(GetWorld());
 
