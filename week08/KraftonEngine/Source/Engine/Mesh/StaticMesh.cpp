@@ -106,7 +106,7 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 {
 	StaticMeshAsset = InMesh;
 	// 현재는 static mesh asset이 로드 후 고정된다고 보고, 메시 변경 dirty 갱신은 비활성화합니다.
-	// MarkMeshPickingBVHDirty();
+	// MarkMeshTrianglePickingBVHDirty();
 
 	// Section → MaterialIndex 캐싱 갱신
 	if (StaticMeshAsset)
@@ -123,7 +123,7 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 				}
 			}
 		}
-		EnsureMeshPickingBVHBuilt(); //warm.
+		EnsureMeshTrianglePickingBVHBuilt();
 	}
 }
 
@@ -142,28 +142,28 @@ const TArray<FStaticMaterial>& UStaticMesh::GetStaticMaterials() const
 	return StaticMaterials;
 }
 
-//void UStaticMesh::MarkMeshPickingBVHDirty()
+//void UStaticMesh::MarkMeshTrianglePickingBVHDirty()
 //{
-//	MeshPickingBVH.MarkDirty();
+//	MeshTrianglePickingBVH.MarkDirty();
 //}
 
-void UStaticMesh::EnsureMeshPickingBVHBuilt() const
+void UStaticMesh::EnsureMeshTrianglePickingBVHBuilt() const
 {
 	if (!StaticMeshAsset)
 	{
 		return;
 	}
 
-	MeshPickingBVH.EnsureBuilt(*StaticMeshAsset);
+	MeshTrianglePickingBVH.EnsureBuilt(*StaticMeshAsset);
 }
 
-bool UStaticMesh::RaycastMeshBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const
+bool UStaticMesh::RaycastMeshTrianglesWithBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const
 {
 	if (!StaticMeshAsset)
 	{
 		return false;
 	}
 
-	EnsureMeshPickingBVHBuilt();
-	return MeshPickingBVH.RaycastLocal(LocalOrigin, LocalDirection, *StaticMeshAsset, OutHitResult);
+	EnsureMeshTrianglePickingBVHBuilt();
+	return MeshTrianglePickingBVH.RaycastLocal(LocalOrigin, LocalDirection, *StaticMeshAsset, OutHitResult);
 }
