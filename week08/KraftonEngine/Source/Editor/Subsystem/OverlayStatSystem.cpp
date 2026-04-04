@@ -42,7 +42,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 			//정확한 성능 측정을 위해 일단 double 출력.
 			const double PickingTimeMS = LastPickingTimeMs;
 			const double AccumulatedTime = AccumulatedPickingTimeMs;
-			snprintf(Buffer, sizeof(Buffer), "Picking Time %.3f ms : Num Attempts %d : Accumulated Time %.3f ms",
+			snprintf(Buffer, sizeof(Buffer), "Picking Time %.4f ms : Num Attempts %d : Accumulated Time %.4f ms",
 				PickingTimeMS, NumAttempts, AccumulatedTime);
 
 			//영상에서처럼 정수로 표기할 경우
