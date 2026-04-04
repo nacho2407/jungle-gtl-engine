@@ -162,7 +162,7 @@ private:
 	std::unique_ptr<FSceneRenderer> SceneRenderer = nullptr;
 	std::unique_ptr<FPassExecutor> PassExecutor = nullptr;
 	std::unique_ptr<FObjectUniformStream> ObjectUniformStream = nullptr;
-	std::unique_ptr<FSceneRenderFrame> CurrentFramePacket = nullptr;
+	std::unique_ptr<FSceneRenderFrame> CurrentRenderFrame = nullptr;
 
 	HWND Hwnd = nullptr;
 	ID3D11Device* Device = nullptr;

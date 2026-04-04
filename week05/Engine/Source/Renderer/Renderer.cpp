@@ -264,7 +264,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	if (!ObjectUniformStream->Initialize(Device, DeviceContext, ObjectConstantBuffer)) return false;
 	SceneRenderer = std::make_unique<FSceneRenderer>(this);
 	PassExecutor = std::make_unique<FPassExecutor>(this);
-	CurrentFramePacket = std::make_unique<FSceneRenderFrame>();
+	CurrentRenderFrame = std::make_unique<FSceneRenderFrame>();
 
 	std::wstring ShaderDirW = FPaths::ShaderDir();
 	std::wstring VSPath = ShaderDirW + L"VertexShader.hlsl";
@@ -373,9 +373,9 @@ void FRenderer::BeginFrame()
 	DeviceContext->RSSetViewports(1, &ActiveVP);
 
 	ClearCommandList();
-	if (CurrentFramePacket)
+	if (CurrentRenderFrame)
 	{
-		CurrentFramePacket->Reset();
+		CurrentRenderFrame->Reset();
 	}
 	if (ObjectUniformStream)
 	{
@@ -423,18 +423,18 @@ void FRenderer::SubmitCommands(FRenderCommandQueue&& Queue)
 
 void FRenderer::ExecuteCommands()
 {
-	if (!SceneRenderer || !PassExecutor || !CurrentFramePacket)
+	if (!SceneRenderer || !PassExecutor || !CurrentRenderFrame)
 	{
 		return;
 	}
 
-	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentFramePacket);
-	ViewMatrix = CurrentFramePacket->View.ViewMatrix;
-	ProjectionMatrix = CurrentFramePacket->View.ProjectionMatrix;
+	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentRenderFrame);
+	ViewMatrix = CurrentRenderFrame->View.ViewMatrix;
+	ProjectionMatrix = CurrentRenderFrame->View.ProjectionMatrix;
 
 	SetConstantBuffers();
 	UpdateFrameConstantBuffer();
-	PassExecutor->Execute(*CurrentFramePacket);
+	PassExecutor->Execute(*CurrentRenderFrame);
 
 	if (PostRenderCallback) PostRenderCallback(this);
 
@@ -954,7 +954,7 @@ void FRenderer::ExecuteLineCommands()
 void FRenderer::Release()
 {
 	ClearViewportCallbacks(); ClearSceneRenderTarget();
-	CurrentFramePacket.reset();
+	CurrentRenderFrame.reset();
 	SceneRenderer.reset();
 	PassExecutor.reset();
 	if (ObjectUniformStream)

@@ -243,6 +243,7 @@ void FEditorViewportRenderService::RenderAll(
 			GridCommand.Material = GridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
 			GridCommand.RenderPass = ERenderPass::World;
+			GridCommand.bOverrideRenderPass = true;
 			Queue.AddCommand(GridCommand);
 		}
 

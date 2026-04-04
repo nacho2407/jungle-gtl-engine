@@ -51,12 +51,7 @@ namespace
 
 	ERenderPass ResolveRenderPass(const FMeshRenderItem& RenderItem, const FRenderCommand* CommandOverride)
 	{
-		if (!CommandOverride)
-		{
-			return RenderItem.RenderPass;
-		}
-
-		if (CommandOverride->RenderPass != ERenderPass::World)
+		if (CommandOverride && CommandOverride->bOverrideRenderPass)
 		{
 			return CommandOverride->RenderPass;
 		}
@@ -260,6 +255,6 @@ void FSceneRenderer::AppendDirectRenderItem(const FRenderCommand& Command, TArra
 	RenderItem.WorldMatrix = Command.WorldMatrix;
 	RenderItem.IndexStart = Command.IndexStart;
 	RenderItem.IndexCount = Command.IndexCount;
-	RenderItem.RenderPass = Command.RenderPass;
+	RenderItem.RenderPass = Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::World;
 	OutRenderItems.push_back(RenderItem);
 }

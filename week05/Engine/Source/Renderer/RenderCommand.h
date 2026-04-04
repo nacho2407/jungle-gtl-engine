@@ -29,6 +29,7 @@ struct ENGINE_API FRenderCommand
 	uint32 IndexCount = 0;
 
 	ERenderPass RenderPass = ERenderPass::World;
+	bool bOverrideRenderPass = false;
 };
 
 struct ENGINE_API FOutlineRenderItem

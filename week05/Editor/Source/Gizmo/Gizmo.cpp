@@ -243,6 +243,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 	FRenderCommand Command;
 	Command.WorldMatrix = AxisGizmoWorld;
 	Command.RenderPass = ERenderPass::NoDepth;
+	Command.bOverrideRenderPass = true;
 	Command.Material = Material.get();
 	
 
