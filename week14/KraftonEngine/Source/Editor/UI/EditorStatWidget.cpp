@@ -1,5 +1,6 @@
 #include "Editor/UI/EditorStatWidget.h"
 
+#include "Editor/Settings/EditorSettings.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "ImGui/imgui.h"
@@ -63,6 +64,10 @@ void FEditorStatWidget::Render(float DeltaTime)
 			bPaused = true;
 		}
 	}
+
+	// --- Runtime Optimization ---
+	ImGui::Checkbox("Runtime Optimization", &FEditorSettings::Get().bRunTimeOptimization);
+	ImGui::Separator();
 
 	// --- Draw Call Count ---
 	uint32 DrawCalls = bPaused ? FrozenDrawCalls : FDrawCallStats::Get();
