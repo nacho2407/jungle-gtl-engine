@@ -105,7 +105,8 @@ const FString& UStaticMesh::GetAssetPathFileName() const
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 {
 	StaticMeshAsset = InMesh;
-	MarkMeshPickingBVHDirty();
+	// 현재는 static mesh asset이 로드 후 고정된다고 보고, 메시 변경 dirty 갱신은 비활성화합니다.
+	// MarkMeshPickingBVHDirty();
 
 	// Section → MaterialIndex 캐싱 갱신
 	if (StaticMeshAsset)
@@ -140,10 +141,10 @@ const TArray<FStaticMaterial>& UStaticMesh::GetStaticMaterials() const
 	return StaticMaterials;
 }
 
-void UStaticMesh::MarkMeshPickingBVHDirty()
-{
-	MeshPickingBVH.MarkDirty();
-}
+//void UStaticMesh::MarkMeshPickingBVHDirty()
+//{
+//	MeshPickingBVH.MarkDirty();
+//}
 
 void UStaticMesh::EnsureMeshPickingBVHBuilt() const
 {
