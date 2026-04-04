@@ -54,7 +54,7 @@ void FMeshBVH::Build(const FRenderMesh& Mesh)
 	RootNodeIndex = BuildRecursive(0, static_cast<int32>(TriangleIndices.size()));
 }
 
-int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
+int32 FMeshBVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.push_back({});
@@ -72,7 +72,7 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 	}
 	Node.Bounds = NodeBounds;
 
-	if (Count <= MaxTrianglesPerLeaf)
+	if (Count <= MaxTrianglesPerLeaf || Depth >= MaxDepth)
 	{
 		Node.FirstTriangle = Start;
 		Node.TriangleCount = Count;
@@ -92,7 +92,7 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
-	TArray<FBucket> Buckets(NUM_BUCKETS);
+	FBucket Buckets[NUM_BUCKETS] = {};
 	for (int32 i = Start; i < End; ++i)
 	{
 		const FTriangleRef& Triangle = Triangles[TriangleIndices[i]];
@@ -104,6 +104,7 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 
 	float BestCost = std::numeric_limits<float>::max();
 	int32 BestSplit = -1;
+	const float ParentArea = NodeBounds.SurfaceArea();
 
 	for (int32 i = 1; i < NUM_BUCKETS; ++i)
 	{
@@ -111,7 +112,12 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 		int32 NL = 0, NR = 0;
 		for (int32 j = 0; j < i; ++j) { L.Expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
 		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.Expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
-		const float Cost = 1.0f + L.SurfaceArea() * NL + R.SurfaceArea() * NR;
+
+		float Cost = 1.0f;
+		if (ParentArea > 1e-8f)
+		{
+			Cost += (L.SurfaceArea() * NL + R.SurfaceArea() * NR) / ParentArea;
+		}
 		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
 	}
 
@@ -150,8 +156,9 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End)
 	}
 
 	Node.SplitAxis = Axis;
-	Node.LeftChild = BuildRecursive(Start, Mid);
-	Node.RightChild = BuildRecursive(Mid, End);
+	const int32 ChildDepth = Depth + 1;
+	Node.LeftChild = BuildRecursive(Start, Mid, ChildDepth);
+	Node.RightChild = BuildRecursive(Mid, End, ChildDepth);
 	Nodes[NodeIndex] = Node;
 	return NodeIndex;
 }
