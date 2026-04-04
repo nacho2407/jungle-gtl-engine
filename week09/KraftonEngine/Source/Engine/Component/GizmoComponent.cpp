@@ -54,6 +54,38 @@ UGizmoComponent::UGizmoComponent()
 	LocalExtents = FVector(1.5f, 1.5f, 1.5f);
 }
 
+void UGizmoComponent::SetHolding(bool bHold)
+{
+	if (bIsHolding == bHold)
+	{
+		return;
+	}
+
+	UWorld* World = nullptr;
+	if (TargetActor)
+	{
+		World = TargetActor->GetWorld();
+	}
+	if (!World && Owner)
+	{
+		World = Owner->GetWorld();
+	}
+
+	if (bHold)
+	{
+		if (World)
+		{
+			World->BeginDeferredPickingBVHUpdate();
+		}
+	}
+	else if (World)
+	{
+		World->EndDeferredPickingBVHUpdate();
+	}
+
+	bIsHolding = bHold;
+}
+
 bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT)
 {
 	FVector AxisStart = GetWorldLocation();
@@ -537,6 +569,11 @@ void UGizmoComponent::UpdateAxisMask(ELevelViewportType ViewportType)
 
 void UGizmoComponent::Deactivate()
 {
+	if (bIsHolding)
+	{
+		SetHolding(false);
+	}
+
 	TargetActor = nullptr;
 	AllSelectedActors = nullptr;
 	SetVisibility(false);

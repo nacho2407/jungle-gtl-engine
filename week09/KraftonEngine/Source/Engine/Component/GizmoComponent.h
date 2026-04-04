@@ -29,7 +29,7 @@ public:
 	void RenderGizmo() {}
 	void SetTarget(AActor* NewTarget);
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
-	inline void SetHolding(bool bHold) { bIsHolding = bHold; }
+	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
 	inline bool HasTarget() const { return TargetActor != nullptr; }
