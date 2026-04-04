@@ -170,18 +170,30 @@ void UWorld::UpdateVisibleProxies()
  		Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
 	}
 
+	// ViewProj 행렬 — 프레임당 1회만 계산
+	const FMatrix ViewProj = ActiveCamera->GetViewProjectionMatrix();
+
+	// BoundingBox 캐싱 — 두 루프에서 재사용
+	CachedBoxes.clear();
+	CachedBoxes.reserve(VisiblePrimitives.size());
+
 	{
 		SCOPE_STAT_CAT("OcclusionCulling", "1_WorldTick");
 		OcclusionCulling.Clear();
 		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 		{
-			if (!Primitive) continue;
+			if (!Primitive)
+			{
+				CachedBoxes.push_back(FBoundingBox());
+				continue;
+			}
 
-			FBoundingBox Box = Primitive->GetWorldBoundingBox();
-			FVector Extent = Box.GetExtent();
+			const FBoundingBox Box = Primitive->GetWorldBoundingBox();
+			CachedBoxes.push_back(Box);
+			const FVector Extent = Box.GetExtent();
 
 			if (Extent.X * Extent.Y * Extent.Z > 0.0002f)
-				OcclusionCulling.RasterizeOccluder(Box, ActiveCamera->GetViewProjectionMatrix());
+				OcclusionCulling.RasterizeOccluder(Box, ViewProj);
 		}
 	}
 
@@ -195,14 +207,15 @@ void UWorld::UpdateVisibleProxies()
 		LOD_STATS_RESET();
 
 		// 보이는 primitive의 프록시만 컬링 해제
-		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
+		const size_t Count = VisiblePrimitives.size();
+		for (size_t i = 0; i < Count; ++i)
 		{
-			if (OcclusionCulling.IsOccluded(Primitive->GetWorldBoundingBox(), ActiveCamera->GetViewProjectionMatrix()))
+			if (OcclusionCulling.IsOccluded(CachedBoxes[i], ViewProj))
 				continue;
 
-			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+			if (FPrimitiveSceneProxy* Proxy = VisiblePrimitives[i]->GetSceneProxy())
 			{
-				const FVector ProxyPos = Proxy->PerObjectConstants.Model.GetLocation();
+				const FVector& ProxyPos = Proxy->CachedWorldPos;
 				const float DistSq = DistanceSquared(CameraPos, ProxyPos);
 
 				Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));

@@ -15,6 +15,7 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 void FPrimitiveSceneProxy::UpdateTransform()
 {
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(Owner->GetWorldMatrix());
+	CachedWorldPos = PerObjectConstants.Model.GetLocation();
 	CachedBounds = Owner->GetWorldBoundingBox();
 }
 
