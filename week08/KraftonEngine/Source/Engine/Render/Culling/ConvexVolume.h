@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "Vector.h"
-#include "Matrix.h"
+#include "Engine/Math/Vector.h"
+#include "Engine/Math/Matrix.h"
 
 struct FBoundingBox;
 
