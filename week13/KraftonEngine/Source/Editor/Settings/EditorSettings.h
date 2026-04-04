@@ -41,6 +41,8 @@ public:
 	bool bRunTimeOptimization = false;
 #endif
 
+	bool bUseMeshBVHForPicking = false;
+
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);
 
