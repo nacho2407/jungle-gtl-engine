@@ -67,7 +67,7 @@ private:
 
 	void CollectPreviousFrame();
 
-	TMap<const char*, FStatEntry> GPUStats;
+	TMap<const char*, FStatAccum> GPUStats;
 	TArray<FStatEntry> Snapshot;
 };
 

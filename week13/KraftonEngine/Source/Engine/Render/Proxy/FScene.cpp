@@ -1,5 +1,6 @@
 ﻿#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
+#include <algorithm>
 
 // ============================================================
 // 소멸자 — 모든 프록시 정리
@@ -13,6 +14,7 @@ FScene::~FScene()
 	Proxies.clear();
 	DirtyProxies.clear();
 	SelectedProxies.clear();
+	NeverCullProxies.clear();
 	FreeSlots.clear();
 }
 
@@ -43,6 +45,9 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 	}
 
 	DirtyProxies.insert(Proxy);
+
+	if (Proxy->bNeverCull)
+		NeverCullProxies.push_back(Proxy);
 }
 
 FPrimitiveSceneProxy* FScene::AddPrimitive(UPrimitiveComponent* Component)
@@ -69,6 +74,12 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	// 각 목록에서 제거
 	DirtyProxies.erase(Proxy);
 	SelectedProxies.erase(Proxy);
+
+	if (Proxy->bNeverCull)
+	{
+		auto it = std::find(NeverCullProxies.begin(), NeverCullProxies.end(), Proxy);
+		if (it != NeverCullProxies.end()) NeverCullProxies.erase(it);
+	}
 
 	// 슬롯 비우고 재활용 목록에 추가
 	Proxies[Slot] = nullptr;

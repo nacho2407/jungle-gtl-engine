@@ -63,7 +63,7 @@ void UEngine::Render(float DeltaTime)
 {
 	if (RenderPipeline)
 	{
-		SCOPE_STAT("UEngine::Render");
+		SCOPE_STAT_CAT("UEngine::Render", "2_Render");
 		RenderPipeline->Execute(DeltaTime, Renderer);
 	}
 }
@@ -85,7 +85,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEngine::WorldTick(float DeltaTime)
 {
-	SCOPE_STAT("UEngine::WorldTick");
+	SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
 	UWorld* World = GetWorld();
 	if (World)
 	{

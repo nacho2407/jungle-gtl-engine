@@ -10,7 +10,7 @@ class AStaticMeshActor : public AActor
 {
 public:
 	DECLARE_CLASS(AStaticMeshActor, AActor)
-	AStaticMeshActor() = default;
+	AStaticMeshActor() { bNeedsTick = false; }
 
 	void InitDefaultComponents(const FString& UStaticMeshFileName);
 

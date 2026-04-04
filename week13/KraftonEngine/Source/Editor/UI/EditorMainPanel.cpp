@@ -53,35 +53,35 @@ void FEditorMainPanel::Render(float DeltaTime)
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 	if (EditorEngine)
 	{
-		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "UI(ImGui)");
+		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "5_UI");
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
 
 	if (!FEditorSettings::Get().bRunTimeOptimization)
 	{
 		{
-			SCOPE_STAT_CAT("ConsoleWidget.Render", "UI(ImGui)");
+			SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
 			ConsoleWidget.Render(DeltaTime);
 		}
 
 		{
-			SCOPE_STAT_CAT("ControlWidget.Render", "UI(ImGui)");
+			SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
 			ControlWidget.Render(DeltaTime);
 		}
 
 		{
-			SCOPE_STAT_CAT("PropertyWidget.Render", "UI(ImGui)");
+			SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
 			PropertyWidget.Render(DeltaTime);
 		}
 	}
 
 	{
-		SCOPE_STAT_CAT("SceneWidget.Render", "UI(ImGui)");
+		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
 		SceneWidget.Render(DeltaTime);
 	}
 
 	{
-		SCOPE_STAT_CAT("StatWidget.Render", "UI(ImGui)");
+		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
 		StatWidget.Render(DeltaTime);
 	}
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)

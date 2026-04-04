@@ -11,27 +11,14 @@ FStatManager::FStatManager()
 
 void FStatManager::RecordTime(const char* Name, double ElapsedSeconds, const char* Category)
 {
-	auto it = Stats.find(Name);
-	if (it == Stats.end())
+	FStatAccum& Accum = Stats[Name];
+	if (!Accum.Name)
 	{
-		FStatEntry Entry;
-		Entry.Name = Name;
-		Entry.Category = Category;
-		Entry.CallCount = 1;
-		Entry.TotalTime = ElapsedSeconds;
-		Entry.MaxTime = ElapsedSeconds;
-		Entry.MinTime = ElapsedSeconds;
-		Entry.LastTime = ElapsedSeconds;
-		Stats[Name] = Entry;
-		return;
+		Accum.Name = Name;
+		Accum.Category = Category;
 	}
-
-	FStatEntry& Entry = it->second;
-	Entry.CallCount++;
-	Entry.TotalTime += ElapsedSeconds;
-	Entry.MaxTime = (std::max)(Entry.MaxTime, ElapsedSeconds);
-	Entry.MinTime = (std::min)(Entry.MinTime, ElapsedSeconds);
-	Entry.LastTime = ElapsedSeconds;
+	Accum.FrameCallCount++;
+	Accum.FrameTotal += ElapsedSeconds;
 }
 
 void FStatManager::TakeSnapshot()
@@ -39,15 +26,40 @@ void FStatManager::TakeSnapshot()
 	Snapshot.clear();
 	Snapshot.reserve(Stats.size());
 
-	for (auto& [Key, Entry] : Stats)
+	for (auto& [Key, Accum] : Stats)
 	{
+		// 현재 프레임 결과를 윈도우에 기록
+		double FrameTime = Accum.FrameTotal;
+		Accum.Window[Accum.WindowHead] = FrameTime;
+		Accum.WindowHead = (Accum.WindowHead + 1) % STAT_WINDOW_SIZE;
+		if (Accum.WindowCount < STAT_WINDOW_SIZE)
+			Accum.WindowCount++;
+
+		// 윈도우에서 Avg/Max/Min 계산
+		double Sum = 0.0;
+		double WMax = 0.0;
+		double WMin = DBL_MAX;
+		for (uint32 i = 0; i < Accum.WindowCount; ++i)
+		{
+			double Val = Accum.Window[i];
+			Sum += Val;
+			WMax = (std::max)(WMax, Val);
+			WMin = (std::min)(WMin, Val);
+		}
+
+		FStatEntry Entry;
+		Entry.Name = Accum.Name;
+		Entry.Category = Accum.Category;
+		Entry.CallCount = Accum.FrameCallCount;
+		Entry.TotalTime = FrameTime;
+		Entry.AvgTime = Accum.WindowCount > 0 ? Sum / Accum.WindowCount : 0.0;
+		Entry.MaxTime = WMax;
+		Entry.MinTime = WMin == DBL_MAX ? 0.0 : WMin;
+		Entry.LastTime = FrameTime;
 		Snapshot.push_back(Entry);
 
-		// Reset for next frame
-		Entry.CallCount = 0;
-		Entry.TotalTime = 0.0;
-		Entry.MaxTime = 0.0;
-		Entry.MinTime = DBL_MAX;
-		Entry.LastTime = 0.0;
+		// 현재 프레임 누적 리셋
+		Accum.FrameCallCount = 0;
+		Accum.FrameTotal = 0.0;
 	}
 }
