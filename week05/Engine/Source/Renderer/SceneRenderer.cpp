@@ -13,7 +13,10 @@ void FSceneFramePacket::Reset()
 {
 	ViewFamily = {};
 	View = {};
-	PassCommandQueues.Reset();
+	for (TArray<FMeshDrawCommand>& PassQueue : PassQueues)
+	{
+		PassQueue.clear();
+	}
 	MeshUploads.clear();
 	OutlineItems.clear();
 	// Lights.clear(); GameJam
@@ -23,11 +26,10 @@ void FSceneFramePacket::Reserve(size_t InCommandCount)
 {
 	MeshUploads.reserve(InCommandCount * 2);
 	OutlineItems.reserve((std::max)(InCommandCount / 2, static_cast<size_t>(8)));
-	PassCommandQueues.BasePassCommands.reserve(InCommandCount);
-	PassCommandQueues.OverlayPassCommands.reserve(InCommandCount);
-	PassCommandQueues.UIPassCommands.reserve(InCommandCount);
-	PassCommandQueues.OutlineMaskCommands.reserve(InCommandCount);
-	PassCommandQueues.OutlineCompositeCommands.reserve(InCommandCount);
+	for (TArray<FMeshDrawCommand>& PassQueue : PassQueues)
+	{
+		PassQueue.reserve(InCommandCount);
+	}
 }
 
 void FSceneFramePacket::RegisterMeshUpload(FRenderMesh* InMesh)
@@ -102,13 +104,15 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFr
 		return A.SubmissionOrder < B.SubmissionOrder;
 	};
 
-	if (OutPacket.PassCommandQueues.BasePassCommands.size() > 1)
+	if (OutPacket.GetPassQueue(ERenderPass::World).size() > 1)
 	{
-		std::sort(OutPacket.PassCommandQueues.BasePassCommands.begin(), OutPacket.PassCommandQueues.BasePassCommands.end(), PassComparator);
+		TArray<FMeshDrawCommand>& WorldCommands = OutPacket.GetPassQueue(ERenderPass::World);
+		std::sort(WorldCommands.begin(), WorldCommands.end(), PassComparator);
 	}
-	if (OutPacket.PassCommandQueues.OverlayPassCommands.size() > 1)
+	if (OutPacket.GetPassQueue(ERenderPass::NoDepth).size() > 1)
 	{
-		std::sort(OutPacket.PassCommandQueues.OverlayPassCommands.begin(), OutPacket.PassCommandQueues.OverlayPassCommands.end(), PassComparator);
+		TArray<FMeshDrawCommand>& NoDepthCommands = OutPacket.GetPassQueue(ERenderPass::NoDepth);
+		std::sort(NoDepthCommands.begin(), NoDepthCommands.end(), PassComparator);
 	}
 }
 

@@ -264,6 +264,7 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
+		// 이 코드 빼면 피킹 정상동작 안함.
 		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
 		{
 			continue;

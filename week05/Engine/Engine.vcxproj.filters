@@ -545,9 +545,6 @@
     <ClInclude Include="Source\Renderer\ObjectUniformStream.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\PassCommandQueues.h">
-      <Filter>Source\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\PassExecutor.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>

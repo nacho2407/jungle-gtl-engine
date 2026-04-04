@@ -2,7 +2,6 @@
 
 #include "Renderer/Material.h"
 #include "Renderer/ObjectUniformStream.h"
-#include "Renderer/PassCommandQueues.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/RenderStateManager.h"
 #include "Renderer/Renderer.h"
@@ -120,7 +119,7 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		}
 
 		InOutPacket.RegisterMeshUpload(MeshBatch.Element.RenderMesh);
-		InOutPacket.PassCommandQueues.GetQueue(DrawCommand.RenderPass).push_back(DrawCommand);
+		InOutPacket.GetPassQueue(DrawCommand.RenderPass).push_back(DrawCommand);
 	}
 }
 

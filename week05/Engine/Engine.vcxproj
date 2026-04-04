@@ -90,7 +90,6 @@
     <ClInclude Include="Source\Renderer\MaterialBindingCache.h" />
     <ClInclude Include="Source\Renderer\MeshPassProcessor.h" />
     <ClInclude Include="Source\Renderer\ObjectUniformStream.h" />
-    <ClInclude Include="Source\Renderer\PassCommandQueues.h" />
     <ClInclude Include="Source\Renderer\PassExecutor.h" />
     <ClInclude Include="Source\Renderer\SceneProxy.h" />
     <ClInclude Include="Source\Renderer\SceneRenderer.h" />

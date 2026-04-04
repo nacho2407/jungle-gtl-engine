@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Renderer/MeshPassProcessor.h"
-#include "Renderer/PassCommandQueues.h"
 #include "Renderer/ViewInfo.h"
+#include <array>
 
 class FRenderer;
 struct FRenderCommand;
@@ -20,9 +20,11 @@ struct FRenderCommandQueue;
 
 struct ENGINE_API FSceneFramePacket
 {
+	using FPassQueueArray = std::array<TArray<FMeshDrawCommand>, static_cast<size_t>(ERenderPass::Count)>;
+
 	FSceneViewFamily ViewFamily;
 	FViewInfo View;
-	FPassCommandQueues PassCommandQueues;
+	FPassQueueArray PassQueues;
 	TArray<FRenderMesh*> MeshUploads;
 	TArray<FOutlineRenderItem> OutlineItems;
 	// TArray<FLightSceneData> Lights; GameJam
@@ -30,6 +32,8 @@ struct ENGINE_API FSceneFramePacket
 	void Reset();
 	void Reserve(size_t InCommandCount);
 	void RegisterMeshUpload(FRenderMesh* InMesh);
+	TArray<FMeshDrawCommand>& GetPassQueue(ERenderPass InRenderPass) { return PassQueues[static_cast<size_t>(InRenderPass)]; }
+	const TArray<FMeshDrawCommand>& GetPassQueue(ERenderPass InRenderPass) const { return PassQueues[static_cast<size_t>(InRenderPass)]; }
 };
 
 class ENGINE_API FSceneRenderer

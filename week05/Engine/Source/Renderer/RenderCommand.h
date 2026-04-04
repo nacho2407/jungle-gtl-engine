@@ -14,6 +14,7 @@ enum class ERenderPass : uint8
 	World = 0,
 	NoDepth,
 	UI,
+	Count,
 };
 
 struct ENGINE_API FRenderCommand

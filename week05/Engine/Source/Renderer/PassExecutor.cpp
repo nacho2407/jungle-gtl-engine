@@ -25,11 +25,9 @@ void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
 
 	Renderer->SetConstantBuffers();
 
-	const TArray<FMeshDrawCommand>& BaseCommands = Packet.PassCommandQueues.BasePassCommands;
-	const TArray<FMeshDrawCommand>& OverlayCommands = Packet.PassCommandQueues.OverlayPassCommands;
-	const TArray<FMeshDrawCommand>& UICommands = Packet.PassCommandQueues.UIPassCommands;
-	const TArray<FMeshDrawCommand>& OutlineMaskCommands = Packet.PassCommandQueues.OutlineMaskCommands;
-	const TArray<FMeshDrawCommand>& OutlineCompositeCommands = Packet.PassCommandQueues.OutlineCompositeCommands;
+	const TArray<FMeshDrawCommand>& BaseCommands = Packet.GetPassQueue(ERenderPass::World);
+	const TArray<FMeshDrawCommand>& OverlayCommands = Packet.GetPassQueue(ERenderPass::NoDepth);
+	const TArray<FMeshDrawCommand>& UICommands = Packet.GetPassQueue(ERenderPass::UI);
 
 	ExecuteQueue(BaseCommands);
 
@@ -50,8 +48,6 @@ void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
 
 	ExecuteQueue(OverlayCommands);
 	ExecuteQueue(UICommands);
-	ExecuteQueue(OutlineMaskCommands);
-	ExecuteQueue(OutlineCompositeCommands);
 
 	if (!Packet.OutlineItems.empty())
 	{
@@ -88,11 +84,9 @@ void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& P
 		}
 	};
 
-	UploadPassQueue(Packet.PassCommandQueues.BasePassCommands);
-	UploadPassQueue(Packet.PassCommandQueues.OverlayPassCommands);
-	UploadPassQueue(Packet.PassCommandQueues.UIPassCommands);
-	UploadPassQueue(Packet.PassCommandQueues.OutlineMaskCommands);
-	UploadPassQueue(Packet.PassCommandQueues.OutlineCompositeCommands);
+	UploadPassQueue(Packet.GetPassQueue(ERenderPass::World));
+	UploadPassQueue(Packet.GetPassQueue(ERenderPass::NoDepth));
+	UploadPassQueue(Packet.GetPassQueue(ERenderPass::UI));
 }
 
 void FPassExecutor::UpdateUploadedMeshes(const FSceneFramePacket& Packet) const
