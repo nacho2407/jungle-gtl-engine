@@ -66,8 +66,10 @@ private:
 		FMeshBuffer* LastMeshBuffer = nullptr;
 		ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 		int32        LastUVScroll   = -1;
+		FVector4     LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f }; // 초기값: 불일치 보장
 		bool         bSamplerBound  = false;
 		bool         bPerObjectBound = false;
+		bool         bMaterialBound  = false;
 
 		bool HasBoundSRV() const { return LastSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull); }
 	};
