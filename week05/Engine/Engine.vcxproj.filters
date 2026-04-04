@@ -276,9 +276,6 @@
     <ClCompile Include="Source\Renderer\MeshData.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\RenderCommand.cpp">
-      <Filter>Source\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Renderer\RenderMesh.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>

@@ -26,8 +26,6 @@ struct ENGINE_API FRenderCommand
 
 	FMatrix WorldMatrix = FMatrix::Identity;
 	FMaterial* Material = nullptr;
-	uint64 SortKey = 0;
-	uint64 SubmissionOrder = 0;
 
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;
@@ -36,10 +34,6 @@ struct ENGINE_API FRenderCommand
 	bool bDisableDepthTest = false;
 	bool bDisableDepthWrite = false;
 	bool bDisableCulling = false;
-
-	bool IsProxyCommand() const { return SceneProxy != nullptr; }
-
-	static uint64 MakeSortKey(const FMaterial* InMaterial, const FRenderMesh* InMeshData);
 };
 
 struct ENGINE_API FOutlineRenderItem

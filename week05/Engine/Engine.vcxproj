@@ -291,7 +291,6 @@
     <ClCompile Include="Source\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Source\Renderer\ViewInfo.cpp" />
     <ClCompile Include="Source\Renderer\MeshData.cpp" />
-    <ClCompile Include="Source\Renderer\RenderCommand.cpp" />
     <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
     <ClCompile Include="Source\Renderer\RenderState.cpp" />
     <ClCompile Include="Source\Renderer\RenderStateManager.cpp" />
