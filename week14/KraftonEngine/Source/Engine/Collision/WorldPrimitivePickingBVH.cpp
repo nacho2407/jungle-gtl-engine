@@ -86,6 +86,12 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
  */
 bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
+	struct FTraversalEntry
+	{
+		int32 NodeIndex;
+		float TMin;
+	};
+
 	OutHitResult = {};
 	OutActor = nullptr;
 	if (Nodes.empty())
@@ -93,20 +99,29 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		return false;
 	}
 
-	TArray<int32> NodeStack;
-	NodeStack.push_back(0); //루트
+	TArray<FTraversalEntry> NodeStack;
+	NodeStack.reserve(64);
+
+	float RootTMin = 0.0f;
+	float RootTMax = 0.0f;
+	if (!FRayUtils::IntersectRayAABB(Ray, Nodes[0].Bounds.Min, Nodes[0].Bounds.Max, RootTMin, RootTMax))
+	{
+		return false;
+	}
+
+	NodeStack.push_back({ 0, RootTMin });
 	while (!NodeStack.empty())
 	{
-		const int32 NodeIndex = NodeStack.back(); //이번 노드
+		const FTraversalEntry Entry = NodeStack.back();
 		NodeStack.pop_back();
-
-		//이번 노드의 BVH AABB와 충돌하지 않으면 스킵.
-		const FNode& Node = Nodes[NodeIndex];
-		if (!FRayUtils::CheckRayAABB(Ray, Node.Bounds.Min, Node.Bounds.Max))
+		if (Entry.TMin > OutHitResult.Distance)
 		{
 			continue;
 		}
 
+		const int32 NodeIndex = Entry.NodeIndex; //이번 노드
+		//이번 노드의 BVH AABB와 충돌하지 않으면 스킵.
+		const FNode& Node = Nodes[NodeIndex];
 		//리프 노드라면 실제 primitive와 충돌 검사 수행
 		if (Node.IsLeaf())
 		{
@@ -114,10 +129,8 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			for (int32 LeafIndex = Node.FirstLeaf; LeafIndex < Node.FirstLeaf + Node.LeafCount; ++LeafIndex)
 			{
 				const FLeaf& Leaf = Leaves[LeafIndex];
-				if (!Leaf.Primitive || !Leaf.Owner || !Leaf.Owner->IsVisible() || !Leaf.Primitive->IsVisible())
-					continue;
 				FHitResult CandidateHit{};
-				if (FRayUtils::RaycastComponent(Leaf.Primitive, Ray, CandidateHit) &&
+				if (Leaf.Primitive->LineTraceComponent(Ray, CandidateHit) &&
 					CandidateHit.Distance < OutHitResult.Distance)
 				{
 					OutHitResult = CandidateHit;
@@ -128,12 +141,46 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		}
 
 		// 내부 노드는 최대 8개의 자식을 가지므로 AABB에 걸린 자식들을 계속 순회합니다.
+		FTraversalEntry ChildEntries[8];
+		int32 ChildEntryCount = 0;
 		for (int32 ChildIndex = 0; ChildIndex < Node.ChildCount; ++ChildIndex)
 		{
-			if (Node.Children[ChildIndex] >= 0)
+			const int32 ChildNodeIndex = Node.Children[ChildIndex];
+			if (ChildNodeIndex < 0)
 			{
-				NodeStack.push_back(Node.Children[ChildIndex]);
+				continue;
 			}
+
+			float ChildTMin = 0.0f;
+			float ChildTMax = 0.0f;
+			const FNode& ChildNode = Nodes[ChildNodeIndex];
+			if (!FRayUtils::IntersectRayAABB(Ray, ChildNode.Bounds.Min, ChildNode.Bounds.Max, ChildTMin, ChildTMax))
+			{
+				continue;
+			}
+			if (ChildTMin > OutHitResult.Distance)
+			{
+				continue;
+			}
+
+			ChildEntries[ChildEntryCount++] = { ChildNodeIndex, ChildTMin };
+		}
+
+		for (int32 I = 1; I < ChildEntryCount; ++I)
+		{
+			FTraversalEntry Key = ChildEntries[I];
+			int32 J = I - 1;
+			while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
+			{
+				ChildEntries[J + 1] = ChildEntries[J];
+				--J;
+			}
+			ChildEntries[J + 1] = Key;
+		}
+
+		for (int32 I = 0; I < ChildEntryCount; ++I)
+		{
+			NodeStack.push_back(ChildEntries[I]);
 		}
 	}
 	return OutActor != nullptr;

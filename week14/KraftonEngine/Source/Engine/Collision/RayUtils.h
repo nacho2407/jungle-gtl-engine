@@ -12,6 +12,7 @@ class UPrimitiveComponent;
 struct FRayUtils
 {
 	// Ray vs AABB 교차 판정
+	static bool IntersectRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax, float& OutTMin, float& OutTMax);
 	static bool CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax);
 
 	// Ray vs Triangle 교차 (Möller–Trumbore)
