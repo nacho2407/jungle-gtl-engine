@@ -25,6 +25,7 @@ void FBillboardSceneProxy::UpdateMesh()
 	MeshBuffer = Owner->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	Pass = ERenderPass::Opaque;
+	UpdateSortKey();
 }
 
 // ============================================================
