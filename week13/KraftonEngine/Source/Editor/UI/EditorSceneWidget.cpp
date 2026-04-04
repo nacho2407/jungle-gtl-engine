@@ -123,7 +123,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 				EditorEngine->GetWorldList().push_back(LoadCtx);
 				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
 				EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
-				LoadCtx.World->BuildPickingBVHNow(); //씬 로드 후에 BVH 구축
+				LoadCtx.World->WarmupPickingData(); // 씬 로드 후 메시 BVH와 월드 BVH를 모두 빌드해놓음 warmup.
 			}
 			EditorEngine->ResetViewport();
 
