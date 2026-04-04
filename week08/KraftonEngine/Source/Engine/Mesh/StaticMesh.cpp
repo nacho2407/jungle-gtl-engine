@@ -5,6 +5,7 @@
 #include "Mesh/ObjImporter.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Profiling/MemoryStats.h"
+#include "Mesh/MeshSimplifier.h"
 
 IMPLEMENT_CLASS(UStaticMesh, UObject)
 
@@ -91,6 +92,37 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 				Mat.MaterialInterface->DiffuseTextureFilePath, InDevice);
 		}
 	}
+
+	// ── LOD 생성 (LOD1: 50%, LOD2: 25%) ──
+	if (StaticMeshAsset->Vertices.size() >= 100)
+	{
+		static const float LODRatios[] = { 0.5f, 0.25f };
+		for (int lod = 0; lod < 2; ++lod)
+		{
+			FSimplifiedMesh Simplified = FMeshSimplifier::Simplify(
+				StaticMeshAsset->Vertices, StaticMeshAsset->Indices,
+				StaticMeshAsset->Sections, LODRatios[lod]);
+
+			AdditionalLODs[lod].Sections = std::move(Simplified.Sections);
+
+			TMeshData<FVertexPNCT> LODRenderData;
+			LODRenderData.Vertices.reserve(Simplified.Vertices.size());
+			for (const FNormalVertex& RawVert : Simplified.Vertices)
+			{
+				FVertexPNCT RenderVert;
+				RenderVert.Position = RawVert.pos;
+				RenderVert.Normal = RawVert.normal;
+				RenderVert.Color = RawVert.color;
+				RenderVert.UV = RawVert.tex;
+				LODRenderData.Vertices.push_back(RenderVert);
+			}
+			LODRenderData.Indices = std::move(Simplified.Indices);
+
+			AdditionalLODs[lod].RenderBuffer = std::make_unique<FMeshBuffer>();
+			AdditionalLODs[lod].RenderBuffer->Create(InDevice, LODRenderData);
+		}
+		bHasLOD = true;
+	}
 }
 
 const FString& UStaticMesh::GetAssetPathFileName() const
@@ -142,11 +174,6 @@ const TArray<FStaticMaterial>& UStaticMesh::GetStaticMaterials() const
 	return StaticMaterials;
 }
 
-//void UStaticMesh::MarkMeshTrianglePickingBVHDirty()
-//{
-//	MeshTrianglePickingBVH.MarkDirty();
-//}
-
 void UStaticMesh::EnsureMeshTrianglePickingBVHBuilt() const
 {
 	if (!StaticMeshAsset)
@@ -166,4 +193,24 @@ bool UStaticMesh::RaycastMeshTrianglesWithBVHLocal(const FVector& LocalOrigin, c
 
 	EnsureMeshTrianglePickingBVHBuilt();
 	return MeshTrianglePickingBVH.RaycastLocal(LocalOrigin, LocalDirection, *StaticMeshAsset, OutHitResult);
+}
+
+FMeshBuffer* UStaticMesh::GetLODMeshBuffer(uint32 LODLevel) const
+{
+	if (LODLevel == 0 && StaticMeshAsset)
+		return StaticMeshAsset->RenderBuffer.get();
+	if (LODLevel >= 1 && LODLevel <= 2 && bHasLOD)
+		return AdditionalLODs[LODLevel - 1].RenderBuffer.get();
+	return StaticMeshAsset ? StaticMeshAsset->RenderBuffer.get() : nullptr;
+}
+
+static const TArray<FStaticMeshSection> EmptySections;
+
+const TArray<FStaticMeshSection>& UStaticMesh::GetLODSections(uint32 LODLevel) const
+{
+	if (LODLevel == 0 && StaticMeshAsset)
+		return StaticMeshAsset->Sections;
+	if (LODLevel >= 1 && LODLevel <= 2 && bHasLOD)
+		return AdditionalLODs[LODLevel - 1].Sections;
+	return StaticMeshAsset ? StaticMeshAsset->Sections : EmptySections;
 }
