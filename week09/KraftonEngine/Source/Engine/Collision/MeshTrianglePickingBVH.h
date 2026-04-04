@@ -32,12 +32,22 @@ private:
 	struct FNode
 	{
 		FBoundingBox Bounds;
-		int32 LeftChild = -1;
-		int32 RightChild = -1;
+		// 이진 트리에서 8분기 트리로 확장
+		int32 Children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+
+		// SIMD(AVX) 최적화를 위한 자식 노드들의 AABB 데이터 (SOA 구조)
+		float ChildMinX[8];
+		float ChildMinY[8];
+		float ChildMinZ[8];
+		float ChildMaxX[8];
+		float ChildMaxY[8];
+		float ChildMaxZ[8];
+
+		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
 		int32 LeafCount = 0;
 
-		bool IsLeaf() const { return LeftChild < 0 && RightChild < 0; }
+		bool IsLeaf() const { return ChildCount == 0; }
 	};
 
 	int32 BuildRecursive(int32 Start, int32 End);
