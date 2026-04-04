@@ -10,14 +10,16 @@ struct FStaticMesh;
 class FMeshPickingBVH
 {
 public:
-	// 메시 정점/인덱스가 바뀌었을 때 캐시된 triangle BVH를 무효화합니다.
-	void MarkDirty();
 	// 메시의 모든 삼각형을 leaf로 수집한 뒤 로컬 공간 BVH를 즉시 다시 빌드합니다.
 	void BuildNow(const FStaticMesh& Mesh);
-	// BVH가 무효화된 경우에만 재빌드를 수행합니다.
+	// 현재는 static mesh asset이 로드 후 고정된다고 보고, 아직 트리가 없을 때만 1회 빌드합니다.
 	void EnsureBuilt(const FStaticMesh& Mesh);
 	// 로컬 공간 ray로 BVH를 순회해 가장 가까운 삼각형 hit를 찾습니다.
 	bool RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const;
+
+	// 오브젝트 단위 PickingBVH의 dirty 플래그와 의미가 겹쳐 혼동을 줄 수 있어,
+	// 메시 변경 대응용 API는 일단 주석으로 남겨 둡니다.
+	// void MarkDirty();
 
 private:
 	struct FTriangleLeaf
@@ -40,8 +42,11 @@ private:
 
 	int32 BuildRecursive(int32 Start, int32 End);
 
-	bool bDirty = true;
-	// 삼각형 단위 leaf 배열입니다. BVH 리프는 이 배열의 연속 구간을 가리킵니다.
+	//현재는 메시가 런타임 중 변하지 않는다고 보고, dirty 기반 재빌드는 비활성화합니다.
+	//오브젝트가 새로 로드되어 트리가 비어 있을 경우에만 EnsureBuilt에서 빌드합니다.
+	//bool bDirty = true;\
+	
+	//삼각형 단위 leaf 배열입니다. 오브젝트들을 BVH 리프 노드에서처럼 여기서는 이 배열의 연속 구간을 가리킵니다.
 	TArray<FTriangleLeaf> TriangleLeaves;
 	// 루트부터 자식까지 연속 저장한 BVH 노드 배열입니다.
 	TArray<FNode> Nodes;

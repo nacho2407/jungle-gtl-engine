@@ -27,9 +27,11 @@ public:
 	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
 	void InitResources(ID3D11Device* InDevice);
-	void MarkMeshPickingBVHDirty();
 	void EnsureMeshPickingBVHBuilt() const;
 	bool RaycastMeshBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const;
+
+	// 메시 변경 대응용 dirty API는 현재 범위에서 혼동을 줄 수 있어 주석 처리합니다.
+	// void MarkMeshPickingBVHDirty();
 	
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;
