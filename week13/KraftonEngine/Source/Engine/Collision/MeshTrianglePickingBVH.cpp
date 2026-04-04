@@ -88,6 +88,12 @@ void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
  */
 bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
+	struct FTraversalEntry
+	{
+		int32 NodeIndex;
+		float TMin;
+	};
+
 	OutHitResult = {};
 	if (Nodes.empty() || Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
 	{
@@ -98,8 +104,17 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	LocalRay.Origin = LocalOrigin;
 	LocalRay.Direction = LocalDirection;
 
-	TArray<int32> NodeStack;
-	NodeStack.push_back(0);
+	TArray<FTraversalEntry> NodeStack;
+	NodeStack.reserve(64);
+
+	float RootTMin = 0.0f;
+	float RootTMax = 0.0f;
+	if (!FRayUtils::IntersectRayAABB(LocalRay, Nodes[0].Bounds.Min, Nodes[0].Bounds.Max, RootTMin, RootTMax))
+	{
+		return false;
+	}
+
+	NodeStack.push_back({ 0, RootTMin });
 
 	float ClosestT = FLT_MAX;
 	bool bHit = false;
@@ -107,14 +122,15 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	// 재귀 대신 명시적 스택으로 순회해 AABB에 걸리는 노드만 내려갑니다.
 	while (!NodeStack.empty())
 	{
-		const int32 NodeIndex = NodeStack.back();
+		const FTraversalEntry Entry = NodeStack.back();
 		NodeStack.pop_back();
-
-		const FNode& Node = Nodes[NodeIndex];
-		if (!FRayUtils::CheckRayAABB(LocalRay, Node.Bounds.Min, Node.Bounds.Max))
+		if (Entry.TMin > ClosestT)
 		{
 			continue;
 		}
+
+		const int32 NodeIndex = Entry.NodeIndex;
+		const FNode& Node = Nodes[NodeIndex];
 
 		if (Node.IsLeaf())
 		{
@@ -141,13 +157,37 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			continue;
 		}
 
-		if (Node.LeftChild >= 0)
+		float LeftTMin = 0.0f;
+		float LeftTMax = 0.0f;
+		const bool bHasLeft = Node.LeftChild >= 0 &&
+			FRayUtils::IntersectRayAABB(LocalRay, Nodes[Node.LeftChild].Bounds.Min, Nodes[Node.LeftChild].Bounds.Max, LeftTMin, LeftTMax) &&
+			LeftTMin <= ClosestT;
+		float RightTMin = 0.0f;
+		float RightTMax = 0.0f;
+		const bool bHasRight = Node.RightChild >= 0 &&
+			FRayUtils::IntersectRayAABB(LocalRay, Nodes[Node.RightChild].Bounds.Min, Nodes[Node.RightChild].Bounds.Max, RightTMin, RightTMax) &&
+			RightTMin <= ClosestT;
+
+		if (bHasLeft && bHasRight)
 		{
-			NodeStack.push_back(Node.LeftChild);
+			if (LeftTMin < RightTMin)
+			{
+				NodeStack.push_back({ Node.RightChild, RightTMin });
+				NodeStack.push_back({ Node.LeftChild, LeftTMin });
+			}
+			else
+			{
+				NodeStack.push_back({ Node.LeftChild, LeftTMin });
+				NodeStack.push_back({ Node.RightChild, RightTMin });
+			}
 		}
-		if (Node.RightChild >= 0)
+		else if (bHasLeft)
 		{
-			NodeStack.push_back(Node.RightChild);
+			NodeStack.push_back({ Node.LeftChild, LeftTMin });
+		}
+		else if (bHasRight)
+		{
+			NodeStack.push_back({ Node.RightChild, RightTMin });
 		}
 	}
 

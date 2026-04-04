@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 
-bool FRayUtils::CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax)
+bool FRayUtils::IntersectRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax, float& OutTMin, float& OutTMax)
 {
 	float tMin = -INFINITY;
 	float tMax = INFINITY;
@@ -17,6 +17,15 @@ bool FRayUtils::CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVec
 
 	for (int i = 0; i < 3; ++i)
 	{
+		if (std::abs(dir[i]) < 1e-8f)
+		{
+			if (origin[i] < minB[i] || origin[i] > maxB[i])
+			{
+				return false;
+			}
+			continue;
+		}
+
 		float invDir = 1.0f / dir[i];
 		float t1 = (minB[i] - origin[i]) * invDir;
 		float t2 = (maxB[i] - origin[i]) * invDir;
@@ -29,7 +38,16 @@ bool FRayUtils::CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVec
 		if (tMin > tMax) return false;
 	}
 
-	return tMax >= 0;
+	OutTMin = tMin;
+	OutTMax = tMax;
+	return tMax >= 0.0f;
+}
+
+bool FRayUtils::CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax)
+{
+	float tMin = 0.0f;
+	float tMax = 0.0f;
+	return IntersectRayAABB(Ray, AABBMin, AABBMax, tMin, tMax);
 }
 
 bool FRayUtils::IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir,
