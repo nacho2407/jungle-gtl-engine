@@ -241,8 +241,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
-    <ClCompile Include="Source\Engine\Collision\PickingBVH.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -258,6 +256,8 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
+    <ClCompile Include="Source\Engine\Collision\PickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
@@ -297,6 +297,8 @@
     <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\LineBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\DepthStencilStateManager.cpp" />
@@ -345,8 +347,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Engine\Collision\Octree.h" />
-    <ClInclude Include="Source\Engine\Collision\PickingBVH.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
@@ -363,6 +363,8 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
+    <ClInclude Include="Source\Engine\Collision\Octree.h" />
+    <ClInclude Include="Source\Engine\Collision\PickingBVH.h" />
     <ClInclude Include="Source\Engine\Collision\RayUtils.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
@@ -409,12 +411,15 @@
     <ClInclude Include="Source\Engine\Platform\Paths.h" />
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\MemoryStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Device\DepthStencilStateManager.h" />
