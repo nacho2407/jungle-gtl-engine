@@ -176,9 +176,11 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
-		const bool bHasBatcher = static_cast<bool>(PassBatchers[i]);
+		const auto& Batcher = PassBatchers[i];
+		const bool bHasBatcher = static_cast<bool>(Batcher);
 		const bool bHasProxies = !InRenderBus.GetProxies(CurPass).empty();
 		if (!bHasBatcher && !bHasProxies) continue;
+		if (bHasBatcher && !bHasProxies && Batcher.IsEmpty && Batcher.IsEmpty()) continue;
 
 		const char* PassName = GetRenderPassName(CurPass);
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
@@ -223,39 +225,45 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Editor] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			DrawLineBatcher(EditorLineBatcher, Ctx);
-		}
+		},
+		[this]() { return EditorLineBatcher.GetLineCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::Grid] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			DrawLineBatcher(GridLineBatcher, Ctx);
-		}
+		},
+		[this]() { return GridLineBatcher.GetLineCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.DrawBatch(Ctx, FontRes);
-		}
+		},
+		[this]() { return FontBatcher.GetQuadCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.DrawScreenBatch(Ctx, FontRes);
-		}
+		},
+		nullptr  // OverlayFont(Stats 등)는 항상 존재
 	};
 
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			SubUVBatcher.DrawBatch(Ctx);
-		}
+		},
+		[this]() { return SubUVBatcher.GetSpriteCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::PostProcess] = {
 		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			DrawPostProcessOutline(Bus, Ctx);
-		}
+		},
+		nullptr  // PostProcess는 내���에서 SelectionMask 체크
 	};
 }
 
