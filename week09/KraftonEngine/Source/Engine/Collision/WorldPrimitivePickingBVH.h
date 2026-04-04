@@ -31,12 +31,13 @@ private:
 	struct FNode
 	{
 		FBoundingBox Bounds;
-		int32 LeftChild = -1;
-		int32 RightChild = -1;
+		//최대 자식 분기는 8번. 이게 효율적인가?
+		int32 Children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
 		int32 LeafCount = 0;
 
-		bool IsLeaf() const { return LeftChild < 0 && RightChild < 0; }
+		bool IsLeaf() const { return ChildCount == 0; }
 	};
 
 	int32 BuildRecursive(int32 Start, int32 End);
