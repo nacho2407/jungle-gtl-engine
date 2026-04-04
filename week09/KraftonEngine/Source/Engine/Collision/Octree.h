@@ -2,7 +2,7 @@
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Math/Vector.h"
 #include "Component/PrimitiveComponent.h"
-#include "Engine/Math/ConvexVolume.h"
+#include "Render/Culling/ConvexVolume.h"
 #include <memory>
 
 constexpr int32 MAX_DEPTH = 5;
