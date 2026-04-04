@@ -29,7 +29,8 @@ public:
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
-	void UpdateVisibleActors();
+	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
+	void UpdateVisibleProxies();
 
 	void InitWorld();      // Set up the world before gameplay begins
 	void BeginPlay();      // Triggers BeginPlay on all actors
@@ -56,8 +57,8 @@ public:
 	void UpdateActorInOctree(AActor* actor);
 private:
 	TArray<AActor*> Actors;
-	TArray<AActor*> VisibleActors;
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
+	TArray<FPrimitiveSceneProxy*> VisibleProxies;
 
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
