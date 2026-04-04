@@ -23,12 +23,14 @@ public:
 	void AddSubUVEntry(FSubUVEntry&& Entry);
 	void AddAABBEntry(FAABBEntry&& Entry);
 	void AddGridEntry(FGridEntry&& Entry);
+	void AddDebugLineEntry(FDebugLineEntry&& Entry);
 
 	const TArray<FFontEntry>& GetFontEntries() const { return FontEntries; }
 	const TArray<FFontEntry>& GetOverlayFontEntries() const { return OverlayFontEntries; }
 	const TArray<FSubUVEntry>& GetSubUVEntries() const { return SubUVEntries; }
 	const TArray<FAABBEntry>& GetAABBEntries() const { return AABBEntries; }
 	const TArray<FGridEntry>& GetGridEntries() const { return GridEntries; }
+	const TArray<FDebugLineEntry>& GetDebugLineEntries() const { return DebugLineEntries; }
 
 	// Getter,Setter
 	void SetCameraInfo(const UCameraComponent* Camera);
@@ -67,6 +69,7 @@ private:
 	TArray<FSubUVEntry> SubUVEntries;
 	TArray<FAABBEntry>  AABBEntries;
 	TArray<FGridEntry>  GridEntries;
+	TArray<FDebugLineEntry> DebugLineEntries;
 
 	FMatrix View;
 	FMatrix Proj;

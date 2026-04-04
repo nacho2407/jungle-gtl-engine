@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
@@ -69,6 +69,9 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Batcher">
       <UniqueIdentifier>{9f304481-1091-e173-0e96-fea5393d1760}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\DebugDraw">
+      <UniqueIdentifier>{fbaf9556-a185-1b47-fe85-a96d26d4db43}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Device">
       <UniqueIdentifier>{1c6ca01a-80a0-7c1a-448e-3662768a07e8}</UniqueIdentifier>
@@ -197,10 +200,13 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
+    <ClCompile Include="Source\Engine\Collision\Octree.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\PickingBVH.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
@@ -250,6 +256,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
       <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Math\ConvexVolume.cpp">
+      <Filter>Source\Engine\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Matrix.cpp">
       <Filter>Source\Engine\Math</Filter>
@@ -313,6 +322,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp">
       <Filter>Source\Engine\Render\Batcher</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
@@ -450,10 +465,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
-    <ClCompile Include="Source\Engine\Math\ConvexVolume.cpp">
-      <Filter>Source\Engine\Math</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -504,10 +515,13 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\RayUtils.h">
+    <ClInclude Include="Source\Engine\Collision\Octree.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\PickingBVH.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\RayUtils.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
@@ -582,6 +596,9 @@
     <ClInclude Include="Source\Engine\Materials\Material.h">
       <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Math\ConvexVolume.h">
+      <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Math\MathUtils.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
@@ -642,6 +659,9 @@
     <ClInclude Include="Source\Engine\Profiling\MemoryStats.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\PlatformTime.h">
+      <Filter>Source\Engine\Profiling</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
@@ -659,6 +679,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h">
       <Filter>Source\Engine\Render\Batcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h">
       <Filter>Source\Engine\Render\Device</Filter>
@@ -833,10 +859,6 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\Octree.h" />
-    <ClInclude Include="Source\Engine\Math\ConvexVolume.h">
-      <Filter>Source\Engine\Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

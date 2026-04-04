@@ -59,6 +59,28 @@ private:
 	// 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회, 필드 직접 접근
 	void ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context);
 
+	// ExecutePass 내부 헬퍼
+	struct FDrawState
+	{
+		FShader*     LastShader     = nullptr;
+		FMeshBuffer* LastMeshBuffer = nullptr;
+		ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
+		int32        LastUVScroll   = -1;
+		bool         bSamplerBound  = false;
+		bool         bPerObjectBound = false;
+
+		bool HasBoundSRV() const { return LastSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull); }
+	};
+
+	void SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies);
+	void BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void BindPerObjectSlot(ID3D11DeviceContext* Ctx, FDrawState& State);
+	void BindExtraCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx);
+	bool BindMeshBuffer(FMeshBuffer* Buffer, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State);
+
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
 

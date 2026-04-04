@@ -97,6 +97,10 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Gizmo->UpdateAxisMask(Opts.ViewportType);
 
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
+		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);
+
+		if (ShowFlags.bOctree)
+			Collector.CollectOctreeDebug(World->GetOctree(), Bus);
 
 		if (VC == Editor->GetActiveViewport())
 			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Bus);
