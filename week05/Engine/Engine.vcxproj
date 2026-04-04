@@ -345,7 +345,6 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <VCToolsVersion>14.42.34433</VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
@@ -441,7 +440,7 @@
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>???꾨줈?앺듃????而댄벂?곗뿉 ?녿뒗 NuGet ?⑦궎吏瑜?李몄“?⑸땲?? ?대떦 ?⑦궎吏瑜??ㅼ슫濡쒕뱶?섎젮硫?NuGet ?⑦궎吏 蹂듭썝???ъ슜?섏떗?쒖삤. ?먯꽭???댁슜? http://go.microsoft.com/fwlink/?LinkID=322105瑜?李몄“?섏떗?쒖삤. ?꾨씫???뚯씪? {0}?낅땲??</ErrorText>
+      <ErrorText>이 프로젝트는 이 컴퓨터에 없는 NuGet 패키지를 참조합니다. 해당 패키지를 다운로드하려면 NuGet 패키지 복원을 사용하십시오. 자세한 내용은 http://go.microsoft.com/fwlink/?LinkID=322105를 참조하십시오. 누락된 파일은 {0}입니다.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
