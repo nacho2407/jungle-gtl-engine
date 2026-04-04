@@ -10,7 +10,7 @@ PS_Input_Full VS(VS_Input_PNCT input)
     PS_Input_Full output;
     output.position = ApplyMVP(input.position);
     output.normal = normalize(mul(input.normal, (float3x3) Model));
-    output.color = input.color * PrimitiveColor;
+    output.color = input.color * SectionColor;
 
     float2 texcoord = input.texcoord;
     if (bIsUVScroll != 0)

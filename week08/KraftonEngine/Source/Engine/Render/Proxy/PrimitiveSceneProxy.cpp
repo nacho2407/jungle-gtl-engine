@@ -15,6 +15,7 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 void FPrimitiveSceneProxy::UpdateTransform()
 {
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(Owner->GetWorldMatrix());
+	CachedWorldPos = PerObjectConstants.Model.GetLocation();
 	CachedBounds = Owner->GetWorldBoundingBox();
 }
 
@@ -39,4 +40,5 @@ void FPrimitiveSceneProxy::UpdateMesh()
 	MeshBuffer = Owner->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	Pass = ERenderPass::Opaque;
+	UpdateSortKey();
 }
