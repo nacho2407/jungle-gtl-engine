@@ -123,6 +123,7 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 				}
 			}
 		}
+		EnsureMeshPickingBVHBuilt(); //warm.
 	}
 }
 

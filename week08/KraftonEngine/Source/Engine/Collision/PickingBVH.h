@@ -11,9 +11,9 @@ class UPrimitiveComponent;
 class FPickingBVH
 {
 public:
-	//월드 상태나 픽킹 대상 변화로 인해 캐시된 트리를 무효화합니다. -> TODO: 최적화 여부 비교해보기
+	//월드 상태나 picking 대상 변화로 인해 캐시된 트리를 무효화합니다. -> TODO: 최적화 여부 비교해보기
 	void MarkDirty();
-	//현재 월드의 actor 목록을 기준으로 픽킹 트리를 즉시 다시 만듭니다.
+	//현재 월드의 actor 목록을 기준으로 picking 트리를 즉시 다시 만듭니다.
 	void BuildNow(const TArray<AActor*>& Actors);
 	//트리가 무효화된 경우에만 재빌드를 수행합니다.
 	void EnsureBuilt(const TArray<AActor*>& Actors);
