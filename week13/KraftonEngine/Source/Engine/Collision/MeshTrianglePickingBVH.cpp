@@ -1,4 +1,4 @@
-﻿#include "Collision/MeshPickingBVH.h"
+﻿#include "Collision/MeshTrianglePickingBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
@@ -19,7 +19,7 @@ namespace
 	}
 }
 
-//void FMeshPickingBVH::MarkDirty()
+//void FMeshTrianglePickingBVH::MarkDirty()
 //{
 //	bDirty = true;
 //}
@@ -30,7 +30,7 @@ namespace
  *
  * \param Mesh BVH를 구성할 원본 정적 메시 데이터
  */
-void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
+void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 {
 	TriangleLeaves.clear();
 	Nodes.clear();
@@ -67,7 +67,7 @@ void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
  *
  * \param Mesh BVH 생성에 사용할 원본 정적 메시 데이터
  */
-void FMeshPickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
+void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 {
 	if (!Nodes.empty())
 	{
@@ -86,7 +86,7 @@ void FMeshPickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
  * \param OutHitResult 가장 가까운 hit 결과
  * \return 하나 이상의 삼각형과 교차하면 true
  */
-bool FMeshPickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
+bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
 	OutHitResult = {};
 	if (Nodes.empty() || Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
@@ -161,7 +161,7 @@ bool FMeshPickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& Lo
  * \param End leaf 구간 끝 다음 인덱스
  * \return 생성된 노드의 인덱스
  */
-int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
+int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.emplace_back();

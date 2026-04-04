@@ -92,7 +92,7 @@ void AActor::SetVisible(bool Visible)
 	bVisible = Visible;
 	if (OwningWorld)
 	{
-		OwningWorld->MarkPickingBVHDirty();
+		OwningWorld->MarkWorldPrimitivePickingBVHDirty();
 	}
 	for (UPrimitiveComponent* Prim : GetPrimitiveComponents())
 	{
@@ -107,7 +107,7 @@ void AActor::MarkPickingDirty()
 {
 	if (OwningWorld)
 	{
-		OwningWorld->MarkPickingBVHDirty();
+		OwningWorld->MarkWorldPrimitivePickingBVHDirty();
 	}
 }
 
