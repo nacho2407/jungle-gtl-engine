@@ -17,6 +17,13 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(const UPrimitiveComponent* InComponen
 {
 }
 
+void FPrimitiveSceneProxy::AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
+{
+	TArray<FMeshBatch> MeshBatches;
+	CollectMeshBatches(View, Renderer, MeshBatches);
+	PassProcessor.BuildMeshDrawCommands(MeshBatches, &Command, Renderer, OutPacket, ObjectUniformStream, InOutSubmissionOrder);
+}
+
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
@@ -65,6 +72,18 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 		MeshBatch.Element.SectionIndex = static_cast<uint32>(SectionIndex);
 		MeshBatchTemplates.push_back(MeshBatch);
 	}
+}
+
+void FStaticMeshSceneProxy::AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
+{
+	(void)View;
+
+	if (!RenderMesh || MeshBatchTemplates.empty())
+	{
+		return;
+	}
+
+	PassProcessor.BuildMeshDrawCommands(MeshBatchTemplates, &Command, Renderer, OutPacket, ObjectUniformStream, InOutSubmissionOrder);
 }
 
 void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const

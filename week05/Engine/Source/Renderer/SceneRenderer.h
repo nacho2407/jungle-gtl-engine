@@ -44,9 +44,7 @@ public:
 
 private:
 	void BuildViewInfo(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const;
-	void AppendProxyMeshBatches(const FRenderCommand& Command, const FViewInfo& View, TArray<FMeshBatch>& OutMeshBatches) const;
 	void AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshBatch>& OutMeshBatches) const;
-	void ApplyCommandOverrides(const FRenderCommand& Command, TArray<FMeshBatch>& InOutMeshBatches) const;
 
 private:
 	FRenderer* Renderer = nullptr;

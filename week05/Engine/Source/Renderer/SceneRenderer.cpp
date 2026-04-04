@@ -69,23 +69,21 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFr
 	Renderer->ObjectUniformStream->Reset();
 
 	TArray<FMeshBatch> MeshBatches;
+	MeshBatches.reserve(1);
 	uint64 SubmissionOrder = 0;
 
 	for (const FRenderCommand& Command : Queue.Commands)
 	{
-		MeshBatches.clear();
-
 		if (Command.SceneProxy)
 		{
-			AppendProxyMeshBatches(Command, OutPacket.View, MeshBatches);
+			Command.SceneProxy->AppendDrawCommands(Command, OutPacket.View, *Renderer, MeshPassProcessor, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
 		}
 		else
 		{
+			MeshBatches.clear();
 			AppendLegacyMeshBatch(Command, MeshBatches);
+			MeshPassProcessor.BuildMeshDrawCommands(MeshBatches, nullptr, *Renderer, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
 		}
-
-		ApplyCommandOverrides(Command, MeshBatches);
-		MeshPassProcessor.BuildMeshDrawCommands(MeshBatches, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
 	}
 
 	if (!OutPacket.MeshUploads.empty())
@@ -126,16 +124,6 @@ void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneFrame
 	OutPacket.View.Initialize(OutPacket.ViewFamily, View);
 }
 
-void FSceneRenderer::AppendProxyMeshBatches(const FRenderCommand& Command, const FViewInfo& View, TArray<FMeshBatch>& OutMeshBatches) const
-{
-	if (!Renderer || !Command.SceneProxy)
-	{
-		return;
-	}
-
-	Command.SceneProxy->CollectMeshBatches(View, *Renderer, OutMeshBatches);
-}
-
 void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshBatch>& OutMeshBatches) const
 {
 	if (!Command.RenderMesh)
@@ -154,32 +142,4 @@ void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray
 	MeshBatch.bDisableDepthWrite = Command.bDisableDepthWrite;
 	MeshBatch.bDisableCulling = Command.bDisableCulling;
 	OutMeshBatches.push_back(MeshBatch);
-}
-
-void FSceneRenderer::ApplyCommandOverrides(const FRenderCommand& Command, TArray<FMeshBatch>& InOutMeshBatches) const
-{
-	for (FMeshBatch& MeshBatch : InOutMeshBatches)
-	{
-		if (Command.Material)
-		{
-			MeshBatch.Material = Command.Material;
-		}
-
-		if (Command.RenderLayer == ERenderLayer::Overlay ||
-			Command.RenderLayer == ERenderLayer::UI ||
-			Command.RenderLayer == ERenderLayer::OutlineMask ||
-			Command.RenderLayer == ERenderLayer::OutlineComposite)
-		{
-			MeshBatch.RenderLayer = Command.RenderLayer;
-		}
-
-		MeshBatch.bDisableDepthTest = MeshBatch.bDisableDepthTest || Command.bDisableDepthTest;
-		MeshBatch.bDisableDepthWrite = MeshBatch.bDisableDepthWrite || Command.bDisableDepthWrite;
-		MeshBatch.bDisableCulling = MeshBatch.bDisableCulling || Command.bDisableCulling;
-
-		if (!MeshBatch.Material && Renderer)
-		{
-			MeshBatch.Material = Renderer->GetDefaultMaterial();
-		}
-	}
 }

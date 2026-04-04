@@ -129,7 +129,15 @@ FMaterial::~FMaterial()
 
 uint64 FMaterial::GetSortId() const
 {
-	return MaterialId;
+	uint64 Key = SortGroupId;
+
+	if (const std::shared_ptr<FMaterialTexture>& Texture = MaterialTexture)
+	{
+		Key = HashCombine64(Key, reinterpret_cast<uint64>(Texture->GetTextureSRV()));
+		Key = HashCombine64(Key, reinterpret_cast<uint64>(Texture->GetSamplerState()));
+	}
+
+	return Key;
 }
 
 uint32 FMaterial::MakePipelineStateVariantIndex(bool bDisableCulling, bool bDisableDepthTest, bool bDisableDepthWrite)
@@ -187,6 +195,19 @@ uint64 FMaterial::GetPipelineStateKey(bool bDisableCulling, bool bDisableDepthTe
 	PipelineStateKeyVariants[VariantIndex] = Key;
 	bPipelineStateKeyVariantValid[VariantIndex] = true;
 	return Key;
+}
+
+bool FMaterial::HasDirtyConstantBuffers() const
+{
+	for (const FMaterialConstantBuffer& ConstantBuffer : ConstantBuffers)
+	{
+		if (ConstantBuffer.bDirty)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void FMaterial::SetVertexShader(const std::shared_ptr<FVertexShader>& InVS)
@@ -279,10 +300,7 @@ bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uin
 	uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
 	FMaterialConstantBuffer* CB = GetConstantBuffer(Info.BufferIndex);
 	if (!CB) return false;
-	if (CB->SetData(Data, CopySize, Info.Offset))
-	{
-		AdvanceBindingRevision();
-	}
+	CB->SetData(Data, CopySize, Info.Offset);
 	return true;
 }
 
@@ -344,6 +362,7 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 	Dynamic->DepthStencilState = DepthStencilState;
 	Dynamic->BlendState = BlendState;
 	Dynamic->MaterialTexture = MaterialTexture;
+	Dynamic->SortGroupId = SortGroupId;
 
 	for (const auto& CB : ConstantBuffers)
 	{

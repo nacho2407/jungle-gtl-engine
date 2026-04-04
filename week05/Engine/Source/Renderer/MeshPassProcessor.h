@@ -3,9 +3,13 @@
 #include "CoreMinimal.h"
 #include "Renderer/RenderCommand.h"
 
+struct FRasterizerState;
+struct FDepthStencilState;
+struct FBlendState;
 struct FRenderMesh;
 class FMaterial;
 class FObjectUniformStream;
+class FRenderer;
 struct FSceneFramePacket;
 
 enum class EMeshPass : uint8
@@ -53,12 +57,15 @@ struct ENGINE_API FMeshDrawCommand
 	uint64 MaterialKey = 0;
 	uint64 MeshKey = 0;
 	uint64 MaterialMeshKey = 0;
+	FRasterizerState* RasterizerState = nullptr;
+	FDepthStencilState* DepthStencilState = nullptr;
+	FBlendState* BlendState = nullptr;
 };
 
 class ENGINE_API FMeshPassProcessor
 {
 public:
-	void BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshBatches, FSceneFramePacket& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
+	void BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneFramePacket& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
 
 private:
 	static EMeshPass ResolveMeshPass(ERenderLayer InRenderLayer);

@@ -103,7 +103,7 @@ struct ENGINE_API FMaterialConstantBuffer
 class ENGINE_API FMaterial
 {
 public:
-	FMaterial() : MaterialId(NextMaterialId++) {}
+	FMaterial() : MaterialId(NextMaterialId++), SortGroupId(MaterialId) {}
 	virtual ~FMaterial();
 
 	FMaterial(const FMaterial&) = delete;
@@ -114,6 +114,7 @@ public:
 	uint64 GetSortId() const;
 	uint64 GetPipelineStateKey(bool bDisableCulling = false, bool bDisableDepthTest = false, bool bDisableDepthWrite = false) const;
 	uint32 GetBindingRevision() const { return BindingRevision; }
+	bool HasDirtyConstantBuffers() const;
 
 	// 에셋 원본 이름 (JSON에서 로드된 이름, 직렬화 시 사용)
 	void SetOriginName(const FString& InName) { OriginName = InName; }
@@ -178,6 +179,7 @@ protected:
 	// TODO: ShaderId가 실제 사용하는 쉐이더를 반영하도록 변경
 	// NOTE: GetSortId에서 비트 연산 쓰는 경우 ShaderId가 32bit를 전부 쓰면 안 됨
 	uint32 MaterialId = 0;
+	uint32 SortGroupId = 0;
 	static inline uint32 NextMaterialId = 1;
 
 	FString OriginName;

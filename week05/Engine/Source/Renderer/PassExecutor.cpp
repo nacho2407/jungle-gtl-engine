@@ -76,19 +76,17 @@ void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& P
 		return;
 	}
 
-	std::unordered_set<FMaterial*> Visited;
-
 	auto UploadPassQueue = [&](const TArray<FMeshDrawCommand>& Commands)
 	{
+		std::unordered_set<FMaterial*> VisitedMaterials;
 		for (const FMeshDrawCommand& Command : Commands)
 		{
 			FMaterial* Material = Command.Material ? Command.Material : Renderer->GetDefaultMaterial();
-			if (!Material)
+			if (!Material || !Material->HasDirtyConstantBuffers())
 			{
 				continue;
 			}
-
-			if (!Visited.insert(Material).second)
+			if (!VisitedMaterials.insert(Material).second)
 			{
 				continue;
 			}
@@ -142,37 +140,9 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 		}
 
 		Material->Bind(Renderer->DeviceContext, Renderer->MaterialBindingCache.get());
-
-		if (Command.bDisableCulling)
-		{
-			FRasterizerStateOption RasterizerOption = Material->GetRasterizerOption();
-			RasterizerOption.CullMode = D3D11_CULL_NONE;
-			Renderer->RenderStateManager->BindState(Renderer->RenderStateManager->GetOrCreateRasterizerState(RasterizerOption));
-		}
-		else
-		{
-			Renderer->RenderStateManager->BindState(Material->GetRasterizerState());
-		}
-
-		if (Command.bDisableDepthTest || Command.bDisableDepthWrite)
-		{
-			FDepthStencilStateOption DepthStencilOption = Material->GetDepthStencilOption();
-			if (Command.bDisableDepthTest)
-			{
-				DepthStencilOption.DepthEnable = false;
-			}
-			if (Command.bDisableDepthWrite)
-			{
-				DepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-			}
-			Renderer->RenderStateManager->BindState(Renderer->RenderStateManager->GetOrCreateDepthStencilState(DepthStencilOption));
-		}
-		else
-		{
-			Renderer->RenderStateManager->BindState(Material->GetDepthStencilState());
-		}
-
-		Renderer->RenderStateManager->BindState(Material->GetBlendState());
+		Renderer->RenderStateManager->BindState(Command.RasterizerState);
+		Renderer->RenderStateManager->BindState(Command.DepthStencilState);
+		Renderer->RenderStateManager->BindState(Command.BlendState);
 
 		if (CurrentMesh != Command.RenderMesh)
 		{

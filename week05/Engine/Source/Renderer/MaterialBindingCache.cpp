@@ -24,7 +24,7 @@ void FMaterialBindingCache::BindMaterial(ID3D11DeviceContext* DeviceContext, FMa
 	}
 
 	const uint32 MaterialRevision = Material->GetBindingRevision();
-	if (BoundMaterial == Material && BoundMaterialRevision == MaterialRevision)
+	if (BoundMaterial == Material && BoundMaterialRevision == MaterialRevision && !Material->HasDirtyConstantBuffers())
 	{
 		return;
 	}

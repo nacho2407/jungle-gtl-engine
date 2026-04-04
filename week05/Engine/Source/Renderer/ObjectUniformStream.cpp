@@ -38,6 +38,7 @@ bool FObjectUniformStream::Initialize(ID3D11Device* InDevice, ID3D11DeviceContex
 
 	DeviceContext->QueryInterface(__uuidof(ID3D11DeviceContext1), reinterpret_cast<void**>(&DeviceContext1));
 	CapacityInObjects = (std::max)(AlignObjectCount(InInitialCapacity), 1u);
+	PendingObjects.reserve(CapacityInObjects);
 
 	return EnsureCapacity(CapacityInObjects);
 }
@@ -152,6 +153,7 @@ bool FObjectUniformStream::EnsureCapacity(uint32 InAllocationCount)
 	}
 
 	CapacityInObjects = DesiredCapacity;
+	PendingObjects.reserve(CapacityInObjects);
 
 	D3D11_BUFFER_DESC Desc = {};
 	Desc.Usage = D3D11_USAGE_DYNAMIC;
