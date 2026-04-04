@@ -144,7 +144,7 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	FVector LocalDirection = GetWorldInverseMatrix().TransformVector(Ray.Direction);
 	LocalDirection.Normalize();
 
-	if (StaticMesh->RaycastMeshBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
+	if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
 	{
 		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
 		const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
