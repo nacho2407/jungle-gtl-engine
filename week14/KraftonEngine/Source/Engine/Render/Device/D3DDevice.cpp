@@ -129,6 +129,17 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 		CreateDeviceFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
 		&swapChainDesc, &SwapChain, &Device, nullptr, &DeviceContext);
 
+	// CPU가 GPU보다 1프레임 이상 앞서지 못하게 제한
+	// (기본값 3 → Present 큐 깊이로 인한 FPS 톱니파 현상 방지)
+	{
+		IDXGIDevice1* DXGIDevice = nullptr;
+		if (SUCCEEDED(Device->QueryInterface(__uuidof(IDXGIDevice1), (void**)&DXGIDevice)))
+		{
+			DXGIDevice->SetMaximumFrameLatency(1);
+			DXGIDevice->Release();
+		}
+	}
+
 	if (Factory5) Factory5->Release();
 
 	SwapChain->GetDesc(&swapChainDesc);

@@ -1,4 +1,4 @@
-﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
+#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
@@ -36,12 +36,29 @@ void FStaticMeshSceneProxy::UpdateMesh()
 	Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
 	Pass = ERenderPass::Opaque;
 
-	// 메시 변경 시 머티리얼도 같이 재구축
 	RebuildSectionDraws();
 }
 
 // ============================================================
-// RebuildSectionDraws — Owner의 머티리얼/섹션 데이터로 SectionDraws 재구축
+// UpdateLOD — LOD 레벨 변경 시 MeshBuffer/SectionDraws 스왑
+// ============================================================
+void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
+{
+	if (LODLevel >= LODCount) LODLevel = LODCount - 1;
+	if (LODLevel == CurrentLOD) return;
+
+	// 현재 활성 데이터를 LODData 슬롯에 swap (할당/해제 없는 O(1) 교환)
+	std::swap(MeshBuffer, LODData[CurrentLOD].MeshBuffer);
+	std::swap(SectionDraws, LODData[CurrentLOD].SectionDraws);
+
+	// 새 LOD 데이터를 활성 슬롯에서 swap
+	CurrentLOD = LODLevel;
+	std::swap(MeshBuffer, LODData[LODLevel].MeshBuffer);
+	std::swap(SectionDraws, LODData[LODLevel].SectionDraws);
+}
+
+// ============================================================
+// RebuildSectionDraws — 모든 LOD의 SectionDraws 재구축
 // ============================================================
 void FStaticMeshSceneProxy::RebuildSectionDraws()
 {
@@ -53,31 +70,42 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 		return;
 	}
 
-	const auto& Sections = Mesh->GetStaticMeshAsset()->Sections;
 	const auto& Slots = Mesh->GetStaticMaterials();
 	const auto& Overrides = SMC->GetOverrideMaterials();
+	LODCount = Mesh->GetLODCount();
 
-	SectionDraws.clear();
-	SectionDraws.reserve(Sections.size());
-
-	for (const FStaticMeshSection& Section : Sections)
+	// 각 LOD별 SectionDraws + MeshBuffer 구축
+	for (uint32 lod = 0; lod < LODCount; ++lod)
 	{
-		FMeshSectionDraw Draw;
-		Draw.FirstIndex = Section.FirstIndex;
-		Draw.IndexCount = Section.NumTriangles * 3;
+		const auto& Sections = Mesh->GetLODSections(lod);
+		LODData[lod].MeshBuffer = Mesh->GetLODMeshBuffer(lod);
+		LODData[lod].SectionDraws.clear();
+		LODData[lod].SectionDraws.reserve(Sections.size());
 
-		int32 i = Section.MaterialIndex;
-		if (i >= 0 && i < static_cast<int32>(Slots.size()))
+		for (const FStaticMeshSection& Section : Sections)
 		{
-			if (i < static_cast<int32>(Overrides.size()) && Overrides[i])
-			{
-				UMaterial* Mat = Overrides[i];
-				if (Mat->DiffuseTexture)
-					Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
-				Draw.DiffuseColor = Mat->DiffuseColor;
-			}
-		}
+			FMeshSectionDraw Draw;
+			Draw.FirstIndex = Section.FirstIndex;
+			Draw.IndexCount = Section.NumTriangles * 3;
 
-		SectionDraws.push_back(Draw);
+			int32 i = Section.MaterialIndex;
+			if (i >= 0 && i < static_cast<int32>(Slots.size()))
+			{
+				if (i < static_cast<int32>(Overrides.size()) && Overrides[i])
+				{
+					UMaterial* Mat = Overrides[i];
+					if (Mat->DiffuseTexture)
+						Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
+					Draw.DiffuseColor = Mat->DiffuseColor;
+				}
+			}
+
+			LODData[lod].SectionDraws.push_back(Draw);
+		}
 	}
+
+	// LOD0을 활성 슬롯으로 설정
+	CurrentLOD = 0;
+	std::swap(MeshBuffer, LODData[0].MeshBuffer);
+	std::swap(SectionDraws, LODData[0].SectionDraws);
 }
