@@ -1,7 +1,21 @@
 ﻿#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
+#include <GameFramework/World.h>
 
 IMPLEMENT_CLASS(USceneComponent, UActorComponent)
+
+static void NotifyOctreeTransformChanged(USceneComponent* Comp)
+{
+    if (!Comp) return;
+
+    AActor* OwnerActor = Comp->GetOwner();
+    if (!OwnerActor) return;
+
+    UWorld* World = OwnerActor->GetWorld();
+    if (!World) return;
+	
+    World->UpdateActorInOctree(OwnerActor);
+}
 
 void USceneComponent::AttachToComponent(USceneComponent* InParent)
 {
@@ -170,6 +184,7 @@ void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
 {
 	RelativeTransform.Location = NewLocation;
 	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
 }
 
 void USceneComponent::SetRelativeRotation(const FRotator& NewRotation)
@@ -178,6 +193,7 @@ void USceneComponent::SetRelativeRotation(const FRotator& NewRotation)
 	bCachedEulerDirty = false;
 	RelativeTransform.SetRotation(NewRotation);
 	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
 }
 
 void USceneComponent::SetRelativeRotation(const FQuat& NewRotation)
@@ -185,6 +201,7 @@ void USceneComponent::SetRelativeRotation(const FQuat& NewRotation)
 	bCachedEulerDirty = true;
 	RelativeTransform.SetRotation(NewRotation);
 	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
 }
 
 void USceneComponent::SetRelativeRotation(const FVector& EulerRotation)
@@ -194,6 +211,7 @@ void USceneComponent::SetRelativeRotation(const FVector& EulerRotation)
 	bCachedEulerDirty = false;
 	RelativeTransform.SetRotation(Rot);
 	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
 }
 
 
@@ -201,6 +219,7 @@ void USceneComponent::SetRelativeScale(const FVector& NewScale)
 {
 	RelativeTransform.Scale = NewScale;
 	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
 }
 
 
@@ -235,6 +254,7 @@ void USceneComponent::SetRelativeRotationWithEulerHint(const FQuat& NewQuat, con
 	bCachedEulerDirty = false;
 	RelativeTransform.SetRotation(NewQuat);
 	MarkTransformDirty();
+    NotifyOctreeTransformChanged(this);
 }
 
 void USceneComponent::ApplyCachedEditRotator()
@@ -243,6 +263,7 @@ void USceneComponent::ApplyCachedEditRotator()
 	bCachedEulerDirty = false;
 	RelativeTransform.SetRotation(CachedEditRotator);
 	MarkTransformDirty();
+    NotifyOctreeTransformChanged(this);
 }
 
 const FMatrix& USceneComponent::GetWorldMatrix() const
