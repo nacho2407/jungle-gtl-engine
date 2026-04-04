@@ -8,6 +8,7 @@
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Math/ConvexVolume.h"
 #include <Collision/Octree.h>
+#include <Collision/SpatialPartition.h>
 
 class UCameraComponent;
 class UPrimitiveComponent;
@@ -49,7 +50,7 @@ public:
 	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
 	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
 
-	FOctree* GetOctree() { return Octree; }
+	const FOctree* GetOctree() const { return Partition.GetOctree(); }
 	void InsertActorToOctree(AActor* actor);
 	void RemoveActorToOctree(AActor* actor);
 	void UpdateActorInOctree(AActor* actor);
@@ -64,7 +65,7 @@ private:
 	FScene Scene;
 	FDebugDrawQueue DebugDrawQueue;
 
-	FOctree* Octree;
+	FSpatialPartition Partition;
 };
 
 template<typename T>
