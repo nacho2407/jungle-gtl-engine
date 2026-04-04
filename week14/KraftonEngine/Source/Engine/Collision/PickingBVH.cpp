@@ -11,6 +11,11 @@ void FPickingBVH::MarkDirty()
 	bDirty = true;
 }
 
+/**
+ * 현재 보이는 primitive 중 실제로 픽킹 가능한 대상만 leaf로 구성하며 트리를 빌드합니다.
+ * 
+ * \param Actors
+ */
 void FPickingBVH::BuildNow(const TArray<AActor*>& Actors)
 {
 	Leaves.clear();
@@ -87,6 +92,7 @@ bool FPickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& Ou
 
 		if (Node.IsLeaf())
 		{
+			//leaf 노드는 연속된 primitive 구간을 보관하며 트리 깊이를 너무 늘어나는 걸 차단합니다
 			for (int32 LeafIndex = Node.FirstLeaf; LeafIndex < Node.FirstLeaf + Node.LeafCount; ++LeafIndex)
 			{
 				const FLeaf& Leaf = Leaves[LeafIndex];
@@ -119,6 +125,14 @@ bool FPickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& Ou
 	return OutActor != nullptr;
 }
 
+/**
+ * 재귀적으로 BVH 트리를 빌드하는 함수입니다. Start부터 End까지의 leaf들을 포함하는 노드를 만들고,
+ * leaf 수가 MaxLeafSize보다 크면 centroid 기준으로 분할하여 자식 노드를 만듭니다.
+ * 
+ * \param Start
+ * \param End
+ * \return 
+ */
 int32 FPickingBVH::BuildRecursive(int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
@@ -142,6 +156,7 @@ int32 FPickingBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
+	// centroid가 가장 넓게 퍼진 축을 고르고, 그 축 기준 median으로 분할한다.
 	FBoundingBox CentroidBounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
