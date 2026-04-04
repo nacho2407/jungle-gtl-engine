@@ -48,7 +48,6 @@ struct Ray
 	FVector O = FVector(0.0f, 0.0f, 0.0f);
 	FVector D = FVector(1.0f, 0.0f, 0.0f);
 	FVector InvD = FVector(0.0f, 0.0f, 0.0f);
-	int DirIsNeg[3] = { 0, 0, 0 };
 
 	Ray() = default;
 
@@ -61,10 +60,6 @@ struct Ray
 		InvD.X = (std::fabs(D.X) < Eps) ? Huge : 1.0f / D.X;
 		InvD.Y = (std::fabs(D.Y) < Eps) ? Huge : 1.0f / D.Y;
 		InvD.Z = (std::fabs(D.Z) < Eps) ? Huge : 1.0f / D.Z;
-
-		DirIsNeg[0] = InvD.X < 0.0f;
-		DirIsNeg[1] = InvD.Y < 0.0f;
-		DirIsNeg[2] = InvD.Z < 0.0f;
 	}
 };
 
@@ -163,20 +158,6 @@ struct BuildNode
 	bool IsLeaf() const { return PrimCount > 0; }
 };
 
-struct LinearNode
-{
-	FAABB Bounds;
-
-	union
-	{
-		int PrimitivesOffset;
-		int SecondChildOffset;
-	};
-
-	uint16 PrimCount = 0;
-	uint16 Axis = 0;
-};
-
 struct FBucket
 {
 	int32   Count = 0;
@@ -197,12 +178,13 @@ public:
 
 private:
 	static constexpr int32 MaxPrimitivesPerLeaf = 8;
+	static constexpr int32 MaxDepth = 16;
 
 	BuildNode* Root = nullptr;
 	TArray<FPrimRef> PrimitiveRefs;
 
 	void DestroyNode(BuildNode* Node);
-	BuildNode* BuildRecursive(int32 Start, int32 End);
+	BuildNode* BuildRecursive(int32 Start, int32 End, int32 Depth = 0);
 	void QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 };

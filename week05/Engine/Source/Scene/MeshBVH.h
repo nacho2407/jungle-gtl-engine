@@ -35,8 +35,9 @@ private:
 	};
 
 	static constexpr int32 MaxTrianglesPerLeaf = 8;
+	static constexpr int32 MaxDepth = 16;
 
-	int32 BuildRecursive(int32 Start, int32 End);
+	int32 BuildRecursive(int32 Start, int32 End, int32 Depth = 0);
 	bool IntersectRayTriangle(const Ray& InRay, const FTriangleRef& Triangle, float& OutDistance) const;
 
 	TArray<FTriangleRef> Triangles;

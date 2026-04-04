@@ -52,54 +52,16 @@ namespace
 	{
 		return InMeshBatch.bDisableCulling || (InCommandOverride && InCommandOverride->bDisableCulling);
 	}
-
-	FRasterizerState* ResolveRasterizerState(FRenderer& Renderer, FMaterial& Material, bool bDisableCulling)
-	{
-		FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
-		if (!RenderStateManager)
-		{
-			return nullptr;
-		}
-
-		if (!bDisableCulling)
-		{
-			return Material.GetRasterizerState().get();
-		}
-
-		FRasterizerStateOption RasterizerOption = Material.GetRasterizerOption();
-		RasterizerOption.CullMode = D3D11_CULL_NONE;
-		return RenderStateManager->GetOrCreateRasterizerState(RasterizerOption).get();
-	}
-
-	FDepthStencilState* ResolveDepthStencilState(FRenderer& Renderer, FMaterial& Material, bool bDisableDepthTest, bool bDisableDepthWrite)
-	{
-		FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
-		if (!RenderStateManager)
-		{
-			return nullptr;
-		}
-
-		if (!bDisableDepthTest && !bDisableDepthWrite)
-		{
-			return Material.GetDepthStencilState().get();
-		}
-
-		FDepthStencilStateOption DepthStencilOption = Material.GetDepthStencilOption();
-		if (bDisableDepthTest)
-		{
-			DepthStencilOption.DepthEnable = false;
-		}
-		if (bDisableDepthWrite)
-		{
-			DepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		}
-
-		return RenderStateManager->GetOrCreateDepthStencilState(DepthStencilOption).get();
-	}
 }
 
 void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneFramePacket& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
 {
+	FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
+	if (!RenderStateManager)
+	{
+		return;
+	}
+
 	bool bHasCachedObjectAllocation = false;
 	FMatrix CachedWorldMatrix = FMatrix::Identity;
 	uint32 CachedObjectAllocation = 0;
@@ -144,8 +106,8 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		DrawCommand.MaterialKey = Material->GetSortId();
 		DrawCommand.MeshKey = MeshBatch.Element.RenderMesh->GetSortId();
 		DrawCommand.MaterialMeshKey = (DrawCommand.MaterialKey << 32ull) | (DrawCommand.MeshKey & 0xFFFFFFFFull);
-		DrawCommand.RasterizerState = ResolveRasterizerState(Renderer, *Material, bDisableCulling);
-		DrawCommand.DepthStencilState = ResolveDepthStencilState(Renderer, *Material, bDisableDepthTest, bDisableDepthWrite);
+		DrawCommand.RasterizerState = Material->ResolveRasterizerState(*RenderStateManager, bDisableCulling);
+		DrawCommand.DepthStencilState = Material->ResolveDepthStencilState(*RenderStateManager, bDisableDepthTest, bDisableDepthWrite);
 		DrawCommand.BlendState = Material->GetBlendState().get();
 
 		if (bHasCachedObjectAllocation && MeshBatch.Element.WorldMatrix == CachedWorldMatrix)

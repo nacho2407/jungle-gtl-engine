@@ -449,6 +449,10 @@ Doxyfile
 # Mesh files
 !Assets/**/*.obj
 
+
+# Intel VTune Profiler
+Intel® VTune™ Profiler Results/
+
 .codex/
 
 
