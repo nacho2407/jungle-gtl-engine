@@ -59,7 +59,8 @@ void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 		if (Proxy->bPerViewportUpdate)
 			Proxy->UpdatePerViewport(RenderBus);
 
-		if (!Proxy->bVisible || Proxy->bFrustumCulled) continue;
+		if (!Proxy->bVisible) continue;
+		if (Proxy->bFrustumCulled && !Proxy->bNeverCull) continue;
 
 		// Batcher 경유 렌더링 (Font, SubUV)
 		if (Proxy->bBatcherRendered)

@@ -12,6 +12,7 @@ FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
 	, bIsInner(bInner)
 {
 	bPerViewportUpdate = true;
+	bNeverCull = true;
 	Pass = bInner ? ERenderPass::GizmoInner : ERenderPass::GizmoOuter;
 }
 
