@@ -19,6 +19,7 @@ struct FShowFlags
 	bool bBoundingVolume = false;
 	bool bDebugDraw = true;
 	bool bOctree = false;
+	bool bOcclusionBVH = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

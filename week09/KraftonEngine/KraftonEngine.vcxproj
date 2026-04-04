@@ -241,9 +241,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
-    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp" />
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -259,9 +256,11 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
+    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
@@ -302,6 +301,7 @@
     <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\OcclusionBVH.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp" />
@@ -368,11 +368,11 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
-    <ClInclude Include="Source\Engine\Collision\Octree.h" />
-    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h" />
     <ClInclude Include="Source\Engine\Collision\MeshTrianglePickingBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\Octree.h" />
     <ClInclude Include="Source\Engine\Collision\RayUtils.h" />
     <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
+    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
@@ -426,6 +426,7 @@
     <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\OcclusionBVH.h" />
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />

@@ -70,6 +70,9 @@
     <Filter Include="Source\Engine\Render\Batcher">
       <UniqueIdentifier>{9f304481-1091-e173-0e96-fea5393d1760}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Culling">
+      <UniqueIdentifier>{58ae316b-ca35-389a-0e2c-f4e351055701}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\DebugDraw">
       <UniqueIdentifier>{fbaf9556-a185-1b47-fe85-a96d26d4db43}</UniqueIdentifier>
     </Filter>
@@ -200,16 +203,19 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\Octree.cpp">
+    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\Octree.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
@@ -259,9 +265,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
       <Filter>Source\Engine\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Math\ConvexVolume.cpp">
-      <Filter>Source\Engine\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Matrix.cpp">
       <Filter>Source\Engine\Math</Filter>
@@ -328,6 +331,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp">
       <Filter>Source\Engine\Render\Batcher</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\OcclusionBVH.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
@@ -471,7 +483,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -522,16 +533,19 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\Octree.h">
+    <ClInclude Include="Source\Engine\Collision\MeshTrianglePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
+    <ClInclude Include="Source\Engine\Collision\Octree.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayUtils.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\MeshTrianglePickingBVH.h">
+    <ClInclude Include="Source\Engine\Collision\SpatialPartition.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
@@ -605,9 +619,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\Material.h">
       <Filter>Source\Engine\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Math\ConvexVolume.h">
-      <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\MathUtils.h">
       <Filter>Source\Engine\Math</Filter>
@@ -692,6 +703,15 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h">
       <Filter>Source\Engine\Render\Batcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\OcclusionBVH.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
@@ -873,7 +893,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
