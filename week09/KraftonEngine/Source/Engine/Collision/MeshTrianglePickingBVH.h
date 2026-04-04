@@ -7,7 +7,7 @@
 
 struct FStaticMesh;
 
-class FMeshPickingBVH
+class FMeshTrianglePickingBVH
 {
 public:
 	// 메시의 모든 삼각형을 leaf로 수집한 뒤 로컬 공간 BVH를 즉시 다시 빌드합니다.
@@ -17,7 +17,7 @@ public:
 	// 로컬 공간 ray로 BVH를 순회해 가장 가까운 삼각형 hit를 찾습니다.
 	bool RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const;
 
-	// 오브젝트 단위 PickingBVH의 dirty 플래그와 의미가 겹쳐 혼동을 줄 수 있어,
+	// 월드 primitive BVH와 dirty 플래그 의미가 겹쳐 혼동을 줄 수 있어,
 	// 메시 변경 대응용 API는 일단 주석으로 남겨 둡니다.
 	// void MarkDirty();
 
