@@ -8,7 +8,7 @@
 class AActor;
 class UPrimitiveComponent;
 
-class FPickingBVH
+class FWorldPrimitivePickingBVH
 {
 public:
 	//월드 상태나 picking 대상 변화로 인해 캐시된 트리를 무효화합니다. -> TODO: 최적화 여부 비교해보기
