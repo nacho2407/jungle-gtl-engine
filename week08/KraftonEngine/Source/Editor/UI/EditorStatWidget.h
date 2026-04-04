@@ -9,7 +9,7 @@ public:
 	void Render(float DeltaTime) override;
 
 private:
-	void RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source, int& OutSortColumn, bool& OutSortDescending);
+	void RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source, int& OutSortColumn, bool& OutSortDescending, float TableHeight = 200.0f);
 
 	int CPUSortColumn = 2;
 	bool bCPUSortDescending = true;

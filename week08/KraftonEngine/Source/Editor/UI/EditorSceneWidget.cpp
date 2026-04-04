@@ -9,6 +9,7 @@
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Profiling/Stats.h"
 
 #include <filesystem>
 
@@ -138,9 +139,9 @@ void FEditorSceneWidget::Render(float DeltaTime)
 							Cam->SetWorldLocation(CamData.Location);
 							Cam->SetRelativeRotation(CamData.Rotation);
 							FCameraState CS = Cam->GetCameraState();
-							CS.FOV   = CamData.FOV;
+							CS.FOV = CamData.FOV;
 							CS.NearZ = CamData.NearClip;
-							CS.FarZ  = CamData.FarClip;
+							CS.FarZ = CamData.FarClip;
 							Cam->SetCameraState(CS);
 						}
 						break;
@@ -164,47 +165,54 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 	SEPARATOR();
 
+#ifndef FPS_OPTIMIZATION
 	// Actor Outliner
-	UWorld* World = EditorEngine->GetWorld();
-	if (World)
-	{
-		const TArray<AActor*>& Actors = World->GetActors();
-		ImGui::Text("Actors (%d)", static_cast<int32>(Actors.size()));
-		ImGui::Separator();
-
-		// Fill remaining space with scrollable child region
-		FSelectionManager& Selection = EditorEngine->GetSelectionManager();
-
-		ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
-		for (AActor* Actor : Actors)
-		{
-			if (!Actor) continue;
-
-			FString ActorName = Actor->GetFName().ToString();
-			if (ActorName.empty())
-			{
-				ActorName = Actor->GetTypeInfo()->name;
-			}
-
-			bool bIsSelected = Selection.IsSelected(Actor);
-			if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
-			{
-				if (ImGui::GetIO().KeyShift)
-				{
-					Selection.SelectRange(Actor, Actors);
-				}
-				else if (ImGui::GetIO().KeyCtrl)
-				{
-					Selection.ToggleSelect(Actor);
-				}
-				else
-				{
-					Selection.Select(Actor);
-				}
-			}
-		}
-		ImGui::EndChild();
-	}
+	RenderActorOutliner();
+#endif
 
 	ImGui::End();
+}
+
+void FEditorSceneWidget::RenderActorOutliner()
+{
+	SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "UI(ImGui)");
+
+	UWorld* World = EditorEngine->GetWorld();
+	if (!World) return;
+
+	const TArray<AActor*>& Actors = World->GetActors();
+	ImGui::Text("Actors (%d)", static_cast<int32>(Actors.size()));
+	ImGui::Separator();
+
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+
+	ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor) continue;
+
+		FString ActorName = Actor->GetFName().ToString();
+		if (ActorName.empty())
+		{
+			ActorName = Actor->GetTypeInfo()->name;
+		}
+
+		bool bIsSelected = Selection.IsSelected(Actor);
+		if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
+		{
+			if (ImGui::GetIO().KeyShift)
+			{
+				Selection.SelectRange(Actor, Actors);
+			}
+			else if (ImGui::GetIO().KeyCtrl)
+			{
+				Selection.ToggleSelect(Actor);
+			}
+			else
+			{
+				Selection.Select(Actor);
+			}
+		}
+	}
+	ImGui::EndChild();
 }

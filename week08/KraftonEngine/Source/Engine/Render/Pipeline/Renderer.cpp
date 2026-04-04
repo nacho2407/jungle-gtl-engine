@@ -164,6 +164,7 @@ void FRenderer::BeginFrame()
 void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	FDrawCallStats::Reset();
+
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
 
@@ -271,25 +272,28 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 // ============================================================
 void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context)
 {
-	// Shader → MeshBuffer 기준 정렬 (state change 최소화)
-	SortedProxyBuffer.assign(Proxies.begin(), Proxies.end());
-	if (SortedProxyBuffer.size() > 1)
 	{
-		std::sort(SortedProxyBuffer.begin(), SortedProxyBuffer.end(),
-			[](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
-			{
-				if (A->Shader != B->Shader)
-					return A->Shader < B->Shader;
-				return A->MeshBuffer < B->MeshBuffer;
-			});
+		SCOPE_STAT("ExecutePass::Sort");
+		// Shader → MeshBuffer 기준 정렬 (state change 최소화)
+		SortedProxyBuffer.assign(Proxies.begin(), Proxies.end());
+		if (SortedProxyBuffer.size() > 1)
+		{
+			std::sort(SortedProxyBuffer.begin(), SortedProxyBuffer.end(),
+				[](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
+				{
+					if (A->Shader != B->Shader)
+						return A->Shader < B->Shader;
+					return A->MeshBuffer < B->MeshBuffer;
+				});
+		}
 	}
 
-	FShader*     LastShader     = nullptr;
+	FShader* LastShader = nullptr;
 	FMeshBuffer* LastMeshBuffer = nullptr;
-	bool         bSamplerBound  = false;
+	bool         bSamplerBound = false;
 	bool         bPerObjectBound = false;
 	ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
-	int32        LastUVScroll   = -1;
+	int32        LastUVScroll = -1;
 
 	for (const FPrimitiveSceneProxy* RawItem : SortedProxyBuffer)
 	{
@@ -494,7 +498,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	frameConstantData.Projection = InRenderBus.GetProj();
 	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
-	
+
 	if (GEngine && GEngine->GetTimer())
 	{
 		frameConstantData.Time = static_cast<float>(GEngine->GetTimer()->GetTotalTime());
