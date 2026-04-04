@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "RenderState.h"
 #include <d3d11.h>
 #include <memory>
 
@@ -37,9 +36,9 @@ struct FMaterialTexture
 // 파라미터 이름 → 상수 버퍼 내 위치 매핑
 struct FMaterialParameterInfo
 {
-	int32 BufferIndex;  // ConstantBuffers 배열 인덱스
-	uint32 Offset;      // 버퍼 내 바이트 오프셋
-	uint32 Size;        // 바이트 크기
+	int32 BufferIndex = -1;	// ConstantBuffers 배열 인덱스
+	uint32 Offset = 0;      // 버퍼 내 바이트 오프셋
+	uint32 Size = 0;        // 바이트 크기
 };
 
 // Material이 소유하는 상수 버퍼 슬롯 하나
@@ -48,25 +47,29 @@ struct ENGINE_API FMaterialConstantBuffer
 {
 	ID3D11Buffer* GPUBuffer = nullptr;
 	uint8* CPUData = nullptr; // CPU 쪽 shadow copy
-	uint32 Size = 0;
+	uint32 Size = 0; 
 	bool bDirty = false;
 
+	// 복사 금지
 	FMaterialConstantBuffer() = default;
 	~FMaterialConstantBuffer();
 
-	// 복사 금지
 	FMaterialConstantBuffer(const FMaterialConstantBuffer&) = delete;
 	FMaterialConstantBuffer& operator=(const FMaterialConstantBuffer&) = delete;
 
 	// Move 지원 (소유권 이전)
 	FMaterialConstantBuffer(FMaterialConstantBuffer&& Other) noexcept
-		: GPUBuffer(Other.GPUBuffer), CPUData(Other.CPUData), Size(Other.Size), bDirty(Other.bDirty)
+		: GPUBuffer(Other.GPUBuffer)
+		, CPUData(Other.CPUData)
+		, Size(Other.Size)
+		, bDirty(Other.bDirty)
 	{
 		Other.GPUBuffer = nullptr;
 		Other.CPUData = nullptr;
 		Other.Size = 0;
 		Other.bDirty = false;
 	}
+
 	FMaterialConstantBuffer& operator=(FMaterialConstantBuffer&& Other) noexcept
 	{
 		if (this != &Other)
@@ -101,7 +104,12 @@ struct ENGINE_API FMaterialConstantBuffer
 class ENGINE_API FMaterial
 {
 public:
-	FMaterial() : MaterialId(NextMaterialId++), SortGroupId(MaterialId) {}
+	FMaterial()
+		: MaterialId(NextMaterialId++)
+		, SortGroupId(MaterialId)
+	{
+	}
+
 	virtual ~FMaterial();
 
 	FMaterial(const FMaterial&) = delete;
@@ -111,6 +119,7 @@ public:
 
 	uint64 GetSortId() const;
 	// 에셋 원본 이름 (JSON에서 로드된 이름, 직렬화 시 사용)
+
 	void SetOriginName(const FString& InName) { OriginName = InName; }
 	const FString& GetOriginName() const { return OriginName; }
 
@@ -123,22 +132,10 @@ public:
 
 	void SetVertexShader(const std::shared_ptr<FVertexShader>& InVS);
 	void SetPixelShader(const std::shared_ptr<FPixelShader>& InPS);
-	void SetRasterizerOption(FRasterizerStateOption InOption);
-	void SetRasterizerState(const std::shared_ptr<FRasterizerState>& InState);
-	void SetDepthStencilOption(FDepthStencilStateOption InOption);
-	void SetDepthStencilState(const std::shared_ptr<FDepthStencilState>& InState);
-	void SetBlendOption(FBlendStateOption InOption);
-	void SetBlendState(const std::shared_ptr<FBlendState>& InState);
 	void SetMaterialTexture(const std::shared_ptr<FMaterialTexture>& InTexture);
 
 	FVertexShader* GetVertexShader() const { return VertexShader.get(); }
 	FPixelShader* GetPixelShader() const { return PixelShader.get(); }
-	const FRasterizerStateOption& GetRasterizerOption() const { return RasterizerOption; }
-	const FDepthStencilStateOption& GetDepthStencilOption() const { return DepthStencilOption; }
-	const FBlendStateOption& GetBlendOption() const { return BlendOption; }
-	std::shared_ptr<FRasterizerState> GetRasterizerState() const { return RasterizerState; }
-	std::shared_ptr<FDepthStencilState> GetDepthStencilState() const { return DepthStencilState; }
-	std::shared_ptr<FBlendState> GetBlendState() const { return BlendState; }
 	std::shared_ptr<FMaterialTexture> GetMaterialTexture() const { return MaterialTexture; }
 	const TArray<FMaterialConstantBuffer>& GetConstantBuffers() const { return ConstantBuffers; }
 	TArray<FMaterialConstantBuffer>& GetConstantBuffers() { return ConstantBuffers; }
@@ -176,15 +173,6 @@ protected:
 	FString InstanceName;
 	std::shared_ptr<FVertexShader> VertexShader;
 	std::shared_ptr<FPixelShader> PixelShader;
-	// RasterizerState를 생성하기 위한 옵션, Serialize.
-	FRasterizerStateOption RasterizerOption;
-	FDepthStencilStateOption DepthStencilOption;
-	FBlendStateOption BlendOption;
-	// 머티리얼 로드시에 생성되는 RasterizerState 포인터. No-Serialize.
-	std::shared_ptr<FRasterizerState> RasterizerState = nullptr;
-	std::shared_ptr<FDepthStencilState> DepthStencilState = nullptr;
-	std::shared_ptr<FBlendState> BlendState = nullptr;
-	// Texture
 	std::shared_ptr<FMaterialTexture> MaterialTexture = nullptr;
 
 	TArray<FMaterialConstantBuffer> ConstantBuffers;

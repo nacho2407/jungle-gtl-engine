@@ -283,20 +283,6 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		DefaultMaterial->SetVertexShader(VS);
 		DefaultMaterial->SetPixelShader(PS);
 
-		FRasterizerStateOption rasterizerOption;
-		rasterizerOption.FillMode = D3D11_FILL_SOLID;
-		rasterizerOption.CullMode = D3D11_CULL_BACK;
-		auto RS = RenderStateManager->GetOrCreateRasterizerState(rasterizerOption);
-		DefaultMaterial->SetRasterizerOption(rasterizerOption);
-		DefaultMaterial->SetRasterizerState(RS);
-
-		FDepthStencilStateOption depthStencilOption;
-		depthStencilOption.DepthEnable = true;
-		depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		auto DSS = RenderStateManager->GetOrCreateDepthStencilState(depthStencilOption);
-		DefaultMaterial->SetDepthStencilOption(depthStencilOption);
-		DefaultMaterial->SetDepthStencilState(DSS);
-
 		int32 SlotIndex = DefaultMaterial->CreateConstantBuffer(Device, 16);
 		if (SlotIndex >= 0)
 		{
@@ -316,20 +302,6 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		DefaultTextureMaterial->SetOriginName("M_Default");
 		DefaultTextureMaterial->SetVertexShader(VS);
 		DefaultTextureMaterial->SetPixelShader(PS);
-
-		FRasterizerStateOption rasterizerOption;
-		rasterizerOption.FillMode = D3D11_FILL_SOLID;
-		rasterizerOption.CullMode = D3D11_CULL_BACK;
-		auto RS = RenderStateManager->GetOrCreateRasterizerState(rasterizerOption);
-		DefaultTextureMaterial->SetRasterizerOption(rasterizerOption);
-		DefaultTextureMaterial->SetRasterizerState(RS);
-
-		FDepthStencilStateOption depthStencilOption;
-		depthStencilOption.DepthEnable = true;
-		depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		auto DSS = RenderStateManager->GetOrCreateDepthStencilState(depthStencilOption);
-		DefaultTextureMaterial->SetDepthStencilOption(depthStencilOption);
-		DefaultTextureMaterial->SetDepthStencilState(DSS);
 
 		int32 SlotIndex = DefaultTextureMaterial->CreateConstantBuffer(Device, 32);
 		if (SlotIndex >= 0)

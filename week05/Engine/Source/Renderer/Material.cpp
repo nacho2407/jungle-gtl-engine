@@ -95,7 +95,7 @@ void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
 		return;
 	}
 
-	D3D11_MAPPED_SUBRESOURCE Mapped;
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
 	HRESULT Hr = DeviceContext->Map(GPUBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
 	if (SUCCEEDED(Hr))
 	{
@@ -148,36 +148,6 @@ void FMaterial::SetPixelShader(const std::shared_ptr<FPixelShader>& InPS)
 	PixelShader = InPS;
 }
 
-void FMaterial::SetRasterizerOption(FRasterizerStateOption InOption)
-{
-	RasterizerOption = InOption;
-}
-
-void FMaterial::SetRasterizerState(const std::shared_ptr<FRasterizerState>& InState)
-{
-	RasterizerState = InState;
-}
-
-void FMaterial::SetDepthStencilOption(FDepthStencilStateOption InOption)
-{
-	DepthStencilOption = InOption;
-}
-
-void FMaterial::SetDepthStencilState(const std::shared_ptr<FDepthStencilState>& InState)
-{
-	DepthStencilState = InState;
-}
-
-void FMaterial::SetBlendOption(FBlendStateOption InOption)
-{
-	BlendOption = InOption;
-}
-
-void FMaterial::SetBlendState(const std::shared_ptr<FBlendState>& InState)
-{
-	BlendState = InState;
-}
-
 void FMaterial::SetMaterialTexture(const std::shared_ptr<FMaterialTexture>& InTexture)
 {
 	MaterialTexture = InTexture;
@@ -185,12 +155,13 @@ void FMaterial::SetMaterialTexture(const std::shared_ptr<FMaterialTexture>& InTe
 
 int32 FMaterial::CreateConstantBuffer(ID3D11Device* Device, uint32 InSize)
 {
-	FMaterialConstantBuffer CB;
-	if (!CB.Create(Device, InSize))
+	FMaterialConstantBuffer ConstantBuffer;
+	if (!ConstantBuffer.Create(Device, InSize))
 	{
 		return -1;
 	}
-	ConstantBuffers.push_back(std::move(CB));
+
+	ConstantBuffers.push_back(std::move(ConstantBuffer));
 	return static_cast<int32>(ConstantBuffers.size() - 1);
 }
 
@@ -211,30 +182,44 @@ void FMaterial::RegisterParameter(const FString& ParamName, int32 BufferIndex, u
 bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uint32 DataSize)
 {
 	auto It = ParameterMap.find(ParamName);
-	if (It == ParameterMap.end()) { return false; }
+	if (It == ParameterMap.end())
+	{
+		return false;
+	}
 
 	const FMaterialParameterInfo& Info = It->second;
+	const uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
+	FMaterialConstantBuffer* ConstantBuffer = GetConstantBuffer(Info.BufferIndex);
+	if (!ConstantBuffer)
+	{
+		return false;
+	}
 
-	uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
-	FMaterialConstantBuffer* CB = GetConstantBuffer(Info.BufferIndex);
-	if (!CB) return false;
-	CB->SetData(Data, CopySize, Info.Offset);
+	ConstantBuffer->SetData(Data, CopySize, Info.Offset);
 	return true;
 }
 
 bool FMaterial::GetParameterData(const FString& ParamName, void* OutData, uint32 DataSize) const
 {
 	auto It = ParameterMap.find(ParamName);
-	if (It == ParameterMap.end()) return false;
+	if (It == ParameterMap.end())
+	{
+		return false;
+	}
 
 	const FMaterialParameterInfo& Info = It->second;
+	if (Info.BufferIndex < 0 || Info.BufferIndex >= static_cast<int32>(ConstantBuffers.size()))
+	{
+		return false;
+	}
 
-	if (Info.BufferIndex < 0 || Info.BufferIndex >= static_cast<int32>(ConstantBuffers.size())) return false;
+	const FMaterialConstantBuffer& ConstantBuffer = ConstantBuffers[Info.BufferIndex];
+	if (!ConstantBuffer.CPUData || Info.Offset + DataSize > ConstantBuffer.Size)
+	{
+		return false;
+	}
 
-	const FMaterialConstantBuffer& CB = ConstantBuffers[Info.BufferIndex];
-	if (!CB.CPUData || Info.Offset + DataSize > CB.Size) return false;
-
-	memcpy(OutData, CB.CPUData + Info.Offset, DataSize);
+	memcpy(OutData, ConstantBuffer.CPUData + Info.Offset, DataSize);
 	return true;
 }
 
@@ -254,14 +239,15 @@ FVector4 FMaterial::GetVectorParameter(const FString& ParamName) const
 std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 {
 	ID3D11Device* Device = nullptr;
-	for (const auto& CB : ConstantBuffers)
+	for (const FMaterialConstantBuffer& ConstantBuffer : ConstantBuffers)
 	{
-		if (CB.GPUBuffer)
+		if (ConstantBuffer.GPUBuffer)
 		{
-			CB.GPUBuffer->GetDevice(&Device);
+			ConstantBuffer.GPUBuffer->GetDevice(&Device);
 			break;
 		}
 	}
+
 	if (!Device)
 	{
 		return nullptr;
@@ -273,28 +259,23 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 	Dynamic->VertexShader = VertexShader;
 	Dynamic->PixelShader = PixelShader;
 	Dynamic->ParameterMap = ParameterMap;
-	Dynamic->RasterizerOption = RasterizerOption;
-	Dynamic->DepthStencilOption = DepthStencilOption;
-	Dynamic->BlendOption = BlendOption;
-	Dynamic->RasterizerState = RasterizerState;
-	Dynamic->DepthStencilState = DepthStencilState;
-	Dynamic->BlendState = BlendState;
 	Dynamic->MaterialTexture = MaterialTexture;
 	Dynamic->SortGroupId = SortGroupId;
 
-	for (const auto& CB : ConstantBuffers)
+	for (const FMaterialConstantBuffer& ConstantBuffer : ConstantBuffers)
 	{
-		FMaterialConstantBuffer NewCB;
-		if (NewCB.Create(Device, CB.Size))
+		FMaterialConstantBuffer NewConstantBuffer;
+		if (NewConstantBuffer.Create(Device, ConstantBuffer.Size))
 		{
-			if (CB.CPUData && NewCB.CPUData)
+			if (ConstantBuffer.CPUData && NewConstantBuffer.CPUData)
 			{
-				memcpy(NewCB.CPUData, CB.CPUData, CB.Size);
-				NewCB.bDirty = true;
+				memcpy(NewConstantBuffer.CPUData, ConstantBuffer.CPUData, ConstantBuffer.Size);
+				NewConstantBuffer.bDirty = true;
 			}
 		}
-		Dynamic->ConstantBuffers.push_back(std::move(NewCB));
+		Dynamic->ConstantBuffers.push_back(std::move(NewConstantBuffer));
 	}
+
 	Device->Release();
 	return Dynamic;
 }
@@ -355,13 +336,13 @@ void FMaterial::Bind(ID3D11DeviceContext* DeviceContext)
 		DeviceContext->PSSetSamplers(0, 1, &NullSampler);
 	}
 
-	for (int32 i = 0; i < static_cast<int32>(ConstantBuffers.size()); ++i)
+	for (int32 Index = 0; Index < static_cast<int32>(ConstantBuffers.size()); ++Index)
 	{
-		ConstantBuffers[i].Upload(DeviceContext);
-		UINT Slot = MaterialCBStartSlot + static_cast<UINT>(i);
-		ID3D11Buffer* Buf = ConstantBuffers[i].GPUBuffer;
-		DeviceContext->VSSetConstantBuffers(Slot, 1, &Buf);
-		DeviceContext->PSSetConstantBuffers(Slot, 1, &Buf);
+		ConstantBuffers[Index].Upload(DeviceContext);
+		const UINT Slot = MaterialCBStartSlot + static_cast<UINT>(Index);
+		ID3D11Buffer* Buffer = ConstantBuffers[Index].GPUBuffer;
+		DeviceContext->VSSetConstantBuffers(Slot, 1, &Buffer);
+		DeviceContext->PSSetConstantBuffers(Slot, 1, &Buffer);
 	}
 }
 
@@ -369,13 +350,11 @@ void FMaterial::Release()
 {
 	VertexShader.reset();
 	PixelShader.reset();
-	RasterizerState.reset();
-	DepthStencilState.reset();
-	BlendState.reset();
 	MaterialTexture.reset();
-	for (auto& CB : ConstantBuffers)
+
+	for (FMaterialConstantBuffer& ConstantBuffer : ConstantBuffers)
 	{
-		CB.Release();
+		ConstantBuffer.Release();
 	}
 	ConstantBuffers.clear();
 }
