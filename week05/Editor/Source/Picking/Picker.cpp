@@ -250,6 +250,7 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
+
 		const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
 
 		float SphereT = 0.0f;
@@ -259,6 +260,11 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 		}
 
 		if (SphereT > ClosestDistance)
+		{
+			continue;
+		}
+
+		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
 		{
 			continue;
 		}
