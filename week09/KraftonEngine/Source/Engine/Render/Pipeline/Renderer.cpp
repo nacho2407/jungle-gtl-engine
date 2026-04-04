@@ -180,7 +180,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		if (!bHasBatcher && !bHasProxies) continue;
 
 		const char* PassName = GetRenderPassName(CurPass);
-		SCOPE_STAT(PassName);
+		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
 		ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
@@ -304,7 +304,7 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 
 void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 {
-	SCOPE_STAT("ExecutePass::Sort");
+	SCOPE_STAT_CAT("ExecutePass::Sort", "4_ExecutePass");
 	SortedProxyBuffer.assign(Proxies.begin(), Proxies.end());
 	if (SortedProxyBuffer.size() > 1)
 	{

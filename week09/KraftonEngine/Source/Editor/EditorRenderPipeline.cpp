@@ -27,7 +27,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 #endif
 
 	{
-		SCOPE_STAT_CAT("RenderViewport", "Viewport");
+		SCOPE_STAT_CAT("RenderViewport", "2_Render");
 		for (FLevelEditorViewportClient* VC : Editor->GetLevelViewportClients())
 		{
 			RenderViewport(VC, Renderer);
@@ -38,7 +38,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	// 스왑체인 백버퍼 복귀 → ImGui 합성 → Present
 	Renderer.BeginFrame();
 	{
-		SCOPE_STAT_CAT("EditorUI", "UI(ImGui)");
+		SCOPE_STAT_CAT("EditorUI", "5_UI");
 		Editor->RenderUI(DeltaTime);
 	}
 
@@ -47,7 +47,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 #endif
 
 	{
-		SCOPE_STAT_CAT("Present", "GPU");
+		SCOPE_STAT_CAT("Present", "2_Render");
 		Renderer.EndFrame();
 	}
 }
@@ -90,7 +90,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
 	{
-		SCOPE_STAT("Collector");
+		SCOPE_STAT_CAT("Collector", "3_Collect");
 		Collector.CollectWorld(World, Bus);
 
 		if (UGizmoComponent* Gizmo = Editor->GetGizmo())
@@ -108,13 +108,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	// 3. Batcher 준비
 	{
-		SCOPE_STAT("PrepareBatcher");
+		SCOPE_STAT_CAT("PrepareBatcher", "3_Collect");
 		Renderer.PrepareBatchers(Bus);
 	}
 
 	// 4. GPU 드로우 콜 실행
 	{
-		SCOPE_STAT("Renderer.Render");
+		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
 		Renderer.Render(Bus);
 	}
 }
