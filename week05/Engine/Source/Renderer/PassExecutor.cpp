@@ -19,17 +19,59 @@ namespace
 		ERenderPass::UI,
 	};
 
-	bool NeedsDepthClearForPass(const TArray<FMeshDrawCommand>& Commands)
+	FRasterizerStateOption MakePassRasterizerState(ERenderPass RenderPass)
 	{
-		for (const FMeshDrawCommand& Command : Commands)
+		(void)RenderPass;
+
+		FRasterizerStateOption State;
+		State.FillMode = D3D11_FILL_SOLID;
+		State.CullMode = D3D11_CULL_NONE;
+		return State;
+	}
+
+	FDepthStencilStateOption MakePassDepthState(ERenderPass RenderPass)
+	{
+		FDepthStencilStateOption State;
+
+		if (RenderPass == ERenderPass::World)
 		{
-			if (!Command.bDisableDepthTest)
-			{
-				return true;
-			}
+			State.DepthEnable = true;
+			State.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+			State.DepthFunc = D3D11_COMPARISON_LESS;
+			return State;
 		}
 
-		return false;
+		State.DepthEnable = false;
+		State.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		return State;
+	}
+
+	FBlendStateOption MakePassBlendState(ERenderPass RenderPass)
+	{
+		(void)RenderPass;
+
+		FBlendStateOption State;
+		State.BlendEnable = true;
+		State.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		State.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		State.BlendOp = D3D11_BLEND_OP_ADD;
+		State.SrcBlendAlpha = D3D11_BLEND_ONE;
+		State.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		State.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		return State;
+	}
+
+	void BindPassState(FRenderer& Renderer, ERenderPass RenderPass)
+	{
+		FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
+		if (!RenderStateManager)
+		{
+			return;
+		}
+
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateRasterizerState(MakePassRasterizerState(RenderPass)));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateDepthStencilState(MakePassDepthState(RenderPass)));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateBlendState(MakePassBlendState(RenderPass)));
 	}
 }
 
@@ -51,12 +93,7 @@ void FPassExecutor::Execute(const FSceneRenderFrame& Packet) const
 	for (ERenderPass RenderPass : GPassExecutionOrder)
 	{
 		const TArray<FMeshDrawCommand>& PassCommands = Packet.GetPassQueue(RenderPass);
-
-		if (RenderPass == ERenderPass::NoDepth && NeedsDepthClearForPass(PassCommands))
-		{
-			Renderer->ClearDepthBuffer();
-		}
-
+		BindPassState(*Renderer, RenderPass);
 		ExecuteQueue(PassCommands);
 	}
 
@@ -136,9 +173,6 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 		}
 
 		Material->Bind(Renderer->DeviceContext, Renderer->MaterialBindingCache.get());
-		Renderer->RenderStateManager->BindState(Command.RasterizerState);
-		Renderer->RenderStateManager->BindState(Command.DepthStencilState);
-		Renderer->RenderStateManager->BindState(Command.BlendState);
 
 		if (CurrentMesh != Command.RenderMesh)
 		{

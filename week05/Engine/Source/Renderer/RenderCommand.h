@@ -29,9 +29,6 @@ struct ENGINE_API FRenderCommand
 	uint32 IndexCount = 0;
 
 	ERenderPass RenderPass = ERenderPass::World;
-	bool bDisableDepthTest = false;
-	bool bDisableDepthWrite = false;
-	bool bDisableCulling = false;
 };
 
 struct ENGINE_API FOutlineRenderItem

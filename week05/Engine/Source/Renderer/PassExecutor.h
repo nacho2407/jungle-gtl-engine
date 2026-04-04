@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Renderer/MeshPassProcessor.h"
+#include "Renderer/SceneRenderTypes.h"
 
 class FRenderer;
 struct FSceneRenderFrame;

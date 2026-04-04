@@ -3,11 +3,101 @@
 #include <algorithm>
 
 #include "Core/Engine.h"
+#include "Renderer/Material.h"
 #include "Renderer/ObjectUniformStream.h"
 #include "Renderer/RenderCommand.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneProxy.h"
+
+namespace
+{
+	ERenderPass ResolveRenderPass(const FMeshRenderItem& RenderItem, const FRenderCommand* CommandOverride)
+	{
+		if (!CommandOverride)
+		{
+			return RenderItem.RenderPass;
+		}
+
+		if (CommandOverride->RenderPass != ERenderPass::World)
+		{
+			return CommandOverride->RenderPass;
+		}
+
+		return RenderItem.RenderPass;
+	}
+
+	FMaterial* ResolveMaterial(const FMeshRenderItem& RenderItem, const FRenderCommand* CommandOverride, FRenderer& Renderer)
+	{
+		if (CommandOverride && CommandOverride->Material)
+		{
+			return CommandOverride->Material;
+		}
+
+		return RenderItem.Material ? RenderItem.Material : Renderer.GetDefaultMaterial();
+	}
+
+	void BuildDrawCommands(
+		const TArray<FMeshRenderItem>& RenderItems,
+		const FRenderCommand* CommandOverride,
+		FRenderer& Renderer,
+		FSceneRenderFrame& OutFrame,
+		FObjectUniformStream& ObjectUniformStream,
+		uint64& InOutSubmissionOrder)
+	{
+		bool bHasCachedObjectAllocation = false;
+		FMatrix CachedWorldMatrix = FMatrix::Identity;
+		uint32 CachedObjectAllocation = 0;
+
+		for (const FMeshRenderItem& RenderItem : RenderItems)
+		{
+			if (!RenderItem.RenderMesh)
+			{
+				continue;
+			}
+
+			FMaterial* Material = ResolveMaterial(RenderItem, CommandOverride, Renderer);
+			const ERenderPass RenderPass = ResolveRenderPass(RenderItem, CommandOverride);
+			if (!Material)
+			{
+				continue;
+			}
+
+			FMeshDrawCommand DrawCommand = {};
+			DrawCommand.Material = Material;
+			DrawCommand.RenderMesh = RenderItem.RenderMesh;
+			DrawCommand.IndexStart = RenderItem.IndexStart;
+			DrawCommand.IndexCount = RenderItem.IndexCount;
+			DrawCommand.SectionIndex = RenderItem.SectionIndex;
+			DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
+			DrawCommand.MaterialKey = Material->GetSortId();
+			DrawCommand.MeshKey = RenderItem.RenderMesh->GetSortId();
+
+			if (bHasCachedObjectAllocation && RenderItem.WorldMatrix == CachedWorldMatrix)
+			{
+				DrawCommand.ObjectUniformAllocation = CachedObjectAllocation;
+			}
+			else
+			{
+				DrawCommand.ObjectUniformAllocation = ObjectUniformStream.AllocateWorldMatrix(RenderItem.WorldMatrix);
+				CachedWorldMatrix = RenderItem.WorldMatrix;
+				CachedObjectAllocation = DrawCommand.ObjectUniformAllocation;
+				bHasCachedObjectAllocation = true;
+			}
+
+			OutFrame.RegisterMeshUpload(RenderItem.RenderMesh);
+			OutFrame.GetPassQueue(RenderPass).push_back(DrawCommand);
+		}
+	}
+
+	bool CompareDrawCommands(const FMeshDrawCommand& A, const FMeshDrawCommand& B)
+	{
+		if (A.MaterialKey != B.MaterialKey) return A.MaterialKey < B.MaterialKey;
+		if (A.MeshKey != B.MeshKey) return A.MeshKey < B.MeshKey;
+		if (A.IndexStart != B.IndexStart) return A.IndexStart < B.IndexStart;
+		return A.SubmissionOrder < B.SubmissionOrder;
+	}
+}
 
 void FSceneRenderFrame::Reset()
 {
@@ -42,15 +132,15 @@ void FSceneRenderFrame::RegisterMeshUpload(FRenderMesh* InMesh)
 	MeshUploads.push_back(InMesh);
 }
 
-void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const
+void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const
 {
-	OutPacket.Reset();
-	OutPacket.Reserve(Queue.Commands.size());
-	BuildViewInfo(Queue, OutPacket);
+	OutFrame.Reset();
+	OutFrame.Reserve(Queue.Commands.size());
+	BuildViewInfo(Queue, OutFrame);
 
 	if (!Queue.OutlineItems.empty())
 	{
-		OutPacket.OutlineItems.reserve(Queue.OutlineItems.size());
+		OutFrame.OutlineItems.reserve(Queue.OutlineItems.size());
 		for (const FOutlineRenderItem& Item : Queue.OutlineItems)
 		{
 			if (!Item.Mesh)
@@ -58,8 +148,8 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRe
 				continue;
 			}
 
-			OutPacket.OutlineItems.push_back(Item);
-			OutPacket.RegisterMeshUpload(Item.Mesh);
+			OutFrame.OutlineItems.push_back(Item);
+			OutFrame.RegisterMeshUpload(Item.Mesh);
 		}
 	}
 
@@ -70,83 +160,64 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRe
 
 	Renderer->ObjectUniformStream->Reset();
 
-	TArray<FMeshRenderItem> MeshBatches;
-	MeshBatches.reserve(1);
+	TArray<FMeshRenderItem> CollectedRenderItems;
+	CollectedRenderItems.reserve(1);
 	uint64 SubmissionOrder = 0;
 
 	for (const FRenderCommand& Command : Queue.Commands)
 	{
+		CollectedRenderItems.clear();
+
 		if (Command.SceneProxy)
 		{
-			// SceneProxy의 역할을 Collect 수준으로 축소, MeshPassProcessor에서 수집한 정보 사용
-			MeshBatches.clear();
-			Command.SceneProxy->CollectMeshBatches(OutPacket.View, *Renderer, MeshBatches);
-			MeshPassProcessor.BuildMeshDrawCommands(MeshBatches, &Command, *Renderer, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
+			Command.SceneProxy->CollectMeshBatches(OutFrame.View, *Renderer, CollectedRenderItems);
+			BuildDrawCommands(CollectedRenderItems, &Command, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder);
+			continue;
 		}
-		else
-		{
-			MeshBatches.clear();
-			AppendLegacyMeshBatch(Command, MeshBatches);
-			MeshPassProcessor.BuildMeshDrawCommands(MeshBatches, nullptr, *Renderer, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
-		}
+
+		AppendLegacyRenderItem(Command, CollectedRenderItems);
+		BuildDrawCommands(CollectedRenderItems, nullptr, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder);
 	}
 
-	if (!OutPacket.MeshUploads.empty())
+	if (!OutFrame.MeshUploads.empty())
 	{
-		std::sort(OutPacket.MeshUploads.begin(), OutPacket.MeshUploads.end());
-		const auto NewEnd = std::unique(OutPacket.MeshUploads.begin(), OutPacket.MeshUploads.end());
-		OutPacket.MeshUploads.erase(NewEnd, OutPacket.MeshUploads.end());
+		std::sort(OutFrame.MeshUploads.begin(), OutFrame.MeshUploads.end());
+		const auto NewEnd = std::unique(OutFrame.MeshUploads.begin(), OutFrame.MeshUploads.end());
+		OutFrame.MeshUploads.erase(NewEnd, OutFrame.MeshUploads.end());
 	}
 
-	auto PassComparator = [](const FMeshDrawCommand& A, const FMeshDrawCommand& B)
+	if (OutFrame.GetPassQueue(ERenderPass::World).size() > 1)
 	{
-		if (A.PipelineStateKey != B.PipelineStateKey) return A.PipelineStateKey < B.PipelineStateKey;
-		if (A.MaterialKey != B.MaterialKey) return A.MaterialKey < B.MaterialKey;
-		if (A.MeshKey != B.MeshKey) return A.MeshKey < B.MeshKey;
-		if (A.SectionIndex != B.SectionIndex) return A.SectionIndex < B.SectionIndex;
-		return A.SubmissionOrder < B.SubmissionOrder;
-	};
-
-	if (OutPacket.GetPassQueue(ERenderPass::World).size() > 1)
-	{
-		TArray<FMeshDrawCommand>& WorldCommands = OutPacket.GetPassQueue(ERenderPass::World);
-		std::sort(WorldCommands.begin(), WorldCommands.end(), PassComparator);
-	}
-	if (OutPacket.GetPassQueue(ERenderPass::NoDepth).size() > 1)
-	{
-		TArray<FMeshDrawCommand>& NoDepthCommands = OutPacket.GetPassQueue(ERenderPass::NoDepth);
-		std::sort(NoDepthCommands.begin(), NoDepthCommands.end(), PassComparator);
+		TArray<FMeshDrawCommand>& WorldCommands = OutFrame.GetPassQueue(ERenderPass::World);
+		std::sort(WorldCommands.begin(), WorldCommands.end(), CompareDrawCommands);
 	}
 }
 
-void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const
+void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const
 {
-	OutPacket.ViewFamily.Time = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
-	OutPacket.ViewFamily.DeltaTime = GEngine ? GEngine->GetDeltaTime() : 0.0f;
+	OutFrame.ViewFamily.Time = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
+	OutFrame.ViewFamily.DeltaTime = GEngine ? GEngine->GetDeltaTime() : 0.0f;
 
 	FSceneView View = {};
 	View.ViewMatrix = Queue.ViewMatrix;
 	View.ProjectionMatrix = Queue.ProjectionMatrix;
 	View.ShowFlags = Queue.ShowFlags;
-	OutPacket.View.Initialize(OutPacket.ViewFamily, View);
+	OutFrame.View.Initialize(OutFrame.ViewFamily, View);
 }
 
-void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutMeshBatches) const
+void FSceneRenderer::AppendLegacyRenderItem(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutRenderItems) const
 {
 	if (!Command.RenderMesh)
 	{
 		return;
 	}
 
-	FMeshRenderItem MeshBatch = {};
-	MeshBatch.Material = Command.Material ? Command.Material : (Renderer ? Renderer->GetDefaultMaterial() : nullptr);
-	MeshBatch.RenderMesh = Command.RenderMesh;
-	MeshBatch.WorldMatrix = Command.WorldMatrix;
-	MeshBatch.IndexStart = Command.IndexStart;
-	MeshBatch.IndexCount = Command.IndexCount;
-	MeshBatch.RenderPass = Command.RenderPass;
-	MeshBatch.bDisableDepthTest = Command.bDisableDepthTest;
-	MeshBatch.bDisableDepthWrite = Command.bDisableDepthWrite;
-	MeshBatch.bDisableCulling = Command.bDisableCulling;
-	OutMeshBatches.push_back(MeshBatch);
+	FMeshRenderItem RenderItem = {};
+	RenderItem.Material = Command.Material ? Command.Material : (Renderer ? Renderer->GetDefaultMaterial() : nullptr);
+	RenderItem.RenderMesh = Command.RenderMesh;
+	RenderItem.WorldMatrix = Command.WorldMatrix;
+	RenderItem.IndexStart = Command.IndexStart;
+	RenderItem.IndexCount = Command.IndexCount;
+	RenderItem.RenderPass = Command.RenderPass;
+	OutRenderItems.push_back(RenderItem);
 }

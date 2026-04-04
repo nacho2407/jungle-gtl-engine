@@ -244,9 +244,6 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 	Command.WorldMatrix = AxisGizmoWorld;
 	Command.RenderPass = ERenderPass::NoDepth;
 	Command.Material = Material.get();
-	Command.bDisableDepthTest = true;
-	Command.bDisableDepthWrite = true;
-	Command.bDisableCulling = true;
 	
 
 	switch (Mode)

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Component/PrimitiveComponent.h"
-#include "Renderer/MeshPassProcessor.h"
+#include "Renderer/SceneRenderTypes.h"
 #include <memory>
 
 class FMaterial;

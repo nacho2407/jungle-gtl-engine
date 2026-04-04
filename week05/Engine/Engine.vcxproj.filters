@@ -255,9 +255,6 @@
     <ClCompile Include="Source\Renderer\MaterialBindingCache.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Renderer\MeshPassProcessor.cpp">
-      <Filter>Source\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
@@ -539,9 +536,6 @@
     <ClInclude Include="Source\Renderer\MaterialBindingCache.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\MeshPassProcessor.h">
-      <Filter>Source\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\ObjectUniformStream.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
@@ -549,6 +543,9 @@
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\SceneProxy.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneRenderTypes.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\SceneRenderer.h">

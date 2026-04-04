@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Renderer/MeshPassProcessor.h"
+#include "Renderer/SceneRenderTypes.h"
 #include "Renderer/ViewInfo.h"
 #include <array>
 
@@ -49,9 +49,8 @@ public:
 
 private:
 	void BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const;
-	void AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutMeshBatches) const;
+	void AppendLegacyRenderItem(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutRenderItems) const;
 
 private:
 	FRenderer* Renderer = nullptr;
-	FMeshPassProcessor MeshPassProcessor;
 };
