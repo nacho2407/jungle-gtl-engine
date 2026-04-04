@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Engine/Math/ConvexVolume.h"
 #include "Engine/Component/CameraComponent.h"
 #include <algorithm>
@@ -54,6 +55,33 @@ void UWorld::MarkPickingBVHDirty()
 void UWorld::BuildPickingBVHNow() const
 {
 	PickingBVH.BuildNow(Actors);
+}
+
+void UWorld::WarmupPickingData() const
+{
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor || !Actor->IsVisible())
+		{
+			continue;
+		}
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (!Primitive || !Primitive->IsVisible() || !Primitive->IsA<UStaticMeshComponent>())
+			{
+				continue;
+			}
+
+			UStaticMeshComponent* StaticMeshComponent = static_cast<UStaticMeshComponent*>(Primitive);
+			if (UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh())
+			{
+				StaticMesh->EnsureMeshPickingBVHBuilt();
+			}
+		}
+	}
+
+	BuildPickingBVHNow();
 }
 
 bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const

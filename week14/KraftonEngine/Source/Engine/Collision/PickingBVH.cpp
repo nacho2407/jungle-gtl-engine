@@ -15,7 +15,7 @@ void FPickingBVH::MarkDirty()
 }
 
 /**
- * 현재 보이는 primitive 중 실제로 픽킹 가능한 대상만 leaf로 구성하며 트리를 빌드합니다.
+ * 현재 보이는 primitive 중 실제로 picking 가능한 대상만 leaf로 구성하며 트리를 빌드합니다.
  * 
  * \param Actors
  */
