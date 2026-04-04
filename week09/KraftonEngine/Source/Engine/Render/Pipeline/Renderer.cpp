@@ -118,7 +118,8 @@ void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 	SubUVBatcher.Clear();
 	{
 		const auto& Entries = Bus.GetSubUVEntries();
-		SortedSubUVBuffer.assign(Entries.begin(), Entries.end());
+		SortedSubUVBuffer.clear();
+		SortedSubUVBuffer.insert(SortedSubUVBuffer.end(), Entries.begin(), Entries.end());
 
 		if (SortedSubUVBuffer.size() > 1)
 		{
@@ -175,9 +176,11 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
-		const bool bHasBatcher = static_cast<bool>(PassBatchers[i]);
+		const auto& Batcher = PassBatchers[i];
+		const bool bHasBatcher = static_cast<bool>(Batcher);
 		const bool bHasProxies = !InRenderBus.GetProxies(CurPass).empty();
 		if (!bHasBatcher && !bHasProxies) continue;
+		if (bHasBatcher && !bHasProxies && Batcher.IsEmpty && Batcher.IsEmpty()) continue;
 
 		const char* PassName = GetRenderPassName(CurPass);
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
@@ -222,39 +225,45 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::Editor] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			DrawLineBatcher(EditorLineBatcher, Ctx);
-		}
+		},
+		[this]() { return EditorLineBatcher.GetLineCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::Grid] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			DrawLineBatcher(GridLineBatcher, Ctx);
-		}
+		},
+		[this]() { return GridLineBatcher.GetLineCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::Font] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.DrawBatch(Ctx, FontRes);
-		}
+		},
+		[this]() { return FontBatcher.GetQuadCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::OverlayFont] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 			FontBatcher.DrawScreenBatch(Ctx, FontRes);
-		}
+		},
+		nullptr  // OverlayFont(Stats 등)는 항상 존재
 	};
 
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			SubUVBatcher.DrawBatch(Ctx);
-		}
+		},
+		[this]() { return SubUVBatcher.GetSpriteCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::PostProcess] = {
 		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			DrawPostProcessOutline(Bus, Ctx);
-		}
+		},
+		nullptr  // PostProcess는 내���에서 SelectionMask 체크
 	};
 }
 
@@ -305,17 +314,31 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 {
 	SCOPE_STAT_CAT("ExecutePass::Sort", "4_ExecutePass");
-	SortedProxyBuffer.assign(Proxies.begin(), Proxies.end());
-	if (SortedProxyBuffer.size() > 1)
+
+	// A: capacity 유지 — assign() 대신 clear() + insert()
+	SortedProxyBuffer.clear();
+	SortedProxyBuffer.insert(SortedProxyBuffer.end(), Proxies.begin(), Proxies.end());
+
+	if (SortedProxyBuffer.size() <= 1) return;
+
+	// B: 이미 정렬되어 있으면 O(N) 체크 후 skip
+	bool bAlreadySorted = true;
+	for (size_t i = 1; i < SortedProxyBuffer.size(); ++i)
 	{
-		std::sort(SortedProxyBuffer.begin(), SortedProxyBuffer.end(),
-			[](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
-			{
-				if (A->Shader != B->Shader)
-					return A->Shader < B->Shader;
-				return A->MeshBuffer < B->MeshBuffer;
-			});
+		if (SortedProxyBuffer[i]->SortKey < SortedProxyBuffer[i - 1]->SortKey)
+		{
+			bAlreadySorted = false;
+			break;
+		}
 	}
+	if (bAlreadySorted) return;
+
+	// C: SortKey (uint64) 단일 정수 비교로 정렬
+	std::sort(SortedProxyBuffer.begin(), SortedProxyBuffer.end(),
+		[](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
+		{
+			return A->SortKey < B->SortKey;
+		});
 }
 
 void FRenderer::BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
@@ -382,6 +405,18 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 		State.bSamplerBound = true;
 	}
 
+	// PerObject CB — 프록시당 1회만 업데이트 (Model 행렬)
+	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+
+	// Material CB 슬롯 바인딩 (1회)
+	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
+	if (!State.bMaterialBound)
+	{
+		ID3D11Buffer* b4 = MaterialCB->GetBuffer();
+		Ctx->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
+		State.bMaterialBound = true;
+	}
+
 	for (const FMeshSectionDraw& Section : Proxy.SectionDraws)
 	{
 		if (Section.IndexCount == 0) continue;
@@ -394,22 +429,17 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 			State.LastSRV = Section.DiffuseSRV;
 		}
 
-		// PerObject CB — Section Color 오버라이드
-		FPerObjectConstants SectionConstants = Proxy.PerObjectConstants;
-		SectionConstants.Color = Section.DiffuseColor;
-		Resources.PerObjectConstantBuffer.Update(Ctx, &SectionConstants, sizeof(FPerObjectConstants));
-
-		// Material CB — UVScroll 변경 시에만
+		// Material CB — SectionColor 또는 UVScroll 변경 시만 업데이트
 		int32 curUVScroll = Section.bIsUVScroll ? 1 : 0;
-		if (curUVScroll != State.LastUVScroll)
+		if (curUVScroll != State.LastUVScroll
+			|| memcmp(&Section.DiffuseColor, &State.LastSectionColor, sizeof(FVector4)) != 0)
 		{
-			FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 			FMaterialConstants MatConstants = {};
 			MatConstants.bIsUVScroll = curUVScroll;
+			MatConstants.SectionColor = Section.DiffuseColor;
 			MaterialCB->Update(Ctx, &MatConstants, sizeof(MatConstants));
-			ID3D11Buffer* b4 = MaterialCB->GetBuffer();
-			Ctx->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
 			State.LastUVScroll = curUVScroll;
+			State.LastSectionColor = Section.DiffuseColor;
 		}
 
 		Ctx->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);

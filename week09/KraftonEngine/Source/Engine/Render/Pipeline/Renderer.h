@@ -21,6 +21,7 @@
 struct FPassBatcherBinding
 {
 	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> DrawBatch;
+	std::function<bool()> IsEmpty;		// true면 이 패스 skip (렌더 상태 적용도 생략)
 
 	explicit operator bool() const { return DrawBatch != nullptr; }
 };
@@ -66,8 +67,10 @@ private:
 		FMeshBuffer* LastMeshBuffer = nullptr;
 		ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 		int32        LastUVScroll   = -1;
+		FVector4     LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f }; // 초기값: 불일치 보장
 		bool         bSamplerBound  = false;
 		bool         bPerObjectBound = false;
+		bool         bMaterialBound  = false;
 
 		bool HasBoundSRV() const { return LastSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull); }
 	};
