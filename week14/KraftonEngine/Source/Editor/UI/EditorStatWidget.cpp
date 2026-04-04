@@ -67,7 +67,6 @@ void FEditorStatWidget::Render(float DeltaTime)
 
 	// --- Runtime Optimization ---
 	ImGui::Checkbox("Runtime Optimization", &FEditorSettings::Get().bRunTimeOptimization);
-	ImGui::Checkbox("Use Mesh BVH For Picking", &FEditorSettings::Get().bUseMeshBVHForPicking);
 	ImGui::Separator();
 
 	// --- Draw Call Count ---
