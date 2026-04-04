@@ -20,7 +20,7 @@ struct FRenderCommandQueue;
 
 struct ENGINE_API FSceneFramePacket
 {
-	using FPassQueueArray = std::array<TArray<FMeshDrawCommand>, static_cast<size_t>(ERenderPass::Count)>;
+	using FPassQueueArray = TStaticArray<TArray<FMeshDrawCommand>, static_cast<size_t>(ERenderPass::Count)>;
 
 	FSceneViewFamily ViewFamily;
 	FViewInfo View;
