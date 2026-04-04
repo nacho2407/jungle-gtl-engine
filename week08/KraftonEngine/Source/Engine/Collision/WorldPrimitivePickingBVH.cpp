@@ -1,4 +1,4 @@
-﻿#include "Collision/PickingBVH.h"
+﻿#include "Collision/WorldPrimitivePickingBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Component/PrimitiveComponent.h"
@@ -8,8 +8,8 @@
 
 /**
  * 월드 내 actor/primitive의 배치가 바뀌었음을 표시해 다음 raycast 전에 BVH를 다시 빌드하게 합니다.
- */
-void FPickingBVH::MarkDirty()
+ */ 
+void FWorldPrimitivePickingBVH::MarkDirty()
 {
 	bDirty = true;
 }
@@ -19,7 +19,7 @@ void FPickingBVH::MarkDirty()
  * 
  * \param Actors
  */
-void FPickingBVH::BuildNow(const TArray<AActor*>& Actors)
+void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 {
 	Leaves.clear();
 	Nodes.clear();
@@ -65,7 +65,7 @@ void FPickingBVH::BuildNow(const TArray<AActor*>& Actors)
  *
  * \param Actors 현재 월드 actor 목록
  */
-void FPickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
+void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 {
 	if (!bDirty)
 	{
@@ -84,7 +84,7 @@ void FPickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
  * \param OutActor hit된 primitive의 owner actor
  * \return 유효한 actor를 하나라도 맞췄으면 true
  */
-bool FPickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
+bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
 	OutHitResult = {};
 	OutActor = nullptr;
@@ -150,7 +150,7 @@ bool FPickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& Ou
  * \param End leaf 구간 끝 다음 인덱스
  * \return 생성된 노드 인덱스
  */
-int32 FPickingBVH::BuildRecursive(int32 Start, int32 End)
+int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.emplace_back();
