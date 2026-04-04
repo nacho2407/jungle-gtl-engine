@@ -45,6 +45,7 @@ public:
 	EDirtyFlag DirtyFlags = EDirtyFlag::All;
 
 	// --- LOD ---
+	FVector CachedWorldPos;		// Transform 갱신 시 캐싱 — LOD 거리 계산용
 	uint32 CurrentLOD = 0;
 	virtual void UpdateLOD(uint32 /*LODLevel*/) {}
 

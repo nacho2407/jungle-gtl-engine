@@ -21,6 +21,7 @@
 struct FPassBatcherBinding
 {
 	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> DrawBatch;
+	std::function<bool()> IsEmpty;		// true면 이 패스 skip (렌더 상태 적용도 생략)
 
 	explicit operator bool() const { return DrawBatch != nullptr; }
 };

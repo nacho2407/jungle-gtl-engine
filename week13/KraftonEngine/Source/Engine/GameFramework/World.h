@@ -63,6 +63,7 @@ private:
 	TArray<AActor*> Actors;
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
+	TArray<FBoundingBox> CachedBoxes;	// Occlusion 두 루프간 BoundingBox 재사용
 
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
