@@ -52,6 +52,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 	if (EditorEngine)
 	{
+		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "UI(ImGui)");
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
 
