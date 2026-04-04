@@ -53,6 +53,7 @@ public:
 	bool bSelected = false;
 	bool bSupportsOutline = true;
 	bool bFrustumCulled = false;	// Frustum culling 결과 — true면 화면 밖
+	bool bNeverCull = false;		// true면 frustum culling 대상에서 제외 (Gizmo 등 에디터 프록시)
 
 	// --- 렌더 패스 ---
 	ERenderPass Pass = ERenderPass::Opaque;
