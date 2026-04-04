@@ -65,7 +65,7 @@ void BVH::Build(const TArray<UPrimitiveComponent*>& InPrimitives)
 	Root = BuildRecursive(0, static_cast<int32>(PrimitiveRefs.size()));
 }
 
-BuildNode* BVH::BuildRecursive(int32 Start, int32 End)
+BuildNode* BVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 {
 	BuildNode* Node = new BuildNode();
 	const int32 Count = End - Start;
@@ -80,7 +80,7 @@ BuildNode* BVH::BuildRecursive(int32 Start, int32 End)
 
 	Node->Bounds = NodeBounds;
 
-	if (Count <= MaxPrimitivesPerLeaf)
+	if (Count <= MaxPrimitivesPerLeaf || Depth >= MaxDepth)
 	{
 		Node->FirstPrimOffset = Start;
 		Node->PrimCount = Count;
@@ -99,8 +99,7 @@ BuildNode* BVH::BuildRecursive(int32 Start, int32 End)
 	}
 
 
-	TArray<FBucket> Buckets(NUM_BUCKETS);
-
+	FBucket Buckets[NUM_BUCKETS] = {};
 	for (int32 i = Start; i < End; ++i)
 	{
 		float t = (GetAxis(PrimitiveRefs[i].Centroid, Axis) - CentroidMin) / (CentroidMax - CentroidMin);
@@ -165,8 +164,9 @@ BuildNode* BVH::BuildRecursive(int32 Start, int32 End)
 
 
 	Node->SplitAxis = Axis;
-	Node->Left = BuildRecursive(Start, Mid);
-	Node->Right = BuildRecursive(Mid, End);
+	const int32 ChildDepth = Depth + 1;
+	Node->Left = BuildRecursive(Start, Mid, ChildDepth);
+	Node->Right = BuildRecursive(Mid, End, ChildDepth);
 	return Node;
 }
 
