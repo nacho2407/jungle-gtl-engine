@@ -2,7 +2,7 @@
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
-#include "Collision/PickingBVH.h"
+#include "Collision/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
@@ -24,8 +24,9 @@ public:
 	T* SpawnActor();
 	void DestroyActor(AActor* Actor);
 	void AddActor(AActor* Actor);
-	void MarkPickingBVHDirty();
-	void BuildPickingBVHNow() const;
+	void MarkWorldPrimitivePickingBVHDirty();
+	void BuildWorldPrimitivePickingBVHNow() const;
+	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
@@ -62,7 +63,7 @@ private:
 
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
-	mutable FPickingBVH PickingBVH;
+	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	FScene Scene;
 	FDebugDrawQueue DebugDrawQueue;
 
