@@ -165,10 +165,8 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 	SEPARATOR();
 
-#ifndef FPS_OPTIMIZATION
 	// Actor Outliner
 	RenderActorOutliner();
-#endif
 
 	ImGui::End();
 }
@@ -181,38 +179,53 @@ void FEditorSceneWidget::RenderActorOutliner()
 	if (!World) return;
 
 	const TArray<AActor*>& Actors = World->GetActors();
-	ImGui::Text("Actors (%d)", static_cast<int32>(Actors.size()));
+
+	// null이 아닌 유효 Actor 인덱스만 수집 (Clipper는 연속 인덱스 필요)
+	ValidActorIndices.clear();
+	ValidActorIndices.reserve(Actors.size());
+	for (int32 i = 0; i < static_cast<int32>(Actors.size()); ++i)
+	{
+		if (Actors[i]) ValidActorIndices.push_back(i);
+	}
+
+	ImGui::Text("Actors (%d)", static_cast<int32>(ValidActorIndices.size()));
 	ImGui::Separator();
 
 	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 
 	ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
-	for (AActor* Actor : Actors)
+
+	ImGuiListClipper Clipper;
+	Clipper.Begin(static_cast<int>(ValidActorIndices.size()));
+	while (Clipper.Step())
 	{
-		if (!Actor) continue;
-
-		FString ActorName = Actor->GetFName().ToString();
-		if (ActorName.empty())
+		for (int Row = Clipper.DisplayStart; Row < Clipper.DisplayEnd; ++Row)
 		{
-			ActorName = Actor->GetTypeInfo()->name;
-		}
+			AActor* Actor = Actors[ValidActorIndices[Row]];
 
-		bool bIsSelected = Selection.IsSelected(Actor);
-		if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
-		{
-			if (ImGui::GetIO().KeyShift)
+			const FString& StoredName = Actor->GetFName().ToString();
+			const char* DisplayName = StoredName.empty()
+				? Actor->GetTypeInfo()->name
+				: StoredName.c_str();
+
+			bool bIsSelected = Selection.IsSelected(Actor);
+			if (ImGui::Selectable(DisplayName, bIsSelected))
 			{
-				Selection.SelectRange(Actor, Actors);
-			}
-			else if (ImGui::GetIO().KeyCtrl)
-			{
-				Selection.ToggleSelect(Actor);
-			}
-			else
-			{
-				Selection.Select(Actor);
+				if (ImGui::GetIO().KeyShift)
+				{
+					Selection.SelectRange(Actor, Actors);
+				}
+				else if (ImGui::GetIO().KeyCtrl)
+				{
+					Selection.ToggleSelect(Actor);
+				}
+				else
+				{
+					Selection.Select(Actor);
+				}
 			}
 		}
 	}
+
 	ImGui::EndChild();
 }
