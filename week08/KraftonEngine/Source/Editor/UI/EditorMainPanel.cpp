@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "ImGui/imgui.h"
@@ -56,19 +57,22 @@ void FEditorMainPanel::Render(float DeltaTime)
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
 
+	if (!FEditorSettings::Get().bRunTimeOptimization)
 	{
-		SCOPE_STAT_CAT("ConsoleWidget.Render", "UI(ImGui)");
-		ConsoleWidget.Render(DeltaTime);
-	}
+		{
+			SCOPE_STAT_CAT("ConsoleWidget.Render", "UI(ImGui)");
+			ConsoleWidget.Render(DeltaTime);
+		}
 
-	{
-		SCOPE_STAT_CAT("ControlWidget.Render", "UI(ImGui)");
-		ControlWidget.Render(DeltaTime);
-	}
+		{
+			SCOPE_STAT_CAT("ControlWidget.Render", "UI(ImGui)");
+			ControlWidget.Render(DeltaTime);
+		}
 
-	{
-		SCOPE_STAT_CAT("PropertyWidget.Render", "UI(ImGui)");
-		PropertyWidget.Render(DeltaTime);
+		{
+			SCOPE_STAT_CAT("PropertyWidget.Render", "UI(ImGui)");
+			PropertyWidget.Render(DeltaTime);
+		}
 	}
 
 	{
