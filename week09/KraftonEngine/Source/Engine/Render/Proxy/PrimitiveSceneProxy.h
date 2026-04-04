@@ -44,6 +44,10 @@ public:
 	// --- 변경 추적 ---
 	EDirtyFlag DirtyFlags = EDirtyFlag::All;
 
+	// --- LOD ---
+	uint32 CurrentLOD = 0;
+	virtual void UpdateLOD(uint32 /*LODLevel*/) {}
+
 	// --- Per-viewport 갱신 (bPerViewportUpdate=true 프록시만) ---
 	// 매 프레임, 각 뷰포트의 카메라 데이터로 프록시 상태를 갱신
 	virtual void UpdatePerViewport(const FRenderBus& Bus) {}
