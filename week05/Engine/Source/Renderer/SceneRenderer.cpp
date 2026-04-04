@@ -132,7 +132,7 @@ void FSceneRenderFrame::RegisterMeshUpload(FRenderMesh* InMesh)
 	MeshUploads.push_back(InMesh);
 }
 
-void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const
+void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const
 {
 	OutFrame.Reset();
 	OutFrame.Reserve(Queue.Commands.size());
@@ -175,7 +175,7 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRe
 			continue;
 		}
 
-		AppendLegacyRenderItem(Command, CollectedRenderItems);
+		AppendDirectRenderItem(Command, CollectedRenderItems);
 		BuildDrawCommands(CollectedRenderItems, nullptr, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder);
 	}
 
@@ -205,7 +205,7 @@ void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRende
 	OutFrame.View.Initialize(OutFrame.ViewFamily, View);
 }
 
-void FSceneRenderer::AppendLegacyRenderItem(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutRenderItems) const
+void FSceneRenderer::AppendDirectRenderItem(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutRenderItems) const
 {
 	if (!Command.RenderMesh)
 	{
