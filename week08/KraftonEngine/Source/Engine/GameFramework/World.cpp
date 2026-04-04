@@ -13,8 +13,6 @@ UWorld::~UWorld()
 	{
 		EndPlay();
 	}
-
-	delete Octree;
 }
 
 void UWorld::DestroyActor(AActor* Actor)
@@ -29,6 +27,7 @@ void UWorld::DestroyActor(AActor* Actor)
 
 	MarkPickingBVHDirty();
 
+	Partition.RemoveActor(Actor);
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
 }
@@ -42,6 +41,7 @@ void UWorld::AddActor(AActor* Actor)
 
 	Actor->SetWorld(this);
 	Actors.push_back(Actor);
+	InsertActorToOctree(Actor);
 	MarkPickingBVHDirty();
 }
 
@@ -64,41 +64,17 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 
 void UWorld::InsertActorToOctree(AActor* Actor)
 {
-    if (!Actor) return;
-
-    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-    {
-        if (!Prim || !Prim->IsVisible()) continue;
-        Prim->UpdateWorldMatrix();
-        Octree->Insert(Prim);
-    }
+    Partition.InsertActor(Actor);
 }
 
 void UWorld::RemoveActorToOctree(AActor* Actor)
 {
-    if (!Actor) return;
-
-    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-    {
-        if (!Prim) continue;
-        Octree->Remove(Prim);
-    }
+    Partition.RemoveActor(Actor);
 }
 
 void UWorld::UpdateActorInOctree(AActor* Actor)
 {
-    if (!Actor) return;
-
-    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-    {
-        if (!Prim) continue;
-
-        if (Prim->IsVisible())
-        {
-			Prim->UpdateWorldMatrix();
-			Octree->MarkDirty(Prim);
-        }
-    }
+    Partition.UpdateActor(Actor);
 }
 
 void UWorld::UpdateVisibleActors()
@@ -114,7 +90,7 @@ void UWorld::UpdateVisibleActors()
 
 	FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
 
- 	Octree->QueryFrustum(ConvexVolume, VisiblePrimitives);
+ 	Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
 
 	// 보이는 primitive의 프록시만 컬링 해제
 	for (UPrimitiveComponent* Primitive : VisiblePrimitives)
@@ -131,8 +107,7 @@ void UWorld::UpdateVisibleActors()
 
 void UWorld::InitWorld()
 {
-	delete Octree;
-	Octree = new FOctree(FBoundingBox(FVector(-40, -40, -40), FVector(40, 40, 40)), 0);
+    Partition.Reset(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)));
 }
 
 void UWorld::BeginPlay()
@@ -150,8 +125,7 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
-    if (Octree)
-		Octree->FlushDirty();
+	Partition.FlushPrimitive();
 	UpdateVisibleActors();
 	DebugDrawQueue.Tick(DeltaTime);
 

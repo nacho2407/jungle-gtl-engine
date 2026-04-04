@@ -392,10 +392,10 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 	}
 
 	// Octree 일괄 삽입
-	for (AActor* Actor : CreatedActors)
+	/*for (AActor* Actor : CreatedActors)
 	{
 		World->InsertActorToOctree(Actor);
-	}
+	}*/
 }
 
 void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, FPerspectiveCameraData& OutCam)
