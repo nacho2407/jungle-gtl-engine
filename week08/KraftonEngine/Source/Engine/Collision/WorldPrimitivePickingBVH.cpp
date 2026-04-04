@@ -94,19 +94,20 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 	}
 
 	TArray<int32> NodeStack;
-	NodeStack.push_back(0);
-
+	NodeStack.push_back(0); //루트
 	while (!NodeStack.empty())
 	{
-		const int32 NodeIndex = NodeStack.back();
+		const int32 NodeIndex = NodeStack.back(); //이번 노드
 		NodeStack.pop_back();
 
+		//이번 노드의 BVH AABB와 충돌하지 않으면 스킵.
 		const FNode& Node = Nodes[NodeIndex];
 		if (!FRayUtils::CheckRayAABB(Ray, Node.Bounds.Min, Node.Bounds.Max))
 		{
 			continue;
 		}
 
+		//리프 노드라면 실제 primitive와 충돌 검사 수행
 		if (Node.IsLeaf())
 		{
 			//leaf 노드는 연속된 primitive 구간을 보관하며 트리 깊이를 너무 늘어나는 걸 차단합니다
@@ -114,10 +115,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			{
 				const FLeaf& Leaf = Leaves[LeafIndex];
 				if (!Leaf.Primitive || !Leaf.Owner || !Leaf.Owner->IsVisible() || !Leaf.Primitive->IsVisible())
-				{
 					continue;
-				}
-
 				FHitResult CandidateHit{};
 				if (FRayUtils::RaycastComponent(Leaf.Primitive, Ray, CandidateHit) &&
 					CandidateHit.Distance < OutHitResult.Distance)
@@ -129,22 +127,21 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			continue;
 		}
 
-		if (Node.LeftChild >= 0)
+		// 내부 노드는 최대 8개의 자식을 가지므로 AABB에 걸린 자식들을 계속 순회합니다.
+		for (int32 ChildIndex = 0; ChildIndex < Node.ChildCount; ++ChildIndex)
 		{
-			NodeStack.push_back(Node.LeftChild);
-		}
-		if (Node.RightChild >= 0)
-		{
-			NodeStack.push_back(Node.RightChild);
+			if (Node.Children[ChildIndex] >= 0)
+			{
+				NodeStack.push_back(Node.Children[ChildIndex]);
+			}
 		}
 	}
-
 	return OutActor != nullptr;
 }
 
 /**
  * [Start, End) 구간의 primitive leaf들로부터 BVH 노드를 재귀적으로 생성합니다.
- * leaf 수가 작으면 종료하고, 많으면 centroid 분포가 가장 큰 축을 따라 median 분할합니다.
+ * leaf 수가 작으면 종료하고, 많으면 centroid 분포가 가장 큰 축을 따라 최대 8개 구간으로 분할합니다.
  *
  * \param Start leaf 구간 시작 인덱스
  * \param End leaf 구간 끝 다음 인덱스
@@ -173,7 +170,7 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
-	// centroid가 가장 넓게 퍼진 축을 고르고, 그 축 기준 median으로 분할한다.
+		// centroid가 가장 넓게 퍼진 축을 고르고, 그 축 기준으로 정렬한 뒤 8-way 분할한다.
 	FBoundingBox CentroidBounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
@@ -191,10 +188,8 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 		SplitAxis = 2;
 	}
 
-	const int32 Mid = Start + LeafCount / 2;
-	std::nth_element(
+	std::sort(
 		Leaves.begin() + Start,
-		Leaves.begin() + Mid,
 		Leaves.begin() + End,
 		[SplitAxis](const FLeaf& A, const FLeaf& B)
 		{
@@ -211,7 +206,18 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 			return CenterA.X < CenterB.X;
 		});
 
-	Nodes[NodeIndex].LeftChild = BuildRecursive(Start, Mid);
-	Nodes[NodeIndex].RightChild = BuildRecursive(Mid, End);
+	const int32 DesiredChildren = std::min<int32>(8, LeafCount);
+	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
+	{
+		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
+		const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
+		if (RangeStart >= RangeEnd)
+		{
+			continue;
+		}
+
+		Nodes[NodeIndex].Children[Nodes[NodeIndex].ChildCount++] = BuildRecursive(RangeStart, RangeEnd);
+	}
+
 	return NodeIndex;
 }
