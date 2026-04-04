@@ -67,6 +67,14 @@ public:
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox CachedBounds;
 
+	// --- Sort Key (Shader|MeshBuffer 조합, 정렬 비교 최적화) ---
+	uint64 SortKey = 0;
+	void UpdateSortKey()
+	{
+		SortKey = (static_cast<uint64>(reinterpret_cast<uintptr_t>(Shader) >> 4) << 32)
+				| (static_cast<uint64>(reinterpret_cast<uintptr_t>(MeshBuffer) >> 4) & 0xFFFFFFFF);
+	}
+
 	// 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
 	TArray<FMeshSectionDraw> SectionDraws;
 
