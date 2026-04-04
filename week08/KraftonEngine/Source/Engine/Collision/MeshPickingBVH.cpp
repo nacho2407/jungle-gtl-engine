@@ -29,6 +29,7 @@ void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
 	TriangleLeaves.clear();
 	Nodes.clear();
 
+	// 삼각형이 하나도 없으면 트리를 만들 필요가 없습니다.
 	if (Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
 	{
 		bDirty = false;
@@ -37,6 +38,7 @@ void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
 
 	TriangleLeaves.reserve(Mesh.Indices.size() / 3);
 
+	// 메시의 각 삼각형을 leaf로 변환해 triangle 단위 AABB를 미리 계산합니다.
 	for (size_t Index = 0; Index + 2 < Mesh.Indices.size(); Index += 3)
 	{
 		const FVector& V0 = Mesh.Vertices[Mesh.Indices[Index]].pos;
@@ -85,6 +87,7 @@ bool FMeshPickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& Lo
 	float ClosestT = FLT_MAX;
 	bool bHit = false;
 
+	// 재귀 대신 명시적 스택으로 순회해 AABB에 걸리는 노드만 내려갑니다.
 	while (!NodeStack.empty())
 	{
 		const int32 NodeIndex = NodeStack.back();
@@ -98,6 +101,7 @@ bool FMeshPickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& Lo
 
 		if (Node.IsLeaf())
 		{
+			// leaf 노드는 연속된 삼각형 구간을 보관하므로 작은 범위만 정밀 교차 검사하면 됩니다.
 			for (int32 LeafIndex = Node.FirstLeaf; LeafIndex < Node.FirstLeaf + Node.LeafCount; ++LeafIndex)
 			{
 				const FTriangleLeaf& Leaf = TriangleLeaves[LeafIndex];
@@ -138,6 +142,7 @@ int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.emplace_back();
 
+	// 현재 구간에 포함된 모든 삼각형 leaf를 감싸는 노드 bounds를 계산합니다.
 	FBoundingBox Bounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
@@ -155,6 +160,8 @@ int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
+	// centroid가 가장 넓게 퍼진 축을 고르고, 그 축의 median 기준으로 반씩 나눕니다.
+	// 완전 정렬 대신 nth_element를 사용해 빌드 비용을 줄입니다.
 	FBoundingBox CentroidBounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
