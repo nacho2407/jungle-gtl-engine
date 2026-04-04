@@ -278,6 +278,9 @@
     <ClCompile Include="Source\Engine\Math\Vector.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Mesh\MeshSimplifier.cpp">
+      <Filter>Source\Engine\Mesh</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Mesh\ObjImporter.cpp">
       <Filter>Source\Engine\Mesh</Filter>
     </ClCompile>
@@ -623,6 +626,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Vector.h">
       <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h">
+      <Filter>Source\Engine\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Mesh\ObjImporter.h">
       <Filter>Source\Engine\Mesh</Filter>
