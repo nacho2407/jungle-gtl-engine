@@ -472,34 +472,6 @@ void FRenderer::ExecuteCommands()
 	ClearCommandList();
 }
 
-void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
-{
-	if (!PassExecutor || !CurrentFramePacket)
-	{
-		return;
-	}
-
-	switch (InRenderLayer)
-	{
-	case ERenderLayer::Overlay:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::Overlay);
-		break;
-	case ERenderLayer::UI:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::UI);
-		break;
-	case ERenderLayer::OutlineMask:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::OutlineMask);
-		break;
-	case ERenderLayer::OutlineComposite:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::OutlineComposite);
-		break;
-	case ERenderLayer::Base:
-	default:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::Base);
-		break;
-	}
-}
-
 void FRenderer::ClearDepthBuffer()
 {
 	ID3D11RenderTargetView* BoundRTV = nullptr;

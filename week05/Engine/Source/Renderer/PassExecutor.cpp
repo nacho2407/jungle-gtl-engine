@@ -59,16 +59,6 @@ void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
 	}
 }
 
-void FPassExecutor::ExecutePass(const FSceneFramePacket& Packet, EMeshPass MeshPass) const
-{
-	ExecuteQueue(Packet.PassCommandQueues.GetQueue(MeshPass));
-
-	if (Renderer && MeshPass == EMeshPass::OutlineComposite && !Packet.OutlineItems.empty())
-	{
-		Renderer->RenderOutlines(Packet.OutlineItems);
-	}
-}
-
 void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& Packet) const
 {
 	if (!Renderer || !Renderer->DeviceContext)

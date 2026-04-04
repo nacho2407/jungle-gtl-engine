@@ -16,7 +16,6 @@ public:
 
 	void SetRenderer(FRenderer* InRenderer) { Renderer = InRenderer; }
 	void Execute(const FSceneFramePacket& Packet) const;
-	void ExecutePass(const FSceneFramePacket& Packet, EMeshPass MeshPass) const;
 
 private:
 	void UpdateUploadedMeshes(const FSceneFramePacket& Packet) const;
