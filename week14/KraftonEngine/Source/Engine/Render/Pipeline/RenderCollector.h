@@ -19,5 +19,5 @@ public:
 	void CollectOctreeDebug(const FOctree* Node, FRenderBus& RenderBus, uint32 Depth = 0);
 
 private:
-	void CollectFromScene(FScene& Scene, FRenderBus& RenderBus);
+	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus);
 };

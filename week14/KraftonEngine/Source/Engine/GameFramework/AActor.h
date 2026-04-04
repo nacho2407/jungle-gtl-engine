@@ -70,6 +70,9 @@ public:
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
 
+	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
+	bool bNeedsTick = true;
+
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
 protected:
