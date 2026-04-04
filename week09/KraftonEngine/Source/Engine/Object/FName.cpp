@@ -31,12 +31,10 @@ const FString& FNamePool::Resolve(uint32 Index) const
 // ============================================================
 // FName
 // ============================================================
-static FString ToLower(const FString& Str)
+static void ToLower(FString& Str)
 {
-	FString Result = Str;
-	std::transform(Result.begin(), Result.end(), Result.begin(),
-		[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-	return Result;
+    for (char& C : Str)
+        C = static_cast<char>(std::tolower(static_cast<unsigned char>(C)));
 }
 
 const FName FName::None = "Name_None";
@@ -47,20 +45,8 @@ FName::FName()
 {
 }
 
-FName::FName(const char* InName)
+FName::FName(const char* InName) : FName(InName ? FString(InName) : FString())
 {
-	if (InName == nullptr || InName[0] == '\0')
-	{
-		ComparisonIndex = 0;
-		DisplayIndex = 0;
-		return;
-	}
-	FString NameStr(InName);
-	FString LowerStr = ToLower(NameStr);
-
-	FNamePool& Pool = FNamePool::Get();
-	DisplayIndex = Pool.Store(NameStr);
-	ComparisonIndex = Pool.Store(LowerStr);
 }
 
 FName::FName(const FString& InName)
@@ -71,10 +57,13 @@ FName::FName(const FString& InName)
 		DisplayIndex = 0;
 		return;
 	}
-	FString LowerStr = ToLower(InName);
 
 	FNamePool& Pool = FNamePool::Get();
 	DisplayIndex = Pool.Store(InName);
+
+	FString LowerStr = InName;
+	ToLower(LowerStr);
+
 	ComparisonIndex = Pool.Store(LowerStr);
 }
 
