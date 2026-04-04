@@ -52,6 +52,7 @@ struct FMaterialConstants
 {
 	uint32 bIsUVScroll;
 	float _pad[3];
+	FVector4 SectionColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
 struct FGizmoConstants
