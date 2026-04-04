@@ -35,6 +35,12 @@ public:
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
+#if FPS_OPTIMIZATION
+	bool bRunTimeOptimization = true;
+#else
+	bool bRunTimeOptimization = false;
+#endif
+
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);
 
