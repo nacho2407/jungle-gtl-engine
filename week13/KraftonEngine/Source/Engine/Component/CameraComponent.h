@@ -38,6 +38,7 @@ public:
 
 	FMatrix GetViewMatrix() const;
 	FMatrix GetProjectionMatrix() const;
+	FMatrix GetViewProjectionMatrix() const;
 	FConvexVolume GetConvexVolume() const;
 
 	float GetFOV() const { return CameraState.FOV; }
