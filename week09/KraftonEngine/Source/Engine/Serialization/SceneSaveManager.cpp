@@ -341,10 +341,14 @@ json::JSON FSceneSaveManager::SerializeCamera(UCameraComponent* Cam)
 void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors)
 {
 	using namespace json;
-	for (auto it = Primitives.ObjectRange().begin(); it != Primitives.ObjectRange().end(); ++it) {
-		const auto& kv = *it;
+
+	// Octree 일괄 삽입을 위해 생성된 Actor를 모아둠
+	TArray<AActor*> CreatedActors;
+	CreatedActors.reserve(Primitives.size());
+
+	for (auto& kv : Primitives.ObjectRange()) {
 		const string& Key = kv.first;
-		JSON Entry = kv.second;
+		JSON& Entry = kv.second;
 
 		if (!Entry.hasKey("Type")) continue;
 		if (Entry["Type"].ToString() != "StaticMeshComp") continue;
@@ -357,31 +361,40 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 		Actor->InitDefaultComponents(FString(MeshPath));
 		OutCreatedActors[Key] = Actor;
 
-		// Location / Rotation / Scale
+		// Location / Rotation / Scale — 인덱스 직접 접근으로 iterator 순회 제거
+		FVector Loc(0, 0, 0), Rot(0, 0, 0), Scale(1, 1, 1);
+
 		if (Entry.hasKey("Location")) {
-			auto locjson = Entry["Location"];
-			float lx = 0, ly = 0, lz = 0;
-			int i = 0;
-			for (auto& e : locjson.ArrayRange()) { if (i == 0) lx = static_cast<float>(e.ToFloat()); else if (i == 1) ly = static_cast<float>(e.ToFloat()); else if (i == 2) lz = static_cast<float>(e.ToFloat()); i++; }
-			Actor->SetActorLocation(FVector(lx, ly, lz));
+			JSON& arr = Entry["Location"];
+			Loc.X = static_cast<float>(arr[0].ToFloat());
+			Loc.Y = static_cast<float>(arr[1].ToFloat());
+			Loc.Z = static_cast<float>(arr[2].ToFloat());
 		}
 		if (Entry.hasKey("Rotation")) {
-			auto rotjson = Entry["Rotation"];
-			float rx = 0, ry = 0, rz = 0;
-			int i = 0;
-			for (auto& e : rotjson.ArrayRange()) { if (i == 0) rx = static_cast<float>(e.ToFloat()); else if (i == 1) ry = static_cast<float>(e.ToFloat()); else if (i == 2) rz = static_cast<float>(e.ToFloat()); i++; }
-			Actor->SetActorRotation(FVector(rx, ry, rz));
+			JSON& arr = Entry["Rotation"];
+			Rot.X = static_cast<float>(arr[0].ToFloat());
+			Rot.Y = static_cast<float>(arr[1].ToFloat());
+			Rot.Z = static_cast<float>(arr[2].ToFloat());
 		}
 		if (Entry.hasKey("Scale")) {
-			auto sjson = Entry["Scale"];
-			float sx = 1, sy = 1, sz = 1;
-			int i = 0;
-			for (auto& e : sjson.ArrayRange()) { if (i == 0) sx = static_cast<float>(e.ToFloat()); else if (i == 1) sy = static_cast<float>(e.ToFloat()); else if (i == 2) sz = static_cast<float>(e.ToFloat()); i++; }
-			Actor->SetActorScale(FVector(sx, sy, sz));
+			JSON& arr = Entry["Scale"];
+			Scale.X = static_cast<float>(arr[0].ToFloat());
+			Scale.Y = static_cast<float>(arr[1].ToFloat());
+			Scale.Z = static_cast<float>(arr[2].ToFloat());
 		}
-		
-		World->InsertActorToOctree(Actor);
+
+		Actor->SetActorLocation(Loc);
+		Actor->SetActorRotation(Rot);
+		Actor->SetActorScale(Scale);
+
+		CreatedActors.push_back(Actor);
 		// Material/UV overrides are applied later when deserializing the Actor's RootComponent properties
+	}
+
+	// Octree 일괄 삽입
+	for (AActor* Actor : CreatedActors)
+	{
+		World->InsertActorToOctree(Actor);
 	}
 }
 
@@ -450,7 +463,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	// Deserialize Primitives (top-level) and Camera first
 	std::unordered_map<string, AActor*> CreatedFromPrimitives;
 	if (root.hasKey("Primitives")) {
-		auto Prims = root["Primitives"];
+		JSON& Prims = root["Primitives"];
 		DeserializePrimitives(Prims, World, CreatedFromPrimitives);
 	}
 
@@ -459,7 +472,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		: root.hasKey("Camera") ? "Camera"
 		: nullptr;
 	if (CamKey) {
-		auto Cam = root[CamKey];
+		JSON& Cam = root[CamKey];
 		DeserializeCamera(Cam, OutCam);
 	}
 
@@ -493,7 +506,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
 			// RootComponent 트리 복원
 			if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
-				auto RootJSON = ActorJSON[SceneKeys::RootComponent];
+				JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
 				if (Actor->GetRootComponent()) {
 					// Merge properties into existing root component created by primitives
 					DeserializeSceneComponentIntoExisting(Actor->GetRootComponent(), RootJSON, Actor);
@@ -515,7 +528,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 					Actor->RegisterComponent(Comp);
 
 					if (CompJSON.hasKey(SceneKeys::Properties)) {
-						auto PropsJSON = CompJSON[SceneKeys::Properties];
+						JSON& PropsJSON = CompJSON[SceneKeys::Properties];
 						DeserializeProperties(Comp, PropsJSON);
 					}
 				}
@@ -540,7 +553,7 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 
 	// Restore properties
 	if (Node.hasKey(SceneKeys::Properties)) {
-		auto PropsJSON = Node[SceneKeys::Properties];
+		json::JSON& PropsJSON = Node[SceneKeys::Properties];
 		DeserializeProperties(Comp, PropsJSON);
 	}
 	Comp->MarkTransformDirty();
@@ -564,7 +577,7 @@ void FSceneSaveManager::DeserializeSceneComponentIntoExisting(USceneComponent* E
 	if (!Existing) return;
 
 	if (Node.hasKey(SceneKeys::Properties)) {
-		auto PropsJSON = Node[SceneKeys::Properties];
+		JSON& PropsJSON = Node[SceneKeys::Properties];
 		DeserializeProperties(Existing, PropsJSON);
 	}
 
@@ -594,7 +607,7 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 
 	for (auto& Prop : Descriptors) {
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
-		auto Value = PropsJSON[Prop.Name.c_str()];
+		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
 		DeserializePropertyValue(Prop, Value);
 		Comp->PostEditProperty(Prop.Name.c_str());
 	}
@@ -607,7 +620,7 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
 	for (size_t i = Descriptors.size(); i < Descriptors2.size(); ++i) {
 		auto& Prop = Descriptors2[i];
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
-		auto Value = PropsJSON[Prop.Name.c_str()];
+		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
 		DeserializePropertyValue(Prop, Value);
 		Comp->PostEditProperty(Prop.Name.c_str());
 	}
