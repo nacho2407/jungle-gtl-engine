@@ -2,14 +2,6 @@
   "Name": "M_TintYellow",
   "VertexShader": "Engine/Shaders/ColorVertexShader.hlsl",
   "PixelShader": "Engine/Shaders/PixelShader.hlsl",
-    "RenderState": {
-    "FillMode": 3,
-    "CullMode": 3,
-    "DepthTest": true,
-    "DepthWrite": 1,
-    "DepthFunc": "Less",
-    "StencilEnable": false
-  },
   "ConstantBuffers": [
     {
       "Parameters": [
