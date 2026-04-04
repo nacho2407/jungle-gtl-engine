@@ -40,6 +40,10 @@ namespace Key
 	constexpr const char* ViewportType = "ViewportType";
 	constexpr const char* SplitterRatios = "SplitterRatios";
 
+	// Runtime
+	constexpr const char* Runtime = "Runtime";
+	constexpr const char* RunTimeOptimization = "RunTimeOptimization";
+
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
 	constexpr const char* Location = "Location";
@@ -106,6 +110,11 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	}
 	LayoutObj[Key::SplitterRatios] = RatiosArr;
 	Root[Key::Layout] = LayoutObj;
+
+	// Runtime
+	JSON RuntimeObj = Object();
+	RuntimeObj[Key::RunTimeOptimization] = bRunTimeOptimization;
+	Root[Key::Runtime] = RuntimeObj;
 
 	// Perspective Camera
 	JSON CamObj = Object();
@@ -235,6 +244,14 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 				SplitterRatios[i] = static_cast<float>(RatiosArr[i].ToFloat());
 			}
 		}
+	}
+
+	// Runtime
+	if (Root.hasKey(Key::Runtime))
+	{
+		JSON RuntimeObj = Root[Key::Runtime];
+		if (RuntimeObj.hasKey(Key::RunTimeOptimization))
+			bRunTimeOptimization = RuntimeObj[Key::RunTimeOptimization].ToBool();
 	}
 
 	// Perspective Camera
