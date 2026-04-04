@@ -28,7 +28,7 @@ public:
 	void BeginFrame();
 	void EndFrame();
 
-	uint32 BeginTimestamp(const char* Name);
+	uint32 BeginTimestamp(const char* Name, const char* Category = "Default");
 	void EndTimestamp(uint32 Index);
 
 	void TakeSnapshot();
@@ -46,6 +46,7 @@ private:
 		ID3D11Query* BeginQuery = nullptr;
 		ID3D11Query* EndQuery = nullptr;
 		const char* Name = nullptr;
+		const char* Category = "Default";
 	};
 
 	struct FFrameData
@@ -74,8 +75,8 @@ private:
 class FGPUScopedTimer
 {
 public:
-	FGPUScopedTimer(const char* InName)
-		: Index(FGPUProfiler::Get().BeginTimestamp(InName)) {}
+	FGPUScopedTimer(const char* InName, const char* InCategory = "Default")
+		: Index(FGPUProfiler::Get().BeginTimestamp(InName, InCategory)) {}
 
 	~FGPUScopedTimer()
 	{
@@ -88,7 +89,9 @@ private:
 
 // --- GPU_SCOPE_STAT 매크로 ---
 #if STATS
-#define GPU_SCOPE_STAT(Name) FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name)
+#define GPU_SCOPE_STAT(Name)           FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name)
+#define GPU_SCOPE_STAT_CAT(Name, Cat)  FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name, Cat)
 #else
-#define GPU_SCOPE_STAT(Name) ((void)0)
+#define GPU_SCOPE_STAT(Name)           ((void)0)
+#define GPU_SCOPE_STAT_CAT(Name, Cat)  ((void)0)
 #endif

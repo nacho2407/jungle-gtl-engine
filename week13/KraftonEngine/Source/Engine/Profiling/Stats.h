@@ -20,6 +20,7 @@
 struct FStatEntry
 {
 	const char* Name = nullptr;
+	const char* Category = "Default";
 	uint32 CallCount = 0;
 	double TotalTime = 0.0;		// seconds
 	double MaxTime = 0.0;
@@ -35,7 +36,7 @@ class FStatManager : public TSingleton<FStatManager>
 	friend class TSingleton<FStatManager>;
 
 public:
-	void RecordTime(const char* Name, double ElapsedSeconds);
+	void RecordTime(const char* Name, double ElapsedSeconds, const char* Category = "Default");
 	void TakeSnapshot();
 	const TArray<FStatEntry>& GetSnapshot() const { return Snapshot; }
 	LARGE_INTEGER GetFrequency() const { return Frequency; }
@@ -53,7 +54,8 @@ private:
 class FScopedTimer
 {
 public:
-	FScopedTimer(const char* InName) : Name(InName)
+	FScopedTimer(const char* InName, const char* InCategory = "Default")
+		: Name(InName), Category(InCategory)
 	{
 		QueryPerformanceCounter(&StartTime);
 	}
@@ -64,11 +66,12 @@ public:
 		QueryPerformanceCounter(&EndTime);
 		double Elapsed = static_cast<double>(EndTime.QuadPart - StartTime.QuadPart)
 			/ static_cast<double>(FStatManager::Get().GetFrequency().QuadPart);
-		FStatManager::Get().RecordTime(Name, Elapsed);
+		FStatManager::Get().RecordTime(Name, Elapsed, Category);
 	}
 
 private:
 	const char* Name;
+	const char* Category;
 	LARGE_INTEGER StartTime;
 };
 
@@ -85,7 +88,9 @@ struct FDrawCallStats
 #if STATS
 #define SCOPE_STAT_CONCAT2(a, b) a##b
 #define SCOPE_STAT_CONCAT(a, b)  SCOPE_STAT_CONCAT2(a, b)
-#define SCOPE_STAT(Name) FScopedTimer SCOPE_STAT_CONCAT(_ScopedTimer_, __COUNTER__)(Name)
+#define SCOPE_STAT(Name)           FScopedTimer SCOPE_STAT_CONCAT(_ScopedTimer_, __COUNTER__)(Name)
+#define SCOPE_STAT_CAT(Name, Cat)  FScopedTimer SCOPE_STAT_CONCAT(_ScopedTimer_, __COUNTER__)(Name, Cat)
 #else
-#define SCOPE_STAT(Name) ((void)0)
+#define SCOPE_STAT(Name)           ((void)0)
+#define SCOPE_STAT_CAT(Name, Cat)  ((void)0)
 #endif

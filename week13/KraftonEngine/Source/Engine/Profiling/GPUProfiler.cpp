@@ -90,7 +90,7 @@ void FGPUProfiler::EndFrame()
 	WriteIndex = (WriteIndex + 1) % FRAME_COUNT;
 }
 
-uint32 FGPUProfiler::BeginTimestamp(const char* Name)
+uint32 FGPUProfiler::BeginTimestamp(const char* Name, const char* Category)
 {
 	if (!bInitialized || !bFrameActive) return UINT32_MAX;
 
@@ -99,6 +99,7 @@ uint32 FGPUProfiler::BeginTimestamp(const char* Name)
 
 	uint32 Idx = Write.UsedCount++;
 	Write.Timestamps[Idx].Name = Name;
+	Write.Timestamps[Idx].Category = Category;
 	Context->End(Write.Timestamps[Idx].BeginQuery);  // Timestamp은 End()로 기록
 	return Idx;
 }
@@ -143,11 +144,13 @@ void FGPUProfiler::CollectPreviousFrame()
 		double ElapsedSec = ElapsedMs * 0.001;
 
 		const char* Name = Read.Timestamps[i].Name;
+		const char* Cat = Read.Timestamps[i].Category;
 		auto it = GPUStats.find(Name);
 		if (it == GPUStats.end())
 		{
 			FStatEntry Entry;
 			Entry.Name = Name;
+			Entry.Category = Cat;
 			Entry.CallCount = 1;
 			Entry.TotalTime = ElapsedSec;
 			Entry.MaxTime = ElapsedSec;
