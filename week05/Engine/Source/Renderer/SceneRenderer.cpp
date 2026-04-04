@@ -12,6 +12,43 @@
 
 namespace
 {
+	FRenderPassState MakeDefaultPassState(ERenderPass RenderPass)
+	{
+		FRenderPassState PassState = {};
+		PassState.RasterizerState.FillMode = D3D11_FILL_SOLID;
+		PassState.RasterizerState.CullMode = D3D11_CULL_NONE;
+
+		if (RenderPass == ERenderPass::World)
+		{
+			PassState.DepthStencilState.DepthEnable = true;
+			PassState.DepthStencilState.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+			PassState.DepthStencilState.DepthFunc = D3D11_COMPARISON_LESS;
+		}
+		else
+		{
+			PassState.DepthStencilState.DepthEnable = false;
+			PassState.DepthStencilState.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		}
+
+		PassState.BlendState.BlendEnable = true;
+		PassState.BlendState.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		PassState.BlendState.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		PassState.BlendState.BlendOp = D3D11_BLEND_OP_ADD;
+		PassState.BlendState.SrcBlendAlpha = D3D11_BLEND_ONE;
+		PassState.BlendState.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		PassState.BlendState.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		return PassState;
+	}
+
+	void ApplyQueuePassOverrides(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame)
+	{
+		if (Queue.bWorldWireframe)
+		{
+			FRenderPassState& WorldPassState = OutFrame.GetPassState(ERenderPass::World);
+			WorldPassState.RasterizerState.FillMode = D3D11_FILL_WIREFRAME;
+		}
+	}
+
 	ERenderPass ResolveRenderPass(const FMeshRenderItem& RenderItem, const FRenderCommand* CommandOverride)
 	{
 		if (!CommandOverride)
@@ -107,6 +144,10 @@ void FSceneRenderFrame::Reset()
 	{
 		PassQueue.clear();
 	}
+	for (size_t PassIndex = 0; PassIndex < PassStates.size(); ++PassIndex)
+	{
+		PassStates[PassIndex] = MakeDefaultPassState(static_cast<ERenderPass>(PassIndex));
+	}
 	MeshUploads.clear();
 	OutlineItems.clear();
 	// Lights.clear(); GameJam
@@ -137,6 +178,7 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 	OutFrame.Reset();
 	OutFrame.Reserve(Queue.Commands.size());
 	BuildViewInfo(Queue, OutFrame);
+	ApplyQueuePassOverrides(Queue, OutFrame);
 
 	if (!Queue.OutlineItems.empty())
 	{

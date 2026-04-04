@@ -17,49 +17,7 @@ namespace
 		ERenderPass::UI,
 	};
 
-	FRasterizerStateOption MakePassRasterizerState(ERenderPass RenderPass)
-	{
-		(void)RenderPass;
-
-		FRasterizerStateOption State;
-		State.FillMode = D3D11_FILL_SOLID;
-		State.CullMode = D3D11_CULL_NONE;
-		return State;
-	}
-
-	FDepthStencilStateOption MakePassDepthState(ERenderPass RenderPass)
-	{
-		FDepthStencilStateOption State;
-
-		if (RenderPass == ERenderPass::World)
-		{
-			State.DepthEnable = true;
-			State.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-			State.DepthFunc = D3D11_COMPARISON_LESS;
-			return State;
-		}
-
-		State.DepthEnable = false;
-		State.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		return State;
-	}
-
-	FBlendStateOption MakePassBlendState(ERenderPass RenderPass)
-	{
-		(void)RenderPass;
-
-		FBlendStateOption State;
-		State.BlendEnable = true;
-		State.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-		State.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		State.BlendOp = D3D11_BLEND_OP_ADD;
-		State.SrcBlendAlpha = D3D11_BLEND_ONE;
-		State.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-		State.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		return State;
-	}
-
-	void BindPassState(FRenderer& Renderer, ERenderPass RenderPass)
+	void BindPassState(FRenderer& Renderer, const FRenderPassState& PassState)
 	{
 		FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
 		if (!RenderStateManager)
@@ -67,9 +25,9 @@ namespace
 			return;
 		}
 
-		RenderStateManager->BindState(RenderStateManager->GetOrCreateRasterizerState(MakePassRasterizerState(RenderPass)));
-		RenderStateManager->BindState(RenderStateManager->GetOrCreateDepthStencilState(MakePassDepthState(RenderPass)));
-		RenderStateManager->BindState(RenderStateManager->GetOrCreateBlendState(MakePassBlendState(RenderPass)));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateRasterizerState(PassState.RasterizerState));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateDepthStencilState(PassState.DepthStencilState));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateBlendState(PassState.BlendState));
 	}
 
 	void ClearUnusedMaterialConstantBuffers(ID3D11DeviceContext* DeviceContext, uint32 PreviousCount, uint32 CurrentCount)
@@ -89,14 +47,14 @@ namespace
 	}
 }
 
-void FPassExecutor::Execute(const FSceneRenderFrame& Packet) const
+void FPassExecutor::Execute(const FSceneRenderFrame& Frame) const
 {
 	if (!Renderer || !Renderer->DeviceContext || !Renderer->ObjectUniformStream)
 	{
 		return;
 	}
 
-	UpdateUploadedMeshes(Packet);
+	UpdateUploadedMeshes(Frame);
 	Renderer->ObjectUniformStream->UploadFrame();
 	Renderer->RenderStateManager->RebindState();
 
@@ -104,20 +62,20 @@ void FPassExecutor::Execute(const FSceneRenderFrame& Packet) const
 
 	for (ERenderPass RenderPass : GPassExecutionOrder)
 	{
-		const TArray<FMeshDrawCommand>& PassCommands = Packet.GetPassQueue(RenderPass);
-		BindPassState(*Renderer, RenderPass);
+		const TArray<FMeshDrawCommand>& PassCommands = Frame.GetPassQueue(RenderPass);
+		BindPassState(*Renderer, Frame.GetPassState(RenderPass));
 		ExecuteQueue(PassCommands);
 	}
 
-	if (!Packet.OutlineItems.empty())
+	if (!Frame.OutlineItems.empty())
 	{
-		Renderer->RenderOutlines(Packet.OutlineItems);
+		Renderer->RenderOutlines(Frame.OutlineItems);
 	}
 }
 
-void FPassExecutor::UpdateUploadedMeshes(const FSceneRenderFrame& Packet) const
+void FPassExecutor::UpdateUploadedMeshes(const FSceneRenderFrame& Frame) const
 {
-	for (FRenderMesh* Mesh : Packet.MeshUploads)
+	for (FRenderMesh* Mesh : Frame.MeshUploads)
 	{
 		if (Mesh)
 		{

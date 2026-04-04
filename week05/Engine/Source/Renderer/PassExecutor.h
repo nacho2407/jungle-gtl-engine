@@ -15,10 +15,10 @@ public:
 	}
 
 	void SetRenderer(FRenderer* InRenderer) { Renderer = InRenderer; }
-	void Execute(const FSceneRenderFrame& Packet) const;
+	void Execute(const FSceneRenderFrame& Frame) const;
 
 private:
-	void UpdateUploadedMeshes(const FSceneRenderFrame& Packet) const;
+	void UpdateUploadedMeshes(const FSceneRenderFrame& Frame) const;
 	void ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) const;
 
 private:

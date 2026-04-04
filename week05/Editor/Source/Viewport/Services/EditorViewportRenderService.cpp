@@ -206,6 +206,7 @@ void FEditorViewportRenderService::RenderAll(
 		Queue.Reserve(ReserveHint);
 		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
+		Queue.bWorldWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe);
 
 		FFrustum Frustum;
 		Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
@@ -219,7 +220,7 @@ void FEditorViewportRenderService::RenderAll(
 			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, Queue);
 		}
 
-		if (Entry.LocalState.ViewMode == ERenderMode::Wireframe && WireFrameMaterial)
+		if (Queue.bWorldWireframe && WireFrameMaterial)
 		{
 			ApplyWireframe(Queue, WireFrameMaterial.get());
 		}

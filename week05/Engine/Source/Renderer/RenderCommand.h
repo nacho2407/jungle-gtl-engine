@@ -45,6 +45,7 @@ struct ENGINE_API FRenderCommandQueue
 	FMatrix ViewMatrix = FMatrix::Identity;
 	FMatrix ProjectionMatrix = FMatrix::Identity;
 	FShowFlags ShowFlags;
+	bool bWorldWireframe = false;
 
 	void Reserve(size_t Count)
 	{
@@ -66,5 +67,6 @@ struct ENGINE_API FRenderCommandQueue
 	{
 		Commands.clear();
 		OutlineItems.clear();
+		bWorldWireframe = false;
 	}
 };

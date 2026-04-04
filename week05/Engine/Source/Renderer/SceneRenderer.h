@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Renderer/RenderState.h"
 #include "Renderer/SceneRenderTypes.h"
 #include "Renderer/ViewInfo.h"
 #include <array>
@@ -8,6 +9,13 @@
 class FRenderer;
 struct FRenderCommand;
 struct FRenderCommandQueue;
+
+struct ENGINE_API FRenderPassState
+{
+	FRasterizerStateOption RasterizerState;
+	FDepthStencilStateOption DepthStencilState;
+	FBlendStateOption BlendState;
+};
 
 // GameJam
 //struct ENGINE_API FLightSceneData
@@ -21,10 +29,12 @@ struct FRenderCommandQueue;
 struct ENGINE_API FSceneRenderFrame
 {
 	using FPassQueueArray = TStaticArray<TArray<FMeshDrawCommand>, static_cast<size_t>(ERenderPass::Count)>;
+	using FPassStateArray = TStaticArray<FRenderPassState, static_cast<size_t>(ERenderPass::Count)>;
 
 	FSceneViewFamily ViewFamily;
 	FViewInfo View;
 	FPassQueueArray PassQueues;
+	FPassStateArray PassStates;
 	TArray<FRenderMesh*> MeshUploads;
 	TArray<FOutlineRenderItem> OutlineItems;
 	// TArray<FLightSceneData> Lights; GameJam
@@ -34,6 +44,8 @@ struct ENGINE_API FSceneRenderFrame
 	void RegisterMeshUpload(FRenderMesh* InMesh);
 	TArray<FMeshDrawCommand>& GetPassQueue(ERenderPass InRenderPass) { return PassQueues[static_cast<size_t>(InRenderPass)]; }
 	const TArray<FMeshDrawCommand>& GetPassQueue(ERenderPass InRenderPass) const { return PassQueues[static_cast<size_t>(InRenderPass)]; }
+	FRenderPassState& GetPassState(ERenderPass InRenderPass) { return PassStates[static_cast<size_t>(InRenderPass)]; }
+	const FRenderPassState& GetPassState(ERenderPass InRenderPass) const { return PassStates[static_cast<size_t>(InRenderPass)]; }
 };
 
 class ENGINE_API FSceneRenderer
