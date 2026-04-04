@@ -6,6 +6,9 @@
 
 #include <algorithm>
 
+/**
+ * 월드 내 actor/primitive의 배치가 바뀌었음을 표시해 다음 raycast 전에 BVH를 다시 빌드하게 합니다.
+ */
 void FPickingBVH::MarkDirty()
 {
 	bDirty = true;
@@ -57,6 +60,11 @@ void FPickingBVH::BuildNow(const TArray<AActor*>& Actors)
 	bDirty = false;
 }
 
+/**
+ * 월드 상태가 변경되어 dirty로 표시된 경우에만 BVH를 다시 빌드합니다.
+ *
+ * \param Actors 현재 월드 actor 목록
+ */
 void FPickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 {
 	if (!bDirty)
@@ -67,6 +75,15 @@ void FPickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 	BuildNow(Actors);
 }
 
+/**
+ * 월드 공간 ray로 오브젝트 BVH를 순회하면서 가장 가까운 primitive hit를 찾습니다.
+ * broad phase에서는 노드 AABB만 검사하고, leaf에 도달한 primitive만 component 수준 line trace를 수행합니다.
+ *
+ * \param Ray 월드 공간 ray
+ * \param OutHitResult 가장 가까운 hit 결과
+ * \param OutActor hit된 primitive의 owner actor
+ * \return 유효한 actor를 하나라도 맞췄으면 true
+ */
 bool FPickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
 	OutHitResult = {};
@@ -126,12 +143,12 @@ bool FPickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& Ou
 }
 
 /**
- * 재귀적으로 BVH 트리를 빌드하는 함수입니다. Start부터 End까지의 leaf들을 포함하는 노드를 만들고,
- * leaf 수가 MaxLeafSize보다 크면 centroid 기준으로 분할하여 자식 노드를 만듭니다.
- * 
- * \param Start
- * \param End
- * \return 
+ * [Start, End) 구간의 primitive leaf들로부터 BVH 노드를 재귀적으로 생성합니다.
+ * leaf 수가 작으면 종료하고, 많으면 centroid 분포가 가장 큰 축을 따라 median 분할합니다.
+ *
+ * \param Start leaf 구간 시작 인덱스
+ * \param End leaf 구간 끝 다음 인덱스
+ * \return 생성된 노드 인덱스
  */
 int32 FPickingBVH::BuildRecursive(int32 Start, int32 End)
 {
