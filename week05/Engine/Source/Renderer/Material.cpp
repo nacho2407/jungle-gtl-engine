@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "MaterialBindingCache.h"
+#include "RenderStateManager.h"
 #include "Shader.h"
 #include <cstring>
 
@@ -161,6 +162,14 @@ void FMaterial::InvalidatePipelineStateCache()
 	bPipelineStateKeyVariantValid.fill(false);
 }
 
+void FMaterial::InvalidateResolvedStateCache()
+{
+	bRasterizerStateVariantValid.fill(false);
+	RasterizerStateVariants.fill(nullptr);
+	bDepthStencilStateVariantValid.fill(false);
+	DepthStencilStateVariants.fill(nullptr);
+}
+
 uint64 FMaterial::GetPipelineStateKey(bool bDisableCulling, bool bDisableDepthTest, bool bDisableDepthWrite) const
 {
 	const uint32 VariantIndex = MakePipelineStateVariantIndex(bDisableCulling, bDisableDepthTest, bDisableDepthWrite);
@@ -197,6 +206,57 @@ uint64 FMaterial::GetPipelineStateKey(bool bDisableCulling, bool bDisableDepthTe
 	return Key;
 }
 
+FRasterizerState* FMaterial::ResolveRasterizerState(FRenderStateManager& RenderStateManager, bool bDisableCulling) const
+{
+	const uint32 VariantIndex = MakePipelineStateVariantIndex(bDisableCulling, false, false);
+	if (!bRasterizerStateVariantValid[VariantIndex])
+	{
+		if (!bDisableCulling)
+		{
+			RasterizerStateVariants[VariantIndex] = RasterizerState.get();
+		}
+		else
+		{
+			FRasterizerStateOption EffectiveRasterizerOption = RasterizerOption;
+			EffectiveRasterizerOption.CullMode = D3D11_CULL_NONE;
+			RasterizerStateVariants[VariantIndex] = RenderStateManager.GetOrCreateRasterizerState(EffectiveRasterizerOption).get();
+		}
+
+		bRasterizerStateVariantValid[VariantIndex] = true;
+	}
+
+	return RasterizerStateVariants[VariantIndex];
+}
+
+FDepthStencilState* FMaterial::ResolveDepthStencilState(FRenderStateManager& RenderStateManager, bool bDisableDepthTest, bool bDisableDepthWrite) const
+{
+	const uint32 VariantIndex = MakePipelineStateVariantIndex(false, bDisableDepthTest, bDisableDepthWrite);
+	if (!bDepthStencilStateVariantValid[VariantIndex])
+	{
+		if (!bDisableDepthTest && !bDisableDepthWrite)
+		{
+			DepthStencilStateVariants[VariantIndex] = DepthStencilState.get();
+		}
+		else
+		{
+			FDepthStencilStateOption EffectiveDepthStencilOption = DepthStencilOption;
+			if (bDisableDepthTest)
+			{
+				EffectiveDepthStencilOption.DepthEnable = false;
+			}
+			if (bDisableDepthWrite)
+			{
+				EffectiveDepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			}
+			DepthStencilStateVariants[VariantIndex] = RenderStateManager.GetOrCreateDepthStencilState(EffectiveDepthStencilOption).get();
+		}
+
+		bDepthStencilStateVariantValid[VariantIndex] = true;
+	}
+
+	return DepthStencilStateVariants[VariantIndex];
+}
+
 bool FMaterial::HasDirtyConstantBuffers() const
 {
 	for (const FMaterialConstantBuffer& ConstantBuffer : ConstantBuffers)
@@ -228,22 +288,26 @@ void FMaterial::SetRasterizerOption(FRasterizerStateOption InOption)
 {
 	RasterizerOption = InOption;
 	InvalidatePipelineStateCache();
+	InvalidateResolvedStateCache();
 }
 
 void FMaterial::SetRasterizerState(const std::shared_ptr<FRasterizerState>& InState)
 {
 	RasterizerState = InState;
+	InvalidateResolvedStateCache();
 }
 
 void FMaterial::SetDepthStencilOption(FDepthStencilStateOption InOption)
 {
 	DepthStencilOption = InOption;
 	InvalidatePipelineStateCache();
+	InvalidateResolvedStateCache();
 }
 
 void FMaterial::SetDepthStencilState(const std::shared_ptr<FDepthStencilState>& InState)
 {
 	DepthStencilState = InState;
+	InvalidateResolvedStateCache();
 }
 
 void FMaterial::SetBlendOption(FBlendStateOption InOption)
@@ -380,6 +444,7 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 
 	Dynamic->BindingRevision = 1;
 	Dynamic->InvalidatePipelineStateCache();
+	Dynamic->InvalidateResolvedStateCache();
 	Device->Release();
 	return Dynamic;
 }
