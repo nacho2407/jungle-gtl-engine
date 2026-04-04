@@ -99,11 +99,11 @@ void FEngine::Tick()
 
 	PrepareFrame(DeltaTime);
 	ProcessInput(DeltaTime);
-	TickPhysics(DeltaTime);
 	//GameJam
+	//TickPhysics(DeltaTime);
 	//TickWorlds(DeltaTime);
+	//SyncPlatformState();
 	RenderFrame();
-	SyncPlatformState();
 	FinalizeFrame(DeltaTime);
 }
 

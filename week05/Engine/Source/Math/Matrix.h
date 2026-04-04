@@ -103,116 +103,130 @@ public:
 
 	FMatrix operator-() const noexcept
 	{
-		return FMatrix(
-			-M[0][0], -M[0][1], -M[0][2], -M[0][3],
-			-M[1][0], -M[1][1], -M[1][2], -M[1][3],
-			-M[2][0], -M[2][1], -M[2][2], -M[2][3],
-			-M[3][0], -M[3][1], -M[3][2], -M[3][3]
+		const XMMatrix A = ToXMMatrix();
+		const XMVector Zero = DirectX::XMVectorZero();
+		FMatrix Result;
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(Result.M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorSubtract(Zero, A.r[0]),
+				DirectX::XMVectorSubtract(Zero, A.r[1]),
+				DirectX::XMVectorSubtract(Zero, A.r[2]),
+				DirectX::XMVectorSubtract(Zero, A.r[3])
+			)
 		);
+		return Result;
 	}
 
 	FMatrix operator+(const FMatrix& Other) const noexcept
 	{
 		FMatrix Result;
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				Result.M[Row][Col] = M[Row][Col] + Other.M[Row][Col];
-			}
-		}
+		const XMMatrix A = ToXMMatrix();
+		const XMMatrix B = Other.ToXMMatrix();
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(Result.M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorAdd(A.r[0], B.r[0]),
+				DirectX::XMVectorAdd(A.r[1], B.r[1]),
+				DirectX::XMVectorAdd(A.r[2], B.r[2]),
+				DirectX::XMVectorAdd(A.r[3], B.r[3])
+			)
+		);
 		return Result;
 	}
 
 	FMatrix operator-(const FMatrix& Other) const noexcept
 	{
 		FMatrix Result;
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				Result.M[Row][Col] = M[Row][Col] - Other.M[Row][Col];
-			}
-		}
+		const XMMatrix A = ToXMMatrix();
+		const XMMatrix B = Other.ToXMMatrix();
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(Result.M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorSubtract(A.r[0], B.r[0]),
+				DirectX::XMVectorSubtract(A.r[1], B.r[1]),
+				DirectX::XMVectorSubtract(A.r[2], B.r[2]),
+				DirectX::XMVectorSubtract(A.r[3], B.r[3])
+			)
+		);
 		return Result;
 	}
 
 	FMatrix operator*(float Scalar) const noexcept
 	{
 		FMatrix Result;
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				Result.M[Row][Col] = M[Row][Col] * Scalar;
-			}
-		}
+		const XMMatrix A = ToXMMatrix();
+		const XMVector S = DirectX::XMVectorReplicate(Scalar);
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(Result.M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorMultiply(A.r[0], S),
+				DirectX::XMVectorMultiply(A.r[1], S),
+				DirectX::XMVectorMultiply(A.r[2], S),
+				DirectX::XMVectorMultiply(A.r[3], S)
+			)
+		);
 		return Result;
 	}
 
 	FMatrix operator/(float Scalar) const noexcept
 	{
 		assert(Scalar != 0.f);
-
-		FMatrix Result;
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				Result.M[Row][Col] = M[Row][Col] / Scalar;
-			}
-		}
-		return Result;
+		return *this * (1.f / Scalar);
 	}
 
 	FMatrix& operator+=(const FMatrix& Other) noexcept
 	{
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				M[Row][Col] += Other.M[Row][Col];
-			}
-		}
+		const XMMatrix A = ToXMMatrix();
+		const XMMatrix B = Other.ToXMMatrix();
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorAdd(A.r[0], B.r[0]),
+				DirectX::XMVectorAdd(A.r[1], B.r[1]),
+				DirectX::XMVectorAdd(A.r[2], B.r[2]),
+				DirectX::XMVectorAdd(A.r[3], B.r[3])
+			)
+		);
 		return *this;
 	}
 
 	FMatrix& operator-=(const FMatrix& Other) noexcept
 	{
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				M[Row][Col] -= Other.M[Row][Col];
-			}
-		}
+		const XMMatrix A = ToXMMatrix();
+		const XMMatrix B = Other.ToXMMatrix();
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorSubtract(A.r[0], B.r[0]),
+				DirectX::XMVectorSubtract(A.r[1], B.r[1]),
+				DirectX::XMVectorSubtract(A.r[2], B.r[2]),
+				DirectX::XMVectorSubtract(A.r[3], B.r[3])
+			)
+		);
 		return *this;
 	}
 
 	FMatrix& operator*=(float Scalar) noexcept
 	{
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				M[Row][Col] *= Scalar;
-			}
-		}
+		const XMMatrix A = ToXMMatrix();
+		const XMVector S = DirectX::XMVectorReplicate(Scalar);
+		DirectX::XMStoreFloat4x4(
+			reinterpret_cast<DirectX::XMFLOAT4X4*>(M),
+			DirectX::XMMATRIX(
+				DirectX::XMVectorMultiply(A.r[0], S),
+				DirectX::XMVectorMultiply(A.r[1], S),
+				DirectX::XMVectorMultiply(A.r[2], S),
+				DirectX::XMVectorMultiply(A.r[3], S)
+			)
+		);
 		return *this;
 	}
 
 	FMatrix& operator/=(float Scalar) noexcept
 	{
 		assert(Scalar != 0.f);
-
-		for (int32_t Row = 0; Row < 4; ++Row)
-		{
-			for (int32_t Col = 0; Col < 4; ++Col)
-			{
-				M[Row][Col] /= Scalar;
-			}
-		}
-		return *this;
+		return *this *= (1.f / Scalar);
 	}
 
 	FMatrix operator*(const FMatrix& Other) const noexcept
