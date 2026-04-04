@@ -102,6 +102,24 @@ struct FDrawCallStats
 	static uint32 Get() { return Count; }
 };
 
+// --- LOD Distribution Counter ---
+#if STATS
+struct FLODStats
+{
+	static uint32 LODCount[3];
+	static void Reset() { LODCount[0] = LODCount[1] = LODCount[2] = 0; }
+	static void Record(uint32 LOD) { if (LOD < 3) ++LODCount[LOD]; }
+	static uint32 GetLOD0() { return LODCount[0]; }
+	static uint32 GetLOD1() { return LODCount[1]; }
+	static uint32 GetLOD2() { return LODCount[2]; }
+};
+#define LOD_STATS_RESET()       FLODStats::Reset()
+#define LOD_STATS_RECORD(LOD)   FLODStats::Record(LOD)
+#else
+#define LOD_STATS_RESET()       ((void)0)
+#define LOD_STATS_RECORD(LOD)   ((void)0)
+#endif
+
 // --- SCOPE_STAT 매크로 ---
 #if STATS
 #define SCOPE_STAT_CONCAT2(a, b) a##b
