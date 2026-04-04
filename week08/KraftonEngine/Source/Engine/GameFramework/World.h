@@ -6,7 +6,8 @@
 #include "GameFramework/AActor.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
-#include "Math/ConvexVolume.h"
+#include "Render/Culling/ConvexVolume.h"
+#include "Render/Culling/OcclusionCulling.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
@@ -68,6 +69,7 @@ private:
 	FDebugDrawQueue DebugDrawQueue;
 
 	FSpatialPartition Partition;
+	FOcclusionCulling OcclusionCulling;
 };
 
 template<typename T>

@@ -5,7 +5,7 @@
 #include "Math/Matrix.h"
 #include "Math/MathUtils.h"
 #include "Math/Vector.h"
-#include "Math/ConvexVolume.h"
+#include "Render/Culling/ConvexVolume.h"
 
 struct FCameraState
 {
@@ -38,6 +38,7 @@ public:
 
 	FMatrix GetViewMatrix() const;
 	FMatrix GetProjectionMatrix() const;
+	FMatrix GetViewProjectionMatrix() const;
 	FConvexVolume GetConvexVolume() const;
 
 	float GetFOV() const { return CameraState.FOV; }
