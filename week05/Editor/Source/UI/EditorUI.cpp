@@ -577,7 +577,10 @@ void FEditorUI::Render()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::Begin("##DockSpaceHost", nullptr, HostFlags);
 	ImGui::PopStyleVar(3);
-	ImGuiID DockID = ImGui::GetID("MainDockSpace");
+	if (DockID == 0)
+	{
+		DockID = ImGui::GetID("MainDockSpace");
+	}
 
 	if (!bLayoutInitialized)
 	{
