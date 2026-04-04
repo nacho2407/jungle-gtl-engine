@@ -24,7 +24,42 @@
 
 namespace
 {
+#ifndef WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
+#define WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER 1
+#endif
+
 	size_t GSceneCommandReserveHint = 2048;
+
+	int32 CountActiveViewportEntries(const TArray<FViewportEntry>& Entries)
+	{
+		int32 ActiveCount = 0;
+		for (const FViewportEntry& Entry : Entries)
+		{
+			if (Entry.bActive && Entry.Viewport)
+			{
+				++ActiveCount;
+			}
+		}
+
+		return ActiveCount;
+	}
+
+	bool BuildSceneViewport(const FRect& Rect, bool bDirectToBackBuffer, D3D11_VIEWPORT& OutViewport)
+	{
+		if (!Rect.IsValid())
+		{
+			return false;
+		}
+
+		OutViewport = {};
+		OutViewport.TopLeftX = bDirectToBackBuffer ? static_cast<float>(Rect.X) : 0.0f;
+		OutViewport.TopLeftY = bDirectToBackBuffer ? static_cast<float>(Rect.Y) : 0.0f;
+		OutViewport.Width = static_cast<float>(Rect.Width);
+		OutViewport.Height = static_cast<float>(Rect.Height);
+		OutViewport.MinDepth = 0.0f;
+		OutViewport.MaxDepth = 1.0f;
+		return true;
+	}
 
 	void BuildGridVectors(const FMatrix& ViewInverse, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
 	{
@@ -122,6 +157,11 @@ void FEditorViewportRenderService::RenderAll(
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	const TArray<FViewportEntry>& Entries = ViewportRegistry.GetEntries();
+#if WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
+	const bool bUseDirectSingleViewportPath = (CountActiveViewportEntries(Entries) == 1);
+#else
+	const bool bUseDirectSingleViewportPath = false;
+#endif
 
 	for (const FViewportEntry& Entry : Entries)
 	{
@@ -130,26 +170,38 @@ void FEditorViewportRenderService::RenderAll(
 			continue;
 		}
 
-		Entry.Viewport->EnsureResources(Device);
-
-		ID3D11RenderTargetView* RTV = Entry.Viewport->GetRTV();
-		ID3D11DepthStencilView* DSV = Entry.Viewport->GetDSV();
-		if (!RTV || !DSV)
+		const FRect& Rect = Entry.Viewport->GetRect();
+		D3D11_VIEWPORT Viewport = {};
+		if (!BuildSceneViewport(Rect, bUseDirectSingleViewportPath, Viewport))
 		{
 			continue;
 		}
 
-		const FRect& Rect = Entry.Viewport->GetRect();
-		D3D11_VIEWPORT Viewport = {};
-		Viewport.TopLeftX = 0.0f;
-		Viewport.TopLeftY = 0.0f;
-		Viewport.Width = static_cast<float>(Rect.Width);
-		Viewport.Height = static_cast<float>(Rect.Height);
-		Viewport.MinDepth = 0.0f;
-		Viewport.MaxDepth = 1.0f;
+		ID3D11RenderTargetView* RTV = nullptr;
+		ID3D11DepthStencilView* DSV = nullptr;
 
-		Context->ClearRenderTargetView(RTV, ClearColor);
-		Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		if (bUseDirectSingleViewportPath)
+		{
+			RTV = Renderer->GetRenderTargetView();
+			DSV = Renderer->GetDepthStencilView();
+		}
+		else
+		{
+			Entry.Viewport->EnsureResources(Device);
+			RTV = Entry.Viewport->GetRTV();
+			DSV = Entry.Viewport->GetDSV();
+
+			if (RTV && DSV)
+			{
+				Context->ClearRenderTargetView(RTV, ClearColor);
+				Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			}
+		}
+
+		if (!RTV || !DSV)
+		{
+			continue;
+		}
 
 		Renderer->BeginScenePass(RTV, DSV, Viewport);
 
@@ -218,9 +270,12 @@ void FEditorViewportRenderService::RenderAll(
 	EditorEngine->ClearDebugDrawForFrame();
 
 	Renderer->BindSwapChainRTV();
-	BlitRenderer.BlitAll(Context, Entries);
+	if (!bUseDirectSingleViewportPath)
+	{
+		BlitRenderer.BlitAll(Context, Entries);
+		Renderer->BindSwapChainRTV();
+	}
 
-	Renderer->BindSwapChainRTV();
 	if (FSlateApplication* Slate = EditorEngine->GetSlateApplication())
 	{
 		FPainter Painter(Renderer);

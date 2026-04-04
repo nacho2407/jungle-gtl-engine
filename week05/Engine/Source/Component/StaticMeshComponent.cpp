@@ -1,4 +1,4 @@
-﻿#include "StaticMeshComponent.h"
+#include "StaticMeshComponent.h"
 
 #include <filesystem>
 
@@ -23,7 +23,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 		const TArray<std::shared_ptr<FMaterial>>& DefaultMats = StaticMesh->GetDefaultMaterials();
 		for (int32 i = 0; i < NeededMaterialSlots && i < DefaultMats.size(); ++i)
 		{
-			Materials[i] = DefaultMats[i] ? DefaultMats[i]->CreateDynamicMaterial() : nullptr;
+			Materials[i] = DefaultMats[i];
 		}
 	}
 	else

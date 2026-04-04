@@ -27,6 +27,36 @@ std::shared_ptr<FMaterial> UMeshComponent::GetMaterial(int32 Index) const
 	return nullptr;
 }
 
+std::shared_ptr<FDynamicMaterial> UMeshComponent::GetOrCreateDynamicMaterial(int32 Index)
+{
+	if (Index < 0 || Index >= static_cast<int32>(Materials.size()))
+	{
+		return nullptr;
+	}
+
+	std::shared_ptr<FMaterial>& Material = Materials[Index];
+	if (!Material)
+	{
+		return nullptr;
+	}
+
+	if (std::shared_ptr<FDynamicMaterial> DynamicMaterial = std::dynamic_pointer_cast<FDynamicMaterial>(Material))
+	{
+		return DynamicMaterial;
+	}
+
+	std::unique_ptr<FDynamicMaterial> DynamicClone = Material->CreateDynamicMaterial();
+	if (!DynamicClone)
+	{
+		return nullptr;
+	}
+
+	std::shared_ptr<FDynamicMaterial> SharedDynamicMaterial(std::move(DynamicClone));
+	Material = SharedDynamicMaterial;
+	MarkRenderStateDirty();
+	return SharedDynamicMaterial;
+}
+
 void UMeshComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);

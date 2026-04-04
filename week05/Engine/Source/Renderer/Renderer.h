@@ -119,6 +119,7 @@ public:
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 	ID3D11RenderTargetView* GetRenderTargetView() const { return RenderTargetView; }
+	ID3D11DepthStencilView* GetDepthStencilView() const;
 	IDXGISwapChain* GetSwapChain() const { return SwapChain; }
 	HWND GetHwnd() const { return Hwnd; }
 

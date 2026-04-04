@@ -498,6 +498,11 @@ FVector FRenderer::GetCameraPosition() const
 	return GetCameraWorldPositionFromViewMatrix(ViewMatrix);
 }
 
+ID3D11DepthStencilView* FRenderer::GetDepthStencilView() const
+{
+	return DepthStencilView;
+}
+
 bool FRenderer::CreateConstantBuffers()
 {
 	D3D11_BUFFER_DESC Desc = {};
