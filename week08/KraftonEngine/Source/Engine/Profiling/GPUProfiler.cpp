@@ -145,28 +145,14 @@ void FGPUProfiler::CollectPreviousFrame()
 
 		const char* Name = Read.Timestamps[i].Name;
 		const char* Cat = Read.Timestamps[i].Category;
-		auto it = GPUStats.find(Name);
-		if (it == GPUStats.end())
+		FStatAccum& Accum = GPUStats[Name];
+		if (!Accum.Name)
 		{
-			FStatEntry Entry;
-			Entry.Name = Name;
-			Entry.Category = Cat;
-			Entry.CallCount = 1;
-			Entry.TotalTime = ElapsedSec;
-			Entry.MaxTime = ElapsedSec;
-			Entry.MinTime = ElapsedSec;
-			Entry.LastTime = ElapsedSec;
-			GPUStats[Name] = Entry;
+			Accum.Name = Name;
+			Accum.Category = Cat;
 		}
-		else
-		{
-			FStatEntry& Entry = it->second;
-			Entry.CallCount++;
-			Entry.TotalTime += ElapsedSec;
-			Entry.MaxTime = (std::max)(Entry.MaxTime, ElapsedSec);
-			Entry.MinTime = (std::min)(Entry.MinTime, ElapsedSec);
-			Entry.LastTime = ElapsedSec;
-		}
+		Accum.FrameCallCount++;
+		Accum.FrameTotal += ElapsedSec;
 	}
 }
 
@@ -175,15 +161,37 @@ void FGPUProfiler::TakeSnapshot()
 	Snapshot.clear();
 	Snapshot.reserve(GPUStats.size());
 
-	for (auto& [Key, Entry] : GPUStats)
+	for (auto& [Key, Accum] : GPUStats)
 	{
+		double FrameTime = Accum.FrameTotal;
+		Accum.Window[Accum.WindowHead] = FrameTime;
+		Accum.WindowHead = (Accum.WindowHead + 1) % STAT_WINDOW_SIZE;
+		if (Accum.WindowCount < STAT_WINDOW_SIZE)
+			Accum.WindowCount++;
+
+		double Sum = 0.0;
+		double WMax = 0.0;
+		double WMin = DBL_MAX;
+		for (uint32 i = 0; i < Accum.WindowCount; ++i)
+		{
+			double Val = Accum.Window[i];
+			Sum += Val;
+			WMax = (std::max)(WMax, Val);
+			WMin = (std::min)(WMin, Val);
+		}
+
+		FStatEntry Entry;
+		Entry.Name = Accum.Name;
+		Entry.Category = Accum.Category;
+		Entry.CallCount = Accum.FrameCallCount;
+		Entry.TotalTime = FrameTime;
+		Entry.AvgTime = Accum.WindowCount > 0 ? Sum / Accum.WindowCount : 0.0;
+		Entry.MaxTime = WMax;
+		Entry.MinTime = WMin == DBL_MAX ? 0.0 : WMin;
+		Entry.LastTime = FrameTime;
 		Snapshot.push_back(Entry);
 
-		// Reset for next frame
-		Entry.CallCount = 0;
-		Entry.TotalTime = 0.0;
-		Entry.MaxTime = 0.0;
-		Entry.MinTime = DBL_MAX;
-		Entry.LastTime = 0.0;
+		Accum.FrameCallCount = 0;
+		Accum.FrameTotal = 0.0;
 	}
 }

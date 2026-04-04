@@ -16,18 +16,36 @@
 #endif
 #endif
 
-// --- Stat Entry ---
+// 슬라이딩 윈도우 크기
+static constexpr uint32 STAT_WINDOW_SIZE = 60;
+
+// --- Stat Entry (Snapshot용 — 읽기 전용) ---
 struct FStatEntry
 {
 	const char* Name = nullptr;
 	const char* Category = "Default";
-	uint32 CallCount = 0;
-	double TotalTime = 0.0;		// seconds
-	double MaxTime = 0.0;
-	double MinTime = DBL_MAX;
-	double LastTime = 0.0;
+	uint32 CallCount = 0;		// 현재 프레임 호출 횟수
+	double TotalTime = 0.0;	// 현재 프레임 합산 시간
+	double AvgTime = 0.0;		// 최근 N프레임 평균
+	double MaxTime = 0.0;		// 최근 N프레임 최대
+	double MinTime = 0.0;		// 최근 N프레임 최소
+	double LastTime = 0.0;		// 직전 프레임 시간
+};
 
-	double GetAvgTime() const { return CallCount > 0 ? TotalTime / CallCount : 0.0; }
+// --- 내부 누적용 Entry ---
+struct FStatAccum
+{
+	const char* Name = nullptr;
+	const char* Category = "Default";
+
+	// 현재 프레임 누적
+	uint32 FrameCallCount = 0;
+	double FrameTotal = 0.0;
+
+	// 슬라이딩 윈도우 (ring buffer)
+	double Window[STAT_WINDOW_SIZE] = {};
+	uint32 WindowHead = 0;		// 다음 쓸 위치
+	uint32 WindowCount = 0;	// 채워진 수 (최대 STAT_WINDOW_SIZE)
 };
 
 // --- Stat Manager (싱글턴) ---
@@ -45,7 +63,7 @@ private:
 	FStatManager();
 	~FStatManager() = default;
 
-	TMap<const char*, FStatEntry> Stats;
+	TMap<const char*, FStatAccum> Stats;
 	TArray<FStatEntry> Snapshot;
 	LARGE_INTEGER Frequency;
 };

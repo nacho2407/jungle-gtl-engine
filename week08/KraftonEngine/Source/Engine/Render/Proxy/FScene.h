@@ -41,6 +41,7 @@ public:
 
 	// --- 조회 ---
 	const TArray<FPrimitiveSceneProxy*>& GetAllProxies() const { return Proxies; }
+	const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return NeverCullProxies; }
 	uint32 GetProxyCount() const { return static_cast<uint32>(Proxies.size()); }
 
 private:
@@ -52,6 +53,9 @@ private:
 
 	// 선택된 프록시 (O(1) 조회)
 	std::unordered_set<FPrimitiveSceneProxy*> SelectedProxies;
+
+	// bNeverCull 프록시 (Gizmo 등) — Frustum 쿼리와 무관하게 항상 수집
+	TArray<FPrimitiveSceneProxy*> NeverCullProxies;
 
 	// 삭제된 슬롯 재활용
 	TArray<uint32> FreeSlots;

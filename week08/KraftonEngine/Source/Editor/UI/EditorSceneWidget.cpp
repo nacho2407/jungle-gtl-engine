@@ -173,7 +173,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 void FEditorSceneWidget::RenderActorOutliner()
 {
-	SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "UI(ImGui)");
+	SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "5_UI");
 
 	UWorld* World = EditorEngine->GetWorld();
 	if (!World) return;
