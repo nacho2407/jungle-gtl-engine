@@ -19,11 +19,17 @@ namespace
 	}
 }
 
-void FMeshPickingBVH::MarkDirty()
-{
-	bDirty = true;
-}
+//void FMeshPickingBVH::MarkDirty()
+//{
+//	bDirty = true;
+//}
 
+/**
+ * 메시의 모든 삼각형을 leaf로 수집하고, triangle 단위 BVH를 새로 빌드합니다.
+ * 현재 구현에서는 static mesh asset이 고정된다고 보고 첫 빌드 시 전체 트리를 생성합니다.
+ *
+ * \param Mesh BVH를 구성할 원본 정적 메시 데이터
+ */
 void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
 {
 	TriangleLeaves.clear();
@@ -32,7 +38,6 @@ void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
 	// 삼각형이 하나도 없으면 트리를 만들 필요가 없습니다.
 	if (Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
 	{
-		bDirty = false;
 		return;
 	}
 
@@ -55,20 +60,32 @@ void FMeshPickingBVH::BuildNow(const FStaticMesh& Mesh)
 	{
 		BuildRecursive(0, static_cast<int32>(TriangleLeaves.size()));
 	}
-
-	bDirty = false;
 }
 
+/**
+ * mesh BVH가 아직 만들어지지 않았을 경우 빌드합니다.
+ *
+ * \param Mesh BVH 생성에 사용할 원본 정적 메시 데이터
+ */
 void FMeshPickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 {
-	if (!bDirty)
+	if (!Nodes.empty())
 	{
 		return;
 	}
-
 	BuildNow(Mesh);
 }
 
+/**
+ * 로컬 공간 ray로 mesh BVH를 순회하면서 가장 가까운 삼각형 hit를 찾습니다.
+ * 내부 노드에서는 AABB 교차만 검사하고, leaf에 도달했을 때만 실제 triangle 교차를 수행합니다.
+ *
+ * \param LocalOrigin 메시 로컬 공간 기준 ray 시작점
+ * \param LocalDirection 메시 로컬 공간 기준 ray 방향
+ * \param Mesh 교차 검사에 사용할 메시 데이터
+ * \param OutHitResult 가장 가까운 hit 결과
+ * \return 하나 이상의 삼각형과 교차하면 true
+ */
 bool FMeshPickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
 	OutHitResult = {};
@@ -137,6 +154,13 @@ bool FMeshPickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& Lo
 	return bHit;
 }
 
+/**
+ * 구간 내 triangle leaf들로부터 BVH 노드를 재귀적으로 구성합니다.
+ *
+ * \param Start leaf 구간 시작 인덱스
+ * \param End leaf 구간 끝 다음 인덱스
+ * \return 생성된 노드의 인덱스
+ */
 int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
@@ -161,7 +185,6 @@ int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
 	}
 
 	// centroid가 가장 넓게 퍼진 축을 고르고, 그 축의 median 기준으로 반씩 나눕니다.
-	// 완전 정렬 대신 nth_element를 사용해 빌드 비용을 줄입니다.
 	FBoundingBox CentroidBounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
@@ -180,10 +203,13 @@ int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
 	}
 
 	const int32 Mid = Start + LeafCount / 2;
+	// 삼각형들을 SplitAxis을 기준으로 분할해 각기 파티션을 만듭니다.
 	std::nth_element(
 		TriangleLeaves.begin() + Start,
-		TriangleLeaves.begin() + Mid,
+		TriangleLeaves.begin() + Mid, //전체를 정렬하는 대신 Mid 위치만 일단 올바르도록 파티션 수행
 		TriangleLeaves.begin() + End,
+
+		//비교용 람다, SplitAxis에 따라 다른 축으로 비교
 		[SplitAxis](const FTriangleLeaf& A, const FTriangleLeaf& B)
 		{
 			const FVector CenterA = A.Bounds.GetCenter();
@@ -197,7 +223,8 @@ int32 FMeshPickingBVH::BuildRecursive(int32 Start, int32 End)
 				return CenterA.Z < CenterB.Z;
 			}
 			return CenterA.X < CenterB.X;
-		});
+		}
+	);
 
 	Nodes[NodeIndex].LeftChild = BuildRecursive(Start, Mid);
 	Nodes[NodeIndex].RightChild = BuildRecursive(Mid, End);
