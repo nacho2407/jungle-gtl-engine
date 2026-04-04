@@ -105,6 +105,7 @@ const FString& UStaticMesh::GetAssetPathFileName() const
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 {
 	StaticMeshAsset = InMesh;
+	MarkMeshPickingBVHDirty();
 
 	// Section → MaterialIndex 캐싱 갱신
 	if (StaticMeshAsset)
@@ -137,4 +138,30 @@ void UStaticMesh::SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials)
 const TArray<FStaticMaterial>& UStaticMesh::GetStaticMaterials() const
 {
 	return StaticMaterials;
+}
+
+void UStaticMesh::MarkMeshPickingBVHDirty()
+{
+	MeshPickingBVH.MarkDirty();
+}
+
+void UStaticMesh::EnsureMeshPickingBVHBuilt() const
+{
+	if (!StaticMeshAsset)
+	{
+		return;
+	}
+
+	MeshPickingBVH.EnsureBuilt(*StaticMeshAsset);
+}
+
+bool UStaticMesh::RaycastMeshBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const
+{
+	if (!StaticMeshAsset)
+	{
+		return false;
+	}
+
+	EnsureMeshPickingBVHBuilt();
+	return MeshPickingBVH.RaycastLocal(LocalOrigin, LocalDirection, *StaticMeshAsset, OutHitResult);
 }

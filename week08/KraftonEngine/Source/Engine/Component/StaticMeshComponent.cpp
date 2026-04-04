@@ -4,6 +4,7 @@
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Collision/RayUtils.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Resource/ShaderManager.h"
@@ -139,6 +140,22 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	if (!StaticMesh) return false;
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
 	if (!Asset || Asset->Vertices.empty() || Asset->Indices.empty()) return false;
+
+	if (FEditorSettings::Get().bUseMeshBVHForPicking)
+	{
+		FVector LocalOrigin = GetWorldInverseMatrix().TransformPositionWithW(Ray.Origin);
+		FVector LocalDirection = GetWorldInverseMatrix().TransformVector(Ray.Direction);
+		LocalDirection.Normalize();
+
+		if (StaticMesh->RaycastMeshBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
+		{
+			const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
+			const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
+			OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
+			OutHitResult.HitComponent = this;
+			return true;
+		}
+	}
 
 	bool bHit = FRayUtils::RaycastTriangles(
 		Ray, GetWorldMatrix(),

@@ -43,6 +43,7 @@ namespace Key
 	// Runtime
 	constexpr const char* Runtime = "Runtime";
 	constexpr const char* RunTimeOptimization = "RunTimeOptimization";
+	constexpr const char* UseMeshBVHForPicking = "UseMeshBVHForPicking";
 
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
@@ -114,6 +115,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	// Runtime
 	JSON RuntimeObj = Object();
 	RuntimeObj[Key::RunTimeOptimization] = bRunTimeOptimization;
+	RuntimeObj[Key::UseMeshBVHForPicking] = bUseMeshBVHForPicking;
 	Root[Key::Runtime] = RuntimeObj;
 
 	// Perspective Camera
@@ -252,6 +254,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		JSON RuntimeObj = Root[Key::Runtime];
 		if (RuntimeObj.hasKey(Key::RunTimeOptimization))
 			bRunTimeOptimization = RuntimeObj[Key::RunTimeOptimization].ToBool();
+		if (RuntimeObj.hasKey(Key::UseMeshBVHForPicking))
+			bUseMeshBVHForPicking = RuntimeObj[Key::UseMeshBVHForPicking].ToBool();
 	}
 
 	// Perspective Camera
