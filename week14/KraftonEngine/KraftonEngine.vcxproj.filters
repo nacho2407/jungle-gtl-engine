@@ -203,13 +203,13 @@
     <ClCompile Include="Source\Engine\Collision\Octree.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\PickingBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\MeshPickingBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
@@ -522,13 +522,13 @@
     <ClInclude Include="Source\Engine\Collision\Octree.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\PickingBVH.h">
+    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayUtils.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\MeshPickingBVH.h">
+    <ClInclude Include="Source\Engine\Collision\MeshTrianglePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
