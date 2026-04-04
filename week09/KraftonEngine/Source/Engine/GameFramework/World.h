@@ -5,6 +5,7 @@
 #include "Collision/PickingBVH.h"
 #include "GameFramework/AActor.h"
 #include "Render/Proxy/FScene.h"
+#include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Math/ConvexVolume.h"
 #include <Collision/Octree.h>
 
@@ -44,6 +45,10 @@ public:
 	FScene& GetScene() { return Scene; }
 	const FScene& GetScene() const { return Scene; }
 	
+	// DebugDraw — DrawDebugLine 등 글로벌 함수가 사용
+	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
+	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
+
 	FOctree* GetOctree() { return Octree; }
 	void InsertActorToOctree(AActor* actor);
 	void RemoveActorToOctree(AActor* actor);
@@ -57,6 +62,7 @@ private:
 	bool bHasBegunPlay = false;
 	mutable FPickingBVH PickingBVH;
 	FScene Scene;
+	FDebugDrawQueue DebugDrawQueue;
 
 	FOctree* Octree;
 };
