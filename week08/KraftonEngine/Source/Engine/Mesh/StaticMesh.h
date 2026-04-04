@@ -9,11 +9,20 @@
 
 struct ID3D11Device;
 
+// LOD 단계별 GPU 리소스
+struct FLODMeshData
+{
+	TArray<FStaticMeshSection> Sections;
+	std::unique_ptr<FMeshBuffer> RenderBuffer;
+};
+
 // UStaticMesh — FStaticMesh를 소유하는 UObject 에셋
 class UStaticMesh : public UObject
 {
 public:
 	DECLARE_CLASS(UStaticMesh, UObject)
+
+	static constexpr uint32 MAX_LOD_COUNT = 3;
 
 	UStaticMesh() = default;
 	~UStaticMesh() override;
@@ -32,11 +41,17 @@ public:
 	void EnsureMeshTrianglePickingBVHBuilt() const;
 	bool RaycastMeshTrianglesWithBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const;
 
-	// 메시 변경 대응용 dirty API는 현재 범위에서 혼동을 줄 수 있어 주석 처리합니다.
-	// void MarkMeshTrianglePickingBVHDirty();
-	
+	// LOD 접근
+	uint32 GetLODCount() const { return bHasLOD ? MAX_LOD_COUNT : 1; }
+	FMeshBuffer* GetLODMeshBuffer(uint32 LODLevel) const;
+	const TArray<FStaticMeshSection>& GetLODSections(uint32 LODLevel) const;
+
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<FStaticMaterial> StaticMaterials; // 슬롯 이름과 머티리얼 인터페이스를 묶어서 저장하는 배열
 	mutable FMeshTrianglePickingBVH MeshTrianglePickingBVH; // 빠른 picking을 위해 메시 내부에 트리 형태로 만들어지는 자료구조
+
+	// LOD1 (50%), LOD2 (25%) — LOD0 is the original StaticMeshAsset
+	FLODMeshData AdditionalLODs[2];
+	bool bHasLOD = false;
 };

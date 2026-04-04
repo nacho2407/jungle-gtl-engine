@@ -284,6 +284,7 @@
     <ClCompile Include="Source\Engine\Math\Rotator.cpp" />
     <ClCompile Include="Source\Engine\Math\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Vector.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\MeshSimplifier.cpp" />
     <ClCompile Include="Source\Engine\Mesh\ObjImporter.cpp" />
     <ClCompile Include="Source\Engine\Mesh\ObjManager.cpp" />
     <ClCompile Include="Source\Engine\Mesh\StaticMesh.cpp" />
@@ -402,6 +403,7 @@
     <ClInclude Include="Source\Engine\Math\Rotator.h" />
     <ClInclude Include="Source\Engine\Math\Transform.h" />
     <ClInclude Include="Source\Engine\Math\Vector.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h" />
     <ClInclude Include="Source\Engine\Mesh\ObjImporter.h" />
     <ClInclude Include="Source\Engine\Mesh\ObjManager.h" />
     <ClInclude Include="Source\Engine\Mesh\StaticMesh.h" />
