@@ -10,21 +10,16 @@ struct FRenderMesh;
 class FMaterial;
 class FObjectUniformStream;
 class FRenderer;
-struct FSceneFramePacket;
+struct FSceneRenderFrame;
 
-struct ENGINE_API FMeshBatchElement
+struct ENGINE_API FMeshRenderItem
 {
+	FMaterial* Material = nullptr;
 	FRenderMesh* RenderMesh = nullptr;
 	FMatrix WorldMatrix = FMatrix::Identity;
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionIndex = 0;
-};
-
-struct ENGINE_API FMeshBatch
-{
-	FMaterial* Material = nullptr;
-	FMeshBatchElement Element;
 	ERenderPass RenderPass = ERenderPass::World;
 	bool bDisableDepthTest = false;
 	bool bDisableDepthWrite = false;
@@ -56,8 +51,8 @@ struct ENGINE_API FMeshDrawCommand
 class ENGINE_API FMeshPassProcessor
 {
 public:
-	void BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneFramePacket& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
+	void BuildMeshDrawCommands(const TArray<FMeshRenderItem>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneRenderFrame& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
 
 private:
-	uint64 BuildPipelineStateKey(const FMaterial* InMaterial, const FMeshBatch& InMeshBatch) const;
+	uint64 BuildPipelineStateKey(const FMaterial* InMaterial, const FMeshRenderItem& InMeshBatch) const;
 };

@@ -18,7 +18,7 @@ struct FRenderCommandQueue;
 //	float Padding[3] = {};
 //};
 
-struct ENGINE_API FSceneFramePacket
+struct ENGINE_API FSceneRenderFrame
 {
 	using FPassQueueArray = TStaticArray<TArray<FMeshDrawCommand>, static_cast<size_t>(ERenderPass::Count)>;
 
@@ -45,11 +45,11 @@ public:
 	}
 
 	void SetRenderer(FRenderer* InRenderer) { Renderer = InRenderer; }
-	void BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const;
+	void BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const;
 
 private:
-	void BuildViewInfo(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const;
-	void AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshBatch>& OutMeshBatches) const;
+	void BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const;
+	void AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutMeshBatches) const;
 
 private:
 	FRenderer* Renderer = nullptr;

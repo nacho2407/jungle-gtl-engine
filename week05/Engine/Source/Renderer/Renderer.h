@@ -21,7 +21,7 @@ class FSceneRenderer;
 class FPassExecutor;
 class FObjectUniformStream;
 class FMaterialBindingCache;
-struct FSceneFramePacket;
+struct FSceneRenderFrame;
 
 using FGUICallback = std::function<void()>;
 class FRenderer;
@@ -164,7 +164,7 @@ private:
 	std::unique_ptr<FPassExecutor> PassExecutor = nullptr;
 	std::unique_ptr<FObjectUniformStream> ObjectUniformStream = nullptr;
 	std::unique_ptr<FMaterialBindingCache> MaterialBindingCache = nullptr;
-	std::unique_ptr<FSceneFramePacket> CurrentFramePacket = nullptr;
+	std::unique_ptr<FSceneRenderFrame> CurrentFramePacket = nullptr;
 
 	HWND Hwnd = nullptr;
 	ID3D11Device* Device = nullptr;

@@ -10,7 +10,30 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderer.h"
 
-void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
+namespace
+{
+	constexpr ERenderPass GPassExecutionOrder[] =
+	{
+		ERenderPass::World,
+		ERenderPass::NoDepth,
+		ERenderPass::UI,
+	};
+
+	bool NeedsDepthClearForPass(const TArray<FMeshDrawCommand>& Commands)
+	{
+		for (const FMeshDrawCommand& Command : Commands)
+		{
+			if (!Command.bDisableDepthTest)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
+void FPassExecutor::Execute(const FSceneRenderFrame& Packet) const
 {
 	if (!Renderer || !Renderer->DeviceContext || !Renderer->ObjectUniformStream || !Renderer->MaterialBindingCache)
 	{
@@ -25,29 +48,17 @@ void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
 
 	Renderer->SetConstantBuffers();
 
-	const TArray<FMeshDrawCommand>& BaseCommands = Packet.GetPassQueue(ERenderPass::World);
-	const TArray<FMeshDrawCommand>& OverlayCommands = Packet.GetPassQueue(ERenderPass::NoDepth);
-	const TArray<FMeshDrawCommand>& UICommands = Packet.GetPassQueue(ERenderPass::UI);
-
-	ExecuteQueue(BaseCommands);
-
-	bool bNeedsDepthClearForOverlay = false;
-	for (const FMeshDrawCommand& OverlayCommand : OverlayCommands)
+	for (ERenderPass RenderPass : GPassExecutionOrder)
 	{
-		if (!OverlayCommand.bDisableDepthTest)
+		const TArray<FMeshDrawCommand>& PassCommands = Packet.GetPassQueue(RenderPass);
+
+		if (RenderPass == ERenderPass::NoDepth && NeedsDepthClearForPass(PassCommands))
 		{
-			bNeedsDepthClearForOverlay = true;
-			break;
+			Renderer->ClearDepthBuffer();
 		}
-	}
 
-	if (bNeedsDepthClearForOverlay)
-	{
-		Renderer->ClearDepthBuffer();
+		ExecuteQueue(PassCommands);
 	}
-
-	ExecuteQueue(OverlayCommands);
-	ExecuteQueue(UICommands);
 
 	if (!Packet.OutlineItems.empty())
 	{
@@ -55,7 +66,7 @@ void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
 	}
 }
 
-void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& Packet) const
+void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneRenderFrame& Packet) const
 {
 	if (!Renderer || !Renderer->DeviceContext)
 	{
@@ -84,12 +95,13 @@ void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& P
 		}
 	};
 
-	UploadPassQueue(Packet.GetPassQueue(ERenderPass::World));
-	UploadPassQueue(Packet.GetPassQueue(ERenderPass::NoDepth));
-	UploadPassQueue(Packet.GetPassQueue(ERenderPass::UI));
+	for (ERenderPass RenderPass : GPassExecutionOrder)
+	{
+		UploadPassQueue(Packet.GetPassQueue(RenderPass));
+	}
 }
 
-void FPassExecutor::UpdateUploadedMeshes(const FSceneFramePacket& Packet) const
+void FPassExecutor::UpdateUploadedMeshes(const FSceneRenderFrame& Packet) const
 {
 	for (FRenderMesh* Mesh : Packet.MeshUploads)
 	{

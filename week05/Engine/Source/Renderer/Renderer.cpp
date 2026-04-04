@@ -266,7 +266,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	MaterialBindingCache = std::make_unique<FMaterialBindingCache>();
 	SceneRenderer = std::make_unique<FSceneRenderer>(this);
 	PassExecutor = std::make_unique<FPassExecutor>(this);
-	CurrentFramePacket = std::make_unique<FSceneFramePacket>();
+	CurrentFramePacket = std::make_unique<FSceneRenderFrame>();
 
 	std::wstring ShaderDirW = FPaths::ShaderDir();
 	std::wstring VSPath = ShaderDirW + L"VertexShader.hlsl";

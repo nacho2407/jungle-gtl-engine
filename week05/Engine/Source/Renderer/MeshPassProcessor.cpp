@@ -9,7 +9,7 @@
 
 namespace
 {
-	ERenderPass ResolveRenderPass(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride)
+	ERenderPass ResolveRenderPass(const FMeshRenderItem& InMeshBatch, const FRenderCommand* InCommandOverride)
 	{
 		if (!InCommandOverride)
 		{
@@ -24,7 +24,7 @@ namespace
 		return InMeshBatch.RenderPass;
 	}
 
-	FMaterial* ResolveMaterial(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride, FRenderer& Renderer)
+	FMaterial* ResolveMaterial(const FMeshRenderItem& InMeshBatch, const FRenderCommand* InCommandOverride, FRenderer& Renderer)
 	{
 		if (InCommandOverride && InCommandOverride->Material)
 		{
@@ -34,23 +34,23 @@ namespace
 		return InMeshBatch.Material ? InMeshBatch.Material : Renderer.GetDefaultMaterial();
 	}
 
-	bool ResolveDisableDepthTest(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride)
+	bool ResolveDisableDepthTest(const FMeshRenderItem& InMeshBatch, const FRenderCommand* InCommandOverride)
 	{
 		return InMeshBatch.bDisableDepthTest || (InCommandOverride && InCommandOverride->bDisableDepthTest);
 	}
 
-	bool ResolveDisableDepthWrite(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride)
+	bool ResolveDisableDepthWrite(const FMeshRenderItem& InMeshBatch, const FRenderCommand* InCommandOverride)
 	{
 		return InMeshBatch.bDisableDepthWrite || (InCommandOverride && InCommandOverride->bDisableDepthWrite);
 	}
 
-	bool ResolveDisableCulling(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride)
+	bool ResolveDisableCulling(const FMeshRenderItem& InMeshBatch, const FRenderCommand* InCommandOverride)
 	{
 		return InMeshBatch.bDisableCulling || (InCommandOverride && InCommandOverride->bDisableCulling);
 	}
 }
 
-void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneFramePacket& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
+void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshRenderItem>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneRenderFrame& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
 {
 	FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
 	if (!RenderStateManager)
@@ -62,9 +62,9 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 	FMatrix CachedWorldMatrix = FMatrix::Identity;
 	uint32 CachedObjectAllocation = 0;
 
-	for (const FMeshBatch& MeshBatch : InMeshBatches)
+	for (const FMeshRenderItem& MeshBatch : InMeshBatches)
 	{
-		if (!MeshBatch.Element.RenderMesh)
+		if (!MeshBatch.RenderMesh)
 		{
 			continue;
 		}
@@ -80,7 +80,7 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		const bool bDisableCulling = ResolveDisableCulling(MeshBatch, InCommandOverride);
 		const ERenderPass RenderPass = ResolveRenderPass(MeshBatch, InCommandOverride);
 
-		FMeshBatch EffectiveMeshBatch = MeshBatch;
+		FMeshRenderItem EffectiveMeshBatch = MeshBatch;
 		EffectiveMeshBatch.Material = Material;
 		EffectiveMeshBatch.RenderPass = RenderPass;
 		EffectiveMeshBatch.bDisableDepthTest = bDisableDepthTest;
@@ -89,10 +89,10 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 
 		FMeshDrawCommand DrawCommand = {};
 		DrawCommand.Material = Material;
-		DrawCommand.RenderMesh = MeshBatch.Element.RenderMesh;
-		DrawCommand.IndexStart = MeshBatch.Element.IndexStart;
-		DrawCommand.IndexCount = MeshBatch.Element.IndexCount;
-		DrawCommand.SectionIndex = MeshBatch.Element.SectionIndex;
+		DrawCommand.RenderMesh = MeshBatch.RenderMesh;
+		DrawCommand.IndexStart = MeshBatch.IndexStart;
+		DrawCommand.IndexCount = MeshBatch.IndexCount;
+		DrawCommand.SectionIndex = MeshBatch.SectionIndex;
 		DrawCommand.RenderPass = RenderPass;
 		DrawCommand.bDisableDepthTest = bDisableDepthTest;
 		DrawCommand.bDisableDepthWrite = bDisableDepthWrite;
@@ -100,30 +100,30 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
 		DrawCommand.PipelineStateKey = BuildPipelineStateKey(Material, EffectiveMeshBatch);
 		DrawCommand.MaterialKey = Material->GetSortId();
-		DrawCommand.MeshKey = MeshBatch.Element.RenderMesh->GetSortId();
+		DrawCommand.MeshKey = MeshBatch.RenderMesh->GetSortId();
 		DrawCommand.MaterialMeshKey = (DrawCommand.MaterialKey << 32ull) | (DrawCommand.MeshKey & 0xFFFFFFFFull);
 		DrawCommand.RasterizerState = Material->ResolveRasterizerState(*RenderStateManager, bDisableCulling);
 		DrawCommand.DepthStencilState = Material->ResolveDepthStencilState(*RenderStateManager, bDisableDepthTest, bDisableDepthWrite);
 		DrawCommand.BlendState = Material->GetBlendState().get();
 
-		if (bHasCachedObjectAllocation && MeshBatch.Element.WorldMatrix == CachedWorldMatrix)
+		if (bHasCachedObjectAllocation && MeshBatch.WorldMatrix == CachedWorldMatrix)
 		{
 			DrawCommand.ObjectUniformAllocation = CachedObjectAllocation;
 		}
 		else
 		{
-			DrawCommand.ObjectUniformAllocation = ObjectUniformStream.AllocateWorldMatrix(MeshBatch.Element.WorldMatrix);
-			CachedWorldMatrix = MeshBatch.Element.WorldMatrix;
+			DrawCommand.ObjectUniformAllocation = ObjectUniformStream.AllocateWorldMatrix(MeshBatch.WorldMatrix);
+			CachedWorldMatrix = MeshBatch.WorldMatrix;
 			CachedObjectAllocation = DrawCommand.ObjectUniformAllocation;
 			bHasCachedObjectAllocation = true;
 		}
 
-		InOutPacket.RegisterMeshUpload(MeshBatch.Element.RenderMesh);
+		InOutPacket.RegisterMeshUpload(MeshBatch.RenderMesh);
 		InOutPacket.GetPassQueue(DrawCommand.RenderPass).push_back(DrawCommand);
 	}
 }
 
-uint64 FMeshPassProcessor::BuildPipelineStateKey(const FMaterial* InMaterial, const FMeshBatch& InMeshBatch) const
+uint64 FMeshPassProcessor::BuildPipelineStateKey(const FMaterial* InMaterial, const FMeshRenderItem& InMeshBatch) const
 {
 	if (!InMaterial)
 	{

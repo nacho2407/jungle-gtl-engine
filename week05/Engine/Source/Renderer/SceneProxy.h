@@ -9,7 +9,7 @@ class FMaterial;
 struct FRenderMesh;
 class FRenderer;
 struct FViewInfo;
-struct FSceneFramePacket;
+struct FSceneRenderFrame;
 class FObjectUniformStream;
 class UStaticMeshComponent;
 class UTextComponent;
@@ -24,8 +24,8 @@ public:
 	explicit FPrimitiveSceneProxy(const UPrimitiveComponent* InComponent);
 	virtual ~FPrimitiveSceneProxy() = default;
 
-	virtual void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const = 0;
-	virtual void AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
+	virtual void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const = 0;
+	virtual void AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneRenderFrame& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
 
 	const FBoxSphereBounds& GetBounds() const { return Bounds; }
 
@@ -37,14 +37,14 @@ class ENGINE_API FStaticMeshSceneProxy : public FPrimitiveSceneProxy
 {
 public:
 	explicit FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent);
-	void AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const override;
-	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const override;
+	void AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneRenderFrame& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const override;
+	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 
 private:
 	FRenderMesh* RenderMesh = nullptr;
 	FMatrix LocalToWorld = FMatrix::Identity;
 	TArray<FMaterial*> Materials;
-	TArray<FMeshBatch> MeshBatchTemplates;
+	TArray<FMeshRenderItem> MeshBatchTemplates;
 };
 
 class ENGINE_API FTextSceneProxy : public FPrimitiveSceneProxy
@@ -52,7 +52,7 @@ class ENGINE_API FTextSceneProxy : public FPrimitiveSceneProxy
 public:
 	explicit FTextSceneProxy(const UTextComponent* InComponent);
 	~FTextSceneProxy() override;
-	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const override;
+	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 
 private:
 	FMatrix LocalToWorld = FMatrix::Identity;
@@ -73,7 +73,7 @@ class ENGINE_API FSubUVSceneProxy : public FPrimitiveSceneProxy
 public:
 	explicit FSubUVSceneProxy(const USubUVComponent* InComponent);
 	~FSubUVSceneProxy() override;
-	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const override;
+	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 
 private:
 	FMatrix LocalToWorld = FMatrix::Identity;
@@ -95,7 +95,7 @@ class ENGINE_API FLineBatchSceneProxy : public FPrimitiveSceneProxy
 {
 public:
 	explicit FLineBatchSceneProxy(const ULineBatchComponent* InComponent);
-	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const override;
+	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 
 private:
 	FRenderMesh* RenderMesh = nullptr;

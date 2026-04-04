@@ -9,7 +9,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneProxy.h"
 
-void FSceneFramePacket::Reset()
+void FSceneRenderFrame::Reset()
 {
 	ViewFamily = {};
 	View = {};
@@ -22,7 +22,7 @@ void FSceneFramePacket::Reset()
 	// Lights.clear(); GameJam
 }
 
-void FSceneFramePacket::Reserve(size_t InCommandCount)
+void FSceneRenderFrame::Reserve(size_t InCommandCount)
 {
 	MeshUploads.reserve(InCommandCount * 2);
 	OutlineItems.reserve((std::max)(InCommandCount / 2, static_cast<size_t>(8)));
@@ -32,7 +32,7 @@ void FSceneFramePacket::Reserve(size_t InCommandCount)
 	}
 }
 
-void FSceneFramePacket::RegisterMeshUpload(FRenderMesh* InMesh)
+void FSceneRenderFrame::RegisterMeshUpload(FRenderMesh* InMesh)
 {
 	if (!InMesh || !InMesh->NeedsBufferUpload())
 	{
@@ -42,7 +42,7 @@ void FSceneFramePacket::RegisterMeshUpload(FRenderMesh* InMesh)
 	MeshUploads.push_back(InMesh);
 }
 
-void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const
+void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const
 {
 	OutPacket.Reset();
 	OutPacket.Reserve(Queue.Commands.size());
@@ -70,7 +70,7 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFr
 
 	Renderer->ObjectUniformStream->Reset();
 
-	TArray<FMeshBatch> MeshBatches;
+	TArray<FMeshRenderItem> MeshBatches;
 	MeshBatches.reserve(1);
 	uint64 SubmissionOrder = 0;
 
@@ -116,7 +116,7 @@ void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFr
 	}
 }
 
-void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const
+void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutPacket) const
 {
 	OutPacket.ViewFamily.Time = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
 	OutPacket.ViewFamily.DeltaTime = GEngine ? GEngine->GetDeltaTime() : 0.0f;
@@ -128,19 +128,19 @@ void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneFrame
 	OutPacket.View.Initialize(OutPacket.ViewFamily, View);
 }
 
-void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshBatch>& OutMeshBatches) const
+void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
 	if (!Command.RenderMesh)
 	{
 		return;
 	}
 
-	FMeshBatch MeshBatch = {};
+	FMeshRenderItem MeshBatch = {};
 	MeshBatch.Material = Command.Material ? Command.Material : (Renderer ? Renderer->GetDefaultMaterial() : nullptr);
-	MeshBatch.Element.RenderMesh = Command.RenderMesh;
-	MeshBatch.Element.WorldMatrix = Command.WorldMatrix;
-	MeshBatch.Element.IndexStart = Command.IndexStart;
-	MeshBatch.Element.IndexCount = Command.IndexCount;
+	MeshBatch.RenderMesh = Command.RenderMesh;
+	MeshBatch.WorldMatrix = Command.WorldMatrix;
+	MeshBatch.IndexStart = Command.IndexStart;
+	MeshBatch.IndexCount = Command.IndexCount;
 	MeshBatch.RenderPass = Command.RenderPass;
 	MeshBatch.bDisableDepthTest = Command.bDisableDepthTest;
 	MeshBatch.bDisableDepthWrite = Command.bDisableDepthWrite;
