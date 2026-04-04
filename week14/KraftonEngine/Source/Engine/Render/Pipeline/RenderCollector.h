@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "RenderBus.h"
+#include "Engine/Collision/Octree.h"
 
 class UWorld;
 class FOverlayStatSystem;
@@ -14,4 +15,6 @@ public:
 
 private:
 	void CollectFromScene(FScene& Scene, FRenderBus& RenderBus);
+	void CollectOctree(const FOctree* Octree, FRenderBus& RenderBus);
+	void CollectOctreeNode(const FOctree& Node, uint32 Depth, FRenderBus& RenderBus);
 };

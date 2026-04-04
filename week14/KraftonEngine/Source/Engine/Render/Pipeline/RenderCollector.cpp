@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
@@ -14,6 +14,12 @@ void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 	FScene& Scene = World->GetScene();
 	Scene.UpdateDirtyProxies();
 	CollectFromScene(Scene, RenderBus);
+
+	
+	if (RenderBus.GetShowFlags().bBoundingVolume)
+	{
+		CollectOctree(World->GetOctree(), RenderBus);
+	}
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
@@ -82,6 +88,32 @@ void FRenderCollector::CollectFromScene(FScene& Scene, FRenderBus& RenderBus)
 				Entry.AABB.Color = FColor::White();
 				RenderBus.AddAABBEntry(std::move(Entry));
 			}
+		}
+	}
+}
+
+void FRenderCollector::CollectOctree(const FOctree* Octree, FRenderBus& RenderBus)
+{
+	if (!Octree) return;
+	CollectOctreeNode(*Octree, 0, RenderBus);
+}
+
+void FRenderCollector::CollectOctreeNode(const FOctree& Node, uint32 Depth, FRenderBus& RenderBus)
+{
+	const FBoundingBox& Bounds = Node.GetBounds();
+	if (!Bounds.IsValid()) return;
+
+	FAABBEntry Entry = {};
+	Entry.AABB.Min = Bounds.Min;
+	Entry.AABB.Max = Bounds.Max;
+	Entry.AABB.Color = FColor::Yellow();
+	RenderBus.AddAABBEntry(std::move(Entry));
+
+	for (FOctree* Child : Node.GetChildren())
+	{
+		if (Child)
+		{
+			CollectOctreeNode(*Child, Depth + 1, RenderBus);
 		}
 	}
 }
