@@ -10,22 +10,19 @@
 
 namespace
 {
-	ERenderLayer ResolveRenderLayer(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride)
+	ERenderPass ResolveRenderPass(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride)
 	{
 		if (!InCommandOverride)
 		{
-			return InMeshBatch.RenderLayer;
+			return InMeshBatch.RenderPass;
 		}
 
-		if (InCommandOverride->RenderLayer == ERenderLayer::Overlay ||
-			InCommandOverride->RenderLayer == ERenderLayer::UI ||
-			InCommandOverride->RenderLayer == ERenderLayer::OutlineMask ||
-			InCommandOverride->RenderLayer == ERenderLayer::OutlineComposite)
+		if (InCommandOverride->RenderPass != ERenderPass::World)
 		{
-			return InCommandOverride->RenderLayer;
+			return InCommandOverride->RenderPass;
 		}
 
-		return InMeshBatch.RenderLayer;
+		return InMeshBatch.RenderPass;
 	}
 
 	FMaterial* ResolveMaterial(const FMeshBatch& InMeshBatch, const FRenderCommand* InCommandOverride, FRenderer& Renderer)
@@ -82,11 +79,11 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		const bool bDisableDepthTest = ResolveDisableDepthTest(MeshBatch, InCommandOverride);
 		const bool bDisableDepthWrite = ResolveDisableDepthWrite(MeshBatch, InCommandOverride);
 		const bool bDisableCulling = ResolveDisableCulling(MeshBatch, InCommandOverride);
-		const ERenderLayer RenderLayer = ResolveRenderLayer(MeshBatch, InCommandOverride);
+		const ERenderPass RenderPass = ResolveRenderPass(MeshBatch, InCommandOverride);
 
 		FMeshBatch EffectiveMeshBatch = MeshBatch;
 		EffectiveMeshBatch.Material = Material;
-		EffectiveMeshBatch.RenderLayer = RenderLayer;
+		EffectiveMeshBatch.RenderPass = RenderPass;
 		EffectiveMeshBatch.bDisableDepthTest = bDisableDepthTest;
 		EffectiveMeshBatch.bDisableDepthWrite = bDisableDepthWrite;
 		EffectiveMeshBatch.bDisableCulling = bDisableCulling;
@@ -97,7 +94,7 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		DrawCommand.IndexStart = MeshBatch.Element.IndexStart;
 		DrawCommand.IndexCount = MeshBatch.Element.IndexCount;
 		DrawCommand.SectionIndex = MeshBatch.Element.SectionIndex;
-		DrawCommand.MeshPass = ResolveMeshPass(RenderLayer);
+		DrawCommand.RenderPass = RenderPass;
 		DrawCommand.bDisableDepthTest = bDisableDepthTest;
 		DrawCommand.bDisableDepthWrite = bDisableDepthWrite;
 		DrawCommand.bDisableCulling = bDisableCulling;
@@ -123,25 +120,7 @@ void FMeshPassProcessor::BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshB
 		}
 
 		InOutPacket.RegisterMeshUpload(MeshBatch.Element.RenderMesh);
-		InOutPacket.PassCommandQueues.GetQueue(DrawCommand.MeshPass).push_back(DrawCommand);
-	}
-}
-
-EMeshPass FMeshPassProcessor::ResolveMeshPass(ERenderLayer InRenderLayer)
-{
-	switch (InRenderLayer)
-	{
-	case ERenderLayer::Overlay:
-		return EMeshPass::Overlay;
-	case ERenderLayer::UI:
-		return EMeshPass::UI;
-	case ERenderLayer::OutlineMask:
-		return EMeshPass::OutlineMask;
-	case ERenderLayer::OutlineComposite:
-		return EMeshPass::OutlineComposite;
-	case ERenderLayer::Base:
-	default:
-		return EMeshPass::Base;
+		InOutPacket.PassCommandQueues.GetQueue(DrawCommand.RenderPass).push_back(DrawCommand);
 	}
 }
 

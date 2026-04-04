@@ -177,7 +177,7 @@ void FPainter::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material)
 	Command.RenderMesh = Mesh;
 	Command.Material = Material;
 	Command.WorldMatrix = FMatrix::Identity;
-	Command.RenderLayer = ERenderLayer::UI;
+	Command.RenderPass = ERenderPass::UI;
 	UIQueue.AddCommand(Command);
 }
 

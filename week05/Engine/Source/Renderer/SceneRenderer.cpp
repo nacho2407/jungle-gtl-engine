@@ -137,7 +137,7 @@ void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray
 	MeshBatch.Element.WorldMatrix = Command.WorldMatrix;
 	MeshBatch.Element.IndexStart = Command.IndexStart;
 	MeshBatch.Element.IndexCount = Command.IndexCount;
-	MeshBatch.RenderLayer = Command.RenderLayer;
+	MeshBatch.RenderPass = Command.RenderPass;
 	MeshBatch.bDisableDepthTest = Command.bDisableDepthTest;
 	MeshBatch.bDisableDepthWrite = Command.bDisableDepthWrite;
 	MeshBatch.bDisableCulling = Command.bDisableCulling;

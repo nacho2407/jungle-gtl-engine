@@ -9,14 +9,11 @@ struct FRenderMesh;
 class FMaterial;
 class FPrimitiveSceneProxy;
 
-enum class ERenderLayer : uint8
+enum class ERenderPass : uint8
 {
-	Base = 0,
-	Default = Base,
-	Overlay,
+	World = 0,
+	NoDepth,
 	UI,
-	OutlineMask,
-	OutlineComposite,
 };
 
 struct ENGINE_API FRenderCommand
@@ -30,7 +27,7 @@ struct ENGINE_API FRenderCommand
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;
 
-	ERenderLayer RenderLayer = ERenderLayer::Base;
+	ERenderPass RenderPass = ERenderPass::World;
 	bool bDisableDepthTest = false;
 	bool bDisableDepthWrite = false;
 	bool bDisableCulling = false;

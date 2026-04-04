@@ -12,15 +12,6 @@ class FObjectUniformStream;
 class FRenderer;
 struct FSceneFramePacket;
 
-enum class EMeshPass : uint8
-{
-	Base,
-	Overlay,
-	UI,
-	OutlineMask,
-	OutlineComposite,
-};
-
 struct ENGINE_API FMeshBatchElement
 {
 	FRenderMesh* RenderMesh = nullptr;
@@ -34,7 +25,7 @@ struct ENGINE_API FMeshBatch
 {
 	FMaterial* Material = nullptr;
 	FMeshBatchElement Element;
-	ERenderLayer RenderLayer = ERenderLayer::Base;
+	ERenderPass RenderPass = ERenderPass::World;
 	bool bDisableDepthTest = false;
 	bool bDisableDepthWrite = false;
 	bool bDisableCulling = false;
@@ -48,7 +39,7 @@ struct ENGINE_API FMeshDrawCommand
 	uint32 IndexCount = 0;
 	uint32 SectionIndex = 0;
 	uint32 ObjectUniformAllocation = 0;
-	EMeshPass MeshPass = EMeshPass::Base;
+	ERenderPass RenderPass = ERenderPass::World;
 	bool bDisableDepthTest = false;
 	bool bDisableDepthWrite = false;
 	bool bDisableCulling = false;
@@ -68,6 +59,5 @@ public:
 	void BuildMeshDrawCommands(const TArray<FMeshBatch>& InMeshBatches, const FRenderCommand* InCommandOverride, FRenderer& Renderer, FSceneFramePacket& InOutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const;
 
 private:
-	static EMeshPass ResolveMeshPass(ERenderLayer InRenderLayer);
 	uint64 BuildPipelineStateKey(const FMaterial* InMaterial, const FMeshBatch& InMeshBatch) const;
 };

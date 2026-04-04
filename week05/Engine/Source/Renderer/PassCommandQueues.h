@@ -19,37 +19,29 @@ struct ENGINE_API FPassCommandQueues
 		OutlineCompositeCommands.clear();
 	}
 
-	TArray<FMeshDrawCommand>& GetQueue(EMeshPass InMeshPass)
+	TArray<FMeshDrawCommand>& GetQueue(ERenderPass InRenderPass)
 	{
-		switch (InMeshPass)
+		switch (InRenderPass)
 		{
-		case EMeshPass::Overlay:
+		case ERenderPass::NoDepth:
 			return OverlayPassCommands;
-		case EMeshPass::UI:
+		case ERenderPass::UI:
 			return UIPassCommands;
-		case EMeshPass::OutlineMask:
-			return OutlineMaskCommands;
-		case EMeshPass::OutlineComposite:
-			return OutlineCompositeCommands;
-		case EMeshPass::Base:
+		case ERenderPass::World:
 		default:
 			return BasePassCommands;
 		}
 	}
 
-	const TArray<FMeshDrawCommand>& GetQueue(EMeshPass InMeshPass) const
+	const TArray<FMeshDrawCommand>& GetQueue(ERenderPass InRenderPass) const
 	{
-		switch (InMeshPass)
+		switch (InRenderPass)
 		{
-		case EMeshPass::Overlay:
+		case ERenderPass::NoDepth:
 			return OverlayPassCommands;
-		case EMeshPass::UI:
+		case ERenderPass::UI:
 			return UIPassCommands;
-		case EMeshPass::OutlineMask:
-			return OutlineMaskCommands;
-		case EMeshPass::OutlineComposite:
-			return OutlineCompositeCommands;
-		case EMeshPass::Base:
+		case ERenderPass::World:
 		default:
 			return BasePassCommands;
 		}

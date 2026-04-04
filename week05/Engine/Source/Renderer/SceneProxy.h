@@ -61,7 +61,7 @@ private:
 	FVector4 TextColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	FString DisplayText;
 	float TextScale = 1.0f;
-	ERenderLayer RenderLayer = ERenderLayer::Base;
+	ERenderPass RenderPass = ERenderPass::World;
 	bool bBillboard = false;
 	mutable bool bMeshDirty = true;
 	mutable std::shared_ptr<FDynamicMesh> TextMesh;

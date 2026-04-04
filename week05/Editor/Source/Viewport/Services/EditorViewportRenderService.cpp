@@ -241,7 +241,7 @@ void FEditorViewportRenderService::RenderAll(
 			GridCommand.RenderMesh = GridMesh;
 			GridCommand.Material = GridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
-			GridCommand.RenderLayer = ERenderLayer::Default;
+			GridCommand.RenderPass = ERenderPass::World;
 			Queue.AddCommand(GridCommand);
 		}
 
@@ -296,7 +296,7 @@ void FEditorViewportRenderService::ApplyWireframe(FRenderCommandQueue& Queue, FM
 {
 	for (FRenderCommand& Command : Queue.Commands)
 	{
-		if (Command.RenderLayer != ERenderLayer::Overlay)
+		if (Command.RenderPass != ERenderPass::NoDepth)
 		{
 			Command.Material = WireMaterial;
 		}
