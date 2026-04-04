@@ -27,6 +27,8 @@ public:
 	void AddActor(AActor* Actor);
 	void MarkWorldPrimitivePickingBVHDirty();
 	void BuildWorldPrimitivePickingBVHNow() const;
+	void BeginDeferredPickingBVHUpdate();
+	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
@@ -65,6 +67,8 @@ private:
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
+	int32 DeferredPickingBVHUpdateDepth = 0;
+	bool bDeferredPickingBVHDirty = false;
 	FScene Scene;
 	FDebugDrawQueue DebugDrawQueue;
 
