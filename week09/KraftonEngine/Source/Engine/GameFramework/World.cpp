@@ -1,8 +1,8 @@
-#include "GameFramework/World.h"
+﻿#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Engine/Math/ConvexVolume.h"
+#include "Engine/Render/Culling/ConvexVolume.h"
 #include "Engine/Component/CameraComponent.h"
 #include <algorithm>
 #include "Profiling/Stats.h"
@@ -145,6 +145,21 @@ void UWorld::UpdateVisibleProxies()
 	}
 
 	{
+		SCOPE_STAT_CAT("OcclusionCulling", "1_WorldTick");
+		OcclusionCulling.Clear();
+		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
+		{
+			if (!Primitive) continue;
+
+			FBoundingBox Box = Primitive->GetWorldBoundingBox();
+			FVector Extent = Box.GetExtent();
+
+			if (Extent.X * Extent.Y * Extent.Z > 0.0002f)
+				OcclusionCulling.RasterizeOccluder(Box, ActiveCamera->GetViewProjectionMatrix());
+		}
+	}
+
+	{
 		SCOPE_STAT_CAT("BuildVisibleProxies", "1_WorldTick");
 
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
@@ -153,8 +168,12 @@ void UWorld::UpdateVisibleProxies()
 		const FVector CameraPos = ActiveCamera->GetWorldLocation();
 		LOD_STATS_RESET();
 
+		// 보이는 primitive의 프록시만 컬링 해제
 		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 		{
+			if (OcclusionCulling.IsOccluded(Primitive->GetWorldBoundingBox(), ActiveCamera->GetViewProjectionMatrix()))
+				continue;
+
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
 			{
 				const FVector ProxyPos = Proxy->PerObjectConstants.Model.GetLocation();

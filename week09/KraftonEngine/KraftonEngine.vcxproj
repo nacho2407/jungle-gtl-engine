@@ -278,7 +278,6 @@
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
-    <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
     <ClCompile Include="Source\Engine\Math\Quat.cpp" />
     <ClCompile Include="Source\Engine\Math\Rotator.cpp" />
@@ -301,6 +300,8 @@
     <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\LineBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp" />
@@ -396,7 +397,6 @@
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
-    <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Math\MathUtils.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
     <ClInclude Include="Source\Engine\Math\Quat.h" />
@@ -425,6 +425,8 @@
     <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h" />
