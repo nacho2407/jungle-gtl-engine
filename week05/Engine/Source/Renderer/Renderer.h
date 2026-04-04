@@ -7,6 +7,7 @@
 #include "Renderer/TextMeshBuilder.h"
 #include "ShaderManager.h"
 #include <d3d11.h>
+#include <dxgi1_5.h>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -148,6 +149,8 @@ private:
 	bool EnsureOutlineMaskResources(uint32 Width, uint32 Height);
 	/** 외곽선 마스크 렌더 타깃 관련 자원을 해제한다. */
 	void ReleaseOutlineMaskResources();
+	/** 현재 시스템/드라이버가 DXGI tearing present를 지원하는지 검사한다. */
+	bool CheckTearingSupport() const;
 	/** 현재 View/Projection과 시간 정보를 프레임 상수 버퍼에 업로드한다. */
 	void UpdateFrameConstantBuffer();
 	/** 개별 오브젝트의 월드 행렬을 오브젝트 상수 버퍼에 업로드한다. */
@@ -185,6 +188,7 @@ private:
 	D3D11_VIEWPORT SceneViewport = {};
 	bool bUseSceneRenderTargetOverride = false;
 	bool bVSyncEnabled = false;
+	bool bAllowTearing = false;
 
 	/** 이번 프레임에 실제 실행할 렌더 커맨드 리스트다. */
 	FRenderCommandQueue PendingCommandQueue;
