@@ -153,6 +153,8 @@ void UWorld::Tick(float DeltaTime)
     if (Octree)
 		Octree->FlushDirty();
 	UpdateVisibleActors();
+	DebugDrawQueue.Tick(DeltaTime);
+
 	for (AActor* Actor : VisibleActors)
 	{
 		if (Actor)

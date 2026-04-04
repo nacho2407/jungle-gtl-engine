@@ -29,6 +29,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 
 		Collector.CollectWorld(World, Bus);
+		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);
 	}
 
 	Renderer.PrepareBatchers(Bus);

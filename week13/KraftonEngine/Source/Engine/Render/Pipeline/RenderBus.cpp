@@ -14,6 +14,7 @@ void FRenderBus::Clear()
 	SubUVEntries.clear();
 	AABBEntries.clear();
 	GridEntries.clear();
+	DebugLineEntries.clear();
 
 	ViewportRTV = nullptr;
 	ViewportDSV = nullptr;
@@ -53,6 +54,11 @@ void FRenderBus::AddAABBEntry(FAABBEntry&& Entry)
 void FRenderBus::AddGridEntry(FGridEntry&& Entry)
 {
 	GridEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddDebugLineEntry(FDebugLineEntry&& Entry)
+{
+	DebugLineEntries.push_back(std::move(Entry));
 }
 
 void FRenderBus::SetCameraInfo(const UCameraComponent* Camera)

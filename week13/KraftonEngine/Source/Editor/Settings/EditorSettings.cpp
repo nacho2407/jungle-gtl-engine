@@ -25,6 +25,8 @@ namespace Key
 	constexpr const char* bGizmo = "bGizmo";
 	constexpr const char* bBillboardText = "bBillboardText";
 	constexpr const char* bBoundingVolume = "bBoundingVolume";
+	constexpr const char* bDebugDraw = "bDebugDraw";
+	constexpr const char* bOctree = "bOctree";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
@@ -95,6 +97,8 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
 		SlotObj[Key::bBillboardText] = Opts.ShowFlags.bBillboardText;
 		SlotObj[Key::bBoundingVolume] = Opts.ShowFlags.bBoundingVolume;
+		SlotObj[Key::bDebugDraw] = Opts.ShowFlags.bDebugDraw;
+		SlotObj[Key::bOctree] = Opts.ShowFlags.bOctree;
 		SlotObj[Key::GridSpacing] = Opts.GridSpacing;
 		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
@@ -223,6 +227,10 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.ShowFlags.bBillboardText = S[Key::bBillboardText].ToBool();
 				if (S.hasKey(Key::bBoundingVolume))
 					Opts.ShowFlags.bBoundingVolume = S[Key::bBoundingVolume].ToBool();
+				if (S.hasKey(Key::bDebugDraw))
+					Opts.ShowFlags.bDebugDraw = S[Key::bDebugDraw].ToBool();
+				if (S.hasKey(Key::bOctree))
+					Opts.ShowFlags.bOctree = S[Key::bOctree].ToBool();
 				if (S.hasKey(Key::GridSpacing))
 					Opts.GridSpacing = static_cast<float>(S[Key::GridSpacing].ToFloat());
 				if (S.hasKey(Key::GridHalfLineCount))

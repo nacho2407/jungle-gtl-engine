@@ -135,6 +135,13 @@ struct FGridEntry
 	FGridConstants Grid;
 };
 
+struct FDebugLineEntry
+{
+	FVector Start;
+	FVector End;
+	FColor  Color;
+};
+
 // 스크린 공간 텍스트 — Overlay Stats 등에서 사용
 struct FOverlayStatLine
 {
