@@ -54,15 +54,32 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
-#ifndef FPS_OPTIMIZATION
-	ConsoleWidget.Render(DeltaTime);
-	ControlWidget.Render(DeltaTime);
-	PropertyWidget.Render(DeltaTime);
-#endif
-	SceneWidget.Render(DeltaTime);
-	StatWidget.Render(DeltaTime);
-	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 
+	{
+		SCOPE_STAT_CAT("ConsoleWidget.Render", "UI(ImGui)");
+		ConsoleWidget.Render(DeltaTime);
+	}
+
+	{
+		SCOPE_STAT_CAT("ControlWidget.Render", "UI(ImGui)");
+		ControlWidget.Render(DeltaTime);
+	}
+
+	{
+		SCOPE_STAT_CAT("PropertyWidget.Render", "UI(ImGui)");
+		PropertyWidget.Render(DeltaTime);
+	}
+
+	{
+		SCOPE_STAT_CAT("SceneWidget.Render", "UI(ImGui)");
+		SceneWidget.Render(DeltaTime);
+	}
+
+	{
+		SCOPE_STAT_CAT("StatWidget.Render", "UI(ImGui)");
+		StatWidget.Render(DeltaTime);
+	}
+	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
