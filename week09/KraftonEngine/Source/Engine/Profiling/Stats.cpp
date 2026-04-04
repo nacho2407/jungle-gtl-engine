@@ -9,13 +9,14 @@ FStatManager::FStatManager()
 	QueryPerformanceFrequency(&Frequency);
 }
 
-void FStatManager::RecordTime(const char* Name, double ElapsedSeconds)
+void FStatManager::RecordTime(const char* Name, double ElapsedSeconds, const char* Category)
 {
 	auto it = Stats.find(Name);
 	if (it == Stats.end())
 	{
 		FStatEntry Entry;
 		Entry.Name = Name;
+		Entry.Category = Category;
 		Entry.CallCount = 1;
 		Entry.TotalTime = ElapsedSeconds;
 		Entry.MaxTime = ElapsedSeconds;

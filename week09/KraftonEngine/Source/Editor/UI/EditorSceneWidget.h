@@ -11,6 +11,7 @@ public:
 
 private:
 	void RefreshSceneFileList();
+	void RenderActorOutliner();
 
 	char SceneName[128] = "Default";
 

@@ -30,12 +30,13 @@ void FEditorStatWidget::Render(float DeltaTime)
 			auto FormatTable = [&](const char* Title, const TArray<FStatEntry>& Entries)
 			{
 				oss << "=== " << Title << " ===\n";
-				oss << "Name\tCalls\tTotal(ms)\tAvg(ms)\tMax(ms)\tMin(ms)\tLast(ms)\n";
+				oss << "Category\tName\tCalls\tTotal(ms)\tAvg(ms)\tMax(ms)\tMin(ms)\tLast(ms)\n";
 				for (const FStatEntry& E : Entries)
 				{
 					if (E.CallCount == 0) continue;
 					double MinVal = E.MinTime == DBL_MAX ? 0.0 : E.MinTime;
-					oss << E.Name << "\t"
+					oss << E.Category << "\t"
+						<< E.Name << "\t"
 						<< E.CallCount << "\t"
 						<< E.TotalTime * 1000.0 << "\t"
 						<< E.GetAvgTime() * 1000.0 << "\t"
@@ -68,18 +69,23 @@ void FEditorStatWidget::Render(float DeltaTime)
 	ImGui::Text("Draw Calls: %u", DrawCalls);
 	ImGui::Separator();
 
+	// 남은 공간을 CPU/GPU 테이블이 반씩 사용
+	float AvailableHeight = ImGui::GetContentRegionAvail().y;
+	float HalfHeight = (AvailableHeight - ImGui::GetFrameHeightWithSpacing() * 2.0f) * 0.5f;
+	if (HalfHeight < 100.0f) HalfHeight = 100.0f;
+
 	// --- CPU Stats ---
 	const TArray<FStatEntry>& CPUSource = bPaused ? FrozenCPUEntries : FStatManager::Get().GetSnapshot();
 	if (ImGui::CollapsingHeader("CPU Stats", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		RenderStatTable("CPUStatTable", CPUSource, CPUSortColumn, bCPUSortDescending);
+		RenderStatTable("CPUStatTable", CPUSource, CPUSortColumn, bCPUSortDescending, HalfHeight);
 	}
 
 	// --- GPU Stats ---
 	const TArray<FStatEntry>& GPUSource = bPaused ? FrozenGPUEntries : FGPUProfiler::Get().GetGPUSnapshot();
 	if (ImGui::CollapsingHeader("GPU Stats", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		RenderStatTable("GPUStatTable", GPUSource, GPUSortColumn, bGPUSortDescending);
+		RenderStatTable("GPUStatTable", GPUSource, GPUSortColumn, bGPUSortDescending, HalfHeight);
 	}
 
 	ImGui::End();
@@ -87,7 +93,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 }
 
 void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source,
-	int& OutSortColumn, bool& OutSortDescending)
+	int& OutSortColumn, bool& OutSortDescending, float TableHeight)
 {
 #if STATS
 	if (Source.empty())
@@ -98,37 +104,42 @@ void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatE
 
 	TArray<FStatEntry> Entries = Source;
 
+	// Category 우선 정렬 후, 선택된 컬럼으로 2차 정렬
 	auto SortPredicate = [&](const FStatEntry& A, const FStatEntry& B) -> bool
 	{
+		int catCmp = strcmp(A.Category, B.Category);
+		if (catCmp != 0) return catCmp < 0;
+
 		double ValA = 0.0, ValB = 0.0;
 		switch (OutSortColumn)
 		{
-		case 0: return OutSortDescending ? (strcmp(A.Name, B.Name) > 0) : (strcmp(A.Name, B.Name) < 0);
-		case 1: ValA = (double)A.CallCount; ValB = (double)B.CallCount; break;
-		case 2: ValA = A.TotalTime;  ValB = B.TotalTime;  break;
-		case 3: ValA = A.GetAvgTime(); ValB = B.GetAvgTime(); break;
-		case 4: ValA = A.MaxTime;    ValB = B.MaxTime;    break;
-		case 5: ValA = A.MinTime == DBL_MAX ? 0.0 : A.MinTime;
+		case 0: return OutSortDescending ? (strcmp(A.Category, B.Category) > 0) : (strcmp(A.Category, B.Category) < 0);
+		case 1: return OutSortDescending ? (strcmp(A.Name, B.Name) > 0) : (strcmp(A.Name, B.Name) < 0);
+		case 2: ValA = (double)A.CallCount; ValB = (double)B.CallCount; break;
+		case 3: ValA = A.TotalTime;  ValB = B.TotalTime;  break;
+		case 4: ValA = A.GetAvgTime(); ValB = B.GetAvgTime(); break;
+		case 5: ValA = A.MaxTime;    ValB = B.MaxTime;    break;
+		case 6: ValA = A.MinTime == DBL_MAX ? 0.0 : A.MinTime;
 				ValB = B.MinTime == DBL_MAX ? 0.0 : B.MinTime; break;
-		case 6: ValA = A.LastTime;   ValB = B.LastTime;   break;
+		case 7: ValA = A.LastTime;   ValB = B.LastTime;   break;
 		}
 		return OutSortDescending ? (ValA > ValB) : (ValA < ValB);
 	};
 	std::sort(Entries.begin(), Entries.end(), SortPredicate);
 
-	const char* Headers[] = { "Name", "Calls", "Total(ms)", "Avg(ms)", "Max(ms)", "Min(ms)", "Last(ms)" };
+	const char* Headers[] = { "Category", "Name", "Calls", "Total(ms)", "Avg(ms)", "Max(ms)", "Min(ms)", "Last(ms)" };
 
-	if (ImGui::BeginTable(TableID, 7,
+	if (ImGui::BeginTable(TableID, 8,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY,
-		ImVec2(0.0f, 200.0f)))
+		ImVec2(0.0f, TableHeight)))
 	{
-		for (int i = 0; i < 7; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			ImGui::TableSetupColumn(Headers[i]);
 		}
 		ImGui::TableHeadersRow();
 
-		for (int i = 0; i < 7; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			if (ImGui::TableGetColumnFlags(i) & ImGuiTableColumnFlags_IsHovered)
 			{
@@ -145,18 +156,34 @@ void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatE
 			}
 		}
 
+		const char* LastCategory = nullptr;
 		for (const FStatEntry& E : Entries)
 		{
 			if (E.CallCount == 0) continue;
 
+			// 카테고리 구분선
+			if (!LastCategory || strcmp(LastCategory, E.Category) != 0)
+			{
+				LastCategory = E.Category;
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "%s", E.Category);
+				for (int col = 1; col < 8; col++)
+				{
+					ImGui::TableSetColumnIndex(col);
+					ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "---");
+				}
+			}
+
 			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0); ImGui::Text("%s", E.Name);
-			ImGui::TableSetColumnIndex(1); ImGui::Text("%u", E.CallCount);
-			ImGui::TableSetColumnIndex(2); ImGui::Text("%.3f", E.TotalTime * 1000.0);
-			ImGui::TableSetColumnIndex(3); ImGui::Text("%.3f", E.GetAvgTime() * 1000.0);
-			ImGui::TableSetColumnIndex(4); ImGui::Text("%.3f", E.MaxTime * 1000.0);
-			ImGui::TableSetColumnIndex(5); ImGui::Text("%.3f", E.MinTime == DBL_MAX ? 0.0 : E.MinTime * 1000.0);
-			ImGui::TableSetColumnIndex(6); ImGui::Text("%.3f", E.LastTime * 1000.0);
+			ImGui::TableSetColumnIndex(0); ImGui::Text("%s", E.Category);
+			ImGui::TableSetColumnIndex(1); ImGui::Text("%s", E.Name);
+			ImGui::TableSetColumnIndex(2); ImGui::Text("%u", E.CallCount);
+			ImGui::TableSetColumnIndex(3); ImGui::Text("%.3f", E.TotalTime * 1000.0);
+			ImGui::TableSetColumnIndex(4); ImGui::Text("%.3f", E.GetAvgTime() * 1000.0);
+			ImGui::TableSetColumnIndex(5); ImGui::Text("%.3f", E.MaxTime * 1000.0);
+			ImGui::TableSetColumnIndex(6); ImGui::Text("%.3f", E.MinTime == DBL_MAX ? 0.0 : E.MinTime * 1000.0);
+			ImGui::TableSetColumnIndex(7); ImGui::Text("%.3f", E.LastTime * 1000.0);
 		}
 
 		ImGui::EndTable();
