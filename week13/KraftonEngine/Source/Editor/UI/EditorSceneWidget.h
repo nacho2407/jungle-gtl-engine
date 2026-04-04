@@ -13,6 +13,7 @@ private:
 	void RefreshSceneFileList();
 	void RenderActorOutliner();
 
+	TArray<int32> ValidActorIndices;
 	char SceneName[128] = "Default";
 
 	TArray<FString> SceneFiles;
