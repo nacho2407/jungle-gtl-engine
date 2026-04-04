@@ -28,6 +28,18 @@ FVector FBoundingBox::GetExtent() const
 	);
 }
 
+void FBoundingBox::GetCorners(FVector (&OutCorners)[8]) const
+{
+	OutCorners[0] = FVector(Min.X, Min.Y, Min.Z);
+	OutCorners[1] = FVector(Max.X, Min.Y, Min.Z);
+	OutCorners[2] = FVector(Min.X, Max.Y, Min.Z);
+	OutCorners[3] = FVector(Max.X, Max.Y, Min.Z);
+	OutCorners[4] = FVector(Min.X, Min.Y, Max.Z);
+	OutCorners[5] = FVector(Max.X, Min.Y, Max.Z);
+	OutCorners[6] = FVector(Min.X, Max.Y, Max.Z);
+	OutCorners[7] = FVector(Max.X, Max.Y, Max.Z);
+}
+
 bool FBoundingBox::IsValid() const
 {
 	return Min.X <= Max.X && Min.Y <= Max.Y && Min.Z <= Max.Z;

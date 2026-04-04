@@ -136,14 +136,15 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	//안전성 검사 후 레이를 로컬 공간으로 변환하여 BVH 가속 구조를 활용한 충돌 테스트 시도
 	if (!StaticMesh) return false;
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
 	if (!Asset || Asset->Vertices.empty() || Asset->Indices.empty()) return false;
-
 	FVector LocalOrigin = GetWorldInverseMatrix().TransformPositionWithW(Ray.Origin);
 	FVector LocalDirection = GetWorldInverseMatrix().TransformVector(Ray.Direction);
 	LocalDirection.Normalize();
 
+	//Mesh BVH를 사용해 충돌 테스트 시도.
 	if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
 	{
 		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
@@ -153,19 +154,20 @@ bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 		return true;
 	}
 
-	bool bHit = FRayUtils::RaycastTriangles(
-		Ray, GetWorldMatrix(),
-		GetWorldInverseMatrix(),
-		&Asset->Vertices[0].pos,
-		sizeof(FNormalVertex),
-		Asset->Indices,
-		OutHitResult);
+	// 실패하면 기존 방식하던 걸 주석 처리. 성능개선이 일단 확인됨.
+	//bool bHit = FRayUtils::RaycastTriangles(
+	//	Ray, GetWorldMatrix(),
+	//	GetWorldInverseMatrix(),
+	//	&Asset->Vertices[0].pos,
+	//	sizeof(FNormalVertex),
+	//	Asset->Indices,
+	//	OutHitResult);
 
-	if (bHit)
-	{
-		OutHitResult.HitComponent = this;
-	}
-	return bHit;
+	//if (bHit)
+	//{
+	//	OutHitResult.HitComponent = this;
+	//}
+	return false; // bHit;
 }
 
 void UStaticMeshComponent::Serialize(bool bIsLoading, json::JSON& Handle)
