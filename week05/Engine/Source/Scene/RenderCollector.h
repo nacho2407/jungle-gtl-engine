@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "EngineAPI.h"
@@ -18,4 +18,7 @@ public:
 private:
 	void FrustrumCull(UScene* Scene, const FFrustum& Frustum,
 		const FShowFlags& ShowFlags, TArray<UPrimitiveComponent*>& OutVisible);
+
+	TArray<UPrimitiveComponent*> VisiblePrimitivesScratch;
+	TArray<UPrimitiveComponent*> CandidatePrimitivesScratch;
 };

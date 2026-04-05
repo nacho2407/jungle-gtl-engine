@@ -1,0 +1,145 @@
+#include "Renderer/SceneRenderer.h"
+
+#include <algorithm>
+
+#include "Core/Engine.h"
+#include "Renderer/ObjectUniformStream.h"
+#include "Renderer/RenderCommand.h"
+#include "Renderer/RenderMesh.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/SceneProxy.h"
+
+void FSceneFramePacket::Reset()
+{
+	ViewFamily = {};
+	View = {};
+	PassCommandQueues.Reset();
+	MeshUploads.clear();
+	OutlineItems.clear();
+	Lights.clear();
+}
+
+void FSceneFramePacket::Reserve(size_t InCommandCount)
+{
+	MeshUploads.reserve(InCommandCount * 2);
+	OutlineItems.reserve((std::max)(InCommandCount / 2, static_cast<size_t>(8)));
+	PassCommandQueues.BasePassCommands.reserve(InCommandCount);
+	PassCommandQueues.OverlayPassCommands.reserve(InCommandCount);
+	PassCommandQueues.UIPassCommands.reserve(InCommandCount);
+	PassCommandQueues.OutlineMaskCommands.reserve(InCommandCount);
+	PassCommandQueues.OutlineCompositeCommands.reserve(InCommandCount);
+}
+
+void FSceneFramePacket::RegisterMeshUpload(FRenderMesh* InMesh)
+{
+	if (!InMesh || !InMesh->NeedsBufferUpload())
+	{
+		return;
+	}
+
+	MeshUploads.push_back(InMesh);
+}
+
+void FSceneRenderer::BuildFramePacket(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const
+{
+	OutPacket.Reset();
+	OutPacket.Reserve(Queue.Commands.size());
+	BuildViewInfo(Queue, OutPacket);
+
+	if (!Queue.OutlineItems.empty())
+	{
+		OutPacket.OutlineItems.reserve(Queue.OutlineItems.size());
+		for (const FOutlineRenderItem& Item : Queue.OutlineItems)
+		{
+			if (!Item.Mesh)
+			{
+				continue;
+			}
+
+			OutPacket.OutlineItems.push_back(Item);
+			OutPacket.RegisterMeshUpload(Item.Mesh);
+		}
+	}
+
+	if (!Renderer || !Renderer->ObjectUniformStream)
+	{
+		return;
+	}
+
+	Renderer->ObjectUniformStream->Reset();
+
+	TArray<FMeshBatch> MeshBatches;
+	MeshBatches.reserve(1);
+	uint64 SubmissionOrder = 0;
+
+	for (const FRenderCommand& Command : Queue.Commands)
+	{
+		if (Command.SceneProxy)
+		{
+			Command.SceneProxy->AppendDrawCommands(Command, OutPacket.View, *Renderer, MeshPassProcessor, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
+		}
+		else
+		{
+			MeshBatches.clear();
+			AppendLegacyMeshBatch(Command, MeshBatches);
+			MeshPassProcessor.BuildMeshDrawCommands(MeshBatches, nullptr, *Renderer, OutPacket, *Renderer->ObjectUniformStream, SubmissionOrder);
+		}
+	}
+
+	if (!OutPacket.MeshUploads.empty())
+	{
+		std::sort(OutPacket.MeshUploads.begin(), OutPacket.MeshUploads.end());
+		const auto NewEnd = std::unique(OutPacket.MeshUploads.begin(), OutPacket.MeshUploads.end());
+		OutPacket.MeshUploads.erase(NewEnd, OutPacket.MeshUploads.end());
+	}
+
+	auto PassComparator = [](const FMeshDrawCommand& A, const FMeshDrawCommand& B)
+	{
+		if (A.PipelineStateKey != B.PipelineStateKey) return A.PipelineStateKey < B.PipelineStateKey;
+		if (A.MaterialKey != B.MaterialKey) return A.MaterialKey < B.MaterialKey;
+		if (A.MeshKey != B.MeshKey) return A.MeshKey < B.MeshKey;
+		if (A.SectionIndex != B.SectionIndex) return A.SectionIndex < B.SectionIndex;
+		return A.SubmissionOrder < B.SubmissionOrder;
+	};
+
+	if (OutPacket.PassCommandQueues.BasePassCommands.size() > 1)
+	{
+		std::sort(OutPacket.PassCommandQueues.BasePassCommands.begin(), OutPacket.PassCommandQueues.BasePassCommands.end(), PassComparator);
+	}
+	if (OutPacket.PassCommandQueues.OverlayPassCommands.size() > 1)
+	{
+		std::sort(OutPacket.PassCommandQueues.OverlayPassCommands.begin(), OutPacket.PassCommandQueues.OverlayPassCommands.end(), PassComparator);
+	}
+}
+
+void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneFramePacket& OutPacket) const
+{
+	OutPacket.ViewFamily.Time = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
+	OutPacket.ViewFamily.DeltaTime = GEngine ? GEngine->GetDeltaTime() : 0.0f;
+
+	FSceneView View = {};
+	View.ViewMatrix = Queue.ViewMatrix;
+	View.ProjectionMatrix = Queue.ProjectionMatrix;
+	View.ShowFlags = Queue.ShowFlags;
+	OutPacket.View.Initialize(OutPacket.ViewFamily, View);
+}
+
+void FSceneRenderer::AppendLegacyMeshBatch(const FRenderCommand& Command, TArray<FMeshBatch>& OutMeshBatches) const
+{
+	if (!Command.RenderMesh)
+	{
+		return;
+	}
+
+	FMeshBatch MeshBatch = {};
+	MeshBatch.Material = Command.Material ? Command.Material : (Renderer ? Renderer->GetDefaultMaterial() : nullptr);
+	MeshBatch.Element.RenderMesh = Command.RenderMesh;
+	MeshBatch.Element.WorldMatrix = Command.WorldMatrix;
+	MeshBatch.Element.IndexStart = Command.IndexStart;
+	MeshBatch.Element.IndexCount = Command.IndexCount;
+	MeshBatch.RenderLayer = Command.RenderLayer;
+	MeshBatch.bDisableDepthTest = Command.bDisableDepthTest;
+	MeshBatch.bDisableDepthWrite = Command.bDisableDepthWrite;
+	MeshBatch.bDisableCulling = Command.bDisableCulling;
+	OutMeshBatches.push_back(MeshBatch);
+}

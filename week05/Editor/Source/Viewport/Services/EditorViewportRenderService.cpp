@@ -12,13 +12,55 @@
 #include "UI/EditorUI.h"
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/TextComponent.h"
 #include "Asset/ObjManager.h"
 #include "Slate/Widget/Painter.h"
+#include <algorithm>
+#include <utility>
 
 namespace
 {
+#ifndef WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
+#define WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER 0
+#endif
+
+	size_t GSceneCommandReserveHint = 2048;
+
+	int32 CountActiveViewportEntries(const TArray<FViewportEntry>& Entries)
+	{
+		int32 ActiveCount = 0;
+		for (const FViewportEntry& Entry : Entries)
+		{
+			if (Entry.bActive && Entry.Viewport)
+			{
+				++ActiveCount;
+			}
+		}
+
+		return ActiveCount;
+	}
+
+	bool BuildSceneViewport(const FRect& Rect, bool bDirectToBackBuffer, D3D11_VIEWPORT& OutViewport)
+	{
+		if (!Rect.IsValid())
+		{
+			return false;
+		}
+
+		OutViewport = {};
+		OutViewport.TopLeftX = bDirectToBackBuffer ? static_cast<float>(Rect.X) : 0.0f;
+		OutViewport.TopLeftY = bDirectToBackBuffer ? static_cast<float>(Rect.Y) : 0.0f;
+		OutViewport.Width = static_cast<float>(Rect.Width);
+		OutViewport.Height = static_cast<float>(Rect.Height);
+		OutViewport.MinDepth = 0.0f;
+		OutViewport.MaxDepth = 1.0f;
+		return true;
+	}
+
 	void BuildGridVectors(const FMatrix& ViewInverse, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
 	{
 		OutViewForward = ViewInverse.GetForwardVector().GetSafeNormal();
@@ -33,8 +75,55 @@ namespace
 		OutGridAxisU = ViewInverse.GetRightVector().GetSafeNormal();
 		OutGridAxisV = ViewInverse.GetUpVector().GetSafeNormal();
 	}
+
+	void BuildOutlineItemsForViewport(FEditorEngine* EditorEngine, const FViewportEntry& Entry, FRenderCommandQueue& Queue)
+	{
+		if (!EditorEngine || !Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives))
+		{
+			return;
+		}
+
+		AActor* SelectedActor = EditorEngine->GetSelectedActor();
+		if (!SelectedActor || SelectedActor->IsPendingDestroy() || !SelectedActor->IsVisible())
+		{
+			return;
+		}
+
+		if (SelectedActor->GetComponentByClass<USkyComponent>() != nullptr)
+		{
+			return;
+		}
+
+		const TArray<UActorComponent*>& Components = SelectedActor->GetComponents();
+		Queue.OutlineItems.reserve(Queue.OutlineItems.size() + Components.size());
+
+		for (UActorComponent* Component : Components)
+		{
+			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
+			{
+				continue;
+			}
+			if (Component->IsA(UTextComponent::StaticClass()) || Component->IsA(USubUVComponent::StaticClass()))
+			{
+				continue;
+			}
+
+			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+			FRenderMesh* RenderMesh = PrimitiveComponent->GetRenderMesh();
+			if (!RenderMesh)
+			{
+				continue;
+			}
+
+			FOutlineRenderItem Item = {};
+			Item.Mesh = RenderMesh;
+			Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
+			Queue.OutlineItems.push_back(Item);
+		}
+	}
 }
 
+FEditorViewportRenderService::~FEditorViewportRenderService() = default;
 
 void FEditorViewportRenderService::RenderAll(
 	FEngine* Engine,
@@ -69,6 +158,11 @@ void FEditorViewportRenderService::RenderAll(
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	const TArray<FViewportEntry>& Entries = ViewportRegistry.GetEntries();
+#if WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
+	const bool bUseDirectSingleViewportPath = (CountActiveViewportEntries(Entries) == 1);
+#else
+	const bool bUseDirectSingleViewportPath = false;
+#endif
 
 	for (const FViewportEntry& Entry : Entries)
 	{
@@ -77,32 +171,45 @@ void FEditorViewportRenderService::RenderAll(
 			continue;
 		}
 
-		Entry.Viewport->EnsureResources(Device);
+		const FRect& Rect = Entry.Viewport->GetRect();
+		D3D11_VIEWPORT Viewport = {};
+		if (!BuildSceneViewport(Rect, bUseDirectSingleViewportPath, Viewport))
+		{
+			continue;
+		}
 
-		ID3D11RenderTargetView* RTV = Entry.Viewport->GetRTV();
-		ID3D11DepthStencilView* DSV = Entry.Viewport->GetDSV();
+		ID3D11RenderTargetView* RTV = nullptr;
+		ID3D11DepthStencilView* DSV = nullptr;
+
+		if (bUseDirectSingleViewportPath)
+		{
+			RTV = Renderer->GetRenderTargetView();
+			DSV = Renderer->GetDepthStencilView();
+		}
+		else
+		{
+			Entry.Viewport->EnsureResources(Device);
+			RTV = Entry.Viewport->GetRTV();
+			DSV = Entry.Viewport->GetDSV();
+
+			if (RTV && DSV)
+			{
+				Context->ClearRenderTargetView(RTV, ClearColor);
+				Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			}
+		}
+
 		if (!RTV || !DSV)
 		{
 			continue;
 		}
 
-		const FRect& Rect = Entry.Viewport->GetRect();
-		D3D11_VIEWPORT Viewport = {};
-		Viewport.TopLeftX = 0.0f;
-		Viewport.TopLeftY = 0.0f;
-		Viewport.Width = static_cast<float>(Rect.Width);
-		Viewport.Height = static_cast<float>(Rect.Height);
-		Viewport.MinDepth = 0.0f;
-		Viewport.MaxDepth = 1.0f;
-
-		Context->ClearRenderTargetView(RTV, ClearColor);
-		Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
 		Renderer->BeginScenePass(RTV, DSV, Viewport);
 
 		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
 		FRenderCommandQueue Queue;
-		Queue.Reserve(Renderer->GetPrevCommandCount());
+		const size_t ReserveHint = (std::max)(Renderer->GetPrevCommandCount(), GSceneCommandReserveHint);
+		Queue.Reserve(ReserveHint);
 		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
 
@@ -144,7 +251,19 @@ void FEditorViewportRenderService::RenderAll(
 			Queue.AddCommand(GridCommand);
 		}
 
-		Renderer->SubmitCommands(Queue);
+		BuildOutlineItemsForViewport(EditorEngine, Entry, Queue);
+
+		const size_t QueueSize = Queue.Commands.size();
+		if (QueueSize > GSceneCommandReserveHint)
+		{
+			GSceneCommandReserveHint = QueueSize;
+		}
+		else
+		{
+			GSceneCommandReserveHint = (std::max)(QueueSize, GSceneCommandReserveHint * 7 / 8);
+		}
+
+		Renderer->SubmitCommands(std::move(Queue));
 		Renderer->ExecuteCommands();
 		EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false);
 		Renderer->EndScenePass();
@@ -152,18 +271,28 @@ void FEditorViewportRenderService::RenderAll(
 	EditorEngine->ClearDebugDrawForFrame();
 
 	Renderer->BindSwapChainRTV();
-	BlitRenderer.BlitAll(Context, Entries);
+	if (!bUseDirectSingleViewportPath)
+	{
+		BlitRenderer.BlitAll(Context, Entries);
+		Renderer->BindSwapChainRTV();
+	}
 
-	Renderer->BindSwapChainRTV();
 	if (FSlateApplication* Slate = EditorEngine->GetSlateApplication())
 	{
-		FPainter Painter(Renderer);
+		if (!SlatePainter)
+		{
+			SlatePainter = std::make_unique<FPainter>(Renderer);
+		}
+		else
+		{
+			SlatePainter->SetRenderer(Renderer);
+		}
 
 		RECT rc{};
 		::GetClientRect(Renderer->GetHwnd(), &rc);
-		Painter.SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
-		Slate->Paint(Painter);
-		Painter.Flush();
+		SlatePainter->SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
+		Slate->Paint(*SlatePainter);
+		SlatePainter->Flush();
 	}
 
 	EditorUI.Render();

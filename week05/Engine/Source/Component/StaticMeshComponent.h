@@ -5,6 +5,7 @@
 #include "Serializer/Archive.h"
 
 class UStaticMesh;
+class FPrimitiveSceneProxy;
 
 class ENGINE_API UStaticMeshComponent : public UMeshComponent
 {
@@ -14,6 +15,7 @@ public:
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
 	FRenderMesh* GetRenderMesh() const override;
 	UStaticMesh* GetStaticMesh() const { return StaticMesh; }
+	std::shared_ptr<FPrimitiveSceneProxy> CreateSceneProxy() const override;
 
 	virtual bool HasMeshIntersection() const override { return true; }
 	virtual bool IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const override;

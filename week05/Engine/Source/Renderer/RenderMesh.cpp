@@ -3,7 +3,7 @@
 
 void FRenderMesh::Bind(ID3D11DeviceContext* Context)
 {
-	if (!VertexBuffer || !IndexBuffer) return;
+	if (!VertexBuffer) return;
 	UINT Stride = sizeof(FVertex);
 	UINT Offset = 0;
 	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
@@ -14,6 +14,26 @@ void FRenderMesh::Release()
 {
 	if (IndexBuffer) { IndexBuffer->Release(); IndexBuffer = nullptr; }
 	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
+}
+
+bool FRenderMesh::NeedsBufferUpload() const
+{
+	if (bIsDirty)
+	{
+		return true;
+	}
+
+	if (!VertexBuffer && !Vertices.empty())
+	{
+		return true;
+	}
+
+	if (!IndexBuffer && !Indices.empty())
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void FRenderMesh::UpdateLocalBound()

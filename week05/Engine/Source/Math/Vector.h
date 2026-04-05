@@ -125,57 +125,61 @@ public:
 		return FVector(-X, -Y, -Z);
 	}
 
-	constexpr FVector operator+(const FVector& Other) const noexcept
+	FVector operator+(const FVector& Other) const noexcept
 	{
-		return FVector(X + Other.X, Y + Other.Y, Z + Other.Z);
+		return FVector(DirectX::XMVectorAdd(ToXMVector(), Other.ToXMVector()));
 	}
 
-	constexpr FVector operator-(const FVector& Other) const noexcept
+	FVector operator-(const FVector& Other) const noexcept
 	{
-		return FVector(X - Other.X, Y - Other.Y, Z - Other.Z);
+		return FVector(DirectX::XMVectorSubtract(ToXMVector(), Other.ToXMVector()));
 	}
 
-	constexpr FVector operator*(float Scalar) const noexcept
+	FVector operator*(float Scalar) const noexcept
 	{
-		return FVector(X * Scalar, Y * Scalar, Z * Scalar);
+		return FVector(DirectX::XMVectorScale(ToXMVector(), Scalar));
 	}
 
-	constexpr FVector operator/(float Scalar) const noexcept
+	FVector operator/(float Scalar) const noexcept
 	{
 		assert(Scalar != 0.f);
-		return FVector(X / Scalar, Y / Scalar, Z / Scalar);
+		return FVector(DirectX::XMVectorScale(ToXMVector(), 1.f / Scalar));
 	}
 
 	FVector& operator+=(const FVector& Other) noexcept
 	{
-		X += Other.X;
-		Y += Other.Y;
-		Z += Other.Z;
+		DirectX::XMStoreFloat3(
+			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
+			DirectX::XMVectorAdd(ToXMVector(), Other.ToXMVector())
+		);
 		return *this;
 	}
 
 	FVector& operator-=(const FVector& Other) noexcept
 	{
-		X -= Other.X;
-		Y -= Other.Y;
-		Z -= Other.Z;
+		DirectX::XMStoreFloat3(
+			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
+			DirectX::XMVectorSubtract(ToXMVector(), Other.ToXMVector())
+		);
 		return *this;
 	}
 
 	FVector& operator*=(float Scalar) noexcept
 	{
-		X *= Scalar;
-		Y *= Scalar;
-		Z *= Scalar;
+		DirectX::XMStoreFloat3(
+			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
+			DirectX::XMVectorScale(ToXMVector(), Scalar)
+		);
 		return *this;
 	}
 
 	FVector& operator/=(float Scalar) noexcept
 	{
 		assert(Scalar != 0.f);
-		X /= Scalar;
-		Y /= Scalar;
-		Z /= Scalar;
+		DirectX::XMStoreFloat3(
+			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
+			DirectX::XMVectorScale(ToXMVector(), 1.f / Scalar)
+		);
 		return *this;
 	}
 

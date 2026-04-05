@@ -33,7 +33,7 @@ void FEditorViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 	}
 
 	EditorUI.Initialize(EditorEngine);
-	//EditorUI.AttachToRenderer(Renderer); GameGem
+	EditorUI.AttachToRenderer(Renderer);
 
 	BlitRenderer.Initialize(Renderer->GetDevice());
 
@@ -197,24 +197,6 @@ void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 
 void FEditorViewportClient::SyncViewportRectsFromDock()
 {
-	RECT rc{};
-	::GetClientRect(EditorEngine.GetRenderer()->GetHwnd(), &rc);
-
-	const FRect NewRect{ rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top };
-
-	static FRect CachedRect{ 0, 0, 0, 0 };
-	if (CachedRect.X != NewRect.X ||
-		CachedRect.Y != NewRect.Y ||
-		CachedRect.Width != NewRect.Width ||
-		CachedRect.Height != NewRect.Height)
-	{
-		CachedRect = NewRect;
-
-		if (FSlateApplication* Slate = EditorEngine.GetSlateApplication())
-		{
-			Slate->SetViewportAreaRect(NewRect);
-		}
-	}
 	FRect Central;
 	if (!EditorUI.GetCentralDockRect(Central) || !Central.IsValid())
 	{

@@ -54,6 +54,10 @@ bool FTextMeshBuilder::Initialize(FRenderer* InRenderer)
 	FontMaterial->SetVertexShader(VS);
 	FontMaterial->SetPixelShader(PS);
 
+	auto MaterialTexture = std::make_shared<FMaterialTexture>();
+	MaterialTexture->SetResources(Atlas.GetTextureSRV(), Atlas.GetSamplerState(), false);
+	FontMaterial->SetMaterialTexture(MaterialTexture);
+
 	// 래스터라이저 설정
 	FRasterizerStateOption rasterizerOption;
 	rasterizerOption.FillMode = D3D11_FILL_SOLID;

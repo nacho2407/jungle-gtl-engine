@@ -5,10 +5,16 @@
 #include "EditorEngine.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderCommand.h"
+#include "Actor/Actor.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/SkyComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/TextComponent.h"
 #include "Math/Frustum.h"
 #include "World/World.h"
 #include "imgui.h"
+#include <utility>
 
 FPreviewViewportClient::FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName)
 	: EditorUI(InEditorUI)
@@ -84,7 +90,40 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 			const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 			const FVector CameraPosition = ViewInverse.GetTranslation();
 			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
-			Renderer->SubmitCommands(Queue);
+
+			if (FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine))
+			{
+				AActor* SelectedActor = EditorEngine->GetSelectedActor();
+				if (SelectedActor && !SelectedActor->IsPendingDestroy() && SelectedActor->IsVisible() &&
+					SelectedActor->GetComponentByClass<USkyComponent>() == nullptr)
+				{
+					for (UActorComponent* Component : SelectedActor->GetComponents())
+					{
+						if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
+						{
+							continue;
+						}
+						if (Component->IsA(UTextComponent::StaticClass()) || Component->IsA(USubUVComponent::StaticClass()))
+						{
+							continue;
+						}
+
+						UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+						FRenderMesh* RenderMesh = PrimitiveComponent->GetRenderMesh();
+						if (!RenderMesh)
+						{
+							continue;
+						}
+
+						FOutlineRenderItem Item = {};
+						Item.Mesh = RenderMesh;
+						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
+						Queue.OutlineItems.push_back(Item);
+					}
+				}
+			}
+
+			Renderer->SubmitCommands(std::move(Queue));
 			Renderer->ExecuteCommands();
 		}
 	}

@@ -3,15 +3,19 @@
 #include "CoreMinimal.h"
 #include "RenderState.h"
 #include <d3d11.h>
+#include <array>
 #include <memory>
 
 class FVertexShader;
 class FPixelShader;
+class FMaterialBindingCache;
+class FRenderStateManager;
 
 struct FMaterialTexture
 {
 	ID3D11ShaderResourceView* TextureSRV = nullptr;
 	ID3D11SamplerState* SamplerState = nullptr;
+	bool bOwnsResources = true;
 
 	FMaterialTexture() = default;
 	~FMaterialTexture();
@@ -19,8 +23,18 @@ struct FMaterialTexture
 	FMaterialTexture(const FMaterialTexture&) = delete;
 	FMaterialTexture& operator=(const FMaterialTexture&) = delete;
 
+	void SetResources(ID3D11ShaderResourceView* InTextureSRV, ID3D11SamplerState* InSamplerState, bool bInOwnsResources = true)
+	{
+		TextureSRV = InTextureSRV;
+		SamplerState = InSamplerState;
+		bOwnsResources = bInOwnsResources;
+	}
+
+	ID3D11ShaderResourceView* GetTextureSRV() const { return TextureSRV; }
+	ID3D11SamplerState* GetSamplerState() const { return SamplerState; }
+
 	void Release();
-	void Bind(ID3D11DeviceContext* DeviceContext);
+	void Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache = nullptr);
 };
 
 // 파라미터 이름 → 상수 버퍼 내 위치 매핑
@@ -77,7 +91,7 @@ struct ENGINE_API FMaterialConstantBuffer
 	bool Create(ID3D11Device* Device, uint32 InSize);
 
 	// CPU 데이터의 특정 오프셋에 값 쓰기 (Dirty 마킹)
-	void SetData(const void* Data, uint32 InSize, uint32 Offset = 0);
+	bool SetData(const void* Data, uint32 InSize, uint32 Offset = 0);
 
 	// Dirty면 Map/Unmap으로 GPU에 업로드
 	void Upload(ID3D11DeviceContext* DeviceContext);
@@ -90,7 +104,7 @@ struct ENGINE_API FMaterialConstantBuffer
 class ENGINE_API FMaterial
 {
 public:
-	FMaterial() : ShaderId(NextShaderId++) {}
+	FMaterial() : MaterialId(NextMaterialId++), SortGroupId(MaterialId) {}
 	virtual ~FMaterial();
 
 	FMaterial(const FMaterial&) = delete;
@@ -99,6 +113,11 @@ public:
 	FMaterial& operator=(FMaterial&&) = default;
 
 	uint64 GetSortId() const;
+	uint64 GetPipelineStateKey(bool bDisableCulling = false, bool bDisableDepthTest = false, bool bDisableDepthWrite = false) const;
+	uint32 GetBindingRevision() const { return BindingRevision; }
+	bool HasDirtyConstantBuffers() const;
+	FRasterizerState* ResolveRasterizerState(FRenderStateManager& RenderStateManager, bool bDisableCulling = false) const;
+	FDepthStencilState* ResolveDepthStencilState(FRenderStateManager& RenderStateManager, bool bDisableDepthTest = false, bool bDisableDepthWrite = false) const;
 
 	// 에셋 원본 이름 (JSON에서 로드된 이름, 직렬화 시 사용)
 	void SetOriginName(const FString& InName) { OriginName = InName; }
@@ -111,15 +130,15 @@ public:
 	// 인스턴스 이름이 있으면 인스턴스 이름, 없으면 원본 이름 반환
 	const FString& GetName() const { return InstanceName.empty() ? OriginName : InstanceName; }
 
-	void SetVertexShader(const std::shared_ptr<FVertexShader>& InVS) { VertexShader = InVS; }
-	void SetPixelShader(const std::shared_ptr<FPixelShader>& InPS) { PixelShader = InPS; }
-	void SetRasterizerOption(const FRasterizerStateOption InOption) { RasterizerOption = InOption; }
-	void SetRasterizerState(const std::shared_ptr<FRasterizerState> InState) { RasterizerState = InState; }
-	void SetDepthStencilOption(const FDepthStencilStateOption InOption) { DepthStencilOption = InOption; }
-	void SetDepthStencilState(const std::shared_ptr<FDepthStencilState> InState) { DepthStencilState = InState; }
-	void SetBlendOption(const FBlendStateOption InOption) { BlendOption = InOption; }
-	void SetBlendState(const std::shared_ptr<FBlendState> InState) { BlendState = InState; }
-	void SetMaterialTexture(const std::shared_ptr<FMaterialTexture> InTexture) { MaterialTexture = InTexture; }
+	void SetVertexShader(const std::shared_ptr<FVertexShader>& InVS);
+	void SetPixelShader(const std::shared_ptr<FPixelShader>& InPS);
+	void SetRasterizerOption(FRasterizerStateOption InOption);
+	void SetRasterizerState(const std::shared_ptr<FRasterizerState>& InState);
+	void SetDepthStencilOption(FDepthStencilStateOption InOption);
+	void SetDepthStencilState(const std::shared_ptr<FDepthStencilState>& InState);
+	void SetBlendOption(FBlendStateOption InOption);
+	void SetBlendState(const std::shared_ptr<FBlendState>& InState);
+	void SetMaterialTexture(const std::shared_ptr<FMaterialTexture>& InTexture);
 
 	FVertexShader* GetVertexShader() const { return VertexShader.get(); }
 	FPixelShader* GetPixelShader() const { return PixelShader.get(); }
@@ -130,6 +149,8 @@ public:
 	std::shared_ptr<FDepthStencilState> GetDepthStencilState() const { return DepthStencilState; }
 	std::shared_ptr<FBlendState> GetBlendState() const { return BlendState; }
 	std::shared_ptr<FMaterialTexture> GetMaterialTexture() const { return MaterialTexture; }
+	const TArray<FMaterialConstantBuffer>& GetConstantBuffers() const { return ConstantBuffers; }
+	TArray<FMaterialConstantBuffer>& GetConstantBuffers() { return ConstantBuffers; }
 
 	// FDynamicMaterial에서 파라미터 설정 시 사용
 	bool SetParameterData(const FString& ParamName, const void* Data, uint32 DataSize);
@@ -149,16 +170,21 @@ public:
 	std::unique_ptr<class FDynamicMaterial> CreateDynamicMaterial() const;
 
 	// 셰이더 바인딩 + Dirty 상수 버퍼 업로드 + 바인딩
-	void Bind(ID3D11DeviceContext* DeviceContext);
+	void Bind(ID3D11DeviceContext* DeviceContext, FMaterialBindingCache* BindingCache = nullptr);
 
 	void Release();
 
 protected:
+	void AdvanceBindingRevision();
+	void InvalidatePipelineStateCache();
+	void InvalidateResolvedStateCache();
+	static uint32 MakePipelineStateVariantIndex(bool bDisableCulling, bool bDisableDepthTest, bool bDisableDepthWrite);
 
 	// TODO: ShaderId가 실제 사용하는 쉐이더를 반영하도록 변경
 	// NOTE: GetSortId에서 비트 연산 쓰는 경우 ShaderId가 32bit를 전부 쓰면 안 됨
-	uint32 ShaderId = 0;
-	static inline uint32 NextShaderId = 0;
+	uint32 MaterialId = 0;
+	uint32 SortGroupId = 0;
+	static inline uint32 NextMaterialId = 1;
 
 	FString OriginName;
 	FString InstanceName;
@@ -177,7 +203,15 @@ protected:
 
 	TArray<FMaterialConstantBuffer> ConstantBuffers;
 	TMap<FString, FMaterialParameterInfo> ParameterMap;
+	mutable std::array<uint64, 8> PipelineStateKeyVariants = {};
+	mutable std::array<bool, 8> bPipelineStateKeyVariantValid = {};
+	mutable std::array<FRasterizerState*, 8> RasterizerStateVariants = {};
+	mutable std::array<bool, 8> bRasterizerStateVariantValid = {};
+	mutable std::array<FDepthStencilState*, 8> DepthStencilStateVariants = {};
+	mutable std::array<bool, 8> bDepthStencilStateVariantValid = {};
+	uint32 BindingRevision = 1;
 
+public:
 	static constexpr UINT MaterialCBStartSlot = 2; // b0=Frame, b1=Object, b2+=Material
 };
 

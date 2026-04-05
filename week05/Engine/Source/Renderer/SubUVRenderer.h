@@ -30,6 +30,12 @@ public:
 	/** SubUV용 사각형 메시 데이터 빌드 */
 	bool BuildSubUVMesh(const FVector2& Size, FRenderMesh& OutMesh) const;
 
+	void UpdateAnimationParams(
+		FMaterial* TargetMaterial,
+		int32 Columns, int32 Rows, int32 TotalFrames,
+		int32 FirstFrame, int32 LastFrame,
+		float FPS, float ElapsedTime, bool bLoop) const;
+
 	/** 애니메이션 프레임에 따른 UV 파라미터 업데이트 */
 	void UpdateAnimationParams(
 		int32 Columns, int32 Rows, int32 TotalFrames,

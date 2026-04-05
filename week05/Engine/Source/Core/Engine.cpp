@@ -20,6 +20,7 @@
 #include "World/World.h"
 #include "Object/ObjectFactory.h"
 #include "Primitive/PrimitiveGizmo.h"
+#include <utility>
 
 FEngine* GEngine = nullptr;
 
@@ -98,10 +99,11 @@ void FEngine::Tick()
 
 	PrepareFrame(DeltaTime);
 	ProcessInput(DeltaTime);
-	TickPhysics(DeltaTime);
-	TickWorlds(DeltaTime);
+	//GameJam
+	//TickPhysics(DeltaTime);
+	//TickWorlds(DeltaTime);
+	//SyncPlatformState();
 	RenderFrame();
-	SyncPlatformState();
 	FinalizeFrame(DeltaTime);
 }
 
@@ -524,7 +526,7 @@ void FEngine::RenderFrame()
 		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue);
 	}
 
-	Renderer->SubmitCommands(CommandQueue);
+	Renderer->SubmitCommands(std::move(CommandQueue));
 	Renderer->ExecuteCommands();
 
 	DebugDrawManager.Flush(Renderer.get(), FShowFlags{}, ActiveWorld);

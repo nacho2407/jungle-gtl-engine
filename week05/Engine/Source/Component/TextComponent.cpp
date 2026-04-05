@@ -2,6 +2,7 @@
 #include "Object/Class.h"
 #include <algorithm>
 
+#include "Renderer/SceneProxy.h"
 #include "Serializer/Archive.h"
 
 
@@ -25,12 +26,18 @@ void UTextComponent::SetText(const FString& InText)
 		Text = InText;
 		// NOTE: 실제 정점 데이터 갱신은 RenderCollector에서 TextRenderer를 통해 수행함
 		MarkTextMeshDirty();
+		UpdateBounds();
 	}
 }
 
 FRenderMesh* UTextComponent::GetRenderMesh() const
 {
 	return TextMesh.get();
+}
+
+std::shared_ptr<FPrimitiveSceneProxy> UTextComponent::CreateSceneProxy() const
+{
+	return std::make_shared<FTextSceneProxy>(this);
 }
 
 void UTextComponent::Serialize(FArchive& Ar)

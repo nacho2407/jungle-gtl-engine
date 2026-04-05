@@ -124,6 +124,10 @@ public:
 	uint32_t GetUUID() const { return ObjectUUID; }
 	T* GetCachedPtr() const { return CachedPtr; }
 
+	// 렌더/물리 등 GC가 실행되지 않는 경로에서 사용.
+	// UUID 해시맵 조회를 생략하고 CachedPtr을 직접 반환한다.
+	T* GetUnchecked() const { return CachedPtr; }
+
 	bool IsValid() const { return Get() != nullptr; }
 	bool IsNull() const { return ObjectUUID == 0; }
 	bool IsPending() const

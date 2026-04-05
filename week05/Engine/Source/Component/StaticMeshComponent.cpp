@@ -9,6 +9,7 @@
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Renderer/Material.h"
+#include "Renderer/SceneProxy.h"
 IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
@@ -22,19 +23,26 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 		const TArray<std::shared_ptr<FMaterial>>& DefaultMats = StaticMesh->GetDefaultMaterials();
 		for (int32 i = 0; i < NeededMaterialSlots && i < DefaultMats.size(); ++i)
 		{
-			Materials[i] = DefaultMats[i]->CreateDynamicMaterial();
+			Materials[i] = DefaultMats[i];
 		}
-		UpdateBounds();
 	}
 	else
 	{
 		Materials.clear();
 	}
+
+	UpdateBounds();
+	MarkRenderStateDirty();
 }
 
 FRenderMesh* UStaticMeshComponent::GetRenderMesh() const
 {
 	 return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
+}
+
+std::shared_ptr<FPrimitiveSceneProxy> UStaticMeshComponent::CreateSceneProxy() const
+{
+	return std::make_shared<FStaticMeshSceneProxy>(this);
 }
 
 FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const

@@ -3,12 +3,15 @@
 
 void FRenderStateManager::PrepareCommonStates()
 {
-	// 예: Solid/Wireframe x Cull None/Back/Front
+	// Solid/Wireframe x Cull None/Front/Back.
+	// Cull-none variants are used frequently by UI, gizmos, and editor overlays.
 	D3D11_FILL_MODE fills[] = { D3D11_FILL_SOLID, D3D11_FILL_WIREFRAME };
 	D3D11_CULL_MODE culls[] = { D3D11_CULL_NONE, D3D11_CULL_FRONT, D3D11_CULL_BACK };
 
-	for (auto f : fills) {
-		for (auto c : culls) {
+	for (auto f : fills)
+	{
+		for (auto c : culls)
+		{
 			FRasterizerStateOption opt;
 			opt.FillMode = f;
 			opt.CullMode = c;
@@ -16,11 +19,23 @@ void FRenderStateManager::PrepareCommonStates()
 		}
 	}
 
-	// 기본 블렌드 상태 (No Blend)
+	// Common depth variants used by default materials and per-draw overrides.
+	{
+		FDepthStencilStateOption depthOpt;
+		GetOrCreateDepthStencilState(depthOpt);
+
+		depthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		GetOrCreateDepthStencilState(depthOpt);
+
+		depthOpt.DepthEnable = false;
+		GetOrCreateDepthStencilState(depthOpt);
+	}
+
+	// Default opaque blend state.
 	FBlendStateOption blendOpt;
 	GetOrCreateBlendState(blendOpt);
 
-	// 알파 블렌드 상태
+	// Common alpha blend state.
 	blendOpt.BlendEnable = true;
 	blendOpt.SrcBlend = D3D11_BLEND_SRC_ALPHA;
 	blendOpt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
@@ -67,7 +82,22 @@ std::shared_ptr<FBlendState> FRenderStateManager::GetOrCreateBlendState(const FB
 	return state;
 }
 
-void FRenderStateManager::BindState(std::shared_ptr<FRasterizerState> InRS)
+void FRenderStateManager::BindState(const std::shared_ptr<FRasterizerState>& InRS)
+{
+	BindState(InRS.get());
+}
+
+void FRenderStateManager::BindState(const std::shared_ptr<FDepthStencilState>& InDSS)
+{
+	BindState(InDSS.get());
+}
+
+void FRenderStateManager::BindState(const std::shared_ptr<FBlendState>& InBS)
+{
+	BindState(InBS.get());
+}
+
+void FRenderStateManager::BindState(FRasterizerState* InRS)
 {
 	if (InRS != nullptr && CurrentRasterizerState != InRS)
 	{
@@ -76,7 +106,7 @@ void FRenderStateManager::BindState(std::shared_ptr<FRasterizerState> InRS)
 	}
 }
 
-void FRenderStateManager::BindState(std::shared_ptr<FDepthStencilState> InDSS)
+void FRenderStateManager::BindState(FDepthStencilState* InDSS)
 {
 	if (InDSS != nullptr && CurrentDepthStencilState != InDSS)
 	{
@@ -85,7 +115,7 @@ void FRenderStateManager::BindState(std::shared_ptr<FDepthStencilState> InDSS)
 	}
 }
 
-void FRenderStateManager::BindState(std::shared_ptr<FBlendState> InBS)
+void FRenderStateManager::BindState(FBlendState* InBS)
 {
 	if (InBS != nullptr && CurrentBlendState != InBS)
 	{

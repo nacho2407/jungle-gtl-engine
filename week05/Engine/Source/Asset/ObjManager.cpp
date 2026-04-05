@@ -494,21 +494,45 @@ namespace
 			return false;
 		}
 
-		ID3D11ShaderResourceView* NewSRV = nullptr;
-		if (!GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath, &NewSRV))
+		if (!GEngine || !GEngine->GetRenderer() || !GEngine->GetRenderer()->GetDevice())
 		{
 			return false;
 		}
 
+		FRenderer* Renderer = GEngine->GetRenderer();
+		ID3D11Device* Device = Renderer->GetDevice();
+
+		ID3D11ShaderResourceView* NewSRV = nullptr;
+		if (!Renderer->CreateTextureFromSTB(Device, TexturePath, &NewSRV))
+		{
+			return false;
+		}
+
+		D3D11_SAMPLER_DESC SamplerDesc = {};
+		SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		SamplerDesc.MinLOD = 0;
+		SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+		ID3D11SamplerState* NewSampler = nullptr;
+		if (FAILED(Device->CreateSamplerState(&SamplerDesc, &NewSampler)))
+		{
+			NewSRV->Release();
+			return false;
+		}
+
 		auto MaterialTexture = std::make_shared<FMaterialTexture>();
-		MaterialTexture->TextureSRV = NewSRV;
+		MaterialTexture->SetResources(NewSRV, NewSampler, true);
 		Material->SetMaterialTexture(MaterialTexture);
 
 		std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
-		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
+		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(Device, TexPSPath.c_str()));
 
 		std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
-		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
+		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(Device, TexVSPath.c_str()));
 		UE_LOG("%s %s", LogPrefix, WideToUtf8(TexturePath.wstring()).c_str());
 		return true;
 	}

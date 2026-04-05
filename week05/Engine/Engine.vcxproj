@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -87,6 +87,14 @@
     <ClInclude Include="Source\Renderer\FontAtlas.h" />
     <ClInclude Include="Source\Renderer\Material.h" />
     <ClInclude Include="Source\Renderer\MaterialManager.h" />
+    <ClInclude Include="Source\Renderer\MaterialBindingCache.h" />
+    <ClInclude Include="Source\Renderer\MeshPassProcessor.h" />
+    <ClInclude Include="Source\Renderer\ObjectUniformStream.h" />
+    <ClInclude Include="Source\Renderer\PassCommandQueues.h" />
+    <ClInclude Include="Source\Renderer\PassExecutor.h" />
+    <ClInclude Include="Source\Renderer\SceneProxy.h" />
+    <ClInclude Include="Source\Renderer\SceneRenderer.h" />
+    <ClInclude Include="Source\Renderer\ViewInfo.h" />
     <ClInclude Include="Source\Renderer\MeshData.h" />
     <ClInclude Include="Source\Renderer\RenderCommand.h" />
     <ClInclude Include="Source\Renderer\RenderMesh.h" />
@@ -99,6 +107,7 @@
     <ClInclude Include="Source\Renderer\ShaderResource.h" />
     <ClInclude Include="Source\Renderer\ShaderType.h" />
     <ClInclude Include="Source\Renderer\SubUVRenderer.h" />
+    <ClInclude Include="Source\Renderer\TextureLoader.h" />
     <ClInclude Include="Source\Renderer\TextMeshBuilder.h" />
     <ClInclude Include="Source\Renderer\TextureVertex.h" />
     <ClInclude Include="Source\Renderer\Vertex.h" />
@@ -274,6 +283,13 @@
     <ClCompile Include="Source\Renderer\FontAtlas.cpp" />
     <ClCompile Include="Source\Renderer\Material.cpp" />
     <ClCompile Include="Source\Renderer\MaterialManager.cpp" />
+    <ClCompile Include="Source\Renderer\MaterialBindingCache.cpp" />
+    <ClCompile Include="Source\Renderer\MeshPassProcessor.cpp" />
+    <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp" />
+    <ClCompile Include="Source\Renderer\PassExecutor.cpp" />
+    <ClCompile Include="Source\Renderer\SceneProxy.cpp" />
+    <ClCompile Include="Source\Renderer\SceneRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\ViewInfo.cpp" />
     <ClCompile Include="Source\Renderer\MeshData.cpp" />
     <ClCompile Include="Source\Renderer\RenderCommand.cpp" />
     <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
@@ -285,6 +301,7 @@
     <ClCompile Include="Source\Renderer\ShaderMap.cpp" />
     <ClCompile Include="Source\Renderer\ShaderResource.cpp" />
     <ClCompile Include="Source\Renderer\SubUVRenderer.cpp" />
+    <ClCompile Include="Source\Renderer\TextureLoader.cpp" />
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp" />
     <ClCompile Include="Source\Scene\BVH.cpp" />
     <ClCompile Include="Source\Scene\MeshBVH.cpp" />
@@ -407,6 +424,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
