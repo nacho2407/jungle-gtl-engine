@@ -98,7 +98,8 @@ namespace
 		FRenderer& Renderer,
 		FSceneRenderFrame& OutFrame,
 		FObjectUniformStream& ObjectUniformStream,
-		uint64& InOutSubmissionOrder)
+		uint64& InOutSubmissionOrder,
+		TArray<FSortKey>& OutSortKeys)
 	{
 		bool bHasCachedObjectAllocation = false;
 		FMatrix CachedWorldMatrix = FMatrix::Identity;
@@ -142,6 +143,15 @@ namespace
 
 			OutFrame.RegisterMeshUpload(RenderItem.RenderMesh);
 			OutFrame.GetPassQueue(RenderPass).push_back(DrawCommand);
+
+			if (RenderPass == ERenderPass::Opaque)
+			{
+				OutSortKeys.push_back({
+					DrawCommand.MaterialKey,
+					DrawCommand.MeshKey,
+					static_cast<uint32>(OutFrame.GetPassQueue(RenderPass).size() - 1)
+					});
+			}
 		}
 	}
 
@@ -221,8 +231,12 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 	Renderer->ObjectUniformStream->Reset();
 
 	TArray<FMeshRenderItem> CollectedRenderItems;
-	CollectedRenderItems.reserve(1);
+	CollectedRenderItems.reserve(8);
 	uint64 SubmissionOrder = 0;
+
+	//GameJam
+	OpaqueSortKeys.clear();
+	OpaqueSortKeys.reserve(Queue.Commands.size());
 
 	for (const FRenderCommand& Command : Queue.Commands)
 	{
@@ -231,12 +245,12 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 		if (Command.SceneProxy)
 		{
 			Command.SceneProxy->CollectMeshBatches(OutFrame.View, *Renderer, CollectedRenderItems);
-			BuildDrawCommands(CollectedRenderItems, &Command, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder);
+			BuildDrawCommands(CollectedRenderItems, &Command, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder, OpaqueSortKeys);
 			continue;
 		}
 
 		AppendDirectRenderItem(Command, CollectedRenderItems);
-		BuildDrawCommands(CollectedRenderItems, nullptr, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder);
+		BuildDrawCommands(CollectedRenderItems, nullptr, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder, OpaqueSortKeys);
 	}
 
 	if (!OutFrame.MeshUploads.empty())
@@ -249,7 +263,38 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 	if (OutFrame.GetPassQueue(ERenderPass::Opaque).size() > 1)
 	{
 		TArray<FMeshDrawCommand>& OpaqueCommands = OutFrame.GetPassQueue(ERenderPass::Opaque);
-		std::sort(OpaqueCommands.begin(), OpaqueCommands.end(), CompareDrawCommands);
+
+		uint64 NewHash = Queue.Commands.size();
+		for (const FRenderCommand& Command : Queue.Commands)
+		{
+			NewHash ^= reinterpret_cast<uint64>(Command.SceneProxy) + 0x9e3779b9 + (NewHash << 6) + (NewHash >> 2);
+		}
+
+		if (bCacheVaild && NewHash == CachedCommandHash && CachedOpaqueCommands.size() == OpaqueCommands.size())
+		{
+			OpaqueCommands = CachedOpaqueCommands;
+		}
+		else
+		{
+			std::sort(OpaqueSortKeys.begin(), OpaqueSortKeys.end(),
+				[](const FSortKey& A, const FSortKey& B)
+				{
+					if (A.MaterialKey != B.MaterialKey) return A.MaterialKey < B.MaterialKey;
+					return A.MeshKey < B.MeshKey;
+				});
+
+			TArray<FMeshDrawCommand> SortedCommands;
+			SortedCommands.reserve(OpaqueCommands.size());
+			for (const FSortKey& Key : OpaqueSortKeys)
+			{
+				SortedCommands.push_back(OpaqueCommands[Key.OriginalIndex]);
+			}
+			OpaqueCommands = std::move(SortedCommands);
+
+			CachedOpaqueCommands = OpaqueCommands;
+			CachedCommandHash = NewHash;
+			bCacheVaild = true;
+		}
 	}
 }
 

@@ -84,7 +84,7 @@ void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer&
 		{
 			MeshBatch.Material = Renderer.GetDefaultMaterial();
 		}
-		OutMeshBatches.push_back(MeshBatch);
+		OutMeshBatches.push_back(std::move(MeshBatch));
 	}
 }
 

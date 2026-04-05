@@ -17,6 +17,14 @@ struct ENGINE_API FRenderPassState
 	FBlendStateOption BlendState;
 };
 
+struct ENGINE_API FSortKey
+{
+	uint64 MaterialKey;
+	uint64 MeshKey;
+	uint32 OriginalIndex;
+};
+
+
 // GameJam
 //struct ENGINE_API FLightSceneData
 //{
@@ -65,4 +73,10 @@ private:
 
 private:
 	FRenderer* Renderer = nullptr;
+
+	mutable TArray<FMeshDrawCommand> CachedOpaqueCommands;
+	mutable uint64 CachedCommandHash = 0;
+	mutable bool bCacheVaild = false;
+
+	mutable TArray<FSortKey> OpaqueSortKeys;
 };
