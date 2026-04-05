@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
+#include <immintrin.h>
 
 /**
  * 월드 내 actor/primitive의 배치가 바뀌었음을 표시해 다음 raycast 전에 BVH를 다시 빌드하게 합니다.
@@ -86,6 +87,12 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
  */
 bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
+	struct FTraversalEntry
+	{
+		int32 NodeIndex;
+		float TMin;
+	};
+
 	OutHitResult = {};
 	OutActor = nullptr;
 	if (Nodes.empty())
@@ -93,31 +100,48 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		return false;
 	}
 
-	TArray<int32> NodeStack;
-	NodeStack.push_back(0); //루트
+	TArray<FTraversalEntry> NodeStack;
+	NodeStack.reserve(64);
+
+	float RootTMin = 0.0f;
+	float RootTMax = 0.0f;
+	if (!FRayUtils::IntersectRayAABB(Ray, Nodes[0].Bounds.Min, Nodes[0].Bounds.Max, RootTMin, RootTMax))
+	{
+		return false;
+	}
+
+	// AVX 연산을 위해 레이의 역방향(1/dir)을 미리 계산
+	// 0으로 나누는 경우를 대비해 아주 작은 값으로 처리
+	auto safe_inv = [](float d) {
+		return std::abs(d) > 1e-8f ? 1.0f / d : 1e30f;
+	};
+	__m256 ray_org_x = _mm256_set1_ps(Ray.Origin.X);
+	__m256 ray_org_y = _mm256_set1_ps(Ray.Origin.Y);
+	__m256 ray_org_z = _mm256_set1_ps(Ray.Origin.Z);
+	__m256 inv_dir_x = _mm256_set1_ps(safe_inv(Ray.Direction.X));
+	__m256 inv_dir_y = _mm256_set1_ps(safe_inv(Ray.Direction.Y));
+	__m256 inv_dir_z = _mm256_set1_ps(safe_inv(Ray.Direction.Z));
+
+	NodeStack.push_back({ 0, RootTMin });
 	while (!NodeStack.empty())
 	{
-		const int32 NodeIndex = NodeStack.back(); //이번 노드
+		const FTraversalEntry Entry = NodeStack.back();
 		NodeStack.pop_back();
-
-		//이번 노드의 BVH AABB와 충돌하지 않으면 스킵.
-		const FNode& Node = Nodes[NodeIndex];
-		if (!FRayUtils::CheckRayAABB(Ray, Node.Bounds.Min, Node.Bounds.Max))
+		if (Entry.TMin > OutHitResult.Distance)
 		{
 			continue;
 		}
 
-		//리프 노드라면 실제 primitive와 충돌 검사 수행
+		const int32 NodeIndex = Entry.NodeIndex;
+		const FNode& Node = Nodes[NodeIndex];
+
 		if (Node.IsLeaf())
 		{
-			//leaf 노드는 연속된 primitive 구간을 보관하며 트리 깊이를 너무 늘어나는 걸 차단합니다
 			for (int32 LeafIndex = Node.FirstLeaf; LeafIndex < Node.FirstLeaf + Node.LeafCount; ++LeafIndex)
 			{
 				const FLeaf& Leaf = Leaves[LeafIndex];
-				if (!Leaf.Primitive || !Leaf.Owner || !Leaf.Owner->IsVisible() || !Leaf.Primitive->IsVisible())
-					continue;
 				FHitResult CandidateHit{};
-				if (FRayUtils::RaycastComponent(Leaf.Primitive, Ray, CandidateHit) &&
+				if (Leaf.Primitive->LineTraceComponent(Ray, CandidateHit) &&
 					CandidateHit.Distance < OutHitResult.Distance)
 				{
 					OutHitResult = CandidateHit;
@@ -127,13 +151,73 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			continue;
 		}
 
-		// 내부 노드는 최대 8개의 자식을 가지므로 AABB에 걸린 자식들을 계속 순회합니다.
-		for (int32 ChildIndex = 0; ChildIndex < Node.ChildCount; ++ChildIndex)
+		// AVX2를 이용한 8개 자식 노드 AABB 동시 검사
+		__m256 min_x = _mm256_loadu_ps(Node.ChildMinX);
+		__m256 min_y = _mm256_loadu_ps(Node.ChildMinY);
+		__m256 min_z = _mm256_loadu_ps(Node.ChildMinZ);
+		__m256 max_x = _mm256_loadu_ps(Node.ChildMaxX);
+		__m256 max_y = _mm256_loadu_ps(Node.ChildMaxY);
+		__m256 max_z = _mm256_loadu_ps(Node.ChildMaxZ);
+
+		// Slab method 적용
+		__m256 t1_x = _mm256_mul_ps(_mm256_sub_ps(min_x, ray_org_x), inv_dir_x);
+		__m256 t2_x = _mm256_mul_ps(_mm256_sub_ps(max_x, ray_org_x), inv_dir_x);
+		__m256 t1_y = _mm256_mul_ps(_mm256_sub_ps(min_y, ray_org_y), inv_dir_y);
+		__m256 t2_y = _mm256_mul_ps(_mm256_sub_ps(max_y, ray_org_y), inv_dir_y);
+		__m256 t1_z = _mm256_mul_ps(_mm256_sub_ps(min_z, ray_org_z), inv_dir_z);
+		__m256 t2_z = _mm256_mul_ps(_mm256_sub_ps(max_z, ray_org_z), inv_dir_z);
+
+		__m256 t_min = _mm256_max_ps(
+			_mm256_max_ps(_mm256_min_ps(t1_x, t2_x), _mm256_min_ps(t1_y, t2_y)),
+			_mm256_min_ps(t1_z, t2_z)
+		);
+		__m256 t_max = _mm256_min_ps(
+			_mm256_min_ps(_mm256_max_ps(t1_x, t2_x), _mm256_max_ps(t1_y, t2_y)),
+			_mm256_max_ps(t1_z, t2_z)
+		);
+
+		// 충돌 조건: t_min <= t_max && t_max >= 0 && t_min < OutHitResult.Distance
+		__m256 hit_mask = _mm256_and_ps(
+			_mm256_cmp_ps(t_min, t_max, _CMP_LE_OQ),
+			_mm256_and_ps(
+				_mm256_cmp_ps(t_max, _mm256_setzero_ps(), _CMP_GE_OQ),
+				_mm256_cmp_ps(t_min, _mm256_set1_ps(OutHitResult.Distance), _CMP_LT_OQ)
+			)
+		);
+
+		int mask = _mm256_movemask_ps(hit_mask);
+		if (mask == 0) continue;
+
+		// 충돌한 자식들을 TMin 기준으로 정렬하여 스택에 넣기 위해 수집
+		FTraversalEntry ChildEntries[8];
+		int32 ChildEntryCount = 0;
+		float TMinValues[8];
+		_mm256_storeu_ps(TMinValues, t_min);
+
+		for (int32 i = 0; i < 8; ++i)
 		{
-			if (Node.Children[ChildIndex] >= 0)
+			if ((mask >> i) & 1)
 			{
-				NodeStack.push_back(Node.Children[ChildIndex]);
+				ChildEntries[ChildEntryCount++] = { Node.Children[i], TMinValues[i] };
 			}
+		}
+
+		// 거리에 따른 간단한 삽입 정렬 (가까운 것을 나중에 넣어서 먼저 팝되도록 함)
+		for (int32 I = 1; I < ChildEntryCount; ++I)
+		{
+			FTraversalEntry Key = ChildEntries[I];
+			int32 J = I - 1;
+			while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
+			{
+				ChildEntries[J + 1] = ChildEntries[J];
+				--J;
+			}
+			ChildEntries[J + 1] = Key;
+		}
+
+		for (int32 I = 0; I < ChildEntryCount; ++I)
+		{
+			NodeStack.push_back(ChildEntries[I]);
 		}
 	}
 	return OutActor != nullptr;
@@ -216,7 +300,29 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 			continue;
 		}
 
-		Nodes[NodeIndex].Children[Nodes[NodeIndex].ChildCount++] = BuildRecursive(RangeStart, RangeEnd);
+		const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
+		const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+		
+		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+		
+		// 자식의 Bounds 데이터를 부모의 SIMD용 배열(SOA)에 미리 저장
+		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+		Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+		Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+		Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+		Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+		Nodes[NodeIndex].ChildCount++;
+	}
+
+	// 나머지 빈 슬롯(ChildCount ~ 7)은 무효한 박스(Min > Max)로 채워 
+	// SIMD 연산 시 자연스럽게 실패하게 만듭니다.
+	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
+	{
+		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
+		Nodes[NodeIndex].ChildMaxX[i] = -1e30f;
 	}
 
 	return NodeIndex;
