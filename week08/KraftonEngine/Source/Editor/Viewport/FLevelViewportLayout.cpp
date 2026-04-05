@@ -834,7 +834,6 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
 			ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
 			ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
-			ImGui::Checkbox("Occlusion BVH", &Opts.ShowFlags.bOcclusionBVH);
 
 			ImGui::Separator();
 

@@ -102,9 +102,6 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		if (ShowFlags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Bus);
 
-		if (ShowFlags.bOcclusionBVH)
-			Collector.CollectOcclusionBVHDebug(World->GetOcclusionBVH(), Bus);
-
 		if (VC == Editor->GetActiveViewport())
 			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Bus);
 	}
