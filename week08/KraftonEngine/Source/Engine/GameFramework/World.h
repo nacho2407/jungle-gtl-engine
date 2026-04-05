@@ -65,10 +65,15 @@ private:
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
 
 	UCameraComponent* ActiveCamera = nullptr;
+	UCameraComponent* LastLODUpdateCamera = nullptr;
 	bool bHasBegunPlay = false;
+	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;
 	bool bDeferredPickingBVHDirty = false;
+	uint32 VisibleProxyBuildFrame = 0;
+	FVector LastFullLODUpdateCameraForward = FVector(1, 0, 0);
+	FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
 	FScene Scene;
 	FDebugDrawQueue DebugDrawQueue;
 
