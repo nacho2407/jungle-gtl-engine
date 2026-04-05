@@ -5,7 +5,7 @@
 uint32 FDrawCallStats::Count = 0;
 
 #if STATS
-uint32 FLODStats::LODCount[3] = { 0, 0, 0 };
+uint32 FLODStats::LODCount[4] = { 0, 0, 0, 0 };
 #endif
 
 FStatManager::FStatManager()

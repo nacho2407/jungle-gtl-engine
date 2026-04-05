@@ -42,9 +42,13 @@ namespace Key
 	constexpr const char* ViewportType = "ViewportType";
 	constexpr const char* SplitterRatios = "SplitterRatios";
 
-	// Runtime
-	constexpr const char* Runtime = "Runtime";
-	constexpr const char* RunTimeOptimization = "RunTimeOptimization";
+	// UI Widgets
+	constexpr const char* UIWidgets = "UIWidgets";
+	constexpr const char* ShowConsole = "ShowConsole";
+	constexpr const char* ShowControlPanel = "ShowControlPanel";
+	constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
+	constexpr const char* ShowSceneManager = "ShowSceneManager";
+	constexpr const char* ShowStatProfiler = "ShowStatProfiler";
 
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
@@ -115,10 +119,14 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	LayoutObj[Key::SplitterRatios] = RatiosArr;
 	Root[Key::Layout] = LayoutObj;
 
-	// Runtime
-	JSON RuntimeObj = Object();
-	RuntimeObj[Key::RunTimeOptimization] = bRunTimeOptimization;
-	Root[Key::Runtime] = RuntimeObj;
+	// UI Widgets
+	JSON WidgetsObj = Object();
+	WidgetsObj[Key::ShowConsole] = UI.bConsole;
+	WidgetsObj[Key::ShowControlPanel] = UI.bControl;
+	WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
+	WidgetsObj[Key::ShowSceneManager] = UI.bScene;
+	WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
+	Root[Key::UIWidgets] = WidgetsObj;
 
 	// Perspective Camera
 	JSON CamObj = Object();
@@ -254,12 +262,15 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		}
 	}
 
-	// Runtime
-	if (Root.hasKey(Key::Runtime))
+	// UI Widgets
+	if (Root.hasKey(Key::UIWidgets))
 	{
-		JSON RuntimeObj = Root[Key::Runtime];
-		if (RuntimeObj.hasKey(Key::RunTimeOptimization))
-			bRunTimeOptimization = RuntimeObj[Key::RunTimeOptimization].ToBool();
+		JSON W = Root[Key::UIWidgets];
+		if (W.hasKey(Key::ShowConsole))        UI.bConsole = W[Key::ShowConsole].ToBool();
+		if (W.hasKey(Key::ShowControlPanel))   UI.bControl = W[Key::ShowControlPanel].ToBool();
+		if (W.hasKey(Key::ShowPropertyWindow)) UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
+		if (W.hasKey(Key::ShowSceneManager))   UI.bScene = W[Key::ShowSceneManager].ToBool();
+		if (W.hasKey(Key::ShowStatProfiler))   UI.bStat = W[Key::ShowStatProfiler].ToBool();
 	}
 
 	// Perspective Camera

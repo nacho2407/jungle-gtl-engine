@@ -50,6 +50,41 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
+	// --- 우상단 Windows 토글 버튼 ---
+	{
+		FEditorSettings& S = FEditorSettings::Get();
+		const ImGuiViewport* VP = ImGui::GetMainViewport();
+		const float ButtonW = 80.0f;
+		const float Margin = 8.0f;
+		ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - ButtonW - Margin, VP->Pos.y + Margin));
+		ImGui::SetNextWindowSize(ImVec2(0, 0));
+		ImGui::Begin("##WidgetToggle", nullptr,
+			ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_NoDocking);
+		if (ImGui::Button("Windows", ImVec2(ButtonW, 0)))
+		{
+			bShowWidgetList = !bShowWidgetList;
+		}
+		ImGui::End();
+
+		if (bShowWidgetList)
+		{
+			ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - 150.0f - Margin, VP->Pos.y + Margin + 30.0f));
+			ImGui::SetNextWindowSize(ImVec2(150.0f, 0));
+			ImGui::Begin("##WidgetList", &bShowWidgetList,
+				ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+				ImGuiWindowFlags_NoDocking);
+			ImGui::Checkbox("Console", &S.UI.bConsole);
+			ImGui::Checkbox("Control", &S.UI.bControl);
+			ImGui::Checkbox("Property", &S.UI.bProperty);
+			ImGui::Checkbox("Scene", &S.UI.bScene);
+			ImGui::Checkbox("Stat", &S.UI.bStat);
+			ImGui::End();
+		}
+	}
+
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 	if (EditorEngine)
 	{
@@ -57,29 +92,33 @@ void FEditorMainPanel::Render(float DeltaTime)
 		EditorEngine->RenderViewportUI(DeltaTime);
 	}
 
-	if (!FEditorSettings::Get().bRunTimeOptimization)
+	const FEditorSettings& Settings = FEditorSettings::Get();
+
+	if (Settings.UI.bConsole)
 	{
-		{
-			SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
-			ConsoleWidget.Render(DeltaTime);
-		}
-
-		{
-			SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
-			ControlWidget.Render(DeltaTime);
-		}
-
-		{
-			SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
-			PropertyWidget.Render(DeltaTime);
-		}
+		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
+		ConsoleWidget.Render(DeltaTime);
 	}
 
+	if (Settings.UI.bControl)
+	{
+		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
+		ControlWidget.Render(DeltaTime);
+	}
+
+	if (Settings.UI.bProperty)
+	{
+		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
+		PropertyWidget.Render(DeltaTime);
+	}
+
+	if (Settings.UI.bScene)
 	{
 		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
 		SceneWidget.Render(DeltaTime);
 	}
 
+	if (Settings.UI.bStat)
 	{
 		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
 		StatWidget.Render(DeltaTime);
