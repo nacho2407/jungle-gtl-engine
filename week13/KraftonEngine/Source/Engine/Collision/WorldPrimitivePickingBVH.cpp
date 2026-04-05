@@ -1,4 +1,4 @@
-#include "Collision/WorldPrimitivePickingBVH.h"
+﻿#include "Collision/WorldPrimitivePickingBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Collision/RayUtilsSIMD.h"
@@ -146,20 +146,26 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				}
 			}
 
+			int32 ClosestEntryIndex = 0;
 			for (int32 I = 1; I < PrimitiveEntryCount; ++I)
 			{
-				FTraversalEntry Key = PrimitiveEntries[I];
-				int32 J = I - 1;
-				while (J >= 0 && PrimitiveEntries[J].TMin < Key.TMin)
+				if (PrimitiveEntries[I].TMin < PrimitiveEntries[ClosestEntryIndex].TMin)
 				{
-					PrimitiveEntries[J + 1] = PrimitiveEntries[J];
-					--J;
+					ClosestEntryIndex = I;
 				}
-				PrimitiveEntries[J + 1] = Key;
+			}
+			if (PrimitiveEntryCount > 1 && ClosestEntryIndex != 0)
+			{
+				std::swap(PrimitiveEntries[0], PrimitiveEntries[ClosestEntryIndex]);
 			}
 
 			for (int32 EntryIndex = 0; EntryIndex < PrimitiveEntryCount; ++EntryIndex)
 			{
+				if (PrimitiveEntries[EntryIndex].TMin >= OutHitResult.Distance)
+				{
+					continue;
+				}
+
 				const FLeaf& Leaf = Leaves[PrimitiveEntries[EntryIndex].NodeIndex];
 				FHitResult CandidateHit{};
 				const uint64 NarrowPhaseStart = FPlatformTime::Cycles64();
