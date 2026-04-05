@@ -8,6 +8,14 @@
 
 #include <algorithm>
 
+namespace
+{
+	constexpr int32 WorldBVHChildFanout = 8;
+	constexpr int32 WorldBVHLeafPacketSize = 8;
+	constexpr int32 WorldBVHMaxLeafSize = 16;
+	constexpr int32 WorldBVHMaxTraversalStack = 128;
+}
+
 void FWorldPrimitivePickingBVH::MarkDirty()
 {
 	bDirty = true;
@@ -17,6 +25,7 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 {
 	Leaves.clear();
 	Nodes.clear();
+	PrimitivePackets.clear();
 
 	for (AActor* Actor : Actors)
 	{
@@ -48,6 +57,7 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 
 	if (!Leaves.empty())
 	{
+		PrimitivePackets.reserve((static_cast<int32>(Leaves.size()) + WorldBVHLeafPacketSize - 1) / WorldBVHLeafPacketSize);
 		BuildRecursive(0, static_cast<int32>(Leaves.size()));
 	}
 
@@ -68,8 +78,8 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 {
 	struct FTraversalEntry
 	{
-		int32 NodeIndex;
-		float TMin;
+		int32 NodeIndex = -1;
+		float TMin = 0.0f;
 	};
 
 	OutHitResult = {};
@@ -80,9 +90,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		return false;
 	}
 
-	TArray<FTraversalEntry> NodeStack;
-	NodeStack.reserve(64);
-
 	float RootTMin = 0.0f;
 	float RootTMax = 0.0f;
 	if (!FRayUtils::IntersectRayAABB(Ray, Nodes[0].Bounds.Min, Nodes[0].Bounds.Max, RootTMin, RootTMax))
@@ -92,44 +99,50 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 
 	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
 
-	NodeStack.push_back({ 0, RootTMin });
-	while (!NodeStack.empty())
+	FTraversalEntry NodeStack[WorldBVHMaxTraversalStack];
+	int32 StackSize = 0;
+	NodeStack[StackSize++] = { 0, RootTMin };
+
+	while (StackSize > 0)
 	{
-		const FTraversalEntry Entry = NodeStack.back();
-		NodeStack.pop_back();
+		const FTraversalEntry Entry = NodeStack[--StackSize];
 		if (Entry.TMin > OutHitResult.Distance)
 		{
 			continue;
 		}
 
 		const FNode& Node = Nodes[Entry.NodeIndex];
-
 		if (Node.IsLeaf())
 		{
 			LastTraversalMetrics.LeafNodesVisited++;
 
-			float PrimitiveTMinValues[8];
-			const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
-				RayContext,
-				Node.LeafMinX, Node.LeafMinY, Node.LeafMinZ,
-				Node.LeafMaxX, Node.LeafMaxY, Node.LeafMaxZ,
-				OutHitResult.Distance,
-				PrimitiveTMinValues);
-			LastTraversalMetrics.PrimitiveAABBTests += static_cast<uint32>(Node.LeafCount);
-
-			if (PrimitiveMask == 0)
-			{
-				continue;
-			}
-
-			FTraversalEntry PrimitiveEntries[8];
+			FTraversalEntry PrimitiveEntries[WorldBVHMaxLeafSize];
 			int32 PrimitiveEntryCount = 0;
-			for (int32 i = 0; i < Node.LeafCount; ++i)
+
+			for (int32 PacketIndex = 0; PacketIndex < Node.PrimitivePacketCount; ++PacketIndex)
 			{
-				if ((PrimitiveMask >> i) & 1)
+				const FPrimitivePacket& Packet = PrimitivePackets[Node.FirstPrimitivePacket + PacketIndex];
+				float PrimitiveTMinValues[8];
+				const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
+					RayContext,
+					Packet.MinX, Packet.MinY, Packet.MinZ,
+					Packet.MaxX, Packet.MaxY, Packet.MaxZ,
+					OutHitResult.Distance,
+					PrimitiveTMinValues);
+				LastTraversalMetrics.PrimitiveAABBTests += static_cast<uint32>(Packet.PrimitiveCount);
+
+				if (PrimitiveMask == 0)
 				{
-					LastTraversalMetrics.PrimitiveAABBHits++;
-					PrimitiveEntries[PrimitiveEntryCount++] = { Node.LeafPrimitiveIndices[i], PrimitiveTMinValues[i] };
+					continue;
+				}
+
+				for (int32 i = 0; i < Packet.PrimitiveCount; ++i)
+				{
+					if ((PrimitiveMask >> i) & 1)
+					{
+						LastTraversalMetrics.PrimitiveAABBHits++;
+						PrimitiveEntries[PrimitiveEntryCount++] = { Packet.PrimitiveIndices[i], PrimitiveTMinValues[i] };
+					}
 				}
 			}
 
@@ -185,10 +198,10 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			continue;
 		}
 
-		FTraversalEntry ChildEntries[8];
+		FTraversalEntry ChildEntries[WorldBVHChildFanout];
 		int32 ChildEntryCount = 0;
 
-		for (int32 i = 0; i < 8; ++i)
+		for (int32 i = 0; i < Node.ChildCount; ++i)
 		{
 			if ((Mask >> i) & 1)
 			{
@@ -208,11 +221,12 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			ChildEntries[J + 1] = Key;
 		}
 
-		for (int32 I = 0; I < ChildEntryCount; ++I)
+		for (int32 I = 0; I < ChildEntryCount && StackSize < WorldBVHMaxTraversalStack; ++I)
 		{
-			NodeStack.push_back(ChildEntries[I]);
+			NodeStack[StackSize++] = ChildEntries[I];
 		}
 	}
+
 	return OutActor != nullptr;
 }
 
@@ -230,37 +244,50 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 	}
 	Nodes[NodeIndex].Bounds = Bounds;
 
-	constexpr int32 MaxLeafSize = 8;
 	const int32 LeafCount = End - Start;
-	if (LeafCount <= MaxLeafSize)
+	if (LeafCount <= WorldBVHMaxLeafSize)
 	{
 		Nodes[NodeIndex].FirstLeaf = Start;
 		Nodes[NodeIndex].LeafCount = LeafCount;
+		Nodes[NodeIndex].FirstPrimitivePacket = static_cast<int32>(PrimitivePackets.size());
+		Nodes[NodeIndex].PrimitivePacketCount = (LeafCount + WorldBVHLeafPacketSize - 1) / WorldBVHLeafPacketSize;
 
-		for (int32 LocalLeafIndex = 0; LocalLeafIndex < 8; ++LocalLeafIndex)
+		for (int32 PacketIndex = 0; PacketIndex < Nodes[NodeIndex].PrimitivePacketCount; ++PacketIndex)
 		{
-			if (LocalLeafIndex < LeafCount)
+			const int32 PacketStart = Start + PacketIndex * WorldBVHLeafPacketSize;
+			const int32 PacketEnd = std::min(PacketStart + WorldBVHLeafPacketSize, End);
+
+			FPrimitivePacket Packet{};
+			Packet.PrimitiveCount = PacketEnd - PacketStart;
+
+			for (int32 LocalIndex = 0; LocalIndex < WorldBVHLeafPacketSize; ++LocalIndex)
 			{
-				const int32 LeafIndex = Start + LocalLeafIndex;
-				const FBoundingBox& LeafBounds = Leaves[LeafIndex].Bounds;
-				Nodes[NodeIndex].LeafPrimitiveIndices[LocalLeafIndex] = LeafIndex;
-				Nodes[NodeIndex].LeafMinX[LocalLeafIndex] = LeafBounds.Min.X;
-				Nodes[NodeIndex].LeafMinY[LocalLeafIndex] = LeafBounds.Min.Y;
-				Nodes[NodeIndex].LeafMinZ[LocalLeafIndex] = LeafBounds.Min.Z;
-				Nodes[NodeIndex].LeafMaxX[LocalLeafIndex] = LeafBounds.Max.X;
-				Nodes[NodeIndex].LeafMaxY[LocalLeafIndex] = LeafBounds.Max.Y;
-				Nodes[NodeIndex].LeafMaxZ[LocalLeafIndex] = LeafBounds.Max.Z;
+				if (LocalIndex < Packet.PrimitiveCount)
+				{
+					const int32 LeafIndex = PacketStart + LocalIndex;
+					const FBoundingBox& LeafBounds = Leaves[LeafIndex].Bounds;
+					Packet.PrimitiveIndices[LocalIndex] = LeafIndex;
+					Packet.MinX[LocalIndex] = LeafBounds.Min.X;
+					Packet.MinY[LocalIndex] = LeafBounds.Min.Y;
+					Packet.MinZ[LocalIndex] = LeafBounds.Min.Z;
+					Packet.MaxX[LocalIndex] = LeafBounds.Max.X;
+					Packet.MaxY[LocalIndex] = LeafBounds.Max.Y;
+					Packet.MaxZ[LocalIndex] = LeafBounds.Max.Z;
+				}
+				else
+				{
+					Packet.MinX[LocalIndex] = 1e30f;
+					Packet.MinY[LocalIndex] = 1e30f;
+					Packet.MinZ[LocalIndex] = 1e30f;
+					Packet.MaxX[LocalIndex] = -1e30f;
+					Packet.MaxY[LocalIndex] = -1e30f;
+					Packet.MaxZ[LocalIndex] = -1e30f;
+				}
 			}
-			else
-			{
-				Nodes[NodeIndex].LeafMinX[LocalLeafIndex] = 1e30f;
-				Nodes[NodeIndex].LeafMinY[LocalLeafIndex] = 1e30f;
-				Nodes[NodeIndex].LeafMinZ[LocalLeafIndex] = 1e30f;
-				Nodes[NodeIndex].LeafMaxX[LocalLeafIndex] = -1e30f;
-				Nodes[NodeIndex].LeafMaxY[LocalLeafIndex] = -1e30f;
-				Nodes[NodeIndex].LeafMaxZ[LocalLeafIndex] = -1e30f;
-			}
+
+			PrimitivePackets.push_back(Packet);
 		}
+
 		return NodeIndex;
 	}
 
@@ -299,7 +326,7 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 			return CenterA.X < CenterB.X;
 		});
 
-	const int32 DesiredChildren = std::min<int32>(8, LeafCount);
+	const int32 DesiredChildren = std::min<int32>(WorldBVHChildFanout, LeafCount);
 	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
 	{
 		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
@@ -325,7 +352,7 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 		Nodes[NodeIndex].ChildCount++;
 	}
 
-	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
+	for (int32 i = Nodes[NodeIndex].ChildCount; i < WorldBVHChildFanout; ++i)
 	{
 		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
 		Nodes[NodeIndex].ChildMinY[i] = 1e30f;

@@ -25,7 +25,7 @@ public:
 
 	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
-	FVector GetVectorForAxis(int32 Axis);
+	FVector GetVectorForAxis(int32 Axis) const;
 	void RenderGizmo() {}
 	void SetTarget(AActor* NewTarget);
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
@@ -76,6 +76,7 @@ public:
 
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
+	bool IntersectRayRotationHandle(const FRay& Ray, int32 Axis, float& OutRayT) const;
 
 	//Control Target Method
 	void HandleDrag(float DragAmount);
