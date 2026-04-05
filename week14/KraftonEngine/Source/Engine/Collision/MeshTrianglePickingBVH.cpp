@@ -68,7 +68,13 @@ void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 
 /**
  * 로컬 공간 ray로 mesh BVH를 순회하면서 가장 가까운 삼각형 hit를 찾습니다.
- * 내부 노드 AABB 검사와 리프 노드 삼각형 교차 검사 모두 AVX2 SIMD를 사용합니다.
+ * 내부 노드 AABB 검사와 리프 노드 삼각형 교차 검사 모두 AVX2 SIMD(256비트)를 사용합니다.
+ * 
+ * \param LocalOrigin
+ * \param LocalDirection
+ * \param Mesh
+ * \param OutHitResult
+ * \return 
  */
 bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
@@ -98,7 +104,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
-	// triangle narrow phase와 child AABB broad phase 모두 같은 ray SIMD context를 공유합니다.
+	//mesh NBH와 scene BVH 모두 같은 ray SIMD context를 공유합니다.
 	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
 	NodeStack.push_back({ 0, RootTMin });
