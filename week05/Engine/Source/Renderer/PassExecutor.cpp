@@ -64,6 +64,7 @@ void FPassExecutor::Execute(const FSceneRenderFrame& Frame) const
 	for (ERenderPass RenderPass : GPassExecutionOrder)
 	{
 		const TArray<FMeshDrawCommand>& PassCommands = Frame.GetPassQueue(RenderPass);
+		if (PassCommands.empty()) continue; // 빈 패스면 스킵
 		BindPassState(*Renderer, Frame.GetPassState(RenderPass));
 		ExecuteQueue(PassCommands);
 	}
