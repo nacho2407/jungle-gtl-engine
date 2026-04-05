@@ -4,10 +4,10 @@
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
 
-void FOverlayStatSystem::RecordPickingAttempt(double ElapsedMs)
+void FOverlayStatSystem::RecordPickingAttempt(const FPickingFrameStats& Stats)
 {
-	LastPickingTimeMs = ElapsedMs;
-	AccumulatedPickingTimeMs += ElapsedMs;
+	LastPickingStats = Stats;
+	AccumulatedPickingTimeMs += Stats.TotalMs;
 	++PickingAttemptCount;
 }
 
@@ -38,18 +38,24 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 		{
 			char Buffer[128] = {};
 			const int32 NumAttempts = static_cast<int32>(PickingAttemptCount);
+			snprintf(Buffer, sizeof(Buffer), "Picking %.4f ms : Attempts %d : Accumulated %.4f ms",
+				LastPickingStats.TotalMs, NumAttempts, AccumulatedPickingTimeMs);
+			Group.Lines.push_back(FString(Buffer));
 
-			//정확한 성능 측정을 위해 일단 double 출력.
-			const double PickingTimeMS = LastPickingTimeMs;
-			const double AccumulatedTime = AccumulatedPickingTimeMs;
-			snprintf(Buffer, sizeof(Buffer), "Picking Time %.4f ms : Num Attempts %d : Accumulated Time %.4f ms",
-				PickingTimeMS, NumAttempts, AccumulatedTime);
+			snprintf(Buffer, sizeof(Buffer), "Stages Gizmo %.4f / World %.4f / Narrow %.4f / Mesh %.4f ms",
+				LastPickingStats.GizmoMs, LastPickingStats.WorldBVHMs,
+				LastPickingStats.NarrowPhaseMs, LastPickingStats.MeshBVHMs);
+			Group.Lines.push_back(FString(Buffer));
 
-			//영상에서처럼 정수로 표기할 경우
-			//const int32 PickingTimeMS = static_cast<int32>(LastPickingTimeMs);
-			//const int32 AccumulatedTime = static_cast<int32>(AccumulatedPickingTimeMs);
-			//snprintf(Buffer, sizeof(Buffer), "Picking Time %d ms : Num Attempts %d : Accumulated Time %d ms",
-			//	PickingTimeMS, NumAttempts, AccumulatedTime);
+			snprintf(Buffer, sizeof(Buffer), "World Nodes %u Internal %u Leaf / Primitive %u tested %u hit / Calls %u",
+				LastPickingStats.WorldInternalNodesVisited, LastPickingStats.WorldLeafNodesVisited,
+				LastPickingStats.PrimitiveAABBTests, LastPickingStats.PrimitiveAABBHits,
+				LastPickingStats.PrimitiveNarrowPhaseCalls);
+			Group.Lines.push_back(FString(Buffer));
+
+			snprintf(Buffer, sizeof(Buffer), "Mesh Nodes %u Internal / Packets %u / Triangle Lanes %u",
+				LastPickingStats.MeshInternalNodesVisited, LastPickingStats.MeshLeafPacketsTested,
+				LastPickingStats.MeshTriangleLanesTested);
 			Group.Lines.push_back(FString(Buffer));
 		}
 
