@@ -6,6 +6,43 @@
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
 
+#include <algorithm>
+#include <cstring>
+
+namespace
+{
+	bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
+	{
+		const uintptr_t ASRV = reinterpret_cast<uintptr_t>(A.DiffuseSRV);
+		const uintptr_t BSRV = reinterpret_cast<uintptr_t>(B.DiffuseSRV);
+		if (ASRV != BSRV)
+		{
+			return ASRV < BSRV;
+		}
+
+		if (A.bIsUVScroll != B.bIsUVScroll)
+		{
+			return A.bIsUVScroll < B.bIsUVScroll;
+		}
+
+		const int ColorCmp = std::memcmp(&A.DiffuseColor, &B.DiffuseColor, sizeof(FVector4));
+		if (ColorCmp != 0)
+		{
+			return ColorCmp < 0;
+		}
+
+		return A.FirstIndex < B.FirstIndex;
+	}
+
+	void SortSectionDrawsByMaterial(TArray<FMeshSectionDraw>& Draws)
+	{
+		if (Draws.size() > 1)
+		{
+			std::sort(Draws.begin(), Draws.end(), SectionMaterialLess);
+		}
+	}
+}
+
 // ============================================================
 // FStaticMeshSceneProxy
 // ============================================================
@@ -35,7 +72,6 @@ void FStaticMeshSceneProxy::UpdateMesh()
 	MeshBuffer = Owner->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
 	Pass = ERenderPass::Opaque;
-	UpdateSortKey();
 
 	RebuildSectionDraws();
 }
@@ -68,7 +104,17 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 	UStaticMesh* Mesh = SMC->GetStaticMesh();
 	if (!Mesh || !Mesh->GetStaticMeshAsset())
 	{
+		for (uint32 lod = 0; lod < MAX_LOD; ++lod)
+		{
+			LODData[lod].MeshBuffer = nullptr;
+			LODData[lod].SectionDraws.clear();
+		}
+
+		LODCount = 1;
+		CurrentLOD = 0;
+		MeshBuffer = nullptr;
 		SectionDraws.clear();
+		UpdateSortKey();
 		return;
 	}
 
@@ -104,6 +150,8 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 
 			LODData[lod].SectionDraws.push_back(Draw);
 		}
+
+		SortSectionDrawsByMaterial(LODData[lod].SectionDraws);
 	}
 
 	// LOD0을 활성 슬롯으로 설정

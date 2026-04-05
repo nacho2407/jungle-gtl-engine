@@ -68,13 +68,10 @@ public:
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox CachedBounds;
 
-	// --- Sort Key (Shader|MeshBuffer 조합, 정렬 비교 최적화) ---
+	// --- Sort Keys (Shader|MeshBuffer + Material layout) ---
 	uint64 SortKey = 0;
-	void UpdateSortKey()
-	{
-		SortKey = (static_cast<uint64>(reinterpret_cast<uintptr_t>(Shader) >> 4) << 32)
-				| (static_cast<uint64>(reinterpret_cast<uintptr_t>(MeshBuffer) >> 4) & 0xFFFFFFFF);
-	}
+	uint32 MaterialSortKey = 0;
+	void UpdateSortKey();
 
 	// 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
 	TArray<FMeshSectionDraw> SectionDraws;
@@ -88,4 +85,7 @@ public:
 	// true면 렌더링은 Batcher(Font/SubUV)가 담당 — CollectRender 호출 유지
 	// false면 프록시가 직접 ProxyQueue에 제출
 	bool bBatcherRendered = false;
+
+	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
+	uint32 LastLODUpdateFrame = UINT32_MAX;
 };
