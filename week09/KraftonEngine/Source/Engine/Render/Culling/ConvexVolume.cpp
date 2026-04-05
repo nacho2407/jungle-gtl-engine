@@ -38,3 +38,20 @@ bool FConvexVolume::IntersectAABB(const FBoundingBox& Box) const
 	}
 	return true;
 }
+
+bool FConvexVolume::ContainsAABB(const FBoundingBox& Box) const
+{
+	// Test negative vertex (NVertex) — the corner farthest in the negative
+	// direction of each plane normal. If NVertex is inside all planes,
+	// the entire AABB is fully contained.
+	for (const auto& P : Planes) {
+		FVector4 NVertex = Box.Max;
+		if (P.X >= 0) NVertex.X = Box.Min.X;
+		if (P.Y >= 0) NVertex.Y = Box.Min.Y;
+		if (P.Z >= 0) NVertex.Z = Box.Min.Z;
+
+		if (P.Dot(NVertex) < 0)
+			return false;
+	}
+	return true;
+}

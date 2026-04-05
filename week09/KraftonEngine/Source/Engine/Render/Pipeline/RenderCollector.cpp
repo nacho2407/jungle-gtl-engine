@@ -6,6 +6,7 @@
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
+#include "Render/Culling/GPUOcclusionCulling.h"
 #include <Collision/Octree.h>
 
 void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
@@ -126,6 +127,8 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	const bool bShowBoundingVolume = RenderBus.GetShowFlags().bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
+	const FGPUOcclusionCulling* Occlusion = RenderBus.GetOcclusionCulling();
+
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
 		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
@@ -133,6 +136,10 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			Proxy->UpdatePerViewport(RenderBus);
 
 		if (!Proxy->bVisible) continue;
+
+		// GPU Occlusion Culling — 이전 프레임에서 가려진 프록시 스킵
+		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
+			continue;
 
 		// Batcher 경유 렌더링 (Font, SubUV)
 		if (Proxy->bBatcherRendered)

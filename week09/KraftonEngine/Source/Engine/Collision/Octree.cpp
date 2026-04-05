@@ -265,24 +265,130 @@ void FOctree::Reset(const FBoundingBox& InBounds, uint32 InDepth)
 
 void FOctree::QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
-	if (!ConvexVolume.IntersectAABB(BoundOctree))
-		return;
+	QueryFrustumInternal(ConvexVolume, OutPrimitives, false);
+}
 
-
+void FOctree::CollectAll(TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
 	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
-		{
+		if (Primitive)
 			OutPrimitives.push_back(Primitive);
+	}
+
+	if (IsLeaf()) return;
+
+	for (int i = 0; i < 8; ++i)
+		Children[i]->CollectAll(OutPrimitives);
+}
+
+void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives, bool bParentContained) const
+{
+	if (!bParentContained)
+	{
+		// Node might be outside — test intersection first
+		if (!ConvexVolume.IntersectAABB(BoundOctree))
+			return;
+
+		// Node fully inside frustum — skip per-primitive tests for entire subtree
+		if (ConvexVolume.ContainsAABB(BoundOctree))
+		{
+			CollectAll(OutPrimitives);
+			return;
 		}
 	}
 
+	// Partial overlap (or parent was contained but we still need visibility check)
+	if (bParentContained)
+	{
+		// Parent fully contained — all primitives here are inside frustum
+		for (UPrimitiveComponent* Primitive : PrimitiveList)
+		{
+			if (Primitive)
+				OutPrimitives.push_back(Primitive);
+		}
+	}
+	else
+	{
+		// Partial overlap — test each primitive individually
+		for (UPrimitiveComponent* Primitive : PrimitiveList)
+		{
+			if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
+				OutPrimitives.push_back(Primitive);
+		}
+	}
 
-	if (IsLeaf())
-		return;
+	if (IsLeaf()) return;
 
 	for (int i = 0; i < 8; ++i)
+		Children[i]->QueryFrustumInternal(ConvexVolume, OutPrimitives, bParentContained);
+}
+
+// ================================================================
+// Proxy-direct frustum query — avoids Component→GetSceneProxy() indirection
+// ================================================================
+
+void FOctree::QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const
+{
+	QueryFrustumProxiesInternal(ConvexVolume, OutProxies, false);
+}
+
+void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
+{
+	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		Children[i]->QueryFrustum(ConvexVolume, OutPrimitives);
+		if (Primitive)
+		{
+			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+				OutProxies.push_back(Proxy);
+		}
 	}
+
+	if (IsLeaf()) return;
+
+	for (int i = 0; i < 8; ++i)
+		Children[i]->CollectAllProxies(OutProxies);
+}
+
+void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies, bool bParentContained) const
+{
+	if (!bParentContained)
+	{
+		if (!ConvexVolume.IntersectAABB(BoundOctree))
+			return;
+
+		if (ConvexVolume.ContainsAABB(BoundOctree))
+		{
+			CollectAllProxies(OutProxies);
+			return;
+		}
+	}
+
+	if (bParentContained)
+	{
+		for (UPrimitiveComponent* Primitive : PrimitiveList)
+		{
+			if (Primitive)
+			{
+				if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+					OutProxies.push_back(Proxy);
+			}
+		}
+	}
+	else
+	{
+		for (UPrimitiveComponent* Primitive : PrimitiveList)
+		{
+			if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
+			{
+				if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+					OutProxies.push_back(Proxy);
+			}
+		}
+	}
+
+	if (IsLeaf()) return;
+
+	for (int i = 0; i < 8; ++i)
+		Children[i]->QueryFrustumProxiesInternal(ConvexVolume, OutProxies, bParentContained);
 }
