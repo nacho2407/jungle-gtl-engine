@@ -131,16 +131,25 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+	const FMatrix& WorldInverse = GetWorldInverseMatrix();
+	return LineTraceStaticMeshFast(Ray, WorldMatrix, WorldInverse, OutHitResult);
+}
+
+bool UStaticMeshComponent::LineTraceStaticMeshFast(
+	const FRay& Ray,
+	const FMatrix& WorldMatrix,
+	const FMatrix& WorldInverse,
+	FHitResult& OutHitResult)
+{
 	LastPickingMetrics = {};
 	if (!StaticMesh) return false;
 
-	const FMatrix& WorldInverse = GetWorldInverseMatrix();
-	const FMatrix& WorldMatrix = GetWorldMatrix();
 	FVector LocalOrigin = WorldInverse.TransformPositionWithW(Ray.Origin);
 	FVector LocalDirection = WorldInverse.TransformVector(Ray.Direction);
 	LocalDirection.Normalize();
 
-	//Mesh BVH를 사용해 충돌 테스트 시도.
+	// Mesh BVH만 사용하는 전용 경로입니다. 월드 BVH는 이 함수를 직접 호출해 가상 호출 비용을 피합니다.
 	const uint64 MeshTraversalStart = FPlatformTime::Cycles64();
 	if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
 	{
