@@ -247,11 +247,32 @@ bool FMeshBVH::IntersectRay(const FVector& RayOrigin, const FVector& RayDirectio
 			continue;
 		}
 
-		if (Node.LeftChild >= 0)
+		float LeftNear = 0.0f;
+		float LeftFar = 0.0f;
+		const bool bHitLeft = Node.LeftChild >= 0 && Nodes[Node.LeftChild].Bounds.Intersect(LocalRay, ClosestDistance, LeftNear, LeftFar);
+
+		float RightNear = 0.0f;
+		float RightFar = 0.0f;
+		const bool bHitRight = Node.RightChild >= 0 && Nodes[Node.RightChild].Bounds.Intersect(LocalRay, ClosestDistance, RightNear, RightFar);
+
+		if (bHitLeft && bHitRight)
+		{
+			if (LeftNear <= RightNear)
+			{
+				Stack.push_back(Node.RightChild);
+				Stack.push_back(Node.LeftChild);
+			}
+			else
+			{
+				Stack.push_back(Node.LeftChild);
+				Stack.push_back(Node.RightChild);
+			}
+		}
+		else if (bHitLeft)
 		{
 			Stack.push_back(Node.LeftChild);
 		}
-		if (Node.RightChild >= 0)
+		else if (bHitRight)
 		{
 			Stack.push_back(Node.RightChild);
 		}

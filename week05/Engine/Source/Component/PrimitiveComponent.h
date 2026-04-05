@@ -34,6 +34,11 @@ public:
 
 	virtual FRenderMesh* GetRenderMesh() const { return nullptr; }
 
+	virtual bool IsPickable() const { return true; }
+	virtual bool UseSpherePicking() const { return false; }
+	virtual bool HasMeshIntersection() const { return false; }
+	virtual bool IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const { return false; }
+
 protected:
 	mutable FBoxSphereBounds Bounds;
 	mutable bool bBoundsDirty = true;

@@ -38,10 +38,9 @@ public:
 
 	const TArray<std::shared_ptr<FMaterial>>& GetDefaultMaterials() const { return DefaultMaterials; }
 	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
-
-private:
 	void BuildAccelerationStructureIfNeeded() const;
 
+private:
 	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<std::shared_ptr<FMaterial>> DefaultMaterials;
 	mutable std::unique_ptr<FMeshBVH> TriangleBVH;

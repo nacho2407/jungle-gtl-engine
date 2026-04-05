@@ -10,6 +10,7 @@ public:
 
 	void PostConstruct() override;
 
+	virtual bool IsPickable() const override { return false; }
 	virtual FString GetDisplayText() const override;
 	// SetWorldOffset 반영해서 오브젝트 머리 위에 뜨도록 함
 	virtual FVector GetRenderWorldPosition() const override;

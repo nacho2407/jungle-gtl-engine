@@ -113,6 +113,13 @@ struct FAABB
 
 	bool Intersect(const Ray& ray, float tMax) const
 	{
+		float TNear = 0.0f;
+		float TFar = 0.0f;
+		return Intersect(ray, tMax, TNear, TFar);
+	}
+
+	bool Intersect(const Ray& ray, float tMax, float& OutTNear, float& OutTFar) const
+	{
 		float tmin = 0.0f;
 		float tmax = tMax;
 
@@ -135,6 +142,8 @@ struct FAABB
 			}
 		}
 
+		OutTNear = tmin;
+		OutTFar = tmax;
 		return true;
 	}
 };

@@ -10,6 +10,7 @@ public:
 
 	void PostConstruct() override;
 
+	virtual bool UseSpherePicking() const override { return true; }
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 
 	void SetSize(const FVector2& InSize) { Size = InSize; }
