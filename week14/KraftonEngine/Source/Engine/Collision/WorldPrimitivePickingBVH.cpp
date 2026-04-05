@@ -1,11 +1,11 @@
 ﻿#include "Collision/WorldPrimitivePickingBVH.h"
 
 #include "Collision/RayUtils.h"
+#include "Collision/RayUtilsSIMD.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
-#include <immintrin.h>
 
 /**
  * 월드 내 actor/primitive의 배치가 바뀌었음을 표시해 다음 raycast 전에 BVH를 다시 빌드하게 합니다.
@@ -110,17 +110,9 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		return false;
 	}
 
-	// AVX 연산을 위해 레이의 역방향(1/dir)을 미리 계산
-	// 0으로 나누는 경우를 대비해 아주 작은 값으로 처리
-	auto safe_inv = [](float d) {
-		return std::abs(d) > 1e-8f ? 1.0f / d : 1e30f;
-	};
-	__m256 ray_org_x = _mm256_set1_ps(Ray.Origin.X);
-	__m256 ray_org_y = _mm256_set1_ps(Ray.Origin.Y);
-	__m256 ray_org_z = _mm256_set1_ps(Ray.Origin.Z);
-	__m256 inv_dir_x = _mm256_set1_ps(safe_inv(Ray.Direction.X));
-	__m256 inv_dir_y = _mm256_set1_ps(safe_inv(Ray.Direction.Y));
-	__m256 inv_dir_z = _mm256_set1_ps(safe_inv(Ray.Direction.Z));
+	// 레이의 broadcast 값과 inverse direction을 한 번만 준비하고,
+	// 내부 노드마다 8개 child AABB를 packet 단위로 재사용합니다.
+	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
 
 	NodeStack.push_back({ 0, RootTMin });
 	while (!NodeStack.empty())
@@ -151,48 +143,19 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			continue;
 		}
 
-		// AVX2를 이용한 8개 자식 노드 AABB 동시 검사
-		__m256 min_x = _mm256_loadu_ps(Node.ChildMinX);
-		__m256 min_y = _mm256_loadu_ps(Node.ChildMinY);
-		__m256 min_z = _mm256_loadu_ps(Node.ChildMinZ);
-		__m256 max_x = _mm256_loadu_ps(Node.ChildMaxX);
-		__m256 max_y = _mm256_loadu_ps(Node.ChildMaxY);
-		__m256 max_z = _mm256_loadu_ps(Node.ChildMaxZ);
-
-		// Slab method 적용
-		__m256 t1_x = _mm256_mul_ps(_mm256_sub_ps(min_x, ray_org_x), inv_dir_x);
-		__m256 t2_x = _mm256_mul_ps(_mm256_sub_ps(max_x, ray_org_x), inv_dir_x);
-		__m256 t1_y = _mm256_mul_ps(_mm256_sub_ps(min_y, ray_org_y), inv_dir_y);
-		__m256 t2_y = _mm256_mul_ps(_mm256_sub_ps(max_y, ray_org_y), inv_dir_y);
-		__m256 t1_z = _mm256_mul_ps(_mm256_sub_ps(min_z, ray_org_z), inv_dir_z);
-		__m256 t2_z = _mm256_mul_ps(_mm256_sub_ps(max_z, ray_org_z), inv_dir_z);
-
-		__m256 t_min = _mm256_max_ps(
-			_mm256_max_ps(_mm256_min_ps(t1_x, t2_x), _mm256_min_ps(t1_y, t2_y)),
-			_mm256_min_ps(t1_z, t2_z)
-		);
-		__m256 t_max = _mm256_min_ps(
-			_mm256_min_ps(_mm256_max_ps(t1_x, t2_x), _mm256_max_ps(t1_y, t2_y)),
-			_mm256_max_ps(t1_z, t2_z)
-		);
-
-		// 충돌 조건: t_min <= t_max && t_max >= 0 && t_min < OutHitResult.Distance
-		__m256 hit_mask = _mm256_and_ps(
-			_mm256_cmp_ps(t_min, t_max, _CMP_LE_OQ),
-			_mm256_and_ps(
-				_mm256_cmp_ps(t_max, _mm256_setzero_ps(), _CMP_GE_OQ),
-				_mm256_cmp_ps(t_min, _mm256_set1_ps(OutHitResult.Distance), _CMP_LT_OQ)
-			)
-		);
-
-		int mask = _mm256_movemask_ps(hit_mask);
+		// Broad phase는 helper에 맡기고, traversal 순서 결정은 BVH가 직접 담당합니다.
+		float TMinValues[8];
+		const int32 mask = FRayUtilsSIMD::IntersectAABB8(
+			RayContext,
+			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
+			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
+			OutHitResult.Distance,
+			TMinValues);
 		if (mask == 0) continue;
 
 		// 충돌한 자식들을 TMin 기준으로 정렬하여 스택에 넣기 위해 수집
 		FTraversalEntry ChildEntries[8];
 		int32 ChildEntryCount = 0;
-		float TMinValues[8];
-		_mm256_storeu_ps(TMinValues, t_min);
 
 		for (int32 i = 0; i < 8; ++i)
 		{
@@ -305,7 +268,7 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 		
 		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
 		
-		// 자식의 Bounds 데이터를 부모의 SIMD용 배열(SOA)에 미리 저장
+		// 자식 bounds를 SOA 형태로 캐시해 raycast 시 gather 없이 바로 SIMD 검사합니다.
 		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
 		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
 		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
@@ -322,7 +285,11 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
 	{
 		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
+		Nodes[NodeIndex].ChildMinY[i] = 1e30f;
+		Nodes[NodeIndex].ChildMinZ[i] = 1e30f;
 		Nodes[NodeIndex].ChildMaxX[i] = -1e30f;
+		Nodes[NodeIndex].ChildMaxY[i] = -1e30f;
+		Nodes[NodeIndex].ChildMaxZ[i] = -1e30f;
 	}
 
 	return NodeIndex;
