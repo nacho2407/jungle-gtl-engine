@@ -118,6 +118,16 @@ bool FViewport::CreateResources()
 	hr = Device->CreateDepthStencilView(DepthTexture, &DSVDesc, &DSV);
 	if (FAILED(hr)) return false;
 
+	// DepthSRV: 뎁스 24비트 읽기 (Hi-Z / GPU Occlusion용)
+	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSRVDesc = {};
+	DepthSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	DepthSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	DepthSRVDesc.Texture2D.MipLevels = 1;
+	DepthSRVDesc.Texture2D.MostDetailedMip = 0;
+
+	hr = Device->CreateShaderResourceView(DepthTexture, &DepthSRVDesc, &DepthSRV);
+	if (FAILED(hr)) return false;
+
 	// StencilSRV: 스텐실 8비트만 읽기 (PostProcess edge detection용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC StencilSRVDesc = {};
 	StencilSRVDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
@@ -142,6 +152,7 @@ bool FViewport::CreateResources()
 void FViewport::ReleaseResources()
 {
 	if (StencilSRV) { StencilSRV->Release(); StencilSRV = nullptr; }
+	if (DepthSRV) { DepthSRV->Release(); DepthSRV = nullptr; }
 	if (DSV) { DSV->Release(); DSV = nullptr; }
 	if (DepthTexture) { DepthTexture->Release(); DepthTexture = nullptr; }
 	if (SRV) { SRV->Release(); SRV = nullptr; }
