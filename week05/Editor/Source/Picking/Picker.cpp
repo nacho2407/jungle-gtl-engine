@@ -3,10 +3,6 @@
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/TextComponent.h"
-#include "Component/UUIDBillboardComponent.h"
 #include "Renderer/MeshData.h"
 #include "Scene/Scene.h"
 #include "Viewport/Viewport.h"
@@ -250,6 +246,10 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
+		if (!PrimComp->IsPickable())
+		{
+			continue;
+		}
 
 		const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
 
@@ -264,15 +264,7 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
-		// Game Jam
-		// Actor.cpp의 PostInitialize함수에서 Billboard를 만들어서 picking이 빌보드까지 점검
-		//그걸 방지하는 코드 -> 빌보드를 없애서 이제 필요 없음.
-		/*if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
-		{
-			continue;
-		}*/
-
-		if (PrimComp->IsA(USubUVComponent::StaticClass()) || PrimComp->IsA(UTextComponent::StaticClass()))
+		if (PrimComp->UseSpherePicking())
 		{
 			if (SphereT < ClosestDistance)
 			{
@@ -298,32 +290,28 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
-		if (PrimComp->IsA(UStaticMeshComponent::StaticClass()))
+		if (PrimComp->HasMeshIntersection())
 		{
-			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(PrimComp);
-			const FMatrix World = SMC->GetWorldTransform();
+			const FMatrix World = PrimComp->GetWorldTransform();
 			const FMatrix InvWorld = World.GetInverse();
 
 			FRay LocalRay;
 			LocalRay.Origin = TransformPointRowVector(WorldRay.Origin, InvWorld);
 			LocalRay.Direction = TransformVectorRowVector(WorldRay.Direction, InvWorld).GetSafeNormal();
-			if (LocalRay.Direction.IsZero())
+			if (!LocalRay.Direction.IsZero())
 			{
-				continue;
-			}
-
-			UStaticMesh* StaticMesh = SMC->GetStaticMesh();
-			float LocalDistance = ClosestDistance;
-			if (StaticMesh && StaticMesh->IntersectLocalRay(LocalRay.Origin, LocalRay.Direction, LocalDistance))
-			{
-				const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
-				const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
-				const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
-
-				if (WorldDistance < ClosestDistance)
+				float LocalDistance = std::min(ClosestDistance, BoxFar);
+				if (PrimComp->IntersectLocalRay(LocalRay.Origin, LocalRay.Direction, LocalDistance))
 				{
-					ClosestDistance = WorldDistance;
-					ClosestActor = Actor;
+					const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
+					const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
+					const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
+
+					if (WorldDistance < ClosestDistance)
+					{
+						ClosestDistance = WorldDistance;
+						ClosestActor = Actor;
+					}
 				}
 			}
 			continue;
