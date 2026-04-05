@@ -3,10 +3,6 @@
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/TextComponent.h"
-#include "Component/UUIDBillboardComponent.h"
 #include "Renderer/MeshData.h"
 #include "Scene/Scene.h"
 #include "Viewport/Viewport.h"
@@ -234,105 +230,79 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 	AActor* ClosestActor = nullptr;
 	float ClosestDistance = (std::numeric_limits<float>::max)();
 
-	TArray<UPrimitiveComponent*> CandidatePrimitives;
-	Scene->QueryPrimitivesByRay(WorldRay.Origin, WorldRay.Direction, ClosestDistance, CandidatePrimitives);
-
-	for (UPrimitiveComponent* PrimComp : CandidatePrimitives)
+	Scene->VisitPrimitivesByRay(
+		WorldRay.Origin,
+		WorldRay.Direction,
+		ClosestDistance,
+		[&](UPrimitiveComponent* PrimComp, float BoundsNear, float BoundsFar, float& InOutClosestDistance)
 	{
-		if (!PrimComp || PrimComp->IsPendingKill())
-		{
-			continue;
-		}
-
-		AActor* Actor = PrimComp->GetOwner();
-		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
-		{
-			continue;
-		}
-
-
-		const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
-
-		float SphereT = 0.0f;
-		if (!RayIntersectsSphere(WorldRay, Bounds.Center, Bounds.Radius, SphereT))
-		{
-			continue;
-		}
-
-		if (SphereT > ClosestDistance)
-		{
-			continue;
-		}
-
-		// 이 코드 빼면 피킹 정상동작 안함.
-		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
-		{
-			continue;
-		}
-
-		if (PrimComp->IsA(USubUVComponent::StaticClass()) || PrimComp->IsA(UTextComponent::StaticClass()))
-		{
-			if (SphereT < ClosestDistance)
+			if (!PrimComp || PrimComp->IsPendingKill())
 			{
-				ClosestDistance = SphereT;
-				ClosestActor = Actor;
-			}
-			continue;
-		}
-
-		const FVector BoxMin = Bounds.Center - Bounds.BoxExtent;
-		const FVector BoxMax = Bounds.Center + Bounds.BoxExtent;
-
-		float BoxNear = 0.0f;
-		float BoxFar = 0.0f;
-		if (!RayIntersectsAABB(WorldRay, BoxMin, BoxMax, BoxNear, BoxFar))
-		{
-			continue;
-		}
-
-		const float BoundsHitT = (BoxNear >= 0.0f) ? BoxNear : BoxFar;
-		if (BoundsHitT > ClosestDistance)
-		{
-			continue;
-		}
-
-		if (PrimComp->IsA(UStaticMeshComponent::StaticClass()))
-		{
-			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(PrimComp);
-			const FMatrix World = SMC->GetWorldTransform();
-			const FMatrix InvWorld = World.GetInverse();
-
-			FRay LocalRay;
-			LocalRay.Origin = TransformPointRowVector(WorldRay.Origin, InvWorld);
-			LocalRay.Direction = TransformVectorRowVector(WorldRay.Direction, InvWorld).GetSafeNormal();
-			if (LocalRay.Direction.IsZero())
-			{
-				continue;
+				return;
 			}
 
-			UStaticMesh* StaticMesh = SMC->GetStaticMesh();
-			float LocalDistance = ClosestDistance;
-			if (StaticMesh && StaticMesh->IntersectLocalRay(LocalRay.Origin, LocalRay.Direction, LocalDistance))
+			AActor* Actor = PrimComp->GetOwner();
+			if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
 			{
-				const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
-				const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
-				const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
+				return;
+			}
 
-				if (WorldDistance < ClosestDistance)
+			if (!PrimComp->IsPickable())
+			{
+				return;
+			}
+
+			if (PrimComp->UseSpherePicking())
+			{
+				const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
+				float SphereT = 0.0f;
+				if (RayIntersectsSphere(WorldRay, Bounds.Center, Bounds.Radius, SphereT) && SphereT < InOutClosestDistance)
 				{
-					ClosestDistance = WorldDistance;
+					InOutClosestDistance = SphereT;
 					ClosestActor = Actor;
 				}
+				return;
 			}
-			continue;
-		}
 
-		if (BoundsHitT < ClosestDistance)
-		{
-			ClosestDistance = BoundsHitT;
-			ClosestActor = Actor;
-		}
-	}
+			const float BoundsHitT = (BoundsNear >= 0.0f) ? BoundsNear : BoundsFar;
+			if (BoundsHitT > InOutClosestDistance)
+			{
+				return;
+			}
+
+			if (PrimComp->HasMeshIntersection())
+			{
+				const FMatrix World = PrimComp->GetWorldTransform();
+				const FMatrix InvWorld = World.GetInverse();
+
+				FRay LocalRay;
+				LocalRay.Origin = TransformPointRowVector(WorldRay.Origin, InvWorld);
+				LocalRay.Direction = TransformVectorRowVector(WorldRay.Direction, InvWorld).GetSafeNormal();
+				if (!LocalRay.Direction.IsZero())
+				{
+					float LocalDistance = std::min(InOutClosestDistance, BoundsFar);
+					if (PrimComp->IntersectLocalRay(LocalRay.Origin, LocalRay.Direction, LocalDistance))
+					{
+						const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
+						const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
+						const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
+
+						if (WorldDistance < InOutClosestDistance)
+						{
+							InOutClosestDistance = WorldDistance;
+							ClosestActor = Actor;
+						}
+					}
+				}
+				return;
+			}
+
+			if (BoundsHitT < InOutClosestDistance)
+			{
+				InOutClosestDistance = BoundsHitT;
+				ClosestActor = Actor;
+			}
+		});
 
 	Engine->LastPickTime = pickCounter.FinishMilliseconds();
 	Engine->TotalPickTime += Engine->LastPickTime;

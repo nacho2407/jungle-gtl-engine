@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <utility>
 #include <cstdint>
@@ -113,6 +114,13 @@ struct FAABB
 
 	bool Intersect(const Ray& ray, float tMax) const
 	{
+		float TNear = 0.0f;
+		float TFar = 0.0f;
+		return Intersect(ray, tMax, TNear, TFar);
+	}
+
+	bool Intersect(const Ray& ray, float tMax, float& OutTNear, float& OutTFar) const
+	{
 		float tmin = 0.0f;
 		float tmax = tMax;
 
@@ -135,6 +143,8 @@ struct FAABB
 			}
 		}
 
+		OutTNear = tmin;
+		OutTFar = tmax;
 		return true;
 	}
 };
@@ -167,6 +177,8 @@ struct FBucket
 class BVH
 {
 public:
+	using FRayHitVisitor = std::function<void(UPrimitiveComponent* Primitive, float PrimitiveTNear, float PrimitiveTFar, float& InOutMaxDistance)>;
+
 	BVH() = default;
 	~BVH();
 
@@ -174,6 +186,7 @@ public:
 	void Build(const TArray<UPrimitiveComponent*>& InPrimitives);
 	void QueryFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void VisitRay(const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const;
 	bool IsEmpty() const { return Root == nullptr; }
 
 private:
@@ -186,5 +199,5 @@ private:
 	void DestroyNode(BuildNode* Node);
 	BuildNode* BuildRecursive(int32 Start, int32 End, int32 Depth = 0);
 	void QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
-	void QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void VisitRayRecursive(const BuildNode* Node, const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const;
 };
