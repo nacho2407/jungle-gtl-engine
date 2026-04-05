@@ -13,7 +13,7 @@ class UStaticMeshComponent;
 class FStaticMeshSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-	static constexpr uint32 MAX_LOD = 3;
+	static constexpr uint32 MAX_LOD = 4;
 
 	FStaticMeshSceneProxy(UStaticMeshComponent* InComponent);
 

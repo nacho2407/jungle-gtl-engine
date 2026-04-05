@@ -26,4 +26,5 @@ private:
 	FEditorPropertyWidget PropertyWidget;
 	FEditorSceneWidget SceneWidget;
 	FEditorStatWidget StatWidget;
+	bool bShowWidgetList = false;
 };

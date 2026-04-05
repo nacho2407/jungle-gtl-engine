@@ -74,15 +74,11 @@ void FEditorStatWidget::Render(float DeltaTime)
 		}
 	}
 
-	// --- Runtime Optimization ---
-	ImGui::Checkbox("Runtime Optimization", &FEditorSettings::Get().bRunTimeOptimization);
-	ImGui::Separator();
-
 	// --- Draw Call Count ---
 	uint32 DrawCalls = bPaused ? FrozenDrawCalls : FDrawCallStats::Get();
 	ImGui::Text("Draw Calls: %u", DrawCalls);
-	ImGui::Text("LOD0: %u  LOD1: %u  LOD2: %u",
-		FLODStats::GetLOD0(), FLODStats::GetLOD1(), FLODStats::GetLOD2());
+	ImGui::Text("LOD0: %u  LOD1: %u  LOD2: %u  LOD3: %u",
+		FLODStats::GetLOD0(), FLODStats::GetLOD1(), FLODStats::GetLOD2(), FLODStats::GetLOD3());
 	ImGui::Separator();
 
 	// 남은 공간을 CPU/GPU 테이블이 반씩 사용

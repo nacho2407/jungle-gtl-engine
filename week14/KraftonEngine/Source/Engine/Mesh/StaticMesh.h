@@ -22,7 +22,7 @@ class UStaticMesh : public UObject
 public:
 	DECLARE_CLASS(UStaticMesh, UObject)
 
-	static constexpr uint32 MAX_LOD_COUNT = 3;
+	static constexpr uint32 MAX_LOD_COUNT = 4;
 
 	UStaticMesh() = default;
 	~UStaticMesh() override;
@@ -51,7 +51,7 @@ private:
 	TArray<FStaticMaterial> StaticMaterials; // 슬롯 이름과 머티리얼 인터페이스를 묶어서 저장하는 배열
 	mutable FMeshTrianglePickingBVH MeshTrianglePickingBVH; // 빠른 picking을 위해 메시 내부에 트리 형태로 만들어지는 자료구조
 
-	// LOD1 (50%), LOD2 (25%) — LOD0 is the original StaticMeshAsset
-	FLODMeshData AdditionalLODs[2];
+	// LOD1 (70%), LOD2 (50%), LOD3 (25%) — LOD0 is the original StaticMeshAsset
+	FLODMeshData AdditionalLODs[3];
 	bool bHasLOD = false;
 };
