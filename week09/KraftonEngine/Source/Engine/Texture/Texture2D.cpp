@@ -63,8 +63,15 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 	std::wstring WidePath = FPaths::ToWide(FilePath);
 
 	ID3D11Resource* Resource = nullptr;
-	HRESULT hr = DirectX::CreateWICTextureFromFile(
-		Device, WidePath.c_str(), &Resource, &SRV);
+	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
+		Device, WidePath.c_str(),
+		0,                                    // maxsize
+		D3D11_USAGE_DEFAULT,                  // usage
+		D3D11_BIND_SHADER_RESOURCE,           // bindFlags
+		0,                                    // cpuAccessFlags
+		0,                                    // miscFlags
+		DirectX::WIC_LOADER_IGNORE_SRGB,     // sRGB 메타데이터 무시 → UNORM 포맷 강제
+		&Resource, &SRV);
 
 	if (FAILED(hr))
 	{
