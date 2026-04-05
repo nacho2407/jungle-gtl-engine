@@ -139,9 +139,15 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 			int32 i = Section.MaterialIndex;
 			if (i >= 0 && i < static_cast<int32>(Slots.size()))
 			{
+				UMaterial* Mat = nullptr;
+
 				if (i < static_cast<int32>(Overrides.size()) && Overrides[i])
+					Mat = Overrides[i];
+				else if (Slots[i].MaterialInterface)
+					Mat = Slots[i].MaterialInterface;
+
+				if (Mat)
 				{
-					UMaterial* Mat = Overrides[i];
 					if (Mat->DiffuseTexture)
 						Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
 					Draw.DiffuseColor = Mat->DiffuseColor;
