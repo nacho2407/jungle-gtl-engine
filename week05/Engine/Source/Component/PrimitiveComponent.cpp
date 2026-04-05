@@ -66,6 +66,16 @@ void UPrimitiveComponent::FlushPendingRenderStateUpdates()
 	}
 }
 
+FRenderMesh* UPrimitiveComponent::GetRenderMesh() const
+{
+	return GetRenderMesh(0.0f);
+}
+
+FRenderMesh* UPrimitiveComponent::GetRenderMesh(const float& Distance) const
+{
+	return nullptr;
+}
+
 std::shared_ptr<FPrimitiveSceneProxy> UPrimitiveComponent::CreateSceneProxy() const
 {
 	return nullptr;

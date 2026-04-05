@@ -1,9 +1,10 @@
 #pragma once
-#include "OutlinerWindow.h" 
+#include "OutlinerWindow.h"
 #include "ControlPanelWindow.h"
 #include "PropertyWindow.h"
 #include "ConsoleWindow.h"
 #include "StatWindow.h"
+#include "FpsOverlayWindow.h"
 #include "Types/ObjectPtr.h"
 #include "ContentBrowserWindow.h"
 #include "Viewport/ViewportTypes.h"
@@ -47,6 +48,7 @@ private:
 	FPropertyWindow Property;
 	FConsoleWindow Console;
 	FStatWindow Stat;
+	FFpsOverlayWindow FpsOverlay;
 	FOutlinerWindow Outliner;
 	FContentBrowserWindow ContentBrowser;
 

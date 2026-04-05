@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Asset\StaticMeshLODBuilder.h" />
     <ClInclude Include="Source\CoreMinimal.h" />
     <ClInclude Include="Source\EngineAPI.h" />
     <ClInclude Include="Source\Actor\Actor.h" />
@@ -59,9 +60,13 @@
     <ClInclude Include="Source\Input\InputMappingContext.h" />
     <ClInclude Include="Source\Input\InputModifier.h" />
     <ClInclude Include="Source\Input\inputTrigger.h" />
+    <ClInclude Include="Source\Math\Collapse.h" />
+    <ClInclude Include="Source\Math\CollapseQueue.h" />
+    <ClInclude Include="Source\Math\Edge.h" />
     <ClInclude Include="Source\Math\Frustum.h" />
     <ClInclude Include="Source\Math\MathUtility.h" />
     <ClInclude Include="Source\Math\Matrix.h" />
+    <ClInclude Include="Source\Math\Quadric.h" />
     <ClInclude Include="Source\Math\Quat.h" />
     <ClInclude Include="Source\Math\Rotator.h" />
     <ClInclude Include="Source\Math\Transform.h" />
@@ -235,6 +240,7 @@
     <ClCompile Include="Source\Actor\SubUVActor.cpp" />
     <ClCompile Include="Source\Actor\TextActor.cpp" />
     <ClCompile Include="Source\Asset\ObjManager.cpp" />
+    <ClCompile Include="Source\Asset\StaticMeshLODBuilder.cpp" />
     <ClCompile Include="Source\Camera\Camera.cpp" />
     <ClCompile Include="Source\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\CameraComponent.cpp" />

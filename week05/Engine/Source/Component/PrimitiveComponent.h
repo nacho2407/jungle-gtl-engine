@@ -40,7 +40,8 @@ public:
 	bool ShouldDrawDebugBounds() const { return bDrawDebugBounds; }
 	void SetDrawDebugBounds(bool bEnable) { bDrawDebugBounds = bEnable; }
 
-	virtual FRenderMesh* GetRenderMesh() const { return nullptr; }
+	virtual FRenderMesh* GetRenderMesh() const;
+	virtual FRenderMesh* GetRenderMesh(const float& Distance) const;
 	virtual EPrimitiveRenderCategory GetRenderCategory() const { return EPrimitiveRenderCategory::Primitive; }
 	virtual std::shared_ptr<FPrimitiveSceneProxy> CreateSceneProxy() const;
 	FPrimitiveSceneProxy* GetSceneProxy() const;

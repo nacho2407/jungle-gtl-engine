@@ -12,6 +12,7 @@ struct FViewInfo;
 struct FSceneFramePacket;
 class FObjectUniformStream;
 class UStaticMeshComponent;
+class UStaticMesh;
 class UTextComponent;
 class USubUVComponent;
 class ULineBatchComponent;
@@ -37,14 +38,14 @@ class ENGINE_API FStaticMeshSceneProxy : public FPrimitiveSceneProxy
 {
 public:
 	explicit FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent);
-	void AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const override;
 	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const override;
 
 private:
-	FRenderMesh* RenderMesh = nullptr;
+	void CollectMeshBatchesForRenderMesh(FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const;
+
+	UStaticMesh* StaticMesh = nullptr;
 	FMatrix LocalToWorld = FMatrix::Identity;
 	TArray<FMaterial*> Materials;
-	TArray<FMeshBatch> MeshBatchTemplates;
 };
 
 class ENGINE_API FTextSceneProxy : public FPrimitiveSceneProxy

@@ -32,77 +32,70 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 		return;
 	}
 
-	RenderMesh = InComponent->GetRenderMesh();
+	StaticMesh = InComponent->GetStaticMesh();
 	LocalToWorld = InComponent->GetWorldTransform();
-	if (!RenderMesh)
+	if (!StaticMesh)
 	{
 		return;
 	}
 
-	const int32 MaterialCount = (std::max)(InComponent->GetNumMaterials(), RenderMesh->GetNumSection());
+	FRenderMesh* BaseRenderMesh = InComponent->GetRenderMesh();
+	const int32 SectionCount = BaseRenderMesh ? BaseRenderMesh->GetNumSection() : 0;
+	const int32 MaterialCount = (std::max)(InComponent->GetNumMaterials(), SectionCount);
 	Materials.reserve(static_cast<size_t>((std::max)(MaterialCount, 1)));
 	for (int32 MaterialIndex = 0; MaterialIndex < MaterialCount; ++MaterialIndex)
 	{
 		const std::shared_ptr<FMaterial> Material = InComponent->GetMaterial(MaterialIndex);
 		Materials.push_back(Material ? Material.get() : nullptr);
 	}
-
-	const int32 SectionCount = RenderMesh->GetNumSection();
-	if (SectionCount <= 0)
-	{
-		FMeshBatch MeshBatch = {};
-		MeshBatch.Material = !Materials.empty() ? Materials[0] : nullptr;
-		MeshBatch.Element.RenderMesh = RenderMesh;
-		MeshBatch.Element.WorldMatrix = LocalToWorld;
-		MeshBatchTemplates.push_back(MeshBatch);
-		return;
-	}
-
-	MeshBatchTemplates.reserve(SectionCount);
-	for (int32 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
-	{
-		const FMeshSection& Section = RenderMesh->Sections[SectionIndex];
-
-		FMeshBatch MeshBatch = {};
-		MeshBatch.Material = SectionIndex < static_cast<int32>(Materials.size()) ? Materials[SectionIndex] : nullptr;
-		MeshBatch.Element.RenderMesh = RenderMesh;
-		MeshBatch.Element.WorldMatrix = LocalToWorld;
-		MeshBatch.Element.IndexStart = Section.StartIndex;
-		MeshBatch.Element.IndexCount = Section.IndexCount;
-		MeshBatch.Element.SectionIndex = static_cast<uint32>(SectionIndex);
-		MeshBatchTemplates.push_back(MeshBatch);
-	}
-}
-
-void FStaticMeshSceneProxy::AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
-{
-	(void)View;
-
-	if (!RenderMesh || MeshBatchTemplates.empty())
-	{
-		return;
-	}
-
-	PassProcessor.BuildMeshDrawCommands(MeshBatchTemplates, &Command, Renderer, OutPacket, ObjectUniformStream, InOutSubmissionOrder);
 }
 
 void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const
 {
-	(void)View;
-
-	if (!RenderMesh)
+	if (!StaticMesh)
 	{
 		return;
 	}
 
-	OutMeshBatches.reserve(OutMeshBatches.size() + MeshBatchTemplates.size());
-	for (const FMeshBatch& TemplateBatch : MeshBatchTemplates)
+	const float DistanceToCamera = (Bounds.Center - View.CameraPosition).Size();
+	FRenderMesh* SelectedMesh = StaticMesh->GetRenderDataForDistance(DistanceToCamera);
+	CollectMeshBatchesForRenderMesh(SelectedMesh, Renderer, OutMeshBatches);
+}
+
+void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const
+{
+	if (!InRenderMesh)
 	{
-		FMeshBatch MeshBatch = TemplateBatch;
+		return;
+	}
+
+	const int32 SectionCount = InRenderMesh->GetNumSection();
+	if (SectionCount <= 0)
+	{
+		FMeshBatch MeshBatch = {};
+		MeshBatch.Material = !Materials.empty() && Materials[0] ? Materials[0] : Renderer.GetDefaultMaterial();
+		MeshBatch.Element.RenderMesh = InRenderMesh;
+		MeshBatch.Element.WorldMatrix = LocalToWorld;
+		OutMeshBatches.push_back(MeshBatch);
+		return;
+	}
+
+	OutMeshBatches.reserve(OutMeshBatches.size() + SectionCount);
+	for (int32 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
+	{
+		const FMeshSection& Section = InRenderMesh->Sections[SectionIndex];
+
+		FMeshBatch MeshBatch = {};
+		MeshBatch.Material = SectionIndex < static_cast<int32>(Materials.size()) ? Materials[SectionIndex] : nullptr;
 		if (!MeshBatch.Material)
 		{
 			MeshBatch.Material = Renderer.GetDefaultMaterial();
 		}
+		MeshBatch.Element.RenderMesh = InRenderMesh;
+		MeshBatch.Element.WorldMatrix = LocalToWorld;
+		MeshBatch.Element.IndexStart = Section.StartIndex;
+		MeshBatch.Element.IndexCount = Section.IndexCount;
+		MeshBatch.Element.SectionIndex = static_cast<uint32>(SectionIndex);
 		OutMeshBatches.push_back(MeshBatch);
 	}
 }

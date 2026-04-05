@@ -181,6 +181,7 @@
     <ClCompile Include="Source\UI\EditorUI.cpp" />
     <ClCompile Include="Source\UI\OutlinerWindow.cpp" />
     <ClCompile Include="Source\UI\PropertyWindow.cpp" />
+    <ClCompile Include="Source\UI\FpsOverlayWindow.cpp" />
     <ClCompile Include="Source\UI\StatWindow.cpp" />
     <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
@@ -237,6 +238,7 @@
     <ClInclude Include="Source\UI\EditorUI.h" />
     <ClInclude Include="Source\UI\OutlinerWindow.h" />
     <ClInclude Include="Source\UI\PropertyWindow.h" />
+    <ClInclude Include="Source\UI\FpsOverlayWindow.h" />
     <ClInclude Include="Source\UI\StatWindow.h" />
     <ClInclude Include="Source\Viewport\BlitRenderer.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />

@@ -30,14 +30,18 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	{
 		Materials.clear();
 	}
-
 	UpdateBounds();
 	MarkRenderStateDirty();
 }
 
 FRenderMesh* UStaticMeshComponent::GetRenderMesh() const
 {
-	 return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
+	return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
+}
+
+FRenderMesh* UStaticMeshComponent::GetRenderMesh(const float& Distance) const
+{
+	return StaticMesh ? StaticMesh->GetRenderDataForDistance(Distance) : nullptr;
 }
 
 std::shared_ptr<FPrimitiveSceneProxy> UStaticMeshComponent::CreateSceneProxy() const

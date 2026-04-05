@@ -939,6 +939,15 @@ void FEditorUI::Render()
 		}
 		Stat.Render(StatArea);
 	}
+	if (DebugState.FPS)
+	{
+		FRect FpsArea;
+		if (!GetCentralDockRect(FpsArea))
+		{
+			FpsArea = { 0, 0, 0, 0 };
+		}
+		FpsOverlay.Render(Engine, FpsArea);
+	}
 	Outliner.Render(Engine);
 	ContentBrowser.Render();
 }

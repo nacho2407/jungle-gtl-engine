@@ -336,6 +336,7 @@
     <ClCompile Include="Source\Scene\MeshBVH.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Asset\StaticMeshLODBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -951,10 +952,13 @@
     <ClInclude Include="Source\Scene\MeshBVH.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Math\Quadric.h" />
+    <ClInclude Include="Source\Math\Edge.h" />
+    <ClInclude Include="Source\Math\Collapse.h" />
+    <ClInclude Include="Source\Math\CollapseQueue.h" />
+    <ClInclude Include="Source\Asset\StaticMeshLODBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
 </Project>
-
-

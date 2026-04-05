@@ -2,7 +2,7 @@
 
 struct FDebugState
 {
-	bool FPS = false;
+	bool FPS = true;
 	bool FPSShowing = false;
 	bool Memory = false;
 };

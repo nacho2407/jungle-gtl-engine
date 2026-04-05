@@ -1,4 +1,6 @@
 #include "MeshData.h"
+#include <algorithm>
+
 #include "Object/Class.h"
 #include "Vertex.h"
 #include "Scene/MeshBVH.h"
@@ -146,8 +148,86 @@ UStaticMesh::~UStaticMesh()
 
 void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InStaticMesh)
 {
+	if (StaticMeshAsset == InStaticMesh)
+	{
+		return;
+	}
+
+	if (StaticMeshAsset)
+	{
+		delete StaticMeshAsset;
+	}
+
 	StaticMeshAsset = InStaticMesh;
+	ClearLODs();
 	TriangleBVH.reset();
+}
+
+FStaticMesh* UStaticMesh::GetRenderData(int32 LODIndex) const
+{
+	if (LODIndex <= 0)
+	{
+		return StaticMeshAsset;
+	}
+
+	const size_t ExtraLodIndex = static_cast<size_t>(LODIndex - 1);
+	if (ExtraLodIndex >= LODs.size())
+	{
+		return StaticMeshAsset;
+	}
+
+	return LODs[ExtraLodIndex].Mesh ? LODs[ExtraLodIndex].Mesh.get() : StaticMeshAsset;
+}
+
+FStaticMesh* UStaticMesh::GetRenderDataForDistance(float Distance) const
+{
+	FStaticMesh* SelectedMesh = StaticMeshAsset;
+	if (!SelectedMesh)
+	{
+		return nullptr;
+	}
+
+	const float ClampedDistance = (std::max)(Distance, 0.0f);
+	for (const FStaticMeshLOD& Lod : LODs)
+	{
+		if (!Lod.Mesh || ClampedDistance < Lod.Distance)
+		{
+			break;
+		}
+
+		SelectedMesh = Lod.Mesh.get();
+	}
+
+	return SelectedMesh;
+}
+
+void UStaticMesh::AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance)
+{
+	if (!InMesh)
+	{
+		return;
+	}
+
+	FStaticMeshLOD NewLOD;
+	NewLOD.VertexCount = static_cast<uint32>(InMesh->Vertices.size());
+	NewLOD.Distance = (std::max)(InDistance, 0.0f);
+	NewLOD.Mesh = std::move(InMesh);
+	LODs.push_back(std::move(NewLOD));
+
+	std::sort(LODs.begin(), LODs.end(), [](const FStaticMeshLOD& A, const FStaticMeshLOD& B)
+	{
+		return A.Distance < B.Distance;
+	});
+}
+
+void UStaticMesh::ClearLODs()
+{
+	LODs.clear();
+}
+
+uint32 UStaticMesh::GetLODCount() const
+{
+	return StaticMeshAsset ? static_cast<uint32>(LODs.size() + 1) : 0;
 }
 
 const FString& UStaticMesh::GetAssetPathFileName() const

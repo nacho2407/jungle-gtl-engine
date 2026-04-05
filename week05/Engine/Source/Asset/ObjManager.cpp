@@ -9,6 +9,7 @@
 #include <Windows.h>
 
 #include "Core/Engine.h"
+#include "Asset/StaticMeshLODBuilder.h"
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Math/MathUtility.h"
@@ -573,6 +574,8 @@ namespace
 			NewAsset->AddDefaultMaterial(Material);
 		}
 
+		FStaticMeshLODBuilder::BuildLODs(*NewAsset);
+
 		return NewAsset;
 	}
 
@@ -625,6 +628,8 @@ namespace
 
 			NewAsset->AddDefaultMaterial(Material);
 		}
+
+		FStaticMeshLODBuilder::BuildLODs(*NewAsset);
 
 		return NewAsset;
 	}

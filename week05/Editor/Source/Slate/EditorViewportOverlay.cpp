@@ -28,12 +28,12 @@ SEditorViewportOverlay::SEditorViewportOverlay(
 
 void SEditorViewportOverlay::OnPaint(SWidget& Painter)
 {
+	return; // GameGem
 	UpdateLayout();
 
 	if (ShouldShowFPS())
 	{
 		FpsWidget.Paint(Painter);
-		return; // GameGem
 	}
 	Transform.Paint(Painter);
 	Toolbar.Paint(Painter);

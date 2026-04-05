@@ -6,6 +6,15 @@
 #include "Scene/MeshBVH.h"
 #include <memory>
 
+struct FStaticMesh;
+
+struct FStaticMeshLOD
+{
+	std::unique_ptr<FStaticMesh> Mesh = nullptr;
+	float Distance = 0.0f;
+	uint32 VertexCount = 0;
+};
+
 struct ENGINE_API FStaticMesh : public FRenderMesh
 {
 	virtual bool UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context) override;
@@ -39,10 +48,17 @@ public:
 	const TArray<std::shared_ptr<FMaterial>>& GetDefaultMaterials() const { return DefaultMaterials; }
 	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
 
+	FStaticMesh* GetRenderData(int32 LODIndex) const;
+	FStaticMesh* GetRenderDataForDistance(float Distance) const;
+	void AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance);
+	void ClearLODs();
+	uint32 GetLODCount() const;
+
 private:
 	void BuildAccelerationStructureIfNeeded() const;
 
 	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<std::shared_ptr<FMaterial>> DefaultMaterials;
 	mutable std::unique_ptr<FMeshBVH> TriangleBVH;
+	TArray<FStaticMeshLOD> LODs;
 };
