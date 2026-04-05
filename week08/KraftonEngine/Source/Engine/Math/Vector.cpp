@@ -1,5 +1,8 @@
 ﻿#include "Vector.h"
 
+#define __AVX2__
+#define __SSE__
+
 #pragma region __FVECTOR__
 
 float FVector::Length() const {
@@ -24,17 +27,49 @@ FVector FVector::Normalized() const {
 }
 
 float FVector::Dot(const FVector& Other) const {
+#if defined(__AVX2__) 
+	__m128 vTemp = _mm_dp_ps(_mm_set_ps(0.f, Z, Y, X), _mm_set_ps(0.f, Other.Z, Other.Y, Other.X), 0xff);
+	return vTemp.m128_f32[0];
+#elif defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	__m128 vTemp2 = _mm_set_ps(0.f, Other.Z, Other.Y, Other.X);
+	__m128 vTemp1 = _mm_set_ps(0.f, Z, Y, X);
+	__m128 vTemp = _mm_mul_ps(vTemp1, vTemp2);
+	vTemp = _mm_hadd_ps(vTemp, vTemp);
+	vTemp = _mm_hadd_ps(vTemp, vTemp);
+	return vTemp.m128_f32[0];
+#else
 	return X * Other.X + Y * Other.Y + Z * Other.Z;
+#endif
 }
 
 FVector FVector::Cross(const FVector& Other) const {
-	FVector ret;
+#if defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	__m128 vec0 = _mm_set_ps(0.f, Z, Y, X);
+	__m128 vec1 = _mm_set_ps(0.f, Other.Z, Other.Y, Other.X);
+	float vTemp[4];
 
-	ret.X = (Y * Other.Z) - (Z * Other.Y);
-	ret.Y = (Z * Other.X) - (X * Other.Z);
-	ret.Z = (X * Other.Y) - (Y * Other.X);
-
-	return ret;
+	// for intel
+	__m128 tmp0 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 0, 2, 1));
+	__m128 tmp1 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 1, 0, 2));
+	__m128 tmp2 = _mm_mul_ps(tmp0, vec1);
+	__m128 tmp3 = _mm_mul_ps(tmp0, tmp1);
+	__m128 tmp4 = _mm_shuffle_ps(tmp2, tmp2, _MM_SHUFFLE(3, 0, 2, 1));
+	_mm_store_ps(vTemp, _mm_sub_ps(tmp3, tmp4));
+	// for amd
+	//__m128 tmp0 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 0, 2, 1));
+	//__m128 tmp1 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 1, 0, 2));
+	//__m128 tmp2 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 1, 0, 2));
+	//__m128 tmp3 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 0, 2, 1));
+	//__m128 tmp4 = _mm_sub_ps(_mm_mul_ps(tmp0, tmp1), _mm_mul_ps(tmp2, tmp3));
+	//_mm_store_ps(vTemp, tmp4);
+	return FVector(vTemp[0], vTemp[1], vTemp[2]);
+#else
+	return FVector{
+		Y * Other.Z - Z * Other.Y,
+		Z * Other.X - X * Other.Z,
+		X * Other.Y - Y * Other.X
+	};
+#endif
 }
 
 float FVector::Distance(const FVector& V1, const FVector& V2) {
@@ -149,16 +184,50 @@ FVector4 FVector4::Normalized() const {
 }
 
 float FVector4::Dot(const FVector4& Other) const {
+#if defined(__AVX2__) 
+	__m128 vTemp = _mm_dp_ps(_mm_set_ps(W, Z, Y, X), _mm_set_ps(Other.W, Other.Z, Other.Y, Other.X), 0xff);
+	return vTemp.m128_f32[0];
+#elif defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	__m128 vTemp2 = _mm_set_ps(Other.W, Other.Z, Other.Y, Other.X);
+	__m128 vTemp1 = _mm_set_ps(W, Z, Y, X);
+	__m128 vTemp = _mm_mul_ps(vTemp1, vTemp2);
+	vTemp = _mm_hadd_ps(vTemp, vTemp);
+	vTemp = _mm_hadd_ps(vTemp, vTemp);
+	return vTemp.m128_f32[0];
+#else
 	return X * Other.X + Y * Other.Y + Z * Other.Z + W * Other.W;
+#endif
 }
 
 FVector4 FVector4::Cross(const FVector4& Other) const {
+#if defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	__m128 vec0 = _mm_set_ps(W, Z, Y, X);
+	__m128 vec1 = _mm_set_ps(Other.W, Other.Z, Other.Y, Other.X);
+	float vTemp[4];
+
+	// for intel
+	__m128 tmp0 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 0, 2, 1));
+	__m128 tmp1 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 1, 0, 2));
+	__m128 tmp2 = _mm_mul_ps(tmp0, vec1);
+	__m128 tmp3 = _mm_mul_ps(tmp0, tmp1);
+	__m128 tmp4 = _mm_shuffle_ps(tmp2, tmp2, _MM_SHUFFLE(3, 0, 2, 1));
+	_mm_store_ps(vTemp, _mm_sub_ps(tmp3, tmp4));
+	// for amd
+	//__m128 tmp0 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 0, 2, 1));
+	//__m128 tmp1 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 1, 0, 2));
+	//__m128 tmp2 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 1, 0, 2));
+	//__m128 tmp3 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 0, 2, 1));
+	//__m128 tmp4 = _mm_sub_ps(_mm_mul_ps(tmp0, tmp1), _mm_mul_ps(tmp2, tmp3));
+	//_mm_store_ps(vTemp, tmp4);
+	return FVector4(vTemp[0], vTemp[1], vTemp[2], 0.0f);
+#else 
 	FVector4 ret;
 	ret.X = (Y * Other.Z) - (Z * Other.Y);
 	ret.Y = (Z * Other.X) - (X * Other.Z);
 	ret.Z = (X * Other.Y) - (Y * Other.X);
 	ret.W = 0.0f;  // direction vector, not a point
 	return ret;
+#endif
 }
 
 FVector4 FVector4::operator+(const FVector4& Other) const {

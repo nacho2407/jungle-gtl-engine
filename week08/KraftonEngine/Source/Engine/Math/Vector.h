@@ -1,6 +1,12 @@
 ﻿#pragma once
 #include <cmath>
 
+#if defined(_MSC_VER)
+	#include <intrin.h>     // MSVC
+#else
+	#include <immintrin.h>  // GCC / Clang
+#endif
+
 //	Virtual Table 용량을 줄이기 위해 Vector 인터페이스를 제거하고 FVector와 FVector4가 직접 구현하도록 변경
 //struct Vector {
 //	virtual float Length() const = 0;
