@@ -124,7 +124,6 @@ void FEditorSceneWidget::Render(float DeltaTime)
 				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
 				EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
 				LoadCtx.World->WarmupPickingData(); // 씬 로드 후 메시 BVH와 월드 primitive BVH를 모두 빌드
-				LoadCtx.World->BuildOcclusionBVH(); // Occlusion BVH 빌드
 			}
 			EditorEngine->ResetViewport();
 

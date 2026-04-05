@@ -30,9 +30,6 @@ void UWorld::DestroyActor(AActor* Actor)
 	MarkWorldPrimitivePickingBVHDirty();
 	Partition.RemoveActor(Actor);
 
-	if (bOcclusionBVHBuilt)
-		OcclusionBVH.RemoveActor(Actor);
-
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
 }
@@ -50,8 +47,6 @@ void UWorld::AddActor(AActor* Actor)
 	InsertActorToOctree(Actor);
 	MarkWorldPrimitivePickingBVHDirty();
 
-	if (bOcclusionBVHBuilt)
-		OcclusionBVH.AddActor(Actor);
 }
 
 void UWorld::MarkWorldPrimitivePickingBVHDirty()
@@ -138,15 +133,6 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
 {
 	Partition.UpdateActor(Actor);
 
-	if (bOcclusionBVHBuilt)
-		OcclusionBVH.MarkDirty(Actor);
-}
-
-// ── Occlusion BVH ──
-void UWorld::BuildOcclusionBVH()
-{
-	OcclusionBVH.Build(Actors);
-	bOcclusionBVHBuilt = true;
 }
 
 // ── LOD 거리 임계값 (제곱) ──
@@ -189,21 +175,9 @@ void UWorld::UpdateVisibleProxies()
 	const FVector CameraPos = ActiveCamera->GetWorldLocation();
 
 	{
-		SCOPE_STAT_CAT("FrustumOcclusionCulling", "1_WorldTick");
+		SCOPE_STAT_CAT("FrustumCulling", "1_WorldTick");
 		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
-		OcclusionCulling.Clear();
-
-		if (bOcclusionBVHBuilt)
-		{
-			// BVH 기반: frustum + occlusion 통합 쿼리
-			OcclusionBVH.QueryFrustumOcclusion(
-				ConvexVolume, OcclusionCulling, ViewProj, CameraPos, VisiblePrimitives);
-		}
-		else
-		{
-			// BVH 미빌드 시 기존 Octree frustum 폴백
-			Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
-		}
+		Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
 	}
 
 	{
@@ -253,10 +227,6 @@ void UWorld::Tick(float DeltaTime)
 {
 	Partition.FlushPrimitive();
 
-	// Occlusion BVH dirty 처리
-	if (bOcclusionBVHBuilt)
-		OcclusionBVH.Rebuild();
-
 	UpdateVisibleProxies();
 	DebugDrawQueue.Tick(DeltaTime);
 
@@ -284,6 +254,5 @@ void UWorld::EndPlay()
 	}
 
 	Actors.clear();
-	bOcclusionBVHBuilt = false;
 	MarkWorldPrimitivePickingBVHDirty();
 }
