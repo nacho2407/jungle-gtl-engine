@@ -14,6 +14,17 @@ TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
 TArray<FMaterialAssetListItem> FObjManager::AvailableMaterialFiles;
 
+static void EnsureMeshCacheDirExists()
+{
+	static bool bCreated = false;
+	if (!bCreated)
+	{
+		std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
+		FPaths::CreateDir(CacheDir);
+		bCreated = true;
+	}
+}
+
 FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 {
 	std::filesystem::path SrcPath(FPaths::ToWide(OriginalPath));
@@ -25,9 +36,7 @@ FString FObjManager::GetBinaryFilePath(const FString& OriginalPath)
 		return OriginalPath;
 	}
 
-	// obj 등 원본 메시 경로가 들어온 경우에는 MeshCache 아래에 bin 생성
-	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
-	FPaths::CreateDir(CacheDir);
+	EnsureMeshCacheDirExists();
 
 	// 상대 경로로 반환
 	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
@@ -47,12 +56,10 @@ FString FObjManager::GetMBinaryFilePath(const FString& OriginalPath)
 		return OriginalPath;
 	}
 
-	// obj 등 원본 메시 경로가 들어온 경우에는 MeshCache 아래에 bin 생성
-	std::wstring CacheDir = FPaths::RootDir() + L"Asset\\MeshCache\\";
-	FPaths::CreateDir(CacheDir);
+	EnsureMeshCacheDirExists();
 
-	// 상대 경로로 반환
-	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.stem();
+	// 상대 경로로 반환 — filename()을 사용해 블렌더 ".001" 접미사가 잘리지 않도록 함
+	std::filesystem::path RelPath = std::filesystem::path(L"Asset\\MeshCache") / SrcPath.filename();
 	RelPath += L".mbin";
 
 	return FPaths::ToUtf8(RelPath.generic_wstring());
@@ -227,7 +234,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 {
 	FString CacheKey = GetBinaryFilePath(PathFileName);
 
-	// 캐시 확인 (O(1) 룩업)
+	// BinPath 기반 캐시 확인
 	auto It = StaticMeshCache.find(CacheKey);
 	if (It != StaticMeshCache.end())
 	{
@@ -318,8 +325,9 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 {
-	std::filesystem::path SrcPath = FPaths::ToWide(MaterialName);
-	FString FileNameOnly = FPaths::ToUtf8(SrcPath.stem().wstring());
+	// 머티리얼 슬롯 이름을 그대로 캐시 키로 사용
+	// stem()을 쓰면 "MatID_1.001" 같은 블렌더 이름에서 ".001"이 확장자로 잘려나감
+	const FString& FileNameOnly = MaterialName;
 
 	// 1. 캐시(RAM)에 이미 있는지 검사
 	if (MaterialCache.contains(FileNameOnly))
@@ -334,11 +342,12 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 
 	FString MBinPath = GetMBinaryFilePath(MaterialName);
 	std::filesystem::path MBinPathW = FPaths::ToWide(MBinPath);
+	std::filesystem::path SrcPath = FPaths::ToWide(MaterialName);
 	bool bNeedRebuild = true;
 
 	if (std::filesystem::exists(MBinPathW))
 	{
-		// 원본 파일이 없거나, 이미 mbin 경로가 들어왔거나, 
+		// 원본 파일이 없거나, 이미 mbin 경로가 들어왔거나,
 		// mbin 파일의 수정 날짜가 원본 파일보다 최신(또는 같음)인 경우 리빌드 생략
 		if (!std::filesystem::exists(SrcPath) || MaterialName == MBinPath ||
 			std::filesystem::last_write_time(MBinPathW) >= std::filesystem::last_write_time(SrcPath))
