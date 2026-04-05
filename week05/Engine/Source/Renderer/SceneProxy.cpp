@@ -25,148 +25,72 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 		return;
 	}
 
+	StaticMesh = InComponent->GetStaticMesh();
 	LocalToWorld = InComponent->GetWorldTransform();
-	UStaticMesh* StaticMesh = InComponent->GetStaticMesh();
 	if (!StaticMesh)
 	{
 		return;
 	}
 
-	const uint32 LODCount = StaticMesh->GetLODCount();
-	if (LODCount == 0)
-	{
-		return;
-	}
-
-	int32 MaxSectionCount = 0;
-	for (uint32 LODIndex = 0; LODIndex < LODCount; ++LODIndex)
-	{
-		if (FRenderMesh* LODRenderMesh = StaticMesh->GetRenderData(static_cast<int32>(LODIndex)))
-		{
-			MaxSectionCount = (std::max)(MaxSectionCount, LODRenderMesh->GetNumSection());
-		}
-	}
-
-	const int32 MaterialCount = (std::max)(InComponent->GetNumMaterials(), MaxSectionCount);
+	FRenderMesh* BaseRenderMesh = InComponent->GetRenderMesh();
+	const int32 SectionCount = BaseRenderMesh ? BaseRenderMesh->GetNumSection() : 0;
+	const int32 MaterialCount = (std::max)(InComponent->GetNumMaterials(), SectionCount);
 	Materials.reserve(static_cast<size_t>((std::max)(MaterialCount, 1)));
 	for (int32 MaterialIndex = 0; MaterialIndex < MaterialCount; ++MaterialIndex)
 	{
 		const std::shared_ptr<FMaterial> Material = InComponent->GetMaterial(MaterialIndex);
 		Materials.push_back(Material ? Material.get() : nullptr);
 	}
-
-	MeshBatchTemplateSets.reserve(static_cast<size_t>(LODCount));
-	for (uint32 LODIndex = 0; LODIndex < LODCount; ++LODIndex)
-	{
-		FRenderMesh* LODRenderMesh = StaticMesh->GetRenderData(static_cast<int32>(LODIndex));
-		if (!LODRenderMesh)
-		{
-			continue;
-		}
-
-		const float LODDistance = StaticMesh->GetLODDistance(static_cast<int32>(LODIndex));
-		BuildMeshBatchTemplates(LODRenderMesh, LODDistance * LODDistance);
-	}
 }
 
-void FStaticMeshSceneProxy::BuildMeshBatchTemplates(FRenderMesh* InRenderMesh, float InMinDistanceSquared)
+void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
+{
+	if (!StaticMesh)
+	{
+		return;
+	}
+
+	const float DistanceToCamera = (Bounds.Center - View.CameraPosition).Size();
+	FRenderMesh* SelectedMesh = StaticMesh->GetRenderDataForDistance(DistanceToCamera);
+	CollectMeshBatchesForRenderMesh(SelectedMesh, Renderer, OutMeshBatches);
+}
+
+void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
 	if (!InRenderMesh)
 	{
 		return;
 	}
 
-	FStaticMeshBatchTemplateSet TemplateSet = {};
-	TemplateSet.MinDistanceSquared = InMinDistanceSquared;
-	TemplateSet.bAllMaterialsResolved = true;
-
 	const int32 SectionCount = InRenderMesh->GetNumSection();
-	TemplateSet.MeshBatchTemplates.reserve(static_cast<size_t>((std::max)(SectionCount, 1)));
 	if (SectionCount <= 0)
 	{
 		FMeshRenderItem MeshBatch = {};
-		MeshBatch.Material = !Materials.empty() ? Materials[0] : nullptr;
+		MeshBatch.Material = !Materials.empty() && Materials[0] ? Materials[0] : Renderer.GetDefaultMaterial();
 		MeshBatch.RenderMesh = InRenderMesh;
 		MeshBatch.WorldMatrix = LocalToWorld;
 		MeshBatch.RenderPass = ERenderPass::Opaque;
-		TemplateSet.bAllMaterialsResolved = MeshBatch.Material != nullptr;
-		TemplateSet.MeshBatchTemplates.push_back(MeshBatch);
-		MeshBatchTemplateSets.push_back(std::move(TemplateSet));
+		OutMeshBatches.push_back(MeshBatch);
 		return;
 	}
 
+	OutMeshBatches.reserve(OutMeshBatches.size() + SectionCount);
 	for (int32 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
 	{
 		const FMeshSection& Section = InRenderMesh->Sections[SectionIndex];
 
 		FMeshRenderItem MeshBatch = {};
 		MeshBatch.Material = SectionIndex < static_cast<int32>(Materials.size()) ? Materials[SectionIndex] : nullptr;
+		if (!MeshBatch.Material)
+		{
+			MeshBatch.Material = Renderer.GetDefaultMaterial();
+		}
 		MeshBatch.RenderMesh = InRenderMesh;
 		MeshBatch.WorldMatrix = LocalToWorld;
 		MeshBatch.IndexStart = Section.StartIndex;
 		MeshBatch.IndexCount = Section.IndexCount;
 		MeshBatch.SectionIndex = static_cast<uint32>(SectionIndex);
 		MeshBatch.RenderPass = ERenderPass::Opaque;
-		TemplateSet.bAllMaterialsResolved = TemplateSet.bAllMaterialsResolved && MeshBatch.Material != nullptr;
-		TemplateSet.MeshBatchTemplates.push_back(MeshBatch);
-	}
-
-	MeshBatchTemplateSets.push_back(std::move(TemplateSet));
-}
-
-const FStaticMeshSceneProxy::FStaticMeshBatchTemplateSet* FStaticMeshSceneProxy::SelectMeshBatchTemplateSet(float InDistanceSquared) const
-{
-	if (MeshBatchTemplateSets.empty())
-	{
-		return nullptr;
-	}
-
-	const FStaticMeshBatchTemplateSet* SelectedTemplateSet = &MeshBatchTemplateSets.front();
-	for (size_t TemplateIndex = 1; TemplateIndex < MeshBatchTemplateSets.size(); ++TemplateIndex)
-	{
-		const FStaticMeshBatchTemplateSet& CandidateTemplateSet = MeshBatchTemplateSets[TemplateIndex];
-		if (InDistanceSquared < CandidateTemplateSet.MinDistanceSquared)
-		{
-			break;
-		}
-
-		SelectedTemplateSet = &CandidateTemplateSet;
-	}
-
-	return SelectedTemplateSet;
-}
-
-void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
-{
-	if (MeshBatchTemplateSets.empty())
-	{
-		return;
-	}
-
-	const float DistanceSquared = (Bounds.Center - View.CameraPosition).SizeSquared();
-	const FStaticMeshBatchTemplateSet* SelectedTemplateSet = SelectMeshBatchTemplateSet(DistanceSquared);
-	if (!SelectedTemplateSet || SelectedTemplateSet->MeshBatchTemplates.empty())
-	{
-		return;
-	}
-
-	const TArray<FMeshRenderItem>& TemplateBatches = SelectedTemplateSet->MeshBatchTemplates;
-	OutMeshBatches.reserve(OutMeshBatches.size() + TemplateBatches.size());
-
-	if (SelectedTemplateSet->bAllMaterialsResolved)
-	{
-		OutMeshBatches.insert(OutMeshBatches.end(), TemplateBatches.begin(), TemplateBatches.end());
-		return;
-	}
-
-	FMaterial* DefaultMaterial = Renderer.GetDefaultMaterial();
-	for (const FMeshRenderItem& TemplateBatch : TemplateBatches)
-	{
-		FMeshRenderItem MeshBatch = TemplateBatch;
-		if (!MeshBatch.Material)
-		{
-			MeshBatch.Material = DefaultMaterial;
-		}
 		OutMeshBatches.push_back(MeshBatch);
 	}
 }

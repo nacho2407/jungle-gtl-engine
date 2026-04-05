@@ -201,22 +201,6 @@ FStaticMesh* UStaticMesh::GetRenderDataForDistance(float Distance) const
 	return SelectedMesh;
 }
 
-float UStaticMesh::GetLODDistance(int32 LODIndex) const
-{
-	if (LODIndex <= 0)
-	{
-		return 0.0f;
-	}
-
-	const size_t ExtraLodIndex = static_cast<size_t>(LODIndex - 1);
-	if (ExtraLodIndex >= LODs.size())
-	{
-		return 0.0f;
-	}
-
-	return LODs[ExtraLodIndex].Distance;
-}
-
 void UStaticMesh::AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance)
 {
 	if (!InMesh)
