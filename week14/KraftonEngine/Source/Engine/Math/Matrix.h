@@ -3,6 +3,12 @@
 #include <cstring>
 #include "Vector.h"
 
+#if defined(_MSC_VER)
+	#include <intrin.h>     // MSVC
+#else
+	#include <immintrin.h>  // GCC / Clang
+#endif
+
 struct FMatrix {
 	static const FMatrix Identity;
 
@@ -13,8 +19,11 @@ struct FMatrix {
 		// Iteration 가능 +Cache 친화
 		float Data[16];
 
-		//추후 성능 개선을 위해 SIMD 명령어로 4개의 행을 한 번에 처리할 수 있도록 FVectors4 배열로도 접근 가능하게 할 수 있음
-		//FVectors4 Rows[4];	
+		// SIMD
+		// SSE
+		__m128 row[4];
+		// AVX
+		__m256 _rowin256[2];
 	};
 
 	// Default constructor (Zero matrix)
