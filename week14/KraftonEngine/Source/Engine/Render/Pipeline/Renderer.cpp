@@ -315,6 +315,16 @@ void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 {
 	SCOPE_STAT_CAT("ExecutePass::Sort", "4_ExecutePass");
 
+	const auto ProxyLess = [](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
+	{
+		if (A->SortKey != B->SortKey)
+		{
+			return A->SortKey < B->SortKey;
+		}
+
+		return A->MaterialSortKey < B->MaterialSortKey;
+	};
+
 	// A: capacity 유지 — assign() 대신 clear() + insert()
 	SortedProxyBuffer.clear();
 	SortedProxyBuffer.insert(SortedProxyBuffer.end(), Proxies.begin(), Proxies.end());
@@ -325,7 +335,7 @@ void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 	bool bAlreadySorted = true;
 	for (size_t i = 1; i < SortedProxyBuffer.size(); ++i)
 	{
-		if (SortedProxyBuffer[i]->SortKey < SortedProxyBuffer[i - 1]->SortKey)
+		if (ProxyLess(SortedProxyBuffer[i], SortedProxyBuffer[i - 1]))
 		{
 			bAlreadySorted = false;
 			break;
@@ -333,12 +343,8 @@ void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 	}
 	if (bAlreadySorted) return;
 
-	// C: SortKey (uint64) 단일 정수 비교로 정렬
-	std::sort(SortedProxyBuffer.begin(), SortedProxyBuffer.end(),
-		[](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
-		{
-			return A->SortKey < B->SortKey;
-		});
+	// C: Shader/MeshBuffer 뒤에 Material layout까지 정렬해 draw-state grouping을 강화한다.
+	std::sort(SortedProxyBuffer.begin(), SortedProxyBuffer.end(), ProxyLess);
 }
 
 void FRenderer::BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
