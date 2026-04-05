@@ -13,7 +13,6 @@
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -25,7 +24,7 @@
 namespace
 {
 #ifndef WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
-#define WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER 0
+#define WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER 1
 #endif
 
 	size_t GSceneCommandReserveHint = 2048;
@@ -85,11 +84,6 @@ namespace
 
 		AActor* SelectedActor = EditorEngine->GetSelectedActor();
 		if (!SelectedActor || SelectedActor->IsPendingDestroy() || !SelectedActor->IsVisible())
-		{
-			return;
-		}
-
-		if (SelectedActor->GetComponentByClass<USkyComponent>() != nullptr)
 		{
 			return;
 		}
@@ -212,6 +206,7 @@ void FEditorViewportRenderService::RenderAll(
 		Queue.Reserve(ReserveHint);
 		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
+		Queue.bOpaqueWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe);
 
 		FFrustum Frustum;
 		Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
@@ -220,12 +215,12 @@ void FEditorViewportRenderService::RenderAll(
 		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
-		if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
+		if (GizmoTarget)
 		{
 			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, Queue);
 		}
 
-		if (Entry.LocalState.ViewMode == ERenderMode::Wireframe && WireFrameMaterial)
+		if (Queue.bOpaqueWireframe && WireFrameMaterial)
 		{
 			ApplyWireframe(Queue, WireFrameMaterial.get());
 		}
@@ -247,7 +242,8 @@ void FEditorViewportRenderService::RenderAll(
 			GridCommand.RenderMesh = GridMesh;
 			GridCommand.Material = GridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
-			GridCommand.RenderLayer = ERenderLayer::Default;
+			GridCommand.RenderPass = ERenderPass::Alpha;
+			GridCommand.bOverrideRenderPass = true;
 			Queue.AddCommand(GridCommand);
 		}
 
@@ -265,10 +261,10 @@ void FEditorViewportRenderService::RenderAll(
 
 		Renderer->SubmitCommands(std::move(Queue));
 		Renderer->ExecuteCommands();
-		EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false);
-		Renderer->EndScenePass();
+		// EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false); // 지금 안씀 GameJam
+		Renderer->EndScenePass(); // 깡통 GameJam
 	}
-	EditorEngine->ClearDebugDrawForFrame();
+	// EditorEngine->ClearDebugDrawForFrame(); // 지금 안씀 GameJam
 
 	Renderer->BindSwapChainRTV();
 	if (!bUseDirectSingleViewportPath)
@@ -302,7 +298,12 @@ void FEditorViewportRenderService::ApplyWireframe(FRenderCommandQueue& Queue, FM
 {
 	for (FRenderCommand& Command : Queue.Commands)
 	{
-		if (Command.RenderLayer != ERenderLayer::Overlay)
+		if (Command.bOverrideRenderPass && Command.RenderPass != ERenderPass::Opaque)
+		{
+			continue;
+		}
+
+		if (!Command.bOverrideRenderPass || Command.RenderPass == ERenderPass::Opaque)
 		{
 			Command.Material = WireMaterial;
 		}

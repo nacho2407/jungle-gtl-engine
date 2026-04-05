@@ -4,7 +4,6 @@
 #include "ShaderMap.h"
 #include "ShaderResource.h"
 #include "Material.h"
-#include "MaterialBindingCache.h"
 #include "ObjectUniformStream.h"
 #include "PassExecutor.h"
 #include "MaterialManager.h"
@@ -263,10 +262,9 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 	SetConstantBuffers();
 	ObjectUniformStream = std::make_unique<FObjectUniformStream>();
 	if (!ObjectUniformStream->Initialize(Device, DeviceContext, ObjectConstantBuffer)) return false;
-	MaterialBindingCache = std::make_unique<FMaterialBindingCache>();
 	SceneRenderer = std::make_unique<FSceneRenderer>(this);
 	PassExecutor = std::make_unique<FPassExecutor>(this);
-	CurrentFramePacket = std::make_unique<FSceneFramePacket>();
+	CurrentRenderFrame = std::make_unique<FSceneRenderFrame>();
 
 	std::wstring ShaderDirW = FPaths::ShaderDir();
 	std::wstring VSPath = ShaderDirW + L"VertexShader.hlsl";
@@ -284,20 +282,6 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		DefaultMaterial->SetOriginName("M_Default");
 		DefaultMaterial->SetVertexShader(VS);
 		DefaultMaterial->SetPixelShader(PS);
-
-		FRasterizerStateOption rasterizerOption;
-		rasterizerOption.FillMode = D3D11_FILL_SOLID;
-		rasterizerOption.CullMode = D3D11_CULL_BACK;
-		auto RS = RenderStateManager->GetOrCreateRasterizerState(rasterizerOption);
-		DefaultMaterial->SetRasterizerOption(rasterizerOption);
-		DefaultMaterial->SetRasterizerState(RS);
-
-		FDepthStencilStateOption depthStencilOption;
-		depthStencilOption.DepthEnable = true;
-		depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		auto DSS = RenderStateManager->GetOrCreateDepthStencilState(depthStencilOption);
-		DefaultMaterial->SetDepthStencilOption(depthStencilOption);
-		DefaultMaterial->SetDepthStencilState(DSS);
 
 		int32 SlotIndex = DefaultMaterial->CreateConstantBuffer(Device, 16);
 		if (SlotIndex >= 0)
@@ -318,20 +302,6 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		DefaultTextureMaterial->SetOriginName("M_Default");
 		DefaultTextureMaterial->SetVertexShader(VS);
 		DefaultTextureMaterial->SetPixelShader(PS);
-
-		FRasterizerStateOption rasterizerOption;
-		rasterizerOption.FillMode = D3D11_FILL_SOLID;
-		rasterizerOption.CullMode = D3D11_CULL_BACK;
-		auto RS = RenderStateManager->GetOrCreateRasterizerState(rasterizerOption);
-		DefaultTextureMaterial->SetRasterizerOption(rasterizerOption);
-		DefaultTextureMaterial->SetRasterizerState(RS);
-
-		FDepthStencilStateOption depthStencilOption;
-		depthStencilOption.DepthEnable = true;
-		depthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		auto DSS = RenderStateManager->GetOrCreateDepthStencilState(depthStencilOption);
-		DefaultTextureMaterial->SetDepthStencilOption(depthStencilOption);
-		DefaultTextureMaterial->SetDepthStencilState(DSS);
 
 		int32 SlotIndex = DefaultTextureMaterial->CreateConstantBuffer(Device, 32);
 		if (SlotIndex >= 0)
@@ -375,8 +345,16 @@ void FRenderer::BeginFrame()
 	FrameDrawCallCount = 0;
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	if (RenderTargetView) DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
-	if (DepthStencilView) DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	if (RenderTargetView)
+	{
+		DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
+	}
+
+	if (DepthStencilView)
+	{
+		DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
 
 	ID3D11RenderTargetView* ActiveRTV = RenderTargetView;
 	ID3D11DepthStencilView* ActiveDSV = DepthStencilView;
@@ -395,9 +373,9 @@ void FRenderer::BeginFrame()
 	DeviceContext->RSSetViewports(1, &ActiveVP);
 
 	ClearCommandList();
-	if (CurrentFramePacket)
+	if (CurrentRenderFrame)
 	{
-		CurrentFramePacket->Reset();
+		CurrentRenderFrame->Reset();
 	}
 	if (ObjectUniformStream)
 	{
@@ -445,51 +423,23 @@ void FRenderer::SubmitCommands(FRenderCommandQueue&& Queue)
 
 void FRenderer::ExecuteCommands()
 {
-	if (!SceneRenderer || !PassExecutor || !CurrentFramePacket)
+	if (!SceneRenderer || !PassExecutor || !CurrentRenderFrame)
 	{
 		return;
 	}
 
-	SceneRenderer->BuildFramePacket(PendingCommandQueue, *CurrentFramePacket);
-	ViewMatrix = CurrentFramePacket->View.ViewMatrix;
-	ProjectionMatrix = CurrentFramePacket->View.ProjectionMatrix;
+	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentRenderFrame);
+	ViewMatrix = CurrentRenderFrame->View.ViewMatrix;
+	ProjectionMatrix = CurrentRenderFrame->View.ProjectionMatrix;
 
 	SetConstantBuffers();
 	UpdateFrameConstantBuffer();
-	PassExecutor->Execute(*CurrentFramePacket);
+	PassExecutor->Execute(*CurrentRenderFrame);
 
 	if (PostRenderCallback) PostRenderCallback(this);
 
 	PrevCommandCount = PendingCommandQueue.Commands.size();
 	ClearCommandList();
-}
-
-void FRenderer::ExecuteRenderPass(ERenderLayer InRenderLayer)
-{
-	if (!PassExecutor || !CurrentFramePacket)
-	{
-		return;
-	}
-
-	switch (InRenderLayer)
-	{
-	case ERenderLayer::Overlay:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::Overlay);
-		break;
-	case ERenderLayer::UI:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::UI);
-		break;
-	case ERenderLayer::OutlineMask:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::OutlineMask);
-		break;
-	case ERenderLayer::OutlineComposite:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::OutlineComposite);
-		break;
-	case ERenderLayer::Base:
-	default:
-		PassExecutor->ExecutePass(*CurrentFramePacket, EMeshPass::Base);
-		break;
-	}
 }
 
 void FRenderer::ClearDepthBuffer()
@@ -939,10 +889,6 @@ void FRenderer::RenderOutlines(const TArray<FOutlineRenderItem>& Items)
 	ShaderManager.Bind(DeviceContext);
 	SetConstantBuffers();
 	RenderStateManager->RebindState();
-	if (MaterialBindingCache)
-	{
-		MaterialBindingCache->Reset();
-	}
 
 	BoundRTV->Release();
 	BoundDSV->Release();
@@ -971,7 +917,7 @@ void FRenderer::ExecuteLineCommands()
 {
 	if (LineVertices.empty()) return;
 	ShaderManager.Bind(DeviceContext);
-	DefaultMaterial->Bind(DeviceContext, MaterialBindingCache.get());
+	DefaultMaterial->Bind(DeviceContext);
 	UINT Size = static_cast<UINT>(LineVertices.size() * sizeof(FVertex));
 	if (LineVertexBuffer && LineVertexBufferSize < Size) { LineVertexBuffer->Release(); LineVertexBuffer = nullptr; }
 	if (!LineVertexBuffer)
@@ -1008,10 +954,9 @@ void FRenderer::ExecuteLineCommands()
 void FRenderer::Release()
 {
 	ClearViewportCallbacks(); ClearSceneRenderTarget();
-	CurrentFramePacket.reset();
+	CurrentRenderFrame.reset();
 	SceneRenderer.reset();
 	PassExecutor.reset();
-	MaterialBindingCache.reset();
 	if (ObjectUniformStream)
 	{
 		ObjectUniformStream->Release();

@@ -17,13 +17,6 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(const UPrimitiveComponent* InComponen
 {
 }
 
-void FPrimitiveSceneProxy::AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
-{
-	TArray<FMeshBatch> MeshBatches;
-	CollectMeshBatches(View, Renderer, MeshBatches);
-	PassProcessor.BuildMeshDrawCommands(MeshBatches, &Command, Renderer, OutPacket, ObjectUniformStream, InOutSubmissionOrder);
-}
-
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
@@ -50,10 +43,10 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 	const int32 SectionCount = RenderMesh->GetNumSection();
 	if (SectionCount <= 0)
 	{
-		FMeshBatch MeshBatch = {};
+		FMeshRenderItem MeshBatch = {};
 		MeshBatch.Material = !Materials.empty() ? Materials[0] : nullptr;
-		MeshBatch.Element.RenderMesh = RenderMesh;
-		MeshBatch.Element.WorldMatrix = LocalToWorld;
+		MeshBatch.RenderMesh = RenderMesh;
+		MeshBatch.WorldMatrix = LocalToWorld;
 		MeshBatchTemplates.push_back(MeshBatch);
 		return;
 	}
@@ -63,30 +56,18 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 	{
 		const FMeshSection& Section = RenderMesh->Sections[SectionIndex];
 
-		FMeshBatch MeshBatch = {};
+		FMeshRenderItem MeshBatch = {};
 		MeshBatch.Material = SectionIndex < static_cast<int32>(Materials.size()) ? Materials[SectionIndex] : nullptr;
-		MeshBatch.Element.RenderMesh = RenderMesh;
-		MeshBatch.Element.WorldMatrix = LocalToWorld;
-		MeshBatch.Element.IndexStart = Section.StartIndex;
-		MeshBatch.Element.IndexCount = Section.IndexCount;
-		MeshBatch.Element.SectionIndex = static_cast<uint32>(SectionIndex);
+		MeshBatch.RenderMesh = RenderMesh;
+		MeshBatch.WorldMatrix = LocalToWorld;
+		MeshBatch.IndexStart = Section.StartIndex;
+		MeshBatch.IndexCount = Section.IndexCount;
+		MeshBatch.SectionIndex = static_cast<uint32>(SectionIndex);
 		MeshBatchTemplates.push_back(MeshBatch);
 	}
 }
 
-void FStaticMeshSceneProxy::AppendDrawCommands(const FRenderCommand& Command, const FViewInfo& View, FRenderer& Renderer, const FMeshPassProcessor& PassProcessor, FSceneFramePacket& OutPacket, FObjectUniformStream& ObjectUniformStream, uint64& InOutSubmissionOrder) const
-{
-	(void)View;
-
-	if (!RenderMesh || MeshBatchTemplates.empty())
-	{
-		return;
-	}
-
-	PassProcessor.BuildMeshDrawCommands(MeshBatchTemplates, &Command, Renderer, OutPacket, ObjectUniformStream, InOutSubmissionOrder);
-}
-
-void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const
+void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
 	(void)View;
 
@@ -96,9 +77,9 @@ void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer&
 	}
 
 	OutMeshBatches.reserve(OutMeshBatches.size() + MeshBatchTemplates.size());
-	for (const FMeshBatch& TemplateBatch : MeshBatchTemplates)
+	for (const FMeshRenderItem& TemplateBatch : MeshBatchTemplates)
 	{
-		FMeshBatch MeshBatch = TemplateBatch;
+		FMeshRenderItem MeshBatch = TemplateBatch;
 		if (!MeshBatch.Material)
 		{
 			MeshBatch.Material = Renderer.GetDefaultMaterial();
@@ -122,7 +103,7 @@ FTextSceneProxy::FTextSceneProxy(const UTextComponent* InComponent)
 	DisplayText = InComponent->GetDisplayText();
 	TextScale = InComponent->GetTextScale();
 	bBillboard = InComponent->IsBillboard();
-	RenderLayer = InComponent->IsA(UUUIDBillboardComponent::StaticClass()) ? ERenderLayer::Overlay : ERenderLayer::Base;
+	RenderPass = InComponent->IsA(UUUIDBillboardComponent::StaticClass()) ? ERenderPass::NoDepth : ERenderPass::Alpha;
 
 	TextMesh = std::make_shared<FDynamicMesh>();
 	TextMesh->Topology = EMeshTopology::EMT_TriangleList;
@@ -130,7 +111,7 @@ FTextSceneProxy::FTextSceneProxy(const UTextComponent* InComponent)
 
 FTextSceneProxy::~FTextSceneProxy() = default;
 
-void FTextSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const
+void FTextSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
 	if (DisplayText.empty() || !TextMesh)
 	{
@@ -169,13 +150,13 @@ void FTextSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Rende
 		DynamicMaterial->SetVectorParameter("TextColor", TextColor);
 	}
 
-	FMeshBatch MeshBatch = {};
+	FMeshRenderItem MeshBatch = {};
 	MeshBatch.Material = Material;
-	MeshBatch.Element.RenderMesh = TextMesh.get();
-	MeshBatch.Element.WorldMatrix = bBillboard
+	MeshBatch.RenderMesh = TextMesh.get();
+	MeshBatch.WorldMatrix = bBillboard
 		? FMatrix::MakeScale(RenderWorldScale) * FMatrix::MakeBillboard(RenderWorldPosition, View.CameraPosition)
 		: FMatrix::MakeScale(FVector(TextScale, TextScale, TextScale)) * LocalToWorld;
-	MeshBatch.RenderLayer = RenderLayer;
+	MeshBatch.RenderPass = RenderPass;
 	OutMeshBatches.push_back(MeshBatch);
 }
 
@@ -204,7 +185,7 @@ FSubUVSceneProxy::FSubUVSceneProxy(const USubUVComponent* InComponent)
 
 FSubUVSceneProxy::~FSubUVSceneProxy() = default;
 
-void FSubUVSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const
+void FSubUVSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
 	if (!SubUVMesh)
 	{
@@ -257,10 +238,11 @@ void FSubUVSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Rend
 		WorldMatrix = FMatrix::MakeScale(WorldScale) * FMatrix::MakeBillboard(WorldPosition, View.CameraPosition);
 	}
 
-	FMeshBatch MeshBatch = {};
+	FMeshRenderItem MeshBatch = {};
 	MeshBatch.Material = Material;
-	MeshBatch.Element.RenderMesh = SubUVMesh.get();
-	MeshBatch.Element.WorldMatrix = WorldMatrix;
+	MeshBatch.RenderMesh = SubUVMesh.get();
+	MeshBatch.WorldMatrix = WorldMatrix;
+	MeshBatch.RenderPass = ERenderPass::Alpha;
 	OutMeshBatches.push_back(MeshBatch);
 }
 
@@ -276,7 +258,7 @@ FLineBatchSceneProxy::FLineBatchSceneProxy(const ULineBatchComponent* InComponen
 	LocalToWorld = InComponent->GetWorldTransform();
 }
 
-void FLineBatchSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshBatch>& OutMeshBatches) const
+void FLineBatchSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
 	(void)View;
 
@@ -285,9 +267,9 @@ void FLineBatchSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& 
 		return;
 	}
 
-	FMeshBatch MeshBatch = {};
+	FMeshRenderItem MeshBatch = {};
 	MeshBatch.Material = Renderer.GetDefaultMaterial();
-	MeshBatch.Element.RenderMesh = RenderMesh;
-	MeshBatch.Element.WorldMatrix = LocalToWorld;
+	MeshBatch.RenderMesh = RenderMesh;
+	MeshBatch.WorldMatrix = LocalToWorld;
 	OutMeshBatches.push_back(MeshBatch);
 }

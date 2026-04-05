@@ -20,8 +20,7 @@ class UScene;
 class FSceneRenderer;
 class FPassExecutor;
 class FObjectUniformStream;
-class FMaterialBindingCache;
-struct FSceneFramePacket;
+struct FSceneRenderFrame;
 
 using FGUICallback = std::function<void()>;
 class FRenderer;
@@ -91,8 +90,6 @@ public:
 	void ExecuteCommands();
 
 	/** 지정한 렌더 레이어 하나만 골라 실제 드로우콜을 수행한다. */
-	void ExecuteRenderPass(ERenderLayer RenderLayer);
-
 	/** 디버그 선 하나를 임시 버퍼에 추가한다. */
 	void DrawLine(const FVector& Start, const FVector& End, const FVector4& Color);
 	/** 박스 외곽선을 선 목록으로 변환해 추가한다. */
@@ -165,8 +162,7 @@ private:
 	std::unique_ptr<FSceneRenderer> SceneRenderer = nullptr;
 	std::unique_ptr<FPassExecutor> PassExecutor = nullptr;
 	std::unique_ptr<FObjectUniformStream> ObjectUniformStream = nullptr;
-	std::unique_ptr<FMaterialBindingCache> MaterialBindingCache = nullptr;
-	std::unique_ptr<FSceneFramePacket> CurrentFramePacket = nullptr;
+	std::unique_ptr<FSceneRenderFrame> CurrentRenderFrame = nullptr;
 
 	HWND Hwnd = nullptr;
 	ID3D11Device* Device = nullptr;
