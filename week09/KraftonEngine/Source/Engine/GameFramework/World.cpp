@@ -148,7 +148,7 @@ static constexpr uint32 LOD_STAGGER_MIN_VISIBLE = 2048;
 static constexpr float LOD_FULL_UPDATE_CAMERA_MOVE_SQ = 1.0f * 1.0f;
 static constexpr float LOD_FULL_UPDATE_CAMERA_ROTATION_DOT = 0.9986295f; // about 3 degrees
 
-static_assert((LOD_UPDATE_SLICE_COUNT & (LOD_UPDATE_SLICE_COUNT - 1)) == 0,
+static_assert((LOD_UPDATE_SLICE_COUNT& (LOD_UPDATE_SLICE_COUNT - 1)) == 0,
 	"LOD_UPDATE_SLICE_COUNT must be a power of two.");
 
 static uint32 SelectLOD(uint32 CurLOD, float DistSq)
@@ -175,9 +175,9 @@ static float DistanceSquared(const FVector& A, const FVector& B)
 
 void UWorld::UpdateVisibleProxies()
 {
-	VisiblePrimitives.clear();
 	VisibleProxies.clear();
 
+	// HEAD: capacity 예약으로 재할당 방지
 	const uint32 ExpectedProxyCount = Scene.GetProxyCount();
 	if (VisiblePrimitives.capacity() < ExpectedProxyCount)
 	{
@@ -197,7 +197,8 @@ void UWorld::UpdateVisibleProxies()
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "1_WorldTick");
 		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
-		Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
+		// Direct proxy output — skips Component→GetSceneProxy() indirection in BuildVisibleProxies
+		Partition.QueryFrustumAllProxies(ConvexVolume, VisibleProxies);
 	}
 
 	{
@@ -226,28 +227,28 @@ void UWorld::UpdateVisibleProxies()
 			bHasLastFullLODUpdateCameraPos = true;
 		}
 
-		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
+		// main: QueryFrustumAllProxies가 이미 VisibleProxies를 채웠으므로 직접 순회
+		// HEAD: LOD 스태거 최적화 유지 (프록시 수가 많을 때 슬라이스별 갱신)
+		const uint32 Count = static_cast<uint32>(VisibleProxies.size());
+		for (uint32 i = 0; i < Count; i++)
 		{
-			if (!Primitive) continue;
-			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+			FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
+			if (!Proxy) continue;
+
+			const bool bRefreshLOD =
+				bForceFullLODRefresh
+				|| Proxy->LastLODUpdateFrame == UINT32_MAX
+				|| ((Proxy->ProxyId & (LOD_UPDATE_SLICE_COUNT - 1)) == LODUpdateSlice);
+
+			if (bRefreshLOD)
 			{
-				const bool bRefreshLOD =
-					bForceFullLODRefresh
-					|| Proxy->LastLODUpdateFrame == UINT32_MAX
-					|| ((Proxy->ProxyId & (LOD_UPDATE_SLICE_COUNT - 1)) == LODUpdateSlice);
-
-				if (bRefreshLOD)
-				{
-					const FVector& ProxyPos = Proxy->CachedWorldPos;
-					const float DistSq = DistanceSquared(CameraPos, ProxyPos);
-					Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
-					Proxy->LastLODUpdateFrame = LODUpdateFrame;
-				}
-
-				LOD_STATS_RECORD(Proxy->CurrentLOD);
-
-				VisibleProxies.push_back(Proxy);
+				const FVector& ProxyPos = Proxy->CachedWorldPos;
+				const float DistSq = DistanceSquared(CameraPos, ProxyPos);
+				Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
+				Proxy->LastLODUpdateFrame = LODUpdateFrame;
 			}
+
+			LOD_STATS_RECORD(Proxy->CurrentLOD);
 		}
 	}
 }
@@ -272,7 +273,10 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
-	Partition.FlushPrimitive();
+	{
+		SCOPE_STAT_CAT("FlushPrimitive", "1_WorldTick");
+		Partition.FlushPrimitive();
+	}
 
 	UpdateVisibleProxies();
 	DebugDrawQueue.Tick(DeltaTime);

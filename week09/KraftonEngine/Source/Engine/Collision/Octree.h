@@ -5,6 +5,8 @@
 #include "Render/Culling/ConvexVolume.h"
 #include <memory>
 
+class FPrimitiveSceneProxy;
+
 constexpr int32 MAX_DEPTH = 5;
 constexpr int32 MAX_SIZE = 32;
 
@@ -35,10 +37,18 @@ public:
 
 	void QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	// Direct proxy output — skips Component→GetSceneProxy() indirection
+	void QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;
 	void QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
 	void Reset(const FBoundingBox& InBounds, uint32 InDepth = 0);
 private:
+	// Collect all visible primitives in this node and descendants (no frustum test)
+	void CollectAll(TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const;
+	// Recursive frustum query with containment propagation
+	void QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives, bool bParentContained) const;
+	void QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies, bool bParentContained) const;
 	FBoundingBox BoundOctree;
 
 	TArray<FOctree*> Children;
