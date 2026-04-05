@@ -115,61 +115,6 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 	}
 }
 
-// ============================================================
-// Occlusion BVH 클러스터 디버그 시각화
-// ============================================================
-#include "Engine/Render/Culling/OcclusionBVH.h"
-
-void FRenderCollector::CollectOcclusionBVHDebug(const FOcclusionBVH& BVH, FRenderBus& RenderBus)
-{
-	const int32 ClusterCount = BVH.GetClusterCount();
-	if (ClusterCount == 0) return;
-
-	static const FColor ClusterColors[] = {
-		FColor(255, 100, 100),	// Red
-		FColor(100, 255, 100),	// Green
-		FColor(100, 100, 255),	// Blue
-		FColor(255, 255, 100),	// Yellow
-		FColor(255, 100, 255),	// Magenta
-		FColor(100, 255, 255),	// Cyan
-	};
-
-	for (int32 i = 0; i < ClusterCount; ++i)
-	{
-		const FBoundingBox Bounds = BVH.GetClusterBounds(i);
-		if (!Bounds.IsValid()) continue;
-
-		const FColor& Color = ClusterColors[i % 6];
-		const FVector& Min = Bounds.Min;
-		const FVector& Max = Bounds.Max;
-
-		FVector V[8] = {
-			FVector(Min.X, Min.Y, Min.Z),
-			FVector(Max.X, Min.Y, Min.Z),
-			FVector(Max.X, Max.Y, Min.Z),
-			FVector(Min.X, Max.Y, Min.Z),
-			FVector(Min.X, Min.Y, Max.Z),
-			FVector(Max.X, Min.Y, Max.Z),
-			FVector(Max.X, Max.Y, Max.Z),
-			FVector(Min.X, Max.Y, Max.Z),
-		};
-
-		static constexpr int32 Edges[][2] = {
-			{0,1},{1,2},{2,3},{3,0},
-			{4,5},{5,6},{6,7},{7,4},
-			{0,4},{1,5},{2,6},{3,7}
-		};
-
-		for (const auto& E : Edges)
-		{
-			FDebugLineEntry Entry;
-			Entry.Start = V[E[0]];
-			Entry.End = V[E[1]];
-			Entry.Color = Color;
-			RenderBus.AddDebugLineEntry(std::move(Entry));
-		}
-	}
-}
 
 // ============================================================
 // Visible 프록시 수집 — UpdateVisibleProxies에서 구축한 dense 리스트만 순회
