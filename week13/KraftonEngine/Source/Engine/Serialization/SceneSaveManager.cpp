@@ -17,6 +17,7 @@
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
+#include "Profiling/PlatformTime.h"
 
 // ---- JSON vector helpers ---------------------------------------------------
 
@@ -388,7 +389,6 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 		Actor->SetActorScale(Scale);
 
 		CreatedActors.push_back(Actor);
-		// Material/UV overrides are applied later when deserializing the Actor's RootComponent properties
 	}
 
 	// Octree 일괄 삽입

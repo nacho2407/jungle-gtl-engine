@@ -58,21 +58,15 @@ void UStaticMeshComponent::CacheLocalBounds()
 	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
 	if (!Asset || Asset->Vertices.empty()) return;
 
-	FVector LocalMin = Asset->Vertices[0].pos;
-	FVector LocalMax = Asset->Vertices[0].pos;
-	for (const FNormalVertex& V : Asset->Vertices)
+	// FStaticMesh에 이미 계산된 바운드가 있으면 그대로 사용
+	if (!Asset->bBoundsValid)
 	{
-		LocalMin.X = std::min(LocalMin.X, V.pos.X);
-		LocalMin.Y = std::min(LocalMin.Y, V.pos.Y);
-		LocalMin.Z = std::min(LocalMin.Z, V.pos.Z);
-		LocalMax.X = std::max(LocalMax.X, V.pos.X);
-		LocalMax.Y = std::max(LocalMax.Y, V.pos.Y);
-		LocalMax.Z = std::max(LocalMax.Z, V.pos.Z);
+		Asset->CacheBounds();
 	}
 
-	CachedLocalCenter = (LocalMin + LocalMax) * 0.5f;
-	CachedLocalExtent = (LocalMax - LocalMin) * 0.5f;
-	bHasValidBounds = true;
+	CachedLocalCenter = Asset->BoundsCenter;
+	CachedLocalExtent = Asset->BoundsExtent;
+	bHasValidBounds = Asset->bBoundsValid;
 }
 
 UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
