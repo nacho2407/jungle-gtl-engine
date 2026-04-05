@@ -5,6 +5,7 @@
 #include "Core/PropertyTypes.h"
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
+#include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Texture/Texture2D.h"
@@ -130,21 +131,45 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+	const FMatrix& WorldInverse = GetWorldInverseMatrix();
+	return LineTraceStaticMeshFast(Ray, WorldMatrix, WorldInverse, OutHitResult);
+}
+
+bool UStaticMeshComponent::LineTraceStaticMeshFast(
+	const FRay& Ray,
+	const FMatrix& WorldMatrix,
+	const FMatrix& WorldInverse,
+	FHitResult& OutHitResult)
+{
+	LastPickingMetrics = {};
 	if (!StaticMesh) return false;
 
-	FVector LocalOrigin = GetWorldInverseMatrix().TransformPositionWithW(Ray.Origin);
-	FVector LocalDirection = GetWorldInverseMatrix().TransformVector(Ray.Direction);
+	FVector LocalOrigin = WorldInverse.TransformPositionWithW(Ray.Origin);
+	FVector LocalDirection = WorldInverse.TransformVector(Ray.Direction);
 	LocalDirection.Normalize();
 
-	//Mesh BVH를 사용해 충돌 테스트 시도.
+	// Mesh BVH만 사용하는 전용 경로입니다. 월드 BVH는 이 함수를 직접 호출해 가상 호출 비용을 피합니다.
+	const uint64 MeshTraversalStart = FPlatformTime::Cycles64();
 	if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
 	{
+		LastPickingMetrics.MeshTraversalMs = FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - MeshTraversalStart);
+		const FMeshTrianglePickingBVH::FTraversalMetrics& MeshMetrics = StaticMesh->GetLastMeshPickingMetrics();
+		LastPickingMetrics.MeshInternalNodesVisited = MeshMetrics.InternalNodesVisited;
+		LastPickingMetrics.MeshLeafPacketsTested = MeshMetrics.LeafPacketsTested;
+		LastPickingMetrics.MeshTriangleLanesTested = MeshMetrics.TriangleLanesTested;
+
 		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
-		const FVector WorldHitPoint = GetWorldMatrix().TransformPositionWithW(LocalHitPoint);
+		const FVector WorldHitPoint = WorldMatrix.TransformPositionWithW(LocalHitPoint);
 		OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
 		OutHitResult.HitComponent = this;
 		return true;
 	}
+	LastPickingMetrics.MeshTraversalMs = FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - MeshTraversalStart);
+	const FMeshTrianglePickingBVH::FTraversalMetrics& MeshMetrics = StaticMesh->GetLastMeshPickingMetrics();
+	LastPickingMetrics.MeshInternalNodesVisited = MeshMetrics.InternalNodesVisited;
+	LastPickingMetrics.MeshLeafPacketsTested = MeshMetrics.LeafPacketsTested;
+	LastPickingMetrics.MeshTriangleLanesTested = MeshMetrics.TriangleLanesTested;
 
 	// 실패하면 기존 방식하던 걸 주석 처리. 성능개선이 일단 확인됨.
 	//bool bHit = FRayUtils::RaycastTriangles(
