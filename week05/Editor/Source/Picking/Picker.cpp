@@ -250,11 +250,11 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 		{
 			continue;
 		}
-
-		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()) || PrimComp->IsA(USkyComponent::StaticClass()))
-		{
-			continue;
-		}
+		// IsA가 부담이 많다 -> 애초에 거르고 시작.
+		//if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()) || PrimComp->IsA(USkyComponent::StaticClass()))
+		//{
+		//	continue;
+		//}
 
 		const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
 
