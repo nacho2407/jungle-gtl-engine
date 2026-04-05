@@ -57,19 +57,26 @@ private:
 		float ChildMaxX[8];
 		float ChildMaxY[8];
 		float ChildMaxZ[8];
-		int32 LeafPrimitiveIndices[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-		float LeafMinX[8];
-		float LeafMinY[8];
-		float LeafMinZ[8];
-		float LeafMaxX[8];
-		float LeafMaxY[8];
-		float LeafMaxZ[8];
 
 		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
 		int32 LeafCount = 0;
+		int32 FirstPrimitivePacket = 0;
+		int32 PrimitivePacketCount = 0;
 
 		bool IsLeaf() const { return ChildCount == 0; }
+	};
+
+	struct FPrimitivePacket
+	{
+		int32 PrimitiveIndices[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		float MinX[8];
+		float MinY[8];
+		float MinZ[8];
+		float MaxX[8];
+		float MaxY[8];
+		float MaxZ[8];
+		int32 PrimitiveCount = 0;
 	};
 
 	int32 BuildRecursive(int32 Start, int32 End);
@@ -77,5 +84,6 @@ private:
 	bool bDirty = true;
 	TArray<FLeaf> Leaves;
 	TArray<FNode> Nodes;
+	TArray<FPrimitivePacket> PrimitivePackets;
 	mutable FTraversalMetrics LastTraversalMetrics;
 };
