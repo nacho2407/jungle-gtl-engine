@@ -264,11 +264,13 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
-		// 이 코드 빼면 피킹 정상동작 안함.
-		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
+		// Game Jam
+		// Actor.cpp의 PostInitialize함수에서 Billboard를 만들어서 picking이 빌보드까지 점검
+		//그걸 방지하는 코드 -> 빌보드를 없애서 이제 필요 없음.
+		/*if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
 		{
 			continue;
-		}
+		}*/
 
 		if (PrimComp->IsA(USubUVComponent::StaticClass()) || PrimComp->IsA(UTextComponent::StaticClass()))
 		{

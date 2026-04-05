@@ -99,7 +99,8 @@ void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
 
 void AActor::PostSpawnInitialize()
 {
-	if (GetComponentByClass<UUUIDBillboardComponent>() == nullptr)
+	// GameJam
+	/*if (GetComponentByClass<UUUIDBillboardComponent>() == nullptr)
 	{
 		UUUIDBillboardComponent* UUIDComponent =
 			FObjectFactory::ConstructObject<UUUIDBillboardComponent>(this, "UUIDBillboard");
@@ -112,7 +113,7 @@ void AActor::PostSpawnInitialize()
 			UUIDComponent->SetWorldScale(0.3f);
 			UUIDComponent->SetTextColor(FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 		}
-	}
+	}*/
 
 	for (UActorComponent* Component : OwnedComponents)
 	{
