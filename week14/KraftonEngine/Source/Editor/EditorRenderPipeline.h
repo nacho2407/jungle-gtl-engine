@@ -2,6 +2,7 @@
 #include "Render/Pipeline/IRenderPipeline.h"
 #include "Render/Pipeline/RenderCollector.h"
 #include "Render/Pipeline/RenderBus.h"
+#include "Render/Culling/GPUOcclusionCulling.h"
 
 class UEditorEngine;
 class FViewport;
@@ -24,4 +25,5 @@ private:
 	UEditorEngine* Editor = nullptr;
 	FRenderCollector Collector;
 	FRenderBus Bus;
+	FGPUOcclusionCulling GPUOcclusion;
 };
