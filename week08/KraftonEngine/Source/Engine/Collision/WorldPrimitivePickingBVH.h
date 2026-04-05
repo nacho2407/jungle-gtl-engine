@@ -11,6 +11,20 @@ class UPrimitiveComponent;
 class FWorldPrimitivePickingBVH
 {
 public:
+	struct FTraversalMetrics
+	{
+		uint32 InternalNodesVisited = 0;
+		uint32 LeafNodesVisited = 0;
+		uint32 PrimitiveAABBTests = 0;
+		uint32 PrimitiveAABBHits = 0;
+		uint32 NarrowPhaseCalls = 0;
+		uint32 MeshInternalNodesVisited = 0;
+		uint32 MeshLeafPacketsTested = 0;
+		uint32 MeshTriangleLanesTested = 0;
+		double NarrowPhaseMs = 0.0;
+		double MeshTraversalMs = 0.0;
+	};
+
 	//월드 상태나 picking 대상 변화로 인해 캐시된 트리를 무효화합니다. -> TODO: 최적화 여부 비교해보기
 	void MarkDirty();
 	//현재 월드의 actor 목록을 기준으로 picking 트리를 즉시 다시 만듭니다.
@@ -19,6 +33,7 @@ public:
 	void EnsureBuilt(const TArray<AActor*>& Actors);
 	//트리를 순회해 가장 가까운 primitive hit 결과를 찾습니다.
 	bool Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	const FTraversalMetrics& GetLastTraversalMetrics() const { return LastTraversalMetrics; }
 
 private:
 	struct FLeaf
@@ -42,6 +57,13 @@ private:
 		float ChildMaxX[8];
 		float ChildMaxY[8];
 		float ChildMaxZ[8];
+		int32 LeafPrimitiveIndices[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+		float LeafMinX[8];
+		float LeafMinY[8];
+		float LeafMinZ[8];
+		float LeafMaxX[8];
+		float LeafMaxY[8];
+		float LeafMaxZ[8];
 
 		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
@@ -55,4 +77,5 @@ private:
 	bool bDirty = true;
 	TArray<FLeaf> Leaves;
 	TArray<FNode> Nodes;
+	mutable FTraversalMetrics LastTraversalMetrics;
 };

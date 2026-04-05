@@ -1,4 +1,4 @@
-﻿#include "Collision/MeshTrianglePickingBVH.h"
+#include "Collision/MeshTrianglePickingBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Collision/RayUtilsSIMD.h"
@@ -20,13 +20,10 @@ namespace
 	}
 }
 
-/**
- * 메시의 모든 삼각형을 leaf로 수집하고, triangle 단위 BVH를 새로 빌드합니다.
- * 8분기 트리 구조를 사용하여 계층 깊이를 최적화합니다.
- */
 void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 {
 	TriangleLeaves.clear();
+	LeafPackets.clear();
 	Nodes.clear();
 
 	if (Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
@@ -35,6 +32,7 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 	}
 
 	TriangleLeaves.reserve(Mesh.Indices.size() / 3);
+	LeafPackets.reserve((Mesh.Indices.size() / 3 + 7) / 8);
 
 	for (size_t Index = 0; Index + 2 < Mesh.Indices.size(); Index += 3)
 	{
@@ -50,13 +48,10 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 
 	if (!TriangleLeaves.empty())
 	{
-		BuildRecursive(0, static_cast<int32>(TriangleLeaves.size()));
+		BuildRecursive(Mesh, 0, static_cast<int32>(TriangleLeaves.size()));
 	}
 }
 
-/**
- * mesh BVH가 아직 만들어지지 않았을 경우 빌드합니다.
- */
 void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 {
 	if (!Nodes.empty())
@@ -66,16 +61,6 @@ void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 	BuildNow(Mesh);
 }
 
-/**
- * 로컬 공간 ray로 mesh BVH를 순회하면서 가장 가까운 삼각형 hit를 찾습니다.
- * 내부 노드 AABB 검사와 리프 노드 삼각형 교차 검사 모두 AVX2 SIMD(256비트)를 사용합니다.
- * 
- * \param LocalOrigin
- * \param LocalDirection
- * \param Mesh
- * \param OutHitResult
- * \return 
- */
 bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
 	struct FTraversalEntry
@@ -85,6 +70,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	};
 
 	OutHitResult = {};
+	LastTraversalMetrics = {};
 	if (Nodes.empty() || Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
 	{
 		return false;
@@ -104,7 +90,6 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
-	//mesh NBH와 scene BVH 모두 같은 ray SIMD context를 공유합니다.
 	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
 	NodeStack.push_back({ 0, RootTMin });
@@ -121,84 +106,60 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			continue;
 		}
 
-		const int32 NodeIndex = Entry.NodeIndex;
-		const FNode& Node = Nodes[NodeIndex];
+		const FNode& Node = Nodes[Entry.NodeIndex];
 
 		if (Node.IsLeaf())
 		{
-			// leaf는 최대 8개 triangle을 담고 있으므로 packet 교차 검사와 잘 맞습니다.
-			alignas(32) float v0x[8], v0y[8], v0z[8];
-			alignas(32) float v1x[8], v1y[8], v1z[8];
-			alignas(32) float v2x[8], v2y[8], v2z[8];
-			int32 indices[8];
-
-			int32 count = Node.LeafCount;
-			for (int32 i = 0; i < 8; ++i)
-			{
-				if (i < count)
-				{
-					const int32 triIdx = TriangleLeaves[Node.FirstLeaf + i].TriangleStartIndex;
-					indices[i] = triIdx;
-					const FVector& V0 = Mesh.Vertices[Mesh.Indices[triIdx]].pos;
-					const FVector& V1 = Mesh.Vertices[Mesh.Indices[triIdx + 1]].pos;
-					const FVector& V2 = Mesh.Vertices[Mesh.Indices[triIdx + 2]].pos;
-					v0x[i] = V0.X; v0y[i] = V0.Y; v0z[i] = V0.Z;
-					v1x[i] = V1.X; v1y[i] = V1.Y; v1z[i] = V1.Z;
-					v2x[i] = V2.X; v2y[i] = V2.Y; v2z[i] = V2.Z;
-				}
-				else
-				{
-					v0x[i] = v0y[i] = v0z[i] = 1e30f; // 멀리 보내기
-					v1x[i] = v1y[i] = v1z[i] = 1e30f;
-					v2x[i] = v2y[i] = v2z[i] = 1e30f;
-					indices[i] = -1;
-				}
-			}
+			LastTraversalMetrics.LeafPacketsTested++;
+			const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
+			LastTraversalMetrics.TriangleLanesTested += Packet.TriangleCount;
 
 			float TValues[8];
-			const int32 mask = FRayUtilsSIMD::IntersectTriangles8(
+			const int32 Mask = FRayUtilsSIMD::IntersectTriangles8Precomputed(
 				RayContext,
-				v0x, v0y, v0z,
-				v1x, v1y, v1z,
-				v2x, v2y, v2z,
+				Packet.V0X, Packet.V0Y, Packet.V0Z,
+				Packet.Edge1X, Packet.Edge1Y, Packet.Edge1Z,
+				Packet.Edge2X, Packet.Edge2Y, Packet.Edge2Z,
 				ClosestT,
-				TValues);
-			if (mask != 0)
+				TValues) & static_cast<int32>(Packet.LaneMask);
+
+			if (Mask != 0)
 			{
 				for (int32 i = 0; i < 8; ++i)
 				{
-					if ((mask >> i) & 1)
+					if (((Mask >> i) & 1) && TValues[i] < ClosestT)
 					{
-						if (TValues[i] < ClosestT)
-						{
-							ClosestT = TValues[i];
-							OutHitResult.bHit = true;
-							OutHitResult.Distance = TValues[i];
-							OutHitResult.FaceIndex = indices[i];
-							bHit = true;
-						}
+						ClosestT = TValues[i];
+						OutHitResult.bHit = true;
+						OutHitResult.Distance = TValues[i];
+						OutHitResult.FaceIndex = Packet.TriangleStartIndices[i];
+						bHit = true;
 					}
 				}
 			}
 			continue;
 		}
 
-		// 내부 노드는 world BVH와 동일하게 8-way AABB packet 검사 후 거리순으로 순회합니다.
+		LastTraversalMetrics.InternalNodesVisited++;
+
 		float TMinValues[8];
-		const int32 node_mask = FRayUtilsSIMD::IntersectAABB8(
+		const int32 NodeMask = FRayUtilsSIMD::IntersectAABB8(
 			RayContext,
 			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
 			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
 			ClosestT,
 			TMinValues);
-		if (node_mask == 0) continue;
+		if (NodeMask == 0)
+		{
+			continue;
+		}
 
 		FTraversalEntry ChildEntries[8];
 		int32 ChildEntryCount = 0;
 
 		for (int32 i = 0; i < 8; ++i)
 		{
-			if ((node_mask >> i) & 1)
+			if ((NodeMask >> i) & 1)
 			{
 				ChildEntries[ChildEntryCount++] = { Node.Children[i], TMinValues[i] };
 			}
@@ -225,10 +186,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	return bHit;
 }
 
-/**
- * 구간 내 triangle leaf들로부터 BVH 노드를 재귀적으로 구성합니다. (8분기 버전)
- */
-int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
+int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.emplace_back();
@@ -247,6 +205,37 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 	{
 		Nodes[NodeIndex].FirstLeaf = Start;
 		Nodes[NodeIndex].LeafCount = LeafCount;
+		Nodes[NodeIndex].PacketIndex = static_cast<int32>(LeafPackets.size());
+
+		FTrianglePacket Packet{};
+		Packet.TriangleCount = static_cast<uint32>(LeafCount);
+
+		for (int32 i = 0; i < 8; ++i)
+		{
+			if (i < LeafCount)
+			{
+				const int32 TriStartIndex = TriangleLeaves[Start + i].TriangleStartIndex;
+				const FVector& V0 = Mesh.Vertices[Mesh.Indices[TriStartIndex]].pos;
+				const FVector& V1 = Mesh.Vertices[Mesh.Indices[TriStartIndex + 1]].pos;
+				const FVector& V2 = Mesh.Vertices[Mesh.Indices[TriStartIndex + 2]].pos;
+				const FVector Edge1 = V1 - V0;
+				const FVector Edge2 = V2 - V0;
+
+				Packet.V0X[i] = V0.X; Packet.V0Y[i] = V0.Y; Packet.V0Z[i] = V0.Z;
+				Packet.Edge1X[i] = Edge1.X; Packet.Edge1Y[i] = Edge1.Y; Packet.Edge1Z[i] = Edge1.Z;
+				Packet.Edge2X[i] = Edge2.X; Packet.Edge2Y[i] = Edge2.Y; Packet.Edge2Z[i] = Edge2.Z;
+				Packet.TriangleStartIndices[i] = TriStartIndex;
+				Packet.LaneMask |= (1u << i);
+			}
+			else
+			{
+				Packet.V0X[i] = Packet.V0Y[i] = Packet.V0Z[i] = 0.0f;
+				Packet.Edge1X[i] = Packet.Edge1Y[i] = Packet.Edge1Z[i] = 0.0f;
+				Packet.Edge2X[i] = Packet.Edge2Y[i] = Packet.Edge2Z[i] = 0.0f;
+			}
+		}
+
+		LeafPackets.push_back(Packet);
 		return NodeIndex;
 	}
 
@@ -258,8 +247,14 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 
 	const FVector CentroidExtent = CentroidBounds.GetExtent();
 	int32 SplitAxis = 0;
-	if (CentroidExtent.Y > CentroidExtent.X && CentroidExtent.Y >= CentroidExtent.Z) SplitAxis = 1;
-	else if (CentroidExtent.Z > CentroidExtent.X && CentroidExtent.Z > CentroidExtent.Y) SplitAxis = 2;
+	if (CentroidExtent.Y > CentroidExtent.X && CentroidExtent.Y >= CentroidExtent.Z)
+	{
+		SplitAxis = 1;
+	}
+	else if (CentroidExtent.Z > CentroidExtent.X && CentroidExtent.Z > CentroidExtent.Y)
+	{
+		SplitAxis = 2;
+	}
 
 	std::sort(
 		TriangleLeaves.begin() + Start,
@@ -271,22 +266,23 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 			if (SplitAxis == 1) return CenterA.Y < CenterB.Y;
 			if (SplitAxis == 2) return CenterA.Z < CenterB.Z;
 			return CenterA.X < CenterB.X;
-		}
-	);
+		});
 
 	const int32 DesiredChildren = std::min<int32>(8, LeafCount);
 	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
 	{
 		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
 		const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
-		if (RangeStart >= RangeEnd) continue;
+		if (RangeStart >= RangeEnd)
+		{
+			continue;
+		}
 
-		const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
+		const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
 		const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
-		
+
 		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
-		
-		// raycast 단계에서 바로 packet 검사할 수 있도록 child bounds를 SOA로 저장합니다.
+
 		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
 		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
 		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
