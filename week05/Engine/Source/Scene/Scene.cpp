@@ -216,3 +216,16 @@ void UScene::QueryPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDi
 	const Ray SceneRay(RayOrigin, RayDirection.GetSafeNormal());
 	SpatialBVH.QueryRay(SceneRay, MaxDistance, OutPrimitives);
 }
+
+void UScene::VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float& InOutMaxDistance, const BVH::FRayHitVisitor& Visitor) const
+{
+	RebuildSpatialIfNeeded();
+
+	if (RayDirection.IsZero())
+	{
+		return;
+	}
+
+	const Ray SceneRay(RayOrigin, RayDirection.GetSafeNormal());
+	SpatialBVH.VisitRay(SceneRay, InOutMaxDistance, Visitor);
+}

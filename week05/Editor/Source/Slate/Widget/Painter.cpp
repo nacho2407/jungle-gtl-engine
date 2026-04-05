@@ -57,21 +57,6 @@ namespace
 
 		return true;
 	}
-
-	static void ApplyUiDepthState(FRenderer* Renderer, FMaterial& Material)
-	{
-		if (!Renderer)
-		{
-			return;
-		}
-
-		FDepthStencilStateOption DepthOpt = Material.GetDepthStencilOption();
-		DepthOpt.DepthEnable = false;
-		DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
-		Material.SetDepthStencilOption(DepthOpt);
-		Material.SetDepthStencilState(DSS);
-	}
 }
 
 FPainter::FPainter(FRenderer* InRenderer)
@@ -100,10 +85,6 @@ void FPainter::SetRenderer(FRenderer* InRenderer)
 	}
 
 	UiColorMaterial = Renderer->GetDefaultMaterial()->CreateDynamicMaterial();
-	if (UiColorMaterial)
-	{
-		ApplyUiDepthState(Renderer, *UiColorMaterial);
-	}
 }
 
 void FPainter::SetScreenSize(int32 Width, int32 Height)
@@ -159,7 +140,6 @@ FDynamicMaterial* FPainter::GetOrCreateFontMaterial(uint32 Color)
 
 	const FVector4 C = ToColor(Color);
 	Material->SetVectorParameter("TextColor", C);
-	ApplyUiDepthState(Renderer, *Material);
 
 	FDynamicMaterial* RawMaterial = Material.get();
 	FontMaterialByColor[Color] = std::move(Material);
@@ -177,7 +157,8 @@ void FPainter::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material)
 	Command.RenderMesh = Mesh;
 	Command.Material = Material;
 	Command.WorldMatrix = FMatrix::Identity;
-	Command.RenderLayer = ERenderLayer::UI;
+	Command.RenderPass = ERenderPass::UI;
+	Command.bOverrideRenderPass = true;
 	UIQueue.AddCommand(Command);
 }
 

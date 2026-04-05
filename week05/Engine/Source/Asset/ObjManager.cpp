@@ -508,14 +508,6 @@ namespace
 		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
 		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
 
-		FMaterial* DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
-		Material->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
-		Material->SetRasterizerState(DefaultTexMat->GetRasterizerState());
-		Material->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
-		Material->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
-		Material->SetBlendOption(DefaultTexMat->GetBlendOption());
-		Material->SetBlendState(DefaultTexMat->GetBlendState());
-
 		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
 		if (SlotIndex >= 0)
 		{

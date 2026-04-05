@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
-#include "Renderer/MeshPassProcessor.h"
+#include "Renderer/SceneRenderTypes.h"
 
 class FRenderer;
-struct FSceneFramePacket;
+struct FSceneRenderFrame;
 
 class ENGINE_API FPassExecutor
 {
@@ -15,12 +15,10 @@ public:
 	}
 
 	void SetRenderer(FRenderer* InRenderer) { Renderer = InRenderer; }
-	void Execute(const FSceneFramePacket& Packet) const;
-	void ExecutePass(const FSceneFramePacket& Packet, EMeshPass MeshPass) const;
+	void Execute(const FSceneRenderFrame& Frame) const;
 
 private:
-	void UpdateUploadedMeshes(const FSceneFramePacket& Packet) const;
-	void FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& Packet) const;
+	void UpdateUploadedMeshes(const FSceneRenderFrame& Frame) const;
 	void ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) const;
 
 private:

@@ -108,21 +108,42 @@ BuildNode* BVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 		Buckets[b].Bounds.Expand(PrimitiveRefs[i].Bounds);
 	}
 
+	// Prefix sweep: PrefixBounds[i] = buckets [0..i] 합산
+	FAABB PrefixBounds[NUM_BUCKETS];
+	int32 PrefixCount[NUM_BUCKETS];
+	PrefixBounds[0] = Buckets[0].Bounds;
+	PrefixCount[0]  = Buckets[0].Count;
+	for (int32 i = 1; i < NUM_BUCKETS; ++i)
+	{
+		PrefixBounds[i] = PrefixBounds[i - 1];
+		PrefixBounds[i].Expand(Buckets[i].Bounds);
+		PrefixCount[i] = PrefixCount[i - 1] + Buckets[i].Count;
+	}
+
+	// Suffix sweep: SuffixBounds[i] = buckets [i..NUM_BUCKETS-1] 합산
+	FAABB SuffixBounds[NUM_BUCKETS];
+	int32 SuffixCount[NUM_BUCKETS];
+	SuffixBounds[NUM_BUCKETS - 1] = Buckets[NUM_BUCKETS - 1].Bounds;
+	SuffixCount[NUM_BUCKETS - 1]  = Buckets[NUM_BUCKETS - 1].Count;
+	for (int32 i = NUM_BUCKETS - 2; i >= 0; --i)
+	{
+		SuffixBounds[i] = SuffixBounds[i + 1];
+		SuffixBounds[i].Expand(Buckets[i].Bounds);
+		SuffixCount[i] = SuffixCount[i + 1] + Buckets[i].Count;
+	}
+
+	// split i: 왼쪽 [0..i-1], 오른쪽 [i..NUM_BUCKETS-1]
 	float BestCost = std::numeric_limits<float>::max();
 	int32 BestSplit = -1;
 	const float ParentArea = NodeBounds.SurfaceArea();
 
 	for (int32 i = 1; i < NUM_BUCKETS; ++i)
 	{
-		FAABB L, R;
-		int32 NL = 0, NR = 0;
-		for (int32 j = 0; j < i; ++j) { L.Expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
-		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.Expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
-
 		float Cost = 1.0f;
 		if (ParentArea > 1e-8f)
 		{
-			Cost += (L.SurfaceArea() * NL + R.SurfaceArea() * NR) / ParentArea;
+			Cost += (PrefixBounds[i - 1].SurfaceArea() * PrefixCount[i - 1]
+				   + SuffixBounds[i].SurfaceArea() * SuffixCount[i]) / ParentArea;
 		}
 
 		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
@@ -206,6 +227,24 @@ void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, 
 
 void BVH::QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
+	float TraversalMaxDistance = MaxDistance;
+	VisitRay(
+		InRay,
+		TraversalMaxDistance,
+		[&OutPrimitives](UPrimitiveComponent* Primitive, float PrimitiveTNear, float PrimitiveTFar, float& InOutMaxDistance)
+		{
+			(void)PrimitiveTNear;
+			(void)PrimitiveTFar;
+			(void)InOutMaxDistance;
+			if (Primitive)
+			{
+				OutPrimitives.push_back(Primitive);
+			}
+		});
+}
+
+void BVH::VisitRay(const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const
+{
 	if (!Root)
 	{
 		return;
@@ -213,17 +252,24 @@ void BVH::QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveCompone
 
 	float RootNear = 0.0f;
 	float RootFar = 0.0f;
-	if (!Root->Bounds.Intersect(InRay, MaxDistance, RootNear, RootFar))
+	if (!Root->Bounds.Intersect(InRay, InOutMaxDistance, RootNear, RootFar))
 	{
 		return;
 	}
 
-	QueryRayRecursive(Root, InRay, MaxDistance, OutPrimitives);
+	VisitRayRecursive(Root, InRay, InOutMaxDistance, Visitor);
 }
 
-void BVH::QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
+void BVH::VisitRayRecursive(const BuildNode* Node, const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const
 {
 	if (!Node)
+	{
+		return;
+	}
+
+	float NodeNear = 0.0f;
+	float NodeFar = 0.0f;
+	if (!Node->Bounds.Intersect(InRay, InOutMaxDistance, NodeNear, NodeFar))
 	{
 		return;
 	}
@@ -233,9 +279,11 @@ void BVH::QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDi
 		for (int32 Index = 0; Index < Node->PrimCount; ++Index)
 		{
 			const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
-			if (Ref.Primitive)
+			float PrimitiveNear = 0.0f;
+			float PrimitiveFar = 0.0f;
+			if (Ref.Primitive && Ref.Bounds.Intersect(InRay, InOutMaxDistance, PrimitiveNear, PrimitiveFar))
 			{
-				OutPrimitives.push_back(Ref.Primitive);
+				Visitor(Ref.Primitive, PrimitiveNear, PrimitiveFar, InOutMaxDistance);
 			}
 		}
 		return;
@@ -243,33 +291,37 @@ void BVH::QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDi
 
 	float LeftNear = 0.0f;
 	float LeftFar = 0.0f;
-	const bool bHitLeft = Node->Left && Node->Left->Bounds.Intersect(InRay, MaxDistance, LeftNear, LeftFar);
+	const bool bHitLeft = Node->Left && Node->Left->Bounds.Intersect(InRay, InOutMaxDistance, LeftNear, LeftFar);
 
 	float RightNear = 0.0f;
 	float RightFar = 0.0f;
-	const bool bHitRight = Node->Right && Node->Right->Bounds.Intersect(InRay, MaxDistance, RightNear, RightFar);
+	const bool bHitRight = Node->Right && Node->Right->Bounds.Intersect(InRay, InOutMaxDistance, RightNear, RightFar);
 
 	if (bHitLeft && bHitRight)
 	{
-		if (LeftNear <= RightNear)
-		{
-			QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
-			QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
-		}
-		else
-		{
-			QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
-			QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
-		}
-		return;
-	}
+		const BuildNode* FirstNode = Node->Left;
+		const BuildNode* SecondNode = Node->Right;
+		float SecondNear = RightNear;
 
-	if (bHitLeft)
+		if (RightNear < LeftNear)
+		{
+			FirstNode = Node->Right;
+			SecondNode = Node->Left;
+			SecondNear = LeftNear;
+		}
+
+		VisitRayRecursive(FirstNode, InRay, InOutMaxDistance, Visitor);
+		if (SecondNear <= InOutMaxDistance)
+		{
+			VisitRayRecursive(SecondNode, InRay, InOutMaxDistance, Visitor);
+		}
+	}
+	else if (bHitLeft)
 	{
-		QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
+		VisitRayRecursive(Node->Left, InRay, InOutMaxDistance, Visitor);
 	}
 	else if (bHitRight)
 	{
-		QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
+		VisitRayRecursive(Node->Right, InRay, InOutMaxDistance, Visitor);
 	}
 }
