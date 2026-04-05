@@ -1,12 +1,12 @@
-#include "Collision/MeshTrianglePickingBVH.h"
+﻿#include "Collision/MeshTrianglePickingBVH.h"
 
 #include "Collision/RayUtils.h"
+#include "Collision/RayUtilsSIMD.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Core/EngineTypes.h"
 
 #include <algorithm>
 #include <cfloat>
-#include <immintrin.h>
 
 namespace
 {
@@ -98,19 +98,8 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
-	auto safe_inv = [](float d) {
-		return std::abs(d) > 1e-8f ? 1.0f / d : 1e30f;
-	};
-
-	__m256 ray_org_x = _mm256_set1_ps(LocalOrigin.X);
-	__m256 ray_org_y = _mm256_set1_ps(LocalOrigin.Y);
-	__m256 ray_org_z = _mm256_set1_ps(LocalOrigin.Z);
-	__m256 ray_dir_x = _mm256_set1_ps(LocalDirection.X);
-	__m256 ray_dir_y = _mm256_set1_ps(LocalDirection.Y);
-	__m256 ray_dir_z = _mm256_set1_ps(LocalDirection.Z);
-	__m256 inv_dir_x = _mm256_set1_ps(safe_inv(LocalDirection.X));
-	__m256 inv_dir_y = _mm256_set1_ps(safe_inv(LocalDirection.Y));
-	__m256 inv_dir_z = _mm256_set1_ps(safe_inv(LocalDirection.Z));
+	// triangle narrow phase와 child AABB broad phase 모두 같은 ray SIMD context를 공유합니다.
+	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
 	NodeStack.push_back({ 0, RootTMin });
 
@@ -131,7 +120,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		if (Node.IsLeaf())
 		{
-			// 리프 노드의 삼각형 8개를 동시에 검사 (AVX2 Möller-Trumbore)
+			// leaf는 최대 8개 triangle을 담고 있으므로 packet 교차 검사와 잘 맞습니다.
 			alignas(32) float v0x[8], v0y[8], v0z[8];
 			alignas(32) float v1x[8], v1y[8], v1z[8];
 			alignas(32) float v2x[8], v2y[8], v2z[8];
@@ -160,48 +149,16 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 				}
 			}
 
-			__m256 V0x = _mm256_load_ps(v0x), V0y = _mm256_load_ps(v0y), V0z = _mm256_load_ps(v0z);
-			__m256 V1x = _mm256_load_ps(v1x), V1y = _mm256_load_ps(v1y), V1z = _mm256_load_ps(v1z);
-			__m256 V2x = _mm256_load_ps(v2x), V2y = _mm256_load_ps(v2y), V2z = _mm256_load_ps(v2z);
-
-			__m256 e1x = _mm256_sub_ps(V1x, V0x), e1y = _mm256_sub_ps(V1y, V0y), e1z = _mm256_sub_ps(V1z, V0z);
-			__m256 e2x = _mm256_sub_ps(V2x, V0x), e2y = _mm256_sub_ps(V2y, V0y), e2z = _mm256_sub_ps(V2z, V0z);
-
-			__m256 pvx = _mm256_sub_ps(_mm256_mul_ps(ray_dir_y, e2z), _mm256_mul_ps(ray_dir_z, e2y));
-			__m256 pvy = _mm256_sub_ps(_mm256_mul_ps(ray_dir_z, e2x), _mm256_mul_ps(ray_dir_x, e2z));
-			__m256 pvz = _mm256_sub_ps(_mm256_mul_ps(ray_dir_x, e2y), _mm256_mul_ps(ray_dir_y, e2x));
-
-			__m256 det = _mm256_add_ps(_mm256_mul_ps(e1x, pvx), _mm256_add_ps(_mm256_mul_ps(e1y, pvy), _mm256_mul_ps(e1z, pvz)));
-			__m256 abs_det = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), det);
-			__m256 inv_det = _mm256_div_ps(_mm256_set1_ps(1.0f), det);
-
-			__m256 tvx = _mm256_sub_ps(ray_org_x, V0x), tvy = _mm256_sub_ps(ray_org_y, V0y), tvz = _mm256_sub_ps(ray_org_z, V0z);
-			__m256 u = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(tvx, pvx), _mm256_add_ps(_mm256_mul_ps(tvy, pvy), _mm256_mul_ps(tvz, pvz))), inv_det);
-
-			__m256 qvx = _mm256_sub_ps(_mm256_mul_ps(tvy, e1z), _mm256_mul_ps(tvz, e1y));
-			__m256 qvy = _mm256_sub_ps(_mm256_mul_ps(tvz, e1x), _mm256_mul_ps(tvx, e1z));
-			__m256 qvz = _mm256_sub_ps(_mm256_mul_ps(tvx, e1y), _mm256_mul_ps(tvy, e1x));
-
-			__m256 v = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(ray_dir_x, qvx), _mm256_add_ps(_mm256_mul_ps(ray_dir_y, qvy), _mm256_mul_ps(ray_dir_z, qvz))), inv_det);
-			__m256 t = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(e2x, qvx), _mm256_add_ps(_mm256_mul_ps(e2y, qvy), _mm256_mul_ps(e2z, qvz))), inv_det);
-
-			__m256 zero = _mm256_setzero_ps();
-			__m256 one = _mm256_set1_ps(1.0f);
-			__m256 hit_mask = _mm256_and_ps(
-				_mm256_cmp_ps(abs_det, _mm256_set1_ps(1e-8f), _CMP_GT_OQ),
-				_mm256_and_ps(_mm256_cmp_ps(u, zero, _CMP_GE_OQ),
-				_mm256_and_ps(_mm256_cmp_ps(u, one, _CMP_LE_OQ),
-				_mm256_and_ps(_mm256_cmp_ps(v, zero, _CMP_GE_OQ),
-				_mm256_and_ps(_mm256_cmp_ps(_mm256_add_ps(u, v), one, _CMP_LE_OQ),
-				_mm256_and_ps(_mm256_cmp_ps(t, zero, _CMP_GT_OQ),
-				_mm256_cmp_ps(t, _mm256_set1_ps(ClosestT), _CMP_LT_OQ))))))
-			);
-
-			int mask = _mm256_movemask_ps(hit_mask);
+			float TValues[8];
+			const int32 mask = FRayUtilsSIMD::IntersectTriangles8(
+				RayContext,
+				v0x, v0y, v0z,
+				v1x, v1y, v1z,
+				v2x, v2y, v2z,
+				ClosestT,
+				TValues);
 			if (mask != 0)
 			{
-				float TValues[8];
-				_mm256_storeu_ps(TValues, t);
 				for (int32 i = 0; i < 8; ++i)
 				{
 					if ((mask >> i) & 1)
@@ -220,39 +177,18 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			continue;
 		}
 
-		// 내부 노드 자식 8개 AABB 동시 검사 (Broad Phase와 동일 로직)
-		__m256 min_x = _mm256_loadu_ps(Node.ChildMinX);
-		__m256 min_y = _mm256_loadu_ps(Node.ChildMinY);
-		__m256 min_z = _mm256_loadu_ps(Node.ChildMinZ);
-		__m256 max_x = _mm256_loadu_ps(Node.ChildMaxX);
-		__m256 max_y = _mm256_loadu_ps(Node.ChildMaxY);
-		__m256 max_z = _mm256_loadu_ps(Node.ChildMaxZ);
-
-		__m256 t1_x = _mm256_mul_ps(_mm256_sub_ps(min_x, ray_org_x), inv_dir_x);
-		__m256 t2_x = _mm256_mul_ps(_mm256_sub_ps(max_x, ray_org_x), inv_dir_x);
-		__m256 t1_y = _mm256_mul_ps(_mm256_sub_ps(min_y, ray_org_y), inv_dir_y);
-		__m256 t2_y = _mm256_mul_ps(_mm256_sub_ps(max_y, ray_org_y), inv_dir_y);
-		__m256 t1_z = _mm256_mul_ps(_mm256_sub_ps(min_z, ray_org_z), inv_dir_z);
-		__m256 t2_z = _mm256_mul_ps(_mm256_sub_ps(max_z, ray_org_z), inv_dir_z);
-
-		__m256 t_min = _mm256_max_ps(_mm256_max_ps(_mm256_min_ps(t1_x, t2_x), _mm256_min_ps(t1_y, t2_y)), _mm256_min_ps(t1_z, t2_z));
-		__m256 t_max = _mm256_min_ps(_mm256_min_ps(_mm256_max_ps(t1_x, t2_x), _mm256_max_ps(t1_y, t2_y)), _mm256_max_ps(t1_z, t2_z));
-
-		__m256 node_hit_mask = _mm256_and_ps(
-			_mm256_cmp_ps(t_min, t_max, _CMP_LE_OQ),
-			_mm256_and_ps(
-				_mm256_cmp_ps(t_max, _mm256_setzero_ps(), _CMP_GE_OQ),
-				_mm256_cmp_ps(t_min, _mm256_set1_ps(ClosestT), _CMP_LT_OQ)
-			)
-		);
-
-		int node_mask = _mm256_movemask_ps(node_hit_mask);
+		// 내부 노드는 world BVH와 동일하게 8-way AABB packet 검사 후 거리순으로 순회합니다.
+		float TMinValues[8];
+		const int32 node_mask = FRayUtilsSIMD::IntersectAABB8(
+			RayContext,
+			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
+			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
+			ClosestT,
+			TMinValues);
 		if (node_mask == 0) continue;
 
 		FTraversalEntry ChildEntries[8];
 		int32 ChildEntryCount = 0;
-		float TMinValues[8];
-		_mm256_storeu_ps(TMinValues, t_min);
 
 		for (int32 i = 0; i < 8; ++i)
 		{
@@ -344,6 +280,7 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 		
 		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
 		
+		// raycast 단계에서 바로 packet 검사할 수 있도록 child bounds를 SOA로 저장합니다.
 		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
 		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
 		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
@@ -358,7 +295,11 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(int32 Start, int32 End)
 	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
 	{
 		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
+		Nodes[NodeIndex].ChildMinY[i] = 1e30f;
+		Nodes[NodeIndex].ChildMinZ[i] = 1e30f;
 		Nodes[NodeIndex].ChildMaxX[i] = -1e30f;
+		Nodes[NodeIndex].ChildMaxY[i] = -1e30f;
+		Nodes[NodeIndex].ChildMaxZ[i] = -1e30f;
 	}
 
 	return NodeIndex;
