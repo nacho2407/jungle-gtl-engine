@@ -171,7 +171,10 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	FDrawCallStats::Reset();
 
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	UpdateFrameBuffer(Context, InRenderBus);
+	{
+		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
+		UpdateFrameBuffer(Context, InRenderBus);
+	}
 
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
@@ -289,19 +292,22 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 
 	FDrawState State;
 
-	for (const FPrimitiveSceneProxy* RawProxy : SortedProxyBuffer)
 	{
-		const FPrimitiveSceneProxy& Proxy = *RawProxy;
-		if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) continue;
+		SCOPE_STAT_CAT("ExecutePass::Draw", "4_ExecutePass");
+		for (const FPrimitiveSceneProxy* RawProxy : SortedProxyBuffer)
+		{
+			const FPrimitiveSceneProxy& Proxy = *RawProxy;
+			if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) continue;
 
-		BindShader(Proxy, Context, State);
-		BindPerObjectSlot(Context, State);
-		BindExtraCB(Proxy, Context);
+			BindShader(Proxy, Context, State);
+			BindPerObjectSlot(Context, State);
+			BindExtraCB(Proxy, Context);
 
-		if (!Proxy.SectionDraws.empty())
-			DrawSections(Proxy, Context, State);
-		else
-			DrawSimple(Proxy, Context, State);
+			if (!Proxy.SectionDraws.empty())
+				DrawSections(Proxy, Context, State);
+			else
+				DrawSimple(Proxy, Context, State);
+		}
 	}
 
 	CleanupSRV(Context, State);

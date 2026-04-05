@@ -61,7 +61,6 @@ public:
 
 private:
 	TArray<AActor*> Actors;
-	TArray<UPrimitiveComponent*> VisiblePrimitives;
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
 
 	UCameraComponent* ActiveCamera = nullptr;

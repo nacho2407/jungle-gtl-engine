@@ -63,6 +63,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	UWorld* World = Editor->GetWorld();
 	if (!World) return;
 
+	// GPU Occlusion 지연 초기화
+	if (!GPUOcclusion.IsInitialized())
+		GPUOcclusion.Initialize(Renderer.GetFD3DDevice().GetDevice());
+
+	// 이전 프레임 Occlusion 결과 읽기 (staging → OccludedSet)
+	GPUOcclusion.ReadbackResults(Ctx);
+
 	// 뷰포트별 렌더 옵션 사용
 	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
 	const FShowFlags& ShowFlags = Opts.ShowFlags;
@@ -84,6 +91,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportInfo(VP);
 	Bus.SetViewportType(Opts.ViewportType);
+	Bus.SetOcclusionCulling(&GPUOcclusion);
 
 	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
 	{
@@ -113,5 +121,22 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
 		Renderer.Render(Bus);
+	}
+
+	// 5. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
+	if (GPUOcclusion.IsInitialized())
+	{
+		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
+
+		// DSV 언바인딩 (DepthSRV 읽기와 동시 바인딩 불가)
+		ID3D11RenderTargetView* rtv = VP->GetRTV();
+		Ctx->OMSetRenderTargets(1, &rtv, nullptr);
+
+		GPUOcclusion.DispatchOcclusionTest(
+			Ctx,
+			VP->GetDepthSRV(),
+			World->GetVisibleProxies(),
+			Bus.GetView(), Bus.GetProj(),
+			VP->GetWidth(), VP->GetHeight());
 	}
 }
