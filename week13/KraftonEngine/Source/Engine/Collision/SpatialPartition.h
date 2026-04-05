@@ -6,6 +6,7 @@
 #include <memory>
 
 class UPrimitiveComponent;
+class FPrimitiveSceneProxy;
 class FOctree;
 class AActor;
 struct FRay;
@@ -21,6 +22,7 @@ class FSpatialPartition
     void UpdateActor(AActor* Actor);
 
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+    void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     //void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 

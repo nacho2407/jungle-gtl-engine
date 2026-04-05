@@ -6,6 +6,7 @@
 class UCameraComponent;
 class FViewport;
 class FPrimitiveSceneProxy;
+class FGPUOcclusionCulling;
 
 
 class FRenderBus
@@ -59,6 +60,10 @@ public:
 	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
 
+	// GPU Occlusion Culling — set by render pipeline, read by collector
+	void SetOcclusionCulling(const FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
+	const FGPUOcclusionCulling* GetOcclusionCulling() const { return OcclusionCulling; }
+
 private:
 	// 프록시 패스 큐 — 포인터만 저장, 데이터는 프록시 소유
 	TArray<const FPrimitiveSceneProxy*> ProxyQueues[(uint32)ERenderPass::MAX];
@@ -88,6 +93,9 @@ private:
 	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
 	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
+
+	// GPU Occlusion
+	const FGPUOcclusionCulling* OcclusionCulling = nullptr;
 
 	//Editor Settings
 	EViewMode ViewMode;

@@ -168,16 +168,15 @@ static float DistanceSquared(const FVector& A, const FVector& B)
 
 void UWorld::UpdateVisibleProxies()
 {
-	VisiblePrimitives.clear();
 	VisibleProxies.clear();
 
-	const FMatrix ViewProj = ActiveCamera->GetViewProjectionMatrix();
 	const FVector CameraPos = ActiveCamera->GetWorldLocation();
 
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "1_WorldTick");
 		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
-		Partition.QueryFrustumAllPrimitive(ConvexVolume, VisiblePrimitives);
+		// Direct proxy output — skips Component→GetSceneProxy() indirection in BuildVisibleProxies
+		Partition.QueryFrustumAllProxies(ConvexVolume, VisibleProxies);
 	}
 
 	{
@@ -188,19 +187,15 @@ void UWorld::UpdateVisibleProxies()
 
 		LOD_STATS_RESET();
 
-		for (UPrimitiveComponent* Primitive : VisiblePrimitives)
+		const uint32 Count = static_cast<uint32>(VisibleProxies.size());
+		for (uint32 i = 0; i < Count; i++)
 		{
-			if (!Primitive) continue;
-			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-			{
-				const FVector& ProxyPos = Proxy->CachedWorldPos;
-				const float DistSq = DistanceSquared(CameraPos, ProxyPos);
+			FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
+			const FVector& ProxyPos = Proxy->CachedWorldPos;
+			const float DistSq = DistanceSquared(CameraPos, ProxyPos);
 
-				Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
-				LOD_STATS_RECORD(Proxy->CurrentLOD);
-
-				VisibleProxies.push_back(Proxy);
-			}
+			Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
+			LOD_STATS_RECORD(Proxy->CurrentLOD);
 		}
 	}
 }
@@ -225,7 +220,10 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
-	Partition.FlushPrimitive();
+	{
+		SCOPE_STAT_CAT("FlushPrimitive", "1_WorldTick");
+		Partition.FlushPrimitive();
+	}
 
 	UpdateVisibleProxies();
 	DebugDrawQueue.Tick(DeltaTime);
