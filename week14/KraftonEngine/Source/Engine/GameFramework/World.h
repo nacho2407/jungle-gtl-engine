@@ -7,8 +7,6 @@
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/ConvexVolume.h"
-#include "Render/Culling/OcclusionCulling.h"
-#include "Render/Culling/OcclusionBVH.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
@@ -61,15 +59,10 @@ public:
 	void RemoveActorToOctree(AActor* actor);
 	void UpdateActorInOctree(AActor* actor);
 
-	// Occlusion BVH
-	void BuildOcclusionBVH();
-	FOcclusionBVH& GetOcclusionBVH() { return OcclusionBVH; }
-	const FOcclusionBVH& GetOcclusionBVH() const { return OcclusionBVH; }
 private:
 	TArray<AActor*> Actors;
 	TArray<UPrimitiveComponent*> VisiblePrimitives;
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
-	TArray<FBoundingBox> CachedBoxes;	// Occlusion 두 루프간 BoundingBox 재사용
 
 	UCameraComponent* ActiveCamera = nullptr;
 	bool bHasBegunPlay = false;
@@ -80,9 +73,6 @@ private:
 	FDebugDrawQueue DebugDrawQueue;
 
 	FSpatialPartition Partition;
-	FOcclusionCulling OcclusionCulling;
-	FOcclusionBVH OcclusionBVH;
-	bool bOcclusionBVHBuilt = false;
 };
 
 template<typename T>
