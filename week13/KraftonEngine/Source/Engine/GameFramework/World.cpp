@@ -179,9 +179,9 @@ void UWorld::UpdateVisibleProxies()
 
 	// HEAD: capacity 예약으로 재할당 방지
 	const uint32 ExpectedProxyCount = Scene.GetProxyCount();
-	if (VisiblePrimitives.capacity() < ExpectedProxyCount)
+	if (VisibleProxies.capacity() < ExpectedProxyCount)
 	{
-		VisiblePrimitives.reserve(ExpectedProxyCount);
+		VisibleProxies.reserve(ExpectedProxyCount);
 	}
 
 	const uint32 ExpectedVisibleProxyCount =
@@ -210,7 +210,7 @@ void UWorld::UpdateVisibleProxies()
 		LOD_STATS_RESET();
 		const uint32 LODUpdateFrame = VisibleProxyBuildFrame++;
 		const uint32 LODUpdateSlice = LODUpdateFrame & (LOD_UPDATE_SLICE_COUNT - 1);
-		const bool bShouldStaggerLOD = VisiblePrimitives.size() >= LOD_STAGGER_MIN_VISIBLE;
+		const bool bShouldStaggerLOD = VisibleProxies.size() >= LOD_STAGGER_MIN_VISIBLE;
 
 		const bool bForceFullLODRefresh =
 			!bShouldStaggerLOD
