@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
@@ -20,6 +20,9 @@ struct FRaySIMDContext
 	__m256 InvDirectionX;
 	__m256 InvDirectionY;
 	__m256 InvDirectionZ;
+	__m256 ParallelXMask;
+	__m256 ParallelYMask;
+	__m256 ParallelZMask;
 };
 
 struct FRayUtilsSIMD
@@ -38,6 +41,14 @@ struct FRayUtilsSIMD
 		const float* V0X, const float* V0Y, const float* V0Z,
 		const float* V1X, const float* V1Y, const float* V1Z,
 		const float* V2X, const float* V2Y, const float* V2Z,
+		float MaxDistance,
+		float* OutTValues);
+
+	static int32 IntersectTriangles8Precomputed(
+		const FRaySIMDContext& Context,
+		const float* V0X, const float* V0Y, const float* V0Z,
+		const float* Edge1X, const float* Edge1Y, const float* Edge1Z,
+		const float* Edge2X, const float* Edge2Y, const float* Edge2Z,
 		float MaxDistance,
 		float* OutTValues);
 };
