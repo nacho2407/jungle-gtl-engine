@@ -605,11 +605,20 @@ void FEditorUI::Render()
 		const float WinX = MainVP ? MainVP->Pos.x : 0.0f;
 		const float WinY = MainVP ? MainVP->Pos.y : 0.0f;
 
-		CentralDockRect.X      = static_cast<int32>(CentralNode->Pos.x - WinX);
-		CentralDockRect.Y      = static_cast<int32>(CentralNode->Pos.y - WinY);
-		CentralDockRect.Width  = static_cast<int32>(CentralNode->Size.x);
-		CentralDockRect.Height = static_cast<int32>(CentralNode->Size.y);
-		bHasCentralDockRect = true;
+		const int32 NewX = static_cast<int32>(CentralNode->Pos.x - WinX);
+		const int32 NewY = static_cast<int32>(CentralNode->Pos.y - WinY);
+		const int32 NewW = static_cast<int32>(CentralNode->Size.x);
+		const int32 NewH = static_cast<int32>(CentralNode->Size.y);
+
+		if (NewX != CentralDockRect.X || NewY != CentralDockRect.Y ||
+			NewW != CentralDockRect.Width || NewH != CentralDockRect.Height)
+		{
+			CentralDockRect.X = NewX;
+			CentralDockRect.Y = NewY;
+			CentralDockRect.Width = NewW;
+			CentralDockRect.Height = NewH;
+			bHasCentralDockRect = true;
+		}
 	}
 
 	ImGui::PopStyleVar();

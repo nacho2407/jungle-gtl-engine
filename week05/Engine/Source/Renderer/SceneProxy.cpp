@@ -91,7 +91,7 @@ void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRende
 		MeshBatch.IndexCount = Section.IndexCount;
 		MeshBatch.SectionIndex = static_cast<uint32>(SectionIndex);
 		MeshBatch.RenderPass = ERenderPass::Opaque;
-		OutMeshBatches.push_back(MeshBatch);
+		OutMeshBatches.push_back(std::move(MeshBatch));
 	}
 }
 
