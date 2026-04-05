@@ -3,6 +3,7 @@
 #include "Collision/RayUtils.h"
 #include "Collision/RayUtilsSIMD.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Engine/Profiling/PlatformTime.h"
 #include "GameFramework/AActor.h"
 
@@ -167,11 +168,24 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				}
 
 				const FLeaf& Leaf = Leaves[PrimitiveEntries[EntryIndex].NodeIndex];
+				UPrimitiveComponent* const Primitive = Leaf.Primitive;
 				FHitResult CandidateHit{};
 				const uint64 NarrowPhaseStart = FPlatformTime::Cycles64();
 				LastTraversalMetrics.NarrowPhaseCalls++;
 
-				if (Leaf.Primitive->LineTraceComponent(Ray, CandidateHit) &&
+				bool bHit = false;
+				if (UStaticMeshComponent* const StaticMeshComponent = Cast<UStaticMeshComponent>(Primitive))
+				{
+					const FMatrix& WorldMatrix = StaticMeshComponent->GetWorldMatrix();
+					const FMatrix& WorldInverse = StaticMeshComponent->GetWorldInverseMatrix();
+					bHit = StaticMeshComponent->LineTraceStaticMeshFast(Ray, WorldMatrix, WorldInverse, CandidateHit);
+				}
+				else
+				{
+					bHit = Primitive->LineTraceComponent(Ray, CandidateHit);
+				}
+
+				if (bHit &&
 					CandidateHit.Distance < OutHitResult.Distance)
 				{
 					OutHitResult = CandidateHit;
@@ -181,7 +195,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				LastTraversalMetrics.NarrowPhaseMs +=
 					FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - NarrowPhaseStart);
 
-				const FPrimitivePickingMetrics& PrimitiveMetrics = Leaf.Primitive->GetLastPickingMetrics();
+				const FPrimitivePickingMetrics& PrimitiveMetrics = Primitive->GetLastPickingMetrics();
 				LastTraversalMetrics.MeshInternalNodesVisited += PrimitiveMetrics.MeshInternalNodesVisited;
 				LastTraversalMetrics.MeshLeafPacketsTested += PrimitiveMetrics.MeshLeafPacketsTested;
 				LastTraversalMetrics.MeshTriangleLanesTested += PrimitiveMetrics.MeshTriangleLanesTested;
