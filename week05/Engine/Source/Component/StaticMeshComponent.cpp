@@ -63,6 +63,11 @@ FBoxSphereBounds UStaticMeshComponent::CalcBounds(const FMatrix& LocalToWorld) c
 	return UPrimitiveComponent::CalcBounds(LocalToWorld);
 }
 
+bool UStaticMeshComponent::IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const
+{
+	return StaticMesh && StaticMesh->IntersectLocalRay(LocalOrigin, LocalDir, InOutDist);
+}
+
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
 

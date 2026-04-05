@@ -206,12 +206,24 @@ void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, 
 
 void BVH::QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
+	if (!Root)
+	{
+		return;
+	}
+
+	float RootNear = 0.0f;
+	float RootFar = 0.0f;
+	if (!Root->Bounds.Intersect(InRay, MaxDistance, RootNear, RootFar))
+	{
+		return;
+	}
+
 	QueryRayRecursive(Root, InRay, MaxDistance, OutPrimitives);
 }
 
 void BVH::QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
-	if (!Node || !Node->Bounds.Intersect(InRay, MaxDistance))
+	if (!Node)
 	{
 		return;
 	}
@@ -229,6 +241,35 @@ void BVH::QueryRayRecursive(const BuildNode* Node, const Ray& InRay, float MaxDi
 		return;
 	}
 
-	QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
-	QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
+	float LeftNear = 0.0f;
+	float LeftFar = 0.0f;
+	const bool bHitLeft = Node->Left && Node->Left->Bounds.Intersect(InRay, MaxDistance, LeftNear, LeftFar);
+
+	float RightNear = 0.0f;
+	float RightFar = 0.0f;
+	const bool bHitRight = Node->Right && Node->Right->Bounds.Intersect(InRay, MaxDistance, RightNear, RightFar);
+
+	if (bHitLeft && bHitRight)
+	{
+		if (LeftNear <= RightNear)
+		{
+			QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
+			QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
+		}
+		else
+		{
+			QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
+			QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
+		}
+		return;
+	}
+
+	if (bHitLeft)
+	{
+		QueryRayRecursive(Node->Left, InRay, MaxDistance, OutPrimitives);
+	}
+	else if (bHitRight)
+	{
+		QueryRayRecursive(Node->Right, InRay, MaxDistance, OutPrimitives);
+	}
 }

@@ -51,6 +51,11 @@ public:
 	void OnRegister() override;
 	void OnUnregister() override;
 
+	virtual bool IsPickable() const { return true; }
+	virtual bool UseSpherePicking() const { return false; }
+	virtual bool HasMeshIntersection() const { return false; }
+	virtual bool IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const { return false; }
+
 protected:
 	static void EnqueueRenderStateUpdate(UPrimitiveComponent* InPrimitiveComponent);
 	void RecreateSceneProxy();

@@ -26,14 +26,13 @@ void FOutlinerWindow::Render(FEditorEngine* Engine)
 		return;
 	}
 
-
 	AActor* SelectedActor = Engine->GetSelectedActor();
 
 	ImGui::SeparatorText("Actors");
 
 	UScene* Scene = Engine->GetScene();
 	const TArray<AActor*>& Actors = Scene->GetActors();
-	
+
 	// GameJam
 //	for (AActor* Actor : Actors)
 //	{
@@ -81,10 +80,11 @@ void FOutlinerWindow::Render(FEditorEngine* Engine)
 
 			ImGui::PopID();
 		}
+
 	}
 	Clipper.End();
 
 
-	ImGui::End();
 
+	ImGui::End();
 }

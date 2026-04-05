@@ -633,6 +633,7 @@ namespace
 
 		BuildOrLoadLODs(*NewAsset, PathFileName);
 
+		NewAsset->BuildAccelerationStructureIfNeeded();
 		return NewAsset;
 	}
 
@@ -688,6 +689,7 @@ namespace
 
 		BuildOrLoadLODs(*NewAsset, PathFileName);
 
+		NewAsset->BuildAccelerationStructureIfNeeded();
 		return NewAsset;
 	}
 
