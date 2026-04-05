@@ -4,14 +4,29 @@
 #include "MathUtils.h"
 #include <iostream>
 
+#define __AVX2__
+#define __SSE__
+
 const FMatrix FMatrix::Identity(1, 0, 0, 0,
 	0, 1, 0, 0,
 	0, 0, 1, 0,
 	0, 0, 0, 1);
 
 FMatrix FMatrix::operator+(const FMatrix& Other) const {
+#if defined(__AVX2__)
 	FMatrix ret;
-
+	ret._rowin256[0] = _mm256_add_ps(_rowin256[0], Other._rowin256[0]);
+	ret._rowin256[1] = _mm256_add_ps(_rowin256[1], Other._rowin256[1]);
+	return ret;
+#elif defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	FMatrix ret;
+	ret.row[0] = _mm_add_ps(row[0], Other.row[0]);
+	ret.row[1] = _mm_add_ps(row[1], Other.row[1]);
+	ret.row[2] = _mm_add_ps(row[2], Other.row[2]);
+	ret.row[3] = _mm_add_ps(row[3], Other.row[3]);
+	return ret;
+#else
+	FMatrix ret;
 	for (int i = 0; i < 16; i++)
 	{
 		ret.Data[i] = Data[i] + Other.Data[i];
@@ -24,9 +39,23 @@ FMatrix FMatrix::operator+(const FMatrix& Other) const {
 	}*/
 
 	return ret;
+#endif
 }
 
 FMatrix FMatrix::operator-(const FMatrix& Other) const {
+#if defined(__AVX2__)
+	FMatrix ret;
+	ret._rowin256[0] = _mm256_sub_ps(_rowin256[0], Other._rowin256[0]);
+	ret._rowin256[1] = _mm256_sub_ps(_rowin256[1], Other._rowin256[1]);
+	return ret;
+#elif defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	FMatrix ret;
+	ret.row[0] = _mm_sub_ps(row[0], Other.row[0]);
+	ret.row[1] = _mm_sub_ps(row[1], Other.row[1]);
+	ret.row[2] = _mm_sub_ps(row[2], Other.row[2]);
+	ret.row[3] = _mm_sub_ps(row[3], Other.row[3]);
+	return ret;
+#else
 	FMatrix ret;
 
 	for (int i = 0; i < 16; i++)
@@ -41,10 +70,36 @@ FMatrix FMatrix::operator-(const FMatrix& Other) const {
 	//}
 
 	return ret;
+#endif
 }
 
 //	Standard matrix multiplication (not optimized)
 FMatrix FMatrix::operator*(const FMatrix& Other) const {
+#if defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	FMatrix ret;
+
+	// B를 column 단위로 분해
+	__m128 B0 = Other.row[0];
+	__m128 B1 = Other.row[1];
+	__m128 B2 = Other.row[2];
+	__m128 B3 = Other.row[3];
+
+	// A의 row들과 B의 columns 내적
+	for (int i = 0; i < 4; ++i) {
+		__m128 r = row[i];
+		ret.row[i] = _mm_add_ps(
+			_mm_add_ps(
+				_mm_mul_ps(_mm_shuffle_ps(r, r, _MM_SHUFFLE(0, 0, 0, 0)), B0),
+				_mm_mul_ps(_mm_shuffle_ps(r, r, _MM_SHUFFLE(1, 1, 1, 1)), B1)
+			),
+			_mm_add_ps(
+				_mm_mul_ps(_mm_shuffle_ps(r, r, _MM_SHUFFLE(2, 2, 2, 2)), B2),
+				_mm_mul_ps(_mm_shuffle_ps(r, r, _MM_SHUFFLE(3, 3, 3, 3)), B3)
+			)
+		);
+	}
+	return ret;
+#else
 	FMatrix ret{};
 
 	for (int i = 0; i < 4; i++) {
@@ -56,6 +111,7 @@ FMatrix FMatrix::operator*(const FMatrix& Other) const {
 	}
 
 	return ret;
+#endif
 }
 
 //	Scalar division
@@ -353,15 +409,58 @@ void FMatrix::Print() const
 
 FVector FMatrix::TransformVector(const FVector& vector) const
 {
+#if defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	__m128 vX = _mm_set1_ps(vector.X);
+	__m128 vY = _mm_set1_ps(vector.Y);
+	__m128 vZ = _mm_set1_ps(vector.Z);
+
+	__m128 res = _mm_add_ps(
+		_mm_mul_ps(vX, row[0]),
+		_mm_add_ps(_mm_mul_ps(vY, row[1]), _mm_mul_ps(vZ, row[2]))
+	);
+
+	FVector Out;
+	Out.X = _mm_cvtss_f32(res);
+	Out.Y = _mm_cvtss_f32(_mm_shuffle_ps(res, res, _MM_SHUFFLE(1, 1, 1, 1)));
+	Out.Z = _mm_cvtss_f32(_mm_shuffle_ps(res, res, _MM_SHUFFLE(2, 2, 2, 2)));
+	return Out;
+#else
 	return FVector(
 		vector.X * M[0][0] + vector.Y * M[1][0] + vector.Z * M[2][0],
 		vector.X * M[0][1] + vector.Y * M[1][1] + vector.Z * M[2][1],
 		vector.X * M[0][2] + vector.Y * M[1][2] + vector.Z * M[2][2]
 	);
+#endif
 }
 
 FVector FMatrix::TransformPositionWithW(const FVector& Vector) const
 {
+#if defined(_XM_SSE_INTRINSICS_) || defined(__SSE__)
+	__m128 vX = _mm_set1_ps(Vector.X);
+	__m128 vY = _mm_set1_ps(Vector.Y);
+	__m128 vZ = _mm_set1_ps(Vector.Z);
+
+	__m128 res = _mm_add_ps(
+		_mm_add_ps(_mm_mul_ps(vX, row[0]), _mm_mul_ps(vY, row[1])),
+		_mm_add_ps(_mm_mul_ps(vZ, row[2]), row[3])
+	);
+
+	__m128 vW = _mm_shuffle_ps(res, res, _MM_SHUFFLE(3, 3, 3, 3));
+
+	float W_Val;
+	_mm_store_ss(&W_Val, vW);
+
+	if (std::abs(W_Val) > 0.0001f && std::abs(W_Val - 1.0f) > 0.0001f)
+	{
+		res = _mm_div_ps(res, vW);
+	}
+
+	FVector Out;
+	Out.X = _mm_cvtss_f32(res);
+	Out.Y = _mm_cvtss_f32(_mm_shuffle_ps(res, res, _MM_SHUFFLE(1, 1, 1, 1)));
+	Out.Z = _mm_cvtss_f32(_mm_shuffle_ps(res, res, _MM_SHUFFLE(2, 2, 2, 2)));
+	return Out;
+#else
 	float X = Vector.X * M[0][0] + Vector.Y * M[1][0] + Vector.Z * M[2][0] + 1.0f * M[3][0];
 	float Y = Vector.X * M[0][1] + Vector.Y * M[1][1] + Vector.Z * M[2][1] + 1.0f * M[3][1];
 	float Z = Vector.X * M[0][2] + Vector.Y * M[1][2] + Vector.Z * M[2][2] + 1.0f * M[3][2];
@@ -374,6 +473,7 @@ FVector FMatrix::TransformPositionWithW(const FVector& Vector) const
 	}
 
 	return FVector(X, Y, Z);
+#endif
 }
 
 FVector FMatrix::GetEuler() const
