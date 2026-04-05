@@ -30,6 +30,7 @@ public:
 	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	const FWorldPrimitivePickingBVH::FTraversalMetrics& GetLastPickingTraversalMetrics() const { return WorldPrimitivePickingBVH.GetLastTraversalMetrics(); }
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
 	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }

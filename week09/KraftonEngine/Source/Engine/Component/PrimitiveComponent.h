@@ -13,6 +13,14 @@ class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
 
+struct FPrimitivePickingMetrics
+{
+	uint32 MeshInternalNodesVisited = 0;
+	uint32 MeshLeafPacketsTested = 0;
+	uint32 MeshTriangleLanesTested = 0;
+	double MeshTraversalMs = 0.0;
+};
+
 class UPrimitiveComponent : public USceneComponent
 {
 public:
@@ -23,6 +31,7 @@ public:
 
 	virtual FMeshBuffer* GetMeshBuffer() const { return nullptr; }
 	virtual const FMeshData* GetMeshData() const { return nullptr; }
+	virtual const FPrimitivePickingMetrics& GetLastPickingMetrics() const { return LastPickingMetrics; }
 
 	void SetVisibility(bool bNewVisible);
 	inline bool IsVisible() const { return bIsVisible; }
@@ -63,4 +72,5 @@ protected:
 	mutable bool bWorldAABBDirty = true;
 	bool bIsVisible = true;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
+	mutable FPrimitivePickingMetrics LastPickingMetrics;
 };
