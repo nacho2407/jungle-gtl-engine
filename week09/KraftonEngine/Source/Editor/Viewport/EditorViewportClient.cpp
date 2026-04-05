@@ -313,14 +313,10 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
 	FScopeCycleCounter PickCounter; //시간측정용 카운터 시작
-	FPickingFrameStats PickStats{};
 
 	FHitResult HitResult{};
 	//먼저 Ray와 기즈모의 충돌을 감지하고 
-	const uint64 GizmoStart = FPlatformTime::Cycles64();
-	const bool bHitGizmo = FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
-	PickStats.GizmoMs = FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - GizmoStart);
-	if (bHitGizmo)
+	if (FRayUtils::RaycastComponent(Gizmo, Ray, HitResult))
 	{
 		Gizmo->SetPressedOnHandle(true);
 	}
@@ -328,20 +324,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	{
 		//기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
 		AActor* BestActor = nullptr;
-		const uint64 WorldPickStart = FPlatformTime::Cycles64();
 		World->RaycastPrimitives(Ray, HitResult, BestActor);
-		PickStats.WorldBVHMs = FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - WorldPickStart);
-		const FWorldPrimitivePickingBVH::FTraversalMetrics& WorldMetrics = World->GetLastPickingTraversalMetrics();
-		PickStats.NarrowPhaseMs = WorldMetrics.NarrowPhaseMs;
-		PickStats.MeshBVHMs = WorldMetrics.MeshTraversalMs;
-		PickStats.WorldInternalNodesVisited = WorldMetrics.InternalNodesVisited;
-		PickStats.WorldLeafNodesVisited = WorldMetrics.LeafNodesVisited;
-		PickStats.PrimitiveAABBTests = WorldMetrics.PrimitiveAABBTests;
-		PickStats.PrimitiveAABBHits = WorldMetrics.PrimitiveAABBHits;
-		PickStats.PrimitiveNarrowPhaseCalls = WorldMetrics.NarrowPhaseCalls;
-		PickStats.MeshInternalNodesVisited = WorldMetrics.MeshInternalNodesVisited;
-		PickStats.MeshLeafPacketsTested = WorldMetrics.MeshLeafPacketsTested;
-		PickStats.MeshTriangleLanesTested = WorldMetrics.MeshTriangleLanesTested;
 
 		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 
@@ -368,8 +351,8 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	if (OverlayStatSystem)
 	{
 		const uint64 PickCycles = PickCounter.Finish();
-		PickStats.TotalMs = FPlatformTime::ToMilliseconds(PickCycles);
-		OverlayStatSystem->RecordPickingAttempt(PickStats);
+		const double ElapsedMs = FPlatformTime::ToMilliseconds(PickCycles);
+		OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
 	}
 }
 
