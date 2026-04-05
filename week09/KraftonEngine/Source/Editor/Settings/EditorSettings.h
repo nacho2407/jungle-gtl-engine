@@ -35,11 +35,23 @@ public:
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
-#if FPS_OPTIMIZATION
-	bool bRunTimeOptimization = true;
+	// UI 위젯 표시 여부
+	struct FUIVisibility
+	{
+#ifdef FPS_OPTIMIZATION
+		bool bConsole = false;
+		bool bControl = false;
+		bool bProperty = false;
+		bool bScene = true;
+		bool bStat = true;
 #else
-	bool bRunTimeOptimization = false;
+		bool bConsole = true;
+		bool bControl = true;
+		bool bProperty = true;
+		bool bScene = true;
+		bool bStat = false;;
 #endif
+	} UI;
 
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);

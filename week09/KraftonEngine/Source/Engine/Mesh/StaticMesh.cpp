@@ -93,11 +93,11 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 		}
 	}
 
-	// ── LOD 생성 (LOD1: 50%, LOD2: 25%) ──
+	// ── LOD 생성 (LOD1: 70%, LOD2: 50%, LOD3: 25%) ──
 	if (StaticMeshAsset->Vertices.size() >= 100)
 	{
-		static const float LODRatios[] = { 0.5f, 0.25f };
-		for (int lod = 0; lod < 2; ++lod)
+		static const float LODRatios[] = { 0.7f, 0.5f, 0.25f };
+		for (int lod = 0; lod < 3; ++lod)
 		{
 			FSimplifiedMesh Simplified = FMeshSimplifier::Simplify(
 				StaticMeshAsset->Vertices, StaticMeshAsset->Indices,
@@ -199,7 +199,7 @@ FMeshBuffer* UStaticMesh::GetLODMeshBuffer(uint32 LODLevel) const
 {
 	if (LODLevel == 0 && StaticMeshAsset)
 		return StaticMeshAsset->RenderBuffer.get();
-	if (LODLevel >= 1 && LODLevel <= 2 && bHasLOD)
+	if (LODLevel >= 1 && LODLevel <= 3 && bHasLOD)
 		return AdditionalLODs[LODLevel - 1].RenderBuffer.get();
 	return StaticMeshAsset ? StaticMeshAsset->RenderBuffer.get() : nullptr;
 }
@@ -210,7 +210,7 @@ const TArray<FStaticMeshSection>& UStaticMesh::GetLODSections(uint32 LODLevel) c
 {
 	if (LODLevel == 0 && StaticMeshAsset)
 		return StaticMeshAsset->Sections;
-	if (LODLevel >= 1 && LODLevel <= 2 && bHasLOD)
+	if (LODLevel >= 1 && LODLevel <= 3 && bHasLOD)
 		return AdditionalLODs[LODLevel - 1].Sections;
 	return StaticMeshAsset ? StaticMeshAsset->Sections : EmptySections;
 }

@@ -151,10 +151,12 @@ void UWorld::BuildOcclusionBVH()
 
 // ── LOD 거리 임계값 (제곱) ──
 static constexpr float LOD1_DIST_SQ = 15.0f * 15.0f;   // LOD0→LOD1
-static constexpr float LOD2_DIST_SQ = 30.0f * 30.0f;   // LOD1→LOD2
+static constexpr float LOD2_DIST_SQ = 25.0f * 25.0f;   // LOD1→LOD2
+static constexpr float LOD3_DIST_SQ = 40.0f * 40.0f;   // LOD2→LOD3
 // 히스테리시스: 더 상세한 LOD로 복귀하려면 10% 더 가까워야 함
 static constexpr float LOD1_BACK_SQ = 13.5f * 13.5f;    // LOD1→LOD0
-static constexpr float LOD2_BACK_SQ = 27.0f * 27.0f;    // LOD2→LOD1
+static constexpr float LOD2_BACK_SQ = 22.5f * 22.5f;    // LOD2→LOD1
+static constexpr float LOD3_BACK_SQ = 36.0f * 36.0f;    // LOD3→LOD2
 
 static uint32 SelectLOD(uint32 CurLOD, float DistSq)
 {
@@ -163,8 +165,10 @@ static uint32 SelectLOD(uint32 CurLOD, float DistSq)
 	// 멀어질 때 — 덜 상세한 LOD로
 	if (CurLOD == 0 && DistSq > LOD1_DIST_SQ)  LOD = 1;
 	if (CurLOD <= 1 && DistSq > LOD2_DIST_SQ)  LOD = 2;
+	if (CurLOD <= 2 && DistSq > LOD3_DIST_SQ)  LOD = 3;
 	// 가까워질 때 — 더 상세한 LOD로 (히스테리시스)
-	if (CurLOD == 2 && DistSq < LOD2_BACK_SQ)   LOD = 1;
+	if (CurLOD == 3 && DistSq < LOD3_BACK_SQ)   LOD = 2;
+	if (CurLOD >= 2 && DistSq < LOD2_BACK_SQ)   LOD = 1;
 	if (CurLOD >= 1 && DistSq < LOD1_BACK_SQ)   LOD = 0;
 
 	return LOD;
