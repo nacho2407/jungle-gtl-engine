@@ -2,14 +2,6 @@
   "Name": "M_Water",
   "VertexShader": "Engine/Shaders/WaterVertexShader.hlsl",
   "PixelShader": "Engine/Shaders/TexturePixelShader.hlsl",
-  "RenderState": {
-    "FillMode": 3,
-    "CullMode": 3,
-    "DepthTest": true,
-    "DepthWrite": 1,
-    "DepthFunc": "Less",
-    "StencilEnable": false
-  },
   "Textures": {
     "Diffuse": "Textures/Water_Diffuse.png"
   },

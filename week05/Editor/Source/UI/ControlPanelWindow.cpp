@@ -6,7 +6,6 @@
 #include "Scene/Scene.h"
 #include "Actor/Actor.h"
 #include "Component/TextComponent.h"
-#include "Component/SkyComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Camera/Camera.h"
 #include "Core/Paths.h"
@@ -22,7 +21,6 @@
 
 #include "Actor/CubeActor.h"
 #include "Actor/PlaneActor.h"
-#include "Actor/SkySphereActor.h"
 #include "Actor/SphereActor.h"
 #include "Actor/StaticMeshActor.h"
 #include "Actor/SubUVActor.h"
@@ -192,7 +190,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 		ImGui::SeparatorText("Spawn");
 
 		static int32 SpawnTypeIndex = 0;
-		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "SubUV", "Text", "SkySphere", "Staticmesh" };
+		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "SubUV", "Text", "Staticmesh" };
 
 		ImGui::Combo("Type", &SpawnTypeIndex, SpawnTypes, IM_ARRAYSIZE(SpawnTypes));
 
@@ -243,10 +241,6 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 						else TextComponent->SetText("Text");
 					}
 				}
-			}
-			else if (SpawnTypeIndex == 5)
-			{
-				NewActor = Scene->SpawnActor<ASkySphereActor>(Name);
 			}
 			else
 			{

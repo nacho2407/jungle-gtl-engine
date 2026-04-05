@@ -5,6 +5,7 @@
 #include "Debug/EngineLog.h"
 #include "Actor/Actor.h"
 #include "Scene/Scene.h"
+#include <DirectXMath.h>
 IMPLEMENT_RTTI(UPrimitiveComponent, USceneComponent)
 
 TArray<UPrimitiveComponent*> UPrimitiveComponent::PendingRenderStateUpdates;
@@ -136,18 +137,21 @@ FBoxSphereBounds UPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) co
 
 	FMatrix AbsM = FMatrix::Abs(LocalToWorld);
 
-	FVector WorldBoxExtent;
-	WorldBoxExtent.X = AbsM.M[0][0] * LocalBound.BoxExtent.X
-		+ AbsM.M[1][0] * LocalBound.BoxExtent.Y
-		+ AbsM.M[2][0] * LocalBound.BoxExtent.Z;
+	// DirectXMath: 3행 × Extent를 벡터 FMA로 한 번에 계산
+	// Result[i] = Row0[i]*Ex + Row1[i]*Ey + Row2[i]*Ez  (i = X, Y, Z)
+	using namespace DirectX;
+	const DirectX::XMVECTOR R0  = XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(AbsM.M[0]));
+	const DirectX::XMVECTOR R1  = XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(AbsM.M[1]));
+	const DirectX::XMVECTOR R2  = XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(AbsM.M[2]));
+	const DirectX::XMVECTOR Ex  = XMVectorReplicate(LocalBound.BoxExtent.X);
+	const DirectX::XMVECTOR Ey  = XMVectorReplicate(LocalBound.BoxExtent.Y);
+	const DirectX::XMVECTOR Ez  = XMVectorReplicate(LocalBound.BoxExtent.Z);
+	// XMVectorMultiplyAdd(a,b,c) = a*b + c  →  FMA 명령 활용
+	const DirectX::XMVECTOR Res = XMVectorMultiplyAdd(R0, Ex, XMVectorMultiplyAdd(R1, Ey, XMVectorMultiply(R2, Ez)));
 
-	WorldBoxExtent.Y = AbsM.M[0][1] * LocalBound.BoxExtent.X
-		+ AbsM.M[1][1] * LocalBound.BoxExtent.Y
-		+ AbsM.M[2][1] * LocalBound.BoxExtent.Z;
-
-	WorldBoxExtent.Z = AbsM.M[0][2] * LocalBound.BoxExtent.X
-		+ AbsM.M[1][2] * LocalBound.BoxExtent.Y
-		+ AbsM.M[2][2] * LocalBound.BoxExtent.Z;
+	XMFLOAT4 Out;
+	XMStoreFloat4(&Out, Res);
+	const FVector WorldBoxExtent(Out.x, Out.y, Out.z);
 
 	return { Center, WorldBoxExtent.Size(), WorldBoxExtent };
 }

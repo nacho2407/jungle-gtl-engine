@@ -2,12 +2,6 @@
   "Name": "M_Sky",
   "VertexShader": "Engine/Shaders/SkyVertexShader.hlsl",
   "PixelShader": "Engine/Shaders/SkyPixelShader.hlsl",
-  "RenderState": {
-    "CullMode": 1,
-    "DepthTest": true,
-    "DepthWrite": 0,
-    "DepthFunc": "LessEqual"
-},
   "ConstantBuffers": [
     {
       "Parameters": [

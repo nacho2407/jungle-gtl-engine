@@ -9,14 +9,13 @@ struct FRenderMesh;
 class FMaterial;
 class FPrimitiveSceneProxy;
 
-enum class ERenderLayer : uint8
+enum class ERenderPass : uint8
 {
-	Base = 0,
-	Default = Base,
-	Overlay,
+	Opaque = 0,
+	Alpha,
+	NoDepth,
 	UI,
-	OutlineMask,
-	OutlineComposite,
+	Count,
 };
 
 struct ENGINE_API FRenderCommand
@@ -26,20 +25,12 @@ struct ENGINE_API FRenderCommand
 
 	FMatrix WorldMatrix = FMatrix::Identity;
 	FMaterial* Material = nullptr;
-	uint64 SortKey = 0;
-	uint64 SubmissionOrder = 0;
 
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;
 
-	ERenderLayer RenderLayer = ERenderLayer::Base;
-	bool bDisableDepthTest = false;
-	bool bDisableDepthWrite = false;
-	bool bDisableCulling = false;
-
-	bool IsProxyCommand() const { return SceneProxy != nullptr; }
-
-	static uint64 MakeSortKey(const FMaterial* InMaterial, const FRenderMesh* InMeshData);
+	ERenderPass RenderPass = ERenderPass::Opaque;
+	bool bOverrideRenderPass = false;
 };
 
 struct ENGINE_API FOutlineRenderItem
@@ -56,6 +47,7 @@ struct ENGINE_API FRenderCommandQueue
 	FMatrix ViewMatrix = FMatrix::Identity;
 	FMatrix ProjectionMatrix = FMatrix::Identity;
 	FShowFlags ShowFlags;
+	bool bOpaqueWireframe = false;
 
 	void Reserve(size_t Count)
 	{
@@ -77,5 +69,6 @@ struct ENGINE_API FRenderCommandQueue
 	{
 		Commands.clear();
 		OutlineItems.clear();
+		bOpaqueWireframe = false;
 	}
 };
