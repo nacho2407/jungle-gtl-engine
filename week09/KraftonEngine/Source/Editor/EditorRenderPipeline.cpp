@@ -28,10 +28,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	{
 		SCOPE_STAT_CAT("RenderViewport", "2_Render");
-		for (FLevelEditorViewportClient* VC : Editor->GetLevelViewportClients())
-		{
-			RenderViewport(VC, Renderer);
-		}
+		RenderViewport(Editor->GetLevelViewportClients().front(), Renderer);
 	}
 	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
 
