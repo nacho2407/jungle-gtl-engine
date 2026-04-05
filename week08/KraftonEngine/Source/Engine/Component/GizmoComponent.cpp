@@ -9,6 +9,7 @@
 #include "Collision/RayUtils.h"
 #include "Render/Proxy/GizmoSceneProxy.h"
 #include "Render/Proxy/FScene.h"
+#include <cfloat>
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
@@ -133,6 +134,38 @@ bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& 
 	float ClickThresholdSquared = Radius * Radius;
 
 	if (DistanceSquared < ClickThresholdSquared)
+	{
+		OutRayT = RayT;
+		return true;
+	}
+
+	return false;
+}
+
+bool UGizmoComponent::IntersectRayRotationHandle(const FRay& Ray, int32 Axis, float& OutRayT) const
+{
+	const FVector AxisVector = GetVectorForAxis(Axis).Normalized();
+	const float Scale = (Axis == 0) ? GetWorldScale().X : (Axis == 1 ? GetWorldScale().Y : GetWorldScale().Z);
+	const float RingRadius = AxisLength * Scale;
+	const float RingThickness = Radius * Scale * 1.75f;
+
+	const float Denom = Ray.Direction.Dot(AxisVector);
+	if (std::abs(Denom) < 1e-6f)
+	{
+		return false;
+	}
+
+	const float RayT = (GetWorldLocation() - Ray.Origin).Dot(AxisVector) / Denom;
+	if (RayT <= 0.0f)
+	{
+		return false;
+	}
+
+	const FVector HitPoint = Ray.Origin + Ray.Direction * RayT;
+	const FVector Radial = HitPoint - GetWorldLocation();
+	const FVector Planar = Radial - AxisVector * Radial.Dot(AxisVector);
+	const float DistanceToRing = std::abs(Planar.Length() - RingRadius);
+	if (DistanceToRing <= RingThickness)
 	{
 		OutRayT = RayT;
 		return true;
@@ -297,28 +330,65 @@ void UGizmoComponent::SetTargetScale(FVector NewScale)
 
 bool UGizmoComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	if (!MeshData || MeshData->Indices.empty()) return false;
-
-	bool bHit = FRayUtils::RaycastTriangles(
-		Ray, GetWorldMatrix(),
-		GetWorldInverseMatrix(),
-		&MeshData->Vertices[0].Position,
-		sizeof(FVertex),
-		MeshData->Indices,
-		OutHitResult);
-
-	if (bHit)
+	OutHitResult = {};
+	if (!MeshData || MeshData->Indices.empty())
 	{
-		OutHitResult.HitComponent = this;
+		return false;
 	}
 
-	UpdateHoveredAxis(OutHitResult.FaceIndex);
+	float BestRayT = FLT_MAX;
+	int32 BestAxis = -1;
+	const FVector GizmoLocation = GetWorldLocation();
 
-	return OutHitResult.bHit;
+	for (int32 Axis = 0; Axis < 3; ++Axis)
+	{
+		if ((AxisMask & (1u << Axis)) == 0)
+		{
+			continue;
+		}
+
+		float RayT = 0.0f;
+		bool bAxisHit = false;
+		if (CurMode == EGizmoMode::Rotate)
+		{
+			bAxisHit = IntersectRayRotationHandle(Ray, Axis, RayT);
+		}
+		else
+		{
+			const FVector AxisDir = GetVectorForAxis(Axis).Normalized();
+			const float AxisScale = (Axis == 0) ? GetWorldScale().X : (Axis == 1 ? GetWorldScale().Y : GetWorldScale().Z);
+			const FVector AxisEnd = GizmoLocation + AxisDir * AxisLength * AxisScale;
+			bAxisHit = IntersectRayAxis(Ray, AxisEnd, RayT);
+		}
+
+		if (bAxisHit && RayT < BestRayT)
+		{
+			BestRayT = RayT;
+			BestAxis = Axis;
+		}
+	}
+
+	if (BestAxis >= 0)
+	{
+		OutHitResult.bHit = true;
+		OutHitResult.Distance = BestRayT;
+		OutHitResult.HitComponent = this;
+		if (!IsHolding())
+		{
+			SelectedAxis = BestAxis;
+		}
+		return true;
+	}
+
+	if (!IsHolding())
+	{
+		SelectedAxis = -1;
+	}
+	return false;
 }
 
 
-FVector UGizmoComponent::GetVectorForAxis(int32 Axis)
+FVector UGizmoComponent::GetVectorForAxis(int32 Axis) const
 {
 	switch (Axis)
 	{
