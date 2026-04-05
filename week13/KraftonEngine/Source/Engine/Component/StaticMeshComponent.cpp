@@ -130,10 +130,8 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	//안전성 검사 후 레이를 로컬 공간으로 변환하여 BVH 가속 구조를 활용한 충돌 테스트 시도
 	if (!StaticMesh) return false;
-	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
-	if (!Asset || Asset->Vertices.empty() || Asset->Indices.empty()) return false;
+
 	FVector LocalOrigin = GetWorldInverseMatrix().TransformPositionWithW(Ray.Origin);
 	FVector LocalDirection = GetWorldInverseMatrix().TransformVector(Ray.Direction);
 	LocalDirection.Normalize();
