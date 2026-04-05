@@ -1,29 +1,32 @@
 ﻿#include "Collision/WorldPrimitivePickingBVH.h"
 
 #include "Collision/RayUtils.h"
+#include "Collision/RayUtilsSIMD.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Engine/Profiling/PlatformTime.h"
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
-#include <immintrin.h>
 
-/**
- * 월드 내 actor/primitive의 배치가 바뀌었음을 표시해 다음 raycast 전에 BVH를 다시 빌드하게 합니다.
- */ 
+namespace
+{
+	constexpr int32 WorldBVHChildFanout = 8;
+	constexpr int32 WorldBVHLeafPacketSize = 8;
+	constexpr int32 WorldBVHMaxLeafSize = 16;
+	constexpr int32 WorldBVHMaxTraversalStack = 128;
+}
+
 void FWorldPrimitivePickingBVH::MarkDirty()
 {
 	bDirty = true;
 }
 
-/**
- * 현재 보이는 primitive 중 실제로 picking 가능한 대상만 leaf로 구성하며 트리를 빌드합니다.
- * 
- * \param Actors
- */
 void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 {
 	Leaves.clear();
 	Nodes.clear();
+	PrimitivePackets.clear();
 
 	for (AActor* Actor : Actors)
 	{
@@ -55,17 +58,13 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 
 	if (!Leaves.empty())
 	{
+		PrimitivePackets.reserve((static_cast<int32>(Leaves.size()) + WorldBVHLeafPacketSize - 1) / WorldBVHLeafPacketSize);
 		BuildRecursive(0, static_cast<int32>(Leaves.size()));
 	}
 
 	bDirty = false;
 }
 
-/**
- * 월드 상태가 변경되어 dirty로 표시된 경우에만 BVH를 다시 빌드합니다.
- *
- * \param Actors 현재 월드 actor 목록
- */
 void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 {
 	if (!bDirty)
@@ -76,32 +75,21 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 	BuildNow(Actors);
 }
 
-/**
- * 월드 공간 ray로 오브젝트 BVH를 순회하면서 가장 가까운 primitive hit를 찾습니다.
- * broad phase에서는 노드 AABB만 검사하고, leaf에 도달한 primitive만 component 수준 line trace를 수행합니다.
- *
- * \param Ray 월드 공간 ray
- * \param OutHitResult 가장 가까운 hit 결과
- * \param OutActor hit된 primitive의 owner actor
- * \return 유효한 actor를 하나라도 맞췄으면 true
- */
 bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
 	struct FTraversalEntry
 	{
-		int32 NodeIndex;
-		float TMin;
+		int32 NodeIndex = -1;
+		float TMin = 0.0f;
 	};
 
 	OutHitResult = {};
 	OutActor = nullptr;
+	LastTraversalMetrics = {};
 	if (Nodes.empty())
 	{
 		return false;
 	}
-
-	TArray<FTraversalEntry> NodeStack;
-	NodeStack.reserve(64);
 
 	float RootTMin = 0.0f;
 	float RootTMax = 0.0f;
@@ -110,99 +98,137 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		return false;
 	}
 
-	// AVX 연산을 위해 레이의 역방향(1/dir)을 미리 계산
-	// 0으로 나누는 경우를 대비해 아주 작은 값으로 처리
-	auto safe_inv = [](float d) {
-		return std::abs(d) > 1e-8f ? 1.0f / d : 1e30f;
-	};
-	__m256 ray_org_x = _mm256_set1_ps(Ray.Origin.X);
-	__m256 ray_org_y = _mm256_set1_ps(Ray.Origin.Y);
-	__m256 ray_org_z = _mm256_set1_ps(Ray.Origin.Z);
-	__m256 inv_dir_x = _mm256_set1_ps(safe_inv(Ray.Direction.X));
-	__m256 inv_dir_y = _mm256_set1_ps(safe_inv(Ray.Direction.Y));
-	__m256 inv_dir_z = _mm256_set1_ps(safe_inv(Ray.Direction.Z));
+	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
 
-	NodeStack.push_back({ 0, RootTMin });
-	while (!NodeStack.empty())
+	FTraversalEntry NodeStack[WorldBVHMaxTraversalStack];
+	int32 StackSize = 0;
+	NodeStack[StackSize++] = { 0, RootTMin };
+
+	while (StackSize > 0)
 	{
-		const FTraversalEntry Entry = NodeStack.back();
-		NodeStack.pop_back();
+		const FTraversalEntry Entry = NodeStack[--StackSize];
 		if (Entry.TMin > OutHitResult.Distance)
 		{
 			continue;
 		}
 
-		const int32 NodeIndex = Entry.NodeIndex;
-		const FNode& Node = Nodes[NodeIndex];
-
+		const FNode& Node = Nodes[Entry.NodeIndex];
 		if (Node.IsLeaf())
 		{
-			for (int32 LeafIndex = Node.FirstLeaf; LeafIndex < Node.FirstLeaf + Node.LeafCount; ++LeafIndex)
+			LastTraversalMetrics.LeafNodesVisited++;
+
+			FTraversalEntry PrimitiveEntries[WorldBVHMaxLeafSize];
+			int32 PrimitiveEntryCount = 0;
+
+			for (int32 PacketIndex = 0; PacketIndex < Node.PrimitivePacketCount; ++PacketIndex)
 			{
-				const FLeaf& Leaf = Leaves[LeafIndex];
+				const FPrimitivePacket& Packet = PrimitivePackets[Node.FirstPrimitivePacket + PacketIndex];
+				float PrimitiveTMinValues[8];
+				const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
+					RayContext,
+					Packet.MinX, Packet.MinY, Packet.MinZ,
+					Packet.MaxX, Packet.MaxY, Packet.MaxZ,
+					OutHitResult.Distance,
+					PrimitiveTMinValues);
+				LastTraversalMetrics.PrimitiveAABBTests += static_cast<uint32>(Packet.PrimitiveCount);
+
+				if (PrimitiveMask == 0)
+				{
+					continue;
+				}
+
+				for (int32 i = 0; i < Packet.PrimitiveCount; ++i)
+				{
+					if ((PrimitiveMask >> i) & 1)
+					{
+						LastTraversalMetrics.PrimitiveAABBHits++;
+						PrimitiveEntries[PrimitiveEntryCount++] = { Packet.PrimitiveIndices[i], PrimitiveTMinValues[i] };
+					}
+				}
+			}
+
+			int32 ClosestEntryIndex = 0;
+			for (int32 I = 1; I < PrimitiveEntryCount; ++I)
+			{
+				if (PrimitiveEntries[I].TMin < PrimitiveEntries[ClosestEntryIndex].TMin)
+				{
+					ClosestEntryIndex = I;
+				}
+			}
+			if (PrimitiveEntryCount > 1 && ClosestEntryIndex != 0)
+			{
+				std::swap(PrimitiveEntries[0], PrimitiveEntries[ClosestEntryIndex]);
+			}
+
+			for (int32 EntryIndex = 0; EntryIndex < PrimitiveEntryCount; ++EntryIndex)
+			{
+				if (PrimitiveEntries[EntryIndex].TMin >= OutHitResult.Distance)
+				{
+					continue;
+				}
+
+				const FLeaf& Leaf = Leaves[PrimitiveEntries[EntryIndex].NodeIndex];
+				UPrimitiveComponent* const Primitive = Leaf.Primitive;
 				FHitResult CandidateHit{};
-				if (Leaf.Primitive->LineTraceComponent(Ray, CandidateHit) &&
+				const uint64 NarrowPhaseStart = FPlatformTime::Cycles64();
+				LastTraversalMetrics.NarrowPhaseCalls++;
+
+				bool bHit = false;
+				if (UStaticMeshComponent* const StaticMeshComponent = Cast<UStaticMeshComponent>(Primitive))
+				{
+					const FMatrix& WorldMatrix = StaticMeshComponent->GetWorldMatrix();
+					const FMatrix& WorldInverse = StaticMeshComponent->GetWorldInverseMatrix();
+					bHit = StaticMeshComponent->LineTraceStaticMeshFast(Ray, WorldMatrix, WorldInverse, CandidateHit);
+				}
+				else
+				{
+					bHit = Primitive->LineTraceComponent(Ray, CandidateHit);
+				}
+
+				if (bHit &&
 					CandidateHit.Distance < OutHitResult.Distance)
 				{
 					OutHitResult = CandidateHit;
 					OutActor = Leaf.Owner;
 				}
+
+				LastTraversalMetrics.NarrowPhaseMs +=
+					FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - NarrowPhaseStart);
+
+				const FPrimitivePickingMetrics& PrimitiveMetrics = Primitive->GetLastPickingMetrics();
+				LastTraversalMetrics.MeshInternalNodesVisited += PrimitiveMetrics.MeshInternalNodesVisited;
+				LastTraversalMetrics.MeshLeafPacketsTested += PrimitiveMetrics.MeshLeafPacketsTested;
+				LastTraversalMetrics.MeshTriangleLanesTested += PrimitiveMetrics.MeshTriangleLanesTested;
+				LastTraversalMetrics.MeshTraversalMs += PrimitiveMetrics.MeshTraversalMs;
 			}
 			continue;
 		}
 
-		// AVX2를 이용한 8개 자식 노드 AABB 동시 검사
-		__m256 min_x = _mm256_loadu_ps(Node.ChildMinX);
-		__m256 min_y = _mm256_loadu_ps(Node.ChildMinY);
-		__m256 min_z = _mm256_loadu_ps(Node.ChildMinZ);
-		__m256 max_x = _mm256_loadu_ps(Node.ChildMaxX);
-		__m256 max_y = _mm256_loadu_ps(Node.ChildMaxY);
-		__m256 max_z = _mm256_loadu_ps(Node.ChildMaxZ);
+		LastTraversalMetrics.InternalNodesVisited++;
 
-		// Slab method 적용
-		__m256 t1_x = _mm256_mul_ps(_mm256_sub_ps(min_x, ray_org_x), inv_dir_x);
-		__m256 t2_x = _mm256_mul_ps(_mm256_sub_ps(max_x, ray_org_x), inv_dir_x);
-		__m256 t1_y = _mm256_mul_ps(_mm256_sub_ps(min_y, ray_org_y), inv_dir_y);
-		__m256 t2_y = _mm256_mul_ps(_mm256_sub_ps(max_y, ray_org_y), inv_dir_y);
-		__m256 t1_z = _mm256_mul_ps(_mm256_sub_ps(min_z, ray_org_z), inv_dir_z);
-		__m256 t2_z = _mm256_mul_ps(_mm256_sub_ps(max_z, ray_org_z), inv_dir_z);
-
-		__m256 t_min = _mm256_max_ps(
-			_mm256_max_ps(_mm256_min_ps(t1_x, t2_x), _mm256_min_ps(t1_y, t2_y)),
-			_mm256_min_ps(t1_z, t2_z)
-		);
-		__m256 t_max = _mm256_min_ps(
-			_mm256_min_ps(_mm256_max_ps(t1_x, t2_x), _mm256_max_ps(t1_y, t2_y)),
-			_mm256_max_ps(t1_z, t2_z)
-		);
-
-		// 충돌 조건: t_min <= t_max && t_max >= 0 && t_min < OutHitResult.Distance
-		__m256 hit_mask = _mm256_and_ps(
-			_mm256_cmp_ps(t_min, t_max, _CMP_LE_OQ),
-			_mm256_and_ps(
-				_mm256_cmp_ps(t_max, _mm256_setzero_ps(), _CMP_GE_OQ),
-				_mm256_cmp_ps(t_min, _mm256_set1_ps(OutHitResult.Distance), _CMP_LT_OQ)
-			)
-		);
-
-		int mask = _mm256_movemask_ps(hit_mask);
-		if (mask == 0) continue;
-
-		// 충돌한 자식들을 TMin 기준으로 정렬하여 스택에 넣기 위해 수집
-		FTraversalEntry ChildEntries[8];
-		int32 ChildEntryCount = 0;
 		float TMinValues[8];
-		_mm256_storeu_ps(TMinValues, t_min);
-
-		for (int32 i = 0; i < 8; ++i)
+		const int32 Mask = FRayUtilsSIMD::IntersectAABB8(
+			RayContext,
+			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
+			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
+			OutHitResult.Distance,
+			TMinValues);
+		if (Mask == 0)
 		{
-			if ((mask >> i) & 1)
+			continue;
+		}
+
+		FTraversalEntry ChildEntries[WorldBVHChildFanout];
+		int32 ChildEntryCount = 0;
+
+		for (int32 i = 0; i < Node.ChildCount; ++i)
+		{
+			if ((Mask >> i) & 1)
 			{
 				ChildEntries[ChildEntryCount++] = { Node.Children[i], TMinValues[i] };
 			}
 		}
 
-		// 거리에 따른 간단한 삽입 정렬 (가까운 것을 나중에 넣어서 먼저 팝되도록 함)
 		for (int32 I = 1; I < ChildEntryCount; ++I)
 		{
 			FTraversalEntry Key = ChildEntries[I];
@@ -215,22 +241,15 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			ChildEntries[J + 1] = Key;
 		}
 
-		for (int32 I = 0; I < ChildEntryCount; ++I)
+		for (int32 I = 0; I < ChildEntryCount && StackSize < WorldBVHMaxTraversalStack; ++I)
 		{
-			NodeStack.push_back(ChildEntries[I]);
+			NodeStack[StackSize++] = ChildEntries[I];
 		}
 	}
+
 	return OutActor != nullptr;
 }
 
-/**
- * [Start, End) 구간의 primitive leaf들로부터 BVH 노드를 재귀적으로 생성합니다.
- * leaf 수가 작으면 종료하고, 많으면 centroid 분포가 가장 큰 축을 따라 최대 8개 구간으로 분할합니다.
- *
- * \param Start leaf 구간 시작 인덱스
- * \param End leaf 구간 끝 다음 인덱스
- * \return 생성된 노드 인덱스
- */
 int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 {
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
@@ -245,16 +264,53 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 	}
 	Nodes[NodeIndex].Bounds = Bounds;
 
-	constexpr int32 MaxLeafSize = 8;
 	const int32 LeafCount = End - Start;
-	if (LeafCount <= MaxLeafSize)
+	if (LeafCount <= WorldBVHMaxLeafSize)
 	{
 		Nodes[NodeIndex].FirstLeaf = Start;
 		Nodes[NodeIndex].LeafCount = LeafCount;
+		Nodes[NodeIndex].FirstPrimitivePacket = static_cast<int32>(PrimitivePackets.size());
+		Nodes[NodeIndex].PrimitivePacketCount = (LeafCount + WorldBVHLeafPacketSize - 1) / WorldBVHLeafPacketSize;
+
+		for (int32 PacketIndex = 0; PacketIndex < Nodes[NodeIndex].PrimitivePacketCount; ++PacketIndex)
+		{
+			const int32 PacketStart = Start + PacketIndex * WorldBVHLeafPacketSize;
+			const int32 PacketEnd = std::min(PacketStart + WorldBVHLeafPacketSize, End);
+
+			FPrimitivePacket Packet{};
+			Packet.PrimitiveCount = PacketEnd - PacketStart;
+
+			for (int32 LocalIndex = 0; LocalIndex < WorldBVHLeafPacketSize; ++LocalIndex)
+			{
+				if (LocalIndex < Packet.PrimitiveCount)
+				{
+					const int32 LeafIndex = PacketStart + LocalIndex;
+					const FBoundingBox& LeafBounds = Leaves[LeafIndex].Bounds;
+					Packet.PrimitiveIndices[LocalIndex] = LeafIndex;
+					Packet.MinX[LocalIndex] = LeafBounds.Min.X;
+					Packet.MinY[LocalIndex] = LeafBounds.Min.Y;
+					Packet.MinZ[LocalIndex] = LeafBounds.Min.Z;
+					Packet.MaxX[LocalIndex] = LeafBounds.Max.X;
+					Packet.MaxY[LocalIndex] = LeafBounds.Max.Y;
+					Packet.MaxZ[LocalIndex] = LeafBounds.Max.Z;
+				}
+				else
+				{
+					Packet.MinX[LocalIndex] = 1e30f;
+					Packet.MinY[LocalIndex] = 1e30f;
+					Packet.MinZ[LocalIndex] = 1e30f;
+					Packet.MaxX[LocalIndex] = -1e30f;
+					Packet.MaxY[LocalIndex] = -1e30f;
+					Packet.MaxZ[LocalIndex] = -1e30f;
+				}
+			}
+
+			PrimitivePackets.push_back(Packet);
+		}
+
 		return NodeIndex;
 	}
 
-		// centroid가 가장 넓게 퍼진 축을 고르고, 그 축 기준으로 정렬한 뒤 8-way 분할한다.
 	FBoundingBox CentroidBounds;
 	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 	{
@@ -290,7 +346,7 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 			return CenterA.X < CenterB.X;
 		});
 
-	const int32 DesiredChildren = std::min<int32>(8, LeafCount);
+	const int32 DesiredChildren = std::min<int32>(WorldBVHChildFanout, LeafCount);
 	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
 	{
 		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
@@ -302,10 +358,9 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 
 		const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
 		const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
-		
+
 		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
-		
-		// 자식의 Bounds 데이터를 부모의 SIMD용 배열(SOA)에 미리 저장
+
 		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
 		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
 		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
@@ -317,12 +372,14 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 		Nodes[NodeIndex].ChildCount++;
 	}
 
-	// 나머지 빈 슬롯(ChildCount ~ 7)은 무효한 박스(Min > Max)로 채워 
-	// SIMD 연산 시 자연스럽게 실패하게 만듭니다.
-	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
+	for (int32 i = Nodes[NodeIndex].ChildCount; i < WorldBVHChildFanout; ++i)
 	{
 		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
+		Nodes[NodeIndex].ChildMinY[i] = 1e30f;
+		Nodes[NodeIndex].ChildMinZ[i] = 1e30f;
 		Nodes[NodeIndex].ChildMaxX[i] = -1e30f;
+		Nodes[NodeIndex].ChildMaxY[i] = -1e30f;
+		Nodes[NodeIndex].ChildMaxZ[i] = -1e30f;
 	}
 
 	return NodeIndex;

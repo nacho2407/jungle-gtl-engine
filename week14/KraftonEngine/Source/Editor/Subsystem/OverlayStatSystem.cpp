@@ -38,18 +38,10 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 		{
 			char Buffer[128] = {};
 			const int32 NumAttempts = static_cast<int32>(PickingAttemptCount);
-
-			//정확한 성능 측정을 위해 일단 double 출력.
 			const double PickingTimeMS = LastPickingTimeMs;
 			const double AccumulatedTime = AccumulatedPickingTimeMs;
 			snprintf(Buffer, sizeof(Buffer), "Picking Time %.4f ms : Num Attempts %d : Accumulated Time %.4f ms",
 				PickingTimeMS, NumAttempts, AccumulatedTime);
-
-			//영상에서처럼 정수로 표기할 경우
-			//const int32 PickingTimeMS = static_cast<int32>(LastPickingTimeMs);
-			//const int32 AccumulatedTime = static_cast<int32>(AccumulatedPickingTimeMs);
-			//snprintf(Buffer, sizeof(Buffer), "Picking Time %d ms : Num Attempts %d : Accumulated Time %d ms",
-			//	PickingTimeMS, NumAttempts, AccumulatedTime);
 			Group.Lines.push_back(FString(Buffer));
 		}
 
