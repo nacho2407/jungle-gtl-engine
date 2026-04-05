@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# for ubuntu
+* text=auto
+*.cpp text eol=crlf
+*.h text eol=crlf
+*.sh text eol=lf
