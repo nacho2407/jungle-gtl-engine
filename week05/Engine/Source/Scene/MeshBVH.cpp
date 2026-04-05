@@ -102,21 +102,42 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 		Buckets[b].Bounds.Expand(Triangle.Bounds);
 	}
 
+	// Prefix sweep: PrefixBounds[i] = buckets [0..i] 합산
+	FAABB PrefixBounds[NUM_BUCKETS];
+	int32 PrefixCount[NUM_BUCKETS];
+	PrefixBounds[0] = Buckets[0].Bounds;
+	PrefixCount[0]  = Buckets[0].Count;
+	for (int32 i = 1; i < NUM_BUCKETS; ++i)
+	{
+		PrefixBounds[i] = PrefixBounds[i - 1];
+		PrefixBounds[i].Expand(Buckets[i].Bounds);
+		PrefixCount[i] = PrefixCount[i - 1] + Buckets[i].Count;
+	}
+
+	// Suffix sweep: SuffixBounds[i] = buckets [i..NUM_BUCKETS-1] 합산
+	FAABB SuffixBounds[NUM_BUCKETS];
+	int32 SuffixCount[NUM_BUCKETS];
+	SuffixBounds[NUM_BUCKETS - 1] = Buckets[NUM_BUCKETS - 1].Bounds;
+	SuffixCount[NUM_BUCKETS - 1]  = Buckets[NUM_BUCKETS - 1].Count;
+	for (int32 i = NUM_BUCKETS - 2; i >= 0; --i)
+	{
+		SuffixBounds[i] = SuffixBounds[i + 1];
+		SuffixBounds[i].Expand(Buckets[i].Bounds);
+		SuffixCount[i] = SuffixCount[i + 1] + Buckets[i].Count;
+	}
+
+	// split i: 왼쪽 [0..i-1], 오른쪽 [i..NUM_BUCKETS-1]
 	float BestCost = std::numeric_limits<float>::max();
 	int32 BestSplit = -1;
 	const float ParentArea = NodeBounds.SurfaceArea();
 
 	for (int32 i = 1; i < NUM_BUCKETS; ++i)
 	{
-		FAABB L, R;
-		int32 NL = 0, NR = 0;
-		for (int32 j = 0; j < i; ++j) { L.Expand(Buckets[j].Bounds); NL += Buckets[j].Count; }
-		for (int32 j = i; j < NUM_BUCKETS; ++j) { R.Expand(Buckets[j].Bounds); NR += Buckets[j].Count; }
-
 		float Cost = 1.0f;
 		if (ParentArea > 1e-8f)
 		{
-			Cost += (L.SurfaceArea() * NL + R.SurfaceArea() * NR) / ParentArea;
+			Cost += (PrefixBounds[i - 1].SurfaceArea() * PrefixCount[i - 1]
+				   + SuffixBounds[i].SurfaceArea()      * SuffixCount[i]) / ParentArea;
 		}
 		if (Cost < BestCost) { BestCost = Cost; BestSplit = i; }
 	}
@@ -217,14 +238,16 @@ bool FMeshBVH::IntersectRay(const FVector& RayOrigin, const FVector& RayDirectio
 		ClosestDistance = (std::numeric_limits<float>::max)();
 	}
 
-	bool bHit = false;
-	TArray<int32> Stack;
-	Stack.push_back(RootNodeIndex);
+	// MaxDepth=16, 양쪽 자식을 모두 push해도 최대 스택 깊이는 MaxDepth+1
+	constexpr int32 StackCapacity = MaxDepth + 2;
+	int32 Stack[StackCapacity];
+	int32 StackTop = 0;
+	Stack[StackTop++] = RootNodeIndex;
 
-	while (!Stack.empty())
+	bool bHit = false;
+	while (StackTop > 0)
 	{
-		const int32 NodeIndex = Stack.back();
-		Stack.pop_back();
+		const int32 NodeIndex = Stack[--StackTop];
 
 		const FNode& Node = Nodes[NodeIndex];
 		if (!Node.Bounds.Intersect(LocalRay, ClosestDistance))
@@ -257,24 +280,25 @@ bool FMeshBVH::IntersectRay(const FVector& RayOrigin, const FVector& RayDirectio
 
 		if (bHitLeft && bHitRight)
 		{
+			// 가까운 자식을 나중에 push해서 먼저 처리
 			if (LeftNear <= RightNear)
 			{
-				Stack.push_back(Node.RightChild);
-				Stack.push_back(Node.LeftChild);
+				Stack[StackTop++] = Node.RightChild;
+				Stack[StackTop++] = Node.LeftChild;
 			}
 			else
 			{
-				Stack.push_back(Node.LeftChild);
-				Stack.push_back(Node.RightChild);
+				Stack[StackTop++] = Node.LeftChild;
+				Stack[StackTop++] = Node.RightChild;
 			}
 		}
 		else if (bHitLeft)
 		{
-			Stack.push_back(Node.LeftChild);
+			Stack[StackTop++] = Node.LeftChild;
 		}
 		else if (bHitRight)
 		{
-			Stack.push_back(Node.RightChild);
+			Stack[StackTop++] = Node.RightChild;
 		}
 	}
 
