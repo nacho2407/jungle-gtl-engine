@@ -1,5 +1,6 @@
 ﻿#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
+#include "Profiling/Stats.h"
 #include <algorithm>
 
 // ============================================================
@@ -93,6 +94,7 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 // ============================================================
 void FScene::UpdateDirtyProxies()
 {
+	SCOPE_STAT_CAT("UpdateDirtyProxies", "3_Collect");
 	for (FPrimitiveSceneProxy* Proxy : DirtyProxies)
 	{
 		if (!Proxy || !Proxy->Owner) continue;
