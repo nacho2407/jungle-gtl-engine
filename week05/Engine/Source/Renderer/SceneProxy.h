@@ -10,7 +10,6 @@ struct FRenderMesh;
 class FRenderer;
 struct FViewInfo;
 class UStaticMeshComponent;
-class UStaticMesh;
 class UTextComponent;
 class USubUVComponent;
 class ULineBatchComponent;
@@ -38,11 +37,19 @@ public:
 	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 
 private:
-	void CollectMeshBatchesForRenderMesh(FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const;
+	struct FStaticMeshBatchTemplateSet
+	{
+		float MinDistanceSquared = 0.0f;
+		bool bAllMaterialsResolved = false;
+		TArray<FMeshRenderItem> MeshBatchTemplates;
+	};
 
-	UStaticMesh* StaticMesh = nullptr;
+	void BuildMeshBatchTemplates(FRenderMesh* InRenderMesh, float InMinDistanceSquared);
+	const FStaticMeshBatchTemplateSet* SelectMeshBatchTemplateSet(float InDistanceSquared) const;
+
 	FMatrix LocalToWorld = FMatrix::Identity;
 	TArray<FMaterial*> Materials;
+	TArray<FStaticMeshBatchTemplateSet> MeshBatchTemplateSets;
 };
 
 class ENGINE_API FTextSceneProxy : public FPrimitiveSceneProxy

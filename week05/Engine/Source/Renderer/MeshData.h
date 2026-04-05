@@ -51,6 +51,7 @@ public:
 
 	FStaticMesh* GetRenderData(int32 LODIndex) const;
 	FStaticMesh* GetRenderDataForDistance(float Distance) const;
+	float GetLODDistance(int32 LODIndex) const;
 	void AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance);
 	void ClearLODs();
 	uint32 GetLODCount() const;
