@@ -10,7 +10,7 @@ public:
 
 	void SetRect(const FRect& InRect);
 	const FRect& GetRect() const { return Rect; }
-
+	/* Viewport의 D3D11 Resource가 반드시 있음을 보장해주는 함수 */
 	void EnsureResources(ID3D11Device* Device);
 	void Release();
 

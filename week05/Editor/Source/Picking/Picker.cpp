@@ -3,7 +3,6 @@
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -251,10 +250,6 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 			continue;
 		}
 
-		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()) || PrimComp->IsA(USkyComponent::StaticClass()))
-		{
-			continue;
-		}
 
 		const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
 
@@ -265,6 +260,12 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 		}
 
 		if (SphereT > ClosestDistance)
+		{
+			continue;
+		}
+
+		// 이 코드 빼면 피킹 정상동작 안함.
+		if (PrimComp->IsA(UUUIDBillboardComponent::StaticClass()))
 		{
 			continue;
 		}

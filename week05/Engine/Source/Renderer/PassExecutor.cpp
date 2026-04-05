@@ -1,113 +1,82 @@
 #include "Renderer/PassExecutor.h"
 
 #include <algorithm>
-#include <unordered_set>
 
 #include "Renderer/Material.h"
-#include "Renderer/MaterialBindingCache.h"
 #include "Renderer/ObjectUniformStream.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SceneRenderer.h"
 
-void FPassExecutor::Execute(const FSceneFramePacket& Packet) const
+namespace
 {
-	if (!Renderer || !Renderer->DeviceContext || !Renderer->ObjectUniformStream || !Renderer->MaterialBindingCache)
+	constexpr ERenderPass GPassExecutionOrder[] =
+	{
+		ERenderPass::Opaque,
+		ERenderPass::Alpha,
+		ERenderPass::NoDepth,
+		ERenderPass::UI,
+	};
+
+	void BindPassState(FRenderer& Renderer, const FRenderPassState& PassState)
+	{
+		FRenderStateManager* RenderStateManager = Renderer.GetRenderStateManager().get();
+		if (!RenderStateManager)
+		{
+			return;
+		}
+
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateRasterizerState(PassState.RasterizerState));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateDepthStencilState(PassState.DepthStencilState));
+		RenderStateManager->BindState(RenderStateManager->GetOrCreateBlendState(PassState.BlendState));
+	}
+
+	void ClearUnusedMaterialConstantBuffers(ID3D11DeviceContext* DeviceContext, uint32 PreviousCount, uint32 CurrentCount)
+	{
+		if (!DeviceContext || CurrentCount >= PreviousCount)
+		{
+			return;
+		}
+
+		ID3D11Buffer* NullBuffer = nullptr;
+		for (uint32 Index = CurrentCount; Index < PreviousCount; ++Index)
+		{
+			const UINT Slot = FMaterial::MaterialCBStartSlot + static_cast<UINT>(Index);
+			DeviceContext->VSSetConstantBuffers(Slot, 1, &NullBuffer);
+			DeviceContext->PSSetConstantBuffers(Slot, 1, &NullBuffer);
+		}
+	}
+}
+
+void FPassExecutor::Execute(const FSceneRenderFrame& Frame) const
+{
+	if (!Renderer || !Renderer->DeviceContext || !Renderer->ObjectUniformStream)
 	{
 		return;
 	}
 
-	UpdateUploadedMeshes(Packet);
+	UpdateUploadedMeshes(Frame);
 	Renderer->ObjectUniformStream->UploadFrame();
-	FlushDirtyMaterialConstantBuffers(Packet);
-	Renderer->MaterialBindingCache->Reset();
 	Renderer->RenderStateManager->RebindState();
 
 	Renderer->SetConstantBuffers();
 
-	const TArray<FMeshDrawCommand>& BaseCommands = Packet.PassCommandQueues.BasePassCommands;
-	const TArray<FMeshDrawCommand>& OverlayCommands = Packet.PassCommandQueues.OverlayPassCommands;
-	const TArray<FMeshDrawCommand>& UICommands = Packet.PassCommandQueues.UIPassCommands;
-	const TArray<FMeshDrawCommand>& OutlineMaskCommands = Packet.PassCommandQueues.OutlineMaskCommands;
-	const TArray<FMeshDrawCommand>& OutlineCompositeCommands = Packet.PassCommandQueues.OutlineCompositeCommands;
-
-	ExecuteQueue(BaseCommands);
-
-	bool bNeedsDepthClearForOverlay = false;
-	for (const FMeshDrawCommand& OverlayCommand : OverlayCommands)
+	for (ERenderPass RenderPass : GPassExecutionOrder)
 	{
-		if (!OverlayCommand.bDisableDepthTest)
-		{
-			bNeedsDepthClearForOverlay = true;
-			break;
-		}
+		const TArray<FMeshDrawCommand>& PassCommands = Frame.GetPassQueue(RenderPass);
+		BindPassState(*Renderer, Frame.GetPassState(RenderPass));
+		ExecuteQueue(PassCommands);
 	}
 
-	if (bNeedsDepthClearForOverlay)
+	if (!Frame.OutlineItems.empty())
 	{
-		Renderer->ClearDepthBuffer();
-	}
-
-	ExecuteQueue(OverlayCommands);
-	ExecuteQueue(UICommands);
-	ExecuteQueue(OutlineMaskCommands);
-	ExecuteQueue(OutlineCompositeCommands);
-
-	if (!Packet.OutlineItems.empty())
-	{
-		Renderer->RenderOutlines(Packet.OutlineItems);
+		Renderer->RenderOutlines(Frame.OutlineItems);
 	}
 }
 
-void FPassExecutor::ExecutePass(const FSceneFramePacket& Packet, EMeshPass MeshPass) const
+void FPassExecutor::UpdateUploadedMeshes(const FSceneRenderFrame& Frame) const
 {
-	ExecuteQueue(Packet.PassCommandQueues.GetQueue(MeshPass));
-
-	if (Renderer && MeshPass == EMeshPass::OutlineComposite && !Packet.OutlineItems.empty())
-	{
-		Renderer->RenderOutlines(Packet.OutlineItems);
-	}
-}
-
-void FPassExecutor::FlushDirtyMaterialConstantBuffers(const FSceneFramePacket& Packet) const
-{
-	if (!Renderer || !Renderer->DeviceContext)
-	{
-		return;
-	}
-
-	auto UploadPassQueue = [&](const TArray<FMeshDrawCommand>& Commands)
-	{
-		std::unordered_set<FMaterial*> VisitedMaterials;
-		for (const FMeshDrawCommand& Command : Commands)
-		{
-			FMaterial* Material = Command.Material ? Command.Material : Renderer->GetDefaultMaterial();
-			if (!Material || !Material->HasDirtyConstantBuffers())
-			{
-				continue;
-			}
-			if (!VisitedMaterials.insert(Material).second)
-			{
-				continue;
-			}
-
-			for (FMaterialConstantBuffer& CB : Material->GetConstantBuffers())
-			{
-				CB.Upload(Renderer->DeviceContext);
-			}
-		}
-	};
-
-	UploadPassQueue(Packet.PassCommandQueues.BasePassCommands);
-	UploadPassQueue(Packet.PassCommandQueues.OverlayPassCommands);
-	UploadPassQueue(Packet.PassCommandQueues.UIPassCommands);
-	UploadPassQueue(Packet.PassCommandQueues.OutlineMaskCommands);
-	UploadPassQueue(Packet.PassCommandQueues.OutlineCompositeCommands);
-}
-
-void FPassExecutor::UpdateUploadedMeshes(const FSceneFramePacket& Packet) const
-{
-	for (FRenderMesh* Mesh : Packet.MeshUploads)
+	for (FRenderMesh* Mesh : Frame.MeshUploads)
 	{
 		if (Mesh)
 		{
@@ -123,6 +92,8 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 		return;
 	}
 
+	FMaterial* CurrentMaterial = nullptr;
+	uint32 CurrentMaterialConstantBufferCount = 0;
 	FRenderMesh* CurrentMesh = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY CurrentTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
@@ -139,10 +110,17 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 			continue;
 		}
 
-		Material->Bind(Renderer->DeviceContext, Renderer->MaterialBindingCache.get());
-		Renderer->RenderStateManager->BindState(Command.RasterizerState);
-		Renderer->RenderStateManager->BindState(Command.DepthStencilState);
-		Renderer->RenderStateManager->BindState(Command.BlendState);
+		if (Material != CurrentMaterial)
+		{
+			const uint32 PreviousMaterialConstantBufferCount = CurrentMaterialConstantBufferCount;
+			Material->Bind(Renderer->DeviceContext);
+			CurrentMaterialConstantBufferCount = static_cast<uint32>(Material->GetConstantBuffers().size());
+			ClearUnusedMaterialConstantBuffers(
+				Renderer->DeviceContext,
+				PreviousMaterialConstantBufferCount,
+				CurrentMaterialConstantBufferCount);
+			CurrentMaterial = Material;
+		}
 
 		if (CurrentMesh != Command.RenderMesh)
 		{

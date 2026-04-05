@@ -2,20 +2,11 @@
   "Name": "M_Gizmos",
   "VertexShader": "Engine/Shaders/ColorVertexShader.hlsl",
   "PixelShader": "Engine/Shaders/ColorPixelShader.hlsl",
-  "RenderState": {
-    "FillMode": 3,
-    "CullMode": 1,
-    "DepthTest": true,
-	"DepthFunc": "LessEqual",
-    "StencilEnable": true,
-    "StencilReadMask": 0,
-    "StencilWriteMask": 255
-  },
-	"ConstantBuffers": [
-  {
-    "Parameters": [
-      { "Name": "BaseColor", "Type": "float4", "Value": [1.0, 1.0, 1.0, 1.0] }
-    ]
-  }
+  "ConstantBuffers": [
+    {
+      "Parameters": [
+        { "Name": "BaseColor", "Type": "float4", "Value": [1.0, 1.0, 1.0, 1.0] }
+      ]
+    }
   ]
 }
