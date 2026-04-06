@@ -62,6 +62,9 @@ void FGPUOcclusionCulling::Initialize(ID3D11Device* InDevice)
 	HiZCopyCS       = CompileCS(Device, L"Shaders/HiZGenerate.hlsl",  "CSCopyDepth");
 	HiZDownsampleCS = CompileCS(Device, L"Shaders/HiZGenerate.hlsl",  "CSDownsample");
 	OcclusionTestCS = CompileCS(Device, L"Shaders/OcclusionTest.hlsl", "CSOcclusionTest");
+#if STATS
+	HiZVisualizeCS  = CompileCS(Device, L"Shaders/HiZVisualize.hlsl", "CSHiZVisualize");
+#endif
 
 	if (!HiZCopyCS || !HiZDownsampleCS || !OcclusionTestCS)
 	{
@@ -84,6 +87,10 @@ void FGPUOcclusionCulling::Release()
 {
 	ReleaseHiZResources();
 	ReleaseBuffers();
+#if STATS
+	ReleaseDebugResources();
+	if (HiZVisualizeCS)  { HiZVisualizeCS->Release();   HiZVisualizeCS = nullptr; }
+#endif
 
 	if (ParamsCB)        { ParamsCB->Release();        ParamsCB = nullptr; }
 	if (HiZCopyCS)       { HiZCopyCS->Release();       HiZCopyCS = nullptr; }
@@ -253,7 +260,7 @@ void FGPUOcclusionCulling::CreateBuffers(uint32 ProxyCount)
 		Device->CreateUnorderedAccessView(VisibilityBuffer, &ud, &VisibilityUAV);
 	}
 
-	// Double-buffered staging (CPU-readable)
+	// Triple-buffered staging (CPU-readable)
 	{
 		D3D11_BUFFER_DESC bd = {};
 		bd.ByteWidth      = Cap * sizeof(uint32);
@@ -367,7 +374,6 @@ void FGPUOcclusionCulling::GenerateHiZ(
 
 void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 {
-	// 읽기 대상 = 현재 Write 반대편 (2프��임 전 데이터)
 	uint32 ReadIdx = (WriteIndex + 1) % STAGING_COUNT;
 
 	if (FrameCount < STAGING_COUNT || StagingProxyCount[ReadIdx] == 0 || !StagingBuffers[ReadIdx])
@@ -378,7 +384,7 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 	D3D11_MAPPED_SUBRESOURCE mapped;
 	HRESULT hr = Ctx->Map(StagingBuffers[ReadIdx], 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped);
 	if (hr == DXGI_ERROR_WAS_STILL_DRAWING)
-		return;  // 아직 미완료 — 기존 OccludedSet 유지
+		return;
 
 	if (SUCCEEDED(hr))
 	{
@@ -499,6 +505,12 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 	// ── Step 3: Copy to this frame's staging buffer ──
 	Ctx->CopyResource(StagingBuffers[WriteIndex], VisibilityBuffer);
 
+#if STATS
+	// ── Step 4: Debug Hi-Z visualization (if enabled) ──
+	if (DebugMip >= 0)
+		UpdateDebugTexture(Ctx);
+#endif
+
 	// Advance write index for next frame
 	WriteIndex = (WriteIndex + 1) % STAGING_COUNT;
 	FrameCount++;
@@ -516,3 +528,78 @@ bool FGPUOcclusionCulling::IsOccluded(const FPrimitiveSceneProxy* Proxy) const
 		return false;
 	return (OccludedBits[word] & (1u << (id & 31))) != 0;
 }
+
+// ================================================================
+// Debug visualization — R32_FLOAT → RGBA grayscale (STATS only)
+// ================================================================
+
+#if STATS
+void FGPUOcclusionCulling::UpdateDebugTexture(ID3D11DeviceContext* Ctx)
+{
+	if (!HiZVisualizeCS || DebugMip < 0) return;
+	uint32 mip = static_cast<uint32>(DebugMip);
+	if (mip >= HiZMipCount) return;
+
+	uint32 mipW = HiZWidth >> mip;  if (mipW < 1) mipW = 1;
+	uint32 mipH = HiZHeight >> mip; if (mipH < 1) mipH = 1;
+
+	// Recreate debug texture if size changed
+	if (DebugTexW != mipW || DebugTexH != mipH || !DebugTexture)
+	{
+		ReleaseDebugResources();
+		DebugTexW = mipW;
+		DebugTexH = mipH;
+
+		D3D11_TEXTURE2D_DESC desc = {};
+		desc.Width            = mipW;
+		desc.Height           = mipH;
+		desc.MipLevels        = 1;
+		desc.ArraySize        = 1;
+		desc.Format           = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.SampleDesc.Count = 1;
+		desc.Usage            = D3D11_USAGE_DEFAULT;
+		desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+		if (FAILED(Device->CreateTexture2D(&desc, nullptr, &DebugTexture))) return;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC sd = {};
+		sd.Format                    = DXGI_FORMAT_R8G8B8A8_UNORM;
+		sd.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
+		sd.Texture2D.MipLevels       = 1;
+		sd.Texture2D.MostDetailedMip = 0;
+		Device->CreateShaderResourceView(DebugTexture, &sd, &DebugSRV);
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC ud = {};
+		ud.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
+		ud.ViewDimension      = D3D11_UAV_DIMENSION_TEXTURE2D;
+		ud.Texture2D.MipSlice = 0;
+		Device->CreateUnorderedAccessView(DebugTexture, &ud, &DebugUAV);
+	}
+
+	// Update CB with visualize params (reuse ParamsCB — no longer in use at this point)
+	struct FVisualizeCB { float Exponent; float NearClip; float FarClip; uint32 Mode; };
+	FVisualizeCB vizParams = { DebugExponent, DebugNear, DebugFar, DebugMode };
+	UpdateParamsCB(Ctx, &vizParams, sizeof(vizParams));
+
+	// Dispatch R→RGBA conversion
+	ID3D11ShaderResourceView* srcSRV = (mip & 1) ? HiZSRVs_B[mip] : HiZSRVs_A[mip];
+	ID3D11ShaderResourceView*  nullSRV = nullptr;
+	ID3D11UnorderedAccessView* nullUAV = nullptr;
+
+	Ctx->CSSetShader(HiZVisualizeCS, nullptr, 0);
+	Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
+	Ctx->CSSetShaderResources(0, 1, &srcSRV);
+	Ctx->CSSetUnorderedAccessViews(0, 1, &DebugUAV, nullptr);
+	Ctx->Dispatch((mipW + 7) / 8, (mipH + 7) / 8, 1);
+	Ctx->CSSetShaderResources(0, 1, &nullSRV);
+	Ctx->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+	Ctx->CSSetShader(nullptr, nullptr, 0);
+}
+
+void FGPUOcclusionCulling::ReleaseDebugResources()
+{
+	if (DebugUAV)     { DebugUAV->Release();     DebugUAV = nullptr; }
+	if (DebugSRV)     { DebugSRV->Release();     DebugSRV = nullptr; }
+	if (DebugTexture) { DebugTexture->Release();  DebugTexture = nullptr; }
+	DebugTexW = DebugTexH = 0;
+}
+#endif
