@@ -14,6 +14,7 @@
 
 struct FVertex;
 struct FRenderMesh;
+struct FMeshDrawCommand;
 class FPixelShader;
 class FComputeShader;
 class FMaterial;
@@ -70,7 +71,7 @@ struct ENGINE_API FOcclusionPassConstants
 	uint32 CandidateCount = 0;
 	uint32 HZBMipCount = 0;
 
-	float DepthBias = 0.001f;
+	float DepthBias = 0.0000125f;
 	float NearPlaneEpsilon = 0.0001f;
 	float Padding[2] = {};
 };
@@ -226,6 +227,10 @@ public:
 	size_t GetPrevCommandCount() const { return PrevCommandCount; }
 	uint32 GetFrameDrawCallCount() const { return FrameDrawCallCount; }
 	uint32 GetFrameStaticMeshDrawCallCount() const;
+	uint32 GetFrameStaticMeshSkippedDrawCallCount() const { return FrameStaticMeshSkippedDrawCallCount; }
+	uint32 GetFrameStaticMeshPotentialDrawCallCount() const { return FrameStaticMeshPotentialDrawCallCount; }
+	uint32 GetFrameStaticMeshSkippedBeforeBuildDrawCommandsCount() const { return FrameStaticMeshSkippedBeforeBuildDrawCommandsCount; }
+	uint32 GetFrameStaticMeshSkippedLateDrawCount() const { return FrameStaticMeshSkippedLateDrawCount; }
 	std::unique_ptr<FRenderStateManager>& GetRenderStateManager() { return RenderStateManager; }
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
@@ -287,6 +292,9 @@ private:
 	bool UploadStaticMeshOcclusionCandidates();
 	void UpdateOcclusionConstantBuffer(const FOcclusionPassConstants& Constants);
 	void ExecuteStaticMeshOcclusionPass();
+	void BuildStaticMeshOcclusionSkipMask();
+	bool ShouldSkipStaticMeshCandidate(uint32 CandidateIndex) const;
+	bool ShouldSkipStaticMeshDraw(const FMeshDrawCommand& Command) const;
 	bool EnsureStaticMeshOcclusionReadbackBuffer(FStaticMeshOcclusionReadbackSlot& InOutSlot, uint32 CandidateCount);
 	FStaticMeshOcclusionReadbackSlot* AcquireStaticMeshOcclusionReadbackSlot();
 	void IssueStaticMeshOcclusionReadback();
@@ -331,6 +339,10 @@ private:
 	size_t PrevCommandCount = 0;
 	uint32 FrameDrawCallCount = 0;
 	uint32 FrameStaticMeshDrawCallCount = 0;
+	uint32 FrameStaticMeshSkippedDrawCallCount = 0;
+	uint32 FrameStaticMeshPotentialDrawCallCount = 0;
+	uint32 FrameStaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
+	uint32 FrameStaticMeshSkippedLateDrawCount = 0;
 
 	/** 디버그 선 렌더링을 위한 임시 CPU/GPU 버퍼다. */
 	TArray<FVertex> LineVertices;
@@ -380,8 +392,10 @@ private:
 	static constexpr uint32 OcclusionReadbackSlotCount = 3;
 	FStaticMeshOcclusionReadbackSlot StaticMeshOcclusionReadbackSlots[OcclusionReadbackSlotCount];
 	FStaticMeshOcclusionReadbackResult LatestStaticMeshOcclusionReadbackResult;
+	TArray<uint8> StaticMeshOcclusionSkipMask;
 	uint32 NextOcclusionReadbackSlotIndex = 0;
 	uint64 OcclusionFrameSerial = 0;
+	bool bStaticMeshOcclusionSkipActive = false;
 	std::shared_ptr<FComputeShader> HZBInitializeComputeShader;
 	std::shared_ptr<FComputeShader> HZBReduceComputeShader;
 	std::shared_ptr<FComputeShader> StaticMeshOcclusionComputeShader;

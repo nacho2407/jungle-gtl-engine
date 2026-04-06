@@ -85,7 +85,15 @@ void FFpsOverlayWindow::Render(FEditorEngine* Engine, const FRect& AreaRect)
     ImGui::Text("r.GpuOcclusionCulling : %s", RenderStats.bGpuOcclusionCullingEnabled ? "ON" : "OFF");
     ImGui::Text("Static Mesh Candidates : %u", RenderStats.StaticMeshCandidateCount);
     ImGui::Text("Static Mesh Frustum Passed : %u", RenderStats.FrustumPassedStaticMeshCount);
-    ImGui::Text("Static Mesh Draw Calls : %u", StaticMeshDrawCallCount);
+    ImGui::Text("Static Mesh Draw Calls : %u / %u",
+        StaticMeshDrawCallCount,
+        RenderStats.StaticMeshDrawCallCountBeforeOcclusion);
+    ImGui::Text("Static Mesh Draw Skipped : %u | Skip Applied: %s",
+        RenderStats.StaticMeshDrawSkippedCount,
+        RenderStats.bOcclusionSkipApplied ? "Yes" : "No");
+    ImGui::Text("Skipped Before BuildDrawCommands : %u | Late Draw Skip : %u",
+        RenderStats.StaticMeshSkippedBeforeBuildDrawCommandsCount,
+        RenderStats.StaticMeshSkippedLateDrawCount);
     ImGui::Text("Total Draw Calls : %u", DrawCallCount);
     ImGui::Text("Build Commands CPU : %.3f ms", static_cast<float>(RenderStats.ViewportBuildCommandsCpuMs));
     ImGui::Text("Collect Commands CPU : %.3f ms", static_cast<float>(RenderStats.CollectRenderCommandsCpuMs));

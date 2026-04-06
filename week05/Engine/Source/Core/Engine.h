@@ -28,6 +28,7 @@ struct ENGINE_API FRenderInstrumentationStats
 	bool bOcclusionReadbackIssued = false;
 	bool bOcclusionReadbackCompleted = false;
 	bool bOcclusionSnapshotReadbackMatched = false;
+	bool bOcclusionSkipApplied = false;
 	uint32 StaticMeshCandidateCount = 0;
 	uint32 FrustumPassedStaticMeshCount = 0;
 	uint32 OcclusionCandidateCount = 0;
@@ -35,6 +36,10 @@ struct ENGINE_API FRenderInstrumentationStats
 	uint32 OcclusionVisibleCount = 0;
 	uint32 OcclusionOccludedCount = 0;
 	uint32 StaticMeshDrawCallCount = 0;
+	uint32 StaticMeshDrawCallCountBeforeOcclusion = 0;
+	uint32 StaticMeshDrawSkippedCount = 0;
+	uint32 StaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
+	uint32 StaticMeshSkippedLateDrawCount = 0;
 	uint32 TotalDrawCallCount = 0;
 	uint32 HZBMipCount = 0;
 	double CollectRenderCommandsCpuMs = 0.0;
@@ -51,6 +56,7 @@ struct ENGINE_API FRenderInstrumentationStats
 		bOcclusionReadbackIssued = false;
 		bOcclusionReadbackCompleted = false;
 		bOcclusionSnapshotReadbackMatched = false;
+		bOcclusionSkipApplied = false;
 		StaticMeshCandidateCount = 0;
 		FrustumPassedStaticMeshCount = 0;
 		OcclusionCandidateCount = 0;
@@ -58,6 +64,10 @@ struct ENGINE_API FRenderInstrumentationStats
 		OcclusionVisibleCount = 0;
 		OcclusionOccludedCount = 0;
 		StaticMeshDrawCallCount = 0;
+		StaticMeshDrawCallCountBeforeOcclusion = 0;
+		StaticMeshDrawSkippedCount = 0;
+		StaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
+		StaticMeshSkippedLateDrawCount = 0;
 		TotalDrawCallCount = 0;
 		HZBMipCount = 0;
 		CollectRenderCommandsCpuMs = 0.0;

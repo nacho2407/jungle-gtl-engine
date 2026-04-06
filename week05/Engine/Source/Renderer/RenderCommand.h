@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Core/ShowFlags.h"
 #include <algorithm>
+#include <cstdint>
 #include <utility>
 
 struct FRenderMesh;
@@ -10,6 +11,8 @@ class FMaterial;
 class FPrimitiveSceneProxy;
 class UStaticMesh;
 class UStaticMeshComponent;
+
+constexpr uint32 GInvalidOcclusionCandidateIndex = UINT32_MAX;
 
 struct ENGINE_API FStaticMeshOcclusionCandidate
 {
@@ -68,6 +71,7 @@ struct ENGINE_API FRenderCommand
 	ERenderPass RenderPass = ERenderPass::Opaque;
 	bool bOverrideRenderPass = false;
 	bool bStaticMesh = false;
+	uint32 StaticMeshOcclusionCandidateIndex = GInvalidOcclusionCandidateIndex;
 };
 
 struct ENGINE_API FOutlineRenderItem

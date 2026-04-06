@@ -130,6 +130,14 @@ namespace
 			DrawCommand.MaterialKey = Material->GetSortId();
 			DrawCommand.MeshKey = RenderItem.RenderMesh->GetSortId();
 			DrawCommand.bStaticMesh = RenderItem.bStaticMesh;
+			DrawCommand.StaticMeshOcclusionCandidateIndex = CommandOverride
+				? CommandOverride->StaticMeshOcclusionCandidateIndex
+				: RenderItem.StaticMeshOcclusionCandidateIndex;
+
+			if (DrawCommand.bStaticMesh && RenderPass != ERenderPass::Opaque)
+			{
+				DrawCommand.StaticMeshOcclusionCandidateIndex = GInvalidOcclusionCandidateIndex;
+			}
 
 			if (bHasCachedObjectAllocation && RenderItem.WorldMatrix == CachedWorldMatrix)
 			{
@@ -244,6 +252,13 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 
 	for (const FRenderCommand& Command : Queue.Commands)
 	{
+		if (Command.bStaticMesh && Renderer->ShouldSkipStaticMeshCandidate(Command.StaticMeshOcclusionCandidateIndex))
+		{
+			++Renderer->FrameStaticMeshSkippedBeforeBuildDrawCommandsCount;
+			++Renderer->FrameStaticMeshSkippedDrawCallCount;
+			continue;
+		}
+
 		CollectedRenderItems.clear();
 
 		if (Command.SceneProxy)
@@ -335,5 +350,6 @@ void FSceneRenderer::AppendDirectRenderItem(const FRenderCommand& Command, TArra
 	RenderItem.IndexCount = Command.IndexCount;
 	RenderItem.RenderPass = Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::Opaque;
 	RenderItem.bStaticMesh = Command.bStaticMesh;
+	RenderItem.StaticMeshOcclusionCandidateIndex = Command.StaticMeshOcclusionCandidateIndex;
 	OutRenderItems.push_back(RenderItem);
 }

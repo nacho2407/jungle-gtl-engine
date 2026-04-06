@@ -16,6 +16,7 @@ struct ENGINE_API FMeshRenderItem
 	uint32 SectionIndex = 0;
 	ERenderPass RenderPass = ERenderPass::Opaque;
 	bool bStaticMesh = false;
+	uint32 StaticMeshOcclusionCandidateIndex = GInvalidOcclusionCandidateIndex;
 };
 
 struct ENGINE_API FMeshDrawCommand
@@ -30,4 +31,5 @@ struct ENGINE_API FMeshDrawCommand
 	uint64 MaterialKey = 0;
 	uint64 MeshKey = 0;
 	bool bStaticMesh = false;
+	uint32 StaticMeshOcclusionCandidateIndex = GInvalidOcclusionCandidateIndex;
 };

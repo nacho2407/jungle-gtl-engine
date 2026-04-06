@@ -423,6 +423,12 @@ void FRenderer::BeginFrame()
 	PollStaticMeshOcclusionReadback();
 	FrameDrawCallCount = 0;
 	FrameStaticMeshDrawCallCount = 0;
+	FrameStaticMeshSkippedDrawCallCount = 0;
+	FrameStaticMeshPotentialDrawCallCount = 0;
+	FrameStaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
+	FrameStaticMeshSkippedLateDrawCount = 0;
+	bStaticMeshOcclusionSkipActive = false;
+	StaticMeshOcclusionSkipMask.clear();
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
@@ -514,6 +520,7 @@ void FRenderer::ExecuteCommands()
 	}
 
 	const auto ExecuteStartTime = std::chrono::high_resolution_clock::now();
+	BuildStaticMeshOcclusionSkipMask();
 	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentRenderFrame);
 	ViewMatrix = CurrentRenderFrame->View.ViewMatrix;
 	ProjectionMatrix = CurrentRenderFrame->View.ProjectionMatrix;
@@ -544,6 +551,12 @@ void FRenderer::ExecuteCommands()
 		Stats.ExecuteRenderCommandsCpuMs += std::chrono::duration<double, std::milli>(ExecuteEndTime - ExecuteStartTime).count();
 		Stats.TotalDrawCallCount = FrameDrawCallCount;
 		Stats.StaticMeshDrawCallCount = FrameStaticMeshDrawCallCount;
+		Stats.StaticMeshDrawCallCountBeforeOcclusion = FrameStaticMeshPotentialDrawCallCount;
+		Stats.StaticMeshDrawSkippedCount = FrameStaticMeshSkippedDrawCallCount;
+		Stats.StaticMeshSkippedBeforeBuildDrawCommandsCount = FrameStaticMeshSkippedBeforeBuildDrawCommandsCount;
+		Stats.StaticMeshSkippedLateDrawCount = FrameStaticMeshSkippedLateDrawCount;
+		Stats.bOcclusionSkipApplied = bStaticMeshOcclusionSkipActive &&
+			(FrameStaticMeshSkippedBeforeBuildDrawCommandsCount > 0 || FrameStaticMeshSkippedLateDrawCount > 0);
 		if (bGpuOcclusionEnabled)
 		{
 			Stats.HZBMipCount = HZBResources.MipCount;
@@ -595,6 +608,90 @@ ID3D11ShaderResourceView* FRenderer::GetDepthShaderResourceView() const
 uint32 FRenderer::GetFrameStaticMeshDrawCallCount() const
 {
 	return FrameStaticMeshDrawCallCount;
+}
+
+void FRenderer::BuildStaticMeshOcclusionSkipMask()
+{
+	bStaticMeshOcclusionSkipActive = false;
+	StaticMeshOcclusionSkipMask.clear();
+
+	if (!GEngine || !GEngine->IsGpuOcclusionCullingEnabled())
+	{
+		return;
+	}
+
+	const FStaticMeshOcclusionReadbackResult& ReadbackResult = LatestStaticMeshOcclusionReadbackResult;
+	const TArray<FStaticMeshOcclusionCandidate>& CurrentCandidates = PendingCommandQueue.StaticMeshOcclusionCandidates;
+	if (!ReadbackResult.bReady || !ReadbackResult.bSizeMatched || CurrentCandidates.empty())
+	{
+		return;
+	}
+
+	if (ReadbackResult.CandidateCount != CurrentCandidates.size() ||
+		ReadbackResult.Snapshot.Candidates.size() != CurrentCandidates.size() ||
+		ReadbackResult.VisibilityValues.size() != CurrentCandidates.size())
+	{
+		return;
+	}
+
+	StaticMeshOcclusionSkipMask.resize(CurrentCandidates.size(), 0);
+	uint32 MatchedCandidateCount = 0;
+	uint32 SkippableCandidateCount = 0;
+
+	for (size_t CandidateIndex = 0; CandidateIndex < CurrentCandidates.size(); ++CandidateIndex)
+	{
+		const FStaticMeshOcclusionCandidate& CurrentCandidate = CurrentCandidates[CandidateIndex];
+		const FStaticMeshOcclusionCandidate& SnapshotCandidate = ReadbackResult.Snapshot.Candidates[CandidateIndex].Candidate;
+		const bool bSameCandidate =
+			CurrentCandidate.Component == SnapshotCandidate.Component &&
+			CurrentCandidate.SceneProxy == SnapshotCandidate.SceneProxy &&
+			CurrentCandidate.StaticMesh == SnapshotCandidate.StaticMesh &&
+			CurrentCandidate.RenderMesh == SnapshotCandidate.RenderMesh;
+		if (!bSameCandidate)
+		{
+			continue;
+		}
+
+		++MatchedCandidateCount;
+		if (ReadbackResult.VisibilityValues[CandidateIndex] == 0)
+		{
+			StaticMeshOcclusionSkipMask[CandidateIndex] = 1;
+			++SkippableCandidateCount;
+		}
+	}
+
+	bStaticMeshOcclusionSkipActive = (MatchedCandidateCount > 0 && SkippableCandidateCount > 0);
+}
+
+bool FRenderer::ShouldSkipStaticMeshDraw(const FMeshDrawCommand& Command) const
+{
+	if (!bStaticMeshOcclusionSkipActive || !Command.bStaticMesh)
+	{
+		return false;
+	}
+
+	const uint32 CandidateIndex = Command.StaticMeshOcclusionCandidateIndex;
+	if (CandidateIndex == GInvalidOcclusionCandidateIndex || CandidateIndex >= StaticMeshOcclusionSkipMask.size())
+	{
+		return false;
+	}
+
+	return StaticMeshOcclusionSkipMask[CandidateIndex] != 0;
+}
+
+bool FRenderer::ShouldSkipStaticMeshCandidate(uint32 CandidateIndex) const
+{
+	if (!bStaticMeshOcclusionSkipActive)
+	{
+		return false;
+	}
+
+	if (CandidateIndex == GInvalidOcclusionCandidateIndex || CandidateIndex >= StaticMeshOcclusionSkipMask.size())
+	{
+		return false;
+	}
+
+	return StaticMeshOcclusionSkipMask[CandidateIndex] != 0;
 }
 
 bool FRenderer::CreateConstantBuffers()
@@ -1256,13 +1353,10 @@ void FRenderer::BuildStaticMeshOcclusionSnapshot()
 	StaticMeshOcclusionSnapshot.Reserve(SourceCandidates.size());
 	GpuOcclusionCandidatesScratch.reserve(SourceCandidates.size());
 
-	uint32 DenseIndex = 0;
-	for (const FStaticMeshOcclusionCandidate& SourceCandidate : SourceCandidates)
+	for (size_t SourceIndex = 0; SourceIndex < SourceCandidates.size(); ++SourceIndex)
 	{
-		if (!SourceCandidate.Component || !SourceCandidate.SceneProxy || !SourceCandidate.StaticMesh || !SourceCandidate.RenderMesh)
-		{
-			continue;
-		}
+		const FStaticMeshOcclusionCandidate& SourceCandidate = SourceCandidates[SourceIndex];
+		const uint32 DenseIndex = static_cast<uint32>(SourceIndex);
 
 		FStaticMeshOcclusionSnapshotEntry SnapshotEntry = {};
 		SnapshotEntry.DenseIndex = DenseIndex;
@@ -1275,12 +1369,11 @@ void FRenderer::BuildStaticMeshOcclusionSnapshot()
 		GpuCandidate.BoundsExtent = SourceCandidate.BoundsExtent;
 		GpuCandidate.DenseIndex = DenseIndex;
 		GpuOcclusionCandidatesScratch.push_back(GpuCandidate);
-		++DenseIndex;
 	}
 
 	if (GEngine)
 	{
-		GEngine->GetMutableRenderInstrumentationStats().OcclusionCandidateCount = DenseIndex;
+		GEngine->GetMutableRenderInstrumentationStats().OcclusionCandidateCount = static_cast<uint32>(SourceCandidates.size());
 	}
 }
 

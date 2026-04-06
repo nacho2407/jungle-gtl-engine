@@ -11,25 +11,26 @@
 
 namespace
 {
-	FStaticMeshOcclusionCandidate BuildStaticMeshOcclusionCandidate(
+	bool TryBuildStaticMeshOcclusionCandidate(
 		const UStaticMeshComponent& StaticMeshComponent,
 		const FPrimitiveSceneProxy* SceneProxy,
-		const FVector& CameraPosition)
+		const FVector& CameraPosition,
+		FStaticMeshOcclusionCandidate& OutCandidate)
 	{
 		const FBoxSphereBounds Bounds = StaticMeshComponent.GetWorldBounds();
 		const float DistanceToCamera = (Bounds.Center - CameraPosition).Size();
 
-		FStaticMeshOcclusionCandidate Candidate = {};
-		Candidate.CandidateId = StaticMeshComponent.UUID;
-		Candidate.Component = &StaticMeshComponent;
-		Candidate.SceneProxy = SceneProxy;
-		Candidate.StaticMesh = StaticMeshComponent.GetStaticMesh();
-		Candidate.RenderMesh = StaticMeshComponent.GetRenderMesh(DistanceToCamera);
-		Candidate.BoundsCenter = Bounds.Center;
-		Candidate.BoundsRadius = Bounds.Radius;
-		Candidate.BoundsExtent = Bounds.BoxExtent;
-		Candidate.WorldMatrix = StaticMeshComponent.GetWorldTransform();
-		return Candidate;
+		OutCandidate = {};
+		OutCandidate.CandidateId = StaticMeshComponent.UUID;
+		OutCandidate.Component = &StaticMeshComponent;
+		OutCandidate.SceneProxy = SceneProxy;
+		OutCandidate.StaticMesh = StaticMeshComponent.GetStaticMesh();
+		OutCandidate.RenderMesh = StaticMeshComponent.GetRenderMesh(DistanceToCamera);
+		OutCandidate.BoundsCenter = Bounds.Center;
+		OutCandidate.BoundsRadius = Bounds.Radius;
+		OutCandidate.BoundsExtent = Bounds.BoxExtent;
+		OutCandidate.WorldMatrix = StaticMeshComponent.GetWorldTransform();
+		return OutCandidate.Component && OutCandidate.SceneProxy && OutCandidate.StaticMesh && OutCandidate.RenderMesh;
 	}
 }
 
@@ -74,8 +75,13 @@ void FSceneRenderCollector::CollectRenderCommands(
 		if (Command.bStaticMesh)
 		{
 			const UStaticMeshComponent* StaticMeshComponent = static_cast<const UStaticMeshComponent*>(PrimitiveComponent);
-			OutQueue.StaticMeshOcclusionCandidates.push_back(BuildStaticMeshOcclusionCandidate(*StaticMeshComponent, SceneProxy, CameraPosition));
-			++AddedStaticMeshCandidateCount;
+			FStaticMeshOcclusionCandidate Candidate = {};
+			if (TryBuildStaticMeshOcclusionCandidate(*StaticMeshComponent, SceneProxy, CameraPosition, Candidate))
+			{
+				Command.StaticMeshOcclusionCandidateIndex = static_cast<uint32>(OutQueue.StaticMeshOcclusionCandidates.size());
+				OutQueue.StaticMeshOcclusionCandidates.push_back(std::move(Candidate));
+				++AddedStaticMeshCandidateCount;
+			}
 		}
 
 		OutQueue.AddCommand(std::move(Command));
