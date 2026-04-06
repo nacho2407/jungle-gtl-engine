@@ -7,8 +7,9 @@
 
 class FPrimitiveSceneProxy;
 
-constexpr int32 MAX_DEPTH = 6;
+constexpr int32 MAX_DEPTH = 5;
 constexpr int32 MAX_SIZE = 32;
+constexpr float LooseFactor = 1.5f;
 
 class FFrustum;
 
@@ -30,7 +31,9 @@ public:
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPremitive);
 	inline bool IsLeaf() const { return Children.empty(); }
 
-	const FBoundingBox& GetBounds() const { return BoundOctree; }
+	const FBoundingBox& GetCellBounds() const { return CellBounds; }
+	const FBoundingBox& GetLooseBounds() const { return LooseBounds; }
+
 	const TArray<FOctree*>& GetChildren() const { return Children; }
 
 	TArray<UPrimitiveComponent*> FindNearestPrimitiveList(const FVector& Pos, const FVector& QueryExtent, uint32 Count);
@@ -51,12 +54,12 @@ private:
 	// Recursive frustum query with containment propagation
 	void QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives, bool bParentContained) const;
 	void QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies, bool bParentContained) const;
-	FBoundingBox BoundOctree;
+	FBoundingBox CellBounds;
+	FBoundingBox LooseBounds;
 
 	TArray<FOctree*> Children;
 	TArray<UPrimitiveComponent*> PrimitiveList;
 
 	uint32 Depth;
-	bool bSubdivideLocked = false;
 };
 

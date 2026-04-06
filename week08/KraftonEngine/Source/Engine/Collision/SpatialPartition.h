@@ -29,6 +29,9 @@ class FSpatialPartition
     const FOctree* GetOctree() const { return Octree.get(); }
 
 private:
+    FBoundingBox BuildActorVisibleBounds(AActor* Actor, bool bUpdateWorldMatrices) const;
+    void EnsureRootContains(const FBoundingBox& RequiredBounds);
+    void RebuildRootBounds(const FBoundingBox& RequiredBounds);
     void InsertPrimitive(UPrimitiveComponent* Primitive);
     void RemovePrimitive(UPrimitiveComponent* Primitive);
 

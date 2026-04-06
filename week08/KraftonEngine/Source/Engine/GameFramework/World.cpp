@@ -255,7 +255,7 @@ void UWorld::UpdateVisibleProxies()
 
 void UWorld::InitWorld()
 {
-	Partition.Reset(FBoundingBox(FVector(-100, -100, -100), FVector(100, 100, 100)));
+	Partition.Reset(FBoundingBox());
 }
 
 void UWorld::BeginPlay()

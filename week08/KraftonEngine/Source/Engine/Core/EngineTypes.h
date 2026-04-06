@@ -71,6 +71,13 @@ struct FBoundingBox
 			(Other.Min.Z >= Min.Z && Other.Max.Z <= Max.Z);
 	}
 
+	bool IsContains(const FVector& Other) const
+	{
+		return (Other.X >= Min.X && Other.X <= Max.X) &&
+			(Other.Y >= Min.Y && Other.Y <= Max.Y) &&
+			(Other.Z >= Min.Z && Other.Z <= Max.Z);
+	}
+
 	//일부분 겹친다
 	bool IsIntersected(const FBoundingBox& Other) const
 	{
