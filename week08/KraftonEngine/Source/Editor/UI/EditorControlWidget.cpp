@@ -85,10 +85,10 @@ void FEditorControlWidget::Render(float DeltaTime)
 	}
 
 	FRotator CamRot = Camera->GetRelativeRotation();
-	float CameraRotation[3] = { CamRot.Pitch, CamRot.Yaw, CamRot.Roll };
+	float CameraRotation[3] = { CamRot.Roll, CamRot.Pitch, CamRot.Yaw };
 	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
 	{
-		Camera->SetRelativeRotation(FRotator(CameraRotation[0], CameraRotation[1], Clamp(CameraRotation[2], CamRot.Roll, CamRot.Roll)));
+		Camera->SetRelativeRotation(FRotator(CameraRotation[1], CameraRotation[2], CamRot.Roll));
 	}
 
 	ImGui::End();
