@@ -377,44 +377,37 @@ void FOctree::CollectAll(TArray<UPrimitiveComponent*>& OutPrimitives) const
 
 void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives, bool bParentContained) const
 {
-	if (!bParentContained)
-	{
-		// Node might be outside — test intersection first
-		if (!ConvexVolume.IntersectAABB(LooseBounds))
-			return;
-
-		// Node fully inside frustum — skip per-primitive tests for entire subtree
-		if (ConvexVolume.ContainsAABB(LooseBounds))
-		{
-			CollectAll(OutPrimitives);
-			return;
-		}
-	}
-
-	// Partial overlap (or parent was contained but we still need visibility check)
 	if (bParentContained)
 	{
-		// Parent fully contained — all primitives here are inside frustum
-		for (UPrimitiveComponent* Primitive : PrimitiveList)
-		{
-			if (Primitive)
-				OutPrimitives.push_back(Primitive);
-		}
+		CollectAll(OutPrimitives);
+		return;
 	}
-	else
+
+	switch (ConvexVolume.ClassifyAABB(LooseBounds))
 	{
-		// Partial overlap — test each primitive individually
-		for (UPrimitiveComponent* Primitive : PrimitiveList)
-		{
-			if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
-				OutPrimitives.push_back(Primitive);
-		}
+	case EAABBFrustumClassify::Outside:
+		return;
+
+	case EAABBFrustumClassify::Contains:
+		CollectAll(OutPrimitives);
+		return;
+
+	case EAABBFrustumClassify::Intersects:
+		break;
+	}
+
+	for (UPrimitiveComponent* Primitive : PrimitiveList)
+	{
+		if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
+			OutPrimitives.push_back(Primitive);
 	}
 
 	if (IsLeaf()) return;
 
 	for (int i = 0; i < 8; ++i)
-		Children[i]->QueryFrustumInternal(ConvexVolume, OutPrimitives, bParentContained);
+	{
+		Children[i]->QueryFrustumInternal(ConvexVolume, OutPrimitives, false);
+	}
 }
 
 // ================================================================
@@ -445,6 +438,25 @@ void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
 
 void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies, bool bParentContained) const
 {
+	if (bParentContained)
+	{
+		CollectAllProxies(OutProxies);
+		return;
+	}
+
+	switch (ConvexVolume.ClassifyAABB(LooseBounds))
+	{
+	case EAABBFrustumClassify::Outside:
+		return;
+
+	case EAABBFrustumClassify::Contains:
+		CollectAllProxies(OutProxies);
+		return;
+
+	case EAABBFrustumClassify::Intersects:
+		break;
+	}
+
 	if (!bParentContained)
 	{
 		if (!ConvexVolume.IntersectAABB(LooseBounds))
@@ -457,26 +469,14 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 		}
 	}
 
-	if (bParentContained)
+	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		for (UPrimitiveComponent* Primitive : PrimitiveList)
+		if (!Primitive) continue;
+
+		if (ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
 		{
-			if (Primitive)
-			{
-				if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-					OutProxies.push_back(Proxy);
-			}
-		}
-	}
-	else
-	{
-		for (UPrimitiveComponent* Primitive : PrimitiveList)
-		{
-			if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
-			{
-				if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-					OutProxies.push_back(Proxy);
-			}
+			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+				OutProxies.push_back(Proxy);
 		}
 	}
 
