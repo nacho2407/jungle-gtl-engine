@@ -18,6 +18,11 @@ FEditorRenderPipeline::~FEditorRenderPipeline()
 {
 }
 
+void FEditorRenderPipeline::OnSceneCleared()
+{
+	GPUOcclusion.InvalidateResults();
+}
+
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
 #if STATS
