@@ -274,8 +274,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
 
-	//Gizmo Hover
-	FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
+	// 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
+	//FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
 
 	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
 	{
