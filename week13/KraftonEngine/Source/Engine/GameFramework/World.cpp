@@ -279,7 +279,10 @@ void UWorld::Tick(float DeltaTime)
 	}
 
 	UpdateVisibleProxies();
+
+#if _DEBUG
 	DebugDrawQueue.Tick(DeltaTime);
+#endif
 
 #ifndef FPS_OPTIMIZATION
 	// 유효하게 돌아가는 로직이 billboardcomponent 뿐인 것에 비해 오버헤드가 꽤 커서 이번 기간동안 주석
