@@ -25,7 +25,7 @@ public:
 
 	virtual void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const = 0;
 	virtual void CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const;
-	virtual bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FStaticMeshOcclusionCandidate& OutCandidate) const;
+	virtual bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FRenderMesh*& OutRenderMesh, FStaticMeshOcclusionCandidate& OutCandidate) const;
 
 	const FBoxSphereBounds& GetBounds() const { return Bounds; }
 
@@ -39,7 +39,9 @@ public:
 	explicit FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent);
 	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 	void CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
-	bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FStaticMeshOcclusionCandidate& OutCandidate) const override;
+	bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FRenderMesh*& OutRenderMesh, FStaticMeshOcclusionCandidate& OutCandidate) const override;
+	const FMatrix& GetLocalToWorld() const { return LocalToWorld; }
+	FMaterial* GetMaterialForSection(int32 SectionIndex) const;
 
 private:
 	FRenderMesh* ResolveRenderMesh(const FVector& CameraPosition) const;

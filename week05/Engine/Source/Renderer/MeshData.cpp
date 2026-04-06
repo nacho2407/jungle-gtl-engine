@@ -181,16 +181,21 @@ FStaticMesh* UStaticMesh::GetRenderData(int32 LODIndex) const
 
 FStaticMesh* UStaticMesh::GetRenderDataForDistance(float Distance) const
 {
+	return GetRenderDataForDistanceSquared(Distance * Distance);
+}
+
+FStaticMesh* UStaticMesh::GetRenderDataForDistanceSquared(float DistanceSquared) const
+{
 	FStaticMesh* SelectedMesh = StaticMeshAsset;
 	if (!SelectedMesh)
 	{
 		return nullptr;
 	}
 
-	const float ClampedDistance = (std::max)(Distance, 0.0f);
+	const float ClampedDistanceSquared = (std::max)(DistanceSquared, 0.0f);
 	for (const FStaticMeshLOD& Lod : LODs)
 	{
-		if (!Lod.Mesh || ClampedDistance < Lod.Distance)
+		if (!Lod.Mesh || ClampedDistanceSquared < Lod.DistanceSquared)
 		{
 			break;
 		}
@@ -211,6 +216,7 @@ void UStaticMesh::AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance)
 	FStaticMeshLOD NewLOD;
 	NewLOD.VertexCount = static_cast<uint32>(InMesh->Vertices.size());
 	NewLOD.Distance = (std::max)(InDistance, 0.0f);
+	NewLOD.DistanceSquared = NewLOD.Distance * NewLOD.Distance;
 	NewLOD.Mesh = std::move(InMesh);
 	LODs.push_back(std::move(NewLOD));
 

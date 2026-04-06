@@ -67,9 +67,10 @@ namespace
 
 		if (Settings.bPerspectiveProjection && Settings.MinProjectedRadius > 0.0f && Settings.ProjectionScaleY > 0.0f && Bounds.Radius > 0.0f)
 		{
-			const float DistanceToCamera = std::sqrt((std::max)(DistanceSquared, 1.0e-6f));
-			const float ProjectedRadius = (Bounds.Radius * Settings.ProjectionScaleY) / DistanceToCamera;
-			if (ProjectedRadius < Settings.MinProjectedRadius)
+			const float RadiusProjection = Bounds.Radius * Settings.ProjectionScaleY;
+			const float RadiusProjectionSquared = RadiusProjection * RadiusProjection;
+			const float MinProjectedRadiusSquared = Settings.MinProjectedRadius * Settings.MinProjectedRadius;
+			if (RadiusProjectionSquared < MinProjectedRadiusSquared * (std::max)(DistanceSquared, 1.0e-6f))
 			{
 				bOutSizeCulled = true;
 				return true;
@@ -100,6 +101,7 @@ void FSceneRenderCollector::CollectRenderCommands(
 	VisiblePrimitivesScratch.clear();
 	FrustrumCull(Scene, Frustum, ShowFlags, CameraPosition, ProjectionMatrix, VisiblePrimitivesScratch);
 	OutQueue.Commands.reserve(OutQueue.Commands.size() + VisiblePrimitivesScratch.size());
+	OutQueue.StaticMeshOcclusionCandidates.reserve(OutQueue.StaticMeshOcclusionCandidates.size() + VisiblePrimitivesScratch.size());
 	uint32 AddedStaticMeshCandidateCount = 0;
 
 	for (const FVisiblePrimitiveEntry& VisiblePrimitive : VisiblePrimitivesScratch)
@@ -123,10 +125,12 @@ void FSceneRenderCollector::CollectRenderCommands(
 		if (Command.bStaticMesh)
 		{
 			FStaticMeshOcclusionCandidate Candidate = {};
-			if (SceneProxy->TryBuildStaticMeshOcclusionCandidate(CameraPosition, Candidate))
+			FRenderMesh* StaticMeshRenderMesh = nullptr;
+			const FStaticMeshSceneProxy* StaticMeshSceneProxy = static_cast<const FStaticMeshSceneProxy*>(SceneProxy);
+			if (StaticMeshSceneProxy->TryBuildStaticMeshOcclusionCandidate(CameraPosition, StaticMeshRenderMesh, Candidate))
 			{
-				Command.RenderMesh = Candidate.RenderMesh;
-				Command.WorldMatrix = Candidate.WorldMatrix;
+				Command.RenderMesh = StaticMeshRenderMesh;
+				Command.WorldMatrix = StaticMeshSceneProxy->GetLocalToWorld();
 				Command.StaticMeshOcclusionCandidateIndex = static_cast<uint32>(OutQueue.StaticMeshOcclusionCandidates.size());
 				OutQueue.StaticMeshOcclusionCandidates.push_back(std::move(Candidate));
 				++AddedStaticMeshCandidateCount;

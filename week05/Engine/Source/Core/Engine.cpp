@@ -630,7 +630,7 @@ void FEngine::RegisterConsoleVariables()
 
 	if (!CVM.Find("r.StaticMeshCullMinProjectedRadius"))
 	{
-		CVM.Register("r.StaticMeshCullMinProjectedRadius", 0.0f, "Cull static meshes after frustum when BoundsRadius * ProjectionYScale / Distance falls below this value (0 = off)");
+		CVM.Register("r.StaticMeshCullMinProjectedRadius", 0.001f, "Cull static meshes after frustum when BoundsRadius * ProjectionYScale / Distance falls below this value (0 = off)");
 	}
 
 	FConsoleVariable* GCIntervalVar = CVM.Find("gc.Interval");

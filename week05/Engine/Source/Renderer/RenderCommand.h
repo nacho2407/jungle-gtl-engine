@@ -24,16 +24,10 @@ inline uint64 MakeStaticMeshOcclusionMatchKey(uint32 CandidateId, const FRenderM
 
 struct ENGINE_API FStaticMeshOcclusionCandidate
 {
-	uint32 CandidateId = 0;
-	const UStaticMeshComponent* Component = nullptr;
-	const FPrimitiveSceneProxy* SceneProxy = nullptr;
-	UStaticMesh* StaticMesh = nullptr;
-	FRenderMesh* RenderMesh = nullptr;
 	uint64 MatchKey = 0;
 	FVector BoundsCenter = FVector::ZeroVector;
 	float BoundsRadius = 0.0f;
 	FVector BoundsExtent = FVector::ZeroVector;
-	FMatrix WorldMatrix = FMatrix::Identity;
 };
 
 struct ENGINE_API FStaticMeshOcclusionFrameSnapshot

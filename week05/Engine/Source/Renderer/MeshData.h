@@ -12,6 +12,7 @@ struct FStaticMeshLOD
 {
 	std::unique_ptr<FStaticMesh> Mesh = nullptr;
 	float Distance = 0.0f;
+	float DistanceSquared = 0.0f;
 	uint32 VertexCount = 0;
 };
 
@@ -51,6 +52,7 @@ public:
 
 	FStaticMesh* GetRenderData(int32 LODIndex) const;
 	FStaticMesh* GetRenderDataForDistance(float Distance) const;
+	FStaticMesh* GetRenderDataForDistanceSquared(float DistanceSquared) const;
 	void AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance);
 	void ClearLODs();
 	uint32 GetLODCount() const;

@@ -427,8 +427,6 @@ void FRenderer::BeginFrame()
 	FrameStaticMeshPotentialDrawCallCount = 0;
 	FrameStaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
 	FrameStaticMeshSkippedLateDrawCount = 0;
-	bStaticMeshOcclusionSkipActive = false;
-	StaticMeshOcclusionSkipMask.clear();
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
@@ -520,7 +518,6 @@ void FRenderer::ExecuteCommands()
 	}
 
 	const auto ExecuteStartTime = std::chrono::high_resolution_clock::now();
-	BuildStaticMeshOcclusionSkipMask();
 	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentRenderFrame);
 	ViewMatrix = CurrentRenderFrame->View.ViewMatrix;
 	ProjectionMatrix = CurrentRenderFrame->View.ProjectionMatrix;
@@ -555,8 +552,10 @@ void FRenderer::ExecuteCommands()
 		Stats.StaticMeshDrawSkippedCount = FrameStaticMeshSkippedDrawCallCount;
 		Stats.StaticMeshSkippedBeforeBuildDrawCommandsCount = FrameStaticMeshSkippedBeforeBuildDrawCommandsCount;
 		Stats.StaticMeshSkippedLateDrawCount = FrameStaticMeshSkippedLateDrawCount;
-		Stats.bOcclusionSkipApplied = bStaticMeshOcclusionSkipActive &&
-			(FrameStaticMeshSkippedBeforeBuildDrawCommandsCount > 0 || FrameStaticMeshSkippedLateDrawCount > 0);
+		Stats.bOcclusionSkipApplied = bGpuOcclusionEnabled &&
+			LatestStaticMeshOcclusionReadbackResult.bReady &&
+			LatestStaticMeshOcclusionReadbackResult.bSizeMatched &&
+			FrameStaticMeshSkippedDrawCallCount > 0;
 		if (bGpuOcclusionEnabled)
 		{
 			Stats.HZBMipCount = HZBResources.MipCount;
@@ -610,82 +609,56 @@ uint32 FRenderer::GetFrameStaticMeshDrawCallCount() const
 	return FrameStaticMeshDrawCallCount;
 }
 
-void FRenderer::BuildStaticMeshOcclusionSkipMask()
+bool FRenderer::ShouldSkipStaticMeshCandidate(uint32 CandidateIndex) const
 {
-	bStaticMeshOcclusionSkipActive = false;
-	StaticMeshOcclusionSkipMask.clear();
-
 	if (!GEngine || !GEngine->IsGpuOcclusionCullingEnabled())
 	{
-		return;
+		return false;
 	}
 
 	const FStaticMeshOcclusionReadbackResult& ReadbackResult = LatestStaticMeshOcclusionReadbackResult;
 	const TArray<FStaticMeshOcclusionCandidate>& CurrentCandidates = PendingCommandQueue.StaticMeshOcclusionCandidates;
-	if (!ReadbackResult.bReady || !ReadbackResult.bSizeMatched || CurrentCandidates.empty())
+	if (!ReadbackResult.bReady || !ReadbackResult.bSizeMatched)
 	{
-		return;
+		return false;
 	}
 
-	if (ReadbackResult.CandidateCount != CurrentCandidates.size() ||
-		ReadbackResult.Snapshot.CandidateKeys.size() != CurrentCandidates.size() ||
-		ReadbackResult.VisibilityValues.size() != CurrentCandidates.size())
+	if (CandidateIndex == GInvalidOcclusionCandidateIndex ||
+		CandidateIndex >= CurrentCandidates.size() ||
+		CandidateIndex >= ReadbackResult.Snapshot.CandidateKeys.size() ||
+		CandidateIndex >= ReadbackResult.VisibilityValues.size())
 	{
-		return;
+		return false;
 	}
 
-	StaticMeshOcclusionSkipMask.resize(CurrentCandidates.size(), 0);
-	uint32 MatchedCandidateCount = 0;
-	uint32 SkippableCandidateCount = 0;
-
-	for (size_t CandidateIndex = 0; CandidateIndex < CurrentCandidates.size(); ++CandidateIndex)
-	{
-		const FStaticMeshOcclusionCandidate& CurrentCandidate = CurrentCandidates[CandidateIndex];
-		if (CurrentCandidate.MatchKey != ReadbackResult.Snapshot.CandidateKeys[CandidateIndex])
-		{
-			continue;
-		}
-
-		++MatchedCandidateCount;
-		if (ReadbackResult.VisibilityValues[CandidateIndex] == 0)
-		{
-			StaticMeshOcclusionSkipMask[CandidateIndex] = 1;
-			++SkippableCandidateCount;
-		}
-	}
-
-	bStaticMeshOcclusionSkipActive = (MatchedCandidateCount > 0 && SkippableCandidateCount > 0);
+	return CurrentCandidates[CandidateIndex].MatchKey == ReadbackResult.Snapshot.CandidateKeys[CandidateIndex] &&
+		ReadbackResult.VisibilityValues[CandidateIndex] == 0;
 }
 
-bool FRenderer::ShouldSkipStaticMeshDraw(const FMeshDrawCommand& Command) const
+void FRenderer::RegisterStaticMeshBuiltDrawCommands(FRenderMesh* RenderMesh)
 {
-	if (!bStaticMeshOcclusionSkipActive || !Command.bStaticMesh)
-	{
-		return false;
-	}
-
-	const uint32 CandidateIndex = Command.StaticMeshOcclusionCandidateIndex;
-	if (CandidateIndex == GInvalidOcclusionCandidateIndex || CandidateIndex >= StaticMeshOcclusionSkipMask.size())
-	{
-		return false;
-	}
-
-	return StaticMeshOcclusionSkipMask[CandidateIndex] != 0;
+	const uint32 DrawCallCount = EstimateStaticMeshDrawCallCount(RenderMesh);
+	FrameStaticMeshPotentialDrawCallCount += DrawCallCount;
+	FrameStaticMeshDrawCallCount += DrawCallCount;
 }
 
-bool FRenderer::ShouldSkipStaticMeshCandidate(uint32 CandidateIndex) const
+void FRenderer::RegisterStaticMeshSkippedBeforeBuild(FRenderMesh* RenderMesh)
 {
-	if (!bStaticMeshOcclusionSkipActive)
+	const uint32 SkippedDrawCallCount = EstimateStaticMeshDrawCallCount(RenderMesh);
+	FrameStaticMeshPotentialDrawCallCount += SkippedDrawCallCount;
+	FrameStaticMeshSkippedDrawCallCount += SkippedDrawCallCount;
+	FrameStaticMeshSkippedBeforeBuildDrawCommandsCount += SkippedDrawCallCount;
+}
+
+uint32 FRenderer::EstimateStaticMeshDrawCallCount(const FRenderMesh* RenderMesh) const
+{
+	if (!RenderMesh)
 	{
-		return false;
+		return 1;
 	}
 
-	if (CandidateIndex == GInvalidOcclusionCandidateIndex || CandidateIndex >= StaticMeshOcclusionSkipMask.size())
-	{
-		return false;
-	}
-
-	return StaticMeshOcclusionSkipMask[CandidateIndex] != 0;
+	const int32 SectionCount = RenderMesh->GetNumSection();
+	return SectionCount > 0 ? static_cast<uint32>(SectionCount) : 1u;
 }
 
 bool FRenderer::CreateConstantBuffers()

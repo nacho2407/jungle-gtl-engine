@@ -93,6 +93,11 @@ namespace
 		return RenderItem.Material ? RenderItem.Material : Renderer.GetDefaultMaterial();
 	}
 
+	ERenderPass ResolveCommandRenderPass(const FRenderCommand& Command)
+	{
+		return Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::Opaque;
+	}
+
 	void BuildDrawCommands(
 		const TArray<FMeshRenderItem>& RenderItems,
 		const FRenderCommand* CommandOverride,
@@ -162,6 +167,82 @@ namespace
 					static_cast<uint32>(OutFrame.GetPassQueue(RenderPass).size() - 1)
 					});
 			}
+		}
+	}
+
+	void BuildStaticMeshDrawCommands(
+		const FRenderCommand& Command,
+		const FStaticMeshSceneProxy& SceneProxy,
+		FRenderer& Renderer,
+		FSceneRenderFrame& OutFrame,
+		FObjectUniformStream& ObjectUniformStream,
+		uint64& InOutSubmissionOrder,
+		TArray<FSortKey>& OutSortKeys)
+	{
+		if (!Command.RenderMesh)
+		{
+			return;
+		}
+
+		const ERenderPass RenderPass = ResolveCommandRenderPass(Command);
+		const uint32 ObjectUniformAllocation = ObjectUniformStream.AllocateWorldMatrix(Command.WorldMatrix);
+		const uint64 MeshKey = Command.RenderMesh->GetSortId();
+		OutFrame.RegisterMeshUpload(Command.RenderMesh);
+
+		auto AppendDrawCommand = [&](FMaterial* Material, uint32 IndexStart, uint32 IndexCount, uint32 SectionIndex)
+		{
+			if (!Material)
+			{
+				Material = Renderer.GetDefaultMaterial();
+			}
+			if (!Material)
+			{
+				return;
+			}
+
+			FMeshDrawCommand DrawCommand = {};
+			DrawCommand.Material = Material;
+			DrawCommand.RenderMesh = Command.RenderMesh;
+			DrawCommand.IndexStart = IndexStart;
+			DrawCommand.IndexCount = IndexCount;
+			DrawCommand.SectionIndex = SectionIndex;
+			DrawCommand.ObjectUniformAllocation = ObjectUniformAllocation;
+			DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
+			DrawCommand.MaterialKey = Material->GetSortId();
+			DrawCommand.MeshKey = MeshKey;
+			DrawCommand.bStaticMesh = true;
+			DrawCommand.StaticMeshOcclusionCandidateIndex = RenderPass == ERenderPass::Opaque
+				? Command.StaticMeshOcclusionCandidateIndex
+				: GInvalidOcclusionCandidateIndex;
+
+			OutFrame.GetPassQueue(RenderPass).push_back(DrawCommand);
+			if (RenderPass == ERenderPass::Opaque)
+			{
+				OutSortKeys.push_back({
+					DrawCommand.MaterialKey,
+					DrawCommand.MeshKey,
+					static_cast<uint32>(OutFrame.GetPassQueue(RenderPass).size() - 1)
+				});
+			}
+		};
+
+		const int32 SectionCount = Command.RenderMesh->GetNumSection();
+		if (SectionCount <= 0)
+		{
+			FMaterial* Material = Command.Material ? Command.Material : SceneProxy.GetMaterialForSection(0);
+			AppendDrawCommand(Material, 0, 0, 0);
+			return;
+		}
+
+		for (int32 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
+		{
+			const FMeshSection& Section = Command.RenderMesh->Sections[SectionIndex];
+			FMaterial* Material = Command.Material ? Command.Material : SceneProxy.GetMaterialForSection(SectionIndex);
+			AppendDrawCommand(
+				Material,
+				Section.StartIndex,
+				Section.IndexCount,
+				static_cast<uint32>(SectionIndex));
 		}
 	}
 
@@ -254,8 +335,21 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 	{
 		if (Command.bStaticMesh && Renderer->ShouldSkipStaticMeshCandidate(Command.StaticMeshOcclusionCandidateIndex))
 		{
-			++Renderer->FrameStaticMeshSkippedBeforeBuildDrawCommandsCount;
-			++Renderer->FrameStaticMeshSkippedDrawCallCount;
+			Renderer->RegisterStaticMeshSkippedBeforeBuild(Command.RenderMesh);
+			continue;
+		}
+
+		if (Command.bStaticMesh && Command.SceneProxy && Command.RenderMesh)
+		{
+			Renderer->RegisterStaticMeshBuiltDrawCommands(Command.RenderMesh);
+			BuildStaticMeshDrawCommands(
+				Command,
+				*static_cast<const FStaticMeshSceneProxy*>(Command.SceneProxy),
+				*Renderer,
+				OutFrame,
+				*Renderer->ObjectUniformStream,
+				SubmissionOrder,
+				OpaqueSortKeys);
 			continue;
 		}
 

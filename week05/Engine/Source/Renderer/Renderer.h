@@ -71,8 +71,8 @@ struct ENGINE_API FOcclusionPassConstants
 	uint32 CandidateCount = 0;
 	uint32 HZBMipCount = 0;
 
-	// float DepthBias = 0.0000125f;
-	float DepthBias = 0.001f;
+	float DepthBias = 0.0000125f; // Flickering 생기는 bias
+	// float DepthBias = 0.001f; // Flickering이 생기지 않지만, 컬링이 안되는 bias
 	float NearPlaneEpsilon = 0.0001f;
 	float Padding[2] = {};
 };
@@ -293,14 +293,19 @@ private:
 	bool UploadStaticMeshOcclusionCandidates();
 	void UpdateOcclusionConstantBuffer(const FOcclusionPassConstants& Constants);
 	void ExecuteStaticMeshOcclusionPass();
-	void BuildStaticMeshOcclusionSkipMask();
+
+public:
 	bool ShouldSkipStaticMeshCandidate(uint32 CandidateIndex) const;
-	bool ShouldSkipStaticMeshDraw(const FMeshDrawCommand& Command) const;
+	void RegisterStaticMeshBuiltDrawCommands(FRenderMesh* RenderMesh);
+	void RegisterStaticMeshSkippedBeforeBuild(FRenderMesh* RenderMesh);
+
+private:
 	bool EnsureStaticMeshOcclusionReadbackBuffer(FStaticMeshOcclusionReadbackSlot& InOutSlot, uint32 CandidateCount);
 	FStaticMeshOcclusionReadbackSlot* AcquireStaticMeshOcclusionReadbackSlot();
 	void IssueStaticMeshOcclusionReadback();
 	void PollStaticMeshOcclusionReadback();
 	void ReleaseStaticMeshOcclusionReadbackResources();
+	uint32 EstimateStaticMeshDrawCallCount(const FRenderMesh* RenderMesh) const;
 
 private:
 	std::unique_ptr<FRenderStateManager> RenderStateManager = nullptr;
@@ -393,10 +398,8 @@ private:
 	static constexpr uint32 OcclusionReadbackSlotCount = 3;
 	FStaticMeshOcclusionReadbackSlot StaticMeshOcclusionReadbackSlots[OcclusionReadbackSlotCount];
 	FStaticMeshOcclusionReadbackResult LatestStaticMeshOcclusionReadbackResult;
-	TArray<uint8> StaticMeshOcclusionSkipMask;
 	uint32 NextOcclusionReadbackSlotIndex = 0;
 	uint64 OcclusionFrameSerial = 0;
-	bool bStaticMeshOcclusionSkipActive = false;
 	std::shared_ptr<FComputeShader> HZBInitializeComputeShader;
 	std::shared_ptr<FComputeShader> HZBReduceComputeShader;
 	std::shared_ptr<FComputeShader> StaticMeshOcclusionComputeShader;
