@@ -33,7 +33,13 @@ public:
 	// 씬 전환 시 댕글링 프록시 포인터 제거
 	void InvalidateResults();
 
+	// Collect 단계에서 AABB를 사전 수집 (DispatchOcclusionTest의 GatherLoop 대체)
+	void BeginGatherAABB(uint32 ExpectedCount);
+	void GatherAABB(FPrimitiveSceneProxy* Proxy);
+	void EndGatherAABB();
+
 	// Hi-Z 생성 + Occlusion Test 디스패치 + staging 복사
+	// bUsePreGathered=true면 사전 수집된 AABB 사용 (GatherLoop 스킵)
 	void DispatchOcclusionTest(
 		ID3D11DeviceContext* Ctx,
 		ID3D11ShaderResourceView* DepthSRV,
@@ -108,6 +114,11 @@ private:
 
 	// CPU-side AABB staging array — gather scattered bounds then single memcpy to mapped buffer
 	TArray<FGPUOcclusionAABB> CPUAABBStaging;
+
+	// 사전 수집 상태 (Collect 단계에서 GatherAABB 호출 시 사용)
+	bool bPreGathered = false;
+	uint32 PreGatherWritePos = 0;
+	uint32 PreGatherMaxId = 0;
 
 	// CPU-side occlusion results — bit array indexed by ProxyId (O(1) lookup)
 	TArray<uint32> OccludedBits;    // each bit = 1 proxy, OccludedBits[id/32] & (1<<(id%32))
