@@ -7,6 +7,7 @@
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/ConvexVolume.h"
+#include "Render/Pipeline/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
@@ -34,6 +35,9 @@ public:
 	const TArray<AActor*>& GetActors() const { return Actors; }
 	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
 	void UpdateVisibleProxies();
+
+	// LOD 컨텍스트를 RenderBus에 전달 (Collect 단계에서 LOD 인라인 갱신용)
+	FLODUpdateContext PrepareLODContext();
 
 	void InitWorld();      // Set up the world before gameplay begins
 	void BeginPlay();      // Triggers BeginPlay on all actors

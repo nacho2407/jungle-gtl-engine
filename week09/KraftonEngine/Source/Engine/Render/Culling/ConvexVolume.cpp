@@ -1,4 +1,4 @@
-﻿#include "Engine/Render/Culling/ConvexVolume.h"
+#include "Engine/Render/Culling/ConvexVolume.h"
 #include "Engine/Core/EngineTypes.h"
 
 void FConvexVolume::UpdateFromMatrix(const FMatrix& InViewProjectionMatrix)
