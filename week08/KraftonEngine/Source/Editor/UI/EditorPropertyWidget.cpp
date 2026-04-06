@@ -231,12 +231,17 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			EditorEngine->GetGizmo()->UpdateGizmoTransform();
 		}
 		{
-			// Rotation: CachedEditRotator 메모리를 DragFloat3가 직접 수정 (짐벌락 방지)
+			// Rotation: CachedEditRotator를 X=Roll(X축), Y=Pitch(Y축), Z=Yaw(Z축)로 노출
 			FRotator& CachedRot = RootComp->GetCachedEditRotator();
-			FRotator PrevRot = CachedRot;	// delta 계산용 복사본
+			FRotator PrevRot = CachedRot;
+			float RotXYZ[3] = { CachedRot.Roll, CachedRot.Pitch, CachedRot.Yaw };
 
-			if (ImGui::DragFloat3("Rotation", &CachedRot.Pitch, 0.1f))
+			if (ImGui::DragFloat3("Rotation", RotXYZ, 0.1f))
 			{
+				CachedRot.Roll  = RotXYZ[0];
+				CachedRot.Pitch = RotXYZ[1];
+				CachedRot.Yaw   = RotXYZ[2];
+
 				if (SelectedActors.size() > 1)
 				{
 					FRotator Delta = CachedRot - PrevRot;
