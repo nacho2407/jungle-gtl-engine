@@ -387,6 +387,8 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 		Actor->SetActorLocation(Loc);
 		Actor->SetActorRotation(Rot);
 		Actor->SetActorScale(Scale);
+		World->RemoveActorToOctree(Actor);
+		World->InsertActorToOctree(Actor);
 
 		CreatedActors.push_back(Actor);
 	}
@@ -533,6 +535,9 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 					}
 				}
 			}
+
+			World->RemoveActorToOctree(Actor);
+			World->InsertActorToOctree(Actor);
 		}
 	}
 
