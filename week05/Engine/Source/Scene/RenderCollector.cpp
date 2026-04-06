@@ -2,9 +2,36 @@
 
 #include "Actor/Actor.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Core/Engine.h"
 #include "Renderer/RenderCommand.h"
 #include "Scene/Scene.h"
+#include <chrono>
 #include <utility>
+
+namespace
+{
+	FStaticMeshOcclusionCandidate BuildStaticMeshOcclusionCandidate(
+		const UStaticMeshComponent& StaticMeshComponent,
+		const FPrimitiveSceneProxy* SceneProxy,
+		const FVector& CameraPosition)
+	{
+		const FBoxSphereBounds Bounds = StaticMeshComponent.GetWorldBounds();
+		const float DistanceToCamera = (Bounds.Center - CameraPosition).Size();
+
+		FStaticMeshOcclusionCandidate Candidate = {};
+		Candidate.CandidateId = StaticMeshComponent.UUID;
+		Candidate.Component = &StaticMeshComponent;
+		Candidate.SceneProxy = SceneProxy;
+		Candidate.StaticMesh = StaticMeshComponent.GetStaticMesh();
+		Candidate.RenderMesh = StaticMeshComponent.GetRenderMesh(DistanceToCamera);
+		Candidate.BoundsCenter = Bounds.Center;
+		Candidate.BoundsRadius = Bounds.Radius;
+		Candidate.BoundsExtent = Bounds.BoxExtent;
+		Candidate.WorldMatrix = StaticMeshComponent.GetWorldTransform();
+		return Candidate;
+	}
+}
 
 void FSceneRenderCollector::CollectRenderCommands(
 	UScene* Scene,
@@ -13,18 +40,19 @@ void FSceneRenderCollector::CollectRenderCommands(
 	const FVector& CameraPosition,
 	FRenderCommandQueue& OutQueue)
 {
-	(void)CameraPosition;
-
 	if (!Scene)
 	{
 		return;
 	}
+
+	const auto CollectStartTime = std::chrono::high_resolution_clock::now();
 
 	UPrimitiveComponent::FlushPendingRenderStateUpdates();
 
 	VisiblePrimitivesScratch.clear();
 	FrustrumCull(Scene, Frustum, ShowFlags, VisiblePrimitivesScratch);
 	OutQueue.Commands.reserve(OutQueue.Commands.size() + VisiblePrimitivesScratch.size());
+	uint32 AddedStaticMeshCandidateCount = 0;
 
 	for (UPrimitiveComponent* PrimitiveComponent : VisiblePrimitivesScratch)
 	{
@@ -41,7 +69,24 @@ void FSceneRenderCollector::CollectRenderCommands(
 
 		FRenderCommand Command = {};
 		Command.SceneProxy = SceneProxy;
+		Command.bStaticMesh = PrimitiveComponent->IsA(UStaticMeshComponent::StaticClass());
+
+		if (Command.bStaticMesh)
+		{
+			const UStaticMeshComponent* StaticMeshComponent = static_cast<const UStaticMeshComponent*>(PrimitiveComponent);
+			OutQueue.StaticMeshOcclusionCandidates.push_back(BuildStaticMeshOcclusionCandidate(*StaticMeshComponent, SceneProxy, CameraPosition));
+			++AddedStaticMeshCandidateCount;
+		}
+
 		OutQueue.AddCommand(std::move(Command));
+	}
+
+	if (GEngine)
+	{
+		FRenderInstrumentationStats& Stats = GEngine->GetMutableRenderInstrumentationStats();
+		Stats.StaticMeshCandidateCount += AddedStaticMeshCandidateCount;
+		const auto CollectEndTime = std::chrono::high_resolution_clock::now();
+		Stats.CollectRenderCommandsCpuMs += std::chrono::duration<double, std::milli>(CollectEndTime - CollectStartTime).count();
 	}
 }
 
@@ -68,6 +113,7 @@ void FSceneRenderCollector::FrustrumCull(
 	CandidatePrimitivesScratch.clear();
 	Scene->QueryPrimitivesByFrustum(Frustum, CandidatePrimitivesScratch);
 	OutVisible.reserve(OutVisible.size() + CandidatePrimitivesScratch.size());
+	uint32 FrustumPassedStaticMeshCount = 0;
 
 	for (UPrimitiveComponent* PrimitiveComponent : CandidatePrimitivesScratch)
 	{
@@ -116,6 +162,16 @@ void FSceneRenderCollector::FrustrumCull(
 			break;
 		}
 
+		if (PrimitiveComponent->IsA(UStaticMeshComponent::StaticClass()))
+		{
+			++FrustumPassedStaticMeshCount;
+		}
+
 		OutVisible.push_back(PrimitiveComponent);
+	}
+
+	if (GEngine)
+	{
+		GEngine->GetMutableRenderInstrumentationStats().FrustumPassedStaticMeshCount += FrustumPassedStaticMeshCount;
 	}
 }

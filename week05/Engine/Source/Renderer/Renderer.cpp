@@ -21,6 +21,8 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
+#include <chrono>
+
 namespace
 {
 	struct FOutlinePostConstantBuffer
@@ -343,6 +345,7 @@ void FRenderer::BeginFrame()
 {
 	if (GUINewFrame) GUINewFrame();
 	FrameDrawCallCount = 0;
+	FrameStaticMeshDrawCallCount = 0;
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
@@ -428,6 +431,7 @@ void FRenderer::ExecuteCommands()
 		return;
 	}
 
+	const auto ExecuteStartTime = std::chrono::high_resolution_clock::now();
 	SceneRenderer->BuildRenderFrame(PendingCommandQueue, *CurrentRenderFrame);
 	ViewMatrix = CurrentRenderFrame->View.ViewMatrix;
 	ProjectionMatrix = CurrentRenderFrame->View.ProjectionMatrix;
@@ -435,6 +439,14 @@ void FRenderer::ExecuteCommands()
 	SetConstantBuffers();
 	UpdateFrameConstantBuffer();
 	PassExecutor->Execute(*CurrentRenderFrame);
+	const auto ExecuteEndTime = std::chrono::high_resolution_clock::now();
+	if (GEngine)
+	{
+		FRenderInstrumentationStats& Stats = GEngine->GetMutableRenderInstrumentationStats();
+		Stats.ExecuteRenderCommandsCpuMs += std::chrono::duration<double, std::milli>(ExecuteEndTime - ExecuteStartTime).count();
+		Stats.TotalDrawCallCount = FrameDrawCallCount;
+		Stats.StaticMeshDrawCallCount = FrameStaticMeshDrawCallCount;
+	}
 
 	if (PostRenderCallback) PostRenderCallback(this);
 
@@ -471,6 +483,11 @@ FVector FRenderer::GetCameraPosition() const
 ID3D11DepthStencilView* FRenderer::GetDepthStencilView() const
 {
 	return DepthStencilView;
+}
+
+uint32 FRenderer::GetFrameStaticMeshDrawCallCount() const
+{
+	return FrameStaticMeshDrawCallCount;
 }
 
 bool FRenderer::CreateConstantBuffers()

@@ -113,6 +113,7 @@ public:
 	/** 직전 프레임의 커맨드 개수를 반환해 다음 프레임 reserve 힌트로 사용한다. */
 	size_t GetPrevCommandCount() const { return PrevCommandCount; }
 	uint32 GetFrameDrawCallCount() const { return FrameDrawCallCount; }
+	uint32 GetFrameStaticMeshDrawCallCount() const;
 	std::unique_ptr<FRenderStateManager>& GetRenderStateManager() { return RenderStateManager; }
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
@@ -190,6 +191,7 @@ private:
 	FRenderCommandQueue PendingCommandQueue;
 	size_t PrevCommandCount = 0;
 	uint32 FrameDrawCallCount = 0;
+	uint32 FrameStaticMeshDrawCallCount = 0;
 
 	/** 디버그 선 렌더링을 위한 임시 CPU/GPU 버퍼다. */
 	TArray<FVertex> LineVertices;

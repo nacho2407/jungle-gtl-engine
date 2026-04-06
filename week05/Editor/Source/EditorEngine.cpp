@@ -281,6 +281,7 @@ void FEditorEngine::RenderFrame()
 		return;
 	}
 
+	ResetRenderInstrumentationStats();
 	Renderer->BeginFrame();
 
 	if (EditorViewportClientRaw)

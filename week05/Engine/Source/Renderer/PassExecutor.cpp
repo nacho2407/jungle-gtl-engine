@@ -156,11 +156,19 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 			}
 
 			++Renderer->FrameDrawCallCount;
+			if (Command.bStaticMesh)
+			{
+				++Renderer->FrameStaticMeshDrawCallCount;
+			}
 			Renderer->DeviceContext->DrawIndexed(DrawCount, Command.IndexStart, 0);
 		}
 		else if (!Command.RenderMesh->Vertices.empty())
 		{
 			++Renderer->FrameDrawCallCount;
+			if (Command.bStaticMesh)
+			{
+				++Renderer->FrameStaticMeshDrawCallCount;
+			}
 			Renderer->DeviceContext->Draw(static_cast<UINT>(Command.RenderMesh->Vertices.size()), 0);
 		}
 	}

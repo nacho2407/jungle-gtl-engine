@@ -70,6 +70,7 @@ void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRende
 		MeshBatch.RenderMesh = InRenderMesh;
 		MeshBatch.WorldMatrix = LocalToWorld;
 		MeshBatch.RenderPass = ERenderPass::Opaque;
+		MeshBatch.bStaticMesh = true;
 		OutMeshBatches.push_back(MeshBatch);
 		return;
 	}
@@ -91,6 +92,7 @@ void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRende
 		MeshBatch.IndexCount = Section.IndexCount;
 		MeshBatch.SectionIndex = static_cast<uint32>(SectionIndex);
 		MeshBatch.RenderPass = ERenderPass::Opaque;
+		MeshBatch.bStaticMesh = true;
 		OutMeshBatches.push_back(std::move(MeshBatch));
 	}
 }

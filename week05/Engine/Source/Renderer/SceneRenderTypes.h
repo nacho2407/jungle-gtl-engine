@@ -15,6 +15,7 @@ struct ENGINE_API FMeshRenderItem
 	uint32 IndexCount = 0;
 	uint32 SectionIndex = 0;
 	ERenderPass RenderPass = ERenderPass::Opaque;
+	bool bStaticMesh = false;
 };
 
 struct ENGINE_API FMeshDrawCommand
@@ -28,4 +29,5 @@ struct ENGINE_API FMeshDrawCommand
 	uint64 SubmissionOrder = 0;
 	uint64 MaterialKey = 0;
 	uint64 MeshKey = 0;
+	bool bStaticMesh = false;
 };

@@ -1,6 +1,7 @@
 #include "Renderer/SceneRenderer.h"
 
 #include <algorithm>
+#include <chrono>
 
 #include "Core/Engine.h"
 #include "Renderer/Material.h"
@@ -128,6 +129,7 @@ namespace
 			DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
 			DrawCommand.MaterialKey = Material->GetSortId();
 			DrawCommand.MeshKey = RenderItem.RenderMesh->GetSortId();
+			DrawCommand.bStaticMesh = RenderItem.bStaticMesh;
 
 			if (bHasCachedObjectAllocation && RenderItem.WorldMatrix == CachedWorldMatrix)
 			{
@@ -203,6 +205,8 @@ void FSceneRenderFrame::RegisterMeshUpload(FRenderMesh* InMesh)
 
 void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const
 {
+	const auto BuildStartTime = std::chrono::high_resolution_clock::now();
+
 	OutFrame.Reset();
 	OutFrame.Reserve(Queue.Commands.size());
 	BuildViewInfo(Queue, OutFrame);
@@ -296,6 +300,12 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 			bCacheVaild = true;
 		}
 	}
+
+	if (GEngine)
+	{
+		const auto BuildEndTime = std::chrono::high_resolution_clock::now();
+		GEngine->GetMutableRenderInstrumentationStats().BuildRenderFrameCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
+	}
 }
 
 void FSceneRenderer::BuildViewInfo(const FRenderCommandQueue& Queue, FSceneRenderFrame& OutFrame) const
@@ -324,5 +334,6 @@ void FSceneRenderer::AppendDirectRenderItem(const FRenderCommand& Command, TArra
 	RenderItem.IndexStart = Command.IndexStart;
 	RenderItem.IndexCount = Command.IndexCount;
 	RenderItem.RenderPass = Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::Opaque;
+	RenderItem.bStaticMesh = Command.bStaticMesh;
 	OutRenderItems.push_back(RenderItem);
 }

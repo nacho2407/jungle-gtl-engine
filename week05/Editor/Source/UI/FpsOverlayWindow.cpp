@@ -16,15 +16,18 @@ void FFpsOverlayWindow::Render(FEditorEngine* Engine, const FRect& AreaRect)
         return;
     }
 
-    const FTimer& Timer = Engine->GetTimer();
-    const float FPS = Timer.GetDisplayFPS();
-    const float FrameTimeMs = Timer.GetFrameTimeMs();
+	const FTimer& Timer = Engine->GetTimer();
+	const float FPS = Timer.GetDisplayFPS();
+	const float FrameTimeMs = Timer.GetFrameTimeMs();
+	const FRenderInstrumentationStats& RenderStats = Engine->GetRenderInstrumentationStats();
 
-    uint32 DrawCallCount = 0;
-    if (FRenderer* Renderer = Engine->GetRenderer())
-    {
-        DrawCallCount = Renderer->GetFrameDrawCallCount();
-    }
+	uint32 DrawCallCount = 0;
+	uint32 StaticMeshDrawCallCount = RenderStats.StaticMeshDrawCallCount;
+	if (FRenderer* Renderer = Engine->GetRenderer())
+	{
+		DrawCallCount = Renderer->GetFrameDrawCallCount();
+		StaticMeshDrawCallCount = Renderer->GetFrameStaticMeshDrawCallCount();
+	}
 
     const double LastPickTime = Engine->LastPickTime;
     const uint16 TotalPickCount = Engine->TotalPickCount;
@@ -79,7 +82,15 @@ void FFpsOverlayWindow::Render(FEditorEngine* Engine, const FRect& AreaRect)
     ImGui::TextDisabled("(%.3f ms)", FrameTimeMs);
 
     ImGui::Separator();
-    ImGui::Text("Draw Calls : %u", DrawCallCount);
+    ImGui::Text("r.GpuOcclusionCulling : %s", RenderStats.bGpuOcclusionCullingEnabled ? "ON" : "OFF");
+    ImGui::Text("Static Mesh Candidates : %u", RenderStats.StaticMeshCandidateCount);
+    ImGui::Text("Static Mesh Frustum Passed : %u", RenderStats.FrustumPassedStaticMeshCount);
+    ImGui::Text("Static Mesh Draw Calls : %u", StaticMeshDrawCallCount);
+    ImGui::Text("Total Draw Calls : %u", DrawCallCount);
+    ImGui::Text("Build Commands CPU : %.3f ms", static_cast<float>(RenderStats.ViewportBuildCommandsCpuMs));
+    ImGui::Text("Collect Commands CPU : %.3f ms", static_cast<float>(RenderStats.CollectRenderCommandsCpuMs));
+    ImGui::Text("Render Build CPU : %.3f ms", static_cast<float>(RenderStats.BuildRenderFrameCpuMs));
+    ImGui::Text("Execute Commands CPU : %.3f ms", static_cast<float>(RenderStats.ExecuteRenderCommandsCpuMs));
     ImGui::Text("Picking    : %.3f ms | Count: %u | Total: %.3f ms",
         static_cast<float>(LastPickTime),
         static_cast<uint32>(TotalPickCount),

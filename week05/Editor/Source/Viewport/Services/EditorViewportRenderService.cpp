@@ -19,6 +19,7 @@
 #include "Asset/ObjManager.h"
 #include "Slate/Widget/Painter.h"
 #include <algorithm>
+#include <chrono>
 #include <utility>
 
 namespace
@@ -212,7 +213,10 @@ void FEditorViewportRenderService::RenderAll(
 		Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 		const FVector CameraPosition = ViewInverse.GetTranslation();
+		const auto BuildStartTime = std::chrono::high_resolution_clock::now();
 		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
+		const auto BuildEndTime = std::chrono::high_resolution_clock::now();
+		Engine->GetMutableRenderInstrumentationStats().ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
 		if (GizmoTarget)
