@@ -293,7 +293,6 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 	FDrawState State;
 	BindPerObjectSlot(Context);
 
-
 	{
 		SCOPE_STAT_CAT("ExecutePass::Draw", "4_ExecutePass");
 		for (const FPrimitiveSceneProxy* RawProxy : SortedProxyBuffer)
@@ -301,10 +300,7 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 			const FPrimitiveSceneProxy& Proxy = *RawProxy;
 			if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) continue;
 			BindShader(Proxy, Context, State);	
-			{
-				SCOPE_STAT_CAT("ExecutePass::BindExtraCB", "4_ExecutePass");
-				BindExtraCB(Proxy, Context);
-			}
+			BindExtraCB(Proxy, Context);
 			
 			if(Proxy.SectionDraws.size() == 1)
 				DrawSingleSection(Proxy, Context, State);
@@ -407,7 +403,6 @@ bool FRenderer::BindMeshBuffer(FMeshBuffer* Buffer, ID3D11DeviceContext* Ctx, FD
 
 void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
 {
-	SCOPE_STAT_CAT("ExecutePass::DrawSections", "4_ExecutePass");
 	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
 
 	// SectionDraw는 IB 필수
@@ -418,12 +413,9 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-	{
-		SCOPE_STAT_CAT("ExecutePass::PerObjectConstantBuffer.Update", "4_ExecutePass");
-		// PerObject CB — 프록시당 1회만 업데이트 (Model 행렬)
-		Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
-	}
-
+	// PerObject CB — 프록시당 1회만 업데이트 (Model 행렬)
+	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+	
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 	if (!State.bMaterialBound)
@@ -465,7 +457,6 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 
 void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
 {
-	SCOPE_STAT_CAT("ExecutePass::DrawSingleSections", "4_ExecutePass");
 	const FMeshSectionDraw& Section = Proxy.SectionDraws[0];
 	if (Section.IndexCount == 0) return;
 	
@@ -478,8 +469,9 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-	
-	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+	{
+		Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+	}
 
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
