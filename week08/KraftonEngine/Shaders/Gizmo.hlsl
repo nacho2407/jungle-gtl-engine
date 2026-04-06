@@ -30,11 +30,12 @@ float4 PS(PS_Input_Color input) : SV_TARGET
 
     float4 outColor = input.color;
 
-    if (axis == SelectedAxis)
-    {
-        outColor.rgb = float3(1, 1, 0);
-        outColor.a = 1.0f;
-    }
+    // 일단 효과를 끕니다.
+    // if (axis == SelectedAxis)
+    // {
+    //     outColor.rgb = float3(1, 1, 0);
+    //     outColor.a = 1.0f;
+    // }
 
     if ((bool) bIsInnerGizmo)
     {
