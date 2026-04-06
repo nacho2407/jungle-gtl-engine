@@ -355,20 +355,18 @@ void FOctree::CollectAll(TArray<UPrimitiveComponent*>& OutPrimitives) const
 void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives, bool bParentContained) const
 {
 	if (!bParentContained)
-    {
-        // 기존: IntersectAABB → ContainsAABB 순서로 2회 순회
-        // 수정: ClassifyAABB 1회로 해결
-        switch (ConvexVolume.ClassifyAABB(BoundOctree))
-        {
-        case EAABBResult::Outside:
-            return;
-        case EAABBResult::Contains:
-            CollectAll(OutPrimitives);
-            return;
-        case EAABBResult::Intersects:
-            break; // 아래 partial overlap 처리로 계속
-        }
-    }
+	{
+		// Node might be outside — test intersection first
+		if (!ConvexVolume.IntersectAABB(BoundOctree))
+			return;
+
+		// Node fully inside frustum — skip per-primitive tests for entire subtree
+		if (ConvexVolume.ContainsAABB(BoundOctree))
+		{
+			CollectAll(OutPrimitives);
+			return;
+		}
+	}
 
 	// Partial overlap (or parent was contained but we still need visibility check)
 	if (bParentContained)
@@ -426,16 +424,14 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 {
 	if (!bParentContained)
 	{
-        switch (ConvexVolume.ClassifyAABB(BoundOctree))
-        {
-        case EAABBResult::Outside:
-            return;
-        case EAABBResult::Contains:
-            CollectAllProxies(OutProxies);
-            return;
-        case EAABBResult::Intersects:
-            break;
-        }
+		if (!ConvexVolume.IntersectAABB(BoundOctree))
+			return;
+
+		if (ConvexVolume.ContainsAABB(BoundOctree))
+		{
+			CollectAllProxies(OutProxies);
+			return;
+		}
 	}
 
 	if (bParentContained)
