@@ -209,8 +209,9 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 		}
 
 		NewMeshAsset->PathFileName = PathFileName;
-		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
+		// MaterialIndex 캐싱을 위해 Materials를 먼저 설정
 		StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
+		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
 
 		// .bin 저장
 		FWindowsBinWriter Writer(BinPath);
@@ -266,6 +267,42 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 		if (Reader.IsValid())
 		{
 			StaticMesh->Serialize(Reader);
+
+			// .mbin 누락 등으로 머티리얼이 비어있으면 OBJ 재파싱으로 전환
+			for (const auto& Mat : StaticMesh->GetStaticMaterials())
+			{
+				if (Mat.MaterialInterface && Mat.MaterialInterface->PathFileName.empty())
+				{
+					bNeedRebuild = true;
+					break;
+				}
+			}
+
+			// 인라인 복구된 머티리얼의 .mbin 저장 + PathFileName 키로 캐시 등록
+			if (!bNeedRebuild)
+			{
+				for (const auto& Mat : StaticMesh->GetStaticMaterials())
+				{
+					if (Mat.MaterialInterface && !Mat.MaterialInterface->PathFileName.empty()
+						&& Mat.MaterialInterface->PathFileName != "None")
+					{
+						// PostEditProperty 등에서 원본 경로로 조회 시 캐시 히트되도록 등록
+						MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+
+						// .mbin이 없으면 디스크에 저장 (다음 세션용)
+						FString MatBinPath = GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+						std::filesystem::path MBinPathW(FPaths::ToWide(MatBinPath));
+						if (!std::filesystem::exists(MBinPathW))
+						{
+							FWindowsBinWriter MatWriter(MatBinPath);
+							if (MatWriter.IsValid())
+							{
+								Mat.MaterialInterface->Serialize(MatWriter);
+							}
+						}
+					}
+				}
+			}
 		}
 		else
 		{
@@ -275,11 +312,16 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 	if (bNeedRebuild)
 	{
+		// 원본 OBJ 경로 결정 — .bin에서 로드한 경우 내부에 저장된 원본 경로 사용
+		FString ObjPath = PathFileName;
+		if (StaticMesh->GetStaticMeshAsset() && !StaticMesh->GetStaticMeshAsset()->PathFileName.empty())
+			ObjPath = StaticMesh->GetStaticMeshAsset()->PathFileName;
+
 		// 무거운 OBJ 파싱 진행
 		FStaticMesh* NewMeshAsset = new FStaticMesh();
 		TArray<FStaticMaterial> ParsedMaterials;
 
-		if (FObjImporter::Import(PathFileName, *NewMeshAsset, ParsedMaterials))
+		if (FObjImporter::Import(ObjPath, *NewMeshAsset, ParsedMaterials))
 		{
 			for (auto& Mat : ParsedMaterials)
 			{
@@ -299,8 +341,9 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 				}
 			}
 
-			StaticMesh->SetStaticMeshAsset(NewMeshAsset);
+			// MaterialIndex 캐싱을 위해 Materials를 먼저 설정
 			StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
+			StaticMesh->SetStaticMeshAsset(NewMeshAsset);
 
 			// 파싱 결과를 하드디스크에 굽기 (다음 로딩 속도 최적화)
 			FWindowsBinWriter Writer(BinPath);
@@ -387,12 +430,15 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 			}
 		}
 
-		FWindowsBinWriter Writer(MBinPath);
-		if (Writer.IsValid())
+		// 속성이 실제로 로드된 경우에만 .mbin 저장 (빈 머티리얼로 .mbin을 덮어쓰지 않음)
+		if (!NewMaterial->PathFileName.empty())
 		{
-			NewMaterial->Serialize(Writer);
+			FWindowsBinWriter Writer(MBinPath);
+			if (Writer.IsValid())
+			{
+				NewMaterial->Serialize(Writer);
+			}
 		}
-
 	}
 
 	// 4. 캐시에 등록 후 반환

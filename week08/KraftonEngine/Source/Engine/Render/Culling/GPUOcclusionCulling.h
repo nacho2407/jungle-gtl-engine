@@ -29,6 +29,9 @@ public:
 	// 이전 프레임 staging buffer → OccludedSet 갱신
 	void ReadbackResults(ID3D11DeviceContext* Ctx);
 
+	// 씬 전환 시 댕글링 프록시 포인터 제거
+	void InvalidateResults();
+
 	// Hi-Z 생성 + Occlusion Test 디스패치 + staging 복사
 	void DispatchOcclusionTest(
 		ID3D11DeviceContext* Ctx,
