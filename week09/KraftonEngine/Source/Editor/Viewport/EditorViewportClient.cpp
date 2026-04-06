@@ -326,25 +326,23 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 		AActor* BestActor = nullptr;
 		World->RaycastPrimitives(Ray, HitResult, BestActor);
 
-		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+			// Multi-picking disabled for performance testing.
+			// bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 
 		if (BestActor == nullptr)
 		{
-			if (!bCtrlHeld)
-			{
 				SelectionManager->ClearSelection();
-			}
 		}
 		else
 		{
-			if (bCtrlHeld)
-			{
-				SelectionManager->ToggleSelect(BestActor);
-			}
-			else
-			{
-				SelectionManager->Select(BestActor);
-			}
+				// if (bCtrlHeld)
+				// {
+				// 	SelectionManager->ToggleSelect(BestActor);
+				// }
+				// else
+				{
+					SelectionManager->Select(BestActor);
+				}
 		}
 	}
 
