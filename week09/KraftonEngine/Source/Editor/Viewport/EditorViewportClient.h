@@ -65,7 +65,7 @@ public:
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
-	void HandleDragStart(const FRay& Ray);
+	void HandleDragStart(const FRay& Ray); //픽킹 시작
 
 private:
 	FViewport* Viewport = nullptr;

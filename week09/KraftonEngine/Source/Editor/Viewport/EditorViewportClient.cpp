@@ -327,7 +327,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	{
 		//기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
 		AActor* BestActor = nullptr;
-		World->RaycastPrimitives(Ray, HitResult, BestActor);
+		World->RaycastPrimitives(Ray, HitResult, BestActor); //BVH 시작
 
 		//멀티픽킹은 성능을 위해 일단 비활성화
 		//bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
