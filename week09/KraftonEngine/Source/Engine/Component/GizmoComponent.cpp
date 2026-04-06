@@ -131,6 +131,7 @@ bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float A
 		(DistanceVector.Y * DistanceVector.Y) +
 		(DistanceVector.Z * DistanceVector.Z);
 
+	//기즈모 픽킹에 원기둥 크기를 반영합니다.
 	float ClickThreshold = Radius * AxisScale;
 	constexpr float StemRadius = 0.06f;
 	ClickThreshold = StemRadius * AxisScale;

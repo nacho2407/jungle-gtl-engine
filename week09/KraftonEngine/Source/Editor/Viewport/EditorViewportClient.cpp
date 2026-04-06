@@ -271,7 +271,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	// FViewport 크기 기준으로 디프로젝션 (슬롯 크기와 동기화됨)
 	float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : WindowWidth;
 	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
-	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
+	//성능 향상을 위해 필요할 때만 아래 분기에서 Ray 생성.
+	//FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
 
 	// 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
@@ -279,6 +280,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
 	{
+		FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 		HandleDragStart(Ray);
 	}
 	else if (InputSystem::Get().GetLeftDragging())
@@ -291,6 +293,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 		if (Gizmo->IsHolding())
 		{
+			FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 			Gizmo->UpdateDrag(Ray);
 		}
 	}
@@ -326,8 +329,8 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 		AActor* BestActor = nullptr;
 		World->RaycastPrimitives(Ray, HitResult, BestActor);
 
-			// Multi-picking disabled for performance testing.
-			// bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+		//멀티픽킹은 성능을 위해 일단 비활성화
+		//bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 
 		if (BestActor == nullptr)
 		{
