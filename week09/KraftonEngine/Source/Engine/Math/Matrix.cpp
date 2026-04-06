@@ -4,9 +4,6 @@
 #include "MathUtils.h"
 #include <iostream>
 
-#define __AVX2__
-#define __SSE__
-
 const FMatrix FMatrix::Identity(1, 0, 0, 0,
 	0, 1, 0, 0,
 	0, 0, 1, 0,
