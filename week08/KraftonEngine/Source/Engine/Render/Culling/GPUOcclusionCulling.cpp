@@ -411,6 +411,41 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 }
 
 // ================================================================
+// Pre-gather API — Collect 단계에서 AABB를 수집, GatherLoop 대체
+// ================================================================
+
+void FGPUOcclusionCulling::BeginGatherAABB(uint32 ExpectedCount)
+{
+	auto& curProxies = StagingProxies[WriteIndex];
+	curProxies.resize(ExpectedCount);
+	CPUAABBStaging.resize(ExpectedCount);
+	PreGatherWritePos = 0;
+	PreGatherMaxId = 0;
+	bPreGathered = false;
+}
+
+void FGPUOcclusionCulling::GatherAABB(FPrimitiveSceneProxy* Proxy)
+{
+	if (!Proxy || Proxy->bNeverCull) return;
+
+	auto& curProxies = StagingProxies[WriteIndex];
+	uint32 pos = PreGatherWritePos;
+	curProxies[pos] = Proxy;
+	if (Proxy->ProxyId > PreGatherMaxId) PreGatherMaxId = Proxy->ProxyId;
+	const FBoundingBox& B = Proxy->CachedBounds;
+	CPUAABBStaging[pos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
+	                         B.Max.X, B.Max.Y, B.Max.Z, 0.0f };
+	PreGatherWritePos++;
+}
+
+void FGPUOcclusionCulling::EndGatherAABB()
+{
+	StagingProxyCount[WriteIndex] = PreGatherWritePos;
+	StagingMaxProxyId[WriteIndex] = PreGatherMaxId;
+	bPreGathered = true;
+}
+
+// ================================================================
 // Dispatch — upload AABBs, generate Hi-Z, run occlusion test
 // ================================================================
 
@@ -425,34 +460,40 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 
 	SCOPE_STAT_CAT("OcclusionDispatch", "4_ExecutePass");
 
-	// Single-pass: filter proxies + gather AABBs simultaneously
+	// AABB 수집: 사전 수집(Collect 단계)이 있으면 GatherLoop 스킵
 	{
 		SCOPE_STAT_CAT("UploadAABB", "4_ExecutePass");
-
-		uint32 visCount = static_cast<uint32>(VisibleProxies.size());
-		auto& curProxies = StagingProxies[WriteIndex];
-		curProxies.resize(visCount);
-		CPUAABBStaging.resize(visCount);
-		FGPUOcclusionAABB* staging = CPUAABBStaging.data();
-		uint32 writePos = 0;
-		uint32 maxId = 0;
-
-		for (uint32 i = 0; i < visCount; i++)
+		if (!bPreGathered)
 		{
-			FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
-			if (!Proxy || Proxy->bNeverCull) continue;
+			// Fallback: 기존 GatherLoop
+			uint32 visCount = static_cast<uint32>(VisibleProxies.size());
+			auto& curProxies = StagingProxies[WriteIndex];
+			curProxies.resize(visCount);
+			CPUAABBStaging.resize(visCount);
+			FGPUOcclusionAABB* staging = CPUAABBStaging.data();
+			uint32 writePos = 0;
+			uint32 maxId = 0;
 
-			curProxies[writePos] = Proxy;
-			if (Proxy->ProxyId > maxId) maxId = Proxy->ProxyId;
-			const FBoundingBox& B = Proxy->CachedBounds;
-			staging[writePos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
-			                      B.Max.X, B.Max.Y, B.Max.Z, 0.0f };
-			writePos++;
+			for (uint32 i = 0; i < visCount; i++)
+			{
+				FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
+				if (!Proxy || Proxy->bNeverCull) continue;
+
+				curProxies[writePos] = Proxy;
+				if (Proxy->ProxyId > maxId) maxId = Proxy->ProxyId;
+				const FBoundingBox& B = Proxy->CachedBounds;
+				staging[writePos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
+				                      B.Max.X, B.Max.Y, B.Max.Z, 0.0f };
+				writePos++;
+			}
+
+			StagingProxyCount[WriteIndex] = writePos;
+			StagingMaxProxyId[WriteIndex] = maxId;
 		}
 
-		uint32 proxyCount = writePos;
-		StagingProxyCount[WriteIndex] = proxyCount;
-		StagingMaxProxyId[WriteIndex] = maxId;
+		bPreGathered = false; // 다음 프레임을 위해 리셋
+
+		uint32 proxyCount = StagingProxyCount[WriteIndex];
 		if (proxyCount == 0) { FrameCount++; WriteIndex = (WriteIndex + 1) % STAGING_COUNT; return; }
 
 		// Ensure GPU buffers
@@ -466,7 +507,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 		dstBox.bottom = 1;
 		dstBox.front  = 0;
 		dstBox.back   = 1;
-		Ctx->UpdateSubresource(AABBBuffer, 0, &dstBox, staging, 0, 0);
+		Ctx->UpdateSubresource(AABBBuffer, 0, &dstBox, CPUAABBStaging.data(), 0, 0);
 	}
 
 	uint32 proxyCount = StagingProxyCount[WriteIndex];

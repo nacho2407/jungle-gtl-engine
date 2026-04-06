@@ -415,7 +415,7 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 	}
 	// PerObject CB — 프록시당 1회만 업데이트 (Model 행렬)
 	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
-	
+
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 	if (!State.bMaterialBound)
@@ -426,7 +426,7 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 	}
 
 	for (const FMeshSectionDraw& Section : Proxy.SectionDraws)
-	{	
+	{
 		if (Section.IndexCount == 0) continue;
 
 		// SRV 변경 시에만 바인딩
@@ -459,7 +459,7 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 {
 	const FMeshSectionDraw& Section = Proxy.SectionDraws[0];
 	if (Section.IndexCount == 0) return;
-	
+
 	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
 	// SectionDraw는 IB 필수
 	if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) return;
@@ -469,9 +469,7 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-	{
-		Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
-	}
+	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
 
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
@@ -481,7 +479,6 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 		Ctx->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
 		State.bMaterialBound = true;
 	}
-
 
 	// SRV 변경 시에만 바인딩
 	if (Section.DiffuseSRV != State.LastSRV)
