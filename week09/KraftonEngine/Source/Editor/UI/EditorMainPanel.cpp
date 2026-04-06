@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -194,12 +194,14 @@ void FEditorMainPanel::Update()
 
 	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
 	bool bWantMouse = IO.WantCaptureMouse;
+	bool bWantKeyboard = IO.WantCaptureKeyboard;
 	if (EditorEngine && EditorEngine->IsMouseOverViewport())
 	{
 		bWantMouse = false;
+		bWantKeyboard = false;
 	}
 	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
-	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
 	if (Window)
