@@ -7,7 +7,7 @@
 
 class FPrimitiveSceneProxy;
 
-constexpr int32 MAX_DEPTH = 5;
+constexpr int32 MAX_DEPTH = 6;
 constexpr int32 MAX_SIZE = 32;
 
 class FFrustum;
@@ -43,6 +43,8 @@ public:
 
 	void Reset(const FBoundingBox& InBounds, uint32 InDepth = 0);
 private:
+	bool HasDistributable() const;
+	
 	// Collect all visible primitives in this node and descendants (no frustum test)
 	void CollectAll(TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const;
@@ -55,5 +57,6 @@ private:
 	TArray<UPrimitiveComponent*> PrimitiveList;
 
 	uint32 Depth;
+	bool bSubdivideLocked = false;
 };
 
