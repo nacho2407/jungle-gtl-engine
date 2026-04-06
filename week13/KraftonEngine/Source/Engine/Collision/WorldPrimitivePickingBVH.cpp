@@ -8,6 +8,7 @@
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
+#include <bit>
 
 /**
  * BVH 트리를 설정합니다.
@@ -18,6 +19,20 @@ namespace
 	constexpr int32 WorldBVHLeafPacketSize = 8;		//각 리프 노드의 최대 프리미티브 수 (8이면 SIMD와 호응)
 	constexpr int32 WorldBVHMaxLeafSize = 16;		//Threshold, 이 기준보다 작으면 더 이상 분할하지 않고 리프로 만듭니다. 
 	constexpr int32 WorldBVHMaxTraversalStack = 258;
+
+	float GetAxisComponent(const FVector& Vector, int32 Axis)
+	{
+		return Axis == 0 ? Vector.X : (Axis == 1 ? Vector.Y : Vector.Z);
+	}
+
+	float GetBoundsSurfaceArea(const FBoundingBox& Bounds)
+	{
+		const FVector Extent = Bounds.GetExtent();
+		const float Width = std::max(Extent.X * 2.0f, 0.0f);
+		const float Height = std::max(Extent.Y * 2.0f, 0.0f);
+		const float Depth = std::max(Extent.Z * 2.0f, 0.0f);
+		return 2.0f * ((Width * Height) + (Width * Depth) + (Height * Depth));
+	}
 }
 
 void FWorldPrimitivePickingBVH::MarkDirty()
@@ -126,6 +141,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 	while (StackSize > 0)
 	{
 		const FTraversalEntry Entry = NodeStack[--StackSize];
+		//현재 노드와의 최소 교차 거리가 이미 찾은 가장 가까운 충돌점보다 멀다면 검사를 생략합니다
 		if (Entry.TMin > OutHitResult.Distance)
 		{
 			continue;
@@ -139,10 +155,12 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			FTraversalEntry PrimitiveEntries[WorldBVHMaxLeafSize];
 			int32 PrimitiveEntryCount = 0;
 
+			//교차 판정이 필요한 리프 노드의 프리미티브들입니다.
 			for (int32 PacketIndex = 0; PacketIndex < Node.PrimitivePacketCount; ++PacketIndex)
 			{
+				//리프 노드 내부에서 AABB 테스트를 SIMD로 수행하여 hit primitive 후보를 뽑아냅니다.
 				const FPrimitivePacket& Packet = PrimitivePackets[Node.FirstPrimitivePacket + PacketIndex];
-				float PrimitiveTMinValues[8];
+				alignas(32) float PrimitiveTMinValues[8];
 				const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
 					RayContext,
 					Packet.MinX, Packet.MinY, Packet.MinZ,
@@ -155,34 +173,29 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				{
 					continue;
 				}
+				// leaf 내부에서도 hit lane만 추려서 narrow phase 후보를 만든다.
+				// AABB miss가 많은 장면에서는 이 단계가 virtual call 수를 크게 줄인다.
+				LastTraversalMetrics.PrimitiveMaskHits += static_cast<uint32>(std::popcount(static_cast<uint32>(PrimitiveMask)));
 
-				for (int32 i = 0; i < Packet.PrimitiveCount; ++i)
+				uint32 RemainingPrimitiveMask = static_cast<uint32>(PrimitiveMask) & ((1u << Packet.PrimitiveCount) - 1u);
+				while (RemainingPrimitiveMask != 0)
 				{
-					if ((PrimitiveMask >> i) & 1)
-					{
-						LastTraversalMetrics.PrimitiveAABBHits++;
-						PrimitiveEntries[PrimitiveEntryCount++] = { Packet.PrimitiveIndices[i], PrimitiveTMinValues[i] };
-					}
+					const uint32 Lane = std::countr_zero(RemainingPrimitiveMask);
+					LastTraversalMetrics.PrimitiveAABBHits++;
+					PrimitiveEntries[PrimitiveEntryCount++] = { Packet.PrimitiveIndices[Lane], PrimitiveTMinValues[Lane] };
+					RemainingPrimitiveMask &= (RemainingPrimitiveMask - 1);
 				}
 			}
 
-			int32 ClosestEntryIndex = 0;
-			for (int32 I = 1; I < PrimitiveEntryCount; ++I)
-			{
-				if (PrimitiveEntries[I].TMin < PrimitiveEntries[ClosestEntryIndex].TMin)
-				{
-					ClosestEntryIndex = I;
-				}
-			}
-			if (PrimitiveEntryCount > 1 && ClosestEntryIndex != 0)
-			{
-				std::swap(PrimitiveEntries[0], PrimitiveEntries[ClosestEntryIndex]);
-			}
+			//정렬하지 않음.
 
 			for (int32 EntryIndex = 0; EntryIndex < PrimitiveEntryCount; ++EntryIndex)
 			{
 				if (PrimitiveEntries[EntryIndex].TMin >= OutHitResult.Distance)
 				{
+					// 이미 더 가까운 hit를 찾은 뒤에는 그보다 먼 후보를 바로 버린다.
+					// SIMD broad phase 성능이 좋아질수록 이 거리 기반 prune 비중이 커진다.
+					LastTraversalMetrics.NarrowPhaseRejectedByDistance++;
 					continue;
 				}
 
@@ -218,6 +231,8 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				LastTraversalMetrics.MeshInternalNodesVisited += PrimitiveMetrics.MeshInternalNodesVisited;
 				LastTraversalMetrics.MeshLeafPacketsTested += PrimitiveMetrics.MeshLeafPacketsTested;
 				LastTraversalMetrics.MeshTriangleLanesTested += PrimitiveMetrics.MeshTriangleLanesTested;
+				LastTraversalMetrics.MeshTriangleMaskHits += PrimitiveMetrics.MeshTriangleMaskHits;
+				LastTraversalMetrics.MeshClosestTHitUpdates += PrimitiveMetrics.MeshClosestTHitUpdates;
 				LastTraversalMetrics.MeshTraversalMs += PrimitiveMetrics.MeshTraversalMs;
 			}
 			continue;
@@ -225,7 +240,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 
 		LastTraversalMetrics.InternalNodesVisited++;
 
-		float TMinValues[8];
+		alignas(32) float TMinValues[8];
 		const int32 Mask = FRayUtilsSIMD::IntersectAABB8(
 			RayContext,
 			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
@@ -236,28 +251,38 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		{
 			continue;
 		}
+		LastTraversalMetrics.ChildMaskHits += static_cast<uint32>(std::popcount(static_cast<uint32>(Mask)));
 
 		FTraversalEntry ChildEntries[WorldBVHChildFanout];
 		int32 ChildEntryCount = 0;
 
-		for (int32 i = 0; i < Node.ChildCount; ++i)
+		// 월드 BVH도 메시 BVH와 같은 방식으로 hit child만 뽑아 정렬한다.
+		// 가까운 child를 먼저 방문해야 OutHitResult.Distance가 빨리 줄어 후속 노드를 더 많이 건너뛸 수 있다.
+		uint32 RemainingChildMask = static_cast<uint32>(Mask) & ((1u << Node.ChildCount) - 1u);
+		while (RemainingChildMask != 0)
 		{
-			if ((Mask >> i) & 1)
-			{
-				ChildEntries[ChildEntryCount++] = { Node.Children[i], TMinValues[i] };
-			}
+			const uint32 Lane = std::countr_zero(RemainingChildMask);
+			ChildEntries[ChildEntryCount++] = { Node.Children[Lane], TMinValues[Lane] };
+			RemainingChildMask &= (RemainingChildMask - 1);
 		}
 
-		for (int32 I = 1; I < ChildEntryCount; ++I)
+		if (ChildEntryCount == 2 && ChildEntries[0].TMin < ChildEntries[1].TMin)
 		{
-			FTraversalEntry Key = ChildEntries[I];
-			int32 J = I - 1;
-			while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
+			std::swap(ChildEntries[0], ChildEntries[1]);
+		}
+		else if (ChildEntryCount > 2)
+		{
+			for (int32 I = 1; I < ChildEntryCount; ++I)
 			{
-				ChildEntries[J + 1] = ChildEntries[J];
-				--J;
+				FTraversalEntry Key = ChildEntries[I];
+				int32 J = I - 1;
+				while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
+				{
+					ChildEntries[J + 1] = ChildEntries[J];
+					--J;
+				}
+				ChildEntries[J + 1] = Key;
 			}
-			ChildEntries[J + 1] = Key;
 		}
 
 		for (int32 I = 0; I < ChildEntryCount && StackSize < WorldBVHMaxTraversalStack; ++I)
@@ -330,65 +355,200 @@ int32 FWorldPrimitivePickingBVH::BuildRecursive(int32 Start, int32 End)
 		return NodeIndex;
 	}
 
-	FBoundingBox CentroidBounds;
-	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
-	{
-		CentroidBounds.Expand(Leaves[LeafIndex].Bounds.GetCenter());
-	}
+	float BestCost = FLT_MAX;
+	int32 BestAxis = 0;
+	bool bFoundValidAxis = false;
 
-	const FVector CentroidExtent = CentroidBounds.GetExtent();
-	int32 SplitAxis = 0;
-	if (CentroidExtent.Y > CentroidExtent.X && CentroidExtent.Y >= CentroidExtent.Z)
+	// 월드 BVH split도 triangle BVH와 동일한 bucket cost 모델을 사용한다.
+	// primitive 수가 많을수록 overlap을 줄이는 편이 SIMD AABB 테스트 수 자체를 줄이는 데 유리하다.
+	for (int32 Axis = 0; Axis < 3; ++Axis)
 	{
-		SplitAxis = 1;
-	}
-	else if (CentroidExtent.Z > CentroidExtent.X && CentroidExtent.Z > CentroidExtent.Y)
-	{
-		SplitAxis = 2;
-	}
+		float MinCenter = FLT_MAX;
+		float MaxCenter = -FLT_MAX;
 
-	std::sort(
-		Leaves.begin() + Start,
-		Leaves.begin() + End,
-		[SplitAxis](const FLeaf& A, const FLeaf& B)
+		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 		{
-			const FVector CenterA = A.Bounds.GetCenter();
-			const FVector CenterB = B.Bounds.GetCenter();
-			if (SplitAxis == 1)
-			{
-				return CenterA.Y < CenterB.Y;
-			}
-			if (SplitAxis == 2)
-			{
-				return CenterA.Z < CenterB.Z;
-			}
-			return CenterA.X < CenterB.X;
-		});
+			const float Center = GetAxisComponent(Leaves[LeafIndex].Bounds.GetCenter(), Axis);
+			MinCenter = std::min(MinCenter, Center);
+			MaxCenter = std::max(MaxCenter, Center);
+		}
 
-	const int32 DesiredChildren = std::min<int32>(WorldBVHChildFanout, LeafCount);
-	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
-	{
-		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
-		const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
-		if (RangeStart >= RangeEnd)
+		if (MaxCenter - MinCenter <= 1e-4f)
 		{
 			continue;
 		}
 
-		const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
-		const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+		FBoundingBox BucketBounds[WorldBVHChildFanout];
+		int32 BucketCounts[WorldBVHChildFanout] = {};
+		const float Scale = static_cast<float>(WorldBVHChildFanout) / (MaxCenter - MinCenter);
 
-		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
+		{
+			const FBoundingBox& LeafBounds = Leaves[LeafIndex].Bounds;
+			const float Center = GetAxisComponent(LeafBounds.GetCenter(), Axis);
+			int32 Bucket = static_cast<int32>((Center - MinCenter) * Scale);
+			Bucket = std::clamp(Bucket, 0, WorldBVHChildFanout - 1);
+			BucketBounds[Bucket].Expand(LeafBounds.Min);
+			BucketBounds[Bucket].Expand(LeafBounds.Max);
+			BucketCounts[Bucket]++;
+		}
 
-		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
-		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
-		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
-		Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
-		Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
-		Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
-		Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+		float AxisCost = 0.0f;
+		for (int32 Bucket = 0; Bucket < WorldBVHChildFanout; ++Bucket)
+		{
+			if (BucketCounts[Bucket] == 0)
+			{
+				continue;
+			}
+			AxisCost += GetBoundsSurfaceArea(BucketBounds[Bucket]) * static_cast<float>(BucketCounts[Bucket]);
+		}
 
-		Nodes[NodeIndex].ChildCount++;
+		if (AxisCost < BestCost)
+		{
+			BestCost = AxisCost;
+			BestAxis = Axis;
+			bFoundValidAxis = true;
+		}
+	}
+
+	if (!bFoundValidAxis)
+	{
+		const FBoundingBox& ReferenceBounds = Leaves[Start].Bounds;
+		const FVector Extent = ReferenceBounds.GetExtent();
+		BestAxis = (Extent.Y > Extent.X && Extent.Y >= Extent.Z) ? 1 : ((Extent.Z > Extent.X && Extent.Z > Extent.Y) ? 2 : 0);
+
+		std::sort(
+			Leaves.begin() + Start,
+			Leaves.begin() + End,
+			[BestAxis](const FLeaf& A, const FLeaf& B)
+			{
+				return GetAxisComponent(A.Bounds.GetCenter(), BestAxis) < GetAxisComponent(B.Bounds.GetCenter(), BestAxis);
+			});
+
+		const int32 DesiredChildren = std::min<int32>(WorldBVHChildFanout, LeafCount);
+		for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
+		{
+			const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
+			const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
+			if (RangeStart >= RangeEnd)
+			{
+				continue;
+			}
+
+			const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
+			const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+			Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+			const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+			Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+			Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+			Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+			Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+			Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+			Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+			Nodes[NodeIndex].ChildCount++;
+		}
+	}
+	else
+	{
+		float MinCenter = FLT_MAX;
+		float MaxCenter = -FLT_MAX;
+		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
+		{
+			const float Center = GetAxisComponent(Leaves[LeafIndex].Bounds.GetCenter(), BestAxis);
+			MinCenter = std::min(MinCenter, Center);
+			MaxCenter = std::max(MaxCenter, Center);
+		}
+
+		const float Scale = static_cast<float>(WorldBVHChildFanout) / (MaxCenter - MinCenter);
+		auto GetBucket = [BestAxis, MinCenter, Scale](const FLeaf& Leaf)
+		{
+			const float Center = GetAxisComponent(Leaf.Bounds.GetCenter(), BestAxis);
+			int32 Bucket = static_cast<int32>((Center - MinCenter) * Scale);
+			return std::clamp(Bucket, 0, WorldBVHChildFanout - 1);
+		};
+
+		std::sort(
+			Leaves.begin() + Start,
+			Leaves.begin() + End,
+			[BestAxis, GetBucket](const FLeaf& A, const FLeaf& B)
+			{
+				const int32 BucketA = GetBucket(A);
+				const int32 BucketB = GetBucket(B);
+				if (BucketA != BucketB)
+				{
+					return BucketA < BucketB;
+				}
+				const float CenterA = GetAxisComponent(A.Bounds.GetCenter(), BestAxis);
+				const float CenterB = GetAxisComponent(B.Bounds.GetCenter(), BestAxis);
+				if (CenterA != CenterB)
+				{
+					return CenterA < CenterB;
+				}
+				return A.Owner < B.Owner;
+			});
+
+		// 한 bucket에 모두 몰린 분포에서는 cost model이 유효한 분할점을 제공하지 못한다.
+		// 이 경우 균등 분할로 fallback해 재귀가 진행되도록 보장한다.
+		if (GetBucket(Leaves[Start]) == GetBucket(Leaves[End - 1]))
+		{
+			const int32 DesiredChildren = std::min<int32>(WorldBVHChildFanout, LeafCount);
+			for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
+			{
+				const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
+				const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
+				if (RangeStart >= RangeEnd)
+				{
+					continue;
+				}
+
+				const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
+				const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+				Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+				const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+				Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+				Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+				Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+				Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+				Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+				Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+				Nodes[NodeIndex].ChildCount++;
+			}
+		}
+		else
+		{
+		int32 RangeStart = Start;
+		while (RangeStart < End)
+		{
+			int32 RangeEnd = RangeStart + 1;
+			const int32 Bucket = GetBucket(Leaves[RangeStart]);
+			while (RangeEnd < End && GetBucket(Leaves[RangeEnd]) == Bucket)
+			{
+				++RangeEnd;
+			}
+
+			const int32 ChildIdx = BuildRecursive(RangeStart, RangeEnd);
+			const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+			Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+			const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+			Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+			Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+			Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+			Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+			Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+			Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+			Nodes[NodeIndex].ChildCount++;
+			RangeStart = RangeEnd;
+		}
+		}
 	}
 
 	for (int32 i = Nodes[NodeIndex].ChildCount; i < WorldBVHChildFanout; ++i)
