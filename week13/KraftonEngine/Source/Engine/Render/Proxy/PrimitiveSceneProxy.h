@@ -67,6 +67,7 @@ public:
 	FMeshBuffer* MeshBuffer = nullptr;
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox CachedBounds;
+	mutable bool bPerObjectCBDirty = true;
 
 	// --- Sort Keys (Shader|MeshBuffer + Material layout) ---
 	uint64 SortKey = 0;
@@ -88,4 +89,8 @@ public:
 
 	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
 	uint32 LastLODUpdateFrame = UINT32_MAX;
+
+	void MarkPerObjectCBDirty() const { bPerObjectCBDirty = true; }
+	void ClearPerObjectCBDirty() const { bPerObjectCBDirty = false; }
+	bool NeedsPerObjectCBUpload() const { return bPerObjectCBDirty; }
 };

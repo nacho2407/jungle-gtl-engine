@@ -45,4 +45,5 @@ void FBillboardSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		* RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
+	MarkPerObjectCBDirty();
 }
