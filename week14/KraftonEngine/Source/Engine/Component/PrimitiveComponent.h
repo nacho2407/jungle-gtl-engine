@@ -12,6 +12,7 @@
 class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
+class FOctree;
 
 class UPrimitiveComponent : public USceneComponent
 {
@@ -53,6 +54,21 @@ public:
 	// FScene의 DirtyProxies에 등록까지 수행하는 헬퍼
 	void MarkProxyDirty(EDirtyFlag Flag) const;
 
+	FOctree* GetOctreeNode() const { return OctreeNode; }
+	bool IsInOctreeOverflow() const { return bInOctreeOverflow; }
+
+	void SetOctreeLocation(FOctree* InNode, bool bOverflow)
+	{
+		OctreeNode = InNode;
+		bInOctreeOverflow = bOverflow;
+	}
+
+	void ClearOctreeLocation()
+	{
+		OctreeNode = nullptr;
+		bInOctreeOverflow = false;
+	}
+
 protected:
 	void OnTransformDirty() override;
 	void EnsureWorldAABBUpdated() const;
@@ -61,6 +77,10 @@ protected:
 	mutable FVector WorldAABBMinLocation;
 	mutable FVector WorldAABBMaxLocation;
 	mutable bool bWorldAABBDirty = true;
+	mutable bool bHasValidWorldAABB = false;
 	bool bIsVisible = true;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
+	
+	FOctree* OctreeNode = nullptr;
+	bool bInOctreeOverflow = false;
 };
