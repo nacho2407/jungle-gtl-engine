@@ -15,12 +15,17 @@ public:
 	{
 		uint32 InternalNodesVisited = 0;
 		uint32 LeafNodesVisited = 0;
+		uint32 ChildMaskHits = 0;
 		uint32 PrimitiveAABBTests = 0;
 		uint32 PrimitiveAABBHits = 0;
+		uint32 PrimitiveMaskHits = 0;
 		uint32 NarrowPhaseCalls = 0;
+		uint32 NarrowPhaseRejectedByDistance = 0;
 		uint32 MeshInternalNodesVisited = 0;
 		uint32 MeshLeafPacketsTested = 0;
 		uint32 MeshTriangleLanesTested = 0;
+		uint32 MeshTriangleMaskHits = 0;
+		uint32 MeshClosestTHitUpdates = 0;
 		double NarrowPhaseMs = 0.0;
 		double MeshTraversalMs = 0.0;
 	};
@@ -51,12 +56,12 @@ private:
 
 		// SIMD(AVX) 최적화를 위한 자식 노드들의 AABB 데이터 (SOA 구조)
 		// 부모 노드에 미리 모아두어 Raycast 시 Gather 오버헤드를 없앱니다.
-		float ChildMinX[8];
-		float ChildMinY[8];
-		float ChildMinZ[8];
-		float ChildMaxX[8];
-		float ChildMaxY[8];
-		float ChildMaxZ[8];
+		alignas(32) float ChildMinX[8];
+		alignas(32) float ChildMinY[8];
+		alignas(32) float ChildMinZ[8];
+		alignas(32) float ChildMaxX[8];
+		alignas(32) float ChildMaxY[8];
+		alignas(32) float ChildMaxZ[8];
 
 		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
@@ -67,15 +72,15 @@ private:
 		bool IsLeaf() const { return ChildCount == 0; }
 	};
 
-	struct FPrimitivePacket
+	struct alignas(32) FPrimitivePacket
 	{
 		int32 PrimitiveIndices[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-		float MinX[8];
-		float MinY[8];
-		float MinZ[8];
-		float MaxX[8];
-		float MaxY[8];
-		float MaxZ[8];
+		alignas(32) float MinX[8];
+		alignas(32) float MinY[8];
+		alignas(32) float MinZ[8];
+		alignas(32) float MaxX[8];
+		alignas(32) float MaxY[8];
+		alignas(32) float MaxZ[8];
 		int32 PrimitiveCount = 0;
 	};
 
