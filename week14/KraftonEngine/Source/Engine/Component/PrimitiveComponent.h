@@ -18,6 +18,8 @@ struct FPrimitivePickingMetrics
 	uint32 MeshInternalNodesVisited = 0;
 	uint32 MeshLeafPacketsTested = 0;
 	uint32 MeshTriangleLanesTested = 0;
+	uint32 MeshTriangleMaskHits = 0;
+	uint32 MeshClosestTHitUpdates = 0;
 	double MeshTraversalMs = 0.0;
 };
 
