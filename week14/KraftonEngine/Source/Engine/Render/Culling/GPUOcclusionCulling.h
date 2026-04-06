@@ -60,14 +60,15 @@ private:
 	ID3D11ComputeShader* HiZDownsampleCS = nullptr;
 	ID3D11ComputeShader* OcclusionTestCS = nullptr;
 
-	// Hi-Z texture + per-mip views
-	ID3D11Texture2D* HiZTexture = nullptr;
-	ID3D11ShaderResourceView* HiZSRV = nullptr;
-	TArray<ID3D11UnorderedAccessView*> HiZMipUAVs;
-
-	// Ping-pong temp texture — avoids DX11 SRV/UAV same-resource binding hazard
-	ID3D11Texture2D* HiZTempTexture = nullptr;
-	TArray<ID3D11ShaderResourceView*> HiZTempMipSRVs;
+	// Hi-Z ping-pong textures — even mips on A, odd mips on B (zero-copy)
+	ID3D11Texture2D* HiZTextureA = nullptr;
+	ID3D11Texture2D* HiZTextureB = nullptr;
+	ID3D11ShaderResourceView* HiZSRV_A = nullptr;	// full chain for OcclusionTest
+	ID3D11ShaderResourceView* HiZSRV_B = nullptr;	// full chain for OcclusionTest
+	TArray<ID3D11UnorderedAccessView*> HiZUAVs_A;	// per-mip write targets
+	TArray<ID3D11UnorderedAccessView*> HiZUAVs_B;
+	TArray<ID3D11ShaderResourceView*> HiZSRVs_A;	// per-mip read sources
+	TArray<ID3D11ShaderResourceView*> HiZSRVs_B;
 	uint32 HiZWidth = 0;
 	uint32 HiZHeight = 0;
 	uint32 HiZMipCount = 0;
@@ -84,6 +85,7 @@ private:
 	ID3D11Buffer* StagingBuffers[STAGING_COUNT] = {};
 	TArray<const FPrimitiveSceneProxy*> StagingProxies[STAGING_COUNT];
 	uint32 StagingProxyCount[STAGING_COUNT] = {};
+	uint32 StagingMaxProxyId[STAGING_COUNT] = {};
 	uint32 WriteIndex = 0;   // 현재 프레임 기록용
 	uint32 VisibilityBufferCapacity = 0;
 
