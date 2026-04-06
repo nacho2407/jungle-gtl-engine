@@ -1,4 +1,4 @@
-#include "Collision/MeshTrianglePickingBVH.h"
+﻿#include "Collision/MeshTrianglePickingBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Collision/RayUtilsSIMD.h"
@@ -6,10 +6,14 @@
 #include "Core/EngineTypes.h"
 
 #include <algorithm>
+#include <bit>
 #include <cfloat>
 
 namespace
 {
+	constexpr int32 MeshBVHChildFanout = 8;
+	constexpr int32 MeshBVHMaxTraversalStack = 256;
+
 	FBoundingBox MakeTriangleBounds(const FVector& V0, const FVector& V1, const FVector& V2)
 	{
 		FBoundingBox Bounds;
@@ -18,6 +22,21 @@ namespace
 		Bounds.Expand(V2);
 		return Bounds;
 	}
+
+	float GetAxisComponent(const FVector& Vector, int32 Axis)
+	{
+		return Axis == 0 ? Vector.X : (Axis == 1 ? Vector.Y : Vector.Z);
+	}
+
+	float GetBoundsSurfaceArea(const FBoundingBox& Bounds)
+	{
+		const FVector Extent = Bounds.GetExtent();
+		const float Width = std::max(Extent.X * 2.0f, 0.0f);
+		const float Height = std::max(Extent.Y * 2.0f, 0.0f);
+		const float Depth = std::max(Extent.Z * 2.0f, 0.0f);
+		return 2.0f * ((Width * Height) + (Width * Depth) + (Height * Depth));
+	}
+
 }
 
 void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
@@ -76,8 +95,8 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
-	TArray<FTraversalEntry> NodeStack;
-	NodeStack.reserve(64);
+	FTraversalEntry NodeStack[MeshBVHMaxTraversalStack];
+	int32 StackSize = 0;
 
 	FRay LocalRay;
 	LocalRay.Origin = LocalOrigin;
@@ -92,15 +111,14 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
-	NodeStack.push_back({ 0, RootTMin });
+	NodeStack[StackSize++] = { 0, RootTMin };
 
 	float ClosestT = FLT_MAX;
 	bool bHit = false;
 
-	while (!NodeStack.empty())
+	while (StackSize > 0)
 	{
-		const FTraversalEntry Entry = NodeStack.back();
-		NodeStack.pop_back();
+		const FTraversalEntry Entry = NodeStack[--StackSize];
 		if (Entry.TMin > ClosestT)
 		{
 			continue;
@@ -114,7 +132,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
 			LastTraversalMetrics.TriangleLanesTested += Packet.TriangleCount;
 
-			float TValues[8];
+			alignas(32) float TValues[8];
 			const int32 Mask = FRayUtilsSIMD::IntersectTriangles8Precomputed(
 				RayContext,
 				Packet.V0X, Packet.V0Y, Packet.V0Z,
@@ -125,16 +143,23 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 			if (Mask != 0)
 			{
-				for (int32 i = 0; i < 8; ++i)
+				// movemask 결과를 비트 스캔으로 순회하면 8개 lane을 매번 전부 확인하지 않아도 된다.
+				// hit가 드문 장면일수록 분기 수와 비교 횟수가 줄어든다.
+				LastTraversalMetrics.TriangleMaskHits += static_cast<uint32>(std::popcount(static_cast<uint32>(Mask)));
+				uint32 RemainingMask = static_cast<uint32>(Mask);
+				while (RemainingMask != 0)
 				{
-					if (((Mask >> i) & 1) && TValues[i] < ClosestT)
+					const uint32 Lane = std::countr_zero(RemainingMask);
+					if (TValues[Lane] < ClosestT)
 					{
-						ClosestT = TValues[i];
+						ClosestT = TValues[Lane];
 						OutHitResult.bHit = true;
-						OutHitResult.Distance = TValues[i];
-						OutHitResult.FaceIndex = Packet.TriangleStartIndices[i];
+						OutHitResult.Distance = TValues[Lane];
+						OutHitResult.FaceIndex = Packet.TriangleStartIndices[Lane];
 						bHit = true;
+						LastTraversalMetrics.ClosestTHitUpdates++;
 					}
+					RemainingMask &= (RemainingMask - 1);
 				}
 			}
 			continue;
@@ -142,7 +167,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		LastTraversalMetrics.InternalNodesVisited++;
 
-		float TMinValues[8];
+		alignas(32) float TMinValues[8];
 		const int32 NodeMask = FRayUtilsSIMD::IntersectAABB8(
 			RayContext,
 			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
@@ -156,30 +181,47 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		FTraversalEntry ChildEntries[8];
 		int32 ChildEntryCount = 0;
-
-		for (int32 i = 0; i < 8; ++i)
+		// 자식 수는 최대 8개라서 bit iteration으로 hit child만 모은 뒤,
+		// 가까운 순서로만 정렬해 front-to-back traversal 효율을 높인다.
+		uint32 RemainingMask = static_cast<uint32>(NodeMask) & ((1u << Node.ChildCount) - 1u);
+		while (RemainingMask != 0)
 		{
-			if ((NodeMask >> i) & 1)
+			const uint32 Lane = std::countr_zero(RemainingMask);
+			ChildEntries[ChildEntryCount++] = { Node.Children[Lane], TMinValues[Lane] };
+			RemainingMask &= (RemainingMask - 1);
+		}
+
+		if (ChildEntryCount == 1)
+		{
+			if (StackSize < MeshBVHMaxTraversalStack)
 			{
-				ChildEntries[ChildEntryCount++] = { Node.Children[i], TMinValues[i] };
+				NodeStack[StackSize++] = ChildEntries[0];
+			}
+			continue;
+		}
+
+		if (ChildEntryCount == 2 && ChildEntries[0].TMin < ChildEntries[1].TMin)
+		{
+			std::swap(ChildEntries[0], ChildEntries[1]);
+		}
+		else if (ChildEntryCount > 2)
+		{
+			for (int32 I = 1; I < ChildEntryCount; ++I)
+			{
+				FTraversalEntry Key = ChildEntries[I];
+				int32 J = I - 1;
+				while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
+				{
+					ChildEntries[J + 1] = ChildEntries[J];
+					--J;
+				}
+				ChildEntries[J + 1] = Key;
 			}
 		}
 
-		for (int32 I = 1; I < ChildEntryCount; ++I)
+		for (int32 I = 0; I < ChildEntryCount && StackSize < MeshBVHMaxTraversalStack; ++I)
 		{
-			FTraversalEntry Key = ChildEntries[I];
-			int32 J = I - 1;
-			while (J >= 0 && ChildEntries[J].TMin < Key.TMin)
-			{
-				ChildEntries[J + 1] = ChildEntries[J];
-				--J;
-			}
-			ChildEntries[J + 1] = Key;
-		}
-
-		for (int32 I = 0; I < ChildEntryCount; ++I)
-		{
-			NodeStack.push_back(ChildEntries[I]);
+			NodeStack[StackSize++] = ChildEntries[I];
 		}
 	}
 
@@ -239,59 +281,201 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 		return NodeIndex;
 	}
 
-	FBoundingBox CentroidBounds;
-	for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
-	{
-		CentroidBounds.Expand(TriangleLeaves[LeafIndex].Bounds.GetCenter());
-	}
+	float BestCost = FLT_MAX;
+	int32 BestAxis = 0;
+	bool bFoundValidAxis = false;
 
-	const FVector CentroidExtent = CentroidBounds.GetExtent();
-	int32 SplitAxis = 0;
-	if (CentroidExtent.Y > CentroidExtent.X && CentroidExtent.Y >= CentroidExtent.Z)
+	// 단순 longest-axis 대신, 각 축을 8개 bucket으로 나눠
+	// bucket surface area * primitive count 비용이 가장 작은 축을 고른다.
+	// 완전 SAH보다는 싸고, centroid sort보다 overlap을 더 잘 줄인다.
+	for (int32 Axis = 0; Axis < 3; ++Axis)
 	{
-		SplitAxis = 1;
-	}
-	else if (CentroidExtent.Z > CentroidExtent.X && CentroidExtent.Z > CentroidExtent.Y)
-	{
-		SplitAxis = 2;
-	}
+		float MinCenter = FLT_MAX;
+		float MaxCenter = -FLT_MAX;
 
-	std::sort(
-		TriangleLeaves.begin() + Start,
-		TriangleLeaves.begin() + End,
-		[SplitAxis](const FTriangleLeaf& A, const FTriangleLeaf& B)
+		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
 		{
-			const FVector CenterA = A.Bounds.GetCenter();
-			const FVector CenterB = B.Bounds.GetCenter();
-			if (SplitAxis == 1) return CenterA.Y < CenterB.Y;
-			if (SplitAxis == 2) return CenterA.Z < CenterB.Z;
-			return CenterA.X < CenterB.X;
-		});
+			const float Center = GetAxisComponent(TriangleLeaves[LeafIndex].Bounds.GetCenter(), Axis);
+			MinCenter = std::min(MinCenter, Center);
+			MaxCenter = std::max(MaxCenter, Center);
+		}
 
-	const int32 DesiredChildren = std::min<int32>(8, LeafCount);
-	for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
-	{
-		const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
-		const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
-		if (RangeStart >= RangeEnd)
+		if (MaxCenter - MinCenter <= 1e-4f)
 		{
 			continue;
 		}
 
-		const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
-		const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+		FBoundingBox BucketBounds[MeshBVHChildFanout];
+		int32 BucketCounts[MeshBVHChildFanout] = {};
+		const float Scale = static_cast<float>(MeshBVHChildFanout) / (MaxCenter - MinCenter);
 
-		Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
+		{
+			const FBoundingBox& LeafBounds = TriangleLeaves[LeafIndex].Bounds;
+			const float Center = GetAxisComponent(LeafBounds.GetCenter(), Axis);
+			int32 Bucket = static_cast<int32>((Center - MinCenter) * Scale);
+			Bucket = std::clamp(Bucket, 0, MeshBVHChildFanout - 1);
+			BucketBounds[Bucket].Expand(LeafBounds.Min);
+			BucketBounds[Bucket].Expand(LeafBounds.Max);
+			BucketCounts[Bucket]++;
+		}
 
-		const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
-		Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
-		Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
-		Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
-		Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
-		Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
-		Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+		float AxisCost = 0.0f;
+		for (int32 Bucket = 0; Bucket < MeshBVHChildFanout; ++Bucket)
+		{
+			if (BucketCounts[Bucket] == 0)
+			{
+				continue;
+			}
+			AxisCost += GetBoundsSurfaceArea(BucketBounds[Bucket]) * static_cast<float>(BucketCounts[Bucket]);
+		}
 
-		Nodes[NodeIndex].ChildCount++;
+		if (AxisCost < BestCost)
+		{
+			BestCost = AxisCost;
+			BestAxis = Axis;
+			bFoundValidAxis = true;
+		}
+	}
+
+	if (!bFoundValidAxis)
+	{
+		const FBoundingBox& ReferenceBounds = TriangleLeaves[Start].Bounds;
+		const FVector Extent = ReferenceBounds.GetExtent();
+		BestAxis = (Extent.Y > Extent.X && Extent.Y >= Extent.Z) ? 1 : ((Extent.Z > Extent.X && Extent.Z > Extent.Y) ? 2 : 0);
+
+		std::sort(
+			TriangleLeaves.begin() + Start,
+			TriangleLeaves.begin() + End,
+			[BestAxis](const FTriangleLeaf& A, const FTriangleLeaf& B)
+			{
+				return GetAxisComponent(A.Bounds.GetCenter(), BestAxis) < GetAxisComponent(B.Bounds.GetCenter(), BestAxis);
+			});
+
+		const int32 DesiredChildren = std::min<int32>(MeshBVHChildFanout, LeafCount);
+		for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
+		{
+			const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
+			const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
+			if (RangeStart >= RangeEnd)
+			{
+				continue;
+			}
+
+			const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
+			const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+			Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+			const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+			Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+			Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+			Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+			Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+			Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+			Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+			Nodes[NodeIndex].ChildCount++;
+		}
+	}
+	else
+	{
+		float MinCenter = FLT_MAX;
+		float MaxCenter = -FLT_MAX;
+		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
+		{
+			const float Center = GetAxisComponent(TriangleLeaves[LeafIndex].Bounds.GetCenter(), BestAxis);
+			MinCenter = std::min(MinCenter, Center);
+			MaxCenter = std::max(MaxCenter, Center);
+		}
+
+		const float Scale = static_cast<float>(MeshBVHChildFanout) / (MaxCenter - MinCenter);
+		auto GetBucket = [BestAxis, MinCenter, Scale](const FTriangleLeaf& Leaf)
+		{
+			const float Center = GetAxisComponent(Leaf.Bounds.GetCenter(), BestAxis);
+			int32 Bucket = static_cast<int32>((Center - MinCenter) * Scale);
+			return std::clamp(Bucket, 0, MeshBVHChildFanout - 1);
+		};
+
+		std::sort(
+			TriangleLeaves.begin() + Start,
+			TriangleLeaves.begin() + End,
+			[BestAxis, GetBucket](const FTriangleLeaf& A, const FTriangleLeaf& B)
+			{
+				const int32 BucketA = GetBucket(A);
+				const int32 BucketB = GetBucket(B);
+				if (BucketA != BucketB)
+				{
+					return BucketA < BucketB;
+				}
+				const float CenterA = GetAxisComponent(A.Bounds.GetCenter(), BestAxis);
+				const float CenterB = GetAxisComponent(B.Bounds.GetCenter(), BestAxis);
+				if (CenterA != CenterB)
+				{
+					return CenterA < CenterB;
+				}
+				return A.TriangleStartIndex < B.TriangleStartIndex;
+			});
+
+		// 특정 축에서 모든 primitive가 같은 bucket으로 몰리면 분할이 진전되지 않는다.
+		// 이 경우 재귀가 한쪽으로 쏠리는 것을 막기 위해 기존의 균등 분할로 되돌린다.
+		if (GetBucket(TriangleLeaves[Start]) == GetBucket(TriangleLeaves[End - 1]))
+		{
+			const int32 DesiredChildren = std::min<int32>(MeshBVHChildFanout, LeafCount);
+			for (int32 RangeIndex = 0; RangeIndex < DesiredChildren; ++RangeIndex)
+			{
+				const int32 RangeStart = Start + (LeafCount * RangeIndex) / DesiredChildren;
+				const int32 RangeEnd = Start + (LeafCount * (RangeIndex + 1)) / DesiredChildren;
+				if (RangeStart >= RangeEnd)
+				{
+					continue;
+				}
+
+				const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
+				const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+				Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+				const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+				Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+				Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+				Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+				Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+				Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+				Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+				Nodes[NodeIndex].ChildCount++;
+			}
+		}
+		else
+		{
+		int32 RangeStart = Start;
+		while (RangeStart < End)
+		{
+			int32 RangeEnd = RangeStart + 1;
+			const int32 Bucket = GetBucket(TriangleLeaves[RangeStart]);
+			while (RangeEnd < End && GetBucket(TriangleLeaves[RangeEnd]) == Bucket)
+			{
+				++RangeEnd;
+			}
+
+			const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
+			const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+			Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+			const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+			Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+			Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+			Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+			Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+			Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+			Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+			Nodes[NodeIndex].ChildCount++;
+			RangeStart = RangeEnd;
+		}
+		}
 	}
 
 	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
