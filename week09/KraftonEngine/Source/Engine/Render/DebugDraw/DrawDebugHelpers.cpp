@@ -1,4 +1,7 @@
 #include "Render/DebugDraw/DrawDebugHelpers.h"
+
+#if defined(_DEBUG)
+
 #include "GameFramework/World.h"
 
 void DrawDebugLine(UWorld* World,
@@ -79,3 +82,5 @@ void DrawDebugPoint(UWorld* World,
 	World->GetDebugDrawQueue().AddLine(
 		Position - FVector(0, 0, Size), Position + FVector(0, 0, Size), Color, Duration);
 }
+
+#endif // _DEBUG

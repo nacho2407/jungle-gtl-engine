@@ -31,6 +31,7 @@ CONFIGURATIONS = [
     ("Release", "x64"),
     ("ObjViewDebug", "x64"),
     ("FPSOptimization", "x64"),
+    ("Demo", "x64"),
 ]
 
 # Per-configuration overrides (base is derived from the name)
@@ -45,6 +46,10 @@ CONFIG_PROPS = {
     "FPSOptimization": {
         "release_like": True,
         "extra_defines": ["FPS_OPTIMIZATION=1"],
+    },
+    "Demo": {
+        "release_like": True,
+        "extra_defines": ["FPS_OPTIMIZATION=1", "STATS=0"],
     },
 }
 
