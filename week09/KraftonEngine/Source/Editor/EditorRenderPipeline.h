@@ -16,6 +16,7 @@ public:
 	~FEditorRenderPipeline() override;
 
 	void Execute(float DeltaTime, FRenderer& Renderer) override;
+	void OnSceneCleared() override;
 
 private:
 	// 단일 뷰포트 렌더 단위 — ViewportClient의 렌더 옵션을 사용

@@ -52,39 +52,50 @@ struct FStaticMaterial
 		FString MatPath;
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			// 현재 매터리얼의 파일 경로(.bin)를 가져옴
 			MatPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
 		}
+		Ar << MatPath;
 
-		Ar << MatPath; // 메시 bin 파일에는 문자열(경로) 1개만 저장됩니다.
+		// 3. 머티리얼 속성을 인라인으로 직렬화 (.mbin 없이도 복구 가능)
+		FString InlinePathFileName;
+		FString InlineTexturePath;
+		FVector4 InlineDiffuseColor = { 1.0f, 0.0f, 1.0f, 1.0f };
 
-		// 3. 로딩 시 해당 경로에서 매터리얼 에셋 로드
+		if (Ar.IsSaving() && Mat.MaterialInterface)
+		{
+			InlinePathFileName = Mat.MaterialInterface->PathFileName;
+			InlineTexturePath = Mat.MaterialInterface->DiffuseTextureFilePath;
+			InlineDiffuseColor = Mat.MaterialInterface->DiffuseColor;
+		}
+
+		Ar << InlinePathFileName;
+		Ar << InlineTexturePath;
+		Ar << InlineDiffuseColor;
+
+		// 4. 로딩 시 머티리얼 복원
 		if (Ar.IsLoading())
 		{
 			if (!MatPath.empty())
 			{
-				// 저장된 경로를 이용해 별도의 bin 파일에서 로드
-				UE_LOG("Archive Loading Material: %s;", MatPath.c_str());
 				Mat.MaterialInterface = FObjManager::GetOrLoadMaterial(MatPath);
 			}
 			else
 			{
 				Mat.MaterialInterface = nullptr;
 			}
+
+			// .mbin 로드 실패 시 인라인 데이터로 복구
+			if (Mat.MaterialInterface && Mat.MaterialInterface->PathFileName.empty())
+			{
+				Mat.MaterialInterface->PathFileName = InlinePathFileName;
+				Mat.MaterialInterface->DiffuseTextureFilePath = InlineTexturePath;
+				Mat.MaterialInterface->DiffuseColor = InlineDiffuseColor;
+			}
 		}
 
 		Ar << Mat.bIsUVScroll;
 
 		return Ar;
-
-		//Ar << Mat.MaterialSlotName;
-
-		//if (Ar.IsLoading()) Mat.MaterialInterface = FObjManager::GetOrLoadMaterial(Mat.MaterialSlotName);
-
-		//Ar << Mat.MaterialInterface->PathFileName;
-		//Ar << Mat.MaterialInterface->DiffuseTextureFilePath;
-		//Ar << Mat.MaterialInterface->DiffuseColor;
-		//return Ar;
 	}
 };
 
