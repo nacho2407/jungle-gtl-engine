@@ -9,12 +9,15 @@
 
 #include <algorithm>
 
+/**
+ * BVH 트리를 설정합니다.
+ */
 namespace
 {
-	constexpr int32 WorldBVHChildFanout = 8;
-	constexpr int32 WorldBVHLeafPacketSize = 8;
-	constexpr int32 WorldBVHMaxLeafSize = 16;
-	constexpr int32 WorldBVHMaxTraversalStack = 128;
+	constexpr int32 WorldBVHChildFanout = 8;		//각 노드의 최대 자식 수 (8이면 SIMD와 호응)
+	constexpr int32 WorldBVHLeafPacketSize = 8;		//각 리프 노드의 최대 프리미티브 수 (8이면 SIMD와 호응)
+	constexpr int32 WorldBVHMaxLeafSize = 16;		//Threshold, 이 기준보다 작으면 더 이상 분할하지 않고 리프로 만듭니다. 
+	constexpr int32 WorldBVHMaxTraversalStack = 258;
 }
 
 void FWorldPrimitivePickingBVH::MarkDirty()
@@ -75,6 +78,17 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 	BuildNow(Actors);
 }
 
+/**
+ * @brief BVH 트리를 순회하며 주어진 Ray와 교차하는 가장 가까운 프리미티브를 찾습니다.
+ * SIMD를 활용하여 (BVH 트리에서 자식으로 이동하며 만나는) 여러 AABB와의 교차 검사를 조금
+ * 더 빠르게 수행하며, 거리에 따라 정렬하여 가장 가까운 노드부터 탐색(Front-to-back)하여
+ * 불필요한 연산을 줄입니다.
+ *
+ * @param Ray 쏠 광선(Ray)의 원점과 방향 정보
+ * @param OutHitResult 가장 가까운 교차점의 물리적 충돌 결과
+ * @param OutActor 교차된 프리미티브를 소유한 액터 포인터
+ * @return 교차한 액터가 있으면 true, 없으면 false를 반환합니다.
+ */
 bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
 	struct FTraversalEntry
@@ -86,6 +100,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 	OutHitResult = {};
 	OutActor = nullptr;
 	LastTraversalMetrics = {};
+
 	if (Nodes.empty())
 	{
 		return false;
@@ -93,13 +108,17 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 
 	float RootTMin = 0.0f;
 	float RootTMax = 0.0f;
+
+	//루트 노드에 대해 AABB 검사 후 실패했다면, picking될 가능성이 없을 테니 바로 return.
 	if (!FRayUtils::IntersectRayAABB(Ray, Nodes[0].Bounds.Min, Nodes[0].Bounds.Max, RootTMin, RootTMax))
 	{
 		return false;
 	}
 
+	//SIMD 최적화를 위해 Ray 정보를 미리 SIMD 레지스터에 적재해둡니다. Gather 오버헤드를 줄일 수 있습니다.
 	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
 
+	//BVH 트리 순회.
 	FTraversalEntry NodeStack[WorldBVHMaxTraversalStack];
 	int32 StackSize = 0;
 	NodeStack[StackSize++] = { 0, RootTMin };
