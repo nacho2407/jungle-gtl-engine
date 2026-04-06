@@ -40,7 +40,6 @@ public:
 	//스태틱 메시 picking 최적화를 위한 BVH 트리 빌드 및 판정 호출 함수
 	void EnsureMeshTrianglePickingBVHBuilt() const;
 	bool RaycastMeshTrianglesWithBVHLocal(const FVector& LocalOrigin, const FVector& LocalDirection, FHitResult& OutHitResult) const;
-	const FMeshTrianglePickingBVH::FTraversalMetrics& GetLastMeshPickingMetrics() const { return MeshTrianglePickingBVH.GetLastTraversalMetrics(); }
 
 	// LOD 접근
 	uint32 GetLODCount() const { return bHasLOD ? MAX_LOD_COUNT : 1; }

@@ -91,7 +91,6 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	LastPickingMetrics = {};
 	const FMeshData* Data = GetMeshData();
 	if (!Data || Data->Indices.empty()) return false;
 
