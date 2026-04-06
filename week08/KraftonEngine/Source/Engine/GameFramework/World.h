@@ -4,6 +4,7 @@
 #include "Core/CollisionTypes.h"
 #include "Collision/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
+#include "Component/CameraComponent.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/ConvexVolume.h"
@@ -31,6 +32,7 @@ public:
 	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	void InvalidateVisibleSet();
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
 	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
@@ -64,6 +66,9 @@ public:
 	void UpdateActorInOctree(AActor* actor);
 
 private:
+	bool NeedsVisibleProxyRebuild() const;
+	void CacheVisibleCameraState();
+
 	TArray<AActor*> Actors;
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
 
@@ -74,7 +79,12 @@ private:
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;
 	bool bDeferredPickingBVHDirty = false;
+	bool bVisibleSetDirty = true;
+	bool bHasVisibleCameraState = false;
 	uint32 VisibleProxyBuildFrame = 0;
+	FVector LastVisibleCameraPos = FVector(0, 0, 0);
+	FVector LastVisibleCameraForward = FVector(1, 0, 0);
+	FCameraState LastVisibleCameraState = {};
 	FVector LastFullLODUpdateCameraForward = FVector(1, 0, 0);
 	FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
 	FScene Scene;
