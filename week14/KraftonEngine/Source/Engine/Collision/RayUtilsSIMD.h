@@ -9,6 +9,8 @@
 #include <immintrin.h>
 #endif
 
+/* Picking을 위한 SIMD를 따로 모아둔 코드입니다. 기존 SIMD와는 계산 양상이 달라 파일을 분리합니다. */
+
 struct FRaySIMDContext
 {
 	__m256 OriginX;
