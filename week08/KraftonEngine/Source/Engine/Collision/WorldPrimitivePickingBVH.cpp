@@ -17,7 +17,7 @@ namespace
 	constexpr int32 WorldBVHChildFanout = 8;		//각 노드의 최대 자식 수 (8이면 SIMD와 호응)
 	constexpr int32 WorldBVHLeafPacketSize = 8;		//각 리프 노드의 최대 프리미티브 수 (8이면 SIMD와 호응)
 	constexpr int32 WorldBVHMaxLeafSize = 16;		//Threshold, 이 기준보다 작으면 더 이상 분할하지 않고 리프로 만듭니다. 
-	constexpr int32 WorldBVHMaxTraversalStack = 258;
+	constexpr int32 WorldBVHMaxTraversalStack = 512;
 
 	float GetAxisComponent(const FVector& Vector, int32 Axis)
 	{
@@ -98,7 +98,7 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
  * SIMD를 활용하여 (BVH 트리에서 자식으로 이동하며 만나는) 여러 AABB와의 교차 검사를
  * 병렬로 빠르게 수행하며, 비트 연산 기반의 최적화를 통해 유효한 충돌만 빠르게 필터링합니다.
  * 검사된 노드들은 거리에 따라 정렬되어 가장 가까운 노드부터 탐색하여
- * 불필요한 연산을 효과적으로 쳐냅니다.
+ * 불필요한 연산을 효과적으로 걷어냅니다.
  *
  * @param Ray 쏠 광선(Ray)의 원점과 방향 정보
  * @param OutHitResult 가장 가까운 교차점의 물리적 충돌 결과 (반환용)
