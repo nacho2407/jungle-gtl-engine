@@ -40,7 +40,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 			const int32 NumAttempts = static_cast<int32>(PickingAttemptCount);
 			const double PickingTimeMS = LastPickingTimeMs;
 			const double AccumulatedTime = AccumulatedPickingTimeMs;
-			snprintf(Buffer, sizeof(Buffer), "Picking Time %.4f ms : Num Attempts %d : Accumulated Time %.4f ms",
+			snprintf(Buffer, sizeof(Buffer), "Picking Time %.5f ms : Num Attempts %d : Accumulated Time %.5f ms",
 				PickingTimeMS, NumAttempts, AccumulatedTime);
 			Group.Lines.push_back(FString(Buffer));
 		}
