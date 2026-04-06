@@ -8,9 +8,153 @@
 #include "GameFramework/AActor.h"
 #include <algorithm>
 
+namespace
+{
+    void ExpandBoundsByBox(FBoundingBox& AccumulatedBounds, const FBoundingBox& Box)
+    {
+        if (!Box.IsValid())
+        {
+            return;
+        }
+
+        if (!AccumulatedBounds.IsValid())
+        {
+            AccumulatedBounds = Box;
+            return;
+        }
+
+        AccumulatedBounds.Expand(Box.Min);
+        AccumulatedBounds.Expand(Box.Max);
+    }
+
+    FBoundingBox MakePaddedRootBounds(const FBoundingBox& Bounds)
+    {
+        if (!Bounds.IsValid())
+        {
+            return Bounds;
+        }
+
+        const FVector Extent = Bounds.GetExtent();
+        const FVector Padding(
+            (std::max)(Extent.X * 0.25f, 10.0f),
+            (std::max)(Extent.Y * 0.25f, 10.0f),
+            (std::max)(Extent.Z * 0.25f, 10.0f));
+
+        return FBoundingBox(Bounds.Min - Padding, Bounds.Max + Padding);
+    }
+}
+
+FBoundingBox FSpatialPartition::BuildActorVisibleBounds(AActor* Actor, bool bUpdateWorldMatrices) const
+{
+    FBoundingBox ActorBounds;
+
+    if (!Actor)
+    {
+        return ActorBounds;
+    }
+
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!Prim || !Prim->IsVisible())
+        {
+            continue;
+        }
+
+        if (bUpdateWorldMatrices)
+        {
+            Prim->UpdateWorldMatrix();
+        }
+
+        ExpandBoundsByBox(ActorBounds, Prim->GetWorldBoundingBox());
+    }
+
+    return ActorBounds;
+}
+
+void FSpatialPartition::EnsureRootContains(const FBoundingBox& RequiredBounds)
+{
+    if (!RequiredBounds.IsValid())
+    {
+        return;
+    }
+
+    if (!Octree)
+    {
+        Octree = std::make_unique<FOctree>(MakePaddedRootBounds(RequiredBounds), 0);
+        return;
+    }
+
+    if (Octree->GetCellBounds().IsContains(RequiredBounds))
+    {
+        return;
+    }
+
+    RebuildRootBounds(RequiredBounds);
+}
+
+void FSpatialPartition::RebuildRootBounds(const FBoundingBox& RequiredBounds)
+{
+    if (!Octree || !RequiredBounds.IsValid())
+    {
+        return;
+    }
+
+    TArray<UPrimitiveComponent*> AllPrimitives;
+    Octree->GetAllPrimitives(AllPrimitives);
+    AllPrimitives.insert(AllPrimitives.end(), OverflowPrimitives.begin(), OverflowPrimitives.end());
+
+    FBoundingBox NewRootBounds = RequiredBounds;
+    for (UPrimitiveComponent* Prim : AllPrimitives)
+    {
+        if (!Prim || !Prim->IsVisible())
+        {
+            continue;
+        }
+
+        ExpandBoundsByBox(NewRootBounds, Prim->GetWorldBoundingBox());
+    }
+
+    if (!NewRootBounds.IsValid())
+    {
+        return;
+    }
+
+    NewRootBounds = MakePaddedRootBounds(NewRootBounds);
+
+    Octree->Reset(NewRootBounds, 0);
+    OverflowPrimitives.clear();
+
+    for (UPrimitiveComponent* Prim : AllPrimitives)
+    {
+        if (!Prim || !Prim->IsVisible())
+        {
+            continue;
+        }
+
+        if (!Octree->Insert(Prim))
+        {
+            InsertPrimitive(Prim);
+        }
+    }
+}
+
 void FSpatialPartition::FlushPrimitive()
 {
 	if (!Octree) return;
+
+    FBoundingBox DirtyBounds;
+    for (AActor* Actor : DirtyActors)
+    {
+        ExpandBoundsByBox(DirtyBounds, BuildActorVisibleBounds(Actor, true));
+    }
+
+    const bool bNeedsRootGrowth = DirtyBounds.IsValid() && !Octree->GetCellBounds().IsContains(DirtyBounds);
+    if (bNeedsRootGrowth)
+    {
+        RebuildRootBounds(DirtyBounds);
+        DirtyActors.clear();
+        return;
+    }
 
     for (AActor* Actor : DirtyActors)
     {
@@ -30,8 +174,6 @@ void FSpatialPartition::FlushPrimitive()
         {
             if (!Prim || !Prim->IsVisible()) continue;
 
-            Prim->UpdateWorldMatrix();
-
             if (!Octree->Insert(Prim))
             {
                 InsertPrimitive(Prim);
@@ -44,13 +186,20 @@ void FSpatialPartition::FlushPrimitive()
 
 void FSpatialPartition::Reset(const FBoundingBox& RootBounds)
 {
-    if (!Octree)
+    if (!RootBounds.IsValid())
     {
-        Octree = std::make_unique<FOctree>(RootBounds, 0);
+        Octree.reset();
     }
     else
     {
-        Octree->Reset(RootBounds, 0);
+        if (!Octree)
+        {
+            Octree = std::make_unique<FOctree>(RootBounds, 0);
+        }
+        else
+        {
+            Octree->Reset(RootBounds, 0);
+        }
     }
 
 	DirtyActors.clear();
@@ -59,12 +208,19 @@ void FSpatialPartition::Reset(const FBoundingBox& RootBounds)
 
 void FSpatialPartition::InsertActor(AActor* Actor)
 {
-	if (!Actor || !Octree) return;
+	if (!Actor) return;
+
+    const FBoundingBox ActorBounds = BuildActorVisibleBounds(Actor, true);
+    EnsureRootContains(ActorBounds);
+
+    if (!Octree)
+    {
+        return;
+    }
 
     for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
     {
         if (!Prim || !Prim->IsVisible()) continue;
-        Prim->UpdateWorldMatrix();
 
         if (!Octree->Insert(Prim)) InsertPrimitive(Prim);
     }
@@ -85,7 +241,13 @@ void FSpatialPartition::RemoveActor(AActor* Actor)
 
 void FSpatialPartition::UpdateActor(AActor* Actor)
 {
-	if (!Actor || !Octree) return;
+	if (!Actor) return;
+
+    if (!Octree)
+    {
+        InsertActor(Actor);
+        return;
+    }
 
     auto It = std::find(DirtyActors.begin(), DirtyActors.end(), Actor);
     if (It == DirtyActors.end())

@@ -29,6 +29,7 @@ void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 		if (UWorld* World = OwnerActor->GetWorld())
 		{
 			World->MarkWorldPrimitivePickingBVHDirty();
+			World->UpdateActorInOctree(OwnerActor);
 		}
 	}
 }
@@ -50,6 +51,7 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 			if (UWorld* World = OwnerActor->GetWorld())
 			{
 				World->MarkWorldPrimitivePickingBVHDirty();
+				World->UpdateActorInOctree(OwnerActor);
 			}
 		}
 	}
@@ -69,6 +71,7 @@ void UPrimitiveComponent::MarkWorldBoundsDirty()
 		if (UWorld* World = OwnerActor->GetWorld())
 		{
 			World->MarkWorldPrimitivePickingBVHDirty();
+			World->UpdateActorInOctree(OwnerActor);
 		}
 	}
 }
