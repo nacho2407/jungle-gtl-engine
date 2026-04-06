@@ -93,10 +93,10 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 		}
 	}
 
-	// ── LOD 생성 (LOD1: 70%, LOD2: 50%, LOD3: 25%) ──
+	// ── LOD 생성 (LOD1: 90%, LOD2: 55%, LOD3: 15%) ──
 	if (StaticMeshAsset->Vertices.size() >= 100)
 	{
-		static const float LODRatios[] = { 0.7f, 0.5f, 0.25f };
+		static const float LODRatios[] = { 0.9f, 0.55f, 0.15f };
 		for (int lod = 0; lod < 3; ++lod)
 		{
 			FSimplifiedMesh Simplified = FMeshSimplifier::Simplify(
