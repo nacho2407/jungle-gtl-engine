@@ -2,7 +2,6 @@
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include <unordered_set>
 
 class UPrimitiveComponent;
 
@@ -37,7 +36,6 @@ public:
 	// --- 선택 ---
 	void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
 	bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
-	const std::unordered_set<FPrimitiveSceneProxy*>& GetSelectedProxies() const { return SelectedProxies; }
 
 	// --- 조회 ---
 	const TArray<FPrimitiveSceneProxy*>& GetAllProxies() const { return Proxies; }
@@ -48,11 +46,11 @@ private:
 	// 전체 프록시 목록 (ProxyId = 인덱스)
 	TArray<FPrimitiveSceneProxy*> Proxies;
 
-	// 프레임 내 변경된 프록시 (중복 방지를 위해 set)
-	std::unordered_set<FPrimitiveSceneProxy*> DirtyProxies;
+	// 프레임 내 변경된 프록시 dense 목록
+	TArray<FPrimitiveSceneProxy*> DirtyProxies;
 
-	// 선택된 프록시 (O(1) 조회)
-	std::unordered_set<FPrimitiveSceneProxy*> SelectedProxies;
+	// 선택된 프록시 dense 목록
+	TArray<FPrimitiveSceneProxy*> SelectedProxies;
 
 	// bNeverCull 프록시 (Gizmo 등) — Frustum 쿼리와 무관하게 항상 수집
 	TArray<FPrimitiveSceneProxy*> NeverCullProxies;

@@ -40,9 +40,13 @@ public:
 	// --- 식별 ---
 	uint32 ProxyId = UINT32_MAX;			// FScene 내 인덱스
 	UPrimitiveComponent* Owner = nullptr;	// 소유 컴포넌트 (역참조용)
+	uint32 SelectedListIndex = UINT32_MAX;
+	uint32 VisibleListIndex = UINT32_MAX;
 
 	// --- 변경 추적 ---
 	EDirtyFlag DirtyFlags = EDirtyFlag::All;
+	bool bQueuedForDirtyUpdate = false;
+	bool bInVisibleSet = false;
 
 	// --- LOD ---
 	FVector CachedWorldPos;		// Transform 갱신 시 캐싱 — LOD 거리 계산용
