@@ -7,6 +7,8 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
+#include "Render/Pipeline/LODContext.h"
+#include "Profiling/Stats.h"
 #include <Collision/Octree.h>
 
 void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
@@ -128,14 +130,40 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
 	const FGPUOcclusionCulling* Occlusion = RenderBus.GetOcclusionCulling();
+	FGPUOcclusionCulling* OcclusionMut = RenderBus.GetOcclusionCullingMutable();
+	const FLODUpdateContext& LODCtx = RenderBus.GetLODContext();
+
+	// GatherAABB 병합: Collect 순회에서 동시에 AABB 수집 (별도 GatherLoop 제거)
+	if (OcclusionMut && OcclusionMut->IsInitialized())
+		OcclusionMut->BeginGatherAABB(static_cast<uint32>(Proxies.size()));
+
+	LOD_STATS_RESET();
 
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
+
+		// LOD 갱신 — WorldTick에서 이동, 단일 순회에 병합
+		if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
+		{
+			const FVector& ProxyPos = Proxy->CachedWorldPos;
+			const float dx = LODCtx.CameraPos.X - ProxyPos.X;
+			const float dy = LODCtx.CameraPos.Y - ProxyPos.Y;
+			const float dz = LODCtx.CameraPos.Z - ProxyPos.Z;
+			const float DistSq = dx * dx + dy * dy + dz * dz;
+			Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
+			Proxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
+		}
+		LOD_STATS_RECORD(Proxy->CurrentLOD);
+
 		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
 			Proxy->UpdatePerViewport(RenderBus);
 
 		if (!Proxy->bVisible) continue;
+
+		// AABB 수집 — 오클루전 체크 전에 수집해야 다음 프레임에 재평가 가능
+		if (OcclusionMut)
+			OcclusionMut->GatherAABB(Proxy);
 
 		// GPU Occlusion Culling — 이전 프레임에서 가려진 프록시 스킵
 		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
@@ -163,5 +191,8 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			}
 		}
 	}
+
+	if (OcclusionMut && OcclusionMut->IsInitialized())
+		OcclusionMut->EndGatherAABB();
 }
 

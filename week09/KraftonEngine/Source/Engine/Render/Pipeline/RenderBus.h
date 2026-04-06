@@ -8,6 +8,8 @@ class FViewport;
 class FPrimitiveSceneProxy;
 class FGPUOcclusionCulling;
 
+#include "Render/Pipeline/LODContext.h"
+
 
 class FRenderBus
 {
@@ -41,6 +43,7 @@ public:
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
+	const FVector& GetCameraPosition() const { return CameraPosition; }
 	const FVector& GetCameraForward() const { return CameraForward; }
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
@@ -61,8 +64,13 @@ public:
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
 
 	// GPU Occlusion Culling — set by render pipeline, read by collector
-	void SetOcclusionCulling(const FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
+	void SetOcclusionCulling(FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
 	const FGPUOcclusionCulling* GetOcclusionCulling() const { return OcclusionCulling; }
+	FGPUOcclusionCulling* GetOcclusionCullingMutable() const { return OcclusionCulling; }
+
+	// LOD Update Context — WorldTick에서 설정, Collect에서 사용
+	void SetLODContext(const FLODUpdateContext& InCtx) { LODContext = InCtx; }
+	const FLODUpdateContext& GetLODContext() const { return LODContext; }
 
 private:
 	// 프록시 패스 큐 — 포인터만 저장, 데이터는 프록시 소유
@@ -78,6 +86,7 @@ private:
 
 	FMatrix View;
 	FMatrix Proj;
+	FVector CameraPosition;
 	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
@@ -95,7 +104,10 @@ private:
 	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
 
 	// GPU Occlusion
-	const FGPUOcclusionCulling* OcclusionCulling = nullptr;
+	FGPUOcclusionCulling* OcclusionCulling = nullptr;
+
+	// LOD
+	FLODUpdateContext LODContext;
 
 	//Editor Settings
 	EViewMode ViewMode;
