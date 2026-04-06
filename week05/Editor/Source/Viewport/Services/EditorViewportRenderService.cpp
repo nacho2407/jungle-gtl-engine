@@ -287,8 +287,8 @@ void FEditorViewportRenderService::RenderAll(
 		RECT rc{};
 		::GetClientRect(Renderer->GetHwnd(), &rc);
 		SlatePainter->SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
-		Slate->Paint(*SlatePainter);
-		SlatePainter->Flush();
+		/*Slate->Paint(*SlatePainter);
+		SlatePainter->Flush();*/
 	}
 
 	EditorUI.Render();
