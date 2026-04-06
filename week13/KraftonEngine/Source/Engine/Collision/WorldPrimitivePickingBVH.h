@@ -7,6 +7,7 @@
 
 class AActor;
 class UPrimitiveComponent;
+class UStaticMeshComponent;
 
 class FWorldPrimitivePickingBVH
 {
@@ -45,6 +46,7 @@ private:
 	{
 		FBoundingBox Bounds;
 		UPrimitiveComponent* Primitive = nullptr;
+		UStaticMeshComponent* StaticMeshPrimitive = nullptr;
 		AActor* Owner = nullptr;
 	};
 
