@@ -97,6 +97,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetViewportInfo(VP);
 	Bus.SetViewportType(Opts.ViewportType);
 	Bus.SetOcclusionCulling(&GPUOcclusion);
+	Bus.SetLODContext(World->PrepareLODContext());
 
 	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
 	{

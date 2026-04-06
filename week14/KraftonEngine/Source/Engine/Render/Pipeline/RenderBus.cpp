@@ -65,6 +65,7 @@ void FRenderBus::SetCameraInfo(const UCameraComponent* Camera)
 {
 	View = Camera->GetViewMatrix();
 	Proj = Camera->GetProjectionMatrix();
+	CameraPosition = Camera->GetWorldLocation();
 	CameraForward = Camera->GetForwardVector();
 	CameraRight = Camera->GetRightVector();
 	CameraUp = Camera->GetUpVector();
