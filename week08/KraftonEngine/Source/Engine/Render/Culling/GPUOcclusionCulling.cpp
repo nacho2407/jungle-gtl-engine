@@ -122,7 +122,7 @@ void FGPUOcclusionCulling::InvalidateResults()
 
 void FGPUOcclusionCulling::CreateHiZResources(uint32 Width, uint32 Height)
 {
-	if (HiZWidth == Width && HiZHeight == Height && HiZTexture)
+	if (HiZWidth == Width && HiZHeight == Height && HiZTextureA)
 		return;
 
 	ReleaseHiZResources();
@@ -135,6 +135,7 @@ void FGPUOcclusionCulling::CreateHiZResources(uint32 Width, uint32 Height)
 	uint32 tmp = maxDim;
 	while (tmp > 1) { tmp >>= 1; HiZMipCount++; }
 
+	// 두 텍스처 모두 SRV+UAV — 진짜 핑퐁으로 CopySubresourceRegion 제거
 	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width            = Width;
 	desc.Height           = Height;
@@ -145,56 +146,58 @@ void FGPUOcclusionCulling::CreateHiZResources(uint32 Width, uint32 Height)
 	desc.Usage            = D3D11_USAGE_DEFAULT;
 	desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 
-	if (FAILED(Device->CreateTexture2D(&desc, nullptr, &HiZTexture)))
-		return;
+	if (FAILED(Device->CreateTexture2D(&desc, nullptr, &HiZTextureA))) return;
+	if (FAILED(Device->CreateTexture2D(&desc, nullptr, &HiZTextureB))) return;
 
-	// SRV for entire mip chain (used by OcclusionTest)
+	// Full-chain SRVs (OcclusionTest에서 사용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvAll = {};
 	srvAll.Format                    = DXGI_FORMAT_R32_FLOAT;
 	srvAll.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvAll.Texture2D.MipLevels       = HiZMipCount;
 	srvAll.Texture2D.MostDetailedMip = 0;
-	Device->CreateShaderResourceView(HiZTexture, &srvAll, &HiZSRV);
+	Device->CreateShaderResourceView(HiZTextureA, &srvAll, &HiZSRV_A);
+	Device->CreateShaderResourceView(HiZTextureB, &srvAll, &HiZSRV_B);
 
-	// Per-mip UAVs on HiZTexture (write target)
-	HiZMipUAVs.resize(HiZMipCount, nullptr);
+	// Per-mip UAVs + SRVs for both textures
+	HiZUAVs_A.resize(HiZMipCount, nullptr);
+	HiZUAVs_B.resize(HiZMipCount, nullptr);
+	HiZSRVs_A.resize(HiZMipCount, nullptr);
+	HiZSRVs_B.resize(HiZMipCount, nullptr);
+
 	for (uint32 i = 0; i < HiZMipCount; i++)
 	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC mu = {};
-		mu.Format               = DXGI_FORMAT_R32_FLOAT;
-		mu.ViewDimension        = D3D11_UAV_DIMENSION_TEXTURE2D;
-		mu.Texture2D.MipSlice   = i;
-		Device->CreateUnorderedAccessView(HiZTexture, &mu, &HiZMipUAVs[i]);
-	}
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format             = DXGI_FORMAT_R32_FLOAT;
+		uavDesc.ViewDimension      = D3D11_UAV_DIMENSION_TEXTURE2D;
+		uavDesc.Texture2D.MipSlice = i;
+		Device->CreateUnorderedAccessView(HiZTextureA, &uavDesc, &HiZUAVs_A[i]);
+		Device->CreateUnorderedAccessView(HiZTextureB, &uavDesc, &HiZUAVs_B[i]);
 
-	// Temp texture for ping-pong reads (avoids SRV/UAV conflict on same resource)
-	D3D11_TEXTURE2D_DESC tempDesc = desc;
-	tempDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;  // read-only
-	if (FAILED(Device->CreateTexture2D(&tempDesc, nullptr, &HiZTempTexture)))
-		return;
-
-	HiZTempMipSRVs.resize(HiZMipCount, nullptr);
-	for (uint32 i = 0; i < HiZMipCount; i++)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC ms = {};
-		ms.Format                    = DXGI_FORMAT_R32_FLOAT;
-		ms.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
-		ms.Texture2D.MipLevels       = 1;
-		ms.Texture2D.MostDetailedMip = i;
-		Device->CreateShaderResourceView(HiZTempTexture, &ms, &HiZTempMipSRVs[i]);
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format                    = DXGI_FORMAT_R32_FLOAT;
+		srvDesc.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels       = 1;
+		srvDesc.Texture2D.MostDetailedMip = i;
+		Device->CreateShaderResourceView(HiZTextureA, &srvDesc, &HiZSRVs_A[i]);
+		Device->CreateShaderResourceView(HiZTextureB, &srvDesc, &HiZSRVs_B[i]);
 	}
 }
 
 void FGPUOcclusionCulling::ReleaseHiZResources()
 {
-	for (auto* v : HiZMipUAVs) if (v) v->Release();
-	for (auto* v : HiZTempMipSRVs) if (v) v->Release();
-	HiZMipUAVs.clear();
-	HiZTempMipSRVs.clear();
+	for (auto* v : HiZUAVs_A) if (v) v->Release();
+	for (auto* v : HiZUAVs_B) if (v) v->Release();
+	for (auto* v : HiZSRVs_A) if (v) v->Release();
+	for (auto* v : HiZSRVs_B) if (v) v->Release();
+	HiZUAVs_A.clear();
+	HiZUAVs_B.clear();
+	HiZSRVs_A.clear();
+	HiZSRVs_B.clear();
 
-	if (HiZSRV)         { HiZSRV->Release();         HiZSRV = nullptr; }
-	if (HiZTexture)     { HiZTexture->Release();      HiZTexture = nullptr; }
-	if (HiZTempTexture) { HiZTempTexture->Release();  HiZTempTexture = nullptr; }
+	if (HiZSRV_A)    { HiZSRV_A->Release();    HiZSRV_A = nullptr; }
+	if (HiZSRV_B)    { HiZSRV_B->Release();    HiZSRV_B = nullptr; }
+	if (HiZTextureA) { HiZTextureA->Release();  HiZTextureA = nullptr; }
+	if (HiZTextureB) { HiZTextureB->Release();  HiZTextureB = nullptr; }
 
 	HiZWidth = HiZHeight = HiZMipCount = 0;
 }
@@ -301,12 +304,12 @@ void FGPUOcclusionCulling::GenerateHiZ(
 {
 	SCOPE_STAT_CAT("GenerateHiZ", "4_ExecutePass");
 	CreateHiZResources(Width, Height);
-	if (!HiZTexture || HiZMipCount == 0) return;
+	if (!HiZTextureA || HiZMipCount == 0) return;
 
 	ID3D11ShaderResourceView*  nullSRV = nullptr;
 	ID3D11UnorderedAccessView* nullUAV = nullptr;
 
-	// ── Mip 0: copy depth ──
+	// ── Mip 0: copy depth → TextureA ──
 	{
 		FHiZParamsCB p = {};
 		p.SrcWidth  = Width;
@@ -316,7 +319,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 		Ctx->CSSetShader(HiZCopyCS, nullptr, 0);
 		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
 		Ctx->CSSetShaderResources(0, 1, &DepthSRV);
-		Ctx->CSSetUnorderedAccessViews(0, 1, &HiZMipUAVs[0], nullptr);
+		Ctx->CSSetUnorderedAccessViews(0, 1, &HiZUAVs_A[0], nullptr);
 
 		Ctx->Dispatch((Width + 7) / 8, (Height + 7) / 8, 1);
 
@@ -324,10 +327,8 @@ void FGPUOcclusionCulling::GenerateHiZ(
 		Ctx->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
 	}
 
-	// Copy mip 0 from HiZTexture → HiZTempTexture so we can read it as SRV
-	Ctx->CopySubresourceRegion(HiZTempTexture, 0, 0, 0, 0, HiZTexture, 0, nullptr);
-
-	// ── Mip 1+: max-downsample (ping-pong to avoid SRV/UAV conflict) ──
+	// ── Mip 1+: 진짜 핑퐁 downsample (Copy 0회) ──
+	// Even mips → TextureA, Odd mips → TextureB
 	Ctx->CSSetShader(HiZDownsampleCS, nullptr, 0);
 	uint32 mW = Width, mH = Height;
 
@@ -341,18 +342,19 @@ void FGPUOcclusionCulling::GenerateHiZ(
 		uint32 dW = (mW > 1) ? (mW / 2) : 1;
 		uint32 dH = (mH > 1) ? (mH / 2) : 1;
 
-		// Read from TempTexture (SRV), write to HiZTexture (UAV) — different resources
+		// src = 이전 mip이 있는 텍스처, dst = 반대 텍스처
+		bool bSrcIsA = ((mip - 1) & 1) == 0;
+		ID3D11ShaderResourceView*  srcSRV = bSrcIsA ? HiZSRVs_A[mip - 1] : HiZSRVs_B[mip - 1];
+		ID3D11UnorderedAccessView* dstUAV = bSrcIsA ? HiZUAVs_B[mip]     : HiZUAVs_A[mip];
+
 		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
-		Ctx->CSSetShaderResources(0, 1, &HiZTempMipSRVs[mip - 1]);
-		Ctx->CSSetUnorderedAccessViews(0, 1, &HiZMipUAVs[mip], nullptr);
+		Ctx->CSSetShaderResources(0, 1, &srcSRV);
+		Ctx->CSSetUnorderedAccessViews(0, 1, &dstUAV, nullptr);
 
 		Ctx->Dispatch((dW + 7) / 8, (dH + 7) / 8, 1);
 
 		Ctx->CSSetShaderResources(0, 1, &nullSRV);
 		Ctx->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
-
-		// Copy newly written mip to TempTexture for next iteration's read
-		Ctx->CopySubresourceRegion(HiZTempTexture, mip, 0, 0, 0, HiZTexture, mip, nullptr);
 
 		mW = dW;
 		mH = dH;
@@ -384,15 +386,7 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 		const uint32 count = StagingProxyCount[ReadIdx];
 		const auto& proxies = StagingProxies[ReadIdx];
 
-		// Find max ProxyId to size the bit array
-		uint32 maxId = 0;
-		for (uint32 i = 0; i < count; i++)
-		{
-			uint32 id = proxies[i]->ProxyId;
-			if (id > maxId) maxId = id;
-		}
-
-		uint32 wordCount = (maxId / 32) + 1;
+		uint32 wordCount = (StagingMaxProxyId[ReadIdx] / 32) + 1;
 		OccludedBits.resize(wordCount);
 		memset(OccludedBits.data(), 0, wordCount * sizeof(uint32));
 
@@ -426,24 +420,24 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 	SCOPE_STAT_CAT("OcclusionDispatch", "4_ExecutePass");
 
 	// Single-pass: filter proxies + gather AABBs simultaneously
-	// Avoids double iteration and improves cache locality
 	{
 		SCOPE_STAT_CAT("UploadAABB", "4_ExecutePass");
 
-		auto& curProxies = StagingProxies[WriteIndex];
-		curProxies.clear();
-
 		uint32 visCount = static_cast<uint32>(VisibleProxies.size());
-		CPUAABBStaging.resize(visCount); // upper bound
+		auto& curProxies = StagingProxies[WriteIndex];
+		curProxies.resize(visCount);
+		CPUAABBStaging.resize(visCount);
 		FGPUOcclusionAABB* staging = CPUAABBStaging.data();
 		uint32 writePos = 0;
+		uint32 maxId = 0;
 
 		for (uint32 i = 0; i < visCount; i++)
 		{
 			FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
 			if (!Proxy || Proxy->bNeverCull) continue;
 
-			curProxies.push_back(Proxy);
+			curProxies[writePos] = Proxy;
+			if (Proxy->ProxyId > maxId) maxId = Proxy->ProxyId;
 			const FBoundingBox& B = Proxy->CachedBounds;
 			staging[writePos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
 			                      B.Max.X, B.Max.Y, B.Max.Z, 0.0f };
@@ -452,6 +446,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 
 		uint32 proxyCount = writePos;
 		StagingProxyCount[WriteIndex] = proxyCount;
+		StagingMaxProxyId[WriteIndex] = maxId;
 		if (proxyCount == 0) { FrameCount++; WriteIndex = (WriteIndex + 1) % STAGING_COUNT; return; }
 
 		// Ensure GPU buffers
@@ -486,17 +481,17 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 		Ctx->CSSetShader(OcclusionTestCS, nullptr, 0);
 		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
 
-		ID3D11ShaderResourceView* srvs[2] = { AABBSRV, HiZSRV };
-		Ctx->CSSetShaderResources(0, 2, srvs);
+		ID3D11ShaderResourceView* srvs[3] = { AABBSRV, HiZSRV_A, HiZSRV_B };
+		Ctx->CSSetShaderResources(0, 3, srvs);
 		Ctx->CSSetUnorderedAccessViews(0, 1, &VisibilityUAV, nullptr);
 
 		uint32 groups = (proxyCount + 63) / 64;
 		Ctx->Dispatch(groups, 1, 1);
 
 		// Unbind
-		ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
+		ID3D11ShaderResourceView* nullSRVs[3] = { nullptr, nullptr, nullptr };
 		ID3D11UnorderedAccessView* nullUAV = nullptr;
-		Ctx->CSSetShaderResources(0, 2, nullSRVs);
+		Ctx->CSSetShaderResources(0, 3, nullSRVs);
 		Ctx->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
 		Ctx->CSSetShader(nullptr, nullptr, 0);
 	}
