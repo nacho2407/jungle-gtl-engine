@@ -75,7 +75,7 @@ public:
 	void SetScene(FScene* InScene) { RegisteredScene = InScene; }
 
 private:
-	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
+	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float AxisScale, float& OutRayT);
 	bool IntersectRayRotationHandle(const FRay& Ray, int32 Axis, float& OutRayT) const;
 
 	//Control Target Method
