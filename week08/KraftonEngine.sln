@@ -9,6 +9,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Demo|x64 = Demo|x64
+		Demo|x86 = Demo|x86
 		FPSOptimization|x64 = FPSOptimization|x64
 		FPSOptimization|x86 = FPSOptimization|x86
 		ObjViewDebug|x64 = ObjViewDebug|x64
@@ -21,6 +23,10 @@ Global
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Debug|x64.Build.0 = Debug|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Debug|x86.ActiveCfg = Debug|Win32
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Debug|x86.Build.0 = Debug|Win32
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x64.ActiveCfg = Demo|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x64.Build.0 = Demo|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x86.ActiveCfg = Demo|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x86.Build.0 = Demo|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.FPSOptimization|x64.ActiveCfg = FPSOptimization|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.FPSOptimization|x64.Build.0 = FPSOptimization|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.FPSOptimization|x86.ActiveCfg = FPSOptimization|x64

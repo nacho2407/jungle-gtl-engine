@@ -347,6 +347,9 @@
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
@@ -717,6 +720,9 @@
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h">

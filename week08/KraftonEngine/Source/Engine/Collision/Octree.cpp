@@ -31,27 +31,37 @@ bool FOctree::Insert(UPrimitiveComponent* primitivie)
 	FBoundingBox PrimBox = primitivie->GetWorldBoundingBox();
 	//사이즈 체크 -> primitive가 안에 들어왔는지 확인한다
 	if(!BoundOctree.IsIntersected(PrimBox)) return false;
-	
-	//자식노드가 없으면
-	if (IsLeaf()) {
-
-		//아직 더 자를 수 있으면 자르고 해당 값을 넣는다.
-		if (PrimitiveList.size() < MAX_SIZE || Depth == MAX_DEPTH)
-		{
-			PrimitiveList.push_back(primitivie); // 해당 객체를 추가한다
-			return true;
-		}
-		SubDivide();
-	}// 자식노드가 있으면
-		
-	for (FOctree* Child : Children)
+ 
+	// ── 내부 노드: 자식에 완전히 들어가면 위임, 아니면 이 노드에 보관 ──
+	if (!IsLeaf())
 	{
-		if (Child && Child->GetBounds().IsContains(PrimBox))
+		for (FOctree* Child : Children)
 		{
-			return Child->Insert(primitivie);
+			if (Child && Child->GetBounds().IsContains(PrimBox))
+				return Child->Insert(primitivie);
 		}
+		// 경계에 걸친 객체 → 이 노드에 보관 (재분할 없음)
+		PrimitiveList.push_back(primitivie);
+		return true;
 	}
+ 
+	// ── 리프 노드 ──
 	PrimitiveList.push_back(primitivie);
+	 if (!bSubdivideLocked
+        && (int)PrimitiveList.size() > MAX_SIZE
+        && Depth < MAX_DEPTH)
+	 {
+        SubDivide();
+	 }
+ 
+	// 용량 초과 && 깊이 여유 있음 && 실제로 분배 가능한 객체가 존재할 때만 분할
+	/*if ((int)PrimitiveList.size() > MAX_SIZE
+		&& Depth < MAX_DEPTH
+		&& HasDistributable())
+	{
+		SubDivide();
+	}*/
+ 
 	return true;
 }
 
@@ -76,6 +86,7 @@ bool FOctree::Remove(const UPrimitiveComponent* Primitive)
         if (Children[i]->Remove(Primitive))
         {
             TryMerge();
+			bSubdivideLocked = false;
             return true;
         }
     }
@@ -118,30 +129,59 @@ void FOctree::SubDivide()
 { 
 	if (!IsLeaf())
         return;
-		
-    Children.resize(8, nullptr);
 
     const FVector Center = BoundOctree.GetCenter();
     const FVector Min = BoundOctree.Min;
     const FVector Max = BoundOctree.Max;
 	
-	
-	Children[0] = new FOctree(FBoundingBox(FVector(Min.X, Center.Y, Min.Z), FVector(Center.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Left
-	Children[1] = new FOctree(FBoundingBox(FVector(Center.X, Center.Y, Min.Z), FVector(Max.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Right
-	Children[2] = new FOctree(FBoundingBox(FVector(Min.X, Center.Y, Center.Z), FVector(Center.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Left
-	Children[3] = new FOctree(FBoundingBox(FVector(Center.X, Center.Y, Center.Z), FVector(Max.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Right
-	Children[4] = new FOctree(FBoundingBox(FVector(Min.X, Min.Y, Min.Z), FVector(Center.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Left
-	Children[5] = new FOctree(FBoundingBox(FVector(Center.X, Min.Y, Min.Z), FVector(Max.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Right
-	Children[6] = new FOctree(FBoundingBox(FVector(Min.X, Min.Y, Center.Z), FVector(Center.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Left
-	Children[7] = new FOctree(FBoundingBox(FVector(Center.X, Min.Y, Center.Z), FVector(Max.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Right
+	const FBoundingBox ChildBoxes[8] = {
+        { FVector(Min.X,    Center.Y, Min.Z),    FVector(Center.X, Max.Y,    Center.Z) },
+        { FVector(Center.X, Center.Y, Min.Z),    FVector(Max.X,    Max.Y,    Center.Z) },
+        { FVector(Min.X,    Center.Y, Center.Z), FVector(Center.X, Max.Y,    Max.Z)    },
+        { FVector(Center.X, Center.Y, Center.Z), FVector(Max.X,    Max.Y,    Max.Z)    },
+        { FVector(Min.X,    Min.Y,    Min.Z),    FVector(Center.X, Center.Y, Center.Z) },
+        { FVector(Center.X, Min.Y,    Min.Z),    FVector(Max.X,    Center.Y, Center.Z) },
+        { FVector(Min.X,    Min.Y,    Center.Z), FVector(Center.X, Center.Y, Max.Z)    },
+        { FVector(Center.X, Min.Y,    Center.Z), FVector(Max.X,    Center.Y, Max.Z)    },
+    };
+
+    Children.resize(8, nullptr);
+    for (int i = 0; i < 8; ++i)
+        Children[i] = new FOctree(ChildBoxes[i], Depth + 1);
 
 	TArray<UPrimitiveComponent*> primitivesToMove = PrimitiveList;
 	PrimitiveList.clear();
-
-	for (UPrimitiveComponent* prim : primitivesToMove)
+	
+    int Distributed = 0;
+	for (UPrimitiveComponent* Prim : primitivesToMove)
 	{
-		Insert(prim);
-	}
+		// Insert 재귀 대신 직접 자식에 배분
+		// → 이미 내부 노드이므로 Insert의 "내부 노드" 분기를 타게 됨
+		// → 어느 자식에도 안 들어가면 PrimitiveList에 크로스-바운더리로 남음
+		// → 크로스-바운더리는 더 이상 SubDivide를 유발하지 않음 (CountDistributable 조건)
+		bool bPlaced = false;
+        const FBoundingBox PrimBox = Prim->GetWorldBoundingBox();
+        for (int i = 0; i < 8; ++i)
+        {
+            if (ChildBoxes[i].IsContains(PrimBox))
+            {
+                Children[i]->Insert(Prim);
+                bPlaced = true;
+                ++Distributed;
+                break;
+            }
+        }
+        if (!bPlaced)
+            PrimitiveList.push_back(Prim);
+    }
+
+	if (Distributed == 0)
+    {
+        for (FOctree* Child : Children) delete Child;
+        Children.clear();
+        // PrimitiveList는 이미 위에서 크로스-바운더리로 재구성됨
+        bSubdivideLocked = true; // ← 이후 Insert에서 검사 자체를 건너뜀
+    }
 }
 
 bool FOctree::HasPrimitive(const UPrimitiveComponent* Primitive)
@@ -261,6 +301,36 @@ void FOctree::Reset(const FBoundingBox& InBounds, uint32 InDepth)
     PrimitiveList.clear();
     BoundOctree = InBounds;
     Depth = InDepth;
+}
+
+bool FOctree::HasDistributable() const
+{
+	const FVector Center = BoundOctree.GetCenter();
+    const FVector Min    = BoundOctree.Min;
+    const FVector Max    = BoundOctree.Max;
+
+    const FBoundingBox ChildBoxes[8] = {
+        { FVector(Min.X,    Center.Y, Min.Z),    FVector(Center.X, Max.Y,    Center.Z) },
+        { FVector(Center.X, Center.Y, Min.Z),    FVector(Max.X,    Max.Y,    Center.Z) },
+        { FVector(Min.X,    Center.Y, Center.Z), FVector(Center.X, Max.Y,    Max.Z)    },
+        { FVector(Center.X, Center.Y, Center.Z), FVector(Max.X,    Max.Y,    Max.Z)    },
+        { FVector(Min.X,    Min.Y,    Min.Z),    FVector(Center.X, Center.Y, Center.Z) },
+        { FVector(Center.X, Min.Y,    Min.Z),    FVector(Max.X,    Center.Y, Center.Z) },
+        { FVector(Min.X,    Min.Y,    Center.Z), FVector(Center.X, Center.Y, Max.Z)    },
+        { FVector(Center.X, Min.Y,    Center.Z), FVector(Max.X,    Center.Y, Max.Z)    },
+    };
+
+    for (UPrimitiveComponent* Prim : PrimitiveList)
+    {
+        if (!Prim) continue;
+        const FBoundingBox PrimBox = Prim->GetWorldBoundingBox();
+        for (const FBoundingBox& ChildBox : ChildBoxes)
+        {
+            if (ChildBox.IsContains(PrimBox))
+                return true; // ← 하나만 찾으면 즉시 종료
+        }
+    }
+    return false;
 }
 
 void FOctree::QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const
