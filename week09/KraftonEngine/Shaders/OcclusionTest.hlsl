@@ -56,6 +56,7 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
     float2 minUV = float2(1.0, 1.0);
     float2 maxUV = float2(0.0, 0.0);
     bool anyFront = false;
+    bool anyBehind = false;
 
     [unroll]
     for (int i = 0; i < 8; i++)
@@ -74,8 +75,16 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
             maxUV = max(maxUV, uv);
             minDepth = min(minDepth, ndc.z);
         }
+        else
+            anyBehind = true;
     }
 
+    if (anyFront && anyBehind)
+    {
+        VisibilityFlags[idx] = 1;
+        return;
+    }
+    
     // All corners behind camera → conservatively visible
     if (!anyFront)
     {
