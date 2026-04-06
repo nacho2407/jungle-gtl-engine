@@ -61,6 +61,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		* FMatrix::MakeTranslationMatrix(Gizmo->GetWorldLocation());
 
 	PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+	MarkPerObjectCBDirty();
 
 	// ExtraCB — FGizmoConstants
 	auto& G = ExtraCB.Bind<FGizmoConstants>(

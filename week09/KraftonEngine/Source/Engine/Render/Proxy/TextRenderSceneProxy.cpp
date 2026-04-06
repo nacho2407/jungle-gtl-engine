@@ -49,6 +49,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	// SelectionMask용 아웃라인 행렬 (텍스트 너비·높이 반영)
 	FMatrix OutlineMatrix = TextComp->CalculateOutlineMatrix(CachedBillboardMatrix);
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(OutlineMatrix);
+	MarkPerObjectCBDirty();
 }
 
 // ============================================================

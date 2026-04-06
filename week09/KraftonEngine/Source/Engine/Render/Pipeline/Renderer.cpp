@@ -45,6 +45,12 @@ void FRenderer::Release()
 	FontBatcher.Release();
 	SubUVBatcher.Release();
 
+	for (FConstantBuffer& CB : PerObjectCBPool)
+	{
+		CB.Release();
+	}
+	PerObjectCBPool.clear();
+
 	Resources.Release();
 	FConstantBufferPool::Get().Release();
 	FShaderManager::Get().Release();
@@ -291,7 +297,6 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 	SortProxies(Proxies);
 
 	FDrawState State;
-	BindPerObjectSlot(Context);
 
 	{
 		SCOPE_STAT_CAT("ExecutePass::Draw", "4_ExecutePass");
@@ -363,10 +368,57 @@ void FRenderer::BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContex
 	}
 }
 
-void FRenderer::BindPerObjectSlot(ID3D11DeviceContext* Ctx)
+void FRenderer::EnsurePerObjectCBPoolCapacity(uint32 RequiredCount)
 {
-	ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-	Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
+	if (PerObjectCBPool.size() >= RequiredCount)
+	{
+		return;
+	}
+
+	const size_t OldCount = PerObjectCBPool.size();
+	PerObjectCBPool.resize(RequiredCount);
+
+	ID3D11Device* D3DDevice = Device.GetDevice();
+	for (size_t Index = OldCount; Index < PerObjectCBPool.size(); ++Index)
+	{
+		PerObjectCBPool[Index].Create(D3DDevice, sizeof(FPerObjectConstants));
+	}
+}
+
+FConstantBuffer* FRenderer::GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy)
+{
+	if (Proxy.ProxyId == UINT32_MAX)
+	{
+		return nullptr;
+	}
+
+	EnsurePerObjectCBPoolCapacity(Proxy.ProxyId + 1);
+	return &PerObjectCBPool[Proxy.ProxyId];
+}
+
+bool FRenderer::BindPerObjectCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
+{
+	FConstantBuffer* CB = GetPerObjectCBForProxy(Proxy);
+	if (!CB || !CB->GetBuffer())
+	{
+		return false;
+	}
+
+	if (Proxy.NeedsPerObjectCBUpload())
+	{
+		SCOPE_STAT_CAT("ExecutePass::PerObjectConstantBuffer.Update", "4_ExecutePass");
+		CB->Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+		Proxy.ClearPerObjectCBDirty();
+	}
+
+	ID3D11Buffer* RawCB = CB->GetBuffer();
+	if (RawCB != State.LastPerObjectCB)
+	{
+		Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
+		State.LastPerObjectCB = RawCB;
+	}
+
+	return true;
 }
 
 void FRenderer::BindExtraCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx)
@@ -407,15 +459,14 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 
 	// SectionDraw는 IB 필수
 	if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) return;
+	if (!BindPerObjectCB(Proxy, Ctx, State)) return;
 
 	if (!State.bSamplerBound)
 	{
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-	// PerObject CB — 프록시당 1회만 업데이트 (Model 행렬)
-	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
-
+	
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 	if (!State.bMaterialBound)
@@ -463,13 +514,13 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
 	// SectionDraw는 IB 필수
 	if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) return;
+	if (!BindPerObjectCB(Proxy, Ctx, State)) return;
 
 	if (!State.bSamplerBound)
 	{
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
 
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
@@ -507,7 +558,7 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 
 void FRenderer::DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
 {
-	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+	if (!BindPerObjectCB(Proxy, Ctx, State)) return;
 
 	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
 
