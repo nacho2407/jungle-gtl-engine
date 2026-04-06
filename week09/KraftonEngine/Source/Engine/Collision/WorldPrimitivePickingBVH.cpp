@@ -4,7 +4,6 @@
 #include "Collision/RayUtilsSIMD.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Engine/Profiling/PlatformTime.h"
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
@@ -116,7 +115,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 
 	OutHitResult = {};
 	OutActor = nullptr;
-	LastTraversalMetrics = {};
 
 	if (Nodes.empty())
 	{
@@ -152,8 +150,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		const FNode& Node = Nodes[Entry.NodeIndex];
 		if (Node.IsLeaf())
 		{
-			LastTraversalMetrics.LeafNodesVisited++;
-
 			FTraversalEntry PrimitiveEntries[WorldBVHMaxLeafSize];
 			int32 PrimitiveEntryCount = 0;
 
@@ -170,7 +166,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 					Packet.MaxX, Packet.MaxY, Packet.MaxZ,
 					OutHitResult.Distance,
 					PrimitiveTMinValues);
-				LastTraversalMetrics.PrimitiveAABBTests += static_cast<uint32>(Packet.PrimitiveCount);
 
 				// 광선과 충돌한 자식이 하나도 없다면 하위 탐색 생략
 				if (PrimitiveMask == 0)
@@ -178,7 +173,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 					continue;
 				}
 				// 월드 BVH도 메시 BVH와 동일하게, 루프를 돌지 않고 countr_zero를 사용하여 충돌한 ChildLane만 빠르게 추출
-				LastTraversalMetrics.PrimitiveMaskHits += static_cast<uint32>(std::popcount(static_cast<uint32>(PrimitiveMask)));
 
 				uint32 RemainingPrimitiveMask = static_cast<uint32>(PrimitiveMask) & ((1u << Packet.PrimitiveCount) - 1u);
 				// countr_zero를 통해 켜져 있는 가장 낮은 비트(Lane 인덱스)를 찾아내는 방식으로
@@ -186,7 +180,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				while (RemainingPrimitiveMask != 0)
 				{
 					const uint32 Lane = std::countr_zero(RemainingPrimitiveMask);
-					LastTraversalMetrics.PrimitiveAABBHits++;
 					PrimitiveEntries[PrimitiveEntryCount++] = { Packet.PrimitiveIndices[Lane], PrimitiveTMinValues[Lane] };
 					RemainingPrimitiveMask &= (RemainingPrimitiveMask - 1);
 				}
@@ -228,15 +221,11 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				{
 					//이미 더 가까운 hit를 찾은 뒤에는 그보다 먼 후보를 바로 버립니다.
 					//위의 pruning과는 별개입니다.
-					LastTraversalMetrics.NarrowPhaseRejectedByDistance++;
 					continue;
 				}
 
 				const FLeaf& Leaf = Leaves[PrimitiveEntries[EntryIndex].NodeIndex];
 				FHitResult CandidateHit{};
-				const uint64 NarrowPhaseStart = FPlatformTime::Cycles64();
-				LastTraversalMetrics.NarrowPhaseCalls++;
-
 				bool bHit = false;
 
 				// 스태틱 메시 컴포넌트인 경우 최적화된 계층적 메시 교차 검사를 호출
@@ -257,22 +246,9 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 					OutHitResult = CandidateHit;
 					OutActor = Leaf.Owner;
 				}
-
-				LastTraversalMetrics.NarrowPhaseMs +=
-					FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - NarrowPhaseStart);
-
-				const FPrimitivePickingMetrics& PrimitiveMetrics = Leaf.Primitive->GetLastPickingMetrics();
-				LastTraversalMetrics.MeshInternalNodesVisited += PrimitiveMetrics.MeshInternalNodesVisited;
-				LastTraversalMetrics.MeshLeafPacketsTested += PrimitiveMetrics.MeshLeafPacketsTested;
-				LastTraversalMetrics.MeshTriangleLanesTested += PrimitiveMetrics.MeshTriangleLanesTested;
-				LastTraversalMetrics.MeshTriangleMaskHits += PrimitiveMetrics.MeshTriangleMaskHits;
-				LastTraversalMetrics.MeshClosestTHitUpdates += PrimitiveMetrics.MeshClosestTHitUpdates;
-				LastTraversalMetrics.MeshTraversalMs += PrimitiveMetrics.MeshTraversalMs;
 			}
 			continue;
 		}
-
-		LastTraversalMetrics.InternalNodesVisited++;
 
 		alignas(32) float TMinValues[8];
 		const int32 Mask = FRayUtilsSIMD::IntersectAABB8(
@@ -285,7 +261,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		{
 			continue;
 		}
-		LastTraversalMetrics.ChildMaskHits += static_cast<uint32>(std::popcount(static_cast<uint32>(Mask)));
 
 		FTraversalEntry ChildEntries[WorldBVHChildFanout];
 		int32 ChildEntryCount = 0;
