@@ -6,6 +6,7 @@
 #include "Core/ConsoleVariableManager.h"
 #include "Core/Engine.h"
 #include "Renderer/RenderCommand.h"
+#include "Renderer/Renderer.h"
 #include "Renderer/SceneProxy.h"
 #include "Scene/Scene.h"
 #include <chrono>
@@ -103,6 +104,7 @@ void FSceneRenderCollector::CollectRenderCommands(
 	OutQueue.Commands.reserve(OutQueue.Commands.size() + VisiblePrimitivesScratch.size());
 	OutQueue.StaticMeshOcclusionCandidates.reserve(OutQueue.StaticMeshOcclusionCandidates.size() + VisiblePrimitivesScratch.size());
 	uint32 AddedStaticMeshCandidateCount = 0;
+	FRenderer* Renderer = GEngine ? GEngine->GetRenderer() : nullptr;
 
 	for (const FVisiblePrimitiveEntry& VisiblePrimitive : VisiblePrimitivesScratch)
 	{
@@ -124,17 +126,26 @@ void FSceneRenderCollector::CollectRenderCommands(
 
 		if (Command.bStaticMesh)
 		{
-			FStaticMeshOcclusionCandidate Candidate = {};
-			FRenderMesh* StaticMeshRenderMesh = nullptr;
 			const FStaticMeshSceneProxy* StaticMeshSceneProxy = static_cast<const FStaticMeshSceneProxy*>(SceneProxy);
-			if (StaticMeshSceneProxy->TryBuildStaticMeshOcclusionCandidate(CameraPosition, StaticMeshRenderMesh, Candidate))
+			FStaticMeshOcclusionCandidate Candidate = {};
+			StaticMeshSceneProxy->BuildStaticMeshOcclusionCandidate(Candidate);
+			Command.StaticMeshOcclusionCandidateIndex = static_cast<uint32>(OutQueue.StaticMeshOcclusionCandidates.size());
+			OutQueue.StaticMeshOcclusionCandidates.push_back(Candidate);
+			++AddedStaticMeshCandidateCount;
+
+			if (Renderer && Renderer->ShouldSkipStaticMeshCandidate(Candidate, Command.StaticMeshOcclusionCandidateIndex))
 			{
-				Command.RenderMesh = StaticMeshRenderMesh;
-				Command.WorldMatrix = StaticMeshSceneProxy->GetLocalToWorld();
-				Command.StaticMeshOcclusionCandidateIndex = static_cast<uint32>(OutQueue.StaticMeshOcclusionCandidates.size());
-				OutQueue.StaticMeshOcclusionCandidates.push_back(std::move(Candidate));
-				++AddedStaticMeshCandidateCount;
+				OutQueue.PreSkippedStaticMeshDrawCallCount += StaticMeshSceneProxy->EstimateDrawCallCount();
+				continue;
 			}
+
+			Command.RenderMesh = StaticMeshSceneProxy->ResolveRenderMesh(CameraPosition);
+			if (!Command.RenderMesh)
+			{
+				continue;
+			}
+
+			Command.WorldMatrix = StaticMeshSceneProxy->GetLocalToWorld();
 		}
 
 		OutQueue.AddCommand(std::move(Command));

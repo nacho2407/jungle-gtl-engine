@@ -7,6 +7,7 @@
 #include "Component/UUIDBillboardComponent.h"
 #include "Renderer/Material.h"
 #include "Renderer/MeshData.h"
+#include "Renderer/ObjectUniformStream.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/SubUVRenderer.h"
 #include "Renderer/TextMeshBuilder.h"
@@ -48,8 +49,14 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 		return;
 	}
 
+	CachedOcclusionCandidate.MatchKey = MakeStaticMeshOcclusionMatchKey(ComponentId);
+	CachedOcclusionCandidate.BoundsCenter = Bounds.Center;
+	CachedOcclusionCandidate.BoundsRadius = Bounds.Radius;
+	CachedOcclusionCandidate.BoundsExtent = Bounds.BoxExtent;
+
 	FRenderMesh* BaseRenderMesh = InComponent->GetRenderMesh();
 	const int32 SectionCount = BaseRenderMesh ? BaseRenderMesh->GetNumSection() : 0;
+	CachedDrawCallCount = SectionCount > 0 ? static_cast<uint32>(SectionCount) : 1u;
 	const int32 MaterialCount = (std::max)(InComponent->GetNumMaterials(), SectionCount);
 	Materials.reserve(static_cast<size_t>((std::max)(MaterialCount, 1)));
 	for (int32 MaterialIndex = 0; MaterialIndex < MaterialCount; ++MaterialIndex)
@@ -118,12 +125,13 @@ bool FStaticMeshSceneProxy::TryBuildStaticMeshOcclusionCandidate(const FVector& 
 	}
 
 	OutRenderMesh = const_cast<FRenderMesh*>(SelectedMesh);
-	OutCandidate = {};
-	OutCandidate.MatchKey = MakeStaticMeshOcclusionMatchKey(ComponentId, OutRenderMesh);
-	OutCandidate.BoundsCenter = Bounds.Center;
-	OutCandidate.BoundsRadius = Bounds.Radius;
-	OutCandidate.BoundsExtent = Bounds.BoxExtent;
+	BuildStaticMeshOcclusionCandidate(OutCandidate);
 	return true;
+}
+
+void FStaticMeshSceneProxy::BuildStaticMeshOcclusionCandidate(FStaticMeshOcclusionCandidate& OutCandidate) const
+{
+	OutCandidate = CachedOcclusionCandidate;
 }
 
 FRenderMesh* FStaticMeshSceneProxy::ResolveRenderMesh(const FVector& CameraPosition) const
@@ -140,6 +148,21 @@ FRenderMesh* FStaticMeshSceneProxy::ResolveRenderMesh(const FVector& CameraPosit
 FMaterial* FStaticMeshSceneProxy::GetMaterialForSection(int32 SectionIndex) const
 {
 	return SectionIndex >= 0 && SectionIndex < static_cast<int32>(Materials.size()) ? Materials[SectionIndex] : nullptr;
+}
+
+uint32 FStaticMeshSceneProxy::ResolveObjectUniformAllocation(FObjectUniformStream& ObjectUniformStream) const
+{
+	if (CachedObjectUniformAllocation == UINT32_MAX)
+	{
+		CachedObjectUniformAllocation = ObjectUniformStream.AcquireStaticWorldMatrix(ComponentId, LocalToWorld);
+	}
+
+	return CachedObjectUniformAllocation;
+}
+
+uint32 FStaticMeshSceneProxy::EstimateDrawCallCount() const
+{
+	return CachedDrawCallCount;
 }
 
 FTextSceneProxy::FTextSceneProxy(const UTextComponent* InComponent)

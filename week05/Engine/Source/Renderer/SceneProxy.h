@@ -8,6 +8,7 @@
 class FMaterial;
 struct FRenderMesh;
 class FRenderer;
+class FObjectUniformStream;
 struct FViewInfo;
 class UStaticMeshComponent;
 class UStaticMesh;
@@ -40,17 +41,22 @@ public:
 	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 	void CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
 	bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FRenderMesh*& OutRenderMesh, FStaticMeshOcclusionCandidate& OutCandidate) const override;
+	void BuildStaticMeshOcclusionCandidate(FStaticMeshOcclusionCandidate& OutCandidate) const;
 	const FMatrix& GetLocalToWorld() const { return LocalToWorld; }
 	FMaterial* GetMaterialForSection(int32 SectionIndex) const;
+	FRenderMesh* ResolveRenderMesh(const FVector& CameraPosition) const;
+	uint32 ResolveObjectUniformAllocation(FObjectUniformStream& ObjectUniformStream) const;
+	uint32 EstimateDrawCallCount() const;
 
 private:
-	FRenderMesh* ResolveRenderMesh(const FVector& CameraPosition) const;
-
 	const UStaticMeshComponent* Component = nullptr;
 	uint32 ComponentId = 0;
 	UStaticMesh* StaticMesh = nullptr;
 	FMatrix LocalToWorld = FMatrix::Identity;
 	TArray<FMaterial*> Materials;
+	FStaticMeshOcclusionCandidate CachedOcclusionCandidate;
+	uint32 CachedDrawCallCount = 1;
+	mutable uint32 CachedObjectUniformAllocation = UINT32_MAX;
 };
 
 class ENGINE_API FTextSceneProxy : public FPrimitiveSceneProxy

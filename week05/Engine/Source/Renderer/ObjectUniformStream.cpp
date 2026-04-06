@@ -6,6 +6,8 @@
 namespace
 {
 	constexpr UINT GConstantBufferOffsetAlignmentInConstants = 16;
+	constexpr uint32 GStaticObjectUniformAllocationFlag = 0x80000000u;
+	constexpr uint32 GObjectUniformAllocationIndexMask = 0x7fffffffu;
 
 	uint32 AlignObjectCount(uint32 InObjectCount)
 	{
@@ -15,6 +17,21 @@ namespace
 			Capacity <<= 1;
 		}
 		return Capacity;
+	}
+
+	bool IsStaticAllocation(uint32 AllocationIndex)
+	{
+		return (AllocationIndex & GStaticObjectUniformAllocationFlag) != 0;
+	}
+
+	uint32 EncodeStaticAllocationIndex(uint32 AllocationIndex)
+	{
+		return AllocationIndex | GStaticObjectUniformAllocationFlag;
+	}
+
+	uint32 DecodeAllocationIndex(uint32 AllocationIndex)
+	{
+		return AllocationIndex & GObjectUniformAllocationIndexMask;
 	}
 }
 
@@ -46,12 +63,22 @@ bool FObjectUniformStream::Initialize(ID3D11Device* InDevice, ID3D11DeviceContex
 void FObjectUniformStream::Release()
 {
 	PendingObjects.clear();
+	StaticObjects.clear();
+	StaticAllocationByKey.clear();
 	CapacityInObjects = 0;
+	StaticCapacityInObjects = 0;
+	bStaticBufferDirty = false;
 
 	if (ObjectRingBuffer)
 	{
 		ObjectRingBuffer->Release();
 		ObjectRingBuffer = nullptr;
+	}
+
+	if (StaticObjectBuffer)
+	{
+		StaticObjectBuffer->Release();
+		StaticObjectBuffer = nullptr;
 	}
 
 	if (DeviceContext1)
@@ -78,9 +105,56 @@ uint32 FObjectUniformStream::AllocateWorldMatrix(const FMatrix& WorldMatrix)
 	return static_cast<uint32>(PendingObjects.size() - 1);
 }
 
+uint32 FObjectUniformStream::AcquireStaticWorldMatrix(uint32 ObjectKey, const FMatrix& WorldMatrix)
+{
+	FObjectUniformEntry Entry = {};
+	Entry.ObjectConstants.World = WorldMatrix.GetTransposed();
+
+	const auto ExistingIt = StaticAllocationByKey.find(ObjectKey);
+	if (ExistingIt != StaticAllocationByKey.end())
+	{
+		const uint32 StaticIndex = ExistingIt->second;
+		if (StaticIndex < StaticObjects.size() && StaticObjects[StaticIndex].ObjectConstants.World != Entry.ObjectConstants.World)
+		{
+			StaticObjects[StaticIndex] = Entry;
+			bStaticBufferDirty = true;
+		}
+		return EncodeStaticAllocationIndex(StaticIndex);
+	}
+
+	StaticObjects.push_back(Entry);
+	const uint32 StaticIndex = static_cast<uint32>(StaticObjects.size() - 1);
+	StaticAllocationByKey.emplace(ObjectKey, StaticIndex);
+	bStaticBufferDirty = true;
+	return EncodeStaticAllocationIndex(StaticIndex);
+}
+
 bool FObjectUniformStream::UploadFrame()
 {
-	if (!DeviceContext1 || PendingObjects.empty())
+	if (!DeviceContext1)
+	{
+		return true;
+	}
+
+	if (bStaticBufferDirty && !StaticObjects.empty())
+	{
+		if (!EnsureStaticCapacity(static_cast<uint32>(StaticObjects.size())) || !StaticObjectBuffer)
+		{
+			return false;
+		}
+
+		D3D11_MAPPED_SUBRESOURCE StaticMapped = {};
+		if (FAILED(DeviceContext->Map(StaticObjectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &StaticMapped)))
+		{
+			return false;
+		}
+
+		memcpy(StaticMapped.pData, StaticObjects.data(), StaticObjects.size() * sizeof(FObjectUniformEntry));
+		DeviceContext->Unmap(StaticObjectBuffer, 0);
+		bStaticBufferDirty = false;
+	}
+
+	if (PendingObjects.empty())
 	{
 		return true;
 	}
@@ -103,16 +177,31 @@ bool FObjectUniformStream::UploadFrame()
 
 void FObjectUniformStream::BindAllocation(uint32 AllocationIndex)
 {
-	if (AllocationIndex >= PendingObjects.size())
+	const bool bStaticAllocation = IsStaticAllocation(AllocationIndex);
+	const uint32 DecodedAllocationIndex = DecodeAllocationIndex(AllocationIndex);
+
+	if (bStaticAllocation)
+	{
+		if (DecodedAllocationIndex >= StaticObjects.size())
+		{
+			return;
+		}
+	}
+	else if (DecodedAllocationIndex >= PendingObjects.size())
 	{
 		return;
 	}
 
-	if (DeviceContext1 && ObjectRingBuffer)
+	if (DeviceContext1)
 	{
-		const UINT FirstConstant = AllocationIndex * GConstantBufferOffsetAlignmentInConstants;
+		ID3D11Buffer* Buffer = bStaticAllocation ? StaticObjectBuffer : ObjectRingBuffer;
+		if (!Buffer)
+		{
+			return;
+		}
+
+		const UINT FirstConstant = DecodedAllocationIndex * GConstantBufferOffsetAlignmentInConstants;
 		const UINT NumConstants = GConstantBufferOffsetAlignmentInConstants;
-		ID3D11Buffer* Buffer = ObjectRingBuffer;
 		DeviceContext1->VSSetConstantBuffers1(1, 1, &Buffer, &FirstConstant, &NumConstants);
 		return;
 	}
@@ -125,7 +214,10 @@ void FObjectUniformStream::BindAllocation(uint32 AllocationIndex)
 	D3D11_MAPPED_SUBRESOURCE Mapped = {};
 	if (SUCCEEDED(DeviceContext->Map(FallbackObjectConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 	{
-		memcpy(Mapped.pData, &PendingObjects[AllocationIndex].ObjectConstants, sizeof(FObjectConstantBuffer));
+		const FObjectConstantBuffer& ObjectConstants = bStaticAllocation
+			? StaticObjects[DecodedAllocationIndex].ObjectConstants
+			: PendingObjects[DecodedAllocationIndex].ObjectConstants;
+		memcpy(Mapped.pData, &ObjectConstants, sizeof(FObjectConstantBuffer));
 		DeviceContext->Unmap(FallbackObjectConstantBuffer, 0);
 	}
 
@@ -163,5 +255,37 @@ bool FObjectUniformStream::EnsureCapacity(uint32 InAllocationCount)
 	Desc.ByteWidth = (Desc.ByteWidth + 15u) & ~15u;
 
 	return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &ObjectRingBuffer));
+}
+
+bool FObjectUniformStream::EnsureStaticCapacity(uint32 InAllocationCount)
+{
+	if (!DeviceContext1)
+	{
+		return true;
+	}
+
+	const uint32 DesiredCapacity = (std::max)(AlignObjectCount(InAllocationCount), 1u);
+	if (StaticObjectBuffer && StaticCapacityInObjects >= DesiredCapacity)
+	{
+		return true;
+	}
+
+	if (StaticObjectBuffer)
+	{
+		StaticObjectBuffer->Release();
+		StaticObjectBuffer = nullptr;
+	}
+
+	StaticCapacityInObjects = DesiredCapacity;
+	StaticObjects.reserve(StaticCapacityInObjects);
+
+	D3D11_BUFFER_DESC Desc = {};
+	Desc.Usage = D3D11_USAGE_DYNAMIC;
+	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	Desc.ByteWidth = StaticCapacityInObjects * sizeof(FObjectUniformEntry);
+	Desc.ByteWidth = (Desc.ByteWidth + 15u) & ~15u;
+
+	return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, &StaticObjectBuffer));
 }
 

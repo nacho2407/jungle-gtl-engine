@@ -203,6 +203,16 @@ bool FRenderer::CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height)
 		&SwapChain, &Device, nullptr, &DeviceContext
 	);
 
+	// DXGI 기본 MaximumFrameLatency는 3 — GPU 앞에 3프레임이 쌓이면
+	// 드라이버가 CPU submit을 차단 → queue depth가 3↔1로 진동하는 사각파 발생.
+	// 1로 고정하면 진동이 사라지고 frame time이 안정된다.
+	IDXGIDevice1* DXGIDevice1 = nullptr;
+	if (SUCCEEDED(Device->QueryInterface(__uuidof(IDXGIDevice1), reinterpret_cast<void**>(&DXGIDevice1))))
+	{
+		DXGIDevice1->SetMaximumFrameLatency(1);
+		DXGIDevice1->Release();
+	}
+
 	if (FAILED(Hr))
 	{
 		MessageBox(nullptr, L"D3D11CreateDeviceAndSwapChain Failed.", nullptr, 0);
@@ -545,17 +555,18 @@ void FRenderer::ExecuteCommands()
 	if (GEngine)
 	{
 		FRenderInstrumentationStats& Stats = GEngine->GetMutableRenderInstrumentationStats();
+		const uint32 PreSkippedStaticMeshDrawCallCount = PendingCommandQueue.PreSkippedStaticMeshDrawCallCount;
 		Stats.ExecuteRenderCommandsCpuMs += std::chrono::duration<double, std::milli>(ExecuteEndTime - ExecuteStartTime).count();
 		Stats.TotalDrawCallCount = FrameDrawCallCount;
 		Stats.StaticMeshDrawCallCount = FrameStaticMeshDrawCallCount;
-		Stats.StaticMeshDrawCallCountBeforeOcclusion = FrameStaticMeshPotentialDrawCallCount;
-		Stats.StaticMeshDrawSkippedCount = FrameStaticMeshSkippedDrawCallCount;
-		Stats.StaticMeshSkippedBeforeBuildDrawCommandsCount = FrameStaticMeshSkippedBeforeBuildDrawCommandsCount;
+		Stats.StaticMeshDrawCallCountBeforeOcclusion = PreSkippedStaticMeshDrawCallCount + FrameStaticMeshPotentialDrawCallCount;
+		Stats.StaticMeshDrawSkippedCount = PreSkippedStaticMeshDrawCallCount + FrameStaticMeshSkippedDrawCallCount;
+		Stats.StaticMeshSkippedBeforeBuildDrawCommandsCount = PreSkippedStaticMeshDrawCallCount + FrameStaticMeshSkippedBeforeBuildDrawCommandsCount;
 		Stats.StaticMeshSkippedLateDrawCount = FrameStaticMeshSkippedLateDrawCount;
 		Stats.bOcclusionSkipApplied = bGpuOcclusionEnabled &&
 			LatestStaticMeshOcclusionReadbackResult.bReady &&
 			LatestStaticMeshOcclusionReadbackResult.bSizeMatched &&
-			FrameStaticMeshSkippedDrawCallCount > 0;
+			(PreSkippedStaticMeshDrawCallCount + FrameStaticMeshSkippedDrawCallCount) > 0;
 		if (bGpuOcclusionEnabled)
 		{
 			Stats.HZBMipCount = HZBResources.MipCount;
@@ -611,27 +622,36 @@ uint32 FRenderer::GetFrameStaticMeshDrawCallCount() const
 
 bool FRenderer::ShouldSkipStaticMeshCandidate(uint32 CandidateIndex) const
 {
+	const TArray<FStaticMeshOcclusionCandidate>& CurrentCandidates = PendingCommandQueue.StaticMeshOcclusionCandidates;
+	if (CandidateIndex == GInvalidOcclusionCandidateIndex || CandidateIndex >= CurrentCandidates.size())
+	{
+		return false;
+	}
+
+	return ShouldSkipStaticMeshCandidate(CurrentCandidates[CandidateIndex], CandidateIndex);
+}
+
+bool FRenderer::ShouldSkipStaticMeshCandidate(const FStaticMeshOcclusionCandidate& Candidate, uint32 CandidateIndex) const
+{
 	if (!GEngine || !GEngine->IsGpuOcclusionCullingEnabled())
 	{
 		return false;
 	}
 
 	const FStaticMeshOcclusionReadbackResult& ReadbackResult = LatestStaticMeshOcclusionReadbackResult;
-	const TArray<FStaticMeshOcclusionCandidate>& CurrentCandidates = PendingCommandQueue.StaticMeshOcclusionCandidates;
 	if (!ReadbackResult.bReady || !ReadbackResult.bSizeMatched)
 	{
 		return false;
 	}
 
 	if (CandidateIndex == GInvalidOcclusionCandidateIndex ||
-		CandidateIndex >= CurrentCandidates.size() ||
 		CandidateIndex >= ReadbackResult.Snapshot.CandidateKeys.size() ||
 		CandidateIndex >= ReadbackResult.VisibilityValues.size())
 	{
 		return false;
 	}
 
-	return CurrentCandidates[CandidateIndex].MatchKey == ReadbackResult.Snapshot.CandidateKeys[CandidateIndex] &&
+	return Candidate.MatchKey == ReadbackResult.Snapshot.CandidateKeys[CandidateIndex] &&
 		ReadbackResult.VisibilityValues[CandidateIndex] == 0;
 }
 
@@ -1313,26 +1333,22 @@ bool FRenderer::InitializeOcclusionShaders()
 
 void FRenderer::BuildStaticMeshOcclusionSnapshot()
 {
-	StaticMeshOcclusionSnapshot.Clear();
-	GpuOcclusionCandidatesScratch.clear();
-
 	const TArray<FStaticMeshOcclusionCandidate>& SourceCandidates = PendingCommandQueue.StaticMeshOcclusionCandidates;
-	StaticMeshOcclusionSnapshot.Reserve(SourceCandidates.size());
-	GpuOcclusionCandidatesScratch.reserve(SourceCandidates.size());
+	StaticMeshOcclusionSnapshot.CandidateKeys.resize(SourceCandidates.size());
+	GpuOcclusionCandidatesScratch.resize(SourceCandidates.size());
 
 	for (size_t SourceIndex = 0; SourceIndex < SourceCandidates.size(); ++SourceIndex)
 	{
 		const FStaticMeshOcclusionCandidate& SourceCandidate = SourceCandidates[SourceIndex];
 		const uint32 DenseIndex = static_cast<uint32>(SourceIndex);
 
-		StaticMeshOcclusionSnapshot.CandidateKeys.push_back(SourceCandidate.MatchKey);
+		StaticMeshOcclusionSnapshot.CandidateKeys[SourceIndex] = SourceCandidate.MatchKey;
 
-		FGpuOcclusionCandidate GpuCandidate = {};
+		FGpuOcclusionCandidate& GpuCandidate = GpuOcclusionCandidatesScratch[SourceIndex];
 		GpuCandidate.BoundsCenter = SourceCandidate.BoundsCenter;
 		GpuCandidate.BoundsRadius = SourceCandidate.BoundsRadius;
 		GpuCandidate.BoundsExtent = SourceCandidate.BoundsExtent;
 		GpuCandidate.DenseIndex = DenseIndex;
-		GpuOcclusionCandidatesScratch.push_back(GpuCandidate);
 	}
 
 	if (GEngine)

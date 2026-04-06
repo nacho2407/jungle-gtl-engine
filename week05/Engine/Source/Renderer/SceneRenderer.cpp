@@ -98,6 +98,35 @@ namespace
 		return Command.bOverrideRenderPass ? Command.RenderPass : ERenderPass::Opaque;
 	}
 
+	uint64 ComputeCommandHash(const FRenderCommandQueue& Queue)
+	{
+		uint64 Hash = Queue.Commands.size();
+		for (const FRenderCommand& Command : Queue.Commands)
+		{
+			Hash ^= reinterpret_cast<uint64>(Command.SceneProxy) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+			Hash ^= reinterpret_cast<uint64>(Command.RenderMesh) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+		}
+		return Hash;
+	}
+
+	bool CanFastReuseOpaqueStaticCommands(const FRenderCommandQueue& Queue)
+	{
+		if (Queue.Commands.empty())
+		{
+			return false;
+		}
+
+		for (const FRenderCommand& Command : Queue.Commands)
+		{
+			if (!Command.bStaticMesh || !Command.SceneProxy || !Command.RenderMesh || ResolveCommandRenderPass(Command) != ERenderPass::Opaque)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	void BuildDrawCommands(
 		const TArray<FMeshRenderItem>& RenderItems,
 		const FRenderCommand* CommandOverride,
@@ -185,12 +214,14 @@ namespace
 		}
 
 		const ERenderPass RenderPass = ResolveCommandRenderPass(Command);
-		const uint32 ObjectUniformAllocation = ObjectUniformStream.AllocateWorldMatrix(Command.WorldMatrix);
+		const uint32 ObjectUniformAllocation = SceneProxy.ResolveObjectUniformAllocation(ObjectUniformStream);
 		const uint64 MeshKey = Command.RenderMesh->GetSortId();
 		OutFrame.RegisterMeshUpload(Command.RenderMesh);
 
-		auto AppendDrawCommand = [&](FMaterial* Material, uint32 IndexStart, uint32 IndexCount, uint32 SectionIndex)
+		const int32 SectionCount = Command.RenderMesh->GetNumSection();
+		if (SectionCount <= 0)
 		{
+			FMaterial* Material = Command.Material ? Command.Material : SceneProxy.GetMaterialForSection(0);
 			if (!Material)
 			{
 				Material = Renderer.GetDefaultMaterial();
@@ -203,9 +234,6 @@ namespace
 			FMeshDrawCommand DrawCommand = {};
 			DrawCommand.Material = Material;
 			DrawCommand.RenderMesh = Command.RenderMesh;
-			DrawCommand.IndexStart = IndexStart;
-			DrawCommand.IndexCount = IndexCount;
-			DrawCommand.SectionIndex = SectionIndex;
 			DrawCommand.ObjectUniformAllocation = ObjectUniformAllocation;
 			DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
 			DrawCommand.MaterialKey = Material->GetSortId();
@@ -224,13 +252,45 @@ namespace
 					static_cast<uint32>(OutFrame.GetPassQueue(RenderPass).size() - 1)
 				});
 			}
-		};
+			return;
+		}
 
-		const int32 SectionCount = Command.RenderMesh->GetNumSection();
-		if (SectionCount <= 0)
+		if (SectionCount == 1)
 		{
+			const FMeshSection& Section = Command.RenderMesh->Sections[0];
 			FMaterial* Material = Command.Material ? Command.Material : SceneProxy.GetMaterialForSection(0);
-			AppendDrawCommand(Material, 0, 0, 0);
+			if (!Material)
+			{
+				Material = Renderer.GetDefaultMaterial();
+			}
+			if (!Material)
+			{
+				return;
+			}
+
+			FMeshDrawCommand DrawCommand = {};
+			DrawCommand.Material = Material;
+			DrawCommand.RenderMesh = Command.RenderMesh;
+			DrawCommand.IndexStart = Section.StartIndex;
+			DrawCommand.IndexCount = Section.IndexCount;
+			DrawCommand.ObjectUniformAllocation = ObjectUniformAllocation;
+			DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
+			DrawCommand.MaterialKey = Material->GetSortId();
+			DrawCommand.MeshKey = MeshKey;
+			DrawCommand.bStaticMesh = true;
+			DrawCommand.StaticMeshOcclusionCandidateIndex = RenderPass == ERenderPass::Opaque
+				? Command.StaticMeshOcclusionCandidateIndex
+				: GInvalidOcclusionCandidateIndex;
+
+			OutFrame.GetPassQueue(RenderPass).push_back(DrawCommand);
+			if (RenderPass == ERenderPass::Opaque)
+			{
+				OutSortKeys.push_back({
+					DrawCommand.MaterialKey,
+					DrawCommand.MeshKey,
+					static_cast<uint32>(OutFrame.GetPassQueue(RenderPass).size() - 1)
+				});
+			}
 			return;
 		}
 
@@ -238,11 +298,39 @@ namespace
 		{
 			const FMeshSection& Section = Command.RenderMesh->Sections[SectionIndex];
 			FMaterial* Material = Command.Material ? Command.Material : SceneProxy.GetMaterialForSection(SectionIndex);
-			AppendDrawCommand(
-				Material,
-				Section.StartIndex,
-				Section.IndexCount,
-				static_cast<uint32>(SectionIndex));
+			if (!Material)
+			{
+				Material = Renderer.GetDefaultMaterial();
+			}
+			if (!Material)
+			{
+				continue;
+			}
+
+			FMeshDrawCommand DrawCommand = {};
+			DrawCommand.Material = Material;
+			DrawCommand.RenderMesh = Command.RenderMesh;
+			DrawCommand.IndexStart = Section.StartIndex;
+			DrawCommand.IndexCount = Section.IndexCount;
+			DrawCommand.SectionIndex = static_cast<uint32>(SectionIndex);
+			DrawCommand.ObjectUniformAllocation = ObjectUniformAllocation;
+			DrawCommand.SubmissionOrder = InOutSubmissionOrder++;
+			DrawCommand.MaterialKey = Material->GetSortId();
+			DrawCommand.MeshKey = MeshKey;
+			DrawCommand.bStaticMesh = true;
+			DrawCommand.StaticMeshOcclusionCandidateIndex = RenderPass == ERenderPass::Opaque
+				? Command.StaticMeshOcclusionCandidateIndex
+				: GInvalidOcclusionCandidateIndex;
+
+			OutFrame.GetPassQueue(RenderPass).push_back(DrawCommand);
+			if (RenderPass == ERenderPass::Opaque)
+			{
+				OutSortKeys.push_back({
+					DrawCommand.MaterialKey,
+					DrawCommand.MeshKey,
+					static_cast<uint32>(OutFrame.GetPassQueue(RenderPass).size() - 1)
+				});
+			}
 		}
 	}
 
@@ -330,15 +418,43 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 	//GameJam
 	OpaqueSortKeys.clear();
 	OpaqueSortKeys.reserve(Queue.Commands.size());
+	const uint64 NewHash = ComputeCommandHash(Queue);
+	const bool bCanFastReuseOpaqueCommands =
+		bCacheVaild &&
+		NewHash == CachedCommandHash &&
+		CanFastReuseOpaqueStaticCommands(Queue);
+
+	if (bCanFastReuseOpaqueCommands)
+	{
+		TArray<FMeshDrawCommand>& OpaqueCommands = OutFrame.GetPassQueue(ERenderPass::Opaque);
+		OpaqueCommands = CachedOpaqueCommands;
+
+		for (const FRenderCommand& Command : Queue.Commands)
+		{
+			if (Command.RenderMesh)
+			{
+				OutFrame.RegisterMeshUpload(Command.RenderMesh);
+				Renderer->RegisterStaticMeshBuiltDrawCommands(Command.RenderMesh);
+			}
+		}
+
+		if (!OutFrame.MeshUploads.empty())
+		{
+			std::sort(OutFrame.MeshUploads.begin(), OutFrame.MeshUploads.end());
+			const auto NewEnd = std::unique(OutFrame.MeshUploads.begin(), OutFrame.MeshUploads.end());
+			OutFrame.MeshUploads.erase(NewEnd, OutFrame.MeshUploads.end());
+		}
+
+		if (GEngine)
+		{
+			const auto BuildEndTime = std::chrono::high_resolution_clock::now();
+			GEngine->GetMutableRenderInstrumentationStats().BuildRenderFrameCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
+		}
+		return;
+	}
 
 	for (const FRenderCommand& Command : Queue.Commands)
 	{
-		if (Command.bStaticMesh && Renderer->ShouldSkipStaticMeshCandidate(Command.StaticMeshOcclusionCandidateIndex))
-		{
-			Renderer->RegisterStaticMeshSkippedBeforeBuild(Command.RenderMesh);
-			continue;
-		}
-
 		if (Command.bStaticMesh && Command.SceneProxy && Command.RenderMesh)
 		{
 			Renderer->RegisterStaticMeshBuiltDrawCommands(Command.RenderMesh);
@@ -376,13 +492,6 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 	if (OutFrame.GetPassQueue(ERenderPass::Opaque).size() > 1)
 	{
 		TArray<FMeshDrawCommand>& OpaqueCommands = OutFrame.GetPassQueue(ERenderPass::Opaque);
-
-		uint64 NewHash = Queue.Commands.size();
-		for (const FRenderCommand& Command : Queue.Commands)
-		{
-			NewHash ^= reinterpret_cast<uint64>(Command.SceneProxy) + 0x9e3779b9 + (NewHash << 6) + (NewHash >> 2);
-			NewHash ^= reinterpret_cast<uint64>(Command.RenderMesh) + 0x9e3779b9 + (NewHash << 6) + (NewHash >> 2);
-		}
 
 		if (bCacheVaild && NewHash == CachedCommandHash && CachedOpaqueCommands.size() == OpaqueCommands.size())
 		{

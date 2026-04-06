@@ -153,17 +153,22 @@ struct FPrimRef
 {
 	FAABB Bounds;
 	FVector Centroid = FVector(0.0f, 0.0f, 0.0f);
+	FVector Center = FVector(0.0f, 0.0f, 0.0f);
+	FVector Extent = FVector(0.0f, 0.0f, 0.0f);
 	UPrimitiveComponent* Primitive = nullptr;
 };
 
 struct BuildNode
 {
 	FAABB Bounds;
+	FVector Center = FVector(0.0f, 0.0f, 0.0f);
+	FVector Extent = FVector(0.0f, 0.0f, 0.0f);
 	BuildNode* Left = nullptr;
 	BuildNode* Right = nullptr;
 	int FirstPrimOffset = 0;
 	int PrimCount = 0;
 	int SplitAxis = 0;
+	int SubtreePrimCount = 0;
 
 	bool IsLeaf() const { return PrimCount > 0; }
 };

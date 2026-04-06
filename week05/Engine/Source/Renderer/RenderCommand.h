@@ -14,12 +14,9 @@ class UStaticMeshComponent;
 
 constexpr uint32 GInvalidOcclusionCandidateIndex = UINT32_MAX;
 
-inline uint64 MakeStaticMeshOcclusionMatchKey(uint32 CandidateId, const FRenderMesh* RenderMesh)
+inline uint64 MakeStaticMeshOcclusionMatchKey(uint32 CandidateId)
 {
-	uint64 Key = static_cast<uint64>(CandidateId);
-	const uint64 MeshKey = static_cast<uint64>(reinterpret_cast<uintptr_t>(RenderMesh));
-	Key ^= MeshKey + 0x9e3779b97f4a7c15ull + (Key << 6) + (Key >> 2);
-	return Key;
+	return static_cast<uint64>(CandidateId);
 }
 
 struct ENGINE_API FStaticMeshOcclusionCandidate
@@ -82,6 +79,7 @@ struct ENGINE_API FRenderCommandQueue
 	TArray<FRenderCommand> Commands;
 	TArray<FOutlineRenderItem> OutlineItems;
 	TArray<FStaticMeshOcclusionCandidate> StaticMeshOcclusionCandidates;
+	uint32 PreSkippedStaticMeshDrawCallCount = 0;
 
 	FMatrix ViewMatrix = FMatrix::Identity;
 	FMatrix ProjectionMatrix = FMatrix::Identity;
@@ -110,6 +108,7 @@ struct ENGINE_API FRenderCommandQueue
 		Commands.clear();
 		OutlineItems.clear();
 		StaticMeshOcclusionCandidates.clear();
+		PreSkippedStaticMeshDrawCallCount = 0;
 		bOpaqueWireframe = false;
 	}
 };

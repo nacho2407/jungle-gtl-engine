@@ -52,7 +52,9 @@ void BVH::Build(const TArray<UPrimitiveComponent*>& InPrimitives)
 
 		FPrimRef Ref;
 		Ref.Bounds = FAABB(Min, Max);
-		Ref.Centroid = Ref.Bounds.Centroid();
+		Ref.Centroid = WorldBounds.Center;
+		Ref.Center = WorldBounds.Center;
+		Ref.Extent = WorldBounds.BoxExtent;
 		Ref.Primitive = Primitive;
 		PrimitiveRefs.push_back(Ref);
 	}
@@ -79,6 +81,9 @@ BuildNode* BVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 	}
 
 	Node->Bounds = NodeBounds;
+	Node->Center = NodeBounds.Centroid();
+	Node->Extent = (NodeBounds.PMax - NodeBounds.PMin) * 0.5f;
+	Node->SubtreePrimCount = Count;
 
 	if (Count <= MaxPrimitivesPerLeaf || Depth >= MaxDepth)
 	{
@@ -188,12 +193,66 @@ BuildNode* BVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 	const int32 ChildDepth = Depth + 1;
 	Node->Left = BuildRecursive(Start, Mid, ChildDepth);
 	Node->Right = BuildRecursive(Mid, End, ChildDepth);
+	Node->SubtreePrimCount =
+		(Node->Left ? Node->Left->SubtreePrimCount : 0) +
+		(Node->Right ? Node->Right->SubtreePrimCount : 0);
 	return Node;
 }
 
 void BVH::QueryFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
-	QueryFrustumRecursive(Root, Frustum, OutPrimitives);
+	if (!Root)
+	{
+		return;
+	}
+
+	constexpr int32 MaxTraversalDepth = 64;
+	const BuildNode* NodeStack[MaxTraversalDepth];
+	int32 StackSize = 0;
+	NodeStack[StackSize++] = Root;
+
+	while (StackSize > 0)
+	{
+		const BuildNode* Node = NodeStack[--StackSize];
+		if (!Node)
+		{
+			continue;
+		}
+
+		const FFrustum::EContainment NodeContainment = Frustum.TestAABB(Node->Center, Node->Extent);
+		if (NodeContainment == FFrustum::EContainment::Outside)
+		{
+			continue;
+		}
+
+		if (NodeContainment == FFrustum::EContainment::Inside)
+		{
+			AppendNodePrimitives(Node, OutPrimitives);
+			continue;
+		}
+
+		if (Node->IsLeaf())
+		{
+			for (int32 Index = 0; Index < Node->PrimCount; ++Index)
+			{
+				const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
+				if (Ref.Primitive && Frustum.TestAABB(Ref.Center, Ref.Extent) != FFrustum::EContainment::Outside)
+				{
+					OutPrimitives.push_back(Ref.Primitive);
+				}
+			}
+			continue;
+		}
+
+		if (Node->Right)
+		{
+			NodeStack[StackSize++] = Node->Right;
+		}
+		if (Node->Left)
+		{
+			NodeStack[StackSize++] = Node->Left;
+		}
+	}
 }
 
 void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
@@ -243,22 +302,43 @@ void BVH::AppendNodePrimitives(const BuildNode* Node, TArray<UPrimitiveComponent
 		return;
 	}
 
-	if (Node->IsLeaf())
-	{
-		OutPrimitives.reserve(OutPrimitives.size() + Node->PrimCount);
-		for (int32 Index = 0; Index < Node->PrimCount; ++Index)
-		{
-			const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
-			if (Ref.Primitive)
-			{
-				OutPrimitives.push_back(Ref.Primitive);
-			}
-		}
-		return;
-	}
+	OutPrimitives.reserve(OutPrimitives.size() + Node->SubtreePrimCount);
 
-	AppendNodePrimitives(Node->Left, OutPrimitives);
-	AppendNodePrimitives(Node->Right, OutPrimitives);
+	constexpr int32 MaxTraversalDepth = 64;
+	const BuildNode* NodeStack[MaxTraversalDepth];
+	int32 StackSize = 0;
+	NodeStack[StackSize++] = Node;
+
+	while (StackSize > 0)
+	{
+		const BuildNode* CurrentNode = NodeStack[--StackSize];
+		if (!CurrentNode)
+		{
+			continue;
+		}
+
+		if (CurrentNode->IsLeaf())
+		{
+			for (int32 Index = 0; Index < CurrentNode->PrimCount; ++Index)
+			{
+				const FPrimRef& Ref = PrimitiveRefs[CurrentNode->FirstPrimOffset + Index];
+				if (Ref.Primitive)
+				{
+					OutPrimitives.push_back(Ref.Primitive);
+				}
+			}
+			continue;
+		}
+
+		if (CurrentNode->Right)
+		{
+			NodeStack[StackSize++] = CurrentNode->Right;
+		}
+		if (CurrentNode->Left)
+		{
+			NodeStack[StackSize++] = CurrentNode->Left;
+		}
+	}
 }
 
 void BVH::QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const

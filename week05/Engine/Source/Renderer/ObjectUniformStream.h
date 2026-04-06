@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Renderer/ShaderType.h"
 #include <d3d11_1.h>
+#include <unordered_map>
 
 class ENGINE_API FObjectUniformStream
 {
@@ -15,11 +16,13 @@ public:
 
 	void Reset();
 	uint32 AllocateWorldMatrix(const FMatrix& WorldMatrix);
+	uint32 AcquireStaticWorldMatrix(uint32 ObjectKey, const FMatrix& WorldMatrix);
 	bool UploadFrame();
 	void BindAllocation(uint32 AllocationIndex);
 
 private:
 	bool EnsureCapacity(uint32 InAllocationCount);
+	bool EnsureStaticCapacity(uint32 InAllocationCount);
 
 private:
 	struct FObjectUniformEntry
@@ -34,6 +37,11 @@ private:
 	ID3D11DeviceContext1* DeviceContext1 = nullptr;
 	ID3D11Buffer* FallbackObjectConstantBuffer = nullptr;
 	ID3D11Buffer* ObjectRingBuffer = nullptr;
+	ID3D11Buffer* StaticObjectBuffer = nullptr;
 	uint32 CapacityInObjects = 0;
+	uint32 StaticCapacityInObjects = 0;
 	TArray<FObjectUniformEntry> PendingObjects;
+	TArray<FObjectUniformEntry> StaticObjects;
+	std::unordered_map<uint32, uint32> StaticAllocationByKey;
+	bool bStaticBufferDirty = false;
 };

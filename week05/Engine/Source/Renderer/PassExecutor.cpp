@@ -97,6 +97,7 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 	uint32 CurrentMaterialConstantBufferCount = 0;
 	FRenderMesh* CurrentMesh = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY CurrentTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+	uint32 CurrentObjectUniformAllocation = UINT32_MAX;
 
 	for (const FMeshDrawCommand& Command : InCommands)
 	{
@@ -136,7 +137,11 @@ void FPassExecutor::ExecuteQueue(const TArray<FMeshDrawCommand>& InCommands) con
 			CurrentTopology = DesiredTopology;
 		}
 
-		Renderer->ObjectUniformStream->BindAllocation(Command.ObjectUniformAllocation);
+		if (CurrentObjectUniformAllocation != Command.ObjectUniformAllocation)
+		{
+			Renderer->ObjectUniformStream->BindAllocation(Command.ObjectUniformAllocation);
+			CurrentObjectUniformAllocation = Command.ObjectUniformAllocation;
+		}
 
 		if (!Command.RenderMesh->Indices.empty())
 		{
