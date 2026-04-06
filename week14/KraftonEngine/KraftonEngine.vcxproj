@@ -256,12 +256,18 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
-    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp">
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
-    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
+    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp">
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
