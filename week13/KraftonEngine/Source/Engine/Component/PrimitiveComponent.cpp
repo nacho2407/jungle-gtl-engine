@@ -89,6 +89,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 	bWorldAABBDirty = false;
 }
 
+/* 현재 쓰이지 않는 코드입니다*/
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
 	const FMeshData* Data = GetMeshData();
