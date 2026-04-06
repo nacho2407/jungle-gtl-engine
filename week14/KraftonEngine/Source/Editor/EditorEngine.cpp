@@ -119,6 +119,10 @@ void UEditorEngine::ClearScene()
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(nullptr);
 
+	// 씬 프록시 파괴 전 GPU Occlusion 스테이징 데이터 무효화
+	if (IRenderPipeline* Pipeline = GetRenderPipeline())
+		Pipeline->OnSceneCleared();
+
 	for (FWorldContext& Ctx : WorldList)
 	{
 		Ctx.World->EndPlay();

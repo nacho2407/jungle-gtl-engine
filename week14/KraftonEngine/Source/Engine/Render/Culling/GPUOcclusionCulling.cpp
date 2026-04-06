@@ -103,6 +103,19 @@ void FGPUOcclusionCulling::Release()
 	Device = nullptr;
 }
 
+void FGPUOcclusionCulling::InvalidateResults()
+{
+	for (uint32 i = 0; i < STAGING_COUNT; i++)
+	{
+		StagingProxies[i].clear();
+		StagingProxyCount[i] = 0;
+	}
+	OccludedBits.clear();
+	bHasResults = false;
+	WriteIndex = 0;
+	FrameCount = 0;
+}
+
 // ================================================================
 // Hi-Z resources (recreated on viewport resize)
 // ================================================================
