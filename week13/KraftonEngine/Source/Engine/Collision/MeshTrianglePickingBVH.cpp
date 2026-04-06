@@ -89,7 +89,6 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	};
 
 	OutHitResult = {};
-	LastTraversalMetrics = {};
 	if (Nodes.empty() || Mesh.Vertices.empty() || Mesh.Indices.size() < 3)
 	{
 		return false;
@@ -128,9 +127,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		if (Node.IsLeaf())
 		{
-			LastTraversalMetrics.LeafPacketsTested++;
 			const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
-			LastTraversalMetrics.TriangleLanesTested += Packet.TriangleCount;
 
 			alignas(32) float TValues[8];
 			const int32 Mask = FRayUtilsSIMD::IntersectTriangles8Precomputed(
@@ -145,7 +142,6 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			{
 				// movemask 결과를 비트 스캔으로 순회하면 8개 lane을 매번 전부 확인하지 않아도 된다.
 				// hit가 드문 장면일수록 분기 수와 비교 횟수가 줄어든다.
-				LastTraversalMetrics.TriangleMaskHits += static_cast<uint32>(std::popcount(static_cast<uint32>(Mask)));
 				uint32 RemainingMask = static_cast<uint32>(Mask);
 				while (RemainingMask != 0)
 				{
@@ -157,15 +153,12 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 						OutHitResult.Distance = TValues[Lane];
 						OutHitResult.FaceIndex = Packet.TriangleStartIndices[Lane];
 						bHit = true;
-						LastTraversalMetrics.ClosestTHitUpdates++;
 					}
 					RemainingMask &= (RemainingMask - 1);
 				}
 			}
 			continue;
 		}
-
-		LastTraversalMetrics.InternalNodesVisited++;
 
 		alignas(32) float TMinValues[8];
 		const int32 NodeMask = FRayUtilsSIMD::IntersectAABB8(

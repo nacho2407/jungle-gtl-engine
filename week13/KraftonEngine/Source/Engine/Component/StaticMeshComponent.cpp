@@ -5,7 +5,6 @@
 #include "Core/PropertyTypes.h"
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
-#include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Texture/Texture2D.h"
@@ -142,7 +141,6 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 	const FMatrix& WorldInverse,
 	FHitResult& OutHitResult)
 {
-	LastPickingMetrics = {};
 	if (!StaticMesh) return false;
 
 	FVector LocalOrigin = WorldInverse.TransformPositionWithW(Ray.Origin);
@@ -150,30 +148,14 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 	LocalDirection.Normalize();
 
 	// Mesh BVH만 사용하는 전용 경로입니다. 월드 BVH는 이 함수를 직접 호출해 가상 호출 비용을 피합니다.
-	const uint64 MeshTraversalStart = FPlatformTime::Cycles64();
 	if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
 	{
-		LastPickingMetrics.MeshTraversalMs = FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - MeshTraversalStart);
-		const FMeshTrianglePickingBVH::FTraversalMetrics& MeshMetrics = StaticMesh->GetLastMeshPickingMetrics();
-		LastPickingMetrics.MeshInternalNodesVisited = MeshMetrics.InternalNodesVisited;
-		LastPickingMetrics.MeshLeafPacketsTested = MeshMetrics.LeafPacketsTested;
-		LastPickingMetrics.MeshTriangleLanesTested = MeshMetrics.TriangleLanesTested;
-		LastPickingMetrics.MeshTriangleMaskHits = MeshMetrics.TriangleMaskHits;
-		LastPickingMetrics.MeshClosestTHitUpdates = MeshMetrics.ClosestTHitUpdates;
-
 		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
 		const FVector WorldHitPoint = WorldMatrix.TransformPositionWithW(LocalHitPoint);
 		OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
 		OutHitResult.HitComponent = this;
 		return true;
 	}
-	LastPickingMetrics.MeshTraversalMs = FPlatformTime::ToMilliseconds(FPlatformTime::Cycles64() - MeshTraversalStart);
-	const FMeshTrianglePickingBVH::FTraversalMetrics& MeshMetrics = StaticMesh->GetLastMeshPickingMetrics();
-	LastPickingMetrics.MeshInternalNodesVisited = MeshMetrics.InternalNodesVisited;
-	LastPickingMetrics.MeshLeafPacketsTested = MeshMetrics.LeafPacketsTested;
-	LastPickingMetrics.MeshTriangleLanesTested = MeshMetrics.TriangleLanesTested;
-	LastPickingMetrics.MeshTriangleMaskHits = MeshMetrics.TriangleMaskHits;
-	LastPickingMetrics.MeshClosestTHitUpdates = MeshMetrics.ClosestTHitUpdates;
 
 	// 실패하면 기존 방식하던 걸 주석 처리. 성능개선이 일단 확인됨.
 	//bool bHit = FRayUtils::RaycastTriangles(
