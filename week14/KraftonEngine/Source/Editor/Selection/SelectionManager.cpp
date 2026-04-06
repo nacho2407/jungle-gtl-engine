@@ -42,6 +42,11 @@ void FSelectionManager::Shutdown()
 
 void FSelectionManager::Select(AActor* Actor)
 {
+	if (SelectedActors.size() == 1 && SelectedActors.front() == Actor)
+	{
+		return;
+	}
+
 	// 기존 선택 해제
 	for (AActor* Prev : SelectedActors)
 		SetActorProxiesSelected(Prev, false);
@@ -138,6 +143,11 @@ void FSelectionManager::Deselect(AActor* Actor)
 
 void FSelectionManager::ClearSelection()
 {
+	if (SelectedActors.empty())
+	{
+		return;
+	}
+
 	for (AActor* Actor : SelectedActors)
 		SetActorProxiesSelected(Actor, false);
 
