@@ -5,6 +5,13 @@
 
 struct FBoundingBox;
 
+enum class EAABBFrustumClassify : int
+{
+	Outside,
+	Intersects,
+	Contains,
+};
+
 struct FConvexVolume
 {
 public:
@@ -12,7 +19,8 @@ public:
 	bool IntersectAABB(const FBoundingBox& Box) const;
 	// Returns true if the AABB is completely inside all 6 frustum planes
 	bool ContainsAABB(const FBoundingBox& Box) const;
-
+	
+	EAABBFrustumClassify ClassifyAABB(const FBoundingBox& Box) const;
 private:
 	FVector4 Planes[6];
 };
