@@ -126,6 +126,7 @@ void UStaticMeshComponent::UpdateWorldAABB() const
 	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
 	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
 	bWorldAABBDirty = false;
+	bHasValidWorldAABB = true;
 }
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
