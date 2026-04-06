@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -68,8 +68,8 @@ private:
 		ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 		int32        LastUVScroll   = -1;
 		FVector4     LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f }; // 초기값: 불일치 보장
+
 		bool         bSamplerBound  = false;
-		bool         bPerObjectBound = false;
 		bool         bMaterialBound  = false;
 
 		bool HasBoundSRV() const { return LastSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull); }
@@ -77,10 +77,11 @@ private:
 
 	void SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies);
 	void BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void BindPerObjectSlot(ID3D11DeviceContext* Ctx, FDrawState& State);
+	void BindPerObjectSlot(ID3D11DeviceContext* Ctx);
 	void BindExtraCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx);
 	bool BindMeshBuffer(FMeshBuffer* Buffer, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State);
 

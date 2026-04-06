@@ -18,6 +18,11 @@ public:
 	void Execute(float DeltaTime, FRenderer& Renderer) override;
 	void OnSceneCleared() override;
 
+#if STATS
+	FGPUOcclusionCulling& GetGPUOcclusion() { return GPUOcclusion; }
+	const FGPUOcclusionCulling& GetGPUOcclusion() const { return GPUOcclusion; }
+#endif
+
 private:
 	// 단일 뷰포트 렌더 단위 — ViewportClient의 렌더 옵션을 사용
 	void RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer);

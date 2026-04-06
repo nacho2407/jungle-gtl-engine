@@ -20,7 +20,8 @@ cbuffer OcclusionParams : register(b0)
 };
 
 StructuredBuffer<AABB> AABBs : register(t0);
-Texture2D<float> HiZTexture : register(t1);
+Texture2D<float> HiZTextureA : register(t1);   // even mips (0, 2, 4, ...)
+Texture2D<float> HiZTextureB : register(t2);   // odd  mips (1, 3, 5, ...)
 RWStructuredBuffer<uint> VisibilityFlags : register(u0);
 
 // Conservative margin: expand screen-space AABB by this many pixels
@@ -55,6 +56,7 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
     float2 minUV = float2(1.0, 1.0);
     float2 maxUV = float2(0.0, 0.0);
     bool anyFront = false;
+    bool anyBehind = false;
 
     [unroll]
     for (int i = 0; i < 8; i++)
@@ -73,8 +75,16 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
             maxUV = max(maxUV, uv);
             minDepth = min(minDepth, ndc.z);
         }
+        else
+            anyBehind = true;
     }
 
+    if (anyFront && anyBehind)
+    {
+        VisibilityFlags[idx] = 1;
+        return;
+    }
+    
     // All corners behind camera → conservatively visible
     if (!anyFront)
     {
@@ -141,7 +151,9 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
     {
         for (int x = minTexel.x; x <= maxTexel.x; x++)
         {
-            float d = HiZTexture.Load(int3(x, y, mipLevel));
+            float d = (mipLevel & 1)
+                ? HiZTextureB.Load(int3(x, y, mipLevel))
+                : HiZTextureA.Load(int3(x, y, mipLevel));
             maxHiZDepth = max(maxHiZDepth, d);
         }
     }

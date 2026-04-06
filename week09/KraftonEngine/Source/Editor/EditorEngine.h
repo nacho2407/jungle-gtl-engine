@@ -7,6 +7,9 @@
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
+#if STATS
+#include "Editor/EditorRenderPipeline.h"
+#endif
 
 class UGizmoComponent;
 class FLevelEditorViewportClient;
@@ -59,6 +62,14 @@ public:
 
 	FOverlayStatSystem& GetOverlayStatSystem() { return OverlayStatSystem; }
 	const FOverlayStatSystem& GetOverlayStatSystem() const { return OverlayStatSystem; }
+
+#if STATS
+	FGPUOcclusionCulling* GetGPUOcclusion()
+	{
+		auto* Pipeline = static_cast<FEditorRenderPipeline*>(GetRenderPipeline());
+		return Pipeline ? &Pipeline->GetGPUOcclusion() : nullptr;
+	}
+#endif
 
 private:
 	FSelectionManager SelectionManager;
