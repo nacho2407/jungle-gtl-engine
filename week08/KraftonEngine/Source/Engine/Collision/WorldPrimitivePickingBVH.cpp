@@ -141,6 +141,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 	while (StackSize > 0)
 	{
 		const FTraversalEntry Entry = NodeStack[--StackSize];
+		//현재 노드와의 최소 교차 거리가 이미 찾은 가장 가까운 충돌점보다 멀다면 검사를 생략합니다
 		if (Entry.TMin > OutHitResult.Distance)
 		{
 			continue;
@@ -154,8 +155,10 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 			FTraversalEntry PrimitiveEntries[WorldBVHMaxLeafSize];
 			int32 PrimitiveEntryCount = 0;
 
+			//교차 판정이 필요한 리프 노드의 프리미티브들입니다.
 			for (int32 PacketIndex = 0; PacketIndex < Node.PrimitivePacketCount; ++PacketIndex)
 			{
+				//리프 노드 내부에서 AABB 테스트를 SIMD로 수행하여 hit primitive 후보를 뽑아냅니다.
 				const FPrimitivePacket& Packet = PrimitivePackets[Node.FirstPrimitivePacket + PacketIndex];
 				alignas(32) float PrimitiveTMinValues[8];
 				const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
@@ -184,28 +187,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				}
 			}
 
-			if (PrimitiveEntryCount > 1)
-			{
-				if (PrimitiveEntryCount == 2 && PrimitiveEntries[0].TMin < PrimitiveEntries[1].TMin)
-				{
-					std::swap(PrimitiveEntries[0], PrimitiveEntries[1]);
-				}
-				else if (PrimitiveEntryCount > 2)
-				{
-					int32 ClosestEntryIndex = 0;
-					for (int32 I = 1; I < PrimitiveEntryCount; ++I)
-					{
-						if (PrimitiveEntries[I].TMin < PrimitiveEntries[ClosestEntryIndex].TMin)
-						{
-							ClosestEntryIndex = I;
-						}
-					}
-					if (ClosestEntryIndex != 0)
-					{
-						std::swap(PrimitiveEntries[0], PrimitiveEntries[ClosestEntryIndex]);
-					}
-				}
-			}
+			//정렬하지 않음.
 
 			for (int32 EntryIndex = 0; EntryIndex < PrimitiveEntryCount; ++EntryIndex)
 			{
