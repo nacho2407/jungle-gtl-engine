@@ -74,6 +74,8 @@ public:
 	bool bNeedsTick = true;
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
+	bool IsQueuedForPartitionUpdate() const { return bQueuedForPartitionUpdate; }
+	void SetQueuedForPartitionUpdate(bool bQueued) { bQueuedForPartitionUpdate = bQueued; }
 
 protected:
 	void MarkPickingDirty();
@@ -89,4 +91,5 @@ protected:
 	// 렌더링용 캐시
 	mutable TArray<UPrimitiveComponent*> PrimitiveCache;
 	mutable bool bPrimitiveCacheDirty = true;
+	bool bQueuedForPartitionUpdate = false;
 };
