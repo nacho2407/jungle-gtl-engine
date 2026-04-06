@@ -55,3 +55,30 @@ bool FConvexVolume::ContainsAABB(const FBoundingBox& Box) const
 	}
 	return true;
 }
+
+EAABBFrustumClassify FConvexVolume::ClassifyAABB(const FBoundingBox& Box) const
+{
+	bool bContained = true;
+
+	for (const auto& P : Planes)
+	{
+		FVector4 PVertex = Box.Min;
+		if (P.X >= 0) PVertex.X = Box.Max.X;
+		if (P.Y >= 0) PVertex.Y = Box.Max.Y;
+		if (P.Z >= 0) PVertex.Z = Box.Max.Z;
+
+		if (P.Dot(PVertex) < 0.0f)
+			return EAABBFrustumClassify::Outside;
+
+		FVector4 NVertex = Box.Max;
+		if (P.X >= 0) NVertex.X = Box.Min.X;
+		if (P.Y >= 0) NVertex.Y = Box.Min.Y;
+		if (P.Z >= 0) NVertex.Z = Box.Min.Z;
+
+		if (P.Dot(NVertex) < 0.0f)
+			bContained = false;
+	}
+
+	return bContained ? EAABBFrustumClassify::Contains
+	                  : EAABBFrustumClassify::Intersects;
+}
