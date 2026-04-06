@@ -158,6 +158,8 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 		LastPickingMetrics.MeshInternalNodesVisited = MeshMetrics.InternalNodesVisited;
 		LastPickingMetrics.MeshLeafPacketsTested = MeshMetrics.LeafPacketsTested;
 		LastPickingMetrics.MeshTriangleLanesTested = MeshMetrics.TriangleLanesTested;
+		LastPickingMetrics.MeshTriangleMaskHits = MeshMetrics.TriangleMaskHits;
+		LastPickingMetrics.MeshClosestTHitUpdates = MeshMetrics.ClosestTHitUpdates;
 
 		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
 		const FVector WorldHitPoint = WorldMatrix.TransformPositionWithW(LocalHitPoint);
@@ -170,6 +172,8 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 	LastPickingMetrics.MeshInternalNodesVisited = MeshMetrics.InternalNodesVisited;
 	LastPickingMetrics.MeshLeafPacketsTested = MeshMetrics.LeafPacketsTested;
 	LastPickingMetrics.MeshTriangleLanesTested = MeshMetrics.TriangleLanesTested;
+	LastPickingMetrics.MeshTriangleMaskHits = MeshMetrics.TriangleMaskHits;
+	LastPickingMetrics.MeshClosestTHitUpdates = MeshMetrics.ClosestTHitUpdates;
 
 	// 실패하면 기존 방식하던 걸 주석 처리. 성능개선이 일단 확인됨.
 	//bool bHit = FRayUtils::RaycastTriangles(
