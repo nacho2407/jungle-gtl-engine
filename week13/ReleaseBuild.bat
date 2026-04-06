@@ -55,6 +55,9 @@ xcopy "%PROJECT_DIR%\Asset" "%RELEASE_DIR%\Asset\" /e /i /q >nul
 :: Settings
 xcopy "%PROJECT_DIR%\Settings" "%RELEASE_DIR%\Settings\" /e /i /q >nul
 
+:: Data (OBJ, MTL, 텍스처 원본 — .bin 재빌드 및 머티리얼 로드에 필요)
+xcopy "%PROJECT_DIR%\Data" "%RELEASE_DIR%\Data\" /e /i /q >nul
+
 :: Saves (있으면 복사)
 if exist "%PROJECT_DIR%\Saves" (
     xcopy "%PROJECT_DIR%\Saves" "%RELEASE_DIR%\Saves\" /e /i /q >nul
@@ -69,7 +72,8 @@ echo  ReleaseBuild/
 echo    KraftonEngine.exe
 echo    imgui.ini
 echo    Shaders/
-echo    Asset/Scene/
+echo    Asset/
+echo    Data/
 echo    Settings/
 echo    Saves/
 echo.
