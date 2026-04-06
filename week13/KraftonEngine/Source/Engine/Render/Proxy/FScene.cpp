@@ -3,6 +3,40 @@
 #include "Profiling/Stats.h"
 #include <algorithm>
 
+namespace
+{
+	void EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
+	{
+		if (!Proxy || Proxy->bQueuedForDirtyUpdate)
+		{
+			return;
+		}
+
+		Proxy->bQueuedForDirtyUpdate = true;
+		DirtyList.push_back(Proxy);
+	}
+
+	void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy)
+	{
+		if (!Proxy || Proxy->SelectedListIndex == UINT32_MAX)
+		{
+			return;
+		}
+
+		const uint32 Index = Proxy->SelectedListIndex;
+		const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
+		if (Index != LastIndex)
+		{
+			FPrimitiveSceneProxy* LastProxy = SelectedList.back();
+			SelectedList[Index] = LastProxy;
+			LastProxy->SelectedListIndex = Index;
+		}
+
+		SelectedList.pop_back();
+		Proxy->SelectedListIndex = UINT32_MAX;
+	}
+}
+
 // ============================================================
 // 소멸자 — 모든 프록시 정리
 // ============================================================
@@ -45,7 +79,7 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 		Proxies.push_back(Proxy);
 	}
 
-	DirtyProxies.insert(Proxy);
+	EnqueueDirtyProxy(DirtyProxies, Proxy);
 
 	if (Proxy->bNeverCull)
 		NeverCullProxies.push_back(Proxy);
@@ -73,8 +107,21 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	uint32 Slot = Proxy->ProxyId;
 
 	// 각 목록에서 제거
-	DirtyProxies.erase(Proxy);
-	SelectedProxies.erase(Proxy);
+	if (Proxy->bQueuedForDirtyUpdate)
+	{
+		auto DirtyIt = std::find(DirtyProxies.begin(), DirtyProxies.end(), Proxy);
+		if (DirtyIt != DirtyProxies.end())
+		{
+			*DirtyIt = DirtyProxies.back();
+			DirtyProxies.pop_back();
+		}
+		Proxy->bQueuedForDirtyUpdate = false;
+	}
+
+	if (Proxy->SelectedListIndex != UINT32_MAX)
+	{
+		RemoveSelectedProxyFast(SelectedProxies, Proxy);
+	}
 
 	if (Proxy->bNeverCull)
 	{
@@ -83,6 +130,8 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	}
 
 	// 슬롯 비우고 재활용 목록에 추가
+	Proxy->bInVisibleSet = false;
+	Proxy->VisibleListIndex = UINT32_MAX;
 	Proxies[Slot] = nullptr;
 	FreeSlots.push_back(Slot);
 
@@ -97,7 +146,13 @@ void FScene::UpdateDirtyProxies()
 	SCOPE_STAT_CAT("UpdateDirtyProxies", "3_Collect");
 	for (FPrimitiveSceneProxy* Proxy : DirtyProxies)
 	{
-		if (!Proxy || !Proxy->Owner) continue;
+		if (!Proxy)
+		{
+			continue;
+		}
+
+		Proxy->bQueuedForDirtyUpdate = false;
+		if (!Proxy->Owner) continue;
 
 		// 가상 함수를 통해 서브클래스별 갱신 로직 호출
 		if (Proxy->IsDirty(EDirtyFlag::Mesh))
@@ -132,7 +187,7 @@ void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
 {
 	if (!Proxy) return;
 	Proxy->MarkDirty(Flag);
-	DirtyProxies.insert(Proxy);
+	EnqueueDirtyProxy(DirtyProxies, Proxy);
 }
 
 // ============================================================
@@ -144,12 +199,20 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 	Proxy->bSelected = bSelected;
 
 	if (bSelected)
-		SelectedProxies.insert(Proxy);
+	{
+		if (Proxy->SelectedListIndex == UINT32_MAX)
+		{
+			Proxy->SelectedListIndex = static_cast<uint32>(SelectedProxies.size());
+			SelectedProxies.push_back(Proxy);
+		}
+	}
 	else
-		SelectedProxies.erase(Proxy);
+	{
+		RemoveSelectedProxyFast(SelectedProxies, Proxy);
+	}
 }
 
 bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
-	return SelectedProxies.count(const_cast<FPrimitiveSceneProxy*>(Proxy)) > 0;
+	return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
 }

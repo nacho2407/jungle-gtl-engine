@@ -93,6 +93,7 @@ void AActor::SetVisible(bool Visible)
 	if (OwningWorld)
 	{
 		OwningWorld->MarkWorldPrimitivePickingBVHDirty();
+		OwningWorld->UpdateActorInOctree(this);
 	}
 	for (UPrimitiveComponent* Prim : GetPrimitiveComponents())
 	{

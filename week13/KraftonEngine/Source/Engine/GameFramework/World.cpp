@@ -5,10 +5,22 @@
 #include "Engine/Render/Culling/ConvexVolume.h"
 #include "Engine/Component/CameraComponent.h"
 #include "Render/Pipeline/LODContext.h"
+#include <cmath>
 #include <algorithm>
 #include "Profiling/Stats.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
+
+namespace
+{
+	constexpr float VisibleCameraMoveThresholdSq = 0.0001f;
+	constexpr float VisibleCameraRotationDotThreshold = 0.99999f;
+
+	bool NearlyEqual(float A, float B, float Epsilon = 0.0001f)
+	{
+		return std::abs(A - B) <= Epsilon;
+	}
+}
 
 UWorld::~UWorld()
 {
@@ -29,6 +41,7 @@ void UWorld::DestroyActor(AActor* Actor)
 		Actors.erase(it);
 
 	MarkWorldPrimitivePickingBVHDirty();
+	InvalidateVisibleSet();
 	Partition.RemoveActor(Actor);
 
 	// Mark for garbage collection
@@ -47,6 +60,7 @@ void UWorld::AddActor(AActor* Actor)
 
 	InsertActorToOctree(Actor);
 	MarkWorldPrimitivePickingBVHDirty();
+	InvalidateVisibleSet();
 
 }
 
@@ -59,6 +73,11 @@ void UWorld::MarkWorldPrimitivePickingBVHDirty()
 	}
 
 	WorldPrimitivePickingBVH.MarkDirty();
+}
+
+void UWorld::InvalidateVisibleSet()
+{
+	bVisibleSetDirty = true;
 }
 
 void UWorld::BuildWorldPrimitivePickingBVHNow() const
@@ -123,17 +142,19 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 void UWorld::InsertActorToOctree(AActor* Actor)
 {
 	Partition.InsertActor(Actor);
+	InvalidateVisibleSet();
 }
 
 void UWorld::RemoveActorToOctree(AActor* Actor)
 {
 	Partition.RemoveActor(Actor);
+	InvalidateVisibleSet();
 }
 
 void UWorld::UpdateActorInOctree(AActor* Actor)
 {
 	Partition.UpdateActor(Actor);
-
+	InvalidateVisibleSet();
 }
 
 // LOD 상수 및 SelectLOD는 LODContext.h에 정의
@@ -144,8 +165,84 @@ static float DistanceSquared(const FVector& A, const FVector& B)
 	return D.X * D.X + D.Y * D.Y + D.Z * D.Z;
 }
 
+bool UWorld::NeedsVisibleProxyRebuild() const
+{
+	if (bVisibleSetDirty || !bHasVisibleCameraState || !ActiveCamera)
+	{
+		return true;
+	}
+
+	const FVector CameraPos = ActiveCamera->GetWorldLocation();
+	if (DistanceSquared(CameraPos, LastVisibleCameraPos) >= VisibleCameraMoveThresholdSq)
+	{
+		return true;
+	}
+
+	const FVector CameraForward = ActiveCamera->GetForwardVector();
+	if (CameraForward.Dot(LastVisibleCameraForward) < VisibleCameraRotationDotThreshold)
+	{
+		return true;
+	}
+
+	const FCameraState& CameraState = ActiveCamera->GetCameraState();
+	return !NearlyEqual(CameraState.FOV, LastVisibleCameraState.FOV)
+		|| !NearlyEqual(CameraState.AspectRatio, LastVisibleCameraState.AspectRatio)
+		|| !NearlyEqual(CameraState.NearZ, LastVisibleCameraState.NearZ)
+		|| !NearlyEqual(CameraState.FarZ, LastVisibleCameraState.FarZ)
+		|| !NearlyEqual(CameraState.OrthoWidth, LastVisibleCameraState.OrthoWidth)
+		|| CameraState.bIsOrthogonal != LastVisibleCameraState.bIsOrthogonal;
+}
+
+void UWorld::CacheVisibleCameraState()
+{
+	if (!ActiveCamera)
+	{
+		bHasVisibleCameraState = false;
+		return;
+	}
+
+	LastVisibleCameraPos = ActiveCamera->GetWorldLocation();
+	LastVisibleCameraForward = ActiveCamera->GetForwardVector();
+	LastVisibleCameraState = ActiveCamera->GetCameraState();
+	bHasVisibleCameraState = true;
+}
+
 void UWorld::UpdateVisibleProxies()
 {
+	if (!ActiveCamera)
+	{
+		for (FPrimitiveSceneProxy* Proxy : VisibleProxies)
+		{
+			if (!Proxy)
+			{
+				continue;
+			}
+
+			Proxy->bInVisibleSet = false;
+			Proxy->VisibleListIndex = UINT32_MAX;
+		}
+
+		VisibleProxies.clear();
+		bHasVisibleCameraState = false;
+		return;
+	}
+
+	if (!NeedsVisibleProxyRebuild())
+	{
+		return;
+	}
+
+	for (FPrimitiveSceneProxy* Proxy : VisibleProxies)
+	{
+		if (!Proxy)
+		{
+			continue;
+		}
+
+		Proxy->bInVisibleSet = false;
+		Proxy->VisibleListIndex = UINT32_MAX;
+	}
+
 	VisibleProxies.clear();
 
 	// HEAD: capacity 예약으로 재할당 방지
@@ -168,9 +265,33 @@ void UWorld::UpdateVisibleProxies()
 		Partition.QueryFrustumAllProxies(ConvexVolume, VisibleProxies);
 	}
 
+	for (uint32 Index = 0; Index < static_cast<uint32>(VisibleProxies.size()); ++Index)
+	{
+		FPrimitiveSceneProxy* Proxy = VisibleProxies[Index];
+		if (!Proxy)
+		{
+			continue;
+		}
+
+		Proxy->bInVisibleSet = true;
+		Proxy->VisibleListIndex = Index;
+	}
+
 	// NeverCull 프록시 추가 (LOD 갱신은 Collect 단계에서 병합 처리)
 	for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
+	{
+		if (!Proxy || Proxy->bInVisibleSet)
+		{
+			continue;
+		}
+
+		Proxy->bInVisibleSet = true;
+		Proxy->VisibleListIndex = static_cast<uint32>(VisibleProxies.size());
 		VisibleProxies.push_back(Proxy);
+	}
+
+	CacheVisibleCameraState();
+	bVisibleSetDirty = false;
 }
 
 FLODUpdateContext UWorld::PrepareLODContext()
@@ -211,6 +332,7 @@ FLODUpdateContext UWorld::PrepareLODContext()
 void UWorld::InitWorld()
 {
 	Partition.Reset(FBoundingBox());
+	InvalidateVisibleSet();
 }
 
 void UWorld::BeginPlay()

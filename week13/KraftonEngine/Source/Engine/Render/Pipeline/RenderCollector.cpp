@@ -30,7 +30,8 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 
 void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
 {
-	const TArray<FOverlayStatLine> Lines = OverlaySystem.BuildLines(Editor);
+	TArray<FOverlayStatLine> Lines;
+	OverlaySystem.BuildLines(Editor, Lines);
 	const float TextScale = OverlaySystem.GetLayout().TextScale;
 
 	for (const FOverlayStatLine& Line : Lines)
