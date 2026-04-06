@@ -7,9 +7,9 @@
 
 class FPrimitiveSceneProxy;
 
-constexpr int32 MAX_DEPTH = 5;
-constexpr int32 MAX_SIZE = 16;
-constexpr float LooseFactor = 1.5f;
+constexpr int32 MAX_DEPTH = 6;
+constexpr int32 MAX_SIZE = 20;
+constexpr float LooseFactor = 1.3f;
 
 class FFrustum;
 
