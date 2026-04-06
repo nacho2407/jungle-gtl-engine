@@ -24,6 +24,27 @@ struct ENGINE_API FStaticMeshOcclusionCandidate
 	FMatrix WorldMatrix = FMatrix::Identity;
 };
 
+struct ENGINE_API FStaticMeshOcclusionSnapshotEntry
+{
+	uint32 DenseIndex = 0;
+	FStaticMeshOcclusionCandidate Candidate = {};
+};
+
+struct ENGINE_API FStaticMeshOcclusionFrameSnapshot
+{
+	TArray<FStaticMeshOcclusionSnapshotEntry> Candidates;
+
+	void Reserve(size_t Count)
+	{
+		Candidates.reserve(Count);
+	}
+
+	void Clear()
+	{
+		Candidates.clear();
+	}
+};
+
 enum class ERenderPass : uint8
 {
 	Opaque = 0,

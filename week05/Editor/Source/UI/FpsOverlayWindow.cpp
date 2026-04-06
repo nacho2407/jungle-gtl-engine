@@ -91,6 +91,22 @@ void FFpsOverlayWindow::Render(FEditorEngine* Engine, const FRect& AreaRect)
     ImGui::Text("Collect Commands CPU : %.3f ms", static_cast<float>(RenderStats.CollectRenderCommandsCpuMs));
     ImGui::Text("Render Build CPU : %.3f ms", static_cast<float>(RenderStats.BuildRenderFrameCpuMs));
     ImGui::Text("Execute Commands CPU : %.3f ms", static_cast<float>(RenderStats.ExecuteRenderCommandsCpuMs));
+    ImGui::Text("HZB Build : %s | Mips: %u | %.3f ms",
+        RenderStats.bHZBBuildSucceeded ? "OK" : "Idle",
+        RenderStats.HZBMipCount,
+        static_cast<float>(RenderStats.HZBBuildCpuMs));
+    ImGui::Text("Occlusion Pass : %s | Candidates: %u | %.3f ms",
+        RenderStats.bOcclusionPassDispatched ? "Dispatched" : "Idle",
+        RenderStats.OcclusionCandidateCount,
+        static_cast<float>(RenderStats.OcclusionDispatchCpuMs));
+    ImGui::Text("Occlusion Readback : %s / %s | Candidates: %u",
+        RenderStats.bOcclusionReadbackIssued ? "Issued" : "Idle",
+        RenderStats.bOcclusionReadbackCompleted ? "Completed" : "Pending",
+        RenderStats.OcclusionReadbackCandidateCount);
+    ImGui::Text("Occlusion Result : Visible %u | Occluded %u | Snapshot Match: %s",
+        RenderStats.OcclusionVisibleCount,
+        RenderStats.OcclusionOccludedCount,
+        RenderStats.bOcclusionSnapshotReadbackMatched ? "OK" : "No");
     ImGui::Text("Picking    : %.3f ms | Count: %u | Total: %.3f ms",
         static_cast<float>(LastPickTime),
         static_cast<uint32>(TotalPickCount),

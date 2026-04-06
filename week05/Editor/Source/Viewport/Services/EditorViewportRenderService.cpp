@@ -199,7 +199,10 @@ void FEditorViewportRenderService::RenderAll(
 			continue;
 		}
 
-		Renderer->BeginScenePass(RTV, DSV, Viewport);
+		ID3D11ShaderResourceView* DepthSRV = bUseDirectSingleViewportPath
+			? Renderer->GetDepthShaderResourceView()
+			: Entry.Viewport->GetDepthSRV();
+		Renderer->BeginScenePass(RTV, DSV, DepthSRV, Viewport);
 
 		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
 		FRenderCommandQueue Queue;

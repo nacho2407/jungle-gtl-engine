@@ -15,12 +15,124 @@
 struct FVertex;
 struct FRenderMesh;
 class FPixelShader;
+class FComputeShader;
 class FMaterial;
 class UScene;
 class FSceneRenderer;
 class FPassExecutor;
 class FObjectUniformStream;
 struct FSceneRenderFrame;
+
+struct ENGINE_API FDepthStencilTextureResources
+{
+	ID3D11Texture2D* Texture = nullptr;
+	ID3D11DepthStencilView* DSV = nullptr;
+	ID3D11ShaderResourceView* DepthSRV = nullptr;
+	uint32 Width = 0;
+	uint32 Height = 0;
+};
+
+struct ENGINE_API FHZBResources
+{
+	ID3D11Texture2D* Texture = nullptr;
+	ID3D11ShaderResourceView* FullSRV = nullptr;
+	TArray<ID3D11ShaderResourceView*> MipSRVs;
+	TArray<ID3D11UnorderedAccessView*> MipUAVs;
+	uint32 Width = 0;
+	uint32 Height = 0;
+	uint32 MipCount = 0;
+};
+
+struct ENGINE_API FHZBBuildConstants
+{
+	uint32 SourceWidth = 0;
+	uint32 SourceHeight = 0;
+	uint32 DestWidth = 0;
+	uint32 DestHeight = 0;
+};
+
+struct ENGINE_API FGpuOcclusionCandidate
+{
+	FVector BoundsCenter = FVector::ZeroVector;
+	float BoundsRadius = 0.0f;
+	FVector BoundsExtent = FVector::ZeroVector;
+	uint32 DenseIndex = 0;
+};
+
+struct ENGINE_API FOcclusionPassConstants
+{
+	FMatrix View = FMatrix::Identity;
+	FMatrix Projection = FMatrix::Identity;
+	FMatrix ViewProjection = FMatrix::Identity;
+
+	uint32 ViewWidth = 0;
+	uint32 ViewHeight = 0;
+	uint32 CandidateCount = 0;
+	uint32 HZBMipCount = 0;
+
+	float DepthBias = 0.001f;
+	float NearPlaneEpsilon = 0.0001f;
+	float Padding[2] = {};
+};
+
+struct ENGINE_API FStaticMeshOcclusionGpuResources
+{
+	ID3D11Buffer* CandidateBuffer = nullptr;
+	ID3D11ShaderResourceView* CandidateSRV = nullptr;
+	ID3D11Buffer* VisibilityBuffer = nullptr;
+	ID3D11UnorderedAccessView* VisibilityUAV = nullptr;
+	uint32 CandidateCapacity = 0;
+};
+
+struct ENGINE_API FStaticMeshOcclusionReadbackSlot
+{
+	ID3D11Buffer* StagingBuffer = nullptr;
+	uint32 CandidateCapacity = 0;
+	uint32 CandidateCount = 0;
+	uint64 FrameSerial = 0;
+	bool bCopyIssued = false;
+	bool bCompleted = false;
+	FStaticMeshOcclusionFrameSnapshot Snapshot;
+	TArray<uint32> VisibilityValues;
+	uint32 VisibleCount = 0;
+	uint32 OccludedCount = 0;
+
+	void ClearFrameState()
+	{
+		CandidateCount = 0;
+		FrameSerial = 0;
+		bCopyIssued = false;
+		bCompleted = false;
+		Snapshot.Clear();
+		VisibilityValues.clear();
+		VisibleCount = 0;
+		OccludedCount = 0;
+	}
+};
+
+struct ENGINE_API FStaticMeshOcclusionReadbackResult
+{
+	FStaticMeshOcclusionFrameSnapshot Snapshot;
+	TArray<uint32> VisibilityValues;
+	uint32 CandidateCount = 0;
+	uint32 VisibleCount = 0;
+	uint32 OccludedCount = 0;
+	uint64 FrameSerial = 0;
+	bool bReady = false;
+	bool bSizeMatched = false;
+
+	void Reset()
+	{
+		Snapshot.Clear();
+		VisibilityValues.clear();
+		CandidateCount = 0;
+		VisibleCount = 0;
+		OccludedCount = 0;
+		FrameSerial = 0;
+		bReady = false;
+		bSizeMatched = false;
+	}
+};
 
 using FGUICallback = std::function<void()>;
 class FRenderer;
@@ -58,12 +170,12 @@ public:
 	void OnResize(int32 NewWidth, int32 NewHeight);
 
 	/** 특정 뷰포트용 렌더 타깃을 임시로 사용하도록 설정한다. */
-	void SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView, ID3D11DepthStencilView* InDepthStencilView, const D3D11_VIEWPORT& InViewport);
+	void SetSceneRenderTarget(ID3D11RenderTargetView* InRenderTargetView, ID3D11DepthStencilView* InDepthStencilView, ID3D11ShaderResourceView* InDepthShaderResourceView, const D3D11_VIEWPORT& InViewport);
 	/** 임시 씬 렌더 타깃 오버라이드를 해제하고 스왑체인 백버퍼로 되돌린다. */
 	void ClearSceneRenderTarget();
 
 	/** 외부 패스가 자체 RTV/DSV/뷰포트를 쓰고 싶을 때 렌더 상태를 그쪽으로 전환한다. */
-	void BeginScenePass(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, const D3D11_VIEWPORT& InVP);
+	void BeginScenePass(ID3D11RenderTargetView* InRTV, ID3D11DepthStencilView* InDSV, ID3D11ShaderResourceView* InDepthSRV, const D3D11_VIEWPORT& InVP);
 	/** BeginScenePass와 쌍을 이루는 종료 훅이다. 현재는 자리만 잡아둔 상태다. */
 	void EndScenePass();
 	/** 렌더 타깃을 다시 스왑체인 백버퍼로 바인딩한다. */
@@ -119,6 +231,8 @@ public:
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 	ID3D11RenderTargetView* GetRenderTargetView() const { return RenderTargetView; }
 	ID3D11DepthStencilView* GetDepthStencilView() const;
+	ID3D11ShaderResourceView* GetDepthShaderResourceView() const;
+	ID3D11ShaderResourceView* GetActiveSceneDepthShaderResourceView() const { return ActiveSceneDepthShaderResourceView; }
 	IDXGISwapChain* GetSwapChain() const { return SwapChain; }
 	HWND GetHwnd() const { return Hwnd; }
 
@@ -139,6 +253,10 @@ private:
 	bool CreateDeviceAndSwapChain(HWND InHwnd, int32 Width, int32 Height);
 	/** 현재 해상도용 백버퍼 RTV와 깊이 버퍼를 만든다. */
 	bool CreateRenderTargetAndDepthStencil(int32 Width, int32 Height);
+	bool CreateDepthStencilTextureResources(int32 Width, int32 Height, FDepthStencilTextureResources& OutResources);
+	void ReleaseDepthStencilTextureResources(FDepthStencilTextureResources& InOutResources);
+	bool CreateHZBConstantBuffer();
+	bool CreateOcclusionConstantBuffer();
 	/** 프레임/오브젝트/외곽선 상수 버퍼를 생성한다. */
 	bool CreateConstantBuffers();
 	/** 기본 텍스처 샘플러와 외곽선 샘플러를 생성한다. */
@@ -157,6 +275,23 @@ private:
 	void UpdateOutlinePostConstantBuffer(const FVector4& OutlineColor, float OutlineThickness, float OutlineThreshold);
 	/** 오버레이 패스 전에 깊이 버퍼만 선택적으로 비운다. */
 	void ClearDepthBuffer();
+	bool EnsureHZBResources(uint32 Width, uint32 Height);
+	void ReleaseHZBResources();
+	bool InitializeHZBShaders();
+	void UpdateHZBConstantBuffer(const FHZBBuildConstants& Constants);
+	void BuildHZB();
+	bool EnsureStaticMeshOcclusionResources(uint32 CandidateCount);
+	void ReleaseStaticMeshOcclusionResources();
+	bool InitializeOcclusionShaders();
+	void BuildStaticMeshOcclusionSnapshot();
+	bool UploadStaticMeshOcclusionCandidates();
+	void UpdateOcclusionConstantBuffer(const FOcclusionPassConstants& Constants);
+	void ExecuteStaticMeshOcclusionPass();
+	bool EnsureStaticMeshOcclusionReadbackBuffer(FStaticMeshOcclusionReadbackSlot& InOutSlot, uint32 CandidateCount);
+	FStaticMeshOcclusionReadbackSlot* AcquireStaticMeshOcclusionReadbackSlot();
+	void IssueStaticMeshOcclusionReadback();
+	void PollStaticMeshOcclusionReadback();
+	void ReleaseStaticMeshOcclusionReadbackResources();
 
 private:
 	std::unique_ptr<FRenderStateManager> RenderStateManager = nullptr;
@@ -170,11 +305,13 @@ private:
 	ID3D11DeviceContext* DeviceContext = nullptr;
 	IDXGISwapChain* SwapChain = nullptr;
 	ID3D11RenderTargetView* RenderTargetView = nullptr;
-	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	FDepthStencilTextureResources DepthTextureResources;
 
 	ID3D11Buffer* FrameConstantBuffer = nullptr;
 	ID3D11Buffer* ObjectConstantBuffer = nullptr;
 	ID3D11Buffer* OutlinePostConstantBuffer = nullptr;
+	ID3D11Buffer* HZBConstantBuffer = nullptr;
+	ID3D11Buffer* OcclusionConstantBuffer = nullptr;
 
 	FMatrix ViewMatrix = FMatrix::Identity;
 	FMatrix ProjectionMatrix = FMatrix::Identity;
@@ -182,6 +319,8 @@ private:
 
 	ID3D11RenderTargetView* SceneRenderTargetView = nullptr;
 	ID3D11DepthStencilView* SceneDepthStencilView = nullptr;
+	ID3D11ShaderResourceView* SceneDepthShaderResourceView = nullptr;
+	ID3D11ShaderResourceView* ActiveSceneDepthShaderResourceView = nullptr;
 	D3D11_VIEWPORT SceneViewport = {};
 	bool bUseSceneRenderTargetOverride = false;
 	bool bVSyncEnabled = false;
@@ -234,6 +373,18 @@ private:
 
 	/** SubUV, Text 등 텍스처 샘플링이 필요한 패스에서 사용하는 기본 샘플러다. */
 	ID3D11SamplerState* NormalSampler = nullptr;
+	FHZBResources HZBResources;
+	FStaticMeshOcclusionGpuResources StaticMeshOcclusionResources;
+	FStaticMeshOcclusionFrameSnapshot StaticMeshOcclusionSnapshot;
+	TArray<FGpuOcclusionCandidate> GpuOcclusionCandidatesScratch;
+	static constexpr uint32 OcclusionReadbackSlotCount = 3;
+	FStaticMeshOcclusionReadbackSlot StaticMeshOcclusionReadbackSlots[OcclusionReadbackSlotCount];
+	FStaticMeshOcclusionReadbackResult LatestStaticMeshOcclusionReadbackResult;
+	uint32 NextOcclusionReadbackSlotIndex = 0;
+	uint64 OcclusionFrameSerial = 0;
+	std::shared_ptr<FComputeShader> HZBInitializeComputeShader;
+	std::shared_ptr<FComputeShader> HZBReduceComputeShader;
+	std::shared_ptr<FComputeShader> StaticMeshOcclusionComputeShader;
 
 public:
 	FShaderManager ShaderManager;

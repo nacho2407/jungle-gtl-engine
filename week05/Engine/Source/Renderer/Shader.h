@@ -51,3 +51,23 @@ private:
 
 	ID3D11PixelShader* Shader = nullptr;
 };
+
+class ENGINE_API FComputeShader
+{
+public:
+	~FComputeShader();
+
+	static std::shared_ptr<FComputeShader> Create(
+		ID3D11Device* Device,
+		const std::shared_ptr<FShaderResource>& Resource
+	);
+
+	void Bind(ID3D11DeviceContext* DeviceContext) const;
+	void Dispatch(ID3D11DeviceContext* DeviceContext, UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ) const;
+	void Release();
+
+private:
+	FComputeShader() = default;
+
+	ID3D11ComputeShader* Shader = nullptr;
+};

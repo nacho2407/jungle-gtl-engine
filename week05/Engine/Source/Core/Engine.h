@@ -23,25 +23,49 @@ class FObjectManager;
 struct ENGINE_API FRenderInstrumentationStats
 {
 	bool bGpuOcclusionCullingEnabled = false;
+	bool bHZBBuildSucceeded = false;
+	bool bOcclusionPassDispatched = false;
+	bool bOcclusionReadbackIssued = false;
+	bool bOcclusionReadbackCompleted = false;
+	bool bOcclusionSnapshotReadbackMatched = false;
 	uint32 StaticMeshCandidateCount = 0;
 	uint32 FrustumPassedStaticMeshCount = 0;
+	uint32 OcclusionCandidateCount = 0;
+	uint32 OcclusionReadbackCandidateCount = 0;
+	uint32 OcclusionVisibleCount = 0;
+	uint32 OcclusionOccludedCount = 0;
 	uint32 StaticMeshDrawCallCount = 0;
 	uint32 TotalDrawCallCount = 0;
+	uint32 HZBMipCount = 0;
 	double CollectRenderCommandsCpuMs = 0.0;
 	double ViewportBuildCommandsCpuMs = 0.0;
 	double BuildRenderFrameCpuMs = 0.0;
 	double ExecuteRenderCommandsCpuMs = 0.0;
+	double HZBBuildCpuMs = 0.0;
+	double OcclusionDispatchCpuMs = 0.0;
 
 	void ResetFrame()
 	{
+		bHZBBuildSucceeded = false;
+		bOcclusionPassDispatched = false;
+		bOcclusionReadbackIssued = false;
+		bOcclusionReadbackCompleted = false;
+		bOcclusionSnapshotReadbackMatched = false;
 		StaticMeshCandidateCount = 0;
 		FrustumPassedStaticMeshCount = 0;
+		OcclusionCandidateCount = 0;
+		OcclusionReadbackCandidateCount = 0;
+		OcclusionVisibleCount = 0;
+		OcclusionOccludedCount = 0;
 		StaticMeshDrawCallCount = 0;
 		TotalDrawCallCount = 0;
+		HZBMipCount = 0;
 		CollectRenderCommandsCpuMs = 0.0;
 		ViewportBuildCommandsCpuMs = 0.0;
 		BuildRenderFrameCpuMs = 0.0;
 		ExecuteRenderCommandsCpuMs = 0.0;
+		HZBBuildCpuMs = 0.0;
+		OcclusionDispatchCpuMs = 0.0;
 	}
 };
 
