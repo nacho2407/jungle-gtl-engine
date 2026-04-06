@@ -291,6 +291,7 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 	SortProxies(Proxies);
 
 	FDrawState State;
+	BindPerObjectSlot(Context);
 
 	{
 		SCOPE_STAT_CAT("ExecutePass::Draw", "4_ExecutePass");
@@ -298,12 +299,12 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 		{
 			const FPrimitiveSceneProxy& Proxy = *RawProxy;
 			if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) continue;
-
-			BindShader(Proxy, Context, State);
-			BindPerObjectSlot(Context, State);
+			BindShader(Proxy, Context, State);	
 			BindExtraCB(Proxy, Context);
-
-			if (!Proxy.SectionDraws.empty())
+			
+			if(Proxy.SectionDraws.size() == 1)
+				DrawSingleSection(Proxy, Context, State);
+			else if (!Proxy.SectionDraws.empty())
 				DrawSections(Proxy, Context, State);
 			else
 				DrawSimple(Proxy, Context, State);
@@ -362,14 +363,10 @@ void FRenderer::BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContex
 	}
 }
 
-void FRenderer::BindPerObjectSlot(ID3D11DeviceContext* Ctx, FDrawState& State)
+void FRenderer::BindPerObjectSlot(ID3D11DeviceContext* Ctx)
 {
-	if (!State.bPerObjectBound)
-	{
-		ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
-		Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
-		State.bPerObjectBound = true;
-	}
+	ID3D11Buffer* cb = Resources.PerObjectConstantBuffer.GetBuffer();
+	Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &cb);
 }
 
 void FRenderer::BindExtraCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx)
@@ -416,10 +413,9 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-
 	// PerObject CB — 프록시당 1회만 업데이트 (Model 행렬)
 	Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
-
+	
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 	if (!State.bMaterialBound)
@@ -430,7 +426,7 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 	}
 
 	for (const FMeshSectionDraw& Section : Proxy.SectionDraws)
-	{
+	{	
 		if (Section.IndexCount == 0) continue;
 
 		// SRV 변경 시에만 바인딩
@@ -457,6 +453,59 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 		Ctx->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
 		FDrawCallStats::Increment();
 	}
+}
+
+void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
+{
+	const FMeshSectionDraw& Section = Proxy.SectionDraws[0];
+	if (Section.IndexCount == 0) return;
+	
+	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
+	// SectionDraw는 IB 필수
+	if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) return;
+
+	if (!State.bSamplerBound)
+	{
+		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+		State.bSamplerBound = true;
+	}
+	{
+		Resources.PerObjectConstantBuffer.Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+	}
+
+	// Material CB 슬롯 바인딩 (1회)
+	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
+	if (!State.bMaterialBound)
+	{
+		ID3D11Buffer* b4 = MaterialCB->GetBuffer();
+		Ctx->VSSetConstantBuffers(ECBSlot::Material, 1, &b4);
+		State.bMaterialBound = true;
+	}
+
+
+	// SRV 변경 시에만 바인딩
+	if (Section.DiffuseSRV != State.LastSRV)
+	{
+		ID3D11ShaderResourceView* srv = Section.DiffuseSRV;
+		Ctx->PSSetShaderResources(0, 1, &srv);
+		State.LastSRV = Section.DiffuseSRV;
+	}
+
+	// Material CB — SectionColor 또는 UVScroll 변경 시만 업데이트
+	int32 curUVScroll = Section.bIsUVScroll ? 1 : 0;
+	if (curUVScroll != State.LastUVScroll
+		|| memcmp(&Section.DiffuseColor, &State.LastSectionColor, sizeof(FVector4)) != 0)
+	{
+		FMaterialConstants MatConstants = {};
+		MatConstants.bIsUVScroll = curUVScroll;
+		MatConstants.SectionColor = Section.DiffuseColor;
+		MaterialCB->Update(Ctx, &MatConstants, sizeof(MatConstants));
+		State.LastUVScroll = curUVScroll;
+		State.LastSectionColor = Section.DiffuseColor;
+	}
+
+	Ctx->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
+	FDrawCallStats::Increment();
 }
 
 void FRenderer::DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)

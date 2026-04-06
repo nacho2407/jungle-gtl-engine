@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -11,7 +11,11 @@ class UWorld;
 //
 // Duration == 0: 1프레임만 표시
 // Duration > 0 : 지정 시간(초) 동안 표시
+//
+// _DEBUG 빌드에서만 동작, Release/Demo에서는 no-op
 // ============================================================
+
+#if defined(_DEBUG)
 
 void DrawDebugLine(UWorld* World,
 	const FVector& Start, const FVector& End,
@@ -52,3 +56,14 @@ void DrawDebugPoint(UWorld* World,
 	const FVector& Position, float Size = 0.1f,
 	const FColor& Color = FColor::White(),
 	float Duration = 0.0f);
+
+#else
+
+inline void DrawDebugLine(UWorld*, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugSphere(UWorld*, const FVector&, float, int32 = 16, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugPoint(UWorld*, const FVector&, float = 0.1f, const FColor & = FColor::White(), float = 0.0f) {}
+
+#endif

@@ -3,6 +3,7 @@
 #include "Render/Types/RenderTypes.h"
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
+#include "Profiling/Stats.h"
 
 class FPrimitiveSceneProxy;
 
@@ -44,6 +45,19 @@ public:
 
 	bool HasResults() const { return bHasResults; }
 
+	// ── Hi-Z Debug Visualization (STATS only) ──
+#if STATS
+	void SetDebugMip(int32 Mip) { DebugMip = Mip; }
+	void SetDebugParams(float InExponent, float InNear, float InFar, uint32 InMode)
+	{
+		DebugExponent = InExponent; DebugNear = InNear; DebugFar = InFar; DebugMode = InMode;
+	}
+	ID3D11ShaderResourceView* GetDebugSRV() const { return DebugSRV; }
+	uint32 GetHiZMipCount() const { return HiZMipCount; }
+	uint32 GetHiZWidth()    const { return HiZWidth; }
+	uint32 GetHiZHeight()   const { return HiZHeight; }
+#endif
+
 private:
 	void CreateHiZResources(uint32 Width, uint32 Height);
 	void ReleaseHiZResources();
@@ -60,14 +74,15 @@ private:
 	ID3D11ComputeShader* HiZDownsampleCS = nullptr;
 	ID3D11ComputeShader* OcclusionTestCS = nullptr;
 
-	// Hi-Z texture + per-mip views
-	ID3D11Texture2D* HiZTexture = nullptr;
-	ID3D11ShaderResourceView* HiZSRV = nullptr;
-	TArray<ID3D11UnorderedAccessView*> HiZMipUAVs;
-
-	// Ping-pong temp texture — avoids DX11 SRV/UAV same-resource binding hazard
-	ID3D11Texture2D* HiZTempTexture = nullptr;
-	TArray<ID3D11ShaderResourceView*> HiZTempMipSRVs;
+	// Hi-Z ping-pong textures — even mips on A, odd mips on B (zero-copy)
+	ID3D11Texture2D* HiZTextureA = nullptr;
+	ID3D11Texture2D* HiZTextureB = nullptr;
+	ID3D11ShaderResourceView* HiZSRV_A = nullptr;	// full chain for OcclusionTest
+	ID3D11ShaderResourceView* HiZSRV_B = nullptr;	// full chain for OcclusionTest
+	TArray<ID3D11UnorderedAccessView*> HiZUAVs_A;	// per-mip write targets
+	TArray<ID3D11UnorderedAccessView*> HiZUAVs_B;
+	TArray<ID3D11ShaderResourceView*> HiZSRVs_A;	// per-mip read sources
+	TArray<ID3D11ShaderResourceView*> HiZSRVs_B;
 	uint32 HiZWidth = 0;
 	uint32 HiZHeight = 0;
 	uint32 HiZMipCount = 0;
@@ -84,6 +99,7 @@ private:
 	ID3D11Buffer* StagingBuffers[STAGING_COUNT] = {};
 	TArray<const FPrimitiveSceneProxy*> StagingProxies[STAGING_COUNT];
 	uint32 StagingProxyCount[STAGING_COUNT] = {};
+	uint32 StagingMaxProxyId[STAGING_COUNT] = {};
 	uint32 WriteIndex = 0;   // 현재 프레임 기록용
 	uint32 VisibilityBufferCapacity = 0;
 
@@ -98,4 +114,21 @@ private:
 	bool bHasResults = false;
 	uint32 FrameCount = 0;
 	bool bInitialized = false;
+
+	// ── Debug visualization resources (STATS only) ──
+#if STATS
+	ID3D11ComputeShader* HiZVisualizeCS = nullptr;
+	ID3D11Texture2D* DebugTexture = nullptr;
+	ID3D11ShaderResourceView* DebugSRV = nullptr;
+	ID3D11UnorderedAccessView* DebugUAV = nullptr;
+	uint32 DebugTexW = 0;
+	uint32 DebugTexH = 0;
+	int32 DebugMip = -1;
+	float DebugExponent = 128.0f;
+	float DebugNear = 0.1f;
+	float DebugFar = 1000.0f;
+	uint32 DebugMode = 0;
+	void UpdateDebugTexture(ID3D11DeviceContext* Ctx);
+	void ReleaseDebugResources();
+#endif
 };
