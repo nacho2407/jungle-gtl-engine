@@ -1,4 +1,4 @@
-#include "Collision/RayUtilsSIMD.h"
+﻿#include "Collision/RayUtilsSIMD.h"
 
 #include <cmath>
 
@@ -40,12 +40,14 @@ int32 FRayUtilsSIMD::IntersectAABB8(
 	float MaxDistance,
 	float* OutTMinValues)
 {
-	const __m256 MinXVec = _mm256_loadu_ps(MinX);
-	const __m256 MinYVec = _mm256_loadu_ps(MinY);
-	const __m256 MinZVec = _mm256_loadu_ps(MinZ);
-	const __m256 MaxXVec = _mm256_loadu_ps(MaxX);
-	const __m256 MaxYVec = _mm256_loadu_ps(MaxY);
-	const __m256 MaxZVec = _mm256_loadu_ps(MaxZ);
+	// Picking용 packet 데이터는 32-byte 정렬을 보장하므로 aligned load를 사용한다.
+	// Ryzen 9 5900HX 같은 AVX2 타깃에서는 loadu 대비 불필요한 완화 비용을 줄일 수 있다.
+	const __m256 MinXVec = _mm256_load_ps(MinX);
+	const __m256 MinYVec = _mm256_load_ps(MinY);
+	const __m256 MinZVec = _mm256_load_ps(MinZ);
+	const __m256 MaxXVec = _mm256_load_ps(MaxX);
+	const __m256 MaxYVec = _mm256_load_ps(MaxY);
+	const __m256 MaxZVec = _mm256_load_ps(MaxZ);
 	const __m256 NegInf = _mm256_set1_ps(-INFINITY);
 	const __m256 PosInf = _mm256_set1_ps(INFINITY);
 	const __m256 AllBits = _mm256_castsi256_ps(_mm256_set1_epi32(-1));
@@ -109,15 +111,16 @@ int32 FRayUtilsSIMD::IntersectTriangles8(
 	float MaxDistance,
 	float* OutTValues)
 {
-	const __m256 V0XVec = _mm256_loadu_ps(V0X);
-	const __m256 V0YVec = _mm256_loadu_ps(V0Y);
-	const __m256 V0ZVec = _mm256_loadu_ps(V0Z);
-	const __m256 V1XVec = _mm256_loadu_ps(V1X);
-	const __m256 V1YVec = _mm256_loadu_ps(V1Y);
-	const __m256 V1ZVec = _mm256_loadu_ps(V1Z);
-	const __m256 V2XVec = _mm256_loadu_ps(V2X);
-	const __m256 V2YVec = _mm256_loadu_ps(V2Y);
-	const __m256 V2ZVec = _mm256_loadu_ps(V2Z);
+	// 삼각형 packet 역시 SoA + 32-byte aligned layout으로 저장되므로 load_ps를 전제로 한다.
+	const __m256 V0XVec = _mm256_load_ps(V0X);
+	const __m256 V0YVec = _mm256_load_ps(V0Y);
+	const __m256 V0ZVec = _mm256_load_ps(V0Z);
+	const __m256 V1XVec = _mm256_load_ps(V1X);
+	const __m256 V1YVec = _mm256_load_ps(V1Y);
+	const __m256 V1ZVec = _mm256_load_ps(V1Z);
+	const __m256 V2XVec = _mm256_load_ps(V2X);
+	const __m256 V2YVec = _mm256_load_ps(V2Y);
+	const __m256 V2ZVec = _mm256_load_ps(V2Z);
 
 	const __m256 Edge1X = _mm256_sub_ps(V1XVec, V0XVec);
 	const __m256 Edge1Y = _mm256_sub_ps(V1YVec, V0YVec);
@@ -192,15 +195,17 @@ int32 FRayUtilsSIMD::IntersectTriangles8Precomputed(
 	float MaxDistance,
 	float* OutTValues)
 {
-	const __m256 V0XVec = _mm256_loadu_ps(V0X);
-	const __m256 V0YVec = _mm256_loadu_ps(V0Y);
-	const __m256 V0ZVec = _mm256_loadu_ps(V0Z);
-	const __m256 Edge1XVec = _mm256_loadu_ps(Edge1X);
-	const __m256 Edge1YVec = _mm256_loadu_ps(Edge1Y);
-	const __m256 Edge1ZVec = _mm256_loadu_ps(Edge1Z);
-	const __m256 Edge2XVec = _mm256_loadu_ps(Edge2X);
-	const __m256 Edge2YVec = _mm256_loadu_ps(Edge2Y);
-	const __m256 Edge2ZVec = _mm256_loadu_ps(Edge2Z);
+	// Leaf packet에서 Edge1/Edge2를 미리 계산해 두었기 때문에 raycast 시에는
+	// gather나 재계산 없이 바로 AVX2 연산만 수행한다.
+	const __m256 V0XVec = _mm256_load_ps(V0X);
+	const __m256 V0YVec = _mm256_load_ps(V0Y);
+	const __m256 V0ZVec = _mm256_load_ps(V0Z);
+	const __m256 Edge1XVec = _mm256_load_ps(Edge1X);
+	const __m256 Edge1YVec = _mm256_load_ps(Edge1Y);
+	const __m256 Edge1ZVec = _mm256_load_ps(Edge1Z);
+	const __m256 Edge2XVec = _mm256_load_ps(Edge2X);
+	const __m256 Edge2YVec = _mm256_load_ps(Edge2Y);
+	const __m256 Edge2ZVec = _mm256_load_ps(Edge2Z);
 
 	const __m256 PVecX = _mm256_sub_ps(_mm256_mul_ps(Context.DirectionY, Edge2ZVec), _mm256_mul_ps(Context.DirectionZ, Edge2YVec));
 	const __m256 PVecY = _mm256_sub_ps(_mm256_mul_ps(Context.DirectionZ, Edge2XVec), _mm256_mul_ps(Context.DirectionX, Edge2ZVec));

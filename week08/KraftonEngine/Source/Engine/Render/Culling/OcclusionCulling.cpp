@@ -120,7 +120,9 @@ bool FOcclusionCulling::IsOccluded(const FBoundingBox& Box, const FMatrix& ViewP
 		int RowOffset = Y * BUF_W;
 		__m256 minZVec = _mm256_set1_ps(MinZ - DepthBias);
 
-		for (int X = X0; X <= X1; X += 8)
+		int X = X0;
+		// 마지막 8개 미만 구간에서 AVX load가 행 끝을 넘지 않도록 tail은 scalar로 분리한다.
+		for (; X <= X1 - 7; X += 8)
 		{
 			__m256 depth = _mm256_loadu_ps(&DepthBuffer[RowOffset + X]);
 			__m256 cmp = _mm256_cmp_ps(minZVec, depth, _CMP_LE_OQ);
@@ -128,6 +130,14 @@ bool FOcclusionCulling::IsOccluded(const FBoundingBox& Box, const FMatrix& ViewP
 			int mask = _mm256_movemask_ps(cmp);
 			if (mask != 0)
 				return false;
+		}
+
+		for (; X <= X1; ++X)
+		{
+			if (MinZ - DepthBias <= DepthBuffer[RowOffset + X])
+			{
+				return false;
+			}
 		}
 	}
 
