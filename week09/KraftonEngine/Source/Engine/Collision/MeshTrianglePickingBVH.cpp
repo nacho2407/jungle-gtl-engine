@@ -11,9 +11,11 @@
 
 namespace
 {
+	//메시 내부 BVH는 world BVH보다 leaf가 작고 traversal stack도 더 얕게 유지합니다.
 	constexpr int32 MeshBVHChildFanout = 8;
 	constexpr int32 MeshBVHMaxTraversalStack = 256;
 
+	//삼각형 한 개를 감싸는 local-space AABB를 만듭니다.
 	FBoundingBox MakeTriangleBounds(const FVector& V0, const FVector& V1, const FVector& V2)
 	{
 		FBoundingBox Bounds;
@@ -28,6 +30,7 @@ namespace
 		return Axis == 0 ? Vector.X : (Axis == 1 ? Vector.Y : Vector.Z);
 	}
 
+	//bucket 기반 분할 비용을 비교하기 위해 각 bucket bounds의 표면적을 사용합니다.
 	float GetBoundsSurfaceArea(const FBoundingBox& Bounds)
 	{
 		const FVector Extent = Bounds.GetExtent();
@@ -41,6 +44,7 @@ namespace
 
 void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 {
+	//메시가 바뀌었을 때 triangle leaf와 packet, node 배열을 통째로 다시 만듭니다.
 	TriangleLeaves.clear();
 	LeafPackets.clear();
 	Nodes.clear();
@@ -53,6 +57,7 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 	TriangleLeaves.reserve(Mesh.Indices.size() / 3);
 	LeafPackets.reserve((Mesh.Indices.size() / 3 + 7) / 8);
 
+	//인덱스 버퍼를 삼각형 단위로 훑으면서 각 삼각형의 bounds와 시작 인덱스를 leaf로 만듭니다.
 	for (size_t Index = 0; Index + 2 < Mesh.Indices.size(); Index += 3)
 	{
 		const FVector& V0 = Mesh.Vertices[Mesh.Indices[Index]].pos;
@@ -73,6 +78,7 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 
 void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 {
+	//static mesh asset은 로드 후 고정된다고 보고, 아직 비어 있을 때만 1회 빌드합니다.
 	if (!Nodes.empty())
 	{
 		return;
@@ -82,6 +88,7 @@ void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 
 bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
+	//로컬 공간 ray로 메시 BVH를 front-to-back 순회하면서 가장 가까운 삼각형 hit를 찾습니다
 	struct FTraversalEntry
 	{
 		int32 NodeIndex;
@@ -97,6 +104,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	FTraversalEntry NodeStack[MeshBVHMaxTraversalStack];
 	int32 StackSize = 0;
 
+	// world 단계에서 이미 world transform을 벗겼으므로 여기서는 local ray만 다루면 됩니다.
 	FRay LocalRay;
 	LocalRay.Origin = LocalOrigin;
 	LocalRay.Direction = LocalDirection;
@@ -110,6 +118,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
+	// 재귀 대신 고정 크기 스택으로 순회해 call overhead와 allocation을 피합니다.
 	NodeStack[StackSize++] = { 0, RootTMin };
 
 	float ClosestT = FLT_MAX;
@@ -127,6 +136,8 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		if (Node.IsLeaf())
 		{
+			// leaf는 최대 8개 triangle을 SoA packet으로 묶어 두었기 때문에
+			// raycast 시에는 triangle 교차를 packet 단위 SIMD 한 번으로 처리할 수 있습니다.
 			const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
 
 			alignas(32) float TValues[8];
@@ -140,8 +151,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 			if (Mask != 0)
 			{
-				// movemask 결과를 비트 스캔으로 순회하면 8개 lane을 매번 전부 확인하지 않아도 된다.
-				// hit가 드문 장면일수록 분기 수와 비교 횟수가 줄어든다.
+				// hit lane만 비트 스캔으로 순회해 scalar 후처리 비용을 줄인다.
 				uint32 RemainingMask = static_cast<uint32>(Mask);
 				while (RemainingMask != 0)
 				{
@@ -160,6 +170,8 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			continue;
 		}
 
+		//internal node에서는 child AABB 8개를 한 번에 검사한 뒤,
+		//실제로 맞은 child만 추려 가까운 순서대로 방문합니다.
 		alignas(32) float TMinValues[8];
 		const int32 NodeMask = FRayUtilsSIMD::IntersectAABB8(
 			RayContext,
@@ -174,8 +186,8 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 		FTraversalEntry ChildEntries[8];
 		int32 ChildEntryCount = 0;
-		// 자식 수는 최대 8개라서 bit iteration으로 hit child만 모은 뒤,
-		// 가까운 순서로만 정렬해 front-to-back traversal 효율을 높인다.
+		//자식 수는 최대 8개라서 hit child만 모아도 정렬 비용이 작고,
+		//가까운 순서대로 방문하면 ClosestT가 빨리 줄어 후속 prune이 잘 됩니다
 		uint32 RemainingMask = static_cast<uint32>(NodeMask) & ((1u << Node.ChildCount) - 1u);
 		while (RemainingMask != 0)
 		{
@@ -223,6 +235,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 
 int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Start, int32 End)
 {
+	//triangle leaf 구간 [Start, End)를 하나의 node로 만들고, 필요하면 재귀 분할합니다.
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
 	Nodes.emplace_back();
 
@@ -238,6 +251,7 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 	const int32 LeafCount = End - Start;
 	if (LeafCount <= MaxLeafSize)
 	{
+		//leaf node는 삼각형들을 packet 하나로 압축해 raycast 시 재계산 없이 바로 SIMD 검사합니다.
 		Nodes[NodeIndex].FirstLeaf = Start;
 		Nodes[NodeIndex].LeafCount = LeafCount;
 		Nodes[NodeIndex].PacketIndex = static_cast<int32>(LeafPackets.size());
@@ -278,9 +292,8 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 	int32 BestAxis = 0;
 	bool bFoundValidAxis = false;
 
-	// 단순 longest-axis 대신, 각 축을 8개 bucket으로 나눠
-	// bucket surface area * primitive count 비용이 가장 작은 축을 고른다.
-	// 완전 SAH보다는 싸고, centroid sort보다 overlap을 더 잘 줄인다.
+	//단순 longest-axis 대신, 각 축을 8개 bucket으로 나눠
+	//surface area * primitive count 비용이 가장 작은 축을 고릅니다.
 	for (int32 Axis = 0; Axis < 3; ++Axis)
 	{
 		float MinCenter = FLT_MAX;
@@ -333,6 +346,8 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 
 	if (!bFoundValidAxis)
 	{
+		//centroid 분포가 거의 한 점으로 겹치면 bucket 비용 비교가 무의미하므로
+		//longest-axis 기반 정렬 후 균등 분할로 되돌립니다.
 		const FBoundingBox& ReferenceBounds = TriangleLeaves[Start].Bounds;
 		const FVector Extent = ReferenceBounds.GetExtent();
 		BestAxis = (Extent.Y > Extent.X && Extent.Y >= Extent.Z) ? 1 : ((Extent.Z > Extent.X && Extent.Z > Extent.Y) ? 2 : 0);
@@ -373,6 +388,8 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 	}
 	else
 	{
+		//최적 축이 정해졌으면 해당 축의 bucket 순서대로 leaf를 재배치하고,
+		//연속된 bucket 구간마다 child node를 만듭니다.
 		float MinCenter = FLT_MAX;
 		float MaxCenter = -FLT_MAX;
 		for (int32 LeafIndex = Start; LeafIndex < End; ++LeafIndex)
@@ -410,8 +427,7 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 				return A.TriangleStartIndex < B.TriangleStartIndex;
 			});
 
-		// 특정 축에서 모든 primitive가 같은 bucket으로 몰리면 분할이 진전되지 않는다.
-		// 이 경우 재귀가 한쪽으로 쏠리는 것을 막기 위해 기존의 균등 분할로 되돌린다.
+		//모든 leaf가 같은 bucket에 몰리면 편향 재귀가 되므로 균등 분할 fallback으로 막습ㄴ디ㅏ.
 		if (GetBucket(TriangleLeaves[Start]) == GetBucket(TriangleLeaves[End - 1]))
 		{
 			const int32 DesiredChildren = std::min<int32>(MeshBVHChildFanout, LeafCount);
@@ -442,35 +458,36 @@ int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Sta
 		}
 		else
 		{
-		int32 RangeStart = Start;
-		while (RangeStart < End)
-		{
-			int32 RangeEnd = RangeStart + 1;
-			const int32 Bucket = GetBucket(TriangleLeaves[RangeStart]);
-			while (RangeEnd < End && GetBucket(TriangleLeaves[RangeEnd]) == Bucket)
+			int32 RangeStart = Start;
+			while (RangeStart < End)
 			{
-				++RangeEnd;
+				int32 RangeEnd = RangeStart + 1;
+				const int32 Bucket = GetBucket(TriangleLeaves[RangeStart]);
+				while (RangeEnd < End && GetBucket(TriangleLeaves[RangeEnd]) == Bucket)
+				{
+					++RangeEnd;
+				}
+
+				const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
+				const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
+
+				Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
+
+				const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
+				Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
+				Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
+				Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
+				Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
+				Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
+				Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
+
+				Nodes[NodeIndex].ChildCount++;
+				RangeStart = RangeEnd;
 			}
-
-			const int32 ChildIdx = BuildRecursive(Mesh, RangeStart, RangeEnd);
-			const int32 LocalChildIdx = Nodes[NodeIndex].ChildCount;
-
-			Nodes[NodeIndex].Children[LocalChildIdx] = ChildIdx;
-
-			const FBoundingBox& ChildBounds = Nodes[ChildIdx].Bounds;
-			Nodes[NodeIndex].ChildMinX[LocalChildIdx] = ChildBounds.Min.X;
-			Nodes[NodeIndex].ChildMinY[LocalChildIdx] = ChildBounds.Min.Y;
-			Nodes[NodeIndex].ChildMinZ[LocalChildIdx] = ChildBounds.Min.Z;
-			Nodes[NodeIndex].ChildMaxX[LocalChildIdx] = ChildBounds.Max.X;
-			Nodes[NodeIndex].ChildMaxY[LocalChildIdx] = ChildBounds.Max.Y;
-			Nodes[NodeIndex].ChildMaxZ[LocalChildIdx] = ChildBounds.Max.Z;
-
-			Nodes[NodeIndex].ChildCount++;
-			RangeStart = RangeEnd;
-		}
 		}
 	}
 
+	//사용하지 않는 child slot은 invalid AABB로 채워 SIMD 검사에서 자동으로 걸러지게 합니다.
 	for (int32 i = Nodes[NodeIndex].ChildCount; i < 8; ++i)
 	{
 		Nodes[NodeIndex].ChildMinX[i] = 1e30f;
