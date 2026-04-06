@@ -31,6 +31,8 @@ struct ENGINE_API FRenderInstrumentationStats
 	bool bOcclusionSkipApplied = false;
 	uint32 StaticMeshCandidateCount = 0;
 	uint32 FrustumPassedStaticMeshCount = 0;
+	uint32 StaticMeshDistanceCulledCount = 0;
+	uint32 StaticMeshSizeCulledCount = 0;
 	uint32 OcclusionCandidateCount = 0;
 	uint32 OcclusionReadbackCandidateCount = 0;
 	uint32 OcclusionVisibleCount = 0;
@@ -59,6 +61,8 @@ struct ENGINE_API FRenderInstrumentationStats
 		bOcclusionSkipApplied = false;
 		StaticMeshCandidateCount = 0;
 		FrustumPassedStaticMeshCount = 0;
+		StaticMeshDistanceCulledCount = 0;
+		StaticMeshSizeCulledCount = 0;
 		OcclusionCandidateCount = 0;
 		OcclusionReadbackCandidateCount = 0;
 		OcclusionVisibleCount = 0;

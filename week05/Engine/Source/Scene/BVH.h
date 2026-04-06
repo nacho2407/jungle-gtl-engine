@@ -199,5 +199,6 @@ private:
 	void DestroyNode(BuildNode* Node);
 	BuildNode* BuildRecursive(int32 Start, int32 End, int32 Depth = 0);
 	void QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void AppendNodePrimitives(const BuildNode* Node, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void VisitRayRecursive(const BuildNode* Node, const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const;
 };

@@ -85,6 +85,9 @@ void FFpsOverlayWindow::Render(FEditorEngine* Engine, const FRect& AreaRect)
     ImGui::Text("r.GpuOcclusionCulling : %s", RenderStats.bGpuOcclusionCullingEnabled ? "ON" : "OFF");
     ImGui::Text("Static Mesh Candidates : %u", RenderStats.StaticMeshCandidateCount);
     ImGui::Text("Static Mesh Frustum Passed : %u", RenderStats.FrustumPassedStaticMeshCount);
+    ImGui::Text("Static Mesh Early Cull : Dist %u | Size %u",
+        RenderStats.StaticMeshDistanceCulledCount,
+        RenderStats.StaticMeshSizeCulledCount);
     ImGui::Text("Static Mesh Draw Calls : %u / %u",
         StaticMeshDrawCallCount,
         RenderStats.StaticMeshDrawCallCountBeforeOcclusion);

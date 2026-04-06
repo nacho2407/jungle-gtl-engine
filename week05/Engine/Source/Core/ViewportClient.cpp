@@ -39,7 +39,7 @@ UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
 	return Engine ? Engine->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, const FMatrix& ProjectionMatrix, FRenderCommandQueue& OutQueue)
 {
 	(void)Scene;
 	OutQueue.ShowFlags = Flags;
@@ -52,7 +52,7 @@ void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const 
 
 	if (UScene* PersistentLevel = World->GetPersistentLevel())
 	{
-		RenderCollector.CollectRenderCommands(PersistentLevel, Frustum, Flags, CameraPosition, OutQueue);
+		RenderCollector.CollectRenderCommands(PersistentLevel, Frustum, Flags, CameraPosition, ProjectionMatrix, OutQueue);
 	}
 
 	for (UScene* StreamingLevel : World->GetStreamingLevels())
@@ -62,7 +62,7 @@ void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const 
 			continue;
 		}
 
-		RenderCollector.CollectRenderCommands(StreamingLevel, Frustum, Flags, CameraPosition, OutQueue);
+		RenderCollector.CollectRenderCommands(StreamingLevel, Frustum, Flags, CameraPosition, ProjectionMatrix, OutQueue);
 	}
 }
 
@@ -129,7 +129,7 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 
 	const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 	const FVector CameraPosition = ViewInverse.GetTranslation();
-	BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
+	BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue.ProjectionMatrix, Queue);
 	Renderer->SubmitCommands(std::move(Queue));
 	Renderer->ExecuteCommands();
 }

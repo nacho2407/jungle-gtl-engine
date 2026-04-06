@@ -203,8 +203,17 @@ void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, 
 		return;
 	}
 
-	if (!Frustum.IsVisible(ToSphereBounds(Node->Bounds)))
+	const FVector NodeCenter = Node->Bounds.Centroid();
+	const FVector NodeExtent = (Node->Bounds.PMax - Node->Bounds.PMin) * 0.5f;
+	const FFrustum::EContainment NodeContainment = Frustum.TestAABB(NodeCenter, NodeExtent);
+	if (NodeContainment == FFrustum::EContainment::Outside)
 	{
+		return;
+	}
+
+	if (NodeContainment == FFrustum::EContainment::Inside)
+	{
+		AppendNodePrimitives(Node, OutPrimitives);
 		return;
 	}
 
@@ -213,7 +222,9 @@ void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, 
 		for (int32 Index = 0; Index < Node->PrimCount; ++Index)
 		{
 			const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
-			if (Ref.Primitive && Frustum.IsVisible(ToSphereBounds(Ref.Bounds)))
+			const FVector PrimitiveCenter = Ref.Bounds.Centroid();
+			const FVector PrimitiveExtent = (Ref.Bounds.PMax - Ref.Bounds.PMin) * 0.5f;
+			if (Ref.Primitive && Frustum.TestAABB(PrimitiveCenter, PrimitiveExtent) != FFrustum::EContainment::Outside)
 			{
 				OutPrimitives.push_back(Ref.Primitive);
 			}
@@ -223,6 +234,31 @@ void BVH::QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, 
 
 	QueryFrustumRecursive(Node->Left, Frustum, OutPrimitives);
 	QueryFrustumRecursive(Node->Right, Frustum, OutPrimitives);
+}
+
+void BVH::AppendNodePrimitives(const BuildNode* Node, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (!Node)
+	{
+		return;
+	}
+
+	if (Node->IsLeaf())
+	{
+		OutPrimitives.reserve(OutPrimitives.size() + Node->PrimCount);
+		for (int32 Index = 0; Index < Node->PrimCount; ++Index)
+		{
+			const FPrimRef& Ref = PrimitiveRefs[Node->FirstPrimOffset + Index];
+			if (Ref.Primitive)
+			{
+				OutPrimitives.push_back(Ref.Primitive);
+			}
+		}
+		return;
+	}
+
+	AppendNodePrimitives(Node->Left, OutPrimitives);
+	AppendNodePrimitives(Node->Right, OutPrimitives);
 }
 
 void BVH::QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const

@@ -71,7 +71,8 @@ struct ENGINE_API FOcclusionPassConstants
 	uint32 CandidateCount = 0;
 	uint32 HZBMipCount = 0;
 
-	float DepthBias = 0.0000125f;
+	// float DepthBias = 0.0000125f;
+	float DepthBias = 0.001f;
 	float NearPlaneEpsilon = 0.0001f;
 	float Padding[2] = {};
 };

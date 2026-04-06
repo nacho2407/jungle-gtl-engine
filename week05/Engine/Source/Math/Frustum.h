@@ -36,9 +36,16 @@ class ENGINE_API FFrustum
 {
 public:
 	enum { Left = 0, Right, Bottom, Top, Near, Far, PlaneCount };
+	enum class EContainment : uint8
+	{
+		Outside,
+		Intersecting,
+		Inside,
+	};
 
 	void ExtractFromVP(const FMatrix& VP);
 	bool IsVisible(const FBoxSphereBounds& Sphere) const;
+	EContainment TestAABB(const FVector& Center, const FVector& Extent) const;
 
 private:
 	FPlane4 Planes[PlaneCount];

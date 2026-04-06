@@ -547,7 +547,7 @@ void FEngine::RenderFrame()
 		const auto BuildStartTime = std::chrono::high_resolution_clock::now();
 		const FMatrix ViewInverse = CommandQueue.ViewMatrix.GetInverse();
 		const FVector CameraPosition = ViewInverse.GetTranslation();
-		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue);
+		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue.ProjectionMatrix, CommandQueue);
 		const auto BuildEndTime = std::chrono::high_resolution_clock::now();
 		RenderInstrumentationStats.ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
 	}
@@ -622,6 +622,16 @@ void FEngine::RegisterConsoleVariables()
 	});
 	bGpuOcclusionCullingEnabled = (GpuOcclusionVar->GetInt() != 0);
 	RenderInstrumentationStats.bGpuOcclusionCullingEnabled = bGpuOcclusionCullingEnabled;
+
+	if (!CVM.Find("r.StaticMeshCullMaxDistance"))
+	{
+		CVM.Register("r.StaticMeshCullMaxDistance", 0.0f, "Cull static meshes after frustum when camera distance exceeds this value (0 = off)");
+	}
+
+	if (!CVM.Find("r.StaticMeshCullMinProjectedRadius"))
+	{
+		CVM.Register("r.StaticMeshCullMinProjectedRadius", 0.0f, "Cull static meshes after frustum when BoundsRadius * ProjectionYScale / Distance falls below this value (0 = off)");
+	}
 
 	FConsoleVariable* GCIntervalVar = CVM.Find("gc.Interval");
 	if (!GCIntervalVar)

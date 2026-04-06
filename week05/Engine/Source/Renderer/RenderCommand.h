@@ -14,6 +14,14 @@ class UStaticMeshComponent;
 
 constexpr uint32 GInvalidOcclusionCandidateIndex = UINT32_MAX;
 
+inline uint64 MakeStaticMeshOcclusionMatchKey(uint32 CandidateId, const FRenderMesh* RenderMesh)
+{
+	uint64 Key = static_cast<uint64>(CandidateId);
+	const uint64 MeshKey = static_cast<uint64>(reinterpret_cast<uintptr_t>(RenderMesh));
+	Key ^= MeshKey + 0x9e3779b97f4a7c15ull + (Key << 6) + (Key >> 2);
+	return Key;
+}
+
 struct ENGINE_API FStaticMeshOcclusionCandidate
 {
 	uint32 CandidateId = 0;
@@ -21,30 +29,25 @@ struct ENGINE_API FStaticMeshOcclusionCandidate
 	const FPrimitiveSceneProxy* SceneProxy = nullptr;
 	UStaticMesh* StaticMesh = nullptr;
 	FRenderMesh* RenderMesh = nullptr;
+	uint64 MatchKey = 0;
 	FVector BoundsCenter = FVector::ZeroVector;
 	float BoundsRadius = 0.0f;
 	FVector BoundsExtent = FVector::ZeroVector;
 	FMatrix WorldMatrix = FMatrix::Identity;
 };
 
-struct ENGINE_API FStaticMeshOcclusionSnapshotEntry
-{
-	uint32 DenseIndex = 0;
-	FStaticMeshOcclusionCandidate Candidate = {};
-};
-
 struct ENGINE_API FStaticMeshOcclusionFrameSnapshot
 {
-	TArray<FStaticMeshOcclusionSnapshotEntry> Candidates;
+	TArray<uint64> CandidateKeys;
 
 	void Reserve(size_t Count)
 	{
-		Candidates.reserve(Count);
+		CandidateKeys.reserve(Count);
 	}
 
 	void Clear()
 	{
-		Candidates.clear();
+		CandidateKeys.clear();
 	}
 };
 

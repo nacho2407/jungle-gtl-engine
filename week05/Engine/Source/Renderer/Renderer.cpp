@@ -628,7 +628,7 @@ void FRenderer::BuildStaticMeshOcclusionSkipMask()
 	}
 
 	if (ReadbackResult.CandidateCount != CurrentCandidates.size() ||
-		ReadbackResult.Snapshot.Candidates.size() != CurrentCandidates.size() ||
+		ReadbackResult.Snapshot.CandidateKeys.size() != CurrentCandidates.size() ||
 		ReadbackResult.VisibilityValues.size() != CurrentCandidates.size())
 	{
 		return;
@@ -641,13 +641,7 @@ void FRenderer::BuildStaticMeshOcclusionSkipMask()
 	for (size_t CandidateIndex = 0; CandidateIndex < CurrentCandidates.size(); ++CandidateIndex)
 	{
 		const FStaticMeshOcclusionCandidate& CurrentCandidate = CurrentCandidates[CandidateIndex];
-		const FStaticMeshOcclusionCandidate& SnapshotCandidate = ReadbackResult.Snapshot.Candidates[CandidateIndex].Candidate;
-		const bool bSameCandidate =
-			CurrentCandidate.Component == SnapshotCandidate.Component &&
-			CurrentCandidate.SceneProxy == SnapshotCandidate.SceneProxy &&
-			CurrentCandidate.StaticMesh == SnapshotCandidate.StaticMesh &&
-			CurrentCandidate.RenderMesh == SnapshotCandidate.RenderMesh;
-		if (!bSameCandidate)
+		if (CurrentCandidate.MatchKey != ReadbackResult.Snapshot.CandidateKeys[CandidateIndex])
 		{
 			continue;
 		}
@@ -1207,7 +1201,7 @@ void FRenderer::IssueStaticMeshOcclusionReadback()
 		return;
 	}
 
-	const uint32 CandidateCount = static_cast<uint32>(StaticMeshOcclusionSnapshot.Candidates.size());
+	const uint32 CandidateCount = static_cast<uint32>(StaticMeshOcclusionSnapshot.CandidateKeys.size());
 	if (CandidateCount == 0)
 	{
 		return;
@@ -1233,7 +1227,7 @@ void FRenderer::IssueStaticMeshOcclusionReadback()
 	CopyRegion.back = 1;
 	DeviceContext->CopySubresourceRegion(Slot->StagingBuffer, 0, 0, 0, 0, StaticMeshOcclusionResources.VisibilityBuffer, 0, &CopyRegion);
 
-	Slot->Snapshot = StaticMeshOcclusionSnapshot;
+	Slot->Snapshot = std::move(StaticMeshOcclusionSnapshot);
 	Slot->CandidateCount = CandidateCount;
 	Slot->FrameSerial = ++OcclusionFrameSerial;
 	Slot->bCopyIssued = true;
@@ -1292,15 +1286,15 @@ void FRenderer::PollStaticMeshOcclusionReadback()
 		Slot.OccludedCount = Slot.CandidateCount >= Slot.VisibleCount ? (Slot.CandidateCount - Slot.VisibleCount) : 0;
 		Slot.bCompleted = true;
 
-		LatestStaticMeshOcclusionReadbackResult.Snapshot = Slot.Snapshot;
-		LatestStaticMeshOcclusionReadbackResult.VisibilityValues = Slot.VisibilityValues;
+		LatestStaticMeshOcclusionReadbackResult.Snapshot = std::move(Slot.Snapshot);
+		LatestStaticMeshOcclusionReadbackResult.VisibilityValues = std::move(Slot.VisibilityValues);
 		LatestStaticMeshOcclusionReadbackResult.CandidateCount = Slot.CandidateCount;
 		LatestStaticMeshOcclusionReadbackResult.VisibleCount = Slot.VisibleCount;
 		LatestStaticMeshOcclusionReadbackResult.OccludedCount = Slot.OccludedCount;
 		LatestStaticMeshOcclusionReadbackResult.FrameSerial = Slot.FrameSerial;
 		LatestStaticMeshOcclusionReadbackResult.bReady = true;
 		LatestStaticMeshOcclusionReadbackResult.bSizeMatched =
-			(LatestStaticMeshOcclusionReadbackResult.Snapshot.Candidates.size() == LatestStaticMeshOcclusionReadbackResult.VisibilityValues.size());
+			(LatestStaticMeshOcclusionReadbackResult.Snapshot.CandidateKeys.size() == LatestStaticMeshOcclusionReadbackResult.VisibilityValues.size());
 
 		if (GEngine)
 		{
@@ -1358,10 +1352,7 @@ void FRenderer::BuildStaticMeshOcclusionSnapshot()
 		const FStaticMeshOcclusionCandidate& SourceCandidate = SourceCandidates[SourceIndex];
 		const uint32 DenseIndex = static_cast<uint32>(SourceIndex);
 
-		FStaticMeshOcclusionSnapshotEntry SnapshotEntry = {};
-		SnapshotEntry.DenseIndex = DenseIndex;
-		SnapshotEntry.Candidate = SourceCandidate;
-		StaticMeshOcclusionSnapshot.Candidates.push_back(std::move(SnapshotEntry));
+		StaticMeshOcclusionSnapshot.CandidateKeys.push_back(SourceCandidate.MatchKey);
 
 		FGpuOcclusionCandidate GpuCandidate = {};
 		GpuCandidate.BoundsCenter = SourceCandidate.BoundsCenter;

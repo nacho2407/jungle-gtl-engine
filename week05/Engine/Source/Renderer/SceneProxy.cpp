@@ -17,6 +17,19 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(const UPrimitiveComponent* InComponen
 {
 }
 
+void FPrimitiveSceneProxy::CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
+{
+	(void)InRenderMesh;
+	CollectMeshBatches(View, Renderer, OutMeshBatches);
+}
+
+bool FPrimitiveSceneProxy::TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FStaticMeshOcclusionCandidate& OutCandidate) const
+{
+	(void)CameraPosition;
+	OutCandidate = {};
+	return false;
+}
+
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
@@ -25,6 +38,8 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 		return;
 	}
 
+	Component = InComponent;
+	ComponentId = InComponent->UUID;
 	StaticMesh = InComponent->GetStaticMesh();
 	LocalToWorld = InComponent->GetWorldTransform();
 	if (!StaticMesh)
@@ -45,18 +60,12 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(const UStaticMeshComponent* InCompo
 
 void FStaticMeshSceneProxy::CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
-	if (!StaticMesh)
-	{
-		return;
-	}
-
-	const float DistanceToCamera = (Bounds.Center - View.CameraPosition).Size();
-	FRenderMesh* SelectedMesh = StaticMesh->GetRenderDataForDistance(DistanceToCamera);
-	CollectMeshBatchesForRenderMesh(SelectedMesh, Renderer, OutMeshBatches);
+	CollectMeshBatchesForRenderMesh(View, ResolveRenderMesh(View.CameraPosition), Renderer, OutMeshBatches);
 }
 
-void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
+void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const
 {
+	(void)View;
 	if (!InRenderMesh)
 	{
 		return;
@@ -95,6 +104,40 @@ void FStaticMeshSceneProxy::CollectMeshBatchesForRenderMesh(FRenderMesh* InRende
 		MeshBatch.bStaticMesh = true;
 		OutMeshBatches.push_back(std::move(MeshBatch));
 	}
+}
+
+bool FStaticMeshSceneProxy::TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FStaticMeshOcclusionCandidate& OutCandidate) const
+{
+	const FRenderMesh* SelectedMesh = ResolveRenderMesh(CameraPosition);
+	if (!Component || !StaticMesh || !SelectedMesh)
+	{
+		OutCandidate = {};
+		return false;
+	}
+
+	OutCandidate = {};
+	OutCandidate.CandidateId = ComponentId;
+	OutCandidate.Component = Component;
+	OutCandidate.SceneProxy = this;
+	OutCandidate.StaticMesh = StaticMesh;
+	OutCandidate.RenderMesh = const_cast<FRenderMesh*>(SelectedMesh);
+	OutCandidate.MatchKey = MakeStaticMeshOcclusionMatchKey(OutCandidate.CandidateId, OutCandidate.RenderMesh);
+	OutCandidate.BoundsCenter = Bounds.Center;
+	OutCandidate.BoundsRadius = Bounds.Radius;
+	OutCandidate.BoundsExtent = Bounds.BoxExtent;
+	OutCandidate.WorldMatrix = LocalToWorld;
+	return true;
+}
+
+FRenderMesh* FStaticMeshSceneProxy::ResolveRenderMesh(const FVector& CameraPosition) const
+{
+	if (!StaticMesh)
+	{
+		return nullptr;
+	}
+
+	const float DistanceToCamera = (Bounds.Center - CameraPosition).Size();
+	return StaticMesh->GetRenderDataForDistance(DistanceToCamera);
 }
 
 FTextSceneProxy::FTextSceneProxy(const UTextComponent* InComponent)

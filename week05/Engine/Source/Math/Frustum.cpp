@@ -34,3 +34,30 @@ bool FFrustum::IsVisible(const FBoxSphereBounds& Sphere) const
 	}
 	return true;
 }
+
+FFrustum::EContainment FFrustum::TestAABB(const FVector& Center, const FVector& Extent) const
+{
+	bool bIntersects = false;
+
+	for (int32 i = 0; i < PlaneCount; ++i)
+	{
+		const FPlane4& Plane = Planes[i];
+		const float Distance = Plane.DistanceTo(Center);
+		const float Radius =
+			std::abs(Plane.A) * Extent.X +
+			std::abs(Plane.B) * Extent.Y +
+			std::abs(Plane.C) * Extent.Z;
+
+		if (Distance < -Radius)
+		{
+			return EContainment::Outside;
+		}
+
+		if (Distance <= Radius)
+		{
+			bIntersects = true;
+		}
+	}
+
+	return bIntersects ? EContainment::Intersecting : EContainment::Inside;
+}

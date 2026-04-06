@@ -146,13 +146,13 @@ void FEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 		FilePath);
 }
 
-void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
+void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, const FMatrix& ProjectionMatrix, FRenderCommandQueue& OutQueue)
 {
 	if (!Engine)
 	{
 		return;
 	}
-	IViewportClient::BuildRenderCommands(Engine, Scene, Frustum, Flags, CameraPosition, OutQueue);
+	IViewportClient::BuildRenderCommands(Engine, Scene, Frustum, Flags, CameraPosition, ProjectionMatrix, OutQueue);
 }
 
 void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
@@ -175,9 +175,9 @@ void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		WireFrameMaterial,
 		GridMesh.get(),
 		GridMaterial.get(),
-		[this](FEngine* InEngine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
+		[this](FEngine* InEngine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, const FMatrix& ProjectionMatrix, FRenderCommandQueue& OutQueue)
 		{
-			BuildRenderCommands(InEngine, Scene, Frustum, Flags, CameraPosition, OutQueue);
+			BuildRenderCommands(InEngine, Scene, Frustum, Flags, CameraPosition, ProjectionMatrix, OutQueue);
 		});
 }
 

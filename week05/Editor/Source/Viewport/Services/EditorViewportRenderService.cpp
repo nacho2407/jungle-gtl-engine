@@ -217,7 +217,7 @@ void FEditorViewportRenderService::RenderAll(
 		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 		const FVector CameraPosition = ViewInverse.GetTranslation();
 		const auto BuildStartTime = std::chrono::high_resolution_clock::now();
-		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
+		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue.ProjectionMatrix, Queue);
 		const auto BuildEndTime = std::chrono::high_resolution_clock::now();
 		Engine->GetMutableRenderInstrumentationStats().ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
 

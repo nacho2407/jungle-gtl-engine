@@ -28,6 +28,7 @@ public:
 		const FFrustum&,
 		const FShowFlags&,
 		const FVector&,
+		const FMatrix&,
 		FRenderCommandQueue&)>;
 
 	void RenderAll(

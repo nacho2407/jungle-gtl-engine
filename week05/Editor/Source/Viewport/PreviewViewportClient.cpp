@@ -90,7 +90,7 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 			const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 			const FVector CameraPosition = ViewInverse.GetTranslation();
 			const auto BuildStartTime = std::chrono::high_resolution_clock::now();
-			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
+			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue.ProjectionMatrix, Queue);
 			const auto BuildEndTime = std::chrono::high_resolution_clock::now();
 			Engine->GetMutableRenderInstrumentationStats().ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
 

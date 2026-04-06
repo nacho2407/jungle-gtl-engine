@@ -263,7 +263,7 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 
 		if (Command.SceneProxy)
 		{
-			Command.SceneProxy->CollectMeshBatches(OutFrame.View, *Renderer, CollectedRenderItems);
+			Command.SceneProxy->CollectMeshBatchesForRenderMesh(OutFrame.View, Command.RenderMesh, *Renderer, CollectedRenderItems);
 			BuildDrawCommands(CollectedRenderItems, &Command, *Renderer, OutFrame, *Renderer->ObjectUniformStream, SubmissionOrder, OpaqueSortKeys);
 			continue;
 		}
@@ -287,6 +287,7 @@ void FSceneRenderer::BuildRenderFrame(const FRenderCommandQueue& Queue, FSceneRe
 		for (const FRenderCommand& Command : Queue.Commands)
 		{
 			NewHash ^= reinterpret_cast<uint64>(Command.SceneProxy) + 0x9e3779b9 + (NewHash << 6) + (NewHash >> 2);
+			NewHash ^= reinterpret_cast<uint64>(Command.RenderMesh) + 0x9e3779b9 + (NewHash << 6) + (NewHash >> 2);
 		}
 
 		if (bCacheVaild && NewHash == CachedCommandHash && CachedOpaqueCommands.size() == OpaqueCommands.size())

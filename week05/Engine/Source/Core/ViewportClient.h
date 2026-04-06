@@ -34,7 +34,7 @@ public:
 	virtual UWorld* ResolveWorld(FEngine* Engine) const;
 	/** 프러스텀 컬링과 수집기를 이용해 실제 렌더 큐에 커맨드를 채운다. */
 	virtual void BuildRenderCommands(FEngine* Engine, UScene* Scene,
-		const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue);
+		const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, const FMatrix& ProjectionMatrix, FRenderCommandQueue& OutQueue);
 	/** 에셋 브라우저와의 상호작용을 위해 파일 더블클릭을 뷰포트가 직접 처리할 수 있게 열어둔 훅이다. */
 	virtual void HandleFileDoubleClick(const FString& FilePath);
 	/** 파일을 뷰포트 위로 드롭했을 때 배치/가져오기 로직을 구현하는 훅이다. */

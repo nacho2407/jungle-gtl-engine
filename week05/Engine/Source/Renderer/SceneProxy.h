@@ -24,6 +24,8 @@ public:
 	virtual ~FPrimitiveSceneProxy() = default;
 
 	virtual void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const = 0;
+	virtual void CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const;
+	virtual bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FStaticMeshOcclusionCandidate& OutCandidate) const;
 
 	const FBoxSphereBounds& GetBounds() const { return Bounds; }
 
@@ -36,10 +38,14 @@ class ENGINE_API FStaticMeshSceneProxy : public FPrimitiveSceneProxy
 public:
 	explicit FStaticMeshSceneProxy(const UStaticMeshComponent* InComponent);
 	void CollectMeshBatches(const FViewInfo& View, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
+	void CollectMeshBatchesForRenderMesh(const FViewInfo& View, FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const override;
+	bool TryBuildStaticMeshOcclusionCandidate(const FVector& CameraPosition, FStaticMeshOcclusionCandidate& OutCandidate) const override;
 
 private:
-	void CollectMeshBatchesForRenderMesh(FRenderMesh* InRenderMesh, FRenderer& Renderer, TArray<FMeshRenderItem>& OutMeshBatches) const;
+	FRenderMesh* ResolveRenderMesh(const FVector& CameraPosition) const;
 
+	const UStaticMeshComponent* Component = nullptr;
+	uint32 ComponentId = 0;
 	UStaticMesh* StaticMesh = nullptr;
 	FMatrix LocalToWorld = FMatrix::Identity;
 	TArray<FMaterial*> Materials;
