@@ -17,6 +17,9 @@ namespace
 
 FRaySIMDContext FRayUtilsSIMD::MakeRayContext(const FVector& Origin, const FVector& Direction)
 {
+	// SISD 버전이라면 ray 원점/방향/invDirection/축별 parallel 여부를
+	// float 변수 몇 개로 한 번 계산해 두고, 이후 각 AABB/triangle 테스트에서
+	// 그 값을 반복 재사용하는 준비 단계에 해당합니다.
 	FRaySIMDContext Context;
 	Context.OriginX = _mm256_set1_ps(Origin.X);
 	Context.OriginY = _mm256_set1_ps(Origin.Y);
@@ -40,6 +43,9 @@ int32 FRayUtilsSIMD::IntersectAABB8(
 	float MaxDistance,
 	float* OutTMinValues)
 {
+	// SISD 버전이라면 아래 8개 lane 각각에 대해
+	// FRayUtils::IntersectRayAABB(ray, boxMin[i], boxMax[i], tMin, tMax)를
+	// for문으로 한 번씩 호출하고, hit면 tMin을 저장하고 bit를 세우는 코드입니다.
 	// Picking용 packet 데이터는 32-byte 정렬을 보장하므로 aligned load를 사용한다.
 	// Ryzen 9 5900HX 같은 AVX2 타깃에서는 loadu 대비 불필요한 완화 비용을 줄일 수 있다.
 	const __m256 MinXVec = _mm256_load_ps(MinX);
@@ -111,6 +117,9 @@ int32 FRayUtilsSIMD::IntersectTriangles8(
 	float MaxDistance,
 	float* OutTValues)
 {
+	// SISD 버전이라면 8개 삼각형에 대해 순차적으로
+	// Moller-Trumbore 교차 판정을 수행하고, 각 triangle의 t가
+	// (0, MaxDistance) 범위에 들어오면 hit mask를 세우는 코드입니다.
 	// 삼각형 packet 역시 SoA + 32-byte aligned layout으로 저장되므로 load_ps를 전제로 한다.
 	const __m256 V0XVec = _mm256_load_ps(V0X);
 	const __m256 V0YVec = _mm256_load_ps(V0Y);
@@ -195,6 +204,9 @@ int32 FRayUtilsSIMD::IntersectTriangles8Precomputed(
 	float MaxDistance,
 	float* OutTValues)
 {
+	// SISD 버전이라면 IntersectTriangles8와 거의 같지만,
+	// 각 triangle마다 Edge1 = V1 - V0, Edge2 = V2 - V0를
+	// raycast 시점에 다시 계산하지 않고 미리 저장된 값을 읽어 쓰는 형태입니다.
 	// Leaf packet에서 Edge1/Edge2를 미리 계산해 두었기 때문에 raycast 시에는
 	// gather나 재계산 없이 바로 AVX2 연산만 수행한다.
 	const __m256 V0XVec = _mm256_load_ps(V0X);
