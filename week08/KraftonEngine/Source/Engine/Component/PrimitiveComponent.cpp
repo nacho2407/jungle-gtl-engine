@@ -11,6 +11,25 @@
 #include <cmath>
 #include <cstring>
 
+namespace
+{
+	bool HasSameTransformBasis(const FMatrix& A, const FMatrix& B)
+	{
+		for (int Row = 0; Row < 3; ++Row)
+		{
+			for (int Col = 0; Col < 3; ++Col)
+			{
+				if (A.M[Row][Col] != B.M[Row][Col])
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+}
+
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
@@ -90,6 +109,7 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 	bWorldAABBDirty = false;
+	bHasValidWorldAABB = true;
 }
 
 /* 현재 쓰이지 않는 코드입니다*/
@@ -115,8 +135,28 @@ bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHit
 
 void UPrimitiveComponent::UpdateWorldMatrix() const
 {
+	const FMatrix PreviousWorldMatrix = CachedWorldMatrix;
+	const FVector PreviousWorldAABBMin = WorldAABBMinLocation;
+	const FVector PreviousWorldAABBMax = WorldAABBMaxLocation;
+	const bool bHadValidWorldAABB = bHasValidWorldAABB;
+
 	USceneComponent::UpdateWorldMatrix();
-	UpdateWorldAABB();
+
+	if (bWorldAABBDirty)
+	{
+		if (bHadValidWorldAABB && HasSameTransformBasis(PreviousWorldMatrix, CachedWorldMatrix))
+		{
+			const FVector TranslationDelta = CachedWorldMatrix.GetLocation() - PreviousWorldMatrix.GetLocation();
+			WorldAABBMinLocation = PreviousWorldAABBMin + TranslationDelta;
+			WorldAABBMaxLocation = PreviousWorldAABBMax + TranslationDelta;
+			bWorldAABBDirty = false;
+			bHasValidWorldAABB = true;
+		}
+		else
+		{
+			UpdateWorldAABB();
+		}
+	}
 
 	// 프록시가 등록된 경우 Transform dirty 전파 (FScene DirtySet에도 등록)
 	MarkProxyDirty(EDirtyFlag::Transform);

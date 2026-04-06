@@ -32,6 +32,7 @@ private:
     FBoundingBox BuildActorVisibleBounds(AActor* Actor, bool bUpdateWorldMatrices) const;
     void EnsureRootContains(const FBoundingBox& RequiredBounds);
     void RebuildRootBounds(const FBoundingBox& RequiredBounds);
+    void ClearQueuedActorFlags();
     void InsertPrimitive(UPrimitiveComponent* Primitive);
     void RemovePrimitive(UPrimitiveComponent* Primitive);
 

@@ -8,7 +8,7 @@
 class FPrimitiveSceneProxy;
 
 constexpr int32 MAX_DEPTH = 5;
-constexpr int32 MAX_SIZE = 32;
+constexpr int32 MAX_SIZE = 16;
 constexpr float LooseFactor = 1.5f;
 
 class FFrustum;
@@ -17,15 +17,16 @@ class FOctree
 {
 public:
 	FOctree();
-	FOctree(const FBoundingBox& BoundOctree, const uint32& depth);
+	FOctree(const FBoundingBox& BoundOctree, const uint32& depth, FOctree* InParent = nullptr);
+
 
 	~FOctree();
 
 	bool Insert(UPrimitiveComponent * InPrimitivie);
-	void SubDivide();
 
-	bool Remove(const UPrimitiveComponent * InPrimitivie);  
-	void TryMerge();
+	bool Remove(UPrimitiveComponent * InPrimitivie);  
+	bool RemoveDirect(UPrimitiveComponent* Primitive, bool bTryMergeNow = true);
+	void TryMergeUpward();
 
 	bool HasPrimitive(const UPrimitiveComponent* p);
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPremitive);
@@ -45,7 +46,13 @@ public:
 	void QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
 	void Reset(const FBoundingBox& InBounds, uint32 InDepth = 0);
+
+	FOctree* GetParent() const { return Parent; }
 private:
+	void SubDivide();
+	void TryMerge();
+	void ClearChildrenAndPrimitiveLocations();
+
 	bool HasDistributable() const;
 	
 	// Collect all visible primitives in this node and descendants (no frustum test)
@@ -61,5 +68,6 @@ private:
 	TArray<UPrimitiveComponent*> PrimitiveList;
 
 	uint32 Depth;
+	FOctree* Parent = nullptr;
 };
 

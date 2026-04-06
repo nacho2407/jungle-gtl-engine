@@ -24,26 +24,21 @@ namespace {
 }
 
 FOctree::FOctree() 
-    : CellBounds(), LooseBounds(), Depth(0)
+    : CellBounds(), LooseBounds(), Depth(0), Parent(nullptr)
 {
 }
 
-FOctree::FOctree(const FBoundingBox& BoundOctree, const uint32& depth)
-	    : CellBounds(BoundOctree)
+FOctree::FOctree(const FBoundingBox& BoundOctree, const uint32& depth, FOctree* InParent)
+    : CellBounds(BoundOctree)
     , LooseBounds(MakeLooseBounds(BoundOctree))
     , Depth(depth)
+    , Parent(InParent)
 {
 }
 
 FOctree::~FOctree()
 {
-	PrimitiveList.clear();
-
-    for (FOctree* Child : Children)
-    {
-        delete Child;
-    }
-    Children.clear();
+    ClearChildrenAndPrimitiveLocations();
 }
 
 bool FOctree::Insert(UPrimitiveComponent* Primitive)
@@ -63,84 +58,166 @@ bool FOctree::Insert(UPrimitiveComponent* Primitive)
 		const int childIndex = GetChildIndex(PrimCenter, CellBounds.GetCenter());
         FOctree* Child = Children[childIndex];
 
-		 if (Child && Child->LooseBounds.IsContains(PrimBox))
+		if (Child && Child->LooseBounds.IsContains(PrimBox))
             return Child->Insert(Primitive);
 
         PrimitiveList.push_back(Primitive);
+        Primitive->SetOctreeLocation(this, false);
         return true;
 	}
  
 	// ── 리프 노드 ──
 	// 용량 초과 && 깊이 여유 있음 && 실제로 분배 가능한 객체가 존재할 때만 분할
 	PrimitiveList.push_back(Primitive);
+    Primitive->SetOctreeLocation(this, false);
 
-	 if (HasDistributable()
+	if (HasDistributable()
         && (int)PrimitiveList.size() > MAX_SIZE
         && Depth < MAX_DEPTH)
-	 {
+	{
         SubDivide();
-	 }
+	}
 
 	return true;
 }
 
-bool FOctree::Remove(const UPrimitiveComponent* Primitive)
+bool FOctree::RemoveDirect(UPrimitiveComponent* Primitive, bool bTryMergeNow)
 {
-	if(Primitive == nullptr) return false;
+	if (!Primitive)
+	{
+		return false;
+	}
 
 	auto It = std::find(PrimitiveList.begin(), PrimitiveList.end(), Primitive);
-    if (It != PrimitiveList.end())
-    {
-        *It = PrimitiveList.back();
-        PrimitiveList.pop_back();
+	if (It == PrimitiveList.end())
+	{
+		return false;
+	}
 
-        if (!IsLeaf()) TryMerge();
-        return true;
-    }
+	if (Primitive->GetOctreeNode() == this)
+	{
+		Primitive->ClearOctreeLocation();
+	}
 
-    if (IsLeaf()) return false;
+	*It = PrimitiveList.back();
+	PrimitiveList.pop_back();
 
-    for (int i = 0; i < 8; ++i)
-    {
-        if (Children[i]->Remove(Primitive))
-        {
-            TryMerge();
-            return true;
-        }
-    }
+	if (bTryMergeNow)
+	{
+		TryMergeUpward();
+	}
 
-	return false;
+	return true;
+}
+
+void FOctree::TryMergeUpward()
+{
+	for (FOctree* Node = this; Node; Node = Node->Parent)
+	{
+		Node->TryMerge();
+	}
+}
+
+bool FOctree::Remove(UPrimitiveComponent* Primitive)
+{
+	if (!Primitive)
+	{
+		return false;
+	}
+
+	if (Primitive->GetOctreeNode() == this)
+	{
+		return RemoveDirect(Primitive, true);
+	}
+
+	if (!IsLeaf())
+	{
+		for (FOctree* Child : Children)
+		{
+			if (Child && Child->Remove(Primitive))
+			{
+				return true;
+			}
+		}
+	}
+
+	return RemoveDirect(Primitive, true);
 }
 
 void FOctree::TryMerge()
 {
-	if(IsLeaf()) return;
-
-	for (int Index = 0; Index < 8; ++Index)
+	if (IsLeaf())
 	{
-		if (!Children[Index]->IsLeaf())
+		return;
+	}
+
+	int32 TotalPrimitives = static_cast<int32>(PrimitiveList.size());
+	for (FOctree* Child : Children)
+	{
+		if (!Child)
 		{
-			return; // 하나라도 리프가 아니면 합치지 않음
+			continue;
+		}
+
+		if (!Child->Children.empty())
+		{
+			return;
+		}
+
+		TotalPrimitives += static_cast<int32>(Child->PrimitiveList.size());
+	}
+
+	if (TotalPrimitives > MAX_SIZE)
+	{
+		return;
+	}
+
+	for (FOctree* Child : Children)
+	{
+		if (!Child)
+		{
+			continue;
+		}
+
+		for (UPrimitiveComponent* Prim : Child->PrimitiveList)
+		{
+			if (Prim)
+			{
+				Prim->SetOctreeLocation(this, false);
+			}
+		}
+
+		PrimitiveList.insert(
+			PrimitiveList.end(),
+			Child->PrimitiveList.begin(),
+			Child->PrimitiveList.end());
+
+		Child->PrimitiveList.clear();
+		delete Child;
+	}
+
+	Children.clear();
+}
+void FOctree::ClearChildrenAndPrimitiveLocations()
+{
+	for (UPrimitiveComponent* Prim : PrimitiveList)
+	{
+		if (Prim && Prim->GetOctreeNode() == this)
+		{
+			Prim->ClearOctreeLocation();
 		}
 	}
-	
-	uint32 TotalPrimitives = PrimitiveList.size();
-	for (int Index = 0; Index < 8; ++Index)
-	{
-		TotalPrimitives += Children[Index]->PrimitiveList.size();
-	}
+	PrimitiveList.clear();
 
-    if (TotalPrimitives <= MAX_SIZE)
-    {
-        for (FOctree* Child : Children)
-        {
-            PrimitiveList.insert(PrimitiveList.end(),
-                Child->PrimitiveList.begin(),
-                Child->PrimitiveList.end());
-            delete Child;
-        }
-        Children.clear();
-    }
+	for (FOctree* Child : Children)
+	{
+		if (Child)
+		{
+            Child->ClearChildrenAndPrimitiveLocations();
+			delete Child;
+		}
+	}
+	Children.clear();
 }
 
 void FOctree::SubDivide()
@@ -165,7 +242,7 @@ void FOctree::SubDivide()
 
     Children.resize(8, nullptr);
     for (int i = 0; i < 8; ++i)
-        Children[i] = new FOctree(ChildBoxes[i], Depth + 1);
+        Children[i] = new FOctree(ChildBoxes[i], Depth + 1, this);
 
 	TArray<UPrimitiveComponent*> primitivesToMove = PrimitiveList;
 	PrimitiveList.clear();
@@ -193,6 +270,7 @@ void FOctree::SubDivide()
 		if (!bPlaced)
 		{
 			PrimitiveList.push_back(Prim);
+            Prim->SetOctreeLocation(this, false);
 		}
     }
 
@@ -312,16 +390,12 @@ void FOctree::QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimiti
 
 void FOctree::Reset(const FBoundingBox& InBounds, uint32 InDepth)
 {
-	 for (FOctree* Child : Children)
-    {
-        delete Child;
-    }
-    Children.clear();
+	ClearChildrenAndPrimitiveLocations();
 
-    PrimitiveList.clear();
-    CellBounds  = InBounds;
-    LooseBounds = MakeLooseBounds(InBounds);
-    Depth = InDepth;
+	CellBounds = InBounds;
+	LooseBounds = MakeLooseBounds(InBounds);
+	Depth = InDepth;
+	Parent = nullptr;
 }
 
 bool FOctree::HasDistributable() const
@@ -457,18 +531,6 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 		break;
 	}
 
-	if (!bParentContained)
-	{
-		if (!ConvexVolume.IntersectAABB(LooseBounds))
-			return;
-
-		if (ConvexVolume.ContainsAABB(LooseBounds))
-		{
-			CollectAllProxies(OutProxies);
-			return;
-		}
-	}
-
 	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
 		if (!Primitive) continue;
@@ -483,5 +545,5 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 	if (IsLeaf()) return;
 
 	for (int i = 0; i < 8; ++i)
-		Children[i]->QueryFrustumProxiesInternal(ConvexVolume, OutProxies, bParentContained);
+		Children[i]->QueryFrustumProxiesInternal(ConvexVolume, OutProxies, false);
 }
