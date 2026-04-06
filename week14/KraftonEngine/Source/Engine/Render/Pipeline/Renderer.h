@@ -66,6 +66,7 @@ private:
 		FShader*     LastShader     = nullptr;
 		FMeshBuffer* LastMeshBuffer = nullptr;
 		ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
+		ID3D11Buffer* LastPerObjectCB = nullptr;
 		int32        LastUVScroll   = -1;
 		FVector4     LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f }; // 초기값: 불일치 보장
 
@@ -77,7 +78,9 @@ private:
 
 	void SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies);
 	void BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void BindPerObjectSlot(ID3D11DeviceContext* Ctx);
+	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
+	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
+	bool BindPerObjectCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void BindExtraCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx);
 	bool BindMeshBuffer(FMeshBuffer* Buffer, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
@@ -102,6 +105,7 @@ private:
 	// 정렬용 멤버 버퍼 (재할당 방지)
 	TArray<const FPrimitiveSceneProxy*> SortedProxyBuffer;
 	TArray<FSubUVEntry> SortedSubUVBuffer;
+	TArray<FConstantBuffer> PerObjectCBPool;
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];

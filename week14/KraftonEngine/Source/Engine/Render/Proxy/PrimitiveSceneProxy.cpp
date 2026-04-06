@@ -69,6 +69,7 @@ void FPrimitiveSceneProxy::UpdateTransform()
 	CachedWorldPos = PerObjectConstants.Model.GetLocation();
 	CachedBounds = Owner->GetWorldBoundingBox();
 	LastLODUpdateFrame = UINT32_MAX;
+	MarkPerObjectCBDirty();
 }
 
 void FPrimitiveSceneProxy::UpdateMaterial()
