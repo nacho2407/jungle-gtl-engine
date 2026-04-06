@@ -15,6 +15,8 @@ public:
 		uint32 InternalNodesVisited = 0;
 		uint32 LeafPacketsTested = 0;
 		uint32 TriangleLanesTested = 0;
+		uint32 TriangleMaskHits = 0;
+		uint32 ClosestTHitUpdates = 0;
 	};
 
 	// 메시의 모든 삼각형을 leaf로 수집한 뒤 로컬 공간 BVH를 즉시 다시 빌드합니다.
@@ -44,12 +46,12 @@ private:
 		int32 Children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
 		// SIMD(AVX) 최적화를 위한 자식 노드들의 AABB 데이터 (SOA 구조)
-		float ChildMinX[8];
-		float ChildMinY[8];
-		float ChildMinZ[8];
-		float ChildMaxX[8];
-		float ChildMaxY[8];
-		float ChildMaxZ[8];
+		alignas(32) float ChildMinX[8];
+		alignas(32) float ChildMinY[8];
+		alignas(32) float ChildMinZ[8];
+		alignas(32) float ChildMaxX[8];
+		alignas(32) float ChildMaxY[8];
+		alignas(32) float ChildMaxZ[8];
 
 		int32 ChildCount = 0;
 		int32 FirstLeaf = 0;
@@ -59,7 +61,7 @@ private:
 		bool IsLeaf() const { return ChildCount == 0; }
 	};
 
-	struct FTrianglePacket
+	struct alignas(32) FTrianglePacket
 	{
 		alignas(32) float V0X[8];
 		alignas(32) float V0Y[8];
