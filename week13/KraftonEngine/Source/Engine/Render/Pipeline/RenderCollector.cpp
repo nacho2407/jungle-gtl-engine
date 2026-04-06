@@ -74,7 +74,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 {
 	if (!Node) return;
 
-	const FBoundingBox& Bounds = Node->GetBounds();
+	const FBoundingBox& Bounds = Node->GetCellBounds();
 	if (!Bounds.IsValid()) return;
 
 	const FColor& Color = OctreeDepthColors[Depth % 6];
