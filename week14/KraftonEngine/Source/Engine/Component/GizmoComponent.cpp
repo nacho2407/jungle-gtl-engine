@@ -87,7 +87,7 @@ void UGizmoComponent::SetHolding(bool bHold)
 	bIsHolding = bHold;
 }
 
-bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT)
+bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float AxisScale, float& OutRayT)
 {
 	FVector AxisStart = GetWorldLocation();
 	FVector RayOrigin = Ray.Origin;
@@ -131,7 +131,10 @@ bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& 
 		(DistanceVector.Y * DistanceVector.Y) +
 		(DistanceVector.Z * DistanceVector.Z);
 
-	float ClickThresholdSquared = Radius * Radius;
+	float ClickThreshold = Radius * AxisScale;
+	constexpr float StemRadius = 0.06f;
+	ClickThreshold = StemRadius * AxisScale;
+	float ClickThresholdSquared = ClickThreshold * ClickThreshold;
 
 	if (DistanceSquared < ClickThresholdSquared)
 	{
@@ -358,7 +361,7 @@ bool UGizmoComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResu
 			const FVector AxisDir = GetVectorForAxis(Axis).Normalized();
 			const float AxisScale = (Axis == 0) ? GetWorldScale().X : (Axis == 1 ? GetWorldScale().Y : GetWorldScale().Z);
 			const FVector AxisEnd = GizmoLocation + AxisDir * AxisLength * AxisScale;
-			bAxisHit = IntersectRayAxis(Ray, AxisEnd, RayT);
+			bAxisHit = IntersectRayAxis(Ray, AxisEnd, AxisScale, RayT);
 		}
 
 		if (bAxisHit && RayT < BestRayT)
