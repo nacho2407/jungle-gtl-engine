@@ -14,6 +14,7 @@ class FEditorConsoleWidget : public FEditorWidget
 {
 public:
 	FEditorConsoleWidget();
+	~FEditorConsoleWidget();
 
 	static void AddLog(const char* fmt, ...);
 

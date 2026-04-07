@@ -18,11 +18,7 @@ REGISTER_FACTORY(UObjViewerEngine)
 
 void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 {
-	WCHAR ModulePath[MAX_PATH];
-	GetModuleFileNameW(nullptr, ModulePath, MAX_PATH);
-	std::filesystem::path ExeDir = std::filesystem::path(ModulePath).parent_path();
-	
-	std::filesystem::current_path(ExeDir);
+	FPaths::RootDir();
 
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
@@ -87,8 +83,16 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 
 void UObjViewerEngine::Shutdown()
 {
-	FString SavePath = FPaths::ToRelativeString(FPaths::ToWide(FObjViewerSettings::GetDefaultSettingsPath()));
+	// FPaths로 찾아낸 안전한 경로를 찾아 저장
+	FString SavePath = FObjViewerSettings::GetDefaultSettingsPath();
 	FObjViewerSettings::Get().SaveToFile(SavePath);
+	
+	ViewportClient.DestroyCamera();
+	MainPanel.Shutdown(); 
+
+	// Init()에서 생성한 프리뷰 월드 해제
+	if (!WorldList.empty())
+		DestroyWorldContext(WorldList[0].ContextHandle);
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
 	UEngine::Shutdown();
