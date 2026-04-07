@@ -19,9 +19,9 @@ private:
 	TMap<uint32, std::shared_ptr<FDepthStencilState>> DepthStencilStateMap;
 	TMap<uint32, std::shared_ptr<FBlendState>> BlendStateMap;
 
-	FRasterizerState* CurrentRasterizerState = nullptr;
-	FDepthStencilState* CurrentDepthStencilState = nullptr;
-	FBlendState* CurrentBlendState = nullptr;
+	std::shared_ptr<FRasterizerState> CurrentRasterizerState = nullptr;
+	std::shared_ptr<FDepthStencilState> CurrentDepthStencilState = nullptr;
+	std::shared_ptr<FBlendState> CurrentBlendState = nullptr;
 
 public:
 	FRenderStateManager(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext)
@@ -38,11 +38,8 @@ public:
 	std::shared_ptr<FBlendState> GetOrCreateBlendState(const FBlendStateOption& opt);
 
 	// 실제 상태 적용
-	void BindState(const std::shared_ptr<FRasterizerState>& InRS);
-	void BindState(const std::shared_ptr<FDepthStencilState>& InDSS);
-	void BindState(const std::shared_ptr<FBlendState>& InBS);
-	void BindState(FRasterizerState* InRS);
-	void BindState(FDepthStencilState* InDSS);
-	void BindState(FBlendState* InBS);
+	void BindState(std::shared_ptr<FRasterizerState> InRS);
+	void BindState(std::shared_ptr<FDepthStencilState> InDSS);
+	void BindState(std::shared_ptr<FBlendState> InBS);
 	void RebindState();
 };

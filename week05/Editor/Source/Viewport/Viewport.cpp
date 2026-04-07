@@ -80,10 +80,10 @@ void FViewport::EnsureResources(ID3D11Device* Device)
 	DepthDesc.Height = Rect.Height;
 	DepthDesc.MipLevels = 1;
 	DepthDesc.ArraySize = 1;
-	DepthDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	DepthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	DepthDesc.SampleDesc.Count = 1;
 	DepthDesc.Usage = D3D11_USAGE_DEFAULT;
-	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &DepthStencilTexture)))
 	{
@@ -91,22 +91,7 @@ void FViewport::EnsureResources(ID3D11Device* Device)
 		return;
 	}
 
-	D3D11_DEPTH_STENCIL_VIEW_DESC DepthViewDesc = {};
-	DepthViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DepthViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	DepthViewDesc.Texture2D.MipSlice = 0;
-	if (FAILED(Device->CreateDepthStencilView(DepthStencilTexture, &DepthViewDesc, &DepthStencilView)))
-	{
-		Release();
-		return;
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSRVDesc = {};
-	DepthSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-	DepthSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	DepthSRVDesc.Texture2D.MostDetailedMip = 0;
-	DepthSRVDesc.Texture2D.MipLevels = 1;
-	if (FAILED(Device->CreateShaderResourceView(DepthStencilTexture, &DepthSRVDesc, &DepthShaderResourceView)))
+	if (FAILED(Device->CreateDepthStencilView(DepthStencilTexture, nullptr, &DepthStencilView)))
 	{
 		Release();
 		return;
@@ -118,11 +103,7 @@ void FViewport::EnsureResources(ID3D11Device* Device)
 
 void FViewport::Release()
 {
-	IUnknown* Resource = reinterpret_cast<IUnknown*>(DepthShaderResourceView);
-	ReleaseIfValid(Resource);
-	DepthShaderResourceView = nullptr;
-
-	Resource = reinterpret_cast<IUnknown*>(DepthStencilView);
+	IUnknown* Resource = reinterpret_cast<IUnknown*>(DepthStencilView);
 	ReleaseIfValid(Resource);
 	DepthStencilView = nullptr;
 

@@ -2,7 +2,6 @@
 #include "PrimitiveComponent.h"
 
 struct FDynamicMesh;
-class FPrimitiveSceneProxy;
 
 class ENGINE_API USubUVComponent : public UPrimitiveComponent
 {
@@ -11,40 +10,37 @@ public:
 
 	void PostConstruct() override;
 
-	virtual bool UseSpherePicking() const override { return true; }
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 
-	void SetSize(const FVector2& InSize) { Size = InSize; UpdateBounds(); }
+	void SetSize(const FVector2& InSize) { Size = InSize; }
 	const FVector2& GetSize() const { return Size; }
 
-	void SetColumns(int32 InColumns) { Columns = InColumns; MarkRenderStateDirty(); }
+	void SetColumns(int32 InColumns) { Columns = InColumns; }
 	int32 GetColumns() const { return Columns; }
 
-	void SetRows(int32 InRows) { Rows = InRows; MarkRenderStateDirty(); }
+	void SetRows(int32 InRows) { Rows = InRows; }
 	int32 GetRows() const { return Rows; }
 
-	void SetTotalFrames(int32 InTotalFrames) { TotalFrames = InTotalFrames; MarkRenderStateDirty(); }
+	void SetTotalFrames(int32 InTotalFrames) { TotalFrames = InTotalFrames; }
 	int32 GetTotalFrames() const { return TotalFrames; }
 
-	void SetFirstFrame(int32 InFirstFrame) { FirstFrame = InFirstFrame; MarkRenderStateDirty(); }
+	void SetFirstFrame(int32 InFirstFrame) { FirstFrame = InFirstFrame; }
 	int32 GetFirstFrame() const { return FirstFrame; }
 
-	void SetLastFrame(int32 InLastFrame) { LastFrame = InLastFrame; MarkRenderStateDirty(); }
+	void SetLastFrame(int32 InLastFrame) { LastFrame = InLastFrame; }
 	int32 GetLastFrame() const { return LastFrame; }
 
-	void SetFPS(float InFPS) { FPS = InFPS; MarkRenderStateDirty(); }
+	void SetFPS(float InFPS) { FPS = InFPS; }
 	float GetFPS() const { return FPS; }
 
-	void SetLoop(bool bInLoop) { bLoop = bInLoop; MarkRenderStateDirty(); }
+	void SetLoop(bool bInLoop) { bLoop = bInLoop; }
 	bool IsLoop() const { return bLoop; }
 
-	void SetBillboard(bool bInBillboard) { bBillboard = bInBillboard; MarkRenderStateDirty(); }
+	void SetBillboard(bool bInBillboard) { bBillboard = bInBillboard; }
 	bool IsBillboard() const { return bBillboard; }
 
 	/** SubUV 렌더링용 메시 데이터 반환 */
 	virtual FRenderMesh* GetRenderMesh() const override;
-	EPrimitiveRenderCategory GetRenderCategory() const override { return EPrimitiveRenderCategory::SubUV; }
-	std::shared_ptr<FPrimitiveSceneProxy> CreateSceneProxy() const override;
 	FDynamicMesh* GetSubUVMesh() const { return SubUVMesh.get(); }
 
 private:

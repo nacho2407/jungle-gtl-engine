@@ -262,7 +262,7 @@ void FEditorViewportInputService::HandleMessage(
 			return;
 		}
 
-		AActor* PickedActor = Picker.PickActor(Scene, Entry, ScreenMouseX, ScreenMouseY, static_cast<FEditorEngine*>(Engine));
+		AActor* PickedActor = Picker.PickActor(Scene, Entry, ScreenMouseX, ScreenMouseY);
 		EditorEngine->SetSelectedActor(PickedActor);
 		if (OnSelectionChanged)
 		{

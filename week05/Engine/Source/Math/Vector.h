@@ -125,61 +125,57 @@ public:
 		return FVector(-X, -Y, -Z);
 	}
 
-	FVector operator+(const FVector& Other) const noexcept
+	constexpr FVector operator+(const FVector& Other) const noexcept
 	{
-		return FVector(DirectX::XMVectorAdd(ToXMVector(), Other.ToXMVector()));
+		return FVector(X + Other.X, Y + Other.Y, Z + Other.Z);
 	}
 
-	FVector operator-(const FVector& Other) const noexcept
+	constexpr FVector operator-(const FVector& Other) const noexcept
 	{
-		return FVector(DirectX::XMVectorSubtract(ToXMVector(), Other.ToXMVector()));
+		return FVector(X - Other.X, Y - Other.Y, Z - Other.Z);
 	}
 
-	FVector operator*(float Scalar) const noexcept
+	constexpr FVector operator*(float Scalar) const noexcept
 	{
-		return FVector(DirectX::XMVectorScale(ToXMVector(), Scalar));
+		return FVector(X * Scalar, Y * Scalar, Z * Scalar);
 	}
 
-	FVector operator/(float Scalar) const noexcept
+	constexpr FVector operator/(float Scalar) const noexcept
 	{
 		assert(Scalar != 0.f);
-		return FVector(DirectX::XMVectorScale(ToXMVector(), 1.f / Scalar));
+		return FVector(X / Scalar, Y / Scalar, Z / Scalar);
 	}
 
 	FVector& operator+=(const FVector& Other) noexcept
 	{
-		DirectX::XMStoreFloat3(
-			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
-			DirectX::XMVectorAdd(ToXMVector(), Other.ToXMVector())
-		);
+		X += Other.X;
+		Y += Other.Y;
+		Z += Other.Z;
 		return *this;
 	}
 
 	FVector& operator-=(const FVector& Other) noexcept
 	{
-		DirectX::XMStoreFloat3(
-			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
-			DirectX::XMVectorSubtract(ToXMVector(), Other.ToXMVector())
-		);
+		X -= Other.X;
+		Y -= Other.Y;
+		Z -= Other.Z;
 		return *this;
 	}
 
 	FVector& operator*=(float Scalar) noexcept
 	{
-		DirectX::XMStoreFloat3(
-			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
-			DirectX::XMVectorScale(ToXMVector(), Scalar)
-		);
+		X *= Scalar;
+		Y *= Scalar;
+		Z *= Scalar;
 		return *this;
 	}
 
 	FVector& operator/=(float Scalar) noexcept
 	{
 		assert(Scalar != 0.f);
-		DirectX::XMStoreFloat3(
-			reinterpret_cast<DirectX::XMFLOAT3*>(XYZ),
-			DirectX::XMVectorScale(ToXMVector(), 1.f / Scalar)
-		);
+		X /= Scalar;
+		Y /= Scalar;
+		Z /= Scalar;
 		return *this;
 	}
 

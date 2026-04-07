@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Asset\StaticMeshLODBuilder.h" />
     <ClInclude Include="Source\CoreMinimal.h" />
     <ClInclude Include="Source\EngineAPI.h" />
     <ClInclude Include="Source\Actor\Actor.h" />
@@ -60,13 +59,9 @@
     <ClInclude Include="Source\Input\InputMappingContext.h" />
     <ClInclude Include="Source\Input\InputModifier.h" />
     <ClInclude Include="Source\Input\inputTrigger.h" />
-    <ClInclude Include="Source\Math\Collapse.h" />
-    <ClInclude Include="Source\Math\CollapseQueue.h" />
-    <ClInclude Include="Source\Math\Edge.h" />
     <ClInclude Include="Source\Math\Frustum.h" />
     <ClInclude Include="Source\Math\MathUtility.h" />
     <ClInclude Include="Source\Math\Matrix.h" />
-    <ClInclude Include="Source\Math\Quadric.h" />
     <ClInclude Include="Source\Math\Quat.h" />
     <ClInclude Include="Source\Math\Rotator.h" />
     <ClInclude Include="Source\Math\Transform.h" />
@@ -92,12 +87,6 @@
     <ClInclude Include="Source\Renderer\FontAtlas.h" />
     <ClInclude Include="Source\Renderer\Material.h" />
     <ClInclude Include="Source\Renderer\MaterialManager.h" />
-    <ClInclude Include="Source\Renderer\ObjectUniformStream.h" />
-    <ClInclude Include="Source\Renderer\PassExecutor.h" />
-    <ClInclude Include="Source\Renderer\SceneProxy.h" />
-    <ClInclude Include="Source\Renderer\SceneRenderTypes.h" />
-    <ClInclude Include="Source\Renderer\SceneRenderer.h" />
-    <ClInclude Include="Source\Renderer\ViewInfo.h" />
     <ClInclude Include="Source\Renderer\MeshData.h" />
     <ClInclude Include="Source\Renderer\RenderCommand.h" />
     <ClInclude Include="Source\Renderer\RenderMesh.h" />
@@ -110,12 +99,9 @@
     <ClInclude Include="Source\Renderer\ShaderResource.h" />
     <ClInclude Include="Source\Renderer\ShaderType.h" />
     <ClInclude Include="Source\Renderer\SubUVRenderer.h" />
-    <ClInclude Include="Source\Renderer\TextureLoader.h" />
     <ClInclude Include="Source\Renderer\TextMeshBuilder.h" />
     <ClInclude Include="Source\Renderer\TextureVertex.h" />
     <ClInclude Include="Source\Renderer\Vertex.h" />
-    <ClInclude Include="Source\Scene\BVH.h" />
-    <ClInclude Include="Source\Scene\MeshBVH.h" />
     <ClInclude Include="Source\Scene\RenderCollector.h" />
     <ClInclude Include="Source\Scene\Scene.h" />
     <ClInclude Include="Source\Scene\SceneContext.h" />
@@ -238,7 +224,6 @@
     <ClCompile Include="Source\Actor\SubUVActor.cpp" />
     <ClCompile Include="Source\Actor\TextActor.cpp" />
     <ClCompile Include="Source\Asset\ObjManager.cpp" />
-    <ClCompile Include="Source\Asset\StaticMeshLODBuilder.cpp" />
     <ClCompile Include="Source\Camera\Camera.cpp" />
     <ClCompile Include="Source\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\CameraComponent.cpp" />
@@ -287,12 +272,8 @@
     <ClCompile Include="Source\Renderer\FontAtlas.cpp" />
     <ClCompile Include="Source\Renderer\Material.cpp" />
     <ClCompile Include="Source\Renderer\MaterialManager.cpp" />
-    <ClCompile Include="Source\Renderer\ObjectUniformStream.cpp" />
-    <ClCompile Include="Source\Renderer\PassExecutor.cpp" />
-    <ClCompile Include="Source\Renderer\SceneProxy.cpp" />
-    <ClCompile Include="Source\Renderer\SceneRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\ViewInfo.cpp" />
     <ClCompile Include="Source\Renderer\MeshData.cpp" />
+    <ClCompile Include="Source\Renderer\RenderCommand.cpp" />
     <ClCompile Include="Source\Renderer\RenderMesh.cpp" />
     <ClCompile Include="Source\Renderer\RenderState.cpp" />
     <ClCompile Include="Source\Renderer\RenderStateManager.cpp" />
@@ -302,10 +283,7 @@
     <ClCompile Include="Source\Renderer\ShaderMap.cpp" />
     <ClCompile Include="Source\Renderer\ShaderResource.cpp" />
     <ClCompile Include="Source\Renderer\SubUVRenderer.cpp" />
-    <ClCompile Include="Source\Renderer\TextureLoader.cpp" />
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp" />
-    <ClCompile Include="Source\Scene\BVH.cpp" />
-    <ClCompile Include="Source\Scene\MeshBVH.cpp" />
     <ClCompile Include="Source\Scene\RenderCollector.cpp" />
     <ClCompile Include="Source\Scene\Scene.cpp" />
     <ClCompile Include="Source\Serializer\Archive.cpp" />
@@ -425,7 +403,6 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)Source\;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

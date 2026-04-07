@@ -8,7 +8,6 @@
 
 class FVertexShader;
 class FPixelShader;
-class FComputeShader;
 
 class ENGINE_API FShaderMap
 {
@@ -23,12 +22,6 @@ public:
 		const wchar_t* FilePath
 	);
 
-	std::shared_ptr<FComputeShader> GetOrCreateComputeShader(
-		ID3D11Device* Device,
-		const wchar_t* FilePath,
-		const char* EntryPoint = "main"
-	);
-
 	void Clear();
 
 	static FShaderMap& Get();
@@ -38,5 +31,4 @@ private:
 
 	std::unordered_map<std::wstring, std::shared_ptr<FVertexShader>> VertexShaders;
 	std::unordered_map<std::wstring, std::shared_ptr<FPixelShader>> PixelShaders;
-	std::unordered_map<std::wstring, std::shared_ptr<FComputeShader>> ComputeShaders;
 };

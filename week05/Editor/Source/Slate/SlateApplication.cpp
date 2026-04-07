@@ -16,7 +16,7 @@ void FSlateApplication::Initialize(const FRect& Area, FViewport* VPs[], int32 Co
 	}
 
 	AreaRect = Area;
-	SetLayout(EViewportLayout::Single);
+	SetLayout(EViewportLayout::FourGrid);
 }
 
 void FSlateApplication::ResetPools()
@@ -269,7 +269,6 @@ void FSlateApplication::Paint(SWidget& Painter)
 	{
 		for (int i = 0; i < ActiveViewportCount; i++)
 		{
-			break; // GameGem
 			if (!Viewports[i] || Viewports[i]->Id != FocusedViewportId)
 			{
 				continue;

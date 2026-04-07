@@ -1,19 +1,17 @@
 #include "Renderer/SubUVRenderer.h"
-
-#include "Core/Paths.h"
-#include "Renderer/Material.h"
-#include "Renderer/MaterialManager.h"
-#include "Renderer/RenderMesh.h"
-#include "Renderer/Renderer.h"
 #include "Renderer/Shader.h"
-#include "Renderer/ShaderMap.h"
 #include "Renderer/ShaderResource.h"
 #include "Renderer/ShaderType.h"
-
+#include "Renderer/Material.h"
+#include "Renderer/MaterialManager.h"
+#include "Renderer/ShaderMap.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/RenderMesh.h"
+#include "Renderer/RenderStateManager.h"
+#include "Core/Paths.h"
 #include <WICTextureLoader.h>
-
-#include <algorithm>
 #include <cstring>
+#include <algorithm>
 
 FSubUVRenderer::~FSubUVRenderer()
 {
@@ -31,6 +29,7 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 
 	Device = InRenderer->GetDevice();
 	DeviceContext = InRenderer->GetDeviceContext();
+
 	if (!Device || !DeviceContext)
 	{
 		return false;
@@ -38,10 +37,7 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 
 	// 텍스처 및 샘플러 생성
 	HRESULT Hr = DirectX::CreateWICTextureFromFile(Device, DeviceContext, TexturePath.c_str(), nullptr, &TextureSRV);
-	if (FAILED(Hr))
-	{
-		return false;
-	}
+	if (FAILED(Hr)) return false;
 
 	D3D11_SAMPLER_DESC SamplerDesc = {};
 	SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -51,12 +47,9 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 	SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	SamplerDesc.MinLOD = 0;
 	SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
 	Hr = Device->CreateSamplerState(&SamplerDesc, &SamplerState);
-	if (FAILED(Hr))
-	{
-		return false;
-	}
+	if (FAILED(Hr)) return false;
+
 	// 전용 머티리얼 구성
 	const std::wstring ShaderDir = FPaths::ShaderDir();
 	const std::wstring VSPath = ShaderDir + L"SubUVVertexShader.hlsl";
@@ -70,11 +63,37 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 	SubUVMaterial->SetVertexShader(VS);
 	SubUVMaterial->SetPixelShader(PS);
 
-	auto MaterialTexture = std::make_shared<FMaterialTexture>();
-	MaterialTexture->SetResources(TextureSRV, SamplerState, false);
-	SubUVMaterial->SetMaterialTexture(MaterialTexture);
+	// 래스터라이저 설정 (컬링 방지)
+	FRasterizerStateOption rasterizerOption;
+	rasterizerOption.FillMode = D3D11_FILL_SOLID;
+	rasterizerOption.CullMode = D3D11_CULL_NONE;
+	auto RS = InRenderer->GetRenderStateManager()->GetOrCreateRasterizerState(rasterizerOption);
+	SubUVMaterial->SetRasterizerOption(rasterizerOption);
+	SubUVMaterial->SetRasterizerState(RS);
 
-	const int32 SlotIndex = SubUVMaterial->CreateConstantBuffer(Device, 16);
+	// 깊이 설정
+	FDepthStencilStateOption depthOption;
+	depthOption.DepthEnable = true;
+	depthOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	auto DSS = InRenderer->GetRenderStateManager()->GetOrCreateDepthStencilState(depthOption);
+	SubUVMaterial->SetDepthStencilOption(depthOption);
+	SubUVMaterial->SetDepthStencilState(DSS);
+
+	// 알파 블렌딩 설정
+	FBlendStateOption blendOption;
+	blendOption.BlendEnable = true;
+	blendOption.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendOption.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendOption.BlendOp = D3D11_BLEND_OP_ADD;
+	blendOption.SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendOption.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	blendOption.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	auto BS = InRenderer->GetRenderStateManager()->GetOrCreateBlendState(blendOption);
+	SubUVMaterial->SetBlendOption(blendOption);
+	SubUVMaterial->SetBlendState(BS);
+
+	// b2: SubUV 파라미터 (CellSize(8), UVOffset(8)) = 16 bytes
+	int32 SlotIndex = SubUVMaterial->CreateConstantBuffer(Device, 16);
 	if (SlotIndex >= 0)
 	{
 		SubUVMaterial->RegisterParameter("CellSize", SlotIndex, 0, 8);
@@ -86,18 +105,8 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 
 void FSubUVRenderer::Release()
 {
-	if (TextureSRV)
-	{
-		TextureSRV->Release();
-		TextureSRV = nullptr;
-	}
-
-	if (SamplerState)
-	{
-		SamplerState->Release();
-		SamplerState = nullptr;
-	}
-
+	if (TextureSRV) { TextureSRV->Release(); TextureSRV = nullptr; }
+	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
 	SubUVMaterial.reset();
 	Device = nullptr;
 	DeviceContext = nullptr;
@@ -132,25 +141,14 @@ bool FSubUVRenderer::BuildSubUVMesh(const FVector2& Size, FRenderMesh& OutMesh) 
 }
 
 void FSubUVRenderer::UpdateAnimationParams(
-	FMaterial* TargetMaterial,
-	int32 Columns,
-	int32 Rows,
-	int32 TotalFrames,
-	int32 FirstFrame,
-	int32 LastFrame,
-	float FPS,
-	float ElapsedTime,
-	bool bLoop) const
+	int32 Columns, int32 Rows, int32 TotalFrames,
+	int32 FirstFrame, int32 LastFrame,
+	float FPS, float ElapsedTime, bool bLoop)
 {
-	(void)TotalFrames;
+	if (!SubUVMaterial || Columns <= 0 || Rows <= 0) return;
 
-	if (!TargetMaterial || Columns <= 0 || Rows <= 0)
-	{
-		return;
-	}
-
-	const float FrameFloat = ElapsedTime * FPS;
-	const int32 AnimationFrame = static_cast<int32>(FrameFloat);
+	float FrameFloat = ElapsedTime * FPS;
+	int32 AnimationFrame = static_cast<int32>(FrameFloat);
 
 	int32 FirstRow = FirstFrame / Columns;
 	int32 LastRow = LastFrame / Columns;
@@ -180,26 +178,14 @@ void FSubUVRenderer::UpdateAnimationParams(
 	}
 
 	const int32 TargetColumn = 0;
-	const int32 FrameIndex = RowIndex * Columns + TargetColumn;
+	int32 FrameIndex = RowIndex * Columns + TargetColumn;
+
 	const int32 Col = FrameIndex % Columns;
 	const int32 Row = FrameIndex / Columns;
 
-	const FVector2 CellSize(1.0f / static_cast<float>(Columns), 1.0f / static_cast<float>(Rows));
-	const FVector2 UVOffset(static_cast<float>(Col) * CellSize.X, static_cast<float>(Row) * CellSize.Y);
+	FVector2 CellSize(1.0f / static_cast<float>(Columns), 1.0f / static_cast<float>(Rows));
+	FVector2 UVOffset(static_cast<float>(Col) * CellSize.X, static_cast<float>(Row) * CellSize.Y);
 
-	TargetMaterial->SetParameterData("CellSize", &CellSize, 8);
-	TargetMaterial->SetParameterData("UVOffset", &UVOffset, 8);
-}
-
-void FSubUVRenderer::UpdateAnimationParams(
-	int32 Columns,
-	int32 Rows,
-	int32 TotalFrames,
-	int32 FirstFrame,
-	int32 LastFrame,
-	float FPS,
-	float ElapsedTime,
-	bool bLoop)
-{
-	UpdateAnimationParams(SubUVMaterial.get(), Columns, Rows, TotalFrames, FirstFrame, LastFrame, FPS, ElapsedTime, bLoop);
+	SubUVMaterial->SetParameterData("CellSize", &CellSize, 8);
+	SubUVMaterial->SetParameterData("UVOffset", &UVOffset, 8);
 }

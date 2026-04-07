@@ -10,14 +10,13 @@ public:
 
 	void SetRect(const FRect& InRect);
 	const FRect& GetRect() const { return Rect; }
-	/* Viewport의 D3D11 Resource가 반드시 있음을 보장해주는 함수 */
+
 	void EnsureResources(ID3D11Device* Device);
 	void Release();
 
 	ID3D11RenderTargetView* GetRTV() const { return RenderTargetView; }
 	ID3D11DepthStencilView* GetDSV() const { return DepthStencilView; }
 	ID3D11ShaderResourceView* GetSRV() const { return ShaderResourceView; }
-	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthShaderResourceView; }
 
 private:
 	FRect Rect;
@@ -27,7 +26,6 @@ private:
 	ID3D11ShaderResourceView* ShaderResourceView = nullptr;
 	ID3D11Texture2D* DepthStencilTexture = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
-	ID3D11ShaderResourceView* DepthShaderResourceView = nullptr;
 
 	uint32 ResourceWidth = 0;
 	uint32 ResourceHeight = 0;

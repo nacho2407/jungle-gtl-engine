@@ -20,8 +20,6 @@
 #include "World/World.h"
 #include "Object/ObjectFactory.h"
 #include "Primitive/PrimitiveGizmo.h"
-#include <chrono>
-#include <utility>
 
 FEngine* GEngine = nullptr;
 
@@ -100,11 +98,10 @@ void FEngine::Tick()
 
 	PrepareFrame(DeltaTime);
 	ProcessInput(DeltaTime);
-	//GameJam
-	//TickPhysics(DeltaTime);
-	//TickWorlds(DeltaTime);
-	//SyncPlatformState();
+	TickPhysics(DeltaTime);
+	TickWorlds(DeltaTime);
 	RenderFrame();
+	SyncPlatformState();
 	FinalizeFrame(DeltaTime);
 }
 
@@ -161,21 +158,6 @@ const FTimer& FEngine::GetTimer() const
 float FEngine::GetDeltaTime() const
 {
 	return Renderer ? Timer.GetDeltaTime() : 0.0f;
-}
-
-const FRenderInstrumentationStats& FEngine::GetRenderInstrumentationStats() const
-{
-	return RenderInstrumentationStats;
-}
-
-FRenderInstrumentationStats& FEngine::GetMutableRenderInstrumentationStats()
-{
-	return RenderInstrumentationStats;
-}
-
-bool FEngine::IsGpuOcclusionCullingEnabled() const
-{
-	return bGpuOcclusionCullingEnabled;
 }
 
 UScene* FEngine::GetScene() const
@@ -431,12 +413,6 @@ void FEngine::BeginFrame()
 	Timer.Tick();
 }
 
-void FEngine::ResetRenderInstrumentationStats()
-{
-	RenderInstrumentationStats.bGpuOcclusionCullingEnabled = bGpuOcclusionCullingEnabled;
-	RenderInstrumentationStats.ResetFrame();
-}
-
 void FEngine::ProcessInput(float DeltaTime)
 {
 	if (InputManager)
@@ -516,7 +492,6 @@ void FEngine::RenderFrame()
 		return;
 	}
 
-	ResetRenderInstrumentationStats();
 	Renderer->BeginFrame();
 
 	UWorld* ActiveWorld = GetActiveWorld();
@@ -544,15 +519,11 @@ void FEngine::RenderFrame()
 
 	if (ActiveViewportClient)
 	{
-		const auto BuildStartTime = std::chrono::high_resolution_clock::now();
-		const FMatrix ViewInverse = CommandQueue.ViewMatrix.GetInverse();
-		const FVector CameraPosition = ViewInverse.GetTranslation();
-		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue.ProjectionMatrix, CommandQueue);
-		const auto BuildEndTime = std::chrono::high_resolution_clock::now();
-		RenderInstrumentationStats.ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
+		const FVector CameraPosition = CommandQueue.ViewMatrix.GetInverse().GetTranslation();
+		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue);
 	}
 
-	Renderer->SubmitCommands(std::move(CommandQueue));
+	Renderer->SubmitCommands(CommandQueue);
 	Renderer->ExecuteCommands();
 
 	DebugDrawManager.Flush(Renderer.get(), FShowFlags{}, ActiveWorld);
@@ -608,29 +579,6 @@ void FEngine::RegisterConsoleVariables()
 	if (Renderer)
 	{
 		Renderer->SetVSync(VSyncVar->GetInt() != 0);
-	}
-
-	FConsoleVariable* GpuOcclusionVar = CVM.Find("r.GpuOcclusionCulling");
-	if (!GpuOcclusionVar)
-	{
-		GpuOcclusionVar = CVM.Register("r.GpuOcclusionCulling", 1, "Enable master switch for future GPU occlusion culling path (0 = off, 1 = on)");
-	}
-	GpuOcclusionVar->SetOnChanged([this](FConsoleVariable* Var)
-	{
-		bGpuOcclusionCullingEnabled = (Var->GetInt() != 0);
-		RenderInstrumentationStats.bGpuOcclusionCullingEnabled = bGpuOcclusionCullingEnabled;
-	});
-	bGpuOcclusionCullingEnabled = (GpuOcclusionVar->GetInt() != 0);
-	RenderInstrumentationStats.bGpuOcclusionCullingEnabled = bGpuOcclusionCullingEnabled;
-
-	if (!CVM.Find("r.StaticMeshCullMaxDistance"))
-	{
-		CVM.Register("r.StaticMeshCullMaxDistance", 0.0f, "Cull static meshes after frustum when camera distance exceeds this value (0 = off)");
-	}
-
-	if (!CVM.Find("r.StaticMeshCullMinProjectedRadius"))
-	{
-		CVM.Register("r.StaticMeshCullMinProjectedRadius", 0.001f, "Cull static meshes after frustum when BoundsRadius * ProjectionYScale / Distance falls below this value (0 = off)");
 	}
 
 	FConsoleVariable* GCIntervalVar = CVM.Find("gc.Interval");

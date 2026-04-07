@@ -12,57 +12,16 @@
 #include "UI/EditorUI.h"
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
-#include "Component/PrimitiveComponent.h"
+#include "Component/SkyComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/TextComponent.h"
 #include "Asset/ObjManager.h"
 #include "Slate/Widget/Painter.h"
-#include <algorithm>
-#include <chrono>
-#include <utility>
 
 namespace
 {
-#ifndef WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
-#define WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER 0
-#endif
-
-	size_t GSceneCommandReserveHint = 2048;
-
-	int32 CountActiveViewportEntries(const TArray<FViewportEntry>& Entries)
+	void BuildGridVectors(const FRenderCommandQueue& Queue, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
 	{
-		int32 ActiveCount = 0;
-		for (const FViewportEntry& Entry : Entries)
-		{
-			if (Entry.bActive && Entry.Viewport)
-			{
-				++ActiveCount;
-			}
-		}
-
-		return ActiveCount;
-	}
-
-	bool BuildSceneViewport(const FRect& Rect, bool bDirectToBackBuffer, D3D11_VIEWPORT& OutViewport)
-	{
-		if (!Rect.IsValid())
-		{
-			return false;
-		}
-
-		OutViewport = {};
-		OutViewport.TopLeftX = bDirectToBackBuffer ? static_cast<float>(Rect.X) : 0.0f;
-		OutViewport.TopLeftY = bDirectToBackBuffer ? static_cast<float>(Rect.Y) : 0.0f;
-		OutViewport.Width = static_cast<float>(Rect.Width);
-		OutViewport.Height = static_cast<float>(Rect.Height);
-		OutViewport.MinDepth = 0.0f;
-		OutViewport.MaxDepth = 1.0f;
-		return true;
-	}
-
-	void BuildGridVectors(const FMatrix& ViewInverse, const FViewportLocalState& LocalState, FVector& OutGridAxisU, FVector& OutGridAxisV, FVector& OutViewForward)
-	{
+		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
 		OutViewForward = ViewInverse.GetForwardVector().GetSafeNormal();
 
 		if (LocalState.ProjectionType == EViewportType::Perspective)
@@ -75,50 +34,8 @@ namespace
 		OutGridAxisU = ViewInverse.GetRightVector().GetSafeNormal();
 		OutGridAxisV = ViewInverse.GetUpVector().GetSafeNormal();
 	}
-
-	void BuildOutlineItemsForViewport(FEditorEngine* EditorEngine, const FViewportEntry& Entry, FRenderCommandQueue& Queue)
-	{
-		if (!EditorEngine || !Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives))
-		{
-			return;
-		}
-
-		AActor* SelectedActor = EditorEngine->GetSelectedActor();
-		if (!SelectedActor || SelectedActor->IsPendingDestroy() || !SelectedActor->IsVisible())
-		{
-			return;
-		}
-
-		const TArray<UActorComponent*>& Components = SelectedActor->GetComponents();
-		Queue.OutlineItems.reserve(Queue.OutlineItems.size() + Components.size());
-
-		for (UActorComponent* Component : Components)
-		{
-			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
-			{
-				continue;
-			}
-			if (Component->IsA(UTextComponent::StaticClass()) || Component->IsA(USubUVComponent::StaticClass()))
-			{
-				continue;
-			}
-
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-			FRenderMesh* RenderMesh = PrimitiveComponent->GetRenderMesh();
-			if (!RenderMesh)
-			{
-				continue;
-			}
-
-			FOutlineRenderItem Item = {};
-			Item.Mesh = RenderMesh;
-			Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
-			Queue.OutlineItems.push_back(Item);
-		}
-	}
 }
 
-FEditorViewportRenderService::~FEditorViewportRenderService() = default;
 
 void FEditorViewportRenderService::RenderAll(
 	FEngine* Engine,
@@ -153,11 +70,6 @@ void FEditorViewportRenderService::RenderAll(
 
 	constexpr float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	const TArray<FViewportEntry>& Entries = ViewportRegistry.GetEntries();
-#if WITH_EDITOR_SINGLE_VIEWPORT_DIRECT_RENDER
-	const bool bUseDirectSingleViewportPath = (CountActiveViewportEntries(Entries) == 1);
-#else
-	const bool bUseDirectSingleViewportPath = false;
-#endif
 
 	for (const FViewportEntry& Entry : Entries)
 	{
@@ -166,68 +78,47 @@ void FEditorViewportRenderService::RenderAll(
 			continue;
 		}
 
-		const FRect& Rect = Entry.Viewport->GetRect();
-		D3D11_VIEWPORT Viewport = {};
-		if (!BuildSceneViewport(Rect, bUseDirectSingleViewportPath, Viewport))
-		{
-			continue;
-		}
+		Entry.Viewport->EnsureResources(Device);
 
-		ID3D11RenderTargetView* RTV = nullptr;
-		ID3D11DepthStencilView* DSV = nullptr;
-
-		if (bUseDirectSingleViewportPath)
-		{
-			RTV = Renderer->GetRenderTargetView();
-			DSV = Renderer->GetDepthStencilView();
-		}
-		else
-		{
-			Entry.Viewport->EnsureResources(Device);
-			RTV = Entry.Viewport->GetRTV();
-			DSV = Entry.Viewport->GetDSV();
-
-			if (RTV && DSV)
-			{
-				Context->ClearRenderTargetView(RTV, ClearColor);
-				Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-			}
-		}
-
+		ID3D11RenderTargetView* RTV = Entry.Viewport->GetRTV();
+		ID3D11DepthStencilView* DSV = Entry.Viewport->GetDSV();
 		if (!RTV || !DSV)
 		{
 			continue;
 		}
 
-		ID3D11ShaderResourceView* DepthSRV = bUseDirectSingleViewportPath
-			? Renderer->GetDepthShaderResourceView()
-			: Entry.Viewport->GetDepthSRV();
-		Renderer->BeginScenePass(RTV, DSV, DepthSRV, Viewport);
+		const FRect& Rect = Entry.Viewport->GetRect();
+		D3D11_VIEWPORT Viewport = {};
+		Viewport.TopLeftX = 0.0f;
+		Viewport.TopLeftY = 0.0f;
+		Viewport.Width = static_cast<float>(Rect.Width);
+		Viewport.Height = static_cast<float>(Rect.Height);
+		Viewport.MinDepth = 0.0f;
+		Viewport.MaxDepth = 1.0f;
+
+		Context->ClearRenderTargetView(RTV, ClearColor);
+		Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		Renderer->BeginScenePass(RTV, DSV, Viewport);
 
 		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
 		FRenderCommandQueue Queue;
-		const size_t ReserveHint = (std::max)(Renderer->GetPrevCommandCount(), GSceneCommandReserveHint);
-		Queue.Reserve(ReserveHint);
+		Queue.Reserve(Renderer->GetPrevCommandCount());
 		Queue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 		Queue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
-		Queue.bOpaqueWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe);
 
 		FFrustum Frustum;
 		Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
-		const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
-		const FVector CameraPosition = ViewInverse.GetTranslation();
-		const auto BuildStartTime = std::chrono::high_resolution_clock::now();
-		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue.ProjectionMatrix, Queue);
-		const auto BuildEndTime = std::chrono::high_resolution_clock::now();
-		Engine->GetMutableRenderInstrumentationStats().ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
+		const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
+		BuildRenderCommands(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, CameraPosition, Queue);
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
-		if (GizmoTarget)
+		if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
 		{
 			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, Queue);
 		}
 
-		if (Queue.bOpaqueWireframe && WireFrameMaterial)
+		if (Entry.LocalState.ViewMode == ERenderMode::Wireframe && WireFrameMaterial)
 		{
 			ApplyWireframe(Queue, WireFrameMaterial.get());
 		}
@@ -237,7 +128,7 @@ void FEditorViewportRenderService::RenderAll(
 			FVector GridAxisU = FVector::ForwardVector;
 			FVector GridAxisV = FVector::RightVector;
 			FVector ViewForward = FVector::ForwardVector;
-			BuildGridVectors(ViewInverse, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
+			BuildGridVectors(Queue, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
 
 			GridMaterial->SetParameterData("GridSize", &Entry.LocalState.GridSize, 4);
 			GridMaterial->SetParameterData("LineThickness", &Entry.LocalState.LineThickness, 4);
@@ -249,53 +140,30 @@ void FEditorViewportRenderService::RenderAll(
 			GridCommand.RenderMesh = GridMesh;
 			GridCommand.Material = GridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
-			GridCommand.RenderPass = ERenderPass::Alpha;
-			GridCommand.bOverrideRenderPass = true;
+			GridCommand.RenderLayer = ERenderLayer::Default;
 			Queue.AddCommand(GridCommand);
 		}
 
-		BuildOutlineItemsForViewport(EditorEngine, Entry, Queue);
-
-		const size_t QueueSize = Queue.Commands.size();
-		if (QueueSize > GSceneCommandReserveHint)
-		{
-			GSceneCommandReserveHint = QueueSize;
-		}
-		else
-		{
-			GSceneCommandReserveHint = (std::max)(QueueSize, GSceneCommandReserveHint * 7 / 8);
-		}
-
-		Renderer->SubmitCommands(std::move(Queue));
+		Renderer->SubmitCommands(Queue);
 		Renderer->ExecuteCommands();
-		// EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false); // 지금 안씀 GameJam
-		Renderer->EndScenePass(); // 깡통 GameJam
+		EditorEngine->FlushDebugDrawForViewport(Renderer, Entry.LocalState.ShowFlags, false);
+		Renderer->EndScenePass();
 	}
-	// EditorEngine->ClearDebugDrawForFrame(); // 지금 안씀 GameJam
+	EditorEngine->ClearDebugDrawForFrame();
 
 	Renderer->BindSwapChainRTV();
-	if (!bUseDirectSingleViewportPath)
-	{
-		BlitRenderer.BlitAll(Context, Entries);
-		Renderer->BindSwapChainRTV();
-	}
+	BlitRenderer.BlitAll(Context, Entries);
 
+	Renderer->BindSwapChainRTV();
 	if (FSlateApplication* Slate = EditorEngine->GetSlateApplication())
 	{
-		if (!SlatePainter)
-		{
-			SlatePainter = std::make_unique<FPainter>(Renderer);
-		}
-		else
-		{
-			SlatePainter->SetRenderer(Renderer);
-		}
+		FPainter Painter(Renderer);
 
 		RECT rc{};
 		::GetClientRect(Renderer->GetHwnd(), &rc);
-		SlatePainter->SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
-		/*Slate->Paint(*SlatePainter);
-		SlatePainter->Flush();*/
+		Painter.SetScreenSize(rc.right - rc.left, rc.bottom - rc.top);
+		Slate->Paint(Painter);
+		Painter.Flush();
 	}
 
 	EditorUI.Render();
@@ -305,12 +173,7 @@ void FEditorViewportRenderService::ApplyWireframe(FRenderCommandQueue& Queue, FM
 {
 	for (FRenderCommand& Command : Queue.Commands)
 	{
-		if (Command.bOverrideRenderPass && Command.RenderPass != ERenderPass::Opaque)
-		{
-			continue;
-		}
-
-		if (!Command.bOverrideRenderPass || Command.RenderPass == ERenderPass::Opaque)
+		if (Command.RenderLayer != ERenderLayer::Overlay)
 		{
 			Command.Material = WireMaterial;
 		}

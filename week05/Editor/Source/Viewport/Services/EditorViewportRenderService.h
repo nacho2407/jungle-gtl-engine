@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Renderer/RenderCommand.h"
-#include "Slate/Widget/Painter.h"
 #include <functional>
 #include <memory>
 
@@ -28,7 +27,6 @@ public:
 		const FFrustum&,
 		const FShowFlags&,
 		const FVector&,
-		const FMatrix&,
 		FRenderCommandQueue&)>;
 
 	void RenderAll(
@@ -43,11 +41,7 @@ public:
 		FRenderMesh* GridMesh,
 		FMaterial* GridMaterial,
 		const FBuildRenderCommands& BuildRenderCommands) const;
-	~FEditorViewportRenderService();
 
 private:
 	static void ApplyWireframe(FRenderCommandQueue& Queue, FMaterial* WireMaterial);
-
-private:
-	mutable std::unique_ptr<FPainter> SlatePainter;
 };

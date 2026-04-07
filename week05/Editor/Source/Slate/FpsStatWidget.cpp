@@ -6,12 +6,10 @@
 
 namespace
 {
-	FString BuildFpsText(float InFPS, float InFrameTimeMs, uint32 InDrawCallCount, FEditorEngine*& Engine)
+	FString BuildFpsText(float InFPS, float InFrameTimeMs)
 	{
-		char Buffer[96];
-		std::snprintf(Buffer, sizeof(Buffer),
-			"FPS: %.1f (%.3f ms) | Draw: %u | Picking: %.3f ms | Count: %u | Total: %.3f ms",
-			InFPS, InFrameTimeMs, InDrawCallCount, (float)Engine->LastPickTime, Engine->TotalPickCount, (float)Engine->TotalPickTime);
+		char Buffer[64];
+		std::snprintf(Buffer, sizeof(Buffer), "FPS: %.1f (%.3f ms)", InFPS, InFrameTimeMs);
 		Buffer[sizeof(Buffer) - 1] = '\0';
 		return FString(Buffer);
 	}
@@ -21,7 +19,7 @@ FpsStatWidget::FpsStatWidget(FEditorEngine* InEngine)
 	: Engine(InEngine)
 {
 	FpsTextBlock.FontSize = FontSize;
-	FpsTextBlock.SetText(BuildFpsText(0.0f, 0.0f, 0, Engine));
+	FpsTextBlock.SetText(BuildFpsText(0.0f, 0.0f));
 	FpsTextBlock.LetterSpacing = 0.5f;
 }
 
@@ -81,14 +79,5 @@ void FpsStatWidget::SyncValue()
 	const FTimer& Timer = Engine->GetTimer();
 	FPS = Timer.GetDisplayFPS();
 	FrameTimeMs = Timer.GetFrameTimeMs();
-	if (FRenderer* Renderer = Engine->GetRenderer())
-	{
-		DrawCallCount = Renderer->GetFrameDrawCallCount();
-	}
-	else
-	{
-		DrawCallCount = 0;
-	}
-
-	FpsTextBlock.SetText(BuildFpsText(FPS, FrameTimeMs, DrawCallCount, Engine));
+	FpsTextBlock.SetText(BuildFpsText(FPS, FrameTimeMs));
 }

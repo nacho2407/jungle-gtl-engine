@@ -70,6 +70,20 @@ void FEditorViewportClient::CreateGridResource(FRenderer* Renderer)
 		GridMaterial->SetVertexShader(VS);
 		GridMaterial->SetPixelShader(PS);
 
+		FRasterizerStateOption RasterizerOption;
+		RasterizerOption.FillMode = D3D11_FILL_SOLID;
+		RasterizerOption.CullMode = D3D11_CULL_NONE;
+		auto RS = Renderer->GetRenderStateManager()->GetOrCreateRasterizerState(RasterizerOption);
+		GridMaterial->SetRasterizerOption(RasterizerOption);
+		GridMaterial->SetRasterizerState(RS);
+
+		FDepthStencilStateOption DepthStencilOption;
+		DepthStencilOption.DepthEnable = true;
+		DepthStencilOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthStencilOption);
+		GridMaterial->SetDepthStencilOption(DepthStencilOption);
+		GridMaterial->SetDepthStencilState(DSS);
+
 		int32 SlotIndex = GridMaterial->CreateConstantBuffer(Device, 64);
 		if (SlotIndex >= 0)
 		{
@@ -146,13 +160,13 @@ void FEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 		FilePath);
 }
 
-void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, const FMatrix& ProjectionMatrix, FRenderCommandQueue& OutQueue)
+void FEditorViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
 {
 	if (!Engine)
 	{
 		return;
 	}
-	IViewportClient::BuildRenderCommands(Engine, Scene, Frustum, Flags, CameraPosition, ProjectionMatrix, OutQueue);
+	IViewportClient::BuildRenderCommands(Engine, Scene, Frustum, Flags, CameraPosition, OutQueue);
 }
 
 void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
@@ -175,9 +189,9 @@ void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		WireFrameMaterial,
 		GridMesh.get(),
 		GridMaterial.get(),
-		[this](FEngine* InEngine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, const FMatrix& ProjectionMatrix, FRenderCommandQueue& OutQueue)
+		[this](FEngine* InEngine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
 		{
-			BuildRenderCommands(InEngine, Scene, Frustum, Flags, CameraPosition, ProjectionMatrix, OutQueue);
+			BuildRenderCommands(InEngine, Scene, Frustum, Flags, CameraPosition, OutQueue);
 		});
 }
 

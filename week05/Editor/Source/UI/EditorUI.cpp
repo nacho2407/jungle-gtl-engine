@@ -26,6 +26,9 @@
 #include "Serializer/SceneSerializer.h"
 #include "Core/ShowFlags.h"
 #include "Viewport/EditorViewportClient.h"
+#include "Component/SkyComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/UUIDBillboardComponent.h"
 
 enum class EFileDialogType
 {
@@ -273,6 +276,52 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 			}
 		}
 	);
+
+	InRenderer->SetPostRenderCallback([this](FRenderer* Renderer)
+		{
+			if (!Engine)
+			{
+				return;
+			}
+	
+			AActor* Selected = Engine->GetSelectedActor();
+			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
+				&& Selected->GetComponentByClass<USkyComponent>() == nullptr
+				&& [&]() -> bool {
+				const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
+				if (ViewportRegistry.GetEntries().empty()) return true;
+				FSlateApplication* Slate = Engine->GetSlateApplication();
+				FViewportId VId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
+				const FViewportEntry* E = (VId != INVALID_VIEWPORT_ID)
+					? ViewportRegistry.FindEntryByViewportID(VId) : &ViewportRegistry.GetEntries().front();
+				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
+			}())
+			{
+				TArray<FOutlineRenderItem> OutlineItems;
+				for (UActorComponent* Component : Selected->GetComponents())
+				{
+					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
+					if (Component->IsA(UTextComponent::StaticClass())) continue;
+					if (Component->IsA(USubUVComponent::StaticClass())) continue;
+
+					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+					if (PrimitiveComponent->GetRenderMesh())
+					{
+						FOutlineRenderItem& Item = OutlineItems.emplace_back();
+						Item.Mesh = PrimitiveComponent->GetRenderMesh();
+						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
+					}
+				}
+
+				if (!OutlineItems.empty())
+				{
+					Renderer->RenderOutlines(OutlineItems);
+				}
+			}
+
+			const float AxisLength = 10000.0f;
+			const FVector Origin = { 0.0f, 0.0f, 0.0f };
+		});
 }
 
 void FEditorUI::OnSlateReady()
@@ -577,10 +626,7 @@ void FEditorUI::Render()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::Begin("##DockSpaceHost", nullptr, HostFlags);
 	ImGui::PopStyleVar(3);
-	if (DockID == 0)
-	{
-		DockID = ImGui::GetID("MainDockSpace");
-	}
+	ImGuiID DockID = ImGui::GetID("MainDockSpace");
 
 	if (!bLayoutInitialized)
 	{
@@ -605,20 +651,11 @@ void FEditorUI::Render()
 		const float WinX = MainVP ? MainVP->Pos.x : 0.0f;
 		const float WinY = MainVP ? MainVP->Pos.y : 0.0f;
 
-		const int32 NewX = static_cast<int32>(CentralNode->Pos.x - WinX);
-		const int32 NewY = static_cast<int32>(CentralNode->Pos.y - WinY);
-		const int32 NewW = static_cast<int32>(CentralNode->Size.x);
-		const int32 NewH = static_cast<int32>(CentralNode->Size.y);
-
-		if (NewX != CentralDockRect.X || NewY != CentralDockRect.Y ||
-			NewW != CentralDockRect.Width || NewH != CentralDockRect.Height)
-		{
-			CentralDockRect.X = NewX;
-			CentralDockRect.Y = NewY;
-			CentralDockRect.Width = NewW;
-			CentralDockRect.Height = NewH;
-			bHasCentralDockRect = true;
-		}
+		CentralDockRect.X      = static_cast<int32>(CentralNode->Pos.x - WinX);
+		CentralDockRect.Y      = static_cast<int32>(CentralNode->Pos.y - WinY);
+		CentralDockRect.Width  = static_cast<int32>(CentralNode->Size.x);
+		CentralDockRect.Height = static_cast<int32>(CentralNode->Size.y);
+		bHasCentralDockRect = true;
 	}
 
 	ImGui::PopStyleVar();
@@ -950,15 +987,6 @@ void FEditorUI::Render()
 			StatArea = { 0, 0, 0, 0 };
 		}
 		Stat.Render(StatArea);
-	}
-	if (DebugState.FPS)
-	{
-		FRect FpsArea;
-		if (!GetCentralDockRect(FpsArea))
-		{
-			FpsArea = { 0, 0, 0, 0 };
-		}
-		FpsOverlay.Render(Engine, FpsArea);
 	}
 	Outliner.Render(Engine);
 	ContentBrowser.Render();

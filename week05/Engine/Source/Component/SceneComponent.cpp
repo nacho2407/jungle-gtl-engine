@@ -114,8 +114,6 @@ void USceneComponent::MarkTransformDirty()
 			Child->MarkTransformDirty();
 		}
 	}
-
-	UpdateBounds();
 }
 
 void USceneComponent::UpdateWorldTransform() const

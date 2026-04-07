@@ -5,16 +5,10 @@
 #include "EditorEngine.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderCommand.h"
-#include "Actor/Actor.h"
-#include "Component/PrimitiveComponent.h"
 #include "Component/CameraComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/TextComponent.h"
 #include "Math/Frustum.h"
 #include "World/World.h"
 #include "imgui.h"
-#include <chrono>
-#include <utility>
 
 FPreviewViewportClient::FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName)
 	: EditorUI(InEditorUI)
@@ -87,45 +81,9 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 			FFrustum Frustum;
 			Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
 
-			const FMatrix ViewInverse = Queue.ViewMatrix.GetInverse();
-			const FVector CameraPosition = ViewInverse.GetTranslation();
-			const auto BuildStartTime = std::chrono::high_resolution_clock::now();
-			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue.ProjectionMatrix, Queue);
-			const auto BuildEndTime = std::chrono::high_resolution_clock::now();
-			Engine->GetMutableRenderInstrumentationStats().ViewportBuildCommandsCpuMs += std::chrono::duration<double, std::milli>(BuildEndTime - BuildStartTime).count();
-
-			if (FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine))
-			{
-				AActor* SelectedActor = EditorEngine->GetSelectedActor();
-				if (SelectedActor && !SelectedActor->IsPendingDestroy() && SelectedActor->IsVisible())
-				{
-					for (UActorComponent* Component : SelectedActor->GetComponents())
-					{
-						if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
-						{
-							continue;
-						}
-						if (Component->IsA(UTextComponent::StaticClass()) || Component->IsA(USubUVComponent::StaticClass()))
-						{
-							continue;
-						}
-
-						UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-						FRenderMesh* RenderMesh = PrimitiveComponent->GetRenderMesh();
-						if (!RenderMesh)
-						{
-							continue;
-						}
-
-						FOutlineRenderItem Item = {};
-						Item.Mesh = RenderMesh;
-						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
-						Queue.OutlineItems.push_back(Item);
-					}
-				}
-			}
-
-			Renderer->SubmitCommands(std::move(Queue));
+			const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
+			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
+			Renderer->SubmitCommands(Queue);
 			Renderer->ExecuteCommands();
 		}
 	}

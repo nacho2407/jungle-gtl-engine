@@ -3,18 +3,7 @@
 
 #include "Renderer/RenderMesh.h"
 #include "CoreMinimal.h"
-#include "Scene/MeshBVH.h"
-#include <memory>
 
-struct FStaticMesh;
-
-struct FStaticMeshLOD
-{
-	std::unique_ptr<FStaticMesh> Mesh = nullptr;
-	float Distance = 0.0f;
-	float DistanceSquared = 0.0f;
-	uint32 VertexCount = 0;
-};
 
 struct ENGINE_API FStaticMesh : public FRenderMesh
 {
@@ -36,30 +25,26 @@ class ENGINE_API UStaticMesh : public UObject
 {
 public:
 	DECLARE_RTTI(UStaticMesh, UObject)
-	~UStaticMesh() override;
+	virtual ~UStaticMesh()
+	{
+		if (StaticMeshAsset)
+		{
+			delete StaticMeshAsset;
+			StaticMeshAsset = nullptr;
+		}
+	}
 
 	FBoxSphereBounds LocalBounds;
 	const FString& GetAssetPathFileName() const;
 
-	void SetStaticMeshAsset(FStaticMesh* InStaticMesh);
+	void SetStaticMeshAsset(FStaticMesh* InStaticMesh) { StaticMeshAsset = InStaticMesh; }
 	FStaticMesh* GetRenderData() const { return StaticMeshAsset; }
 	int32 GetNumSections() const { return StaticMeshAsset ? StaticMeshAsset->GetNumSection() : 0; }
-	bool IntersectLocalRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const;
 
 	const TArray<std::shared_ptr<FMaterial>>& GetDefaultMaterials() const { return DefaultMaterials; }
 	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
-	void BuildAccelerationStructureIfNeeded() const;
-
-	FStaticMesh* GetRenderData(int32 LODIndex) const;
-	FStaticMesh* GetRenderDataForDistance(float Distance) const;
-	FStaticMesh* GetRenderDataForDistanceSquared(float DistanceSquared) const;
-	void AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance);
-	void ClearLODs();
-	uint32 GetLODCount() const;
 
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<std::shared_ptr<FMaterial>> DefaultMaterials;
-	mutable std::unique_ptr<FMeshBVH> TriangleBVH;
-	TArray<FStaticMeshLOD> LODs;
 };

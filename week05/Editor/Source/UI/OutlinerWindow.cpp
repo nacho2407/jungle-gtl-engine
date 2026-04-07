@@ -26,65 +26,39 @@ void FOutlinerWindow::Render(FEditorEngine* Engine)
 		return;
 	}
 
+
 	AActor* SelectedActor = Engine->GetSelectedActor();
 
 	ImGui::SeparatorText("Actors");
 
 	UScene* Scene = Engine->GetScene();
 	const TArray<AActor*>& Actors = Scene->GetActors();
+	
 
-	// GameJam
-//	for (AActor* Actor : Actors)
-//	{
-//;
-//		if (!Actor || Actor->IsPendingDestroy())
-//		{
-//			continue;
-//		}
-//
-//		const bool bSelected = (Actor == SelectedActor);
-//		ImGui::PushID(Actor);
-//		bool bVisible = Actor->IsVisible();
-//		if (ImGui::Checkbox("##visible", &bVisible))
-//		{
-//			Actor->SetVisible(bVisible);
-//		}
-//		ImGui::SameLine();
-//
-//		if (ImGui::Selectable(Actor->GetName().c_str(), bSelected))
-//		{
-//			Engine->SetSelectedActor(Actor);
-//		}
-//		ImGui::PopID();
-//	}
-
-	ImGuiListClipper Clipper;
-	Clipper.Begin((int)Actors.size());
-
-	while (Clipper.Step())
+	for (AActor* Actor : Actors)
 	{
-		for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++)
+;
+		if (!Actor || Actor->IsPendingDestroy())
 		{
-			AActor* Actor = Actors[i];
-			if (!Actor || Actor->IsPendingDestroy()) continue;
-
-			const bool bSelected = (Actor == SelectedActor);
-			ImGui::PushID(Actor);
-
-			if (ImGui::Selectable("##sel", bSelected))
-			{
-				Engine->SetSelectedActor(Actor);
-			}
-			ImGui::SameLine();
-			ImGui::TextUnformatted(Actor->GetName().c_str());
-
-			ImGui::PopID();
+			continue;
 		}
 
+		const bool bSelected = (Actor == SelectedActor);
+		ImGui::PushID(Actor);
+		bool bVisible = Actor->IsVisible();
+		if (ImGui::Checkbox("##visible", &bVisible))
+		{
+			Actor->SetVisible(bVisible);
+		}
+		ImGui::SameLine();
+
+		if (ImGui::Selectable(Actor->GetName().c_str(), bSelected))
+		{
+			Engine->SetSelectedActor(Actor);
+		}
+		ImGui::PopID();
 	}
-	Clipper.End();
-
-
 
 	ImGui::End();
+
 }

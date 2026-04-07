@@ -6,6 +6,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/SkyComponent.h"
 #include "Object/Class.h"
 void FDebugDrawManager::DrawLine(const FVector& Start, const FVector& End, const FVector4& Color)
 {

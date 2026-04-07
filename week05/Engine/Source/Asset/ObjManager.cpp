@@ -9,7 +9,6 @@
 #include <Windows.h>
 
 #include "Core/Engine.h"
-#include "Asset/StaticMeshLODBuilder.h"
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Math/MathUtility.h"
@@ -30,67 +29,6 @@ namespace
 	constexpr uint32 GModelVersionLegacy = 1;
 	constexpr uint32 GModelVersionEmbeddedMaterials = 2;
 	constexpr uint32 GModelVersion = GModelVersionEmbeddedMaterials;
-
-	constexpr char GLODMagic[4] = { 'L', 'O', 'D', 'F' };
-	constexpr uint32 GLODVersion = 1;
-
-	FString GetLodFilePath(const FString& MeshPathFileName, int32 LodLevel)
-	{
-		const std::filesystem::path MeshPath =
-			FPaths::ToPath(FPaths::ToAbsolutePath(MeshPathFileName)).lexically_normal();
-
-		const std::filesystem::path LodPath = MeshPath.parent_path()
-			/ (MeshPath.stem().wstring() + L"_lod" + std::to_wstring(LodLevel) + L".lod");
-
-		FString Result = FPaths::FromPath(LodPath);
-		std::replace(Result.begin(), Result.end(), '\\', '/');
-
-		return Result;
-	}
-
-	void BuildOrLoadLODs(UStaticMesh& Asset, const FString& PathFileName)
-	{
-		const FStaticMeshLODSettings Settings;
-
-		bool bAllCached = true;
-		for (int32 i = 1; i <= Settings.NumLODs; ++i)
-		{
-			const FString LodPath = GetLodFilePath(PathFileName, i);
-			if (!std::filesystem::exists(FPaths::ToPath(LodPath)))
-			{
-				bAllCached = false;
-				break;
-			}
-		}
-
-		if (bAllCached)
-		{
-			for (int32 i = 1; i <= Settings.NumLODs; ++i)
-			{
-				const FString LodPath = GetLodFilePath(PathFileName, i);
-				FStaticMesh* LodMesh = FObjManager::LoadLODAsset(LodPath);
-				if (LodMesh)
-				{
-					Asset.AddLOD(std::unique_ptr<FStaticMesh>(LodMesh), Settings.DistanceStep * static_cast<float>(i));
-				}
-			}
-		}
-		else
-		{
-			FStaticMeshLODBuilder::BuildLODs(Asset, Settings);
-
-			const uint32 LodCount = Asset.GetLODCount();
-			for (uint32 i = 1; i < LodCount; ++i)
-			{
-				FStaticMesh* LodMesh = Asset.GetRenderData(static_cast<int32>(i));
-				if (LodMesh)
-				{
-					const FString LodPath = GetLodFilePath(PathFileName, static_cast<int32>(i));
-					FObjManager::SaveLODAsset(LodPath, *LodMesh);
-				}
-			}
-		}
-	}
 
 	FString NormalizeSlashes(FString Path)
 	{
@@ -512,6 +450,14 @@ namespace
 		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), VSPath.c_str()));
 		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), PSPath.c_str()));
 
+		FMaterial* DefaultTexMat = GEngine->GetRenderer()->GetDefaultTextureMaterial();
+		Material->SetRasterizerOption(DefaultTexMat->GetRasterizerOption());
+		Material->SetRasterizerState(DefaultTexMat->GetRasterizerState());
+		Material->SetDepthStencilOption(DefaultTexMat->GetDepthStencilOption());
+		Material->SetDepthStencilState(DefaultTexMat->GetDepthStencilState());
+		Material->SetBlendOption(DefaultTexMat->GetBlendOption());
+		Material->SetBlendState(DefaultTexMat->GetBlendState());
+
 		int32 SlotIndex = Material->CreateConstantBuffer(GEngine->GetRenderer()->GetDevice(), 32);
 		if (SlotIndex >= 0)
 		{
@@ -548,45 +494,21 @@ namespace
 			return false;
 		}
 
-		if (!GEngine || !GEngine->GetRenderer() || !GEngine->GetRenderer()->GetDevice())
-		{
-			return false;
-		}
-
-		FRenderer* Renderer = GEngine->GetRenderer();
-		ID3D11Device* Device = Renderer->GetDevice();
-
 		ID3D11ShaderResourceView* NewSRV = nullptr;
-		if (!Renderer->CreateTextureFromSTB(Device, TexturePath, &NewSRV))
+		if (!GEngine->GetRenderer()->CreateTextureFromSTB(GEngine->GetRenderer()->GetDevice(), TexturePath, &NewSRV))
 		{
-			return false;
-		}
-
-		D3D11_SAMPLER_DESC SamplerDesc = {};
-		SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		SamplerDesc.MinLOD = 0;
-		SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		ID3D11SamplerState* NewSampler = nullptr;
-		if (FAILED(Device->CreateSamplerState(&SamplerDesc, &NewSampler)))
-		{
-			NewSRV->Release();
 			return false;
 		}
 
 		auto MaterialTexture = std::make_shared<FMaterialTexture>();
-		MaterialTexture->SetResources(NewSRV, NewSampler, true);
+		MaterialTexture->TextureSRV = NewSRV;
 		Material->SetMaterialTexture(MaterialTexture);
 
 		std::wstring TexPSPath = FPaths::ShaderDir() / L"TexturePixelShader.hlsl";
-		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(Device, TexPSPath.c_str()));
+		Material->SetPixelShader(FShaderMap::Get().GetOrCreatePixelShader(GEngine->GetRenderer()->GetDevice(), TexPSPath.c_str()));
 
 		std::wstring TexVSPath = FPaths::ShaderDir() / L"TextureVertexShader.hlsl";
-		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(Device, TexVSPath.c_str()));
+		Material->SetVertexShader(FShaderMap::Get().GetOrCreateVertexShader(GEngine->GetRenderer()->GetDevice(), TexVSPath.c_str()));
 		UE_LOG("%s %s", LogPrefix, WideToUtf8(TexturePath.wstring()).c_str());
 		return true;
 	}
@@ -627,9 +549,6 @@ namespace
 			NewAsset->AddDefaultMaterial(Material);
 		}
 
-		BuildOrLoadLODs(*NewAsset, PathFileName);
-
-		NewAsset->BuildAccelerationStructureIfNeeded();
 		return NewAsset;
 	}
 
@@ -683,9 +602,6 @@ namespace
 			NewAsset->AddDefaultMaterial(Material);
 		}
 
-		BuildOrLoadLODs(*NewAsset, PathFileName);
-
-		NewAsset->BuildAccelerationStructureIfNeeded();
 		return NewAsset;
 	}
 
@@ -1118,168 +1034,6 @@ bool FObjManager::SaveModelStaticMeshAsset(const FString& PathFileName, const FS
 	}
 
 	return File.good();
-}
-
-bool FObjManager::SaveLODAsset(const FString& PathFileName, const FStaticMesh& LodMesh)
-{
-	const FString AbsolutePath = FPaths::ToAbsolutePath(PathFileName);
-	const std::filesystem::path FilePath = FPaths::ToPath(AbsolutePath).lexically_normal();
-
-	std::error_code ErrorCode;
-	if (!FilePath.parent_path().empty())
-	{
-		std::filesystem::create_directories(FilePath.parent_path(), ErrorCode);
-	}
-
-	std::ofstream File(FilePath, std::ios::binary | std::ios::trunc);
-	if (!File.is_open())
-	{
-		UE_LOG("[FObjManager] Failed to create .lod file: %s", AbsolutePath.c_str());
-		return false;
-	}
-
-	if (!WriteBinaryBytes(File, GLODMagic, sizeof(GLODMagic))
-		|| !WriteBinaryValue(File, GLODVersion)
-		|| !WriteBinaryValue(File, static_cast<uint32>(LodMesh.Vertices.size()))
-		|| !WriteBinaryValue(File, static_cast<uint32>(LodMesh.Indices.size()))
-		|| !WriteBinaryValue(File, static_cast<uint32>(LodMesh.Sections.size())))
-	{
-		return false;
-	}
-
-	for (const FVertex& Vertex : LodMesh.Vertices)
-	{
-		if (!WriteBinaryValue(File, Vertex.Position.X)
-			|| !WriteBinaryValue(File, Vertex.Position.Y)
-			|| !WriteBinaryValue(File, Vertex.Position.Z)
-			|| !WriteBinaryValue(File, Vertex.Color.X)
-			|| !WriteBinaryValue(File, Vertex.Color.Y)
-			|| !WriteBinaryValue(File, Vertex.Color.Z)
-			|| !WriteBinaryValue(File, Vertex.Color.W)
-			|| !WriteBinaryValue(File, Vertex.Normal.X)
-			|| !WriteBinaryValue(File, Vertex.Normal.Y)
-			|| !WriteBinaryValue(File, Vertex.Normal.Z)
-			|| !WriteBinaryValue(File, Vertex.UV.X)
-			|| !WriteBinaryValue(File, Vertex.UV.Y))
-		{
-			return false;
-		}
-	}
-
-	for (uint32 Index : LodMesh.Indices)
-	{
-		if (!WriteBinaryValue(File, Index))
-		{
-			return false;
-		}
-	}
-
-	for (const FMeshSection& Section : LodMesh.Sections)
-	{
-		if (!WriteBinaryValue(File, Section.MaterialIndex)
-			|| !WriteBinaryValue(File, Section.StartIndex)
-			|| !WriteBinaryValue(File, Section.IndexCount))
-		{
-			return false;
-		}
-	}
-
-	return File.good();
-}
-
-FStaticMesh* FObjManager::LoadLODAsset(const FString& PathFileName)
-{
-	const FString AbsolutePath = FPaths::ToAbsolutePath(PathFileName);
-	const std::filesystem::path FilePath = FPaths::ToPath(AbsolutePath).lexically_normal();
-
-	std::ifstream File(FilePath, std::ios::binary);
-	if (!File.is_open())
-	{
-		return nullptr;
-	}
-
-	char Magic[sizeof(GLODMagic)] = {};
-	if (!ReadBinaryBytes(File, Magic, sizeof(Magic)) || std::memcmp(Magic, GLODMagic, sizeof(GLODMagic)) != 0)
-	{
-		UE_LOG("[FObjManager] Invalid .lod header: %s", AbsolutePath.c_str());
-		return nullptr;
-	}
-
-	uint32 Version = 0;
-	uint32 VertexCount = 0;
-	uint32 IndexCount = 0;
-	uint32 SectionCount = 0;
-	if (!ReadBinaryValue(File, Version)
-		|| !ReadBinaryValue(File, VertexCount)
-		|| !ReadBinaryValue(File, IndexCount)
-		|| !ReadBinaryValue(File, SectionCount))
-	{
-		UE_LOG("[FObjManager] Failed to read .lod header: %s", AbsolutePath.c_str());
-		return nullptr;
-	}
-
-	if (Version != GLODVersion)
-	{
-		UE_LOG("[FObjManager] Unsupported .lod version %u: %s", Version, AbsolutePath.c_str());
-		return nullptr;
-	}
-
-	auto Mesh = std::make_unique<FStaticMesh>();
-	Mesh->Topology = EMeshTopology::EMT_TriangleList;
-	Mesh->Vertices.resize(VertexCount);
-	Mesh->Indices.resize(IndexCount);
-	Mesh->Sections.resize(SectionCount);
-
-	for (FVertex& Vertex : Mesh->Vertices)
-	{
-		if (!ReadBinaryValue(File, Vertex.Position.X)
-			|| !ReadBinaryValue(File, Vertex.Position.Y)
-			|| !ReadBinaryValue(File, Vertex.Position.Z)
-			|| !ReadBinaryValue(File, Vertex.Color.X)
-			|| !ReadBinaryValue(File, Vertex.Color.Y)
-			|| !ReadBinaryValue(File, Vertex.Color.Z)
-			|| !ReadBinaryValue(File, Vertex.Color.W)
-			|| !ReadBinaryValue(File, Vertex.Normal.X)
-			|| !ReadBinaryValue(File, Vertex.Normal.Y)
-			|| !ReadBinaryValue(File, Vertex.Normal.Z)
-			|| !ReadBinaryValue(File, Vertex.UV.X)
-			|| !ReadBinaryValue(File, Vertex.UV.Y))
-		{
-			UE_LOG("[FObjManager] Failed to read .lod vertices: %s", AbsolutePath.c_str());
-			return nullptr;
-		}
-	}
-
-	for (uint32& Index : Mesh->Indices)
-	{
-		if (!ReadBinaryValue(File, Index))
-		{
-			UE_LOG("[FObjManager] Failed to read .lod indices: %s", AbsolutePath.c_str());
-			return nullptr;
-		}
-	}
-
-	for (FMeshSection& Section : Mesh->Sections)
-	{
-		if (!ReadBinaryValue(File, Section.MaterialIndex)
-			|| !ReadBinaryValue(File, Section.StartIndex)
-			|| !ReadBinaryValue(File, Section.IndexCount))
-		{
-			UE_LOG("[FObjManager] Failed to read .lod sections: %s", AbsolutePath.c_str());
-			return nullptr;
-		}
-
-		const uint64 SectionEndIndex = static_cast<uint64>(Section.StartIndex) + static_cast<uint64>(Section.IndexCount);
-		if (SectionEndIndex > Mesh->Indices.size())
-		{
-			UE_LOG("[FObjManager] Invalid .lod section range: %s", AbsolutePath.c_str());
-			return nullptr;
-		}
-	}
-
-	Mesh->UpdateLocalBound();
-	Mesh->bIsDirty = true;
-	return Mesh.release();
 }
 
 bool FObjManager::BuildModelMaterialInfosFromObj(

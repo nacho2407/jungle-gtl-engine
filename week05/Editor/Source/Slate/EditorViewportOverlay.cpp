@@ -28,7 +28,6 @@ SEditorViewportOverlay::SEditorViewportOverlay(
 
 void SEditorViewportOverlay::OnPaint(SWidget& Painter)
 {
-	return; // GameGem
 	UpdateLayout();
 
 	if (ShouldShowFPS())
@@ -91,10 +90,12 @@ void SEditorViewportOverlay::UpdateLayout() const
 
 	FpsWidget.Refresh();
 	const int32 FpsWidth = FpsWidget.GetDesiredWidth();
-	const int32 FpsRight = ViewportBounds.X + ViewportBounds.Width - Transform.GetRightPadding();
-	const int32 FpsX = FpsRight - FpsWidth;
-	const int32 FpsY = ViewportBounds.Y + OverlaySpacing;
-
+	const int32 FpsX = Transform.Rect.IsValid()
+		? Transform.Rect.X
+		: ViewportBounds.X + ViewportBounds.Width - FpsWidth;
+	const int32 FpsY = Transform.Rect.IsValid()
+		? Transform.Rect.Y + Transform.Rect.Height + OverlaySpacing
+		: ViewportBounds.Y + OverlayRowHeight + OverlaySpacing;
 	FpsWidget.SetWidgetRect({ FpsX, FpsY, FpsWidth, OverlayRowHeight });
 }
 
@@ -142,8 +143,7 @@ bool SEditorViewportOverlay::ComputeViewportBounds(FRect& OutRect) const
 
 bool SEditorViewportOverlay::ShouldShowFPS() const
 {
-	//return EditorUI && EditorUI->GetDebugState().FPS; GameGem
-	return true;
+	return EditorUI && EditorUI->GetDebugState().FPS;
 }
 
 FRect SEditorViewportOverlay::GetInteractiveRect() const

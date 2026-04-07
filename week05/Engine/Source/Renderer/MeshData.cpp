@@ -1,9 +1,6 @@
 #include "MeshData.h"
-#include <algorithm>
-
 #include "Object/Class.h"
 #include "Vertex.h"
-#include "Scene/MeshBVH.h"
 
 bool FStaticMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context)
 {
@@ -137,130 +134,9 @@ bool FDynamicMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11Device
 }
 
 IMPLEMENT_RTTI(UStaticMesh, UObject)
-UStaticMesh::~UStaticMesh()
-{
-	if (StaticMeshAsset)
-	{
-		delete StaticMeshAsset;
-		StaticMeshAsset = nullptr;
-	}
-}
-
-void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InStaticMesh)
-{
-	if (StaticMeshAsset == InStaticMesh)
-	{
-		return;
-	}
-
-	if (StaticMeshAsset)
-	{
-		delete StaticMeshAsset;
-	}
-
-	StaticMeshAsset = InStaticMesh;
-	ClearLODs();
-	TriangleBVH.reset();
-}
-
-FStaticMesh* UStaticMesh::GetRenderData(int32 LODIndex) const
-{
-	if (LODIndex <= 0)
-	{
-		return StaticMeshAsset;
-	}
-
-	const size_t ExtraLodIndex = static_cast<size_t>(LODIndex - 1);
-	if (ExtraLodIndex >= LODs.size())
-	{
-		return StaticMeshAsset;
-	}
-
-	return LODs[ExtraLodIndex].Mesh ? LODs[ExtraLodIndex].Mesh.get() : StaticMeshAsset;
-}
-
-FStaticMesh* UStaticMesh::GetRenderDataForDistance(float Distance) const
-{
-	return GetRenderDataForDistanceSquared(Distance * Distance);
-}
-
-FStaticMesh* UStaticMesh::GetRenderDataForDistanceSquared(float DistanceSquared) const
-{
-	FStaticMesh* SelectedMesh = StaticMeshAsset;
-	if (!SelectedMesh)
-	{
-		return nullptr;
-	}
-
-	const float ClampedDistanceSquared = (std::max)(DistanceSquared, 0.0f);
-	for (const FStaticMeshLOD& Lod : LODs)
-	{
-		if (!Lod.Mesh || ClampedDistanceSquared < Lod.DistanceSquared)
-		{
-			break;
-		}
-
-		SelectedMesh = Lod.Mesh.get();
-	}
-
-	return SelectedMesh;
-}
-
-void UStaticMesh::AddLOD(std::unique_ptr<FStaticMesh> InMesh, float InDistance)
-{
-	if (!InMesh)
-	{
-		return;
-	}
-
-	FStaticMeshLOD NewLOD;
-	NewLOD.VertexCount = static_cast<uint32>(InMesh->Vertices.size());
-	NewLOD.Distance = (std::max)(InDistance, 0.0f);
-	NewLOD.DistanceSquared = NewLOD.Distance * NewLOD.Distance;
-	NewLOD.Mesh = std::move(InMesh);
-	LODs.push_back(std::move(NewLOD));
-
-	std::sort(LODs.begin(), LODs.end(), [](const FStaticMeshLOD& A, const FStaticMeshLOD& B)
-	{
-		return A.Distance < B.Distance;
-	});
-}
-
-void UStaticMesh::ClearLODs()
-{
-	LODs.clear();
-}
-
-uint32 UStaticMesh::GetLODCount() const
-{
-	return StaticMeshAsset ? static_cast<uint32>(LODs.size() + 1) : 0;
-}
-
 const FString& UStaticMesh::GetAssetPathFileName() const
 {
 	if (StaticMeshAsset) return StaticMeshAsset->PathFileName;
 	static FString EmptyPath = "";
 	return EmptyPath;
-}
-
-void UStaticMesh::BuildAccelerationStructureIfNeeded() const
-{
-	if (TriangleBVH || !StaticMeshAsset)
-	{
-		return;
-	}
-
-	TriangleBVH = std::make_unique<FMeshBVH>();
-	TriangleBVH->Build(*StaticMeshAsset);
-}
-
-bool UStaticMesh::IntersectLocalRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const
-{
-	BuildAccelerationStructureIfNeeded();
-	if (!TriangleBVH || !TriangleBVH->IsValid())
-	{
-		return false;
-	}
-
-	return TriangleBVH->IntersectRay(RayOrigin, RayDirection, OutDistance);
 }

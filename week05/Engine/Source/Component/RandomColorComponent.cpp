@@ -25,7 +25,15 @@ void URandomColorComponent::BeginPlay()
 	// 공유 Material을 복제하여 독립적인 DynamicMaterial 생성
 	if (CachedMesh)
 	{
-		DynamicMaterial = CachedMesh->GetOrCreateDynamicMaterial(0);
+		std::shared_ptr<FMaterial> BaseMat = CachedMesh->GetMaterial(0);
+		if (BaseMat)
+		{
+			DynamicMaterial = std::shared_ptr<FDynamicMaterial>(BaseMat->CreateDynamicMaterial().release());
+			if (DynamicMaterial)
+			{
+				CachedMesh->SetMaterial(0, DynamicMaterial);
+			}
+		}
 	}
 
 	// 시작 시 즉시 한 번 적용
@@ -55,11 +63,7 @@ void URandomColorComponent::ApplyRandomColor()
 {
 	if (!DynamicMaterial)
 	{
-		DynamicMaterial = CachedMesh ? CachedMesh->GetOrCreateDynamicMaterial(0) : nullptr;
-		if (!DynamicMaterial)
-		{
-			return;
-		}
+		return;
 	}
 
 	FVector4 Color = GenerateRandomColor();

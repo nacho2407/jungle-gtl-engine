@@ -181,7 +181,6 @@
     <ClCompile Include="Source\UI\EditorUI.cpp" />
     <ClCompile Include="Source\UI\OutlinerWindow.cpp" />
     <ClCompile Include="Source\UI\PropertyWindow.cpp" />
-    <ClCompile Include="Source\UI\FpsOverlayWindow.cpp" />
     <ClCompile Include="Source\UI\StatWindow.cpp" />
     <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
@@ -238,7 +237,6 @@
     <ClInclude Include="Source\UI\EditorUI.h" />
     <ClInclude Include="Source\UI\OutlinerWindow.h" />
     <ClInclude Include="Source\UI\PropertyWindow.h" />
-    <ClInclude Include="Source\UI\FpsOverlayWindow.h" />
     <ClInclude Include="Source\UI\StatWindow.h" />
     <ClInclude Include="Source\Viewport\BlitRenderer.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
@@ -249,7 +247,6 @@
     <ClInclude Include="Source\Viewport\Services\EditorViewportAssetInteractionService.h" />
     <ClInclude Include="Source\Viewport\Services\EditorViewportInputService.h" />
     <ClInclude Include="Source\Viewport\Services\EditorViewportRenderService.h" />
-    <ClInclude Include="Source\Picking\WindowsPlatformTime.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="ThirdParty\imgui\imgui_impl_dx11.h" />

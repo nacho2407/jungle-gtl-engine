@@ -60,24 +60,6 @@ void AActor::AddOwnedComponent(UActorComponent* InComponent)
 	{
 		RootComponent = static_cast<USceneComponent*>(InComponent);
 	}
-
-	// Components added after initial spawn (e.g., scene deserialize/runtime additions)
-	// still need registration and bounds update so render collection can see them.
-	const bool bActorInScene = (GetScene() != nullptr);
-	if (bActorInScene && !InComponent->IsRegistered())
-	{
-		InComponent->OnRegister();
-	}
-
-	if (bActorBegunPlay && !InComponent->HasBegunPlay())
-	{
-		InComponent->BeginPlay();
-	}
-
-	if (UPrimitiveComponent* PrimitiveComponent = dynamic_cast<UPrimitiveComponent*>(InComponent))
-	{
-		PrimitiveComponent->UpdateBounds();
-	}
 }
 
 void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
@@ -99,8 +81,7 @@ void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
 
 void AActor::PostSpawnInitialize()
 {
-	// GameJam
-	/*if (GetComponentByClass<UUUIDBillboardComponent>() == nullptr)
+	if (GetComponentByClass<UUUIDBillboardComponent>() == nullptr)
 	{
 		UUUIDBillboardComponent* UUIDComponent =
 			FObjectFactory::ConstructObject<UUUIDBillboardComponent>(this, "UUIDBillboard");
@@ -113,7 +94,7 @@ void AActor::PostSpawnInitialize()
 			UUIDComponent->SetWorldScale(0.3f);
 			UUIDComponent->SetTextColor(FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 		}
-	}*/
+	}
 
 	for (UActorComponent* Component : OwnedComponents)
 	{

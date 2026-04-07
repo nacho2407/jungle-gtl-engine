@@ -2,6 +2,9 @@
   "Name": "M_Wireframe",
   "VertexShader": "Engine/Shaders/VertexShader.hlsl",
   "PixelShader": "Engine/Shaders/WhitePixelShader.hlsl",
+  "RenderState": {
+    "FillMode": 2
+  },
   "ConstantBuffers": [
   ]
 }

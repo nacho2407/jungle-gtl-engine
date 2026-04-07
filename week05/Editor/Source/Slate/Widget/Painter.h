@@ -11,7 +11,6 @@ class FPainter : public SWidget
 {
 public:
 	explicit FPainter(FRenderer* InRenderer);
-	void SetRenderer(FRenderer* InRenderer);
 
 	void SetScreenSize(int32 Width, int32 Height);
 
@@ -33,5 +32,4 @@ private:
 	std::unique_ptr<FDynamicMaterial> UiColorMaterial;
 	TMap<uint32, std::unique_ptr<FDynamicMaterial>> FontMaterialByColor;
 	TArray<std::unique_ptr<FDynamicMesh>> FrameMeshes;
-	size_t ActiveFrameMeshCount = 0;
 };

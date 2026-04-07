@@ -1,22 +1,26 @@
 #include "Picker.h"
 
+#include "Scene/Scene.h"
 #include "Actor/Actor.h"
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/TextComponent.h"
+#include "Component/UUIDBillboardComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Renderer/MeshData.h"
-#include "Scene/Scene.h"
+#include "Component/SkyComponent.h"
 #include "Viewport/Viewport.h"
 
-#include <algorithm>
-#include "WindowsPlatformTime.h"
-#include "EditorEngine.h"
-#include <cmath>
 #include <limits>
+#include <algorithm>
 
 namespace
 {
-	FVector TransformPointRowVector(const FVector& P, const FMatrix& M)
+	static FVector TransformPointRowVector(const FVector& P, const FMatrix& M)
 	{
+		// row-vector 규약:
+		// [x y z 1] * M
 		return {
 			P.X * M.M[0][0] + P.Y * M.M[1][0] + P.Z * M.M[2][0] + M.M[3][0],
 			P.X * M.M[0][1] + P.Y * M.M[1][1] + P.Z * M.M[2][1] + M.M[3][1],
@@ -24,8 +28,10 @@ namespace
 		};
 	}
 
-	FVector TransformVectorRowVector(const FVector& V, const FMatrix& M)
+	static FVector TransformVectorRowVector(const FVector& V, const FMatrix& M)
 	{
+		// row-vector 규약:
+		// [x y z 0] * M
 		return {
 			V.X * M.M[0][0] + V.Y * M.M[1][0] + V.Z * M.M[2][0],
 			V.X * M.M[0][1] + V.Y * M.M[1][1] + V.Z * M.M[2][1],
@@ -33,12 +39,14 @@ namespace
 		};
 	}
 
-	bool RayIntersectsSphere(const FRay& Ray, const FVector& Center, float Radius, float& OutT)
+	static bool RayIntersectsSphere(const FRay& Ray, const FVector& Center, float Radius, float& OutT)
 	{
+		// Ray.Direction은 normalized 상태라고 가정
 		const FVector M = Ray.Origin - Center;
 		const float B = FVector::DotProduct(M, Ray.Direction);
 		const float C = FVector::DotProduct(M, M) - Radius * Radius;
 
+		// 시작점이 sphere 바깥이고, 반대 방향이면 miss
 		if (C > 0.0f && B > 0.0f)
 		{
 			return false;
@@ -50,7 +58,9 @@ namespace
 			return false;
 		}
 
-		float T = -B - std::sqrt(Discriminant);
+		float T = -B - sqrt(Discriminant);
+
+		// origin이 sphere 내부면 0으로 처리
 		if (T < 0.0f)
 		{
 			T = 0.0f;
@@ -60,7 +70,7 @@ namespace
 		return true;
 	}
 
-	bool RayIntersectsAABB(const FRay& Ray, const FVector& BoxMin, const FVector& BoxMax, float& OutTNear, float& OutTFar)
+	static bool RayIntersectsAABB(const FRay& Ray, const FVector& BoxMin, const FVector& BoxMax, float& OutTNear, float& OutTFar)
 	{
 		constexpr float Epsilon = 1.0e-8f;
 
@@ -68,26 +78,27 @@ namespace
 		float TFar = (std::numeric_limits<float>::max)();
 
 		auto TestAxis = [&](float Origin, float Dir, float MinV, float MaxV) -> bool
-		{
-			if (std::abs(Dir) < Epsilon)
 			{
-				return (Origin >= MinV && Origin <= MaxV);
-			}
+				// 평행이면 origin이 slab 안에 있어야 함
+				if (abs(Dir) < Epsilon)
+				{
+					return (Origin >= MinV && Origin <= MaxV);
+				}
 
-			const float InvDir = 1.0f / Dir;
-			float T1 = (MinV - Origin) * InvDir;
-			float T2 = (MaxV - Origin) * InvDir;
+				const float InvDir = 1.0f / Dir;
+				float T1 = (MinV - Origin) * InvDir;
+				float T2 = (MaxV - Origin) * InvDir;
 
-			if (T1 > T2)
-			{
-				std::swap(T1, T2);
-			}
+				if (T1 > T2)
+				{
+					std::swap(T1, T2);
+				}
 
-			TNear = (std::max)(TNear, T1);
-			TFar = (std::min)(TFar, T2);
+				TNear = (std::max)(TNear, T1);
+				TFar = (std::min)(TFar, T2);
 
-			return TNear <= TFar;
-		};
+				return TNear <= TFar;
+			};
 
 		if (!TestAxis(Ray.Origin.X, Ray.Direction.X, BoxMin.X, BoxMax.X)) return false;
 		if (!TestAxis(Ray.Origin.Y, Ray.Direction.Y, BoxMin.Y, BoxMax.Y)) return false;
@@ -123,6 +134,7 @@ FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 	const FMatrix ProjMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
 	const FMatrix ViewInverse = ViewMatrix.GetInverse();
 
+	// 픽셀 중심 기준 half-pixel offset
 	const float NdcX = (2.0f * (ScreenX + 0.5f) / Rect.Width) - 1.0f;
 	const float NdcY = 1.0f - (2.0f * (ScreenY + 0.5f) / Rect.Height);
 
@@ -140,15 +152,35 @@ FRay FPicker::ScreenToRay(const FViewportEntry& Entry, int32 ScreenX, int32 Scre
 		RayOrigin.Z = ViewRight * ViewInverse.M[1][2] + ViewUp * ViewInverse.M[2][2] + ViewInverse.M[3][2];
 
 		FVector Forward = FVector::ForwardVector;
+
 		switch (Entry.LocalState.ProjectionType)
 		{
-		case EViewportType::OrthoTop: Forward = FVector::DownVector; break;
-		case EViewportType::OrthoBottom: Forward = FVector::UpVector; break;
-		case EViewportType::OrthoLeft: Forward = FVector::RightVector; break;
-		case EViewportType::OrthoRight: Forward = FVector::LeftVector; break;
-		case EViewportType::OrthoFront: Forward = FVector::BackwardVector; break;
-		case EViewportType::OrthoBack: Forward = FVector::ForwardVector; break;
-		default: break;
+		case EViewportType::OrthoTop:
+			Forward = FVector::DownVector;
+			break;
+
+		case EViewportType::OrthoBottom:
+			Forward = FVector::UpVector;
+			break;
+
+		case EViewportType::OrthoLeft:
+			Forward = FVector::RightVector;
+			break;
+
+		case EViewportType::OrthoRight:
+			Forward = FVector::LeftVector;
+			break;
+
+		case EViewportType::OrthoFront:
+			Forward = FVector::BackwardVector;
+			break;
+
+		case EViewportType::OrthoBack:
+			Forward = FVector::ForwardVector;
+			break;
+
+		default:
+			break;
 		}
 
 		return { RayOrigin, Forward };
@@ -183,6 +215,8 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 
 	const FVector H = FVector::CrossProduct(Ray.Direction, Edge2);
 	const float A = FVector::DotProduct(Edge1, H);
+
+	// Render path와 동일하게 back-face는 picking 대상에서 제외한다.
 	if (A <= Epsilon)
 	{
 		return false;
@@ -213,7 +247,7 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 	return false;
 }
 
-AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY, FEditorEngine* Engine) const
+AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY) const
 {
 	if (!Scene || !Entry)
 	{
@@ -222,89 +256,126 @@ AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 Scr
 
 	const FRay WorldRay = ScreenToRay(*Entry, ScreenX, ScreenY);
 
-	TStatId MyStatId;
-
-	FScopeCycleCounter pickCounter(MyStatId);
-	++Engine->TotalPickCount;
-
 	AActor* ClosestActor = nullptr;
 	float ClosestDistance = (std::numeric_limits<float>::max)();
 
-	Scene->VisitPrimitivesByRay(
-		WorldRay.Origin,
-		WorldRay.Direction,
-		ClosestDistance,
-		[&](UPrimitiveComponent* PrimComp, float BoundsNear, float BoundsFar, float& InOutClosestDistance)
+	for (AActor* Actor : Scene->GetActors())
 	{
-			if (!PrimComp || PrimComp->IsPendingKill())
+		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
+		{
+			continue;
+		}
+
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass())) continue;
+
+			// 피킹 제외 대상
+			if (Component->IsA(UUUIDBillboardComponent::StaticClass())) continue;
+			if (Component->IsA(USkyComponent::StaticClass())) continue;
+
+			UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(Component);
+			const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
+
+			// 1) world sphere broad phase
+			float SphereT = 0.0f;
+			if (!RayIntersectsSphere(WorldRay, Bounds.Center, Bounds.Radius, SphereT))
 			{
-				return;
+				continue;
 			}
 
-			AActor* Actor = PrimComp->GetOwner();
-			if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
+			if (SphereT > ClosestDistance)
 			{
-				return;
+				continue;
 			}
 
-			if (!PrimComp->IsPickable())
+			// Text / SubUV는 sphere만으로 처리
+			if (PrimComp->IsA(USubUVComponent::StaticClass()) || PrimComp->IsA(UTextComponent::StaticClass()))
 			{
-				return;
-			}
-
-			if (PrimComp->UseSpherePicking())
-			{
-				const FBoxSphereBounds Bounds = PrimComp->GetWorldBounds();
-				float SphereT = 0.0f;
-				if (RayIntersectsSphere(WorldRay, Bounds.Center, Bounds.Radius, SphereT) && SphereT < InOutClosestDistance)
+				if (SphereT < ClosestDistance)
 				{
-					InOutClosestDistance = SphereT;
+					ClosestDistance = SphereT;
 					ClosestActor = Actor;
 				}
-				return;
+				continue;
 			}
 
-			const float BoundsHitT = (BoundsNear >= 0.0f) ? BoundsNear : BoundsFar;
-			if (BoundsHitT > InOutClosestDistance)
+			// 2) world AABB broad phase
+			const FVector BoxMin = Bounds.Center - Bounds.BoxExtent;
+			const FVector BoxMax = Bounds.Center + Bounds.BoxExtent;
+
+			float BoxNear = 0.0f;
+			float BoxFar = 0.0f;
+			if (!RayIntersectsAABB(WorldRay, BoxMin, BoxMax, BoxNear, BoxFar))
 			{
-				return;
+				continue;
 			}
 
-			if (PrimComp->HasMeshIntersection())
+			const float BoundsHitT = (BoxNear >= 0.0f) ? BoxNear : BoxFar;
+			if (BoundsHitT > ClosestDistance)
 			{
-				const FMatrix World = PrimComp->GetWorldTransform();
+				continue;
+			}
+
+			// 3) StaticMesh는 local ray로 정밀 검사
+			if (PrimComp->IsA(UStaticMeshComponent::StaticClass()))
+			{
+				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(PrimComp);
+				FRenderMesh* Mesh = SMC->GetRenderMesh();
+
+				// 메쉬가 없거나 정점이 비어있으면 패스
+				if (!Mesh || Mesh->Vertices.empty() || Mesh->Indices.empty()) continue;
+
+				const FMatrix World = SMC->GetWorldTransform();
 				const FMatrix InvWorld = World.GetInverse();
 
 				FRay LocalRay;
 				LocalRay.Origin = TransformPointRowVector(WorldRay.Origin, InvWorld);
 				LocalRay.Direction = TransformVectorRowVector(WorldRay.Direction, InvWorld).GetSafeNormal();
-				if (!LocalRay.Direction.IsZero())
-				{
-					float LocalDistance = std::min(InOutClosestDistance, BoundsFar);
-					if (PrimComp->IntersectLocalRay(LocalRay.Origin, LocalRay.Direction, LocalDistance))
-					{
-						const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
-						const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
-						const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
 
-						if (WorldDistance < InOutClosestDistance)
-						{
-							InOutClosestDistance = WorldDistance;
-							ClosestActor = Actor;
-						}
+				if (LocalRay.Direction.IsZero())
+				{
+					continue;
+				}
+
+				for (uint32 Index = 0; Index + 2 < Mesh->Indices.size(); Index += 3)
+				{
+					// ⭐ 이제 무조건 신형 FVertex 구조체를 쓰므로 코드가 하나로 통합됩니다.
+					const FVector& P0 = Mesh->Vertices[Mesh->Indices[Index]].Position;
+					const FVector& P1 = Mesh->Vertices[Mesh->Indices[Index + 1]].Position;
+					const FVector& P2 = Mesh->Vertices[Mesh->Indices[Index + 2]].Position;
+
+					float LocalDistance = 0.0f;
+					if (!RayTriangleIntersect(LocalRay, P0, P1, P2, LocalDistance))
+					{
+						continue;
+					}
+
+					// local hit point -> world hit point
+					const FVector LocalHitPoint = LocalRay.Origin + LocalRay.Direction * LocalDistance;
+					const FVector WorldHitPoint = TransformPointRowVector(LocalHitPoint, World);
+
+					// 비교는 반드시 월드 거리로
+					const float WorldDistance = (WorldHitPoint - WorldRay.Origin).Size();
+
+					if (WorldDistance < ClosestDistance)
+					{
+						ClosestDistance = WorldDistance;
+						ClosestActor = Actor;
 					}
 				}
-				return;
+
+				continue;
 			}
 
-			if (BoundsHitT < InOutClosestDistance)
+			// StaticMesh가 아닌 일반 Primitive는 bounds hit만으로 선택
+			if (BoundsHitT < ClosestDistance)
 			{
-				InOutClosestDistance = BoundsHitT;
+				ClosestDistance = BoundsHitT;
 				ClosestActor = Actor;
 			}
-		});
+		}
+	}
 
-	Engine->LastPickTime = pickCounter.FinishMilliseconds();
-	Engine->TotalPickTime += Engine->LastPickTime;
 	return ClosestActor;
 }

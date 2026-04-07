@@ -1,272 +1,223 @@
 #include "RenderCollector.h"
-
-#include "Actor/Actor.h"
-#include "Component/PrimitiveComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Core/ConsoleVariableManager.h"
-#include "Core/Engine.h"
+#include "Component/UUIDBillboardComponent.h"
 #include "Renderer/RenderCommand.h"
+#include "Actor/Actor.h"
+#include "Component/StaticMeshComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Core/Engine.h"
+#include "Component/TextComponent.h"
+#include "Debug/EngineLog.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/SceneProxy.h"
-#include "Scene/Scene.h"
-#include <chrono>
-#include <cmath>
-#include <utility>
+#include "Renderer/TextMeshBuilder.h"
+#include "Renderer/SubUVRenderer.h"
+#include "Renderer/Material.h"
+#include "Renderer/MeshData.h"
 
-namespace
+void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors, const FFrustum& Frustum,
+	const FShowFlags& ShowFlags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
 {
-	struct FStaticMeshCullSettings
-	{
-		float MaxDistance = 0.0f;
-		float MinProjectedRadius = 0.0f;
-		float ProjectionScaleY = 0.0f;
-		bool bPerspectiveProjection = false;
-	};
+	// ⭐ UActorComponent가 아니라 UPrimitiveComponent로 바로 받습니다!
+	TArray<UPrimitiveComponent*> VisiblePrimitives;
+	FrustrumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
 
-	float ReadConsoleFloat(const char* Name, float DefaultValue)
-	{
-		if (FConsoleVariable* Var = FConsoleVariableManager::Get().Find(Name))
-		{
-			return Var->GetFloat();
-		}
-
-		return DefaultValue;
-	}
-
-	FStaticMeshCullSettings BuildStaticMeshCullSettings(const FMatrix& ProjectionMatrix)
-	{
-		FStaticMeshCullSettings Settings;
-		Settings.MaxDistance = (std::max)(ReadConsoleFloat("r.StaticMeshCullMaxDistance", 0.0f), 0.0f);
-		Settings.MinProjectedRadius = (std::max)(ReadConsoleFloat("r.StaticMeshCullMinProjectedRadius", 0.0f), 0.0f);
-		Settings.ProjectionScaleY = ProjectionMatrix.M[2][1];
-		Settings.bPerspectiveProjection = std::abs(ProjectionMatrix.M[0][3]) > 0.5f;
-		return Settings;
-	}
-
-	bool ShouldCullStaticMeshBySettings(
-		const FBoxSphereBounds& Bounds,
-		const FVector& CameraPosition,
-		const FStaticMeshCullSettings& Settings,
-		bool& bOutDistanceCulled,
-		bool& bOutSizeCulled)
-	{
-		bOutDistanceCulled = false;
-		bOutSizeCulled = false;
-
-		const FVector CameraDelta = Bounds.Center - CameraPosition;
-		const float DistanceSquared = CameraDelta.SizeSquared();
-
-		if (Settings.MaxDistance > 0.0f)
-		{
-			const float MaxDistanceSquared = Settings.MaxDistance * Settings.MaxDistance;
-			if (DistanceSquared > MaxDistanceSquared)
-			{
-				bOutDistanceCulled = true;
-				return true;
-			}
-		}
-
-		if (Settings.bPerspectiveProjection && Settings.MinProjectedRadius > 0.0f && Settings.ProjectionScaleY > 0.0f && Bounds.Radius > 0.0f)
-		{
-			const float RadiusProjection = Bounds.Radius * Settings.ProjectionScaleY;
-			const float RadiusProjectionSquared = RadiusProjection * RadiusProjection;
-			const float MinProjectedRadiusSquared = Settings.MinProjectedRadius * Settings.MinProjectedRadius;
-			if (RadiusProjectionSquared < MinProjectedRadiusSquared * (std::max)(DistanceSquared, 1.0e-6f))
-			{
-				bOutSizeCulled = true;
-				return true;
-			}
-		}
-
-		return false;
-	}
-}
-
-void FSceneRenderCollector::CollectRenderCommands(
-	UScene* Scene,
-	const FFrustum& Frustum,
-	const FShowFlags& ShowFlags,
-	const FVector& CameraPosition,
-	const FMatrix& ProjectionMatrix,
-	FRenderCommandQueue& OutQueue)
-{
-	if (!Scene)
-	{
-		return;
-	}
-
-	const auto CollectStartTime = std::chrono::high_resolution_clock::now();
-
-	UPrimitiveComponent::FlushPendingRenderStateUpdates();
-
-	VisiblePrimitivesScratch.clear();
-	FrustrumCull(Scene, Frustum, ShowFlags, CameraPosition, ProjectionMatrix, VisiblePrimitivesScratch);
-	OutQueue.Commands.reserve(OutQueue.Commands.size() + VisiblePrimitivesScratch.size());
-	OutQueue.StaticMeshOcclusionCandidates.reserve(OutQueue.StaticMeshOcclusionCandidates.size() + VisiblePrimitivesScratch.size());
-	uint32 AddedStaticMeshCandidateCount = 0;
 	FRenderer* Renderer = GEngine ? GEngine->GetRenderer() : nullptr;
+	if (!Renderer) return;
 
-	for (const FVisiblePrimitiveEntry& VisiblePrimitive : VisiblePrimitivesScratch)
+	FTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
+	FSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
+
+	for (UPrimitiveComponent* Comp : VisiblePrimitives)
 	{
-		UPrimitiveComponent* PrimitiveComponent = VisiblePrimitive.PrimitiveComponent;
-		if (!PrimitiveComponent)
+		if (!Comp) continue;
+
+		// ─── 1. 텍스트 컴포넌트 ───
+		if (Comp->IsA(UTextComponent::StaticClass()))
 		{
+			UTextComponent* TextComp = static_cast<UTextComponent*>(Comp);
+			FRenderMesh* TextMesh = TextComp->GetRenderMesh();
+
+			if (TextMesh)
+			{
+				bool bBuilt = false;
+				if (TextComp->IsTextMeshDirty())
+				{
+					bBuilt = TextRenderer.BuildTextMesh(TextComp->GetDisplayText(), *TextMesh);
+					if (bBuilt)
+					{
+						TextMesh->bIsDirty = true;
+						TextComp->ClearTextMeshDirty();
+					}
+				}
+
+				if (!TextMesh->Vertices.empty())
+				{
+					FMaterial* FontMat = TextRenderer.GetFontMaterial();
+					if (FontMat)
+					{
+						FVector4 Color = TextComp->GetTextColor();
+						FontMat->SetParameterData("TextColor", &Color, 16);
+
+						FRenderCommand Command;
+						Command.RenderMesh = TextMesh;
+						Command.Material = FontMat;
+
+						if (!Comp->IsA(UUUIDBillboardComponent::StaticClass()))
+						{
+							Command.RenderLayer = ERenderLayer::Default;
+						}
+						else
+						{
+							Command.RenderLayer = ERenderLayer::Overlay;
+						}
+
+						const FVector WorldPos = TextComp->GetRenderWorldPosition();
+						const FVector Scale = TextComp->GetRenderWorldScale();
+
+						if (TextComp->IsBillboard())
+						{
+							Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
+						}
+						else
+						{
+							const float TextScale = TextComp->GetTextScale();
+							Command.WorldMatrix =
+								FMatrix::MakeScale(FVector(TextScale, TextScale, TextScale)) *
+								TextComp->GetWorldTransform();
+						}
+
+						OutQueue.AddCommand(Command);
+					}
+				}
+			}
 			continue;
 		}
 
-		FPrimitiveSceneProxy* SceneProxy = VisiblePrimitive.SceneProxy;
-		if (!SceneProxy)
+		// ─── 2. SubUV 스프라이트 컴포넌트 ───
+		if (Comp->IsA(USubUVComponent::StaticClass()))
 		{
+			USubUVComponent* SubUVComponent = static_cast<USubUVComponent*>(Comp);
+			FRenderMesh* SubUVMesh = SubUVComponent->GetSubUVMesh();
+			if (SubUVMesh && SubUVRenderer.BuildSubUVMesh(SubUVComponent->GetSize(), *SubUVMesh))
+			{
+				SubUVMesh->bIsDirty = true;
+				float TotalTime = GEngine ? static_cast<float>(GEngine->GetTimer().GetTotalTime()) : 0.0f;
+				SubUVRenderer.UpdateAnimationParams(
+					SubUVComponent->GetColumns(), SubUVComponent->GetRows(), SubUVComponent->GetTotalFrames(),
+					SubUVComponent->GetFirstFrame(), SubUVComponent->GetLastFrame(),
+					SubUVComponent->GetFPS(), TotalTime, SubUVComponent->IsLoop()
+				);
+
+				FMaterial* SubUVMat = SubUVRenderer.GetSubUVMaterial();
+				if (SubUVMat)
+				{
+					FRenderCommand Command;
+					Command.RenderMesh = SubUVMesh;
+					Command.Material = SubUVMat;
+					Command.WorldMatrix = SubUVComponent->GetWorldTransform();
+
+					if (SubUVComponent->IsBillboard())
+					{
+						const FVector WorldPos = Command.WorldMatrix.GetTranslation();
+						const FVector Scale = Command.WorldMatrix.GetScaleVector();
+						Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
+					}
+
+					OutQueue.AddCommand(Command);
+				}
+			}
 			continue;
 		}
 
-		FRenderCommand Command = {};
-		Command.SceneProxy = SceneProxy;
-		Command.bStaticMesh = VisiblePrimitive.bStaticMesh;
-
-		if (Command.bStaticMesh)
+		// ─── 3. 정적 메쉬 컴포넌트 (과거 프리미티브 대통합) ───
+		if (Comp->IsA(UStaticMeshComponent::StaticClass()))
 		{
-			const FStaticMeshSceneProxy* StaticMeshSceneProxy = static_cast<const FStaticMeshSceneProxy*>(SceneProxy);
-			FStaticMeshOcclusionCandidate Candidate = {};
-			StaticMeshSceneProxy->BuildStaticMeshOcclusionCandidate(Candidate);
-			Command.StaticMeshOcclusionCandidateIndex = static_cast<uint32>(OutQueue.StaticMeshOcclusionCandidates.size());
-			OutQueue.StaticMeshOcclusionCandidates.push_back(Candidate);
-			++AddedStaticMeshCandidateCount;
+			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(Comp);
+			FRenderMesh* TargetMesh = SMC->GetRenderMesh();
 
-			if (Renderer && Renderer->ShouldSkipStaticMeshCandidate(Candidate, Command.StaticMeshOcclusionCandidateIndex))
+			if (TargetMesh)
 			{
-				OutQueue.PreSkippedStaticMeshDrawCallCount += StaticMeshSceneProxy->EstimateDrawCallCount();
-				continue;
-			}
+				int32 NumSections = TargetMesh->GetNumSection();
+				if (NumSections <= 0)
+				{
+					FRenderCommand Command;
+					Command.RenderMesh = TargetMesh;
+					Command.WorldMatrix = SMC->GetWorldTransform();
+					std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(0);
+					Command.Material = MatPtr ? MatPtr.get() : Renderer->GetDefaultMaterial();
 
-			Command.RenderMesh = StaticMeshSceneProxy->ResolveRenderMesh(CameraPosition);
-			if (!Command.RenderMesh)
-			{
-				continue;
-			}
+					OutQueue.AddCommand(Command);
+				}
+				else
+				{
+					for (int32 i = 0; i < NumSections; ++i)
+					{
+						const FMeshSection& Section = TargetMesh->Sections[i];
 
-			Command.WorldMatrix = StaticMeshSceneProxy->GetLocalToWorld();
+						FRenderCommand Command;
+						Command.RenderMesh = TargetMesh;
+						Command.WorldMatrix = SMC->GetWorldTransform();
+
+						Command.IndexStart = Section.StartIndex;
+						Command.IndexCount = Section.IndexCount;
+
+						// 2. 인덱스(i)에 맞는 머티리얼을 꺼내서 주문서에 붙이기
+						std::shared_ptr<FMaterial> MatPtr = SMC->GetMaterial(i);
+						Command.Material = MatPtr ? MatPtr.get() : Renderer->GetDefaultMaterial();
+						OutQueue.AddCommand(Command);
+					}
+				}
+			}
+			continue;
 		}
-
-		OutQueue.AddCommand(std::move(Command));
-	}
-
-	if (GEngine)
-	{
-		FRenderInstrumentationStats& Stats = GEngine->GetMutableRenderInstrumentationStats();
-		Stats.StaticMeshCandidateCount += AddedStaticMeshCandidateCount;
-		const auto CollectEndTime = std::chrono::high_resolution_clock::now();
-		Stats.CollectRenderCommandsCpuMs += std::chrono::duration<double, std::milli>(CollectEndTime - CollectStartTime).count();
 	}
 }
 
-void FSceneRenderCollector::FrustrumCull(
-	UScene* Scene,
-	const FFrustum& Frustum,
-	const FShowFlags& ShowFlags,
-	const FVector& CameraPosition,
-	const FMatrix& ProjectionMatrix,
-	TArray<FVisiblePrimitiveEntry>& OutVisible)
+void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FFrustum& Frustum,
+	const FShowFlags& ShowFlags, TArray<UPrimitiveComponent*>& OutVisible)
 {
-	if (!Scene)
+	for (AActor* Actor : Actors)
 	{
-		return;
-	}
+		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible()) continue;
+		if (!Actor->IsVisible()) continue;
 
-	const bool bShowUUID = ShowFlags.HasFlag(EEngineShowFlags::SF_UUID);
-	const bool bShowBillboard = ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard);
-	const bool bShowText = ShowFlags.HasFlag(EEngineShowFlags::SF_Text);
-	const bool bShowPrimitives = ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
-	if (!bShowUUID && !bShowBillboard && !bShowText && !bShowPrimitives)
-	{
-		return;
-	}
-
-	const FStaticMeshCullSettings StaticMeshCullSettings = BuildStaticMeshCullSettings(ProjectionMatrix);
-	CandidatePrimitivesScratch.clear();
-	Scene->QueryPrimitivesByFrustum(Frustum, CandidatePrimitivesScratch);
-	OutVisible.reserve(OutVisible.size() + CandidatePrimitivesScratch.size());
-	uint32 FrustumPassedStaticMeshCount = 0;
-	uint32 DistanceCulledStaticMeshCount = 0;
-	uint32 SizeCulledStaticMeshCount = 0;
-
-	for (UPrimitiveComponent* PrimitiveComponent : CandidatePrimitivesScratch)
-	{
-		if (!PrimitiveComponent || PrimitiveComponent->IsPendingKill())
+		for (UActorComponent* Component : Actor->GetComponents())
 		{
-			continue;
+			if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
+
+			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+
+			const bool bIsUUID = PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass());
+			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
+			const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
+			// ─── ShowFlags에 따른 필터링 ───
+			if (bIsUUID)
+			{
+				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID)) continue;
+			}
+			else if (bIsSubUV)
+			{
+				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
+				{
+					continue;
+				}
+			}
+			else if (bIsText)
+			{
+				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text))
+				{
+					continue;
+				}
+			}
+			else
+			{
+				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives)) continue;
+				if (!PrimitiveComponent->GetRenderMesh()) continue;
+			}
+
+			if (Frustum.IsVisible(PrimitiveComponent->GetWorldBounds()))
+			{
+				OutVisible.push_back(PrimitiveComponent);
+			}
 		}
-
-		AActor* OwnerActor = PrimitiveComponent->GetOwnerFast();
-		if (!OwnerActor || OwnerActor->IsPendingDestroy() || !OwnerActor->IsVisible())
-		{
-			continue;
-		}
-
-		FPrimitiveSceneProxy* SceneProxy = PrimitiveComponent->GetSceneProxy();
-		if (!SceneProxy)
-		{
-			continue;
-		}
-
-		const bool bStaticMesh = PrimitiveComponent->IsA(UStaticMeshComponent::StaticClass());
-
-		switch (PrimitiveComponent->GetRenderCategory())
-		{
-		case EPrimitiveRenderCategory::UUIDBillboard:
-			if (!bShowUUID)
-			{
-				continue;
-			}
-			break;
-		case EPrimitiveRenderCategory::SubUV:
-			if (!bShowBillboard)
-			{
-				continue;
-			}
-			break;
-		case EPrimitiveRenderCategory::Text:
-			if (!bShowText)
-			{
-				continue;
-			}
-			break;
-		case EPrimitiveRenderCategory::Primitive:
-		default:
-			if (!bShowPrimitives)
-			{
-				continue;
-			}
-
-			if (!bStaticMesh && !PrimitiveComponent->GetRenderMesh())
-			{
-				continue;
-			}
-			break;
-		}
-
-		if (bStaticMesh)
-		{
-			bool bDistanceCulled = false;
-			bool bSizeCulled = false;
-			if (ShouldCullStaticMeshBySettings(SceneProxy->GetBounds(), CameraPosition, StaticMeshCullSettings, bDistanceCulled, bSizeCulled))
-			{
-				DistanceCulledStaticMeshCount += bDistanceCulled ? 1u : 0u;
-				SizeCulledStaticMeshCount += bSizeCulled ? 1u : 0u;
-				continue;
-			}
-
-			++FrustumPassedStaticMeshCount;
-		}
-
-		OutVisible.push_back({ PrimitiveComponent, SceneProxy, bStaticMesh });
-	}
-
-	if (GEngine)
-	{
-		FRenderInstrumentationStats& Stats = GEngine->GetMutableRenderInstrumentationStats();
-		Stats.FrustumPassedStaticMeshCount += FrustumPassedStaticMeshCount;
-		Stats.StaticMeshDistanceCulledCount += DistanceCulledStaticMeshCount;
-		Stats.StaticMeshSizeCulledCount += SizeCulledStaticMeshCount;
 	}
 }

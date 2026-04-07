@@ -1,7 +1,6 @@
 #include "LineBatchComponent.h"
 #include "Math/MathUtility.h"
 #include "Object/Class.h"
-#include "Renderer/SceneProxy.h"
 
 IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
@@ -9,11 +8,6 @@ void ULineBatchComponent::PostConstruct()
 {
 	LineMesh = std::make_shared<FDynamicMesh>();
 	LineMesh->Topology = EMeshTopology::EMT_LineList;
-}
-
-std::shared_ptr<FPrimitiveSceneProxy> ULineBatchComponent::CreateSceneProxy() const
-{
-	return std::make_shared<FLineBatchSceneProxy>(this);
 }
 
 void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InColor)
@@ -41,7 +35,6 @@ void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InCo
 	// 상태 갱신
 	LineMesh->bIsDirty = true;
 	LineMesh->UpdateLocalBound();
-	UpdateBounds();
 }
 
 void ULineBatchComponent::DrawWireCube(FVector InCenter, FQuat InRotation, FVector InScale, FVector4 InColor)
@@ -127,6 +120,5 @@ void ULineBatchComponent::Clear()
 		LineMesh->Indices.clear();
 		LineMesh->bIsDirty = true;
 		LineMesh->UpdateLocalBound();
-		UpdateBounds();
 	}
 }

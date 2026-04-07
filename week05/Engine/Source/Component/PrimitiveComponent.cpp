@@ -1,136 +1,19 @@
 #include "PrimitiveComponent.h"
 #include "Object/Class.h"
-#include "Renderer/SceneProxy.h"
 #include "Serializer/Archive.h"
 #include "Debug/EngineLog.h"
-#include "Actor/Actor.h"
-#include "Scene/Scene.h"
-#include <DirectXMath.h>
-IMPLEMENT_RTTI(UPrimitiveComponent, USceneComponent)
 
-TArray<UPrimitiveComponent*> UPrimitiveComponent::PendingRenderStateUpdates;
+#include "PrimitiveComponent.h"
+IMPLEMENT_RTTI(UPrimitiveComponent, USceneComponent)
 
 FBoxSphereBounds UPrimitiveComponent::GetLocalBounds() const
 {
 	return { FVector(0, 0, 0), 0.f, FVector(0, 0, 0) };
 }
 
-void UPrimitiveComponent::OnRegister()
-{
-	USceneComponent::OnRegister();
-	MarkRenderStateDirty();
-}
-
-void UPrimitiveComponent::OnUnregister()
-{
-	auto PendingIt = std::remove(PendingRenderStateUpdates.begin(), PendingRenderStateUpdates.end(), this);
-	PendingRenderStateUpdates.erase(PendingIt, PendingRenderStateUpdates.end());
-	SceneProxy.reset();
-	bRenderStateDirty = true;
-	bRenderStateUpdateQueued = false;
-	USceneComponent::OnUnregister();
-}
-
-void UPrimitiveComponent::MarkRenderStateDirty()
-{
-	bRenderStateDirty = true;
-	EnqueueRenderStateUpdate(this);
-}
-
-void UPrimitiveComponent::FlushPendingRenderStateUpdates()
-{
-	if (PendingRenderStateUpdates.empty())
-	{
-		return;
-	}
-
-	TArray<UPrimitiveComponent*> PendingUpdates = std::move(PendingRenderStateUpdates);
-	PendingRenderStateUpdates.clear();
-
-	for (UPrimitiveComponent* PrimitiveComponent : PendingUpdates)
-	{
-		if (!PrimitiveComponent || !PrimitiveComponent->bRenderStateUpdateQueued)
-		{
-			continue;
-		}
-
-		PrimitiveComponent->bRenderStateUpdateQueued = false;
-		if (PrimitiveComponent->IsPendingKill() || !PrimitiveComponent->IsRegistered())
-		{
-			continue;
-		}
-
-		if (PrimitiveComponent->bRenderStateDirty)
-		{
-			PrimitiveComponent->RecreateSceneProxy();
-		}
-	}
-}
-
-FRenderMesh* UPrimitiveComponent::GetRenderMesh() const
-{
-	return GetRenderMesh(0.0f);
-}
-
-FRenderMesh* UPrimitiveComponent::GetRenderMesh(const float& Distance) const
-{
-	return nullptr;
-}
-
-std::shared_ptr<FPrimitiveSceneProxy> UPrimitiveComponent::CreateSceneProxy() const
-{
-	return nullptr;
-}
-
-FPrimitiveSceneProxy* UPrimitiveComponent::GetSceneProxy() const
-{
-	// Render state updates are expected to be processed in FlushPendingRenderStateUpdates
-	// on the render command collection boundary.
-
-	return SceneProxy.get();
-}
-
-void UPrimitiveComponent::EnqueueRenderStateUpdate(UPrimitiveComponent* InPrimitiveComponent)
-{
-	if (!InPrimitiveComponent || InPrimitiveComponent->bRenderStateUpdateQueued)
-	{
-		return;
-	}
-
-	InPrimitiveComponent->bRenderStateUpdateQueued = true;
-	PendingRenderStateUpdates.push_back(InPrimitiveComponent);
-}
-
-void UPrimitiveComponent::RecreateSceneProxy()
-{
-	SceneProxy = CreateSceneProxy();
-	bRenderStateDirty = false;
-	bRenderStateUpdateQueued = false;
-}
-
 void UPrimitiveComponent::UpdateBounds()
 {
-	bBoundsDirty = true;
-	MarkRenderStateDirty();
-
-	AActor* OwnerActor = GetOwner();
-	if (OwnerActor)
-	{
-		if (UScene* Scene = OwnerActor->GetScene())
-		{
-			Scene->MarkSpatialDirty();
-		}
-	}
-}
-
-FBoxSphereBounds UPrimitiveComponent::GetWorldBounds() const
-{
-	if (bBoundsDirty)
-	{
-		Bounds = CalcBounds(GetWorldTransform());
-		bBoundsDirty = false;
-	}
-	return Bounds;
+	Bounds = CalcBounds(GetWorldTransform());
 }
 
 FBoxSphereBounds UPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) const
@@ -147,21 +30,18 @@ FBoxSphereBounds UPrimitiveComponent::CalcBounds(const FMatrix& LocalToWorld) co
 
 	FMatrix AbsM = FMatrix::Abs(LocalToWorld);
 
-	// DirectXMath: 3행 × Extent를 벡터 FMA로 한 번에 계산
-	// Result[i] = Row0[i]*Ex + Row1[i]*Ey + Row2[i]*Ez  (i = X, Y, Z)
-	using namespace DirectX;
-	const DirectX::XMVECTOR R0  = XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(AbsM.M[0]));
-	const DirectX::XMVECTOR R1  = XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(AbsM.M[1]));
-	const DirectX::XMVECTOR R2  = XMLoadFloat4(reinterpret_cast<const XMFLOAT4*>(AbsM.M[2]));
-	const DirectX::XMVECTOR Ex  = XMVectorReplicate(LocalBound.BoxExtent.X);
-	const DirectX::XMVECTOR Ey  = XMVectorReplicate(LocalBound.BoxExtent.Y);
-	const DirectX::XMVECTOR Ez  = XMVectorReplicate(LocalBound.BoxExtent.Z);
-	// XMVectorMultiplyAdd(a,b,c) = a*b + c  →  FMA 명령 활용
-	const DirectX::XMVECTOR Res = XMVectorMultiplyAdd(R0, Ex, XMVectorMultiplyAdd(R1, Ey, XMVectorMultiply(R2, Ez)));
+	FVector WorldBoxExtent;
+	WorldBoxExtent.X = AbsM.M[0][0] * LocalBound.BoxExtent.X
+		+ AbsM.M[1][0] * LocalBound.BoxExtent.Y
+		+ AbsM.M[2][0] * LocalBound.BoxExtent.Z;
 
-	XMFLOAT4 Out;
-	XMStoreFloat4(&Out, Res);
-	const FVector WorldBoxExtent(Out.x, Out.y, Out.z);
+	WorldBoxExtent.Y = AbsM.M[0][1] * LocalBound.BoxExtent.X
+		+ AbsM.M[1][1] * LocalBound.BoxExtent.Y
+		+ AbsM.M[2][1] * LocalBound.BoxExtent.Z;
+
+	WorldBoxExtent.Z = AbsM.M[0][2] * LocalBound.BoxExtent.X
+		+ AbsM.M[1][2] * LocalBound.BoxExtent.Y
+		+ AbsM.M[2][2] * LocalBound.BoxExtent.Z;
 
 	return { Center, WorldBoxExtent.Size(), WorldBoxExtent };
 }

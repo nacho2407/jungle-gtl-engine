@@ -20,69 +20,6 @@ class FInputManager;
 class FEnhancedInputManager;
 class FObjectManager;
 
-struct ENGINE_API FRenderInstrumentationStats
-{
-	bool bGpuOcclusionCullingEnabled = false;
-	bool bHZBBuildSucceeded = false;
-	bool bOcclusionPassDispatched = false;
-	bool bOcclusionReadbackIssued = false;
-	bool bOcclusionReadbackCompleted = false;
-	bool bOcclusionSnapshotReadbackMatched = false;
-	bool bOcclusionSkipApplied = false;
-	uint32 StaticMeshCandidateCount = 0;
-	uint32 FrustumPassedStaticMeshCount = 0;
-	uint32 StaticMeshDistanceCulledCount = 0;
-	uint32 StaticMeshSizeCulledCount = 0;
-	uint32 OcclusionCandidateCount = 0;
-	uint32 OcclusionReadbackCandidateCount = 0;
-	uint32 OcclusionVisibleCount = 0;
-	uint32 OcclusionOccludedCount = 0;
-	uint32 StaticMeshDrawCallCount = 0;
-	uint32 StaticMeshDrawCallCountBeforeOcclusion = 0;
-	uint32 StaticMeshDrawSkippedCount = 0;
-	uint32 StaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
-	uint32 StaticMeshSkippedLateDrawCount = 0;
-	uint32 TotalDrawCallCount = 0;
-	uint32 HZBMipCount = 0;
-	double CollectRenderCommandsCpuMs = 0.0;
-	double ViewportBuildCommandsCpuMs = 0.0;
-	double BuildRenderFrameCpuMs = 0.0;
-	double ExecuteRenderCommandsCpuMs = 0.0;
-	double HZBBuildCpuMs = 0.0;
-	double OcclusionDispatchCpuMs = 0.0;
-
-	void ResetFrame()
-	{
-		bHZBBuildSucceeded = false;
-		bOcclusionPassDispatched = false;
-		bOcclusionReadbackIssued = false;
-		bOcclusionReadbackCompleted = false;
-		bOcclusionSnapshotReadbackMatched = false;
-		bOcclusionSkipApplied = false;
-		StaticMeshCandidateCount = 0;
-		FrustumPassedStaticMeshCount = 0;
-		StaticMeshDistanceCulledCount = 0;
-		StaticMeshSizeCulledCount = 0;
-		OcclusionCandidateCount = 0;
-		OcclusionReadbackCandidateCount = 0;
-		OcclusionVisibleCount = 0;
-		OcclusionOccludedCount = 0;
-		StaticMeshDrawCallCount = 0;
-		StaticMeshDrawCallCountBeforeOcclusion = 0;
-		StaticMeshDrawSkippedCount = 0;
-		StaticMeshSkippedBeforeBuildDrawCommandsCount = 0;
-		StaticMeshSkippedLateDrawCount = 0;
-		TotalDrawCallCount = 0;
-		HZBMipCount = 0;
-		CollectRenderCommandsCpuMs = 0.0;
-		ViewportBuildCommandsCpuMs = 0.0;
-		BuildRenderFrameCpuMs = 0.0;
-		ExecuteRenderCommandsCpuMs = 0.0;
-		HZBBuildCpuMs = 0.0;
-		OcclusionDispatchCpuMs = 0.0;
-	}
-};
-
 struct FEngineInitArgs
 {
 	FWindowsWindow* MainWindow = nullptr;
@@ -127,9 +64,6 @@ public:
 	const FTimer& GetTimer() const;
 	/** 최근 프레임 델타 타임을 초 단위로 반환한다. */
 	float GetDeltaTime() const;
-	const FRenderInstrumentationStats& GetRenderInstrumentationStats() const;
-	FRenderInstrumentationStats& GetMutableRenderInstrumentationStats();
-	bool IsGpuOcclusionCullingEnabled() const;
 	/** 엔진이 소유한 모든 월드 컨텍스트 목록을 반환한다. */
 	const TArray<std::unique_ptr<FWorldContext>>& GetWorldContexts() const { return WorldContexts; }
 
@@ -172,7 +106,6 @@ protected:
 	virtual void RenderFrame();
 	/** 플랫폼별 상태 동기화가 필요할 때 파생 클래스가 채운다. */
 	virtual void SyncPlatformState();
-	void ResetRenderInstrumentationStats();
 	/** 월드 타입으로 컨텍스트를 찾는다. */
 	FWorldContext* FindWorldContext(EWorldType WorldType);
 	/** const 버전의 월드 타입 검색 함수다. */
@@ -223,8 +156,6 @@ private:
 	double GCInterval = 30.0;
 	int32 WindowWidth = 0;
 	int32 WindowHeight = 0;
-	bool bGpuOcclusionCullingEnabled = false;
-	FRenderInstrumentationStats RenderInstrumentationStats;
 
 	FRenderCommandQueue CommandQueue;
 };

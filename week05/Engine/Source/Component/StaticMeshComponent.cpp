@@ -9,7 +9,6 @@
 #include "Core/Paths.h"
 #include "Debug/EngineLog.h"
 #include "Renderer/Material.h"
-#include "Renderer/SceneProxy.h"
 IMPLEMENT_RTTI(UStaticMeshComponent, UMeshComponent)
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
@@ -23,30 +22,19 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 		const TArray<std::shared_ptr<FMaterial>>& DefaultMats = StaticMesh->GetDefaultMaterials();
 		for (int32 i = 0; i < NeededMaterialSlots && i < DefaultMats.size(); ++i)
 		{
-			Materials[i] = DefaultMats[i];
+			Materials[i] = DefaultMats[i]->CreateDynamicMaterial();
 		}
+		UpdateBounds();
 	}
 	else
 	{
 		Materials.clear();
 	}
-	UpdateBounds();
-	MarkRenderStateDirty();
 }
 
 FRenderMesh* UStaticMeshComponent::GetRenderMesh() const
 {
-	return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
-}
-
-FRenderMesh* UStaticMeshComponent::GetRenderMesh(const float& Distance) const
-{
-	return StaticMesh ? StaticMesh->GetRenderDataForDistance(Distance) : nullptr;
-}
-
-std::shared_ptr<FPrimitiveSceneProxy> UStaticMeshComponent::CreateSceneProxy() const
-{
-	return std::make_shared<FStaticMeshSceneProxy>(this);
+	 return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
 }
 
 FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
@@ -61,11 +49,6 @@ FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
 FBoxSphereBounds UStaticMeshComponent::CalcBounds(const FMatrix& LocalToWorld) const
 {
 	return UPrimitiveComponent::CalcBounds(LocalToWorld);
-}
-
-bool UStaticMeshComponent::IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const
-{
-	return StaticMesh && StaticMesh->IntersectLocalRay(LocalOrigin, LocalDir, InOutDist);
 }
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)

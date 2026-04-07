@@ -21,10 +21,9 @@ private:
 
 private:
 	FEditorEngine* Engine = nullptr;
-	float FontSize = 24.0f;
+	float FontSize = 16.0f;
 	float FPS = 0.00f;
 	float FrameTimeMs = 0.0f;
-	uint32 DrawCallCount = 0;
 	STextBlock FpsTextBlock;
-	const int32 Gap = 172;
+	const int32 Gap = 16;
 };

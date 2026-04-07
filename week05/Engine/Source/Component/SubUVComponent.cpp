@@ -1,7 +1,6 @@
 #include "SubUVComponent.h"
 #include "Object/Class.h"
 #include "Renderer/MeshData.h"
-#include "Renderer/SceneProxy.h"
 
 IMPLEMENT_RTTI(USubUVComponent, UPrimitiveComponent)
 
@@ -13,11 +12,6 @@ void USubUVComponent::PostConstruct()
 }
 
 FRenderMesh* USubUVComponent::GetRenderMesh() const { return SubUVMesh.get(); }
-
-std::shared_ptr<FPrimitiveSceneProxy> USubUVComponent::CreateSceneProxy() const
-{
-	return std::make_shared<FSubUVSceneProxy>(this);
-}
 
 FBoxSphereBounds USubUVComponent::GetWorldBounds() const
 {
