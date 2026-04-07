@@ -321,7 +321,7 @@ void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode,
 
         NewActor->InitDefaultComponents();
         NewActor->SetWorld(World);
-        World->AddActor(NewActor);
+        //World->SpawnActor(NewActor);
 
         if (USceneComponent* RootComp = NewActor->GetRootComponent()) 
         {
