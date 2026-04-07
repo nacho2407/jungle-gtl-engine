@@ -6,6 +6,7 @@
 #include "WorldTypes.h"
 #include "Core/ShowFlags.h"
 #include "RenderCollector.h"
+#include "BVH.h"
 
 class AActor;
 class FCamera;
@@ -62,7 +63,17 @@ public:
 	/** 씬 안의 액터를 순회하며 Tick하고, 끝나면 파괴 대상을 정리한다. */
 	void Tick(float DeltaTime);
 
+	void MarkSpatialDirty();
+	void QueryPrimitivesByFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void QueryPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float& InOutMaxDistance, const BVH::FRayHitVisitor& Visitor) const;
+
 private:
+	void GatherPrimitiveComponents(TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void RebuildSpatialIfNeeded() const;
+
 	TArray<AActor*> Actors;
 	bool bBegunPlay = false;
+	mutable BVH SpatialBVH;
+	mutable bool bSpatialDirty = true;
 };

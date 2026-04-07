@@ -21,7 +21,9 @@ public:
 	void Serialize(FArchive& Ar) override;
 	FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const override;
 	FBoxSphereBounds GetLocalBounds() const override;
-
+	virtual bool HasMeshIntersection() const override { return true; }
+	virtual bool IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const override;
+	
 private:
 	UStaticMesh* StaticMesh = nullptr;
 };

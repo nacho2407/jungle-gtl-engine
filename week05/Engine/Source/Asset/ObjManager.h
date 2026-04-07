@@ -21,7 +21,7 @@ enum class EObjImportAxis : uint8
 };
 
 struct FObjLoadOptions
-{
+{ 
 	bool bUseLegacyObjConversion = true;
 	EObjImportAxis ForwardAxis = EObjImportAxis::PosX;
 	EObjImportAxis UpAxis = EObjImportAxis::PosZ;

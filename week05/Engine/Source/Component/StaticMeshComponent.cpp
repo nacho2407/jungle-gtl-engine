@@ -46,6 +46,11 @@ FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
 	return UPrimitiveComponent::GetLocalBounds();
 }
 
+bool UStaticMeshComponent::IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const
+{
+	return StaticMesh && StaticMesh->IntersectLocalRay(LocalOrigin, LocalDir, InOutDist);
+}
+
 FBoxSphereBounds UStaticMeshComponent::CalcBounds(const FMatrix& LocalToWorld) const
 {
 	return UPrimitiveComponent::CalcBounds(LocalToWorld);

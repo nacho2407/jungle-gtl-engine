@@ -548,7 +548,7 @@ namespace
 
 			NewAsset->AddDefaultMaterial(Material);
 		}
-
+		NewAsset->BuildAccelerationStructureIfNeeded();
 		return NewAsset;
 	}
 
@@ -601,7 +601,7 @@ namespace
 
 			NewAsset->AddDefaultMaterial(Material);
 		}
-
+		NewAsset->BuildAccelerationStructureIfNeeded();
 		return NewAsset;
 	}
 

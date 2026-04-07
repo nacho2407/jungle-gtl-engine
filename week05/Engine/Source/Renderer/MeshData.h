@@ -3,7 +3,8 @@
 
 #include "Renderer/RenderMesh.h"
 #include "CoreMinimal.h"
-
+#include "Scene/MeshBVH.h"
+#include <memory>
 
 struct ENGINE_API FStaticMesh : public FRenderMesh
 {
@@ -43,8 +44,11 @@ public:
 
 	const TArray<std::shared_ptr<FMaterial>>& GetDefaultMaterials() const { return DefaultMaterials; }
 	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
+	bool IntersectLocalRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const;
+	void BuildAccelerationStructureIfNeeded() const;
 
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;
 	TArray<std::shared_ptr<FMaterial>> DefaultMaterials;
+	mutable std::unique_ptr<FMeshBVH> TriangleBVH;
 };

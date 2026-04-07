@@ -10,6 +10,8 @@ public:
 
 	void PostConstruct() override;
 
+	virtual bool UseSpherePicking() const override { return true; }
+	
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 
 	void SetText(const FString& InText);

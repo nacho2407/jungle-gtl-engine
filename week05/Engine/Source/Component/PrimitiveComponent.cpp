@@ -2,9 +2,24 @@
 #include "Object/Class.h"
 #include "Serializer/Archive.h"
 #include "Debug/EngineLog.h"
+#include "Actor/Actor.h"
+#include "Scene/Scene.h"
 
 #include "PrimitiveComponent.h"
 IMPLEMENT_RTTI(UPrimitiveComponent, USceneComponent)
+
+void UPrimitiveComponent::MarkTransformDirty()
+{
+	USceneComponent::MarkTransformDirty();
+
+	if (AActor* Owner = GetOwner())
+	{
+		if (UScene* Scene = Owner->GetScene())
+		{
+			Scene->MarkSpatialDirty();
+		}
+	}
+}
 
 FBoxSphereBounds UPrimitiveComponent::GetLocalBounds() const
 {

@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cmath>
 
+class UScene;
+
 struct FRenderMesh;
 class FArchive;
 class FMaterial;
@@ -35,7 +37,14 @@ public:
 
 	virtual FRenderMesh* GetRenderMesh() const { return nullptr; }
 
+	virtual bool IsPickable() const { return true; }
+	virtual bool UseSpherePicking() const { return false; }
+	virtual bool HasMeshIntersection() const { return false; }
+	virtual bool IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const { return false; }
+
 protected:
+	virtual void MarkTransformDirty() override;
+
 	FBoxSphereBounds Bounds;
 	bool bDrawDebugBounds = true;
 };

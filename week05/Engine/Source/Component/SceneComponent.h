@@ -34,9 +34,11 @@ public:
 	/** 상대 위치/회전/스케일을 직렬화해 씬 저장 데이터와 연결한다. */
 	void Serialize(FArchive& Ar) override;
 
-private:
+protected:
 	/** 자신과 자식들의 월드 트랜스폼 캐시를 무효화한다. */
-	void MarkTransformDirty();
+	virtual void MarkTransformDirty();
+
+private:
 	/** 부모 트랜스폼까지 반영해 월드 변환 행렬 캐시를 다시 만든다. */
 	void UpdateWorldTransform() const;
 
