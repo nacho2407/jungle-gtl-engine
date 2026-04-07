@@ -82,7 +82,7 @@ public:
 
 	// --- Default Resources ---
 	void InitializeDefaultResources(ID3D11Device* Device);
-	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const { return DefaultWhiteSRV; }
+	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const { return DefaultWhiteSRV.Get(); }
 
 	// --- Material Texture (SRV) ---
 	FMaterialResource* FindTexture(const FString& Path) const;
@@ -131,7 +131,7 @@ private:
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
-	ID3D11Device* CahcedDevice = { nullptr };
+	TComPtr<ID3D11Device> CachedDevice;
 
 	FObjLoader ObjLoader;
 	FFontAtlasLoader FontLoader;
@@ -148,8 +148,8 @@ private:
 	TMap<FString, FStaticMeshResource> StaticMeshRegistry;
 	TMap<FString, UStaticMesh*>        StaticMeshMap;
 
-	ID3D11Texture2D*          DefaultWhiteTexture = nullptr;
-	ID3D11ShaderResourceView* DefaultWhiteSRV     = nullptr;
+	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
+	TComPtr<ID3D11ShaderResourceView> DefaultWhiteSRV;
 	
 	/* Paths */
 	TArray<FString> ObjFilePaths;

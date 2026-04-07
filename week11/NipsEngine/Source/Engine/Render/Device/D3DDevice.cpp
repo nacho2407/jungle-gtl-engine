@@ -244,17 +244,16 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 	// Check tearing support for no-vsync with flip model
-	IDXGIFactory5* Factory5 = nullptr;
+	TComPtr<IDXGIFactory5> Factory5;
 	{
-		IDXGIFactory1* Factory1 = nullptr;
-		if (SUCCEEDED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&Factory1)))
+		TComPtr<IDXGIFactory1> Factory1;
+		if (SUCCEEDED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(Factory1.GetAddressOf()))))
 		{
-			if (SUCCEEDED(Factory1->QueryInterface(__uuidof(IDXGIFactory5), (void**)&Factory5)))
+			if (SUCCEEDED(Factory1->QueryInterface(__uuidof(IDXGIFactory5), reinterpret_cast<void**>(Factory5.GetAddressOf()))))
 			{
 				Factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
 					&bTearingSupported, sizeof(bTearingSupported));
 			}
-			Factory1->Release();
 		}
 	}
 
@@ -274,8 +273,6 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 		CreateDeviceFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
 		&swapChainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), nullptr,
 		DeviceContext.GetAddressOf());
-
-	if (Factory5) Factory5->Release();
 
 	SwapChain->GetDesc(&swapChainDesc);
 
