@@ -250,3 +250,17 @@ public:
 	}
 };
 
+namespace std
+{
+	template <>
+	struct hash<FVector2>
+	{
+		size_t operator()(const FVector2& V) const noexcept
+		{
+			size_t HashX = std::hash<float>{}(V.X);
+			size_t HashY = std::hash<float>{}(V.Y);
+			return HashX ^ (HashY * 2654435761u + 0x9e3779b9u + (HashX << 6) + (HashX >> 2));
+		}
+	};
+}
+

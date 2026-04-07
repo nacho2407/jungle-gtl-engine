@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <cfloat>
 
+#include "Engine/Geometry/Frustum.h"
+#include "Engine/Geometry/AABB.h"
+
 /**
  * @brief Build a BVH over the provided object bounds.
  * @param ObjectBounds Array of per-object AABBs.

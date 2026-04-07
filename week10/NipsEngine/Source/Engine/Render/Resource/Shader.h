@@ -13,9 +13,9 @@
 class FShader
 {
 private:
-	ID3D11VertexShader* VertexShader = nullptr;
-	ID3D11PixelShader* PixelShader = nullptr;
-	ID3D11InputLayout* InputLayout = nullptr;
+	TComPtr<ID3D11VertexShader> VertexShader;
+	TComPtr<ID3D11PixelShader> PixelShader;
+	TComPtr<ID3D11InputLayout> InputLayout;
 
 public:
 

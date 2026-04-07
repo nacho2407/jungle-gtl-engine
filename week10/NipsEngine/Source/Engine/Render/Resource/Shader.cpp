@@ -5,98 +5,80 @@
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char * InVSEntryPoint, const char * InPSEntryPoint,
 		const D3D11_INPUT_ELEMENT_DESC * InInputElements, UINT InInputElementCount)
 {
-	ID3DBlob* vertexShaderCSO = nullptr;
-	ID3DBlob* pixelShaderCSO = nullptr;
-	ID3DBlob* errorBlob = nullptr;
+	TComPtr<ID3DBlob> vertexShaderCSO;
+	TComPtr<ID3DBlob> pixelShaderCSO;
+	TComPtr<ID3DBlob> errorBlob;
 
 	// Vertex Shader 컴파일
-	HRESULT hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
+	HRESULT hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InVSEntryPoint, "vs_5_0", 0, 0,
+		vertexShaderCSO.GetAddressOf(), errorBlob.GetAddressOf());
 	if (FAILED(hr))
 	{
 		if (errorBlob)
 		{
 			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Vertex Shader Compile Error", MB_OK | MB_ICONERROR);
-			errorBlob->Release();
 		}
 		return;
 	}
 
 	// Pixel Shader 컴파일
-	hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
+	errorBlob.Reset();
+	hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InPSEntryPoint, "ps_5_0", 0, 0,
+		pixelShaderCSO.GetAddressOf(), errorBlob.GetAddressOf());
 	if (FAILED(hr))
 	{
 		if (errorBlob)
 		{
 			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Pixel Shader Compile Error", MB_OK | MB_ICONERROR);
-			errorBlob->Release();
 		}
-		vertexShaderCSO->Release();
 		return;
 	}
 
 	// Vertex Shader 생성
-	hr = InDevice->CreateVertexShader(vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
+	hr = InDevice->CreateVertexShader(vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), nullptr,
+		VertexShader.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 	{
 		std::cerr << "Failed to create Vertex Shader (HRESULT: " << hr << ")" << std::endl;
-		vertexShaderCSO->Release();
-		pixelShaderCSO->Release();
 		return;
 	}
 
 	// Pixel Shader 생성
-	hr = InDevice->CreatePixelShader(pixelShaderCSO->GetBufferPointer(), pixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
+	hr = InDevice->CreatePixelShader(pixelShaderCSO->GetBufferPointer(), pixelShaderCSO->GetBufferSize(), nullptr,
+		PixelShader.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 	{
 		std::cerr << "Failed to create Pixel Shader (HRESULT: " << hr << ")" << std::endl;
-		vertexShaderCSO->Release();
-		pixelShaderCSO->Release();
 		return;
 	}
 
 	// Input Layout 생성 (fullscreen triangle 등 입력 레이아웃이 없는 VS 지원)
 	if (InInputElements != nullptr && InInputElementCount > 0)
 	{
-		hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
+		hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(),
+			vertexShaderCSO->GetBufferSize(), InputLayout.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
-			vertexShaderCSO->Release();
-			pixelShaderCSO->Release();
 			return;
 		}
 	}
 	else
 	{
-		InputLayout = nullptr;
+		InputLayout.Reset();
 	}
-
-	vertexShaderCSO->Release();
-	pixelShaderCSO->Release();
 }
 
 void FShader::Release()
 {
-	if (InputLayout)
-	{
-		InputLayout->Release();
-		InputLayout = nullptr;
-	}
-	if (PixelShader)
-	{
-		PixelShader->Release();
-		PixelShader = nullptr;
-	}
-	if (VertexShader)
-	{
-		VertexShader->Release();
-		VertexShader = nullptr;
-	}
+	InputLayout.Reset();
+	PixelShader.Reset();
+	VertexShader.Reset();
 }
 
 void FShader::Bind(ID3D11DeviceContext* InDeviceContext) const
 {
-	InDeviceContext->IASetInputLayout(InputLayout);
-	InDeviceContext->VSSetShader(VertexShader, nullptr, 0);
-	InDeviceContext->PSSetShader(PixelShader, nullptr, 0);
+	InDeviceContext->IASetInputLayout(InputLayout.Get());
+	InDeviceContext->VSSetShader(VertexShader.Get(), nullptr, 0);
+	InDeviceContext->PSSetShader(PixelShader.Get(), nullptr, 0);
 }

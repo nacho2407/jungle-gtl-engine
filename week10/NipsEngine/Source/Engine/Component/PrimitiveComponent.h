@@ -3,9 +3,9 @@
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
 #include "Render/Common/RenderTypes.h"
-#include "Core/RayTypes.h"
+#include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
-#include "Math/AABB.h"
+#include "Engine/Geometry/AABB.h"
 
 
 class UPrimitiveComponent : public USceneComponent
