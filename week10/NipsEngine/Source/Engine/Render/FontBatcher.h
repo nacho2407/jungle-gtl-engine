@@ -35,12 +35,8 @@ public:
 	void Create(ID3D11Device* InDevice);
 	void Release();
 
-	// 월드 좌표 위에 빌보드 텍스트 추가 (배치에 누적)
 	void AddText(const FString& Text,
-		const FVector& WorldPos,
-		const FVector& CamRight,
-		const FVector& CamUp,
-		const FVector& WorldScale,
+		const FMatrix& WorldMatrix,
 		float Scale = 1.0f);
 
 	// 스크린 좌표 위에 빌보드 텍스트 추가	 (배치에 누적)
