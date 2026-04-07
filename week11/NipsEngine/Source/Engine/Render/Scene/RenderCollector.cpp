@@ -223,19 +223,15 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 			FRenderCommand TextCmd = BaseCmd;
 			BaseCmd.PerObjectConstants.Model = WorldMatrix;
-
-			if (ShowFlags.bBillboardText)
-			{
-				TextCmd.PerObjectConstants = FPerObjectConstants{TextComp->GetTextMatrix()};
-				TextCmd.Type = ERenderCommandType::Font;
-				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
-				TextCmd.Constants.Font.Text = &Text;
-				TextCmd.Constants.Font.Font = Font;
-				TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-				TextCmd.BlendState = EBlendState::AlphaBlend;
-				TextCmd.DepthStencilState = EDepthStencilState::Default;
-				RenderBus.AddCommand(ERenderPass::Font, TextCmd);
-			}
+			TextCmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix()};
+			TextCmd.Type = ERenderCommandType::Font;
+			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
+			TextCmd.Constants.Font.Text = &Text;
+			TextCmd.Constants.Font.Font = Font;
+			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
+			TextCmd.BlendState = EBlendState::AlphaBlend;
+			TextCmd.DepthStencilState = EDepthStencilState::Default;
+			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
 		{
@@ -354,7 +350,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Font;
-		Cmd.PerObjectConstants = FPerObjectConstants{TextComp->GetTextMatrix(), TextComp->GetColor()};
+		Cmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix(), TextComp->GetColor()};
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
