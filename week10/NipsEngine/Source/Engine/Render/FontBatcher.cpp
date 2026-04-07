@@ -90,13 +90,17 @@ void FFontBatcher::Release()
 }
 
 void FFontBatcher::AddText(const FString& Text,
-	const FVector& WorldPos,
-	const FVector& CamRight,
-	const FVector& CamUp,
-	const FVector& WorldScale,
+	const FMatrix& ModelMatrix,
 	float Scale)
 {
 	if (Text.empty()) return;
+
+
+
+	FVector RightVector = ModelMatrix.GetRightVector();
+	FVector UpVector = ModelMatrix.GetUpVector();
+	FVector WorldScale = ModelMatrix.GetScaleVector();
+
 
 	const float CharW = 0.5f * Scale * WorldScale.Y;
 	const float CharH = 0.5f * Scale * WorldScale.Z;
@@ -112,8 +116,8 @@ void FFontBatcher::AddText(const FString& Text,
 	uint32* pI = Indices.data() + IdxBase;
 
 	// 빌보드 반벡터를 루프 밖에서 미리 계산
-	const FVector HalfRight = CamRight * (CharW * 0.5f);
-	const FVector HalfUp    = CamUp    * (CharH * 0.5f);
+	const FVector HalfRight = RightVector * (CharW * 0.5f);
+	const FVector HalfUp    = UpVector    * (CharH * 0.5f);
 
 	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
 	const uint8* const End = Ptr + Text.size();
@@ -132,7 +136,7 @@ void FFontBatcher::AddText(const FString& Text,
 		FVector2 UVMin, UVMax;
 		GetCharUV(CP, UVMin, UVMax);
 
-		const FVector Center = WorldPos + CamRight * CharCursorX;
+		const FVector Center = ModelMatrix.GetOrigin() + RightVector * CharCursorX;
 
 		/*pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
 		pV[1] = { Center + HalfRight + HalfUp, { UVMax.X, UVMin.Y } };
