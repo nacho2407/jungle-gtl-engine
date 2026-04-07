@@ -12,6 +12,12 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("stat", [this](const TArray<FString>& Args) { CmdStat(Args); });
 }
 
+FEditorConsoleWidget::~FEditorConsoleWidget() 
+{
+	Clear();
+	ClearHistory();
+}
+
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	char buf[1024];
 	va_list args;
