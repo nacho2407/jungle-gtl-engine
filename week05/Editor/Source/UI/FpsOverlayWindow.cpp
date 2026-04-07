@@ -82,42 +82,42 @@ void FFpsOverlayWindow::Render(FEditorEngine* Engine, const FRect& AreaRect)
     ImGui::TextDisabled("(%.3f ms)", FrameTimeMs);
 
     ImGui::Separator();
-    ImGui::Text("r.GpuOcclusionCulling : %s", RenderStats.bGpuOcclusionCullingEnabled ? "ON" : "OFF");
-    ImGui::Text("Static Mesh Candidates : %u", RenderStats.StaticMeshCandidateCount);
-    ImGui::Text("Static Mesh Frustum Passed : %u", RenderStats.FrustumPassedStaticMeshCount);
-    ImGui::Text("Static Mesh Early Cull : Dist %u | Size %u",
-        RenderStats.StaticMeshDistanceCulledCount,
-        RenderStats.StaticMeshSizeCulledCount);
-    ImGui::Text("Static Mesh Draw Calls : %u / %u",
-        StaticMeshDrawCallCount,
-        RenderStats.StaticMeshDrawCallCountBeforeOcclusion);
-    ImGui::Text("Static Mesh Draw Skipped : %u | Skip Applied: %s",
-        RenderStats.StaticMeshDrawSkippedCount,
-        RenderStats.bOcclusionSkipApplied ? "Yes" : "No");
-    ImGui::Text("Skipped Before BuildDrawCommands : %u | Late Draw Skip : %u",
-        RenderStats.StaticMeshSkippedBeforeBuildDrawCommandsCount,
-        RenderStats.StaticMeshSkippedLateDrawCount);
-    ImGui::Text("Total Draw Calls : %u", DrawCallCount);
-    ImGui::Text("Build Commands CPU : %.3f ms", static_cast<float>(RenderStats.ViewportBuildCommandsCpuMs));
-    ImGui::Text("Collect Commands CPU : %.3f ms", static_cast<float>(RenderStats.CollectRenderCommandsCpuMs));
-    ImGui::Text("Render Build CPU : %.3f ms", static_cast<float>(RenderStats.BuildRenderFrameCpuMs));
-    ImGui::Text("Execute Commands CPU : %.3f ms", static_cast<float>(RenderStats.ExecuteRenderCommandsCpuMs));
-    ImGui::Text("HZB Build : %s | Mips: %u | %.3f ms",
-        RenderStats.bHZBBuildSucceeded ? "OK" : "Idle",
-        RenderStats.HZBMipCount,
-        static_cast<float>(RenderStats.HZBBuildCpuMs));
-    ImGui::Text("Occlusion Pass : %s | Candidates: %u | %.3f ms",
-        RenderStats.bOcclusionPassDispatched ? "Dispatched" : "Idle",
-        RenderStats.OcclusionCandidateCount,
-        static_cast<float>(RenderStats.OcclusionDispatchCpuMs));
-    ImGui::Text("Occlusion Readback : %s / %s | Candidates: %u",
-        RenderStats.bOcclusionReadbackIssued ? "Issued" : "Idle",
-        RenderStats.bOcclusionReadbackCompleted ? "Completed" : "Pending",
-        RenderStats.OcclusionReadbackCandidateCount);
-    ImGui::Text("Occlusion Result : Visible %u | Occluded %u | Snapshot Match: %s",
-        RenderStats.OcclusionVisibleCount,
-        RenderStats.OcclusionOccludedCount,
-        RenderStats.bOcclusionSnapshotReadbackMatched ? "OK" : "No");
+    //ImGui::Text("r.GpuOcclusionCulling : %s", RenderStats.bGpuOcclusionCullingEnabled ? "ON" : "OFF");
+    //ImGui::Text("Static Mesh Candidates : %u", RenderStats.StaticMeshCandidateCount);
+    //ImGui::Text("Static Mesh Frustum Passed : %u", RenderStats.FrustumPassedStaticMeshCount);
+    //ImGui::Text("Static Mesh Early Cull : Dist %u | Size %u",
+    //    RenderStats.StaticMeshDistanceCulledCount,
+    //    RenderStats.StaticMeshSizeCulledCount);
+    //ImGui::Text("Static Mesh Draw Calls : %u / %u",
+    //    StaticMeshDrawCallCount,
+    //    RenderStats.StaticMeshDrawCallCountBeforeOcclusion);
+    //ImGui::Text("Static Mesh Draw Skipped : %u | Skip Applied: %s",
+    //    RenderStats.StaticMeshDrawSkippedCount,
+    //    RenderStats.bOcclusionSkipApplied ? "Yes" : "No");
+    //ImGui::Text("Skipped Before BuildDrawCommands : %u | Late Draw Skip : %u",
+    //    RenderStats.StaticMeshSkippedBeforeBuildDrawCommandsCount,
+    //    RenderStats.StaticMeshSkippedLateDrawCount);
+    //ImGui::Text("Total Draw Calls : %u", DrawCallCount);
+    //ImGui::Text("Build Commands CPU : %.3f ms", static_cast<float>(RenderStats.ViewportBuildCommandsCpuMs));
+    //ImGui::Text("Collect Commands CPU : %.3f ms", static_cast<float>(RenderStats.CollectRenderCommandsCpuMs));
+    //ImGui::Text("Render Build CPU : %.3f ms", static_cast<float>(RenderStats.BuildRenderFrameCpuMs));
+    //ImGui::Text("Execute Commands CPU : %.3f ms", static_cast<float>(RenderStats.ExecuteRenderCommandsCpuMs));
+    //ImGui::Text("HZB Build : %s | Mips: %u | %.3f ms",
+    //    RenderStats.bHZBBuildSucceeded ? "OK" : "Idle",
+    //    RenderStats.HZBMipCount,
+    //    static_cast<float>(RenderStats.HZBBuildCpuMs));
+    //ImGui::Text("Occlusion Pass : %s | Candidates: %u | %.3f ms",
+    //    RenderStats.bOcclusionPassDispatched ? "Dispatched" : "Idle",
+    //    RenderStats.OcclusionCandidateCount,
+    //    static_cast<float>(RenderStats.OcclusionDispatchCpuMs));
+    //ImGui::Text("Occlusion Readback : %s / %s | Candidates: %u",
+    //    RenderStats.bOcclusionReadbackIssued ? "Issued" : "Idle",
+    //    RenderStats.bOcclusionReadbackCompleted ? "Completed" : "Pending",
+    //    RenderStats.OcclusionReadbackCandidateCount);
+    //ImGui::Text("Occlusion Result : Visible %u | Occluded %u | Snapshot Match: %s",
+    //    RenderStats.OcclusionVisibleCount,
+    //    RenderStats.OcclusionOccludedCount,
+    //    RenderStats.bOcclusionSnapshotReadbackMatched ? "OK" : "No");
     ImGui::Text("Picking    : %.3f ms | Count: %u | Total: %.3f ms",
         static_cast<float>(LastPickTime),
         static_cast<uint32>(TotalPickCount),
