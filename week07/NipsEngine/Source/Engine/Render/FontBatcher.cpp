@@ -1,23 +1,23 @@
-﻿#include "FontBatcher.h"
-
+﻿#include <d3d11.h>
+#include "FontBatcher.h"
 #include "Core/CoreTypes.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	// Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 — 여기서 로드하지 않음)
+	// Dynamic VB/IB 초기 할당 (텍스처는 ResourceManager가 소유 ? 여기서 로드하지 않음)
 	MaxVertexCount = 1024;
 	MaxIndexCount = 1536;
 	CreateBuffers();
 
-	// Sampler — Point 필터 (폰트는 선명하게)
+	// Sampler ? Point 필터 (폰트는 선명하게)
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Device->CreateSamplerState(&sampDesc, &SamplerState);
+	Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
 
 	// 셰이더 + Input Layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -25,28 +25,28 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	FontShader.Create(Device, L"Shaders/ShaderFont.hlsl",
+	FontShader.Create(Device.Get(), L"Shaders/ShaderFont.hlsl",
 		"VS", "PS", layout, ARRAYSIZE(layout));
 }
 
 void FFontBatcher::CreateBuffers()
 {
-	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-	if (IndexBuffer) { IndexBuffer->Release();  IndexBuffer = nullptr; }
+	VertexBuffer.Reset();
+	IndexBuffer.Reset();
 
 	D3D11_BUFFER_DESC vbDesc = {};
 	vbDesc.Usage = D3D11_USAGE_DYNAMIC;
 	vbDesc.ByteWidth = sizeof(FTextureVertex) * MaxVertexCount;
 	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	Device->CreateBuffer(&vbDesc, nullptr, &VertexBuffer);
+	Device->CreateBuffer(&vbDesc, nullptr, VertexBuffer.ReleaseAndGetAddressOf());
 
 	D3D11_BUFFER_DESC ibDesc = {};
 	ibDesc.Usage = D3D11_USAGE_DYNAMIC;
 	ibDesc.ByteWidth = sizeof(uint32) * MaxIndexCount;
 	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	Device->CreateBuffer(&ibDesc, nullptr, &IndexBuffer);
+	Device->CreateBuffer(&ibDesc, nullptr, IndexBuffer.ReleaseAndGetAddressOf());
 }
 
 void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
@@ -81,21 +81,26 @@ void FFontBatcher::Release()
 	CharInfoMap.clear();
 	Clear();
 
-	if (VertexBuffer) { VertexBuffer->Release(); VertexBuffer = nullptr; }
-	if (IndexBuffer) { IndexBuffer->Release();  IndexBuffer = nullptr; }
-	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
+	VertexBuffer.Reset();
+	IndexBuffer.Reset();
+	SamplerState.Reset();
+	Device.Reset();
 
 	FontShader.Release();
 }
 
 void FFontBatcher::AddText(const FString& Text,
-	const FVector& WorldPos,
-	const FVector& CamRight,
-	const FVector& CamUp,
-	const FVector& WorldScale,
+	const FMatrix& ModelMatrix,
 	float Scale)
 {
 	if (Text.empty()) return;
+
+
+
+	FVector RightVector = ModelMatrix.GetRightVector();
+	FVector UpVector = ModelMatrix.GetUpVector();
+	FVector WorldScale = ModelMatrix.GetScaleVector();
+
 
 	const float CharW = 0.5f * Scale * WorldScale.Y;
 	const float CharH = 0.5f * Scale * WorldScale.Z;
@@ -111,8 +116,8 @@ void FFontBatcher::AddText(const FString& Text,
 	uint32* pI = Indices.data() + IdxBase;
 
 	// 빌보드 반벡터를 루프 밖에서 미리 계산
-	const FVector HalfRight = CamRight * (CharW * 0.5f);
-	const FVector HalfUp    = CamUp    * (CharH * 0.5f);
+	const FVector HalfRight = RightVector * (CharW * 0.5f);
+	const FVector HalfUp    = UpVector    * (CharH * 0.5f);
 
 	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
 	const uint8* const End = Ptr + Text.size();
@@ -131,7 +136,7 @@ void FFontBatcher::AddText(const FString& Text,
 		FVector2 UVMin, UVMax;
 		GetCharUV(CP, UVMin, UVMax);
 
-		const FVector Center = WorldPos + CamRight * CharCursorX;
+		const FVector Center = ModelMatrix.GetOrigin() + RightVector * CharCursorX;
 
 		/*pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
 		pV[1] = { Center + HalfRight + HalfUp, { UVMax.X, UVMin.Y } };
@@ -228,27 +233,30 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 
 	// VB 업로드
 	D3D11_MAPPED_SUBRESOURCE mapped = {};
-	if (FAILED(Context->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+	if (FAILED(Context->Map(VertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
 	memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
-	Context->Unmap(VertexBuffer, 0);
+	Context->Unmap(VertexBuffer.Get(), 0);
 
 	// IB 업로드
-	if (FAILED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
+	if (FAILED(Context->Map(IndexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
 	memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
-	Context->Unmap(IndexBuffer, 0);
+	Context->Unmap(IndexBuffer.Get(), 0);
 
 	// 셰이더 바인딩
 	FontShader.Bind(Context);
 
 	uint32 stride = sizeof(FTextureVertex), offset = 0;
-	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
-	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	ID3D11Buffer* VertexBufferPtr = VertexBuffer.Get();
+	ID3D11Buffer* IndexBufferPtr = IndexBuffer.Get();
+	Context->IASetVertexBuffers(0, 1, &VertexBufferPtr, &stride, &offset);
+	Context->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// ResourceManager 소유 SRV 바인딩
-	ID3D11ShaderResourceView* SRV = Resource->SRV;
+	ID3D11ShaderResourceView* SRV = Resource->SRV.Get();
 	Context->PSSetShaderResources(0, 1, &SRV);
-	Context->PSSetSamplers(0, 1, &SamplerState);
+	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
+	Context->PSSetSamplers(0, 1, Samplers);
 
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 }
@@ -267,3 +275,4 @@ void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& Out
 	OutUVMin = FVector2(Info.U, Info.V);
 	OutUVMax = FVector2(Info.U + Info.Width, Info.V + Info.Height);
 }
+

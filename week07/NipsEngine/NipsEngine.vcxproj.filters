@@ -278,9 +278,6 @@
     <ClCompile Include="Source\Engine\GameFramework\World.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Math\AABB.cpp">
-      <Filter>Source\Engine\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Math\Color.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
@@ -291,9 +288,6 @@
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Rotator.cpp">
-      <Filter>Source\Engine\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Math\Transform.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Vector.cpp">
@@ -441,6 +435,12 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\AABB.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\Frustum.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\Plane.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\Transform.cpp" />
+    <ClCompile Include="Source\Engine\Spatial\BVH.cpp" />
+    <ClCompile Include="Source\Engine\Spatial\KDTree.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -602,9 +602,6 @@
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\RayTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\ResourceManager.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -662,9 +659,6 @@
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Math\AABB.h">
-      <Filter>Source\Engine\Math</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Math\Color.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
@@ -675,9 +669,6 @@
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Rotator.h">
-      <Filter>Source\Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Math\Transform.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Utils.h">
@@ -881,5 +872,13 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\AABB.h" />
+    <ClInclude Include="Source\Engine\Geometry\Frustum.h" />
+    <ClInclude Include="Source\Engine\Geometry\Plane.h" />
+    <ClInclude Include="Source\Engine\Geometry\Ray.h" />
+    <ClInclude Include="Source\Engine\Geometry\Transform.h" />
+    <ClInclude Include="Source\Engine\Geometry\Triangle.h" />
+    <ClInclude Include="Source\Engine\Spatial\BVH.h" />
+    <ClInclude Include="Source\Engine\Spatial\KDTree.h" />
   </ItemGroup>
 </Project>

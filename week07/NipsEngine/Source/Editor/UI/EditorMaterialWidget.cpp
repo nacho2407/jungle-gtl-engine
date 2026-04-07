@@ -258,7 +258,7 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
     {
         if (Path.empty()) return nullptr;
         FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-        return (Res && Res->SRV) ? Res->SRV : nullptr;
+        return (Res && Res->SRV) ? Res->SRV.Get() : nullptr;
     };
 
     auto TextureRow = [&](const char* MapLabel,

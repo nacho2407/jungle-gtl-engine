@@ -1,9 +1,13 @@
 ﻿#pragma once
 
 #include "Core/CoreMinimal.h"
-#include "Render/Common/RenderTypes.h"
+#include "Render/Common/ComPtr.h"
 
 #include "Render/Common/ViewTypes.h"
+
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11Buffer;
 
 // ============================================================
 // FLineVertex — 라인 렌더링용 버텍스 (Position + Color)
@@ -80,9 +84,9 @@ private:
 	TArray<FLineVertex> IndexedVertices;
 	TArray<uint32> Indices;
 
-	ID3D11Buffer* IndexedVertexBuffer = nullptr;
-	ID3D11Buffer* IndexBuffer = nullptr;
-	ID3D11Device* Device = nullptr;
+	TComPtr<ID3D11Buffer> IndexedVertexBuffer;
+	TComPtr<ID3D11Buffer> IndexBuffer;
+	TComPtr<ID3D11Device> Device;
 	uint32 MaxIndexedVertexCount = 0;
 	uint32 MaxIndexCount = 0;
 };

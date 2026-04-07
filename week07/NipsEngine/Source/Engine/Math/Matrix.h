@@ -947,8 +947,8 @@ struct FMatrix
         const float YScale = 1.0f / std::tan(FovYRad * 0.5f);
         const float XScale = YScale / AspectRatio;
 
-        return FMatrix(0.f, 0.f, FarZ / (FarZ - NearZ), 1.f, XScale, 0.f, 0.f, 0.f, 0.f, YScale,
-                       0.f, 0.f, 0.f, 0.f, -NearZ * FarZ / (FarZ - NearZ), 0.f);
+        return FMatrix(0.f, 0.f, FarZ / (FarZ - NearZ), 1.f, XScale, 0.f, 0.f, 0.f, 0.f,
+                       YScale, 0.f, 0.f, 0.f, 0.f, -NearZ * FarZ / (FarZ - NearZ), 0.f);
     }
 
     // Left-Handed 기준 직교 투영 행렬을 생성함
