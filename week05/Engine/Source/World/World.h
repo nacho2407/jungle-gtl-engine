@@ -63,6 +63,8 @@ public:
 	float GetWorldTime() const { return WorldTime; }
 	float GetDeltaTime() const { return DeltaSeconds; }
 
+	static UWorld* DuplicateWorldForPIE(UWorld* EditorWorld);
+
 private:
 	UScene* PersistentLevel = nullptr;
 	TArray<UScene*> StreamingLevels;
