@@ -72,7 +72,7 @@ struct ENGINE_API FOcclusionPassConstants
 	uint32 HZBMipCount = 0;
 
 	// float DepthBias = 0.0000125f;// Flickering 생기는 bias
-	float DepthBias = 1e-6f;		// 가장 이상적인 bias
+	float DepthBias = 25e-7f;		// 가장 이상적인 bias
 	// float DepthBias = 0.001f;	// Flickering이 생기지 않지만, 컬링이 안되는 bias
 	float NearPlaneEpsilon = 0.0001f;
 	float Padding[2] = {};
