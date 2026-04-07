@@ -61,49 +61,62 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 
 void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 {
-	FEditorSettings& Settings = FEditorSettings::Get();
+    FEditorSettings& Settings = FEditorSettings::Get();
 
-	if (!ImGui::Begin("Viewport Settings"))
-	{
-		ImGui::End();
-		return;
-	}
+    if (!ImGui::Begin("Viewport Settings"))
+    {
+        ImGui::End();
+        return;
+    }
 
-	// Show Flags
-	ImGui::Text("Show");
-	ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
-	ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
-	ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
-	ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
-	ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
+    // 위젯 너비를 현재 창 콘텐츠 영역의 50%로 설정하는 람다 또는 변수
+    float ItemWidth = ImGui::GetContentRegionAvail().x * 0.5f;
 
-	ImGui::Separator();
+    // Show Flags
+    ImGui::Text("Show");
+    ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
+    ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
+    ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
+    ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
+    ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
 
-	// Grid Settings
-	ImGui::Text("Grid");
-	ImGui::SliderFloat("Spacing", &Settings.GridSpacing, 0.1f, 10.0f, "%.1f");
-	ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
+    ImGui::Separator();
 
-	ImGui::Separator();
+    // Grid Settings
+    ImGui::Text("Grid");
+    
+    ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
+    ImGui::SliderFloat("Spacing", &Settings.GridSpacing, 0.1f, 10.0f, "%.1f");
+    
+    ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
+    ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
 
-	// Camera Sensitivity
-	ImGui::Text("Camera");
-	ImGui::SliderFloat("Move Sensitivity", &Settings.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
-	ImGui::SliderFloat("Rotate Sensitivity", &Settings.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-	if (EditorEngine)
-	{
-		FViewportLayout& Layout = EditorEngine->GetViewportLayout();
-		const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
-		FEditorViewportClient& FocusedClient = Layout.GetViewportClient(FocusedIdx);
-		float CameraMoveSpeed = FocusedClient.GetMoveSpeed();
-		if (ImGui::SliderFloat("Move Speed (Focused VP)", &CameraMoveSpeed, 10.0f, 2000.0f, "%.0f"))
-		{
-			FocusedClient.SetMoveSpeed(CameraMoveSpeed);
-		}
-	}
+    ImGui::Separator();
 
-	ImGui::End();
+    // Camera Sensitivity
+    ImGui::Text("Camera");
 
+    ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
+    ImGui::SliderFloat("Move Sensitivity", &Settings.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+    
+    ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
+    ImGui::SliderFloat("Rotate Sensitivity", &Settings.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+
+    if (EditorEngine)
+    {
+        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
+        FEditorViewportClient& FocusedClient = Layout.GetViewportClient(FocusedIdx);
+        float CameraMoveSpeed = FocusedClient.GetMoveSpeed();
+
+        ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
+        if (ImGui::SliderFloat("Dolly Speed", &CameraMoveSpeed, 10.0f, 2000.0f, "%.0f"))
+        {
+            FocusedClient.SetMoveSpeed(CameraMoveSpeed);
+        }
+    }
+
+    ImGui::End();
 }
 
 void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
