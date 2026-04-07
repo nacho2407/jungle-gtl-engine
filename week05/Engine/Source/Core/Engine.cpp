@@ -613,7 +613,7 @@ void FEngine::RegisterConsoleVariables()
 	FConsoleVariable* GpuOcclusionVar = CVM.Find("r.GpuOcclusionCulling");
 	if (!GpuOcclusionVar)
 	{
-		GpuOcclusionVar = CVM.Register("r.GpuOcclusionCulling", 0, "Enable master switch for future GPU occlusion culling path (0 = off, 1 = on)");
+		GpuOcclusionVar = CVM.Register("r.GpuOcclusionCulling", 1, "Enable master switch for future GPU occlusion culling path (0 = off, 1 = on)");
 	}
 	GpuOcclusionVar->SetOnChanged([this](FConsoleVariable* Var)
 	{
