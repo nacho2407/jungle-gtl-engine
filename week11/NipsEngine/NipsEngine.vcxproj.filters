@@ -290,9 +290,6 @@
     <ClCompile Include="Source\Engine\Math\Rotator.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Math\Transform.cpp">
-      <Filter>Source\Engine\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Math\Vector.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
@@ -605,9 +602,6 @@
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\RayTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\ResourceManager.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -675,9 +669,6 @@
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Rotator.h">
-      <Filter>Source\Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Math\Transform.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Utils.h">

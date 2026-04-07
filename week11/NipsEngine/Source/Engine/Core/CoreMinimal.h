@@ -33,3 +33,16 @@
 #include "Math/Vector.h"
 #include "Math/Vector4.h"
 #include "Math/Vector2.h"
+
+//=============================================================================
+// Geometry
+// 기하 프리미티브 및 기하 유틸리티
+// AABB, Ray, Segment, Triangle, 교차 판정, Bounds 보조 함수 등
+//=============================================================================
+#include "Engine/Geometry/Transform.h"
+#include "Engine/Geometry/AABB.h"
+#include "Engine/Geometry/Ray.h"
+#include "Engine/Geometry/Plane.h"
+#include "Engine/Geometry/Triangle.h"
+#include "Engine/Geometry/Frustum.h"
+#include "Engine/Geometry/Edge.h"
