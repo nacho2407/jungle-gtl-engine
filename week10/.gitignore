@@ -451,10 +451,6 @@ CMakeLists.txt
 
 # ignore Build Files
 NipsEngine/Build/
-
-# ignore .ini Files
-*.ini
-
 NipsEngine/Saves/**
 NipsEngine/Asset/Mesh/Bin/**
 
