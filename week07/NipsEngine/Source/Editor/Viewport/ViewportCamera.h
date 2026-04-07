@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Core/RayTypes.h"
+#include "Engine/Geometry/Ray.h"
 #include "Math/Matrix.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"

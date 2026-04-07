@@ -937,7 +937,7 @@ struct FMatrix
                        NewUp.X, NewUp.Y, NewUp.Z, 0.f, Eye.X, Eye.Y, Eye.Z, 1.f);
     }
 
-    // Left-Handed 기준 원근 투영 행렬을 생성함
+    // Left-Handed 기준 reverse-Z 원근 투영 행렬을 생성함
     static FMatrix MakePerspectiveFovLH(float FovYRad, float AspectRatio, float NearZ,
                                         float FarZ) noexcept
     {
@@ -947,11 +947,11 @@ struct FMatrix
         const float YScale = 1.0f / std::tan(FovYRad * 0.5f);
         const float XScale = YScale / AspectRatio;
 
-        return FMatrix(0.f, 0.f, FarZ / (FarZ - NearZ), 1.f, XScale, 0.f, 0.f, 0.f, 0.f, YScale,
-                       0.f, 0.f, 0.f, 0.f, -NearZ * FarZ / (FarZ - NearZ), 0.f);
+        return FMatrix(0.f, 0.f, -NearZ / (FarZ - NearZ), 1.f, XScale, 0.f, 0.f, 0.f, 0.f,
+                       YScale, 0.f, 0.f, 0.f, 0.f, NearZ * FarZ / (FarZ - NearZ), 0.f);
     }
 
-    // Left-Handed 기준 직교 투영 행렬을 생성함
+    // Left-Handed 기준 reverse-Z 직교 투영 행렬을 생성함
     static FMatrix MakeOrthographicLH(float ViewWidth, float ViewHeight, float NearZ,
                                       float FarZ) noexcept
     {
@@ -959,8 +959,8 @@ struct FMatrix
         assert(ViewHeight != 0.f);
         assert(FarZ != NearZ);
 
-        return FMatrix(0.f, 0.f, 1.f / (FarZ - NearZ), 0.f, 2.f / ViewWidth, 0.f, 0.f, 0.f, 0.f,
-                       2.f / ViewHeight, 0.f, 0.f, 0.f, 0.f, -NearZ / (FarZ - NearZ), 1.f);
+        return FMatrix(0.f, 0.f, -1.f / (FarZ - NearZ), 0.f, 2.f / ViewWidth, 0.f, 0.f, 0.f, 0.f,
+                       2.f / ViewHeight, 0.f, 0.f, 0.f, 0.f, FarZ / (FarZ - NearZ), 1.f);
     }
 
     // Left-Handed 기준 View LookAt 행렬을 생성함

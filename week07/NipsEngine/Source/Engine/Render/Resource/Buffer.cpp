@@ -1,5 +1,5 @@
 ﻿#include "Buffer.h"
-
+#include <d3d11.h>
 #pragma region __FMESHBUFFER__
 
 void FMeshBuffer::Create(ID3D11Device* InDevice, const FMeshData& InMeshData)
@@ -74,7 +74,7 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InDat
 
 	D3D11_SUBRESOURCE_DATA vertexBufferSRD = { InData.data() };
 	
-	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, &Buffer);
+	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, Buffer.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 	{
 		Release();
@@ -90,21 +90,17 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const TArray<FVertex> & InDat
 void FVertexBuffer::SetRaw(ID3D11Buffer* InBuffer, uint32 InVertexCount, uint32 InStride)
 {
 	Release();
-	Buffer      = InBuffer;
+	Buffer.Attach(InBuffer);
 	VertexCount = InVertexCount;
 	Stride      = InStride;
 }
 
 void FVertexBuffer::Release()
 {
-	if (Buffer)
-	{
-		Buffer->Release();
-		Buffer = nullptr;
-	}
+	Buffer.Reset();
 }
 
-//	 Vertex buffer는 Immutable로 생성했으므로 업데이트가 불가. 업데이트가 필요하다면 Dynamic으로 생성
+//	 Vertex buffer�� Immutable�� ���������Ƿ� ������Ʈ�� �Ұ�. ������Ʈ�� �ʿ��ϴٸ� Dynamic���� ����
 void FVertexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth)
 {
 	//	 Do nothing
@@ -112,14 +108,14 @@ void FVertexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<ui
 
 ID3D11Buffer* FVertexBuffer::GetBuffer() const
 {
-	return Buffer;
+	return Buffer.Get();
 }
 
 #pragma endregion
 
 #pragma region __FCONSTANTBUFFER__
 
-//	 Constant buffer는 Dynamic으로 생성하여 업데이트가 가능하도록 구현
+//	 Constant buffer�� Dynamic���� �����Ͽ� ������Ʈ�� �����ϵ��� ����
 void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 {
 	D3D11_BUFFER_DESC constantBufferDesc = {};
@@ -129,37 +125,33 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;	
 	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	InDevice->CreateBuffer(&constantBufferDesc, nullptr, &Buffer);
+	InDevice->CreateBuffer(&constantBufferDesc, nullptr, Buffer.ReleaseAndGetAddressOf());
 }
 
 void FConstantBuffer::Release()
 {
-	if(Buffer)
-	{
-		Buffer->Release();
-		Buffer = nullptr;
-	}
+	Buffer.Reset();
 }
 
-//	Constant buffer는 Dynamic으로 생성했으므로 업데이트가 가능. 업데이트가 필요하다면 Map/Unmap을 이용하여 업데이트
-//	InData는 Constant buffer에 업데이트할 데이터의 포인터입니다. InByteWidth는 업데이트할 데이터의 총 byte 크기입니다.
-//	즉, InData는 FPerObjectConstants 구조체의 포인터입니다.
+//	Constant buffer�� Dynamic���� ���������Ƿ� ������Ʈ�� ����. ������Ʈ�� �ʿ��ϴٸ� Map/Unmap�� �̿��Ͽ� ������Ʈ
+//	InData�� Constant buffer�� ������Ʈ�� �������� �������Դϴ�. InByteWidth�� ������Ʈ�� �������� �� byte ũ���Դϴ�.
+//	��, InData�� FPerObjectConstants ����ü�� �������Դϴ�.
 void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void * InData, uint32 InByteWidth)
 {
 	if (Buffer)
 	{
 		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-		InDeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+		InDeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
 
 		std::memcpy(constantbufferMSR.pData, InData, InByteWidth);
 
-		InDeviceContext->Unmap(Buffer, 0);
+		InDeviceContext->Unmap(Buffer.Get(), 0);
 	}
 }
 
 ID3D11Buffer* FConstantBuffer::GetBuffer() 
 {
-	return Buffer;
+	return Buffer.Get();
 }
 
 #pragma endregion
@@ -183,7 +175,7 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, 
 
 	D3D11_SUBRESOURCE_DATA indexBufferSRD = { InData.data() };
 
-	HRESULT hr = InDevice->CreateBuffer(&indexBufferDesc, &indexBufferSRD, &Buffer);
+	HRESULT hr = InDevice->CreateBuffer(&indexBufferDesc, &indexBufferSRD, Buffer.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 	{
 		Release();
@@ -196,11 +188,7 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const TArray<uint32>& InData, 
 
 void FIndexBuffer::Release()
 {
-	if (Buffer)
-	{
-		Buffer->Release();
-		Buffer = nullptr;
-	}
+	Buffer.Reset();
 }
 
 void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth)
@@ -210,7 +198,8 @@ void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uin
 
 ID3D11Buffer * FIndexBuffer::GetBuffer() const
 {
-	return Buffer;
+	return Buffer.Get();
 }
 
 #pragma endregion
+
