@@ -153,6 +153,15 @@ void UStaticMesh::BuildAccelerationStructureIfNeeded() const
 	TriangleBVH->Build(*StaticMeshAsset);
 }
 
+void UStaticMesh::VisitMeshBVHNodes(const FBVHNodeVisitor& Visitor) const
+{
+	BuildAccelerationStructureIfNeeded();
+	if (TriangleBVH && TriangleBVH->IsValid())
+	{
+		TriangleBVH->VisitNodes(Visitor);
+	}
+}
+
 bool UStaticMesh::IntersectLocalRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const
 {
 	BuildAccelerationStructureIfNeeded();

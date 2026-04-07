@@ -11,6 +11,7 @@ public:
 	void Build(const FRenderMesh& Mesh);
 	bool IntersectRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const;
 	bool IsValid() const { return RootNodeIndex >= 0; }
+	void VisitNodes(const FBVHNodeVisitor& Visitor) const;
 
 private:
 	struct FTriangleRef
@@ -39,6 +40,7 @@ private:
 
 	int32 BuildRecursive(int32 Start, int32 End, int32 Depth = 0);
 	bool IntersectRayTriangle(const Ray& InRay, const FTriangleRef& Triangle, float& OutDistance) const;
+	void VisitNodesRecursive(int32 NodeIndex, int32 Depth, const FBVHNodeVisitor& Visitor) const;
 
 	TArray<FTriangleRef> Triangles;
 	TArray<int32> TriangleIndices;

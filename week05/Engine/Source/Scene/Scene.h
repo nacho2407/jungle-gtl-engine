@@ -67,6 +67,8 @@ public:
 	void QueryPrimitivesByFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float& InOutMaxDistance, const BVH::FRayHitVisitor& Visitor) const;
+	void VisitBVHNodes(const FBVHNodeVisitor& Visitor) const;
+	void VisitBVHNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const;
 
 private:
 	void GatherPrimitiveComponents(TArray<UPrimitiveComponent*>& OutPrimitives) const;

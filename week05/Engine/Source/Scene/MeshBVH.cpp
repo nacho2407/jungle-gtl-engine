@@ -184,6 +184,24 @@ int32 FMeshBVH::BuildRecursive(int32 Start, int32 End, int32 Depth)
 	return NodeIndex;
 }
 
+void FMeshBVH::VisitNodes(const FBVHNodeVisitor& Visitor) const
+{
+	if (RootNodeIndex < 0) return;
+	VisitNodesRecursive(RootNodeIndex, 0, Visitor);
+}
+
+void FMeshBVH::VisitNodesRecursive(int32 NodeIndex, int32 Depth, const FBVHNodeVisitor& Visitor) const
+{
+	if (NodeIndex < 0) return;
+	const FNode& Node = Nodes[NodeIndex];
+	Visitor(Node.Bounds, Depth, Node.IsLeaf());
+	if (!Node.IsLeaf())
+	{
+		VisitNodesRecursive(Node.LeftChild, Depth + 1, Visitor);
+		VisitNodesRecursive(Node.RightChild, Depth + 1, Visitor);
+	}
+}
+
 bool FMeshBVH::IntersectRayTriangle(const Ray& InRay, const FTriangleRef& Triangle, float& OutDistance) const
 {
 	constexpr float Epsilon = 1e-6f;

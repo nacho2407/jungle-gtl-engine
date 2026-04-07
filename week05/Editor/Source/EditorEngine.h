@@ -40,6 +40,7 @@ public:
 	FEditorViewportRegistry& GetViewportRegistry() { return ViewportRegistry; }
 	FSlateApplication* GetSlateApplication() const { return SlateApplication.get(); }
 	void FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFlags& ShowFlags, bool bClearAfterFlush);
+	void DrawSelectedBVH(FRenderer* Renderer);
 	void ClearDebugDrawForFrame();
 	void CreateInitUI();
 

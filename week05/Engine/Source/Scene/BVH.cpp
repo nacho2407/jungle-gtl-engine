@@ -260,6 +260,55 @@ void BVH::VisitRay(const Ray& InRay, float& InOutMaxDistance, const FRayHitVisit
 	VisitRayRecursive(Root, InRay, InOutMaxDistance, Visitor);
 }
 
+void BVH::VisitNodes(const FBVHNodeVisitor& Visitor) const
+{
+	VisitNodesRecursive(Root, 0, Visitor);
+}
+
+void BVH::VisitNodesRecursive(const BuildNode* Node, int32 Depth, const FBVHNodeVisitor& Visitor) const
+{
+	if (!Node) return;
+	Visitor(Node->Bounds, Depth, Node->IsLeaf());
+	if (!Node->IsLeaf())
+	{
+		VisitNodesRecursive(Node->Left, Depth + 1, Visitor);
+		VisitNodesRecursive(Node->Right, Depth + 1, Visitor);
+	}
+}
+
+void BVH::VisitNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const
+{
+	VisitNodesForPrimitiveRecursive(Root, 0, Target, Visitor);
+}
+
+bool BVH::VisitNodesForPrimitiveRecursive(const BuildNode* Node, int32 Depth, UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const
+{
+	if (!Node) return false;
+
+	if (Node->IsLeaf())
+	{
+		for (int32 i = 0; i < Node->PrimCount; ++i)
+		{
+			if (PrimitiveRefs[Node->FirstPrimOffset + i].Primitive == Target)
+			{
+				Visitor(Node->Bounds, Depth, true);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	const bool bInLeft = VisitNodesForPrimitiveRecursive(Node->Left, Depth + 1, Target, Visitor);
+	const bool bInRight = VisitNodesForPrimitiveRecursive(Node->Right, Depth + 1, Target, Visitor);
+
+	if (bInLeft || bInRight)
+	{
+		Visitor(Node->Bounds, Depth, false);
+		return true;
+	}
+	return false;
+}
+
 void BVH::VisitRayRecursive(const BuildNode* Node, const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const
 {
 	if (!Node)

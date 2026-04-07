@@ -174,6 +174,8 @@ struct FBucket
 	FAABB  Bounds;
 };
 
+using FBVHNodeVisitor = std::function<void(const FAABB& Bounds, int32 Depth, bool bIsLeaf)>;
+
 class BVH
 {
 public:
@@ -187,6 +189,8 @@ public:
 	void QueryFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryRay(const Ray& InRay, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void VisitRay(const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const;
+	void VisitNodes(const FBVHNodeVisitor& Visitor) const;
+	void VisitNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const;
 	bool IsEmpty() const { return Root == nullptr; }
 
 private:
@@ -200,4 +204,6 @@ private:
 	BuildNode* BuildRecursive(int32 Start, int32 End, int32 Depth = 0);
 	void QueryFrustumRecursive(const BuildNode* Node, const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void VisitRayRecursive(const BuildNode* Node, const Ray& InRay, float& InOutMaxDistance, const FRayHitVisitor& Visitor) const;
+	void VisitNodesRecursive(const BuildNode* Node, int32 Depth, const FBVHNodeVisitor& Visitor) const;
+	bool VisitNodesForPrimitiveRecursive(const BuildNode* Node, int32 Depth, UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const;
 };

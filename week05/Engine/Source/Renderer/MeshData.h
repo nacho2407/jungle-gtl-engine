@@ -46,6 +46,7 @@ public:
 	void AddDefaultMaterial(const std::shared_ptr<FMaterial>& InMaterial) { DefaultMaterials.push_back(InMaterial); }
 	bool IntersectLocalRay(const FVector& RayOrigin, const FVector& RayDirection, float& OutDistance) const;
 	void BuildAccelerationStructureIfNeeded() const;
+	void VisitMeshBVHNodes(const FBVHNodeVisitor& Visitor) const;
 
 private:
 	FStaticMesh* StaticMeshAsset = nullptr;

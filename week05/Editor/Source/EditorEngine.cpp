@@ -3,6 +3,10 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "Actor/Actor.h"
+#include "Core/ShowFlags.h"
+#include "Object/Class.h"
+#include "Renderer/MeshData.h"
+#include "Renderer/Renderer.h"
 #include "Camera/Camera.h"
 #include "Component/CameraComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -308,6 +312,11 @@ void FEditorEngine::FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFl
 		return;
 	}
 
+	if (ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw))
+	{
+		DrawSelectedBVH(Renderer);
+	}
+
 	if (UWorld* ActiveWorld = GetActiveWorld())
 	{
 		GetDebugDrawManager().Flush(Renderer, ShowFlags, ActiveWorld, bClearAfterFlush);
@@ -316,6 +325,79 @@ void FEditorEngine::FlushDebugDrawForViewport(FRenderer* Renderer, const FShowFl
 	{
 		GetDebugDrawManager().Clear();
 	}
+}
+
+void FEditorEngine::DrawSelectedBVH(FRenderer* Renderer)
+{
+	AActor* SelectedActor = GetSelectedActor();
+	if (!SelectedActor) return;
+
+	UWorld* World = GetActiveWorld();
+	if (!World) return;
+
+	// 선택된 액터의 StaticMeshComponent 탐색
+	UStaticMeshComponent* MeshComp = nullptr;
+	for (UActorComponent* Comp : SelectedActor->GetComponents())
+	{
+		if (Comp && Comp->IsA(UStaticMeshComponent::StaticClass()))
+		{
+			MeshComp = static_cast<UStaticMeshComponent*>(Comp);
+			break;
+		}
+	}
+
+	if (!MeshComp) return;
+
+	// --- 씬 BVH: 선택된 컴포넌트까지의 경로만 표시 ---
+	// 내부 노드: 초록, 리프: 노랑
+	if (UScene* Scene = World->GetScene())
+	{
+		Scene->VisitBVHNodesForPrimitive(MeshComp, [Renderer](const FAABB& Bounds, int32 Depth, bool bIsLeaf)
+			{
+				const FVector Center = (Bounds.PMin + Bounds.PMax) * 0.5f;
+				const FVector Extent = (Bounds.PMax - Bounds.PMin) * 0.5f;
+				const FVector4 Color = bIsLeaf
+					? FVector4(1.0f, 1.0f, 0.0f, 1.0f)
+					: FVector4(0.0f, 1.0f, 0.0f, 1.0f);
+				Renderer->DrawCube(Center, Extent, Color);
+			});
+	}
+
+	// --- 메시 BVH: 선택된 메시의 전체 트리를 재귀적으로 표시 ---
+	// 내부 노드: 하늘색, 리프: 파랑
+	UStaticMesh* StaticMesh = MeshComp->GetStaticMesh();
+	if (!StaticMesh) return;
+
+	const FMatrix& LocalToWorld = MeshComp->GetWorldTransform();
+	StaticMesh->VisitMeshBVHNodes([Renderer, &LocalToWorld](const FAABB& LocalBounds, int32 Depth, bool bIsLeaf)
+		{
+			const FVector& PMin = LocalBounds.PMin;
+			const FVector& PMax = LocalBounds.PMax;
+			const FVector Corners[8] = {
+				{PMin.X, PMin.Y, PMin.Z}, {PMax.X, PMin.Y, PMin.Z},
+				{PMin.X, PMax.Y, PMin.Z}, {PMax.X, PMax.Y, PMin.Z},
+				{PMin.X, PMin.Y, PMax.Z}, {PMax.X, PMin.Y, PMax.Z},
+				{PMin.X, PMax.Y, PMax.Z}, {PMax.X, PMax.Y, PMax.Z},
+			};
+			FVector WorldMin = LocalToWorld.TransformPosition(Corners[0]);
+			FVector WorldMax = WorldMin;
+			for (int32 i = 1; i < 8; ++i)
+			{
+				const FVector W = LocalToWorld.TransformPosition(Corners[i]);
+				WorldMin.X = (W.X < WorldMin.X) ? W.X : WorldMin.X;
+				WorldMin.Y = (W.Y < WorldMin.Y) ? W.Y : WorldMin.Y;
+				WorldMin.Z = (W.Z < WorldMin.Z) ? W.Z : WorldMin.Z;
+				WorldMax.X = (W.X > WorldMax.X) ? W.X : WorldMax.X;
+				WorldMax.Y = (W.Y > WorldMax.Y) ? W.Y : WorldMax.Y;
+				WorldMax.Z = (W.Z > WorldMax.Z) ? W.Z : WorldMax.Z;
+			}
+			const FVector Center = (WorldMin + WorldMax) * 0.5f;
+			const FVector Extent = (WorldMax - WorldMin) * 0.5f;
+			const FVector4 Color = bIsLeaf
+				? FVector4(0.0f, 0.5f, 1.0f, 1.0f)
+				: FVector4(0.0f, 1.0f, 1.0f, 1.0f);
+			Renderer->DrawCube(Center, Extent, Color);
+		});
 }
 
 void FEditorEngine::ClearDebugDrawForFrame()

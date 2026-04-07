@@ -229,3 +229,15 @@ void UScene::VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDi
 	const Ray SceneRay(RayOrigin, RayDirection.GetSafeNormal());
 	SpatialBVH.VisitRay(SceneRay, InOutMaxDistance, Visitor);
 }
+
+void UScene::VisitBVHNodes(const FBVHNodeVisitor& Visitor) const
+{
+	RebuildSpatialIfNeeded();
+	SpatialBVH.VisitNodes(Visitor);
+}
+
+void UScene::VisitBVHNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const
+{
+	RebuildSpatialIfNeeded();
+	SpatialBVH.VisitNodesForPrimitive(Target, Visitor);
+}
