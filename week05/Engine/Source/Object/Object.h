@@ -124,6 +124,12 @@ public:
 	/** 이 객체가 삭제 예정 상태인지 확인한다. */
 	bool IsPendingKill() const;
 
+	// TODO: 아래 함수들을 모든 자식 클래스마다 일일히 선언하는건 너무 번거로울 것 같음.
+	// 하지만 인터페이스 제공 목적으로 우선 첨부함.
+	// 서브 오브젝트를 복제하는 함수 (하위 클래스에서 재정의 가능)
+	virtual void DuplicateSubObjects() {}
+	virtual UObject* Duplicate() { return nullptr; }
+
 private:
 	FString			Name;
 	UObject*		Outer = nullptr;

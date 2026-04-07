@@ -135,6 +135,11 @@ void UWorld::CleanupWorld()
 	DeltaSeconds = 0.f;
 }
 
+UWorld* UWorld::DuplicateWorldForPIE(UWorld* EditorWorld)
+{
+	return nullptr;
+}
+
 void UWorld::DestroyActor(AActor* InActor)
 {
 	if (!InActor || !PersistentLevel) return;
