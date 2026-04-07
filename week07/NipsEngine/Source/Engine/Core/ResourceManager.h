@@ -10,14 +10,11 @@
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 #include "Render/Resource/Material.h"
+#include <d3d11.h>
 
 // 리소스를 관리하는 싱글턴.
 // Resource.ini에서 리소스 경로/그리드 정보를 읽고, GPU 리소스를 로드/캐싱합니다.
 // 컴포넌트는 소유하지 않고 포인터로 공유 데이터를 참조합니다.
-
-struct ID3D11Device;
-struct ID3D11Texture2D;
-struct ID3D11ShaderResourceView;
 
 #pragma region __ASSET_META__
 

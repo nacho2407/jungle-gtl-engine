@@ -3,9 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Object/FName.h"
 #include "Render/Common/ComPtr.h"
-
-// COM 인터페이스 전방 선언 (d3d11.h 없이 포인터 사용 가능)
-struct ID3D11ShaderResourceView;
+#include <d3d11.h>
 
 struct FTextureResource
 {
