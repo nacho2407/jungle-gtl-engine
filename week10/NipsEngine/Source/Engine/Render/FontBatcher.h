@@ -2,9 +2,14 @@
 
 #include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
-#include "Render/Common/RenderTypes.h"
+#include "Render/Common/ComPtr.h"
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/VertexTypes.h"
+
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11Buffer;
+struct ID3D11SamplerState;
 
 // Texture Atlas UV 정보
 struct FCharacterInfo
@@ -35,12 +40,8 @@ public:
 	void Create(ID3D11Device* InDevice);
 	void Release();
 
-	// 월드 좌표 위에 빌보드 텍스트 추가 (배치에 누적)
 	void AddText(const FString& Text,
-		const FVector& WorldPos,
-		const FVector& CamRight,
-		const FVector& CamUp,
-		const FVector& WorldScale,
+		const FMatrix& WorldMatrix,
 		float Scale = 1.0f);
 
 	// 스크린 좌표 위에 빌보드 텍스트 추가	 (배치에 누적)
@@ -65,15 +66,15 @@ private:
 	TArray<uint32>         Indices;
 
 	// GPU 버퍼 (Dynamic)
-	ID3D11Buffer* VertexBuffer = nullptr;
-	ID3D11Buffer* IndexBuffer  = nullptr;
+	TComPtr<ID3D11Buffer> VertexBuffer;
+	TComPtr<ID3D11Buffer> IndexBuffer;
 
 	uint32 MaxVertexCount = 0;
 	uint32 MaxIndexCount  = 0;
 
 	// 공유 DX 리소스
-	ID3D11Device*       Device       = nullptr;
-	ID3D11SamplerState* SamplerState = nullptr;
+	TComPtr<ID3D11Device>       Device;
+	TComPtr<ID3D11SamplerState> SamplerState;
 	FShader             FontShader;
 
 	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드

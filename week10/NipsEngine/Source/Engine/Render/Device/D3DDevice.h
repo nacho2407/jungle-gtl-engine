@@ -7,6 +7,8 @@
 #include "Render/Common/RenderTypes.h"
 #include "Core/CoreTypes.h"
 
+struct ID3D11Debug;
+
 enum class EDepthStencilState
 {
 	Default,
@@ -53,42 +55,44 @@ struct FRenderTargetSet
 class FD3DDevice
 {
 private:
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
-	IDXGISwapChain* SwapChain = nullptr;
+	TComPtr<ID3D11Device> Device;
+	TComPtr<ID3D11DeviceContext> DeviceContext;
+	TComPtr<IDXGISwapChain> SwapChain;
 
-	ID3D11Texture2D* FrameBuffer = nullptr;
-	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
-	ID3D11Texture2D* SelectionMaskBuffer = nullptr;
-	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
-	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
-	ID3D11Texture2D* ViewportSceneColorTexture = nullptr;
-	ID3D11RenderTargetView* ViewportSceneColorRTV = nullptr;
-	ID3D11ShaderResourceView* ViewportSceneColorSRV = nullptr;
-	ID3D11Texture2D* ViewportSelectionMaskTexture = nullptr;
-	ID3D11RenderTargetView* ViewportSelectionMaskRTV = nullptr;
-	ID3D11ShaderResourceView* ViewportSelectionMaskSRV = nullptr;
+	TComPtr<ID3D11Texture2D> FrameBuffer;
+	TComPtr<ID3D11RenderTargetView> FrameBufferRTV;
+	TComPtr<ID3D11Texture2D> SelectionMaskBuffer;
+	TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
+	TComPtr<ID3D11ShaderResourceView> SelectionMaskSRV;
+	TComPtr<ID3D11Texture2D> ViewportSceneColorTexture;
+	TComPtr<ID3D11RenderTargetView> ViewportSceneColorRTV;
+	TComPtr<ID3D11ShaderResourceView> ViewportSceneColorSRV;
+	TComPtr<ID3D11Texture2D> ViewportSelectionMaskTexture;
+	TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;
+	TComPtr<ID3D11ShaderResourceView> ViewportSelectionMaskSRV;
 
-	ID3D11RasterizerState* RasterizerStateBackCull = nullptr;
-	ID3D11RasterizerState* RasterizerStateFrontCull = nullptr;
-	ID3D11RasterizerState* RasterizerStateNoCull = nullptr;
-	ID3D11RasterizerState* RasterizerStateWireFrame = nullptr;
+	TComPtr<ID3D11RasterizerState> RasterizerStateBackCull;
+	TComPtr<ID3D11RasterizerState> RasterizerStateFrontCull;
+	TComPtr<ID3D11RasterizerState> RasterizerStateNoCull;
+	TComPtr<ID3D11RasterizerState> RasterizerStateWireFrame;
 
-	ID3D11Texture2D* DepthStencilBuffer = nullptr;
-	ID3D11DepthStencilView* DepthStencilView = nullptr;
-	ID3D11Texture2D* ViewportDepthStencilTexture = nullptr;
-	ID3D11DepthStencilView* ViewportDepthStencilView = nullptr;
+	TComPtr<ID3D11Texture2D> DepthStencilBuffer;
+	TComPtr<ID3D11DepthStencilView> DepthStencilView;
+	TComPtr<ID3D11Texture2D> ViewportDepthStencilTexture;
+	TComPtr<ID3D11DepthStencilView> ViewportDepthStencilView;
 
-	ID3D11DepthStencilState* DepthStencilStateDefault = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateDepthReadOnly = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateStencilWrite = nullptr;
-	ID3D11DepthStencilState* DepthStencilStateStencilMaskEqual = nullptr;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateDefault;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateDepthReadOnly;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateStencilWrite;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateStencilMaskEqual;
 
-	ID3D11DepthStencilState* DepthStencilStateGizmoInside = nullptr;  
-	ID3D11DepthStencilState* DepthStencilStateGizmoOutside = nullptr; 
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateGizmoInside;
+	TComPtr<ID3D11DepthStencilState> DepthStencilStateGizmoOutside;
 
-	ID3D11BlendState* BlendStateAlpha = nullptr;
-	ID3D11BlendState* BlendStateNoColorWrite = nullptr;
+	TComPtr<ID3D11BlendState> BlendStateAlpha;
+	TComPtr<ID3D11BlendState> BlendStateNoColorWrite;
+
+	TComPtr<ID3D11Debug> DebugDevice;
 
 	D3D11_VIEWPORT ViewportInfo = {};
 
@@ -129,6 +133,7 @@ public:
 
 	void Create(HWND InHWindow);
 	void Release();
+	void ReportLiveObjects();
 
 	void BeginFrame();
 	void EndFrame();
@@ -145,11 +150,11 @@ public:
 
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
-	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
-	ID3D11RenderTargetView* GetSelectionMaskRTV() const { return SelectionMaskRTV; }
-	ID3D11ShaderResourceView* GetSelectionMaskSRV() const { return SelectionMaskSRV; }
-	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
-	ID3D11ShaderResourceView* GetViewportSceneColorSRV() const { return ViewportSceneColorSRV; }
+	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV.Get(); }
+	ID3D11RenderTargetView* GetSelectionMaskRTV() const { return SelectionMaskRTV.Get(); }
+	ID3D11ShaderResourceView* GetSelectionMaskSRV() const { return SelectionMaskSRV.Get(); }
+	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView.Get(); }
+	ID3D11ShaderResourceView* GetViewportSceneColorSRV() const { return ViewportSceneColorSRV.Get(); }
 	float GetViewportWidth() const { return ViewportInfo.Width; }
 	float GetViewportHeight() const { return ViewportInfo.Height; }
 	FRenderTargetSet GetBackBufferRenderTargets() const;

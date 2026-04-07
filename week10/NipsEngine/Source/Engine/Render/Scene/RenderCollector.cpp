@@ -69,8 +69,7 @@ namespace
 		case EPrimitiveType::EPT_Text:
 		{
 			const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(PrimitiveComponent);
-			const FMatrix BillboardMatrix = MakeViewBillboardMatrix(PrimitiveComponent, RenderBus);
-			return BuildQuadAABB(TextComp->CalculateOutlineMatrix(BillboardMatrix));
+			return BuildQuadAABB(TextComp->GetTextMatrix());
 		}
 		case EPrimitiveType::EPT_SubUV:
 		{
@@ -220,24 +219,19 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			const FString& Text = TextComp->GetText();
 			if (Text.empty()) continue;
 
-			const FMatrix BillboardMatrix = MakeViewBillboardMatrix(primitiveComponent, RenderBus);
-			FMatrix outlineMatrix = TextComp->CalculateOutlineMatrix(BillboardMatrix);
+			FMatrix WorldMatrix = TextComp->GetTextMatrix();
 
 			FRenderCommand TextCmd = BaseCmd;
-			BaseCmd.PerObjectConstants.Model = outlineMatrix;
-
-			if (ShowFlags.bBillboardText)
-			{
-				TextCmd.PerObjectConstants = FPerObjectConstants{ BillboardMatrix };
-				TextCmd.Type = ERenderCommandType::Font;
-				TextCmd.PerObjectConstants.Color = TextComp->GetColor();
-				TextCmd.Constants.Font.Text = &Text;
-				TextCmd.Constants.Font.Font = Font;
-				TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-				TextCmd.BlendState = EBlendState::AlphaBlend;
-				TextCmd.DepthStencilState = EDepthStencilState::Default;
-				RenderBus.AddCommand(ERenderPass::Font, TextCmd);
-			}
+			BaseCmd.PerObjectConstants.Model = WorldMatrix;
+			TextCmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix()};
+			TextCmd.Type = ERenderCommandType::Font;
+			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
+			TextCmd.Constants.Font.Text = &Text;
+			TextCmd.Constants.Font.Font = Font;
+			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
+			TextCmd.BlendState = EBlendState::AlphaBlend;
+			TextCmd.DepthStencilState = EDepthStencilState::Default;
+			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
 		{
@@ -314,7 +308,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
 			{
 				FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
+				return (Res && Res->SRV) ? Res->SRV.Get() : DefaultSRV;
 			};
 
 			// 와이어 프레임이 있는 경우 텍스쳐를 사용하지 않는 메테리얼에게 기본 텍스쳐를 강제 주입
@@ -356,9 +350,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Font;
-		Cmd.PerObjectConstants = FPerObjectConstants{
-			MakeViewBillboardMatrix(Primitive, RenderBus),
-			TextComp->GetColor() };
+		Cmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix(), TextComp->GetColor()};
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();

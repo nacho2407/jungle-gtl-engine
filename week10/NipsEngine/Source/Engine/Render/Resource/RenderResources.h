@@ -25,5 +25,5 @@ struct FRenderResources
 	FShader OutlineShader;
     FShader StaticMeshShader;
 
-	ID3D11SamplerState* MeshSamplerState;
+	TComPtr<ID3D11SamplerState> MeshSamplerState;
 };

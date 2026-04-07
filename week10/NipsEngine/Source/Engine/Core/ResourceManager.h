@@ -10,14 +10,11 @@
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 #include "Render/Resource/Material.h"
+#include <d3d11.h>
 
 // 리소스를 관리하는 싱글턴.
 // Resource.ini에서 리소스 경로/그리드 정보를 읽고, GPU 리소스를 로드/캐싱합니다.
 // 컴포넌트는 소유하지 않고 포인터로 공유 데이터를 참조합니다.
-
-struct ID3D11Device;
-struct ID3D11Texture2D;
-struct ID3D11ShaderResourceView;
 
 #pragma region __ASSET_META__
 
@@ -82,7 +79,7 @@ public:
 
 	// --- Default Resources ---
 	void InitializeDefaultResources(ID3D11Device* Device);
-	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const { return DefaultWhiteSRV; }
+	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const { return DefaultWhiteSRV.Get(); }
 
 	// --- Material Texture (SRV) ---
 	FMaterialResource* FindTexture(const FString& Path) const;
@@ -131,7 +128,7 @@ private:
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
-	ID3D11Device* CahcedDevice = { nullptr };
+	TComPtr<ID3D11Device> CachedDevice;
 
 	FObjLoader ObjLoader;
 	FFontAtlasLoader FontLoader;
@@ -148,8 +145,8 @@ private:
 	TMap<FString, FStaticMeshResource> StaticMeshRegistry;
 	TMap<FString, UStaticMesh*>        StaticMeshMap;
 
-	ID3D11Texture2D*          DefaultWhiteTexture = nullptr;
-	ID3D11ShaderResourceView* DefaultWhiteSRV     = nullptr;
+	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
+	TComPtr<ID3D11ShaderResourceView> DefaultWhiteSRV;
 	
 	/* Paths */
 	TArray<FString> ObjFilePaths;
