@@ -90,5 +90,5 @@ protected:
 	bool bActorBegunPlay = false;
 	bool bPendingDestroy = false;
 	bool bVisible = true;
-	bool bTickInEditor = true;
+	bool bTickInEditor = false;
 };
