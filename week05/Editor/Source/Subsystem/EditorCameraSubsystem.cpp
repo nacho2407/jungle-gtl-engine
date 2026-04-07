@@ -5,7 +5,7 @@
 #include "Input/InputManager.h"
 #include "Object/ObjectFactory.h"
 #include "Pawn/EditorCameraPawn.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "World/World.h"
 
 FEditorCameraSubsystem::~FEditorCameraSubsystem()
@@ -47,7 +47,7 @@ void FEditorCameraSubsystem::Shutdown()
 	ViewportController.Cleanup();
 }
 
-void FEditorCameraSubsystem::PrepareFrame(UWorld* ActiveWorld, UScene* ActiveScene, float DeltaTime)
+void FEditorCameraSubsystem::PrepareFrame(UWorld* ActiveWorld, ULevel* ActiveScene, float DeltaTime)
 {
 	SyncActiveCamera(ActiveWorld, ActiveScene);
 	ViewportController.SetFrameDeltaTime(DeltaTime);
@@ -58,7 +58,7 @@ FEditorViewportController* FEditorCameraSubsystem::GetViewportController()
 	return &ViewportController;
 }
 
-void FEditorCameraSubsystem::SyncActiveCamera(UWorld* ActiveWorld, UScene* ActiveScene)
+void FEditorCameraSubsystem::SyncActiveCamera(UWorld* ActiveWorld, ULevel* ActiveScene)
 {
 	if (EditorPawn == nullptr || ActiveWorld == nullptr || ActiveScene == nullptr || !ActiveScene->IsEditorScene())
 	{

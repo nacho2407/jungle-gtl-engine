@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "Scene/WorldTypes.h"
+#include "Level/WorldTypes.h"
 
 class AActor;
 class UWorld;

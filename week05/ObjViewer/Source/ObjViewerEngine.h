@@ -86,7 +86,7 @@ public:
 	FObjViewerEngine();
 	~FObjViewerEngine() override;
 
-	UScene* GetActiveScene() const override;
+	ULevel* GetActiveScene() const override;
 	UWorld* GetActiveWorld() const override;
 	const FWorldContext* GetActiveWorldContext() const override;
 

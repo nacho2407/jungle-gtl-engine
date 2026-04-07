@@ -40,7 +40,7 @@ public:
 
 	void HandleFileDoubleClick(const FString& FilePath) override;
 	void HandleFileDropOnViewport(const FString& FilePath) override;
-	void BuildRenderCommands(FEngine* Engine, UScene* Scene,
+	void BuildRenderCommands(FEngine* Engine, ULevel* Scene,
 	const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue) override;
 	void Render(FEngine* Engine, FRenderer* Renderer);
 

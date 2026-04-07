@@ -15,7 +15,7 @@ struct FVertex;
 struct FRenderMesh;
 class FPixelShader;
 class FMaterial;
-class UScene;
+class ULevel;
 
 using FGUICallback = std::function<void()>;
 class FRenderer;

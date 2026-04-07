@@ -65,7 +65,7 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		return;
 	}
 
-	UScene* Scene = ResolveScene(Engine);
+	ULevel* Scene = ResolveScene(Engine);
 	UWorld* ActiveWorld = ResolveWorld(Engine);
 
 	if (Scene && ActiveWorld)
@@ -91,7 +91,7 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 	EditorUI.Render();
 }
 
-UScene* FPreviewViewportClient::ResolveScene(FEngine* Engine) const
+ULevel* FPreviewViewportClient::ResolveScene(FEngine* Engine) const
 {
 	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
 	if (!EditorEngine)
@@ -99,7 +99,7 @@ UScene* FPreviewViewportClient::ResolveScene(FEngine* Engine) const
 		return nullptr;
 	}
 
-	if (UScene* PreviewScene = EditorEngine->GetPreviewScene(PreviewContextName))
+	if (ULevel* PreviewScene = EditorEngine->GetPreviewScene(PreviewContextName))
 	{
 		return PreviewScene;
 	}

@@ -4,7 +4,7 @@
 #include "EngineAPI.h"
 #include <d3d11.h>
 
-class UScene;
+class ULevel;
 
 struct ENGINE_API FCameraSerializeData
 {
@@ -19,8 +19,8 @@ struct ENGINE_API FCameraSerializeData
 class ENGINE_API FSceneSerializer
 {
 public:
-	static void Save(UScene* Scene, const FString& FilePath,
+	static void Save(ULevel* Scene, const FString& FilePath,
 	                 const FCameraSerializeData& CameraData = {});
-	static bool Load(UScene* Scene, const FString& FilePath, ID3D11Device* Device,
+	static bool Load(ULevel* Scene, const FString& FilePath, ID3D11Device* Device,
 	                 FCameraSerializeData* OutCameraData = nullptr);
 };

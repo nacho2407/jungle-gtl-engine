@@ -2,7 +2,7 @@
 
 #include "EditorViewportClient.h"
 #include "Core/Engine.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 
 namespace
 {

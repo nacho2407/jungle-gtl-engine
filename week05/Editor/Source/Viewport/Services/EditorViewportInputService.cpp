@@ -10,7 +10,7 @@
 #include "imgui.h"
 #include "Input/InputManager.h"
 #include "Picking/Picker.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
 
@@ -203,7 +203,7 @@ void FEditorViewportInputService::HandleMessage(
 		return;
 	}
 
-	UScene* Scene = Engine->GetScene();
+	ULevel* Scene = Engine->GetScene();
 	AActor* SelectedActor = EditorEngine->GetSelectedActor();
 	if (!Scene)
 	{

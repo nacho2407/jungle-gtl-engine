@@ -4,13 +4,13 @@
 #include "Scene/WorldTypes.h"
 
 class AActor;
-class UScene;
+class ULevel;
 
 struct ENGINE_API FSceneContext
 {
 	FString ContextName;
 	EWorldType WorldType = EWorldType::Game;
-	UScene* Scene = nullptr;
+	ULevel* Scene = nullptr;
 
 	bool IsValid() const { return Scene != nullptr; }
 	void Reset()

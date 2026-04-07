@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Scene/WorldTypes.h"
+#include "Level/WorldTypes.h"
 #include "Windows.h"
 #include "Core/Timer.h"
 #include "Debug/DebugDrawManager.h"
@@ -14,7 +14,7 @@
 
 class FWindowsWindow;
 class AActor;
-class UScene;
+class ULevel;
 class UWorld;
 class FInputManager;
 class FEnhancedInputManager;
@@ -68,11 +68,11 @@ public:
 	const TArray<std::unique_ptr<FWorldContext>>& GetWorldContexts() const { return WorldContexts; }
 
 	/** 기본적으로 현재 활성 씬을 반환한다. 에디터 엔진은 이를 재정의해 다른 씬을 선택할 수 있다. */
-	virtual UScene* GetScene() const;
+	virtual ULevel* GetScene() const;
 	/** 현재 렌더링/상호작용 대상인 활성 씬을 반환한다. */
-	virtual UScene* GetActiveScene() const;
+	virtual ULevel* GetActiveScene() const;
 	/** 게임 플레이용 기본 씬을 반환한다. */
-	virtual UScene* GetGameScene() const;
+	virtual ULevel* GetGameScene() const;
 	/** 필요 시 게임 씬을 활성 씬으로 전환하도록 파생 클래스가 구현한다. */
 	virtual void ActivateGameScene() const;
 

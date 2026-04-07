@@ -7,7 +7,7 @@
 #include "Core/Paths.h"
 #include "Actor/Actor.h"
 #include "Component/PrimitiveComponent.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Object/ObjectFactory.h" 
 #include "Serializer/Archive.h"
 #include "Object/Class.h"
@@ -179,7 +179,7 @@ namespace
 		return ActorJson;
 	}
 
-	bool DeserializeActorFromJson(UScene* Scene, const json& ActorJson, int32 ActorIndex)
+	bool DeserializeActorFromJson(ULevel* Scene, const json& ActorJson, int32 ActorIndex)
 	{
 		if (!Scene || !ActorJson.is_object())
 		{
@@ -232,7 +232,7 @@ namespace
 	}
 }
 
-void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCameraSerializeData& CameraData)
+void FSceneSerializer::Save(ULevel* Scene, const FString& FilePath, const FCameraSerializeData& CameraData)
 {
 	json Json;
 	if (CameraData.bValid)
@@ -293,7 +293,7 @@ void FSceneSerializer::Save(UScene* Scene, const FString& FilePath, const FCamer
 	}
 }
 
-bool FSceneSerializer::Load(UScene* Scene, const FString& FilePath, ID3D11Device* Device,
+bool FSceneSerializer::Load(ULevel* Scene, const FString& FilePath, ID3D11Device* Device,
                             FCameraSerializeData* OutCameraData)
 {
 	std::ifstream File(FPaths::ToPath(FilePath));

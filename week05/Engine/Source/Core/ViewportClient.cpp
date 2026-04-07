@@ -5,7 +5,7 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderCommand.h"
 #include "Renderer/Material.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Debug/EngineLog.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/SubUVComponent.h"
@@ -63,7 +63,7 @@ void IViewportClient::HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM
 {
 }
 
-UScene* IViewportClient::ResolveScene(FEngine* Engine) const
+ULevel* IViewportClient::ResolveScene(FEngine* Engine) const
 {
 	return Engine ? Engine->GetActiveScene() : nullptr;
 }
@@ -73,7 +73,7 @@ UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
 	return Engine ? Engine->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(FEngine* Engine, UScene* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildRenderCommands(FEngine* Engine, ULevel* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
 {
 	UWorld* World = ResolveWorld(Engine);
 	if (!World) return;
@@ -121,7 +121,7 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		return;
 	}
 
-	UScene* Scene = ResolveScene(Engine);
+	ULevel* Scene = ResolveScene(Engine);
 	if (!Scene)
 	{
 		return;

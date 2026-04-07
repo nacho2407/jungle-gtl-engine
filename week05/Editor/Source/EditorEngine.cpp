@@ -17,7 +17,7 @@
 #include "Core/Paths.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Windows/WindowsWindow.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Viewport/Viewport.h"
 #include "Viewport/EditorViewportClient.h"
 #include "Viewport/PreviewViewportClient.h"
@@ -118,12 +118,12 @@ bool FEditorEngine::ActivatePreviewScene(const FString& ContextName)
 	return true;
 }
 
-UScene* FEditorEngine::GetEditorScene() const
+ULevel* FEditorEngine::GetEditorScene() const
 {
 	return (EditorWorldContext && EditorWorldContext->World) ? EditorWorldContext->World->GetScene() : nullptr;
 }
 
-UScene* FEditorEngine::GetPreviewScene(const FString& ContextName) const
+ULevel* FEditorEngine::GetPreviewScene(const FString& ContextName) const
 {
 	const FWorldContext* Context = FindPreviewWorld(ContextName);
 	return (Context && Context->World) ? Context->World->GetScene() : nullptr;
@@ -162,12 +162,12 @@ FWorldContext* FEditorEngine::CreatePreviewWorldContext(const FString& ContextNa
 	return PreviewContext;
 }
 
-UScene* FEditorEngine::GetScene() const
+ULevel* FEditorEngine::GetScene() const
 {
 	return GetActiveScene();
 }
 
-UScene* FEditorEngine::GetActiveScene() const
+ULevel* FEditorEngine::GetActiveScene() const
 {
 	UWorld* ActiveWorld = GetActiveWorld();
 	return ActiveWorld ? ActiveWorld->GetScene() : nullptr;
@@ -350,7 +350,7 @@ void FEditorEngine::DrawSelectedBVH(FRenderer* Renderer)
 
 	// --- 씬 BVH: 선택된 컴포넌트까지의 경로만 표시 ---
 	// 내부 노드: 초록, 리프: 노랑
-	if (UScene* Scene = World->GetScene())
+	if (ULevel* Scene = World->GetScene())
 	{
 		Scene->VisitBVHNodesForPrimitive(MeshComp, [Renderer](const FAABB& Bounds, int32 Depth, bool bIsLeaf)
 			{

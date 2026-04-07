@@ -288,10 +288,10 @@
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\RenderCollector.cpp">
+    <ClCompile Include="Source\Level\RenderCollector.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\Scene.cpp">
+    <ClCompile Include="Source\Level\Level.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Serializer\Archive.cpp">
@@ -306,10 +306,10 @@
     <ClCompile Include="Source\World\World.cpp">
       <Filter>Source\World</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\BVH.cpp">
+    <ClCompile Include="Source\Level\BVH.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\MeshBVH.cpp">
+    <ClCompile Include="Source\Level\MeshBVH.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
   </ItemGroup>
@@ -560,16 +560,16 @@
     <ClInclude Include="Source\Renderer\Vertex.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\RenderCollector.h">
+    <ClInclude Include="Source\Level\RenderCollector.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\Scene.h">
+    <ClInclude Include="Source\Level\Level.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\SceneContext.h">
+    <ClInclude Include="Source\Level\SceneContext.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\WorldTypes.h">
+    <ClInclude Include="Source\Level\WorldTypes.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Serializer\Archive.h">
@@ -894,10 +894,10 @@
       <Filter>ThirdParty\nlohmann</Filter>
     </ClInclude>
     <ClInclude Include="Source\Object\ObjectIterator.h" />
-    <ClInclude Include="Source\Scene\BVH.h">
+    <ClInclude Include="Source\Level\BVH.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Scene\MeshBVH.h">
+    <ClInclude Include="Source\Level\MeshBVH.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
   </ItemGroup>

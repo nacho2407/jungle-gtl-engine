@@ -5,11 +5,11 @@
 #include "Types/String.h"
 #include "ShowFlags.h"
 #include "Renderer/RenderCommand.h"
-#include "Scene/RenderCollector.h"
+#include "Level/RenderCollector.h"
 
 class FEngine;
 class FRenderer;
-class UScene;
+class ULevel;
 class FFrustum;
 class UPrimitiveComponent;
 struct FRenderCommandQueue;
@@ -29,11 +29,11 @@ public:
 	/** 윈도우 메시지를 직접 다루고 싶을 때 사용하는 후킹 지점이다. */
 	virtual void HandleMessage(FEngine* Engine, HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
 	/** 이 뷰포트가 어떤 씬을 바라볼지 결정한다. 기본값은 엔진의 활성 씬이다. */
-	virtual UScene* ResolveScene(FEngine* Engine) const;
+	virtual ULevel* ResolveScene(FEngine* Engine) const;
 	/** 이 뷰포트가 어떤 월드를 조작할지 결정한다. 기본값은 엔진의 활성 월드다. */
 	virtual UWorld* ResolveWorld(FEngine* Engine) const;
 	/** 프러스텀 컬링과 수집기를 이용해 실제 렌더 큐에 커맨드를 채운다. */
-	virtual void BuildRenderCommands(FEngine* Engine, UScene* Scene,
+	virtual void BuildRenderCommands(FEngine* Engine, ULevel* Scene,
 		const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue);
 	/** 에셋 브라우저와의 상호작용을 위해 파일 더블클릭을 뷰포트가 직접 처리할 수 있게 열어둔 훅이다. */
 	virtual void HandleFileDoubleClick(const FString& FilePath);

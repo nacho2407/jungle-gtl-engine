@@ -202,7 +202,7 @@ FObjViewerEngine::FObjViewerEngine()
 
 FObjViewerEngine::~FObjViewerEngine() = default;
 
-UScene* FObjViewerEngine::GetActiveScene() const
+ULevel* FObjViewerEngine::GetActiveScene() const
 {
 	return (ViewerWorldContext && ViewerWorldContext->World) ? ViewerWorldContext->World->GetScene() : nullptr;
 }
@@ -232,7 +232,7 @@ bool FObjViewerEngine::LoadModelFromFile(const FString& FilePath, const FObjImpo
 	}
 
 	UWorld* ViewerWorld = GetActiveWorld();
-	UScene* ViewerScene = GetActiveScene();
+	ULevel* ViewerScene = GetActiveScene();
 	if (!ViewerWorld || !ViewerScene)
 	{
 		return false;
@@ -350,7 +350,7 @@ bool FObjViewerEngine::ReloadLoadedModel()
 void FObjViewerEngine::ClearLoadedModel()
 {
 	UWorld* ViewerWorld = GetActiveWorld();
-	UScene* ViewerScene = GetActiveScene();
+	ULevel* ViewerScene = GetActiveScene();
 	if (ViewerScene)
 	{
 		const TArray<AActor*> ExistingActors = ViewerScene->GetActors();
@@ -514,7 +514,7 @@ void FObjViewerEngine::RenderFrame()
 	Renderer->BeginFrame();
 
 	UWorld* ActiveWorld = GetActiveWorld();
-	UScene* Scene = GetViewportClient() ? GetViewportClient()->ResolveScene(this) : GetActiveScene();
+	ULevel* Scene = GetViewportClient() ? GetViewportClient()->ResolveScene(this) : GetActiveScene();
 	FShowFlags ViewerShowFlags;
 	ViewerShowFlags.SetFlag(EEngineShowFlags::SF_UUID, false);
 	ViewerShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, NormalSettings.bVisible);

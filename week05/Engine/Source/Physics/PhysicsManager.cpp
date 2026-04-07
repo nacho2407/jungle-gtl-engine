@@ -8,7 +8,7 @@
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/TextComponent.h"
 
-bool FPhysicsManager::Linetrace(const UScene* Scene, const FVector& Start, const FVector& End, FHitResult& OutHit)
+bool FPhysicsManager::Linetrace(const ULevel* Scene, const FVector& Start, const FVector& End, FHitResult& OutHit)
 {
 	const TArray<AActor*>& Actors = Scene->GetActors();
 

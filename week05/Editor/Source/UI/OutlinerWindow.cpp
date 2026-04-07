@@ -4,7 +4,7 @@
 #include "EditorEngine.h"
 #include "Core/ShowFlags.h"
 #include "Core/ViewportClient.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Actor/Actor.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -31,7 +31,7 @@ void FOutlinerWindow::Render(FEditorEngine* Engine)
 
 	ImGui::SeparatorText("Actors");
 
-	UScene* Scene = Engine->GetScene();
+	ULevel* Scene = Engine->GetScene();
 	const TArray<AActor*>& Actors = Scene->GetActors();
 	
 

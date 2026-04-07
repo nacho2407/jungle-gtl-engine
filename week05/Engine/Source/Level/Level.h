@@ -15,11 +15,12 @@ class UCameraComponent;
 class UPrimitiveComponent;
 struct FRenderCommandQueue;
 
-class ENGINE_API UScene : public UObject
+// 씬 -> 레벨로 이름 변경.
+class ENGINE_API ULevel : public UObject
 {
 public:
-	DECLARE_RTTI(UScene, UObject)
-	~UScene();
+	DECLARE_RTTI(ULevel, UObject)
+	~ULevel();
 
 	/** 지정한 액터 타입을 생성하고 씬에 등록한 뒤 PostSpawnInitialize까지 호출한다. */
 	template <typename T>

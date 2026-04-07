@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include "EditorEngine.h"
 #include "Renderer/Renderer.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Actor/Actor.h"
 #include "Component/TextComponent.h"
 #include "Component/SkyComponent.h"
@@ -206,7 +206,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 
 		if (ImGui::Button("Spawn"))
 		{
-			UScene* Scene = Engine->GetScene();
+			ULevel* Scene = Engine->GetScene();
 			static int32 SpawnCount = 0;
 			const FString Name = FString(SpawnTypes[SpawnTypeIndex]) + "_Spawned_" + std::to_string(SpawnCount++);
 

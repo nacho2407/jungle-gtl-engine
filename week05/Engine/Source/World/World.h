@@ -1,10 +1,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Object/Object.h"
-#include "Scene/WorldTypes.h"
+#include "Level/WorldTypes.h"
 
 // Forward declarations로 include 의존성을 최소화한다.
-class UScene;
+class ULevel;
 class AActor;
 class UCameraComponent;
 class FCamera;
@@ -25,15 +25,15 @@ public:
 	void DestroyActor(AActor* InActor);
 
 	/** 항상 존재하는 기본 씬(Persistent Level)을 반환한다. */
-	UScene* GetPersistentLevel() const { return PersistentLevel; }
+	ULevel* GetPersistentLevel() const { return PersistentLevel; }
 	/** 스트리밍 레벨을 로드해 월드에 추가한다. 이미 로드돼 있으면 기존 레벨을 반환한다. */
-	UScene* LoadStreamingLevel(const FString& LevelName, ID3D11Device* Device = nullptr);
+	ULevel* LoadStreamingLevel(const FString& LevelName, ID3D11Device* Device = nullptr);
 	/** 이름으로 스트리밍 레벨을 찾아 월드에서 제거한다. */
 	void UnloadStreamingLevel(const FString& LevelName);
 	/** 이름에 해당하는 스트리밍 레벨을 찾는다. */
-	UScene* FindStreamingLevel(const FString& LevelName) const;
+	ULevel* FindStreamingLevel(const FString& LevelName) const;
 	/** 현재 로드된 모든 스트리밍 레벨 목록을 반환한다. */
-	const TArray<UScene*>& GetStreamingLevels() const { return StreamingLevels; }
+	const TArray<ULevel*>& GetStreamingLevels() const { return StreamingLevels; }
 
 	/** Persistent + Streaming 레벨을 합친 전체 액터 목록을 새 배열로 돌려준다. */
 	TArray<AActor*> GetAllActors() const;
@@ -41,7 +41,7 @@ public:
 	const TArray<AActor*>& GetActors() const;
 
 	/** 기본 씬 접근용 별칭이다. */
-	UScene* GetScene() const { return PersistentLevel; }
+	ULevel* GetScene() const { return PersistentLevel; }
 	/** 현재 월드가 사용할 활성 카메라 컴포넌트를 지정한다. null이면 기본 씬 카메라로 되돌린다. */
 	void SetActiveCameraComponent(UCameraComponent* InCamera);
 	/** 렌더링과 뷰 계산에 사용할 활성 카메라 컴포넌트를 반환한다. */
@@ -66,8 +66,8 @@ public:
 	static UWorld* DuplicateWorldForPIE(UWorld* EditorWorld);
 
 private:
-	UScene* PersistentLevel = nullptr;
-	TArray<UScene*> StreamingLevels;
+	ULevel* PersistentLevel = nullptr;
+	TArray<ULevel*> StreamingLevels;
 
 	bool bBegunPlay = false;
 	float WorldTime = 0.f;
@@ -77,7 +77,7 @@ private:
 	TObjectPtr<UCameraComponent> ActiveCameraComponent;
 };
 
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 
 template <typename T>
 T* UWorld::SpawnActor(const FString& InName)

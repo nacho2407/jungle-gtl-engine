@@ -8,7 +8,7 @@
 #include "Math/Frustum.h"
 #include "Renderer/Material.h"
 #include "Renderer/Renderer.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "UI/EditorUI.h"
 #include "Viewport/BlitRenderer.h"
 #include "Viewport/Viewport.h"
@@ -62,7 +62,7 @@ void FEditorViewportRenderService::RenderAll(
 		return;
 	}
 
-	UScene* Scene = Engine->GetScene();
+	ULevel* Scene = Engine->GetScene();
 	if (!Scene)
 	{
 		return;

@@ -23,13 +23,13 @@ public:
 	AActor* GetSelectedActor() const;
 	void ActivateEditorScene();
 	bool ActivatePreviewScene(const FString& ContextName);
-	UScene* GetEditorScene() const;
-	UScene* GetPreviewScene(const FString& ContextName) const;
+	ULevel* GetEditorScene() const;
+	ULevel* GetPreviewScene(const FString& ContextName) const;
 	UWorld* GetEditorWorld() const;
 	const TArray<FWorldContext*>& GetPreviewWorldContexts() const;
 	FWorldContext* CreatePreviewWorldContext(const FString& ContextName, int32 Width, int32 Height);
-	UScene* GetScene() const override;
-	UScene* GetActiveScene() const override;
+	ULevel* GetScene() const override;
+	ULevel* GetActiveScene() const override;
 	UWorld* GetActiveWorld() const override;
 	const FWorldContext* GetActiveWorldContext() const override;
 	void HandleResize(int32 Width, int32 Height) override;

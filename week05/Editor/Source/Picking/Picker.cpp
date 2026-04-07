@@ -4,7 +4,7 @@
 #include "Camera/Camera.h"
 #include "Component/PrimitiveComponent.h"
 #include "Renderer/MeshData.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Viewport/Viewport.h"
 
 #include <algorithm>
@@ -212,7 +212,7 @@ bool FPicker::RayTriangleIntersect(const FRay& Ray,
 	return false;
 }
 
-AActor* FPicker::PickActor(UScene* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY, FEditorEngine* Engine) const
+AActor* FPicker::PickActor(ULevel* Scene, const FViewportEntry* Entry, int32 ScreenX, int32 ScreenY, FEditorEngine* Engine) const
 {
 	if (!Scene || !Entry)
 	{

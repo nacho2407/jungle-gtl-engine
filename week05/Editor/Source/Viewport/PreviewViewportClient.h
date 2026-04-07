@@ -13,7 +13,7 @@ public:
 	void Detach(FEngine* Engine, FRenderer* Renderer) override;
 	void Tick(FEngine* Engine, float DeltaTime) override;
 	void Render(FEngine* Engine, FRenderer* Renderer) override;
-	UScene* ResolveScene(FEngine* Engine) const override;
+	ULevel* ResolveScene(FEngine* Engine) const override;
 
 private:
 	FEditorUI& EditorUI;

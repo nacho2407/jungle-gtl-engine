@@ -15,7 +15,7 @@
 #include "Renderer/MaterialManager.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderCommand.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "ViewportClient.h"
 #include "World/World.h"
 #include "Object/ObjectFactory.h"
@@ -160,18 +160,18 @@ float FEngine::GetDeltaTime() const
 	return Renderer ? Timer.GetDeltaTime() : 0.0f;
 }
 
-UScene* FEngine::GetScene() const
+ULevel* FEngine::GetScene() const
 {
 	return GetActiveScene();
 }
 
-UScene* FEngine::GetActiveScene() const
+ULevel* FEngine::GetActiveScene() const
 {
 	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
 	return (Context && Context->World) ? Context->World->GetScene() : nullptr;
 }
 
-UScene* FEngine::GetGameScene() const
+ULevel* FEngine::GetGameScene() const
 {
 	const FWorldContext* Context = FindWorldContext(EWorldType::Game);
 	return (Context && Context->World) ? Context->World->GetScene() : nullptr;
@@ -486,7 +486,7 @@ void FEngine::TickPhysics(float DeltaTime)
 
 void FEngine::RenderFrame()
 {
-	UScene* Scene = ActiveViewportClient ? ActiveViewportClient->ResolveScene(this) : GetActiveScene();
+	ULevel* Scene = ActiveViewportClient ? ActiveViewportClient->ResolveScene(this) : GetActiveScene();
 	if (!Renderer || !Scene || Renderer->IsOccluded())
 	{
 		return;

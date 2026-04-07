@@ -1,7 +1,7 @@
 #include "MeshData.h"
 #include "Object/Class.h"
 #include "Vertex.h"
-#include "Scene/MeshBVH.h"
+#include "Level/MeshBVH.h"
 
 bool FStaticMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context)
 {

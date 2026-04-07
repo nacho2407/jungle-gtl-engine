@@ -7,15 +7,15 @@
 #include "Component/SceneComponent.h"
 #include "Debug/EngineLog.h"
 #include "Serializer/Archive.h"
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 IMPLEMENT_RTTI(AActor, UObject)
 
 namespace {
 	FVector GZeroVector{};
 }
 
-UScene* AActor::GetScene() const { return Scene; }
-void AActor::SetScene(UScene* InScene) { Scene = InScene; }
+ULevel* AActor::GetScene() const { return Scene; }
+void AActor::SetScene(ULevel* InScene) { Scene = InScene; }
 UWorld* AActor::GetWorld() const
 {
 	if (Scene)

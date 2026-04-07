@@ -3,7 +3,7 @@
 
 #include "Renderer/RenderMesh.h"
 #include "CoreMinimal.h"
-#include "Scene/MeshBVH.h"
+#include "Level/MeshBVH.h"
 #include <memory>
 
 struct ENGINE_API FStaticMesh : public FRenderMesh

@@ -1,4 +1,4 @@
-#include "Scene.h"
+#include "Level.h"
 
 #include "Core/Paths.h"
 #include "Actor/Actor.h"
@@ -16,9 +16,9 @@
 
 #include "Component/LineBatchComponent.h"
 
-IMPLEMENT_RTTI(UScene, UObject)
+IMPLEMENT_RTTI(ULevel, UObject)
 
-UScene::~UScene()
+ULevel::~ULevel()
 {
 	for (AActor* Actor : Actors)
 	{
@@ -33,24 +33,24 @@ UScene::~UScene()
 }
 
 
-FCamera* UScene::GetCamera() const
+FCamera* ULevel::GetCamera() const
 {
 	UWorld* World = GetTypedOuter<UWorld>();
 	return World ? World->GetCamera() : nullptr;
 }
 
-EWorldType UScene::GetWorldType() const
+EWorldType ULevel::GetWorldType() const
 {
 	UWorld* World = GetTypedOuter<UWorld>();
 	return World ? World->GetWorldType() : EWorldType::Game;
 }
 
-bool UScene::IsEditorScene() const
+bool ULevel::IsEditorScene() const
 {
 	return GetWorldType() == EWorldType::Editor;
 }
 
-bool UScene::IsGameScene() const
+bool ULevel::IsGameScene() const
 {
 	const EWorldType WorldType = GetWorldType();
 	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
@@ -58,7 +58,7 @@ bool UScene::IsGameScene() const
 
 
 
-void UScene::ClearActors()
+void ULevel::ClearActors()
 {
 	for (AActor* Actor : Actors)
 	{
@@ -73,7 +73,7 @@ void UScene::ClearActors()
 	MarkSpatialDirty();
 }
 
-void UScene::RegisterActor(AActor* InActor)
+void ULevel::RegisterActor(AActor* InActor)
 {
 	if (!InActor)
 	{
@@ -91,7 +91,7 @@ void UScene::RegisterActor(AActor* InActor)
 	MarkSpatialDirty();
 }
 
-void UScene::DestroyActor(AActor* InActor)
+void ULevel::DestroyActor(AActor* InActor)
 {
 	if (!InActor)
 	{
@@ -101,7 +101,7 @@ void UScene::DestroyActor(AActor* InActor)
 	MarkSpatialDirty();
 }
 
-void UScene::CleanupDestroyedActors()
+void ULevel::CleanupDestroyedActors()
 {
 	const auto NewEnd = std::ranges::remove_if(Actors,
 		[](const AActor* Actor)
@@ -117,7 +117,7 @@ void UScene::CleanupDestroyedActors()
 	}
 }
 
-void UScene::BeginPlay()
+void ULevel::BeginPlay()
 {
 	if (bBegunPlay)
 	{
@@ -135,7 +135,7 @@ void UScene::BeginPlay()
 	}
 }
 
-void UScene::Tick(float DeltaTime)
+void ULevel::Tick(float DeltaTime)
 {
 	if (!bBegunPlay)
 	{
@@ -153,12 +153,12 @@ void UScene::Tick(float DeltaTime)
 	CleanupDestroyedActors();
 }
 
-void UScene::MarkSpatialDirty()
+void ULevel::MarkSpatialDirty()
 {
 	bSpatialDirty = true;
 }
 
-void UScene::GatherPrimitiveComponents(TArray<UPrimitiveComponent*>& OutPrimitives) const
+void ULevel::GatherPrimitiveComponents(TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
 	for (AActor* Actor : Actors)
 	{
@@ -185,7 +185,7 @@ void UScene::GatherPrimitiveComponents(TArray<UPrimitiveComponent*>& OutPrimitiv
 	}
 }
 
-void UScene::RebuildSpatialIfNeeded() const
+void ULevel::RebuildSpatialIfNeeded() const
 {
 	if (!bSpatialDirty)
 	{
@@ -198,13 +198,13 @@ void UScene::RebuildSpatialIfNeeded() const
 	bSpatialDirty = false;
 }
 
-void UScene::QueryPrimitivesByFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
+void ULevel::QueryPrimitivesByFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
 	RebuildSpatialIfNeeded();
 	SpatialBVH.QueryFrustum(Frustum, OutPrimitives);
 }
 
-void UScene::QueryPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
+void ULevel::QueryPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float MaxDistance, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
 	RebuildSpatialIfNeeded();
 
@@ -217,7 +217,7 @@ void UScene::QueryPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDi
 	SpatialBVH.QueryRay(SceneRay, MaxDistance, OutPrimitives);
 }
 
-void UScene::VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float& InOutMaxDistance, const BVH::FRayHitVisitor& Visitor) const
+void ULevel::VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDirection, float& InOutMaxDistance, const BVH::FRayHitVisitor& Visitor) const
 {
 	RebuildSpatialIfNeeded();
 
@@ -230,13 +230,13 @@ void UScene::VisitPrimitivesByRay(const FVector& RayOrigin, const FVector& RayDi
 	SpatialBVH.VisitRay(SceneRay, InOutMaxDistance, Visitor);
 }
 
-void UScene::VisitBVHNodes(const FBVHNodeVisitor& Visitor) const
+void ULevel::VisitBVHNodes(const FBVHNodeVisitor& Visitor) const
 {
 	RebuildSpatialIfNeeded();
 	SpatialBVH.VisitNodes(Visitor);
 }
 
-void UScene::VisitBVHNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const
+void ULevel::VisitBVHNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const
 {
 	RebuildSpatialIfNeeded();
 	SpatialBVH.VisitNodesForPrimitive(Target, Visitor);

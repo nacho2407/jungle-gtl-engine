@@ -15,7 +15,7 @@ class FBlitRenderer;
 class FMaterial;
 class FFrustum;
 class FShowFlags;
-class UScene;
+class ULevel;
 struct FRenderMesh;
 
 class FEditorViewportRenderService
@@ -23,7 +23,7 @@ class FEditorViewportRenderService
 public:
 	using FBuildRenderCommands = std::function<void(
 		FEngine*,
-		UScene*,
+		ULevel*,
 		const FFrustum&,
 		const FShowFlags&,
 		const FVector&,

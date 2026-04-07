@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
-class UScene;
+class ULevel;
 
 struct FRenderMesh;
 class FArchive;

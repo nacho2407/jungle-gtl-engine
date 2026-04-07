@@ -1,6 +1,6 @@
 #include "World.h"
 #include "Object/Class.h"  
-#include "Scene/Scene.h"
+#include "Level/Level.h"
 #include "Object/ObjectFactory.h"
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
@@ -12,7 +12,7 @@
 
 namespace
 {
-	bool TryLoadSceneFromCandidates(UScene* Scene, ID3D11Device* Device, const std::initializer_list<std::filesystem::path>& CandidatePaths)
+	bool TryLoadSceneFromCandidates(ULevel* Scene, ID3D11Device* Device, const std::initializer_list<std::filesystem::path>& CandidatePaths)
 	{
 		if (!Scene || !Device)
 		{
@@ -45,7 +45,7 @@ UWorld::~UWorld()
 
 void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 {
-	PersistentLevel = FObjectFactory::ConstructObject<UScene>(this, "PersistentLevel");
+	PersistentLevel = FObjectFactory::ConstructObject<ULevel>(this, "PersistentLevel");
 	if (!PersistentLevel)
 	{
 		return;
@@ -82,7 +82,7 @@ void UWorld::BeginPlay()
 	{
 		PersistentLevel->BeginPlay();
 	}
-	for (UScene* Level : StreamingLevels)
+	for (ULevel* Level : StreamingLevels)
 	{
 		if (Level) Level->BeginPlay();
 	}
@@ -97,7 +97,7 @@ void UWorld::Tick(float InDeltaTime)
 	{
 		PersistentLevel->Tick(InDeltaTime);
 	}
-	for (UScene* Level : StreamingLevels)
+	for (ULevel* Level : StreamingLevels)
 	{
 		if (Level)
 		{
@@ -108,7 +108,7 @@ void UWorld::Tick(float InDeltaTime)
 
 void UWorld::CleanupWorld()
 {
-	for (UScene* Level : StreamingLevels)
+	for (ULevel* Level : StreamingLevels)
 	{
 		if (Level)
 		{
@@ -160,14 +160,14 @@ void UWorld::DestroyActor(AActor* InActor)
 	PersistentLevel->DestroyActor(InActor);
 }
 
-UScene* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Device)
+ULevel* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Device)
 {
 	// 이미 로드됐는지 확인
-	if (UScene* Existing = FindStreamingLevel(LevelName))
+	if (ULevel* Existing = FindStreamingLevel(LevelName))
 	{
 		return Existing;
 	}
-	UScene* NewLevel = FObjectFactory::ConstructObject<UScene>(this, LevelName);
+	ULevel* NewLevel = FObjectFactory::ConstructObject<ULevel>(this, LevelName);
 	if (!NewLevel) return nullptr;
 
 	if (Device)
@@ -191,7 +191,7 @@ UScene* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Devic
 void UWorld::UnloadStreamingLevel(const FString& LevelName)
 {
 	auto It = std::find_if(StreamingLevels.begin(), StreamingLevels.end(),
-		[&](UScene* Level) { return Level->GetName() == LevelName; });
+		[&](ULevel* Level) { return Level->GetName() == LevelName; });
 	if (It != StreamingLevels.end())
 	{
 		(*It)->ClearActors();
@@ -200,9 +200,9 @@ void UWorld::UnloadStreamingLevel(const FString& LevelName)
 	}
 }
 
-UScene* UWorld::FindStreamingLevel(const FString& LevelName) const
+ULevel* UWorld::FindStreamingLevel(const FString& LevelName) const
 {
-	for (UScene* Level : StreamingLevels)
+	for (ULevel* Level : StreamingLevels)
 	{
 		if (Level && Level->GetName() == LevelName)
 		{
@@ -220,7 +220,7 @@ TArray<AActor*> UWorld::GetAllActors() const
 		const auto& PersistentActors = PersistentLevel->GetActors();
 		AllActors.insert(AllActors.end(), PersistentActors.begin(), PersistentActors.end());
 	}
-	for (UScene* Level : StreamingLevels)
+	for (ULevel* Level : StreamingLevels)
 	{
 		if (Level)
 		{

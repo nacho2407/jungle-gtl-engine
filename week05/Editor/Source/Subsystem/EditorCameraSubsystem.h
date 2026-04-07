@@ -6,7 +6,7 @@
 class AEditorCameraPawn;
 class FEnhancedInputManager;
 class FInputManager;
-class UScene;
+class ULevel;
 class UWorld;
 
 class FEditorCameraSubsystem
@@ -16,12 +16,12 @@ public:
 
 	bool Initialize(UWorld* ActiveWorld, FInputManager* InInputManager, FEnhancedInputManager* InEnhancedInputManager);
 	void Shutdown();
-	void PrepareFrame(UWorld* ActiveWorld, UScene* ActiveScene, float DeltaTime);
+	void PrepareFrame(UWorld* ActiveWorld, ULevel* ActiveScene, float DeltaTime);
 
 	FEditorViewportController* GetViewportController();
 
 private:
-	void SyncActiveCamera(UWorld* ActiveWorld, UScene* ActiveScene);
+	void SyncActiveCamera(UWorld* ActiveWorld, ULevel* ActiveScene);
 
 	TObjectPtr<AEditorCameraPawn> EditorPawn;
 	FEditorViewportController ViewportController;

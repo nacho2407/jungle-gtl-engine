@@ -2,7 +2,7 @@
 #include "Math/Vector.h"
 
 class AActor;
-class UScene;
+class ULevel;
 
 struct FHitResult
 {
@@ -22,6 +22,6 @@ public:
 	 * \param OutHit: 처음으로 Hit 된 대상에 대한 정보 (HitActor, HitLocation, ...)
 	 * \return 
 	 */
-	bool Linetrace(const UScene* Scene, const FVector& Start, const FVector& End, FHitResult& OutHit);
+	bool Linetrace(const ULevel* Scene, const FVector& Start, const FVector& End, FHitResult& OutHit);
 private:
 };
