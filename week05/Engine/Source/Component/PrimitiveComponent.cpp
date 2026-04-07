@@ -14,9 +14,9 @@ void UPrimitiveComponent::MarkTransformDirty()
 
 	if (AActor* Owner = GetOwner())
 	{
-		if (ULevel* Scene = Owner->GetScene())
+		if (ULevel* Level = Owner->GetLevel())
 		{
-			Scene->MarkSpatialDirty();
+			Level->MarkSpatialDirty();
 		}
 	}
 }

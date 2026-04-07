@@ -87,7 +87,7 @@ void ULevel::RegisterActor(AActor* InActor)
 	}
 
 	Actors.push_back(InActor);
-	InActor->SetScene(this);
+	InActor->SetLevel(this);
 	MarkSpatialDirty();
 }
 

@@ -15,9 +15,9 @@ public:
 	~AActor() override = default;
 
 	/** 자신이 속한 씬을 반환한다. */
-	ULevel* GetScene() const;
+	ULevel* GetLevel() const;
 	/** 씬 등록 시 호출되며, 이 액터의 소속 씬을 갱신한다. */
-	void SetScene(ULevel* InScene);
+	void SetLevel(ULevel* InLevel);
 	/** 소속 씬의 Outer를 따라가 현재 월드를 찾아 반환한다. */
 	UWorld* GetWorld() const;
 	// ULevel* GetLevel() const { return Level;
@@ -29,7 +29,7 @@ public:
 	void SetRootComponent(USceneComponent* InRootComponent);
 
 	/** 액터가 소유한 모든 컴포넌트 배열을 반환한다. */
-	const TArray<UActorComponent*>& GetComponents() const;
+	const TSet<UActorComponent*>& GetComponents() const;
 	/** 액터에 새 컴포넌트를 소유권과 함께 등록한다. */
 	void AddOwnedComponent(UActorComponent* InComponent);
 	/** 액터에서 컴포넌트를 분리하고 소유 관계를 끊는다. */
@@ -75,16 +75,20 @@ public:
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool bInVisible) { bVisible = bInVisible; }
 
+	bool IsTickInEditor() const { return bTickInEditor; }
+	void SetTickInEditor(bool bInTickInEditor) { bTickInEditor = bInTickInEditor; }
+
 protected:
-	TObjectPtr<ULevel> Scene;
+	TObjectPtr<ULevel> Level;
 	//ULevel* Level = nullptr;
 
 	USceneComponent* RootComponent = nullptr;
-	TArray<UActorComponent*> OwnedComponents;
+	TSet<UActorComponent*> OwnedComponents;
 
 	bool bCanEverTick = true;
 	bool bTickEnabled = true;
 	bool bActorBegunPlay = false;
 	bool bPendingDestroy = false;
 	bool bVisible = true;
+	bool bTickInEditor = true;
 };

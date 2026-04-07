@@ -14,13 +14,13 @@ namespace {
 	FVector GZeroVector{};
 }
 
-ULevel* AActor::GetScene() const { return Scene; }
-void AActor::SetScene(ULevel* InScene) { Scene = InScene; }
+ULevel* AActor::GetLevel() const { return Level; }
+void AActor::SetLevel(ULevel* InLevel) { Level = InLevel; }
 UWorld* AActor::GetWorld() const
 {
-	if (Scene)
+	if (Level)
 	{
-		return Scene->GetTypedOuter<UWorld>();
+		return Level->GetTypedOuter<UWorld>();
 	}
 	return nullptr;
 }
@@ -38,7 +38,7 @@ void AActor::SetRootComponent(USceneComponent* InRootComponent)
 	}
 }
 
-const TArray<UActorComponent*>& AActor::GetComponents() const { return OwnedComponents; }
+const TSet<UActorComponent*>& AActor::GetComponents() const { return OwnedComponents; }
 
 void AActor::AddOwnedComponent(UActorComponent* InComponent)
 {
@@ -53,7 +53,7 @@ void AActor::AddOwnedComponent(UActorComponent* InComponent)
 		return;
 	}
 
-	OwnedComponents.push_back(InComponent);
+	OwnedComponents.insert(InComponent);
 	InComponent->SetOwner(this);
 
 	if (RootComponent == nullptr && InComponent->IsA(USceneComponent::StaticClass()))
@@ -69,7 +69,7 @@ void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
 		return;
 	}
 
-	std::erase(OwnedComponents, InComponent);
+	OwnedComponents.erase(InComponent);
 
 	if (RootComponent == InComponent)
 	{
