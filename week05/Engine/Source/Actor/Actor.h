@@ -29,7 +29,7 @@ public:
 	void SetRootComponent(USceneComponent* InRootComponent);
 
 	/** 액터가 소유한 모든 컴포넌트 배열을 반환한다. */
-	const TArray<UActorComponent*>& GetComponents() const;
+	const TSet<UActorComponent*>& GetComponents() const;
 	/** 액터에 새 컴포넌트를 소유권과 함께 등록한다. */
 	void AddOwnedComponent(UActorComponent* InComponent);
 	/** 액터에서 컴포넌트를 분리하고 소유 관계를 끊는다. */
@@ -80,7 +80,7 @@ protected:
 	//ULevel* Level = nullptr;
 
 	USceneComponent* RootComponent = nullptr;
-	TArray<UActorComponent*> OwnedComponents;
+	TSet<UActorComponent*> OwnedComponents;
 
 	bool bCanEverTick = true;
 	bool bTickEnabled = true;

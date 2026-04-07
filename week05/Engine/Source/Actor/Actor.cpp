@@ -38,7 +38,7 @@ void AActor::SetRootComponent(USceneComponent* InRootComponent)
 	}
 }
 
-const TArray<UActorComponent*>& AActor::GetComponents() const { return OwnedComponents; }
+const TSet<UActorComponent*>& AActor::GetComponents() const { return OwnedComponents; }
 
 void AActor::AddOwnedComponent(UActorComponent* InComponent)
 {
@@ -53,7 +53,7 @@ void AActor::AddOwnedComponent(UActorComponent* InComponent)
 		return;
 	}
 
-	OwnedComponents.push_back(InComponent);
+	OwnedComponents.insert(InComponent);
 	InComponent->SetOwner(this);
 
 	if (RootComponent == nullptr && InComponent->IsA(USceneComponent::StaticClass()))
@@ -69,7 +69,7 @@ void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
 		return;
 	}
 
-	std::erase(OwnedComponents, InComponent);
+	OwnedComponents.erase(InComponent);
 
 	if (RootComponent == InComponent)
 	{
