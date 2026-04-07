@@ -314,7 +314,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
 			{
 				FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
+				return (Res && Res->SRV) ? Res->SRV.Get() : DefaultSRV;
 			};
 
 			// 와이어 프레임이 있는 경우 텍스쳐를 사용하지 않는 메테리얼에게 기본 텍스쳐를 강제 주입

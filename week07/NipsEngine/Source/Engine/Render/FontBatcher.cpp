@@ -249,7 +249,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// ResourceManager 소유 SRV 바인딩
-	ID3D11ShaderResourceView* SRV = Resource->SRV;
+	ID3D11ShaderResourceView* SRV = Resource->SRV.Get();
 	Context->PSSetShaderResources(0, 1, &SRV);
 	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
 	Context->PSSetSamplers(0, 1, Samplers);

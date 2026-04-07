@@ -296,11 +296,11 @@ void FRenderer::InitializePassBatchers()
 				const auto& SubUV = Cmd.Constants.SubUV;
 				if (!SubUVCachedSRV && SubUV.Particle->IsLoaded())
 				{
-					SubUVCachedSRV = SubUV.Particle->SRV;
+					SubUVCachedSRV = SubUV.Particle->SRV.Get();
 				}
 
 				SubUVBatcher.AddSprite(
-					SubUV.Particle->SRV,
+					SubUV.Particle->SRV.Get(),
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),

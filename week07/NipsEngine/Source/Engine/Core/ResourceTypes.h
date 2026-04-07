@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Object/FName.h"
+#include "Render/Common/ComPtr.h"
 
 // COM 인터페이스 전방 선언 (d3d11.h 없이 포인터 사용 가능)
 struct ID3D11ShaderResourceView;
@@ -11,7 +12,7 @@ struct FTextureResource
 	FName	Name;
 	FString Path;
 
-	ID3D11ShaderResourceView* SRV = nullptr;
+	TComPtr<ID3D11ShaderResourceView> SRV;
 
 	bool IsLoaded() const { return SRV != nullptr;  }
 };
@@ -25,7 +26,7 @@ struct FTextureAtlasResource
 	FName   Name;
 	FString Path;							// Asset 상대 경로 (Resource.ini에서 로드)
 
-	ID3D11ShaderResourceView* SRV = nullptr; // GPU에 로드된 텍스처 SRV
+	TComPtr<ID3D11ShaderResourceView> SRV; // GPU에 로드된 텍스처 SRV
 
 	uint32 Columns = 1;						// 아틀라스 가로 프레임(셀) 수
 	uint32 Rows    = 1;						// 아틀라스 세로 프레임(셀) 수
