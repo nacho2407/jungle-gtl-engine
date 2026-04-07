@@ -269,10 +269,7 @@ void FRenderer::InitializePassBatchers()
 			{
 				FontBatcher.AddText(
 					*Cmd.Constants.Font.Text,
-					Cmd.PerObjectConstants.Model.GetOrigin(),
-					Bus.GetCameraRight(),
-					Bus.GetCameraUp(),
-					Cmd.PerObjectConstants.Model.GetScaleVector(),
+					Cmd.PerObjectConstants.Model,
 					Cmd.Constants.Font.Scale
 				);
 			}
