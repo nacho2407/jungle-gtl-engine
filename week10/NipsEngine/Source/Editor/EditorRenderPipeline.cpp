@@ -52,6 +52,10 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	// 4개 뷰포트를 순서대로 렌더링
 	RenderViewport(Renderer, 0);
+	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	{
+      RenderViewport(Renderer, i);
+	}
 
 	Renderer.UseBackBufferRenderTargets();
 

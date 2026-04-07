@@ -450,12 +450,14 @@ FodyWeavers.xsd
 CMakeLists.txt
 
 # ignore Build Files
-ZZupEngine/Build/
+NipsEngine/Build/
 
 # ignore .ini Files
 *.ini
 
+NipsEngine/Saves/**
+NipsEngine/Asset/Mesh/Bin/**
+
 # Asset 파일 살리기 - obj 등 (Bin 폴더 내의 파일은 무시)
-!ZZupEngine/Asset/Mesh/**
-!ZZupEngine/Asset/**/*.meta
-ZZupEngine/Asset/Mesh/Bin/
+!NipsEngine/Asset/Mesh/**
+!NipsEngine/Asset/**/*.meta
