@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Scene/WorldTypes.h"
+#include "Level/WorldTypes.h"
 
 class AActor;
 class ULevel;
 
-struct ENGINE_API FSceneContext
+struct ENGINE_API FLevelContext
 {
 	FString ContextName;
 	EWorldType WorldType = EWorldType::Game;
@@ -21,10 +21,10 @@ struct ENGINE_API FSceneContext
 	}
 };
 
-struct ENGINE_API FEditorSceneContext : public FSceneContext
+struct ENGINE_API FEditorLevelContext : public FLevelContext
 {
 	void Reset()
 	{
-		FSceneContext::Reset();
+		FLevelContext::Reset();
 	}
 };

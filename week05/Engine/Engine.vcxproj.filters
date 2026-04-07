@@ -566,7 +566,7 @@
     <ClInclude Include="Source\Level\Level.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Level\SceneContext.h">
+    <ClInclude Include="Source\Level\LevelContext.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Level\WorldTypes.h">

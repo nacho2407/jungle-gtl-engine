@@ -106,7 +106,7 @@
     <ClInclude Include="Source\Level\MeshBVH.h" />
     <ClInclude Include="Source\Level\RenderCollector.h" />
     <ClInclude Include="Source\Level\Level.h" />
-    <ClInclude Include="Source\Level\SceneContext.h" />
+    <ClInclude Include="Source\Level\LevelContext.h" />
     <ClInclude Include="Source\Level\WorldTypes.h" />
     <ClInclude Include="Source\Serializer\Archive.h" />
     <ClInclude Include="Source\Serializer\SceneSerializer.h" />
