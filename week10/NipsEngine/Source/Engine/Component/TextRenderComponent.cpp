@@ -7,7 +7,7 @@
 #include "Core/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UTextRenderComponent, UBillboardComponent)
+DEFINE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UTextRenderComponent)
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
@@ -28,27 +28,6 @@ void UTextRenderComponent::UpdateWorldAABB() const
 	float ScaledWidth = TotalWidth * WorldScale.Y;
 	float ScaledHeight = TotalHeight * WorldScale.Z;
 
-	const FViewportCamera* Camera = nullptr;
-	TryGetActiveCamera(Camera);
-
-	if (TryGetActiveCamera(Camera) && Camera != nullptr)
-	{
-		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-			GetWorldScale(),
-			Camera->GetEffectiveForward(),
-			Camera->GetEffectiveRight(),
-			Camera->GetEffectiveUp());
-	}
-	else
-	{
-		// 카메라를 찾을 수 없는 로드 초기 시점 등에서는 기본 축을 사용합니다.
-		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-			GetWorldScale(),
-			FVector(1.0f, 0.0f, 0.0f),  // Forward
-			FVector(0.0f, 1.0f, 0.0f),  // Right
-			FVector(0.0f, 0.0f, 1.0f)); // Up
-	}
-
 	FVector WorldRight = FVector(CachedWorldMatrix.M[1][0], CachedWorldMatrix.M[1][1], CachedWorldMatrix.M[1][2]).Normalized();
 	FVector WorldUp = FVector(CachedWorldMatrix.M[2][0], CachedWorldMatrix.M[2][1], CachedWorldMatrix.M[2][2]).Normalized();
 
@@ -66,20 +45,10 @@ void UTextRenderComponent::UpdateWorldAABB() const
 
 bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-	FMatrix BillboardWorldMatrix = GetWorldMatrix();
-	const FViewportCamera* ActiveCamera = nullptr;
-	if (TryGetActiveCamera(ActiveCamera))
-	{
-		BillboardWorldMatrix = MakeBillboardWorldMatrix(
-			GetWorldLocation(),
-			GetWorldScale(),
-			ActiveCamera->GetEffectiveForward(),
-			ActiveCamera->GetEffectiveRight(),
-			ActiveCamera->GetEffectiveUp());
-	}
+	FMatrix WorldMatrix = GetWorldMatrix();
 
-	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(BillboardWorldMatrix);
-	FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
+	FMatrix TextRangeMatrix = GetTextMatrix();
+	FMatrix InvWorldMatrix = TextRangeMatrix.GetInverse();
 
 	FRay LocalRay;
 	LocalRay.Origin = InvWorldMatrix.TransformPosition(Ray.Origin);
@@ -97,12 +66,12 @@ bool UTextRenderComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult
 	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
 		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
 	{
-		FVector WorldHitPos = OutlineWorldMatrix.TransformPosition(LocalHitPos);
+		FVector WorldHitPos = TextRangeMatrix.TransformPosition(LocalHitPos);
 		OutHitResult.bHit = true;
 		OutHitResult.HitComponent = this;
 		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Size();
 		OutHitResult.Location = WorldHitPos;
-		OutHitResult.Normal = OutlineWorldMatrix.GetForwardVector();
+		OutHitResult.Normal = TextRangeMatrix.GetForwardVector();
 		OutHitResult.FaceIndex = 0;
 		return true;
 	}
@@ -158,13 +127,7 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 	}
 }
 
-
-FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
-{
-	return CalculateOutlineMatrix(GetWorldMatrix());
-}
-
-FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWorldMatrix) const
+FMatrix UTextRenderComponent::GetTextMatrix() const
 {
 	int32 Len = GetUTF8Length(Text);
 
@@ -180,7 +143,7 @@ FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWor
 	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
 	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
 
-	return (ScaleMatrix * TransMatrix) * BillboardWorldMatrix;
+	return (ScaleMatrix * TransMatrix) * GetWorldMatrix();
 }
 
 int32 UTextRenderComponent::GetUTF8Length(const FString& str) const{
