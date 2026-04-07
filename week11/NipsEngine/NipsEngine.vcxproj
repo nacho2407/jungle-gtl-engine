@@ -249,7 +249,10 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
-    <ClCompile Include="Source\Engine\Math\AABB.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\AABB.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\Frustum.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\Plane.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\Transform.cpp" />
     <ClCompile Include="Source\Engine\Math\Color.cpp" />
     <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
     <ClCompile Include="Source\Engine\Math\Quat.cpp" />
@@ -288,6 +291,8 @@
     <ClCompile Include="Source\Engine\Slate\SWidget.cpp" />
     <ClCompile Include="Source\Engine\Slate\SWindow.cpp" />
     <ClCompile Include="Source\Engine\Slate\SlateApplication.cpp" />
+    <ClCompile Include="Source\Engine\Spatial\BVH.cpp" />
+    <ClCompile Include="Source\Engine\Spatial\KDTree.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.cpp" />
@@ -379,7 +384,12 @@
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
-    <ClInclude Include="Source\Engine\Math\AABB.h" />
+    <ClInclude Include="Source\Engine\Geometry\AABB.h" />
+    <ClInclude Include="Source\Engine\Geometry\Frustum.h" />
+    <ClInclude Include="Source\Engine\Geometry\Plane.h" />
+    <ClInclude Include="Source\Engine\Geometry\Ray.h" />
+    <ClInclude Include="Source\Engine\Geometry\Transform.h" />
+    <ClInclude Include="Source\Engine\Geometry\Triangle.h" />
     <ClInclude Include="Source\Engine\Math\Color.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
     <ClInclude Include="Source\Engine\Math\Quat.h" />
@@ -434,6 +444,8 @@
     <ClInclude Include="Source\Engine\Slate\SWindow.h" />
     <ClInclude Include="Source\Engine\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Engine\Slate\SlateUtils.h" />
+    <ClInclude Include="Source\Engine\Spatial\BVH.h" />
+    <ClInclude Include="Source\Engine\Spatial\KDTree.h" />
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.h" />
