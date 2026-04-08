@@ -88,6 +88,18 @@ void UEngine::WorldTick(float DeltaTime)
 {
 	SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
 
+	// PIE 활성 시 Editor 월드는 sleep (UE 동작과 동일).
+	// culling/octree/visibility 갱신을 건너뛰어 50k+ 환경에서 비용 2배를 방지.
+	bool bHasPIEWorld = false;
+	for (const FWorldContext& Ctx : WorldList)
+	{
+		if (Ctx.WorldType == EWorldType::PIE && Ctx.World)
+		{
+			bHasPIEWorld = true;
+			break;
+		}
+	}
+
 	// 월드 타입별 Tick 라우팅 (UE 패턴 참고):
 	// - Editor: bNeedsTick 인 액터만 Tick (현재 bTickInEditor 역할)
 	// - PIE:    모든 액터 Tick
@@ -97,6 +109,12 @@ void UEngine::WorldTick(float DeltaTime)
 		UWorld* World = Ctx.World;
 		if (!World) continue;
 
+		// PIE 활성 시 Editor 월드는 완전히 skip
+		if (bHasPIEWorld && Ctx.WorldType == EWorldType::Editor)
+		{
+			continue;
+		}
+
 		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw)
 		World->Tick(DeltaTime);
 
@@ -104,7 +122,7 @@ void UEngine::WorldTick(float DeltaTime)
 		{
 			for (AActor* Actor : World->GetActors())
 			{
-				if (Actor && Actor->bNeedsTick)
+				if (Actor && Actor->bTickInEditor)
 				{
 					Actor->Tick(DeltaTime);
 				}
@@ -114,7 +132,18 @@ void UEngine::WorldTick(float DeltaTime)
 		{
 			for (AActor* Actor : World->GetActors())
 			{
-				if (Actor)
+				// 추후 Component 단위 Tick으로 세분화할 때 bNeedsTick이 Actor 자체가 아니라 Component 단위로 옮겨질 수 있다.
+				if (Actor && Actor->bNeedsTick)
+				{
+					Actor->Tick(DeltaTime);
+				}
+			}
+		}
+		else if (Ctx.WorldType == EWorldType::Game)
+		{
+			for (AActor* Actor : World->GetActors())
+			{
+				if (Actor && Actor->bNeedsTick)
 				{
 					Actor->Tick(DeltaTime);
 				}
