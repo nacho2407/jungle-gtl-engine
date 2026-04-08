@@ -190,6 +190,17 @@ void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
 	EnqueueDirtyProxy(DirtyProxies, Proxy);
 }
 
+void FScene::MarkAllPerObjectCBDirty()
+{
+	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	{
+		if (Proxy)
+		{
+			Proxy->MarkPerObjectCBDirty();
+		}
+	}
+}
+
 // ============================================================
 // 선택 관리
 // ============================================================
