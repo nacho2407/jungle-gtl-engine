@@ -35,7 +35,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 	ImGui::Begin("Jungle Control Panel");
 
 	// Spawn
-	ImGui::Combo("Primitive", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
+	ImGui::Combo("Actor", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
 
 	if (ImGui::Button("Spawn"))
 	{

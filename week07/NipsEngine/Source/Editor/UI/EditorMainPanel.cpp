@@ -1,4 +1,6 @@
-﻿#include "Editor/UI/EditorMainPanel.h"
+﻿
+
+#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/ViewportLayout.h"
@@ -74,8 +76,11 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ImFontGlyphRangesBuilder KoreanBuilder;
 	KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesKorean());
 	KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesDefault());
+	KoreanBuilder.AddText("▶⏸■");
+
 	KoreanBuilder.BuildRanges(&FontGlyphRanges);
-	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
+
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisym.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
 
 	// 2차: msyh.ttc — 한자 전체를 malgun이 없는 글리프에만 병합 (fallback)
 	ImFontConfig MergeConfig;

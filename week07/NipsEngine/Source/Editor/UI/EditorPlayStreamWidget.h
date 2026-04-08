@@ -8,8 +8,9 @@ public:
 	virtual void Render(float DeltaTime) override;
 
 private:
-	const char* PlayLabel = "▶ Start";
-	const char* PauseLabel = "|| Pause";
-	const char* StopLabel = "■ Stop";
+	const char* PlayLabel   = "▶ Play";
+    const char* ResumeLabel = "▶ Resume";
+    const char* PauseLabel  = "❚❚ Pause"; 
+    const char* StopLabel   = "■ Stop";
 };
 
