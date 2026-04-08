@@ -11,6 +11,7 @@ public:
 	DECLARE_RTTI(AStaticMeshActor, AActor)
 
 	virtual void PostSpawnInitialize() override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 private:
 	UStaticMeshComponent* StaticMeshComp = nullptr;

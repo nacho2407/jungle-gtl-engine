@@ -11,6 +11,7 @@ public:
 	DECLARE_RTTI(ASubUVActor, AActor)
 
 	void PostSpawnInitialize() override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 private:
 	USubUVComponent* SubUVComponent = nullptr;

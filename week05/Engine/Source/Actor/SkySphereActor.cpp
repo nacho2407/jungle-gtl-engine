@@ -25,3 +25,9 @@ void ASkySphereActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void ASkySphereActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<ASkySphereActor*>(DuplicatedObject)->SkySphereComponent = Context.FindDuplicate(SkySphereComponent);
+}
