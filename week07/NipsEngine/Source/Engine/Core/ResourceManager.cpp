@@ -655,16 +655,49 @@ void FResourceManager::ReleaseGPUResources()
 
 void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
 {
-	std::filesystem::path Path = FPaths::ToWide(FilePath);
-	std::filesystem::path MtlPath = Path.parent_path() / Path.stem().concat(L".mtl");
-	LoadMaterial(FPaths::ToUtf8(MtlPath.generic_wstring()));
+	namespace fs = std::filesystem;
+
+	// 1. OBJ 파일에서 mtllib 키워드로 참조된 mtl 파일명 파싱
+	TArray<FString> Lines;
+	FString MtlFileName;
+	if (FFileUtils::LoadFileToLines(FilePath, Lines))
+	{
+		for (const FString& RawLine : Lines)
+		{
+			FString Line = StringUtils::Trim(RawLine);
+			if (Line.rfind("mtllib ", 0) == 0 && Line.size() > 7)
+			{
+				MtlFileName = StringUtils::Trim(Line.substr(7));
+				break;
+			}
+		}
+	}
+
+	if (MtlFileName.empty())
+	{
+		UE_LOG("[ResourceManager] No mtllib keyword found in: %s", FilePath.c_str());
+		return;
+	}
+
+	// 2. OBJ 파일 위치를 기준으로 FindFileRecursively 로 mtl 파일 탐색
+	fs::path AbsObjDir = fs::path(FPaths::ToAbsolute(FPaths::ToWide(FilePath))).parent_path();
+	FString FoundRelPath;
+	if (!FFileUtils::FindFileRecursively(FPaths::ToUtf8(AbsObjDir.generic_wstring()), MtlFileName, FoundRelPath))
+	{
+		UE_LOG("[ResourceManager] mtl not found via FindFileRecursively: %s", MtlFileName.c_str());
+		return;
+	}
+
+	// FoundRelPath 는 AbsObjDir 기준 상대 경로이므로 절대 경로로 결합 후 LoadMaterial 호출
+	fs::path AbsMtlPath = (AbsObjDir / FPaths::ToWide(FoundRelPath)).lexically_normal();
+	LoadMaterial(FPaths::ToUtf8(AbsMtlPath.generic_wstring()));
 }
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 {
 	if (MtlFilePath.empty())
 	{
-		return false;
+		return false;	
 	}
 
 	TMap<FString, FMaterial> Parsed;
