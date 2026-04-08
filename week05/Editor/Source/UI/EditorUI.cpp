@@ -872,45 +872,6 @@ void FEditorUI::Render()
 			}
 			ImGui::EndMenu();
 		}
-
-		if (Engine)
-		{
-			ImGui::SameLine();
-			ImGui::Spacing();
-			ImGui::SameLine();
-
-			const bool bIsPIEActive = Engine->IsPIEActive();
-			const bool bIsPIEPaused = Engine->IsPIEPaused();
-			const char* PIEPrimaryLabel = !bIsPIEActive
-				? "▶ Start"
-				: (bIsPIEPaused ? "▶ Resume" : "❚❚ Pause");
-
-			if (ImGui::Button(PIEPrimaryLabel))
-			{
-				if (!bIsPIEActive)
-				{
-					Engine->StartPIE();
-				}
-				else
-				{
-					Engine->TogglePIEPause();
-				}
-			}
-
-			ImGui::SameLine();
-			if (!bIsPIEActive)
-			{
-				ImGui::BeginDisabled();
-			}
-			if (ImGui::Button("■ Stop") && bIsPIEActive)
-			{
-				Engine->EndPIE();
-			}
-			if (!bIsPIEActive)
-			{
-				ImGui::EndDisabled();
-			}
-		}
 		ImGui::EndMainMenuBar();
 	}
 
@@ -934,7 +895,7 @@ void FEditorUI::Render()
 
 		ImGui::SetCursorPosY(35);
 		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("v2.0.0").x) * 0.5f);
-		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "v2.0.0");
+		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "v2.1.0");
 
 		ImGui::SetCursorPosY(70);
 		ImGui::SetCursorPosX(20);
@@ -958,7 +919,7 @@ void FEditorUI::Render()
 
 		ImGui::SetCursorPosX(20);
 
-		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "Second Contributors");
+		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "Second Contributors (Meteor Engine)");
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(20);
 		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.9f, 0.7f, 0.3f, 0.5f));
@@ -969,6 +930,26 @@ void FEditorUI::Render()
 
 		const char* Second_Contributors[] = { "Kang Myeongjun", "Lee Sujin", "Jung Gyuho" };
 		for (const char* Name : Second_Contributors)
+		{
+			ImGui::SetCursorPosX(20);
+			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "-");
+			ImGui::SameLine();
+			ImGui::Text("%s", Name);
+		}
+
+		ImGui::SetCursorPosX(20);
+
+		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "Third Contributors");
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(20);
+		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.9f, 0.7f, 0.3f, 0.5f));
+		ImGui::Separator();
+		ImGui::PopStyleColor();
+
+		ImGui::Spacing();
+
+		const char* Third_Contributors[] = { "Nam Yoonji", "Chong Chanil", "Kang Keonwoo", "Jang Minjun" };
+		for (const char* Name : Third_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
 			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "-");

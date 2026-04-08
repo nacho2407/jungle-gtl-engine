@@ -38,7 +38,7 @@ namespace
 		{ "Static Mesh Component", "StaticMeshComponent", &UStaticMeshComponent::StaticClass },
 		{ "Text Component", "TextComponent", &UTextRenderComponent::StaticClass },
 		{ "SubUV Component", "SubUVComponent", &USubUVComponent::StaticClass },
-		{"Move Component", "MoveComponent", &UMoveComponent::StaticClass}
+		{ "Move Component", "MoveComponent", &UMoveComponent::StaticClass}
 	};
 
 	FString BuildUniqueComponentName(AActor* SelectedActor, const FString& BaseName)
@@ -606,6 +606,11 @@ bool FPropertyWindow::AddComponentToActor(AActor* SelectedActor, UClass* Compone
 	if (ULevel* Level = SelectedActor->GetLevel())
 	{
 		Level->MarkSpatialDirty();
+	}
+
+	if (SelectedActor->HasBegunPlay())
+	{
+		NewComponent->BeginPlay();
 	}
 
 	SelectedComponent = NewComponent;
