@@ -99,6 +99,7 @@ namespace
 			const USubUVComponent* SubUVComp = static_cast<const USubUVComponent*>(PrimitiveComponent);
 			return BuildQuadAABB(MakeViewSubUVSelectionMatrix(SubUVComp, RenderBus));
 		}
+
 		default:
 			return PrimitiveComponent->GetWorldAABB();
 		}
@@ -345,6 +346,11 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 				RenderBus);
 		}
 
+		else if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Billboard)
+		{
+			BaseCmd.PerObjectConstants.Model = MakeViewBillboardMatrix(primitiveComponent, RenderBus);
+		}
+
 		if (!primitiveComponent->SupportsOutline()) continue;
 
 		// Selection Mask
@@ -485,6 +491,27 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
+		break;
+	}
+	case EPrimitiveType::EPT_Billboard:
+	{
+		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
+		FMaterialResource* Sprite = BillboardComp->GetCachedSprite();
+
+		ID3D11ShaderResourceView* SRV = (Sprite && Sprite->SRV)	? Sprite->SRV.Get() : FResourceManager::Get().GetDefaultWhiteSRV();
+
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Billboard;
+		Cmd.PerObjectConstants = FPerObjectConstants{
+			MakeViewBillboardMatrix(Primitive, RenderBus),
+			FColor::White().ToVector4() };
+		Cmd.Constants.Billboard.SRV = SRV;
+		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
+		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
+		Cmd.BlendState = EBlendState::AlphaBlend;
+		Cmd.DepthStencilState = EDepthStencilState::Default;
+
+		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
 	}
 	default:

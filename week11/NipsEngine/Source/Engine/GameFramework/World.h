@@ -14,11 +14,11 @@ public:
 	~UWorld() override;
 
 	virtual UWorld* Duplicate() override;
-	virtual UWorld* DuplicateSubObjects() override { return this; }
+	virtual UWorld* DuplicateSubObjects() override;
 
     // Actor lifecycle
     template<typename T>
-	T* SpawnActor() 
+    T* SpawnActor()
 	{
         // create and register an actor
         T* Actor = UObjectManager::Get().CreateObject<T>();
@@ -31,15 +31,18 @@ public:
         SpatialIndex.FlushDirtyBounds();
         return Actor;
     }
+
     void DestroyActor(AActor* Actor) 
 	{
-        // remove and clean up
         if (!Actor) return;
-        Actor->EndPlay();
+
+        Actor->EndPlay(EEndPlayReason::Type::Destroyed);
 		PersistentLevel->RemoveActor(Actor);
         Actor->SetWorld(nullptr);
         UObjectManager::Get().DestroyObject(Actor);
     }
+
+
 
 	TArray<AActor*> GetActors() const { return PersistentLevel->GetActors(); }
 
@@ -47,7 +50,7 @@ public:
 
     void BeginPlay();      // Triggers BeginPlay on all actors
     void Tick(float DeltaTime);  // Drives the game loop every frame
-    void EndPlay();        // Cleanup before world is destroyed
+    void EndPlay(EEndPlayReason::Type EndPlayReason); // Cleanup before world is destroyed
 
     /** @brief Rebuild the world BVH and bounds snapshot from all current primitives. */
     void RebuildSpatialIndex();
@@ -67,7 +70,11 @@ public:
     /** @brief Access the world-level primitive AABB/BVH manager. */
     const FWorldSpatialIndex& GetSpatialIndex() const { return SpatialIndex; }
 
+	EWorldType GetWorldType() const { return WorldType; }
+	void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
+
 private:
+	EWorldType WorldType = EWorldType::Editor;
 	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
     FWorldSpatialIndex SpatialIndex;

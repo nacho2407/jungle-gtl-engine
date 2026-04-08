@@ -66,3 +66,12 @@ public:
 
     void InitDefaultComponents();
 };
+
+class ABillboardActor : public AActor
+{
+public:
+    DECLARE_CLASS(ABillboardActor, AActor)
+	ABillboardActor() = default;
+
+    void InitDefaultComponents();
+};

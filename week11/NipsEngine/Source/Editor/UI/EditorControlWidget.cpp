@@ -35,7 +35,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 	ImGui::Begin("Jungle Control Panel");
 
 	// Spawn
-	ImGui::Combo("Primitive", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
+	ImGui::Combo("Actor", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
 
 	if (ImGui::Button("Spawn"))
 	{
@@ -69,6 +69,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 			case 2: // SubUV
 			{
 				ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 3: // Billboard
+			{
+				ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
@@ -118,8 +125,9 @@ void FEditorControlWidget::Render(float DeltaTime)
 	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
 	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
 	{
-		FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
-		NewRotation.Roll = 0.0f;
+		CameraRotation[1] = MathUtil::Clamp(CameraRotation[1], -89.9f, 89.9f);
+        FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
+
 		NewRotation.Normalize();
 		Camera->SetRotation(NewRotation);
 	}

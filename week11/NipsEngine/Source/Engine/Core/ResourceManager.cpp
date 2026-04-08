@@ -164,11 +164,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 			MaterialFilePaths.push_back(RelativePath);
 			LoadMaterial(RelativePath);
 		}
-		else if (
-			Extension == L".png" ||
-			Extension == L".dds" ||
-			Extension == L".jpg" ||
-			Extension == L".jpeg")
+		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
 			const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
 
@@ -182,10 +178,15 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 				ParticleFilePaths.push_back(RelativePath);
 				RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
 			}
-			else
+			else if (Meta.Type == EAssetMetaType::Texture)
 			{
 				TextureFilePaths.push_back(RelativePath);
+				LoadTexture(RelativePath, Device);
 			}
+			//else
+			//{
+			//	TextureFilePaths.push_back(RelativePath);
+			//}
 		}
 	}
 
@@ -283,10 +284,15 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 					ParticleFilePaths.push_back(RelativePath);
 					RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
 				}
-				else
+				else if (Meta.Type == EAssetMetaType::Texture)
 				{
 					TextureFilePaths.push_back(RelativePath);
+					LoadTexture(RelativePath, CachedDevice.Get());
 				}
+				//else
+				//{
+				//	TextureFilePaths.push_back(RelativePath);
+				//}
 			}
 		}
 	}
@@ -377,6 +383,10 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 					{
 						Meta.Type = EAssetMetaType::Particle;
 					}
+					else if (TypeStr == "Texture")
+					{
+						Meta.Type = EAssetMetaType::Texture;
+					}
 				}
 
 				if (Root.hasKey(ResourceKey::Columns))
@@ -405,6 +415,10 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 	{
 		Meta.Type = EAssetMetaType::Particle;
 	}
+	else if (ParentDir == L"Texture")
+	{
+		Meta.Type = EAssetMetaType::Texture;
+	}
 	else
 	{
 		Meta.Type = EAssetMetaType::None;
@@ -423,6 +437,10 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 	else if (Meta.Type == EAssetMetaType::Particle)
 	{
 		Root[ResourceKey::Type] = "Particle";
+	}
+	else if (Meta.Type == EAssetMetaType::Texture)
+	{
+		Root[ResourceKey::Type] = "Texture";
 	}
 	else
 	{
@@ -637,16 +655,49 @@ void FResourceManager::ReleaseGPUResources()
 
 void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
 {
-	std::filesystem::path Path = FPaths::ToWide(FilePath);
-	std::filesystem::path MtlPath = Path.parent_path() / Path.stem().concat(L".mtl");
-	LoadMaterial(FPaths::ToUtf8(MtlPath.generic_wstring()));
+	namespace fs = std::filesystem;
+
+	// 1. OBJ 파일에서 mtllib 키워드로 참조된 mtl 파일명 파싱
+	TArray<FString> Lines;
+	FString MtlFileName;
+	if (FFileUtils::LoadFileToLines(FilePath, Lines))
+	{
+		for (const FString& RawLine : Lines)
+		{
+			FString Line = StringUtils::Trim(RawLine);
+			if (Line.rfind("mtllib ", 0) == 0 && Line.size() > 7)
+			{
+				MtlFileName = StringUtils::Trim(Line.substr(7));
+				break;
+			}
+		}
+	}
+
+	if (MtlFileName.empty())
+	{
+		UE_LOG("[ResourceManager] No mtllib keyword found in: %s", FilePath.c_str());
+		return;
+	}
+
+	// 2. OBJ 파일 위치를 기준으로 FindFileRecursively 로 mtl 파일 탐색
+	fs::path AbsObjDir = fs::path(FPaths::ToAbsolute(FPaths::ToWide(FilePath))).parent_path();
+	FString FoundRelPath;
+	if (!FFileUtils::FindFileRecursively(FPaths::ToUtf8(AbsObjDir.generic_wstring()), MtlFileName, FoundRelPath))
+	{
+		UE_LOG("[ResourceManager] mtl not found via FindFileRecursively: %s", MtlFileName.c_str());
+		return;
+	}
+
+	// FoundRelPath 는 AbsObjDir 기준 상대 경로이므로 절대 경로로 결합 후 LoadMaterial 호출
+	fs::path AbsMtlPath = (AbsObjDir / FPaths::ToWide(FoundRelPath)).lexically_normal();
+	LoadMaterial(FPaths::ToUtf8(AbsMtlPath.generic_wstring()));
 }
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 {
 	if (MtlFilePath.empty())
 	{
-		return false;
+		return false;	
 	}
 
 	TMap<FString, FMaterial> Parsed;
@@ -931,6 +982,11 @@ UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 TArray<FString> FResourceManager::GetStaticMeshPaths() const
 {
 	return ObjFilePaths;
+}
+
+const TArray<FString>& FResourceManager::GetTextureFilePath() const
+{
+	return TextureFilePaths;
 }
 
 size_t FResourceManager::GetMaterialMemorySize() const

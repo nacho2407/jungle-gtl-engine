@@ -76,13 +76,16 @@ namespace
 		if (std::fabs(FwdN) > MathUtil::Epsilon)
 		{
 			const float T = -PosN / FwdN;
-			if (T > 0.0f)
+			// T가 너무 크면 그리드가 너무 멀리 생성되어 페이드아웃 되거나 정밀도 문제가 생길 수 있으므로 제한합니다.
+			// 높이의 10배 정도면 충분히 멀리 있는 것으로 간주합니다.
+			const float MaxT = std::fabs(PosN) * 10.0f;
+			if (T > 0.0f && T < MaxT)
 			{
 				return CameraPos + CameraFwd * T;
 			}
 		}
 
-		// 평행하거나 교점이 뒤에 있을 때: 카메라 위치를 평면에 투영
+		// 평행하거나 교점이 뒤에 있을 때, 혹은 너무 멀 때: 카메라 위치를 평면에 투영
 		FVector Fallback = CameraPos;
 		GetComp(Fallback, Desc.N) = 0.0f;
 		return Fallback;
