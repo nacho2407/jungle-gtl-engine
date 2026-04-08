@@ -1,7 +1,7 @@
 ﻿#include "RotatingMovementComponent.h"
 
-#include "Component/SceneComponent.h"
 #include "Object/ObjectFactory.h"
+#include "SceneComponent.h"
 
 IMPLEMENT_CLASS(URotatingMovementComponent, UMovementComponent)
 
