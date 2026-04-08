@@ -182,7 +182,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			if (Proxy->bSupportsOutline)
 				RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
 
-			if (bShowBoundingVolume)
+			if (bShowBoundingVolume && Proxy->bShowAABB)
 			{
 				FAABBEntry Entry = {};
 				Entry.AABB.Min = Proxy->CachedBounds.Min;
