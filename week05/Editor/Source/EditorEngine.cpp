@@ -513,6 +513,7 @@ bool FEditorEngine::StartPIE()
 		Backup.ViewportId = Entry.Id;
 		Backup.LocalState = Entry.LocalState;
 		Backup.LocalState.ViewMode = Entry.LocalState.ViewMode;
+		Backup.LocalState.ShowFlags = Entry.LocalState.ShowFlags;
 		SavedPIEViewportStates.push_back(Backup);
 	}
 
@@ -547,6 +548,8 @@ bool FEditorEngine::StartPIE()
 	if (PIEViewportEntry)
 	{
 		PIEViewportEntry->LocalState.ViewMode = ERenderMode::Lighting;
+		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_UUID, false);
+		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, false);
 		if (PIEViewportEntry->LocalState.ProjectionType == EViewportType::Perspective)
 		{
 			PIEViewportEntry->LocalState.bShowGrid = false;
