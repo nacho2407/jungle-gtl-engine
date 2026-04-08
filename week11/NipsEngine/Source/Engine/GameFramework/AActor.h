@@ -33,12 +33,12 @@ public:
 	}
 
 	// Tick 관련
-	virtual void BeginPlay() {}
+	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
-	bool IsActorTickEnabled() const { return bActorTickEnabled; }
-	void SetActorTickEnabled(bool bEnabled) { bActorTickEnabled = bEnabled; }
+	bool IsActive() const { return bIsActive ; }
+	void SetActive(bool bEnabled) { bIsActive = bEnabled; }
 
 	bool ShouldTickInEditor() const { return bTickInEditor; }
 	void SetTickInEditor(bool bEnabled)  { bTickInEditor = bEnabled; }
@@ -104,7 +104,7 @@ protected:
 	FVector PendingActorLocation = FVector(0, 0, 0);
 
 	bool bVisible = true;
-	bool bActorTickEnabled = true;
+	bool bIsActive = true;
     bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;

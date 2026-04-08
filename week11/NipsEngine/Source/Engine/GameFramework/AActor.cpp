@@ -156,6 +156,16 @@ void AActor::SetActorLocation(const FVector& NewLocation) {
 	}
 }
 
+void AActor::BeginPlay()
+{
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            Component->BeginPlay();
+        }
+    }
+}
 void AActor::Tick(float DeltaTime)
 {
 	for (UActorComponent* Component : OwnedComponents)
