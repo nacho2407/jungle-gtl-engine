@@ -147,6 +147,9 @@
     <FxCompile Include="Shaders\Primitive.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\ShaderBillboard.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -260,6 +263,9 @@
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -275,7 +281,13 @@
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp">
@@ -345,6 +357,9 @@
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Batcher\BatcherBase.cpp">
+      <Filter>Source\Engine\Render\Batcher</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Batcher\BillboardBatcher.cpp">
       <Filter>Source\Engine\Render\Batcher</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp">
@@ -507,12 +522,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-	  <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
-		  <Filter>Source\Engine\GameFramework</Filter>
-	  </ClCompile>
-	  <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
-		  <Filter>Source\Engine\Component</Filter>
-	  </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -611,6 +620,9 @@
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -622,6 +634,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h">
       <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ClassTypes.h">
+      <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
@@ -647,7 +662,13 @@
     <ClInclude Include="Source\Engine\Core\Singleton.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\TickFunction.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Level.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h">
@@ -738,6 +759,9 @@
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h">
+      <Filter>Source\Engine\Render\Batcher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Batcher\BillboardBatcher.h">
       <Filter>Source\Engine\Render\Batcher</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h">
@@ -944,15 +968,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ClassTypes.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-	<ClInclude Include="Source\Engine\GameFramework\Level.h">
-	  <Filter>Source\Engine\GameFramework</Filter>
-	</ClInclude>
-	<ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
-	  <Filter>Source\Engine\Component</Filter>
-	</ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

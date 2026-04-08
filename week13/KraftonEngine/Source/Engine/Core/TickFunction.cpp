@@ -28,12 +28,16 @@ namespace
 	}
 }
 
-void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
+void FTickFunction::RegisterTickFunction()
 {
-	if (Target)
-	{
-		Target->TickActor(DeltaTime, TickType, *this);
-	}
+	bRegistered = true;
+	TickAccumulator = 0.0f;
+}
+
+void FTickFunction::UnRegisterTickFunction()
+{
+	bRegistered = false;
+	TickAccumulator = 0.0f;
 }
 
 void FTickManager::Tick(UWorld* World, float DeltaTime, ELevelTick TickType)
@@ -110,16 +114,12 @@ void FTickManager::QueueTickFunction(FTickFunction& TickFunction)
 	TickFunctions.push_back(&TickFunction);
 }
 
-void FTickFunction::RegisterTickFunction()
+void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
 {
-	bRegistered = true;
-	TickAccumulator = 0.0f;
-}
-
-void FTickFunction::UnRegisterTickFunction()
-{
-	bRegistered = false;
-	TickAccumulator = 0.0f;
+	if (Target)
+	{
+		Target->TickActor(DeltaTime, TickType, *this);
+	}
 }
 
 const char* FActorTickFunction::GetDebugName() const

@@ -262,6 +262,8 @@ void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Static Mesh") == 0)
 	{
 		if (StaticMeshPath.empty() || StaticMeshPath == "None")

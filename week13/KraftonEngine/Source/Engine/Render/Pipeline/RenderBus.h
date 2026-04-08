@@ -24,6 +24,7 @@ public:
 	void AddFontEntry(FFontEntry&& Entry);
 	void AddOverlayFontEntry(FFontEntry&& Entry);
 	void AddSubUVEntry(FSubUVEntry&& Entry);
+	void AddBillboardEntry(FBillboardEntry&& Entry);
 	void AddAABBEntry(FAABBEntry&& Entry);
 	void AddGridEntry(FGridEntry&& Entry);
 	void AddDebugLineEntry(FDebugLineEntry&& Entry);
@@ -31,6 +32,7 @@ public:
 	const TArray<FFontEntry>& GetFontEntries() const { return FontEntries; }
 	const TArray<FFontEntry>& GetOverlayFontEntries() const { return OverlayFontEntries; }
 	const TArray<FSubUVEntry>& GetSubUVEntries() const { return SubUVEntries; }
+	const TArray<FBillboardEntry>& GetBillboardEntries() const { return BillboardEntries; }
 	const TArray<FAABBEntry>& GetAABBEntries() const { return AABBEntries; }
 	const TArray<FGridEntry>& GetGridEntries() const { return GridEntries; }
 	const TArray<FDebugLineEntry>& GetDebugLineEntries() const { return DebugLineEntries; }
@@ -80,6 +82,7 @@ private:
 	TArray<FFontEntry>  FontEntries;
 	TArray<FFontEntry>  OverlayFontEntries;
 	TArray<FSubUVEntry> SubUVEntries;
+	TArray<FBillboardEntry> BillboardEntries;
 	TArray<FAABBEntry>  AABBEntries;
 	TArray<FGridEntry>  GridEntries;
 	TArray<FDebugLineEntry> DebugLineEntries;
