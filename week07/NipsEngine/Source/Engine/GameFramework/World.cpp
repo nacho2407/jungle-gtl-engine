@@ -12,6 +12,7 @@ UWorld::UWorld()
 // 소멸 역시 UObjectManager를 통해 처리한다.
 UWorld::~UWorld()
 { 
+    SpatialIndex.Clear();
     UObjectManager::Get().DestroyObject(PersistentLevel); 
 }
 

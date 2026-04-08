@@ -28,7 +28,6 @@ public:
             Actor->BeginPlay();
         }
 		PersistentLevel->AddActor(Actor);
-        SpatialIndex.RegisterActor(Actor);
         SpatialIndex.FlushDirtyBounds();
         return Actor;
     }
@@ -36,9 +35,9 @@ public:
 	{
         // remove and clean up
         if (!Actor) return;
-        SpatialIndex.UnregisterActor(Actor);
         Actor->EndPlay();
 		PersistentLevel->RemoveActor(Actor);
+        Actor->SetWorld(nullptr);
         UObjectManager::Get().DestroyObject(Actor);
     }
 
