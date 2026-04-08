@@ -223,11 +223,12 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			Camera->AddWorldOffset(FVector(0.0f, 0.0f, WorldVerticalMove * DeltaTime));
 		}
 
+		//pan 패닝
 		if (InputSystem::Get().GetKey(VK_MBUTTON))
 		{
 			float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
 			float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
-			Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.03f , DeltaY * PanMouseScale * 0.03f));
+			Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.05f , DeltaY * PanMouseScale * 0.05f));
 		}
 
 		// ── Perspective: 키보드 회전 ──
@@ -312,7 +313,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 		else
 		{
-			//발줌은 절대 delta time을 곱하지 않음. 노치당 이동 거리가 일치해야 하기 때문.
+			//foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
 			Camera->MoveLocal(FVector(ScrollNotches * ZoomSpeed*0.015f, 0.0f, 0.0f));
 		}
 	}
