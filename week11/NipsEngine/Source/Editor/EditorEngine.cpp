@@ -33,7 +33,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// Selection & Gizmo
 	SelectionManager.Init();
-	ViewportLayout.Init(InWindow, GetWorld(), &SelectionManager);
+	ViewportLayout.Init(InWindow, GetWorld(), &SelectionManager, this);
 	GetWorld()->SetActiveCamera(GetCamera());
 
 	// Slate 초기화 및 Viewport Layout 추가
@@ -111,6 +111,8 @@ void UEditorEngine::StartPlaySession()
         return;
     }
 
+	//ShowCursor(false);
+
 	// 이미 플레이 중이라면 무시
     if (EditorState == EEditorState::Play) return;
 
@@ -138,6 +140,9 @@ void UEditorEngine::StartPlaySession()
     {
         ViewportLayout.GetViewportClient(i).SetWorld(PIEWorld);
     }
+
+	ViewportLayout.SetLastFocusedViewportIndex(0);
+
     PIEWorld->SetActiveCamera(GetCamera());
 
     // 이전 에디터에서 선택했던 액터 포인터 해제 (복제본과 섞이지 않도록)
@@ -158,6 +163,8 @@ void UEditorEngine::StopPlaySession()
 	if (EditorState == EEditorState::Edit) return;
 
     SetEditorState(EEditorState::Edit);
+
+	ShowCursor(true);
 
     UWorld* PIEWorld = nullptr;
     FName EditorContextHandle = FName::None;

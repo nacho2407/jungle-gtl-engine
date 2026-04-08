@@ -54,6 +54,7 @@ void FEditorPlayStreamWidget::Render(float DeltaTime)
         {
             if (bIsPlaying) EditorEngine->PausePlaySession();
             else EditorEngine->StartPlaySession(); 
+			ImGui::SetWindowFocus(nullptr);
         }
         ImGui::PopStyleColor(3);
     }
