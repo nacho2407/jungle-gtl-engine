@@ -210,6 +210,17 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
 	SetActiveWorld(FName("PIE"));
 
+	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
+	//    UWorld::UpdateVisibleProxies가 ActiveCamera를 기준으로 frustum culling을 수행하므로
+	//    이를 설정하지 않으면 PIE 월드의 VisibleProxies가 비어 있어 아무것도 렌더되지 않음.
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
+		{
+			PIEWorld->SetActiveCamera(VCCamera);
+		}
+	}
+
 	// TODO(Tick 담당): 아래 항목은 별도 작업 범위로 분리됨.
 	// - PIE World Tick 라우팅 (Editor World는 Tick 제외)
 	// - PIEWorld->BeginPlay() 호출 시점
