@@ -209,8 +209,10 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	SelectionManager.ClearSelection();
 	SelectionManager.SetGizmoEnabled(false);
 	SelectionManager.SetWorld(PIEWorld);
-	MainPanel.HideEditorWindowsForPIE();
-	ViewportLayout.DisableWorldAxisForPIE();
+	
+	//이 코드와 대응되는 게 아래 EndPlayMap()에 있음.
+	//MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
+	//ViewportLayout.DisableWorldAxisForPIE(); //PIE 중에는 월드 축 렌더링을 비활성화.
 
 	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
 	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
@@ -259,8 +261,10 @@ void UEditorEngine::EndPlayMap()
 	SelectionManager.ClearSelection();
 	SelectionManager.SetGizmoEnabled(true);
 	SelectionManager.SetWorld(GetWorld());
-	MainPanel.RestoreEditorWindowsAfterPIE();
-	ViewportLayout.RestoreWorldAxisAfterPIE();
+	
+	//이 코드와 대응되는 게 위의 StartPlayInEditorSession()에 있음.
+	//MainPanel.RestoreEditorWindowsAfterPIE();
+	//ViewportLayout.RestoreWorldAxisAfterPIE();
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));

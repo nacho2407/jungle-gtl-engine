@@ -1,6 +1,7 @@
 ﻿#include "ProjectileMovementComponent.h"
 
 #include "Component/SceneComponent.h"
+#include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -69,6 +70,34 @@ void UProjectileMovementComponent::Serialize(FArchive& Ar)
 void UProjectileMovementComponent::StopSimulating()
 {
 	Velocity = FVector(0.0f, 0.0f, 0.0f);
+}
+
+FVector UProjectileMovementComponent::GetPreviewVelocity() const
+{
+	FVector PreviewVelocity = Velocity;
+
+	if (PreviewVelocity.Length() <= FMath::Epsilon && InitialSpeed > 0.0f)
+	{
+		USceneComponent* SourceComponent = GetUpdatedComponent();
+		if (!SourceComponent)
+		{
+			AActor* OwnerActor = GetOwner();
+			SourceComponent = OwnerActor ? OwnerActor->GetRootComponent() : nullptr;
+		}
+
+		if (SourceComponent)
+		{
+			PreviewVelocity = SourceComponent->GetForwardVector().Normalized() * InitialSpeed;
+		}
+	}
+
+	const float CurrentSpeed = PreviewVelocity.Length();
+	if (MaxSpeed > 0.0f && CurrentSpeed > MaxSpeed)
+	{
+		PreviewVelocity = PreviewVelocity.Normalized() * MaxSpeed;
+	}
+
+	return PreviewVelocity;
 }
 
 EProjectileHitBehavior UProjectileMovementComponent::GetHitBehavior() const
