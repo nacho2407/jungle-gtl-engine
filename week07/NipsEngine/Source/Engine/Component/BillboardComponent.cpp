@@ -5,6 +5,28 @@
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
+// UpdateWorldAABB 등의 함수를 오버라이드하지 않았기 때문에 UBillboradComponent도 추상 클래스가 됩니다.
+// 추후에 UBillboardComponent를 사용할 일이 있다면 Duplicate의 주석을 해제하고 수정하시면 됩니다.
+
+// 객체를 동적 생성한 뒤, 부모 클래스의 프로퍼티부터 내려오며 깊은 복사합니다.
+//UBillboardComponent* UBillboardComponent::Duplicate()
+//{
+//    UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
+//
+//	NewComp->SetActive(this->IsActive());
+//    NewComp->SetOwner(nullptr);
+//    
+//    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+//    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+//    NewComp->SetRelativeScale(this->GetRelativeScale());
+//    
+//    NewComp->SetVisibility(this->IsVisible());
+//
+//    NewComp->bIsBillboard = this->bIsBillboard;
+//
+//    return NewComp;
+//}
+
 bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
 {
 	OutCamera = nullptr;
