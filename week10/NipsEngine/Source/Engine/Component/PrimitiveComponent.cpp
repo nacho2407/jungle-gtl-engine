@@ -1,6 +1,7 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
+#include "GameFramework/World.h"
 #include "Math/Utils.h"
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
@@ -16,6 +17,18 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
 	USceneComponent::PostEditProperty(PropertyName);
+	NotifySpatialIndexDirty();
+}
+
+void UPrimitiveComponent::SetVisibility(bool bVisible)
+{
+	if (bIsVisible == bVisible)
+	{
+		return;
+	}
+
+	bIsVisible = bVisible;
+	NotifySpatialIndexDirty();
 }
 
 bool UPrimitiveComponent::Raycast(const FRay& Ray, FHitResult& OutHitResult)
@@ -86,6 +99,28 @@ void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
 {
 	USceneComponent::AddWorldOffset(WorldDelta);
 	UpdateWorldAABB();
+}
+
+void UPrimitiveComponent::OnTransformDirty()
+{
+	NotifySpatialIndexDirty();
+}
+
+void UPrimitiveComponent::NotifySpatialIndexDirty() const
+{
+	AActor* Owner = GetOwner();
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	UWorld* World = Owner->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	World->GetSpatialIndex().MarkPrimitiveDirty(const_cast<UPrimitiveComponent*>(this));
 }
 
 

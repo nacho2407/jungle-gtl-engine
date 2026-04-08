@@ -43,4 +43,6 @@ struct FAABB
     bool         IntersectRay(const FRay& Ray, float& OutTMin, float& OutTMax) const;
     static FAABB TransformAABB(const FAABB& InLocalAABB, const FMatrix& InMatrix);
     void         ExpandToInclude(const FAABB& Other);
+    bool         NearlyEqualAABB(const FAABB& Other) const;
+    static bool         NearlyEqualAABB(const FAABB& A, const FAABB& B);
 };
