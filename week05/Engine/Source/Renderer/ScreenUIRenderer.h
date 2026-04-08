@@ -15,6 +15,10 @@ struct ENGINE_API FUIBatchCommand
 	FDynamicMesh* Mesh = nullptr;
 	// 위 메시를 그릴 때 바인딩할 머티리얼이다.
 	FMaterial* Material = nullptr;
+	// 정렬된 UI 레이어/깊이 키다.
+	int32 Layer = 0;
+	float Depth = 0.0f;
+	int32 DepthSortKey = 0;
 };
 
 struct ENGINE_API FUIRenderBatch
@@ -60,7 +64,7 @@ private:
 	// 요청한 텍스트 색상에 대응하는 폰트 머티리얼을 반환하거나 생성한다.
 	FDynamicMaterial* GetOrCreateFontMaterial(FRenderer& Renderer, uint32 Color);
 	// 메시/머티리얼 쌍을 현재 UI 배치에 추가한다.
-	void EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material);
+	void EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material, int32 Layer, float Depth);
 	// 준비된 UI 배치에서 메시/머티리얼 쌍 하나를 그린다.
 	bool DrawBatchCommand(FRenderer& Renderer, const FUIBatchCommand& BatchCommand);
 	// 채워진 사각형 엘리먼트를 메시 기하로 변환한다.

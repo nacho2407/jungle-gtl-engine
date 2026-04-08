@@ -1,4 +1,4 @@
-#include "Viewport/Services/EditorViewportRenderService.h"
+﻿#include "Viewport/Services/EditorViewportRenderService.h"
 
 #include "EditorEngine.h"
 #include "Viewport/EditorViewportRegistry.h"
@@ -145,20 +145,21 @@ void FEditorViewportRenderService::RenderAll(
 
 		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
 		FSceneRenderPacket ScenePacket;
-		FRenderCommandQueue OverlayQueue;
-		OverlayQueue.Reserve(Renderer->GetPrevCommandCount());
-		OverlayQueue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
-		OverlayQueue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
+		// 씬 패킷과 별도로, 그리드/기즈모 같은 추가 씬 커맨드는 별도 큐로 유지한다.
+		FRenderCommandQueue AdditionalQueue;
+		AdditionalQueue.Reserve(Renderer->GetPrevCommandCount());
+		AdditionalQueue.ProjectionMatrix = Entry.LocalState.BuildProjMatrix(AspectRatio);
+		AdditionalQueue.ViewMatrix = Entry.LocalState.BuildViewMatrix();
 
 		FFrustum Frustum;
-		Frustum.ExtractFromVP(OverlayQueue.ViewMatrix * OverlayQueue.ProjectionMatrix);
-		const FVector CameraPosition = OverlayQueue.ViewMatrix.GetInverse().GetTranslation();
+		Frustum.ExtractFromVP(AdditionalQueue.ViewMatrix * AdditionalQueue.ProjectionMatrix);
+		const FVector CameraPosition = AdditionalQueue.ViewMatrix.GetInverse().GetTranslation();
 		BuildSceneRenderPacket(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, ScenePacket);
 
 		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
 		if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
 		{
-			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, OverlayQueue);
+			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, AdditionalQueue);
 		}
 
 		FMaterial* EntryGridMaterial = (CurrentEntryIndex < MAX_VIEWPORTS) ? GridMaterials[CurrentEntryIndex] : nullptr;
@@ -167,7 +168,7 @@ void FEditorViewportRenderService::RenderAll(
 			FVector GridAxisU = FVector::ForwardVector;
 			FVector GridAxisV = FVector::RightVector;
 			FVector ViewForward = FVector::ForwardVector;
-			BuildGridVectors(OverlayQueue, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
+			BuildGridVectors(AdditionalQueue, Entry.LocalState, GridAxisU, GridAxisV, ViewForward);
 
 			EntryGridMaterial->SetParameterData("GridSize", &Entry.LocalState.GridSize, 4);
 			EntryGridMaterial->SetParameterData("LineThickness", &Entry.LocalState.LineThickness, 4);
@@ -180,7 +181,7 @@ void FEditorViewportRenderService::RenderAll(
 			GridCommand.Material = EntryGridMaterial;
 			GridCommand.WorldMatrix = FMatrix::Identity;
 			GridCommand.RenderLayer = ERenderLayer::Default;
-			OverlayQueue.AddCommand(GridCommand);
+			AdditionalQueue.AddCommand(GridCommand);
 		}
 
 		FViewportScenePassRequest ScenePass;
@@ -188,11 +189,11 @@ void FEditorViewportRenderService::RenderAll(
 		ScenePass.DepthStencilView = DSV;
 		ScenePass.Viewport = Viewport;
 		ScenePass.ScenePacket = std::move(ScenePacket);
-		ScenePass.SceneView.ViewMatrix = OverlayQueue.ViewMatrix;
-		ScenePass.SceneView.ProjectionMatrix = OverlayQueue.ProjectionMatrix;
+		ScenePass.SceneView.ViewMatrix = AdditionalQueue.ViewMatrix;
+		ScenePass.SceneView.ProjectionMatrix = AdditionalQueue.ProjectionMatrix;
 		ScenePass.SceneView.CameraPosition = CameraPosition;
 		ScenePass.SceneView.TotalTimeSeconds = Engine ? static_cast<float>(Engine->GetTimer().GetTotalTime()) : 0.0f;
-		ScenePass.AdditionalCommands = std::move(OverlayQueue);
+		ScenePass.AdditionalCommands = std::move(AdditionalQueue);
 		ScenePass.bForceWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe && WireFrameMaterial != nullptr);
 		ScenePass.WireframeMaterial = WireFrameMaterial.get();
 		ScenePass.OutlineRequest.bEnabled = Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);

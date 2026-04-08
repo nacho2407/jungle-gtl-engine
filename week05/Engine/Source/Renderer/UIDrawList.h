@@ -37,6 +37,8 @@ struct ENGINE_API FUIDrawElement
 	float FontSize = 12.0f;
 	float LetterSpacing = 1.0f;
 	int32 Layer = 0;
+	// 같은 Layer 내부에서 화면 앞/뒤 순서를 결정하는 키다.
+	float Depth = 0.0f;
 	uint64 Order = 0;
 	bool bHasClipRect = false;
 	FUIRect ClipRect = {};

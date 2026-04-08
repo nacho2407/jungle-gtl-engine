@@ -1,4 +1,4 @@
-#include "Renderer/SceneRenderer.h"
+﻿#include "Renderer/SceneRenderer.h"
 
 #include <algorithm>
 
@@ -8,12 +8,20 @@
 
 void FSceneRenderer::BeginFrame()
 {
-	ClearCommandList();
+	PrevCommandCount = (std::max)(PrevCommandCount, CurrentFramePeakCommandCount);
+	CurrentFramePeakCommandCount = 0;
+	DefaultCommandList.clear();
+	OverlayCommandList.clear();
+	TransparentCommandList.clear();
+	DefaultCommandList.reserve(PrevCommandCount);
+	OverlayCommandList.reserve((PrevCommandCount / 4) + 1);
+	TransparentCommandList.reserve((PrevCommandCount / 4) + 1);
+	NextSubmissionOrder = 0;
 }
 
 size_t FSceneRenderer::GetPrevCommandCount() const
 {
-	return PrevCommandCount;
+	return (std::max)(PrevCommandCount, CurrentFramePeakCommandCount);
 }
 
 void FSceneRenderer::BuildQueue(
@@ -36,10 +44,10 @@ void FSceneRenderer::BuildQueue(
 	SceneCommandBuilder.BuildQueue(BuildContext, Packet, SceneView.CameraPosition, OutQueue);
 }
 
-void FSceneRenderer::AddCommand(FRenderer& Renderer, const FRenderCommand& Command)
+void FSceneRenderer::AddCommand(FRenderer& Renderer, TArray<FRenderCommand>& TargetList, const FRenderCommand& Command)
 {
-	CommandList.push_back(Command);
-	FRenderCommand& Added = CommandList.back();
+	TargetList.push_back(Command);
+	FRenderCommand& Added = TargetList.back();
 	if (!Added.Material)
 	{
 		Added.Material = Renderer.GetDefaultMaterial();
@@ -49,11 +57,21 @@ void FSceneRenderer::AddCommand(FRenderer& Renderer, const FRenderCommand& Comma
 	Added.SubmissionOrder = NextSubmissionOrder++;
 }
 
-void FSceneRenderer::ClearCommandList()
+void FSceneRenderer::ClearCommandLists()
 {
-	PrevCommandCount = CommandList.size();
-	CommandList.clear();
-	CommandList.reserve(PrevCommandCount);
+	const size_t PrevDefaultCount = DefaultCommandList.size();
+	const size_t PrevOverlayCount = OverlayCommandList.size();
+	const size_t PrevTransparentCount = TransparentCommandList.size();
+	const size_t ExecutedCommandCount = PrevDefaultCount + PrevOverlayCount + PrevTransparentCount;
+	CurrentFramePeakCommandCount = (std::max)(CurrentFramePeakCommandCount, ExecutedCommandCount);
+
+	DefaultCommandList.clear();
+	OverlayCommandList.clear();
+	TransparentCommandList.clear();
+
+	DefaultCommandList.reserve(PrevDefaultCount);
+	OverlayCommandList.reserve(PrevOverlayCount);
+	TransparentCommandList.reserve(PrevTransparentCount);
 	NextSubmissionOrder = 0;
 }
 
@@ -69,49 +87,91 @@ void FSceneRenderer::SubmitCommands(FRenderer& Renderer, const FRenderCommandQue
 	Renderer.ViewMatrix = Queue.ViewMatrix;
 	Renderer.ProjectionMatrix = Queue.ProjectionMatrix;
 
-	for (const FRenderCommand& Command : Queue.Commands)
+	auto SubmitBucket = [&](const TArray<FRenderCommand>& SourceCommands, TArray<FRenderCommand>& TargetList)
 	{
-		if (Command.RenderMesh)
+		for (const FRenderCommand& Command : SourceCommands)
 		{
-			Command.RenderMesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
-		}
+			if (Command.RenderMesh)
+			{
+				Command.RenderMesh->UpdateVertexAndIndexBuffer(Device, DeviceContext);
+			}
 
-		AddCommand(Renderer, Command);
+			AddCommand(Renderer, TargetList, Command);
+		}
+	};
+
+	SubmitBucket(Queue.DefaultCommands, DefaultCommandList);
+	SubmitBucket(Queue.OverlayCommands, OverlayCommandList);
+	SubmitBucket(Queue.TransparentCommands, TransparentCommandList);
+}
+
+void FSceneRenderer::SortRenderPass(TArray<FRenderCommand>& Commands, ERenderLayer RenderLayer)
+{
+	if (Commands.size() < 2)
+	{
+		return;
+	}
+
+	switch (RenderLayer)
+	{
+	case ERenderLayer::Default:
+		std::sort(
+			Commands.begin(),
+			Commands.end(),
+			[](const FRenderCommand& A, const FRenderCommand& B)
+			{
+				if (A.SortKey != B.SortKey)
+				{
+					return A.SortKey < B.SortKey;
+				}
+				return A.SubmissionOrder < B.SubmissionOrder;
+			});
+		break;
+
+	case ERenderLayer::Transparent:
+		// 투명체는 이후 깊이 기반 정렬이 들어갈 자리다.
+		std::sort(
+			Commands.begin(),
+			Commands.end(),
+			[](const FRenderCommand& A, const FRenderCommand& B)
+			{
+				return A.SubmissionOrder < B.SubmissionOrder;
+			});
+		break;
+
+	case ERenderLayer::Overlay:
+	default:
+		// Overlay는 제출 순서를 유지해 기즈모/디버그 출력 순서를 보존한다.
+		break;
 	}
 }
 
 void FSceneRenderer::ExecuteCommands(FRenderer& Renderer)
 {
-	std::sort(
-		CommandList.begin(),
-		CommandList.end(),
-		[](const FRenderCommand& A, const FRenderCommand& B)
-		{
-			if (A.RenderLayer != B.RenderLayer)
-			{
-				return A.RenderLayer < B.RenderLayer;
-			}
-
-			if (A.RenderLayer == ERenderLayer::UI)
-			{
-				return A.SubmissionOrder < B.SubmissionOrder;
-			}
-
-			return A.SortKey < B.SortKey;
-		});
-
 	Renderer.SetConstantBuffers();
 	Renderer.UpdateFrameConstantBuffer();
 
-	ExecuteRenderPass(Renderer, ERenderLayer::Default);
+	SortRenderPass(DefaultCommandList, ERenderLayer::Default);
+	ExecuteRenderPass(Renderer, DefaultCommandList);
+
+	SortRenderPass(TransparentCommandList, ERenderLayer::Transparent);
+	ExecuteRenderPass(Renderer, TransparentCommandList);
+
 	Renderer.ClearDepthBuffer();
-	ExecuteRenderPass(Renderer, ERenderLayer::Overlay);
-	ExecuteRenderPass(Renderer, ERenderLayer::UI);
-	ClearCommandList();
+
+	SortRenderPass(OverlayCommandList, ERenderLayer::Overlay);
+	ExecuteRenderPass(Renderer, OverlayCommandList);
+
+	ClearCommandLists();
 }
 
-void FSceneRenderer::ExecuteRenderPass(FRenderer& Renderer, ERenderLayer RenderLayer)
+void FSceneRenderer::ExecuteRenderPass(FRenderer& Renderer, const TArray<FRenderCommand>& Commands)
 {
+	if (Commands.empty())
+	{
+		return;
+	}
+
 	ID3D11DeviceContext* DeviceContext = Renderer.GetDeviceContext();
 	if (!DeviceContext)
 	{
@@ -122,26 +182,9 @@ void FSceneRenderer::ExecuteRenderPass(FRenderer& Renderer, ERenderLayer RenderL
 	FRenderMesh* CurrentMesh = nullptr;
 	D3D11_PRIMITIVE_TOPOLOGY CurrentTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 
-	FRenderCommand Sentinel;
-	Sentinel.RenderLayer = RenderLayer;
-	auto It = std::lower_bound(
-		CommandList.begin(),
-		CommandList.end(),
-		Sentinel,
-		[](const FRenderCommand& A, const FRenderCommand& B)
-		{
-			return A.RenderLayer < B.RenderLayer;
-		});
-
 	Renderer.GetRenderStateManager()->RebindState();
-	for (; It != CommandList.end(); ++It)
+	for (const FRenderCommand& Command : Commands)
 	{
-		const FRenderCommand& Command = *It;
-		if (Command.RenderLayer != RenderLayer)
-		{
-			return;
-		}
-
 		if (!Command.RenderMesh)
 		{
 			continue;
@@ -209,7 +252,7 @@ void FSceneRenderer::ExecuteRenderPass(FRenderer& Renderer, ERenderLayer RenderL
 			CurrentMesh = Command.RenderMesh;
 		}
 
-		D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = static_cast<D3D11_PRIMITIVE_TOPOLOGY>(Command.RenderMesh->Topology);
+		const D3D11_PRIMITIVE_TOPOLOGY DesiredTopology = static_cast<D3D11_PRIMITIVE_TOPOLOGY>(Command.RenderMesh->Topology);
 		if (DesiredTopology != CurrentTopology)
 		{
 			DeviceContext->IASetPrimitiveTopology(DesiredTopology);
@@ -220,26 +263,13 @@ void FSceneRenderer::ExecuteRenderPass(FRenderer& Renderer, ERenderLayer RenderL
 
 		if (!Command.RenderMesh->Indices.empty())
 		{
-			UINT DrawCount = (Command.IndexCount > 0) ? Command.IndexCount : static_cast<UINT>(Command.RenderMesh->Indices.size());
+			const UINT DrawCount = (Command.IndexCount > 0) ? Command.IndexCount : static_cast<UINT>(Command.RenderMesh->Indices.size());
 			DeviceContext->DrawIndexed(DrawCount, Command.IndexStart, 0);
 		}
 		else
 		{
 			DeviceContext->Draw(static_cast<UINT>(Command.RenderMesh->Vertices.size()), 0);
 		}
-	}
-}
-
-void FSceneRenderer::AppendAdditionalCommands(FRenderCommandQueue& InOutQueue, const FRenderCommandQueue& AdditionalCommands)
-{
-	if (AdditionalCommands.Commands.empty())
-	{
-		return;
-	}
-
-	for (const FRenderCommand& Command : AdditionalCommands.Commands)
-	{
-		InOutQueue.AddCommand(Command);
 	}
 }
 
@@ -250,12 +280,14 @@ void FSceneRenderer::ApplyWireframeOverride(FRenderCommandQueue& InOutQueue, FMa
 		return;
 	}
 
-	for (FRenderCommand& Command : InOutQueue.Commands)
+	for (FRenderCommand& Command : InOutQueue.DefaultCommands)
 	{
-		if (Command.RenderLayer != ERenderLayer::Overlay)
-		{
-			Command.Material = WireframeMaterial;
-		}
+		Command.Material = WireframeMaterial;
+	}
+
+	for (FRenderCommand& Command : InOutQueue.TransparentCommands)
+	{
+		Command.Material = WireframeMaterial;
 	}
 }
 
@@ -271,16 +303,28 @@ bool FSceneRenderer::RenderPacketToTarget(
 	FMaterial* WireframeMaterial,
 	const float ClearColor[4])
 {
-	FRenderCommandQueue Queue;
-	BuildQueue(Renderer, Packet, SceneView, Queue);
+	FRenderCommandQueue SceneQueue;
+	BuildQueue(Renderer, Packet, SceneView, SceneQueue);
 
 	if (bForceWireframe)
 	{
-		ApplyWireframeOverride(Queue, WireframeMaterial);
+		ApplyWireframeOverride(SceneQueue, WireframeMaterial);
 	}
 
-	AppendAdditionalCommands(Queue, AdditionalCommands);
-	return RenderQueueToTarget(Renderer, RenderTargetView, DepthStencilView, Viewport, Queue, ClearColor);
+	if (!RenderQueueToTarget(Renderer, RenderTargetView, DepthStencilView, Viewport, SceneQueue, ClearColor, true))
+	{
+		return false;
+	}
+
+	if (!AdditionalCommands.IsEmpty())
+	{
+		if (!RenderQueueToTarget(Renderer, RenderTargetView, DepthStencilView, Viewport, AdditionalCommands, ClearColor, false))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool FSceneRenderer::RenderQueueToTarget(
@@ -289,7 +333,8 @@ bool FSceneRenderer::RenderQueueToTarget(
 	ID3D11DepthStencilView* DepthStencilView,
 	const D3D11_VIEWPORT& Viewport,
 	const FRenderCommandQueue& Queue,
-	const float ClearColor[4])
+	const float ClearColor[4],
+	bool bClearTarget)
 {
 	ID3D11DeviceContext* Context = Renderer.GetDeviceContext();
 	if (!Context || !RenderTargetView || !DepthStencilView)
@@ -297,11 +342,20 @@ bool FSceneRenderer::RenderQueueToTarget(
 		return false;
 	}
 
-	Context->ClearRenderTargetView(RenderTargetView, ClearColor);
-	Context->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	if (bClearTarget)
+	{
+		Context->ClearRenderTargetView(RenderTargetView, ClearColor);
+		Context->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	}
 
 	Context->OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
 	Context->RSSetViewports(1, &Viewport);
+
+	if (Queue.IsEmpty())
+	{
+		return true;
+	}
+
 	SubmitCommands(Renderer, Queue);
 	ExecuteCommands(Renderer);
 	return true;

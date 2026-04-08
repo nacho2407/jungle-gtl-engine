@@ -363,6 +363,7 @@
     <ClInclude Include="Source\Slate\ViewportChromeWidget.h" />
     <ClInclude Include="Source\Slate\ViewportHost.h" />
     <ClInclude Include="Source\Slate\Widget\WidgetHelpers.h" />
+    <ClInclude Include="Source\Slate\Widget\TextMetrics.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

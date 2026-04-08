@@ -44,7 +44,8 @@ struct FGameFrameRequest
 	FSceneRenderPacket ScenePacket;
 	// 씬 패스 실행에 필요한 카메라 데이터다.
 	FSceneViewRenderRequest SceneView;
-	// 씬 패킷 외부에서 따로 만든 추가 메시 커맨드다.
+	// 씬 패킷 외부에서 따로 만든 추가 메시 커맨드 큐다.
+	// 메인 씬 큐와 섞지 않고 별도 제출/실행 경로를 탄다.
 	FRenderCommandQueue AdditionalCommands;
 	// 프레임 끝에 덧그릴 디버그 라인 요청이다.
 	FDebugLineRenderRequest DebugLineRequest;
@@ -65,7 +66,7 @@ struct FViewportScenePassRequest
 	FSceneRenderPacket ScenePacket;
 	// 이 뷰포트 씬 패스에 대응하는 카메라 데이터다.
 	FSceneViewRenderRequest SceneView;
-	// 그리드나 기즈모처럼 별도로 덧붙이는 메시 커맨드다.
+	// 그리드나 기즈모처럼 씬 패킷과 분리된 추가 메시 커맨드 큐다.
 	FRenderCommandQueue AdditionalCommands;
 	// 씬 패스 뒤에 실행할 아웃라인 요청이다.
 	FOutlineRenderRequest OutlineRequest;

@@ -130,7 +130,8 @@ FRect FSlatePaintContext::ApplyCurrentClip(const FRect& InRect) const
 
 void FSlatePaintContext::AppendElement(FUIDrawElement&& Element)
 {
-	Element.Layer = 0;
+	Element.Layer = CurrentLayer;
+	Element.Depth = CurrentDepth;
 	Element.Order = NextOrder++;
 
 	if (HasActiveClip())
@@ -242,6 +243,44 @@ void FSlatePaintContext::PopClipRect()
 	}
 }
 
+void FSlatePaintContext::PushDepth(float InDepth)
+{
+	DepthStack.push_back(CurrentDepth);
+	CurrentDepth += InDepth;
+}
+
+void FSlatePaintContext::PopDepth()
+{
+	if (!DepthStack.empty())
+	{
+		CurrentDepth = DepthStack.back();
+		DepthStack.pop_back();
+	}
+	else
+	{
+		CurrentDepth = 0.0f;
+	}
+}
+
+void FSlatePaintContext::PushLayer(int32 InLayer)
+{
+	LayerStack.push_back(CurrentLayer);
+	CurrentLayer += InLayer;
+}
+
+void FSlatePaintContext::PopLayer()
+{
+	if (!LayerStack.empty())
+	{
+		CurrentLayer = LayerStack.back();
+		LayerStack.pop_back();
+	}
+	else
+	{
+		CurrentLayer = 0;
+	}
+}
+
 FUIDrawList FSlatePaintContext::ConsumeDrawList()
 {
 	FUIDrawList Out = std::move(DrawList);
@@ -253,5 +292,9 @@ void FSlatePaintContext::Reset()
 {
 	DrawList.Clear();
 	ClipStack.clear();
+	LayerStack.clear();
+	CurrentLayer = 0;
+	DepthStack.clear();
+	CurrentDepth = 0.0f;
 	NextOrder = 0;
 }

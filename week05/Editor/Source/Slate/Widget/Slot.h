@@ -28,6 +28,7 @@ struct FSlot
 	float HeightFill = 0.0f;
 	float MinWidth = 0.0f;
 	float MinHeight = 0.0f;
+	int32 Layer = 0;
 	int32 ZOrder = 0;
 
 	FSlot& operator[](SWidget* W) { Widget = W; return *this; }
@@ -40,5 +41,6 @@ struct FSlot
 	FSlot& VAlign(EVAlign A) { VAlignment = A; return *this; }
 	FSlot& SetMinWidth(float InMinWidth) { MinWidth = InMinWidth; return *this; }
 	FSlot& SetMinHeight(float InMinHeight) { MinHeight = InMinHeight; return *this; }
+	FSlot& SetLayer(int32 InLayer) { Layer = InLayer; return *this; }
 	FSlot& SetZOrder(int32 InZOrder) { ZOrder = InZOrder; return *this; }
 };

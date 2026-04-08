@@ -27,6 +27,14 @@ public:
 	void PushClipRect(const FRect& InRect);
 	// 가장 최근에 푸시한 클리핑 사각형을 팝한다.
 	void PopClipRect();
+	// 이후 엘리먼트에 적용할 UI 상대 깊이 오프셋을 푸시한다.
+	void PushDepth(float InDepth);
+	// 가장 최근에 푸시한 UI 깊이값을 팝한다.
+	void PopDepth();
+	// 이후 엘리먼트에 적용할 UI 상대 레이어 오프셋을 푸시한다.
+	void PushLayer(int32 InLayer);
+	// 가장 최근에 푸시한 UI 레이어값을 팝한다.
+	void PopLayer();
 
 	// 현재까지 기록된 드로우 리스트를 읽기 전용으로 반환한다.
 	const FUIDrawList& GetDrawList() const { return DrawList; }
@@ -47,6 +55,10 @@ private:
 	FUIDrawList DrawList;
 	uint64 NextOrder = 0;
 	TArray<FRect> ClipStack;
+	TArray<int32> LayerStack;
+	int32 CurrentLayer = 0;
+	TArray<float> DepthStack;
+	float CurrentDepth = 0.0f;
 };
 
 using FPainter = FSlatePaintContext;

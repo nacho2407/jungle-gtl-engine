@@ -21,7 +21,15 @@ public:
 	
 	void SetText(const FString& InText);
 	FVector2 ComputeDesiredSize() const override { return SWidgetTextMetrics::MeasureText(Text, FontSize, LetterSpacing); }
-	FVector2 ComputeMinSize() const override { return { 0.0f, SWidgetTextMetrics::MeasureText("Ag", FontSize, LetterSpacing).Y }; }
+	FVector2 ComputeMinSize() const override
+	{
+		const float MinTextWidth =
+			Text.empty() ? 0.0f : SWidgetTextMetrics::MeasureTextWidth("...", FontSize, LetterSpacing);
+		const float MinTextHeight =
+			SWidgetTextMetrics::MeasureText("Ag", FontSize, LetterSpacing).Y;
+
+		return { MinTextWidth, MinTextHeight };
+	}
 	void OnPaint(FSlatePaintContext& Painter) override
 	{
 		if (!Rect.IsValid())

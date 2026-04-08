@@ -232,6 +232,7 @@
     <ClInclude Include="Source\Slate\Widget\SplitterH.h" />
     <ClInclude Include="Source\Slate\Widget\SplitterV.h" />
     <ClInclude Include="Source\Slate\Widget\TextBlock.h" />
+    <ClInclude Include="Source\Slate\Widget\TextMetrics.h" />
     <ClInclude Include="Source\Slate\Widget\Toolbar.h" />
     <ClInclude Include="Source\Slate\Widget\VerticalBox.h" />
     <ClInclude Include="Source\Slate\Widget\Widget.h" />

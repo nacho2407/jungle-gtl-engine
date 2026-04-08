@@ -7,7 +7,9 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderFeatureInterfaces.h"
 #include <algorithm>
+#include <cmath>
 #include <cfloat>
+#include <limits>
 
 namespace
 {
@@ -179,6 +181,21 @@ namespace
 		}
 		return true;
 	}
+
+	static int32 MakeDepthSortKey(float Depth)
+	{
+		if (!std::isfinite(Depth))
+		{
+			return 0;
+		}
+
+		constexpr double DepthScale = 1024.0;
+		const double Scaled = static_cast<double>(Depth) * DepthScale;
+		const double MinKey = static_cast<double>((std::numeric_limits<int32>::min)());
+		const double MaxKey = static_cast<double>((std::numeric_limits<int32>::max)());
+		const double Clamped = (std::max)(MinKey, (std::min)(Scaled, MaxKey));
+		return static_cast<int32>(std::llround(Clamped));
+	}
 }
 
 bool FScreenUIRenderer::DrawBatchCommand(FRenderer& Renderer, const FUIBatchCommand& BatchCommand)
@@ -318,16 +335,49 @@ FDynamicMaterial* FScreenUIRenderer::GetOrCreateFontMaterial(FRenderer& Renderer
 	return Raw;
 }
 
-void FScreenUIRenderer::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material)
+void FScreenUIRenderer::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material, int32 Layer, float Depth)
 {
 	if (!Mesh || !Material || Mesh->Vertices.empty())
 	{
 		return;
 	}
 
+	const int32 DepthSortKey = MakeDepthSortKey(Depth);
+
+	if (!UIBatch.Commands.empty())
+	{
+		FUIBatchCommand& Last = UIBatch.Commands.back();
+		if (Last.Mesh && Last.Material == Material
+			&& Last.Layer == Layer
+			&& Last.DepthSortKey == DepthSortKey
+			&& Last.Mesh->Topology == Mesh->Topology
+			&& (Last.Mesh->Indices.empty() == Mesh->Indices.empty()))
+		{
+			const uint32 VertexBase = static_cast<uint32>(Last.Mesh->Vertices.size());
+			Last.Mesh->Vertices.insert(Last.Mesh->Vertices.end(), Mesh->Vertices.begin(), Mesh->Vertices.end());
+			if (!Mesh->Indices.empty())
+			{
+				Last.Mesh->Indices.reserve(Last.Mesh->Indices.size() + Mesh->Indices.size());
+				for (const uint32 Index : Mesh->Indices)
+				{
+					Last.Mesh->Indices.push_back(VertexBase + Index);
+				}
+			}
+
+			Last.Mesh->bIsDirty = true;
+			Mesh->Vertices.clear();
+			Mesh->Indices.clear();
+			Mesh->bIsDirty = true;
+			return;
+		}
+	}
+
 	FUIBatchCommand Command;
 	Command.Mesh = Mesh;
 	Command.Material = Material;
+	Command.Layer = Layer;
+	Command.Depth = Depth;
+	Command.DepthSortKey = DepthSortKey;
 	UIBatch.Commands.push_back(Command);
 }
 
@@ -474,7 +524,7 @@ void FScreenUIRenderer::AppendText(FRenderer& Renderer, const FUIDrawElement& El
 	}
 
 	Mesh->bIsDirty = true;
-	EnqueueMesh(Mesh, FontMaterial);
+	EnqueueMesh(Mesh, FontMaterial, Element.Layer, Element.Depth);
 }
 
 void FScreenUIRenderer::ApplyOrthoProjection(int32 Width, int32 Height)
@@ -561,6 +611,12 @@ bool FScreenUIRenderer::Render(FRenderer& Renderer, const FUIDrawList& DrawList)
 			{
 				return A->Layer < B->Layer;
 			}
+			const int32 ADepthKey = MakeDepthSortKey(A->Depth);
+			const int32 BDepthKey = MakeDepthSortKey(B->Depth);
+			if (ADepthKey != BDepthKey)
+			{
+				return ADepthKey < BDepthKey;
+			}
 			return A->Order < B->Order;
 		});
 
@@ -580,7 +636,7 @@ bool FScreenUIRenderer::Render(FRenderer& Renderer, const FUIDrawList& DrawList)
 			AppendFilledRect(Element);
 			if (FrameMeshes.size() > PrevMeshCount)
 			{
-				EnqueueMesh(FrameMeshes.back().get(), ColorMaterial);
+				EnqueueMesh(FrameMeshes.back().get(), ColorMaterial, Element.Layer, Element.Depth);
 			}
 			break;
 
@@ -588,7 +644,7 @@ bool FScreenUIRenderer::Render(FRenderer& Renderer, const FUIDrawList& DrawList)
 			AppendRectOutline(Element);
 			if (FrameMeshes.size() > PrevMeshCount)
 			{
-				EnqueueMesh(FrameMeshes.back().get(), ColorMaterial);
+				EnqueueMesh(FrameMeshes.back().get(), ColorMaterial, Element.Layer, Element.Depth);
 			}
 			break;
 
