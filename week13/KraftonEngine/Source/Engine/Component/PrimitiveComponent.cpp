@@ -114,7 +114,11 @@ FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 
 void UPrimitiveComponent::MarkWorldBoundsDirty()
 {
+	// Local bounds(shape) 자체가 바뀐 경우용 진입점.
+	// fast-path(이전 AABB를 translation만으로 재사용)는 shape가 동일하다는 가정에 의존하므로
+	// 여기서는 반드시 무력화해야 한다. 안 그러면 mesh 교체 후에도 stale AABB가 캐시된다.
 	bWorldAABBDirty = true;
+	bHasValidWorldAABB = false;
 	MarkRenderTransformDirty();
 }
 
@@ -233,7 +237,10 @@ void UPrimitiveComponent::MarkRenderStateDirty()
 
 void UPrimitiveComponent::OnTransformDirty()
 {
-	MarkWorldBoundsDirty();
+	// 순수 transform 변경 — local bounds(shape)는 그대로이므로 fast-path를 살린다.
+	// (basis 동일 + translation만 바뀐 경우 UpdateWorldMatrix가 이전 AABB를 평행이동만 적용)
+	bWorldAABBDirty = true;
+	MarkRenderTransformDirty();
 }
 
 void UPrimitiveComponent::EnsureWorldAABBUpdated() const
