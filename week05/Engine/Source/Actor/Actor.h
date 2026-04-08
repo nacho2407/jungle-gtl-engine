@@ -48,6 +48,9 @@ public:
 		return nullptr;
 	}
 
+	bool CanDeleteInstanceComponent(const UActorComponent* InComponent) const;
+	bool DestroyInstanceComponent(UActorComponent* InComponent);
+
 	void Test() { int a = 5; }
 
 	/** 스폰 직후 호출되며, 기본 컴포넌트 등록과 바운드 갱신 같은 초기 준비를 담당한다. */
