@@ -157,16 +157,7 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "Visible") == 0)
 	{
-		// TextRender는 자체 "Visible" 항목을 노출하므로 가시성 전파를 직접 수행한다.
-		MarkProxyDirty(EDirtyFlag::Visibility);
-		if (AActor* OwnerActor = GetOwner())
-		{
-			if (UWorld* World = OwnerActor->GetWorld())
-			{
-				World->MarkWorldPrimitivePickingBVHDirty();
-				World->UpdateActorInOctree(OwnerActor);
-			}
-		}
+		MarkRenderVisibilityDirty();
 	}
 }
 
