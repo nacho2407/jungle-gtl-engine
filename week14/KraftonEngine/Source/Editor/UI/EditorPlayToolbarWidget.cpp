@@ -49,40 +49,48 @@ void FEditorPlayToolbarWidget::Render(float Width)
 	ImGui::SetCursorScreenPos(ImVec2(CursorStart.x + ButtonPadding, CursorStart.y + ButtonPadding));
 
 	const bool bPlaying = Editor->IsPlayingInEditor();
-	ID3D11ShaderResourceView* Icon = bPlaying ? StopIcon : PlayIcon;
-	const char* Id = bPlaying ? "##PIE_Stop" : "##PIE_Play";
 
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
 
-	bool bClicked = false;
-	if (Icon)
+	auto DrawIconButton = [&](const char* Id, ID3D11ShaderResourceView* Icon, const char* FallbackLabel, bool bDisabled) -> bool
 	{
-		bClicked = ImGui::ImageButton(
-			Id,
-			reinterpret_cast<ImTextureID>(Icon),
-			ImVec2(IconSize, IconSize));
-	}
-	else
-	{
-		bClicked = ImGui::Button(bPlaying ? "Stop" : "Play", ImVec2(IconSize + 8, IconSize + 8));
-	}
-
-	ImGui::PopStyleColor(3);
-
-	if (bClicked)
-	{
-		if (bPlaying)
+		if (bDisabled)
 		{
-			Editor->RequestEndPlayMap();
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.4f);
+		}
+		bool bClicked = false;
+		if (Icon)
+		{
+			bClicked = ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(Icon), ImVec2(IconSize, IconSize));
 		}
 		else
 		{
-			FRequestPlaySessionParams Params;
-			Editor->RequestPlaySession(Params);
+			bClicked = ImGui::Button(FallbackLabel, ImVec2(IconSize + 8, IconSize + 8));
 		}
+		if (bDisabled)
+		{
+			ImGui::PopStyleVar();
+			bClicked = false; // disabled 상태에서는 클릭 무시
+		}
+		return bClicked;
+	};
+
+	if (DrawIconButton("##PIE_Play", PlayIcon, "Play", /*bDisabled=*/bPlaying))
+	{
+		FRequestPlaySessionParams Params;
+		Editor->RequestPlaySession(Params);
 	}
+
+	ImGui::SameLine(0.0f, ButtonSpacing);
+
+	if (DrawIconButton("##PIE_Stop", StopIcon, "Stop", /*bDisabled=*/!bPlaying))
+	{
+		Editor->RequestEndPlayMap();
+	}
+
+	ImGui::PopStyleColor(3);
 
 	// 다음 콘텐츠는 툴바 아래로 이어지도록 커서 복원
 	ImGui::SetCursorScreenPos(ImVec2(CursorStart.x, CursorStart.y + ToolbarHeight));
