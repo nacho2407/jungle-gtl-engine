@@ -14,6 +14,7 @@
 #include "Render/Batcher/LineBatcher.h"
 #include "Render/Batcher/FontBatcher.h"
 #include "Render/Batcher/SubUVBatcher.h"
+#include "Render/Batcher/BillboardBatcher.h"
 
 #include <functional>
 
@@ -101,10 +102,12 @@ private:
 	FLineBatcher   GridLineBatcher;
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
+	FBillboardBatcher BillboardBatcher;
 
 	// 정렬용 멤버 버퍼 (재할당 방지)
 	TArray<const FPrimitiveSceneProxy*> SortedProxyBuffer;
 	TArray<FSubUVEntry> SortedSubUVBuffer;
+	TArray<FBillboardEntry> SortedBillboardBuffer;
 	TArray<FConstantBuffer> PerObjectCBPool;
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];

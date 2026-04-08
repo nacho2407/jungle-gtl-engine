@@ -110,6 +110,13 @@ struct FSubUVConstants
 	float Height = 1.0f;
 };
 
+struct FBillboardConstants
+{
+	const FTextureResource* Texture = nullptr;
+	float Width  = 1.0f;
+	float Height = 1.0f;
+};
+
 // ============================================================
 // Batcher Entry — 각 Batcher가 필요한 데이터만 담는 경량 구조체
 // ============================================================
@@ -124,6 +131,12 @@ struct FSubUVEntry
 {
 	FPerObjectConstants PerObject;
 	FSubUVConstants SubUV;
+};
+
+struct FBillboardEntry
+{
+	FPerObjectConstants PerObject;
+	FBillboardConstants Billboard;
 };
 
 struct FAABBEntry
