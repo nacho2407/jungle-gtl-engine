@@ -1,7 +1,10 @@
 ﻿#pragma once
-	
+
+#include "Core/CoreTypes.h"
+
 class AActor;
 class UActorComponent;
+class UWorld;
 
 enum ELevelTick : int
 {
@@ -38,7 +41,7 @@ public:
 	bool bCanEverTick = false; 
 	// BeginPlay이후부터 바로 Tick함수 실행
 	bool bStartWithTickEnabled = true;
-	bool bRegistered = true;
+	bool bRegistered = false;
 
 	//현재상태 변수
 	//현재 틱을 사용할건지 여부
@@ -60,16 +63,8 @@ public:
 	virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) = 0;
 	virtual const char* GetDebugName() const = 0;
 
-	bool CanExecute(ELevelTick TickType) const
-    {
-        if (!bCanEverTick || !bTickEnabled)
-            return false;
-
-        if (TickType == LEVELTICK_PauseTick && !bTickEvenWhenPaused)
-            return false;
-
-        return true;
-    }
+	void RegisterTickFunction();
+	void UnRegisterTickFunction();
 
 	bool ConsumeInterval(float DeltaTime)
 	{
@@ -84,7 +79,7 @@ public:
 			return false;
 		}
 
-		TickAccumulator = 0.0f;
+		TickAccumulator -= TickInterval;
 		return true;
 	}
 
@@ -105,8 +100,26 @@ public:
 			return false;
 		}
 
+		if (TickType == LEVELTICK_PauseTick && !bTickEvenWhenPaused)
+		{
+			return false;
+		}
+
 		return true;
 	}
+};
+
+class FTickManager
+{
+public:
+	void Tick(UWorld* World, float DeltaTime, ELevelTick TickType);
+	void Reset();
+
+private:
+	void GatherTickFunctions(UWorld* World, ELevelTick TickType);
+	void QueueTickFunction(FTickFunction& TickFunction);
+
+	TArray<FTickFunction*> TickFunctions;
 };
 
 struct FActorTickFunction :public FTickFunction {
@@ -127,9 +140,10 @@ public:
 };
 
 struct FActorComponentTickFunction : public FTickFunction {
-	UActorComponent* Target;
+	UActorComponent* Target= nullptr;;
 	
 public:
+	void SetTarget(UActorComponent* InTarget) { Target = InTarget; }
 	virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) override;
 
 	// FTickFunction을(를) 통해 상속됨
