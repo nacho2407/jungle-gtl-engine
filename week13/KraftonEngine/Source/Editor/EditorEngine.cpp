@@ -207,7 +207,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
 	//    픽킹(=PIE 월드) / outliner / outline 렌더가 모두 어긋난다.
 	SelectionManager.ClearSelection();
-	SelectionManager.SetGizmoEnabled(false);
+	//SelectionManager.SetGizmoEnabled(false); //PIE가 시작되면 gizmo 비활성화
 	SelectionManager.SetWorld(PIEWorld);
 	
 	//이 코드와 대응되는 게 아래 EndPlayMap()에 있음.
@@ -259,7 +259,7 @@ void UEditorEngine::EndPlayMap()
 
 	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
 	SelectionManager.ClearSelection();
-	SelectionManager.SetGizmoEnabled(true);
+	//SelectionManager.SetGizmoEnabled(true); //PIE가 끝나면 gizmo 활성화
 	SelectionManager.SetWorld(GetWorld());
 	
 	//이 코드와 대응되는 게 위의 StartPlayInEditorSession()에 있음.
