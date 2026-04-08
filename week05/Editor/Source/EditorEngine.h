@@ -75,6 +75,7 @@ public:
 	FEditorViewportRegistry& GetViewportRegistry() { return ViewportRegistry; }
 	// 현재 Slate 애플리케이션 인스턴스를 반환한다.
 	FSlateApplication* GetSlateApplication() const { return SlateApplication.get(); }
+	FWindowsWindow* GetMainWindow() const { return MainWindow; }
 	// 현재 에디터 show flag와 선택 상태를 반영한 디버그 라인 요청을 만든다.
 	void BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDebugLineRenderRequest& OutRequest);
 	// 프레임 동안 누적된 디버그 드로우 데이터를 비운다.
@@ -146,6 +147,8 @@ private:
 	void SyncFocusedViewportLocalState();
 	// Slate 커서 상태를 운영체제 커서에 반영한다.
 	void SyncPlatformCursor();
+	// PIE 뷰포트 기준으로 커서 숨김/클리핑 상태를 갱신한다.
+	void SyncPIECursorState();
 	// 활성 월드 종류에 따라 Editor/Preview ViewportClient를 전환한다.
 	void SyncViewportClient();
 	// 선택된 액터의 BVH를 디버그 라인 요청에 추가한다.
@@ -172,6 +175,7 @@ private:
 	TObjectPtr<AActor> SavedPIESelectedActor;
 	FViewportId PIEViewportId = INVALID_VIEWPORT_ID;
 	bool bWasCursorHiddenForPIE = false;
+	bool bIsPIECursorCurrentlyHidden = false;
 	bool bIsPIEActive = false;
 	bool bIsPIEPaused = false;
 };
