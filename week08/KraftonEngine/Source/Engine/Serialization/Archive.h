@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h" // TArray가 정의된 곳
+#include "Object/FName.h"
 #include <type_traits>
 #include <string>
 
@@ -42,6 +43,18 @@ inline FArchive& operator<<(FArchive& Ar, std::string& Str)
 	if (Ar.IsLoading()) Str.resize(Length);
 	if (Length > 0) Ar.Serialize(Str.data(), Length * sizeof(char));
 
+	return Ar;
+}
+
+// FName은 풀 인덱스가 프로세스/환경마다 다르므로 문자열로 왕복.
+inline FArchive& operator<<(FArchive& Ar, FName& Name)
+{
+	FString Str = Ar.IsSaving() ? Name.ToString() : FString();
+	Ar << Str;
+	if (Ar.IsLoading())
+	{
+		Name = FName(Str);
+	}
 	return Ar;
 }
 

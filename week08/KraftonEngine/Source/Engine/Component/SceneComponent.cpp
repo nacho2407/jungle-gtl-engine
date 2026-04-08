@@ -1,6 +1,7 @@
 ﻿#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>
+#include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(USceneComponent, UActorComponent)
 
@@ -54,6 +55,23 @@ void USceneComponent::PostEditProperty(const char* PropertyName)
 	if (bApplyChangeToPartition)
 	{
 		NotifyOctreeTransformChanged(this);
+	}
+}
+
+void USceneComponent::Serialize(FArchive& Ar)
+{
+	UActorComponent::Serialize(Ar);
+	// ParentComponent / ChildComponents 는 직렬화 제외 — 복제 단계에서 명시적으로 재구성.
+	// FTransform은 trivially copyable이 아닐 수 있으므로 멤버 단위로 직렬화한다.
+	Ar << RelativeTransform.Location;
+	Ar << RelativeTransform.Rotation;
+	Ar << RelativeTransform.Scale;
+
+	if (Ar.IsLoading())
+	{
+		bTransformDirty = true;
+		bCachedEulerDirty = true;
+		bInverseWorldDirty = true;
 	}
 }
 
