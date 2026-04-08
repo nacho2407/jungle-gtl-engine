@@ -200,13 +200,22 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	Ctx.World = PIEWorld;
 	WorldList.push_back(Ctx);
 
-	// TODO: 다음 단계에서 Tick 분기/액티브 월드 전환/BeginPlay 등 추가.
-	// 현재는 PIE World 복제만 검증하고 에디터 월드는 그대로 유지한다.
-
+	// 3) 세션 정보 기록 (이전 활성 핸들 포함 — EndPlayMap에서 복원).
 	FPlayInEditorSessionInfo Info;
 	Info.OriginalRequestParams = Params;
 	Info.PIEStartTime = 0.0;
+	Info.PreviousActiveWorldHandle = GetActiveWorldHandle();
 	PlayInEditorSessionInfo = Info;
+
+	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
+	SetActiveWorld(FName("PIE"));
+
+	// TODO(Tick 담당): 아래 항목은 별도 작업 범위로 분리됨.
+	// - PIE World Tick 라우팅 (Editor World는 Tick 제외)
+	// - PIEWorld->BeginPlay() 호출 시점
+	// - ViewportClient가 참조하는 World* 스왑 (현재는 에디터 월드를 그대로 렌더)
+	// - SelectionManager / Gizmo / Picking을 PIE 월드 대상으로 재바인딩
+	// - PIE 중 에디터 입력(선택/기즈모) 차단 여부 결정
 }
 
 void UEditorEngine::EndPlayMap()
@@ -216,7 +225,11 @@ void UEditorEngine::EndPlayMap()
 		return;
 	}
 
-	// PIE WorldContext 제거 (DestroyWorldContext가 World까지 파괴해 준다고 가정).
+	// 활성 월드를 PIE 시작 전 핸들로 복원.
+	const FName PrevHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
+	SetActiveWorld(PrevHandle);
+
+	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
 
 	PlayInEditorSessionInfo.reset();
