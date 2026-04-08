@@ -165,6 +165,8 @@ void FEditorViewportInputService::TickCameraNavigation(
 		if (Input->IsKeyDown('S')) MoveDelta -= Forward;
 		if (Input->IsKeyDown('D')) MoveDelta += Right;
 		if (Input->IsKeyDown('A')) MoveDelta -= Right;
+		if (Input->IsKeyDown('E')) MoveDelta += FVector(0.0f, 0.0f, 1.0f);
+		if (Input->IsKeyDown('Q')) MoveDelta -= FVector(0.0f, 0.0f, 1.0f);
 		if (!MoveDelta.IsNearlyZero())
 		{
 			FocusedEntry->LocalState.Position += MoveDelta.GetSafeNormal() * (Speed * EditorEngine->GetDeltaTime());
