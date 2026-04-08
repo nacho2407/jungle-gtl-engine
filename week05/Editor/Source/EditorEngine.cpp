@@ -513,15 +513,7 @@ bool FEditorEngine::StartPIE()
 	}
 
 	// PIE 모드에서는 그리드가 항상 꺼진 상태로 시작하도록 강제
-	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
-	{
-		if (!Entry.bActive)
-		{
-			continue;
-		}
-
-		Entry.LocalState.bShowGrid = false;
-	}
+	PIEViewportEntry->LocalState.bShowGrid = false;
 
 	SetSelectedActor(nullptr);
 
