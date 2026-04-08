@@ -284,6 +284,9 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
@@ -352,12 +355,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\OcclusionCulling\OcclusionCulling.cpp">
-      <Filter>Source\Engine\Render\Renderer\OcclusionCulling</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\OcclusionCulling\Renderer.cpp">
-      <Filter>Source\Engine\Render\Renderer\OcclusionCulling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
@@ -683,6 +680,9 @@
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Level.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
@@ -740,6 +740,9 @@
     <ClInclude Include="Source\Engine\Math\Vector4.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ActorIterator.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\EngineStatics.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
@@ -787,12 +790,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\OcclusionCulling\OcclusionCulling.h">
-      <Filter>Source\Engine\Render\Renderer\OcclusionCulling</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\OcclusionCulling\Renderer.h">
-      <Filter>Source\Engine\Render\Renderer\OcclusionCulling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
       <Filter>Source\Engine\Render\Resource</Filter>

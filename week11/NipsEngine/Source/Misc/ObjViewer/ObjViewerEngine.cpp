@@ -34,7 +34,6 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 		CreateWorldContext(EWorldType::Preview, FName("ObjViewerPath"), "ObjViewerWorld");
 	}
 	SetActiveWorld(WorldList[0].ContextHandle);
-	GetWorld()->InitWorld();
 
 	// 프리뷰 액터 및 컴포넌트를 생성해 멤버 변수에 저장한다.
 	AActor* PreviewActor = GetWorld()->SpawnActor<AActor>();

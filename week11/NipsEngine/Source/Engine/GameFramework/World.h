@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
+#include "Level.h"
 
 class UCameraComponent;
 class FViewportCamera;
@@ -8,12 +9,16 @@ class FViewportCamera;
 class UWorld : public UObject {
 public:
     DECLARE_CLASS(UWorld, UObject)
-    UWorld() = default;
-    ~UWorld() override;
+	UWorld();
+	~UWorld() override;
+
+	virtual UWorld* Duplicate() override;
+	virtual UWorld* DuplicateSubObjects() override { return this; }
 
     // Actor lifecycle
     template<typename T>
-    T* SpawnActor() {
+    T* SpawnActor() 
+	{
         // create and register an actor
         T* Actor = UObjectManager::Get().CreateObject<T>();
         Actor->SetWorld(this);
@@ -21,29 +26,22 @@ public:
         {
             Actor->BeginPlay();
         }
-        Actors.push_back(Actor);
+		PersistentLevel->AddActor(Actor);
         return Actor;
     }
-    void DestroyActor(AActor* Actor) {
+    void DestroyActor(AActor* Actor) 
+	{
         // remove and clean up
         if (!Actor) return;
         Actor->EndPlay();
-        // Remove from actor list
-        auto it = std::find(Actors.begin(), Actors.end(), Actor);
-        if (it != Actors.end())
-            Actors.erase(it);
-
-        // Mark for garbage collection
+		PersistentLevel->RemoveActor(Actor);
         UObjectManager::Get().DestroyObject(Actor);
     }
 
-	virtual UWorld* Duplicate() override;
-    virtual UWorld* DuplicateSubObjects() override;
+	TArray<AActor*> GetActors() const { return PersistentLevel->GetActors(); }
 
-    const TArray<AActor*>& GetActors() const { return Actors; }
-    void AddActor(AActor* Actor) { Actors.push_back(Actor); }
+	ULevel* GetPersistentLevel() const { return PersistentLevel; }
 
-    void InitWorld();      // Set up the world before gameplay begins
     void BeginPlay();      // Triggers BeginPlay on all actors
     void Tick(float DeltaTime);  // Drives the game loop every frame
     void EndPlay();        // Cleanup before world is destroyed
@@ -55,7 +53,7 @@ public:
 	FViewportCamera* GetActiveCamera() const { return ActiveCamera; }
 
 private:
-    TArray<AActor*> Actors;
+	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
     bool bHasBegunPlay = false;
 };
