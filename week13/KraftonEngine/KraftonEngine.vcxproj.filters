@@ -13,6 +13,9 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{879fdc11-4e44-c448-2bbf-5fd281dc244f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\PIE">
+      <UniqueIdentifier>{1485fbd8-4084-14c8-cd14-33798c9651d4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\Selection">
       <UniqueIdentifier>{024578ed-1bd0-0e0e-b5f9-209501f28d5c}</UniqueIdentifier>
     </Filter>
@@ -132,6 +135,9 @@
     <FxCompile Include="Shaders\HiZGenerate.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\HiZVisualize.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\OcclusionTest.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -186,6 +192,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
@@ -500,6 +509,9 @@
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\PIE\PIETypes.h">
+      <Filter>Source\Editor\PIE</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h">
       <Filter>Source\Editor\Selection</Filter>
     </ClInclude>
@@ -516,6 +528,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
@@ -749,6 +764,9 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderBus.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -837,6 +855,9 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Archive.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
