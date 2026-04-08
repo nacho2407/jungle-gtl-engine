@@ -92,9 +92,11 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	SceneWidget.Initialize(InEditorEngine);
 	ViewportOverlayWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
+	PlayStreamWidget.Initialize(InEditorEngine);
 	ToolbarWidget.Initialize(InEditorEngine);
 	ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
 	ToolbarWidget.SetSceneWidget(&SceneWidget);
+	ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
 	ToolbarWidget.SetPanelVisibilityRefs(
 		&bShowConsole,
 		&bShowControl,
@@ -118,6 +120,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui::NewFrame();
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
 	ToolbarWidget.Render(DeltaTime);
 
 	RenderViewportHostWindow();

@@ -134,7 +134,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
 	const TArray<FStaticMeshSection>& Sections = MeshComp->GetStaticMesh()->GetSections();
 	const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshComp->GetStaticMesh()->GetMaterialSlots();
 	FString SlotName = "Unknown";
-	if (SelectedSectionIndex < static_cast<int32>(Sections.size()))
+	if (SelectedSectionIndex < static_cast<int32>(Sections.size())) 
 	{
 		int32 SlotIdx = Sections[SelectedSectionIndex].MaterialSlotIndex;
 		if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))

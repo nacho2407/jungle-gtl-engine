@@ -87,7 +87,12 @@ void UEditorEngine::Tick(float DeltaTime)
 	}
 
 	MainPanel.Update();
-	UEngine::Tick(DeltaTime);
+	InputSystem::Get().Tick();
+	if (GetEditorState() == EEditorState::Play)
+	{
+		WorldTick(DeltaTime);
+	}
+	Render(DeltaTime);
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
@@ -95,6 +100,25 @@ void UEditorEngine::RenderUI(float DeltaTime)
 	FViewportRect HostRect = GetViewportLayout().GetHostRect();
 	GetRenderer().GetFD3DDevice().EnsureViewportRenderTargets(HostRect.Width, HostRect.Height);
 	MainPanel.Render(DeltaTime);
+}
+
+void UEditorEngine::StartPlaySession()
+{
+	SetEditorState(EEditorState::Play);
+
+	//PIE 실행 로직 필요
+}
+
+void UEditorEngine::PausePlaySession()
+{
+	SetEditorState(EEditorState::Pause);
+}
+
+void UEditorEngine::StopPlaySession()
+{
+	SetEditorState(EEditorState::Edit);
+
+	// PIE 종료 로직 필요
 }
 
 void UEditorEngine::ResetViewport()
