@@ -403,12 +403,12 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 	ImGui::SameLine();
 	if (ImGui::Button("Remove"))
 	{
-		if (SelectedComponent != nullptr)
-		{
-			Actor->RemoveComponent(SelectedComponent);
-			SelectedComponent = nullptr;
-			return;
-		}
+		//if (SelectedComponent != nullptr)
+		//{
+		//	Actor->RemoveComponent(SelectedComponent);
+		//	SelectedComponent = nullptr;
+		//	return;
+		//}
 	}
 	ImGui::Separator();
 
