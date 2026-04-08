@@ -44,20 +44,20 @@ ULevel* ULevel::DuplicateSubObjects()
 
 void ULevel::BeginPlay()
 {
-		for (AActor* Actor : Actors)
+	for (AActor* Actor : Actors)
 	{
 		if (Actor)
 		{
 			Actor->BeginPlay();
 		}
-		}
+	}
 }
 
 void ULevel::Tick(float DeltaTime)
 {
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+		if (Actor && Actor->IsActive())
 		{
 			Actor->Tick(DeltaTime);
 		}

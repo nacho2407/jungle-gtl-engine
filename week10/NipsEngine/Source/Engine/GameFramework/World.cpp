@@ -59,7 +59,7 @@ void UWorld::Tick(float DeltaTime)
 
     for (AActor* Actor : PersistentLevel->GetActors())
     {
-        if (Actor && Actor->IsActorTickEnabled())
+        if (Actor && Actor->IsActive())
         {
             // 에디터 월드일 경우, 에디터 틱이 허용된 액터만 Tick을 수행합니다.
             if (WorldType == EWorldType::Editor && !Actor->ShouldTickInEditor())
