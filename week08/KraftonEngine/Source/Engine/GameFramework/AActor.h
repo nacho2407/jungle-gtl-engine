@@ -2,22 +2,27 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
+#include "Core/TickFunction.h"
 
 class FArchive;
 
 #include <type_traits>
 
+enum ELevelTick;
+struct FActorTickFunction;
 class UWorld;
+class ULevel;
 class UPrimitiveComponent;
 
 class AActor : public UObject
 {
 public:
 	DECLARE_CLASS(AActor, UObject)
-	AActor() = default;
+	AActor();
 	~AActor() override;
 
 	virtual void BeginPlay();
+	virtual void TickActor( float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction );
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay();
 
@@ -72,6 +77,7 @@ public:
 	FVector GetActorForward() const;
 
 	UWorld* GetWorld() const;
+	ULevel* GetLevel() const;
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
@@ -83,7 +89,8 @@ public:
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 	bool IsQueuedForPartitionUpdate() const { return bQueuedForPartitionUpdate; }
 	void SetQueuedForPartitionUpdate(bool bQueued) { bQueuedForPartitionUpdate = bQueued; }
-
+	
+	FActorTickFunction PrimaryActorTick;
 protected:
 	void MarkPickingDirty();
 

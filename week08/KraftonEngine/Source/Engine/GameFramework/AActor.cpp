@@ -3,12 +3,21 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
+#include "GameFramework/Level.h"
 #include "GameFramework/World.h"
 #include "Serialization/Archive.h"
 
 #include <algorithm>
 
 IMPLEMENT_CLASS(AActor, UObject)
+
+AActor::AActor()
+{
+	PrimaryActorTick.SetTarget(this);
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bTickEnabled = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+}
 
 AActor::~AActor()
 {
@@ -89,6 +98,11 @@ UWorld* AActor::GetWorld() const
 	return GetTypedOuter<UWorld>();
 }
 
+ULevel* AActor::GetLevel() const
+{
+	return GetTypedOuter<ULevel>();
+}
+
 void AActor::SetVisible(bool Visible)
 {
 	if (bVisible == Visible)
@@ -159,6 +173,16 @@ void AActor::BeginPlay()
 	}
 }
 
+//엔진 단계에서의 틱
+void AActor::TickActor(float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction)
+{
+	if (GetWorld())
+	{
+		//유저 코드 
+		Tick(DeltaSeconds);	
+	}
+}
+
 void AActor::EndPlay()
 {
 	if (!bActorHasBegunPlay) return;
@@ -172,10 +196,10 @@ void AActor::EndPlay()
 
 void AActor::Tick(float DeltaTime)
 {
-	for (UActorComponent* ActorComp : OwnedComponents)
+	/*for (UActorComponent* ActorComp : OwnedComponents)
 	{
 		ActorComp->Tick(DeltaTime);
-	}
+	}*/
 }
 
 FRotator AActor::GetActorRotation() const
