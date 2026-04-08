@@ -26,7 +26,11 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 	void SetVelocity(const FVector& InVelocity) { Velocity = InVelocity; }
+	const FVector& GetVelocity() const { return Velocity; }
 	void SetInitialSpeed(float InInitialSpeed) { InitialSpeed = InInitialSpeed; }
+	float GetInitialSpeed() const { return InitialSpeed; }
+	float GetMaxSpeed() const { return MaxSpeed; }
+	FVector GetPreviewVelocity() const;
 	void StopSimulating();
 
 protected:
