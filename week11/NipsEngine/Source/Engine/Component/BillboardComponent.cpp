@@ -5,6 +5,30 @@
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
+// 객체를 동적 생성한 뒤, 부모 클래스의 프로퍼티부터 내려오며 깊은 복사합니다.
+UBillboardComponent* UBillboardComponent::Duplicate()
+{
+    UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
+
+	NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+    
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+    
+    NewComp->SetVisibility(this->IsVisible());
+
+    NewComp->bIsBillboard = this->bIsBillboard;
+
+    return NewComp;
+}
+
+UBillboardComponent* UBillboardComponent::DuplicateSubObjects()
+{
+    return this;
+}
+
 bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
 {
 	OutCamera = nullptr;

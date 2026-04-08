@@ -8,6 +8,9 @@ class UMeshComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
 	
+	virtual UMeshComponent* Duplicate() override;
+	virtual UMeshComponent* DuplicateSubObjects() override { return this; }
+
 	void SetMaterial(int32 SlotIndex, FMaterial* InMaterial);
 	FMaterial* GetMaterial(int32 SlotIndex) const;
 

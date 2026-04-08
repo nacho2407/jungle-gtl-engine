@@ -4,7 +4,6 @@
 #include "StaticMeshTypes.h"
 #include "Object/Object.h"
 
-
 class UStaticMesh : public UObject
 {
 public:

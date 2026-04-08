@@ -2,6 +2,26 @@
 
 DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 
+// 부모 클래스를 계층별로 복사한 뒤, Matrerial을 얕은 복사로 세팅해 줍니다.
+UMeshComponent* UMeshComponent::Duplicate()
+{
+    UMeshComponent* NewComp = UObjectManager::Get().CreateObject<UMeshComponent>();
+
+    NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+    
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+
+    NewComp->SetVisibility(this->IsVisible());
+  
+    NewComp->OverrideMaterial = this->OverrideMaterial;
+    NewComp->ScrollUV = this->ScrollUV;
+
+    return NewComp;
+}
+
 void UMeshComponent::SetMaterial(int32 SlotIndex, FMaterial* InMaterial)
 {
 	if (SlotIndex < 0)
