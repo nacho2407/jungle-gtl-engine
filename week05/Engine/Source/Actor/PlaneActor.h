@@ -10,6 +10,7 @@ public:
 	DECLARE_RTTI(APlaneActor, AActor)
 
 	void PostSpawnInitialize() override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 private:
 	UStaticMeshComponent* PlaneMeshComponent = nullptr;

@@ -35,6 +35,39 @@
 class UClass;
 class UObject;
 
+struct ENGINE_API FDuplicateContext
+{
+	EObjectFlags DuplicateFlags = EObjectFlags::None;
+	TMap<const void*, UObject*> DuplicatedObjects;
+
+	// DuplicatedObject에서 Source를 찾는다.
+	template <typename T>
+	T* FindDuplicate(const T* Source) const
+	{
+		if (!Source)
+		{
+			return nullptr;
+		}
+
+		auto It = DuplicatedObjects.find(static_cast<const void*>(Source));
+		if (It == DuplicatedObjects.end())
+		{
+			return nullptr;
+		}
+
+		return reinterpret_cast<T*>(It->second);
+	}
+
+	// Source를 key로, Duplicate를 value로 DuplicatedObjects에 등록한다.
+	void Register(const UObject* Source, UObject* Duplicate)
+	{
+		if (Source && Duplicate)
+		{
+			DuplicatedObjects[static_cast<const void*>(Source)] = Duplicate;
+		}
+	}
+};
+
 // 엔진에서 생성한 모든 UObject를 추적하는 전역 배열이다.
 // 각 객체의 InternalIndex는 이 배열 안에서 자신의 슬롯을 가리킨다.
 extern ENGINE_API TArray<UObject*> GUObjectArray;
@@ -127,8 +160,11 @@ public:
 	// TODO: 아래 함수들을 모든 자식 클래스마다 일일히 선언하는건 너무 번거로울 것 같음.
 	// 하지만 인터페이스 제공 목적으로 우선 첨부함.
 	// 서브 오브젝트를 복제하는 함수 (하위 클래스에서 재정의 가능)
-	virtual void DuplicateSubObjects() {}
-	virtual UObject* Duplicate() { return nullptr; }
+	virtual void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const {}
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject, FDuplicateContext& Context) const {}
+	virtual void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const {}
+	virtual void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const {}
+	virtual UObject* Duplicate(UObject* InOuter, const FString& InName, FDuplicateContext& Context) const;
 
 private:
 	FString			Name;

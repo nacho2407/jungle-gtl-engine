@@ -1,16 +1,124 @@
 #include "PropertyWindow.h"
 #include "EditorEngine.h"
 #include "Actor/Actor.h"
+#include "Component/ActorComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "Component/RandomColorComponent.h"
+#include "Component/SceneComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/BillboardComponent.h"
+#include "Level/Level.h"
+#include "Object/Class.h"
+#include "Object/ObjectFactory.h"
 #include "Object/ObjectIterator.h"
 #include "Renderer/MeshData.h"
 #include "Renderer/RenderMesh.h"
 #include "Renderer/Material.h"
 #include "Renderer/MaterialManager.h"
+
+namespace
+{
+	using FComponentClassGetter = UClass * (*)();
+
+	struct FComponentAddOption
+	{
+		const char* Label;
+		const char* BaseName;
+		FComponentClassGetter GetClass;
+	};
+
+	const FComponentAddOption GComponentAddOptions[] =
+	{
+		{ "Scene Component", "SceneComponent", &USceneComponent::StaticClass },
+		{ "Static Mesh Component", "StaticMeshComponent", &UStaticMeshComponent::StaticClass },
+		{ "Text Component", "TextComponent", &UTextComponent::StaticClass },
+		{ "SubUV Component", "SubUVComponent", &USubUVComponent::StaticClass },
+	};
+
+	FString BuildUniqueComponentName(AActor* SelectedActor, const FString& BaseName)
+	{
+		if (!SelectedActor)
+		{
+			return BaseName;
+		}
+
+		auto HasSameName = [SelectedActor](const FString& CandidateName)
+		{
+			for (UActorComponent* Component : SelectedActor->GetComponents())
+			{
+				if (Component && Component->GetName() == CandidateName)
+				{
+					return true;
+				}
+			}
+			return false;
+		};
+
+		FString UniqueName = BaseName;
+		int32 Suffix = 1;
+		while (HasSameName(UniqueName))
+		{
+			UniqueName = BaseName + std::to_string(Suffix++);
+		}
+
+		return UniqueName;
+	}
+
+	void RefreshSceneComponentHierarchy(USceneComponent* Component)
+	{
+		if (!Component)
+		{
+			return;
+		}
+
+		if (Component->IsA(UPrimitiveComponent::StaticClass()))
+		{
+			static_cast<UPrimitiveComponent*>(Component)->UpdateBounds();
+		}
+
+		for (USceneComponent* Child : Component->GetAttachChildren())
+		{
+			RefreshSceneComponentHierarchy(Child);
+		}
+	}
+}
+
+bool FPropertyWindow::IsComponentOwnedByActor(AActor* SelectedActor, UActorComponent* Component) const
+{
+	if (!SelectedActor || !Component)
+	{
+		return false;
+	}
+
+	for (UActorComponent* OwnedComponent : SelectedActor->GetComponents())
+	{
+		if (OwnedComponent == Component)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+USceneComponent* FPropertyWindow::GetSelectedSceneComponent(AActor* SelectedActor) const
+{
+	if (!IsComponentOwnedByActor(SelectedActor, SelectedComponent))
+	{
+		return nullptr;
+	}
+
+	if (!SelectedComponent->IsA(USceneComponent::StaticClass()))
+	{
+		return nullptr;
+	}
+
+	return static_cast<USceneComponent*>(SelectedComponent);
+}
 
 void FPropertyWindow::SetTarget(const FVector& Location, const FVector& Rotation,
                                 const FVector& Scale, const char* ActorName)
@@ -28,82 +136,577 @@ void FPropertyWindow::SetTarget(const FVector& Location, const FVector& Rotation
 
 void FPropertyWindow::DrawTransformSection()
 {
-	float Loc[3] = { EditLocation.X, EditLocation.Y, EditLocation.Z };
-	float Rot[3] = { EditRotation.X, EditRotation.Y, EditRotation.Z };
-	float Scl[3] = { EditScale.X,    EditScale.Y,    EditScale.Z };
+}
 
-	const float ResetBtnWidth = 14.0f;
-	const float Spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-	const float DragUIWidth = 200.f;
-
-	// Location
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.1f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-	if (ImGui::Button("##RL", ImVec2(ResetBtnWidth, 0)))
+bool FPropertyWindow::DrawVector3Control(const char* Label, const FVector& Value, FVector& OutValue, float Speed, const char* Format)
+{
+	float Values[3] = { Value.X, Value.Y, Value.Z };
+	ImGui::PushItemWidth(-1.0f);
+	const bool bChanged = ImGui::DragFloat3(Label, Values, Speed, 0.0f, 0.0f, Format);
+	ImGui::PopItemWidth();
+	if (bChanged)
 	{
-		EditLocation = { 0.0f, 0.0f, 0.0f };
-		bModified = true;
+		OutValue = FVector(Values[0], Values[1], Values[2]);
 	}
-	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset Location");
-	ImGui::PopStyleColor(3);
+	return bChanged;
+}
 
-	ImGui::SameLine(0, Spacing);
-	// ImGui::PushItemWidth(-(ResetBtnWidth));
-	ImGui::PushItemWidth(DragUIWidth);
-	if (ImGui::DragFloat3("Location", Loc, 0.1f, 0.0f, 0.0f, "%.2f"))
+void FPropertyWindow::DrawSceneComponentDetails(USceneComponent* SceneComponent)
+{
+	if (!SceneComponent)
 	{
-		EditLocation = { Loc[0], Loc[1], Loc[2] };
-		bModified = true;
+		return;
+	}
+
+	ImGui::TextDisabled("Transform");
+
+	FTransform RelativeTransform = SceneComponent->GetRelativeTransform();
+	bool bChangedTransform = false;
+
+	FVector NewLocation = RelativeTransform.GetTranslation();
+	if (DrawVector3Control("Location", RelativeTransform.GetTranslation(), NewLocation, 0.1f, "%.2f"))
+	{
+		RelativeTransform.SetTranslation(NewLocation);
+		bChangedTransform = true;
+	}
+
+	const FVector CurrentEuler = RelativeTransform.Rotator().Euler();
+	FVector NewEuler = CurrentEuler;
+	if (DrawVector3Control("Rotation", CurrentEuler, NewEuler, 0.5f, "%.1f"))
+	{
+		RelativeTransform.SetRotation(FRotator::MakeFromEuler(NewEuler));
+		bChangedTransform = true;
+	}
+
+	FVector NewScale = RelativeTransform.GetScale3D();
+	if (DrawVector3Control("Scale", RelativeTransform.GetScale3D(), NewScale, 0.01f, "%.3f"))
+	{
+		RelativeTransform.SetScale3D(NewScale);
+		bChangedTransform = true;
+	}
+
+	if (bChangedTransform)
+	{
+		SceneComponent->SetRelativeTransform(RelativeTransform);
+		RefreshSceneComponentHierarchy(SceneComponent);
+		if (AActor* Owner = SceneComponent->GetOwner())
+		{
+			if (ULevel* Level = Owner->GetLevel())
+			{
+				Level->MarkSpatialDirty();
+			}
+		}
+	}
+}
+
+void FPropertyWindow::DrawStaticMeshComponentDetails(UStaticMeshComponent* MeshComponent)
+{
+	if (!MeshComponent)
+	{
+		return;
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("Static Mesh");
+
+	UStaticMesh* CurrentMesh = MeshComponent->GetStaticMesh();
+	const std::string CurrentMeshName = CurrentMesh ? CurrentMesh->GetAssetPathFileName() : "None";
+
+	ImGui::PushItemWidth(-1.0f);
+	if (ImGui::BeginCombo("Mesh Asset", CurrentMeshName.c_str()))
+	{
+		for (TObjectIterator<UStaticMesh> It; It; ++It)
+		{
+			UStaticMesh* MeshAsset = It.Get();
+			if (!MeshAsset)
+			{
+				continue;
+			}
+
+			const std::string MeshName = MeshAsset->GetAssetPathFileName();
+			const bool bSelected = (CurrentMesh == MeshAsset);
+			if (ImGui::Selectable(MeshName.c_str(), bSelected))
+			{
+				MeshComponent->SetStaticMesh(MeshAsset);
+				MeshComponent->UpdateBounds();
+				if (AActor* Owner = MeshComponent->GetOwner())
+				{
+					if (ULevel* Level = Owner->GetLevel())
+					{
+						Level->MarkSpatialDirty();
+					}
+				}
+			}
+
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 	ImGui::PopItemWidth();
 
-	// Rotation
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.4f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
-	if (ImGui::Button("##RR", ImVec2(ResetBtnWidth, 0)))
+	if (!CurrentMesh)
 	{
-		EditRotation = { 0.0f, 0.0f, 0.0f };
-		bModified = true;
+		ImGui::TextDisabled("No Static Mesh Assigned");
+		return;
 	}
-	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset Rotation");
-	ImGui::PopStyleColor(3);
 
-	ImGui::SameLine(0, Spacing);
-	// ImGui::PushItemWidth(-(ResetBtnWidth));
-	ImGui::PushItemWidth(DragUIWidth);
-	if (ImGui::DragFloat3("Rotation", Rot, 0.5f, -360.0f, 360.0f, "%.1f"))
+	ImGui::Spacing();
+	ImGui::TextDisabled("Materials");
+
+	TArray<FString> MaterialNames = FMaterialManager::Get().GetAllMaterialNames();
+	const uint32 NumSections = CurrentMesh->GetNumSections();
+
+	if (ImGui::BeginCombo("Apply To All", "Select Material..."))
 	{
-		EditRotation = { Rot[0], Rot[1], Rot[2] };
-		bModified = true;
+		for (const FString& MaterialName : MaterialNames)
+		{
+			if (ImGui::Selectable(MaterialName.c_str(), false))
+			{
+				if (std::shared_ptr<FMaterial> Material = FMaterialManager::Get().FindByName(MaterialName))
+				{
+					for (uint32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
+					{
+						MeshComponent->SetMaterial(SectionIndex, Material);
+					}
+				}
+			}
+		}
+		ImGui::EndCombo();
 	}
-	ImGui::PopItemWidth();
 
-	// Scale
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.2f, 0.5f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.3f, 0.7f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.4f, 0.9f, 1.0f));
-	if (ImGui::Button("##RS", ImVec2(ResetBtnWidth, 0)))
+	float MasterScroll[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	if (NumSections > 0)
 	{
-		EditScale = { 1.0f, 1.0f, 1.0f };
-		bModified = true;
+		if (std::shared_ptr<FMaterial> FirstMaterial = MeshComponent->GetMaterial(0))
+		{
+			FirstMaterial->GetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
+		}
 	}
-	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset Scale");
-	ImGui::PopStyleColor(3);
 
-	ImGui::SameLine(0, Spacing);
-	// ImGui::PushItemWidth(-(ResetBtnWidth));
-	ImGui::PushItemWidth(DragUIWidth);
-	if (ImGui::DragFloat3("Scale", Scl, 0.01f, 0.001f, 100.0f, "%.3f"))
+	if (ImGui::DragFloat2("Scroll All Sections", MasterScroll, 0.001f, -5.0f, 5.0f, "%.2f"))
 	{
-		EditScale = { Scl[0], Scl[1], Scl[2] };
-		bModified = true;
+		for (uint32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
+		{
+			if (std::shared_ptr<FMaterial> Material = MeshComponent->GetMaterial(SectionIndex))
+			{
+				Material->SetParameterData("UVScrollSpeed", MasterScroll, sizeof(MasterScroll));
+			}
+		}
 	}
-	ImGui::PopItemWidth();
 
-	if (bModified && OnChanged)
-		OnChanged(EditLocation, EditRotation, EditScale);
+	for (uint32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
+	{
+		std::shared_ptr<FMaterial> CurrentMaterial = MeshComponent->GetMaterial(SectionIndex);
+		const std::string CurrentMaterialName = CurrentMaterial ? CurrentMaterial->GetOriginName() : "None";
+		const std::string ComboLabel = "Section " + std::to_string(SectionIndex);
+
+		ImGui::PushID(static_cast<int>(SectionIndex));
+		ImGui::PushItemWidth(-1.0f);
+		if (ImGui::BeginCombo(ComboLabel.c_str(), CurrentMaterialName.c_str()))
+		{
+			for (const FString& MaterialName : MaterialNames)
+			{
+				const bool bSelected = (CurrentMaterialName == MaterialName);
+				if (ImGui::Selectable(MaterialName.c_str(), bSelected))
+				{
+					if (std::shared_ptr<FMaterial> Material = FMaterialManager::Get().FindByName(MaterialName))
+					{
+						MeshComponent->SetMaterial(SectionIndex, Material);
+						CurrentMaterial = Material;
+					}
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::PopItemWidth();
+
+		if (CurrentMaterial)
+		{
+			FVector4 BaseColor = CurrentMaterial->GetVectorParameter("BaseColor");
+			float ColorArray[4] = { BaseColor.X, BaseColor.Y, BaseColor.Z, BaseColor.W };
+			if (ImGui::ColorEdit4("Base Color", ColorArray))
+			{
+				CurrentMaterial->SetParameterData("BaseColor", ColorArray, sizeof(ColorArray));
+			}
+
+			float ScrollArray[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			CurrentMaterial->GetParameterData("UVScrollSpeed", ScrollArray, sizeof(ScrollArray));
+			if (ImGui::DragFloat2("UV Scroll", ScrollArray, 0.001f, -5.0f, 5.0f, "%.2f"))
+			{
+				CurrentMaterial->SetParameterData("UVScrollSpeed", ScrollArray, sizeof(ScrollArray));
+			}
+		}
+		ImGui::Spacing();
+		ImGui::PopID();
+	}
+}
+
+void FPropertyWindow::DrawTextComponentDetails(UTextComponent* TextComponent)
+{
+	if (!TextComponent)
+	{
+		return;
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("Text");
+
+	char TextBuffer[256] = {};
+	snprintf(TextBuffer, sizeof(TextBuffer), "%s", TextComponent->GetText().c_str());
+	if (ImGui::InputText("Text", TextBuffer, sizeof(TextBuffer)))
+	{
+		TextComponent->SetText(TextBuffer);
+		TextComponent->UpdateBounds();
+		if (AActor* Owner = TextComponent->GetOwner())
+		{
+			if (ULevel* Level = Owner->GetLevel())
+			{
+				Level->MarkSpatialDirty();
+			}
+		}
+	}
+
+	FVector4 TextColor = TextComponent->GetTextColor();
+	float ColorArray[4] = { TextColor.X, TextColor.Y, TextColor.Z, TextColor.W };
+	if (ImGui::ColorEdit4("Text Color", ColorArray))
+	{
+		TextComponent->SetTextColor(FVector4(ColorArray[0], ColorArray[1], ColorArray[2], ColorArray[3]));
+		TextComponent->MarkTextMeshDirty();
+	}
+
+	float TextScale = TextComponent->GetTextScale();
+	if (ImGui::DragFloat("Text Scale", &TextScale, 0.01f, 0.01f, 100.0f, "%.2f"))
+	{
+		TextComponent->SetTextScale(TextScale);
+		TextComponent->UpdateBounds();
+		if (AActor* Owner = TextComponent->GetOwner())
+		{
+			if (ULevel* Level = Owner->GetLevel())
+			{
+				Level->MarkSpatialDirty();
+			}
+		}
+	}
+
+	bool bBillboard = TextComponent->IsBillboard();
+	if (ImGui::Checkbox("Billboard", &bBillboard))
+	{
+		TextComponent->SetBillboard(bBillboard);
+	}
+}
+
+void FPropertyWindow::DrawSubUVComponentDetails(USubUVComponent* SubUVComponent)
+{
+	if (!SubUVComponent)
+	{
+		return;
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("SubUV");
+
+	FVector2 Size = SubUVComponent->GetSize();
+	float SizeArray[2] = { Size.X, Size.Y };
+	if (ImGui::DragFloat2("Size", SizeArray, 0.01f, 0.01f, 100.0f, "%.2f"))
+	{
+		SubUVComponent->SetSize(FVector2(SizeArray[0], SizeArray[1]));
+		SubUVComponent->UpdateBounds();
+		if (AActor* Owner = SubUVComponent->GetOwner())
+		{
+			if (ULevel* Level = Owner->GetLevel())
+			{
+				Level->MarkSpatialDirty();
+			}
+		}
+	}
+
+	float FPS = SubUVComponent->GetFPS();
+	if (ImGui::DragFloat("FPS", &FPS, 0.1f, 0.0f, 240.0f, "%.1f"))
+	{
+		SubUVComponent->SetFPS(FPS);
+	}
+
+	bool bLoop = SubUVComponent->IsLoop();
+	if (ImGui::Checkbox("Loop", &bLoop))
+	{
+		SubUVComponent->SetLoop(bLoop);
+	}
+
+	bool bBillboard = SubUVComponent->IsBillboard();
+	if (ImGui::Checkbox("Billboard", &bBillboard))
+	{
+		SubUVComponent->SetBillboard(bBillboard);
+	}
+}
+
+void FPropertyWindow::DrawDetailsSection(UActorComponent* Component)
+{
+	if (!Component)
+	{
+		ImGui::TextDisabled("Select a component from the Components panel.");
+		return;
+	}
+
+	const FString ClassName = Component->GetClass() ? Component->GetClass()->GetName() : "UActorComponent";
+	const FString ComponentName = Component->GetName().empty() ? ClassName : Component->GetName();
+
+	ImGui::Text("Name: %s", ComponentName.c_str());
+	ImGui::Text("Class: %s", ClassName.c_str());
+	ImGui::Text("Registered: %s", Component->IsRegistered() ? "Yes" : "No");
+
+	bool bTickEnabled = Component->IsComponentTickEnabled();
+	if (ImGui::Checkbox("Tick Enabled", &bTickEnabled))
+	{
+		Component->SetComponentTickEnabled(bTickEnabled);
+	}
+
+	if (Component->IsA(USceneComponent::StaticClass()))
+	{
+		DrawSceneComponentDetails(static_cast<USceneComponent*>(Component));
+	}
+
+	if (Component->IsA(UStaticMeshComponent::StaticClass()))
+	{
+		DrawStaticMeshComponentDetails(static_cast<UStaticMeshComponent*>(Component));
+	}
+
+	if (Component->IsA(UTextComponent::StaticClass()) && !Component->IsA(UUUIDBillboardComponent::StaticClass()))
+	{
+		DrawTextComponentDetails(static_cast<UTextComponent*>(Component));
+	}
+
+	if (Component->IsA(USubUVComponent::StaticClass()))
+	{
+		DrawSubUVComponentDetails(static_cast<USubUVComponent*>(Component));
+	}
+}
+
+bool FPropertyWindow::AddComponentToActor(AActor* SelectedActor, UClass* ComponentClass, const char* BaseName)
+{
+	if (!SelectedActor || !ComponentClass || !ComponentClass->IsChildOf(UActorComponent::StaticClass()))
+	{
+		return false;
+	}
+
+	USceneComponent* SelectedSceneComponent = GetSelectedSceneComponent(SelectedActor);
+	const bool bIsSceneComponentClass = ComponentClass->IsChildOf(USceneComponent::StaticClass());
+	if (bIsSceneComponentClass && !SelectedSceneComponent && SelectedActor->GetRootComponent())
+	{
+		return false;
+	}
+
+	const FString ComponentName = BuildUniqueComponentName(
+		SelectedActor,
+		(BaseName && BaseName[0] != '\0') ? FString(BaseName) : ComponentClass->GetName());
+
+	UActorComponent* NewComponent = static_cast<UActorComponent*>(
+		FObjectFactory::ConstructObject(ComponentClass, SelectedActor, ComponentName));
+	if (!NewComponent)
+	{
+		return false;
+	}
+
+	SelectedActor->AddOwnedComponent(NewComponent);
+
+	if (NewComponent->IsA(USceneComponent::StaticClass()))
+	{
+		USceneComponent* NewSceneComponent = static_cast<USceneComponent*>(NewComponent);
+		if (SelectedSceneComponent)
+		{
+			NewSceneComponent->AttachTo(SelectedSceneComponent);
+		}
+		else
+		{
+			SelectedActor->SetRootComponent(NewSceneComponent);
+		}
+	}
+
+	if (!NewComponent->IsRegistered())
+	{
+		NewComponent->OnRegister();
+	}
+
+	if (NewComponent->IsA(UPrimitiveComponent::StaticClass()))
+	{
+		UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(NewComponent);
+		PrimitiveComponent->UpdateBounds();
+	}
+
+	if (NewComponent->IsA(UTextComponent::StaticClass()))
+	{
+		UTextComponent* TextComponent = static_cast<UTextComponent*>(NewComponent);
+		TextComponent->MarkTextMeshDirty();
+	}
+
+	if (ULevel* Level = SelectedActor->GetLevel())
+	{
+		Level->MarkSpatialDirty();
+	}
+
+	SelectedComponent = NewComponent;
+	return true;
+}
+
+bool FPropertyWindow::DrawAddComponentButton(AActor* SelectedActor)
+{
+	if (!SelectedActor)
+	{
+		return false;
+	}
+
+	bool bAddedComponent = false;
+	constexpr float AddButtonWidth = 90.0f;
+	USceneComponent* SelectedSceneComponent = GetSelectedSceneComponent(SelectedActor);
+
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x > AddButtonWidth
+		? ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - AddButtonWidth
+		: ImGui::GetCursorPosX());
+
+	if (ImGui::Button("+ Add", ImVec2(AddButtonWidth, 0.0f)))
+	{
+		ImGui::OpenPopup("##AddComponentPopup");
+	}
+
+	if (ImGui::BeginPopup("##AddComponentPopup"))
+	{
+		ImGui::TextDisabled("Add Component");
+		if (SelectedComponent && IsComponentOwnedByActor(SelectedActor, SelectedComponent))
+		{
+			const FString ComponentName = SelectedComponent->GetName().empty()
+				? SelectedComponent->GetClass()->GetName()
+				: SelectedComponent->GetName();
+			ImGui::Text("Target: %s", ComponentName.c_str());
+		}
+		else
+		{
+			ImGui::TextDisabled("Target: Select a component below");
+		}
+		ImGui::Separator();
+
+		for (const FComponentAddOption& Option : GComponentAddOptions)
+		{
+			UClass* OptionClass = Option.GetClass();
+			const bool bIsSceneOption = OptionClass && OptionClass->IsChildOf(USceneComponent::StaticClass());
+			const bool bCanAdd = OptionClass && (!bIsSceneOption || SelectedSceneComponent || !SelectedActor->GetRootComponent());
+
+			ImGui::BeginDisabled(!bCanAdd);
+			if (ImGui::Selectable(Option.Label))
+			{
+				bAddedComponent = AddComponentToActor(SelectedActor, OptionClass, Option.BaseName);
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndDisabled();
+		}
+
+		ImGui::EndPopup();
+	}
+
+	return bAddedComponent;
+}
+
+void FPropertyWindow::DrawSceneComponentNode(USceneComponent* Component, int32 Depth)
+{
+	if (!Component)
+	{
+		return;
+	}
+
+	const FString ClassName = Component->GetClass() ? Component->GetClass()->GetName() : "USceneComponent";
+	const FString ComponentName = Component->GetName().empty() ? ClassName : Component->GetName();
+	const bool bIsRoot = (Component->GetAttachParent() == nullptr);
+	const TArray<USceneComponent*>& Children = Component->GetAttachChildren();
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (SelectedComponent == Component)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+	if (Children.empty())
+	{
+		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+
+	const bool bOpen = ImGui::TreeNodeEx(
+		Component,
+		Flags,
+		"%s%s (%s)",
+		bIsRoot ? "[Root] " : "",
+		ComponentName.c_str(),
+		ClassName.c_str());
+
+	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+	{
+		SelectedComponent = Component;
+	}
+
+	if (bOpen && !Children.empty())
+	{
+		for (USceneComponent* Child : Children)
+		{
+			DrawSceneComponentNode(Child, Depth + 1);
+		}
+		ImGui::TreePop();
+	}
+}
+
+void FPropertyWindow::DrawNonSceneComponentEntry(UActorComponent* Component)
+{
+	if (!Component)
+	{
+		return;
+	}
+
+	const FString ClassName = Component->GetClass() ? Component->GetClass()->GetName() : "UActorComponent";
+	const FString ComponentName = Component->GetName().empty() ? ClassName : Component->GetName();
+	const FString Label = ComponentName + " (" + ClassName + ")";
+
+	if (ImGui::Selectable(Label.c_str(), SelectedComponent == Component))
+	{
+		SelectedComponent = Component;
+	}
+}
+
+void FPropertyWindow::DrawComponentSection(AActor* SelectedActor)
+{
+	if (!SelectedActor)
+	{
+		ImGui::TextDisabled("No actor selected.");
+		return;
+	}
+
+	if (USceneComponent* RootComponent = SelectedActor->GetRootComponent())
+	{
+		DrawSceneComponentNode(RootComponent, 0);
+	}
+	else
+	{
+		ImGui::TextDisabled("No root scene component.");
+	}
+
+	bool bHasNonSceneComponent = false;
+	for (UActorComponent* Component : SelectedActor->GetComponents())
+	{
+		if (!Component || Component->IsA(USceneComponent::StaticClass()))
+		{
+			continue;
+		}
+
+		if (!bHasNonSceneComponent)
+		{
+			ImGui::Spacing();
+			ImGui::TextDisabled("Other Components");
+			bHasNonSceneComponent = true;
+		}
+
+		DrawNonSceneComponentEntry(Component);
+	}
 }
 
 void FPropertyWindow::Render(FEditorEngine* Engine)
@@ -124,7 +727,60 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 	ImGui::SameLine();
 	ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.4f, 1.0f), "%s", ActorNameBuf);
 
+	AActor* SelectedActor = Engine ? Engine->GetSelectedActor() : nullptr;
+	if (!IsComponentOwnedByActor(SelectedActor, SelectedComponent))
+	{
+		SelectedComponent = nullptr;
+		if (SelectedActor)
+		{
+			if (USceneComponent* RootComponent = SelectedActor->GetRootComponent())
+			{
+				SelectedComponent = RootComponent;
+			}
+			else
+			{
+				for (UActorComponent* Component : SelectedActor->GetComponents())
+				{
+					if (Component)
+					{
+						SelectedComponent = Component;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	ImGui::Separator();
+
+	ImGui::TextDisabled("Components");
+	DrawAddComponentButton(SelectedActor);
+
+	const float AvailableHeight = ImGui::GetContentRegionAvail().y;
+	const float ComponentsPanelHeight = AvailableHeight > 220.0f ? AvailableHeight * 0.4f : 120.0f;
+	if (ImGui::BeginChild("##ComponentsPanel", ImVec2(0.0f, ComponentsPanelHeight), true))
+	{
+		DrawComponentSection(SelectedActor);
+	}
+	ImGui::EndChild();
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("Details");
+	if (ImGui::BeginChild("##DetailsPanel", ImVec2(0.0f, 0.0f), true))
+	{
+		DrawDetailsSection(SelectedComponent);
+	}
+	ImGui::EndChild();
+
+	ImGui::End();
+	return;
+
+	if (SelectedActor && ImGui::CollapsingHeader("Components", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::Indent(8.0f);
+		DrawComponentSection(SelectedActor);
+		ImGui::Unindent(8.0f);
+	}
 
 	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -134,7 +790,6 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 	}
 	if (Engine)
 	{
-		AActor* SelectedActor = Engine->GetSelectedActor();
 		if (SelectedActor)
 		{
 			if (ImGui::CollapsingHeader("Billboard", ImGuiTreeNodeFlags_DefaultOpen))

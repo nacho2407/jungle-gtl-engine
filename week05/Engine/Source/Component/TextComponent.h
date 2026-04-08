@@ -52,6 +52,8 @@ public:
 	void ClearTextMeshDirty() { bTextMeshDirty = false; }
 
 	void Serialize(FArchive& Ar) override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 	void SetHiddenInGame(bool bInHidden) { bHiddenInGame = bInHidden; }
 	bool IsHiddenInGame() const { return bHiddenInGame; }

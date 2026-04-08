@@ -37,6 +37,15 @@ FRenderMesh* UStaticMeshComponent::GetRenderMesh() const
 	 return StaticMesh ? StaticMesh->GetRenderData() : nullptr;
 }
 
+void UStaticMeshComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	UStaticMeshComponent* DuplicatedStaticMeshComponent = static_cast<UStaticMeshComponent*>(DuplicatedObject);
+	DuplicatedStaticMeshComponent->SetStaticMesh(StaticMesh);
+	DuplicateMaterialsTo(DuplicatedStaticMeshComponent);
+}
+
 FBoxSphereBounds UStaticMeshComponent::GetLocalBounds() const
 {
 	if (StaticMesh)

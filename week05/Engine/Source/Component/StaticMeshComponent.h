@@ -19,6 +19,7 @@ public:
 	// 현재는 일단 .obj파싱 용도로 사용 - 추후 직렬화?
 	// virtual void Serialize(FArchive& Ar) override;
 	void Serialize(FArchive& Ar) override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 	FBoxSphereBounds CalcBounds(const FMatrix& LocalToWorld) const override;
 	FBoxSphereBounds GetLocalBounds() const override;
 	virtual bool HasMeshIntersection() const override { return true; }

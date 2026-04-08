@@ -29,6 +29,7 @@ void UTextRenderComponent::SetText(const FString& InText)
 	}
 }
 
+
 void UTextRenderComponent::SetHorizontalAlignment(EHorizTextAligment value)
 {
 	HorizontalAlignment = value;
@@ -41,9 +42,34 @@ void UTextRenderComponent::SetVerticalAlignment(EVerticalTextAligment value)
 	MarkTextMeshDirty();
 }
 
+void UTextComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	DuplicatedTextComponent->Text = Text;
+	DuplicatedTextComponent->TextColor = TextColor;
+	DuplicatedTextComponent->TextScale = TextScale;
+	DuplicatedTextComponent->bBillboard = bBillboard;
+	DuplicatedTextComponent->bTextMeshDirty = true;
+	if (DuplicatedTextComponent->TextMesh)
+	{
+		DuplicatedTextComponent->TextMesh->bIsDirty = true;
+	}
+}
+
 FRenderMesh* UTextRenderComponent::GetRenderMesh() const
 {
 	return TextMesh.get();
+}
+
+
+void UTextComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	UPrimitiveComponent::PostDuplicate(DuplicatedObject, Context);
+
+	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	DuplicatedTextComponent->MarkTextMeshDirty();
 }
 
 void UTextRenderComponent::Serialize(FArchive& Ar)

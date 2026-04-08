@@ -71,6 +71,14 @@ public:
 	void VisitBVHNodes(const FBVHNodeVisitor& Visitor) const;
 	void VisitBVHNodesForPrimitive(UPrimitiveComponent* Target, const FBVHNodeVisitor& Visitor) const;
 
+	//----------------------------------------------------------------
+	//						PIE Layer
+	//----------------------------------------------------------------
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void DuplicateSubObjects(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
+	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
+
 private:
 	void GatherPrimitiveComponents(TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void RebuildSpatialIfNeeded() const;

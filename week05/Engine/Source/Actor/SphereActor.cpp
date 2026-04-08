@@ -20,3 +20,9 @@ void ASphereActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void ASphereActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<ASphereActor*>(DuplicatedObject)->SphereMeshComponent = Context.FindDuplicate(SphereMeshComponent);
+}

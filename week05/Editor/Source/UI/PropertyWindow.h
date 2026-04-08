@@ -3,6 +3,9 @@
 #include "imgui.h"
 #include <functional>
 class FEditorEngine;
+class AActor;
+class UActorComponent;
+class USceneComponent;
 using FPropertyChangedCallback = std::function<void(const FVector&, const FVector&, const FVector&)>;
 
 class FPropertyWindow
@@ -22,10 +25,24 @@ public:
 	FPropertyChangedCallback OnChanged;
 private:
 	void DrawTransformSection();
+	void DrawComponentSection(AActor* SelectedActor);
+	void DrawSceneComponentNode(USceneComponent* Component, int32 Depth = 0);
+	void DrawNonSceneComponentEntry(UActorComponent* Component);
+	void DrawDetailsSection(UActorComponent* Component);
+	void DrawSceneComponentDetails(USceneComponent* SceneComponent);
+	void DrawStaticMeshComponentDetails(class UStaticMeshComponent* MeshComponent);
+	void DrawTextComponentDetails(class UTextComponent* TextComponent);
+	void DrawSubUVComponentDetails(class USubUVComponent* SubUVComponent);
+	bool DrawVector3Control(const char* Label, const FVector& Value, FVector& OutValue, float Speed, const char* Format);
+	bool DrawAddComponentButton(AActor* SelectedActor);
+	bool AddComponentToActor(AActor* SelectedActor, class UClass* ComponentClass, const char* BaseName);
+	bool IsComponentOwnedByActor(AActor* SelectedActor, UActorComponent* Component) const;
+	USceneComponent* GetSelectedSceneComponent(AActor* SelectedActor) const;
 
 	FVector EditLocation = { 0.0f, 0.0f, 0.0f };
 	FVector EditRotation = { 0.0f, 0.0f, 0.0f };
 	FVector EditScale = { 1.0f, 1.0f, 1.0f };
 	char    ActorNameBuf[128] = "None";
 	bool    bModified = false;
+	UActorComponent* SelectedComponent = nullptr;
 };

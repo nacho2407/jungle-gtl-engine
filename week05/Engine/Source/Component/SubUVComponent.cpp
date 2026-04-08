@@ -11,6 +11,23 @@ void USubUVComponent::PostConstruct()
 	SubUVMesh = std::make_shared<FDynamicMesh>();
 }
 
+void USubUVComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	USubUVComponent* DuplicatedSubUVComponent = static_cast<USubUVComponent*>(DuplicatedObject);
+	DuplicatedSubUVComponent->Size = Size;
+	DuplicatedSubUVComponent->Color = Color;
+	DuplicatedSubUVComponent->Columns = Columns;
+	DuplicatedSubUVComponent->Rows = Rows;
+	DuplicatedSubUVComponent->TotalFrames = TotalFrames;
+	DuplicatedSubUVComponent->FirstFrame = FirstFrame;
+	DuplicatedSubUVComponent->LastFrame = LastFrame;
+	DuplicatedSubUVComponent->FPS = FPS;
+	DuplicatedSubUVComponent->bLoop = bLoop;
+	DuplicatedSubUVComponent->bBillboard = bBillboard;
+}
+
 FRenderMesh* USubUVComponent::GetRenderMesh() const { return SubUVMesh.get(); }
 
 FBoxSphereBounds USubUVComponent::GetWorldBounds() const
