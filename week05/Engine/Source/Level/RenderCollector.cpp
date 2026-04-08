@@ -4,12 +4,14 @@
 #include "Actor/Actor.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Core/Engine.h"
 #include "Component/TextComponent.h"
 #include "Debug/EngineLog.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/TextMeshBuilder.h"
 #include "Renderer/SubUVRenderer.h"
+#include "Renderer/BillboardRenderer.h"
 #include "Renderer/Material.h"
 #include "Renderer/MeshData.h"
 
@@ -25,15 +27,16 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 
 	FTextMeshBuilder& TextRenderer = Renderer->GetTextRenderer();
 	FSubUVRenderer& SubUVRenderer = Renderer->GetSubUVRenderer();
+	FBillboardRenderer& BillboardRenderer = Renderer->GetBillboardRenderer();
 
 	for (UPrimitiveComponent* Comp : VisiblePrimitives)
 	{
 		if (!Comp) continue;
 
 		// ─── 1. 텍스트 컴포넌트 ───
-		if (Comp->IsA(UTextComponent::StaticClass()))
+		if (Comp->IsA(UTextRenderComponent::StaticClass()))
 		{
-			UTextComponent* TextComp = static_cast<UTextComponent*>(Comp);
+			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Comp);
 			FRenderMesh* TextMesh = TextComp->GetRenderMesh();
 
 			if (TextMesh)
@@ -41,7 +44,8 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 				bool bBuilt = false;
 				if (TextComp->IsTextMeshDirty())
 				{
-					bBuilt = TextRenderer.BuildTextMesh(TextComp->GetDisplayText(), *TextMesh);
+					bBuilt = TextRenderer.BuildTextMesh(TextComp->GetDisplayText(), *TextMesh, 
+						1.0f, TextComp->GetHorizontalAlignment(), TextComp->GetVerticalAlignment());
 					if (bBuilt)
 					{
 						TextMesh->bIsDirty = true;
@@ -169,6 +173,40 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 			}
 			continue;
 		}
+
+		// ─── 4. 빌보드 컴포넌트 ───
+		if (Comp->IsA(UBillboardComponent::StaticClass()))
+		{
+			UBillboardComponent* BillboardComponent = static_cast<UBillboardComponent*>(Comp);
+			FRenderMesh* BillboardMesh = BillboardComponent->GetBillboardMesh();
+
+			if (BillboardMesh && BillboardRenderer.BuildBillboardMesh(BillboardComponent->GetSize(), *BillboardMesh))
+			{
+				auto MatTex = BillboardRenderer.GetOrLoadTexture(BillboardComponent->GetTexturePath());
+				FMaterial* BillboardMat = BillboardRenderer.GetBillboardMeterial();
+
+				if (BillboardMat && MatTex)
+				{
+					BillboardMat->SetMaterialTexture(MatTex);
+
+					FVector2 CellSize = BillboardComponent->GetUVMax() - BillboardComponent->GetUVMin();
+					FVector2 UVOffset = BillboardComponent->GetUVMin();
+					BillboardMat->SetParameterData("CellSize", &CellSize, 8);
+					BillboardMat->SetParameterData("UVOffset", &UVOffset, 8);
+
+					FRenderCommand Command;
+					Command.RenderMesh = BillboardMesh;
+					Command.Material = BillboardMat;
+
+					Command.WorldMatrix = BillboardComponent->GetWorldTransform();
+					const FVector WorldPos = Command.WorldMatrix.GetTranslation();
+					const FVector Scale = Command.WorldMatrix.GetScaleVector();
+					Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);
+
+					OutQueue.AddCommand(Command);
+				}
+			}
+		}
 	}
 }
 
@@ -188,7 +226,7 @@ void FSceneRenderCollector::FrustrumCull(const TArray<AActor*>& Actors, const FF
 
 			const bool bIsUUID = PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass());
 			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-			const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
+			const bool bIsText = PrimitiveComponent->IsA(UTextRenderComponent::StaticClass());
 			// ─── ShowFlags에 따른 필터링 ───
 			if (bIsUUID)
 			{

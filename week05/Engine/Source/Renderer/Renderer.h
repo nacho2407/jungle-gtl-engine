@@ -5,6 +5,7 @@
 #include "Renderer/RenderStateManager.h"
 #include "Renderer/TextMeshBuilder.h"
 #include "Renderer/SubUVRenderer.h"
+#include "Renderer/BillboardRenderer.h"
 #include "ShaderManager.h"
 #include <d3d11.h>
 #include <filesystem>
@@ -121,6 +122,7 @@ public:
 
 	FTextMeshBuilder& GetTextRenderer() { return TextRenderer; }
 	FSubUVRenderer& GetSubUVRenderer() { return SubUVRenderer; }
+	FBillboardRenderer& GetBillboardRenderer() { return BillboardRenderer; }
 	/** 현재 ViewMatrix를 역변환해 카메라 월드 위치를 반환한다. */
 	FVector GetCameraPosition() const;
 
@@ -219,6 +221,7 @@ private:
 
 	FTextMeshBuilder TextRenderer;
 	FSubUVRenderer SubUVRenderer;
+	FBillboardRenderer BillboardRenderer;
 
 	ID3D11ShaderResourceView* FolderIconSRV = nullptr;
 	ID3D11ShaderResourceView* FileIconSRV = nullptr;

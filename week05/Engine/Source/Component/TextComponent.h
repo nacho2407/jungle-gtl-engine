@@ -3,10 +3,14 @@
 
 #include "Renderer/MeshData.h"
 
-class ENGINE_API UTextComponent : public UPrimitiveComponent
+enum EHorizTextAligment;
+enum EVerticalTextAligment;
+
+
+class ENGINE_API UTextRenderComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_RTTI(UTextComponent, UPrimitiveComponent)
+	DECLARE_RTTI(UTextRenderComponent, UPrimitiveComponent)
 
 	void PostConstruct() override;
 
@@ -31,6 +35,12 @@ public:
 	void SetWorldScale(float InScale) { TextScale = InScale; }
 	float GetWorldScale() const { return TextScale; }
 
+	void SetHorizontalAlignment(EHorizTextAligment value);
+	EHorizTextAligment GetHorizontalAlignment() const { return HorizontalAlignment; }
+
+	void SetVerticalAlignment(EVerticalTextAligment value);
+	EVerticalTextAligment GetVerticalAlignment() const { return VerticalAlignment; }
+
 	virtual FVector GetRenderWorldPosition() const { return GetWorldLocation(); }
 	virtual FVector GetRenderWorldScale() const { return GetWorldTransform().GetScaleVector() * TextScale; }
 
@@ -45,11 +55,19 @@ public:
 	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
+	void SetHiddenInGame(bool bInHidden) { bHiddenInGame = bInHidden; }
+	bool IsHiddenInGame() const { return bHiddenInGame; }
+
 protected:
 	FString Text = "Text";
 	FVector4 TextColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float TextScale = 1.0f;
 	bool bBillboard = false;
+
+	bool bHiddenInGame = true;
+
+	EHorizTextAligment HorizontalAlignment = EHorizTextAligment::EHTA_Center;
+	EVerticalTextAligment VerticalAlignment = EVerticalTextAligment::EVRTA_TextCenter;
 
 	std::shared_ptr<struct FDynamicMesh> TextMesh;
 

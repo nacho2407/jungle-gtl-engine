@@ -105,7 +105,13 @@ void FTextMeshBuilder::Release()
 	RenderStateManager = nullptr;
 }
 
-bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh, float LetterSpacing) const
+bool FTextMeshBuilder::BuildTextMesh(
+	const FString& Text,
+	FRenderMesh& OutMesh,
+	float LetterSpacing,
+	EHorizTextAligment HorizAlignment,
+	EVerticalTextAligment VertAlignment
+) const
 {
 	if (Text.empty())
 	{
@@ -136,13 +142,34 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh, 
 	};
 
 	float TotalWidth = 0.0f;
+	float MaxHeight = 0.0f;
+
 	for (uint32 Cp : Codepoints)
 	{
 		const FFontGlyph& Glyph = Atlas.GetGlyph(Cp);
 		TotalWidth += ResolveAdvance(Cp, Glyph.Advance);
+		MaxHeight = (std::max)(MaxHeight, Glyph.Height);
 	}
 
-	float PenX = -TotalWidth * 0.5f;
+	float PenX = 0.0f;
+	if (HorizAlignment == EHorizTextAligment::EHTA_Center)
+	{
+		PenX = -TotalWidth * 0.5f;
+	}
+	else if (HorizAlignment == EHorizTextAligment::EHTA_Left)
+	{
+		PenX = -TotalWidth;
+	}
+
+	float PenY = 0.0f;
+	if (VertAlignment == EVerticalTextAligment::EVRTA_TextCenter)
+	{
+		PenY = -MaxHeight * 0.5f;
+	}
+	else if (VertAlignment == EVerticalTextAligment::EVRTA_TextBottom)
+	{
+		PenY = -MaxHeight;
+	}
 
 	OutMesh.Vertices.clear();
 	OutMesh.Indices.clear();
@@ -156,8 +183,9 @@ bool FTextMeshBuilder::BuildTextMesh(const FString& Text, FRenderMesh& OutMesh, 
 		{
 			const float X0 = PenX;
 			const float X1 = PenX + Glyph.Width;
-			const float Y0 = 0.0f;
-			const float Y1 = Glyph.Height;
+
+			const float Y0 = PenY;
+			const float Y1 = PenY+ Glyph.Height;
 
 			const uint32 BaseIndex = static_cast<uint32>(OutMesh.Vertices.size());
 

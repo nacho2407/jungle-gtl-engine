@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Renderer/FontAtlas.h"
 #include "Renderer/TextureVertex.h"
+#include "Renderer/RenderType.h"
 #include <d3d11.h>
 #include <memory>
 
@@ -13,6 +14,7 @@ class FMaterial;
 struct FMeshData;
 class FRenderer;
 class FRenderStateManager;
+
 /**
  * 문자열을 렌더링 가능한 메시 데이터로 변환하고 폰트 머티리얼을 관리함
  * 렌더러가 직접 문자열을 그리는 대신 메시와 머티리얼을 생성하여 통합 패스에서 처리함
@@ -33,7 +35,12 @@ public:
 	 * 문자열을 분석하여 메시 데이터(정점/인덱스)를 생성함
 	 * 결과는 텍스트가 바뀔 때만 호출하여 성능을 최적화할 것을 권장함
 	 */
-	bool BuildTextMesh(const FString& Text, FRenderMesh& OutMesh, float LetterSpacing = 1.0f) const;
+	bool BuildTextMesh(
+		const FString& Text, 
+		FRenderMesh& OutMesh,
+		float LetterSpacing = 1.0f,
+		EHorizTextAligment HorizAlignment = EHorizTextAligment::EHTA_Center,
+		EVerticalTextAligment VertAlignment = EVerticalTextAligment::EVRTA_TextBottom) const;
 	void SetFillMode(D3D11_FILL_MODE InFillMode);
 	/** 폰트 아틀라스 텍스처 SRV 및 샘플러 반환 */
 	ID3D11ShaderResourceView* GetAtlasSRV() const { return Atlas.GetTextureSRV(); }

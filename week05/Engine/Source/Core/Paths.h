@@ -23,6 +23,7 @@ public:
 	static std::filesystem::path TextureDir();
 	static std::filesystem::path ContentDir();
 	static std::filesystem::path ShaderCacheDir();
+	static std::filesystem::path IconDir();
 
 	/*
 	// 경로 결합

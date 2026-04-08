@@ -17,4 +17,14 @@ struct ENGINE_API FVector2
 		: X(InX), Y(InY)
 	{
 	}
+
+	FVector2 operator-(const FVector2& Other) const
+	{
+		return FVector2(X - Other.X, Y - Other.Y);
+	}
+
+	FVector2 operator+(const FVector2& Other) const
+	{
+		return FVector2(X + Other.X, Y + Other.Y);
+	}
 };

@@ -29,6 +29,7 @@
 #include "Component/SkyComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/UUIDBillboardComponent.h"
+#include "Component/BillboardComponent.h"
 
 enum class EFileDialogType
 {
@@ -301,8 +302,9 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 				for (UActorComponent* Component : Selected->GetComponents())
 				{
 					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
-					if (Component->IsA(UTextComponent::StaticClass())) continue;
+					if (Component->IsA(UTextRenderComponent::StaticClass())) continue;
 					if (Component->IsA(USubUVComponent::StaticClass())) continue;
+					if (Component->IsA(UBillboardComponent::StaticClass())) continue;
 
 					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
 					if (PrimitiveComponent->GetRenderMesh())

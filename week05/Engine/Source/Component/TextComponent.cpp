@@ -3,11 +3,12 @@
 #include <algorithm>
 
 #include "Serializer/Archive.h"
+#include "Renderer/RenderType.h"
 
 
-IMPLEMENT_RTTI(UTextComponent, UPrimitiveComponent)
+IMPLEMENT_RTTI(UTextRenderComponent, UPrimitiveComponent)
 
-void UTextComponent::PostConstruct()
+void UTextRenderComponent::PostConstruct()
 {
 	// 폰트 렌더링용 메시 데이터 객체 생성
 	bDrawDebugBounds = false;
@@ -18,7 +19,7 @@ void UTextComponent::PostConstruct()
 	if (TextMesh) TextMesh->bIsDirty = true;
 }
 
-void UTextComponent::SetText(const FString& InText)
+void UTextRenderComponent::SetText(const FString& InText)
 {
 	if (Text != InText)
 	{
@@ -28,11 +29,24 @@ void UTextComponent::SetText(const FString& InText)
 	}
 }
 
-void UTextComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+
+void UTextRenderComponent::SetHorizontalAlignment(EHorizTextAligment value)
+{
+	HorizontalAlignment = value;
+	MarkTextMeshDirty();
+}
+
+void UTextRenderComponent::SetVerticalAlignment(EVerticalTextAligment value)
+{
+	VerticalAlignment = value;
+	MarkTextMeshDirty();
+}
+
+void UTextRenderComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
 {
 	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
 
-	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	UTextRenderComponent* DuplicatedTextComponent = static_cast<UTextRenderComponent*>(DuplicatedObject);
 	DuplicatedTextComponent->Text = Text;
 	DuplicatedTextComponent->TextColor = TextColor;
 	DuplicatedTextComponent->TextScale = TextScale;
@@ -44,20 +58,21 @@ void UTextComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateConte
 	}
 }
 
-FRenderMesh* UTextComponent::GetRenderMesh() const
+FRenderMesh* UTextRenderComponent::GetRenderMesh() const
 {
 	return TextMesh.get();
 }
 
-void UTextComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+
+void UTextRenderComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
 {
 	UPrimitiveComponent::PostDuplicate(DuplicatedObject, Context);
 
-	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	UTextRenderComponent* DuplicatedTextComponent = static_cast<UTextRenderComponent*>(DuplicatedObject);
 	DuplicatedTextComponent->MarkTextMeshDirty();
 }
 
-void UTextComponent::Serialize(FArchive& Ar)
+void UTextRenderComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 
@@ -79,7 +94,7 @@ void UTextComponent::Serialize(FArchive& Ar)
 	}
 }
 
-FBoxSphereBounds UTextComponent::GetWorldBounds() const
+FBoxSphereBounds UTextRenderComponent::GetWorldBounds() const
 {
 	const FVector Center = GetRenderWorldPosition();
 	const FString DisplayText = GetDisplayText();
