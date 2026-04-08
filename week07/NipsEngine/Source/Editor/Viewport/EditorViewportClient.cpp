@@ -262,7 +262,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		if (bShiftDown && InputSystem::Get().GetKeyDown(VK_F1))
 		{
 			UnlockCursor();
-			ShowCursor(TRUE);
+			while (ShowCursor(TRUE) < 0);
 		}
 
 		if (InputSystem::Get().GetKeyDown(VK_ESCAPE))
@@ -727,7 +727,7 @@ void FEditorViewportClient::LockCursorToViewport()
 		return;
 	}
 
-	ShowCursor(FALSE);
+	while (ShowCursor(FALSE) >= 0);
 
 	HWND hWnd = Window->GetHWND();
 	SetForegroundWindow(hWnd);
