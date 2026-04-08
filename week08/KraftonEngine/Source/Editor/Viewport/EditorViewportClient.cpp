@@ -290,12 +290,13 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
-	if (EditorEngine && EditorEngine->IsPlayingInEditor())
-	{
-		Gizmo->Deactivate();
-		return;
-	}
+	//기즈모 비활성화하는 설정. 일단은 PIE 중에도 기즈모가 생김.
+	//UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+	//if (EditorEngine && EditorEngine->IsPlayingInEditor())
+	//{
+	//	Gizmo->Deactivate();
+	//	return;
+	//}
 
 	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(),
 		Camera->IsOrthogonal(), Camera->GetOrthoWidth());
