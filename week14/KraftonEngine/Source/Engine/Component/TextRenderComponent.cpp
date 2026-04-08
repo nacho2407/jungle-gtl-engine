@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/MeshBufferManager.h"
@@ -136,9 +137,36 @@ void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
+	// TextRender의 GetEditableProperties는 USceneComponent 베이스를 직접 사용한다.
+	USceneComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Font") == 0)
 	{
 		SetFont(FontName);
+		MarkProxyDirty(EDirtyFlag::Mesh);
+	}
+	else if (strcmp(PropertyName, "Text") == 0)
+	{
+		// 문자 길이가 바뀌면 빌보드 바운드/아웃라인 행렬이 변한다.
+		MarkProxyDirty(EDirtyFlag::Transform);
+		MarkWorldBoundsDirty();
+	}
+	else if (strcmp(PropertyName, "Font Size") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Transform);
+	}
+	else if (strcmp(PropertyName, "Visible") == 0)
+	{
+		// TextRender는 자체 "Visible" 항목을 노출하므로 가시성 전파를 직접 수행한다.
+		MarkProxyDirty(EDirtyFlag::Visibility);
+		if (AActor* OwnerActor = GetOwner())
+		{
+			if (UWorld* World = OwnerActor->GetWorld())
+			{
+				World->MarkWorldPrimitivePickingBVHDirty();
+				World->UpdateActorInOctree(OwnerActor);
+			}
+		}
 	}
 }
 
