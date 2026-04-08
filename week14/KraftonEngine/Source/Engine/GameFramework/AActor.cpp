@@ -230,10 +230,15 @@ void AActor::Serialize(FArchive& Ar)
 	Ar << bNeedsTick;
 }
 
-// SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들고 AttachToComponent로 재연결.
+// SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들되,
+// RegisterComponent(=CreateRenderState/Proxy) 호출 전에 부모에 Attach 해서
+// 프록시가 처음부터 올바른 월드 트랜스폼으로 생성되도록 한다.
+// (Attach 전 Register 시 child의 world transform = local로 잘못 계산되어
+//  복제 직후 한 프레임 동안 잘못된 위치에 렌더되는 문제가 있었음.)
 static USceneComponent* DuplicateSceneSubtree(
 	const USceneComponent* Src,
 	AActor* DupOwner,
+	USceneComponent* DupParent,
 	TSet<const UActorComponent*>& Visited)
 {
 	if (!Src) return nullptr;
@@ -242,15 +247,16 @@ static USceneComponent* DuplicateSceneSubtree(
 	if (!DupNode) return nullptr;
 
 	DupNode->SetOwner(DupOwner);
+	if (DupParent)
+	{
+		DupNode->AttachToComponent(DupParent); // Register 전에 부모 연결
+	}
 	DupOwner->RegisterComponent(DupNode); // Outer/OwnedComponents/CreateRenderState 일괄 처리
 	Visited.insert(Src);
 
 	for (USceneComponent* Child : Src->GetChildren())
 	{
-		if (USceneComponent* DupChild = DuplicateSceneSubtree(Child, DupOwner, Visited))
-		{
-			DupChild->AttachToComponent(DupNode); // 부모 재연결 (양방향)
-		}
+		DuplicateSceneSubtree(Child, DupOwner, DupNode, Visited);
 	}
 	return DupNode;
 }
@@ -276,7 +282,7 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	// 3a) Root 서브트리 재귀 복제 — 도달 가능한 모든 SceneComponent를 처리
 	if (RootComponent)
 	{
-		USceneComponent* DupRoot = DuplicateSceneSubtree(RootComponent, Dup, Visited);
+		USceneComponent* DupRoot = DuplicateSceneSubtree(RootComponent, Dup, nullptr, Visited);
 		if (DupRoot)
 		{
 			Dup->SetRootComponent(DupRoot);

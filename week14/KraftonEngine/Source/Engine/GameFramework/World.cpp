@@ -369,9 +369,14 @@ void UWorld::BeginPlay()
 {
 	bHasBegunPlay = true;
 
-	for (AActor* Actor : Actors)
+	// 인덱스 기반 순회 — BeginPlay 도중 SpawnActor가 호출되면 Actors가 push_back되어
+	// range-for 이터레이터가 무효화될 수 있다. AddActor가 bHasBegunPlay 가드로 신규
+	// 액터의 BeginPlay를 직접 트리거하므로, 여기서는 스냅샷 시점 액터만 처리한다.
+	const size_t InitialCount = Actors.size();
+	for (size_t i = 0; i < InitialCount; ++i)
 	{
-		if (Actor)
+		AActor* Actor = Actors[i];
+		if (Actor && !Actor->HasActorBegunPlay())
 		{
 			Actor->BeginPlay();
 		}
