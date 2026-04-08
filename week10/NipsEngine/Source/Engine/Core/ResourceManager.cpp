@@ -164,11 +164,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 			MaterialFilePaths.push_back(RelativePath);
 			LoadMaterial(RelativePath);
 		}
-		else if (
-			Extension == L".png" ||
-			Extension == L".dds" ||
-			Extension == L".jpg" ||
-			Extension == L".jpeg")
+		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
 			const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
 
@@ -182,10 +178,15 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 				ParticleFilePaths.push_back(RelativePath);
 				RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
 			}
-			else
+			else if (Meta.Type == EAssetMetaType::Texture)
 			{
 				TextureFilePaths.push_back(RelativePath);
+				LoadTexture(RelativePath, Device);
 			}
+			//else
+			//{
+			//	TextureFilePaths.push_back(RelativePath);
+			//}
 		}
 	}
 
@@ -283,10 +284,15 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 					ParticleFilePaths.push_back(RelativePath);
 					RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
 				}
-				else
+				else if (Meta.Type == EAssetMetaType::Texture)
 				{
 					TextureFilePaths.push_back(RelativePath);
+					LoadTexture(RelativePath, CachedDevice.Get());
 				}
+				//else
+				//{
+				//	TextureFilePaths.push_back(RelativePath);
+				//}
 			}
 		}
 	}
@@ -377,6 +383,10 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 					{
 						Meta.Type = EAssetMetaType::Particle;
 					}
+					else if (TypeStr == "Texture")
+					{
+						Meta.Type = EAssetMetaType::Texture;
+					}
 				}
 
 				if (Root.hasKey(ResourceKey::Columns))
@@ -405,6 +415,10 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 	{
 		Meta.Type = EAssetMetaType::Particle;
 	}
+	else if (ParentDir == L"Texture")
+	{
+		Meta.Type = EAssetMetaType::Texture;
+	}
 	else
 	{
 		Meta.Type = EAssetMetaType::None;
@@ -423,6 +437,10 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 	else if (Meta.Type == EAssetMetaType::Particle)
 	{
 		Root[ResourceKey::Type] = "Particle";
+	}
+	else if (Meta.Type == EAssetMetaType::Texture)
+	{
+		Root[ResourceKey::Type] = "Texture";
 	}
 	else
 	{
@@ -931,6 +949,11 @@ UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 TArray<FString> FResourceManager::GetStaticMeshPaths() const
 {
 	return ObjFilePaths;
+}
+
+const TArray<FString>& FResourceManager::GetTextureFilePath() const
+{
+	return TextureFilePaths;
 }
 
 size_t FResourceManager::GetMaterialMemorySize() const

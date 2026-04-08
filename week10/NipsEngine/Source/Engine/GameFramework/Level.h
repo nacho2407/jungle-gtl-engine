@@ -1,12 +1,17 @@
 ﻿#pragma once
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
+
 class ULevel : public UObject
 {
 public:
 	DECLARE_CLASS(ULevel, UObject)
+
 	ULevel() = default;
-	~ULevel() override {};
+	virtual ~ULevel() override;
+
+	virtual ULevel* Duplicate() override;
+    virtual ULevel* DuplicateSubObjects() override { return this; }
 
 	void AddActor(AActor* Actor) { Actors.push_back(Actor); }
 	void RemoveActor(AActor* Actor) {
@@ -21,6 +26,5 @@ public:
 
 private:
 	TArray<AActor*> Actors;
-
 };
 
