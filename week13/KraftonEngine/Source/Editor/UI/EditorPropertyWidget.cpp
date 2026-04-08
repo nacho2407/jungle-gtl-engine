@@ -239,9 +239,9 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 			if (ImGui::DragFloat3("Rotation", RotXYZ, 0.1f))
 			{
-				CachedRot.Roll  = RotXYZ[0];
+				CachedRot.Roll = RotXYZ[0];
 				CachedRot.Pitch = RotXYZ[1];
-				CachedRot.Yaw   = RotXYZ[2];
+				CachedRot.Yaw = RotXYZ[2];
 
 				if (SelectedActors.size() > 1)
 				{
@@ -401,15 +401,19 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
 	ImGui::SameLine();
-	if (ImGui::Button("Remove"))
+	if (SelectedComponent != Actor->GetRootComponent())
 	{
-		//if (SelectedComponent != nullptr)
-		//{
-		//	Actor->RemoveComponent(SelectedComponent);
-		//	SelectedComponent = nullptr;
-		//	return;
-		//}
+		if (ImGui::Button("Remove"))
+		{
+			if (SelectedComponent != nullptr)
+			{
+				Actor->RemoveComponent(SelectedComponent);
+				SelectedComponent = nullptr;
+				return;
+			}
+		}
 	}
+
 	ImGui::Separator();
 
 	// PropertyDescriptor 기반 자동 위젯 렌더링
@@ -598,7 +602,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	}
 	case EPropertyType::MaterialSlot:
 	{
-		FMaterialSlot* Slot    = static_cast<FMaterialSlot*>(Prop.ValuePtr);
+		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
 		int32          ElemIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
 
 		FString SlotName = "None";
