@@ -33,6 +33,11 @@ public:
 	// 외부에서 프록시를 Dirty로 마킹 (SceneComponent::MarkTransformDirty 등에서 호출)
 	void MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag);
 
+	// 모든 프록시의 PerObjectCB를 dirty로 마킹 — PIE 전환 시 Renderer의
+	// PerObjectCBPool(ProxyId 인덱싱, 월드 간 공유)이 타 월드 값으로 오염된 상태를
+	// 리프레시하기 위해 사용. GPU 업로드는 다음 프레임 Render에서 수행된다.
+	void MarkAllPerObjectCBDirty();
+
 	// --- 선택 ---
 	void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
 	bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
