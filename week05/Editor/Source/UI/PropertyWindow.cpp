@@ -11,6 +11,7 @@
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 #include "Component/BillboardComponent.h"
+#include "Component/MoveComponent.h"
 #include "Level/Level.h"
 #include "Object/Class.h"
 #include "Object/ObjectFactory.h"
@@ -37,6 +38,7 @@ namespace
 		{ "Static Mesh Component", "StaticMeshComponent", &UStaticMeshComponent::StaticClass },
 		{ "Text Component", "TextComponent", &UTextRenderComponent::StaticClass },
 		{ "SubUV Component", "SubUVComponent", &USubUVComponent::StaticClass },
+		{"Move Component", "MoveComponent", &UMoveComponent::StaticClass}
 	};
 
 	FString BuildUniqueComponentName(AActor* SelectedActor, const FString& BaseName)

@@ -76,12 +76,7 @@ FEditorEngine::~FEditorEngine() = default;
 void FEditorEngine::Shutdown()
 {
 	FEngineLog::Get().SetCallback({});
-
-	if (bIsPIEActive)
-	{
-		EndPIE();
-	}
-
+	if (IsPIEActive() || IsPIEPaused()) EndPIE();
 	EditorUI.SaveEditorSettings();
 
 	if (GetViewportClient() == PreviewViewportClient.get())
@@ -300,6 +295,14 @@ void FEditorEngine::FinalizeInitialize()
 
 void FEditorEngine::PrepareFrame(float DeltaTime)
 {
+	if (bIsPIEActive && PIEViewportId != INVALID_VIEWPORT_ID)
+	{
+		if (SlateApplication && !SlateApplication->IsViewportActive(PIEViewportId))
+		{
+			EndPIE();
+		}
+	}
+
 	SyncViewportClient();
 	SyncFocusedViewportLocalState();
 	CameraSubsystem.PrepareFrame(GetActiveWorld(), GetScene(), DeltaTime);
@@ -381,8 +384,6 @@ void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDe
 
 void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) const
 {
-	return;
-
 	AActor* SelectedActor = GetSelectedActor();
 	if (!SelectedActor)
 	{
@@ -519,6 +520,8 @@ bool FEditorEngine::StartPIE()
 		Backup.ViewportId = Entry.Id;
 		Backup.WorldContext = Entry.WorldContext;
 		Backup.LocalState = Entry.LocalState;
+		Backup.LocalState.ViewMode = Entry.LocalState.ViewMode;
+		Backup.LocalState.ShowFlags = Entry.LocalState.ShowFlags;
 		SavedPIEViewportStates.push_back(Backup);
 	}
 
@@ -553,10 +556,31 @@ bool FEditorEngine::StartPIE()
 	if (PIEViewportEntry)
 	{
 		PIEViewportEntry->WorldContext = PIEWorldContext;
-		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
-		PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
-		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
-		PIEViewportEntry->LocalState.bShowGrid = false;
+		PIEViewportId = PIEViewportEntry->Id;
+		PIEViewportEntry->LocalState.ViewMode = ERenderMode::Lighting;
+		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_UUID, false);
+		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, false);
+		if (PIEViewportEntry->LocalState.ProjectionType == EViewportType::Perspective)
+		{
+			PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
+			PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
+			PIEViewportEntry->LocalState.bShowGrid = false;
+		}
+		else
+		{
+			// PIE should not inherit the last perspective camera when launched from
+			// an ortho viewport. Start from a deterministic perspective state instead.
+			const FViewportLocalState PreviousViewportState = PIEViewportEntry->LocalState;
+			FViewportLocalState PIEViewportState = FViewportLocalState::CreateDefault(EViewportType::Perspective);
+			PIEViewportState.ShowFlags = PreviousViewportState.ShowFlags;
+			PIEViewportState.ViewMode = PreviousViewportState.ViewMode;
+			PIEViewportState.GridSize = PreviousViewportState.GridSize;
+			PIEViewportState.LineThickness = PreviousViewportState.LineThickness;
+			PIEViewportState.NearPlane = PreviousViewportState.NearPlane;
+			PIEViewportState.FarPlane = PreviousViewportState.FarPlane;
+			PIEViewportState.bShowGrid = false;
+			PIEViewportEntry->LocalState = PIEViewportState;
+		}
 	}
 
 	SetSelectedActor(nullptr);
@@ -604,6 +628,7 @@ void FEditorEngine::EndPIE()
 
 	bIsPIEActive = false;
 	bIsPIEPaused = false;
+	PIEViewportId = INVALID_VIEWPORT_ID;
 }
 
 void FEditorEngine::TogglePIEPause()

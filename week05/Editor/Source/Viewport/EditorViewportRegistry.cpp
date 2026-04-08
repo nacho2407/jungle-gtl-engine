@@ -200,6 +200,23 @@ bool FEditorViewportRegistry::SetViewportType(FViewportId ViewportId, EViewportT
 			}
 		}
 
+		if (!SeedPerspective)
+		{
+			for (const FViewportEntry& Entry : Entries)
+			{
+				if (Entry.Id == ViewportId)
+				{
+					continue;
+				}
+
+				if (Entry.LocalState.ProjectionType == EViewportType::Perspective)
+				{
+					SeedPerspective = &Entry;
+					break;
+				}
+			}
+		}
+
 		if (SeedPerspective)
 		{
 			ConvertedState.Position = SeedPerspective->LocalState.Position;

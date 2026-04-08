@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Source\Actor\BillboardActor.h" />
     <ClInclude Include="Source\Component\BillboardComponent.h" />
+    <ClInclude Include="Source\Component\MoveComponent.h" />
     <ClInclude Include="Source\CoreMinimal.h" />
     <ClInclude Include="Source\EngineAPI.h" />
     <ClInclude Include="Source\Actor\Actor.h" />
@@ -249,6 +250,7 @@
     <ClCompile Include="Source\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Component\LineBatchComponent.cpp" />
     <ClCompile Include="Source\Component\MeshComponent.cpp" />
+    <ClCompile Include="Source\Component\MoveComponent.cpp" />
     <ClCompile Include="Source\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Component\RandomColorComponent.cpp" />
     <ClCompile Include="Source\Component\SceneComponent.cpp" />
