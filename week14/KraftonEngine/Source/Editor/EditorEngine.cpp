@@ -210,6 +210,13 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
 	SetActiveWorld(FName("PIE"));
 
+	// GPU Occlusion readback은 ProxyId 기반이라 월드가 갈리면 stale.
+	// 이전 프레임 결과를 무효화해야 wrong-proxy hit 방지.
+	if (IRenderPipeline* Pipeline = GetRenderPipeline())
+	{
+		Pipeline->OnSceneCleared();
+	}
+
 	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
 	//    UWorld::UpdateVisibleProxies가 ActiveCamera를 기준으로 frustum culling을 수행하므로
 	//    이를 설정하지 않으면 PIE 월드의 VisibleProxies가 비어 있어 아무것도 렌더되지 않음.
@@ -249,6 +256,12 @@ void UEditorEngine::EndPlayMap()
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
+
+	// PIE 월드의 프록시가 모두 파괴됐으므로 GPU Occlusion readback 무효화.
+	if (IRenderPipeline* Pipeline = GetRenderPipeline())
+	{
+		Pipeline->OnSceneCleared();
+	}
 
 	PlayInEditorSessionInfo.reset();
 }
