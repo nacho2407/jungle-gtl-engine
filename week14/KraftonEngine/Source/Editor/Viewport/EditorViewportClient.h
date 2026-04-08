@@ -65,6 +65,7 @@ public:
 	void RenderViewportImage(bool bIsActiveViewport);
 
 private:
+	void TickEditorShortcuts();
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void HandleDragStart(const FRay& Ray); //픽킹 시작

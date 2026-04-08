@@ -87,30 +87,6 @@ void UEditorEngine::Tick(float DeltaTime)
 		VC->Tick(DeltaTime);
 	}
 
-	// Ctrl+D — 선택된 액터 복제
-	if (InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
-	{
-		const TArray<AActor*> ToDuplicate = SelectionManager.GetSelectedActors();
-		if (!ToDuplicate.empty())
-		{
-			TArray<AActor*> NewSelection;
-			for (AActor* Src : ToDuplicate)
-			{
-				if (!Src) continue;
-				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-				if (Dup)
-				{
-					NewSelection.push_back(Dup);
-				}
-			}
-			SelectionManager.ClearSelection();
-			for (AActor* Actor : NewSelection)
-			{
-				SelectionManager.ToggleSelect(Actor);
-			}
-		}
-	}
-
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
 }
