@@ -16,13 +16,13 @@ class UPrimitiveComponent;
 
 class AActor : public UObject
 {
+    friend struct FActorTickFunction;
 public:
 	DECLARE_CLASS(AActor, UObject)
 	AActor();
 	~AActor() override;
 
 	virtual void BeginPlay();
-	virtual void TickActor( float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction );
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay();
 
@@ -92,6 +92,8 @@ public:
 	
 	FActorTickFunction PrimaryActorTick;
 protected:
+	virtual void TickActor( float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction );
+	
 	void MarkPickingDirty();
 
 	USceneComponent* RootComponent = nullptr;
