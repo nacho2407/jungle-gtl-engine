@@ -1,5 +1,5 @@
 ﻿#include "PrimitiveComponent.h"
-#include "Core/RayTypes.h"
+#include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 #include "Math/Utils.h"
 
