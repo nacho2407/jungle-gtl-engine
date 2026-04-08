@@ -558,6 +558,11 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 	}
 
+	if(World != nullptr && World->GetWorldType() == EWorldType::PIE)
+	{
+		return;
+	}
+
 	FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, WindowWidth, WindowHeight);
 	
 	// 카메라 위치에 따른 기즈모 스케일 처리
