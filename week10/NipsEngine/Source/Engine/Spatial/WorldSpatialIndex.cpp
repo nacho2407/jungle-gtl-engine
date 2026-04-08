@@ -292,6 +292,30 @@ bool FWorldSpatialIndex::RayQueryClosestPrimitive(const FRay& Ray, UPrimitiveCom
     return OutPrimitive != nullptr;
 }
 
+void FWorldSpatialIndex::RayQueryPrimitives(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives,
+                                            TArray<float>& OutTs, FPrimitiveRayQueryScratch& Scratch)
+{
+    FlushDirtyBounds();
+
+    Scratch.ObjectIndices.clear();
+    Scratch.HitTs.clear();
+    BVH.RayQuery(Bounds, Ray, Scratch.ObjectIndices, Scratch.HitTs, Scratch.BVHScratch);
+
+    OutPrimitives.clear();
+    OutTs.clear();
+    OutPrimitives.reserve(Scratch.ObjectIndices.size());
+    OutTs.reserve(Scratch.HitTs.size());
+
+    for (int32 HitIndex = 0; HitIndex < static_cast<int32>(Scratch.ObjectIndices.size()); ++HitIndex)
+    {
+        if (UPrimitiveComponent* Primitive = Resolve(Scratch.ObjectIndices[HitIndex]))
+        {
+            OutPrimitives.push_back(Primitive);
+            OutTs.push_back(Scratch.HitTs[HitIndex]);
+        }
+    }
+}
+
 void FWorldSpatialIndex::FrustumQueryPrimitives(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives,
                                                 FPrimitiveFrustumQueryScratch& Scratch, bool bInsideOnly)
 {

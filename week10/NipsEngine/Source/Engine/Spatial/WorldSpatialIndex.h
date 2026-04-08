@@ -40,6 +40,18 @@ class FWorldSpatialIndex
         TArray<int32>             ObjectIndices;
     };
 
+    /**
+     * @brief Caller-owned scratch for primitive ray queries that return all BVH leaf hits.
+     * @note The wrapper keeps BVH object indices internal while still allowing
+     * callers to reuse traversal/sort buffers across repeated queries.
+     */
+    struct FPrimitiveRayQueryScratch
+    {
+        FBVH::FRayQueryScratch BVHScratch;
+        TArray<int32>         ObjectIndices;
+        TArray<float>         HitTs;
+    };
+
     FWorldSpatialIndex() = default;
     ~FWorldSpatialIndex() = default;
 
@@ -89,6 +101,20 @@ class FWorldSpatialIndex
      */
     bool RayQueryClosestPrimitive(const FRay& Ray, UPrimitiveComponent*& OutPrimitive, float& OutT,
                                   FBVH::FRayQueryScratch& Scratch);
+
+    /**
+     * @brief Collect primitives whose BVH leaf AABBs are intersected by the ray.
+     * @param Ray Query ray.
+     * @param OutPrimitives Output primitives sorted by leaf-AABB hit distance.
+     * @param OutTs Output hit distances aligned with `OutPrimitives`.
+     * @param Scratch Caller-owned wrapper scratch.
+     * @note Pending dirty bounds are flushed before the query executes.
+     * @note This is still a broad-phase query over leaf AABBs. Callers that need
+     * exact mesh picking should perform a narrow-phase primitive raycast on the
+     * returned candidates.
+     */
+    void RayQueryPrimitives(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives, TArray<float>& OutTs,
+                            FPrimitiveRayQueryScratch& Scratch);
 
     /**
      * @brief Collect tracked primitives whose leaf AABBs overlap the input frustum.

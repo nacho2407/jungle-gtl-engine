@@ -51,6 +51,7 @@ public:
 	FTimer* GetTimer() const { return Timer; }
 
 	FRenderer& GetRenderer() { return Renderer; }
+	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
 
 protected:
 	void Render(float DeltaTime);
