@@ -195,10 +195,11 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 	const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
 	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
+	const float PanMouseScale = CameraSpeed * 0.01f;
 
 	if (!bIsOrtho)
 	{
-		// ── Perspective: 기존 WASDQE 이동 ──
+		// ── Perspective: 키보드 이동 + 중클릭 로컬 팬 ──
 		FVector LocalMove = FVector(0, 0, 0);
 		float WorldVerticalMove = 0.0f;
 
@@ -220,6 +221,13 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		if (WorldVerticalMove != 0.0f)
 		{
 			Camera->AddWorldOffset(FVector(0.0f, 0.0f, WorldVerticalMove * DeltaTime));
+		}
+
+		if (InputSystem::Get().GetKey(VK_MBUTTON))
+		{
+			float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
+			float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+			Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.03f , DeltaY * PanMouseScale * 0.03f));
 		}
 
 		// ── Perspective: 키보드 회전 ──
