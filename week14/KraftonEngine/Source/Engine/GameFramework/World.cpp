@@ -234,6 +234,24 @@ void UWorld::CacheVisibleCameraState()
 	bHasVisibleCameraState = true;
 }
 
+void UWorld::RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index)
+{
+	//if (Index != UINT32_MAX)
+	//{
+	//	// swap-pop
+	//	FPrimitiveSceneProxy* Last = VisibleProxies.back();
+	//	VisibleProxies[Index] = Last;
+	//	VisibleProxies.pop_back();
+
+	//	if (Last != Proxy)
+	//		Last->VisibleListIndex = Index;
+
+	//	Proxy->bInVisibleSet = false;
+	//	Proxy->VisibleListIndex = UINT32_MAX;
+	//	delete Proxy;
+	//}
+}
+
 void UWorld::UpdateVisibleProxies()
 {
 	if (!ActiveCamera)
