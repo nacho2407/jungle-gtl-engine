@@ -144,7 +144,13 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 void FScene::UpdateDirtyProxies()
 {
 	SCOPE_STAT_CAT("UpdateDirtyProxies", "3_Collect");
-	for (FPrimitiveSceneProxy* Proxy : DirtyProxies)
+
+	//Update 중 Transform/Mesh 업데이트가 다시 MarkProxyDirty를 호출할 수 있으므로
+	//현재 배치는 스냅샷으로 분리해 순회한다.
+	TArray<FPrimitiveSceneProxy*> PendingDirtyProxies = std::move(DirtyProxies);
+	DirtyProxies.clear();
+
+	for (FPrimitiveSceneProxy* Proxy : PendingDirtyProxies)
 	{
 		if (!Proxy)
 		{
@@ -154,30 +160,31 @@ void FScene::UpdateDirtyProxies()
 		Proxy->bQueuedForDirtyUpdate = false;
 		if (!Proxy->Owner) continue;
 
+		// 현재 프레임에 처리할 dirty만 캡처하고, 처리 중 새로 발생한 dirty는
+		// 다음 배치/다음 프레임에 남겨둔다.
+		const EDirtyFlag FlagsToProcess = Proxy->DirtyFlags;
+		Proxy->DirtyFlags = EDirtyFlag::None;
+
 		// 가상 함수를 통해 서브클래스별 갱신 로직 호출
-		if (Proxy->IsDirty(EDirtyFlag::Mesh))
+		if (HasFlag(FlagsToProcess, EDirtyFlag::Mesh))
 		{
 			Proxy->UpdateMesh();
 		}
-		else if (Proxy->IsDirty(EDirtyFlag::Material))
+		else if (HasFlag(FlagsToProcess, EDirtyFlag::Material))
 		{
 			// Mesh가 이미 갱신됐으면 Material도 포함되므로 else if
 			Proxy->UpdateMaterial();
 		}
 
-		if (Proxy->IsDirty(EDirtyFlag::Transform))
+		if (HasFlag(FlagsToProcess, EDirtyFlag::Transform))
 		{
 			Proxy->UpdateTransform();
 		}
-		if (Proxy->IsDirty(EDirtyFlag::Visibility))
+		if (HasFlag(FlagsToProcess, EDirtyFlag::Visibility))
 		{
 			Proxy->UpdateVisibility();
 		}
-
-		Proxy->DirtyFlags = EDirtyFlag::None;
 	}
-
-	DirtyProxies.clear();
 }
 
 // ============================================================
@@ -188,6 +195,17 @@ void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
 	if (!Proxy) return;
 	Proxy->MarkDirty(Flag);
 	EnqueueDirtyProxy(DirtyProxies, Proxy);
+}
+
+void FScene::MarkAllPerObjectCBDirty()
+{
+	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	{
+		if (Proxy)
+		{
+			Proxy->MarkPerObjectCBDirty();
+		}
+	}
 }
 
 // ============================================================
