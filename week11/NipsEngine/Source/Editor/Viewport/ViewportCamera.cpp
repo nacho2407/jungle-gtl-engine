@@ -131,8 +131,13 @@ FRay FViewportCamera::DeprojectScreenToWorld(float ScreenX, float ScreenY, float
     const float NdcX = (2.0f * ScreenX) / ScreenWidth - 1.0f;
     const float NdcY = 1.0f - (2.0f * ScreenY) / ScreenHeight;
 
-    const FVector NdcNear(NdcX, NdcY, 1.0f);
-    const FVector NdcFar(NdcX, NdcY, 0.0f);
+    // The viewport camera uses the same conventional D3D clip-space depth
+    // mapping as the rest of the engine: near = 0, far = 1.
+    // A previous reverse-Z experiment left these endpoints flipped, which
+    // built rays from the far plane back toward the camera and caused picking
+    // to prefer the farthest object along the view direction.
+    const FVector NdcNear(NdcX, NdcY, 0.0f);
+    const FVector NdcFar(NdcX, NdcY, 1.0f);
 
     const FMatrix InverseViewProjection = GetViewProjectionMatrix().GetInverse();
     const FVector WorldNear = InverseViewProjection.TransformPosition(NdcNear);

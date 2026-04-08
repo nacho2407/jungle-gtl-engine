@@ -5,6 +5,7 @@
 
 #include "Engine/Math/Quat.h"
 #include "Engine/Geometry/Ray.h"
+#include "Spatial/WorldSpatialIndex.h"
 
 #include <string>
 
@@ -101,4 +102,5 @@ private:
 	float OrbitDistance = 10.0f;
 
 	FCursorOverlayState CursorOverlayState;
+	FWorldSpatialIndex::FPrimitiveRayQueryScratch RayQueryScratch;
 };

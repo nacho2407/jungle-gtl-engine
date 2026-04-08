@@ -14,6 +14,7 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Settings/EditorSettings.h"
+#include <algorithm>
 
 DEFINE_CLASS(UEditorEngine, UEngine)
 REGISTER_FACTORY(UEditorEngine)
@@ -32,6 +33,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 		CreateWorldContext(EWorldType::Editor, FName("Default"));
 	}
 	SetActiveWorld(WorldList[0].ContextHandle);
+	ApplySpatialIndexMaintenanceSettings();
 
 	// Selection & Gizmo
 	SelectionManager.Init();
@@ -142,8 +144,27 @@ void UEditorEngine::NewScene()
 	ClearScene();
 	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
 	SetActiveWorld(Ctx.ContextHandle);
+	ApplySpatialIndexMaintenanceSettings(Ctx.World);
 
 	ResetViewport();
+}
+
+void UEditorEngine::ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld)
+{
+	UWorld* World = (TargetWorld != nullptr) ? TargetWorld : GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const FEditorSettings& Settings = GetSettings();
+	FWorldSpatialIndex::FMaintenancePolicy& Policy = World->GetSpatialIndex().GetMaintenancePolicy();
+
+	Policy.BatchRefitMinDirtyCount = std::max<int32>(1, Settings.SpatialBatchRefitMinDirtyCount);
+	Policy.BatchRefitDirtyPercentThreshold = std::clamp<int32>(Settings.SpatialBatchRefitDirtyPercentThreshold, 1, 100);
+	Policy.RotationStructuralChangeThreshold = std::max<int32>(1, Settings.SpatialRotationStructuralChangeThreshold);
+	Policy.RotationDirtyCountThreshold = std::max<int32>(1, Settings.SpatialRotationDirtyCountThreshold);
+	Policy.RotationDirtyPercentThreshold = std::clamp<int32>(Settings.SpatialRotationDirtyPercentThreshold, 1, 100);
 }
 
 FViewportCamera* UEditorEngine::GetCamera()
@@ -154,6 +175,11 @@ FViewportCamera* UEditorEngine::GetCamera()
 const FViewportCamera* UEditorEngine::GetCamera() const
 {
 	return ViewportLayout.GetIndexedViewportClientCamera(0);
+}
+
+FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
+{
+	return static_cast<FEditorRenderPipeline*>(GetRenderPipeline());
 }
 
 void UEditorEngine::ClearScene()

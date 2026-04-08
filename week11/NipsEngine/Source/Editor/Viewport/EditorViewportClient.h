@@ -5,6 +5,7 @@
 #include "Core/CollisionTypes.h"
 #include "Runtime/ViewportClient.h"
 #include "Viewport/ViewportNavigationController.h"
+#include "Spatial/WorldSpatialIndex.h"
 
 enum EEditorViewportType
 {
@@ -150,5 +151,10 @@ private:
 	bool bFirstMouseMoveAfterRightPanStart = false;
 	bool bFirstMouseMoveAfterPanStart      = false;
 	bool bFirstMouseMoveAfterDollyStart    = false;
+
+	// Caller-owned query scratch keeps repeated editor picks allocation-free
+	// without sharing mutable buffers across unrelated systems.
+	FWorldSpatialIndex::FPrimitiveRayQueryScratch RayQueryScratch;
+	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
 };
 
