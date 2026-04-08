@@ -64,6 +64,12 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		},
 		FMargin(0.0f, 0.0f, 4.0f, 0.0f));
 	PlayToggle.bEnabled = (Engine != nullptr);
+	PlayToggle.ActiveBackgroundColor = 0xFF2E7D32;
+	PlayToggle.InactiveBackgroundColor = 0xFF2C2F33;
+	PlayToggle.ActiveBorderColor = 0xFF81C784;
+	PlayToggle.InactiveBorderColor = 0xFF5A6068;
+	PlayToggle.ActiveTextColor = 0xFFFFFFFF;
+	PlayToggle.InactiveTextColor = 0xFFFFFFFF;
 
 	auto& PauseToggle = Toolbar.AddToggle(
 		"Pause",
@@ -80,6 +86,10 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		},
 		FMargin(0.0f, 0.0f, 4.0f, 0.0f));
 	PauseToggle.bEnabled = (Engine != nullptr);
+	PauseToggle.ActiveBackgroundColor = 0xFFF9A825;
+	PauseToggle.InactiveBackgroundColor = 0xFF2C2F33;
+	PauseToggle.ActiveBorderColor = 0xFFFFF176;
+	PauseToggle.InactiveBorderColor = 0xFF5A6068;
 
 	auto& StopToggle = Toolbar.AddToggle(
 		"Stop",
@@ -96,6 +106,10 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		},
 		FMargin(0.0f, 0.0f, 6.0f, 0.0f));
 	StopToggle.bEnabled = (Engine != nullptr);
+	StopToggle.ActiveBackgroundColor = 0xFFC62828;
+	StopToggle.InactiveBackgroundColor = 0xFF2C2F33;
+	StopToggle.ActiveBorderColor = 0xFFEF9A9A;
+	StopToggle.InactiveBorderColor = 0xFF5A6068;
 
 	auto& LayoutDropdown = SWidgetHelpers::MakeDropdown(
 		Toolbar.GetOwnedChildrenStorage(),
@@ -151,8 +165,8 @@ void SLayoutToolbarWidget::OnPaint(FSlatePaintContext& Painter)
 		return;
 	}
 
-	Painter.DrawRectFilled(Rect, 0xD01C1E21);
-	Painter.DrawRect(Rect, 0xFF555B63);
+	Painter.DrawRectFilled(Rect, BackgroundFillColor);
+	Painter.DrawRect(Rect, BorderColor);
 	Toolbar.Paint(Painter);
 }
 

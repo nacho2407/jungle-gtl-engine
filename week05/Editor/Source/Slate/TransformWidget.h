@@ -21,6 +21,15 @@ public:
 	int32 GetDesiredWidth() const;
 	int32 GetRightPadding() const { return Padding; }
 
+	uint32 ActiveButtonBackgroundColor = 0xFF3B5E84;
+	uint32 InactiveButtonBackgroundColor = 0xFF2C2F33;
+	uint32 ActiveButtonBorderColor = 0xFF86C8FF;
+	uint32 InactiveButtonBorderColor = 0xFF5A6068;
+	uint32 ActiveButtonTextColor = 0xFFFFFFFF;
+	uint32 InactiveButtonTextColor = 0xFFFFFFFF;
+	uint32 DisabledButtonBackgroundColor = 0xFF1F2124;
+	uint32 DisabledButtonTextColor = 0xFF757575;
+
 private:
 	void SyncSelectionState();
 	void UpdateGeometry();
@@ -30,6 +39,7 @@ private:
 	void SetScaleMode();
 	void ToggleCoordMode();
 
+	void ApplyButtonStyle(SButton& Button, bool bActive) const;
 	bool HandleButtonMouse(SButton& Button, int32 X, int32 Y);
 
 	FRect GetExpandedInteractiveRect() const;

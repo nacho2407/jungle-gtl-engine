@@ -27,5 +27,8 @@ private:
 	FEditorEngine* Engine = nullptr;
 	SToolbar Toolbar;
 	FTransformWidget TransformWidget;
+
+	uint32 BackgroundFillColor = 0xD01C1E21;
+	uint32 BorderColor = 0xFF555B63;
 };
 

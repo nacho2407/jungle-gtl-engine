@@ -50,6 +50,7 @@ private:
 	void ApplyRenderMode(ERenderMode NewMode);
 	int32 EstimateTitleWidth() const;
 	bool ShouldShowPIECaptureHint() const;
+	void ApplyTitleButtonStyle();
 
 private:
 	FEditorEngine* Engine = nullptr;
@@ -61,5 +62,9 @@ private:
 	bool bShowLayout = true;
 	bool bShowViewportSettings = true;
 	FViewportId TargetViewportId = INVALID_VIEWPORT_ID;
+
+	uint32 TitleBackgroundColor = 0xFF1F1F1F;
+	uint32 TitleBorderColor = 0xFF4E4E4E;
+	uint32 TitleTextColor = 0xFFBDBDBD;
 };
 

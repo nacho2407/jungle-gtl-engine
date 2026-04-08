@@ -252,8 +252,9 @@ void SDropdown::OnPaint(FSlatePaintContext& Painter)
 	const int32 ValueY = ComputeHeaderTextY(static_cast<int32>(ValueSize.Y + 0.5f));
 	const int32 ArrowY = ComputeHeaderTextY(static_cast<int32>(ArrowSize.Y + 0.5f));
 
-	const uint32 LabelColor = bEnabled ? 0xFFE5E5E5 : DisabledTextColor;
+	const uint32 LabelColor = bEnabled ? HeaderLabelColor : DisabledHeaderLabelColor;
 	const uint32 ValueColor = bEnabled ? TextColor : DisabledTextColor;
+	const uint32 ArrowColor = bEnabled ? HeaderArrowColor : DisabledHeaderArrowColor;
 
 	if (!RenderedLabel.empty())
 	{
@@ -263,7 +264,7 @@ void SDropdown::OnPaint(FSlatePaintContext& Painter)
 	{
 		Painter.DrawText({ ValueX, ValueY }, RenderedValue.c_str(), ValueColor, FontSize, LetterSpacing);
 	}
-	Painter.DrawText({ ArrowX, ArrowY }, ArrowText.c_str(), LabelColor, FontSize, LetterSpacing);
+	Painter.DrawText({ ArrowX, ArrowY }, ArrowText.c_str(), ArrowColor, FontSize, LetterSpacing);
 
 	if (!bOpen)
 	{
@@ -309,7 +310,8 @@ void SDropdown::OnPaint(FSlatePaintContext& Painter)
 			break;
 		}
 
-		Painter.DrawText({ OptionX, OptionY }, RenderedOption.c_str(), TextColor, FontSize, LetterSpacing);
+		const uint32 CurrentOptionTextColor = bEnabled ? OptionTextColor : DisabledOptionTextColor;
+		Painter.DrawText({ OptionX, OptionY }, RenderedOption.c_str(), CurrentOptionTextColor, FontSize, LetterSpacing);
 	}
 }
 

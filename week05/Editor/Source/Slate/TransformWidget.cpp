@@ -82,6 +82,15 @@ int32 FTransformWidget::GetDesiredWidth() const
 	return Padding * 2 + ButtonSize * 4 + Gap * 3;
 }
 
+void FTransformWidget::ApplyButtonStyle(SButton& Button, bool bActive) const
+{
+	Button.BackgroundColor = bActive ? ActiveButtonBackgroundColor : InactiveButtonBackgroundColor;
+	Button.BorderColor = bActive ? ActiveButtonBorderColor : InactiveButtonBorderColor;
+	Button.TextColor = bActive ? ActiveButtonTextColor : InactiveButtonTextColor;
+	Button.DisabledBackgroundColor = DisabledButtonBackgroundColor;
+	Button.DisabledTextColor = DisabledButtonTextColor;
+}
+
 void FTransformWidget::SyncSelectionState()
 {
 	FEditorViewportClient* ActiveClient = GetActiveViewportClient();
@@ -96,14 +105,10 @@ void FTransformWidget::SyncSelectionState()
 	}
 
 	const EGizmoMode Mode = ActiveClient->GetGizmoMode();
-	auto Configure = [bEnabled](SButton& Button, bool bActive)
+	auto Configure = [this, bEnabled](SButton& Button, bool bActive)
 		{
 			Button.bEnabled = bEnabled;
-			Button.BackgroundColor = bActive ? 0xFF3B5E84 : 0xFF2C2F33;
-			Button.BorderColor = bActive ? 0xFF86C8FF : 0xFF5A6068;
-			Button.TextColor = 0xFFFFFFFF;
-			Button.DisabledBackgroundColor = 0xFF1F2124;
-			Button.DisabledTextColor = 0xFF757575;
+			ApplyButtonStyle(Button, bActive);
 		};
 
 	Configure(TranslateModeButton, Mode == EGizmoMode::Location);
