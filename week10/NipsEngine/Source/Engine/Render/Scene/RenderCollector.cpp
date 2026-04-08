@@ -243,6 +243,11 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 				RenderBus);
 		}
 
+		else if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Billboard)
+		{
+			BaseCmd.PerObjectConstants.Model = MakeViewBillboardMatrix(primitiveComponent, RenderBus);
+		}
+
 		if (!primitiveComponent->SupportsOutline()) continue;
 
 		// Selection Mask
