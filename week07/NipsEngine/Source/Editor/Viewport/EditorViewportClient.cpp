@@ -10,7 +10,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
-#include "Object/ActorInterator.h"
+#include "Object/ActorIterator.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Runtime/SceneView.h"
 #include "EditorUtils.h"

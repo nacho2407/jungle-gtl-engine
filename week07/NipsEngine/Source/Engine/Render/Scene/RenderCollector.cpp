@@ -2,7 +2,7 @@
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
-#include "Object/ActorInterator.h"
+#include "Object/ActorIterator.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"

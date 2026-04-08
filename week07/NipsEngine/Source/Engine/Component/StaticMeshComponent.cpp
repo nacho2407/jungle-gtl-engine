@@ -14,6 +14,34 @@ UStaticMeshComponent::UStaticMeshComponent()
 	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
 }
 
+// 객체를 동적 생성한 뒤, 부모 클래스의 프로퍼티부터 내려오며 깊은 복사합니다.
+UStaticMeshComponent* UStaticMeshComponent::Duplicate()
+{
+    UStaticMeshComponent* NewComp = UObjectManager::Get().CreateObject<UStaticMeshComponent>();
+
+	NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+    
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+    
+    NewComp->SetVisibility(this->IsVisible());
+
+	NewComp->OverrideMaterial = this->OverrideMaterial;
+    NewComp->ScrollUV = this->ScrollUV;
+
+    // 에셋 포인터는 얕은 복사로 동일한 원본 리소스를 참조하게 합니다.
+    NewComp->StaticMeshAsset = this->StaticMeshAsset;
+    NewComp->StaticMeshAssetPath = this->StaticMeshAssetPath;
+
+    // Dirty 플래그를 초기화해 복사 후 상태를 업데이트하도록 합니다.
+    NewComp->bBoundsDirty = true;
+    NewComp->bRenderStateDirty = true;
+
+    return NewComp;
+}
+
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 {
 	if (StaticMeshAsset == InStaticMesh)

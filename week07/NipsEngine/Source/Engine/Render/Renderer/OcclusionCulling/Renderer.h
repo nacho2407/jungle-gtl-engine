@@ -8,10 +8,10 @@
 #include "Render/Resource/VertexTypes.h"
 
 #include "Render/Scene/RenderBus.h"
-#include "Misc/ObjViewer/Render/RenderDataManager.h"
+// #include "Misc/ObjViewer/Render/RenderDataManager.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
-#include "Render/Renderer/OcclusionCulling.h"
+// #include "Render/Renderer/OcclusionCulling.h"
 #include "Render/LineBatcher.h"
 #include "Render/FontBatcher.h"
 #include "Render/SubUVBatcher.h"

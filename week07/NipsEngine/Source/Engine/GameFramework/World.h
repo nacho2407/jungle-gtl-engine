@@ -9,8 +9,11 @@ class FViewportCamera;
 class UWorld : public UObject {
 public:
     DECLARE_CLASS(UWorld, UObject)
-	UWorld() : PersistentLevel(new ULevel()) {}
-	~UWorld() override { delete PersistentLevel; }
+	UWorld();
+	~UWorld() override;
+
+	virtual UWorld* Duplicate() override;
+	virtual UWorld* DuplicateSubObjects() override { return this; }
 
     // Actor lifecycle
     template<typename T>
