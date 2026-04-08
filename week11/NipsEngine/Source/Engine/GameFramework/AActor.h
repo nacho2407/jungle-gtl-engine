@@ -2,6 +2,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
+#include "Engine/GameFramework/WorldContext.h"
 
 #include <type_traits>
 
@@ -14,12 +15,9 @@ public:
 	AActor() = default;
 	~AActor() override;
 
-	virtual AActor* DuplicateSubObjects();
 	virtual AActor* Duplicate();
+	virtual AActor* DuplicateSubObjects();
 
-	virtual void BeginPlay() {}
-	virtual void Tick(float DeltaTime);
-	virtual void EndPlay() {}
     virtual void InitDefaultComponents() {}
 
 	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.
@@ -34,12 +32,20 @@ public:
 		return Comp;
 	}
 
+	// Tick 관련
+	virtual void BeginPlay() {}
+	virtual void Tick(float DeltaTime);
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
+	bool IsActorTickEnabled() const { return bActorTickEnabled; }
+	void SetActorTickEnabled(bool bEnabled) { bActorTickEnabled = bEnabled; }
+
+	bool ShouldTickInEditor() const { return bTickInEditor; }
+	void SetTickInEditor(bool bEnabled)  { bTickInEditor = bEnabled; }
+
 	// FTypeInfo 기반 런타임 컴포넌트 생성
 	UActorComponent* AddComponentByClass(const FTypeInfo* Class);
-
 	void RemoveComponent(UActorComponent* Component);
-
-	// 외부에서 생성된 컴포넌트를 등록 (역직렬화 등)
 	void RegisterComponent(UActorComponent* Comp);
 
 	void SetRootComponent(USceneComponent* Comp);
@@ -96,7 +102,10 @@ protected:
 	UWorld* OwningWorld = nullptr;
 
 	FVector PendingActorLocation = FVector(0, 0, 0);
+
 	bool bVisible = true;
+	bool bActorTickEnabled = true;
+    bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;
 

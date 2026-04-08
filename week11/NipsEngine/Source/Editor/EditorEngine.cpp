@@ -25,8 +25,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
 	MainPanel.Create(Window, Renderer, this);
-
-	// World
 	if (WorldList.empty())
 	{
 		CreateWorldContext(EWorldType::Editor, FName("Default"));
@@ -35,19 +33,14 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// Selection & Gizmo
 	SelectionManager.Init();
-
-	//  뷰포트 초기화
 	ViewportLayout.Init(InWindow, GetWorld(), &SelectionManager);
-
-	// 퍼스펙티브 카메라(0번)를 월드 활성 카메라로 등록
 	GetWorld()->SetActiveCamera(GetCamera());
 
-	// Slate 초기화
+	// Slate 초기화 및 Viewport Layout 추가
 	FSlateApplication::Get().Initialize();
-	// Make Viewport Layout ( SplitterV -> 2 * SplitterH)
 	ViewportLayout.BuildViewportLayout(static_cast<int32>(Window->GetWidth()), static_cast<int32>(Window->GetHeight()));
 
-	// Editor render pipeline
+	// Editor용 렌더 파이프라인 세팅
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 }
 
@@ -123,7 +116,7 @@ void UEditorEngine::CloseScene()
 	SelectionManager.ClearSelection();
 
 	for (FWorldContext& Ctx : WorldList) {
-		Ctx.World->EndPlay();
+		Ctx.World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
 		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
 	WorldList.clear();
@@ -162,7 +155,7 @@ void UEditorEngine::ClearScene()
 
 	for (FWorldContext& Ctx : WorldList)
 	{
-		Ctx.World->EndPlay();
+		Ctx.World->EndPlay(EEndPlayReason::Type::LevelTransition);
 		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
 

@@ -25,6 +25,7 @@ public:
 	inline void SetComponentTickEnabled(bool bEnabled) { bCanEverTick = bEnabled; }
 
 	inline bool IsActive() { return bIsActive; }
+	inline bool IsComponentTickEnabled() const { return bCanEverTick; }
 
 	void SetOwner(AActor* Actor) { Owner = Actor; }
 	AActor* GetOwner() const { return Owner; }

@@ -39,6 +39,8 @@ UStaticMeshComponent* UStaticMeshComponent::Duplicate()
     NewComp->bBoundsDirty = true;
     NewComp->bRenderStateDirty = true;
 
+	NewComp->DuplicateSubObjects();
+
     return NewComp;
 }
 
