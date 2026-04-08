@@ -9,7 +9,6 @@ IMPLEMENT_RTTI(UTextComponent, UPrimitiveComponent)
 
 void UTextComponent::PostConstruct()
 {
-	// 폰트 렌더링용 메시 데이터 객체 생성
 	bDrawDebugBounds = false;
 	TextMesh = std::make_shared<FDynamicMesh>();
 	TextMesh->Topology = EMeshTopology::EMT_TriangleList;
@@ -23,7 +22,6 @@ void UTextComponent::SetText(const FString& InText)
 	if (Text != InText)
 	{
 		Text = InText;
-		// NOTE: 실제 정점 데이터 갱신은 RenderCollector에서 TextRenderer를 통해 수행함
 		MarkTextMeshDirty();
 	}
 }

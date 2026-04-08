@@ -52,11 +52,12 @@ struct FDepthStencilStateOption {
 
 	uint32 ToKey() const {
 		uint32 key = 0;
-		key |= (DepthEnable ? 1 : 0);									// 1 bit
-		key |= (static_cast<uint32>(DepthWriteMask) & 0x1) << 2;		// 1 bit
-		key |= (StencilEnable ? 1 : 0) << 3;							// 1 bit
-		key |= (static_cast<uint32>(StencilReadMask) & 0xFF) << 6;		// 8 bit
-		key |= (static_cast<uint32>(StencilWriteMask) & 0xFF) << 14;	// 8 bit
+		key |= (DepthEnable ? 1u : 0u);
+		key |= (static_cast<uint32>(DepthWriteMask) & 0x1u) << 1;
+		key |= (static_cast<uint32>(DepthFunc) & 0x7u) << 2;
+		key |= (StencilEnable ? 1u : 0u) << 5;
+		key |= (static_cast<uint32>(StencilReadMask) & 0xFFu) << 6;
+		key |= (static_cast<uint32>(StencilWriteMask) & 0xFFu) << 14;
 		return key;
 	}
 };
@@ -89,10 +90,14 @@ struct FBlendStateOption {
 
 	uint32 ToKey() const {
 		uint32 key = 0;
-		key |= (BlendEnable ? 1 : 0);
-		key |= (static_cast<uint32>(SrcBlend) & 0x1F) << 1;
-		key |= (static_cast<uint32>(DestBlend) & 0x1F) << 6;
-		key |= (static_cast<uint32>(BlendOp) & 0x7) << 11;
+		key |= (BlendEnable ? 1u : 0u);
+		key |= (static_cast<uint32>(SrcBlend) & 0x1Fu) << 1;
+		key |= (static_cast<uint32>(DestBlend) & 0x1Fu) << 6;
+		key |= (static_cast<uint32>(BlendOp) & 0x7u) << 11;
+		key |= (static_cast<uint32>(SrcBlendAlpha) & 0x1Fu) << 14;
+		key |= (static_cast<uint32>(DestBlendAlpha) & 0x1Fu) << 19;
+		key |= (static_cast<uint32>(BlendOpAlpha) & 0x7u) << 24;
+		key |= (static_cast<uint32>(RenderTargetWriteMask) & 0xFu) << 27;
 		return key;
 	}
 };

@@ -5,7 +5,6 @@
 #include <d3d11.h>
 #include "WorldTypes.h"
 #include "Core/ShowFlags.h"
-#include "RenderCollector.h"
 #include "BVH.h"
 
 class AActor;

@@ -12,9 +12,15 @@ class SViewportToolbarWidget : public SWidget
 public:
 	explicit SViewportToolbarWidget(FEditorEngine* InEngine);
 
-	void OnPaint(SWidget& Painter) override;
+	FRect GetPaintClipRect() const override { return GetInteractiveRect(); }
+	void OnPaint(FSlatePaintContext& Painter) override;
 	bool OnMouseDown(int32 X, int32 Y) override;
 	bool HitTest(FPoint Point) const override;
+	FVector2 ComputeDesiredSize() const override;
+	FVector2 ComputeMinSize() const override;
+
+	void ConfigureForGlobalLayout();
+	void ConfigureForViewport(FViewportId InViewportId);
 	void SetHeaderRect(const FRect& InRect);
 	FRect GetInteractiveRect() const;
 	bool HasOpenDropdown() const;
@@ -36,14 +42,12 @@ private:
 
 	EViewportLayout GetCurrentLayout() const;
 	FViewportEntry* GetFocusedEntry() const;
+	FViewportEntry* GetTargetEntry() const;
 
 	void ApplyLayout(EViewportLayout NewLayout);
 	void ApplyViewportType(EViewportType NewType);
 	void ApplyRenderMode(ERenderMode NewMode);
-
-	static bool ContainsPoint(const FRect& InRect, FPoint Point);
-	static FRect UnionRects(const FRect& A, const FRect& B);
-	FRect GetExpandedInteractiveRect() const;
+	int32 EstimateTitleWidth() const;
 
 private:
 	FEditorEngine* Engine = nullptr;
@@ -51,4 +55,8 @@ private:
 	SDropdown LayoutDropdown;
 	SDropdown TypeDropdown;
 	SDropdown ModeDropdown;
+	bool bShowLayout = true;
+	bool bShowViewportSettings = true;
+	FViewportId TargetViewportId = INVALID_VIEWPORT_ID;
 };
+

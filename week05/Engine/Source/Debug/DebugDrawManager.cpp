@@ -1,13 +1,11 @@
-#include "DebugDrawManager.h"
-#include "Renderer/Renderer.h"
-#include "Core/ShowFlags.h"
-#include "World/World.h"
+﻿#include "DebugDrawManager.h"
+
 #include "Actor/Actor.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/UUIDBillboardComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/SkyComponent.h"
+#include "Core/ShowFlags.h"
 #include "Object/Class.h"
+#include "World/World.h"
+
 void FDebugDrawManager::DrawLine(const FVector& Start, const FVector& End, const FVector4& Color)
 {
 	Lines.push_back({ Start, End, Color });
@@ -20,52 +18,41 @@ void FDebugDrawManager::DrawCube(const FVector& Center, const FVector& Extent, c
 
 void FDebugDrawManager::DrawWorldAxis(float Length)
 {
+	(void)Length;
 	bDrawWorldAxis = true;
 }
 
-void FDebugDrawManager::Flush(FRenderer* Renderer, const FShowFlags& ShowFlags, UWorld* World, bool bClearAfterFlush)
+void FDebugDrawManager::BuildRenderRequest(
+	const FShowFlags& ShowFlags,
+	UWorld* World,
+	FDebugLineRenderRequest& OutRequest) const
 {
-
-	if (!Renderer) return;
-
-	// 디버그 드로우 전체 꺼져있으면 스킵
+	// 엔진 쪽 수집 데이터는 여기서만 feature가 이해하는 request 형식으로 변환한다.
 	if (!ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw))
 	{
-		if (bClearAfterFlush)
-		{
-			Clear();
-		}
 		return;
 	}
 
-
 	if (ShowFlags.HasFlag(EEngineShowFlags::SF_Collision) && World)
 	{
-		DrawAllCollisionBounds(Renderer, World);
+		DrawAllCollisionBounds(World, OutRequest);
 	}
 
-	for (const auto& Cube : Cubes)
+	for (const FDebugCube& Cube : Cubes)
 	{
-		Renderer->DrawCube(Cube.Center, Cube.Extent, Cube.Color);
+		FDebugLineRenderFeature::AddCube(OutRequest, Cube.Center, Cube.Extent, Cube.Color);
 	}
-	for (const auto& Line : Lines)
+
+	for (const FDebugLine& Line : Lines)
 	{
-		Renderer->DrawLine(Line.Start, Line.End, Line.Color);
+		FDebugLineRenderFeature::AddLine(OutRequest, Line.Start, Line.End, Line.Color);
 	}
 
-
-	// 월드 축
 	if (ShowFlags.HasFlag(EEngineShowFlags::SF_WorldAxis))
 	{
-		Renderer->DrawLine({ 0,0,0 }, { 1000,0,0 }, { 1,0,0,1 });  // X: Red
-		Renderer->DrawLine({ 0,0,0 }, { 0,1000,0 }, { 0,1,0,1 });  // Y: Green
-		Renderer->DrawLine({ 0,0,0 }, { 0,0,1000 }, { 0,0,1,1 });  // Z: Blue
-	}
-
-	Renderer->ExecuteLineCommands();
-	if (bClearAfterFlush)
-	{
-		Clear();
+		FDebugLineRenderFeature::AddLine(OutRequest, { 0, 0, 0 }, { 1000, 0, 0 }, { 1, 0, 0, 1 });
+		FDebugLineRenderFeature::AddLine(OutRequest, { 0, 0, 0 }, { 0, 1000, 0 }, { 0, 1, 0, 1 });
+		FDebugLineRenderFeature::AddLine(OutRequest, { 0, 0, 0 }, { 0, 0, 1000 }, { 0, 0, 1, 1 });
 	}
 }
 
@@ -76,30 +63,34 @@ void FDebugDrawManager::Clear()
 	bDrawWorldAxis = false;
 }
 
-void FDebugDrawManager::DrawAllCollisionBounds(FRenderer* Renderer, UWorld* World)
+void FDebugDrawManager::DrawAllCollisionBounds(UWorld* World, FDebugLineRenderRequest& OutRequest) const
 {
+	// 충돌 디버그 가시화는 월드의 프리미티브 컴포넌트를 순회하며 바운드를 선분으로 바꾼다.
 	TArray<AActor*> AllActors = World->GetAllActors();
 	for (AActor* Actor : AllActors)
 	{
 		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
-			continue;
-
-		for (UActorComponent* Comp : Actor->GetComponents())
 		{
-			if (!Comp || !Comp->IsA(UPrimitiveComponent::StaticClass()))
-				continue;
+			continue;
+		}
 
-			UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(Comp);
-
-			if (!PrimComp->ShouldDrawDebugBounds())
-				continue;
-
-			FBoxSphereBounds Bound = PrimComp->GetWorldBounds();
-
-			// 바운드 크기가 유효한 경우에만 박스를 그립니다.
-			if (Bound.BoxExtent.SizeSquared() > 0.0f)
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			if (!Component || !Component->IsA(UPrimitiveComponent::StaticClass()))
 			{
-				Renderer->DrawCube(Bound.Center, Bound.BoxExtent, FVector4(1.0f, 0.0f, 0.0f, 1.0f)); // 빨간색
+				continue;
+			}
+
+			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+			if (!PrimitiveComponent->ShouldDrawDebugBounds())
+			{
+				continue;
+			}
+
+			const FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
+			if (Bounds.BoxExtent.SizeSquared() > 0.0f)
+			{
+				FDebugLineRenderFeature::AddCube(OutRequest, Bounds.Center, Bounds.BoxExtent, FVector4(1.0f, 0.0f, 0.0f, 1.0f));
 			}
 		}
 	}

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Widget.h"
-#include "Renderer/MeshData.h"
+#include "TextMetrics.h"
+#include <algorithm>
 
 #ifdef DrawText
 #undef DrawText
@@ -10,7 +11,7 @@
 class STextBlock : public SWidget
 {
 public:
-	~STextBlock() { delete CachedMesh; }
+	~STextBlock() override = default;
 	FString Text;
 	uint32 Color = 0xFFFFFFFF;
 	float FontSize = 48.0f;
@@ -19,18 +20,48 @@ public:
 	ETextVAlign TextVAlign = ETextVAlign::Center;
 	
 	void SetText(const FString& InText);
-	FVector2 ComputeDesiredSize() const override { return { (float)Text.size() * FontSize * 0.6f * LetterSpacing, FontSize }; }
-	void OnPaint(SWidget& Painter) override
+	FVector2 ComputeDesiredSize() const override { return SWidgetTextMetrics::MeasureText(Text, FontSize, LetterSpacing); }
+	FVector2 ComputeMinSize() const override { return { 0.0f, SWidgetTextMetrics::MeasureText("Ag", FontSize, LetterSpacing).Y }; }
+	void OnPaint(FSlatePaintContext& Painter) override
 	{
-		if (CachedRenderedText != Text || CachedLetterSpacing != LetterSpacing)
+		if (!Rect.IsValid())
 		{
-			CachedRenderedText = Text;
-			CachedLetterSpacing = LetterSpacing;
-			delete CachedMesh;
-			CachedMesh = nullptr;
+			return;
 		}
 
-		const FVector2 TextSize = Painter.MeasureText(Text.c_str(), FontSize, LetterSpacing, CachedMesh);
+		auto FitTextToWidth = [&](const FString& SourceText, int32 MaxWidth)
+		{
+			if (MaxWidth <= 0 || SourceText.empty())
+			{
+				return FString();
+			}
+
+			if (Painter.MeasureText(SourceText.c_str(), FontSize, LetterSpacing).X <= MaxWidth)
+			{
+				return SourceText;
+			}
+
+			const FString Ellipsis = "...";
+			for (int32 Length = static_cast<int32>(SourceText.size()) - 1; Length >= 0; --Length)
+			{
+				const FString Candidate = SourceText.substr(0, static_cast<size_t>(Length)) + Ellipsis;
+				const FVector2 CandidateSize = Painter.MeasureText(Candidate.c_str(), FontSize, LetterSpacing);
+				if (CandidateSize.X <= MaxWidth)
+				{
+					return Candidate;
+				}
+			}
+			return Ellipsis;
+		};
+
+		const FString RenderedText = FitTextToWidth(Text, (std::max)(0, Rect.Width));
+		if (CachedRenderedText != RenderedText || CachedLetterSpacing != LetterSpacing)
+		{
+			CachedRenderedText = RenderedText;
+			CachedLetterSpacing = LetterSpacing;
+		}
+
+		const FVector2 TextSize = Painter.MeasureText(CachedRenderedText.c_str(), FontSize, LetterSpacing);
 		const int32 TextWidth = static_cast<int32>(TextSize.X + 0.5f);
 		const int32 TextHeight = static_cast<int32>(TextSize.Y + 0.5f);
 
@@ -62,11 +93,11 @@ public:
 			break;
 		}
 
-		Painter.DrawText({ TextX, TextY }, Text.c_str(), Color, FontSize, LetterSpacing, CachedMesh);
+		Painter.DrawText({ TextX, TextY }, CachedRenderedText.c_str(), Color, FontSize, LetterSpacing);
 	}
 
 private:
-	FDynamicMesh* CachedMesh = nullptr;
 	FString CachedRenderedText;
 	float CachedLetterSpacing = 1.0f;
 };
+

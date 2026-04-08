@@ -7,5 +7,5 @@ class SImage : public SWidget
 public:
 	uint32 TintColor = 0xFFFFFFFF;
 
-	void OnPaint(SWidget& Painter) override { Painter.DrawRectFilled(Rect, TintColor); }
+	void OnPaint(FSlatePaintContext& Painter) override { Painter.DrawRectFilled(Rect, TintColor); }
 };

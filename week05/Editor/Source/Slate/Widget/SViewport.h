@@ -9,5 +9,5 @@ public:
 	FViewport*   Viewport = nullptr;
 
 	bool HitTest(int32 X, int32 Y) const;
-	void OnPaint(SWidget& Painter) override { Painter.DrawRect(Rect, 0xFF282828); }
+	void OnPaint(FSlatePaintContext& Painter) override { Painter.DrawRect(Rect, 0xFF282828); }
 };

@@ -23,6 +23,15 @@ struct FMaterialTexture
 	void Bind(ID3D11DeviceContext* DeviceContext);
 };
 
+struct FMaterialPixelTextureBinding
+{
+	uint32 Slot = 0;
+	ID3D11ShaderResourceView* TextureSRV = nullptr;
+	ID3D11SamplerState* SamplerState = nullptr;
+
+	bool IsValid() const { return TextureSRV != nullptr; }
+};
+
 // 파라미터 이름 → 상수 버퍼 내 위치 매핑
 struct FMaterialParameterInfo
 {
@@ -120,6 +129,8 @@ public:
 	void SetBlendOption(const FBlendStateOption InOption) { BlendOption = InOption; }
 	void SetBlendState(const std::shared_ptr<FBlendState> InState) { BlendState = InState; }
 	void SetMaterialTexture(const std::shared_ptr<FMaterialTexture> InTexture) { MaterialTexture = InTexture; }
+	void SetPixelTextureBinding(uint32 Slot, ID3D11ShaderResourceView* TextureSRV, ID3D11SamplerState* SamplerState);
+	void ClearPixelTextureBinding();
 
 	FVertexShader* GetVertexShader() const { return VertexShader.get(); }
 	FPixelShader* GetPixelShader() const { return PixelShader.get(); }
@@ -130,6 +141,7 @@ public:
 	std::shared_ptr<FDepthStencilState> GetDepthStencilState() const { return DepthStencilState; }
 	std::shared_ptr<FBlendState> GetBlendState() const { return BlendState; }
 	std::shared_ptr<FMaterialTexture> GetMaterialTexture() const { return MaterialTexture; }
+	bool HasPixelTextureBinding() const;
 
 	// FDynamicMaterial에서 파라미터 설정 시 사용
 	bool SetParameterData(const FString& ParamName, const void* Data, uint32 DataSize);
@@ -174,6 +186,7 @@ protected:
 	std::shared_ptr<FBlendState> BlendState = nullptr;
 	// Texture
 	std::shared_ptr<FMaterialTexture> MaterialTexture = nullptr;
+	FMaterialPixelTextureBinding PixelTextureBinding = {};
 
 	TArray<FMaterialConstantBuffer> ConstantBuffers;
 	TMap<FString, FMaterialParameterInfo> ParameterMap;
@@ -193,3 +206,4 @@ public:
 	bool SetVectorParameter(const FString& ParamName, const FVector4& Value);
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value);
 };
+

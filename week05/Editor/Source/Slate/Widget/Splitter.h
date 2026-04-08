@@ -20,5 +20,5 @@ public:
 	virtual void OnMouseMove(int32 X, int32 Y) = 0;
 	virtual FRect GetSplitterBarRect() const = 0;
 	virtual EMouseCursor GetCursor() const override { return EMouseCursor::Default; }
-	void OnPaint(SWidget& Painter) override { Painter.DrawRectFilled(GetSplitterBarRect(), Color); SPanel::OnPaint(Painter); }
+	void OnPaint(FSlatePaintContext& Painter) override { Painter.DrawRectFilled(GetSplitterBarRect(), Color); SPanel::OnPaint(Painter); }
 };
