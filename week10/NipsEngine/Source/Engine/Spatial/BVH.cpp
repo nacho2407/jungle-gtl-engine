@@ -754,11 +754,11 @@ bool FBVH::UpdateObject(const TArray<FAABB>& ObjectBounds, int32 ObjectIndex)
  * @brief Traverse BVH and collect object indices intersecting a frustum.
  * @param Frustum Query frustum.
  * @param OutIndices Output list of intersecting object indices.
+ * @param Scratch Caller-owned traversal scratch.
  * @param bInsideOnly If true, only nodes fully inside the frustum are accepted.
- * @note Internal mutable scratch storage is reused here, so concurrent queries
- * on the same `FBVH` instance are not thread-safe.
  */
-void FBVH::FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, bool bInsideOnly) const
+void FBVH::FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, FFrustumQueryScratch& Scratch,
+                        bool bInsideOnly) const
 {
     OutIndices.clear();
 
@@ -767,15 +767,16 @@ void FBVH::FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, bool
         return;
     }
 
-    // Reuse the traversal stack to avoid allocating a temporary stack every query.
-    FrustumQueryStackScratch.clear();
-    FrustumQueryStackScratch.reserve(Nodes.size());
-    FrustumQueryStackScratch.push_back({RootNodeIndex, false});
+    // The caller owns this scratch, so separate threads can query the same BVH
+    // concurrently as long as they do not share the scratch instance.
+    Scratch.TraversalStack.clear();
+    Scratch.TraversalStack.reserve(Nodes.size());
+    Scratch.TraversalStack.push_back({RootNodeIndex, false});
 
-    while (!FrustumQueryStackScratch.empty())
+    while (!Scratch.TraversalStack.empty())
     {
-        const FFrustumStackEntry Entry = FrustumQueryStackScratch.back();
-        FrustumQueryStackScratch.pop_back();
+        const FFrustumQueryScratch::FStackEntry Entry = Scratch.TraversalStack.back();
+        Scratch.TraversalStack.pop_back();
 
         const FNode& Node = Nodes[Entry.NodeIndex];
 
@@ -812,13 +813,99 @@ void FBVH::FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, bool
 
         if (Node.Left != INDEX_NONE)
         {
-            FrustumQueryStackScratch.push_back({Node.Left, bChildAssumeInside});
+            Scratch.TraversalStack.push_back({Node.Left, bChildAssumeInside});
         }
         if (Node.Right != INDEX_NONE)
         {
-            FrustumQueryStackScratch.push_back({Node.Right, bChildAssumeInside});
+            Scratch.TraversalStack.push_back({Node.Right, bChildAssumeInside});
         }
     }
+}
+
+/**
+ * @brief Return the closest leaf-AABB hit along the ray.
+ * @param Ray Query ray.
+ * @param OutObjectIndex Closest intersected object index, or `INDEX_NONE` on miss.
+ * @param OutT Ray distance to the closest leaf AABB hit.
+ * @param Scratch Caller-owned traversal scratch.
+ * @return `true` if any leaf AABB was hit.
+ *
+ * The traversal uses front-to-back ordering and prunes any subtree whose entry
+ * distance is already farther than the best hit found so far.
+ */
+bool FBVH::RayQueryClosestAABB(const FRay& Ray, int32& OutObjectIndex, float& OutT, FRayQueryScratch& Scratch) const
+{
+    OutObjectIndex = INDEX_NONE;
+    OutT = FLT_MAX;
+
+    if (RootNodeIndex == INDEX_NONE)
+    {
+        return false;
+    }
+
+    Scratch.NodeStack.clear();
+    Scratch.NodeStack.reserve(Nodes.size());
+
+    float tRoot = 0.0f;
+    if (!Nodes[RootNodeIndex].Bounds.IntersectRay(Ray, tRoot))
+    {
+        return false;
+    }
+
+    Scratch.NodeStack.push_back({RootNodeIndex, tRoot});
+
+    while (!Scratch.NodeStack.empty())
+    {
+        const FRayQueryScratch::FStackEntry Entry = Scratch.NodeStack.back();
+        Scratch.NodeStack.pop_back();
+
+        if (Entry.TEnter > OutT)
+        {
+            continue;
+        }
+
+        const FNode& Node = Nodes[Entry.NodeIndex];
+        if (Node.IsLeaf())
+        {
+            const int32 ObjIndex = Node.ObjectIndex;
+            if (ObjIndex != INDEX_NONE && ObjIndex >= 0 && Entry.TEnter < OutT)
+            {
+                OutObjectIndex = ObjIndex;
+                OutT = Entry.TEnter;
+            }
+            continue;
+        }
+
+        float      tL = FLT_MAX;
+        float      tR = FLT_MAX;
+        const bool bL = (Node.Left != INDEX_NONE) && Nodes[Node.Left].Bounds.IntersectRay(Ray, tL) && (tL <= OutT);
+        const bool bR = (Node.Right != INDEX_NONE) && Nodes[Node.Right].Bounds.IntersectRay(Ray, tR) && (tR <= OutT);
+
+        // Push the farther child first so the next pop visits the nearer child first.
+        if (bL && bR)
+        {
+            if (tL < tR)
+            {
+                Scratch.NodeStack.push_back({Node.Right, tR});
+                Scratch.NodeStack.push_back({Node.Left, tL});
+            }
+            else
+            {
+                Scratch.NodeStack.push_back({Node.Left, tL});
+                Scratch.NodeStack.push_back({Node.Right, tR});
+            }
+        }
+        else if (bL)
+        {
+            Scratch.NodeStack.push_back({Node.Left, tL});
+        }
+        else if (bR)
+        {
+            Scratch.NodeStack.push_back({Node.Right, tR});
+        }
+    }
+
+    return OutObjectIndex != INDEX_NONE;
 }
 
 /**
@@ -827,11 +914,10 @@ void FBVH::FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, bool
  * @param Ray Query ray.
  * @param OutIndices Output hit object indices.
  * @param OutTs Output hit distances aligned with OutIndices.
- * @note Internal mutable scratch storage is reused here, so concurrent queries
- * on the same `FBVH` instance are not thread-safe.
+ * @param Scratch Caller-owned traversal and sorting scratch.
  */
 void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
-                    TArray<float>& OutTs) const
+                    TArray<float>& OutTs, FRayQueryScratch& Scratch) const
 {
     OutIndices.clear();
     OutTs.clear();
@@ -841,20 +927,22 @@ void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<i
         return;
     }
 
-    // Reuse traversal and sort scratch to keep ray-query allocations stable.
-    RayQueryNodeStackScratch.clear();
-    RayQueryNodeStackScratch.reserve(Nodes.size());
+    // The caller owns this scratch, so separate threads can query the same BVH
+    // concurrently as long as they do not share the scratch instance.
+    Scratch.NodeStack.clear();
+    Scratch.NodeStack.reserve(Nodes.size());
 
     float tRoot = 0.f;
     if (!Nodes[RootNodeIndex].Bounds.IntersectRay(Ray, tRoot))
         return;
-    RayQueryNodeStackScratch.push_back(RootNodeIndex);
+    Scratch.NodeStack.push_back({RootNodeIndex, tRoot});
 
-    while (!RayQueryNodeStackScratch.empty())
+    while (!Scratch.NodeStack.empty())
     {
-        const int32 NodeIndex = RayQueryNodeStackScratch.back();
-        RayQueryNodeStackScratch.pop_back();
+        const FRayQueryScratch::FStackEntry Entry = Scratch.NodeStack.back();
+        Scratch.NodeStack.pop_back();
 
+        const int32 NodeIndex = Entry.NodeIndex;
         const FNode& Node = Nodes[NodeIndex];
 
         if (Node.IsLeaf())
@@ -862,12 +950,10 @@ void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<i
             const int32 ObjIndex = Node.ObjectIndex;
             if (ObjIndex != INDEX_NONE && ObjIndex >= 0 && ObjIndex < static_cast<int32>(ObjectBounds.size()))
             {
-                float HitT = 0.f;
-                if (ObjectBounds[ObjIndex].IntersectRay(Ray, HitT) && HitT >= 0.f)
-                {
-                    OutIndices.push_back(ObjIndex);
-                    OutTs.push_back(HitT);
-                }
+                // The traversal already intersected the leaf bounds and carried
+                // the corresponding entry distance to this point.
+                OutIndices.push_back(ObjIndex);
+                OutTs.push_back(Entry.TEnter);
             }
             continue;
         }
@@ -882,44 +968,74 @@ void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<i
         {
             if (tL < tR)
             {
-                RayQueryNodeStackScratch.push_back(Node.Right);
-                RayQueryNodeStackScratch.push_back(Node.Left);
+                Scratch.NodeStack.push_back({Node.Right, tR});
+                Scratch.NodeStack.push_back({Node.Left, tL});
             }
             else
             {
-                RayQueryNodeStackScratch.push_back(Node.Left);
-                RayQueryNodeStackScratch.push_back(Node.Right);
+                Scratch.NodeStack.push_back({Node.Left, tL});
+                Scratch.NodeStack.push_back({Node.Right, tR});
             }
         }
         else if (bL)
-            RayQueryNodeStackScratch.push_back(Node.Left);
+        {
+            Scratch.NodeStack.push_back({Node.Left, tL});
+        }
         else if (bR)
-            RayQueryNodeStackScratch.push_back(Node.Right);
+        {
+            Scratch.NodeStack.push_back({Node.Right, tR});
+        }
     }
 
     if (OutIndices.size() <= 1)
         return; // Sorting is unnecessary for 0 or 1 hit.
 
     // Front-to-back traversal leaves hits nearly sorted in many cases.
-    // The final reorder keeps the public output strictly sorted by hit distance.
-    const int32   N = static_cast<int32>(OutIndices.size());
-    RayQueryOrderScratch.resize(N);
-    for (int32 i = 0; i < N; ++i)
-        RayQueryOrderScratch[i] = i;
+    // Use an in-place insertion sort for small hit sets to avoid extra
+    // permutation and copy passes.
+    const int32 N = static_cast<int32>(OutIndices.size());
+    constexpr int32 InsertionSortThreshold = 32;
 
-    std::sort(RayQueryOrderScratch.begin(), RayQueryOrderScratch.end(), [&](int32 A, int32 B) { return OutTs[A] < OutTs[B]; });
-
-    RayQuerySortedIndicesScratch.clear();
-    RayQuerySortedIndicesScratch.reserve(N);
-    RayQuerySortedTsScratch.clear();
-    RayQuerySortedTsScratch.reserve(N);
-    for (int32 Ord : RayQueryOrderScratch)
+    if (N <= InsertionSortThreshold)
     {
-        RayQuerySortedIndicesScratch.push_back(OutIndices[Ord]);
-        RayQuerySortedTsScratch.push_back(OutTs[Ord]);
+        for (int32 i = 1; i < N; ++i)
+        {
+            const float KeyT = OutTs[i];
+            const int32 KeyIndex = OutIndices[i];
+
+            int32 j = i - 1;
+            while (j >= 0 && OutTs[j] > KeyT)
+            {
+                OutTs[j + 1] = OutTs[j];
+                OutIndices[j + 1] = OutIndices[j];
+                --j;
+            }
+
+            OutTs[j + 1] = KeyT;
+            OutIndices[j + 1] = KeyIndex;
+        }
+        return;
     }
-    OutIndices.swap(RayQuerySortedIndicesScratch);
-    OutTs.swap(RayQuerySortedTsScratch);
+
+    // Larger hit sets still use the scratch-backed permutation path so the
+    // public outputs end up strictly sorted without allocating per call.
+    Scratch.Order.resize(N);
+    for (int32 i = 0; i < N; ++i)
+        Scratch.Order[i] = i;
+
+    std::sort(Scratch.Order.begin(), Scratch.Order.end(), [&](int32 A, int32 B) { return OutTs[A] < OutTs[B]; });
+
+    Scratch.SortedIndices.clear();
+    Scratch.SortedIndices.reserve(N);
+    Scratch.SortedTs.clear();
+    Scratch.SortedTs.reserve(N);
+    for (int32 Ord : Scratch.Order)
+    {
+        Scratch.SortedIndices.push_back(OutIndices[Ord]);
+        Scratch.SortedTs.push_back(OutTs[Ord]);
+    }
+    OutIndices.swap(Scratch.SortedIndices);
+    OutTs.swap(Scratch.SortedTs);
 }
 
 // ============================================================================
