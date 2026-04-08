@@ -660,6 +660,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			Names = FResourceManager::Get().GetFontNames();
 		else if (strcmp(Prop.Name.c_str(), "Particle") == 0)
 			Names = FResourceManager::Get().GetParticleNames();
+		else if (strcmp(Prop.Name.c_str(), "Texture") == 0)
+			Names = FResourceManager::Get().GetTextureNames();
 
 		if (!Names.empty())
 		{

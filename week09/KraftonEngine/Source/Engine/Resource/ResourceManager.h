@@ -41,10 +41,19 @@ public:
 	// --- Particle names ---
 	TArray<FString> GetParticleNames() const;
 
+	// --- Texture (단일 정적 이미지, 1x1 atlas) ---
+	FTextureResource* FindTexture(const FName& TextureName);
+	const FTextureResource* FindTexture(const FName& TextureName) const;
+	void RegisterTexture(const FName& TextureName, const FString& InPath);
+
+	// --- Texture names ---
+	TArray<FString> GetTextureNames() const;
+
 private:
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
+	TMap<FString, FTextureResource>  TextureResources;
 };
