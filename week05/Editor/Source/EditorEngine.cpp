@@ -352,6 +352,9 @@ void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDe
 
 void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) const
 {
+	// TODO : 라인 배치 쓸때까지 봉인
+	return;
+
 	// 선택된 액터가 스태틱 메시일 때만 씬 BVH와 메시 BVH를 시각화한다.
 	AActor* SelectedActor = GetSelectedActor();
 	if (!SelectedActor) return;

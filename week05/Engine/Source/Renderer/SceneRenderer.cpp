@@ -311,20 +311,10 @@ bool FSceneRenderer::RenderPacketToTarget(
 		ApplyWireframeOverride(SceneQueue, WireframeMaterial);
 	}
 
-	if (!RenderQueueToTarget(Renderer, RenderTargetView, DepthStencilView, Viewport, SceneQueue, ClearColor, true))
-	{
-		return false;
-	}
+	// 추가 커맨드를 같은 프레임 큐에 합쳐 깊이 버퍼 연속성을 유지한다.
+	SceneQueue.Append(AdditionalCommands);
 
-	if (!AdditionalCommands.IsEmpty())
-	{
-		if (!RenderQueueToTarget(Renderer, RenderTargetView, DepthStencilView, Viewport, AdditionalCommands, ClearColor, false))
-		{
-			return false;
-		}
-	}
-
-	return true;
+	return RenderQueueToTarget(Renderer, RenderTargetView, DepthStencilView, Viewport, SceneQueue, ClearColor, true);
 }
 
 bool FSceneRenderer::RenderQueueToTarget(

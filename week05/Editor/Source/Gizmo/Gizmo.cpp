@@ -242,9 +242,9 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 	const FMatrix ScreenGizmoWorld = FTransform(FQuat::Identity, WorldLocation, FVector(RenderGizmoScale, RenderGizmoScale, RenderGizmoScale)).ToMatrixWithScale();
 	FRenderCommand Command;
 	Command.WorldMatrix = AxisGizmoWorld;
-	Command.RenderLayer = ERenderLayer::Overlay;
+	Command.RenderLayer = ERenderLayer::Default;
 	Command.Material = Material.get();
-	Command.bDisableDepthTest = true;
+	Command.bDisableDepthTest = false;
 	Command.bDisableDepthWrite = true;
 	Command.bDisableCulling = true;
 	
