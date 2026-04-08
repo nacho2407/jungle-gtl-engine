@@ -2,7 +2,7 @@
 #include "Object/Class.h"
 #include "Actor/Actor.h"
 
-IMPLEMENT_RTTI(UMoveComponent, UActorComponent)
+IMPLEMENT_RTTI(UMoveComponent, USceneComponent)
 
 void UMoveComponent::BeginPlay()
 {

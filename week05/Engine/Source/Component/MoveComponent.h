@@ -1,10 +1,10 @@
 #pragma once
-#include "ActorComponent.h"
+#include "SceneComponent.h"
 
-class ENGINE_API UMoveComponent : public UActorComponent
+class ENGINE_API UMoveComponent : public USceneComponent
 {
 public:
-	DECLARE_RTTI(UMoveComponent, UActorComponent)
+	DECLARE_RTTI(UMoveComponent, USceneComponent)
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
