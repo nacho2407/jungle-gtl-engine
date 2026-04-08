@@ -41,7 +41,8 @@ public:
 	void InvalidateVisibleSet();
 
 	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
-	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
+	TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() { return VisibleProxies; }
+	void RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index);
 	void UpdateVisibleProxies();
 
 	// LOD 컨텍스트를 RenderBus에 전달 (Collect 단계에서 LOD 인라인 갱신용)
@@ -66,6 +67,7 @@ public:
 	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
 	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
 
+	FSpatialPartition& GetPartition() { return Partition; }
 	const FOctree* GetOctree() const { return Partition.GetOctree(); }
 	void InsertActorToOctree(AActor* actor);
 	void RemoveActorToOctree(AActor* actor);

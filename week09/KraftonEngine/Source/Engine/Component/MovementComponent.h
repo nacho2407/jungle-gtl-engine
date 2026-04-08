@@ -20,7 +20,7 @@ public:
 	~UMovementComponent() override = default;
 
 	void BeginPlay() override;
-	void Tick(float DeltaTime) override;
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
 

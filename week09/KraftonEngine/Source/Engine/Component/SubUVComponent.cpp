@@ -63,13 +63,20 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)
 {
+	// SubUV는 GetEditableProperties에서 Billboard의 Texture를 의도적으로 스킵하므로
+	// PostEditProperty도 Billboard를 거치지 않고 Primitive로 직접 올라간다.
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Particle") == 0)
 	{
 		SetParticle(ParticleName);
+		// 파티클 교체 시 UV 그리드/텍스처가 바뀌므로 Mesh 단계까지 dirty.
+		MarkProxyDirty(EDirtyFlag::Mesh);
 	}
 	else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
 	{
 		MarkProxyDirty(EDirtyFlag::Transform);
+		MarkWorldBoundsDirty();
 	}
 }
 
@@ -95,9 +102,9 @@ void USubUVComponent::UpdateWorldAABB() const
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 }
 
-void USubUVComponent::Tick(float DeltaTime)
+void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	UBillboardComponent::Tick(DeltaTime);
+	UBillboardComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (!CachedParticle) return;
 	if (!bLoop && bIsExecute) return; // 단발 재생 완료 후 정지

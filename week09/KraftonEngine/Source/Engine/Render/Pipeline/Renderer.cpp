@@ -28,6 +28,7 @@ void FRenderer::Create(HWND hWindow)
 	GridLineBatcher.Create(Device.GetDevice());
 	FontBatcher.Create(Device.GetDevice());
 	SubUVBatcher.Create(Device.GetDevice());
+	BillboardBatcher.Create(Device.GetDevice());
 
 	InitializePassRenderStates();
 	InitializePassBatchers();
@@ -44,6 +45,7 @@ void FRenderer::Release()
 	GridLineBatcher.Release();
 	FontBatcher.Release();
 	SubUVBatcher.Release();
+	BillboardBatcher.Release();
 
 	for (FConstantBuffer& CB : PerObjectCBPool)
 	{
@@ -154,6 +156,38 @@ void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 			}
 		}
 	}
+
+	// --- Billboard 패스: 컬러 텍스처 quad → BillboardBatcher (Texture SRV 기준 정렬) ---
+	BillboardBatcher.Clear();
+	{
+		const auto& Entries = Bus.GetBillboardEntries();
+		SortedBillboardBuffer.clear();
+		SortedBillboardBuffer.insert(SortedBillboardBuffer.end(), Entries.begin(), Entries.end());
+
+		if (SortedBillboardBuffer.size() > 1)
+		{
+			std::sort(SortedBillboardBuffer.begin(), SortedBillboardBuffer.end(),
+				[](const FBillboardEntry& A, const FBillboardEntry& B) {
+					return A.Billboard.Texture < B.Billboard.Texture;
+				});
+		}
+
+		for (const auto& Entry : SortedBillboardBuffer)
+		{
+			if (Entry.Billboard.Texture)
+			{
+				BillboardBatcher.AddSprite(
+					Entry.Billboard.Texture->SRV,
+					Entry.PerObject.Model.GetLocation(),
+					Bus.GetCameraRight(),
+					Bus.GetCameraUp(),
+					Entry.PerObject.Model.GetScale(),
+					Entry.Billboard.Width,
+					Entry.Billboard.Height
+				);
+			}
+		}
+	}
 }
 
 //	스왑체인 백버퍼 복귀 — ImGui 합성 직전에 호출
@@ -224,6 +258,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Billboard] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 }
 
 // ============================================================
@@ -266,6 +301,13 @@ void FRenderer::InitializePassBatchers()
 			SubUVBatcher.DrawBatch(Ctx);
 		},
 		[this]() { return SubUVBatcher.GetSpriteCount() == 0; }
+	};
+
+	PassBatchers[(uint32)ERenderPass::Billboard] = {
+		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
+			BillboardBatcher.DrawBatch(Ctx);
+		},
+		[this]() { return BillboardBatcher.GetSpriteCount() == 0; }
 	};
 
 	PassBatchers[(uint32)ERenderPass::PostProcess] = {
