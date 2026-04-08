@@ -76,19 +76,37 @@ void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 
 void UWorld::BeginPlay()
 {
-	if (bBegunPlay) return;
+	if (bBegunPlay)
+	{
+		return;
+	}
 
-	bBegunPlay = true;     
-	
+	bBegunPlay = true;
+
 	if (PersistentLevel)
 	{
-		PersistentLevel->BeginPlay();
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (Actor && !Actor->HasBegunPlay())
+			{
+				Actor->BeginPlay();
+			}
+		}
 	}
 
 	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
 	//for (ULevel* Level : StreamingLevels)
 	//{
-	//	if (Level) Level->BeginPlay();
+	//	if (Level)
+	//	{
+	//		for (AActor* Actor : Level->GetActors())
+	//		{
+	//			if (Actor && !Actor->HasBegunPlay())
+	//			{
+	//				Actor->BeginPlay();
+	//			}
+	//		}
+	//	}
 	//}
 }
 
@@ -101,7 +119,13 @@ void UWorld::EndPlay()
 
 	if (PersistentLevel)
 	{
-		PersistentLevel->EndPlay();
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (Actor && Actor->HasBegunPlay() && !Actor->IsPendingDestroy())
+			{
+				Actor->EndPlay();
+			}
+		}
 	}
 
 	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
@@ -109,7 +133,13 @@ void UWorld::EndPlay()
 	//{
 	//	if (Level)
 	//	{
-	//		Level->EndPlay();
+	//		for (AActor* Actor : Level->GetActors())
+	//		{
+	//			if (Actor && Actor->HasBegunPlay() && !Actor->IsPendingDestroy())
+	//			{
+	//				Actor->EndPlay();
+	//			}
+	//		}
 	//	}
 	//}
 
@@ -123,7 +153,41 @@ void UWorld::Tick(float InDeltaTime)
 
 	if (PersistentLevel)
 	{
-		PersistentLevel->Tick(InDeltaTime);
+		const EWorldType CurrentWorldType = GetWorldType();
+		const bool bShouldTickForPlay = (CurrentWorldType == EWorldType::Game || CurrentWorldType == EWorldType::PIE) && bBegunPlay;
+		const bool bShouldTickForEditor = (CurrentWorldType == EWorldType::Editor);
+
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (!Actor || Actor->IsPendingDestroy())
+			{
+				continue;
+			}
+
+			if (bShouldTickForEditor)
+			{
+				if (!Actor->IsTickInEditor())
+				{
+					continue;
+				}
+			}
+			else if (bShouldTickForPlay)
+			{
+				if (!Actor->HasBegunPlay())
+				{
+					continue;
+				}
+			}
+			else
+			{
+				// 나중에 월드 타입이 늘어나면 여기서 추가적으로 체크
+				continue;
+			}
+
+			Actor->Tick(InDeltaTime);
+		}
+
+		PersistentLevel->CleanupDestroyedActors();
 	}
 
 	// [Minjun][deprecated] StreamingLevels는 삭제될 예정

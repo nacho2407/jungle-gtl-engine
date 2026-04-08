@@ -59,12 +59,6 @@ public:
 
 	/** 모든 액터를 파괴하고 씬을 빈 상태로 되돌린다. */
 	void ClearActors();
-	/** 아직 BeginPlay가 호출되지 않은 액터들에게 한 번만 BeginPlay를 전파한다. */
-	void BeginPlay();
-	/** BeginPlay 되었던 액터들에게 EndPlay를 전파하고 플레이 상태를 해제한다. */
-	void EndPlay();
-	/** 씬 안의 액터를 순회하며 Tick하고, 끝나면 파괴 대상을 정리한다. */
-	void Tick(float DeltaTime);
 
 	void MarkSpatialDirty();
 	void QueryPrimitivesByFrustum(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives) const;
@@ -78,7 +72,6 @@ private:
 	void RebuildSpatialIfNeeded() const;
 
 	TArray<AActor*> Actors;
-	bool bBegunPlay = false;
 	mutable BVH SpatialBVH;
 	mutable bool bSpatialDirty = true;
 };

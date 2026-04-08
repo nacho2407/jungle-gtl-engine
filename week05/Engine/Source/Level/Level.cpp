@@ -69,7 +69,6 @@ void ULevel::ClearActors()
 	}
 	Actors.clear();
 
-	bBegunPlay = false;
 	MarkSpatialDirty();
 }
 
@@ -115,55 +114,6 @@ void ULevel::CleanupDestroyedActors()
 	{
 		MarkSpatialDirty();
 	}
-}
-
-void ULevel::BeginPlay()
-{
-	if (bBegunPlay)
-	{
-		return;
-	}
-
-	bBegunPlay = true;
-
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && !Actor->HasBegunPlay())
-		{
-			Actor->BeginPlay();
-		}
-	}
-}
-
-void ULevel::EndPlay()
-{
-	if (!bBegunPlay)
-	{
-		return;
-	}
-
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && Actor->HasBegunPlay() && !Actor->IsPendingDestroy())
-		{
-			Actor->EndPlay();
-		}
-	}
-
-	bBegunPlay = false;
-}
-
-void ULevel::Tick(float DeltaTime)
-{
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && !Actor->IsPendingDestroy())
-		{
-			Actor->Tick(DeltaTime);
-		}
-	}
-
-	CleanupDestroyedActors();
 }
 
 void ULevel::MarkSpatialDirty()

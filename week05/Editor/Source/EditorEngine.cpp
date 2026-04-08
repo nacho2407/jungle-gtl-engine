@@ -264,9 +264,23 @@ void FEditorEngine::PrepareFrame(float DeltaTime)
 
 void FEditorEngine::TickWorlds(float DeltaTime)
 {
-	if (UWorld* ActiveWorld = GetActiveWorld())
+	if (bIsPIEActive)
 	{
-		ActiveWorld->Tick(DeltaTime);
+		if (bIsPIEPaused)
+		{
+			return;
+		}
+
+		if (PIEWorldContext && PIEWorldContext->World)
+		{
+			PIEWorldContext->World->Tick(DeltaTime);
+		}
+		return;
+	}
+
+	if (EditorWorldContext && EditorWorldContext->World)
+	{
+		EditorWorldContext->World->Tick(DeltaTime);
 	}
 }
 
