@@ -430,7 +430,17 @@ void AActor::Serialize(FArchive& Ar)
 		Ar.Serialize("RootComponentUUID", RootCompUUID);
 
 		TArray<FArchive*> ComponentArchives;
-		for (UActorComponent* Component : OwnedComponents)
+		if (RootComponent)
+		{
+			FArchive* ComponentArchive = new FArchive(true);
+
+			FString ComponentClassName = RootComponent->GetClass()->GetName();
+			ComponentArchive->Serialize("Class", ComponentClassName);
+
+			RootComponent->Serialize(*ComponentArchive);
+			ComponentArchives.push_back(ComponentArchive);
+		}
+		/*for (UActorComponent* Component : OwnedComponents)
 		{
 			if (Component)
 			{
@@ -442,7 +452,7 @@ void AActor::Serialize(FArchive& Ar)
 				Component->Serialize(*ComponentArchive);
 				ComponentArchives.push_back(ComponentArchive);
 			}
-		}
+		}*/
 
 		Ar.Serialize("Components", ComponentArchives);
 
