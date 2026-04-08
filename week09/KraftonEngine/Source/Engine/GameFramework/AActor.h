@@ -17,9 +17,11 @@ public:
 	AActor() = default;
 	~AActor() override;
 
-	virtual void BeginPlay() {}
+	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay() {}
+
+	bool HasActorBegunPlay() const { return bActorHasBegunPlay; }
 
 	void Serialize(FArchive& Ar) override;
 	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
@@ -76,6 +78,7 @@ public:
 
 	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
 	bool bNeedsTick = true;
+	bool bTickInEditor = false;
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 	bool IsQueuedForPartitionUpdate() const { return bQueuedForPartitionUpdate; }
@@ -95,4 +98,5 @@ protected:
 	mutable TArray<UPrimitiveComponent*> PrimitiveCache;
 	mutable bool bPrimitiveCacheDirty = true;
 	bool bQueuedForPartitionUpdate = false;
+	bool bActorHasBegunPlay = false;
 };
