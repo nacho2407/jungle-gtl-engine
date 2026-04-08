@@ -11,6 +11,16 @@ FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
 	bBatcherRendered = true; // 렌더링은 FontBatcher 경유, 프록시는 SelectionMask 전용
 }
 
+void FTextRenderSceneProxy::UpdateMesh()
+{
+	// Billboard::UpdateMesh의 CachedTexture 기반 분기를 피하고 FontBatcher 경로만 유지한다.
+	MeshBuffer = Owner->GetMeshBuffer();
+	Shader = nullptr;
+	Pass = ERenderPass::Font;
+	bBatcherRendered = true;
+	UpdateSortKey();
+}
+
 UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 {
 	return static_cast<UTextRenderComponent*>(Owner);

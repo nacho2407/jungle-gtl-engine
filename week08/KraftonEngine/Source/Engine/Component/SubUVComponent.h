@@ -29,10 +29,7 @@ public:
 	bool IsFinished() const { return !bLoop && bIsExecute; }
 	void Play() { FrameIndex = 0; TimeAccumulator = 0.0f; bIsExecute = false; } // 처음부터 다시 재생
 
-	// --- Sprite Size (월드 공간 크기) ---
-	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
-	float GetWidth()  const { return Width; }
-	float GetHeight() const { return Height; }
+	// Sprite Size(Width/Height)는 UBillboardComponent로 끌어올림 — 상속받아 사용.
 
 	// --- Property / Serialization ---
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
@@ -52,8 +49,6 @@ private:
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 
 	uint32 FrameIndex = 0;
-	float  Width = 1.0f;
-	float  Height = 1.0f;
 	float  PlayRate = 30.0f; // 초당 프레임 수
 	float  TimeAccumulator = 0.0f;
 

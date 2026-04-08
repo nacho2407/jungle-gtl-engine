@@ -25,3 +25,4 @@ struct FTextureAtlasResource
 // 의미론적 별칭 — 타입은 동일하지만 용도를 명시합니다.
 using FFontResource     = FTextureAtlasResource;
 using FParticleResource = FTextureAtlasResource;
+using FTextureResource  = FTextureAtlasResource;	// 단일 정적 텍스처 (Columns=Rows=1)

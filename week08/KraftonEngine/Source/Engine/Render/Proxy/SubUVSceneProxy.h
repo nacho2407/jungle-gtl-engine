@@ -13,6 +13,7 @@ class FSubUVSceneProxy : public FBillboardSceneProxy
 public:
 	FSubUVSceneProxy(USubUVComponent* InComponent);
 
+	void UpdateMesh() override;
 	void CollectEntries(FRenderBus& Bus) override;
 
 private:
