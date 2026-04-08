@@ -180,8 +180,29 @@ void UEditorEngine::StartQueuedPlaySessionRequest()
 
 void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Params)
 {
-	// TODO: 실제 PIE World 복제, GameInstance 기동, 뷰포트 전환 구현.
-	// 현재는 세션 정보만 채워서 IsPlayingInEditor()가 true를 반환하도록 한다.
+	// 1) 현재 에디터 월드를 복제해 PIE 월드 생성 (UE의 CreatePIEWorldByDuplication 대응).
+	UWorld* EditorWorld = GetWorld();
+	if (!EditorWorld)
+	{
+		return;
+	}
+	UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate(nullptr));
+	if (!PIEWorld)
+	{
+		return;
+	}
+
+	// 2) PIE WorldContext를 WorldList에 등록.
+	FWorldContext Ctx;
+	Ctx.WorldType = EWorldType::PIE;
+	Ctx.ContextHandle = FName("PIE");
+	Ctx.ContextName = "PIE";
+	Ctx.World = PIEWorld;
+	WorldList.push_back(Ctx);
+
+	// TODO: 다음 단계에서 Tick 분기/액티브 월드 전환/BeginPlay 등 추가.
+	// 현재는 PIE World 복제만 검증하고 에디터 월드는 그대로 유지한다.
+
 	FPlayInEditorSessionInfo Info;
 	Info.OriginalRequestParams = Params;
 	Info.PIEStartTime = 0.0;
@@ -194,7 +215,10 @@ void UEditorEngine::EndPlayMap()
 	{
 		return;
 	}
-	// TODO: PIE World 파괴, GameInstance Shutdown, 뷰포트 원복.
+
+	// PIE WorldContext 제거 (DestroyWorldContext가 World까지 파괴해 준다고 가정).
+	DestroyWorldContext(FName("PIE"));
+
 	PlayInEditorSessionInfo.reset();
 }
 

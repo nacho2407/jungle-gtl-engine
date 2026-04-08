@@ -30,6 +30,29 @@ UWorld::~UWorld()
 	}
 }
 
+UObject* UWorld::Duplicate(UObject* NewOuter) const
+{
+	// UE의 CreatePIEWorldByDuplication 대응 (간소화 버전).
+	// 새 UWorld를 만들고, 소스의 Actor들을 하나씩 복제해 NewWorld를 Outer로 삼아 등록한다.
+	// AActor::Duplicate 내부에서 Dup->GetTypedOuter<UWorld>() 경유 AddActor가 호출되므로
+	// 여기서는 World 단위 상태만 챙기면 된다.
+	UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
+	if (!NewWorld)
+	{
+		return nullptr;
+	}
+	NewWorld->SetOuter(NewOuter);
+
+	for (AActor* Src : Actors)
+	{
+		if (!Src) continue;
+		Src->Duplicate(NewWorld);
+	}
+
+	NewWorld->PostDuplicate();
+	return NewWorld;
+}
+
 void UWorld::DestroyActor(AActor* Actor)
 {
 	// remove and clean up

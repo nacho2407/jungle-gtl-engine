@@ -21,6 +21,11 @@ public:
 	UWorld() = default;
 	~UWorld() override;
 
+	// PIE 월드 복제용 — 자체 Actor 리스트를 순회하며 각 Actor를 새 World로 Duplicate.
+	// UObject::Duplicate는 Serialize 왕복만 수행하므로 UWorld처럼 컨테이너 기반 상태가 있는
+	// 타입은 별도 오버라이드가 필요하다.
+	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
+
 	// Actor lifecycle
 	template<typename T>
 	T* SpawnActor();
