@@ -11,19 +11,6 @@ IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
 void UProjectileMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();
-
-	if (Velocity.Length() > FMath::Epsilon || InitialSpeed <= 0.0f)
-	{
-		return;
-	}
-
-	USceneComponent* UpdatedSceneComponent = GetUpdatedComponent();
-	if (!UpdatedSceneComponent)
-	{
-		return;
-	}
-
-	Velocity = UpdatedSceneComponent->GetForwardVector().Normalized() * InitialSpeed;
 }
 
 void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
@@ -36,13 +23,14 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick Tic
 		return;
 	}
 
-	const float CurrentSpeed = Velocity.Length();
+	FVector EffectiveVelocity = ComputeEffectiveVelocity();
+	const float CurrentSpeed = EffectiveVelocity.Length();
 	if (MaxSpeed > 0.0f && CurrentSpeed > MaxSpeed)
 	{
-		Velocity = Velocity.Normalized() * MaxSpeed;
+		EffectiveVelocity = EffectiveVelocity.Normalized() * MaxSpeed;
 	}
 
-	const FVector MoveDelta = Velocity * DeltaTime;
+	const FVector MoveDelta = EffectiveVelocity * DeltaTime;
 	if (MoveDelta.Length() <= FMath::Epsilon)
 	{
 		return;
@@ -74,9 +62,19 @@ void UProjectileMovementComponent::StopSimulating()
 
 FVector UProjectileMovementComponent::GetPreviewVelocity() const
 {
-	FVector PreviewVelocity = Velocity;
+	return ComputeEffectiveVelocity();
+}
 
-	if (PreviewVelocity.Length() <= FMath::Epsilon && InitialSpeed > 0.0f)
+EProjectileHitBehavior UProjectileMovementComponent::GetHitBehavior() const
+{
+	return EProjectileHitBehavior::Stop;
+}
+
+FVector UProjectileMovementComponent::ComputeEffectiveVelocity() const
+{
+	FVector EffectiveVelocity = Velocity;
+
+	if (EffectiveVelocity.Length() <= FMath::Epsilon)
 	{
 		USceneComponent* SourceComponent = GetUpdatedComponent();
 		if (!SourceComponent)
@@ -87,22 +85,16 @@ FVector UProjectileMovementComponent::GetPreviewVelocity() const
 
 		if (SourceComponent)
 		{
-			PreviewVelocity = SourceComponent->GetForwardVector().Normalized() * InitialSpeed;
+			EffectiveVelocity = SourceComponent->GetForwardVector().Normalized();
 		}
 	}
 
-	const float CurrentSpeed = PreviewVelocity.Length();
-	if (MaxSpeed > 0.0f && CurrentSpeed > MaxSpeed)
+	if (InitialSpeed > 0.0f && EffectiveVelocity.Length() > FMath::Epsilon)
 	{
-		PreviewVelocity = PreviewVelocity.Normalized() * MaxSpeed;
+		EffectiveVelocity *= InitialSpeed;
 	}
 
-	return PreviewVelocity;
-}
-
-EProjectileHitBehavior UProjectileMovementComponent::GetHitBehavior() const
-{
-	return EProjectileHitBehavior::Stop;
+	return EffectiveVelocity;
 }
 
 bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult)

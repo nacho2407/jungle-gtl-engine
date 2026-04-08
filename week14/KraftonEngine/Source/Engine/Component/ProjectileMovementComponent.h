@@ -34,6 +34,7 @@ public:
 	void StopSimulating();
 
 protected:
+	FVector ComputeEffectiveVelocity() const;
 	virtual EProjectileHitBehavior GetHitBehavior() const;
 	virtual bool HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult);
 
