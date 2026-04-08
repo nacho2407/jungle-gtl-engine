@@ -10,23 +10,24 @@ DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 // 추후에 UBillboardComponent를 사용할 일이 있다면 Duplicate의 주석을 해제하고 수정하시면 됩니다.
 
 // 객체를 동적 생성한 뒤, 부모 클래스의 프로퍼티부터 내려오며 깊은 복사합니다.
-//UBillboardComponent* UBillboardComponent::Duplicate()
-//{
-//    UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
-//
-//	  NewComp->SetActive(this->IsActive());
-//    NewComp->SetOwner(nullptr);
-//    
-//    NewComp->SetRelativeLocation(this->GetRelativeLocation());
-//    NewComp->SetRelativeRotation(this->GetRelativeRotation());
-//    NewComp->SetRelativeScale(this->GetRelativeScale());
-//    
-//    NewComp->SetVisibility(this->IsVisible());
-//
-//    NewComp->bIsBillboard = this->bIsBillboard;
-//
-//    return NewComp;
-//}
+UBillboardComponent* UBillboardComponent::Duplicate()
+{
+    UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
+
+	NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+    
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+    
+    NewComp->SetVisibility(this->IsVisible());
+
+    NewComp->bIsBillboard = this->bIsBillboard;
+    NewComp->SetTextureName(this->GetTextureName());
+
+    return NewComp;
+}
 
 REGISTER_FACTORY(UBillboardComponent)
 bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
@@ -41,10 +42,7 @@ bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) 
 	OutCamera = GetOwner()->GetWorld()->GetActiveCamera();
 	return OutCamera != nullptr;
 }
-UBillboardComponent* UBillboardComponent::Duplicate()
-{
-	return nullptr;
-}
+
 // 카메라 Forward, Right, Up Vector 기반으로 billboard 의 world 행렬 생성 
 FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
 	const FVector& WorldLocation,
