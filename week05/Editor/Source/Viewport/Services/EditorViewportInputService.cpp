@@ -352,7 +352,19 @@ void FEditorViewportInputService::HandleMessage(
 	switch (Msg)
 	{
 	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
 	{
+		const bool bAltDown = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+		if (bAltDown && WParam == 'P')
+		{
+			const bool bWantsKeyboard = ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureKeyboard;
+			if (!bWantsKeyboard)
+			{
+				EditorEngine->PlaySimulation();
+				return;
+			}
+		}
+
 		if (Entry && IsPIEViewportEntry(Entry))
 		{
 			const bool bShiftDown = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
