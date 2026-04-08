@@ -303,13 +303,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
 
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
-	if (ScrollNotches != 0.0f) {
-		if (Camera->IsOrthogonal()) {
+	if (ScrollNotches != 0.0f)
+	{
+		if (Camera->IsOrthogonal())
+		{
 			float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * ZoomSpeed * DeltaTime;
 			Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
 		}
-		else {
-			Camera->MoveLocal(FVector(ScrollNotches * ZoomSpeed * DeltaTime, 0.0f, 0.0f));
+		else
+		{
+			//발줌은 절대 delta time을 곱하지 않음. 노치당 이동 거리가 일치해야 하기 때문.
+			Camera->MoveLocal(FVector(ScrollNotches * ZoomSpeed*0.015f, 0.0f, 0.0f));
 		}
 	}
 
