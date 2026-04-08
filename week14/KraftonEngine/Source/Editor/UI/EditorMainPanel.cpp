@@ -55,6 +55,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
 	// --- 우상단 Windows 토글 버튼 ---
+	if (!bHideEditorWindows)
 	{
 		FEditorSettings& S = FEditorSettings::Get();
 		const ImGuiViewport* VP = ImGui::GetMainViewport();
@@ -101,38 +102,41 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
 
-	if (Settings.UI.bConsole)
+	if (!bHideEditorWindows && Settings.UI.bConsole)
 	{
 		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
 		ConsoleWidget.Render(DeltaTime);
 	}
 
-	if (Settings.UI.bControl)
+	if (!bHideEditorWindows && Settings.UI.bControl)
 	{
 		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
 		ControlWidget.Render(DeltaTime);
 	}
 
-	if (Settings.UI.bProperty)
+	if (!bHideEditorWindows && Settings.UI.bProperty)
 	{
 		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
 		PropertyWidget.Render(DeltaTime);
 	}
 
-	if (Settings.UI.bScene)
+	if (!bHideEditorWindows && Settings.UI.bScene)
 	{
 		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
 		SceneWidget.Render(DeltaTime);
 	}
 
-	if (Settings.UI.bStat)
+	if (!bHideEditorWindows && Settings.UI.bStat)
 	{
 		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
 		StatWidget.Render(DeltaTime);
 	}
 
 #if STATS
-	RenderHiZDebug(Settings);
+	if (!bHideEditorWindows)
+	{
+		RenderHiZDebug(Settings);
+	}
 #endif
 
 	ImGui::Render();
@@ -216,4 +220,45 @@ void FEditorMainPanel::Update()
 			ImmAssociateContext(hWnd, NULL);
 		}
 	}
+}
+
+void FEditorMainPanel::HideEditorWindowsForPIE()
+{
+	if (bHasSavedUIVisibility)
+	{
+		bHideEditorWindows = true;
+		bShowWidgetList = false;
+		return;
+	}
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+	SavedUIVisibility = Settings.UI;
+	bSavedShowWidgetList = bShowWidgetList;
+	bHasSavedUIVisibility = true;
+	bHideEditorWindows = true;
+	bShowWidgetList = false;
+
+	Settings.UI.bConsole = false;
+	Settings.UI.bControl = false;
+	Settings.UI.bProperty = false;
+	Settings.UI.bScene = false;
+	Settings.UI.bStat = false;
+#if STATS
+	Settings.UI.bHiZDebug = false;
+#endif
+}
+
+void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
+{
+	if (!bHasSavedUIVisibility)
+	{
+		bHideEditorWindows = false;
+		return;
+	}
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+	Settings.UI = SavedUIVisibility;
+	bShowWidgetList = bSavedShowWidgetList;
+	bHideEditorWindows = false;
+	bHasSavedUIVisibility = false;
 }
