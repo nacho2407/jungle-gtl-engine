@@ -403,6 +403,8 @@ void FEngine::DestroyWorldContext(FWorldContext* Context)
 		Context->World->EndPlay();
 		Context->World->CleanupWorld();
 		Context->World->MarkPendingKill();
+		// World 바로 제거
+		ObjManager->FlushKilledObjects();
 		Context->World = nullptr;
 	}
 
