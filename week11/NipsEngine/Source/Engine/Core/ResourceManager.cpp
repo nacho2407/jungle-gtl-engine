@@ -110,7 +110,7 @@ namespace ResourceKey
 //	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
 void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device* Device)
 {
-	CahcedDevice = Device;
+	CachedDevice = Device;
 	//	초기화
 	ObjFilePaths.clear();
 	FontFilePaths.clear();
@@ -216,6 +216,8 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 	MaterialFilePaths.clear();
 	ParticleFilePaths.clear();
 	StaticMeshRegistry.clear();
+	FontResources.clear();
+	ParticleResources.clear();
 
 	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
 	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
@@ -285,7 +287,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 				else if (Meta.Type == EAssetMetaType::Texture)
 				{
 					TextureFilePaths.push_back(RelativePath);
-					LoadTexture(RelativePath,CahcedDevice);
+					LoadTexture(RelativePath, CachedDevice.Get());
 				}
 				//else
 				//{
@@ -297,6 +299,11 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 	catch (const std::exception& Ex)
 	{
 		UE_LOG("[ResourceManager] Refresh Exception: %s", Ex.what());
+	}
+
+	if (CachedDevice && !LoadGPUResources(CachedDevice.Get()))
+	{
+		UE_LOG("[ResourceManager] Refresh Failed : GPU Resource Reload Error");
 	}
 
 	UE_LOG("[ResourceManager] Asset Refresh Complete");
@@ -619,43 +626,19 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
 	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
 
-	Device->CreateTexture2D(&Desc, &InitData, &DefaultWhiteTexture);
+	Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
 	if (DefaultWhiteTexture)
 	{
-		Device->CreateShaderResourceView(DefaultWhiteTexture, nullptr, &DefaultWhiteSRV);
+		Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultWhiteSRV.ReleaseAndGetAddressOf());
 	}
 }
 
 void FResourceManager::ReleaseGPUResources()
 {
-	for (auto& [Key, Resource] : FontResources)
-	{
-		if (Resource.SRV)
-		{
-			Resource.SRV->Release();
-			Resource.SRV = nullptr;
-		}
-	}
 	FontResources.clear();
 
-	for (auto& [Key, Resource] : ParticleResources)
-	{
-		if (Resource.SRV)
-		{
-			Resource.SRV->Release();
-			Resource.SRV = nullptr;
-		}
-	}
 	ParticleResources.clear();
 
-	for (auto& [Key, Resource] : MaterialTextureResources)
-	{
-		if (Resource.SRV)
-		{
-			Resource.SRV->Release();
-			Resource.SRV = nullptr;
-		}
-	}
 	MaterialTextureResources.clear();
 
 	for (auto& [Path, StaticMeshAsset] : StaticMeshMap)
@@ -665,16 +648,9 @@ void FResourceManager::ReleaseGPUResources()
 	StaticMeshMap.clear();
 	StaticMeshRegistry.clear();
 
-	if (DefaultWhiteSRV)
-	{
-		DefaultWhiteSRV->Release();
-		DefaultWhiteSRV = nullptr;
-	}
-	if (DefaultWhiteTexture)
-	{
-		DefaultWhiteTexture->Release();
-		DefaultWhiteTexture = nullptr;
-	}
+	DefaultWhiteSRV.Reset();
+	DefaultWhiteTexture.Reset();
+	CachedDevice.Reset();
 }
 
 void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
@@ -705,10 +681,10 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 
 	for (auto& [Name, Mat] : MaterialRegistry)
 	{
-		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath, CahcedDevice);
-		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath, CahcedDevice);
-		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, CahcedDevice);
-		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath, CahcedDevice);
+		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath, CachedDevice.Get());
+		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath, CachedDevice.Get());
+		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, CachedDevice.Get());
+		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath, CachedDevice.Get());
 	}
 
 	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
@@ -765,11 +741,11 @@ FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Devi
 	HRESULT hr;
 	if (FullPath.size() >= 4 && FullPath.substr(FullPath.size() - 4) == L".dds")
 	{
-		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, &Resource.SRV);
+		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.SRV.ReleaseAndGetAddressOf());
 	}
 	else
 	{
-		hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, &Resource.SRV);
+		hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.SRV.ReleaseAndGetAddressOf());
 	}
 
 	if (FAILED(hr))
@@ -813,7 +789,6 @@ void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath
 	Resource.Path = InPath;
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
-	Resource.SRV = nullptr;
 	FontResources[FontName.ToString()] = Resource;
 }
 
@@ -848,7 +823,6 @@ void FResourceManager::RegisterParticle(const FName& ParticleName, const FString
 	Resource.Path = InPath;
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
-	Resource.SRV = nullptr;
 	ParticleResources[ParticleName.ToString()] = Resource;
 }
 

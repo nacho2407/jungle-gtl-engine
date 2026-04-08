@@ -43,7 +43,7 @@ struct FFrameConstants
 {
 	FMatrix View;          
 	FMatrix Projection;    
-	float bIsWireframe;
+	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
 };
 

@@ -1,11 +1,12 @@
 ﻿#pragma once
 #include "Render/Common/RenderTypes.h"
-
 #include "Viewport/CursorOverlayState.h"
-#include <string>
-#include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 
+#include "Engine/Math/Quat.h"
+#include "Engine/Geometry/Ray.h"
+
+#include <string>
 
 class FViewportCamera;
 class UWorld;

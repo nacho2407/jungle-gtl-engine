@@ -56,7 +56,7 @@ void FRenderer::Create(HWND hWindow)
 	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	Device.GetDevice()->CreateSamplerState(&SampDesc, &Resources.MeshSamplerState);
+	Device.GetDevice()->CreateSamplerState(&SampDesc, Resources.MeshSamplerState.ReleaseAndGetAddressOf());
 
 
 	//	MeshManager init
@@ -92,7 +92,7 @@ void FRenderer::Release()
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 	Resources.StaticMeshConstantBuffer.Release();
-	Resources.MeshSamplerState->Release();
+	Resources.MeshSamplerState.Reset();
 
 	FGPUProfiler::Get().Shutdown();
 
@@ -293,11 +293,11 @@ void FRenderer::InitializePassBatchers()
 				const auto& SubUV = Cmd.Constants.SubUV;
 				if (!SubUVCachedSRV && SubUV.Particle->IsLoaded())
 				{
-					SubUVCachedSRV = SubUV.Particle->SRV;
+					SubUVCachedSRV = SubUV.Particle->SRV.Get();
 				}
 
 				SubUVBatcher.AddSprite(
-					SubUV.Particle->SRV,
+					SubUV.Particle->SRV.Get(),
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
@@ -469,7 +469,8 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
             Context->PSSetConstantBuffers(6, 1, &cb6);
 
             // 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
-            Context->PSSetSamplers(0, 1, &Resources.MeshSamplerState);
+            ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
+            Context->PSSetSamplers(0, 1, Samplers);
         }
 
         // [주의] 텍스처(SRV)는 타입이 같아도 메시의 머티리얼마다 변경될 수 있으므로 분기문 밖에서 매번 바인딩합니다.
