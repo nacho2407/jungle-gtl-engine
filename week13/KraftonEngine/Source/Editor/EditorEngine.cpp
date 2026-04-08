@@ -221,11 +221,15 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 		}
 	}
 
+	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
+	//    픽킹(=PIE 월드) / outliner / outline 렌더가 모두 어긋난다.
+	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(PIEWorld);
+
 	// TODO(Tick 담당): 아래 항목은 별도 작업 범위로 분리됨.
 	// - PIE World Tick 라우팅 (Editor World는 Tick 제외)
 	// - PIEWorld->BeginPlay() 호출 시점
 	// - ViewportClient가 참조하는 World* 스왑 (현재는 에디터 월드를 그대로 렌더)
-	// - SelectionManager / Gizmo / Picking을 PIE 월드 대상으로 재바인딩
 	// - PIE 중 에디터 입력(선택/기즈모) 차단 여부 결정
 }
 
@@ -239,6 +243,10 @@ void UEditorEngine::EndPlayMap()
 	// 활성 월드를 PIE 시작 전 핸들로 복원.
 	const FName PrevHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
 	SetActiveWorld(PrevHandle);
+
+	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
+	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(GetWorld());
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
@@ -260,6 +268,7 @@ void UEditorEngine::CloseScene()
 
 void UEditorEngine::NewScene()
 {
+	StopPlayInEditorImmediate();
 	ClearScene();
 	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
 	Ctx.World->InitWorld();
@@ -271,6 +280,7 @@ void UEditorEngine::NewScene()
 
 void UEditorEngine::ClearScene()
 {
+	StopPlayInEditorImmediate();
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(nullptr);
 
