@@ -85,9 +85,12 @@ public:
 
 	bool IsPIEActive() const { return bIsPIEActive; }
 	bool IsPIEPaused() const { return bIsPIEPaused; }
+	bool IsPIEInputCaptured() const { return bIsPIEInputCaptured; }
 	bool StartPIE();
 	void EndPIE();
 	void TogglePIEPause();
+	void CapturePIEInput();
+	void ReleasePIEInputCapture();
 
 protected:
 	// 에디터 런타임 초기화 전에 ImGui/로그 라우팅을 준비한다.
@@ -149,6 +152,8 @@ private:
 	void SyncPlatformCursor();
 	// PIE 뷰포트 기준으로 커서 숨김/클리핑 상태를 갱신한다.
 	void SyncPIECursorState();
+	// PIE 입력 캡쳐 시작 시 커서를 대상 뷰포트 중앙으로 옮긴다.
+	void CenterCursorInPIEViewport();
 	// 활성 월드 종류에 따라 Editor/Preview ViewportClient를 전환한다.
 	void SyncViewportClient();
 	// 선택된 액터의 BVH를 디버그 라인 요청에 추가한다.
@@ -178,4 +183,5 @@ private:
 	bool bIsPIECursorCurrentlyHidden = false;
 	bool bIsPIEActive = false;
 	bool bIsPIEPaused = false;
+	bool bIsPIEInputCaptured = false;
 };

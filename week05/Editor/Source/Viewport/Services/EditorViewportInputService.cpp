@@ -97,7 +97,7 @@ void FEditorViewportInputService::TickCameraNavigation(
 
 	if (IsPIEViewportEntry(FocusedEntry))
 	{
-		if (EditorEngine->IsPIEPaused() || FocusedEntry->Viewport == nullptr)
+		if (EditorEngine->IsPIEPaused() || !EditorEngine->IsPIEInputCaptured() || FocusedEntry->Viewport == nullptr)
 		{
 			return;
 		}
@@ -353,7 +353,14 @@ void FEditorViewportInputService::HandleMessage(
 	{
 		if (Entry && IsPIEViewportEntry(Entry))
 		{
-			if (WParam == VK_ESCAPE)
+			const bool bShiftDown = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+			if (WParam == VK_F1 && bShiftDown && EditorEngine->IsPIEInputCaptured())
+			{
+				EditorEngine->ReleasePIEInputCapture();
+				return;
+			}
+
+			if (WParam == VK_ESCAPE && EditorEngine->IsPIEInputCaptured())
 			{
 				EditorEngine->EndPIE();
 			}
@@ -390,7 +397,24 @@ void FEditorViewportInputService::HandleMessage(
 
 	case WM_LBUTTONDOWN:
 	{
-		FViewport* Viewport = ViewportRegistry.GetViewportById(Slate->GetFocusedViewportId());
+		FViewport* ClickedViewport = ViewportRegistry.GetViewportById(Slate->GetFocusedViewportId());
+		if (Entry && IsPIEViewportEntry(Entry) && ClickedViewport)
+		{
+			const FRect& ClickedRect = ClickedViewport->GetRect();
+			const bool bHoveringPIEViewport = (Slate->GetHoveredViewportId() == Slate->GetFocusedViewportId());
+			const bool bClickedPIEViewportScene =
+				bHoveringPIEViewport &&
+				ClickedRect.IsValid() &&
+				(ClickedRect.X < MouseX && MouseX < ClickedRect.X + ClickedRect.Width) &&
+				(ClickedRect.Y < MouseY && MouseY < ClickedRect.Y + ClickedRect.Height);
+			if (bClickedPIEViewportScene)
+			{
+				EditorEngine->CapturePIEInput();
+				return;
+			}
+		}
+
+		FViewport* Viewport = ClickedViewport;
 		if (!Viewport || !Entry || !IsEditorViewportEntry(Entry))
 		{
 			return;

@@ -590,28 +590,10 @@ bool FEditorEngine::StartPIE()
 	ActiveWorldContext = PIEWorldContext;
 	bIsPIEActive = true;
 	bIsPIEPaused = false;
-
-	if (!bWasCursorHiddenForPIE)
-	{
-		::ShowCursor(FALSE);
-		bWasCursorHiddenForPIE = true;
-		bIsPIECursorCurrentlyHidden = true;
-	}
-
-	if (PIEViewportEntry && MainWindow)
-	{
-		HWND Hwnd = MainWindow->GetHwnd();
-		if (Hwnd)
-		{
-			const FRect& Rect = PIEViewportEntry->Viewport->GetRect();
-			if (Rect.IsValid())
-			{
-				POINT Center = { Rect.X + Rect.Width / 2, Rect.Y + Rect.Height / 2 };
-				::ClientToScreen(Hwnd, &Center);
-				::SetCursorPos(Center.x, Center.y);
-			}
-		}
-	}
+	bIsPIEInputCaptured = true;
+	bWasCursorHiddenForPIE = true;
+	bIsPIECursorCurrentlyHidden = false;
+	CenterCursorInPIEViewport();
 	SyncPIECursorState();
 
 	PIEWorld->BeginPlay();
@@ -657,6 +639,7 @@ void FEditorEngine::EndPIE()
 
 	bIsPIEActive = false;
 	bIsPIEPaused = false;
+	bIsPIEInputCaptured = false;
 	PIEViewportId = INVALID_VIEWPORT_ID;
 }
 
@@ -666,6 +649,30 @@ void FEditorEngine::TogglePIEPause()
 	{
 		bIsPIEPaused = !bIsPIEPaused;
 	}
+}
+
+void FEditorEngine::CapturePIEInput()
+{
+	if (!bIsPIEActive || bIsPIEPaused || PIEViewportId == INVALID_VIEWPORT_ID)
+	{
+		return;
+	}
+
+	bIsPIEInputCaptured = true;
+	bWasCursorHiddenForPIE = true;
+	CenterCursorInPIEViewport();
+	SyncPIECursorState();
+}
+
+void FEditorEngine::ReleasePIEInputCapture()
+{
+	if (!bIsPIEActive)
+	{
+		return;
+	}
+
+	bIsPIEInputCaptured = false;
+	SyncPIECursorState();
 }
 
 bool FEditorEngine::InitEditorPreview()
@@ -866,6 +873,17 @@ void FEditorEngine::SyncPIECursorState()
 		return;
 	}
 
+	if (!bIsPIEInputCaptured)
+	{
+		if (bWasCursorHiddenForPIE && bIsPIECursorCurrentlyHidden)
+		{
+			::ShowCursor(TRUE);
+			bIsPIECursorCurrentlyHidden = false;
+		}
+		::ClipCursor(nullptr);
+		return;
+	}
+
 	HWND Hwnd = MainWindow->GetHwnd();
 	const bool bWindowActive = (Hwnd != nullptr) &&
 		(::GetForegroundWindow() == Hwnd);
@@ -914,6 +932,36 @@ void FEditorEngine::SyncPIECursorState()
 
 	RECT ClipRect = { TopLeft.x, TopLeft.y, BottomRight.x, BottomRight.y };
 	::ClipCursor(&ClipRect);
+}
+
+void FEditorEngine::CenterCursorInPIEViewport()
+{
+	if (!bIsPIEActive || PIEViewportId == INVALID_VIEWPORT_ID || MainWindow == nullptr)
+	{
+		return;
+	}
+
+	FViewport* PIEViewport = FindViewport(PIEViewportId);
+	if (PIEViewport == nullptr)
+	{
+		return;
+	}
+
+	HWND Hwnd = MainWindow->GetHwnd();
+	if (Hwnd == nullptr)
+	{
+		return;
+	}
+
+	const FRect& Rect = PIEViewport->GetRect();
+	if (!Rect.IsValid())
+	{
+		return;
+	}
+
+	POINT Center = { Rect.X + Rect.Width / 2, Rect.Y + Rect.Height / 2 };
+	::ClientToScreen(Hwnd, &Center);
+	::SetCursorPos(Center.x, Center.y);
 }
 
 void FEditorEngine::SyncViewportClient()
