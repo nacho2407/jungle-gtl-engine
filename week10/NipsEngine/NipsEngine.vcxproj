@@ -247,6 +247,7 @@
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Timer.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Geometry\AABB.cpp" />
@@ -270,8 +271,6 @@
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\OcclusionCulling\OcclusionCulling.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\OcclusionCulling\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
@@ -382,6 +381,7 @@
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Level.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
@@ -401,6 +401,7 @@
     <ClInclude Include="Source\Engine\Math\Vector.h" />
     <ClInclude Include="Source\Engine\Math\Vector2.h" />
     <ClInclude Include="Source\Engine\Math\Vector4.h" />
+    <ClInclude Include="Source\Engine\Object\ActorIterator.h" />
     <ClInclude Include="Source\Engine\Object\EngineStatics.h" />
     <ClInclude Include="Source\Engine\Object\FName.h" />
     <ClInclude Include="Source\Engine\Object\Object.h" />
@@ -417,8 +418,6 @@
     <ClInclude Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\OcclusionCulling\OcclusionCulling.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\OcclusionCulling\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />

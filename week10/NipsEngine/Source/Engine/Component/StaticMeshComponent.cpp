@@ -42,11 +42,6 @@ UStaticMeshComponent* UStaticMeshComponent::Duplicate()
     return NewComp;
 }
 
-UStaticMeshComponent* UStaticMeshComponent::DuplicateSubObjects()
-{
-    return this;
-}
-
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 {
 	if (StaticMeshAsset == InStaticMesh)

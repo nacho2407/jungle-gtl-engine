@@ -32,7 +32,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 		CreateWorldContext(EWorldType::Editor, FName("Default"));
 	}
 	SetActiveWorld(WorldList[0].ContextHandle);
-	GetWorld()->InitWorld();
 
 	// Selection & Gizmo
 	SelectionManager.Init();
