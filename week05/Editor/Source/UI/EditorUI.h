@@ -57,4 +57,5 @@ private:
 	bool bHasCentralDockRect = false;
 	FRenderer* CurrentRenderer = nullptr;
 	FDebugState DebugState;
+	bool bRequestViewportFocusOnNextRender = false;
 };

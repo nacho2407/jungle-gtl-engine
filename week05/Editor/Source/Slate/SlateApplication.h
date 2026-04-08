@@ -57,6 +57,7 @@ class FSlateApplication
 public:
 	void Initialize(const FRect& Area, FViewport* VPs[], int32 Count);
 	void SetLayout(EViewportLayout Layout);
+	void FocusViewport(FViewportId ViewportId); // 지정한 활성 뷰포트로 포커스를 옮긴다.
 	void SetViewportAreaRect(const FRect& Area);
 	void PerformLayout();
 

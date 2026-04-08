@@ -238,6 +238,9 @@ void FEditorViewportInputService::HandleMessage(
 			Gizmo.ToggleCoordinateSpace();
 			UE_LOG("Gizmo Space: %s", Gizmo.GetCoordinateSpace() == EGizmoCoordinateSpace::Local ? "Local" : "World");
 			return;
+		case VK_SPACE:
+			Gizmo.CycleMode();
+			return;
 		default:
 			return;
 		}
