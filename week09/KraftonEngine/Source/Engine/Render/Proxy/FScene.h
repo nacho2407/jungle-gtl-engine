@@ -47,6 +47,13 @@ public:
 	const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return NeverCullProxies; }
 	uint32 GetProxyCount() const { return static_cast<uint32>(Proxies.size()); }
 
+	// --- 가시 프록시 캐시 (World가 매 프레임 frustum cull 결과를 채워 넣음) ---
+	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
+	TArray<FPrimitiveSceneProxy*>& GetVisibleProxiesMutable() { return VisibleProxies; }
+	bool IsVisibleSetDirty() const { return bVisibleSetDirty; }
+	void InvalidateVisibleSet() { bVisibleSetDirty = true; }
+	void MarkVisibleSetClean() { bVisibleSetDirty = false; }
+
 private:
 	// 전체 프록시 목록 (ProxyId = 인덱스)
 	TArray<FPrimitiveSceneProxy*> Proxies;
@@ -62,4 +69,8 @@ private:
 
 	// 삭제된 슬롯 재활용
 	TArray<uint32> FreeSlots;
+
+	// 매 프레임 frustum culling 결과 캐시 (World::UpdateVisibleProxies가 채움)
+	TArray<FPrimitiveSceneProxy*> VisibleProxies;
+	bool bVisibleSetDirty = true;
 };

@@ -51,6 +51,7 @@ FScene::~FScene()
 	SelectedProxies.clear();
 	NeverCullProxies.clear();
 	FreeSlots.clear();
+	VisibleProxies.clear();
 }
 
 // ============================================================
@@ -128,6 +129,24 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 		auto it = std::find(NeverCullProxies.begin(), NeverCullProxies.end(), Proxy);
 		if (it != NeverCullProxies.end()) NeverCullProxies.erase(it);
 	}
+
+	// VisibleProxies 캐시에서도 제거 — dangling 포인터 방지
+	if (Proxy->bInVisibleSet && Proxy->VisibleListIndex < VisibleProxies.size())
+	{
+		const uint32 Index = Proxy->VisibleListIndex;
+		const uint32 LastIndex = static_cast<uint32>(VisibleProxies.size() - 1);
+		if (Index != LastIndex)
+		{
+			FPrimitiveSceneProxy* Last = VisibleProxies[LastIndex];
+			VisibleProxies[Index] = Last;
+			if (Last)
+			{
+				Last->VisibleListIndex = Index;
+			}
+		}
+		VisibleProxies.pop_back();
+	}
+	bVisibleSetDirty = true;
 
 	// 슬롯 비우고 재활용 목록에 추가
 	Proxy->bInVisibleSet = false;
