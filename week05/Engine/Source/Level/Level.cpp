@@ -155,11 +155,6 @@ void ULevel::EndPlay()
 
 void ULevel::Tick(float DeltaTime)
 {
-	if (!bBegunPlay)
-	{
-		BeginPlay();
-	}
-
 	for (AActor* Actor : Actors)
 	{
 		if (Actor && !Actor->IsPendingDestroy())

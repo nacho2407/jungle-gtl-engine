@@ -76,16 +76,20 @@ void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 
 void UWorld::BeginPlay()
 {
-	if (bBegunPlay) return;  
+	if (bBegunPlay) return;
+
 	bBegunPlay = true;     
+	
 	if (PersistentLevel)
 	{
 		PersistentLevel->BeginPlay();
 	}
-	for (ULevel* Level : StreamingLevels)
-	{
-		if (Level) Level->BeginPlay();
-	}
+
+	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
+	//for (ULevel* Level : StreamingLevels)
+	//{
+	//	if (Level) Level->BeginPlay();
+	//}
 }
 
 void UWorld::EndPlay()
@@ -99,13 +103,15 @@ void UWorld::EndPlay()
 	{
 		PersistentLevel->EndPlay();
 	}
-	for (ULevel* Level : StreamingLevels)
-	{
-		if (Level)
-		{
-			Level->EndPlay();
-		}
-	}
+
+	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
+	//for (ULevel* Level : StreamingLevels)
+	//{
+	//	if (Level)
+	//	{
+	//		Level->EndPlay();
+	//	}
+	//}
 
 	bBegunPlay = false;
 }
@@ -119,13 +125,15 @@ void UWorld::Tick(float InDeltaTime)
 	{
 		PersistentLevel->Tick(InDeltaTime);
 	}
-	for (ULevel* Level : StreamingLevels)
-	{
-		if (Level)
-		{
-			Level->Tick(InDeltaTime);
-		}
-	}
+
+	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
+	//for (ULevel* Level : StreamingLevels)
+	//{
+	//	if (Level)
+	//	{
+	//		Level->Tick(InDeltaTime);
+	//	}
+	//}
 }
 
 void UWorld::ResetRuntimeState()

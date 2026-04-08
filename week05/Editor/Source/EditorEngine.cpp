@@ -463,7 +463,7 @@ bool FEditorEngine::StartPIE()
 	SavedPIESelectedActor = GetSelectedActor();
 
 	// PIE 시작 시점에 포커스된 뷰포트가 있으면 해당 뷰포트를 계속 사용, 없으면 활성 뷰포트 중 첫 번째를 사용
-	// (Minjun) 카메라 관련 로직은 손 볼 필요가 있음
+	// [Minjun] 카메라 관련 로직은 손 볼 필요가 있음
 	FViewportEntry* PIEViewportEntry = nullptr;
 	if (SlateApplication)
 	{
@@ -493,7 +493,7 @@ bool FEditorEngine::StartPIE()
 		// PIE 모드에서는 항상 원근 뷰포트로 시작하도록 강제합니다. 나중에 뷰포트가 포커스될 때 저장된 LocalState로 복원할 수 있도록 합니다.
 		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
 
-		// PIE 시작 시점의 카메라는 위치 (0, 0, 0), 회전 (0,0,0)으로 초기화
+		// [Minjun][임시 조치] PIE 시작 시점의 카메라는 위치 (0, 0, 0), 회전 (0,0,0)으로 초기화
 		PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
 		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
 	}
@@ -517,7 +517,7 @@ bool FEditorEngine::StartPIE()
 	PIEWorld->BeginPlay();
 
 	// PIE 모드 진입 시 마우스 커서 숨김
-	// (Minjun) 나중에 UI 상에서 PIE 모드 진입 / 종료 지점이 생기면 아래 코드 활성화할 것
+	// [Minjun] 나중에 UI 상에서 PIE 모드 진입 / 종료 지점이 생기면 아래 코드 활성화할 것
 	//::ShowCursor(FALSE);
 	//bWasCursorHiddenForPIE = true;
 
@@ -572,7 +572,10 @@ void FEditorEngine::EndPIE()
 
 void FEditorEngine::TogglePIEPause()
 {
-
+	if (bIsPIEActive)
+	{
+		bIsPIEPaused = !bIsPIEPaused;
+	}
 }
 
 bool FEditorEngine::InitEditorPreview()
