@@ -31,7 +31,7 @@ USubUVComponent* USubUVComponent::Duplicate()
     
     NewComp->SetVisibility(this->IsVisible());
 	
-    NewComp->bIsBillboard = this->bIsBillboard;
+    NewComp->SetBillboardEnabled(this->bIsBillboard);
 
     // 2. USubUVComponent 고유 리소스 얕은 복사
     NewComp->ParticleName = this->ParticleName;
