@@ -56,7 +56,7 @@ public:
 	FViewportCamera* GetActiveCamera() const { return ActiveCamera; }
 
 	EWorldType GetWorldType() const { return WorldType; }
-	void SetWorld(EWorldType InWorldType) { WorldType = InWorldType; }
+	void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
 
 private:
 	EWorldType WorldType = EWorldType::Editor;
