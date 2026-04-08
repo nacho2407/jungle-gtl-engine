@@ -6,6 +6,7 @@
 #include "Slate/SlateApplication.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -53,17 +54,18 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 	: Engine(InEngine)
 {
 	Rect = { 0, 0, 330, 0 };
-	TitleButton.Text = "Viewport";
+	TitleButton.Text = "View";
 	TitleButton.bEnabled = false;
-	TitleButton.FontSize = 20.0f;
+	TitleButton.FontSize = 18.0f;
 	TitleButton.LetterSpacing = 0.5f;
 	TitleButton.DisabledBackgroundColor = 0xFF1F1F1F;
 	TitleButton.BorderColor = 0xFF4E4E4E;
 	TitleButton.DisabledTextColor = 0xFFBDBDBD;
+	TitleButton.TextHAlign = ETextHAlign::Center;
 
 	LayoutDropdown.Label = "Layout";
 	LayoutDropdown.Placeholder = "Select";
-	LayoutDropdown.FontSize = 20.0f;
+	LayoutDropdown.FontSize = 18.0f;
 	LayoutDropdown.LetterSpacing = 0.5f;
 	LayoutDropdown.SetOptions(GetLayoutOptions());
 	LayoutDropdown.OnSelectionChanged = [this](int32 SelectedIndex)
@@ -73,7 +75,7 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 
 	TypeDropdown.Label = "Type";
 	TypeDropdown.Placeholder = "";
-	TypeDropdown.FontSize = 20.0f;
+	TypeDropdown.FontSize = 18.0f;
 	TypeDropdown.LetterSpacing = 0.5f;
 	TypeDropdown.SetOptions(GetViewportTypeOptions());
 	TypeDropdown.OnSelectionChanged = [this](int32 SelectedIndex)
@@ -83,7 +85,7 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 
 	ModeDropdown.Label = "Mode";
 	ModeDropdown.Placeholder = "";
-	ModeDropdown.FontSize = 20.0f;
+	ModeDropdown.FontSize = 18.0f;
 	ModeDropdown.LetterSpacing = 0.5f;
 	ModeDropdown.SetOptions(GetRenderModeOptions());
 	ModeDropdown.OnSelectionChanged = [this](int32 SelectedIndex)
@@ -92,18 +94,86 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 	};
 }
 
-void SViewportToolbarWidget::OnPaint(SWidget& Painter)
+void SViewportToolbarWidget::ConfigureForGlobalLayout()
+{
+	bShowLayout = true;
+	bShowViewportSettings = false;
+	TargetViewportId = INVALID_VIEWPORT_ID;
+	TitleButton.Text = "Viewport";
+	CloseAllDropdowns();
+}
+
+void SViewportToolbarWidget::ConfigureForViewport(FViewportId InViewportId)
+{
+	bShowLayout = false;
+	bShowViewportSettings = true;
+	TargetViewportId = InViewportId;
+	TitleButton.Text = "View";
+	CloseAllDropdowns();
+}
+
+FVector2 SViewportToolbarWidget::ComputeDesiredSize() const
+{
+	float Width = static_cast<float>(EstimateTitleWidth());
+	if (bShowLayout)
+	{
+		Width += LayoutDropdown.ComputeDesiredSize().X + 6.0f;
+	}
+	if (bShowViewportSettings)
+	{
+		Width += TypeDropdown.ComputeDesiredSize().X + ModeDropdown.ComputeDesiredSize().X + 12.0f;
+	}
+	return { Width, 24.0f };
+}
+
+FVector2 SViewportToolbarWidget::ComputeMinSize() const
+{
+	float Width = 48.0f;
+	if (bShowLayout)
+	{
+		Width += LayoutDropdown.ComputeMinSize().X + 6.0f;
+	}
+	if (bShowViewportSettings)
+	{
+		Width += TypeDropdown.ComputeMinSize().X + ModeDropdown.ComputeMinSize().X + 12.0f;
+	}
+	return { Width, 24.0f };
+}
+
+void SViewportToolbarWidget::OnPaint(FSlatePaintContext& Painter)
 {
 	SyncSelectionState();
 	UpdateGeometry();
 
-	Painter.DrawRectFilled(Rect, 0xD01C1E21);
-	Painter.DrawRect(Rect, 0xFF555B63);
+	if (!Rect.IsValid())
+	{
+		return;
+	}
 
 	TitleButton.Paint(Painter);
-	LayoutDropdown.Paint(Painter);
-	TypeDropdown.Paint(Painter);
-	ModeDropdown.Paint(Painter);
+	if (bShowLayout)
+	{
+		LayoutDropdown.Paint(Painter);
+	}
+	if (bShowViewportSettings)
+	{
+		if (!TypeDropdown.IsOpen())
+		{
+			TypeDropdown.Paint(Painter);
+		}
+		if (!ModeDropdown.IsOpen())
+		{
+			ModeDropdown.Paint(Painter);
+		}
+		if (TypeDropdown.IsOpen())
+		{
+			TypeDropdown.Paint(Painter);
+		}
+		if (ModeDropdown.IsOpen())
+		{
+			ModeDropdown.Paint(Painter);
+		}
+	}
 }
 
 bool SViewportToolbarWidget::OnMouseDown(int32 X, int32 Y)
@@ -111,25 +181,22 @@ bool SViewportToolbarWidget::OnMouseDown(int32 X, int32 Y)
 	SyncSelectionState();
 	UpdateGeometry();
 
-	const FPoint Point{ X, Y };
-	if (!HitTest(Point))
+	if (!HitTest({ X, Y }))
 	{
 		CloseAllDropdowns();
 		UpdateGeometry();
 		return false;
 	}
 
-	if (HandleDropdownMouse(LayoutDropdown, EDropdownId::Layout, X, Y))
+	if (bShowLayout && HandleDropdownMouse(LayoutDropdown, EDropdownId::Layout, X, Y))
 	{
 		return true;
 	}
-
-	if (HandleDropdownMouse(TypeDropdown, EDropdownId::Type, X, Y))
+	if (bShowViewportSettings && HandleDropdownMouse(TypeDropdown, EDropdownId::Type, X, Y))
 	{
 		return true;
 	}
-
-	if (HandleDropdownMouse(ModeDropdown, EDropdownId::Mode, X, Y))
+	if (bShowViewportSettings && HandleDropdownMouse(ModeDropdown, EDropdownId::Mode, X, Y))
 	{
 		return true;
 	}
@@ -141,7 +208,7 @@ bool SViewportToolbarWidget::OnMouseDown(int32 X, int32 Y)
 
 bool SViewportToolbarWidget::HitTest(FPoint Point) const
 {
-	return ContainsPoint(GetExpandedInteractiveRect(), Point);
+	return ContainsPoint(GetInteractiveRect(), Point);
 }
 
 void SViewportToolbarWidget::SetHeaderRect(const FRect& InRect)
@@ -152,26 +219,46 @@ void SViewportToolbarWidget::SetHeaderRect(const FRect& InRect)
 
 FRect SViewportToolbarWidget::GetInteractiveRect() const
 {
-	return GetExpandedInteractiveRect();
+	FRect Expanded = Rect;
+	if (bShowLayout && LayoutDropdown.IsOpen())
+	{
+		Expanded = UnionRect(Expanded, LayoutDropdown.GetExpandedRect());
+	}
+	if (bShowViewportSettings && TypeDropdown.IsOpen())
+	{
+		Expanded = UnionRect(Expanded, TypeDropdown.GetExpandedRect());
+	}
+	if (bShowViewportSettings && ModeDropdown.IsOpen())
+	{
+		Expanded = UnionRect(Expanded, ModeDropdown.GetExpandedRect());
+	}
+	return Expanded;
 }
 
 bool SViewportToolbarWidget::HasOpenDropdown() const
 {
-	return LayoutDropdown.IsOpen() || TypeDropdown.IsOpen() || ModeDropdown.IsOpen();
+	return (bShowLayout && LayoutDropdown.IsOpen()) || (bShowViewportSettings && (TypeDropdown.IsOpen() || ModeDropdown.IsOpen()));
 }
 
 void SViewportToolbarWidget::SyncSelectionState()
 {
-	LayoutDropdown.bEnabled = true;
-	LayoutDropdown.SetSelectedIndex(static_cast<int32>(GetCurrentLayout()));
+	LayoutDropdown.bEnabled = bShowLayout;
+	if (bShowLayout)
+	{
+		LayoutDropdown.SetSelectedIndex(static_cast<int32>(GetCurrentLayout()));
+	}
+	else
+	{
+		LayoutDropdown.SetOpen(false);
+	}
 
-	FViewportEntry* FocusedEntry = GetFocusedEntry();
-	const bool bHasFocusedEntry = (FocusedEntry != nullptr);
+	FViewportEntry* TargetEntry = GetTargetEntry();
+	const bool bHasTargetEntry = (TargetEntry != nullptr) && bShowViewportSettings;
 
-	TypeDropdown.bEnabled = bHasFocusedEntry;
-	ModeDropdown.bEnabled = bHasFocusedEntry;
+	TypeDropdown.bEnabled = bHasTargetEntry;
+	ModeDropdown.bEnabled = bHasTargetEntry;
 
-	if (!bHasFocusedEntry)
+	if (!bHasTargetEntry)
 	{
 		TypeDropdown.SetSelectedIndex(-1);
 		ModeDropdown.SetSelectedIndex(-1);
@@ -180,8 +267,13 @@ void SViewportToolbarWidget::SyncSelectionState()
 		return;
 	}
 
-	TypeDropdown.SetSelectedIndex(static_cast<int32>(FocusedEntry->LocalState.ProjectionType));
-	ModeDropdown.SetSelectedIndex(static_cast<int32>(FocusedEntry->LocalState.ViewMode));
+	TypeDropdown.SetSelectedIndex(static_cast<int32>(TargetEntry->LocalState.ProjectionType));
+	ModeDropdown.SetSelectedIndex(static_cast<int32>(TargetEntry->LocalState.ViewMode));
+}
+
+int32 SViewportToolbarWidget::EstimateTitleWidth() const
+{
+	return static_cast<int32>(std::ceil(TitleButton.ComputeDesiredSize().X));
 }
 
 void SViewportToolbarWidget::UpdateGeometry()
@@ -195,55 +287,70 @@ void SViewportToolbarWidget::UpdateGeometry()
 		return;
 	}
 
-	const int32 Padding = 8;
 	const int32 Gap = 6;
-	const int32 RowHeight = 24;
-	const int32 MinTitleWidth = 72;
-	const int32 MaxTitleWidth = 110;
-	const int32 MinDropdownWidth = 72;
-	const int32 MinHeaderInnerWidth = MinTitleWidth + Gap * 3 + MinDropdownWidth * 3;
+	const int32 RowHeight = Rect.Height;
+	const int32 RowY = Rect.Y;
+	int32 CursorX = Rect.X;
 
-	const int32 InnerWidth = Rect.Width - Padding * 2;
-	if (InnerWidth < MinHeaderInnerWidth)
+	const int32 DesiredTitleWidth = EstimateTitleWidth();
+	const int32 MinTitleWidth = 44;
+	const int32 LayoutDesiredWidth = static_cast<int32>(std::ceil(LayoutDropdown.ComputeDesiredSize().X));
+	const int32 LayoutMinWidth = static_cast<int32>(std::ceil(LayoutDropdown.ComputeMinSize().X));
+	const int32 TypeDesiredWidth = static_cast<int32>(std::ceil(TypeDropdown.ComputeDesiredSize().X));
+	const int32 TypeMinWidth = static_cast<int32>(std::ceil(TypeDropdown.ComputeMinSize().X));
+	const int32 ModeDesiredWidth = static_cast<int32>(std::ceil(ModeDropdown.ComputeDesiredSize().X));
+	const int32 ModeMinWidth = static_cast<int32>(std::ceil(ModeDropdown.ComputeMinSize().X));
+
+	if (bShowLayout)
 	{
-		TitleButton.Rect = { 0, 0, 0, 0 };
-		LayoutDropdown.Rect = { 0, 0, 0, 0 };
+		int32 TitleWidth = DesiredTitleWidth;
+		int32 LayoutWidth = LayoutDesiredWidth;
+		const int32 DesiredTotal = TitleWidth + Gap + LayoutWidth;
+		if (DesiredTotal > Rect.Width)
+		{
+			const int32 Deficit = DesiredTotal - Rect.Width;
+			const int32 TitleShrink = (std::min)(TitleWidth - MinTitleWidth, Deficit / 2);
+			TitleWidth -= (std::max)(0, TitleShrink);
+			LayoutWidth = (std::max)(LayoutMinWidth, Rect.Width - TitleWidth - Gap);
+		}
+
+		TitleButton.Rect = IntersectRect({ CursorX, RowY, TitleWidth, RowHeight }, Rect);
+		CursorX += TitleWidth + Gap;
+		LayoutDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, LayoutWidth), RowHeight }, Rect);
 		TypeDropdown.Rect = { 0, 0, 0, 0 };
 		ModeDropdown.Rect = { 0, 0, 0, 0 };
 		return;
 	}
 
-	int32 TitleWidth = Rect.Width / 5;
-	TitleWidth = (std::clamp)(TitleWidth, MinTitleWidth, MaxTitleWidth);
-
-	int32 DropdownAreaWidth = InnerWidth - TitleWidth - Gap * 3;
-	int32 DropdownWidth = DropdownAreaWidth / 3;
-	if (DropdownWidth < MinDropdownWidth)
-	{
-		TitleWidth = (std::max)(MinTitleWidth, TitleWidth - (MinDropdownWidth - DropdownWidth) * 3);
-		DropdownAreaWidth = InnerWidth - TitleWidth - Gap * 3;
-		DropdownWidth = DropdownAreaWidth / 3;
-		if (DropdownWidth < MinDropdownWidth)
+		int32 TitleWidth = DesiredTitleWidth;
+		int32 TypeWidth = TypeDesiredWidth;
+		int32 ModeWidth = ModeDesiredWidth;
+		const int32 DesiredTotal = TitleWidth + Gap + TypeWidth + Gap + ModeWidth;
+		if (DesiredTotal > Rect.Width)
 		{
-			TitleButton.Rect = { 0, 0, 0, 0 };
-			LayoutDropdown.Rect = { 0, 0, 0, 0 };
-			TypeDropdown.Rect = { 0, 0, 0, 0 };
-			ModeDropdown.Rect = { 0, 0, 0, 0 };
-			return;
+			TitleWidth = (std::min)(DesiredTitleWidth, (std::max)(MinTitleWidth, Rect.Width / 4));
+			const int32 WidthForDropdowns = (std::max)(0, Rect.Width - TitleWidth - Gap * 2);
+			const int32 TotalDesired = TypeDesiredWidth + ModeDesiredWidth;
+			if (TotalDesired > 0)
+			{
+				TypeWidth = (std::max)(TypeMinWidth, static_cast<int32>(WidthForDropdowns * (static_cast<float>(TypeDesiredWidth) / TotalDesired) + 0.5f));
+				ModeWidth = (std::max)(ModeMinWidth, WidthForDropdowns - TypeWidth);
+			}
+			if (TypeWidth + ModeWidth > WidthForDropdowns)
+			{
+				const int32 Over = TypeWidth + ModeWidth - WidthForDropdowns;
+				const int32 ShrinkMode = (std::min)(Over, ModeWidth - ModeMinWidth);
+				ModeWidth -= (std::max)(0, ShrinkMode);
+				TypeWidth = (std::max)(TypeMinWidth, WidthForDropdowns - ModeWidth);
+			}
 		}
-	}
 
-	TitleButton.Rect = { Rect.X + Padding, Rect.Y + (Rect.Height - RowHeight) / 2, TitleWidth, RowHeight };
-	const int32 RowY = Rect.Y + (Rect.Height - RowHeight) / 2;
-	int32 CursorX = TitleButton.Rect.X + TitleWidth + Gap;
-
-	LayoutDropdown.Rect = { CursorX, RowY, DropdownWidth, RowHeight };
-	CursorX += DropdownWidth + Gap;
-
-	TypeDropdown.Rect = { CursorX, RowY, DropdownWidth, RowHeight };
-	CursorX += DropdownWidth + Gap;
-
-	ModeDropdown.Rect = { CursorX, RowY, DropdownWidth, RowHeight };
+		TitleButton.Rect = IntersectRect({ CursorX, RowY, TitleWidth, RowHeight }, Rect);
+		CursorX += TitleWidth + Gap;
+		TypeDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, TypeWidth), RowHeight }, Rect);
+		CursorX += TypeWidth + Gap;
+		ModeDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, ModeWidth), RowHeight }, Rect);
+		LayoutDropdown.Rect = { 0, 0, 0, 0 };
 }
 
 bool SViewportToolbarWidget::HandleDropdownMouse(SDropdown& Dropdown, EDropdownId DropdownId, int32 X, int32 Y)
@@ -325,6 +432,22 @@ FViewportEntry* SViewportToolbarWidget::GetFocusedEntry() const
 	return FocusedEntry;
 }
 
+FViewportEntry* SViewportToolbarWidget::GetTargetEntry() const
+{
+	if (TargetViewportId == INVALID_VIEWPORT_ID)
+	{
+		return GetFocusedEntry();
+	}
+
+	if (!Engine)
+	{
+		return nullptr;
+	}
+
+	FViewportEntry* Entry = Engine->GetViewportRegistry().FindEntryByViewportID(TargetViewportId);
+	return (Entry && Entry->bActive) ? Entry : nullptr;
+}
+
 void SViewportToolbarWidget::ApplyLayout(EViewportLayout NewLayout)
 {
 	if (!Engine || !Engine->GetSlateApplication())
@@ -346,64 +469,21 @@ void SViewportToolbarWidget::ApplyLayout(EViewportLayout NewLayout)
 
 void SViewportToolbarWidget::ApplyViewportType(EViewportType NewType)
 {
-	FViewportEntry* FocusedEntry = GetFocusedEntry();
-	if (!FocusedEntry || !Engine)
+	if (!Engine)
 	{
 		return;
 	}
 
-	const FVector* FocusPointHint = nullptr;
-	FVector FocusPoint = FVector::ZeroVector;
-	if (AActor* SelectedActor = Engine->GetSelectedActor())
+	if (FViewportEntry* Entry = GetTargetEntry())
 	{
-		FocusPoint = SelectedActor->GetActorLocation();
-		FocusPointHint = &FocusPoint;
+		Engine->GetViewportRegistry().SetViewportType(Entry->Id, NewType);
 	}
-
-	Engine->GetViewportRegistry().SetViewportType(FocusedEntry->Id, NewType, FocusPointHint);
 }
 
 void SViewportToolbarWidget::ApplyRenderMode(ERenderMode NewMode)
 {
-	FViewportEntry* FocusedEntry = GetFocusedEntry();
-	if (!FocusedEntry)
+	if (FViewportEntry* Entry = GetTargetEntry())
 	{
-		return;
+		Entry->LocalState.ViewMode = NewMode;
 	}
-
-	FocusedEntry->LocalState.ViewMode = NewMode;
-}
-
-bool SViewportToolbarWidget::ContainsPoint(const FRect& InRect, FPoint Point)
-{
-	return InRect.IsValid() &&
-		(InRect.X <= Point.X && Point.X <= InRect.X + InRect.Width) &&
-		(InRect.Y <= Point.Y && Point.Y <= InRect.Y + InRect.Height);
-}
-
-FRect SViewportToolbarWidget::UnionRects(const FRect& A, const FRect& B)
-{
-	if (!A.IsValid())
-	{
-		return B;
-	}
-	if (!B.IsValid())
-	{
-		return A;
-	}
-
-	const int32 Left = (std::min)(A.X, B.X);
-	const int32 Top = (std::min)(A.Y, B.Y);
-	const int32 Right = (std::max)(A.X + A.Width, B.X + B.Width);
-	const int32 Bottom = (std::max)(A.Y + A.Height, B.Y + B.Height);
-	return { Left, Top, Right - Left, Bottom - Top };
-}
-
-FRect SViewportToolbarWidget::GetExpandedInteractiveRect() const
-{
-	FRect Expanded = Rect;
-	Expanded = UnionRects(Expanded, LayoutDropdown.GetExpandedRect());
-	Expanded = UnionRects(Expanded, TypeDropdown.GetExpandedRect());
-	Expanded = UnionRects(Expanded, ModeDropdown.GetExpandedRect());
-	return Expanded;
 }

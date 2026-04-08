@@ -26,6 +26,10 @@ void FMaterialTexture::Release()
 void FMaterialTexture::Bind(ID3D11DeviceContext* DeviceContext)
 {
 	DeviceContext->PSSetShaderResources(0, 1, &TextureSRV);
+	if (SamplerState)
+	{
+		DeviceContext->PSSetSamplers(0, 1, &SamplerState);
+	}
 }
 
 // ─── FMaterialConstantBuffer ───
@@ -148,7 +152,7 @@ bool FMaterial::SetParameterData(const FString& ParamName, const void* Data, uin
 	uint32 CopySize = (DataSize < Info.Size) ? DataSize : Info.Size;
 	FMaterialConstantBuffer* CB = GetConstantBuffer(Info.BufferIndex);
 	if (!CB) return false;
-	CB->SetData(Data, DataSize, Info.Offset);
+	CB->SetData(Data, CopySize, Info.Offset);
 	return true;
 }
 
@@ -181,6 +185,28 @@ FVector4 FMaterial::GetVectorParameter(const FString& ParamName) const
 	return Result;
 }
 
+void FMaterial::SetPixelTextureBinding(uint32 Slot, ID3D11ShaderResourceView* TextureSRV, ID3D11SamplerState* SamplerState)
+{
+	PixelTextureBinding.Slot = Slot;
+	PixelTextureBinding.TextureSRV = TextureSRV;
+	PixelTextureBinding.SamplerState = SamplerState;
+}
+
+void FMaterial::ClearPixelTextureBinding()
+{
+	PixelTextureBinding = {};
+}
+
+bool FMaterial::HasPixelTextureBinding() const
+{
+	if (PixelTextureBinding.IsValid())
+	{
+		return true;
+	}
+
+	return MaterialTexture && MaterialTexture->TextureSRV != nullptr && MaterialTexture->SamplerState != nullptr;
+}
+
 std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 {
 	ID3D11Device* Device = nullptr;
@@ -210,6 +236,7 @@ std::unique_ptr<FDynamicMaterial> FMaterial::CreateDynamicMaterial() const
 	Dynamic->DepthStencilState = DepthStencilState;
 	Dynamic->BlendState = BlendState;
 	Dynamic->SetMaterialTexture(MaterialTexture);
+	Dynamic->PixelTextureBinding = PixelTextureBinding;
 
 	for (const auto& CB : ConstantBuffers)
 	{
@@ -253,6 +280,14 @@ void FMaterial::Bind(ID3D11DeviceContext* DeviceContext)
 	if (VertexShader) VertexShader->Bind(DeviceContext);
 	if (PixelShader) PixelShader->Bind(DeviceContext);
 	if (MaterialTexture) MaterialTexture->Bind(DeviceContext);
+	if (PixelTextureBinding.IsValid())
+	{
+		DeviceContext->PSSetShaderResources(PixelTextureBinding.Slot, 1, &PixelTextureBinding.TextureSRV);
+		if (PixelTextureBinding.SamplerState)
+		{
+			DeviceContext->PSSetSamplers(PixelTextureBinding.Slot, 1, &PixelTextureBinding.SamplerState);
+		}
+	}
 
 	for (int32 i = 0; i < static_cast<int32>(ConstantBuffers.size()); ++i)
 	{
@@ -271,6 +306,8 @@ void FMaterial::Release()
 	RasterizerState.reset();
 	DepthStencilState.reset();
 	BlendState.reset();
+	PixelTextureBinding = {};
+	MaterialTexture.reset();
 	for (auto& CB : ConstantBuffers)
 	{
 		CB.Release();

@@ -9,6 +9,7 @@
 #include "Math/Frustum.h"
 #include "World/World.h"
 #include "imgui.h"
+#include <algorithm>
 
 FPreviewViewportClient::FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName)
 	: EditorUI(InEditorUI)
@@ -25,12 +26,12 @@ void FPreviewViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 	}
 
 	EditorUI.Initialize(EditorEngine);
-	EditorUI.AttachToRenderer(Renderer);
+	EditorUI.InitializeRendererResources(Renderer);
 }
 
 void FPreviewViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
-	EditorUI.DetachFromRenderer(Renderer);
+	EditorUI.ShutdownRendererResources(Renderer);
 }
 
 void FPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
@@ -73,18 +74,19 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
 		if (ActiveCamera)
 		{
-			FRenderCommandQueue Queue;
-			Queue.Reserve(Renderer->GetPrevCommandCount());
-			Queue.ViewMatrix = ActiveCamera->GetViewMatrix();
-			Queue.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
+			FSceneRenderPacket ScenePacket;
+			FGameFrameRequest FrameRequest;
+			FrameRequest.SceneView.ViewMatrix = ActiveCamera->GetViewMatrix();
+			FrameRequest.SceneView.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
 
 			FFrustum Frustum;
-			Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
+			Frustum.ExtractFromVP(FrameRequest.SceneView.ViewMatrix * FrameRequest.SceneView.ProjectionMatrix);
 
-			const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
-			BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
-			Renderer->SubmitCommands(Queue);
-			Renderer->ExecuteCommands();
+			FrameRequest.SceneView.CameraPosition = FrameRequest.SceneView.ViewMatrix.GetInverse().GetTranslation();
+			FrameRequest.SceneView.TotalTimeSeconds = Engine ? static_cast<float>(Engine->GetTimer().GetTotalTime()) : 0.0f;
+			BuildSceneRenderPacket(Engine, Scene, Frustum, FShowFlags{}, ScenePacket);
+			FrameRequest.ScenePacket = std::move(ScenePacket);
+			Renderer->RenderGameFrame(FrameRequest);
 		}
 	}
 

@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Renderer/RenderCommand.h"
+#include "Level/SceneRenderPacket.h"
+#include "Viewport/ViewportTypes.h"
 #include <functional>
 #include <memory>
 
@@ -11,7 +12,6 @@ class FEditorEngine;
 class FEditorViewportRegistry;
 class FEditorUI;
 class FGizmo;
-class FBlitRenderer;
 class FMaterial;
 class FFrustum;
 class FShowFlags;
@@ -21,14 +21,14 @@ struct FRenderMesh;
 class FEditorViewportRenderService
 {
 public:
-	using FBuildRenderCommands = std::function<void(
+	using FBuildSceneRenderPacket = std::function<void(
 		FEngine*,
 		ULevel*,
 		const FFrustum&,
 		const FShowFlags&,
-		const FVector&,
-		FRenderCommandQueue&)>;
+		FSceneRenderPacket&)>;
 
+	// 에디터 전체 프레임 요청을 구성해 FRenderer에 전달한다.
 	void RenderAll(
 		FEngine* Engine,
 		FRenderer* Renderer,
@@ -36,12 +36,8 @@ public:
 		FEditorViewportRegistry& ViewportRegistry,
 		FEditorUI& EditorUI,
 		FGizmo& Gizmo,
-		FBlitRenderer& BlitRenderer,
 		const std::shared_ptr<FMaterial>& WireFrameMaterial,
 		FRenderMesh* GridMesh,
-		FMaterial* GridMaterial,
-		const FBuildRenderCommands& BuildRenderCommands) const;
-
-private:
-	static void ApplyWireframe(FRenderCommandQueue& Queue, FMaterial* WireMaterial);
+		FMaterial* GridMaterials[MAX_VIEWPORTS],
+		const FBuildSceneRenderPacket& BuildSceneRenderPacket) const;
 };

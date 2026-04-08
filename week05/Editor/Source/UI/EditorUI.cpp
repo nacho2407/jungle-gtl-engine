@@ -4,7 +4,6 @@
 #include "Object/Object.h"
 #include "Level/Level.h"
 #include "Actor/Actor.h"
-#include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
 #include "Platform/Windows/WindowsWindow.h"
 #include "Renderer/Renderer.h"
@@ -26,10 +25,6 @@
 #include "Serializer/SceneSerializer.h"
 #include "Core/ShowFlags.h"
 #include "Viewport/EditorViewportClient.h"
-#include "Component/SkyComponent.h"
-#include "Component/SubUVComponent.h"
-#include "Component/UUIDBillboardComponent.h"
-#include "Component/BillboardComponent.h"
 
 enum class EFileDialogType
 {
@@ -44,7 +39,7 @@ std::string GetFilePathUsingDialog(EFileDialogType Type)
 
 	OPENFILENAMEW Ofn = {};
 	Ofn.lStructSize = sizeof(OPENFILENAMEW);
-	Ofn.lpstrFilter = L"Scene Files (*.json;*.scene)\0*.json;*.scene\0All Files (*.*)\0*.*\0";
+	Ofn.lpstrFilter = L"JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
 	Ofn.lpstrFile = FileName;
 	Ofn.nMaxFile = MAX_PATH;
 	Ofn.lpstrDefExt = L"json";
@@ -123,17 +118,15 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 					{
 						int Result = MessageBoxW(
 							nullptr,
-							L"이미 같은 이름의 파일이 존재합니다.\n덮어쓰시겠습니까?",
+							L"A file with the same name already exists.\nDo you want to overwrite it?",
 							L"Overwrite",
 							MB_YESNO | MB_ICONWARNING
 						);
 
 						if (Result != IDYES)
 						{
-							return; // 취소
+							return;
 						}
-
-						// 덮어쓰기 위해 기존 파일 삭제
 						std::filesystem::remove(Dst, ec);
 						if (ec)
 						{
@@ -167,7 +160,7 @@ void FEditorUI::Initialize(FEditorEngine* InEngine)
 		};
 }
 
-void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
+void FEditorUI::InitializeRendererResources(FRenderer* InRenderer)
 {
 	if (!Engine || !InRenderer)
 	{
@@ -175,155 +168,139 @@ void FEditorUI::AttachToRenderer(FRenderer* InRenderer)
 	}
 
 	bViewportClientActive = true;
-	CurrentRenderer = InRenderer;
+
+	ContentBrowser.SetFolderIcon(InRenderer->GetFolderIconSRV());
+	ContentBrowser.SetFileIcon(InRenderer->GetFileIconSRV());
+	InitializeImGui(InRenderer);
+}
+
+bool FEditorUI::InitializeImGui(FRenderer* InRenderer)
+{
+	if (!InRenderer)
+	{
+		return false;
+	}
+
+	if (bImGuiInitialized)
+	{
+		return true;
+	}
 
 	const HWND Hwnd = InRenderer->GetHwnd();
 	ID3D11Device* Device = InRenderer->GetDevice();
 	ID3D11DeviceContext* DeviceContext = InRenderer->GetDeviceContext();
+	if (!Hwnd || !Device || !DeviceContext)
+	{
+		return false;
+	}
 
-	ContentBrowser.SetFolderIcon(CurrentRenderer->GetFolderIconSRV());
-	ContentBrowser.SetFileIcon(CurrentRenderer->GetFileIconSRV());
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	IO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	IO.IniFilename = "imgui_editor.ini";
 
 	std::filesystem::path FontPath = FPaths::ProjectRoot() / "Content" / "Fonts" / "NotoSansKR-Bold.ttf";
 	std::wstring FontPathWString = FontPath.wstring();
-	InRenderer->SetGUICallbacks(
-		[Hwnd, Device, DeviceContext, FontPathWString, FontPath]()
+
+	ImFontConfig FontConfig;
+	FontConfig.OversampleH = 1;
+	FontConfig.OversampleV = 1;
+	FontConfig.PixelSnapH = true;
+
+	ImFont* Font = nullptr;
+	FILE* FileHandle = nullptr;
+	_wfopen_s(&FileHandle, FontPath.c_str(), L"rb");
+	if (FileHandle)
+	{
+		fseek(FileHandle, 0, SEEK_END);
+		const size_t FontByteSize = static_cast<size_t>(ftell(FileHandle));
+		fseek(FileHandle, 0, SEEK_SET);
+		void* FontData = IM_ALLOC(FontByteSize);
+		if (FontData)
 		{
-			IMGUI_CHECKVERSION();
-			ImGui::CreateContext();
-			ImGuiIO& IO = ImGui::GetIO();
-			IO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-			IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-			IO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-			IO.IniFilename = "imgui_editor.ini";
-
-			ImFontConfig FontConfig;
-			FontConfig.OversampleH = 1;
-			FontConfig.OversampleV = 1;
-			FontConfig.PixelSnapH = true;
-
-			ImFont* Font = nullptr;
-			FILE* f;
-			_wfopen_s(&f, FontPath.c_str(), L"rb");
-			if (f) {
-				// 1. 파일 크기 확인
-				fseek(f, 0, SEEK_END);
-				size_t size = ftell(f);
-				fseek(f, 0, SEEK_SET);
-
-				// 2. ImGui 전용 메모리 할당 (ImGui가 나중에 직접 free함)
-				void* fontData = IM_ALLOC(size);
-				fread(fontData, 1, size, f);
-				fclose(f);
-
-				// 3. 메모리로부터 폰트 로드
-				// 마지막 인자로 한글 범위를 지정해야 화면에 한글이 출력됩니다.
-				Font = IO.Fonts->AddFontFromMemoryTTF(fontData, (int)size, 16.0f, &FontConfig, IO.Fonts->GetGlyphRangesKorean());
-			}
-			else {
-				fclose(f);
-			}
-
-			if (!Font)
-			{
-				MessageBoxW(nullptr, FontPathWString.c_str(), L"Failed to load font", MB_OK);
-				IO.Fonts->AddFontDefault();
-			}
-
-			ImGui::StyleColorsDark();
-
-			ImGuiStyle& Style = ImGui::GetStyle();
-			Style.WindowPadding = ImVec2(0, 0);
-			Style.DisplayWindowPadding = ImVec2(0, 0);
-			Style.DisplaySafeAreaPadding = ImVec2(0, 0);
-
-			Style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-			Style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.0f);
-
-
-			if (IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			{
-				Style.WindowRounding = 0.0f;
-				Style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-			}
-
-			ImGui_ImplWin32_Init(Hwnd);
-			ImGui_ImplDX11_Init(Device, DeviceContext);
-		},
-		[]()
-		{
-			ImGui_ImplDX11_Shutdown();
-			ImGui_ImplWin32_Shutdown();
-			ImGui::DestroyContext();
-		},
-		[]()
-		{
-			ImGui_ImplDX11_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-		},
-		[]()
-		{
-			ImGui::Render();
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-		},
-		[]()
-		{
-			ImGuiIO& IO = ImGui::GetIO();
-			if (IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			{
-				ImGui::UpdatePlatformWindows();
-				ImGui::RenderPlatformWindowsDefault();
-			}
+			fread(FontData, 1, FontByteSize, FileHandle);
+			Font = IO.Fonts->AddFontFromMemoryTTF(
+				FontData,
+				static_cast<int32>(FontByteSize),
+				16.0f,
+				&FontConfig,
+				IO.Fonts->GetGlyphRangesKorean());
 		}
-	);
+		fclose(FileHandle);
+	}
 
-	InRenderer->SetPostRenderCallback([this](FRenderer* Renderer)
-		{
-			if (!Engine)
-			{
-				return;
-			}
-	
-			AActor* Selected = Engine->GetSelectedActor();
-			if (Selected && !Selected->IsPendingDestroy() && Selected->IsVisible()
-				&& Selected->GetComponentByClass<USkyComponent>() == nullptr
-				&& [&]() -> bool {
-				const FEditorViewportRegistry& ViewportRegistry = Engine->GetViewportRegistry();
-				if (ViewportRegistry.GetEntries().empty()) return true;
-				FSlateApplication* Slate = Engine->GetSlateApplication();
-				FViewportId VId = Slate ? Slate->GetFocusedViewportId() : INVALID_VIEWPORT_ID;
-				const FViewportEntry* E = (VId != INVALID_VIEWPORT_ID)
-					? ViewportRegistry.FindEntryByViewportID(VId) : &ViewportRegistry.GetEntries().front();
-				return E && E->LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
-			}())
-			{
-				TArray<FOutlineRenderItem> OutlineItems;
-				for (UActorComponent* Component : Selected->GetComponents())
-				{
-					if (!Component->IsA(UPrimitiveComponent::StaticClass())) continue;
-					if (Component->IsA(UTextRenderComponent::StaticClass())) continue;
-					if (Component->IsA(USubUVComponent::StaticClass())) continue;
-					if (Component->IsA(UBillboardComponent::StaticClass())) continue;
+	if (!Font)
+	{
+		MessageBoxW(nullptr, FontPathWString.c_str(), L"Failed to load font", MB_OK);
+		IO.Fonts->AddFontDefault();
+	}
 
-					UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-					if (PrimitiveComponent->GetRenderMesh())
-					{
-						FOutlineRenderItem& Item = OutlineItems.emplace_back();
-						Item.Mesh = PrimitiveComponent->GetRenderMesh();
-						Item.WorldMatrix = PrimitiveComponent->GetWorldTransform();
-					}
-				}
+	ImGui::StyleColorsDark();
+	ImGuiStyle& Style = ImGui::GetStyle();
+	Style.WindowPadding = ImVec2(0, 0);
+	Style.DisplayWindowPadding = ImVec2(0, 0);
+	Style.DisplaySafeAreaPadding = ImVec2(0, 0);
+	Style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	Style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.0f);
+	if (IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		Style.WindowRounding = 0.0f;
+		Style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
 
-				if (!OutlineItems.empty())
-				{
-					Renderer->RenderOutlines(OutlineItems);
-				}
-			}
+	ImGui_ImplWin32_Init(Hwnd);
+	ImGui_ImplDX11_Init(Device, DeviceContext);
+	bImGuiInitialized = true;
+	return true;
+}
 
-			const float AxisLength = 10000.0f;
-			const FVector Origin = { 0.0f, 0.0f, 0.0f };
-		});
+void FEditorUI::ShutdownImGui()
+{
+	if (!bImGuiInitialized)
+	{
+		return;
+	}
+
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	if (ImGui::GetCurrentContext())
+	{
+		ImGui::DestroyContext();
+	}
+	bImGuiInitialized = false;
+}
+
+void FEditorUI::BeginFrame()
+{
+	if (!bViewportClientActive || !bImGuiInitialized)
+	{
+		return;
+	}
+
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+}
+
+void FEditorUI::EndFrame()
+{
+	if (!bViewportClientActive || !bImGuiInitialized)
+	{
+		return;
+	}
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+	ImGuiIO& IO = ImGui::GetIO();
+	if (IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+	}
 }
 
 void FEditorUI::OnSlateReady()
@@ -341,18 +318,40 @@ void FEditorUI::OnSlateReady()
 
 	Slate->OnSplitterDragEnd = [this]() { SaveEditorSettings(); };
 	LoadEditorSettings();
+
+	FViewportId PreferredViewportId = INVALID_VIEWPORT_ID;
+	if (Engine)
+	{
+		for (const FViewportEntry& Entry : Engine->GetViewportRegistry().GetEntries())
+		{
+			if (!Entry.bActive)
+			{
+				continue;
+			}
+
+			if (Entry.LocalState.ProjectionType == EViewportType::Perspective)
+			{
+				PreferredViewportId = Entry.Id;
+				break;
+			}
+
+			if (PreferredViewportId == INVALID_VIEWPORT_ID)
+			{
+				PreferredViewportId = Entry.Id;
+			}
+		}
+	}
+
+	Slate->FocusViewport(PreferredViewportId);
+	bRequestViewportFocusOnNextRender = true;
 }
 
-void FEditorUI::DetachFromRenderer(FRenderer* InRenderer)
+void FEditorUI::ShutdownRendererResources(FRenderer* InRenderer)
 {
 	bViewportClientActive = false;
-	CurrentRenderer = nullptr;
+	(void)InRenderer;
 
-	if (InRenderer)
-	{
-		InRenderer->ClearSceneRenderTarget();
-		InRenderer->ClearViewportCallbacks();
-	}
+	ShutdownImGui();
 }
 
 void FEditorUI::SetupWindow(FWindowsWindow* InWindow)
@@ -647,8 +646,6 @@ void FEditorUI::Render()
 	ImGuiDockNode* CentralNode = ImGui::DockBuilderGetCentralNode(DockID);
 	if (CentralNode && CentralNode->Size.x > 0 && CentralNode->Size.y > 0)
 	{
-		// CentralNode->Pos는 모니터 절대 좌표 (ViewportsEnable 시)
-		// DX11 swap chain은 클라이언트 기준(0,0)이므로 창 위치를 빼야 함
 		ImGuiViewport* MainVP = ImGui::GetMainViewport();
 		const float WinX = MainVP ? MainVP->Pos.x : 0.0f;
 		const float WinY = MainVP ? MainVP->Pos.y : 0.0f;
@@ -748,7 +745,7 @@ void FEditorUI::Render()
 						{
 							MessageBoxW(
 								nullptr,
-								L"Scene 정보가 잘못되었습니다.",
+								L"Failed to load the selected scene file.",
 								L"Error",
 								MB_OK | MB_ICONWARNING
 							);
@@ -822,9 +819,7 @@ void FEditorUI::Render()
 						TargetEntry = &ViewportRegistry.GetEntries().front();
 
 				FShowFlags& ShowFlags = TargetEntry->LocalState.ShowFlags;
-				// ===== Show Flags 섹션 =====
 				ImGui::SeparatorText("Show Flags");
-				// 각 플래그마다 Checkbox 하나씩
 				auto ShowFlagCheckbox = [&](const char* Label, EEngineShowFlags Flag)
 				{
 					bool bValue = ShowFlags.HasFlag(Flag);
@@ -848,10 +843,7 @@ void FEditorUI::Render()
 				ShowFlagCheckbox("Primitives", EEngineShowFlags::SF_Primitives);
 				ShowFlagCheckbox("UUID", EEngineShowFlags::SF_UUID);
 				ShowFlagCheckbox("Debug Draw", EEngineShowFlags::SF_DebugDraw);
-				//ShowFlagCheckbox("World Axis", EEngineShowFlags::SF_WorldAxis);
 				ShowFlagCheckbox("Collision", EEngineShowFlags::SF_Collision);
-
-				// ─── Grid ───
 				ImGui::SeparatorText("Grid");
 				bool bShowGrid = TargetEntry->LocalState.bShowGrid;
 				if (ImGui::Checkbox("Show Grid", &bShowGrid))
@@ -925,13 +917,12 @@ void FEditorUI::Render()
 	if (bOpenAboutPopup)
 	{
 		ImGui::OpenPopup("AboutPopup"); 
-		ImGui::SetNextWindowSize(ImVec2(420, 320), ImGuiCond_Always); // ← 원하는 크기로 조절
+		ImGui::SetNextWindowSize(ImVec2(420, 320), ImGuiCond_Always);
 		bOpenAboutPopup = false;
 	}
 
 	if (ImGui::BeginPopupModal("AboutPopup", nullptr, ImGuiWindowFlags_NoTitleBar))
 	{
-		// 헤더 배경
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		ImVec2 WinPos = ImGui::GetWindowPos();
 		ImVec2 WinSize = ImGui::GetWindowSize();
@@ -947,8 +938,6 @@ void FEditorUI::Render()
 
 		ImGui::SetCursorPosY(70);
 		ImGui::SetCursorPosX(20);
-
-		// Contributors
 		ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "First Contributors (Dino Engine)");
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(20);
@@ -958,11 +947,11 @@ void FEditorUI::Render()
 
 		ImGui::Spacing();
 
-		const char* First_Contributors[] = { "김지수", "김태현", "박세영", "조상현" };
+		const char* First_Contributors[] = { "Kim Jiwoo", "Kim Sihyun", "Park Seyoon", "Cho Sanghyuk" };
 		for (const char* Name : First_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
-			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "•");
+			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "-");
 			ImGui::SameLine();
 			ImGui::Text("%s", Name);
 		}
@@ -978,11 +967,11 @@ void FEditorUI::Render()
 
 		ImGui::Spacing();
 
-		const char* Second_Contributors[] = { "강명호", "오준혁", "정찬일" };
+		const char* Second_Contributors[] = { "Kang Myeongjun", "Lee Sujin", "Jung Gyuho" };
 		for (const char* Name : Second_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
-			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "•");
+			ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.6f, 1.0f), "-");
 			ImGui::SameLine();
 			ImGui::Text("%s", Name);
 		}
@@ -1031,6 +1020,16 @@ void FEditorUI::Render()
 	}
 	Outliner.Render(Engine);
 	ContentBrowser.Render();
+
+	if (bRequestViewportFocusOnNextRender)
+	{
+		if (ImGui::GetCurrentContext())
+		{
+			ImGui::SetWindowFocus(nullptr);
+			ImGui::ClearActiveID();
+		}
+		bRequestViewportFocusOnNextRender = false;
+	}
 }
 
 bool FEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const

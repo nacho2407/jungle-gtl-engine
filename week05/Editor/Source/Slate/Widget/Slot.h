@@ -26,11 +26,21 @@ struct FSlot
 	EVAlign VAlignment = EVAlign::Fill;
 	float WidthFill = 0.0f;
 	float HeightFill = 0.0f;
+	float MinWidth = 0.0f;
+	float MinHeight = 0.0f;
+	int32 Layer = 0;
+	int32 ZOrder = 0;
 
 	FSlot& operator[](SWidget* W) { Widget = W; return *this; }
+	FSlot& AutoWidth() { WidthFill = 0.0f; return *this; }
+	FSlot& FillWidth(float Ratio) { WidthFill = Ratio; return *this; }
 	FSlot& AutoHeight() { HeightFill = 0.0f; return *this; }
 	FSlot& FillHeight(float Ratio) { HeightFill = Ratio; return *this; }
 	FSlot& Padding(FMargin P) { PaddingInsets = P; return *this; }
 	FSlot& HAlign(EHAlign A) { HAlignment = A; return *this; }
 	FSlot& VAlign(EVAlign A) { VAlignment = A; return *this; }
+	FSlot& SetMinWidth(float InMinWidth) { MinWidth = InMinWidth; return *this; }
+	FSlot& SetMinHeight(float InMinHeight) { MinHeight = InMinHeight; return *this; }
+	FSlot& SetLayer(int32 InLayer) { Layer = InLayer; return *this; }
+	FSlot& SetZOrder(int32 InZOrder) { ZOrder = InZOrder; return *this; }
 };

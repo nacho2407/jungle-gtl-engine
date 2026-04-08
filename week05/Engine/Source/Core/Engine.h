@@ -6,7 +6,6 @@
 #include "Core/Timer.h"
 #include "Debug/DebugDrawManager.h"
 #include "Physics/PhysicsManager.h"
-#include "Renderer/RenderCommand.h"
 #include "Renderer/Renderer.h"
 #include "ViewportClient.h"
 #include "World/WorldContext.h"
@@ -27,7 +26,11 @@ struct FEngineInitArgs
 	int32 Width = 0;
 	int32 Height = 0;
 };
-
+/**
+ * 엔진 런타임의 최상위 진입점이다.
+ * 플랫폼, 월드, 입력, 물리, 렌더링 서브시스템을 연결하고
+ * 한 프레임의 전체 순서를 조정한다.
+ */
 class ENGINE_API FEngine
 {
 public:
@@ -39,110 +42,107 @@ public:
 	FEngine(FEngine&&) = delete;
 	FEngine& operator=(const FEngine&&) = delete;
 
-	/** 엔진 부팅의 진입점이다. 파생 클래스가 세부 단계를 채우고, 공통 런타임 초기화 순서는 베이스가 고정한다. */
+	// 엔진 런타임 시스템과 기본 월드/뷰포트를 초기화한다.
 	bool Initialize(const FEngineInitArgs& Args);
-	/** 한 프레임 동안 입력, 물리, 월드 진행, 렌더링, 마무리 순서를 수행한다. */
+	// 한 프레임의 업데이트와 렌더링 순서를 실행한다.
 	void Tick();
-	/** 런타임 시스템, 월드, 뷰포트 클라이언트를 역순으로 정리한다. */
+	// 엔진이 소유한 런타임 자원을 종료 순서에 맞게 해제한다.
 	virtual void Shutdown();
-	/** 운영체제 메시지를 입력 시스템과 활성 뷰포트 클라이언트에 전달한다. */
+	// 플랫폼 메시지를 입력/뷰포트 계층으로 전달한다.
 	bool HandleMessage(HWND Hwnd, UINT Msg, WPARAM WParam, LPARAM LParam);
-	/** 창 크기가 바뀌었을 때 렌더 타깃과 카메라 종횡비를 함께 갱신한다. */
+	// 창 크기 변경을 렌더러와 월드 카메라에 반영한다.
 	virtual void HandleResize(int32 Width, int32 Height);
 
-	/** 현재 엔진이 소유한 렌더러를 반환한다. */
+	// 현재 엔진이 사용하는 렌더러를 반환한다.
 	FRenderer* GetRenderer() const;
-	/** 실제로 입력/렌더 상호작용을 담당 중인 활성 뷰포트 클라이언트를 반환한다. */
+	// 현재 활성 뷰포트 클라이언트를 반환한다.
 	IViewportClient* GetViewportClient() const;
-	/** 활성 뷰포트 클라이언트를 교체하며 Attach/Detach 훅도 함께 처리한다. */
+	// 활성 뷰포트 클라이언트를 교체하고 Attach/Detach를 처리한다.
 	void SetViewportClient(IViewportClient* InViewportClient);
-	/** 저수준 입력 상태를 모으는 입력 매니저를 반환한다. */
+	// 기본 입력 매니저를 반환한다.
 	FInputManager* GetInputManager() const;
-	/** 액션/매핑 기반의 확장 입력 매니저를 반환한다. */
+	// 강화 입력 매니저를 반환한다.
 	FEnhancedInputManager* GetEnhancedInputManager() const;
-	/** 프레임 시간과 누적 시간을 기록하는 타이머를 반환한다. */
+	// 현재 프레임 타이머를 반환한다.
 	const FTimer& GetTimer() const;
-	/** 최근 프레임 델타 타임을 초 단위로 반환한다. */
+	// 현재 프레임 델타 타임을 반환한다.
 	float GetDeltaTime() const;
-	/** 엔진이 소유한 모든 월드 컨텍스트 목록을 반환한다. */
 	const TArray<std::unique_ptr<FWorldContext>>& GetWorldContexts() const { return WorldContexts; }
 
-	/** 기본적으로 현재 활성 씬을 반환한다. 에디터 엔진은 이를 재정의해 다른 씬을 선택할 수 있다. */
+	// 현재 활성 씬을 반환한다.
 	virtual ULevel* GetScene() const;
-	/** 현재 렌더링/상호작용 대상인 활성 씬을 반환한다. */
+	// 현재 렌더링 대상 활성 씬을 반환한다.
 	virtual ULevel* GetActiveScene() const;
-	/** 게임 플레이용 기본 씬을 반환한다. */
+	// 게임 월드의 기본 씬을 반환한다.
 	virtual ULevel* GetGameScene() const;
-	/** 필요 시 게임 씬을 활성 씬으로 전환하도록 파생 클래스가 구현한다. */
+	// 게임 씬을 활성 씬으로 전환할 때 사용하는 훅이다.
 	virtual void ActivateGameScene() const;
 
-	/** 현재 활성 월드를 반환한다. */
+	// 현재 활성 월드를 반환한다.
 	virtual UWorld* GetActiveWorld() const;
-	/** 게임 플레이용 기본 월드를 반환한다. */
+	// 게임 월드를 반환한다.
 	virtual UWorld* GetGameWorld() const;
-	/** 현재 활성 월드 컨텍스트를 반환한다. */
+	// 현재 활성 월드 컨텍스트를 반환한다.
 	virtual const FWorldContext* GetActiveWorldContext() const;
 
 protected:
-	/** 공통 런타임 초기화 전에 파생 클래스가 선행 준비를 할 수 있는 훅이다. */
+	// 파생 엔진이 런타임 초기화 전에 준비 작업을 넣을 수 있다.
 	virtual void PreInitialize() {}
-	/** 엔진이 창/호스트 객체에 의존해야 할 때 바인딩하는 훅이다. */
+	// 플랫폼 호스트와 엔진을 연결할 기회를 제공한다.
 	virtual void BindHost(FWindowsWindow* InMainWindow) {}
-	/** 필요한 월드 컨텍스트를 생성하고 초기 씬을 준비한다. */
-	virtual bool InitializeWorlds(void);
-	/** 게임/에디터별 전용 모드 초기화를 수행한다. */
+	// 월드 컨텍스트와 월드 초기화를 담당한다.
+	virtual bool InitializeWorlds();
+	// 게임/에디터 모드별 추가 초기화를 수행한다.
 	virtual bool InitializeMode() { return true; }
-	/** 모든 초기화가 성공한 뒤 마지막 검증이나 후처리를 수행한다. */
+	// 전체 초기화가 끝난 뒤 후처리를 수행한다.
 	virtual void FinalizeInitialize() {}
-	/** 프레임 시작 직후, 입력 처리 전에 공통 상태를 준비한다. */
+	// 프레임 시작 직후 파생 엔진이 준비 작업을 할 수 있다.
 	virtual void PrepareFrame(float DeltaTime);
-	/** 각 파생 엔진이 자신이 관리하는 월드들을 실제로 Tick한다. */
+	// 실제 월드 Tick은 파생 엔진이 구현한다.
 	virtual void TickWorlds(float DeltaTime) = 0;
-	/** 물리 디버그 시각화가 필요한 엔진인지 알려준다. */
+	// 물리 디버그 가시화가 필요한지 파생 엔진이 결정한다.
 	virtual bool WantsPhysicsDebugVisualization() const { return false; }
-	/** 기본 뷰포트 클라이언트를 생성한다. */
+	// 현재 모드에 맞는 기본 뷰포트 클라이언트를 생성한다.
 	virtual std::unique_ptr<IViewportClient> CreateViewportClient() = 0;
-	/** 활성 월드와 카메라를 기준으로 렌더 큐를 만들고 실제 드로우를 실행한다. */
+	// 렌더 프레임 전체 순서를 실행한다.
 	virtual void RenderFrame();
-	/** 플랫폼별 상태 동기화가 필요할 때 파생 클래스가 채운다. */
+	// 프레임 이후 플랫폼 상태를 동기화한다.
 	virtual void SyncPlatformState();
-	/** 월드 타입으로 컨텍스트를 찾는다. */
+	// 월드 타입으로 월드 컨텍스트를 찾는다.
 	FWorldContext* FindWorldContext(EWorldType WorldType);
-	/** const 버전의 월드 타입 검색 함수다. */
+	// 월드 타입으로 상수 월드 컨텍스트를 찾는다.
 	const FWorldContext* FindWorldContext(EWorldType WorldType) const;
-	/** 새 월드 컨텍스트를 만들고, 필요하면 기본 씬까지 바로 초기화한다. */
+	// 새 월드 컨텍스트와 월드를 만들고 목록에 등록한다.
 	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, float AspectRatio, bool bDefaultScene);
-	/** 이미 생성된 월드를 받아 월드 컨텍스트에 등록한다. */
 	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, UWorld* ExistingWorld);
-	/** 월드 컨텍스트를 정리하고 내부 목록에서 제거한다. */
+	// 월드 컨텍스트와 그 안의 월드를 정리하고 제거한다.
 	void DestroyWorldContext(FWorldContext* Context);
-	/** 월드의 카메라 종횡비를 창 크기에 맞게 맞춘다. */
+	// 월드의 카메라 종횡비를 현재 창 크기에 맞게 갱신한다.
 	void UpdateWorldAspectRatio(UWorld* World, float AspectRatio) const;
 
 	std::unique_ptr<IViewportClient> ViewportClient;
-	/** 파생 클래스가 디버그/툴링 용도로 물리 매니저에 접근할 수 있게 열어둔다. */
+	// 물리 매니저 접근자다.
 	FPhysicsManager* GetPhysicsManager() const { return PhysicsManager.get(); }
-	/** 디버그 선/도형을 쌓아둘 매니저를 반환한다. */
+	// 디버그 드로우 매니저 접근자다.
 	FDebugDrawManager& GetDebugDrawManager() { return DebugDrawManager; }
-
-	const float GetWindowAspectRatio() const { return (WindowHeight > 0) ? (static_cast<float>(WindowWidth) / static_cast<float>(WindowHeight)) : 1.0f; }
+	float GetWindowAspectRatio() const { return (WindowHeight > 0) ? (static_cast<float>(WindowWidth) / static_cast<float>(WindowHeight)) : 1.0f; }
 
 private:
-	/** 렌더러, 입력, 오브젝트 매니저 등 공통 런타임 시스템을 생성한다. */
+	// 렌더러, 입력, 오브젝트 매니저 등 런타임 코어 시스템을 만든다.
 	bool InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height);
-	/** CreateViewportClient 결과를 활성 뷰포트로 등록한다. */
+	// 기본 뷰포트 클라이언트를 만들고 활성화한다.
 	bool InitializePrimaryViewport();
-	/** 런타임 시스템과 월드 컨텍스트를 모두 정리한다. */
+	// 런타임 시스템을 종료 순서대로 정리한다.
 	void ReleaseRuntime();
-	/** 프레임 타이머를 갱신한다. */
+	// 프레임 시작 시 타이머 등 공용 상태를 갱신한다.
 	void BeginFrame();
-	/** 입력 상태를 갱신하고 뷰포트별 Tick을 실행한다. */
+	// 입력 시스템과 뷰포트 Tick을 처리한다.
 	void ProcessInput(float DeltaTime);
-	/** 물리 시뮬레이션과 디버그 시각화를 진행한다. */
+	// 물리 시뮬레이션 단계를 실행한다.
 	void TickPhysics(float DeltaTime);
-	/** 주기적 GC 같은 프레임 종료 후처리를 수행한다. */
+	// GC 같은 프레임 마무리 작업을 처리한다.
 	void FinalizeFrame(float DeltaTime);
-	/** 런타임 콘솔 변수와 명령을 등록한다. */
+	// 렌더링 및 런타임 관련 콘솔 변수를 등록한다.
 	void RegisterConsoleVariables();
 
 private:
@@ -160,6 +160,4 @@ private:
 	double GCInterval = 30.0;
 	int32 WindowWidth = 0;
 	int32 WindowHeight = 0;
-
-	FRenderCommandQueue CommandQueue;
 };

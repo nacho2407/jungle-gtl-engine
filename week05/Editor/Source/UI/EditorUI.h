@@ -18,8 +18,10 @@ class FEditorUI
 public:
 	void Initialize(FEditorEngine* InEngine);
 	void SetupWindow(FWindowsWindow* InWindow);
-	void AttachToRenderer(FRenderer* InRenderer);
-	void DetachFromRenderer(FRenderer* InRenderer);
+	void InitializeRendererResources(FRenderer* InRenderer);
+	void ShutdownRendererResources(FRenderer* InRenderer);
+	void BeginFrame();
+	void EndFrame();
 	void Render();
 	void OnSlateReady();
 	void SyncSelectedActorProperty();
@@ -35,6 +37,8 @@ public:
 	const FDebugState& GetDebugState() const { return DebugState; }
 
 private:
+	bool InitializeImGui(FRenderer* InRenderer);
+	void ShutdownImGui();
 	void BuildDefaultLayout(uint32 DockID);
 	void LoadEditorSettings();
 	std::wstring GetEditorIniPathW() const;
@@ -53,8 +57,9 @@ private:
 	bool bWindowSetup = false;
 	bool bViewportClientActive = false;
 	bool bLayoutInitialized = false;
+	bool bImGuiInitialized = false;
+	bool bRequestViewportFocusOnNextRender = false;
 	FRect CentralDockRect;
 	bool bHasCentralDockRect = false;
-	FRenderer* CurrentRenderer = nullptr;
 	FDebugState DebugState;
 };

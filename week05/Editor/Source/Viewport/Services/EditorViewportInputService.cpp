@@ -47,7 +47,7 @@ void FEditorViewportInputService::TickCameraNavigation(
 	}
 
 	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(Slate->GetFocusedViewportId());
-	if (!FocusedEntry)
+	if (!FocusedEntry || !FocusedEntry->bActive)
 	{
 		return;
 	}
@@ -176,7 +176,7 @@ void FEditorViewportInputService::HandleMessage(
 		if (!ImGui::GetCurrentContext() || !ImGui::GetIO().WantCaptureMouse)
 		{
 			FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(Slate->GetFocusedViewportId());
-			if (FocusedEntry && FocusedEntry->LocalState.ProjectionType != EViewportType::Perspective)
+			if (FocusedEntry && FocusedEntry->bActive && FocusedEntry->LocalState.ProjectionType != EViewportType::Perspective)
 			{
 				const float WheelDelta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(WParam)) / WHEEL_DELTA;
 				FocusedEntry->LocalState.OrthoZoom *= (1.0f - WheelDelta * 0.1f);
@@ -237,6 +237,9 @@ void FEditorViewportInputService::HandleMessage(
 		case 'L':
 			Gizmo.ToggleCoordinateSpace();
 			UE_LOG("Gizmo Space: %s", Gizmo.GetCoordinateSpace() == EGizmoCoordinateSpace::Local ? "Local" : "World");
+			return;
+		case VK_SPACE:
+			Gizmo.CycleMode();
 			return;
 		default:
 			return;

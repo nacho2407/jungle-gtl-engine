@@ -23,8 +23,13 @@ FpsStatWidget::FpsStatWidget(FEditorEngine* InEngine)
 	FpsTextBlock.LetterSpacing = 0.5f;
 }
 
-void FpsStatWidget::OnPaint(SWidget& Painter)
+void FpsStatWidget::OnPaint(FSlatePaintContext& Painter)
 {
+	if (!bVisible)
+	{
+		return;
+	}
+
 	UpdateGeometry();
 
 	if (!Rect.IsValid())
@@ -48,6 +53,11 @@ void FpsStatWidget::Refresh()
 
 int32 FpsStatWidget::GetDesiredWidth() const
 {
+	if (!bVisible)
+	{
+		return 0;
+	}
+
 	const FVector2 DesiredSize = FpsTextBlock.ComputeDesiredSize();
 	return static_cast<int32>(DesiredSize.X + 0.5f) + Gap;
 }
@@ -81,3 +91,4 @@ void FpsStatWidget::SyncValue()
 	FrameTimeMs = Timer.GetFrameTimeMs();
 	FpsTextBlock.SetText(BuildFpsText(FPS, FrameTimeMs));
 }
+

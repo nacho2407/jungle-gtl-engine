@@ -11,9 +11,11 @@ class FTransformWidget : public SWidget
 public:
 	FTransformWidget(FEditorEngine* InEngine, FEditorViewportClient* InViewportClient);
 
-	void OnPaint(SWidget& Painter) override;
+	void OnPaint(FSlatePaintContext& Painter) override;
 	bool OnMouseDown(int32 X, int32 Y) override;
 	bool HitTest(FPoint Point) const override;
+	FVector2 ComputeDesiredSize() const override { return { static_cast<float>(GetDesiredWidth()), static_cast<float>(ButtonSize) }; }
+	FVector2 ComputeMinSize() const override { return { static_cast<float>(ButtonSize * 4), static_cast<float>(ButtonSize) }; }
 	void SetWidgetRect(const FRect& InRect);
 	FRect GetInteractiveRect() const;
 	int32 GetDesiredWidth() const;
@@ -31,20 +33,19 @@ private:
 	bool HandleButtonMouse(SButton& Button, int32 X, int32 Y);
 
 	FRect GetExpandedInteractiveRect() const;
-
-	static bool ContainsPoint(const FRect& InRect, FPoint Point);
-	static FRect UnionRects(const FRect& A, const FRect& B);
+	FEditorViewportClient* GetActiveViewportClient() const;
 
 private:
 	FEditorEngine* Engine = nullptr;
 	FEditorViewportClient* ViewportClient = nullptr;
 
 	int32 ButtonSize = 24;
-	int32 Padding = 8;
-	int32 Gap = 6;
+	int32 Padding = 4;
+	int32 Gap = 4;
 
 	SButton TranslateModeButton;
 	SButton RotationModeButton;
 	SButton ScaleModeButton;
 	SButton ToggleCoordModeButton;
 };
+
