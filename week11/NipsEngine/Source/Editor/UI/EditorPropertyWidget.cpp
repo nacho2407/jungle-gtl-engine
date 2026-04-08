@@ -10,8 +10,9 @@
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
-
 #include <functional>
+#include "Component/SubUVComponent.h"
+#include "Selection/SelectionManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -67,8 +68,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	ImGui::Begin("Jungle Property Window");
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
-	AActor* PrimaryActor = Selection.GetPrimarySelection();
+	AActor* PrimaryActor = SelectionManager->GetPrimarySelection();
 	if (!PrimaryActor)
 	{
 		SelectedComponent = nullptr;
@@ -97,7 +97,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		}
 	}
 
-	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+	const TArray<AActor*>& SelectedActors = SelectionManager->GetSelectedActors();
 	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
 	// ========== 고정 영역: Actor Info (clickable) ==========
@@ -129,7 +129,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 					Actor->GetWorld()->DestroyActor(Actor);
 				}
 			}
-			Selection.ClearSelection();
+			SelectionManager->ClearSelection();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
@@ -157,7 +157,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			{
 				PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
 			}
-			Selection.ClearSelection();
+			SelectionManager->ClearSelection();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
@@ -214,6 +214,12 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::EndChild();
 
 	ImGui::End();
+}
+
+void FEditorPropertyWidget::Initialize(UEditorEngine* InEditorEngine)
+{
+	FEditorWidget::Initialize(InEditorEngine);
+	SelectionManager = &EditorEngine->GetSelectionManager();
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -436,6 +442,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	if (SelectedComponent->IsA<USceneComponent>())
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
+		SelectionManager->GetGizmo()->UpdateGizmoTransform();
 	}
 }
 
