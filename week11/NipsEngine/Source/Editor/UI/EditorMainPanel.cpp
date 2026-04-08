@@ -60,55 +60,65 @@ namespace
 		default: return "Viewport";
 		}
 	}
-}
+} // namespace
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
 
-	ImGuiIO& IO = ImGui::GetIO();
-	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImGuiIO& IO = ImGui::GetIO();
+    IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-	Window = InWindow;
-	EditorEngine = InEditorEngine;
+    Window = InWindow;
+    EditorEngine = InEditorEngine;
 
-	// 1차: malgun.ttf — 한글 + 기본 라틴 (주 폰트)
-	ImFontGlyphRangesBuilder KoreanBuilder;
-	KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesKorean());
-	KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesDefault());
-	KoreanBuilder.AddText("▶⏸■");
+    // 1차: malgun.ttf — 한글 + 기본 라틴 (주 폰트)
+    ImFontGlyphRangesBuilder KoreanBuilder;
+    KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesKorean());
+    KoreanBuilder.AddRanges(IO.Fonts->GetGlyphRangesDefault());
 
-	KoreanBuilder.BuildRanges(&FontGlyphRanges);
+    KoreanBuilder.BuildRanges(&FontGlyphRanges);
 
-	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
+    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
 
-	// 2차: msyh.ttc — 한자 전체를 malgun이 없는 글리프에만 병합 (fallback)
-	ImFontConfig MergeConfig;
-	MergeConfig.MergeMode = true;
-	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 16.0f, &MergeConfig, IO.Fonts->GetGlyphRangesChineseFull());
+    ImFontConfig icon_config;
+    icon_config.MergeMode = true;  // 중요: 앞서 로드한 맑은 고딕에 폰트를 병합합니다.
+    icon_config.PixelSnapH = true; // 아이콘을 픽셀 경계에 맞춰 선명하게 렌더링
 
-	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
-	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
+    // 추가할 특수 기호의 유니코드 범위 설정 (▶, ⏸, ■)
+    // ▶ (U+25B6), ⏸ (U+23F8), ■ (U+25A0)
+    static const ImWchar icon_ranges[] = {
+        0x23F8, 0x23F8, // ⏸
+        0x25A0, 0x25A0, // ■
+        0x25B6, 0x25B6, // ▶
+        0,              // 배열의 끝을 알리는 0
+    };
 
-	ConsoleWidget.Initialize(InEditorEngine);
-	ControlWidget.Initialize(InEditorEngine);
-	MaterialWidget.Initialize(InEditorEngine);
-	PropertyWidget.Initialize(InEditorEngine);
-	SceneWidget.Initialize(InEditorEngine);
-	ViewportOverlayWidget.Initialize(InEditorEngine);
-	StatWidget.Initialize(InEditorEngine);
-	PlayStreamWidget.Initialize(InEditorEngine);
-	ToolbarWidget.Initialize(InEditorEngine);
-	ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
-	ToolbarWidget.SetSceneWidget(&SceneWidget);
-	ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
-	ToolbarWidget.SetPanelVisibilityRefs(
-		&bShowConsole,
-		&bShowControl,
-		&bShowProperty,
-		&bShowSceneManager,
-		&bShowMaterialEditor,
-		&bShowStatProfiler);
+    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisym.ttf", 16.0f, &icon_config, icon_ranges);
+
+    // 2차: msyh.ttc — 한자 전체를 malgun이 없는 글리프에만 병합 (fallback)
+    ImFontConfig MergeConfig;
+    MergeConfig.MergeMode = true;
+    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 16.0f, &MergeConfig,
+                                 IO.Fonts->GetGlyphRangesChineseFull());
+
+    ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
+    ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
+
+    ConsoleWidget.Initialize(InEditorEngine);
+    ControlWidget.Initialize(InEditorEngine);
+    MaterialWidget.Initialize(InEditorEngine);
+    PropertyWidget.Initialize(InEditorEngine);
+    SceneWidget.Initialize(InEditorEngine);
+    ViewportOverlayWidget.Initialize(InEditorEngine);
+    StatWidget.Initialize(InEditorEngine);
+    PlayStreamWidget.Initialize(InEditorEngine);
+    ToolbarWidget.Initialize(InEditorEngine);
+    ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
+    ToolbarWidget.SetSceneWidget(&SceneWidget);
+    ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
+    ToolbarWidget.SetPanelVisibilityRefs(&bShowConsole, &bShowControl, &bShowProperty, &bShowSceneManager,
+                                         &bShowMaterialEditor, &bShowStatProfiler);
 }
  
 void FEditorMainPanel::Release()
