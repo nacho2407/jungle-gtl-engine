@@ -48,6 +48,12 @@ public:
 	// 프록시 전체 재생성 (메시 교체 등 큰 변경 시 사용)
 	void MarkRenderStateDirty();
 
+	// 트랜스폼/AABB 변경 시 호출 — 프록시·Octree·PickingBVH·VisibleSet을 일괄 갱신.
+	void MarkRenderTransformDirty();
+
+	// 가시성 토글 시 호출 — 위와 동일하되 Visibility dirty 플래그를 사용.
+	void MarkRenderVisibilityDirty();
+
 	// 서브클래스가 오버라이드하여 자신에 맞는 구체 프록시를 생성
 	virtual FPrimitiveSceneProxy* CreateSceneProxy();
 
