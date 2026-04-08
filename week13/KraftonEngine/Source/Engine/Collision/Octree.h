@@ -27,6 +27,7 @@ public:
 	bool Remove(UPrimitiveComponent * InPrimitivie);  
 	bool RemoveDirect(UPrimitiveComponent* Primitive, bool bTryMergeNow = true);
 	void TryMergeUpward();
+	void TryMergeRecursive();
 
 	bool HasPrimitive(const UPrimitiveComponent* p);
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPremitive);
