@@ -9,6 +9,7 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Mesh/ObjManager.h"
 #include "GameFramework/World.h"
+#include "GameFramework/AActor.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -86,10 +87,39 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 void UEngine::WorldTick(float DeltaTime)
 {
 	SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
-	UWorld* World = GetWorld();
-	if (World)
+
+	// 월드 타입별 Tick 라우팅 (UE 패턴 참고):
+	// - Editor: bNeedsTick 인 액터만 Tick (현재 bTickInEditor 역할)
+	// - PIE:    모든 액터 Tick
+	// - 기타:   건너뜀
+	for (FWorldContext& Ctx : WorldList)
 	{
+		UWorld* World = Ctx.World;
+		if (!World) continue;
+
+		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw)
 		World->Tick(DeltaTime);
+
+		if (Ctx.WorldType == EWorldType::Editor)
+		{
+			for (AActor* Actor : World->GetActors())
+			{
+				if (Actor && Actor->bNeedsTick)
+				{
+					Actor->Tick(DeltaTime);
+				}
+			}
+		}
+		else if (Ctx.WorldType == EWorldType::PIE)
+		{
+			for (AActor* Actor : World->GetActors())
+			{
+				if (Actor)
+				{
+					Actor->Tick(DeltaTime);
+				}
+			}
+		}
 	}
 }
 

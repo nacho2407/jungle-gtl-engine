@@ -105,7 +105,6 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 	LevelVC->SetSettings(&FEditorSettings::Get());
 	LevelVC->Initialize(Window);
 	LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	LevelVC->SetWorld(Editor->GetWorld());
 	LevelVC->SetGizmo(SelectionManager->GetGizmo());
 	LevelVC->SetSelectionManager(SelectionManager);
 
@@ -178,10 +177,10 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
 	}
 }
 
-void FLevelViewportLayout::SetWorld(UWorld* InWorld)
+void FLevelViewportLayout::SetWorld(UWorld* /*InWorld*/)
 {
-	for (FEditorViewportClient* VC : AllViewportClients)
-		VC->SetWorld(InWorld);
+	// World는 GEngine->GetWorld() 경유로 조회되므로 별도 저장이 필요 없음.
+	// 호환성을 위해 시그니처만 유지.
 }
 
 void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
@@ -189,7 +188,6 @@ void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 	for (FLevelEditorViewportClient* VC : LevelViewportClients)
 	{
 		VC->CreateCamera();
-		VC->SetWorld(InWorld);
 		VC->ResetCamera();
 
 		// 카메라 재생성 후 현재 뷰포트 크기로 AspectRatio 동기화
@@ -214,7 +212,6 @@ void FLevelViewportLayout::DestroyAllCameras()
 	for (FEditorViewportClient* VC : AllViewportClients)
 	{
 		VC->DestroyCamera();
-		VC->SetWorld(nullptr);
 	}
 }
 
@@ -232,7 +229,6 @@ void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
 		LevelVC->SetSettings(&FEditorSettings::Get());
 		LevelVC->Initialize(Window);
 		LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
-		LevelVC->SetWorld(Editor->GetWorld());
 		LevelVC->SetGizmo(SelectionManager->GetGizmo());
 		LevelVC->SetSelectionManager(SelectionManager);
 
