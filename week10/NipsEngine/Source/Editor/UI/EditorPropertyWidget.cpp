@@ -7,6 +7,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
@@ -211,6 +212,41 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		PrimaryActor->SetVisible(bVisible);
 	}
 
+	ImGui::Separator();
+	// Billboard 타입 체크
+	if (UBillboardComponent* BillboardComp =
+		dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
+	{
+		ImGui::Separator();
+		ImGui::Text("Sprite Texture");
+
+		const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
+		const FString CurrentName = BillboardComp->GetTextureName();
+
+		if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
+		{
+			for (const FString& TexPath : TextureList)
+			{
+				// 경로 전체 대신 파일명만 표시
+				FString DisplayName = TexPath;
+				bool bSelected = (TexPath == CurrentName);
+
+				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+				{
+					for (AActor* Actor : SelectedActors)
+					{
+						if (UBillboardComponent* Comp =
+							dynamic_cast<UBillboardComponent*>(Actor->GetRootComponent()))
+						{
+							Comp->SetTextureName(TexPath);
+						}
+					}
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+	}
 }
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)

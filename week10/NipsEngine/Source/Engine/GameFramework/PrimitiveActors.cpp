@@ -187,7 +187,5 @@ void ABillboardActor::InitDefaultComponents()
 {	
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	SetRootComponent(Billboard);
-
-
-
+	//Billboard->SetTextureName();
 }

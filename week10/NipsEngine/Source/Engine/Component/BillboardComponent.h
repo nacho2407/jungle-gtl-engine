@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
+#include "Core/ResourceTypes.h"
+#include "Object/FName.h"
+
 
 class FViewportCamera;
 struct FTextureResource;
@@ -30,19 +33,22 @@ public:
 
 	void SetTextureName(FString InName);
 	FString GetTextureName();
+	FMaterialResource* GetCachedSprite();
 
 	//////////////////// override ////////////////////////////
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-
+	float GetWidth()  const { return Width; }
+	float GetHeight() const { return Height; }
 	// Billboard는 outline 미지원 (Batcher 계열)
-	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
+	//void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
 
 	///////////////////////////////////////////////////////////
 
 private:
-	FString TextureName;
+	FName TextureName;
+	FMaterialResource* CachedSprite = { nullptr }; // ResourceManager 소유, 여기선 참조만
 	uint32 FrameIndex = 0;
 	float  Width = 1.0f;
 	float  Height = 1.0f;
