@@ -1,4 +1,4 @@
-﻿#include "EditorEngine.h"
+#include "EditorEngine.h"
 
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -512,6 +512,7 @@ bool FEditorEngine::StartPIE()
 		FPIEViewportStateBackup Backup;
 		Backup.ViewportId = Entry.Id;
 		Backup.LocalState = Entry.LocalState;
+		Backup.LocalState.ViewMode = Entry.LocalState.ViewMode;
 		SavedPIEViewportStates.push_back(Backup);
 	}
 
@@ -545,6 +546,7 @@ bool FEditorEngine::StartPIE()
 
 	if (PIEViewportEntry)
 	{
+		PIEViewportEntry->LocalState.ViewMode = ERenderMode::Lighting;
 		if (PIEViewportEntry->LocalState.ProjectionType == EViewportType::Perspective)
 		{
 			PIEViewportEntry->LocalState.bShowGrid = false;
