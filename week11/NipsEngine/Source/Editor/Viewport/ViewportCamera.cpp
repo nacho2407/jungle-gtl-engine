@@ -67,11 +67,11 @@ FMatrix FViewportCamera::GetViewMatrix() const
 {
 	if (bIsViewDirty)
 	{
-		const FVector Forward = bHasCustomLookDir
-			? CustomLookDir
-			: GetForwardVector().GetSafeNormal();
-		CachedViewMatrix = FMatrix::MakeViewLookAtLH(Location, Location + Forward, ViewUp);
-		bIsViewDirty = false;
+		const FVector Forward = bHasCustomLookDir ? CustomLookDir : GetForwardVector().GetSafeNormal();
+        const FVector ActualUp = bHasCustomLookDir ? ViewUp : GetUpVector().GetSafeNormal();
+
+        CachedViewMatrix = FMatrix::MakeViewLookAtLH(Location, Location + Forward, ActualUp);
+        bIsViewDirty = false;
 	}
 
 	return CachedViewMatrix;
