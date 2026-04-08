@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
+#include "Editor/UI/EditorPlayToolbarWidget.h"
 #include <d3d11.h>
 
 class SSplitter;
@@ -106,4 +107,7 @@ private:
 
 	// 레이아웃 아이콘 SRV (EViewportLayout::MAX 개)
 	ID3D11ShaderResourceView* LayoutIcons[static_cast<int>(EViewportLayout::MAX)] = {};
+
+	// 뷰포트 상단 Play/Stop 툴바
+	FEditorPlayToolbarWidget PlayToolbar;
 };
