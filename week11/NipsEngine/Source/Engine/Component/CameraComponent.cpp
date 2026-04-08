@@ -17,6 +17,8 @@ UCameraComponent* UCameraComponent::Duplicate()
 
     NewComp->CameraState = this->CameraState;
 
+	NewComp->DuplicateSubObjects();
+
     return NewComp;
 }
 

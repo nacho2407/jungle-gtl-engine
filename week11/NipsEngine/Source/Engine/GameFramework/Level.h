@@ -11,7 +11,7 @@ public:
 	virtual ~ULevel() override;
 
 	virtual ULevel* Duplicate() override;
-    virtual ULevel* DuplicateSubObjects() override { return this; }
+    virtual ULevel* DuplicateSubObjects() override;
 
 	void AddActor(AActor* Actor) { Actors.push_back(Actor); }
 	void RemoveActor(AActor* Actor) {
@@ -20,9 +20,10 @@ public:
 	}
 
 	const TArray<AActor*>& GetActors() const { return Actors; }
+
 	void BeginPlay();
 	void Tick(float DeltaTime);
-	void EndPlay();
+	void EndPlay(EEndPlayReason::Type EndPlayReason);
 
 private:
 	TArray<AActor*> Actors;
