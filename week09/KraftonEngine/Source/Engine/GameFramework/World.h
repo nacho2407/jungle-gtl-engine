@@ -103,10 +103,6 @@ inline T* UWorld::SpawnActor()
 {
 	// create and register an actor
 	T* Actor = UObjectManager::Get().CreateObject<T>(this);
-	if (bHasBegunPlay)
-	{
-		Actor->BeginPlay();
-	}
-	AddActor(Actor);
+	AddActor(Actor); // BeginPlay 트리거는 AddActor 내부에서 bHasBegunPlay 가드로 처리
 	return Actor;
 }

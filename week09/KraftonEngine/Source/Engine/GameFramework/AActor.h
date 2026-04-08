@@ -19,7 +19,7 @@ public:
 
 	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
-	virtual void EndPlay() {}
+	virtual void EndPlay();
 
 	bool HasActorBegunPlay() const { return bActorHasBegunPlay; }
 
