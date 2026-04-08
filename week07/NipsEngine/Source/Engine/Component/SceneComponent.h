@@ -65,6 +65,9 @@ public:
 	void Rotate(float DeltaYaw, float DeltaPitch);
 
 protected:
+    /** @brief Hook fired when this component becomes transform-dirty. */
+    virtual void OnTransformDirty() {}
+
 	FRotator GetRelativeRotator() const;
 	FQuat GetRelativeQuat() const;
 

@@ -126,6 +126,7 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 	{
 		EditorEngine->GetWorldList().push_back(LoadCtx);
 		EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
+		EditorEngine->ApplySpatialIndexMaintenanceSettings(LoadCtx.World);
 	}
 	EditorEngine->ResetViewport();
 

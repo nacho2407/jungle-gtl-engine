@@ -95,7 +95,22 @@ void FFontBatcher::AddText(const FString& Text,
 {
 	if (Text.empty()) return;
 
-
+	// 1. 실제 유니코드 문자 개수 세기
+	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
+	const uint8* const End = Ptr + Text.size();
+	size_t ActualCharCount = 0;
+	{
+		const uint8* CountPtr = Ptr;
+		while (CountPtr < End)
+		{
+			if (CountPtr[0] < 0x80) { CountPtr += 1; }
+			else if ((CountPtr[0] & 0xE0) == 0xC0 && CountPtr + 1 < End) { CountPtr += 2; }
+			else if ((CountPtr[0] & 0xF0) == 0xE0 && CountPtr + 2 < End) { CountPtr += 3; }
+			else if ((CountPtr[0] & 0xF8) == 0xF0 && CountPtr + 3 < End) { CountPtr += 4; }
+			else { ++CountPtr; continue; }
+			++ActualCharCount;
+		}
+	}
 
 	FVector RightVector = ModelMatrix.GetRightVector();
 	FVector UpVector = ModelMatrix.GetUpVector();
@@ -110,8 +125,8 @@ void FFontBatcher::AddText(const FString& Text,
 	const size_t CharCount = Text.size();
 
 	// resize + 포인터 직접 쓰기로 push_back 오버헤드 제거
-	Vertices.resize(Base + CharCount * 4);
-	Indices.resize(IdxBase + CharCount * 6);
+	Vertices.resize(Base + ActualCharCount * 4);
+	Indices.resize(IdxBase + ActualCharCount * 6);
 	FTextureVertex* pV = Vertices.data() + Base;
 	uint32* pI = Indices.data() + IdxBase;
 
@@ -119,11 +134,10 @@ void FFontBatcher::AddText(const FString& Text,
 	const FVector HalfRight = RightVector * (CharW * 0.5f);
 	const FVector HalfUp    = UpVector    * (CharH * 0.5f);
 
-	const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
-	const uint8* const End = Ptr + Text.size();
+	Ptr = reinterpret_cast<const uint8*>(Text.c_str());
 	uint32 CharIdx = 0;
 
-	CharCursorX = -(CharCount * CharW * 0.5f);
+	CharCursorX = -(ActualCharCount * CharW * 0.5f);
 	for (size_t i = 0; i < CharCount && Ptr < End; ++i)
 	{
 		uint32 CP = 0;
