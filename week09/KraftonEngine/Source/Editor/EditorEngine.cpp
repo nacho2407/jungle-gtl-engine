@@ -239,6 +239,17 @@ void UEditorEngine::EndPlayMap()
 	{
 		EditorWorld->InvalidateVisibleSet();
 		EditorWorld->GetScene().MarkAllPerObjectCBDirty();
+
+		// ActiveCamera는 PIE 시작 시 PIE 월드로 옮겨졌고 PIE 월드와 함께 파괴됐다.
+		// Editor 월드의 ActiveCamera는 여전히 그 dangling 포인터를 가리킬 수 있으므로
+		// 활성 뷰포트의 카메라로 다시 바인딩해 줘야 frustum culling이 정상 동작한다.
+		if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+		{
+			if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
+			{
+				EditorWorld->SetActiveCamera(VCCamera);
+			}
+		}
 	}
 
 	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
