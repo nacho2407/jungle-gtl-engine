@@ -30,6 +30,30 @@ UWorld::~UWorld()
 	}
 }
 
+UObject* UWorld::Duplicate(UObject* NewOuter) const
+{
+	// UE의 CreatePIEWorldByDuplication 대응 (간소화 버전).
+	// 새 UWorld를 만들고, 소스의 Actor들을 하나씩 복제해 NewWorld를 Outer로 삼아 등록한다.
+	// AActor::Duplicate 내부에서 Dup->GetTypedOuter<UWorld>() 경유 AddActor가 호출되므로
+	// 여기서는 World 단위 상태만 챙기면 된다.
+	UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
+	if (!NewWorld)
+	{
+		return nullptr;
+	}
+	NewWorld->SetOuter(NewOuter);
+	NewWorld->InitWorld(); // Partition/VisibleSet 초기화 — 이거 없으면 복제 액터가 렌더링되지 않음
+
+	for (AActor* Src : Actors)
+	{
+		if (!Src) continue;
+		Src->Duplicate(NewWorld);
+	}
+
+	NewWorld->PostDuplicate();
+	return NewWorld;
+}
+
 void UWorld::DestroyActor(AActor* Actor)
 {
 	// remove and clean up
@@ -362,14 +386,8 @@ void UWorld::Tick(float DeltaTime)
 	DebugDrawQueue.Tick(DeltaTime);
 #endif
 
-#ifndef FPS_OPTIMIZATION
-	// 유효하게 돌아가는 로직이 billboardcomponent 뿐인 것에 비해 오버헤드가 꽤 커서 이번 기간동안 주석
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && Actor->bNeedsTick)
-			Actor->Tick(DeltaTime);
-	}
-#endif
+	// 액터 Tick 루프는 월드 타입별로 다르게 돌아야 하므로 UEngine::WorldTick에서 처리한다.
+	(void)DeltaTime;
 }
 
 void UWorld::EndPlay()

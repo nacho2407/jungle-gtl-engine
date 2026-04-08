@@ -10,6 +10,12 @@
 #include "Component/CameraComponent.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/World.h"
+#include "Engine/Runtime/Engine.h"
+
+UWorld* FEditorViewportClient::GetWorld() const
+{
+	return GEngine ? GEngine->GetWorld() : nullptr;
+}
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Collision/RayUtils.h"
@@ -226,7 +232,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 {
 	(void)DeltaTime;
 
-	if (!Camera || !Gizmo || !World)
+	if (!Camera || !Gizmo || !GetWorld())
 	{
 		return;
 	}
@@ -325,7 +331,10 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	{
 		//기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
 		AActor* BestActor = nullptr;
-		World->RaycastPrimitives(Ray, HitResult, BestActor); //BVH 시작
+		if (UWorld* W = GetWorld())
+		{
+			W->RaycastPrimitives(Ray, HitResult, BestActor); //BVH 시작
+		}
 
 		//멀티픽킹은 성능을 위해 일단 비활성화
 		//bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);

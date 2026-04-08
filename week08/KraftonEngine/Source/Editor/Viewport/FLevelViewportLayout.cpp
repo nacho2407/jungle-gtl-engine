@@ -96,13 +96,15 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 	// 아이콘 로드
 	LoadLayoutIcons(InRenderer.GetFD3DDevice().GetDevice());
 
+	// Play/Stop 툴바 초기화
+	PlayToolbar.Initialize(InEditor, InRenderer.GetFD3DDevice().GetDevice());
+
 	// LevelViewportClient 생성 (단일 뷰포트)
 	auto* LevelVC = new FLevelEditorViewportClient();
 	LevelVC->SetOverlayStatSystem(&Editor->GetOverlayStatSystem());
 	LevelVC->SetSettings(&FEditorSettings::Get());
 	LevelVC->Initialize(Window);
 	LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
-	LevelVC->SetWorld(Editor->GetWorld());
 	LevelVC->SetGizmo(SelectionManager->GetGizmo());
 	LevelVC->SetSelectionManager(SelectionManager);
 
@@ -152,6 +154,7 @@ void FLevelViewportLayout::Release()
 	LevelViewportClients.clear();
 
 	ReleaseLayoutIcons();
+	PlayToolbar.Release();
 }
 
 // ─── 활성 뷰포트 ────────────────────────────────────────────
@@ -174,10 +177,10 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
 	}
 }
 
-void FLevelViewportLayout::SetWorld(UWorld* InWorld)
+void FLevelViewportLayout::SetWorld(UWorld* /*InWorld*/)
 {
-	for (FEditorViewportClient* VC : AllViewportClients)
-		VC->SetWorld(InWorld);
+	// World는 GEngine->GetWorld() 경유로 조회되므로 별도 저장이 필요 없음.
+	// 호환성을 위해 시그니처만 유지.
 }
 
 void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
@@ -185,7 +188,6 @@ void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 	for (FLevelEditorViewportClient* VC : LevelViewportClients)
 	{
 		VC->CreateCamera();
-		VC->SetWorld(InWorld);
 		VC->ResetCamera();
 
 		// 카메라 재생성 후 현재 뷰포트 크기로 AspectRatio 동기화
@@ -210,7 +212,6 @@ void FLevelViewportLayout::DestroyAllCameras()
 	for (FEditorViewportClient* VC : AllViewportClients)
 	{
 		VC->DestroyCamera();
-		VC->SetWorld(nullptr);
 	}
 }
 
@@ -228,7 +229,6 @@ void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
 		LevelVC->SetSettings(&FEditorSettings::Get());
 		LevelVC->Initialize(Window);
 		LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
-		LevelVC->SetWorld(Editor->GetWorld());
 		LevelVC->SetGizmo(SelectionManager->GetGizmo());
 		LevelVC->SetSelectionManager(SelectionManager);
 
@@ -496,7 +496,17 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 	if (ContentSize.x > 0 && ContentSize.y > 0)
 	{
-		FRect ContentRect = { ContentPos.x, ContentPos.y, ContentSize.x, ContentSize.y };
+		// 상단에 Play/Stop 툴바 영역 확보 후 나머지를 뷰포트에 할당
+		const float ToolbarHeight = PlayToolbar.GetDesiredHeight();
+		ImGui::SetCursorScreenPos(ContentPos);
+		PlayToolbar.Render(ContentSize.x);
+
+		FRect ContentRect = {
+			ContentPos.x,
+			ContentPos.y + ToolbarHeight,
+			ContentSize.x,
+			ContentSize.y - ToolbarHeight
+		};
 
 		// SSplitter 레이아웃 계산
 		if (RootSplitter)

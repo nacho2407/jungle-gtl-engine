@@ -1,6 +1,7 @@
 ﻿#include "ActorComponent.h"
+#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UActorComponent, UObject)
+IMPLEMENT_CLASS(UActorComponent, UObject)
 
 void UActorComponent::BeginPlay()
 {
