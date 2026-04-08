@@ -117,7 +117,7 @@ void UEngine::DestroyWorldContext(const FName& Handle)
 	{
 		if (it->ContextHandle == Handle)
 		{
-			it->World->EndPlay();
+			it->World->EndPlay(EEndPlayReason::Type::Destroyed);
 			UObjectManager::Get().DestroyObject(it->World);
 			WorldList.erase(it);
 			return;
