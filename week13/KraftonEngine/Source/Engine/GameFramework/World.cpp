@@ -24,7 +24,7 @@ namespace
 
 UWorld::~UWorld()
 {
-	if (!Actors.empty())
+	if (PersistentLevel && !GetActors().empty())
 	{
 		EndPlay();
 	}
@@ -44,7 +44,7 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
 	NewWorld->SetOuter(NewOuter);
 	NewWorld->InitWorld(); // Partition/VisibleSet 초기화 — 이거 없으면 복제 액터가 렌더링되지 않음
 
-	for (AActor* Src : Actors)
+	for (AActor* Src : GetActors())
 	{
 		if (!Src) continue;
 		Src->Duplicate(NewWorld);
@@ -60,9 +60,7 @@ void UWorld::DestroyActor(AActor* Actor)
 	if (!Actor) return;
 	Actor->EndPlay();
 	// Remove from actor list
-	auto it = std::find(Actors.begin(), Actors.end(), Actor);
-	if (it != Actors.end())
-		Actors.erase(it);
+	PersistentLevel->RemoveActor(Actor);
 
 	MarkWorldPrimitivePickingBVHDirty();
 	InvalidateVisibleSet();
@@ -79,8 +77,7 @@ void UWorld::AddActor(AActor* Actor)
 		return;
 	}
 
-	Actor->SetOuter(this);
-	Actors.push_back(Actor);
+	PersistentLevel->AddActor(Actor);
 
 	InsertActorToOctree(Actor);
 	MarkWorldPrimitivePickingBVHDirty();
@@ -111,7 +108,7 @@ void UWorld::InvalidateVisibleSet()
 
 void UWorld::BuildWorldPrimitivePickingBVHNow() const
 {
-	WorldPrimitivePickingBVH.BuildNow(Actors);
+	WorldPrimitivePickingBVH.BuildNow(GetActors());
 }
 
 void UWorld::BeginDeferredPickingBVHUpdate()
@@ -136,7 +133,7 @@ void UWorld::EndDeferredPickingBVHUpdate()
 
 void UWorld::WarmupPickingData() const
 {
-	for (AActor* Actor : Actors)
+	for (AActor* Actor : GetActors())
 	{
 		if (!Actor || !Actor->IsVisible())
 		{
@@ -164,7 +161,7 @@ void UWorld::WarmupPickingData() const
 bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
 	//혹시라도 BVH 트리가 업데이트 되지 않았다면 업데이트
-	WorldPrimitivePickingBVH.EnsureBuilt(Actors);
+	WorldPrimitivePickingBVH.EnsureBuilt(GetActors());
 	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
 }
 
@@ -363,18 +360,17 @@ void UWorld::InitWorld()
 {
 	Partition.Reset(FBoundingBox());
 	InvalidateVisibleSet();
+	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
+	PersistentLevel->SetWorld(this);
 }
 
 void UWorld::BeginPlay()
 {
 	bHasBegunPlay = true;
 
-	for (AActor* Actor : Actors)
+	if (PersistentLevel)
 	{
-		if (Actor)
-		{
-			Actor->BeginPlay();
-		}
+		PersistentLevel->BeginPlay();
 	}
 }
 
@@ -392,33 +388,23 @@ void UWorld::Tick(float DeltaTime)
 #endif
 
 	// 액터 Tick 루프는 월드 타입별로 다르게 돌아야 하므로 UEngine::WorldTick에서 처리한다.
-	(void)DeltaTime;
 }
 
 void UWorld::EndPlay()
 {
 	bHasBegunPlay = false;
 
-	for (AActor* Actor : Actors)
+	if (!PersistentLevel)
 	{
-		if (Actor)
-		{
-			Actor->EndPlay();
-		}
+		return;
 	}
+
+	PersistentLevel->EndPlay();
 
 	// Clear spatial partition while actors/components are still alive.
 	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.
 	Partition.Reset(FBoundingBox());
 
-	for (AActor* Actor : Actors)
-	{
-		if (Actor)
-		{
-			UObjectManager::Get().DestroyObject(Actor);
-		}
-	}
-
-	Actors.clear();
+	PersistentLevel->Clear();
 	MarkWorldPrimitivePickingBVHDirty();
 }

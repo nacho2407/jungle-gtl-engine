@@ -13,16 +13,35 @@ void UActorComponent::BeginPlay()
 
 void UActorComponent::Activate()
 {
-	bCanEverTick = true;
+	bIsActive = true;
+	PrimaryComponentTick.SetTickEnabled(true);
 }
 
 void UActorComponent::Deactivate()
 {
-	bCanEverTick = false;
+	bIsActive = false;
+	PrimaryComponentTick.SetTickEnabled(false);
 }
+
 
 void UActorComponent::TickComponent(float DeltaTime)
 {
+	if (GetOwner() == nullptr)
+	{
+		return;
+	}
+
+	if (PrimaryComponentTick.bTickEnabled == false)
+	{
+		return;
+	}
+
+	if (bIsActive == false)
+	{
+		return;
+	}
+
+	Tick(DeltaTime);
 }
 
 void UActorComponent::SetActive(bool bNewActive)
@@ -44,6 +63,15 @@ void UActorComponent::SetActive(bool bNewActive)
 	}
 }
 
+void UActorComponent::SetOwner(AActor* Actor)
+{
+	Owner = Actor;
+	PrimaryComponentTick.Target = this;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bTickEnabled = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
+}
+
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
@@ -53,10 +81,5 @@ void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 
 void UActorComponent::Tick(float DeltaTime)
 {
-	if (bCanEverTick == false || bIsActive == false)
-	{
-		return;
-	}
 
-	TickComponent(DeltaTime);
 }
