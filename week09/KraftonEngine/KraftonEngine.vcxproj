@@ -314,6 +314,7 @@
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
@@ -391,6 +392,7 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Core\ClassTypes.h" />
@@ -437,6 +439,7 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Level.h" />
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
@@ -535,6 +538,7 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
+    <ClInclude Include="Source\Engine\Core\TickFunction.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Editor.hlsl">
