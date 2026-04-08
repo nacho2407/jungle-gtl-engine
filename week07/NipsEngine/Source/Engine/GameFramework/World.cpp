@@ -41,6 +41,7 @@ UWorld* UWorld::Duplicate()
 
     NewWorld->SetActiveCamera(this->ActiveCamera);
     NewWorld->bHasBegunPlay = false;
+    NewWorld->RebuildSpatialIndex();
 
     return NewWorld;
 }
@@ -49,11 +50,13 @@ void UWorld::BeginPlay()
 {
 	bHasBegunPlay = true;
 	PersistentLevel->BeginPlay();
+    RebuildSpatialIndex();
 }
 
 void UWorld::Tick(float DeltaTime)
 {
 	PersistentLevel->Tick(DeltaTime);
+    SyncSpatialIndex();
 }
 
 void UWorld::EndPlay()
@@ -63,4 +66,14 @@ void UWorld::EndPlay()
 		bHasBegunPlay = false;
 		PersistentLevel->EndPlay();
 	}
+}
+
+void UWorld::RebuildSpatialIndex()
+{
+    SpatialIndex.Rebuild(this);
+}
+
+void UWorld::SyncSpatialIndex()
+{
+    SpatialIndex.FlushDirtyBounds();
 }

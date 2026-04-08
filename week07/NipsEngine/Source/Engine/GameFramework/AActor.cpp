@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
+#include "GameFramework/World.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
@@ -93,6 +94,8 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 
 	Comp->SetOwner(this);
 	OwnedComponents.push_back(Comp);
+	bPrimitiveCacheDirty = true;
+	NotifyComponentRegistered(Comp);
 	return Comp;
 }
 
@@ -104,11 +107,14 @@ void AActor::RegisterComponent(UActorComponent* Comp) {
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
+		NotifyComponentRegistered(Comp);
 	}
 }
 
 void AActor::RemoveComponent(UActorComponent* Component) {
 	if (!Component) return;
+
+	NotifyComponentUnregistered(Component);
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
 	if (it != OwnedComponents.end()) {
@@ -121,6 +127,17 @@ void AActor::RemoveComponent(UActorComponent* Component) {
 		RootComponent = nullptr;
 
 	UObjectManager::Get().DestroyObject(Component);
+}
+
+void AActor::SetVisible(bool Visible)
+{
+	if (bVisible == Visible)
+	{
+		return;
+	}
+
+	bVisible = Visible;
+	MarkPrimitiveComponentsDirty();
 }
 
 void AActor::SetRootComponent(USceneComponent* Comp) {
@@ -149,6 +166,52 @@ void AActor::Tick(float DeltaTime)
 	for (UActorComponent* ActorComp : OwnedComponents)
 	{
 		ActorComp->ExecuteTick(DeltaTime);
+	}
+}
+
+void AActor::NotifyComponentRegistered(UActorComponent* Component)
+{
+	if (Component == nullptr || OwningWorld == nullptr)
+	{
+		return;
+	}
+
+	UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component);
+	if (Primitive == nullptr)
+	{
+		return;
+	}
+
+	OwningWorld->GetSpatialIndex().RegisterPrimitive(Primitive);
+	OwningWorld->GetSpatialIndex().FlushDirtyBounds();
+}
+
+void AActor::NotifyComponentUnregistered(UActorComponent* Component)
+{
+	if (Component == nullptr || OwningWorld == nullptr)
+	{
+		return;
+	}
+
+	UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component);
+	if (Primitive == nullptr)
+	{
+		return;
+	}
+
+	OwningWorld->GetSpatialIndex().UnregisterPrimitive(Primitive);
+}
+
+void AActor::MarkPrimitiveComponentsDirty()
+{
+	if (OwningWorld == nullptr)
+	{
+		return;
+	}
+
+	for (UPrimitiveComponent* Primitive : GetPrimitiveComponents())
+	{
+		OwningWorld->GetSpatialIndex().MarkPrimitiveDirty(Primitive);
 	}
 }
 

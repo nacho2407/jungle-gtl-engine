@@ -212,6 +212,7 @@ void USceneComponent::SetRelativeScale(const FVector& NewScale)
 void USceneComponent::MarkTransformDirty()
 {
 	bTransformDirty = true;
+    OnTransformDirty();
 
 	for (auto* Child : ChildComponents)
 	{
