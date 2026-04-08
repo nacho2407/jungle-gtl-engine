@@ -197,6 +197,8 @@ void FSceneRenderCollector::CollectRenderCommands(const TArray<AActor*>& Actors,
 					FRenderCommand Command;
 					Command.RenderMesh = BillboardMesh;
 					Command.Material = BillboardMat;
+
+					Command.WorldMatrix = BillboardComponent->GetWorldTransform();
 					const FVector WorldPos = Command.WorldMatrix.GetTranslation();
 					const FVector Scale = Command.WorldMatrix.GetScaleVector();
 					Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPos, CameraPosition);

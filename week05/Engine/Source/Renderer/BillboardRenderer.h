@@ -19,6 +19,10 @@ public:
 	std::shared_ptr<FMaterialTexture> GetOrLoadTexture(const std::wstring& Path);
 
 	FMaterial* GetBillboardMeterial() const { return BillboardMaterial.get(); }
+	const TMap<std::wstring, std::shared_ptr<FMaterialTexture>>& GetTextureCache() const
+	{
+		return TextureCache;
+	}
 
 private:
 	ID3D11Device* Device = nullptr;

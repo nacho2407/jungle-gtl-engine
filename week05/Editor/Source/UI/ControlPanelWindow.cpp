@@ -27,6 +27,7 @@
 #include "Actor/StaticMeshActor.h"
 #include "Actor/SubUVActor.h"
 #include "Actor/TextActor.h"
+#include "Actor/BillboardActor.h"
 #include "Math/MathUtility.h"
 #include "Asset/ObjManager.h"
 #include "Renderer/Material.h"
@@ -192,7 +193,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 		ImGui::SeparatorText("Spawn");
 
 		static int32 SpawnTypeIndex = 0;
-		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "SubUV", "Text", "SkySphere", "Staticmesh" };
+		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "SubUV", "Text", "SkySphere", "Billboard", "Staticmesh"};
 
 		ImGui::Combo("Type", &SpawnTypeIndex, SpawnTypes, IM_ARRAYSIZE(SpawnTypes));
 
@@ -247,6 +248,10 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			else if (SpawnTypeIndex == 5)
 			{
 				NewActor = Scene->SpawnActor<ASkySphereActor>(Name);
+			}
+			else if (SpawnTypeIndex == 6)
+			{
+				NewActor = Scene->SpawnActor<ABillboardActor>(Name);
 			}
 			else
 			{
