@@ -286,6 +286,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
 	ImGui::Text("Components");
 
+	// Get All Component Classes
 	TArray<const FTypeInfo*>& AllClasses = GetClassRegistry();
 
 	TArray<const FTypeInfo*> ComponentClasses;
@@ -313,11 +314,17 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 	USceneComponent* Root = Actor->GetRootComponent();
 
+	// Add Component
 	if (ImGui::Button("Add"))
 	{
 		UActorComponent* Comp = Actor->AddComponentByClass(ComponentClasses[SelectedIndex]);
 		if (ComponentClasses[SelectedIndex]->IsA(&USceneComponent::s_TypeInfo))
-			Cast<USceneComponent>(Comp)->AttachToComponent(Root);
+		{
+			if (SelectedComponent != nullptr && SelectedComponent->GetTypeInfo()->IsA(&USceneComponent::s_TypeInfo))
+				Cast<USceneComponent>(Comp)->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
+			else
+				Cast<USceneComponent>(Comp)->AttachToComponent(Root);
+		}
 	}
 
 	ImGui::Separator();
