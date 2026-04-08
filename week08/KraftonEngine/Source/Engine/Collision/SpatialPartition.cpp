@@ -10,161 +10,161 @@
 
 namespace
 {
-    void ExpandBoundsByBox(FBoundingBox& AccumulatedBounds, const FBoundingBox& Box)
-    {
-        if (!Box.IsValid())
-        {
-            return;
-        }
+	void ExpandBoundsByBox(FBoundingBox& AccumulatedBounds, const FBoundingBox& Box)
+	{
+		if (!Box.IsValid())
+		{
+			return;
+		}
 
-        if (!AccumulatedBounds.IsValid())
-        {
-            AccumulatedBounds = Box;
-            return;
-        }
+		if (!AccumulatedBounds.IsValid())
+		{
+			AccumulatedBounds = Box;
+			return;
+		}
 
-        AccumulatedBounds.Expand(Box.Min);
-        AccumulatedBounds.Expand(Box.Max);
-    }
+		AccumulatedBounds.Expand(Box.Min);
+		AccumulatedBounds.Expand(Box.Max);
+	}
 
-    FBoundingBox MakePaddedRootBounds(const FBoundingBox& Bounds)
-    {
-        if (!Bounds.IsValid())
-        {
-            return Bounds;
-        }
+	FBoundingBox MakePaddedRootBounds(const FBoundingBox& Bounds)
+	{
+		if (!Bounds.IsValid())
+		{
+			return Bounds;
+		}
 
-        const FVector Extent = Bounds.GetExtent();
-        const FVector Padding(
-            (std::max)(Extent.X * 0.25f, 10.0f),
-            (std::max)(Extent.Y * 0.25f, 10.0f),
-            (std::max)(Extent.Z * 0.25f, 10.0f));
+		const FVector Extent = Bounds.GetExtent();
+		const FVector Padding(
+			(std::max)(Extent.X * 0.25f, 10.0f),
+			(std::max)(Extent.Y * 0.25f, 10.0f),
+			(std::max)(Extent.Z * 0.25f, 10.0f));
 
-        return FBoundingBox(Bounds.Min - Padding, Bounds.Max + Padding);
-    }
+		return FBoundingBox(Bounds.Min - Padding, Bounds.Max + Padding);
+	}
 
-    void AppendUniqueNode(TArray<FOctree*>& Nodes, FOctree* Node)
-    {
-        if (!Node)
-        {
-            return;
-        }
+	void AppendUniqueNode(TArray<FOctree*>& Nodes, FOctree* Node)
+	{
+		if (!Node)
+		{
+			return;
+		}
 
-        if (std::find(Nodes.begin(), Nodes.end(), Node) == Nodes.end())
-        {
-            Nodes.push_back(Node);
-        }
-    }
+		if (std::find(Nodes.begin(), Nodes.end(), Node) == Nodes.end())
+		{
+			Nodes.push_back(Node);
+		}
+	}
 }
 
 void FSpatialPartition::ClearQueuedActorFlags()
 {
-    for (AActor* Actor : DirtyActors)
-    {
-        if (Actor)
-        {
-            Actor->SetQueuedForPartitionUpdate(false);
-        }
-    }
+	for (AActor* Actor : DirtyActors)
+	{
+		if (Actor)
+		{
+			Actor->SetQueuedForPartitionUpdate(false);
+		}
+	}
 }
 
 FBoundingBox FSpatialPartition::BuildActorVisibleBounds(AActor* Actor, bool bUpdateWorldMatrices) const
 {
-    FBoundingBox ActorBounds;
+	FBoundingBox ActorBounds;
 
-    if (!Actor)
-    {
-        return ActorBounds;
-    }
+	if (!Actor)
+	{
+		return ActorBounds;
+	}
 
-    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-    {
-        if (!Prim || !Prim->IsVisible())
-        {
-            continue;
-        }
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (!Prim || !Prim->IsVisible())
+		{
+			continue;
+		}
 
-        if (bUpdateWorldMatrices)
-        {
-            Prim->UpdateWorldMatrix();
-        }
+		if (bUpdateWorldMatrices)
+		{
+			Prim->UpdateWorldMatrix();
+		}
 
-        ExpandBoundsByBox(ActorBounds, Prim->GetWorldBoundingBox());
-    }
+		ExpandBoundsByBox(ActorBounds, Prim->GetWorldBoundingBox());
+	}
 
-    return ActorBounds;
+	return ActorBounds;
 }
 
 void FSpatialPartition::EnsureRootContains(const FBoundingBox& RequiredBounds)
 {
-    if (!RequiredBounds.IsValid())
-    {
-        return;
-    }
+	if (!RequiredBounds.IsValid())
+	{
+		return;
+	}
 
-    if (!Octree)
-    {
-        Octree = std::make_unique<FOctree>(MakePaddedRootBounds(RequiredBounds), 0);
-        return;
-    }
+	if (!Octree)
+	{
+		Octree = std::make_unique<FOctree>(MakePaddedRootBounds(RequiredBounds), 0);
+		return;
+	}
 
-    if (Octree->GetCellBounds().IsContains(RequiredBounds))
-    {
-        return;
-    }
+	if (Octree->GetCellBounds().IsContains(RequiredBounds))
+	{
+		return;
+	}
 
-    RebuildRootBounds(RequiredBounds);
+	RebuildRootBounds(RequiredBounds);
 }
 
 void FSpatialPartition::RebuildRootBounds(const FBoundingBox& RequiredBounds)
 {
-    if (!Octree || !RequiredBounds.IsValid())
-    {
-        return;
-    }
+	if (!Octree || !RequiredBounds.IsValid())
+	{
+		return;
+	}
 
-    TArray<UPrimitiveComponent*> AllPrimitives;
-    Octree->GetAllPrimitives(AllPrimitives);
-    AllPrimitives.insert(AllPrimitives.end(), OverflowPrimitives.begin(), OverflowPrimitives.end());
+	TArray<UPrimitiveComponent*> AllPrimitives;
+	Octree->GetAllPrimitives(AllPrimitives);
+	AllPrimitives.insert(AllPrimitives.end(), OverflowPrimitives.begin(), OverflowPrimitives.end());
 
-    FBoundingBox NewRootBounds = RequiredBounds;
-    for (UPrimitiveComponent* Prim : AllPrimitives)
-    {
-        if (!Prim)
-        {
-            continue;
-        }
+	FBoundingBox NewRootBounds = RequiredBounds;
+	for (UPrimitiveComponent* Prim : AllPrimitives)
+	{
+		if (!Prim)
+		{
+			continue;
+		}
 
-        Prim->ClearOctreeLocation();
+		Prim->ClearOctreeLocation();
 
-        if (Prim->IsVisible())
-        {
-            ExpandBoundsByBox(NewRootBounds, Prim->GetWorldBoundingBox());
-        }
-    }
+		if (Prim->IsVisible())
+		{
+			ExpandBoundsByBox(NewRootBounds, Prim->GetWorldBoundingBox());
+		}
+	}
 
-    if (!NewRootBounds.IsValid())
-    {
-        return;
-    }
+	if (!NewRootBounds.IsValid())
+	{
+		return;
+	}
 
-    NewRootBounds = MakePaddedRootBounds(NewRootBounds);
+	NewRootBounds = MakePaddedRootBounds(NewRootBounds);
 
-    Octree->Reset(NewRootBounds, 0);
-    OverflowPrimitives.clear();
+	Octree->Reset(NewRootBounds, 0);
+	OverflowPrimitives.clear();
 
-    for (UPrimitiveComponent* Prim : AllPrimitives)
-    {
-        if (!Prim || !Prim->IsVisible())
-        {
-            continue;
-        }
+	for (UPrimitiveComponent* Prim : AllPrimitives)
+	{
+		if (!Prim || !Prim->IsVisible())
+		{
+			continue;
+		}
 
-        if (!Octree->Insert(Prim))
-        {
-            InsertPrimitive(Prim);
-        }
-    }
+		if (!Octree->Insert(Prim))
+		{
+			InsertPrimitive(Prim);
+		}
+	}
 }
 
 void FSpatialPartition::FlushPrimitive()
@@ -176,8 +176,8 @@ void FSpatialPartition::FlushPrimitive()
 
 	if (!Octree)
 	{
-        ClearQueuedActorFlags();
-        DirtyActors.clear();
+		ClearQueuedActorFlags();
+		DirtyActors.clear();
 		return;
 	}
 
@@ -204,7 +204,7 @@ void FSpatialPartition::FlushPrimitive()
 		return;
 	}
 
-    TArray<FOctree*> NodesToMerge;
+	TArray<FOctree*> NodesToMerge;
 
 	for (AActor* Actor : DirtyActors)
 	{
@@ -228,7 +228,7 @@ void FSpatialPartition::FlushPrimitive()
 				}
 				else if (FOctree* Node = Prim->GetOctreeNode())
 				{
-                    AppendUniqueNode(NodesToMerge, Node);
+					AppendUniqueNode(NodesToMerge, Node);
 					Node->RemoveDirect(Prim, false);
 				}
 				continue;
@@ -254,7 +254,7 @@ void FSpatialPartition::FlushPrimitive()
 					continue;
 				}
 
-                AppendUniqueNode(NodesToMerge, Node);
+				AppendUniqueNode(NodesToMerge, Node);
 				Node->RemoveDirect(Prim, false);
 
 				if (!Octree->Insert(Prim))
@@ -271,132 +271,121 @@ void FSpatialPartition::FlushPrimitive()
 		}
 	}
 
-    for (FOctree* Node : NodesToMerge)
-    {
-        if (Node)
-        {
-            Node->TryMergeUpward();
-        }
-    }
+	for (FOctree* Node : NodesToMerge)
+	{
+		if (Node)
+		{
+			Node->TryMergeUpward();
+		}
+	}
 
-    ClearQueuedActorFlags();
+	ClearQueuedActorFlags();
 	DirtyActors.clear();
 }
 
 void FSpatialPartition::Reset(const FBoundingBox& RootBounds)
 {
-    ClearQueuedActorFlags();
+	ClearQueuedActorFlags();
 
-    if (Octree)
-    {
-        TArray<UPrimitiveComponent*> ExistingPrimitives;
-        Octree->GetAllPrimitives(ExistingPrimitives);
-        for (UPrimitiveComponent* Prim : ExistingPrimitives)
-        {
-            if (Prim)
-            {
-                Prim->ClearOctreeLocation();
-            }
-        }
-    }
+	if (Octree)
+	{
+		TArray<UPrimitiveComponent*> ExistingPrimitives;
+		Octree->GetAllPrimitives(ExistingPrimitives);
+		for (UPrimitiveComponent* Prim : ExistingPrimitives)
+		{
+			if (Prim)
+			{
+				Prim->ClearOctreeLocation();
+			}
+		}
+	}
 
-    for (UPrimitiveComponent* Prim : OverflowPrimitives)
-    {
-        if (Prim)
-        {
-            Prim->ClearOctreeLocation();
-        }
-    }
+	for (UPrimitiveComponent* Prim : OverflowPrimitives)
+	{
+		if (Prim)
+		{
+			Prim->ClearOctreeLocation();
+		}
+	}
 
-    if (!RootBounds.IsValid())
-    {
-        Octree.reset();
-    }
-    else
-    {
-        if (!Octree)
-        {
-            Octree = std::make_unique<FOctree>(RootBounds, 0);
-        }
-        else
-        {
-            Octree->Reset(RootBounds, 0);
-        }
-    }
+	if (!RootBounds.IsValid())
+	{
+		Octree.reset();
+	}
+	else
+	{
+		if (!Octree)
+		{
+			Octree = std::make_unique<FOctree>(RootBounds, 0);
+		}
+		else
+		{
+			Octree->Reset(RootBounds, 0);
+		}
+	}
 
 	DirtyActors.clear();
-    OverflowPrimitives.clear();
+	OverflowPrimitives.clear();
 }
 
 void FSpatialPartition::InsertActor(AActor* Actor)
 {
 	if (!Actor) return;
 
-    const FBoundingBox ActorBounds = BuildActorVisibleBounds(Actor, true);
-    EnsureRootContains(ActorBounds);
+	const FBoundingBox ActorBounds = BuildActorVisibleBounds(Actor, true);
+	EnsureRootContains(ActorBounds);
 
-    if (!Octree)
-    {
-        return;
-    }
+	if (!Octree)
+	{
+		return;
+	}
 
-    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-    {
-        if (!Prim || !Prim->IsVisible()) continue;
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (!Prim || !Prim->IsVisible()) continue;
 
-        if (!Octree->Insert(Prim))
-        {
-            InsertPrimitive(Prim);
-        }
-    }
+		if (!Octree->Insert(Prim))
+		{
+			InsertPrimitive(Prim);
+		}
+	}
 }
 
 void FSpatialPartition::RemoveActor(AActor* Actor)
 {
 	if (!Actor) return;
 
-    Actor->SetQueuedForPartitionUpdate(false);
-    auto DirtyIt = std::find(DirtyActors.begin(), DirtyActors.end(), Actor);
-    if (DirtyIt != DirtyActors.end())
-    {
-        *DirtyIt = DirtyActors.back();
-        DirtyActors.pop_back();
-    }
+	Actor->SetQueuedForPartitionUpdate(false);
+	auto DirtyIt = std::find(DirtyActors.begin(), DirtyActors.end(), Actor);
+	if (DirtyIt != DirtyActors.end())
+	{
+		*DirtyIt = DirtyActors.back();
+		DirtyActors.pop_back();
+	}
 
-    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-    {
-        if (!Prim) continue;
+	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+	{
+		if (!Prim) continue;
 
-        if (Prim->IsInOctreeOverflow())
-        {
-            RemovePrimitive(Prim);
-        }
-        else if (FOctree* Node = Prim->GetOctreeNode())
-        {
-            Node->RemoveDirect(Prim);
-        }
-        else if (Octree)
-        {
-		    Octree->Remove(Prim);
-        }
-    }
+		RemoveSinglePrimitive(Prim);
+	}
 }
 
 void FSpatialPartition::UpdateActor(AActor* Actor)
 {
 	if (!Actor) return;
 
-    if (!Octree)
-    {
-        InsertActor(Actor);
-        return;
-    }
+	if (!Octree)
+	{
+		InsertActor(Actor);
+		return;
+	}
 
-    if (!Actor->IsQueuedForPartitionUpdate())
-    {
-        DirtyActors.push_back(Actor);
-        Actor->SetQueuedForPartitionUpdate(true);
-    }
+	if (!Actor->IsQueuedForPartitionUpdate())
+	{
+		DirtyActors.push_back(Actor);
+		Actor->SetQueuedForPartitionUpdate(true);
+	}
 }
 
 void FSpatialPartition::QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const
@@ -464,6 +453,24 @@ void FSpatialPartition::InsertPrimitive(UPrimitiveComponent* Primitive)
 	{
 		OverflowPrimitives.push_back(Primitive);
 		Primitive->SetOctreeLocation(nullptr, true);
+	}
+}
+
+void FSpatialPartition::RemoveSinglePrimitive(UPrimitiveComponent* Primitive)
+{
+	if (!Primitive) return;
+
+	if (Primitive->IsInOctreeOverflow())
+	{
+		RemovePrimitive(Primitive);
+	}
+	else if (FOctree* Node = Primitive->GetOctreeNode())
+	{
+		Node->RemoveDirect(Primitive);
+	}
+	else if (Octree)
+	{
+		Octree->Remove(Primitive);
 	}
 }
 
