@@ -8,7 +8,6 @@ struct FMeshData;
 
 class UGizmoComponent : public UPrimitiveComponent
 {
-
 private:
 	enum EGizmoMode
 	{
@@ -46,6 +45,10 @@ private:
 public:
 	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
 	UGizmoComponent();
+
+	// 헤더에서 바로 nullptr을 반환하도록 처리합니다.
+	virtual UGizmoComponent* Duplicate() override { return nullptr; }
+	virtual UGizmoComponent* DuplicateSubObjects() override { return nullptr; }
 
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;

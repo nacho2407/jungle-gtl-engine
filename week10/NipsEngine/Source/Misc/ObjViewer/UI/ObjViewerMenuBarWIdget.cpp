@@ -25,11 +25,9 @@ void FObjViewerMenuBarWidget::Render(float DeltaTime)
 		{
 			if (ImGui::MenuItem("Load Obj..."))
 				LoadObj();
-			
-			ImGui::Separator();
 
-			if (ImGui::MenuItem("Load Scene..."))
-				LoadScene();
+			// if (ImGui::MenuItem("Load Scene..."))
+			//  	LoadScene();
 
 			ImGui::EndMenu();
 		}
