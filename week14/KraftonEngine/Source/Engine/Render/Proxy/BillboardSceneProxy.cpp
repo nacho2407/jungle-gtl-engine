@@ -10,6 +10,7 @@ FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
 	bPerViewportUpdate = true;
+	bShowAABB = false;
 }
 
 UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const

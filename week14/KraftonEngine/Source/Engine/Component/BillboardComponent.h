@@ -12,6 +12,8 @@ public:
 	void TickComponent(float DeltaTime) override;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
+	void Serialize(FArchive& Ar) override;
+
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
 
 	// 주어진 카메라 방향으로 빌보드 월드 행렬을 계산 (per-view 렌더링용)

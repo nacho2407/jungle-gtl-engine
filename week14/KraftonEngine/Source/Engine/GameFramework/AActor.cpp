@@ -4,6 +4,7 @@
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
 #include "GameFramework/World.h"
+#include "Serialization/Archive.h"
 
 #include <algorithm>
 
@@ -25,7 +26,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 {
 	if (!Class) return nullptr;
 
-	UObject* Obj = FObjectFactory::Get().Create(Class->name);
+	UObject* Obj = FObjectFactory::Get().Create(Class->name, this);
 	if (!Obj) return nullptr;
 
 	UActorComponent* Comp = Cast<UActorComponent>(Obj);
@@ -49,6 +50,7 @@ void AActor::RegisterComponent(UActorComponent* Comp)
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Comp);
 	if (it == OwnedComponents.end()) {
 		Comp->SetOwner(this);
+		Comp->SetOuter(this);
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
 		MarkPickingDirty();
@@ -82,6 +84,11 @@ void AActor::SetRootComponent(USceneComponent* Comp)
 	RootComponent = Comp;
 }
 
+UWorld* AActor::GetWorld() const
+{
+	return GetTypedOuter<UWorld>();
+}
+
 void AActor::SetVisible(bool Visible)
 {
 	if (bVisible == Visible)
@@ -90,10 +97,10 @@ void AActor::SetVisible(bool Visible)
 	}
 
 	bVisible = Visible;
-	if (OwningWorld)
+	if (UWorld* World = GetWorld())
 	{
-		OwningWorld->MarkWorldPrimitivePickingBVHDirty();
-		OwningWorld->UpdateActorInOctree(this);
+		World->MarkWorldPrimitivePickingBVHDirty();
+		World->UpdateActorInOctree(this);
 	}
 	for (UPrimitiveComponent* Prim : GetPrimitiveComponents())
 	{
@@ -106,9 +113,9 @@ void AActor::SetVisible(bool Visible)
 
 void AActor::MarkPickingDirty()
 {
-	if (OwningWorld)
+	if (UWorld* World = GetWorld())
 	{
-		OwningWorld->MarkWorldPrimitivePickingBVHDirty();
+		World->MarkWorldPrimitivePickingBVHDirty();
 	}
 }
 
@@ -189,6 +196,91 @@ FVector AActor::GetActorForward() const
 	}
 
 	return FVector(0, 0, 1);
+}
+
+void AActor::Serialize(FArchive& Ar)
+{
+	UObject::Serialize(Ar);
+	// 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
+	Ar << bVisible;
+	Ar << bNeedsTick;
+}
+
+// SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들고 AttachToComponent로 재연결.
+static USceneComponent* DuplicateSceneSubtree(
+	const USceneComponent* Src,
+	AActor* DupOwner,
+	TSet<const UActorComponent*>& Visited)
+{
+	if (!Src) return nullptr;
+
+	USceneComponent* DupNode = Cast<USceneComponent>(Src->Duplicate(DupOwner));
+	if (!DupNode) return nullptr;
+
+	DupNode->SetOwner(DupOwner);
+	DupOwner->RegisterComponent(DupNode); // Outer/OwnedComponents/CreateRenderState 일괄 처리
+	Visited.insert(Src);
+
+	for (USceneComponent* Child : Src->GetChildren())
+	{
+		if (USceneComponent* DupChild = DuplicateSceneSubtree(Child, DupOwner, Visited))
+		{
+			DupChild->AttachToComponent(DupNode); // 부모 재연결 (양방향)
+		}
+	}
+	return DupNode;
+}
+
+UObject* AActor::Duplicate(UObject* NewOuter) const
+{
+	// 1) 같은 타입 액터를 팩토리로 생성 (UObject::Duplicate 경유: Serialize 왕복까지 수행)
+	//    NewOuter 미지정 시 원본의 Outer(World)를 승계 → 이후 AddActor가 다시 보강.
+	UObject* DupBase = UObject::Duplicate(NewOuter);
+	AActor* Dup = static_cast<AActor*>(DupBase);
+	if (!Dup)
+	{
+		return nullptr;
+	}
+
+	// 2) 얕은 복사로 따라온 컴포넌트 컨테이너 즉시 비우기 (안전장치)
+	Dup->OwnedComponents.clear();
+	Dup->RootComponent = nullptr;
+	Dup->bPrimitiveCacheDirty = true;
+
+	TSet<const UActorComponent*> Visited;
+
+	// 3a) Root 서브트리 재귀 복제 — 도달 가능한 모든 SceneComponent를 처리
+	if (RootComponent)
+	{
+		USceneComponent* DupRoot = DuplicateSceneSubtree(RootComponent, Dup, Visited);
+		if (DupRoot)
+		{
+			Dup->SetRootComponent(DupRoot);
+		}
+	}
+
+	// 3b) 트리에 포함되지 않은 나머지(비씬 컴포넌트 + 분리된 씬 컴포넌트) 평면 복제
+	for (UActorComponent* Comp : OwnedComponents)
+	{
+		if (!Comp || Visited.count(Comp)) continue;
+
+		UActorComponent* DupComp = Cast<UActorComponent>(Comp->Duplicate(Dup));
+		if (!DupComp) continue;
+
+		DupComp->SetOwner(Dup);
+		Dup->RegisterComponent(DupComp);
+		Visited.insert(Comp);
+	}
+
+	Dup->bPrimitiveCacheDirty = true;
+
+	// 4) 월드에 등록
+	if (UWorld* World = GetWorld())
+	{
+		World->AddActor(Dup);
+	}
+
+	return Dup;
 }
 
 const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
