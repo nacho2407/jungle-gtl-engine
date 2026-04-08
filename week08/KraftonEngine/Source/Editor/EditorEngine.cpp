@@ -210,6 +210,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	SelectionManager.SetGizmoEnabled(false);
 	SelectionManager.SetWorld(PIEWorld);
 	MainPanel.HideEditorWindowsForPIE();
+	ViewportLayout.DisableWorldAxisForPIE();
 
 	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
 	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
@@ -259,6 +260,7 @@ void UEditorEngine::EndPlayMap()
 	SelectionManager.SetGizmoEnabled(true);
 	SelectionManager.SetWorld(GetWorld());
 	MainPanel.RestoreEditorWindowsAfterPIE();
+	ViewportLayout.RestoreWorldAxisAfterPIE();
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));

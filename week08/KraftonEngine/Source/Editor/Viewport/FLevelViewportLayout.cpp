@@ -215,6 +215,52 @@ void FLevelViewportLayout::DestroyAllCameras()
 	}
 }
 
+void FLevelViewportLayout::DisableWorldAxisForPIE()
+{
+	if (bHasSavedWorldAxisVisibility)
+	{
+		for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+		{
+			LevelViewportClients[i]->GetRenderOptions().ShowFlags.bGrid = false;
+			LevelViewportClients[i]->GetRenderOptions().ShowFlags.bWorldAxis = false;
+		}
+		return;
+	}
+
+	for (int32 i = 0; i < MaxViewportSlots; ++i)
+	{
+		SavedGridVisibility[i] = false;
+		SavedWorldAxisVisibility[i] = false;
+	}
+
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
+		SavedGridVisibility[i] = Opts.ShowFlags.bGrid;
+		SavedWorldAxisVisibility[i] = Opts.ShowFlags.bWorldAxis;
+		Opts.ShowFlags.bGrid = false;
+		Opts.ShowFlags.bWorldAxis = false;
+	}
+
+	bHasSavedWorldAxisVisibility = true;
+}
+
+void FLevelViewportLayout::RestoreWorldAxisAfterPIE()
+{
+	if (!bHasSavedWorldAxisVisibility)
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		LevelViewportClients[i]->GetRenderOptions().ShowFlags.bGrid = SavedGridVisibility[i];
+		LevelViewportClients[i]->GetRenderOptions().ShowFlags.bWorldAxis = SavedWorldAxisVisibility[i];
+	}
+
+	bHasSavedWorldAxisVisibility = false;
+}
+
 // ─── 뷰포트 슬롯 관리 ───────────────────────────────────────
 
 void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
@@ -840,6 +886,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
 			ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
 			ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
+			ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
 			ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
 			ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
 			ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
