@@ -1,5 +1,6 @@
 #include "Object/Object.h"
 #include "Object/Class.h"
+#include "Object/ObjectFactory.h"
 #include "Memory/MemoryBase.h"
 
 // 조건 1: 전역 오브젝트 배열 정의
@@ -159,4 +160,27 @@ void UObject::MarkPendingKill()
 bool UObject::IsPendingKill() const
 {
 	return HasAnyFlags(EObjectFlags::PendingKill);
+}
+
+UObject* UObject::Duplicate(UObject* InOuter, const FString& InName, FDuplicateContext& Context) const
+{
+	if (IsPendingKill())
+	{
+		return nullptr;
+	}
+
+	UObject* DuplicatedObject = FObjectFactory::ConstructObject(
+		GetClass(),
+		InOuter,
+		InName.empty() ? GetName() : InName,
+		Context.DuplicateFlags);
+	if (!DuplicatedObject)
+	{
+		return nullptr;
+	}
+	// Duplicated Map에 추가
+	Context.Register(this, DuplicatedObject);
+	DuplicateShallow(DuplicatedObject, Context);
+	DuplicateSubObjects(DuplicatedObject, Context);
+	return DuplicatedObject;
 }
