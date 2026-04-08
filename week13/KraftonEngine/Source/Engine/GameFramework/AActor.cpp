@@ -159,6 +159,17 @@ void AActor::BeginPlay()
 	}
 }
 
+void AActor::EndPlay()
+{
+	if (!bActorHasBegunPlay) return;
+	bActorHasBegunPlay = false;
+
+	for (UActorComponent* Comp : OwnedComponents)
+	{
+		if (Comp) Comp->EndPlay();
+	}
+}
+
 void AActor::Tick(float DeltaTime)
 {
 	for (UActorComponent* ActorComp : OwnedComponents)
