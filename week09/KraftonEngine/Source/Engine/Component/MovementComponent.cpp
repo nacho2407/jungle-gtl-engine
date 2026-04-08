@@ -14,7 +14,7 @@ void UMovementComponent::BeginPlay()
 
 void UMovementComponent::TickComponent(float DeltaTime)
 {
-	//일단 여타 컴포넌트들과 마찬가지로 처리. 비어 있음.
+	// 기본 이동 컴포넌트는 별도 로직 없이 틱 파이프라인만 유지합니다.
 	UActorComponent::TickComponent(DeltaTime);
 }
 
