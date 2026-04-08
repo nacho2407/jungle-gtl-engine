@@ -159,8 +159,11 @@
     <ClCompile Include="Source\Picking\Picker.cpp" />
     <ClCompile Include="Source\Slate\EditorViewportOverlay.cpp" />
     <ClCompile Include="Source\Slate\FpsStatWidget.cpp" />
+    <ClCompile Include="Source\Slate\LayoutToolbarWidget.cpp" />
     <ClCompile Include="Source\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Slate\TransformWidget.cpp" />
+    <ClCompile Include="Source\Slate\ViewportChromeWidget.cpp" />
+    <ClCompile Include="Source\Slate\ViewportHost.cpp" />
     <ClCompile Include="Source\Slate\ViewportToolbar.cpp" />
     <ClCompile Include="Source\Slate\Widget\Button.cpp" />
     <ClCompile Include="Source\Slate\Widget\Dropdown.cpp" />
@@ -171,6 +174,7 @@
     <ClCompile Include="Source\Slate\Widget\SplitterH.cpp" />
     <ClCompile Include="Source\Slate\Widget\SplitterV.cpp" />
     <ClCompile Include="Source\Slate\Widget\TextBlock.cpp" />
+    <ClCompile Include="Source\Slate\Widget\Toolbar.cpp" />
     <ClCompile Include="Source\Slate\Widget\VerticalBox.cpp" />
     <ClCompile Include="Source\Slate\Widget\Widget.cpp" />
     <ClCompile Include="Source\Subsystem\EditorCameraSubsystem.cpp" />
@@ -182,7 +186,6 @@
     <ClCompile Include="Source\UI\OutlinerWindow.cpp" />
     <ClCompile Include="Source\UI\PropertyWindow.cpp" />
     <ClCompile Include="Source\UI\StatWindow.cpp" />
-    <ClCompile Include="Source\Viewport\BlitRenderer.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Viewport\EditorViewportRegistry.cpp" />
     <ClCompile Include="Source\Viewport\PreviewViewportClient.cpp" />
@@ -209,8 +212,11 @@
     <ClInclude Include="Source\Picking\Picker.h" />
     <ClInclude Include="Source\Slate\EditorViewportOverlay.h" />
     <ClInclude Include="Source\Slate\FpsStatWidget.h" />
+    <ClInclude Include="Source\Slate\LayoutToolbarWidget.h" />
     <ClInclude Include="Source\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Slate\TransformWidget.h" />
+    <ClInclude Include="Source\Slate\ViewportChromeWidget.h" />
+    <ClInclude Include="Source\Slate\ViewportHost.h" />
     <ClInclude Include="Source\Slate\ViewportToolbar.h" />
     <ClInclude Include="Source\Slate\Widget\Button.h" />
     <ClInclude Include="Source\Slate\Widget\Dropdown.h" />
@@ -219,14 +225,18 @@
     <ClInclude Include="Source\Slate\Widget\Overlay.h" />
     <ClInclude Include="Source\Slate\Widget\Painter.h" />
     <ClInclude Include="Source\Slate\Widget\Panel.h" />
+    <ClInclude Include="Source\Slate\Widget\Spacer.h" />
     <ClInclude Include="Source\Slate\Widget\SViewport.h" />
     <ClInclude Include="Source\Slate\Widget\Slot.h" />
     <ClInclude Include="Source\Slate\Widget\Splitter.h" />
     <ClInclude Include="Source\Slate\Widget\SplitterH.h" />
     <ClInclude Include="Source\Slate\Widget\SplitterV.h" />
     <ClInclude Include="Source\Slate\Widget\TextBlock.h" />
+    <ClInclude Include="Source\Slate\Widget\TextMetrics.h" />
+    <ClInclude Include="Source\Slate\Widget\Toolbar.h" />
     <ClInclude Include="Source\Slate\Widget\VerticalBox.h" />
     <ClInclude Include="Source\Slate\Widget\Widget.h" />
+    <ClInclude Include="Source\Slate\Widget\WidgetHelpers.h" />
     <ClInclude Include="Source\Slate\Widget\Window.h" />
     <ClInclude Include="Source\Subsystem\EditorCameraSubsystem.h" />
     <ClInclude Include="Source\Subsystem\EditorSelectionSubsystem.h" />
@@ -238,7 +248,6 @@
     <ClInclude Include="Source\UI\OutlinerWindow.h" />
     <ClInclude Include="Source\UI\PropertyWindow.h" />
     <ClInclude Include="Source\UI\StatWindow.h" />
-    <ClInclude Include="Source\Viewport\BlitRenderer.h" />
     <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Viewport\EditorViewportRegistry.h" />
     <ClInclude Include="Source\Viewport\PreviewViewportClient.h" />

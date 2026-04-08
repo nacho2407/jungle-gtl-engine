@@ -144,9 +144,6 @@
     <ClCompile Include="Source\UI\StatWindow.cpp">
       <Filter>Source\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\BlitRenderer.cpp">
-      <Filter>Source\Viewport</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Viewport</Filter>
     </ClCompile>
@@ -192,6 +189,10 @@
     <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp">
       <Filter>ThirdParty\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Slate\Widget\Toolbar.cpp" />
+    <ClCompile Include="Source\Slate\LayoutToolbarWidget.cpp" />
+    <ClCompile Include="Source\Slate\ViewportChromeWidget.cpp" />
+    <ClCompile Include="Source\Slate\ViewportHost.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\EditorEngine.h">
@@ -308,9 +309,6 @@
     <ClInclude Include="Source\UI\StatWindow.h">
       <Filter>Source\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Viewport\BlitRenderer.h">
-      <Filter>Source\Viewport</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Viewport\EditorViewportClient.h">
       <Filter>Source\Viewport</Filter>
     </ClInclude>
@@ -359,6 +357,13 @@
     <ClInclude Include="ThirdParty\imgui\imstb_truetype.h">
       <Filter>ThirdParty\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Slate\Widget\Spacer.h" />
+    <ClInclude Include="Source\Slate\Widget\Toolbar.h" />
+    <ClInclude Include="Source\Slate\LayoutToolbarWidget.h" />
+    <ClInclude Include="Source\Slate\ViewportChromeWidget.h" />
+    <ClInclude Include="Source\Slate\ViewportHost.h" />
+    <ClInclude Include="Source\Slate\Widget\WidgetHelpers.h" />
+    <ClInclude Include="Source\Slate\Widget\TextMetrics.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\imgui\imgui.natstepfilter">

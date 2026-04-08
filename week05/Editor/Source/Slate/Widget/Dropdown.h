@@ -6,7 +6,7 @@
 class SDropdown : public SWidget
 {
 public:
-	~SDropdown() override;
+	~SDropdown() override = default;
 
 	FString Label = "Dropdown";
 	FString Placeholder = "Select";
@@ -40,19 +40,22 @@ public:
 
 	std::function<void(int32)> OnSelectionChanged;
 
-	void OnPaint(SWidget& Painter) override;
+	FVector2 ComputeDesiredSize() const override;
+	FVector2 ComputeMinSize() const override;
+	FRect GetPaintClipRect() const override { return GetExpandedRect(); }
+	bool WantsPopupPaintPriority() const override { return bOpen; }
+	void OnPaint(FSlatePaintContext& Painter) override;
 	bool OnMouseDown(int32 X, int32 Y) override;
 
 private:
 	FString GetSelectedText() const;
 	FRect GetOptionRect(int32 Index) const;
-	FVector2 MeasureTextCached(SWidget& Painter, const FString& Text, FDynamicMesh*& OutMesh);
-	void ClearTextMeshes();
+	FString FitTextToWidth(const FString& Text, int32 MaxWidth);
+	float EstimateTextWidth(const FString& Text) const;
 
 private:
 	TArray<FString> Options;
 	int32 SelectedIndex = -1;
 	bool bOpen = false;
-	float CachedLetterSpacing = 1.0f;
-	TMap<FString, FDynamicMesh*> TextMeshes;
 };
+

@@ -1,293 +1,210 @@
 #include "Painter.h"
+#include "TextMetrics.h"
 
-#include "Renderer/Renderer.h"
-#include "Component/TextComponent.h"
-#include <limits>
 #include <algorithm>
+#include <utility>
 
 namespace
 {
-	static FVector4 ToColor(uint32 C)
+	static FUIRect ToUIRect(const FRect& Rect)
 	{
-		const float A = ((C >> 24) & 0xFF) / 255.0f;
-		const float R = ((C >> 16) & 0xFF) / 255.0f;
-		const float G = ((C >> 8) & 0xFF) / 255.0f;
-		const float B = (C & 0xFF) / 255.0f;
-		return { R, G, B, A };
-	}
-
-	static bool EnsureUiTextMesh(FRenderer* Renderer, const char* Text, float LetterSpacing, FDynamicMesh*& InOutMesh)
-	{
-		if (!Renderer || !Text || Text[0] == '\0')
-		{
-			return false;
-		}
-
-		if (!InOutMesh)
-		{
-			InOutMesh = new FDynamicMesh();
-			InOutMesh->Topology = EMeshTopology::EMT_TriangleList;
-			if (!Renderer->GetTextRenderer().BuildTextMesh(Text, *InOutMesh, LetterSpacing))
-			{
-				delete InOutMesh;
-				InOutMesh = nullptr;
-				return false;
-			}
-
-			float MinX = (std::numeric_limits<float>::max)();
-			float MinY = (std::numeric_limits<float>::max)();
-
-			for (FVertex& Vertex : InOutMesh->Vertices)
-			{
-				const float ScreenX = Vertex.Position.Y;
-				const float ScreenY = -Vertex.Position.Z;
-				Vertex.Position = FVector(ScreenX, ScreenY, 0.0f);
-				MinX = (std::min)(MinX, Vertex.Position.X);
-				MinY = (std::min)(MinY, Vertex.Position.Y);
-			}
-
-			for (FVertex& Vertex : InOutMesh->Vertices)
-			{
-				Vertex.Position.X -= MinX;
-				Vertex.Position.Y -= MinY;
-			}
-
-			InOutMesh->bIsDirty = true;
-		}
-
-		return true;
+		FUIRect Out;
+		Out.X = static_cast<float>(Rect.X);
+		Out.Y = static_cast<float>(Rect.Y);
+		Out.Width = static_cast<float>(Rect.Width);
+		Out.Height = static_cast<float>(Rect.Height);
+		return Out;
 	}
 }
 
-FPainter::FPainter(FRenderer* InRenderer)
+void FSlatePaintContext::SetScreenSize(int32 Width, int32 Height)
 {
-	Renderer = InRenderer;
-
-	if (Renderer && Renderer->GetDefaultMaterial())
-	{
-		UiColorMaterial = Renderer->GetDefaultMaterial()->CreateDynamicMaterial();
-		if (UiColorMaterial)
-		{
-			FDepthStencilStateOption DepthOpt = UiColorMaterial->GetDepthStencilOption();
-			DepthOpt.DepthEnable = false;
-			DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-			auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
-			UiColorMaterial->SetDepthStencilOption(DepthOpt);
-			UiColorMaterial->SetDepthStencilState(DSS);
-		}
-	}
+	DrawList.ScreenWidth = (std::max)(0, Width);
+	DrawList.ScreenHeight = (std::max)(0, Height);
 }
 
-void FPainter::SetScreenSize(int32 Width, int32 Height)
+bool FSlatePaintContext::HasActiveClip() const
 {
-	if (Width <= 0 || Height <= 0)
-	{
-		OrthoProj = FMatrix::Identity;
-		return;
-	}
-
-	OrthoProj = FMatrix(
-		2.0f / Width, 0, 0, 0,
-		0, -2.0f / Height, 0, 0,
-		0, 0, 1, 0,
-		-1, 1, 0, 1
-	);
+	return !ClipStack.empty() && ClipStack.back().IsValid();
 }
 
-FDynamicMesh* FPainter::CreateFrameMesh(EMeshTopology Topology)
+FRect FSlatePaintContext::ApplyCurrentClip(const FRect& InRect) const
 {
-	auto Mesh = std::make_unique<FDynamicMesh>();
-	Mesh->Topology = Topology;
-	Mesh->bIsDirty = true;
+	if (!HasActiveClip())
+	{
+		return InRect;
+	}
 
-	FDynamicMesh* RawMesh = Mesh.get();
-	FrameMeshes.push_back(std::move(Mesh));
-	return RawMesh;
+	return IntersectRect(InRect, ClipStack.back());
 }
 
-FDynamicMaterial* FPainter::GetOrCreateFontMaterial(uint32 Color)
+void FSlatePaintContext::AppendElement(FUIDrawElement&& Element)
 {
-	if (!Renderer)
+	Element.Layer = CurrentLayer;
+	Element.Depth = CurrentDepth;
+	Element.Order = NextOrder++;
+
+	if (HasActiveClip())
 	{
-		return nullptr;
+		Element.bHasClipRect = true;
+		Element.ClipRect = ToUIRect(ClipStack.back());
 	}
 
-	auto MatIt = FontMaterialByColor.find(Color);
-	if (MatIt != FontMaterialByColor.end())
-	{
-		return MatIt->second.get();
-	}
-
-	auto Material = Renderer->GetTextRenderer().GetFontMaterial()->CreateDynamicMaterial();
-	if (!Material)
-	{
-		return nullptr;
-	}
-
-	const FVector4 C = ToColor(Color);
-	Material->SetVectorParameter("TextColor", C);
-
-	FDepthStencilStateOption DepthOpt = Material->GetDepthStencilOption();
-	DepthOpt.DepthEnable = false;
-	DepthOpt.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	auto DSS = Renderer->GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOpt);
-	Material->SetDepthStencilOption(DepthOpt);
-	Material->SetDepthStencilState(DSS);
-
-	FDynamicMaterial* RawMaterial = Material.get();
-	FontMaterialByColor[Color] = std::move(Material);
-	return RawMaterial;
+	DrawList.Elements.push_back(std::move(Element));
 }
 
-void FPainter::EnqueueMesh(FDynamicMesh* Mesh, FMaterial* Material)
+void FSlatePaintContext::DrawRectFilled(FRect Rect, uint32 Color)
 {
-	if (!Mesh || !Material || Mesh->Vertices.empty())
+	if (!Rect.IsValid())
 	{
 		return;
 	}
 
-	FRenderCommand Command;
-	Command.RenderMesh = Mesh;
-	Command.Material = Material;
-	Command.WorldMatrix = FMatrix::Identity;
-	Command.RenderLayer = ERenderLayer::UI;
-	UIQueue.AddCommand(Command);
-}
-
-void FPainter::DrawRect(FRect InRect, uint32 Color)
-{
-	if (!Renderer || !InRect.IsValid()) return;
-
-	FDynamicMesh* Mesh = CreateFrameMesh(EMeshTopology::EMT_LineList);
-	if (!Mesh) return;
-
-	const FVector4 C = ToColor(Color);
-	auto V = [&](float X, float Y)
-		{
-			FVertex Out{};
-			Out.Position = FVector(X, Y, 0.0f);
-			Out.Color = C;
-			Out.Normal = FVector(0.0f, 0.0f, 1.0f);
-			Out.UV = FVector2(0, 0);
-			return Out;
-		};
-
-	const uint32 Base = static_cast<uint32>(Mesh->Vertices.size());
-
-	Mesh->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
-	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
-	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
-	Mesh->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
-
-	Mesh->Indices.push_back(Base + 0);
-	Mesh->Indices.push_back(Base + 1);
-
-	Mesh->Indices.push_back(Base + 1);
-	Mesh->Indices.push_back(Base + 2);
-
-	Mesh->Indices.push_back(Base + 2);
-	Mesh->Indices.push_back(Base + 3);
-
-	Mesh->Indices.push_back(Base + 3);
-	Mesh->Indices.push_back(Base + 0);
-
-	Mesh->bIsDirty = true;
-	EnqueueMesh(Mesh, UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial());
-}
-
-void FPainter::DrawRectFilled(FRect InRect, uint32 Color)
-{
-	if (!Renderer || !InRect.IsValid()) return;
-
-	FDynamicMesh* Mesh = CreateFrameMesh(EMeshTopology::EMT_TriangleList);
-	if (!Mesh) return;
-
-	const FVector4 C = ToColor(Color);
-	auto V = [&](float X, float Y)
-		{
-			FVertex Out{};
-			Out.Position = FVector(X, Y, 0.0f);
-			Out.Color = C;
-			Out.Normal = FVector(0.0f, 0.0f, 1.0f);
-			Out.UV = FVector2(0, 0);
-			return Out;
-		};
-
-	const uint32 Base = static_cast<uint32>(Mesh->Vertices.size());
-
-	Mesh->Vertices.push_back(V((float)InRect.X, (float)InRect.Y));
-	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)InRect.Y));
-	Mesh->Vertices.push_back(V((float)(InRect.X + InRect.Width), (float)(InRect.Y + InRect.Height)));
-	Mesh->Vertices.push_back(V((float)InRect.X, (float)(InRect.Y + InRect.Height)));
-
-	Mesh->Indices.push_back(Base + 0);
-	Mesh->Indices.push_back(Base + 1);
-	Mesh->Indices.push_back(Base + 2);
-
-	Mesh->Indices.push_back(Base + 0);
-	Mesh->Indices.push_back(Base + 2);
-	Mesh->Indices.push_back(Base + 3);
-
-	Mesh->bIsDirty = true;
-	EnqueueMesh(Mesh, UiColorMaterial ? static_cast<FMaterial*>(UiColorMaterial.get()) : Renderer->GetDefaultMaterial());
-}
-
-void FPainter::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
-{
-	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return;
-
-	FDynamicMaterial* FontMat = GetOrCreateFontMaterial(Color);
-	if (!FontMat) return;
-
-	FDynamicMesh* Mesh = CreateFrameMesh(InOutMesh->Topology);
-	if (!Mesh) return;
-
-	for (const FVertex& Src : InOutMesh->Vertices)
+	Rect = ApplyCurrentClip(Rect);
+	if (!Rect.IsValid())
 	{
-		FVertex Dst = Src;
-		Dst.Position = FVector(
-			(float)Point.X + Src.Position.X * FontSize,
-			(float)Point.Y + Src.Position.Y * FontSize,
-			0.0f
-		);
-		Mesh->Vertices.push_back(Dst);
+		return;
 	}
 
-	for (const auto& Idx : InOutMesh->Indices)
-	{
-		Mesh->Indices.push_back(static_cast<uint32>(Idx));
-	}
-
-	Mesh->bIsDirty = true;
-	EnqueueMesh(Mesh, FontMat);
+	FUIDrawElement Element;
+	Element.Type = EUIDrawElementType::FilledRect;
+	Element.Rect = ToUIRect(Rect);
+	Element.Color = Color;
+	AppendElement(std::move(Element));
 }
 
-FVector2 FPainter::MeasureText(const char* Text, float FontSize, float LetterSpacing, FDynamicMesh*& InOutMesh)
+void FSlatePaintContext::DrawRect(FRect Rect, uint32 Color)
 {
-	if (!EnsureUiTextMesh(Renderer, Text, LetterSpacing, InOutMesh)) return { 0.0f, 0.0f };
-
-	float MaxX = 0.0f;
-	float MaxY = 0.0f;
-	for (const FVertex& V : InOutMesh->Vertices)
+	if (!Rect.IsValid())
 	{
-		MaxX = (std::max)(MaxX, V.Position.X);
-		MaxY = (std::max)(MaxY, V.Position.Y);
+		return;
 	}
 
-	return { MaxX * FontSize, MaxY * FontSize };
+	Rect = ApplyCurrentClip(Rect);
+	if (!Rect.IsValid())
+	{
+		return;
+	}
+
+	FUIDrawElement Element;
+	Element.Type = EUIDrawElementType::RectOutline;
+	Element.Rect = ToUIRect(Rect);
+	Element.Color = Color;
+	AppendElement(std::move(Element));
 }
 
-void FPainter::Flush()
+void FSlatePaintContext::DrawText(FPoint Point, const char* Text, uint32 Color, float FontSize, float LetterSpacing)
 {
-	if (!Renderer) return;
-	UIQueue.ViewMatrix = FMatrix::Identity;
-	UIQueue.ProjectionMatrix = OrthoProj;
-
-	if (!UIQueue.Commands.empty())
+	if (!Text || Text[0] == '\0' || FontSize <= 0.0f)
 	{
-		Renderer->SubmitCommands(UIQueue);
-		Renderer->ExecuteCommands();
+		return;
 	}
-	UIQueue.Clear();
-	FrameMeshes.clear();
+
+	const FVector2 EstimatedSize = SWidgetTextMetrics::MeasureText(Text, FontSize, LetterSpacing);
+	FRect TextRect(
+		Point.X,
+		Point.Y,
+		static_cast<int32>(EstimatedSize.X + 0.5f),
+		static_cast<int32>(EstimatedSize.Y + 0.5f));
+
+	if (HasActiveClip() && !IntersectRect(TextRect, ClipStack.back()).IsValid())
+	{
+		return;
+	}
+
+	FUIDrawElement Element;
+	Element.Type = EUIDrawElementType::Text;
+	Element.Point = { static_cast<float>(Point.X), static_cast<float>(Point.Y) };
+	Element.Rect = ToUIRect(TextRect);
+	Element.Color = Color;
+	Element.Text = Text;
+	Element.FontSize = FontSize;
+	Element.LetterSpacing = LetterSpacing;
+	AppendElement(std::move(Element));
+}
+
+FVector2 FSlatePaintContext::MeasureText(const char* Text, float FontSize, float LetterSpacing)
+{
+	return SWidgetTextMetrics::MeasureText(Text, FontSize, LetterSpacing);
+}
+
+void FSlatePaintContext::PushClipRect(const FRect& InRect)
+{
+	if (!InRect.IsValid())
+	{
+		ClipStack.push_back({ 0, 0, 0, 0 });
+		return;
+	}
+
+	if (ClipStack.empty())
+	{
+		ClipStack.push_back(InRect);
+		return;
+	}
+
+	ClipStack.push_back(IntersectRect(ClipStack.back(), InRect));
+}
+
+void FSlatePaintContext::PopClipRect()
+{
+	if (!ClipStack.empty())
+	{
+		ClipStack.pop_back();
+	}
+}
+
+void FSlatePaintContext::PushDepth(float InDepth)
+{
+	DepthStack.push_back(CurrentDepth);
+	CurrentDepth += InDepth;
+}
+
+void FSlatePaintContext::PopDepth()
+{
+	if (!DepthStack.empty())
+	{
+		CurrentDepth = DepthStack.back();
+		DepthStack.pop_back();
+	}
+	else
+	{
+		CurrentDepth = 0.0f;
+	}
+}
+
+void FSlatePaintContext::PushLayer(int32 InLayer)
+{
+	LayerStack.push_back(CurrentLayer);
+	CurrentLayer += InLayer;
+}
+
+void FSlatePaintContext::PopLayer()
+{
+	if (!LayerStack.empty())
+	{
+		CurrentLayer = LayerStack.back();
+		LayerStack.pop_back();
+	}
+	else
+	{
+		CurrentLayer = 0;
+	}
+}
+
+FUIDrawList FSlatePaintContext::ConsumeDrawList()
+{
+	FUIDrawList Out = std::move(DrawList);
+	Reset();
+	return Out;
+}
+
+void FSlatePaintContext::Reset()
+{
+	DrawList.Clear();
+	ClipStack.clear();
+	LayerStack.clear();
+	CurrentLayer = 0;
+	DepthStack.clear();
+	CurrentDepth = 0.0f;
+	NextOrder = 0;
 }

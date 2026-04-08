@@ -2,6 +2,7 @@
 #include "Object/Class.h"
 #include "Vertex.h"
 #include "Level/MeshBVH.h"
+#include <cstring>
 
 bool FStaticMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context)
 {
@@ -13,7 +14,10 @@ bool FStaticMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11DeviceC
 bool FStaticMesh::CreateVertexAndIndexBuffer(ID3D11Device* Device)
 {
 	Release();
-	if (Vertices.empty() || Indices.empty()) return false;
+	if (Vertices.empty())
+	{
+		return false;
+	}
 
 	// Vertex Buffer
 	D3D11_BUFFER_DESC VBDesc = {};
@@ -29,6 +33,12 @@ bool FStaticMesh::CreateVertexAndIndexBuffer(ID3D11Device* Device)
 	{
 		printf("[FMeshData] Failed to create vertex buffer\n");
 		return false;
+	}
+
+	// Non-indexed mesh path.
+	if (Indices.empty())
+	{
+		return true;
 	}
 
 	// Index Buffer
@@ -56,12 +66,13 @@ bool FDynamicMesh::CreateVertexAndIndexBuffer(ID3D11Device* Device)
 {
 	Release();
 
-	if (Vertices.empty() || Indices.empty()) return false;
+	if (Vertices.empty())
+	{
+		return false;
+	}
 
-	// 잦은 버퍼 재생성을 막기 위해 실제 필요한 크기보다 1.5배 크게(여유 공간) 할당
 	MaxVertexCapacity = static_cast<uint32>(Vertices.size());
 	MaxIndexCapacity = static_cast<uint32>(Indices.size());
-
 
 	// 1. Vertex Buffer (DYNAMIC + CPU_ACCESS_WRITE)
 	D3D11_BUFFER_DESC VBDesc = {};
@@ -78,6 +89,12 @@ bool FDynamicMesh::CreateVertexAndIndexBuffer(ID3D11Device* Device)
 	{
 		printf("[FDynamicMesh] Failed to create vertex buffer\n");
 		return false;
+	}
+
+	// Non-indexed mesh path.
+	if (MaxIndexCapacity == 0)
+	{
+		return true;
 	}
 
 	// 2. Index Buffer (DYNAMIC + CPU_ACCESS_WRITE)
@@ -108,9 +125,18 @@ bool FDynamicMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11Device
 		return true;
 	}
 
-	if (!VertexBuffer || !IndexBuffer ||
-		Vertices.size() > MaxVertexCapacity ||
-		Indices.size() > MaxIndexCapacity)
+	if (Vertices.empty())
+	{
+		return false;
+	}
+
+	const bool bHasIndices = !Indices.empty();
+	const bool bNeedRecreateVertexBuffer = (!VertexBuffer || Vertices.size() > MaxVertexCapacity);
+	const bool bNeedRecreateIndexBuffer = bHasIndices
+		? (!IndexBuffer || Indices.size() > MaxIndexCapacity)
+		: (IndexBuffer != nullptr || MaxIndexCapacity != 0);
+
+	if (bNeedRecreateVertexBuffer || bNeedRecreateIndexBuffer)
 	{
 		bIsDirty = false;
 		return CreateVertexAndIndexBuffer(Device);
@@ -123,11 +149,14 @@ bool FDynamicMesh::UpdateVertexAndIndexBuffer(ID3D11Device* Device, ID3D11Device
 		Context->Unmap(VertexBuffer, 0);
 	}
 
-	D3D11_MAPPED_SUBRESOURCE MappedIB;
-	if (SUCCEEDED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedIB)))
+	if (bHasIndices && IndexBuffer)
 	{
-		memcpy(MappedIB.pData, Indices.data(), sizeof(uint32) * Indices.size());
-		Context->Unmap(IndexBuffer, 0);
+		D3D11_MAPPED_SUBRESOURCE MappedIB;
+		if (SUCCEEDED(Context->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedIB)))
+		{
+			memcpy(MappedIB.pData, Indices.data(), sizeof(uint32) * Indices.size());
+			Context->Unmap(IndexBuffer, 0);
+		}
 	}
 
 	bIsDirty = false;

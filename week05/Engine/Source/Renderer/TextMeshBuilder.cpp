@@ -53,6 +53,7 @@ bool FTextMeshBuilder::Initialize(FRenderer* InRenderer)
 	FontMaterial->SetOriginName("M_Font");
 	FontMaterial->SetVertexShader(VS);
 	FontMaterial->SetPixelShader(PS);
+	FontMaterial->SetPixelTextureBinding(0, Atlas.GetTextureSRV(), Atlas.GetSamplerState());
 
 	// 래스터라이저 설정
 	FRasterizerStateOption rasterizerOption;

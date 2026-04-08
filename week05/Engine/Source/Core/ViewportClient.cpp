@@ -3,17 +3,12 @@
 #include "Input/InputManager.h"
 #include "Camera/Camera.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/RenderCommand.h"
-#include "Renderer/Material.h"
 #include "Level/Level.h"
+#include "Level/SceneRenderPacket.h"
 #include "Debug/EngineLog.h"
-#include "Component/UUIDBillboardComponent.h"
-#include "Component/SubUVComponent.h"
 #include "Core/Engine.h"
-#include "Component/TextComponent.h"
 #include "Component/CameraComponent.h"
 #include "Math/Frustum.h"
-
 
 void IViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
@@ -25,7 +20,7 @@ void IViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 
 void IViewportClient::Tick(FEngine* Engine, float DeltaTime)
 {
-	// instead Enhance input system controller
+	// 예전 직접 카메라 입력 경로는 Enhanced Input 전환 이후 보류 상태다.
 	//if (!Core)
 	//{
 	//	return;
@@ -73,14 +68,22 @@ UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
 	return Engine ? Engine->GetActiveWorld() : nullptr;
 }
 
-void IViewportClient::BuildRenderCommands(FEngine* Engine, ULevel* Scene, const FFrustum& Frustum, const FShowFlags& Flags, const FVector& CameraPosition, FRenderCommandQueue& OutQueue)
+void IViewportClient::BuildSceneRenderPacket(
+	FEngine* Engine,
+	ULevel* Scene,
+	const FFrustum& Frustum,
+	const FShowFlags& Flags,
+	FSceneRenderPacket& OutPacket)
 {
+	// ViewportClient는 렌더 커맨드를 만들지 않고, 월드를 씬 패킷으로만 변환한다.
 	UWorld* World = ResolveWorld(Engine);
-	if (!World) return;
+	if (!World)
+	{
+		return;
+	}
 
-	// Persistent + Streaming 전체 액터를 렌더
 	TArray<AActor*> AllActors = World->GetAllActors();
-	RenderCollector.CollectRenderCommands(AllActors, Frustum, Flags, CameraPosition, OutQueue);
+	ScenePacketBuilder.BuildScenePacket(AllActors, Frustum, Flags, OutPacket);
 }
 
 void IViewportClient::HandleFileDoubleClick(const FString& FilePath)
@@ -100,18 +103,14 @@ void IViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 
 void FGameViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
-	if (Renderer)
-	{
-		Renderer->ClearViewportCallbacks();
-	}
+	(void)Engine;
+	(void)Renderer;
 }
 
 void FGameViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
 {
-	if (Renderer)
-	{
-		Renderer->ClearViewportCallbacks();
-	}
+	(void)Engine;
+	(void)Renderer;
 }
 
 void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
@@ -139,16 +138,20 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		return;
 	}
 
-	FRenderCommandQueue Queue;
-	Queue.Reserve(Renderer->GetPrevCommandCount());
-	Queue.ViewMatrix = ActiveCamera->GetViewMatrix();
-	Queue.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
+	// 게임 뷰포트는 활성 카메라 기준으로 프러스텀을 만들고 씬 패킷을 채운다.
+	FSceneRenderPacket ScenePacket;
+	FGameFrameRequest FrameRequest;
+	FrameRequest.SceneView.ViewMatrix = ActiveCamera->GetViewMatrix();
+	FrameRequest.SceneView.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
 
 	FFrustum Frustum;
-	Frustum.ExtractFromVP(Queue.ViewMatrix * Queue.ProjectionMatrix);
+	Frustum.ExtractFromVP(FrameRequest.SceneView.ViewMatrix * FrameRequest.SceneView.ProjectionMatrix);
 
-	const FVector CameraPosition = Queue.ViewMatrix.GetInverse().GetTranslation();
-	BuildRenderCommands(Engine, Scene, Frustum, FShowFlags{}, CameraPosition, Queue);
-	Renderer->SubmitCommands(Queue);
-	Renderer->ExecuteCommands();
+	FrameRequest.SceneView.CameraPosition = FrameRequest.SceneView.ViewMatrix.GetInverse().GetTranslation();
+	FrameRequest.SceneView.TotalTimeSeconds = Engine ? static_cast<float>(Engine->GetTimer().GetTotalTime()) : 0.0f;
+	BuildSceneRenderPacket(Engine, Scene, Frustum, FShowFlags{}, ScenePacket);
+	FrameRequest.ScenePacket = std::move(ScenePacket);
+
+	// 실제 씬 실행과 프레임 순서는 FRenderer 내부 서브시스템이 담당한다.
+	Renderer->RenderGameFrame(FrameRequest);
 }

@@ -10,7 +10,6 @@ IMPLEMENT_RTTI(UTextRenderComponent, UPrimitiveComponent)
 
 void UTextRenderComponent::PostConstruct()
 {
-	// 폰트 렌더링용 메시 데이터 객체 생성
 	bDrawDebugBounds = false;
 	TextMesh = std::make_shared<FDynamicMesh>();
 	TextMesh->Topology = EMeshTopology::EMT_TriangleList;
@@ -24,7 +23,6 @@ void UTextRenderComponent::SetText(const FString& InText)
 	if (Text != InText)
 	{
 		Text = InText;
-		// NOTE: 실제 정점 데이터 갱신은 RenderCollector에서 TextRenderer를 통해 수행함
 		MarkTextMeshDirty();
 	}
 }
@@ -51,6 +49,9 @@ void UTextRenderComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicat
 	DuplicatedTextComponent->TextColor = TextColor;
 	DuplicatedTextComponent->TextScale = TextScale;
 	DuplicatedTextComponent->bBillboard = bBillboard;
+	DuplicatedTextComponent->bHiddenInGame = bHiddenInGame;
+	DuplicatedTextComponent->HorizontalAlignment = HorizontalAlignment;
+	DuplicatedTextComponent->VerticalAlignment = VerticalAlignment;
 	DuplicatedTextComponent->bTextMeshDirty = true;
 	if (DuplicatedTextComponent->TextMesh)
 	{
@@ -76,21 +77,33 @@ void UTextRenderComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 
+	uint32 SavedHorizontalAlignment = static_cast<uint32>(HorizontalAlignment);
+	uint32 SavedVerticalAlignment = static_cast<uint32>(VerticalAlignment);
+
 	if (Ar.IsSaving())
 	{
 		Ar.Serialize("Text", Text);
 		Ar.Serialize("TextColor", TextColor);
 		Ar.Serialize("Billboard", bBillboard);
+		Ar.Serialize("HiddenInGame", bHiddenInGame);
+		Ar.Serialize("HorizontalAlignment", SavedHorizontalAlignment);
+		Ar.Serialize("VerticalAlignment", SavedVerticalAlignment);
 	}
 	else
 	{
 		Ar.Serialize("Text", Text);
 		Ar.Serialize("TextColor", TextColor);
 		Ar.Serialize("Billboard", bBillboard);
+		Ar.Serialize("HiddenInGame", bHiddenInGame);
+		Ar.Serialize("HorizontalAlignment", SavedHorizontalAlignment);
+		Ar.Serialize("VerticalAlignment", SavedVerticalAlignment);
 
 		SetText(Text);
 		SetTextColor(TextColor);
 		SetBillboard(bBillboard);
+		SetHiddenInGame(bHiddenInGame);
+		SetHorizontalAlignment(static_cast<EHorizTextAligment>(static_cast<int32>(SavedHorizontalAlignment)));
+		SetVerticalAlignment(static_cast<EVerticalTextAligment>(static_cast<int32>(SavedVerticalAlignment)));
 	}
 }
 
