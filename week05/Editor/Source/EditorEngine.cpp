@@ -1,4 +1,4 @@
-#include "EditorEngine.h"
+﻿#include "EditorEngine.h"
 
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -64,7 +64,6 @@ namespace
 
 		if (UCameraComponent* PreviewCamera = PreviewWorld->GetActiveCameraComponent())
 		{
-			// 프리뷰 월드는 에디터가 열리자마자 바로 보일 수 있도록 기본 카메라를 잡아둔다.
 			PreviewCamera->GetCamera()->SetPosition({ -8.0f, -8.0f, 6.0f });
 			PreviewCamera->GetCamera()->SetRotation(45.0f, -20.0f);
 			PreviewCamera->SetFov(50.0f);
@@ -76,7 +75,6 @@ FEditorEngine::~FEditorEngine() = default;
 
 void FEditorEngine::Shutdown()
 {
-	// 에디터 로그/설정/UI와 월드 컨텍스트를 먼저 정리한 뒤 기반 엔진을 종료한다.
 	FEngineLog::Get().SetCallback({});
 	EditorUI.SaveEditorSettings();
 
@@ -105,23 +103,47 @@ AActor* FEditorEngine::GetSelectedActor() const
 
 void FEditorEngine::PlaySimulation()
 {
-	SimulationPlaybackState = ESimulationPlaybackState::Playing;
+	if (!bIsPIEActive)
+	{
+		StartPIE();
+		return;
+	}
+
+	if (bIsPIEPaused)
+	{
+		TogglePIEPause();
+	}
 }
 
 void FEditorEngine::PauseSimulation()
 {
-	SimulationPlaybackState = ESimulationPlaybackState::Paused;
+	if (bIsPIEActive && !bIsPIEPaused)
+	{
+		TogglePIEPause();
+	}
 }
 
 void FEditorEngine::StopSimulation()
 {
-	SimulationPlaybackState = ESimulationPlaybackState::Stopped;
+	if (bIsPIEActive)
+	{
+		EndPIE();
+	}
+}
+
+FEditorEngine::ESimulationPlaybackState FEditorEngine::GetSimulationPlaybackState() const
+{
+	if (!bIsPIEActive)
+	{
+		return ESimulationPlaybackState::Stopped;
+	}
+
+	return bIsPIEPaused ? ESimulationPlaybackState::Paused : ESimulationPlaybackState::Playing;
 }
 
 void FEditorEngine::ActivateEditorScene()
 {
-	// 에디터 모드의 기본 활성 월드는 메인 에디터 월드다.
-	ActiveEditorWorldContext = (EditorWorldContext && EditorWorldContext->World) ? EditorWorldContext : nullptr;
+	ActiveWorldContext = (EditorWorldContext && EditorWorldContext->World) ? EditorWorldContext : nullptr;
 }
 
 bool FEditorEngine::ActivatePreviewScene(const FString& ContextName)
@@ -132,7 +154,7 @@ bool FEditorEngine::ActivatePreviewScene(const FString& ContextName)
 		return false;
 	}
 
-	ActiveEditorWorldContext = PreviewContext;
+	ActiveWorldContext = PreviewContext;
 	return true;
 }
 
@@ -193,12 +215,12 @@ ULevel* FEditorEngine::GetActiveScene() const
 
 UWorld* FEditorEngine::GetActiveWorld() const
 {
-	return ActiveEditorWorldContext ? ActiveEditorWorldContext->World : FEngine::GetActiveWorld();
+	return ActiveWorldContext ? ActiveWorldContext->World : FEngine::GetActiveWorld();
 }
 
 const FWorldContext* FEditorEngine::GetActiveWorldContext() const
 {
-	return ActiveEditorWorldContext ? ActiveEditorWorldContext : FEngine::GetActiveWorldContext();
+	return ActiveWorldContext ? ActiveWorldContext : FEngine::GetActiveWorldContext();
 }
 
 void FEditorEngine::HandleResize(int32 Width, int32 Height)
@@ -210,13 +232,11 @@ void FEditorEngine::HandleResize(int32 Width, int32 Height)
 		return;
 	}
 
-	// 에디터는 메인 월드뿐 아니라 모든 프리뷰 월드도 같은 종횡비 업데이트가 필요하다.
 	UpdateEditorWorldAspectRatio(static_cast<float>(Width) / static_cast<float>(Height));
 }
 
 void FEditorEngine::PreInitialize()
 {
-	// 에디터 시작 전 로그를 UI 콘솔로 보내고, ImGui DPI 설정을 먼저 적용한다.
 	ImGui_ImplWin32_EnableDpiAwareness();
 
 	FEngineLog::Get().SetCallback([this](const char* Msg)
@@ -228,18 +248,16 @@ void FEditorEngine::PreInitialize()
 void FEditorEngine::BindHost(FWindowsWindow* InMainWindow)
 {
 	MainWindow = InMainWindow;
-	// EditorUI가 윈도우 핸들과 크기 정보를 참조할 수 있게 미리 연결한다.
 	EditorUI.SetupWindow(InMainWindow);
 }
 
-bool FEditorEngine::InitializeWorlds(int32 Width, int32 Height)
+bool FEditorEngine::InitializeWorlds()
 {
-	return InitEditorWorlds(Width, Height);
+	return InitEditorWorlds();
 }
 
 bool FEditorEngine::InitializeMode()
 {
-	// 에디터 모드 초기화는 프리뷰 -> 콘솔 -> 카메라 -> 뷰포트 라우팅 순서로 진행한다.
 	if (!InitEditorPreview())
 	{
 		return false;
@@ -266,7 +284,7 @@ void FEditorEngine::FinalizeInitialize()
 	FViewport* VPs[MAX_VIEWPORTS] = {
 		&Viewports[0], &Viewports[1], &Viewports[2], &Viewports[3]
 	};
-	// Slate가 실제 뷰포트 레이아웃과 오버레이를 구성한 뒤 초기 UI를 올린다.
+
 	SlateApplication = std::make_unique<FSlateApplication>();
 	SlateApplication->Initialize(FRect(0, 0, W, H), VPs, MAX_VIEWPORTS);
 	EditorUI.OnSlateReady();
@@ -276,7 +294,6 @@ void FEditorEngine::FinalizeInitialize()
 
 void FEditorEngine::PrepareFrame(float DeltaTime)
 {
-	// 포커스된 뷰포트에 맞는 입력/카메라 대상 상태를 매 프레임 동기화한다.
 	SyncViewportClient();
 	SyncFocusedViewportLocalState();
 	CameraSubsystem.PrepareFrame(GetActiveWorld(), GetScene(), DeltaTime);
@@ -284,8 +301,17 @@ void FEditorEngine::PrepareFrame(float DeltaTime)
 
 void FEditorEngine::TickWorlds(float DeltaTime)
 {
-	if (SimulationPlaybackState != ESimulationPlaybackState::Playing)
+	if (bIsPIEActive)
 	{
+		if (bIsPIEPaused)
+		{
+			return;
+		}
+
+		if (PIEWorldContext && PIEWorldContext->World)
+		{
+			PIEWorldContext->World->Tick(DeltaTime);
+		}
 		return;
 	}
 
@@ -297,7 +323,6 @@ void FEditorEngine::TickWorlds(float DeltaTime)
 
 std::unique_ptr<IViewportClient> FEditorEngine::CreateViewportClient()
 {
-	// 에디터 메인 뷰포트 클라이언트는 이후 서비스 객체들의 허브 역할을 한다.
 	auto Client = std::make_unique<FEditorViewportClient>(*this, EditorUI, ViewportRegistry, MainWindow);
 	EditorViewportClientRaw = Client.get();
 	return Client;
@@ -311,7 +336,6 @@ void FEditorEngine::RenderFrame()
 		return;
 	}
 
-	// 에디터 프레임은 백버퍼 시작 -> ImGui 프레임 -> 뷰포트 렌더 -> UI 마감 순서로 흐른다.
 	Renderer->BeginFrame();
 	EditorUI.BeginFrame();
 
@@ -336,7 +360,6 @@ FEditorViewportController* FEditorEngine::GetViewportController()
 
 void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDebugLineRenderRequest& OutRequest)
 {
-	// 에디터 디버그 라인은 선택 BVH와 엔진 공통 디버그 도형을 합쳐 하나의 request로 만든다.
 	OutRequest.Clear();
 
 	if (ShowFlags.HasFlag(EEngineShowFlags::SF_DebugDraw))
@@ -352,15 +375,20 @@ void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDe
 
 void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) const
 {
-	// TODO : 라인 배치 쓸때까지 봉인
 	return;
 
-	// 선택된 액터가 스태틱 메시일 때만 씬 BVH와 메시 BVH를 시각화한다.
 	AActor* SelectedActor = GetSelectedActor();
-	if (!SelectedActor) return;
+	if (!SelectedActor)
+	{
+		return;
+	}
 
 	UWorld* World = GetActiveWorld();
-	if (!World) return;
+	if (!World)
+	{
+		return;
+	}
+
 	UStaticMeshComponent* MeshComp = nullptr;
 	for (UActorComponent* Comp : SelectedActor->GetComponents())
 	{
@@ -371,7 +399,11 @@ void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) con
 		}
 	}
 
-	if (!MeshComp) return;
+	if (!MeshComp)
+	{
+		return;
+	}
+
 	if (ULevel* Scene = World->GetScene())
 	{
 		Scene->VisitBVHNodesForPrimitive(MeshComp, [&InOutRequest](const FAABB& Bounds, int32 Depth, bool bIsLeaf)
@@ -384,8 +416,12 @@ void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) con
 				FDebugLineRenderFeature::AddCube(InOutRequest, Center, Extent, Color);
 			});
 	}
+
 	UStaticMesh* StaticMesh = MeshComp->GetStaticMesh();
-	if (!StaticMesh) return;
+	if (!StaticMesh)
+	{
+		return;
+	}
 
 	const FMatrix& LocalToWorld = MeshComp->GetWorldTransform();
 	StaticMesh->VisitMeshBVHNodes([&InOutRequest, &LocalToWorld](const FAABB& LocalBounds, int32 Depth, bool bIsLeaf)
@@ -393,16 +429,17 @@ void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) con
 			const FVector& PMin = LocalBounds.PMin;
 			const FVector& PMax = LocalBounds.PMax;
 			const FVector Corners[8] = {
-				{PMin.X, PMin.Y, PMin.Z}, {PMax.X, PMin.Y, PMin.Z},
-				{PMin.X, PMax.Y, PMin.Z}, {PMax.X, PMax.Y, PMin.Z},
-				{PMin.X, PMin.Y, PMax.Z}, {PMax.X, PMin.Y, PMax.Z},
-				{PMin.X, PMax.Y, PMax.Z}, {PMax.X, PMax.Y, PMax.Z},
+				{ PMin.X, PMin.Y, PMin.Z }, { PMax.X, PMin.Y, PMin.Z },
+				{ PMin.X, PMax.Y, PMin.Z }, { PMax.X, PMax.Y, PMin.Z },
+				{ PMin.X, PMin.Y, PMax.Z }, { PMax.X, PMin.Y, PMax.Z },
+				{ PMin.X, PMax.Y, PMax.Z }, { PMax.X, PMax.Y, PMax.Z },
 			};
+
 			FVector WorldMin = LocalToWorld.TransformPosition(Corners[0]);
 			FVector WorldMax = WorldMin;
-			for (int32 i = 1; i < 8; ++i)
+			for (int32 Index = 1; Index < 8; ++Index)
 			{
-				const FVector W = LocalToWorld.TransformPosition(Corners[i]);
+				const FVector W = LocalToWorld.TransformPosition(Corners[Index]);
 				WorldMin.X = (W.X < WorldMin.X) ? W.X : WorldMin.X;
 				WorldMin.Y = (W.Y < WorldMin.Y) ? W.Y : WorldMin.Y;
 				WorldMin.Z = (W.Z < WorldMin.Z) ? W.Z : WorldMin.Z;
@@ -410,6 +447,7 @@ void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) con
 				WorldMax.Y = (W.Y > WorldMax.Y) ? W.Y : WorldMax.Y;
 				WorldMax.Z = (W.Z > WorldMax.Z) ? W.Z : WorldMax.Z;
 			}
+
 			const FVector Center = (WorldMin + WorldMax) * 0.5f;
 			const FVector Extent = (WorldMax - WorldMin) * 0.5f;
 			const FVector4 Color = bIsLeaf
@@ -426,16 +464,149 @@ void FEditorEngine::ClearDebugDrawForFrame()
 
 void FEditorEngine::CreateInitUI()
 {
-	// 에디터 시작 시 뷰포트 오버레이를 Slate 오버레이 레이어에 연결한다.
 	auto* RawEditorVP = static_cast<FEditorViewportClient*>(ViewportClient.get());
 	std::unique_ptr<SEditorViewportOverlay> Overlay = std::make_unique<SEditorViewportOverlay>(this, &EditorUI, RawEditorVP);
 	SWidget* RawOverlay = SlateApplication->CreateWidget(std::move(Overlay));
 	SlateApplication->AddOverlayWidget(RawOverlay);
 }
 
+bool FEditorEngine::StartPIE()
+{
+	if (bIsPIEActive)
+	{
+		return false;
+	}
+
+	if (EditorWorldContext == nullptr || EditorWorldContext->World == nullptr)
+	{
+		return false;
+	}
+
+	UWorld* PIEWorld = UWorld::DuplicateWorldForPIE(EditorWorldContext->World);
+	if (PIEWorld == nullptr)
+	{
+		return false;
+	}
+
+	PIEWorld->ResetRuntimeState();
+
+	const float AspectRatio = GetWindowAspectRatio();
+	PIEWorldContext = CreateWorldContext("PIE", EWorldType::PIE, PIEWorld);
+	if (PIEWorldContext == nullptr)
+	{
+		PIEWorld->CleanupWorld();
+		PIEWorld->MarkPendingKill();
+		return false;
+	}
+
+	UpdateWorldAspectRatio(PIEWorld, AspectRatio);
+
+	SavedPIEViewportStates.clear();
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		if (!Entry.bActive)
+		{
+			continue;
+		}
+
+		FPIEViewportStateBackup Backup;
+		Backup.ViewportId = Entry.Id;
+		Backup.LocalState = Entry.LocalState;
+		SavedPIEViewportStates.push_back(Backup);
+	}
+
+	SavedPIESelectedActor = GetSelectedActor();
+
+	FViewportEntry* PIEViewportEntry = nullptr;
+	if (SlateApplication)
+	{
+		const FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
+		if (FocusedId != INVALID_VIEWPORT_ID)
+		{
+			FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+			if (FocusedEntry && FocusedEntry->bActive)
+			{
+				PIEViewportEntry = FocusedEntry;
+			}
+		}
+	}
+
+	if (PIEViewportEntry == nullptr)
+	{
+		for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+		{
+			if (Entry.bActive)
+			{
+				PIEViewportEntry = &Entry;
+				break;
+			}
+		}
+	}
+
+	if (PIEViewportEntry)
+	{
+		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
+		PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
+		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
+		PIEViewportEntry->LocalState.bShowGrid = false;
+	}
+
+	SetSelectedActor(nullptr);
+
+	PrePIEActiveWorldContext = ActiveWorldContext ? ActiveWorldContext : EditorWorldContext;
+	ActiveWorldContext = PIEWorldContext;
+	bIsPIEActive = true;
+	bIsPIEPaused = false;
+
+	PIEWorld->BeginPlay();
+	return true;
+}
+
+void FEditorEngine::EndPIE()
+{
+	if (!bIsPIEActive)
+	{
+		return;
+	}
+
+	for (const FPIEViewportStateBackup& Backup : SavedPIEViewportStates)
+	{
+		FViewportEntry* RestoreViewportEntry = ViewportRegistry.FindEntryByViewportID(Backup.ViewportId);
+		if (RestoreViewportEntry)
+		{
+			RestoreViewportEntry->LocalState = Backup.LocalState;
+		}
+	}
+	SavedPIEViewportStates.clear();
+
+	DestroyWorldContext(PIEWorldContext);
+	PIEWorldContext = nullptr;
+
+	ActiveWorldContext = PrePIEActiveWorldContext ? PrePIEActiveWorldContext : EditorWorldContext;
+	PrePIEActiveWorldContext = nullptr;
+	SetSelectedActor(SavedPIESelectedActor.Get());
+	SavedPIESelectedActor = nullptr;
+
+	if (bWasCursorHiddenForPIE)
+	{
+		::ShowCursor(TRUE);
+		bWasCursorHiddenForPIE = false;
+	}
+
+	bIsPIEActive = false;
+	bIsPIEPaused = false;
+}
+
+void FEditorEngine::TogglePIEPause()
+{
+	if (bIsPIEActive)
+	{
+		bIsPIEPaused = !bIsPIEPaused;
+	}
+}
+
 bool FEditorEngine::InitEditorPreview()
 {
-	// 프리뷰 월드는 에셋 미리보기나 보조 화면이 필요할 때 사용할 별도 월드다.
 	InitializeDefaultPreviewScene(this);
 	PreviewViewportClient = std::make_unique<FPreviewViewportClient>(EditorUI, PreviewSceneContextName);
 	return PreviewViewportClient != nullptr;
@@ -443,7 +614,6 @@ bool FEditorEngine::InitEditorPreview()
 
 void FEditorEngine::InitEditorConsole()
 {
-	// 등록된 콘솔 변수 이름을 UI 콘솔 자동완성과 실행 경로에 연결한다.
 	FConsoleVariableManager& CVM = FConsoleVariableManager::Get();
 	CVM.GetAllNames([this](const FString& Name)
 	{
@@ -466,14 +636,13 @@ void FEditorEngine::InitEditorConsole()
 
 bool FEditorEngine::InitEditorCamera()
 {
-	// 에디터 카메라는 활성 월드와 입력 시스템을 기반으로 동작한다.
 	return CameraSubsystem.Initialize(GetActiveWorld(), GetInputManager(), GetEnhancedInputManager());
 }
 
 void FEditorEngine::InitEditorViewportRouting()
 {
-	// 포커스된 perspective 뷰포트를 카메라 조작 대상 로컬 상태로 연결한다.
 	SyncViewportClient();
+
 	FViewportEntry* PerspEntry = nullptr;
 	if (SlateApplication)
 	{
@@ -481,31 +650,27 @@ void FEditorEngine::InitEditorViewportRouting()
 		if (FocusedId != INVALID_VIEWPORT_ID)
 		{
 			FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
-			if (FocusedEntry &&
-				FocusedEntry->bActive &&
-				FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+			if (FocusedEntry && FocusedEntry->bActive && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
 			{
 				PerspEntry = FocusedEntry;
 			}
 		}
 	}
+
 	if (!PerspEntry)
 	{
 		PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
 	}
+
 	if (PerspEntry)
 	{
 		CameraSubsystem.GetViewportController()->SetActiveLocalState(&PerspEntry->LocalState);
 	}
 }
 
-bool FEditorEngine::InitEditorWorlds(int32 Width, int32 Height)
+bool FEditorEngine::InitEditorWorlds()
 {
-	const float AspectRatio = (Height > 0)
-		? (static_cast<float>(Width) / static_cast<float>(Height))
-		: 1.0f;
-
-	// 에디터 메인 월드는 게임 월드와 별도로 독립적인 Editor 타입 컨텍스트를 사용한다.
+	const float AspectRatio = GetWindowAspectRatio();
 	EditorWorldContext = CreateWorldContext("EditorScene", EWorldType::Editor, AspectRatio, true);
 	if (!EditorWorldContext)
 	{
@@ -518,8 +683,12 @@ bool FEditorEngine::InitEditorWorlds(int32 Width, int32 Height)
 
 void FEditorEngine::ReleaseEditorWorlds()
 {
-	// 프리뷰 월드를 먼저 비우고 마지막에 에디터 메인 월드를 정리한다.
-	ActiveEditorWorldContext = nullptr;
+	if (bIsPIEActive)
+	{
+		EndPIE();
+	}
+
+	ActiveWorldContext = nullptr;
 
 	for (FWorldContext* PreviewContext : PreviewWorldContexts)
 	{
@@ -559,7 +728,6 @@ const FWorldContext* FEditorEngine::FindPreviewWorld(const FString& ContextName)
 
 void FEditorEngine::UpdateEditorWorldAspectRatio(float AspectRatio)
 {
-	// 메인 에디터 월드와 프리뷰 월드는 같은 창 크기 기준 종횡비를 공유한다.
 	UpdateWorldAspectRatio(EditorWorldContext ? EditorWorldContext->World : nullptr, AspectRatio);
 
 	for (FWorldContext* PreviewContext : PreviewWorldContexts)
@@ -570,7 +738,6 @@ void FEditorEngine::UpdateEditorWorldAspectRatio(float AspectRatio)
 
 void FEditorEngine::SyncFocusedViewportLocalState()
 {
-	// 포커스된 perspective 뷰포트만 카메라 컨트롤러의 대상 로컬 상태가 된다.
 	if (!EditorViewportClientRaw || !SlateApplication)
 	{
 		return;
@@ -589,7 +756,6 @@ void FEditorEngine::SyncFocusedViewportLocalState()
 
 void FEditorEngine::SyncPlatformCursor()
 {
-	// Slate가 계산한 커서 모양을 실제 OS 커서에 반영한다.
 	if (!SlateApplication || !SlateApplication->GetIsCoursorInArea())
 	{
 		return;
@@ -618,7 +784,6 @@ void FEditorEngine::SyncPlatformCursor()
 
 void FEditorEngine::SyncViewportClient()
 {
-	// 활성 월드가 프리뷰면 PreviewViewportClient, 아니면 에디터 메인 ViewportClient를 사용한다.
 	if (!GetActiveWorldContext())
 	{
 		return;

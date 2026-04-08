@@ -10,6 +10,7 @@
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Level/Level.h"
 #include "Object/Class.h"
 #include "Object/ObjectFactory.h"
@@ -34,7 +35,7 @@ namespace
 	{
 		{ "Scene Component", "SceneComponent", &USceneComponent::StaticClass },
 		{ "Static Mesh Component", "StaticMeshComponent", &UStaticMeshComponent::StaticClass },
-		{ "Text Component", "TextComponent", &UTextComponent::StaticClass },
+		{ "Text Component", "TextComponent", &UTextRenderComponent::StaticClass },
 		{ "SubUV Component", "SubUVComponent", &USubUVComponent::StaticClass },
 	};
 
@@ -347,7 +348,7 @@ void FPropertyWindow::DrawStaticMeshComponentDetails(UStaticMeshComponent* MeshC
 	}
 }
 
-void FPropertyWindow::DrawTextComponentDetails(UTextComponent* TextComponent)
+void FPropertyWindow::DrawTextComponentDetails(UTextRenderComponent* TextComponent)
 {
 	if (!TextComponent)
 	{
@@ -399,6 +400,17 @@ void FPropertyWindow::DrawTextComponentDetails(UTextComponent* TextComponent)
 	{
 		TextComponent->SetBillboard(bBillboard);
 	}
+
+
+	const char* HAlignOptions[] = { "Left", "Center", "Right" };
+	int HAlignIndex = (int)TextComponent->GetHorizontalAlignment();
+	if (ImGui::Combo("Horizontal Alignment", &HAlignIndex, HAlignOptions, IM_ARRAYSIZE(HAlignOptions)))
+		TextComponent->SetHorizontalAlignment((EHorizTextAligment)HAlignIndex);
+
+	const char* VAlignOptions[] = { "Top", "Center", "Bottom" };
+	int VAlignIndex = (int)TextComponent->GetVerticalAlignment();
+	if (ImGui::Combo("Vertical Alignment", &VAlignIndex, VAlignOptions, IM_ARRAYSIZE(VAlignOptions)))
+		TextComponent->SetVerticalAlignment((EVerticalTextAligment)VAlignIndex);
 }
 
 void FPropertyWindow::DrawSubUVComponentDetails(USubUVComponent* SubUVComponent)
@@ -445,7 +457,47 @@ void FPropertyWindow::DrawSubUVComponentDetails(USubUVComponent* SubUVComponent)
 	}
 }
 
-void FPropertyWindow::DrawDetailsSection(UActorComponent* Component)
+void FPropertyWindow::DrawBillboardComponentDetials(UBillboardComponent* BillboardComponent, FEditorEngine* Engine)
+{
+	std::wstring CurrentPath = BillboardComponent->GetTexturePath();
+	std::string CurrentFileName = std::filesystem::path(CurrentPath).filename().string();
+	if (ImGui::BeginCombo("Sprite", CurrentFileName.c_str()))
+	{
+		for (auto& Pair : Engine->GetRenderer()->GetBillboardRenderer().GetTextureCache())
+		{
+			std::string FileName = std::filesystem::path(Pair.first).filename().string();
+			bool bSelected = (Pair.first == CurrentPath);
+			if (ImGui::Selectable(FileName.c_str(), bSelected))
+				BillboardComponent->SetTexturePath(Pair.first); 
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGui::Separator();
+
+	float Size[2] = { BillboardComponent->GetSize().X, BillboardComponent->GetSize().Y };
+	if (ImGui::DragFloat2("Size", Size, 0.01f, 0.01f, 100.f, "%.2f"))
+		BillboardComponent->SetSize(FVector2(Size[0], Size[1]));
+
+	float U = BillboardComponent->GetUVMin().X;
+	float V = BillboardComponent->GetUVMin().Y;
+	float UL = BillboardComponent->GetUVMax().X;
+	float VL = BillboardComponent->GetUVMax().Y;
+
+	ImGui::Separator();
+
+	ImGui::DragFloat("U", &U, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("V", &V, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("UL", &UL, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("VL", &VL, 0.01f, 0.0f, 1.0f);
+
+	BillboardComponent->SetUVMin(FVector2(U, V));
+	BillboardComponent->SetUVMax(FVector2(UL, VL));
+}
+
+void FPropertyWindow::DrawDetailsSection(UActorComponent* Component, FEditorEngine* Engine)
 {
 	if (!Component)
 	{
@@ -476,14 +528,19 @@ void FPropertyWindow::DrawDetailsSection(UActorComponent* Component)
 		DrawStaticMeshComponentDetails(static_cast<UStaticMeshComponent*>(Component));
 	}
 
-	if (Component->IsA(UTextComponent::StaticClass()) && !Component->IsA(UUUIDBillboardComponent::StaticClass()))
+	if (Component->IsA(UTextRenderComponent::StaticClass()) && !Component->IsA(UUUIDBillboardComponent::StaticClass()))
 	{
-		DrawTextComponentDetails(static_cast<UTextComponent*>(Component));
+		DrawTextComponentDetails(static_cast<UTextRenderComponent*>(Component));
 	}
 
 	if (Component->IsA(USubUVComponent::StaticClass()))
 	{
 		DrawSubUVComponentDetails(static_cast<USubUVComponent*>(Component));
+	}
+
+	if (Component->IsA(UBillboardComponent::StaticClass()))
+	{
+		DrawBillboardComponentDetials(static_cast<UBillboardComponent*>(Component), Engine);
 	}
 }
 
@@ -538,9 +595,9 @@ bool FPropertyWindow::AddComponentToActor(AActor* SelectedActor, UClass* Compone
 		PrimitiveComponent->UpdateBounds();
 	}
 
-	if (NewComponent->IsA(UTextComponent::StaticClass()))
+	if (NewComponent->IsA(UTextRenderComponent::StaticClass()))
 	{
-		UTextComponent* TextComponent = static_cast<UTextComponent*>(NewComponent);
+		UTextRenderComponent* TextComponent = static_cast<UTextRenderComponent*>(NewComponent);
 		TextComponent->MarkTextMeshDirty();
 	}
 
@@ -767,7 +824,7 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 	ImGui::TextDisabled("Details");
 	if (ImGui::BeginChild("##DetailsPanel", ImVec2(0.0f, 0.0f), true))
 	{
-		DrawDetailsSection(SelectedComponent);
+		DrawDetailsSection(SelectedComponent, Engine);
 	}
 	ImGui::EndChild();
 
@@ -805,9 +862,9 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 						if (ImGui::Checkbox("SubUV Billboard", &bBillboard))
 							SubUVComp->SetBillboard(bBillboard);
 					}
-					else if (Component->IsA(UTextComponent::StaticClass()) && !Component->IsA(UUUIDBillboardComponent::StaticClass()))
+					else if (Component->IsA(UTextRenderComponent::StaticClass()) && !Component->IsA(UUUIDBillboardComponent::StaticClass()))
 					{
-						UTextComponent* TextComp = static_cast<UTextComponent*>(Component);
+						UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Component);
 						bool bBillboard = TextComp->IsBillboard();
 						if (ImGui::Checkbox("Text Billboard", &bBillboard))
 							TextComp->SetBillboard(bBillboard);
@@ -1033,6 +1090,11 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 					}
 					ImGui::Unindent(8.0f);
 				}
+			}
+
+			if (UBillboardComponent* BillboardComp = SelectedActor->GetComponentByClass<UBillboardComponent>())
+			{
+
 			}
 		}
 	}

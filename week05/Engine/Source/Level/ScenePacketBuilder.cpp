@@ -1,6 +1,7 @@
 #include "Level/ScenePacketBuilder.h"
 
 #include "Actor/Actor.h"
+#include "Component/BillboardComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -31,15 +32,21 @@ void FScenePacketBuilder::BuildScenePacket(
 			continue;
 		}
 
-		if (Primitive->IsA(UTextComponent::StaticClass()))
+		if (Primitive->IsA(UTextRenderComponent::StaticClass()))
 		{
-			OutPacket.TextPrimitives.push_back({ static_cast<UTextComponent*>(Primitive) });
+			OutPacket.TextPrimitives.push_back({ static_cast<UTextRenderComponent*>(Primitive) });
 			continue;
 		}
 
 		if (Primitive->IsA(USubUVComponent::StaticClass()))
 		{
 			OutPacket.SubUVPrimitives.push_back({ static_cast<USubUVComponent*>(Primitive) });
+			continue;
+		}
+
+		if (Primitive->IsA(UBillboardComponent::StaticClass()))
+		{
+			OutPacket.BillboardPrimitives.push_back({ static_cast<UBillboardComponent*>(Primitive) });
 		}
 	}
 }
@@ -68,7 +75,8 @@ void FScenePacketBuilder::FrustumCull(
 
 			const bool bIsUUID = PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass());
 			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-			const bool bIsText = PrimitiveComponent->IsA(UTextComponent::StaticClass());
+			const bool bIsText = PrimitiveComponent->IsA(UTextRenderComponent::StaticClass());
+			const bool bIsBillboard = PrimitiveComponent->IsA(UBillboardComponent::StaticClass());
 			if (bIsUUID)
 			{
 				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID))
@@ -77,6 +85,13 @@ void FScenePacketBuilder::FrustumCull(
 				}
 			}
 			else if (bIsSubUV)
+			{
+				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
+				{
+					continue;
+				}
+			}
+			else if (bIsBillboard)
 			{
 				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
 				{

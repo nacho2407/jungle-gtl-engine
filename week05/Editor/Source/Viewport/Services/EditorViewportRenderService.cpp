@@ -1,4 +1,4 @@
-﻿#include "Viewport/Services/EditorViewportRenderService.h"
+#include "Viewport/Services/EditorViewportRenderService.h"
 
 #include "EditorEngine.h"
 #include "Viewport/EditorViewportRegistry.h"
@@ -12,6 +12,7 @@
 #include "UI/EditorUI.h"
 #include "Viewport/Viewport.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Component/SkyComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -61,7 +62,9 @@ namespace
 				continue;
 			}
 
-			if (Component->IsA(UTextComponent::StaticClass()) || Component->IsA(USubUVComponent::StaticClass()))
+			if (Component->IsA(UTextRenderComponent::StaticClass()) ||
+				Component->IsA(USubUVComponent::StaticClass()) ||
+				Component->IsA(UBillboardComponent::StaticClass()))
 			{
 				continue;
 			}

@@ -331,6 +331,15 @@
     <ClCompile Include="Source\Renderer\Feature\OutlineRenderFeature.cpp" />
     <ClCompile Include="Source\Renderer\Feature\SubUVRenderFeature.cpp" />
     <ClCompile Include="Source\Renderer\Feature\TextRenderFeature.cpp" />
+    <ClCompile Include="Source\Component\BillboardComponent.cpp">
+      <Filter>Source\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\BillboardRenderer.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\BillboardActor.cpp">
+      <Filter>Source\Actor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -943,6 +952,18 @@
     <ClInclude Include="Source\Renderer\Feature\OutlineRenderFeature.h" />
     <ClInclude Include="Source\Renderer\Feature\SubUVRenderFeature.h" />
     <ClInclude Include="Source\Renderer\Feature\TextRenderFeature.h" />
+    <ClInclude Include="Source\Renderer\RenderType.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\BillboardComponent.h">
+      <Filter>Source\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\BillboardRenderer.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\BillboardActor.h">
+      <Filter>Source\Actor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

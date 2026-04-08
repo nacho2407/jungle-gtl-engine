@@ -43,7 +43,7 @@ public:
 	// 에디터 월드 시뮬레이션 재생 상태를 정지로 전환한다.
 	void StopSimulation();
 	// 현재 에디터 월드 시뮬레이션 재생 상태를 반환한다.
-	ESimulationPlaybackState GetSimulationPlaybackState() const { return SimulationPlaybackState; }
+	ESimulationPlaybackState GetSimulationPlaybackState() const;
 	// 활성 월드를 에디터 월드로 전환한다.
 	void ActivateEditorScene();
 	// 이름으로 지정한 프리뷰 월드를 활성 월드로 전환한다.
@@ -82,13 +82,19 @@ public:
 	// 초기 에디터 오버레이 UI를 생성한다.
 	void CreateInitUI();
 
+	bool IsPIEActive() const { return bIsPIEActive; }
+	bool IsPIEPaused() const { return bIsPIEPaused; }
+	bool StartPIE();
+	void EndPIE();
+	void TogglePIEPause();
+
 protected:
 	// 에디터 런타임 초기화 전에 ImGui/로그 라우팅을 준비한다.
 	void PreInitialize() override;
 	// 메인 윈도우와 EditorUI를 연결한다.
 	void BindHost(FWindowsWindow* InMainWindow) override;
 	// 에디터 월드와 프리뷰 월드에 필요한 컨텍스트를 만든다.
-	bool InitializeWorlds(int32 Width, int32 Height) override;
+	bool InitializeWorlds() override;
 	// 프리뷰, 카메라, 콘솔, 뷰포트 라우팅을 초기화한다.
 	bool InitializeMode() override;
 	// Slate와 초기 UI를 만들어 에디터 화면 구성을 완료한다.
@@ -111,6 +117,12 @@ protected:
 	FViewport* FindViewport(FViewportId Id);
 
 private:
+	struct FPIEViewportStateBackup
+	{
+		FViewportId ViewportId = INVALID_VIEWPORT_ID;
+		FViewportLocalState LocalState;
+	};
+
 	// 기본 프리뷰 월드와 프리뷰 클라이언트를 준비한다.
 	bool InitEditorPreview();
 	// 에디터 콘솔 명령 라우팅을 연결한다.
@@ -120,7 +132,7 @@ private:
 	// 현재 포커스와 레이아웃 기준으로 뷰포트 라우팅을 맞춘다.
 	void InitEditorViewportRouting();
 	// 에디터 월드 컨텍스트를 생성한다.
-	bool InitEditorWorlds(int32 Width, int32 Height);
+	bool InitEditorWorlds();
 	// 에디터와 프리뷰 월드 컨텍스트를 모두 정리한다.
 	void ReleaseEditorWorlds();
 	// 이름으로 프리뷰 월드 컨텍스트를 찾는다.
@@ -142,14 +154,22 @@ private:
 	std::unique_ptr<FPreviewViewportClient> PreviewViewportClient;
 	FEditorSelectionSubsystem SelectionSubsystem;
 	FEditorCameraSubsystem CameraSubsystem;
+
 	FWorldContext* EditorWorldContext = nullptr;
+	FWorldContext* PIEWorldContext = nullptr;
 	TArray<FWorldContext*> PreviewWorldContexts;
-	FWorldContext* ActiveEditorWorldContext = nullptr;
+
+	FWorldContext* ActiveWorldContext = nullptr;
+	FWorldContext* PrePIEActiveWorldContext = nullptr;
 
 	FWindowsWindow* MainWindow = nullptr;
 	FEditorViewportRegistry ViewportRegistry;
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
-	ESimulationPlaybackState SimulationPlaybackState = ESimulationPlaybackState::Playing;
 
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
+	TArray<FPIEViewportStateBackup> SavedPIEViewportStates;
+	TObjectPtr<AActor> SavedPIESelectedActor;
+	bool bWasCursorHiddenForPIE = false;
+	bool bIsPIEActive = false;
+	bool bIsPIEPaused = false;
 };

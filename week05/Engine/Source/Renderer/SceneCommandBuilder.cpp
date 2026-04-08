@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "Component/BillboardComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
@@ -232,7 +233,7 @@ void FSceneCommandBuilder::BuildQueue(
 
 	for (const FSceneTextPrimitive& Primitive : Packet.TextPrimitives)
 	{
-		UTextComponent* TextComponent = Primitive.Component;
+		UTextRenderComponent* TextComponent = Primitive.Component;
 		if (!TextComponent)
 		{
 			continue;
@@ -246,7 +247,12 @@ void FSceneCommandBuilder::BuildQueue(
 
 		if (TextComponent->IsTextMeshDirty())
 		{
-			if (BuildContext.TextFeature && BuildContext.TextFeature->BuildMesh(TextComponent->GetDisplayText(), *TextMesh, 1.0f))
+			if (BuildContext.TextFeature && BuildContext.TextFeature->BuildMesh(
+				TextComponent->GetDisplayText(),
+				*TextMesh,
+				1.0f,
+				TextComponent->GetHorizontalAlignment(),
+				TextComponent->GetVerticalAlignment()))
 			{
 				TextMesh->bIsDirty = true;
 				TextComponent->ClearTextMeshDirty();
@@ -339,5 +345,52 @@ void FSceneCommandBuilder::BuildQueue(
 	}
 
 	PruneStaleSubUVMaterials(ActiveSubUVComponents);
+
+	TArray<const UBillboardComponent*> ActiveBillboardComponents;
+	ActiveBillboardComponents.reserve(Packet.BillboardPrimitives.size());
+
+	for (const FSceneBillboardPrimitive& Primitive : Packet.BillboardPrimitives)
+	{
+		UBillboardComponent* BillboardComponent = Primitive.Component;
+		if (!BillboardComponent)
+		{
+			continue;
+		}
+
+		FRenderMesh* BillboardMesh = BillboardComponent->GetBillboardMesh();
+		if (!BillboardMesh || !BuildContext.BillboardFeature)
+		{
+			continue;
+		}
+
+		if (!BuildContext.BillboardFeature->BuildMesh(BillboardComponent->GetSize(), *BillboardMesh))
+		{
+			continue;
+		}
+
+		BillboardMesh->bIsDirty = true;
+
+		FMaterial* BillboardMaterial = BuildContext.BillboardFeature->GetOrCreateMaterial(*BillboardComponent);
+		if (!BillboardMaterial)
+		{
+			continue;
+		}
+
+		FRenderCommand Command;
+		Command.RenderMesh = BillboardMesh;
+		Command.Material = BillboardMaterial;
+
+		const FVector WorldPosition = BillboardComponent->GetWorldTransform().GetTranslation();
+		const FVector Scale = BillboardComponent->GetWorldTransform().GetScaleVector();
+		Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPosition, CameraPosition);
+
+		OutQueue.AddCommand(Command);
+		ActiveBillboardComponents.push_back(BillboardComponent);
+	}
+
+	if (BuildContext.BillboardFeature)
+	{
+		BuildContext.BillboardFeature->PruneMaterials(ActiveBillboardComponents);
+	}
 }
 

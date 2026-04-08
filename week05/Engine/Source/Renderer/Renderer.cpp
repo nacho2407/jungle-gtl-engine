@@ -148,6 +148,12 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		return false;
 	}
 
+	BillboardFeature = std::make_unique<FBillboardRenderer>();
+	if (!BillboardFeature || !BillboardFeature->Initialize(*this))
+	{
+		return false;
+	}
+
 	OutlineFeature = std::make_unique<FOutlineRenderFeature>();
 	DebugLineFeature = std::make_unique<FDebugLineRenderFeature>();
 
@@ -471,10 +477,12 @@ void FRenderer::Release()
 	if (DebugLineFeature) DebugLineFeature->Release();
 	if (TextFeature) TextFeature->Release();
 	if (SubUVFeature) SubUVFeature->Release();
+	if (BillboardFeature) BillboardFeature->Release();
 	OutlineFeature.reset();
 	DebugLineFeature.reset();
 	TextFeature.reset();
 	SubUVFeature.reset();
+	BillboardFeature.reset();
 	ShaderManager.Release(); FShaderMap::Get().Clear(); FMaterialManager::Get().Clear();
 	if (NormalSampler) { NormalSampler->Release(); NormalSampler = nullptr; }
 	DefaultMaterial.reset();

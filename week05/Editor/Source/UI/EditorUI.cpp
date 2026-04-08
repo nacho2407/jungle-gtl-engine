@@ -872,6 +872,45 @@ void FEditorUI::Render()
 			}
 			ImGui::EndMenu();
 		}
+
+		if (Engine)
+		{
+			ImGui::SameLine();
+			ImGui::Spacing();
+			ImGui::SameLine();
+
+			const bool bIsPIEActive = Engine->IsPIEActive();
+			const bool bIsPIEPaused = Engine->IsPIEPaused();
+			const char* PIEPrimaryLabel = !bIsPIEActive
+				? "▶ Start"
+				: (bIsPIEPaused ? "▶ Resume" : "❚❚ Pause");
+
+			if (ImGui::Button(PIEPrimaryLabel))
+			{
+				if (!bIsPIEActive)
+				{
+					Engine->StartPIE();
+				}
+				else
+				{
+					Engine->TogglePIEPause();
+				}
+			}
+
+			ImGui::SameLine();
+			if (!bIsPIEActive)
+			{
+				ImGui::BeginDisabled();
+			}
+			if (ImGui::Button("■ Stop") && bIsPIEActive)
+			{
+				Engine->EndPIE();
+			}
+			if (!bIsPIEActive)
+			{
+				ImGui::EndDisabled();
+			}
+		}
 		ImGui::EndMainMenuBar();
 	}
 

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Level/WorldTypes.h"
@@ -26,7 +26,6 @@ struct FEngineInitArgs
 	int32 Width = 0;
 	int32 Height = 0;
 };
-
 /**
  * 엔진 런타임의 최상위 진입점이다.
  * 플랫폼, 월드, 입력, 물리, 렌더링 서브시스템을 연결하고
@@ -92,7 +91,7 @@ protected:
 	// 플랫폼 호스트와 엔진을 연결할 기회를 제공한다.
 	virtual void BindHost(FWindowsWindow* InMainWindow) {}
 	// 월드 컨텍스트와 월드 초기화를 담당한다.
-	virtual bool InitializeWorlds(int32 Width, int32 Height);
+	virtual bool InitializeWorlds();
 	// 게임/에디터 모드별 추가 초기화를 수행한다.
 	virtual bool InitializeMode() { return true; }
 	// 전체 초기화가 끝난 뒤 후처리를 수행한다.
@@ -115,6 +114,7 @@ protected:
 	const FWorldContext* FindWorldContext(EWorldType WorldType) const;
 	// 새 월드 컨텍스트와 월드를 만들고 목록에 등록한다.
 	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, float AspectRatio, bool bDefaultScene);
+	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, UWorld* ExistingWorld);
 	// 월드 컨텍스트와 그 안의 월드를 정리하고 제거한다.
 	void DestroyWorldContext(FWorldContext* Context);
 	// 월드의 카메라 종횡비를 현재 창 크기에 맞게 갱신한다.
@@ -125,6 +125,7 @@ protected:
 	FPhysicsManager* GetPhysicsManager() const { return PhysicsManager.get(); }
 	// 디버그 드로우 매니저 접근자다.
 	FDebugDrawManager& GetDebugDrawManager() { return DebugDrawManager; }
+	float GetWindowAspectRatio() const { return (WindowHeight > 0) ? (static_cast<float>(WindowWidth) / static_cast<float>(WindowHeight)) : 1.0f; }
 
 private:
 	// 렌더러, 입력, 오브젝트 매니저 등 런타임 코어 시스템을 만든다.

@@ -1,25 +1,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Renderer/RenderType.h"
 
 class FMaterial;
 struct FRenderMesh;
+class UBillboardComponent;
 
-/**
- * Scene/UI text primitive를 mesh/material로 변환하는 공통 계약.
- * frontend/renderer 코어 결합을 줄이기 위한 얇은 인터페이스다.
- */
 class ENGINE_API ISceneTextFeature
 {
 public:
 	virtual ~ISceneTextFeature() = default;
 	virtual FMaterial* GetBaseMaterial() const = 0;
-	virtual bool BuildMesh(const FString& Text, FRenderMesh& OutMesh, float LetterSpacing) const = 0;
+	virtual bool BuildMesh(
+		const FString& Text,
+		FRenderMesh& OutMesh,
+		float LetterSpacing,
+		EHorizTextAligment HorizAlignment = EHorizTextAligment::EHTA_Center,
+		EVerticalTextAligment VertAlignment = EVerticalTextAligment::EVRTA_TextBottom) const = 0;
 };
 
-/**
- * SubUV primitive를 mesh/material로 변환하는 공통 계약.
- */
 class ENGINE_API ISceneSubUVFeature
 {
 public:
@@ -28,3 +28,12 @@ public:
 	virtual bool BuildMesh(const FVector2& Size, FRenderMesh& OutMesh) const = 0;
 };
 
+class ENGINE_API ISceneBillboardFeature
+{
+public:
+	virtual ~ISceneBillboardFeature() = default;
+	virtual FMaterial* GetBaseMaterial() const = 0;
+	virtual bool BuildMesh(const FVector2& Size, FRenderMesh& OutMesh) const = 0;
+	virtual FMaterial* GetOrCreateMaterial(const UBillboardComponent& Component) = 0;
+	virtual void PruneMaterials(const TArray<const UBillboardComponent*>& ActiveComponents) = 0;
+};

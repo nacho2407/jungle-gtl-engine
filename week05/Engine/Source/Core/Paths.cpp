@@ -229,6 +229,11 @@ std::filesystem::path FPaths::ShaderCacheDir()
 	return Root / "Content/Shaders/";
 }
 
+std::filesystem::path FPaths::IconDir()
+{
+	return Root / "Editor/Icon/";
+}
+
 
 /*
 FString FPaths::Combine(const FString& Base, const FString& Relative)

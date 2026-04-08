@@ -17,7 +17,12 @@ FMaterial* FTextRenderFeature::GetBaseMaterial() const
 	return TextMeshBuilder.GetFontMaterial();
 }
 
-bool FTextRenderFeature::BuildMesh(const FString& Text, FRenderMesh& OutMesh, float LetterSpacing) const
+bool FTextRenderFeature::BuildMesh(
+	const FString& Text,
+	FRenderMesh& OutMesh,
+	float LetterSpacing,
+	EHorizTextAligment HorizAlignment,
+	EVerticalTextAligment VertAlignment) const
 {
-	return TextMeshBuilder.BuildTextMesh(Text, OutMesh, LetterSpacing);
+	return TextMeshBuilder.BuildTextMesh(Text, OutMesh, LetterSpacing, HorizAlignment, VertAlignment);
 }

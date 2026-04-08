@@ -2,7 +2,7 @@
 
 #include "Actor.h"
 
-class UTextComponent;
+class UTextRenderComponent;
 
 class ENGINE_API ATextActor : public AActor
 {
@@ -13,5 +13,6 @@ public:
 	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 private:
-	UTextComponent* TextComponent = nullptr;
+	UTextRenderComponent* TextComponent = nullptr;
 };
+

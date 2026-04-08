@@ -3,11 +3,12 @@
 #include <algorithm>
 
 #include "Serializer/Archive.h"
+#include "Renderer/RenderType.h"
 
 
-IMPLEMENT_RTTI(UTextComponent, UPrimitiveComponent)
+IMPLEMENT_RTTI(UTextRenderComponent, UPrimitiveComponent)
 
-void UTextComponent::PostConstruct()
+void UTextRenderComponent::PostConstruct()
 {
 	bDrawDebugBounds = false;
 	TextMesh = std::make_shared<FDynamicMesh>();
@@ -17,7 +18,7 @@ void UTextComponent::PostConstruct()
 	if (TextMesh) TextMesh->bIsDirty = true;
 }
 
-void UTextComponent::SetText(const FString& InText)
+void UTextRenderComponent::SetText(const FString& InText)
 {
 	if (Text != InText)
 	{
@@ -26,15 +27,31 @@ void UTextComponent::SetText(const FString& InText)
 	}
 }
 
-void UTextComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+
+void UTextRenderComponent::SetHorizontalAlignment(EHorizTextAligment value)
+{
+	HorizontalAlignment = value;
+	MarkTextMeshDirty();
+}
+
+void UTextRenderComponent::SetVerticalAlignment(EVerticalTextAligment value)
+{
+	VerticalAlignment = value;
+	MarkTextMeshDirty();
+}
+
+void UTextRenderComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
 {
 	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
 
-	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	UTextRenderComponent* DuplicatedTextComponent = static_cast<UTextRenderComponent*>(DuplicatedObject);
 	DuplicatedTextComponent->Text = Text;
 	DuplicatedTextComponent->TextColor = TextColor;
 	DuplicatedTextComponent->TextScale = TextScale;
 	DuplicatedTextComponent->bBillboard = bBillboard;
+	DuplicatedTextComponent->bHiddenInGame = bHiddenInGame;
+	DuplicatedTextComponent->HorizontalAlignment = HorizontalAlignment;
+	DuplicatedTextComponent->VerticalAlignment = VerticalAlignment;
 	DuplicatedTextComponent->bTextMeshDirty = true;
 	if (DuplicatedTextComponent->TextMesh)
 	{
@@ -42,42 +59,55 @@ void UTextComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateConte
 	}
 }
 
-FRenderMesh* UTextComponent::GetRenderMesh() const
+FRenderMesh* UTextRenderComponent::GetRenderMesh() const
 {
 	return TextMesh.get();
 }
 
-void UTextComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+
+void UTextRenderComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
 {
 	UPrimitiveComponent::PostDuplicate(DuplicatedObject, Context);
 
-	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	UTextRenderComponent* DuplicatedTextComponent = static_cast<UTextRenderComponent*>(DuplicatedObject);
 	DuplicatedTextComponent->MarkTextMeshDirty();
 }
 
-void UTextComponent::Serialize(FArchive& Ar)
+void UTextRenderComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
+
+	uint32 SavedHorizontalAlignment = static_cast<uint32>(HorizontalAlignment);
+	uint32 SavedVerticalAlignment = static_cast<uint32>(VerticalAlignment);
 
 	if (Ar.IsSaving())
 	{
 		Ar.Serialize("Text", Text);
 		Ar.Serialize("TextColor", TextColor);
 		Ar.Serialize("Billboard", bBillboard);
+		Ar.Serialize("HiddenInGame", bHiddenInGame);
+		Ar.Serialize("HorizontalAlignment", SavedHorizontalAlignment);
+		Ar.Serialize("VerticalAlignment", SavedVerticalAlignment);
 	}
 	else
 	{
 		Ar.Serialize("Text", Text);
 		Ar.Serialize("TextColor", TextColor);
 		Ar.Serialize("Billboard", bBillboard);
+		Ar.Serialize("HiddenInGame", bHiddenInGame);
+		Ar.Serialize("HorizontalAlignment", SavedHorizontalAlignment);
+		Ar.Serialize("VerticalAlignment", SavedVerticalAlignment);
 
 		SetText(Text);
 		SetTextColor(TextColor);
 		SetBillboard(bBillboard);
+		SetHiddenInGame(bHiddenInGame);
+		SetHorizontalAlignment(static_cast<EHorizTextAligment>(static_cast<int32>(SavedHorizontalAlignment)));
+		SetVerticalAlignment(static_cast<EVerticalTextAligment>(static_cast<int32>(SavedVerticalAlignment)));
 	}
 }
 
-FBoxSphereBounds UTextComponent::GetWorldBounds() const
+FBoxSphereBounds UTextRenderComponent::GetWorldBounds() const
 {
 	const FVector Center = GetRenderWorldPosition();
 	const FString DisplayText = GetDisplayText();

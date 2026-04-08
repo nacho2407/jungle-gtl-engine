@@ -39,6 +39,7 @@ void FSceneRenderer::BuildQueue(
 	BuildContext.DefaultMaterial = Renderer.GetDefaultMaterial();
 	BuildContext.TextFeature = Renderer.GetSceneTextFeature();
 	BuildContext.SubUVFeature = Renderer.GetSceneSubUVFeature();
+	BuildContext.BillboardFeature = Renderer.GetSceneBillboardFeature();
 	BuildContext.TotalTimeSeconds = SceneView.TotalTimeSeconds;
 
 	SceneCommandBuilder.BuildQueue(BuildContext, Packet, SceneView.CameraPosition, OutQueue);

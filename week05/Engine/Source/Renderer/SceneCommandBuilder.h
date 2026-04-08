@@ -7,6 +7,7 @@
 class FMaterial;
 class FDynamicMaterial;
 struct FRenderCommandQueue;
+class UBillboardComponent;
 class USubUVComponent;
 
 /**
@@ -17,6 +18,7 @@ struct ENGINE_API FSceneCommandBuildContext
 	FMaterial* DefaultMaterial = nullptr;
 	ISceneTextFeature* TextFeature = nullptr;
 	ISceneSubUVFeature* SubUVFeature = nullptr;
+	ISceneBillboardFeature* BillboardFeature = nullptr;
 	float TotalTimeSeconds = 0.0f;
 };
 

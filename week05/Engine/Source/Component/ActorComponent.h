@@ -18,11 +18,14 @@ public:
 	virtual void OnRegister() { bRegistered = true; }
 	virtual void OnUnregister() { bRegistered = false; }
 	virtual void BeginPlay() { bBegunPlay = true; }
+	virtual void EndPlay() { bBegunPlay = false; }
 	virtual void Tick(float DeltaTime) {}
 	bool HasBegunPlay() const { return bBegunPlay; }
 	bool IsComponentTickEnabled() const { return bTickEnabled; }
+	bool IsTickInEditor() const { return bTickInEditor; }
 	bool CanTick() const { return bCanEverTick && bTickEnabled; }
 	void SetComponentTickEnabled(bool bEnabled) { bTickEnabled = bEnabled; }
+	void SetTickInEditor(bool bEnabled) { bTickInEditor = bEnabled; }
 	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
@@ -34,5 +37,6 @@ protected:
 	bool bBegunPlay = false;
 	bool bCanEverTick = false;
 	bool bTickEnabled = true;
+	bool bTickInEditor = false;
 };
 

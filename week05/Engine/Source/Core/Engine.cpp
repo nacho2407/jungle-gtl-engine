@@ -42,7 +42,6 @@ bool FEngine::Initialize(const FEngineInitArgs& Args)
 		return false;
 	}
 
-	// 중간 단계에서 실패해도 Shutdown 하나로 정리되도록 공통 실패 경로를 둔다.
 	auto FailInitialize = [this]() -> bool
 	{
 		Shutdown();
@@ -52,24 +51,28 @@ bool FEngine::Initialize(const FEngineInitArgs& Args)
 	GEngine = this;
 	PreInitialize();
 	BindHost(Args.MainWindow);
+
 	if (!InitializeRuntimeSystems(Args.Hwnd, Args.Width, Args.Height))
 	{
 		return FailInitialize();
 	}
-	if (!InitializeWorlds(Args.Width, Args.Height))
+
+	if (!InitializeWorlds())
 	{
 		return FailInitialize();
 	}
+
 	if (!InitializePrimaryViewport())
 	{
 		return FailInitialize();
 	}
+
 	if (!InitializeMode())
 	{
 		return FailInitialize();
 	}
-	FinalizeInitialize();
 
+	FinalizeInitialize();
 	return true;
 }
 
@@ -80,11 +83,9 @@ void FEngine::Tick()
 		return;
 	}
 
-	// 엔진 프레임은 준비 -> 입력 -> 물리 -> 월드 -> 렌더 -> 마무리 순서로 흐른다.
 	BeginFrame();
 
 	const float DeltaTime = GetDeltaTime();
-
 	PrepareFrame(DeltaTime);
 	ProcessInput(DeltaTime);
 	TickPhysics(DeltaTime);
@@ -210,7 +211,6 @@ void FEngine::HandleResize(int32 Width, int32 Height)
 		return;
 	}
 
-	// 창 크기 변경은 렌더러와 모든 월드 카메라의 종횡비에 함께 반영한다.
 	WindowWidth = Width;
 	WindowHeight = Height;
 
@@ -245,14 +245,13 @@ bool FEngine::InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height)
 	WindowWidth = Width;
 	WindowHeight = Height;
 
-	// 렌더러가 먼저 준비되어야 이후 리소스 로더와 머티리얼 매니저가 디바이스를 사용할 수 있다.
 	Renderer = std::make_unique<FRenderer>(Hwnd, Width, Height);
 	if (!Renderer)
 	{
 		return false;
 	}
-	ObjManager = std::make_unique<FObjectManager>();
 
+	ObjManager = std::make_unique<FObjectManager>();
 	FMaterialManager::Get().LoadAllMaterials(Renderer->GetDevice(), Renderer->GetRenderStateManager().get());
 
 	InputManager = std::make_unique<FInputManager>();
@@ -261,21 +260,16 @@ bool FEngine::InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height)
 
 	Timer.Initialize();
 	RegisterConsoleVariables();
-
 	return true;
 }
 
-bool FEngine::InitializeWorlds(int32 Width, int32 Height)
+bool FEngine::InitializeWorlds()
 {
-	(void)Width;
-	(void)Height;
-
 	return true;
 }
 
 bool FEngine::InitializePrimaryViewport()
 {
-	// 엔진 모드가 결정한 기본 ViewportClient를 만들고 활성 상태로 연결한다.
 	ViewportClient = CreateViewportClient();
 	if (!ViewportClient)
 	{
@@ -288,7 +282,6 @@ bool FEngine::InitializePrimaryViewport()
 
 void FEngine::ReleaseRuntime()
 {
-	// 월드 -> 오브젝트/입력 -> 렌더러 순서로 정리해 참조가 남지 않게 한다.
 	while (!WorldContexts.empty())
 	{
 		DestroyWorldContext(WorldContexts.back().get());
@@ -303,7 +296,6 @@ void FEngine::ReleaseRuntime()
 
 	EnhancedInput.reset();
 	InputManager.reset();
-
 	PhysicsManager.reset();
 	FPrimitiveGizmo::ClearCache();
 	Renderer.reset();
@@ -363,6 +355,24 @@ FWorldContext* FEngine::CreateWorldContext(const FString& ContextName, EWorldTyp
 	return CreatedContext;
 }
 
+FWorldContext* FEngine::CreateWorldContext(const FString& ContextName, EWorldType WorldType, UWorld* ExistingWorld)
+{
+	if (!ExistingWorld)
+	{
+		return nullptr;
+	}
+
+	std::unique_ptr<FWorldContext> NewContext = std::make_unique<FWorldContext>();
+	NewContext->ContextName = ContextName;
+	NewContext->WorldType = WorldType;
+	NewContext->World = ExistingWorld;
+	NewContext->World->SetWorldType(WorldType);
+
+	FWorldContext* CreatedContext = NewContext.get();
+	WorldContexts.push_back(std::move(NewContext));
+	return CreatedContext;
+}
+
 void FEngine::DestroyWorldContext(FWorldContext* Context)
 {
 	if (!Context)
@@ -372,8 +382,10 @@ void FEngine::DestroyWorldContext(FWorldContext* Context)
 
 	if (Context->World)
 	{
+		Context->World->EndPlay();
 		Context->World->CleanupWorld();
-		delete Context->World;
+		Context->World->MarkPendingKill();
+		Context->World = nullptr;
 	}
 
 	Context->Reset();
@@ -426,7 +438,6 @@ void FEngine::TickPhysics(float DeltaTime)
 
 void FEngine::RenderFrame()
 {
-	// 기본 엔진 경로는 게임 씬 하나를 렌더하고, 마지막에 디버그 라인을 덧그린다.
 	ULevel* Scene = ActiveViewportClient ? ActiveViewportClient->ResolveScene(this) : GetActiveScene();
 	if (!Renderer || !Scene || Renderer->IsOccluded())
 	{
@@ -440,7 +451,6 @@ void FEngine::RenderFrame()
 		ActiveViewportClient->Render(this, Renderer.get());
 	}
 
-	// 즉시 드로우 대신 요청 데이터로 모은 디버그 선을 feature 경로로 넘긴다.
 	FDebugLineRenderRequest DebugLineRequest;
 	DebugDrawManager.BuildRenderRequest(FShowFlags{}, GetActiveWorld(), DebugLineRequest);
 	Renderer->RenderDebugLines(DebugLineRequest);
@@ -454,12 +464,13 @@ void FEngine::SyncPlatformState()
 
 void FEngine::FinalizeFrame(float DeltaTime)
 {
+	(void)DeltaTime;
+
 	if (GCInterval <= 0.0 || !ObjManager)
 	{
 		return;
 	}
 
-	// GC는 매 프레임이 아니라 설정된 주기마다만 실행한다.
 	const double CurrentTime = Timer.GetTotalTime();
 	if ((CurrentTime - LastGCTime) >= GCInterval)
 	{
@@ -472,7 +483,6 @@ void FEngine::RegisterConsoleVariables()
 {
 	FConsoleVariableManager& CVM = FConsoleVariableManager::Get();
 
-	// 프레임 속도, VSync, GC 간격은 엔진 코어가 직접 관리하는 대표 런타임 옵션이다.
 	FConsoleVariable* MaxFPSVar = CVM.Find("t.MaxFPS");
 	if (!MaxFPSVar)
 	{

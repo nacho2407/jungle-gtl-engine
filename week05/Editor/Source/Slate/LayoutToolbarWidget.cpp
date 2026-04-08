@@ -46,13 +46,20 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		"Play",
 		[this]() -> bool
 		{
-			return Engine && Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Playing;
+			return Engine && Engine->IsPIEActive() && !Engine->IsPIEPaused();
 		},
 		[this]()
 		{
 			if (Engine)
 			{
-				Engine->PlaySimulation();
+				if (!Engine->IsPIEActive())
+				{
+					Engine->StartPIE();
+				}
+				else if (Engine->IsPIEPaused())
+				{
+					Engine->TogglePIEPause();
+				}
 			}
 		},
 		FMargin(0.0f, 0.0f, 4.0f, 0.0f));
@@ -62,22 +69,14 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		"Pause",
 		[this]() -> bool
 		{
-			return Engine && Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Paused;
+			return Engine && Engine->IsPIEActive() && Engine->IsPIEPaused();
 		},
 		[this]()
 		{
-			if (!Engine)
+			if (Engine && Engine->IsPIEActive())
 			{
-				return;
+				Engine->TogglePIEPause();
 			}
-
-			if (Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Paused)
-			{
-				Engine->PlaySimulation();
-				return;
-			}
-
-			Engine->PauseSimulation();
 		},
 		FMargin(0.0f, 0.0f, 4.0f, 0.0f));
 	PauseToggle.bEnabled = (Engine != nullptr);
@@ -86,13 +85,13 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		"Stop",
 		[this]() -> bool
 		{
-			return Engine && Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Stopped;
+			return Engine && !Engine->IsPIEActive();
 		},
 		[this]()
 		{
-			if (Engine)
+			if (Engine && Engine->IsPIEActive())
 			{
-				Engine->StopSimulation();
+				Engine->EndPIE();
 			}
 		},
 		FMargin(0.0f, 0.0f, 6.0f, 0.0f));

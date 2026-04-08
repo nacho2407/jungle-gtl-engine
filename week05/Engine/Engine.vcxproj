@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Actor\BillboardActor.h" />
+    <ClInclude Include="Source\Component\BillboardComponent.h" />
     <ClInclude Include="Source\CoreMinimal.h" />
     <ClInclude Include="Source\EngineAPI.h" />
     <ClInclude Include="Source\Actor\Actor.h" />
@@ -88,6 +90,7 @@
     <ClInclude Include="Source\Renderer\Feature\OutlineRenderFeature.h" />
     <ClInclude Include="Source\Renderer\Feature\SubUVRenderFeature.h" />
     <ClInclude Include="Source\Renderer\Feature\TextRenderFeature.h" />
+    <ClInclude Include="Source\Renderer\BillboardRenderer.h" />
     <ClInclude Include="Source\Renderer\FontAtlas.h" />
     <ClInclude Include="Source\Renderer\Material.h" />
     <ClInclude Include="Source\Renderer\MaterialManager.h" />
@@ -99,6 +102,7 @@
     <ClInclude Include="Source\Renderer\RenderState.h" />
     <ClInclude Include="Source\Renderer\RenderStateManager.h" />
     <ClInclude Include="Source\Renderer\Renderer.h" />
+    <ClInclude Include="Source\Renderer\RenderType.h" />
     <ClInclude Include="Source\Renderer\Shader.h" />
     <ClInclude Include="Source\Renderer\ShaderManager.h" />
     <ClInclude Include="Source\Renderer\ShaderMap.h" />
@@ -230,6 +234,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Actor\Actor.cpp" />
+    <ClCompile Include="Source\Actor\BillboardActor.cpp" />
     <ClCompile Include="Source\Actor\CubeActor.cpp" />
     <ClCompile Include="Source\Actor\PlaneActor.cpp" />
     <ClCompile Include="Source\Actor\SkySphereActor.cpp" />
@@ -240,6 +245,7 @@
     <ClCompile Include="Source\Asset\ObjManager.cpp" />
     <ClCompile Include="Source\Camera\Camera.cpp" />
     <ClCompile Include="Source\Component\ActorComponent.cpp" />
+    <ClCompile Include="Source\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Component\LineBatchComponent.cpp" />
     <ClCompile Include="Source\Component\MeshComponent.cpp" />
@@ -287,6 +293,7 @@
     <ClCompile Include="Source\Renderer\Feature\OutlineRenderFeature.cpp" />
     <ClCompile Include="Source\Renderer\Feature\SubUVRenderFeature.cpp" />
     <ClCompile Include="Source\Renderer\Feature\TextRenderFeature.cpp" />
+    <ClCompile Include="Source\Renderer\BillboardRenderer.cpp" />
     <ClCompile Include="Source\Renderer\FontAtlas.cpp" />
     <ClCompile Include="Source\Renderer\Material.cpp" />
     <ClCompile Include="Source\Renderer\MaterialManager.cpp" />
