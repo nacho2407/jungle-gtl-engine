@@ -432,3 +432,24 @@ void AActor::SetActorLocation(const FVector& InLocation)
 
 	RootComponent->SetRelativeLocation(InLocation);
 }
+
+
+const FTransform& AActor::GetActorTransform() const
+{
+	if (RootComponent == nullptr)
+	{
+		return FTransform{};
+	}
+
+	return RootComponent->GetRelativeTransform();
+}
+
+void AActor::SetActorTransform(const FTransform& InTransform)
+{
+	if (RootComponent == nullptr)
+	{
+		return;
+	}
+
+	RootComponent->SetRelativeTransform(InTransform);
+}
