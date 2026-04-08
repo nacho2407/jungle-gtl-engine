@@ -690,6 +690,7 @@ void FEditorUI::Render()
 						Cam->GetCamera()->SetRotation(0.f, 0.f);
 					}
 					Engine->GetEditorScene()->ClearActors();
+					Engine->CollectGarbage();
 					UE_LOG("New scene created");
 				}
 			}
@@ -704,6 +705,7 @@ void FEditorUI::Render()
 					{
 						Engine->SetSelectedActor(nullptr);
 						Engine->GetEditorScene()->ClearActors();
+						Engine->CollectGarbage();
 
 						FCameraSerializeData CameraData;
 						bool bLoaded = FSceneSerializer::Load(Engine->GetEditorScene(), Path,

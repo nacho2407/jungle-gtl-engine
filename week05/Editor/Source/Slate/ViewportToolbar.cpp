@@ -272,7 +272,11 @@ bool SViewportToolbarWidget::HasOpenDropdown() const
 
 void SViewportToolbarWidget::SyncSelectionState()
 {
-	LayoutDropdown.bEnabled = bShowLayout;
+	FViewportEntry* TargetEntry = GetTargetEntry();
+	const bool bIsPIEActive = Engine && Engine->IsPIEActive();
+	const bool bIsPIEViewport = TargetEntry && TargetEntry->WorldContext && (TargetEntry->WorldContext->WorldType == EWorldType::PIE);
+
+	LayoutDropdown.bEnabled = bShowLayout && !bIsPIEActive;
 	if (bShowLayout)
 	{
 		LayoutDropdown.SetSelectedIndex(static_cast<int32>(GetCurrentLayout()));
@@ -282,10 +286,8 @@ void SViewportToolbarWidget::SyncSelectionState()
 		LayoutDropdown.SetOpen(false);
 	}
 
-	FViewportEntry* TargetEntry = GetTargetEntry();
 	const bool bHasTargetEntry = (TargetEntry != nullptr) && bShowViewportSettings;
 	const bool bCanShowViewportSettings = bHasTargetEntry && !IsTargetPIEViewport();
-
 	TypeDropdown.bEnabled = bCanShowViewportSettings;
 	ModeDropdown.bEnabled = bCanShowViewportSettings;
 

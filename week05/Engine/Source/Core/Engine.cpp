@@ -150,6 +150,17 @@ float FEngine::GetDeltaTime() const
 	return Renderer ? Timer.GetDeltaTime() : 0.0f;
 }
 
+void FEngine::CollectGarbage()
+{
+	if (!ObjManager)
+	{
+		return;
+	}
+
+	ObjManager->FlushKilledObjects();
+	LastGCTime = Timer.GetTotalTime();
+}
+
 ULevel* FEngine::GetScene() const
 {
 	return GetActiveScene();

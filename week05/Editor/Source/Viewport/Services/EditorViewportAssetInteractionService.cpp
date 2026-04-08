@@ -56,6 +56,7 @@ void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 
 	Engine->SetSelectedActor(nullptr);
 	EditorScene->ClearActors();
+	Engine->CollectGarbage();
 
 	FCameraSerializeData CameraData;
 	const bool bLoaded = FSceneSerializer::Load(

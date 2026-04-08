@@ -38,6 +38,7 @@ namespace
 		{ "Static Mesh Component", "StaticMeshComponent", &UStaticMeshComponent::StaticClass },
 		{ "Text Component", "TextComponent", &UTextRenderComponent::StaticClass },
 		{ "SubUV Component", "SubUVComponent", &USubUVComponent::StaticClass },
+		{ "BillboardComponent", "BillboardComponent", &UBillboardComponent::StaticClass},
 		{ "Move Component", "MoveComponent", &UMoveComponent::StaticClass}
 	};
 

@@ -68,6 +68,7 @@ public:
 	// 현재 프레임 델타 타임을 반환한다.
 	float GetDeltaTime() const;
 	const TArray<std::unique_ptr<FWorldContext>>& GetWorldContexts() const { return WorldContexts; }
+	void CollectGarbage();
 
 	// 현재 활성 씬을 반환한다.
 	virtual ULevel* GetScene() const;
