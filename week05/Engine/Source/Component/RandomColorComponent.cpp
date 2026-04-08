@@ -11,6 +11,25 @@ void URandomColorComponent::PostConstruct()
 	bCanEverTick = true;
 }
 
+void URandomColorComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UActorComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	URandomColorComponent* DuplicatedRandomColorComponent = static_cast<URandomColorComponent*>(DuplicatedObject);
+	DuplicatedRandomColorComponent->CachedMesh = nullptr;
+	DuplicatedRandomColorComponent->DynamicMaterial.reset();
+	DuplicatedRandomColorComponent->UpdateInterval = UpdateInterval;
+	DuplicatedRandomColorComponent->ElapsedTime = ElapsedTime;
+}
+
+void URandomColorComponent::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	UActorComponent::FixupDuplicatedReferences(DuplicatedObject, Context);
+
+	URandomColorComponent* DuplicatedRandomColorComponent = static_cast<URandomColorComponent*>(DuplicatedObject);
+	DuplicatedRandomColorComponent->CachedMesh = Context.FindDuplicate(CachedMesh.Get());
+}
+
 URandomColorComponent::~URandomColorComponent() = default;
 
 void URandomColorComponent::BeginPlay()

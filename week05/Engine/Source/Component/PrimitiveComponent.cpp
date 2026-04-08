@@ -8,6 +8,23 @@
 #include "PrimitiveComponent.h"
 IMPLEMENT_RTTI(UPrimitiveComponent, USceneComponent)
 
+void UPrimitiveComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	USceneComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	UPrimitiveComponent* DuplicatedPrimitiveComponent = static_cast<UPrimitiveComponent*>(DuplicatedObject);
+	DuplicatedPrimitiveComponent->Bounds = {};
+	DuplicatedPrimitiveComponent->bDrawDebugBounds = bDrawDebugBounds;
+}
+
+void UPrimitiveComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	USceneComponent::PostDuplicate(DuplicatedObject, Context);
+
+	UPrimitiveComponent* DuplicatedPrimitiveComponent = static_cast<UPrimitiveComponent*>(DuplicatedObject);
+	DuplicatedPrimitiveComponent->UpdateBounds();
+}
+
 void UPrimitiveComponent::MarkTransformDirty()
 {
 	USceneComponent::MarkTransformDirty();

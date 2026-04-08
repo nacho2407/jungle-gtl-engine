@@ -4,6 +4,22 @@
 
 IMPLEMENT_RTTI(UActorComponent, UObject)
 
+void UActorComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UActorComponent* DuplicatedComponent = static_cast<UActorComponent*>(DuplicatedObject);
+	DuplicatedComponent->Owner = nullptr;
+	DuplicatedComponent->bRegistered = false;
+	DuplicatedComponent->bBegunPlay = false;
+	DuplicatedComponent->bCanEverTick = bCanEverTick;
+	DuplicatedComponent->bTickEnabled = bTickEnabled;
+}
+
+void UActorComponent::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	UActorComponent* DuplicatedComponent = static_cast<UActorComponent*>(DuplicatedObject);
+	DuplicatedComponent->Owner = Context.FindDuplicate(Owner.Get());
+}
+
 void UActorComponent::Serialize(FArchive& Ar)
 {
 	if (Ar.IsSaving()) Ar.Serialize("UUID", UUID);

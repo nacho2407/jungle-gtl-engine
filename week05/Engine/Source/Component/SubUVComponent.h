@@ -44,6 +44,7 @@ public:
 	/** SubUV 렌더링용 메시 데이터 반환 */
 	virtual FRenderMesh* GetRenderMesh() const override;
 	FDynamicMesh* GetSubUVMesh() const { return SubUVMesh.get(); }
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 
 private:
 	FVector2 Size = FVector2(1.f, 1.f);

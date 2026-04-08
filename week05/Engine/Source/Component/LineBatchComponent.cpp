@@ -2,12 +2,40 @@
 #include "Math/MathUtility.h"
 #include "Object/Class.h"
 
+namespace
+{
+	void CopyRenderMeshCPUState(const FRenderMesh* SourceMesh, FRenderMesh* DuplicatedMesh)
+	{
+		if (!SourceMesh || !DuplicatedMesh)
+		{
+			return;
+		}
+
+		DuplicatedMesh->Release();
+		DuplicatedMesh->Topology = SourceMesh->Topology;
+		DuplicatedMesh->Vertices = SourceMesh->Vertices;
+		DuplicatedMesh->Indices = SourceMesh->Indices;
+		DuplicatedMesh->Sections = SourceMesh->Sections;
+		DuplicatedMesh->PathFileName = SourceMesh->PathFileName;
+		DuplicatedMesh->bIsDirty = true;
+		DuplicatedMesh->UpdateLocalBound();
+	}
+}
+
 IMPLEMENT_RTTI(ULineBatchComponent, UPrimitiveComponent)
 
 void ULineBatchComponent::PostConstruct()
 {
 	LineMesh = std::make_shared<FDynamicMesh>();
 	LineMesh->Topology = EMeshTopology::EMT_LineList;
+}
+
+void ULineBatchComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	ULineBatchComponent* DuplicatedLineBatchComponent = static_cast<ULineBatchComponent*>(DuplicatedObject);
+	CopyRenderMeshCPUState(LineMesh.get(), DuplicatedLineBatchComponent->LineMesh.get());
 }
 
 void ULineBatchComponent::DrawLine(FVector InStart, FVector InEnd, FVector4 InColor)
