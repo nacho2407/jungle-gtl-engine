@@ -394,13 +394,13 @@ void USceneComponent::MoveLocal(const FVector& Delta)
 
 void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
 {
-	FRotator Rot = GetRelativeRotation();
+	FRotator Rot = GetCachedEditRotator();
 	Rot.Yaw += DeltaYaw;
 	Rot.Pitch += DeltaPitch;
 	Rot.Pitch = Clamp(Rot.Pitch, -89.9f, 89.9f);
 	Rot.Roll = 0.0f;
 
-	SetRelativeRotation(Rot);
+	SetRelativeRotationWithEulerHint(Rot.ToQuaternion(), Rot);
 }
 
 FMatrix USceneComponent::GetRelativeMatrix() const

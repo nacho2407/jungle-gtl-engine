@@ -116,11 +116,18 @@ void FGPUOcclusionCulling::InvalidateResults()
 	{
 		StagingProxies[i].clear();
 		StagingProxyCount[i] = 0;
+		StagingMaxProxyId[i] = 0;
 	}
 	OccludedBits.clear();
 	bHasResults = false;
 	WriteIndex = 0;
 	FrameCount = 0;
+
+	// Pre-gather 상태도 리셋 — 다음 프레임 BeginGatherAABB가 정상 진입하도록.
+	bPreGathered = false;
+	PreGatherWritePos = 0;
+	PreGatherMaxId = 0;
+	CPUAABBStaging.clear();
 }
 
 // ================================================================
