@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/EngineTypes.h"
+#include "Object/FName.h"
 
 // PIE 세션 실행 위치. 현재는 InProcess만 사용.
 enum class EPIESessionDestination : uint8
@@ -28,4 +29,6 @@ struct FPlayInEditorSessionInfo
 {
 	FRequestPlaySessionParams OriginalRequestParams;
 	double PIEStartTime = 0.0;
+	// PIE 시작 직전 활성 월드 핸들 — EndPlayMap에서 원복에 사용.
+	FName PreviousActiveWorldHandle;
 };
