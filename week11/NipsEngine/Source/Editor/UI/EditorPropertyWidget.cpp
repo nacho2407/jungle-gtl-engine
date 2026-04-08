@@ -11,6 +11,7 @@
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
+#include "Component/SubUVComponent.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -214,9 +215,12 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 	ImGui::Separator();
 	// Billboard 타입 체크
-	if (UBillboardComponent* BillboardComp =
-		dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
+	if (UBillboardComponent* BillboardComp = dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
 	{
+		if (dynamic_cast<USubUVComponent*>(PrimaryActor->GetRootComponent()))
+		{
+			return;
+		}
 		ImGui::Separator();
 		ImGui::Text("Sprite Texture");
 

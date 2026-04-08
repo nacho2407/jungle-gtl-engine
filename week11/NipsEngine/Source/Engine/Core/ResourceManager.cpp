@@ -183,10 +183,10 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 				TextureFilePaths.push_back(RelativePath);
 				LoadTexture(RelativePath, Device);
 			}
-			else
-			{
-				TextureFilePaths.push_back(RelativePath);
-			}
+			//else
+			//{
+			//	TextureFilePaths.push_back(RelativePath);
+			//}
 		}
 	}
 
@@ -287,10 +287,10 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 					TextureFilePaths.push_back(RelativePath);
 					LoadTexture(RelativePath,CahcedDevice);
 				}
-				else
-				{
-					TextureFilePaths.push_back(RelativePath);
-				}
+				//else
+				//{
+				//	TextureFilePaths.push_back(RelativePath);
+				//}
 			}
 		}
 	}

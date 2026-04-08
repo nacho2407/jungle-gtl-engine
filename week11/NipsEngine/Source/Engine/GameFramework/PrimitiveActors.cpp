@@ -187,5 +187,6 @@ void ABillboardActor::InitDefaultComponents()
 {	
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	SetRootComponent(Billboard);
+	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
 	//Billboard->SetTextureName();
 }
