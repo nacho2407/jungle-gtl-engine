@@ -11,7 +11,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Object/Object.h"
-#include "Object/ActorInterator.h"
+#include "Object/ActorIterator.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
@@ -97,16 +97,18 @@ json::JSON FSceneSaveManager::SerializeWorldToPrimitives(UWorld* World, const FW
     JSON Primitives = json::Object();
     int32 PrimitiveID = 0;
 
-	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
+	if (ULevel* PersistentLevel = World->GetPersistentLevel())
     {
-		AActor* Actor = *Iter;
-        if (!Actor) continue;
-
-        // 루트 컴포넌트만 추출하여 직렬화
-        if (USceneComponent* RootComp = Actor->GetRootComponent()) 
+        for (AActor* Actor : PersistentLevel->GetActors())
         {
-            JSON PrimObj = SerializeComponentToPrimitive(RootComp);
-            Primitives[std::to_string(PrimitiveID++)] = PrimObj;
+            if (!Actor) continue;
+
+            // 루트 컴포넌트만 추출하여 직렬화
+            if (USceneComponent* RootComp = Actor->GetRootComponent()) 
+            {
+                JSON PrimObj = SerializeComponentToPrimitive(RootComp);
+                Primitives[std::to_string(PrimitiveID++)] = PrimObj;
+            }
         }
     }
     return Primitives;
@@ -163,7 +165,8 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 	a[SceneKeys::Visible] = Actor->IsVisible();
 
 	// 자식 컴포넌트 및 NonScene 컴포넌트는 무시하고 RootComponent만 직렬화
-	if (Actor->GetRootComponent()) {
+	if (Actor->GetRootComponent()) 
+	{
 		a[SceneKeys::RootComponent] = SerializeSceneComponentTree(Actor->GetRootComponent());
 	}
 
@@ -320,12 +323,17 @@ void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode,
         }
         UObject* Obj = FObjectFactory::Get().Create(ActorClassName);
 
-        AActor* NewActor = Obj ? Obj->Cast<AActor>() : nullptr;
+        AActor* NewActor = Obj ? Cast<AActor>(Obj) : nullptr;
         if (!NewActor) continue;
 
         NewActor->InitDefaultComponents();
         NewActor->SetWorld(World);
         //World->SpawnActor(NewActor);
+		
+		if (ULevel* PersistentLevel = World->GetPersistentLevel())
+        {
+            PersistentLevel->AddActor(NewActor);
+        }
 
         if (USceneComponent* RootComp = NewActor->GetRootComponent()) 
         {

@@ -14,6 +14,9 @@ public:
 	USceneComponent();
 	~USceneComponent() override;
 
+	virtual USceneComponent* Duplicate() override;
+	virtual USceneComponent* DuplicateSubObjects() override { return this; }
+
 	// Parent Relation Manager
 	void AttachToComponent(USceneComponent* InParent);
 	void SetParent(USceneComponent* NewParent);
