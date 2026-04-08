@@ -1,6 +1,7 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
 #include "Render/Pipeline/RenderBus.h"
+#include "Render/Resource/ShaderManager.h"
 
 // ============================================================
 // FSubUVSceneProxy
@@ -18,7 +19,8 @@ void FSubUVSceneProxy::UpdateMesh()
 	// 분기시키는데, SubUV는 자체 ParticleResource를 사용하므로 그 분기가 불리하다.
 	// 여기서는 SubUV batcher 경로만 강제한다.
 	MeshBuffer = Owner->GetMeshBuffer();
-	Shader = nullptr;
+	// SelectionMask 아웃라인 패스에서 사용할 shader (Quad/Primitive 레이아웃)
+	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	Pass = ERenderPass::SubUV;
 	bBatcherRendered = true;
 	UpdateSortKey();
