@@ -226,11 +226,10 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(PIEWorld);
 
-	// TODO(Tick 담당): 아래 항목은 별도 작업 범위로 분리됨.
-	// - PIE World Tick 라우팅 (Editor World는 Tick 제외)
-	// - PIEWorld->BeginPlay() 호출 시점
-	// - ViewportClient가 참조하는 World* 스왑 (현재는 에디터 월드를 그대로 렌더)
-	// - PIE 중 에디터 입력(선택/기즈모) 차단 여부 결정
+	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
+	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
+	//    SpawnActor로 만든 신규 액터도 자동으로 BeginPlay된다.
+	PIEWorld->BeginPlay();
 }
 
 void UEditorEngine::EndPlayMap()
