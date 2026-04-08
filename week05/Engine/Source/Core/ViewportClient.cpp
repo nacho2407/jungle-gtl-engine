@@ -1,4 +1,4 @@
-﻿#include "ViewportClient.h"
+#include "ViewportClient.h"
 #include "World/World.h"
 #include "Input/InputManager.h"
 #include "Camera/Camera.h"

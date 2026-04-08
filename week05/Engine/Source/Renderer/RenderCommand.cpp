@@ -1,6 +1,12 @@
-﻿#include "RenderCommand.h"
+#include "RenderCommand.h"
 #include "Material.h"
 #include "MeshData.h"
+
+FRenderCommand::FRenderCommand(const FRenderCommand& Other) = default;
+FRenderCommand::FRenderCommand(FRenderCommand&& Other) noexcept = default;
+FRenderCommand& FRenderCommand::operator=(const FRenderCommand& Other) = default;
+FRenderCommand& FRenderCommand::operator=(FRenderCommand&& Other) noexcept = default;
+FRenderCommand::~FRenderCommand() = default;
 
 uint64 FRenderCommand::MakeSortKey(const FMaterial* InMaterial, const FRenderMesh* InMeshData)
 {

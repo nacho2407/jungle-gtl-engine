@@ -1,6 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
+
+#include <memory>
 
 struct FRenderMesh;
 class FMaterial;
@@ -14,7 +16,16 @@ enum class ERenderLayer
 
 struct ENGINE_API FRenderCommand
 {
+	FRenderCommand() = default;
+	FRenderCommand(const FRenderCommand& Other);
+	FRenderCommand(FRenderCommand&& Other) noexcept;
+	FRenderCommand& operator=(const FRenderCommand& Other);
+	FRenderCommand& operator=(FRenderCommand&& Other) noexcept;
+	~FRenderCommand();
+
 	FRenderMesh* RenderMesh = nullptr;
+	// 프레임 중 재생성되는 임시 메시(예: 회전 기즈모)의 수명을 보장한다.
+	std::shared_ptr<FRenderMesh> RenderMeshOwner = nullptr;
 
 	FMatrix WorldMatrix;
 	FMaterial* Material = nullptr;

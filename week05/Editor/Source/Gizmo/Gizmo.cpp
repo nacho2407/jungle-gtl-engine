@@ -257,6 +257,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 			return;
 		}
 		Command.RenderMesh = FTranslationGizmo->GetRenderMesh();
+		Command.RenderMeshOwner.reset();
 		OutQueue.AddCommand(Command);
 		break;
 
@@ -274,6 +275,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 
 			Command.WorldMatrix = AxisGizmoWorld;
 			Command.RenderMesh = AxisMesh.get();
+			Command.RenderMeshOwner = AxisMesh;
 			OutQueue.AddCommand(Command);
 		}
 
@@ -281,6 +283,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 		{
 			Command.WorldMatrix = ScreenGizmoWorld;
 			Command.RenderMesh = RotationScreenMesh.get();
+			Command.RenderMeshOwner = RotationScreenMesh;
 			OutQueue.AddCommand(Command);
 		}
 		break;
@@ -291,6 +294,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 			return;
 		}
 		Command.RenderMesh = FScaleGizmo->GetRenderMesh();
+		Command.RenderMeshOwner.reset();
 		OutQueue.AddCommand(Command);
 		break;
 
@@ -313,6 +317,7 @@ void FGizmo::BuildRenderCommands(AActor* SelectedActor, const FViewportEntry* En
 				FRenderCommand HighlightCommand = Command;
 				HighlightCommand.WorldMatrix = HighlightWorldMatrix;
 				HighlightCommand.RenderMesh = HighlightMeshSlot.get();
+				HighlightCommand.RenderMeshOwner = HighlightMeshSlot;
 				OutQueue.AddCommand(HighlightCommand);
 			}
 		};
