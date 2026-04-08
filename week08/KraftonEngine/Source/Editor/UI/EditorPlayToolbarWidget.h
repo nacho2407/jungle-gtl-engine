@@ -31,4 +31,5 @@ private:
 
 	float ToolbarHeight = 28.0f;
 	float IconSize = 16.0f;
+	float ButtonSpacing = 4.0f;
 };
