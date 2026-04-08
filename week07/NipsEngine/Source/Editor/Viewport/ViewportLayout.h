@@ -6,6 +6,7 @@
 #include "FSceneViewport.h"
 #include "EditorViewportClient.h"
 
+class UEditorEngine;
 class UWorld;
 class SViewport;
 class SSplitterV;
@@ -28,7 +29,7 @@ public:
 	static constexpr int32 MaxViewports = 4;
 
 	// Lifecycle
-	void Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager);
+	void Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine);
 	void Shutdown();
 	void UpdateHoverStates();
 	void Tick(float DeltaTime);
@@ -105,5 +106,6 @@ private:
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
 	FWindowsWindow* Window = nullptr;
 	FViewportRect HostRect;
+	UEditorEngine* Editor = nullptr;
 };
 

@@ -26,6 +26,7 @@ enum EEditorViewportType
 };
 
 
+class UEditorEngine;
 class UWorld;
 class UGizmoComponent;
 class FEditorSettings;
@@ -45,8 +46,8 @@ struct FEditorViewportState;
 class FEditorViewportClient : public FViewportClient
 {
 public:
-	void Initialize(FWindowsWindow* InWindow);
-	void SetWorld(UWorld* InWorld) { World = InWorld; }
+	void Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor);
+	void SetWorld(UWorld* InWorld);
 	void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
 	void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	void SetSelectionManager(FSelectionManager* InSelectionManager);
@@ -101,6 +102,9 @@ public:
 	bool IsBoxSelecting() const { return bBoxSelecting; }
 	POINT GetBoxSelectStart() const { return BoxSelectStart; }
 	POINT GetBoxSelectEnd() const { return BoxSelectEnd; }
+
+	void LockCursorToViewport();
+
 private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
@@ -113,10 +117,12 @@ private:
 
 	FVector ResolveOrbitPivot() const;
 
+	void UnlockCursor();
+
 private:
 	// Viewport <-> ViewportClient는 상호참조(상위 객체 소유권)
 	FWindowsWindow* Window = nullptr;
-
+	UEditorEngine* Editor = nullptr;
 	FSceneViewport* Viewport = nullptr;
 
 	EEditorViewportType  ViewportType = EVT_Perspective;  // 값 멤버로 직접 보유

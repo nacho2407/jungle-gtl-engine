@@ -9,6 +9,7 @@
 #include "Slate/SlateApplication.h"
 #include "Core/InputSystem.h"
 #include "Engine/Component/GizmoComponent.h"
+#include "EditorEngine.h"
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
 static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
@@ -19,10 +20,10 @@ static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewport
 	EVT_OrthoRight,    // 3 : 우하단 (라이트 뷰)
 };
 
-void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager)
+void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine)
 {
 	Window = InWindow;
-
+	Editor = EditorEngine;
 	// Settings 에서 레이아웃 상태 복원
 	const FEditorSettings& S = FEditorSettings::Get();
 	bSingleViewport    = (S.ActiveViewportCount == 1);
@@ -36,7 +37,7 @@ void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionMa
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		ViewportClients[i].SetSettings(&FEditorSettings::Get());
-		ViewportClients[i].Initialize(Window);
+		ViewportClients[i].Initialize(Window, EditorEngine);
 		ViewportClients[i].SetWorld(World);
 		ViewportClients[i].SetGizmo(SelectionManager->GetGizmo());
 		ViewportClients[i].SetSelectionManager(SelectionManager);
@@ -147,7 +148,6 @@ void FViewportLayout::UpdateHoverStates()
 void FViewportLayout::Tick(float DeltaTime)
 {
 	UpdateHoverStates();
-
 	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
@@ -305,6 +305,9 @@ void FViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 	if (Index < 0) Index = 0;
 	if (Index >= MaxViewports) Index = MaxViewports - 1;
 	LastFocusedViewportIndex = Index;
+
+	FEditorViewportClient& MainViewport = GetViewportClient(LastFocusedViewportIndex);
+	MainViewport.LockCursorToViewport();
 }
 
 void FViewportLayout::SyncViewportRects()
