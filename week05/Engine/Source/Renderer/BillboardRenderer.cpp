@@ -25,6 +25,16 @@ bool FBillboardRenderer::Initialize(FRenderer* InRenderer)
 	if (!Device || !DeviceContext)
 		return false;
 
+
+	// 파일에 포함되어 있는 텍스처 로딩
+	for (auto& Entry : std::filesystem::directory_iterator(FPaths::IconDir()))
+	{
+		if (Entry.path().extension() == L".png" || Entry.path().extension() == L".dds")
+		{
+			GetOrLoadTexture(Entry.path().wstring());
+		}
+	}
+
 	// 전용 머티리얼 구성
 	const std::wstring ShaderDir = FPaths::ShaderDir();
 	const std::wstring VSPath = ShaderDir + L"SubUVVertexShader.hlsl";

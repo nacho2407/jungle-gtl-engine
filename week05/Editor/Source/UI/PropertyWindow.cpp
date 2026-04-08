@@ -5,6 +5,7 @@
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Object/ObjectIterator.h"
 #include "Renderer/MeshData.h"
 #include "Renderer/RenderMesh.h"
@@ -378,6 +379,11 @@ void FPropertyWindow::Render(FEditorEngine* Engine)
 					}
 					ImGui::Unindent(8.0f);
 				}
+			}
+
+			if (UBillboardComponent* BillboardComp = SelectedActor->GetComponentByClass<UBillboardComponent>())
+			{
+
 			}
 		}
 	}
