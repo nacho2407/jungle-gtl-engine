@@ -66,6 +66,11 @@ class FSlateApplication
 	void BringChromeWidgetToFront(SWidget* Widget); // 크롬 위젯 하나를 그리기 순서의 맨 앞으로 올린다.
 
 public:
+	uint32 FocusBorderColor = 0xFF00B7FF;
+	uint32 SplitterIdleColor = 0xFF3C3C3C;
+	uint32 SplitterHoverColor = 0xFF5A9CFF;
+	uint32 SplitterDraggingColor = 0xFF5A9CFF;
+
 	void Initialize(const FRect& Area, FViewport* VPs[], int32 Count); // 뷰포트 위젯과 초기 레이아웃 트리를 구성한다.
 	void SetLayout(EViewportLayout Layout); // 활성 뷰포트 레이아웃 프리셋을 바꾼다.
 	void FocusViewport(FViewportId ViewportId); // 지정한 활성 뷰포트로 포커스를 옮긴다.

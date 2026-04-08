@@ -63,10 +63,8 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 	TitleButton.bEnabled = false;
 	TitleButton.FontSize = 18.0f;
 	TitleButton.LetterSpacing = 0.5f;
-	TitleButton.DisabledBackgroundColor = 0xFF1F1F1F;
-	TitleButton.BorderColor = 0xFF4E4E4E;
-	TitleButton.DisabledTextColor = 0xFFBDBDBD;
 	TitleButton.TextHAlign = ETextHAlign::Center;
+	ApplyTitleButtonStyle();
 
 	LayoutDropdown.Label = "Layout";
 	LayoutDropdown.Placeholder = "Select";
@@ -97,6 +95,15 @@ SViewportToolbarWidget::SViewportToolbarWidget(FEditorEngine* InEngine)
 	{
 		ApplyRenderMode(static_cast<ERenderMode>(SelectedIndex));
 	};
+}
+
+void SViewportToolbarWidget::ApplyTitleButtonStyle()
+{
+	TitleButton.BackgroundColor = TitleBackgroundColor;
+	TitleButton.DisabledBackgroundColor = TitleBackgroundColor;
+	TitleButton.BorderColor = TitleBorderColor;
+	TitleButton.TextColor = TitleTextColor;
+	TitleButton.DisabledTextColor = TitleTextColor;
 }
 
 void SViewportToolbarWidget::ConfigureForGlobalLayout()

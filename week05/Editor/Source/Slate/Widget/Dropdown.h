@@ -26,6 +26,13 @@ public:
 	uint32 OptionBackgroundColor = 0xFF2C2C2C;
 	uint32 OptionBorderColor = 0xFF555555;
 
+	uint32 HeaderLabelColor = 0xFFE5E5E5;
+	uint32 HeaderArrowColor = 0xFFE5E5E5;
+	uint32 OptionTextColor = 0xFFFFFFFF;
+	uint32 DisabledHeaderLabelColor = 0xFF9A9A9A;
+	uint32 DisabledHeaderArrowColor = 0xFF9A9A9A;
+	uint32 DisabledOptionTextColor = 0xFF9A9A9A;
+
 	void SetOptions(const TArray<FString>& InOptions);
 	const TArray<FString>& GetOptions() const { return Options; }
 

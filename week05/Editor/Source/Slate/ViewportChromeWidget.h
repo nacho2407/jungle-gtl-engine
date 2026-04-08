@@ -34,5 +34,8 @@ private:
 	SViewportToolbarWidget ViewSettings;
 	FpsStatWidget FpsWidget;
 	SToolbar Toolbar;
+
+	uint32 BackgroundFillColor = 0xD01C1E21;
+	uint32 BorderColor = 0xFF555B63;
 };
 
