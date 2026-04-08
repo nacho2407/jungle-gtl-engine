@@ -2,11 +2,17 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <d3d11.h>
 
 void FGPUProfiler::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext)
 {
 	Device = InDevice;
 	Context = InContext;
+	if (!Device || !Context)
+	{
+		bInitialized = false;
+		return;
+	}
 
 	D3D11_QUERY_DESC disjointDesc = {};
 	disjointDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
@@ -16,13 +22,13 @@ void FGPUProfiler::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InCon
 
 	for (uint32 f = 0; f < FRAME_COUNT; ++f)
 	{
-		Device->CreateQuery(&disjointDesc, &Frames[f].DisjointQuery);
+		Device->CreateQuery(&disjointDesc, Frames[f].DisjointQuery.ReleaseAndGetAddressOf());
 		Frames[f].UsedCount = 0;
 
 		for (uint32 i = 0; i < MAX_TIMESTAMPS; ++i)
 		{
-			Device->CreateQuery(&timestampDesc, &Frames[f].Timestamps[i].BeginQuery);
-			Device->CreateQuery(&timestampDesc, &Frames[f].Timestamps[i].EndQuery);
+			Device->CreateQuery(&timestampDesc, Frames[f].Timestamps[i].BeginQuery.ReleaseAndGetAddressOf());
+			Device->CreateQuery(&timestampDesc, Frames[f].Timestamps[i].EndQuery.ReleaseAndGetAddressOf());
 			Frames[f].Timestamps[i].Name = nullptr;
 		}
 	}
@@ -36,17 +42,17 @@ void FGPUProfiler::Shutdown()
 
 	for (uint32 f = 0; f < FRAME_COUNT; ++f)
 	{
-		if (Frames[f].DisjointQuery) { Frames[f].DisjointQuery->Release(); Frames[f].DisjointQuery = nullptr; }
+		Frames[f].DisjointQuery.Reset();
 
 		for (uint32 i = 0; i < MAX_TIMESTAMPS; ++i)
 		{
-			if (Frames[f].Timestamps[i].BeginQuery) { Frames[f].Timestamps[i].BeginQuery->Release(); }
-			if (Frames[f].Timestamps[i].EndQuery)   { Frames[f].Timestamps[i].EndQuery->Release(); }
-			Frames[f].Timestamps[i].BeginQuery = nullptr;
-			Frames[f].Timestamps[i].EndQuery = nullptr;
+			Frames[f].Timestamps[i].BeginQuery.Reset();
+			Frames[f].Timestamps[i].EndQuery.Reset();
 		}
 	}
 
+	Device.Reset();
+	Context.Reset();
 	bInitialized = false;
 }
 
@@ -57,17 +63,27 @@ void FGPUProfiler::BeginFrame()
 	// 이전 프레임 결과 수집
 	CollectPreviousFrame();
 
+	// 쿼리 재사용 전에 결과가 준비됐는지 확인 (GPU가 느리면 스킵)
+	if (Context->GetData(Frames[WriteIndex].DisjointQuery.Get(), nullptr, 0,
+		D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK)
+	{
+		bSkipFrame = true;
+		return;
+	}
+	bSkipFrame = false;
+
 	// 현재 프레임 시작
 	FFrameData& Write = Frames[WriteIndex];
 	Write.UsedCount = 0;
-	Context->Begin(Write.DisjointQuery);
+	Context->Begin(Write.DisjointQuery.Get());
 }
 
 void FGPUProfiler::EndFrame()
 {
 	if (!bInitialized) return;
+	if (bSkipFrame) return;
 
-	Context->End(Frames[WriteIndex].DisjointQuery);
+	Context->End(Frames[WriteIndex].DisjointQuery.Get());
 
 	// 프레임 스왑
 	WriteIndex = 1 - WriteIndex;
@@ -76,24 +92,26 @@ void FGPUProfiler::EndFrame()
 uint32 FGPUProfiler::BeginTimestamp(const char* Name)
 {
 	if (!bInitialized) return UINT32_MAX;
+	if (bSkipFrame) return UINT32_MAX;
 
 	FFrameData& Write = Frames[WriteIndex];
 	if (Write.UsedCount >= MAX_TIMESTAMPS) return UINT32_MAX;
 
 	uint32 Idx = Write.UsedCount++;
 	Write.Timestamps[Idx].Name = Name;
-	Context->End(Write.Timestamps[Idx].BeginQuery);  // Timestamp은 End()로 기록
+	Context->End(Write.Timestamps[Idx].BeginQuery.Get());  // Timestamp은 End()로 기록
 	return Idx;
 }
 
 void FGPUProfiler::EndTimestamp(uint32 Index)
 {
 	if (!bInitialized || Index == UINT32_MAX) return;
+	if (bSkipFrame) return;
 
 	FFrameData& Write = Frames[WriteIndex];
 	if (Index >= Write.UsedCount) return;
 
-	Context->End(Write.Timestamps[Index].EndQuery);
+	Context->End(Write.Timestamps[Index].EndQuery.Get());
 }
 
 void FGPUProfiler::CollectPreviousFrame()
@@ -103,7 +121,7 @@ void FGPUProfiler::CollectPreviousFrame()
 
 	// Disjoint 결과 확인 (UsedCount와 무관하게 항상 읽어서 Query 상태를 소비)
 	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
-	HRESULT hr = Context->GetData(Read.DisjointQuery, &disjointData, sizeof(disjointData), 0);
+	HRESULT hr = Context->GetData(Read.DisjointQuery.Get(), &disjointData, sizeof(disjointData), 0);
 	if (hr != S_OK || disjointData.Disjoint || Read.UsedCount == 0)
 	{
 		return;
@@ -114,8 +132,8 @@ void FGPUProfiler::CollectPreviousFrame()
 	for (uint32 i = 0; i < Read.UsedCount; ++i)
 	{
 		UINT64 tsBegin = 0, tsEnd = 0;
-		if (Context->GetData(Read.Timestamps[i].BeginQuery, &tsBegin, sizeof(UINT64), 0) != S_OK) continue;
-		if (Context->GetData(Read.Timestamps[i].EndQuery, &tsEnd, sizeof(UINT64), 0) != S_OK) continue;
+		if (Context->GetData(Read.Timestamps[i].BeginQuery.Get(), &tsBegin, sizeof(UINT64), 0) != S_OK) continue;
+		if (Context->GetData(Read.Timestamps[i].EndQuery.Get(), &tsEnd, sizeof(UINT64), 0) != S_OK) continue;
 
 		double ElapsedMs = static_cast<double>(tsEnd - tsBegin) * InvFrequency;
 		double ElapsedSec = ElapsedMs * 0.001;
