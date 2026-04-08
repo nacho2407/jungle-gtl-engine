@@ -86,6 +86,11 @@ void UWorld::AddActor(AActor* Actor)
 	MarkWorldPrimitivePickingBVHDirty();
 	InvalidateVisibleSet();
 
+	// PIE 중 Duplicate(Ctrl+D)나 SpawnActor로 들어온 액터에도 BeginPlay를 보장.
+	if (bHasBegunPlay && !Actor->HasActorBegunPlay())
+	{
+		Actor->BeginPlay();
+	}
 }
 
 void UWorld::MarkWorldPrimitivePickingBVHDirty()
