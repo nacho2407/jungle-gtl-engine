@@ -288,6 +288,7 @@
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp" />
@@ -295,18 +296,12 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
-    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp">
-      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
-    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp">
-      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
-      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
@@ -400,12 +395,14 @@
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
+    <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorStatWidget.h" />
@@ -483,6 +480,7 @@
     <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
@@ -513,6 +511,7 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Runtime\resource.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
+    <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
     <ClInclude Include="Source\Engine\Texture\Texture2D.h" />
@@ -552,6 +551,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\HiZGenerate.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='FPSOptimization|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\HiZVisualize.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
