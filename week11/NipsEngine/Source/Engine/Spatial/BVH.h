@@ -90,6 +90,15 @@ class FBVH
     void BuildBVH(const TArray<FAABB>& ObjectBounds);
 
     /**
+     * @brief Build a BVH over a subset of objects while preserving their original object indices.
+     * @param ObjectBounds Array of per-object AABBs indexed by the final object ids.
+     * @param BuildObjectIndices Object indices to include in the new BVH.
+     * @note This is useful when the owner keeps sparse object slots but wants a
+     * full top-down rebuild over only the currently active objects.
+     */
+    void BuildBVH(const TArray<FAABB>& ObjectBounds, const TArray<int32>& BuildObjectIndices);
+
+    /**
      * @brief Rebuild BVH from scratch.
      * @param ObjectBounds Array of per-object AABBs.
      */

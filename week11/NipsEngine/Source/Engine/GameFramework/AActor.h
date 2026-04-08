@@ -85,7 +85,7 @@ public:
 		return FVector(0, 0, 1);
 	}
 
-	void SetWorld(UWorld* World) { OwningWorld = World; }
+	void SetWorld(UWorld* World);
 	UWorld* GetWorld() const { return OwningWorld; }
 
 	bool IsVisible() const { return bVisible; }

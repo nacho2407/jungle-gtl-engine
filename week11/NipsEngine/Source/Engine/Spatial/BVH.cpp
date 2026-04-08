@@ -28,9 +28,44 @@ using BVHDetail::GetAxisValue;
  */
 void FBVH::BuildBVH(const TArray<FAABB>& ObjectBounds)
 {
+    const int32 ObjectCount = static_cast<int32>(ObjectBounds.size());
+    TArray<int32> BuildObjectIndices;
+    BuildObjectIndices.resize(ObjectCount);
+    for (int32 i{0}; i < ObjectCount; ++i)
+    {
+        BuildObjectIndices[i] = i;
+    }
+    BuildBVH(ObjectBounds, BuildObjectIndices);
+}
+
+/**
+ * @brief Build a BVH over a subset of objects while preserving their original indices.
+ * @param ObjectBounds Array of per-object AABBs.
+ * @param BuildObjectIndices Object indices to include in the BVH.
+ */
+void FBVH::BuildBVH(const TArray<FAABB>& ObjectBounds, const TArray<int32>& BuildObjectIndices)
+{
     Reset();
 
-    const int32 ObjectCount = static_cast<int32>(ObjectBounds.size());
+    TArray<int32> FilteredBuildObjectIndices;
+    FilteredBuildObjectIndices.reserve(BuildObjectIndices.size());
+
+    int32 MaxObjectIndex = INDEX_NONE;
+    for (int32 ObjectIndex : BuildObjectIndices)
+    {
+        if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(ObjectBounds.size()))
+        {
+            continue;
+        }
+
+        FilteredBuildObjectIndices.push_back(ObjectIndex);
+        if (ObjectIndex > MaxObjectIndex)
+        {
+            MaxObjectIndex = ObjectIndex;
+        }
+    }
+
+    const int32 ObjectCount = static_cast<int32>(FilteredBuildObjectIndices.size());
     if (ObjectCount == 0)
     {
         RootNodeIndex = INDEX_NONE;
@@ -38,14 +73,8 @@ void FBVH::BuildBVH(const TArray<FAABB>& ObjectBounds)
     }
 
     Nodes.reserve(ObjectCount * 2 - 1);
-    ObjectToLeafNode.resize(ObjectCount, INDEX_NONE);
-    TArray<int32> BuildObjectIndices;
-    BuildObjectIndices.resize(ObjectCount);
-    for (int32 i{0}; i < ObjectCount; ++i)
-    {
-        BuildObjectIndices[i] = i;
-    }
-    RootNodeIndex = BuildNode(ObjectBounds, BuildObjectIndices, 0, ObjectCount, 0);
+    ObjectToLeafNode.resize(std::max(static_cast<int32>(ObjectBounds.size()), MaxObjectIndex + 1), INDEX_NONE);
+    RootNodeIndex = BuildNode(ObjectBounds, FilteredBuildObjectIndices, 0, ObjectCount, 0);
 
     BVH_VALIDATE();
 }
