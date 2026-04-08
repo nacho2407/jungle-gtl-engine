@@ -116,6 +116,7 @@ private:
 	TArray<FWorldContext*> PreviewWorldContexts;
 
 	FWorldContext* ActiveWorldContext = nullptr;
+	FWorldContext* PrePIEActiveWorldContext = nullptr;
 
 	FWindowsWindow* MainWindow = nullptr;
 	FEditorViewportRegistry ViewportRegistry;

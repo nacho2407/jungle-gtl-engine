@@ -400,6 +400,7 @@ void FEngine::DestroyWorldContext(FWorldContext* Context)
 
 	if (Context->World)
 	{
+		Context->World->EndPlay();
 		Context->World->CleanupWorld();
 		Context->World->MarkPendingKill();
 		Context->World = nullptr;

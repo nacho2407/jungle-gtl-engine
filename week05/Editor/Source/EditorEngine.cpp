@@ -526,6 +526,7 @@ bool FEditorEngine::StartPIE()
 	SetSelectedActor(nullptr);
 
 	// PIE 월드 컨텍스트 활성화 및 BeginPlay 호출
+	PrePIEActiveWorldContext = ActiveWorldContext;
 	ActiveWorldContext = PIEWorldContext;
 
 	PIEWorld->BeginPlay();
@@ -559,18 +560,12 @@ void FEditorEngine::EndPIE()
 	}
 	SavedPIEViewportStates.clear();
 
-	// PIE 월드 정리 및 컨텍스트 제거
-	if (PIEWorldContext && PIEWorldContext->World)
-	{
-		PIEWorldContext->World->EndPlay();
-		PIEWorldContext->World->CleanupWorld();
-	}
-
 	DestroyWorldContext(PIEWorldContext);
 	PIEWorldContext = nullptr;
 
-	// 에디터 월드 컨텍스트로 복원
-	ActiveWorldContext = EditorWorldContext;
+	// PIE 진입 전 활성 월드 컨텍스트로 복원
+	ActiveWorldContext = PrePIEActiveWorldContext ? PrePIEActiveWorldContext : EditorWorldContext;
+	PrePIEActiveWorldContext = nullptr;
 	SetSelectedActor(SavedPIESelectedActor.Get());
 	SavedPIESelectedActor = nullptr;
 

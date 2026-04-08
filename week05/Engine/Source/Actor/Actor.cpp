@@ -222,17 +222,38 @@ void AActor::Tick(float DeltaTime)
 		return;
 	}
 
+	UWorld* World = GetWorld();
+	const EWorldType WorldType = World ? World->GetWorldType() : EWorldType::Game;
+	const bool bIsPlayWorld = (WorldType == EWorldType::Game || WorldType == EWorldType::PIE);
+	if (bIsPlayWorld && !bActorBegunPlay)
+	{
+		return;
+	}
+
 	for (UActorComponent* Component : OwnedComponents)
 	{
-		if (Component && Component->CanTick())
+		if (!Component || !Component->CanTick())
 		{
-			Component->Tick(DeltaTime);
+			continue;
 		}
+
+		if (bIsPlayWorld && !Component->HasBegunPlay())
+		{
+			continue;
+		}
+
+		if (WorldType == EWorldType::Editor && !Component->IsTickInEditor())
+		{
+			continue;
+		}
+
+		Component->Tick(DeltaTime);
 	}
 }
 
 void AActor::EndPlay()
 {
+	bActorBegunPlay = false;
 }
 
 void AActor::Destroy()

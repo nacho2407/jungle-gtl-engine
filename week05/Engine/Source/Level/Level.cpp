@@ -60,7 +60,6 @@ void ULevel::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Cont
 {
 	ULevel* DuplicatedLevel = static_cast<ULevel*>(DuplicatedObject);
 	DuplicatedLevel->Actors.clear();
-	DuplicatedLevel->bBegunPlay = false;
 	DuplicatedLevel->SpatialBVH.Reset();
 	DuplicatedLevel->bSpatialDirty = true;
 }

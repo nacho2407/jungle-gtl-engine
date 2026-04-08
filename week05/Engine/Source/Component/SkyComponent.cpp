@@ -17,6 +17,7 @@ void USkyComponent::PostConstruct()
 {
 	bDrawDebugBounds = false;
 	bCanEverTick = true;
+	bTickInEditor = true;
 
 	FTransform T = GetRelativeTransform();
 	T.SetScale3D({ 2000.0f, 2000.0f, 2000.0f });

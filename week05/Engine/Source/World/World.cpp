@@ -312,53 +312,22 @@ void UWorld::DestroyActor(AActor* InActor)
 
 ULevel* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Device)
 {
-	// 이미 로드됐는지 확인
-	if (ULevel* Existing = FindStreamingLevel(LevelName))
-	{
-		return Existing;
-	}
-	ULevel* NewLevel = FObjectFactory::ConstructObject<ULevel>(this, LevelName);
-	if (!NewLevel) return nullptr;
+	(void)LevelName;
+	(void)Device;
 
-	if (Device)
-	{
-		const std::filesystem::path SceneDir = FPaths::SceneDir();
-		TryLoadSceneFromCandidates(NewLevel, Device, {
-			SceneDir / FPaths::ToPath(LevelName + ".json"),
-			SceneDir / FPaths::ToPath(LevelName + ".scene")
-		});
-	}
-	StreamingLevels.push_back(NewLevel);
+	// StreamingLevel은 현재 프로젝트에서 사용하지 않으므로 비활성화
 
-	// 이미 게임 진행 중이면 BeginPlay 호출
-	if (bBegunPlay)
-	{
-		NewLevel->BeginPlay();
-	}
-	return NewLevel;
+	return nullptr;
 }
 
 void UWorld::UnloadStreamingLevel(const FString& LevelName)
 {
-	auto It = std::find_if(StreamingLevels.begin(), StreamingLevels.end(),
-		[&](ULevel* Level) { return Level->GetName() == LevelName; });
-	if (It != StreamingLevels.end())
-	{
-		(*It)->ClearActors();
-		(*It)->MarkPendingKill();
-		StreamingLevels.erase(It);
-	}
+	(void)LevelName;
 }
 
 ULevel* UWorld::FindStreamingLevel(const FString& LevelName) const
 {
-	for (ULevel* Level : StreamingLevels)
-	{
-		if (Level && Level->GetName() == LevelName)
-		{
-			return Level;
-		}
-	}
+	(void)LevelName;
 	return nullptr;
 }
 
