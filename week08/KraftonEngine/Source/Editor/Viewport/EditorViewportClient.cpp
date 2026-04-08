@@ -21,6 +21,8 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "Collision/RayUtils.h"
 #include "Object/Object.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "Editor/EditorEngine.h"
+#include "GameFramework/AActor.h"
 #include "ImGui/imgui.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
@@ -132,8 +134,48 @@ void FEditorViewportClient::Tick(float DeltaTime)
 {
 	if (!bIsActive) return;
 
+	TickEditorShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
+}
+
+void FEditorViewportClient::TickEditorShortcuts()
+{
+	UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+	if (!EditorEngine)
+	{
+		return;
+	}
+
+	// PIE 중 ESC로 종료 (UE 동작과 동일)
+	if (EditorEngine->IsPlayingInEditor() && InputSystem::Get().GetKeyDown(VK_ESCAPE))
+	{
+		EditorEngine->RequestEndPlayMap();
+	}
+
+	// Ctrl+D — 선택된 액터 복제
+	if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
+	{
+		const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
+		if (!ToDuplicate.empty())
+		{
+			TArray<AActor*> NewSelection;
+			for (AActor* Src : ToDuplicate)
+			{
+				if (!Src) continue;
+				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
+				if (Dup)
+				{
+					NewSelection.push_back(Dup);
+				}
+			}
+			SelectionManager->ClearSelection();
+			for (AActor* Actor : NewSelection)
+			{
+				SelectionManager->ToggleSelect(Actor);
+			}
+		}
+	}
 }
 
 void FEditorViewportClient::TickInput(float DeltaTime)
