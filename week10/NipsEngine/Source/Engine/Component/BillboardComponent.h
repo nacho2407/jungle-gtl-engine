@@ -9,6 +9,8 @@ protected:
 	bool bIsBillboard = true;
 	bool TryGetActiveCamera(const FViewportCamera*& OutCamera) const;
 
+	virtual UBillboardComponent* Duplicate() override;
+	virtual UBillboardComponent* DuplicateSubObjects() override  { return this; }
 
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
