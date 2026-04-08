@@ -7,6 +7,7 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
+#include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
 
@@ -66,6 +67,31 @@ bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	}
 
 	return false;
+}
+
+void UTextRenderComponent::Serialize(FArchive& Ar)
+{
+	UBillboardComponent::Serialize(Ar);
+
+	Ar << Text;
+	Ar << FontName;
+	Ar << Color;
+	Ar << FontSize;
+	Ar << Spacing;
+	Ar << CharWidth;
+	Ar << CharHeight;
+	Ar << RenderSpace;
+	Ar << HAlign;
+	Ar << VAlign;
+	Ar << ScreenX;
+	Ar << ScreenY;
+}
+
+void UTextRenderComponent::PostDuplicate()
+{
+	UBillboardComponent::PostDuplicate();
+	// 폰트 리소스 재바인딩 — 직렬화된 FontName 기준으로 ResourceManager에서 다시 lookup
+	SetFont(FontName);
 }
 
 FString UTextRenderComponent::GetOwnerUUIDToString() const

@@ -34,8 +34,6 @@ public:
 	UMaterial* GetMaterial(int32 ElementIndex) const;
 	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
 
-	void Serialize(bool bIsLoading, json::JSON& Handle);
-
 	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 

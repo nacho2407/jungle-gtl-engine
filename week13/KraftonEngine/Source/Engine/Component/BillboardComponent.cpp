@@ -2,12 +2,19 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
+#include "Serialization/Archive.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
 FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 {
 	return new FBillboardSceneProxy(this);
+}
+
+void UBillboardComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+	Ar << bIsBillboard;
 }
 
 void UBillboardComponent::TickComponent(float DeltaTime)
