@@ -75,6 +75,10 @@ public:
 	void RequestEndPlayMap();
 	bool IsPlayingInEditor() const { return PlayInEditorSessionInfo.has_value(); }
 
+	// 즉시 동기 종료 — Save / NewScene / Load 등 에디터 월드를 만지는 작업 직전에 호출.
+	// PIE 중이 아니면 no-op.
+	void StopPlayInEditorImmediate() { if (IsPlayingInEditor()) EndPlayMap(); }
+
 #if STATS
 	FGPUOcclusionCulling* GetGPUOcclusion()
 	{
