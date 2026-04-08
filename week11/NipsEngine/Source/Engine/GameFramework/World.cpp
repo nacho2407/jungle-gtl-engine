@@ -12,6 +12,7 @@ UWorld::UWorld()
 // 소멸 역시 UObjectManager를 통해 처리한다.
 UWorld::~UWorld()
 { 
+    SpatialIndex.Clear();
     UObjectManager::Get().DestroyObject(PersistentLevel); 
 }
 
@@ -19,6 +20,12 @@ UWorld::~UWorld()
 UWorld* UWorld::Duplicate()
 {
     UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
+
+    if (NewWorld->PersistentLevel)
+    {
+        UObjectManager::Get().DestroyObject(NewWorld->PersistentLevel);
+        NewWorld->PersistentLevel = nullptr;
+    }
 
     NewWorld->WorldType = this->WorldType;
     NewWorld->SetActiveCamera(this->ActiveCamera);
@@ -44,6 +51,8 @@ UWorld* UWorld::DuplicateSubObjects()
         }
     }
 
+    RebuildSpatialIndex();
+
 	return this;
 }
 
@@ -51,6 +60,7 @@ void UWorld::BeginPlay()
 {
 	bHasBegunPlay = true;
 	PersistentLevel->BeginPlay();
+    RebuildSpatialIndex();
 }
 
 void UWorld::Tick(float DeltaTime)
@@ -69,6 +79,8 @@ void UWorld::Tick(float DeltaTime)
             Actor->Tick(DeltaTime);
         }
     }
+
+    SyncSpatialIndex();
 }
 
 void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
@@ -76,6 +88,16 @@ void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
 	if(bHasBegunPlay)
 	{
 		bHasBegunPlay = false;
-		PersistentLevel->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
+		PersistentLevel->EndPlay(EndPlayReason);
 	}
+}
+
+void UWorld::RebuildSpatialIndex()
+{
+    SpatialIndex.Rebuild(this);
+}
+
+void UWorld::SyncSpatialIndex()
+{
+    SpatialIndex.FlushDirtyBounds();
 }

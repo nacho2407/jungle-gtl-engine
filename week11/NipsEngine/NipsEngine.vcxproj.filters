@@ -425,6 +425,9 @@
     <ClCompile Include="Source\Engine\Spatial\KDTree.cpp">
       <Filter>Source\Engine\Spatial</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Spatial\WorldSpatialIndex.cpp">
+      <Filter>Source\Engine\Spatial</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp">
       <Filter>Source\Misc\ObjViewer</Filter>
     </ClCompile>
@@ -891,6 +894,9 @@
       <Filter>Source\Engine\Spatial</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Spatial\KDTree.h">
+      <Filter>Source\Engine\Spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Spatial\WorldSpatialIndex.h">
       <Filter>Source\Engine\Spatial</Filter>
     </ClInclude>
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h">

@@ -14,6 +14,7 @@ FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer&
 	: Editor(InEditor)
 {
 	Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
+	ViewportCullingStats.resize(FViewportLayout::MaxViewports);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline()
@@ -27,6 +28,11 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FStatManager::Get().TakeSnapshot();
 	FGPUProfiler::Get().TakeSnapshot();
 #endif
+
+	for (FRenderCollector::FCullingStats& Stats : ViewportCullingStats)
+	{
+		Stats = {};
+	}
 
 	if (!Editor->GetWorld()) return;
 
@@ -98,7 +104,9 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 
-	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+	const FFrustum& ViewFrustum = Camera->GetFrustum();
+	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
+	ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
 	Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, Camera->IsOrthographic());
 
 	// 뷰포트별 카메라 기준으로 기즈모 스케일 결정
@@ -120,4 +128,16 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	// 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
 	Renderer.PrepareBatchers(Bus);
 	Renderer.Render(Bus);
+}
+
+const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCullingStats(int32 ViewportIndex) const
+{
+	static const FRenderCollector::FCullingStats EmptyStats{};
+
+	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportCullingStats.size()))
+	{
+		return EmptyStats;
+	}
+
+	return ViewportCullingStats[ViewportIndex];
 }

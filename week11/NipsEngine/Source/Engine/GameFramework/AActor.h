@@ -32,6 +32,8 @@ public:
 
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
+		bPrimitiveCacheDirty = true;
+		NotifyComponentRegistered(Comp);
 		return Comp;
 	}
 
@@ -92,15 +94,19 @@ public:
 		return FVector(0, 0, 1);
 	}
 
-	void SetWorld(UWorld* World) { OwningWorld = World; }
+	void SetWorld(UWorld* World);
 	UWorld* GetWorld() const { return OwningWorld; }
 
 	bool IsVisible() const { return bVisible; }
-	void SetVisible(bool Visible) { bVisible = Visible; }
+	void SetVisible(bool Visible);
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
 protected:
+	void NotifyComponentRegistered(UActorComponent* Component);
+	void NotifyComponentUnregistered(UActorComponent* Component);
+	void MarkPrimitiveComponentsDirty();
+
 	USceneComponent* RootComponent = nullptr;
 	UWorld* OwningWorld = nullptr;
 

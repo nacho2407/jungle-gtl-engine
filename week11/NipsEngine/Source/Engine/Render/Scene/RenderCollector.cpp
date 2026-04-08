@@ -11,10 +11,41 @@
 #include "Component/SubUVComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
+#include "Engine/Geometry/Frustum.h"
 #include "Render/Resource/Material.h"
+#include <unordered_set>
 
 namespace
 {
+	FColor MakeBVHInternalNodeColor(int32 PathIndexFromLeaf, int32 PathLength)
+	{
+		if (PathLength <= 1)
+		{
+			return FColor::Yellow();
+		}
+
+		const float T = static_cast<float>(PathIndexFromLeaf) / static_cast<float>(PathLength - 1);
+		return FColor::Lerp(FColor::Cyan(), FColor::Yellow(), T);
+	}
+
+	bool UsesCameraDependentRenderBounds(const UPrimitiveComponent* PrimitiveComponent)
+	{
+		if (PrimitiveComponent == nullptr)
+		{
+			return false;
+		}
+
+		switch (PrimitiveComponent->GetPrimitiveType())
+		{
+		case EPrimitiveType::EPT_Billboard:
+		case EPrimitiveType::EPT_Text:
+		case EPrimitiveType::EPT_SubUV:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
 	{
 		const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
@@ -67,6 +98,8 @@ namespace
 	{
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
+		case EPrimitiveType::EPT_Billboard:
+			return BuildQuadAABB(MakeViewBillboardMatrix(PrimitiveComponent, RenderBus));
 		case EPrimitiveType::EPT_Text:
 		{
 			const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(PrimitiveComponent);
@@ -84,15 +117,96 @@ namespace
 	}
 }
 
-void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
+                                    const FFrustum* ViewFrustum)
 {
+	ResetCullingStats();
+
 	if (!World) return;
+
+	if (ViewFrustum != nullptr)
+	{
+		CollectWorldWithFrustum(World, *ViewFrustum, ShowFlags, ViewMode, RenderBus);
+		return;
+	}
 
 	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
 		AActor* Actor = *Iter;
-		if (!Actor) continue;
+		if (!Actor || !Actor->IsVisible()) continue;
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (Primitive != nullptr && Primitive->IsVisible())
+			{
+				++LastCullingStats.TotalVisiblePrimitiveCount;
+			}
+		}
+
 		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
+	}
+}
+
+void FRenderCollector::ResetCullingStats()
+{
+	LastCullingStats = {};
+}
+
+void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags,
+                                               EViewMode ViewMode, FRenderBus& RenderBus)
+{
+	VisiblePrimitiveScratch.clear();
+	World->GetSpatialIndex().FrustumQueryPrimitives(ViewFrustum, VisiblePrimitiveScratch, FrustumQueryScratch);
+
+	for (UPrimitiveComponent* Primitive : VisiblePrimitiveScratch)
+	{
+		if (Primitive == nullptr || UsesCameraDependentRenderBounds(Primitive))
+		{
+			continue;
+		}
+
+		++LastCullingStats.BVHPassedPrimitiveCount;
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+	}
+
+	std::unordered_set<UPrimitiveComponent*> CollectedCameraDependentPrimitives;
+	CollectedCameraDependentPrimitives.reserve(32);
+
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
+	{
+		AActor* Actor = *Iter;
+		if (Actor == nullptr || !Actor->IsVisible())
+		{
+			continue;
+		}
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (Primitive == nullptr || !Primitive->IsVisible())
+			{
+				continue;
+			}
+
+			++LastCullingStats.TotalVisiblePrimitiveCount;
+
+			if (!UsesCameraDependentRenderBounds(Primitive))
+			{
+				continue;
+			}
+
+			if (!CollectedCameraDependentPrimitives.insert(Primitive).second)
+			{
+				continue;
+			}
+
+			if (ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
+			{
+				continue;
+			}
+
+			++LastCullingStats.FallbackPassedPrimitiveCount;
+			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+		}
 	}
 }
 
@@ -186,6 +300,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	if (!Actor->IsVisible()) return false;
 
 	bool bHasSelectionMask = false;
+	std::unordered_set<int32> SeenBVHNodeIndices;
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
@@ -256,6 +371,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 		bHasSelectionMask = true;
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+		CollectBVHInternalNodeAABBs(primitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
 	}
 
 	return bHasSelectionMask;
@@ -420,20 +536,95 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	}
 }
 
+void FRenderCollector::CollectBVHInternalNodeAABBs(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags,
+                                                   FRenderBus& RenderBus, std::unordered_set<int32>& SeenNodeIndices)
+{
+	if (!ShowFlags.bBoundingVolume || !ShowFlags.bBVHBoundingVolume || PrimitiveComponent == nullptr)
+	{
+		return;
+	}
+
+	AActor* Owner = PrimitiveComponent->GetOwner();
+	UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const FWorldSpatialIndex& SpatialIndex = World->GetSpatialIndex();
+	const int32 ObjectIndex = SpatialIndex.FindObjectIndex(PrimitiveComponent);
+	if (ObjectIndex == FBVH::INDEX_NONE)
+	{
+		return;
+	}
+
+	const FBVH& BVH = SpatialIndex.GetBVH();
+	const TArray<int32>& ObjectToLeafNode = BVH.GetObjectToLeafNode();
+	if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(ObjectToLeafNode.size()))
+	{
+		return;
+	}
+
+	const int32 LeafNodeIndex = ObjectToLeafNode[ObjectIndex];
+	if (LeafNodeIndex == FBVH::INDEX_NONE)
+	{
+		return;
+	}
+
+	const TArray<FBVH::FNode>& Nodes = BVH.GetNodes();
+	if (LeafNodeIndex < 0 || LeafNodeIndex >= static_cast<int32>(Nodes.size()))
+	{
+		return;
+	}
+
+	TArray<int32> PathToRoot;
+	PathToRoot.reserve(16);
+
+	int32 CurrentNodeIndex = Nodes[LeafNodeIndex].Parent;
+	while (CurrentNodeIndex != FBVH::INDEX_NONE)
+	{
+		if (CurrentNodeIndex < 0 || CurrentNodeIndex >= static_cast<int32>(Nodes.size()))
+		{
+			break;
+		}
+
+		PathToRoot.push_back(CurrentNodeIndex);
+		CurrentNodeIndex = Nodes[CurrentNodeIndex].Parent;
+	}
+
+	for (int32 PathIndex = 0; PathIndex < static_cast<int32>(PathToRoot.size()); ++PathIndex)
+	{
+		const int32 NodeIndex = PathToRoot[PathIndex];
+		if (!SeenNodeIndices.insert(NodeIndex).second)
+		{
+			continue;
+		}
+
+		const FBVH::FNode& Node = Nodes[NodeIndex];
+		if (Node.IsLeaf())
+		{
+			continue;
+		}
+
+		const FColor Color = MakeBVHInternalNodeColor(PathIndex, static_cast<int32>(PathToRoot.size()));
+		CollectAABBCommand(Node.Bounds, Color, RenderBus);
+	}
+}
+
+void FRenderCollector::CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus)
+{
+	FRenderCommand AABBCmd = {};
+	AABBCmd.Type = ERenderCommandType::DebugBox;
+	AABBCmd.Constants.AABB.Min = Box.Min;
+	AABBCmd.Constants.AABB.Max = Box.Max;
+	AABBCmd.Constants.AABB.Color = Color;
+	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
+}
+
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
 	if (!ShowFlags.bBoundingVolume) return;
 
-	FRenderCommand AABBCmd = {};
-	AABBCmd.Type = ERenderCommandType::DebugBox;
-
 	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
-
-	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
-	AABBCmd.Constants.AABB.Min = Box.Min;
-	AABBCmd.Constants.AABB.Max = Box.Max;
-	AABBCmd.Constants.AABB.Color = FColor::White();
-
-	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
-	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
+	CollectAABBCommand(Box, FColor::White(), RenderBus);
 }

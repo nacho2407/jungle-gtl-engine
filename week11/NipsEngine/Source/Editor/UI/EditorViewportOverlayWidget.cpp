@@ -2,6 +2,7 @@
 
 #include "Core/ResourceManager.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/EditorRenderPipeline.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Slate/SlateApplication.h"
 #include "ImGui/imgui.h"
@@ -79,6 +80,12 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
     ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
     ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
+    if (Settings.ShowFlags.bBoundingVolume)
+    {
+        ImGui::Indent();
+        ImGui::Checkbox("BVH Bounding Volume", &Settings.ShowFlags.bBVHBoundingVolume);
+        ImGui::Unindent();
+    }
 
     ImGui::Separator();
 
@@ -116,6 +123,31 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
         }
     }
 
+    ImGui::Separator();
+
+    ImGui::Text("BVH Maintenance");
+    bool bPolicyChanged = false;
+
+    ImGui::SetNextItemWidth(ItemWidth);
+    bPolicyChanged |= ImGui::SliderInt("Batch Refit Min Dirty", &Settings.SpatialBatchRefitMinDirtyCount, 1, 256);
+
+    ImGui::SetNextItemWidth(ItemWidth);
+    bPolicyChanged |= ImGui::SliderInt("Batch Refit Dirty %%", &Settings.SpatialBatchRefitDirtyPercentThreshold, 1, 100);
+
+    ImGui::SetNextItemWidth(ItemWidth);
+    bPolicyChanged |= ImGui::SliderInt("Rotation Structural Changes", &Settings.SpatialRotationStructuralChangeThreshold, 1, 256);
+
+    ImGui::SetNextItemWidth(ItemWidth);
+    bPolicyChanged |= ImGui::SliderInt("Rotation Dirty Count", &Settings.SpatialRotationDirtyCountThreshold, 1, 512);
+
+    ImGui::SetNextItemWidth(ItemWidth);
+    bPolicyChanged |= ImGui::SliderInt("Rotation Dirty %%", &Settings.SpatialRotationDirtyPercentThreshold, 1, 100);
+
+    if (bPolicyChanged && EditorEngine)
+    {
+        EditorEngine->ApplySpatialIndexMaintenanceSettings();
+    }
+
     ImGui::End();
 }
 
@@ -133,6 +165,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		ImGuiWindowFlags_NoInputs;
 
 	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	const FEditorRenderPipeline* RenderPipeline = EditorEngine->GetEditorRenderPipeline();
 
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 	{
@@ -153,6 +186,9 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
 		if (ImGui::Begin(WinId, nullptr, kFlags))
 		{
+			const FRenderCollector::FCullingStats* CullingStats =
+				(RenderPipeline != nullptr) ? &RenderPipeline->GetViewportCullingStats(i) : nullptr;
+
 			// FPS 출력 (초록색 텍스트)
 			if (VS.bShowStatFPS)
 			{
@@ -160,9 +196,37 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 				ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "FPS: %.1f (%.2f ms)", FPS, DeltaTime * 1000.f);
 			}
 
+			if (CullingStats != nullptr)
+			{
+				const int32 CulledPrimitiveCount = std::max(
+					0,
+					CullingStats->TotalVisiblePrimitiveCount -
+						(CullingStats->BVHPassedPrimitiveCount + CullingStats->FallbackPassedPrimitiveCount));
+
+				if (VS.bShowStatFPS)
+				{
+					ImGui::Separator();
+				}
+
+				ImGui::TextColored(ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "Culling");
+				ImGui::TextColored(
+					ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Total Visible: %d", CullingStats->TotalVisiblePrimitiveCount);
+				ImGui::TextColored(
+					ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- BVH Passed: %d", CullingStats->BVHPassedPrimitiveCount);
+				ImGui::TextColored(
+					ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Fallback Passed: %d",
+					CullingStats->FallbackPassedPrimitiveCount);
+				ImGui::TextColored(ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Culled: %d", CulledPrimitiveCount);
+			}
+
 			// Memory 출력 (노란색 텍스트)
 			if (VS.bShowStatMemory)
 			{
+				if (CullingStats != nullptr || VS.bShowStatFPS)
+				{
+					ImGui::Separator();
+				}
+
 				size_t MeshMemoryBytes = 0;
 				for (TObjectIterator<UStaticMesh> It; It; ++It)
 				{

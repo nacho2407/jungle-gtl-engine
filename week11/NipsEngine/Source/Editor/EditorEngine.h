@@ -12,6 +12,7 @@
 #include "Editor/Viewport/ViewportLayout.h"
 
 class UGizmoComponent;
+class FEditorRenderPipeline;
 
 enum class EEditorState : uint8
 {
@@ -46,6 +47,7 @@ public:
 	void ResetViewport();
 	void CloseScene();
 	void NewScene();
+	void ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld = nullptr);
 
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
 	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
@@ -55,6 +57,7 @@ public:
 
 	FViewportLayout& GetViewportLayout() { return ViewportLayout; }
 	const FViewportLayout& GetViewportLayout() const { return ViewportLayout; }
+	FEditorRenderPipeline* GetEditorRenderPipeline() const;
 
 	void RenderUI(float DeltaTime);
 

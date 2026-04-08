@@ -545,33 +545,43 @@ void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)
 
 	AActor* BestActor = nullptr;
 	float ClosestDistance = FLT_MAX;
+	TArray<UPrimitiveComponent*> CandidatePrimitives;
+	TArray<float>                CandidateTs;
+	World->GetSpatialIndex().RayQueryPrimitives(Ray, CandidatePrimitives, CandidateTs, RayQueryScratch);
 
-	for (AActor* Actor : World->GetActors())
+	for (int32 CandidateIndex = 0; CandidateIndex < static_cast<int32>(CandidatePrimitives.size()); ++CandidateIndex)
 	{
-		if (!Actor || !Actor->GetRootComponent())
+		if (CandidateTs[CandidateIndex] > ClosestDistance)
+		{
+			break;
+		}
+
+		UPrimitiveComponent* PrimitiveComp = CandidatePrimitives[CandidateIndex];
+		AActor*              Actor = (PrimitiveComp != nullptr) ? PrimitiveComp->GetOwner() : nullptr;
+		if (Actor == nullptr || Actor->GetRootComponent() == nullptr)
 		{
 			continue;
 		}
-		// USceneComponent* RootComp = Actor->GetRootComponent();
-		// if (!RootComp->IsA<UPrimitiveComponent>()) continue;
 
-		for (auto* primitive : Actor->GetPrimitiveComponents())
+		HitResult = {};
+		if (PrimitiveComp->Raycast(Ray, HitResult) && HitResult.Distance < ClosestDistance)
 		{
-			UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(primitive);
-
-			HitResult = {};
-			if (PrimitiveComp->Raycast(Ray, HitResult))
-			{
-				if (HitResult.Distance < ClosestDistance)
-				{
-					ClosestDistance = HitResult.Distance;
-					BestActor = Actor;
-				}
-			}
+			ClosestDistance = HitResult.Distance;
+			BestActor = Actor;
 		}
 	}
 
-	bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+	if (SelectionManager != nullptr)
+	{
+		if (BestActor != nullptr)
+		{
+			SelectionManager->Select(BestActor);
+		}
+		else
+		{
+			SelectionManager->ClearSelection();
+		}
+	}
 }
 
 void FObjViewerViewportClient::TickCursorOverlay(float DeltaTime)

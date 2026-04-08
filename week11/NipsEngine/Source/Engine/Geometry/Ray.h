@@ -41,8 +41,12 @@ struct FRay
 		const float NDCY =
 			1.0f - (2.0f * static_cast<float>(MouseY) / static_cast<float>(ViewportHeight));
 
-		const FVector NearPointNDC(NDCX, NDCY, 1.0f);
-		const FVector FarPointNDC(NDCX, NDCY, 0.0f);
+		// The engine projection matrices map near depth to NDC z = 0 and far
+		// depth to NDC z = 1. Keep the deprojection helper aligned with that
+		// convention so screen rays always start at the near plane and travel
+		// forward into the scene.
+		const FVector NearPointNDC(NDCX, NDCY, 0.0f);
+		const FVector FarPointNDC(NDCX, NDCY, 1.0f);
 
 		const FMatrix InvViewProjection = ViewProjection.GetInverse();
 
