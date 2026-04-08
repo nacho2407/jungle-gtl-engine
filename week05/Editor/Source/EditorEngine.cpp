@@ -76,6 +76,7 @@ FEditorEngine::~FEditorEngine() = default;
 void FEditorEngine::Shutdown()
 {
 	FEngineLog::Get().SetCallback({});
+	if (IsPIEActive() || IsPIEPaused()) EndPIE();
 	EditorUI.SaveEditorSettings();
 
 	if (GetViewportClient() == PreviewViewportClient.get())
