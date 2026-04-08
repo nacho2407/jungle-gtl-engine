@@ -120,6 +120,7 @@ private:
 	struct FPIEViewportStateBackup
 	{
 		FViewportId ViewportId = INVALID_VIEWPORT_ID;
+		FWorldContext* WorldContext = nullptr;
 		FViewportLocalState LocalState;
 	};
 

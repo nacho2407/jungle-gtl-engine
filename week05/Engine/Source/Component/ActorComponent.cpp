@@ -12,6 +12,7 @@ void UActorComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateCont
 	DuplicatedComponent->bBegunPlay = false;
 	DuplicatedComponent->bCanEverTick = bCanEverTick;
 	DuplicatedComponent->bTickEnabled = bTickEnabled;
+	DuplicatedComponent->bInstanceComponent = bInstanceComponent;
 }
 
 void UActorComponent::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const

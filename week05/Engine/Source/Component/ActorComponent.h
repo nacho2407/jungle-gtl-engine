@@ -26,6 +26,8 @@ public:
 	bool CanTick() const { return bCanEverTick && bTickEnabled; }
 	void SetComponentTickEnabled(bool bEnabled) { bTickEnabled = bEnabled; }
 	void SetTickInEditor(bool bEnabled) { bTickInEditor = bEnabled; }
+	bool IsInstanceComponent() const { return bInstanceComponent; }
+	void SetInstanceComponent(bool bInInstanceComponent) { bInstanceComponent = bInInstanceComponent; }
 	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
@@ -38,5 +40,6 @@ protected:
 	bool bCanEverTick = false;
 	bool bTickEnabled = true;
 	bool bTickInEditor = false;
+	bool bInstanceComponent = false;
 };
 

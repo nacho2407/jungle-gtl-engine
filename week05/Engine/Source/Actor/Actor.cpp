@@ -12,6 +12,63 @@ IMPLEMENT_RTTI(AActor, UObject)
 
 namespace {
 	FVector GZeroVector{};
+
+	bool IsComponentOwnedByActor(const AActor* Actor, const UActorComponent* Component)
+	{
+		if (!Actor || !Component)
+		{
+			return false;
+		}
+
+		for (UActorComponent* OwnedComponent : Actor->GetComponents())
+		{
+			if (OwnedComponent == Component)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool HasNonInstanceSceneDescendant(const USceneComponent* Component)
+	{
+		if (!Component)
+		{
+			return false;
+		}
+
+		for (USceneComponent* Child : Component->GetAttachChildren())
+		{
+			if (!Child)
+			{
+				continue;
+			}
+
+			if (!Child->IsInstanceComponent() || HasNonInstanceSceneDescendant(Child))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void GatherSceneDeletionSubtree(USceneComponent* Component, TArray<UActorComponent*>& OutComponents)
+	{
+		if (!Component)
+		{
+			return;
+		}
+
+		for (USceneComponent* Child : Component->GetAttachChildren())
+		{
+			GatherSceneDeletionSubtree(Child, OutComponents);
+		}
+
+		OutComponents.push_back(Component);
+	}
+
 }
 
 ULevel* AActor::GetLevel() const { return Level; }
@@ -77,6 +134,84 @@ void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
 	}
 
 	InComponent->SetOwner(nullptr);
+}
+
+bool AActor::CanDeleteInstanceComponent(const UActorComponent* InComponent) const
+{
+	if (!InComponent || !InComponent->IsInstanceComponent() || !IsComponentOwnedByActor(this, InComponent))
+	{
+		return false;
+	}
+
+	if (!InComponent->IsA(USceneComponent::StaticClass()))
+	{
+		return true;
+	}
+
+	return !HasNonInstanceSceneDescendant(static_cast<const USceneComponent*>(InComponent));
+}
+
+bool AActor::DestroyInstanceComponent(UActorComponent* InComponent)
+{
+	if (!CanDeleteInstanceComponent(InComponent))
+	{
+		return false;
+	}
+
+	TArray<UActorComponent*> ComponentsToDelete;
+	if (InComponent->IsA(USceneComponent::StaticClass()))
+	{
+		GatherSceneDeletionSubtree(static_cast<USceneComponent*>(InComponent), ComponentsToDelete);
+	}
+	else
+	{
+		ComponentsToDelete.push_back(InComponent);
+	}
+
+	for (UActorComponent* ComponentToDelete : ComponentsToDelete)
+	{
+		if (!ComponentToDelete || !IsComponentOwnedByActor(this, ComponentToDelete))
+		{
+			continue;
+		}
+
+		if (ComponentToDelete->IsA(USceneComponent::StaticClass()))
+		{
+			static_cast<USceneComponent*>(ComponentToDelete)->DetachFromParent();
+		}
+
+		if (ComponentToDelete->HasBegunPlay())
+		{
+			ComponentToDelete->EndPlay();
+		}
+
+		if (ComponentToDelete->IsRegistered())
+		{
+			ComponentToDelete->OnUnregister();
+		}
+
+		RemoveOwnedComponent(ComponentToDelete);
+		ComponentToDelete->MarkPendingKill();
+	}
+
+	if (!RootComponent)
+	{
+		for (UActorComponent* Component : OwnedComponents)
+		{
+			if (Component && Component->IsA(USceneComponent::StaticClass()))
+			{
+				RootComponent = static_cast<USceneComponent*>(Component);
+				break;
+			}
+		}
+	}
+
+	if (Level)
+	{
+		Level->MarkSpatialDirty();
+	}
+
+	return true;
 }
 
 void AActor::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const

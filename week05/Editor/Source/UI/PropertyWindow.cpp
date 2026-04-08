@@ -514,6 +514,48 @@ void FPropertyWindow::DrawDetailsSection(UActorComponent* Component, FEditorEngi
 	ImGui::Text("Class: %s", ClassName.c_str());
 	ImGui::Text("Registered: %s", Component->IsRegistered() ? "Yes" : "No");
 
+	if (AActor* OwnerActor = Component->GetOwner())
+	{
+		const bool bCanDelete = OwnerActor->CanDeleteInstanceComponent(Component);
+		ImGui::BeginDisabled(!bCanDelete);
+		if (ImGui::Button("Delete Component"))
+		{
+			USceneComponent* ParentSceneComponent = nullptr;
+			if (Component->IsA(USceneComponent::StaticClass()))
+			{
+				ParentSceneComponent = static_cast<USceneComponent*>(Component)->GetAttachParent();
+			}
+
+			if (OwnerActor->DestroyInstanceComponent(Component))
+			{
+				if (ParentSceneComponent && IsComponentOwnedByActor(OwnerActor, ParentSceneComponent))
+				{
+					SelectedComponent = ParentSceneComponent;
+				}
+				else if (USceneComponent* RootComponent = OwnerActor->GetRootComponent())
+				{
+					SelectedComponent = RootComponent;
+				}
+				else
+				{
+					SelectedComponent = nullptr;
+					for (UActorComponent* RemainingComponent : OwnerActor->GetComponents())
+					{
+						if (RemainingComponent)
+						{
+							SelectedComponent = RemainingComponent;
+							break;
+						}
+					}
+				}
+
+				ImGui::EndDisabled();
+				return;
+			}
+		}
+		ImGui::EndDisabled();
+	}
+
 	bool bTickEnabled = Component->IsComponentTickEnabled();
 	if (ImGui::Checkbox("Tick Enabled", &bTickEnabled))
 	{
@@ -571,6 +613,7 @@ bool FPropertyWindow::AddComponentToActor(AActor* SelectedActor, UClass* Compone
 		return false;
 	}
 
+	NewComponent->SetInstanceComponent(true);
 	SelectedActor->AddOwnedComponent(NewComponent);
 
 	if (NewComponent->IsA(USceneComponent::StaticClass()))

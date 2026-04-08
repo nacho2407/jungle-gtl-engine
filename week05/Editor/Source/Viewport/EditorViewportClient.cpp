@@ -170,17 +170,17 @@ void FEditorViewportClient::HandleFileDropOnViewport(const FString& FilePath)
 
 void FEditorViewportClient::BuildSceneRenderPacket(
 	FEngine* Engine,
-	ULevel* Scene,
+	UWorld* World,
 	const FFrustum& Frustum,
 	const FShowFlags& Flags,
 	FSceneRenderPacket& OutPacket)
 {
-	if (!Engine)
+	if (!Engine || !World)
 	{
 		return;
 	}
 	// 실제 수집 로직은 공통 ViewportClient의 ScenePacketBuilder 경로를 재사용한다.
-	IViewportClient::BuildSceneRenderPacket(Engine, Scene, Frustum, Flags, OutPacket);
+	IViewportClient::BuildSceneRenderPacket(Engine, World, Frustum, Flags, OutPacket);
 }
 
 void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
@@ -210,9 +210,9 @@ void FEditorViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		WireFrameMaterial,
 		GridMesh.get(),
 		GridMaterialPtrs,
-		[this](FEngine* InEngine, ULevel* Scene, const FFrustum& Frustum, const FShowFlags& Flags, FSceneRenderPacket& OutPacket)
+		[this](FEngine* InEngine, UWorld* World, const FFrustum& Frustum, const FShowFlags& Flags, FSceneRenderPacket& OutPacket)
 		{
-			BuildSceneRenderPacket(InEngine, Scene, Frustum, Flags, OutPacket);
+			BuildSceneRenderPacket(InEngine, World, Frustum, Flags, OutPacket);
 		});
 }
 
