@@ -94,7 +94,12 @@ void UEditorEngine::Tick(float DeltaTime)
 	}
 
 	MainPanel.Update();
-	UEngine::Tick(DeltaTime);
+	InputSystem::Get().Tick();
+	if (GetEditorState() == EEditorState::Play)
+	{
+		WorldTick(DeltaTime);
+	}
+	Render(DeltaTime);
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
