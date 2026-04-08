@@ -38,6 +38,13 @@ public:
 	float CameraMoveSensitivity = 1.0f;
 	float CameraRotateSensitivity = 1.0f;
 
+	// Spatial index / BVH maintenance
+	int32 SpatialBatchRefitMinDirtyCount = 8;
+	int32 SpatialBatchRefitDirtyPercentThreshold = 15;
+	int32 SpatialRotationStructuralChangeThreshold = 8;
+	int32 SpatialRotationDirtyCountThreshold = 24;
+	int32 SpatialRotationDirtyPercentThreshold = 30;
+
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 

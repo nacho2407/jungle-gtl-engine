@@ -17,6 +17,7 @@
 #include "Math/Vector4.h"
 #include "Slate/SWidget.h"
 #include <algorithm>
+#include <unordered_set>
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -618,28 +619,29 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 	{
 		AActor* BestActor = nullptr;
 		float ClosestDistance = FLT_MAX;
+		TArray<UPrimitiveComponent*> CandidatePrimitives;
+		TArray<float>                CandidateTs;
+		World->GetSpatialIndex().RayQueryPrimitives(Ray, CandidatePrimitives, CandidateTs, RayQueryScratch);
 
-		for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
+		for (int32 CandidateIndex = 0; CandidateIndex < static_cast<int32>(CandidatePrimitives.size()); ++CandidateIndex)
 		{
-			AActor* Actor = *Iter;
-			if (!Actor || !Actor->GetRootComponent())
+			if (CandidateTs[CandidateIndex] > ClosestDistance)
+			{
+				break;
+			}
+
+			UPrimitiveComponent* PrimitiveComp = CandidatePrimitives[CandidateIndex];
+			AActor*              Actor = (PrimitiveComp != nullptr) ? PrimitiveComp->GetOwner() : nullptr;
+			if (Actor == nullptr || Actor->GetRootComponent() == nullptr)
 			{
 				continue;
 			}
 
-			for (auto* primitive : Actor->GetPrimitiveComponents())
+			HitResult = {};
+			if (PrimitiveComp->Raycast(Ray, HitResult) && HitResult.Distance < ClosestDistance)
 			{
-				UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(primitive);
-
-				HitResult = {};
-				if (PrimitiveComp->Raycast(Ray, HitResult))
-				{
-					if (HitResult.Distance < ClosestDistance)
-					{
-						ClosestDistance = HitResult.Distance;
-						BestActor = Actor;
-					}
-				}
+				ClosestDistance = HitResult.Distance;
+				BestActor = Actor;
 			}
 		}
 
@@ -734,10 +736,21 @@ void FEditorViewportClient::HandleBoxSelection()
 		SelectionManager->ClearSelection();
 	}
 
-	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
+	TArray<UPrimitiveComponent*> CandidatePrimitives;
+	World->GetSpatialIndex().FrustumQueryPrimitives(Camera.GetFrustum(), CandidatePrimitives, FrustumQueryScratch);
+
+	std::unordered_set<AActor*> SeenActors;
+	SeenActors.reserve(CandidatePrimitives.size());
+
+	for (UPrimitiveComponent* Primitive : CandidatePrimitives)
 	{
-		AActor* Actor = *Iter;
+		AActor* Actor = (Primitive != nullptr) ? Primitive->GetOwner() : nullptr;
 		if (!Actor || !Actor->GetRootComponent())
+		{
+			continue;
+		}
+
+		if (!SeenActors.insert(Actor).second)
 		{
 			continue;
 		}

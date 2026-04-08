@@ -1,6 +1,7 @@
 ﻿#include "Editor/Settings/EditorSettings.h"
 #include "SimpleJSON/json.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 
@@ -38,6 +39,14 @@ namespace EditorKey
 	constexpr const char* Grid = "Grid";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
+
+	// Spatial index / BVH maintenance
+	constexpr const char* SpatialIndex = "SpatialIndex";
+	constexpr const char* BatchRefitMinDirtyCount = "BatchRefitMinDirtyCount";
+	constexpr const char* BatchRefitDirtyPercentThreshold = "BatchRefitDirtyPercentThreshold";
+	constexpr const char* RotationStructuralChangeThreshold = "RotationStructuralChangeThreshold";
+	constexpr const char* RotationDirtyCountThreshold = "RotationDirtyCountThreshold";
+	constexpr const char* RotationDirtyPercentThreshold = "RotationDirtyPercentThreshold";
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
@@ -85,6 +94,15 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	GridObj[EditorKey::GridSpacing] = GridSpacing;
 	GridObj[EditorKey::GridHalfLineCount] = GridHalfLineCount;
 	Root[EditorKey::Grid] = GridObj;
+
+	// Spatial index / BVH maintenance
+	JSON SpatialIndexObj = Object();
+	SpatialIndexObj[EditorKey::BatchRefitMinDirtyCount] = SpatialBatchRefitMinDirtyCount;
+	SpatialIndexObj[EditorKey::BatchRefitDirtyPercentThreshold] = SpatialBatchRefitDirtyPercentThreshold;
+	SpatialIndexObj[EditorKey::RotationStructuralChangeThreshold] = SpatialRotationStructuralChangeThreshold;
+	SpatialIndexObj[EditorKey::RotationDirtyCountThreshold] = SpatialRotationDirtyCountThreshold;
+	SpatialIndexObj[EditorKey::RotationDirtyPercentThreshold] = SpatialRotationDirtyPercentThreshold;
+	Root[EditorKey::SpatialIndex] = SpatialIndexObj;
 
 	// Paths
 	JSON PathsObj = Object();
@@ -203,6 +221,45 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			GridSpacing = static_cast<float>(GridObj[EditorKey::GridSpacing].ToFloat());
 		if (GridObj.hasKey(EditorKey::GridHalfLineCount))
 			GridHalfLineCount = GridObj[EditorKey::GridHalfLineCount].ToInt();
+	}
+
+	// Spatial index / BVH maintenance
+	if (Root.hasKey(EditorKey::SpatialIndex))
+	{
+		JSON SpatialIndexObj = Root[EditorKey::SpatialIndex];
+
+		if (SpatialIndexObj.hasKey(EditorKey::BatchRefitMinDirtyCount))
+		{
+			const int32 Value = static_cast<int32>(SpatialIndexObj[EditorKey::BatchRefitMinDirtyCount].ToInt());
+			SpatialBatchRefitMinDirtyCount = std::max<int32>(1, Value);
+		}
+		if (SpatialIndexObj.hasKey(EditorKey::BatchRefitDirtyPercentThreshold))
+		{
+			const int32 Value =
+				static_cast<int32>(SpatialIndexObj[EditorKey::BatchRefitDirtyPercentThreshold].ToInt());
+			SpatialBatchRefitDirtyPercentThreshold =
+				std::clamp<int32>(Value, 1, 100);
+		}
+		if (SpatialIndexObj.hasKey(EditorKey::RotationStructuralChangeThreshold))
+		{
+			const int32 Value =
+				static_cast<int32>(SpatialIndexObj[EditorKey::RotationStructuralChangeThreshold].ToInt());
+			SpatialRotationStructuralChangeThreshold =
+				std::max<int32>(1, Value);
+		}
+		if (SpatialIndexObj.hasKey(EditorKey::RotationDirtyCountThreshold))
+		{
+			const int32 Value = static_cast<int32>(SpatialIndexObj[EditorKey::RotationDirtyCountThreshold].ToInt());
+			SpatialRotationDirtyCountThreshold =
+				std::max<int32>(1, Value);
+		}
+		if (SpatialIndexObj.hasKey(EditorKey::RotationDirtyPercentThreshold))
+		{
+			const int32 Value =
+				static_cast<int32>(SpatialIndexObj[EditorKey::RotationDirtyPercentThreshold].ToInt());
+			SpatialRotationDirtyPercentThreshold =
+				std::clamp<int32>(Value, 1, 100);
+		}
 	}
 
 	// Paths

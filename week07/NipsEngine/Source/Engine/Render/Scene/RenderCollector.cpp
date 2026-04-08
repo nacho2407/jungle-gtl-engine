@@ -11,10 +11,30 @@
 #include "Component/SubUVComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
+#include "Engine/Geometry/Frustum.h"
 #include "Render/Resource/Material.h"
+#include <unordered_set>
 
 namespace
 {
+	bool UsesCameraDependentRenderBounds(const UPrimitiveComponent* PrimitiveComponent)
+	{
+		if (PrimitiveComponent == nullptr)
+		{
+			return false;
+		}
+
+		switch (PrimitiveComponent->GetPrimitiveType())
+		{
+		case EPrimitiveType::EPT_Billboard:
+		case EPrimitiveType::EPT_Text:
+		case EPrimitiveType::EPT_SubUV:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	FMatrix MakeViewBillboardMatrix(const UPrimitiveComponent* Primitive, const FRenderBus& RenderBus)
 	{
 		const FMatrix WorldMatrix = Primitive->GetWorldMatrix();
@@ -67,6 +87,8 @@ namespace
 	{
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
+		case EPrimitiveType::EPT_Billboard:
+			return BuildQuadAABB(MakeViewBillboardMatrix(PrimitiveComponent, RenderBus));
 		case EPrimitiveType::EPT_Text:
 		{
 			const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(PrimitiveComponent);
@@ -83,15 +105,96 @@ namespace
 	}
 }
 
-void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
+                                    const FFrustum* ViewFrustum)
 {
+	ResetCullingStats();
+
 	if (!World) return;
+
+	if (ViewFrustum != nullptr)
+	{
+		CollectWorldWithFrustum(World, *ViewFrustum, ShowFlags, ViewMode, RenderBus);
+		return;
+	}
 
 	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
 		AActor* Actor = *Iter;
-		if (!Actor) continue;
+		if (!Actor || !Actor->IsVisible()) continue;
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (Primitive != nullptr && Primitive->IsVisible())
+			{
+				++LastCullingStats.TotalVisiblePrimitiveCount;
+			}
+		}
+
 		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
+	}
+}
+
+void FRenderCollector::ResetCullingStats()
+{
+	LastCullingStats = {};
+}
+
+void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags,
+                                               EViewMode ViewMode, FRenderBus& RenderBus)
+{
+	VisiblePrimitiveScratch.clear();
+	World->GetSpatialIndex().FrustumQueryPrimitives(ViewFrustum, VisiblePrimitiveScratch, FrustumQueryScratch);
+
+	for (UPrimitiveComponent* Primitive : VisiblePrimitiveScratch)
+	{
+		if (Primitive == nullptr || UsesCameraDependentRenderBounds(Primitive))
+		{
+			continue;
+		}
+
+		++LastCullingStats.BVHPassedPrimitiveCount;
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+	}
+
+	std::unordered_set<UPrimitiveComponent*> CollectedCameraDependentPrimitives;
+	CollectedCameraDependentPrimitives.reserve(32);
+
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
+	{
+		AActor* Actor = *Iter;
+		if (Actor == nullptr || !Actor->IsVisible())
+		{
+			continue;
+		}
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (Primitive == nullptr || !Primitive->IsVisible())
+			{
+				continue;
+			}
+
+			++LastCullingStats.TotalVisiblePrimitiveCount;
+
+			if (!UsesCameraDependentRenderBounds(Primitive))
+			{
+				continue;
+			}
+
+			if (!CollectedCameraDependentPrimitives.insert(Primitive).second)
+			{
+				continue;
+			}
+
+			if (ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
+			{
+				continue;
+			}
+
+			++LastCullingStats.FallbackPassedPrimitiveCount;
+			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+		}
 	}
 }
 
