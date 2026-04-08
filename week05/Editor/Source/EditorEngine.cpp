@@ -425,6 +425,7 @@ bool FEditorEngine::StartPIE()
 		return false;
 	}
 
+	// 월드 복사 및 PIE 월드 컨텍스트 생성
 	UWorld* PIEWorld = UWorld::DuplicateWorldForPIE(EditorWorldContext->World);
 	if (PIEWorld == nullptr)
 	{
@@ -444,6 +445,24 @@ bool FEditorEngine::StartPIE()
 
 	UpdateWorldAspectRatio(PIEWorld, AspectRatio);
 
+	// 나중에 PIE 종료 시점에 복원할 수 있도록 PIE 시작 시점의 뷰포트 상태 저장
+	SavedPIEViewportStates.clear();
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		if (!Entry.bActive)
+		{
+			continue;
+		}
+
+		FPIEViewportStateBackup Backup;
+		Backup.ViewportId = Entry.Id;
+		Backup.LocalState = Entry.LocalState;
+		SavedPIEViewportStates.push_back(Backup);
+	}
+
+	SavedPIESelectedActor = GetSelectedActor();
+
+	// PIE 시작 시점에 포커스된 뷰포트가 있으면 해당 뷰포트를 계속 사용, 없으면 활성 뷰포트 중 첫 번째를 사용
 	// (Minjun) 카메라 관련 로직은 손 볼 필요가 있음
 	FViewportEntry* PIEViewportEntry = nullptr;
 	if (SlateApplication)
@@ -471,10 +490,6 @@ bool FEditorEngine::StartPIE()
 	}
 	if (PIEViewportEntry)
 	{
-		SavedPIECameraLocalState = PIEViewportEntry->LocalState;
-		SavedPIEViewportId = PIEViewportEntry->Id;
-		bHasSavedPIECameraLocalState = true;
-
 		// PIE 모드에서는 항상 원근 뷰포트로 시작하도록 강제합니다. 나중에 뷰포트가 포커스될 때 저장된 LocalState로 복원할 수 있도록 합니다.
 		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
 
@@ -483,9 +498,28 @@ bool FEditorEngine::StartPIE()
 		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
 	}
 
+	// PIE 모드에서는 그리드가 항상 꺼진 상태로 시작하도록 강제
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		if (!Entry.bActive)
+		{
+			continue;
+		}
+
+		Entry.LocalState.bShowGrid = false;
+	}
+
+	SetSelectedActor(nullptr);
+
+	// PIE 월드 컨텍스트 활성화 및 BeginPlay 호출
 	ActiveWorldContext = PIEWorldContext;
 
 	PIEWorld->BeginPlay();
+
+	// PIE 모드 진입 시 마우스 커서 숨김
+	// (Minjun) 나중에 UI 상에서 PIE 모드 진입 / 종료 지점이 생기면 아래 코드 활성화할 것
+	//::ShowCursor(FALSE);
+	//bWasCursorHiddenForPIE = true;
 
 	bIsPIEActive = true;
 	bIsPIEPaused = false;
@@ -500,18 +534,18 @@ void FEditorEngine::EndPIE()
 		return;
 	}
 
-	if (bHasSavedPIECameraLocalState)
+	// 저장해둔 뷰포트 상태 복원
+	for (const FPIEViewportStateBackup& Backup : SavedPIEViewportStates)
 	{
-		FViewportEntry* RestoreViewportEntry = ViewportRegistry.FindEntryByViewportID(SavedPIEViewportId);
+		FViewportEntry* RestoreViewportEntry = ViewportRegistry.FindEntryByViewportID(Backup.ViewportId);
 		if (RestoreViewportEntry)
 		{
-			RestoreViewportEntry->LocalState = SavedPIECameraLocalState;
+			RestoreViewportEntry->LocalState = Backup.LocalState;
 		}
-
-		SavedPIEViewportId = INVALID_VIEWPORT_ID;
-		bHasSavedPIECameraLocalState = false;
 	}
+	SavedPIEViewportStates.clear();
 
+	// PIE 월드 정리 및 컨텍스트 제거
 	if (PIEWorldContext && PIEWorldContext->World)
 	{
 		PIEWorldContext->World->EndPlay();
@@ -519,10 +553,18 @@ void FEditorEngine::EndPIE()
 	}
 
 	DestroyWorldContext(PIEWorldContext);
-
 	PIEWorldContext = nullptr;
 
+	// 에디터 월드 컨텍스트로 복원
 	ActiveWorldContext = EditorWorldContext;
+	SetSelectedActor(SavedPIESelectedActor.Get());
+	SavedPIESelectedActor = nullptr;
+
+	if (bWasCursorHiddenForPIE)
+	{
+		::ShowCursor(TRUE);
+		bWasCursorHiddenForPIE = false;
+	}
 
 	bIsPIEActive = false;
 	bIsPIEPaused = false;

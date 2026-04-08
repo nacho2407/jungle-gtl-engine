@@ -83,6 +83,12 @@ protected:
 	FViewport* FindViewport(FViewportId Id);
 
 private:
+	struct FPIEViewportStateBackup
+	{
+		FViewportId ViewportId = INVALID_VIEWPORT_ID;
+		FViewportLocalState LocalState;
+	};
+
 	// 프리뷰 씬/프리뷰 뷰포트 준비
 	bool InitEditorPreview();
 	// 에디터 콘솔 UI와 콘솔 변수 시스템 연결
@@ -116,9 +122,9 @@ private:
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
 
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
-	FViewportLocalState SavedPIECameraLocalState;
-	FViewportId SavedPIEViewportId = INVALID_VIEWPORT_ID;
-	bool bHasSavedPIECameraLocalState = false;
+	TArray<FPIEViewportStateBackup> SavedPIEViewportStates;
+	TObjectPtr<AActor> SavedPIESelectedActor;
+	bool bWasCursorHiddenForPIE = false;
 
 	bool bIsPIEActive = false;
 	bool bIsPIEPaused = false;
