@@ -43,6 +43,7 @@ private:
 	EViewportLayout GetCurrentLayout() const;
 	FViewportEntry* GetFocusedEntry() const;
 	FViewportEntry* GetTargetEntry() const;
+	bool IsTargetPIEViewport() const;
 
 	void ApplyLayout(EViewportLayout NewLayout);
 	void ApplyViewportType(EViewportType NewType);

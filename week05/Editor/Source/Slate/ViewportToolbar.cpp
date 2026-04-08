@@ -126,7 +126,10 @@ FVector2 SViewportToolbarWidget::ComputeDesiredSize() const
 	}
 	if (bShowViewportSettings)
 	{
-		Width += TypeDropdown.ComputeDesiredSize().X + ModeDropdown.ComputeDesiredSize().X + 12.0f;
+		if (!IsTargetPIEViewport())
+		{
+			Width += TypeDropdown.ComputeDesiredSize().X + ModeDropdown.ComputeDesiredSize().X + 12.0f;
+		}
 		if (ShouldShowPIECaptureHint())
 		{
 			Width += SWidgetTextMetrics::MeasureTextWidth(PIECaptureHintText, PIECaptureHintFontSize, PIECaptureHintLetterSpacing) + 8.0f;
@@ -144,7 +147,10 @@ FVector2 SViewportToolbarWidget::ComputeMinSize() const
 	}
 	if (bShowViewportSettings)
 	{
-		Width += TypeDropdown.ComputeMinSize().X + ModeDropdown.ComputeMinSize().X + 12.0f;
+		if (!IsTargetPIEViewport())
+		{
+			Width += TypeDropdown.ComputeMinSize().X + ModeDropdown.ComputeMinSize().X + 12.0f;
+		}
 		if (ShouldShowPIECaptureHint())
 		{
 			Width += SWidgetTextMetrics::MeasureTextWidth("Shift + F1", PIECaptureHintFontSize, PIECaptureHintLetterSpacing) + 8.0f;
@@ -170,21 +176,24 @@ void SViewportToolbarWidget::OnPaint(FSlatePaintContext& Painter)
 	}
 	if (bShowViewportSettings)
 	{
-		if (!TypeDropdown.IsOpen())
+		if (!IsTargetPIEViewport())
 		{
-			TypeDropdown.Paint(Painter);
-		}
-		if (!ModeDropdown.IsOpen())
-		{
-			ModeDropdown.Paint(Painter);
-		}
-		if (TypeDropdown.IsOpen())
-		{
-			TypeDropdown.Paint(Painter);
-		}
-		if (ModeDropdown.IsOpen())
-		{
-			ModeDropdown.Paint(Painter);
+			if (!TypeDropdown.IsOpen())
+			{
+				TypeDropdown.Paint(Painter);
+			}
+			if (!ModeDropdown.IsOpen())
+			{
+				ModeDropdown.Paint(Painter);
+			}
+			if (TypeDropdown.IsOpen())
+			{
+				TypeDropdown.Paint(Painter);
+			}
+			if (ModeDropdown.IsOpen())
+			{
+				ModeDropdown.Paint(Painter);
+			}
 		}
 		if (PIECaptureHintRect.IsValid() && ShouldShowPIECaptureHint())
 		{
@@ -275,11 +284,12 @@ void SViewportToolbarWidget::SyncSelectionState()
 
 	FViewportEntry* TargetEntry = GetTargetEntry();
 	const bool bHasTargetEntry = (TargetEntry != nullptr) && bShowViewportSettings;
+	const bool bCanShowViewportSettings = bHasTargetEntry && !IsTargetPIEViewport();
 
-	TypeDropdown.bEnabled = bHasTargetEntry;
-	ModeDropdown.bEnabled = bHasTargetEntry;
+	TypeDropdown.bEnabled = bCanShowViewportSettings;
+	ModeDropdown.bEnabled = bCanShowViewportSettings;
 
-	if (!bHasTargetEntry)
+	if (!bCanShowViewportSettings)
 	{
 		TypeDropdown.SetSelectedIndex(-1);
 		ModeDropdown.SetSelectedIndex(-1);
@@ -323,6 +333,7 @@ void SViewportToolbarWidget::UpdateGeometry()
 	const int32 ModeDesiredWidth = static_cast<int32>(std::ceil(ModeDropdown.ComputeDesiredSize().X));
 	const int32 ModeMinWidth = static_cast<int32>(std::ceil(ModeDropdown.ComputeMinSize().X));
 	const bool bShowPIECaptureHint = ShouldShowPIECaptureHint();
+	const bool bShowViewportSettings = this->bShowViewportSettings && !IsTargetPIEViewport();
 	const int32 HintDesiredWidth = bShowPIECaptureHint
 		? static_cast<int32>(std::ceil(SWidgetTextMetrics::MeasureTextWidth(PIECaptureHintText, PIECaptureHintFontSize, PIECaptureHintLetterSpacing)))
 		: 0;
@@ -351,20 +362,24 @@ void SViewportToolbarWidget::UpdateGeometry()
 	}
 
 		int32 TitleWidth = DesiredTitleWidth;
-		int32 TypeWidth = TypeDesiredWidth;
-		int32 ModeWidth = ModeDesiredWidth;
-		const int32 DesiredTotal = TitleWidth + Gap + TypeWidth + Gap + ModeWidth + HintGap + HintDesiredWidth;
+		int32 TypeWidth = bShowViewportSettings ? TypeDesiredWidth : 0;
+		int32 ModeWidth = bShowViewportSettings ? ModeDesiredWidth : 0;
+		const int32 DesiredTotal = TitleWidth +
+			(bShowViewportSettings ? Gap + TypeWidth + Gap + ModeWidth : 0) +
+			HintGap + HintDesiredWidth;
 		if (DesiredTotal > Rect.Width)
 		{
 			TitleWidth = (std::min)(DesiredTitleWidth, (std::max)(MinTitleWidth, Rect.Width / 4));
-			const int32 WidthForDropdowns = (std::max)(0, Rect.Width - TitleWidth - Gap * 2 - HintGap - HintDesiredWidth);
-			const int32 TotalDesired = TypeDesiredWidth + ModeDesiredWidth;
-			if (TotalDesired > 0)
+			const int32 WidthForDropdowns = bShowViewportSettings
+				? (std::max)(0, Rect.Width - TitleWidth - Gap * 2 - HintGap - HintDesiredWidth)
+				: 0;
+			const int32 TotalDesired = bShowViewportSettings ? (TypeDesiredWidth + ModeDesiredWidth) : 0;
+			if (bShowViewportSettings && TotalDesired > 0)
 			{
 				TypeWidth = (std::max)(TypeMinWidth, static_cast<int32>(WidthForDropdowns * (static_cast<float>(TypeDesiredWidth) / TotalDesired) + 0.5f));
 				ModeWidth = (std::max)(ModeMinWidth, WidthForDropdowns - TypeWidth);
 			}
-			if (TypeWidth + ModeWidth > WidthForDropdowns)
+			if (bShowViewportSettings && TypeWidth + ModeWidth > WidthForDropdowns)
 			{
 				const int32 Over = TypeWidth + ModeWidth - WidthForDropdowns;
 				const int32 ShrinkMode = (std::min)(Over, ModeWidth - ModeMinWidth);
@@ -374,11 +389,21 @@ void SViewportToolbarWidget::UpdateGeometry()
 		}
 
 		TitleButton.Rect = IntersectRect({ CursorX, RowY, TitleWidth, RowHeight }, Rect);
-		CursorX += TitleWidth + Gap;
-		TypeDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, TypeWidth), RowHeight }, Rect);
-		CursorX += TypeWidth + Gap;
-		ModeDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, ModeWidth), RowHeight }, Rect);
-		CursorX += ModeWidth + HintGap;
+		CursorX += TitleWidth;
+		if (bShowViewportSettings)
+		{
+			CursorX += Gap;
+			TypeDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, TypeWidth), RowHeight }, Rect);
+			CursorX += TypeWidth + Gap;
+			ModeDropdown.Rect = IntersectRect({ CursorX, RowY, (std::max)(0, ModeWidth), RowHeight }, Rect);
+			CursorX += ModeWidth;
+		}
+		else
+		{
+			TypeDropdown.Rect = { 0, 0, 0, 0 };
+			ModeDropdown.Rect = { 0, 0, 0, 0 };
+		}
+		CursorX += HintGap;
 		PIECaptureHintRect = bShowPIECaptureHint
 			? IntersectRect({ CursorX, RowY, (std::max)(0, Rect.X + Rect.Width - CursorX), RowHeight }, Rect)
 			: FRect{ 0, 0, 0, 0 };
@@ -478,6 +503,14 @@ FViewportEntry* SViewportToolbarWidget::GetTargetEntry() const
 
 	FViewportEntry* Entry = Engine->GetViewportRegistry().FindEntryByViewportID(TargetViewportId);
 	return (Entry && Entry->bActive) ? Entry : nullptr;
+}
+
+bool SViewportToolbarWidget::IsTargetPIEViewport() const
+{
+	const FViewportEntry* Entry = GetTargetEntry();
+	return Entry &&
+		Entry->WorldContext &&
+		Entry->WorldContext->WorldType == EWorldType::PIE;
 }
 
 void SViewportToolbarWidget::ApplyLayout(EViewportLayout NewLayout)
