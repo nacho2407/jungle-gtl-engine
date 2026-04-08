@@ -8,6 +8,8 @@
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
+#include "Input/InputSystem.h"
+#include "GameFramework/AActor.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -15,7 +17,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
-	
+
 	FObjManager::ScanMeshAssets();
 	FObjManager::ScanMaterialAssets();
 
@@ -73,6 +75,31 @@ void UEditorEngine::Tick(float DeltaTime)
 	{
 		VC->Tick(DeltaTime);
 	}
+
+	// Ctrl+D — 선택된 액터 복제
+	if (InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
+	{
+		const TArray<AActor*> ToDuplicate = SelectionManager.GetSelectedActors();
+		if (!ToDuplicate.empty())
+		{
+			TArray<AActor*> NewSelection;
+			for (AActor* Src : ToDuplicate)
+			{
+				if (!Src) continue;
+				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
+				if (Dup)
+				{
+					NewSelection.push_back(Dup);
+				}
+			}
+			SelectionManager.ClearSelection();
+			for (AActor* Actor : NewSelection)
+			{
+				SelectionManager.ToggleSelect(Actor);
+			}
+		}
+	}
+
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
 }

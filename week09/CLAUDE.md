@@ -21,8 +21,11 @@ msbuild KraftonEngine.sln /p:Configuration=ObjViewDebug /p:Platform=x64
 # Regenerate project files after adding/removing source files
 python Scripts/GenerateProjectFiles.py
 
-# Release packaging (copies exe + shaders + assets to ReleaseBuild/)
+# Release packaging (copies exe + shaders + Data/ + assets to ReleaseBuild/)
 ./ReleaseBuild.bat
+
+# Demo packaging
+./DemoBuild.bat
 ```
 
 Output: `KraftonEngine/Bin/<Configuration>/KraftonEngine.exe`
@@ -71,10 +74,10 @@ Standalone mesh preview mode (`Source/ObjViewer/`). `UObjViewerEngine` subclasse
 
 ## Key Source Layout
 
-- `KraftonEngine/Source/Engine/` — core engine (Object, Math, Render, GameFramework, Component, Serialization, Core, Runtime)
+- `KraftonEngine/Source/Engine/` — core engine (Object, Math, Render, GameFramework, Component, Serialization, Core, Runtime, Collision, Input, Materials, Mesh, Platform, Profiling, Resource, Texture, UI, Viewport)
 - `KraftonEngine/Source/Editor/` — editor layer (UI widgets, viewport, selection, settings)
 - `KraftonEngine/Source/ObjViewer/` — standalone mesh viewer (ObjViewerEngine, Panel, RenderPipeline, ViewportClient)
-- `KraftonEngine/Shaders/` — 8 HLSL files + `Common/` subdirectory (`ConstantBuffers.hlsl`, `Functions.hlsl`, `VertexLayouts.hlsl`)
+- `KraftonEngine/Shaders/` — HLSL files (StaticMesh, Primitive, Gizmo, Editor, Outline, SubUV, Font, HiZGenerate/Visualize, OcclusionTest, ...) + `Common/` (`ConstantBuffers.hlsl`, `Functions.hlsl`, `VertexLayouts.hlsl`)
 - `KraftonEngine/ThirdParty/` — ImGui and SimpleJSON (vendored)
 - `KraftonEngine/Asset/` — font atlas, particle textures, default scene, MeshCache (prebuilt .bin meshes), StaticMesh
 - `KraftonEngine/Data/` — mesh source files (.obj, .mtl, textures) organized by model name
