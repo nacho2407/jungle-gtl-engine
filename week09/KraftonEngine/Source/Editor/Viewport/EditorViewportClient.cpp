@@ -290,6 +290,13 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
+	UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+	if (EditorEngine && EditorEngine->IsPlayingInEditor())
+	{
+		Gizmo->Deactivate();
+		return;
+	}
+
 	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(),
 		Camera->IsOrthogonal(), Camera->GetOrthoWidth());
 
