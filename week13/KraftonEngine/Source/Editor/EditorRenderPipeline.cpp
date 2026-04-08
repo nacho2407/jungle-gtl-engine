@@ -17,14 +17,16 @@ namespace
 {
 	void AddProjectileVelocityArrow(FRenderBus& Bus, const FVector& Start, const FVector& Velocity)
 	{
-		const float VelocityLength = Velocity.Length();
+		constexpr float ProjectileArrowScale = 0.25f;
+		const FVector ScaledVelocity = Velocity * ProjectileArrowScale;
+		const float VelocityLength = ScaledVelocity.Length();
 		if (VelocityLength <= FMath::Epsilon)
 		{
 			return;
 		}
 
-		const FVector Direction = Velocity / VelocityLength;
-		const FVector End = Start + Velocity;
+		const FVector Direction = ScaledVelocity / VelocityLength;
+		const FVector End = Start + ScaledVelocity;
 		const FColor ArrowColor(135, 206, 235);
 
 		FDebugLineEntry Shaft;
