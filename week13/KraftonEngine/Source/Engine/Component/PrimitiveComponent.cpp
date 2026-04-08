@@ -194,9 +194,11 @@ void UPrimitiveComponent::DestroyRenderState()
 	if (!SceneProxy) return;
 
 	if (Owner && Owner->GetWorld())
-	{
+	{ 
 		FScene& Scene = Owner->GetWorld()->GetScene();
 		Scene.RemovePrimitive(SceneProxy);
+
+		//Owner->GetWorld()->RemoveVisibleProxy(SceneProxy, SceneProxy->VisibleListIndex);
 	}
 	SceneProxy = nullptr;
 }
