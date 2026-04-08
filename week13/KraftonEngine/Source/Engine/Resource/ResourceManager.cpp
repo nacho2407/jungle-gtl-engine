@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <d3d11.h>
 #include "DDSTextureLoader.h"
+#include "WICTextureLoader.h"
 #include "UI/EditorConsoleWidget.h"
 #include "Profiling/MemoryStats.h"
 
@@ -13,6 +14,7 @@ namespace ResourceKey
 {
 	constexpr const char* Font     = "Font";
 	constexpr const char* Particle = "Particle";
+	constexpr const char* Texture  = "Texture";
 	constexpr const char* Path     = "Path";
 	constexpr const char* Columns  = "Columns";
 	constexpr const char* Rows     = "Rows";
@@ -67,6 +69,23 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 		}
 	}
 
+	// Texture — { "Name": { "Path": "..." } }  (Columns/Rows는 항상 1)
+	if (Root.hasKey(ResourceKey::Texture))
+	{
+		JSON TextureSection = Root[ResourceKey::Texture];
+		for (auto& Pair : TextureSection.ObjectRange())
+		{
+			JSON Entry = Pair.second;
+			FTextureResource Resource;
+			Resource.Name    = FName(Pair.first.c_str());
+			Resource.Path    = Entry[ResourceKey::Path].ToString();
+			Resource.Columns = 1;
+			Resource.Rows    = 1;
+			Resource.SRV     = nullptr;
+			TextureResources[Pair.first] = Resource;
+		}
+	}
+
 	if (LoadGPUResources(InDevice))
 	{
 		UE_LOG("Complete Load Resources!");
@@ -98,17 +117,44 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 		}
 
 		std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Resource.Path));
-		HRESULT hr = DirectX::CreateDDSTextureFromFileEx(
-			Device,
-			FullPath.c_str(),
-			0,
-			D3D11_USAGE_IMMUTABLE,
-			D3D11_BIND_SHADER_RESOURCE,
-			0, 0,
-			DirectX::DDS_LOADER_DEFAULT,
-			nullptr,
-			&Resource.SRV
-		);
+
+		// 확장자에 따라 DDS / WIC 로더 분기
+		std::filesystem::path Ext = std::filesystem::path(Resource.Path).extension();
+		FString ExtStr = Ext.string();
+		for (char& c : ExtStr) c = static_cast<char>(::tolower(static_cast<unsigned char>(c)));
+
+		HRESULT hr;
+		if (ExtStr == ".dds")
+		{
+			hr = DirectX::CreateDDSTextureFromFileEx(
+				Device,
+				FullPath.c_str(),
+				0,
+				D3D11_USAGE_IMMUTABLE,
+				D3D11_BIND_SHADER_RESOURCE,
+				0, 0,
+				DirectX::DDS_LOADER_DEFAULT,
+				nullptr,
+				&Resource.SRV
+			);
+		}
+		else
+		{
+			// .png/.jpg/.bmp/.tga 등 — WIC 경유
+			hr = DirectX::CreateWICTextureFromFileEx(
+				Device,
+				FullPath.c_str(),
+				0,
+				D3D11_USAGE_IMMUTABLE,
+				D3D11_BIND_SHADER_RESOURCE,
+				0, 0,
+				// 이 버전의 DirectXTK 에는 PREMULTIPLY_ALPHA 플래그가 없다.
+				// straight-alpha 보간으로 생기는 검은 헤일로는 PS 측 알파 컷오프(0.5) 로 회피.
+				DirectX::WIC_LOADER_FORCE_RGBA32,
+				nullptr,
+				&Resource.SRV
+			);
+		}
 		if (FAILED(hr) || !Resource.SRV)
 		{
 			return false;
@@ -140,6 +186,11 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 		if (!LoadSRV(Resource)) return false;
 	}
 
+	for (auto& [Key, Resource] : TextureResources)
+	{
+		if (!LoadSRV(Resource)) return false;
+	}
+
 	return true;
 }
 
@@ -155,6 +206,15 @@ void FResourceManager::ReleaseGPUResources()
 		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
 	}
 	for (auto& [Key, Resource] : ParticleResources)
+	{
+		if (Resource.TrackedMemoryBytes > 0)
+		{
+			MemoryStats::SubTextureMemory(Resource.TrackedMemoryBytes);
+			Resource.TrackedMemoryBytes = 0;
+		}
+		if (Resource.SRV) { Resource.SRV->Release(); Resource.SRV = nullptr; }
+	}
+	for (auto& [Key, Resource] : TextureResources)
 	{
 		if (Resource.TrackedMemoryBytes > 0)
 		{
@@ -229,6 +289,41 @@ TArray<FString> FResourceManager::GetParticleNames() const
 	TArray<FString> Names;
 	Names.reserve(ParticleResources.size());
 	for (const auto& [Key, _] : ParticleResources)
+	{
+		Names.push_back(Key);
+	}
+	return Names;
+}
+
+// --- Texture ---
+FTextureResource* FResourceManager::FindTexture(const FName& TextureName)
+{
+	auto It = TextureResources.find(TextureName.ToString());
+	return (It != TextureResources.end()) ? &It->second : nullptr;
+}
+
+const FTextureResource* FResourceManager::FindTexture(const FName& TextureName) const
+{
+	auto It = TextureResources.find(TextureName.ToString());
+	return (It != TextureResources.end()) ? &It->second : nullptr;
+}
+
+void FResourceManager::RegisterTexture(const FName& TextureName, const FString& InPath)
+{
+	FTextureResource Resource;
+	Resource.Name    = TextureName;
+	Resource.Path    = InPath;
+	Resource.Columns = 1;
+	Resource.Rows    = 1;
+	Resource.SRV     = nullptr;
+	TextureResources[TextureName.ToString()] = Resource;
+}
+
+TArray<FString> FResourceManager::GetTextureNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(TextureResources.size());
+	for (const auto& [Key, _] : TextureResources)
 	{
 		Names.push_back(Key);
 	}

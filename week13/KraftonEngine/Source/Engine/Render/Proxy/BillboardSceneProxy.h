@@ -16,6 +16,7 @@ public:
 
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FRenderBus& Bus) override;
+	void CollectEntries(FRenderBus& Bus) override;
 
 private:
 	UBillboardComponent* GetBillboardComponent() const;
