@@ -8,6 +8,7 @@
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
+#include "Object/ObjectFactory.h"
 
 #include <cmath>
 #include <cstring>
@@ -31,7 +32,7 @@ namespace
 	}
 }
 
-DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
+IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 {

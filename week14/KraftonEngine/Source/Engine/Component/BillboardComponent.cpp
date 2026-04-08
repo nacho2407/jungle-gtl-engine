@@ -3,8 +3,9 @@
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
 #include "Serialization/Archive.h"
+#include "Object/ObjectFactory.h"
 
-DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
+IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
 
 FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
 {
