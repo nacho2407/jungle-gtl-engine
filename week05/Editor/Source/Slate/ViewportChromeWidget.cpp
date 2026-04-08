@@ -45,8 +45,8 @@ void SViewportChromeWidget::OnPaint(FSlatePaintContext& Painter)
 	}
 
 	SyncState();
-	Painter.DrawRectFilled(Rect, 0xD01C1E21);
-	Painter.DrawRect(Rect, 0xFF555B63);
+	Painter.DrawRectFilled(Rect, BackgroundFillColor);
+	Painter.DrawRect(Rect, BorderColor);
 	Toolbar.Paint(Painter);
 }
 

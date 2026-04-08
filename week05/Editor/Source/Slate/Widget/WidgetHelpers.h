@@ -16,14 +16,27 @@ namespace SWidgetHelpers
 		std::function<bool()> GetValue;
 		std::function<void()> OnToggle;
 
+		uint32 ActiveBackgroundColor = 0xFF3B5E84;
+		uint32 InactiveBackgroundColor = 0xFF2C2F33;
+		uint32 ActiveBorderColor = 0xFF86C8FF;
+		uint32 InactiveBorderColor = 0xFF5A6068;
+		uint32 ActiveTextColor = 0xFFFFFFFF;
+		uint32 InactiveTextColor = 0xFFFFFFFF;
+		uint32 ActiveDisabledBackgroundColor = 0xFF1F2124;
+		uint32 InactiveDisabledBackgroundColor = 0xFF1F2124;
+		uint32 ActiveDisabledTextColor = 0xFF757575;
+		uint32 InactiveDisabledTextColor = 0xFF757575;
+
 		void OnPaint(FSlatePaintContext& Painter) override
 		{
 			const bool bActive = GetValue ? GetValue() : false;
-			BackgroundColor = bActive ? 0xFF3B5E84 : 0xFF2C2F33;
-			BorderColor = bActive ? 0xFF86C8FF : 0xFF5A6068;
-			TextColor = 0xFFFFFFFF;
-			DisabledBackgroundColor = 0xFF1F2124;
-			DisabledTextColor = 0xFF757575;
+
+			BackgroundColor = bActive ? ActiveBackgroundColor : InactiveBackgroundColor;
+			BorderColor = bActive ? ActiveBorderColor : InactiveBorderColor;
+			TextColor = bActive ? ActiveTextColor : InactiveTextColor;
+			DisabledBackgroundColor = bActive ? ActiveDisabledBackgroundColor : InactiveDisabledBackgroundColor;
+			DisabledTextColor = bActive ? ActiveDisabledTextColor : InactiveDisabledTextColor;
+
 			SButton::OnPaint(Painter);
 		}
 
@@ -89,6 +102,22 @@ namespace SWidgetHelpers
 		Dropdown.Placeholder = "";
 		Dropdown.FontSize = 18.0f;
 		Dropdown.LetterSpacing = 0.5f;
+
+		Dropdown.RowBackgroundColor = 0xFF2C2F33;
+		Dropdown.RowOpenBackgroundColor = 0xFF3B5E84;
+		Dropdown.RowDisabledBackgroundColor = 0xFF1F2124;
+		Dropdown.BorderColor = 0xFF5A6068;
+		Dropdown.TextColor = 0xFFFFFFFF;
+		Dropdown.DisabledTextColor = 0xFF757575;
+		Dropdown.OptionBackgroundColor = 0xFF2C2F33;
+		Dropdown.OptionBorderColor = 0xFF5A6068;
+
+		Dropdown.HeaderLabelColor = 0xFFE5E5E5;
+		Dropdown.HeaderArrowColor = 0xFFE5E5E5;
+		Dropdown.OptionTextColor = 0xFFFFFFFF;
+		Dropdown.DisabledHeaderLabelColor = 0xFF757575;
+		Dropdown.DisabledHeaderArrowColor = 0xFF757575;
+		Dropdown.DisabledOptionTextColor = 0xFF757575;
 	}
 
 	template <typename TOwnedList>
@@ -111,7 +140,7 @@ namespace SWidgetHelpers
 	}
 
 	template <typename TOwnedList>
-	SButton& MakeToggle(TOwnedList& OwnedChildren, const FString& Label, std::function<bool()> GetValue, std::function<void()> OnToggle)
+	SToggleButton& MakeToggle(TOwnedList& OwnedChildren, const FString& Label, std::function<bool()> GetValue, std::function<void()> OnToggle)
 	{
 		SToggleButton& Button = EmplaceOwned<TOwnedList, SToggleButton>(OwnedChildren);
 		Button.Text = Label;

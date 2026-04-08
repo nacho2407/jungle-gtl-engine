@@ -377,11 +377,11 @@ void FSlateApplication::Paint(FSlatePaintContext& Painter)
 				break;
 			}
 
-			Painter.DrawRect(FocusRect, 0xFF00B7FF);
+			Painter.DrawRect(FocusRect, FocusBorderColor);
 			const FRect Inner = { FocusRect.X + 1, FocusRect.Y + 1, FocusRect.Width - 2, FocusRect.Height - 2 };
 			if (Inner.IsValid())
 			{
-				Painter.DrawRect(Inner, 0xFF00B7FF);
+				Painter.DrawRect(Inner, FocusBorderColor);
 			}
 			break;
 		}
@@ -569,13 +569,13 @@ void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 	{
 		if (ActiveSplitters[i])
 		{
-			ActiveSplitters[i]->Color = 0xFF3C3C3C;
+			ActiveSplitters[i]->Color = SplitterIdleColor;
 		}
 	}
 
 	if (DraggingSplitter)
 	{
-		DraggingSplitter->Color = 0xFF5A9CFF;
+		DraggingSplitter->Color = SplitterDraggingColor;
 		HoveredViewportId = INVALID_VIEWPORT_ID;
 		CurrentCursor = DraggingSplitter->GetCursor();
 		DraggingSplitter->OnMouseMove(X, Y);
@@ -604,7 +604,7 @@ void FSlateApplication::ProcessMouseMove(int32 X, int32 Y)
 		FRect Bar = S->GetSplitterBarRect();
 		if (Bar.IsValid() && Bar.X <= X && X <= Bar.X + Bar.Width && Bar.Y <= Y && Y <= Bar.Y + Bar.Height)
 		{
-			S->Color = 0xFF5A9CFF;
+			S->Color = SplitterHoverColor;
 			HoveredViewportId = INVALID_VIEWPORT_ID;
 			CurrentCursor = S->GetCursor();
 			return;
@@ -631,7 +631,7 @@ void FSlateApplication::ProcessMouseUp(int32 X, int32 Y)
 	(void)Y;
 	if (DraggingSplitter)
 	{
-		DraggingSplitter->Color = 0xFF3C3C3C;
+		DraggingSplitter->Color = SplitterIdleColor;
 		DraggingSplitter = nullptr;
 		if (OnSplitterDragEnd) OnSplitterDragEnd();
 	}

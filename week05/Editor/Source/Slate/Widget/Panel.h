@@ -32,13 +32,15 @@ public:
 		return Button;
 	}
 
-	SButton& AddToggle(
+	SWidgetHelpers::SToggleButton& AddToggle(
 		const FString& Label,
 		std::function<bool()> GetValue,
 		std::function<void()> OnToggle,
 		const FMargin& Padding = FMargin(3.0f, 0.0f))
 	{
-		SButton& Button = SWidgetHelpers::MakeToggle(OwnedChildren, Label, std::move(GetValue), std::move(OnToggle));
+		SWidgetHelpers::SToggleButton& Button =
+			SWidgetHelpers::MakeToggle(OwnedChildren, Label, std::move(GetValue), std::move(OnToggle));
+
 		AddWidget(&Button, 0.0f, Padding, EHAlign::Fill, EVAlign::Center);
 		return Button;
 	}
