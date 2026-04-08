@@ -43,18 +43,6 @@ namespace
 		return FBoundingBox(Bounds.Min - Padding, Bounds.Max + Padding);
 	}
 
-	void AppendUniqueNode(TArray<FOctree*>& Nodes, FOctree* Node)
-	{
-		if (!Node)
-		{
-			return;
-		}
-
-		if (std::find(Nodes.begin(), Nodes.end(), Node) == Nodes.end())
-		{
-			Nodes.push_back(Node);
-		}
-	}
 }
 
 void FSpatialPartition::ClearQueuedActorFlags()
@@ -204,8 +192,6 @@ void FSpatialPartition::FlushPrimitive()
 		return;
 	}
 
-	TArray<FOctree*> NodesToMerge;
-
 	for (AActor* Actor : DirtyActors)
 	{
 		if (!Actor)
@@ -228,7 +214,6 @@ void FSpatialPartition::FlushPrimitive()
 				}
 				else if (FOctree* Node = Prim->GetOctreeNode())
 				{
-					AppendUniqueNode(NodesToMerge, Node);
 					Node->RemoveDirect(Prim, false);
 				}
 				continue;
@@ -254,7 +239,6 @@ void FSpatialPartition::FlushPrimitive()
 					continue;
 				}
 
-				AppendUniqueNode(NodesToMerge, Node);
 				Node->RemoveDirect(Prim, false);
 
 				if (!Octree->Insert(Prim))
@@ -271,13 +255,7 @@ void FSpatialPartition::FlushPrimitive()
 		}
 	}
 
-	for (FOctree* Node : NodesToMerge)
-	{
-		if (Node)
-		{
-			Node->TryMergeUpward();
-		}
-	}
+	Octree->TryMergeRecursive();
 
 	ClearQueuedActorFlags();
 	DirtyActors.clear();
