@@ -1,5 +1,6 @@
 ﻿#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
 #include "Render/Resource/MeshBufferManager.h"
@@ -36,6 +37,13 @@ void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 {
 	if (!SceneProxy || !Owner || !Owner->GetWorld()) return;
 	Owner->GetWorld()->GetScene().MarkProxyDirty(SceneProxy, Flag);
+}
+
+void UPrimitiveComponent::Serialize(FArchive& Ar)
+{
+	USceneComponent::Serialize(Ar);
+	Ar << bIsVisible;
+	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
 void UPrimitiveComponent::SetVisibility(bool bNewVisible)
