@@ -230,9 +230,15 @@ void UEditorEngine::EndPlayMap()
 	// PIE 중 Editor WorldTick이 skip되어 캐시가 PIE 시작 전 시점 그대로 남아 있고,
 	// NeedsVisibleProxyRebuild()가 카메라 변화 기반이라 false를 반환하면 stale
 	// VisibleProxies가 그대로 재사용되어 dangling proxy 참조로 크래시가 날 수 있다.
+	//
+	// 또한 Renderer::PerObjectCBPool은 ProxyId로 인덱싱되는 월드 간 공유 풀이라,
+	// PIE 중 PIE 프록시가 덮어쓴 슬롯이 그대로 남아 있으면 Editor 프록시의
+	// bPerObjectCBDirty=false 상태로 인해 업로드가 skip되어 PIE 마지막 transform으로
+	// 렌더된다. 모든 Editor 프록시를 PerObjectCB dirty로 마킹해 재업로드 강제.
 	if (UWorld* EditorWorld = GetWorld())
 	{
 		EditorWorld->InvalidateVisibleSet();
+		EditorWorld->GetScene().MarkAllPerObjectCBDirty();
 	}
 
 	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
