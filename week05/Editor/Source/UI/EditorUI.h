@@ -13,6 +13,7 @@ class FEditorEngine;
 class FWindowsWindow;
 class FRenderer;
 class AActor;
+struct FWorldContext;
 class FEditorUI
 {
 public:
@@ -44,6 +45,7 @@ private:
 	std::wstring GetEditorIniPathW() const;
 	FEditorEngine* Engine = nullptr;
 	TObjectPtr<AActor> CachedSelectedActor;
+	const FWorldContext* CachedActiveWorldContext = nullptr;
 
 	FWindowsWindow* MainWindow = nullptr;
 

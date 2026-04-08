@@ -39,7 +39,7 @@ public:
 	// 월드와 프러스텀을 바탕으로 렌더러 비의존적인 씬 패킷을 만든다.
 	virtual void BuildSceneRenderPacket(
 		FEngine* Engine,
-		ULevel* Scene,
+		UWorld* World,
 		const FFrustum& Frustum,
 		const FShowFlags& Flags,
 		FSceneRenderPacket& OutPacket);

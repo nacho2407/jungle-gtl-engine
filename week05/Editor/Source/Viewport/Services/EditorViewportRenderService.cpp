@@ -11,6 +11,8 @@
 #include "Level/Level.h"
 #include "UI/EditorUI.h"
 #include "Viewport/Viewport.h"
+#include "World/World.h"
+#include "World/WorldContext.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/SkyComponent.h"
@@ -36,15 +38,9 @@ namespace
 		OutGridAxisV = ViewInverse.GetUpVector().GetSafeNormal();
 	}
 
-	TArray<FOutlineRenderItem> BuildSelectionOutlineItems(FEditorEngine* EditorEngine)
+	TArray<FOutlineRenderItem> BuildSelectionOutlineItems(AActor* Selected)
 	{
 		TArray<FOutlineRenderItem> OutlineItems;
-		if (!EditorEngine)
-		{
-			return OutlineItems;
-		}
-
-		AActor* Selected = EditorEngine->GetSelectedActor();
 		if (!Selected || Selected->IsPendingDestroy() || !Selected->IsVisible())
 		{
 			return OutlineItems;
@@ -109,15 +105,9 @@ void FEditorViewportRenderService::RenderAll(
 		return;
 	}
 
-	ULevel* Scene = Engine->GetScene();
-	if (!Scene)
-	{
-		return;
-	}
-
 	FEditorFrameRequest FrameRequest;
 	const TArray<FViewportEntry>& Entries = ViewportRegistry.GetEntries();
-	const TArray<FOutlineRenderItem> SelectionOutlineItems = BuildSelectionOutlineItems(EditorEngine);
+	AActor* SelectedActor = EditorEngine->GetSelectedActor();
 
 	int32 EntryIndex = 0;
 	for (const FViewportEntry& Entry : Entries)
@@ -147,6 +137,15 @@ void FEditorViewportRenderService::RenderAll(
 		Viewport.MaxDepth = 1.0f;
 
 		const float AspectRatio = static_cast<float>(Rect.Width) / static_cast<float>(Rect.Height);
+		FWorldContext* EntryWorldContext = Entry.WorldContext;
+		UWorld* EntryWorld = EntryWorldContext ? EntryWorldContext->World : nullptr;
+		if (!EntryWorld)
+		{
+			continue;
+		}
+		const bool bIsEditorWorld = EntryWorldContext && EntryWorldContext->WorldType == EWorldType::Editor;
+		const bool bCanShowEditorSelection = bIsEditorWorld && SelectedActor && SelectedActor->GetWorld() == EntryWorld;
+
 		FSceneRenderPacket ScenePacket;
 		// 씬 패킷과 별도로, 그리드/기즈모 같은 추가 씬 커맨드는 별도 큐로 유지한다.
 		FRenderCommandQueue AdditionalQueue;
@@ -157,12 +156,11 @@ void FEditorViewportRenderService::RenderAll(
 		FFrustum Frustum;
 		Frustum.ExtractFromVP(AdditionalQueue.ViewMatrix * AdditionalQueue.ProjectionMatrix);
 		const FVector CameraPosition = AdditionalQueue.ViewMatrix.GetInverse().GetTranslation();
-		BuildSceneRenderPacket(Engine, Scene, Frustum, Entry.LocalState.ShowFlags, ScenePacket);
+		BuildSceneRenderPacket(Engine, EntryWorld, Frustum, Entry.LocalState.ShowFlags, ScenePacket);
 
-		AActor* GizmoTarget = EditorEngine->GetSelectedActor();
-		if (GizmoTarget && GizmoTarget->GetComponentByClass<USkyComponent>() == nullptr)
+		if (bCanShowEditorSelection && SelectedActor->GetComponentByClass<USkyComponent>() == nullptr)
 		{
-			Gizmo.BuildRenderCommands(GizmoTarget, &Entry, AdditionalQueue);
+			Gizmo.BuildRenderCommands(SelectedActor, &Entry, AdditionalQueue);
 		}
 
 		FMaterial* EntryGridMaterial = (CurrentEntryIndex < MAX_VIEWPORTS) ? GridMaterials[CurrentEntryIndex] : nullptr;
@@ -199,12 +197,17 @@ void FEditorViewportRenderService::RenderAll(
 		ScenePass.AdditionalCommands = std::move(AdditionalQueue);
 		ScenePass.bForceWireframe = (Entry.LocalState.ViewMode == ERenderMode::Wireframe && WireFrameMaterial != nullptr);
 		ScenePass.WireframeMaterial = WireFrameMaterial.get();
-		ScenePass.OutlineRequest.bEnabled = Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
+		ScenePass.OutlineRequest.bEnabled =
+			bCanShowEditorSelection &&
+			Entry.LocalState.ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives);
 		if (ScenePass.OutlineRequest.bEnabled)
 		{
-			ScenePass.OutlineRequest.Items = SelectionOutlineItems;
+			ScenePass.OutlineRequest.Items = BuildSelectionOutlineItems(SelectedActor);
 		}
-		EditorEngine->BuildDebugLineRenderRequest(Entry.LocalState.ShowFlags, ScenePass.DebugLineRequest);
+		if (bIsEditorWorld)
+		{
+			EditorEngine->BuildDebugLineRenderRequest(Entry.LocalState.ShowFlags, ScenePass.DebugLineRequest);
+		}
 
 		FrameRequest.ScenePasses.push_back(std::move(ScenePass));
 	}

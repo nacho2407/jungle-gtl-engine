@@ -295,6 +295,14 @@ void FEditorEngine::FinalizeInitialize()
 
 void FEditorEngine::PrepareFrame(float DeltaTime)
 {
+	if (bIsPIEActive && PIEViewportId != INVALID_VIEWPORT_ID)
+	{
+		if (SlateApplication && !SlateApplication->IsViewportActive(PIEViewportId))
+		{
+			EndPIE();
+		}
+	}
+
 	SyncViewportClient();
 	SyncFocusedViewportLocalState();
 	CameraSubsystem.PrepareFrame(GetActiveWorld(), GetScene(), DeltaTime);
@@ -368,9 +376,9 @@ void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDe
 		AppendSelectedBVH(OutRequest);
 	}
 
-	if (UWorld* ActiveWorld = GetActiveWorld())
+	if (UWorld* EditorWorld = GetEditorWorld())
 	{
-		GetDebugDrawManager().BuildRenderRequest(ShowFlags, ActiveWorld, OutRequest);
+		GetDebugDrawManager().BuildRenderRequest(ShowFlags, EditorWorld, OutRequest);
 	}
 }
 
@@ -510,6 +518,7 @@ bool FEditorEngine::StartPIE()
 
 		FPIEViewportStateBackup Backup;
 		Backup.ViewportId = Entry.Id;
+		Backup.WorldContext = Entry.WorldContext;
 		Backup.LocalState = Entry.LocalState;
 		Backup.LocalState.ViewMode = Entry.LocalState.ViewMode;
 		Backup.LocalState.ShowFlags = Entry.LocalState.ShowFlags;
@@ -546,11 +555,15 @@ bool FEditorEngine::StartPIE()
 
 	if (PIEViewportEntry)
 	{
+		PIEViewportEntry->WorldContext = PIEWorldContext;
+		PIEViewportId = PIEViewportEntry->Id;
 		PIEViewportEntry->LocalState.ViewMode = ERenderMode::Lighting;
 		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_UUID, false);
 		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, false);
 		if (PIEViewportEntry->LocalState.ProjectionType == EViewportType::Perspective)
 		{
+			PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
+			PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
 			PIEViewportEntry->LocalState.bShowGrid = false;
 		}
 		else
@@ -593,6 +606,7 @@ void FEditorEngine::EndPIE()
 		FViewportEntry* RestoreViewportEntry = ViewportRegistry.FindEntryByViewportID(Backup.ViewportId);
 		if (RestoreViewportEntry)
 		{
+			RestoreViewportEntry->WorldContext = Backup.WorldContext;
 			RestoreViewportEntry->LocalState = Backup.LocalState;
 		}
 	}
@@ -614,6 +628,7 @@ void FEditorEngine::EndPIE()
 
 	bIsPIEActive = false;
 	bIsPIEPaused = false;
+	PIEViewportId = INVALID_VIEWPORT_ID;
 }
 
 void FEditorEngine::TogglePIEPause()
@@ -696,17 +711,17 @@ bool FEditorEngine::InitEditorWorlds()
 		return false;
 	}
 
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		Entry.WorldContext = EditorWorldContext;
+	}
+
 	ActivateEditorScene();
 	return true;
 }
 
 void FEditorEngine::ReleaseEditorWorlds()
 {
-	if (bIsPIEActive)
-	{
-		EndPIE();
-	}
-
 	ActiveWorldContext = nullptr;
 
 	for (FWorldContext* PreviewContext : PreviewWorldContexts)
@@ -765,9 +780,17 @@ void FEditorEngine::SyncFocusedViewportLocalState()
 	FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
 	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
 	FViewportLocalState* LocalState = nullptr;
-	if (FocusedEntry && FocusedEntry->bActive && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+	if (FocusedEntry && FocusedEntry->bActive)
 	{
-		LocalState = &FocusedEntry->LocalState;
+		if (FocusedEntry->WorldContext && FocusedEntry->WorldContext->World)
+		{
+			ActiveWorldContext = FocusedEntry->WorldContext;
+		}
+
+		if (FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+		{
+			LocalState = &FocusedEntry->LocalState;
+		}
 	}
 
 	CameraSubsystem.GetViewportController()->SetActiveLocalState(LocalState);

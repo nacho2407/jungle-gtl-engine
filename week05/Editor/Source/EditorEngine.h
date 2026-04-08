@@ -120,6 +120,7 @@ private:
 	struct FPIEViewportStateBackup
 	{
 		FViewportId ViewportId = INVALID_VIEWPORT_ID;
+		FWorldContext* WorldContext = nullptr;
 		FViewportLocalState LocalState;
 	};
 
@@ -169,6 +170,7 @@ private:
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
 	TArray<FPIEViewportStateBackup> SavedPIEViewportStates;
 	TObjectPtr<AActor> SavedPIESelectedActor;
+	FViewportId PIEViewportId = INVALID_VIEWPORT_ID;
 	bool bWasCursorHiddenForPIE = false;
 	bool bIsPIEActive = false;
 	bool bIsPIEPaused = false;

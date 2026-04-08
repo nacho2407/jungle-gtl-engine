@@ -13,6 +13,29 @@
 #include "Level/Level.h"
 #include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
+#include "World/World.h"
+#include "World/WorldContext.h"
+
+namespace
+{
+	bool IsEditorViewportEntry(const FViewportEntry* Entry)
+	{
+		return Entry &&
+			Entry->WorldContext &&
+			Entry->WorldContext->World &&
+			Entry->WorldContext->WorldType == EWorldType::Editor;
+	}
+
+	ULevel* GetViewportScene(const FViewportEntry* Entry)
+	{
+		if (!Entry || !Entry->WorldContext || !Entry->WorldContext->World)
+		{
+			return nullptr;
+		}
+
+		return Entry->WorldContext->World->GetScene();
+	}
+}
 
 void FEditorViewportInputService::TickCameraNavigation(
 	FEngine* Engine,
@@ -47,7 +70,7 @@ void FEditorViewportInputService::TickCameraNavigation(
 	}
 
 	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(Slate->GetFocusedViewportId());
-	if (!FocusedEntry || !FocusedEntry->bActive)
+	if (!FocusedEntry || !FocusedEntry->bActive || !IsEditorViewportEntry(FocusedEntry))
 	{
 		return;
 	}
@@ -58,9 +81,12 @@ void FEditorViewportInputService::TickCameraNavigation(
 	if (FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
 	{
 		float Sensitivity = 0.2f;
-		if (FCamera* Cam = Engine->GetScene()->GetCamera())
+		if (ULevel* Scene = GetViewportScene(FocusedEntry))
 		{
-			Sensitivity = Cam->GetMouseSensitivity();
+			if (FCamera* Cam = Scene->GetCamera())
+			{
+				Sensitivity = Cam->GetMouseSensitivity();
+			}
 		}
 
 		FocusedEntry->LocalState.Rotation.Yaw += DeltaX * Sensitivity;
@@ -176,7 +202,10 @@ void FEditorViewportInputService::HandleMessage(
 		if (!ImGui::GetCurrentContext() || !ImGui::GetIO().WantCaptureMouse)
 		{
 			FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(Slate->GetFocusedViewportId());
-			if (FocusedEntry && FocusedEntry->bActive && FocusedEntry->LocalState.ProjectionType != EViewportType::Perspective)
+			if (FocusedEntry &&
+				FocusedEntry->bActive &&
+				IsEditorViewportEntry(FocusedEntry) &&
+				FocusedEntry->LocalState.ProjectionType != EViewportType::Perspective)
 			{
 				const float WheelDelta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(WParam)) / WHEEL_DELTA;
 				FocusedEntry->LocalState.OrthoZoom *= (1.0f - WheelDelta * 0.1f);
@@ -203,12 +232,7 @@ void FEditorViewportInputService::HandleMessage(
 		return;
 	}
 
-	ULevel* Scene = Engine->GetScene();
 	AActor* SelectedActor = EditorEngine->GetSelectedActor();
-	if (!Scene)
-	{
-		return;
-	}
 
 	const bool bRightMouseDown = Engine->GetInputManager() &&
 		Engine->GetInputManager()->IsMouseButtonDown(FInputManager::MOUSE_RIGHT);
@@ -218,7 +242,7 @@ void FEditorViewportInputService::HandleMessage(
 	{
 	case WM_KEYDOWN:
 	{
-		if (Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID || bRightMouseDown)
+		if (Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID || bRightMouseDown || !Entry || !IsEditorViewportEntry(Entry))
 		{
 			return;
 		}
@@ -249,7 +273,13 @@ void FEditorViewportInputService::HandleMessage(
 	case WM_LBUTTONDOWN:
 	{
 		FViewport* Viewport = ViewportRegistry.GetViewportById(Slate->GetFocusedViewportId());
-		if (!Viewport)
+		if (!Viewport || !Entry || !IsEditorViewportEntry(Entry))
+		{
+			return;
+		}
+
+		ULevel* Scene = GetViewportScene(Entry);
+		if (!Scene)
 		{
 			return;
 		}
@@ -284,6 +314,21 @@ void FEditorViewportInputService::HandleMessage(
 		}
 
 		FViewportEntry* HoveredEntry = ViewportRegistry.FindEntryByViewportID(Slate->GetHoveredViewportId());
+		if (!IsEditorViewportEntry(HoveredEntry))
+		{
+			if (Gizmo.IsDragging())
+			{
+				Gizmo.EndDrag();
+				if (OnSelectionChanged)
+				{
+					OnSelectionChanged();
+				}
+			}
+
+			Gizmo.ClearHover();
+			return;
+		}
+
 		const FRect& Rect = Viewport->GetRect();
 		ScreenWidth = Rect.Width;
 		ScreenHeight = Rect.Height;
@@ -305,6 +350,13 @@ void FEditorViewportInputService::HandleMessage(
 
 	case WM_LBUTTONUP:
 	{
+		if (!Entry || !IsEditorViewportEntry(Entry))
+		{
+			Gizmo.EndDrag();
+			Gizmo.ClearHover();
+			return;
+		}
+
 		if (!Gizmo.IsDragging())
 		{
 			return;

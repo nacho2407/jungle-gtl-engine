@@ -70,13 +70,12 @@ UWorld* IViewportClient::ResolveWorld(FEngine* Engine) const
 
 void IViewportClient::BuildSceneRenderPacket(
 	FEngine* Engine,
-	ULevel* Scene,
+	UWorld* World,
 	const FFrustum& Frustum,
 	const FShowFlags& Flags,
 	FSceneRenderPacket& OutPacket)
 {
 	// ViewportClient는 렌더 커맨드를 만들지 않고, 월드를 씬 패킷으로만 변환한다.
-	UWorld* World = ResolveWorld(Engine);
 	if (!World)
 	{
 		return;
@@ -120,12 +119,6 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		return;
 	}
 
-	ULevel* Scene = ResolveScene(Engine);
-	if (!Scene)
-	{
-		return;
-	}
-
 	UWorld* ActiveWorld = ResolveWorld(Engine);
 	if (!ActiveWorld)
 	{
@@ -149,7 +142,7 @@ void FGameViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 
 	FrameRequest.SceneView.CameraPosition = FrameRequest.SceneView.ViewMatrix.GetInverse().GetTranslation();
 	FrameRequest.SceneView.TotalTimeSeconds = Engine ? static_cast<float>(Engine->GetTimer().GetTotalTime()) : 0.0f;
-	BuildSceneRenderPacket(Engine, Scene, Frustum, FShowFlags{}, ScenePacket);
+	BuildSceneRenderPacket(Engine, ActiveWorld, Frustum, FShowFlags{}, ScenePacket);
 	FrameRequest.ScenePacket = std::move(ScenePacket);
 
 	// 실제 씬 실행과 프레임 순서는 FRenderer 내부 서브시스템이 담당한다.
