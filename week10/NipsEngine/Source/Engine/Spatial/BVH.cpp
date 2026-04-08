@@ -8,338 +8,293 @@
 #include "Engine/Geometry/AABB.h"
 
 /**
+ * @file BVH.cpp
+ * @brief FBVH build, refit, optimization, and query implementation.
+ */
+
+/**
  * @brief Build a BVH over the provided object bounds.
  * @param ObjectBounds Array of per-object AABBs.
  * @param InLeafSize Maximum number of objects per leaf node.
  */
 void FBVH::BuildBVH(const TArray<FAABB>& ObjectBounds, int32 InLeafSize)
 {
-    Reset();
-    LeafSize = InLeafSize;
+	Reset();
+	LeafSize = InLeafSize;
 
-    const int32 ObjectCount = static_cast<int32>(ObjectBounds.size());
-    if (ObjectCount == 0)
-    {
-        RootNodeIndex = INDEX_NONE;
-        return;
-    }
+	const int32 ObjectCount = static_cast<int32>(ObjectBounds.size());
+	if (ObjectCount == 0)
+	{
+		RootNodeIndex = INDEX_NONE;
+		return;
+	}
 
-    ObjectIndices.resize(ObjectCount);
-    for (int32 i{0}; i < ObjectCount; ++i)
-    {
-        ObjectIndices[i] = i;
-    }
-    RootNodeIndex = BuildNode(ObjectBounds, 0, ObjectCount);
+	ObjectIndices.resize(ObjectCount);
+	for (int32 i{ 0 }; i < ObjectCount; ++i)
+	{
+		ObjectIndices[i] = i;
+	}
+	RootNodeIndex = BuildNode(ObjectBounds, 0, ObjectCount);
+
+	ValidateBVH();
 }
 
+/**
+ * @brief Build a BLAS using the BVH build routine.
+ * @param ObjectBounds Array of per-object AABBs.
+ * @param InLeafSize Maximum number of objects per leaf node.
+ */
 void FBVH::BuildBLAS(const TArray<FAABB>& ObjectBounds, int32 InLeafSize)
 {
-    BuildBVH(ObjectBounds, InLeafSize);
+	BuildBVH(ObjectBounds, InLeafSize);
 }
 
-void FBVH::RefitBVH(const TArray<FAABB>& ObjectBounds, int32 InLeafSize) {}
+/**
+ * @brief Refit all node bounds in an existing BVH.
+ * @param ObjectBounds Updated per-object AABBs.
+ */
+void FBVH::RefitBVH(const TArray<FAABB>& ObjectBounds)
+{
+	if (RootNodeIndex == INDEX_NONE || Nodes.empty())
+	{
+		return;
+	}
 
-void FBVH::ReBuildBVH(const TArray<FAABB>& ObjectBounds, int32 InLeafSize) {}
+	for (int32 NodeIndex = static_cast<int32>(Nodes.size()) - 1; NodeIndex >= 0; --NodeIndex)
+	{
+		RefitNode(ObjectBounds, NodeIndex);
+	}
 
+	ValidateBVH();
+}
+
+/**
+ * @brief Perform local rotations to reduce hierarchy cost, then refit.
+ * @param ObjectBounds Updated per-object AABBs.
+ */
+void FBVH::RotationBVH(const TArray<FAABB>& ObjectBounds)
+{
+	if (RootNodeIndex == INDEX_NONE || Nodes.empty())
+	{
+		return;
+	}
+
+	RefitBVH(ObjectBounds);
+	RebuildParentLinks();
+	ValidateBVH();
+
+	bool bChanged = true;
+	int32 PassCount = 0;
+	constexpr int32 MaxPasses = 4;
+
+	while (bChanged && PassCount < MaxPasses)
+	{
+		bChanged = false;
+		++PassCount;
+
+		for (int32 NodeIndex = static_cast<int32>(Nodes.size()) - 1; NodeIndex >= 0; --NodeIndex)
+		{
+			if (TryRotateNode(ObjectBounds, NodeIndex))
+			{
+				bChanged = true;
+			}
+		}
+
+		if (bChanged)
+		{
+			RefitBVH(ObjectBounds);
+			RebuildParentLinks();
+			ValidateBVH();
+		}
+	}
+}
+
+/**
+ * @brief Rebuild BVH from scratch with a resolved leaf size.
+ * @param ObjectBounds Per-object AABBs used to rebuild.
+ * @param InLeafSize Requested leaf size. If <= 0, fallback to current/default.
+ */
+void FBVH::ReBuildBVH(const TArray<FAABB>& ObjectBounds, int32 InLeafSize)
+{
+	const int32 EffectiveLeafSize =
+		(InLeafSize > 0) ? InLeafSize :
+		((LeafSize > 0) ? LeafSize : 4);
+
+	BuildBVH(ObjectBounds, EffectiveLeafSize);
+}
+
+/**
+ * @brief Traverse BVH and collect object indices intersecting a frustum.
+ * @param Frustum Query frustum.
+ * @param OutIndices Output list of intersecting object indices.
+ * @param bInsideOnly If true, only nodes fully inside the frustum are accepted.
+ */
 void FBVH::FrustumQuery(const FFrustum& Frustum, TArray<uint32>& OutIndices, bool bInsideOnly) const
 {
-    if (RootNodeIndex == INDEX_NONE)
-    {
-        return;
-    }
+	if (RootNodeIndex == INDEX_NONE)
+	{
+		return;
+	}
 
-    struct FStackEntry
-    {
-        int32 NodeIndex;
-        bool  bAssumeInside;
-    };
+	struct FStackEntry
+	{
+		int32 NodeIndex;
+		bool  bAssumeInside;
+	};
 
-    TArray<FStackEntry> Stack;
-    Stack.reserve(Nodes.size());
-    Stack.push_back({RootNodeIndex, false});
+	TArray<FStackEntry> Stack;
+	Stack.reserve(Nodes.size());
+	Stack.push_back({ RootNodeIndex, false });
 
-    while (!Stack.empty())
-    {
-        const FStackEntry Entry = Stack.back();
-        Stack.pop_back();
+	while (!Stack.empty())
+	{
+		const FStackEntry Entry = Stack.back();
+		Stack.pop_back();
 
-        const FNode& Node = Nodes[Entry.NodeIndex];
+		const FNode& Node = Nodes[Entry.NodeIndex];
 
-        FFrustum::EFrustumIntersectResult Result = FFrustum::EFrustumIntersectResult::Intersect;
-        if (!Entry.bAssumeInside)
-        {
-            Result = Frustum.Intersects(Node.Bounds);
-            if (Result == FFrustum::EFrustumIntersectResult::Outside)
-            {
-                continue;
-            }
-            if (bInsideOnly && Result == FFrustum::EFrustumIntersectResult::Intersect)
-            {
-                continue;
-            }
-        }
-        else
-        {
-            Result = FFrustum::EFrustumIntersectResult::Inside;
-        }
+		FFrustum::EFrustumIntersectResult Result = FFrustum::EFrustumIntersectResult::Intersect;
+		if (!Entry.bAssumeInside)
+		{
+			Result = Frustum.Intersects(Node.Bounds);
+			if (Result == FFrustum::EFrustumIntersectResult::Outside)
+			{
+				continue;
+			}
+			if (bInsideOnly && Result == FFrustum::EFrustumIntersectResult::Intersect)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			Result = FFrustum::EFrustumIntersectResult::Inside;
+		}
 
-        if (Node.IsLeaf())
-        {
-            for (int32 i = 0; i < Node.ObjectCount; ++i)
-            {
-                OutIndices.push_back(ObjectIndices[Node.FirstObject + i]);
-            }
-            continue;
-        }
-
-        const bool bChildAssumeInside =
-            (Entry.bAssumeInside || Result == FFrustum::EFrustumIntersectResult::Inside);
-
-        if (Node.Left != INDEX_NONE)
-        {
-            Stack.push_back({Node.Left, bChildAssumeInside});
-        }
-        if (Node.Right != INDEX_NONE)
-        {
-            Stack.push_back({Node.Right, bChildAssumeInside});
-        }
-    }
-}
-
-void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
-                    TArray<float>& OutTs) const
-{
-    OutIndices.clear();
-    OutTs.clear();
-
-    if (RootNodeIndex == INDEX_NONE)
-        return;
-
-    struct FEntry
-    {
-        int32 NodeIndex;
-        float tEnter;
-    };
-
-    TArray<FEntry> Stack;
-    Stack.reserve(64);
-
-    float tRoot = 0.f;
-    if (!Nodes[RootNodeIndex].Bounds.IntersectRay(Ray, tRoot))
-        return;
-    Stack.push_back({RootNodeIndex, tRoot});
-
-    while (!Stack.empty())
-    {
-        auto [NodeIndex, tEnter] = Stack.back();
-        Stack.pop_back();
-
-        const FNode& Node = Nodes[NodeIndex];
-
-        if (Node.IsLeaf())
-        {
-            for (int32 idx = 0; idx < Node.ObjectCount; ++idx)
-            {
-                const int32 ObjIndex = ObjectIndices[Node.FirstObject + idx];
-                float       HitT = 0.f;
-                if (ObjectBounds[ObjIndex].IntersectRay(Ray, HitT) && HitT >= 0.f)
-                {
-                    OutIndices.push_back(ObjIndex);
-                    OutTs.push_back(HitT);
-                }
-            }
-            continue;
-        }
-
-        float      tL = FLT_MAX, tR = FLT_MAX;
-        const bool bL = (Node.Left != INDEX_NONE) && Nodes[Node.Left].Bounds.IntersectRay(Ray, tL);
-        const bool bR =
-            (Node.Right != INDEX_NONE) && Nodes[Node.Right].Bounds.IntersectRay(Ray, tR);
-
-        // 가까운 노드를 나중에 push → LIFO로 먼저 pop = Front-to-Back 순서 보장
-        //  수집된 OutTs가 대체로 오름차순이므로 후처리 정렬 비용 절감
-        if (bL && bR)
-        {
-            if (tL < tR)
-            {
-                Stack.push_back({Node.Right, tR});
-                Stack.push_back({Node.Left, tL});
-            }
-            else
-            {
-                Stack.push_back({Node.Left, tL});
-                Stack.push_back({Node.Right, tR});
-            }
-        }
-        else if (bL)
-            Stack.push_back({Node.Left, tL});
-        else if (bR)
-            Stack.push_back({Node.Right, tR});
-    }
-
-    if (OutIndices.size() <= 1)
-        return; // 0~1개는 정렬 불필요
-
-    // Front-to-Back 순회로 이미 대체로 정렬된 상태 → insertion sort가 평균적으로 더 빠름
-    // std::sort 대신 std::stable_sort or 단순 insertion sort 고려 가능
-    // 히트 수가 적을 경우(TLAS는 보통 수십 개 이하) 아래로 충분
-    const int32   N = static_cast<int32>(OutIndices.size());
-    TArray<int32> Order(N);
-    for (int32 i = 0; i < N; ++i)
-        Order[i] = i;
-
-    std::sort(Order.begin(), Order.end(), [&](int32 A, int32 B) { return OutTs[A] < OutTs[B]; });
-
-    TArray<int32> SortedIndices;
-    SortedIndices.reserve(N);
-    TArray<float> SortedTs;
-    SortedTs.reserve(N);
-    for (int32 Ord : Order)
-    {
-        SortedIndices.push_back(OutIndices[Ord]);
-        SortedTs.push_back(OutTs[Ord]);
-    }
-    OutIndices.swap(SortedIndices);
-    OutTs.swap(SortedTs);
-}
-
-void FBVH::RayQueryTriangle(const FRay& Ray, TArray<int32>& OutIndices) const
-{
-    if (RootNodeIndex == INDEX_NONE)
-    {
-        return;
-    }
-
-    struct FEntry
-    {
-        int32 NodeIndex;
-        float tEnter;
-    };
-
-    TArray<FEntry> Stack;
-    Stack.reserve(64);
-
-    float tRoot = 0.0f;
-    if (!Nodes[RootNodeIndex].Bounds.IntersectRay(Ray, tRoot))
-        return;
-    Stack.push_back({RootNodeIndex, tRoot});
-
-    float tMax = FLT_MAX;
-
-    while (!Stack.empty())
-    {
-        auto [NodeIndex, tEnter] = Stack.back();
-        Stack.pop_back();
-
-        if (tEnter >= tMax)
-            continue;
-        const FNode& Node = Nodes[NodeIndex];
-
-        float      tL = FLT_MAX, tR = FLT_MAX;
-        const bool bL = (Node.Left != INDEX_NONE) && Nodes[Node.Left].Bounds.IntersectRay(Ray, tL);
-        const bool bR =
-            (Node.Right != INDEX_NONE) && Nodes[Node.Right].Bounds.IntersectRay(Ray, tR);
-
-        // 가까운 노드를 나중에 push (Front-to-Back), IntersectRay는 push 전 1회만 호출 — 중복 호출
-        // 없음
-        if (bL && bR)
-        {
-            if (tL < tR)
-            {
-                Stack.push_back({Node.Right, tR});
-                Stack.push_back({Node.Left, tL});
-            }
-            else
-            {
-                Stack.push_back({Node.Left, tL});
-                Stack.push_back({Node.Right, tR});
-            }
-        }
-        else if (bL)
-            Stack.push_back({Node.Left, tL});
-        else if (bR)
-            Stack.push_back({Node.Right, tR});
-    }
-}
-
-bool FBVH::RayQueryTriangleClosest(const FRay& Ray, float& OutT, int32& OutTriangleIndex,
-	const std::function<bool(int32, float&)>& IntersectFn) const
-{
-    if (RootNodeIndex == INDEX_NONE)
-        return false;
-
-    struct FEntry
-    {
-        int32 NodeIndex;
-        float tEnter; // AABB 진입 거리 (우선순위 정렬용)
-    };
-
-    TArray<FEntry> Stack;
-    Stack.reserve(64);
-
-    float tMax = FLT_MAX;
-    OutTriangleIndex = -1;
-
-    // Root AABB 충돌 검사
-    float tRoot = 0.0f;
-    if (!Nodes[RootNodeIndex].Bounds.IntersectRay(Ray, tRoot))
-        return false;
-    Stack.push_back({RootNodeIndex, tRoot});
-
-    while (!Stack.empty())
-    {
-        FEntry Entry = Stack.back();
-        Stack.pop_back();
-
-		// 이미 찾은 히트보다 먼 AABB는 스킵 (Front-to-Back Early Out)
-		if (Entry.tEnter >= tMax)
+		if (Node.IsLeaf())
+		{
+			for (int32 i = 0; i < Node.ObjectCount; ++i)
+			{
+				OutIndices.push_back(ObjectIndices[Node.FirstObject + i]);
+			}
 			continue;
+		}
 
-        const FNode& Node = Nodes[Entry.NodeIndex];
+		const bool bChildAssumeInside =
+			(Entry.bAssumeInside || Result == FFrustum::EFrustumIntersectResult::Inside);
 
-        if (Node.IsLeaf())
-        {
-            for (int32 i = 0; i < Node.ObjectCount; i++)
-            {
-                const int32 TriangeIndex = ObjectIndices[Node.FirstObject + i];
-            }
-            continue;
-        }
+		if (Node.Left != INDEX_NONE)
+		{
+			Stack.push_back({ Node.Left, bChildAssumeInside });
+		}
+		if (Node.Right != INDEX_NONE)
+		{
+			Stack.push_back({ Node.Right, bChildAssumeInside });
+		}
+	}
+}
 
-        // 내부 노드: 두 자식 AABB와 교차 거리를 계산해, 가까운 쪽이 나중에 pop되도록 한다.
-        float tLeft = FLT_MAX, tRight = FLT_MAX;
-        bool  bHitLeft =
-            (Node.Left != INDEX_NONE) && Nodes[Node.Left].Bounds.IntersectRay(Ray, tLeft);
-        bool bHitRight =
-            (Node.Right != INDEX_NONE) && Nodes[Node.Right].Bounds.IntersectRay(Ray, tRight);
+/**
+ * @brief Traverse BVH and collect ray-hit object indices and hit distances.
+ * @param ObjectBounds Per-object AABBs referenced by the BVH.
+ * @param Ray Query ray.
+ * @param OutIndices Output hit object indices.
+ * @param OutTs Output hit distances aligned with OutIndices.
+ */
+void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
+	TArray<float>& OutTs) const
+{
+	OutIndices.clear();
+	OutTs.clear();
 
-        if (bHitLeft && tLeft >= tMax)
-            bHitLeft = false;
-        if (bHitRight && tRight >= tMax)
-            bHitRight = false;
+	if (RootNodeIndex == INDEX_NONE)
+		return;
 
-        // 거리가 먼 순서대로 push하면 Stack에서는 먼저 pop되게 된다.
-        if (bHitLeft && bHitRight)
-        {
-            if (tLeft < tRight)
-            {
-                Stack.push_back({Node.Right, tRight});
-                Stack.push_back({Node.Left, tLeft});
-            }
-            else
-            {
-                Stack.push_back({Node.Left, tLeft});
-                Stack.push_back({Node.Right, tRight});
-            }
-        }
-        else if (bHitLeft)
-            Stack.push_back({Node.Left, tLeft});
-        else if (bHitRight)
-            Stack.push_back({Node.Right, tRight});
-    }
+	struct FEntry
+	{
+		int32 NodeIndex;
+		float tEnter;
+	};
 
-    OutT = tMax;
-    return OutTriangleIndex != -1;
+	TArray<FEntry> Stack;
+	Stack.reserve(64);
+
+	float tRoot = 0.f;
+	if (!Nodes[RootNodeIndex].Bounds.IntersectRay(Ray, tRoot))
+		return;
+	Stack.push_back({ RootNodeIndex, tRoot });
+
+	while (!Stack.empty())
+	{
+		auto [NodeIndex, tEnter] = Stack.back();
+		Stack.pop_back();
+
+		const FNode& Node = Nodes[NodeIndex];
+
+		if (Node.IsLeaf())
+		{
+			for (int32 idx = 0; idx < Node.ObjectCount; ++idx)
+			{
+				const int32 ObjIndex = ObjectIndices[Node.FirstObject + idx];
+				float       HitT = 0.f;
+				if (ObjectBounds[ObjIndex].IntersectRay(Ray, HitT) && HitT >= 0.f)
+				{
+					OutIndices.push_back(ObjIndex);
+					OutTs.push_back(HitT);
+				}
+			}
+			continue;
+		}
+
+		float      tL = FLT_MAX, tR = FLT_MAX;
+		const bool bL = (Node.Left != INDEX_NONE) && Nodes[Node.Left].Bounds.IntersectRay(Ray, tL);
+		const bool bR =
+			(Node.Right != INDEX_NONE) && Nodes[Node.Right].Bounds.IntersectRay(Ray, tR);
+
+		// Push the farther child first so LIFO pops the nearer child first.
+		// This keeps traversal roughly front-to-back and reduces sort work later.
+		if (bL && bR)
+		{
+			if (tL < tR)
+			{
+				Stack.push_back({ Node.Right, tR });
+				Stack.push_back({ Node.Left, tL });
+			}
+			else
+			{
+				Stack.push_back({ Node.Left, tL });
+				Stack.push_back({ Node.Right, tR });
+			}
+		}
+		else if (bL)
+			Stack.push_back({ Node.Left, tL });
+		else if (bR)
+			Stack.push_back({ Node.Right, tR });
+	}
+
+	if (OutIndices.size() <= 1)
+		return; // Sorting is unnecessary for 0 or 1 hit.
+
+	// Front-to-back traversal leaves hits nearly sorted in many cases.
+	// For the expected small hit counts here, index sorting is sufficient.
+	const int32   N = static_cast<int32>(OutIndices.size());
+	TArray<int32> Order(N);
+	for (int32 i = 0; i < N; ++i)
+		Order[i] = i;
+
+	std::sort(Order.begin(), Order.end(), [&](int32 A, int32 B) { return OutTs[A] < OutTs[B]; });
+
+	TArray<int32> SortedIndices;
+	SortedIndices.reserve(N);
+	TArray<float> SortedTs;
+	SortedTs.reserve(N);
+	for (int32 Ord : Order)
+	{
+		SortedIndices.push_back(OutIndices[Ord]);
+		SortedTs.push_back(OutTs[Ord]);
+	}
+	OutIndices.swap(SortedIndices);
+	OutTs.swap(SortedTs);
 }
 
 /**
@@ -351,46 +306,48 @@ bool FBVH::RayQueryTriangleClosest(const FRay& Ray, float& OutT, int32& OutTrian
  */
 int32 FBVH::BuildNode(const TArray<FAABB>& ObjectBounds, int32 Start, int32 Count)
 {
-    assert(Count > 0);
+	assert(Count > 0);
 
-    const int32 NodeIndex{static_cast<int32>(Nodes.size())};
-    Nodes.emplace_back();
+	const int32 NodeIndex{ static_cast<int32>(Nodes.size()) };
+	Nodes.emplace_back();
 
-    Nodes[NodeIndex].Bounds = ComputeBounds(ObjectBounds, ObjectIndices, Start, Count);
+	Nodes[NodeIndex].Bounds = ComputeBounds(ObjectBounds, ObjectIndices, Start, Count);
 
-    // leaf면 여기서 끝
-    if (Count <= LeafSize)
-    {
-        Nodes[NodeIndex].FirstObject = Start;
-        Nodes[NodeIndex].ObjectCount = Count;
-        return NodeIndex;
-    }
+	// Leaf node termination.
+	if (Count <= LeafSize)
+	{
+		Nodes[NodeIndex].FirstObject = Start;
+		Nodes[NodeIndex].ObjectCount = Count;
+		return NodeIndex;
+	}
 
-    // SAH split
-    const FSplitCriterion SplitCriterion{FindSplitPosition(ObjectBounds, Start, Count)};
-    const int32           MidIndex{PartitionObjects(ObjectBounds, Start, Count, SplitCriterion)};
+	// SAH-based split.
+	const FSplitCriterion SplitCriterion{ FindSplitPosition(ObjectBounds, Start, Count) };
+	const int32           MidIndex{ PartitionObjects(ObjectBounds, Start, Count, SplitCriterion) };
 
-    const int32 LeftCount{MidIndex - Start};
-    const int32 RightCount{Count - LeftCount};
+	const int32 LeftCount{ MidIndex - Start };
+	const int32 RightCount{ Count - LeftCount };
 
-    // 안전장치: 퇴화 분할 방지
-    if (LeftCount <= 0 || RightCount <= 0)
-    {
-        Nodes[NodeIndex].FirstObject = Start;
-        Nodes[NodeIndex].ObjectCount = Count;
-        return NodeIndex;
-    }
+	// Safety net against degenerate partitioning.
+	if (LeftCount <= 0 || RightCount <= 0)
+	{
+		Nodes[NodeIndex].FirstObject = Start;
+		Nodes[NodeIndex].ObjectCount = Count;
+		return NodeIndex;
+	}
 
-    Nodes[NodeIndex].Left = BuildNode(ObjectBounds, Start, LeftCount);
-    Nodes[NodeIndex].Right = BuildNode(ObjectBounds, MidIndex, RightCount);
+	Nodes[NodeIndex].Left = BuildNode(ObjectBounds, Start, LeftCount);
+	Nodes[NodeIndex].Right = BuildNode(ObjectBounds, MidIndex, RightCount);
 
-    // [수정됨] 내부 노드(Internal Node)도 자신이 포함하는 전체 오브젝트 범위를 저장합니다.
-    // 자식 노드로 분할될 때 ObjectIndices가 연속적으로 배치되므로 이 범위가 하위 트리의 모든
-    // 오브젝트를 포함합니다.
-    Nodes[NodeIndex].FirstObject = Start;
-    Nodes[NodeIndex].ObjectCount = Count;
+	Nodes[Nodes[NodeIndex].Left].Parent = NodeIndex;
+	Nodes[Nodes[NodeIndex].Right].Parent = NodeIndex;
 
-    return NodeIndex;
+	// Internal nodes also track the full object range they cover.
+	// During partitioning, child ranges remain contiguous in ObjectIndices.
+	Nodes[NodeIndex].FirstObject = Start;
+	Nodes[NodeIndex].ObjectCount = Count;
+
+	return NodeIndex;
 }
 
 /**
@@ -402,111 +359,142 @@ int32 FBVH::BuildNode(const TArray<FAABB>& ObjectBounds, int32 Start, int32 Coun
  * @return Bounding box for the range.
  */
 FAABB FBVH::ComputeBounds(const TArray<FAABB>& ObjectBounds, const TArray<int32>& ObjectIndices,
-                          int32 Start, int32 Count)
+	int32 Start, int32 Count)
 {
-    assert(Count > 0);
+	assert(Count > 0);
 
-    FAABB Result = ObjectBounds[ObjectIndices[Start]];
+	FAABB Result = ObjectBounds[ObjectIndices[Start]];
 
-    for (int32 i = 1; i < Count; ++i)
-    {
-        Result.ExpandToInclude(ObjectBounds[ObjectIndices[Start + i]]);
-    }
-    return Result;
+	for (int32 i = 1; i < Count; ++i)
+	{
+		Result.ExpandToInclude(ObjectBounds[ObjectIndices[Start + i]]);
+	}
+	return Result;
 }
 
+/**
+ * @brief Evaluate SAH candidates and pick a split axis/position.
+ * @param ObjectBounds Array of per-object AABBs.
+ * @param Start Start index into ObjectIndices.
+ * @param Count Number of objects in the range.
+ * @return Best split criterion for this range.
+ */
 FSplitCriterion FBVH::FindSplitPosition(const TArray<FAABB>& ObjectBounds, int32 Start, int32 Count)
 {
-    assert(Count > 0);
+	assert(Count >= 2);
 
-    // SAH (Surface Area Heuristic) using a full sort per axis.
-    struct FAxisEntry
-    {
-        int32 Index;
-        float Center;
-    };
+	struct FAxisEntry
+	{
+		int32 Index;
+		float Center;
+	};
 
-    auto ComputeSurfaceArea = [](const FAABB& Box)
-    {
-        const FVector Extent = Box.Max - Box.Min;
-        const float   Dx = Extent.X;
-        const float   Dy = Extent.Y;
-        const float   Dz = Extent.Z;
-        return 2.0f * (Dx * Dy + Dy * Dz + Dz * Dx);
-    };
+	auto ComputeSurfaceArea = [](const FAABB& Box) -> float
+		{
+			const FVector Extent = Box.Max - Box.Min;
+			return 2.0f * (Extent.X * Extent.Y + Extent.Y * Extent.Z + Extent.Z * Extent.X);
+		};
 
-    FSplitCriterion Best{};
-    float           BestCost = std::numeric_limits<float>::infinity();
+	const FAABB NodeBounds = ComputeBounds(ObjectBounds, ObjectIndices, Start, Count);
+	const float ParentArea = ComputeSurfaceArea(NodeBounds);
 
-    const FAABB NodeBounds = ComputeBounds(ObjectBounds, ObjectIndices, Start, Count);
-    const float ParentArea = ComputeSurfaceArea(NodeBounds);
-    if (ParentArea <= MathUtil::Epsilon)
-    {
-        return FindSplitPositionFromBounds(NodeBounds);
-    }
+	// If parent area is degenerate, SAH loses meaning; use fallback split.
+	if (ParentArea <= MathUtil::Epsilon)
+	{
+		return FindSplitPositionFromBounds(NodeBounds);
+	}
 
-    for (int32 Axis = 0; Axis < 3; ++Axis)
-    {
-        TArray<FAxisEntry> Entries;
-        Entries.reserve(Count);
-        for (int32 i = 0; i < Count; ++i)
-        {
-            const int32   ObjIndex = ObjectIndices[Start + i];
-            const FVector Center = ObjectBounds[ObjIndex].GetCenter();
-            Entries.push_back({ObjIndex, Center[Axis]});
-        }
+	FSplitCriterion Best = FindSplitPositionFromBounds(NodeBounds);
+	float BestCost = std::numeric_limits<float>::infinity();
+	int32 BestBalance = std::numeric_limits<int32>::max();
+	bool bFound = false;
 
-        std::sort(Entries.begin(), Entries.end(),
-                  [](const FAxisEntry& A, const FAxisEntry& B) { return A.Center < B.Center; });
+	for (int32 Axis = 0; Axis < 3; ++Axis)
+	{
+		TArray<FAxisEntry> Entries;
+		Entries.reserve(Count);
 
-        TArray<FAABB> Prefix;
-        TArray<FAABB> Suffix;
-        Prefix.resize(Count);
-        Suffix.resize(Count);
+		for (int32 i = 0; i < Count; ++i)
+		{
+			const int32 ObjIndex = ObjectIndices[Start + i];
+			const float Center = ObjectBounds[ObjIndex].GetCenter()[Axis];
+			Entries.push_back({ ObjIndex, Center });
+		}
 
-        Prefix[0] = ObjectBounds[Entries[0].Index];
-        for (int32 i = 1; i < Count; ++i)
-        {
-            Prefix[i] = Prefix[i - 1];
-            Prefix[i].ExpandToInclude(ObjectBounds[Entries[i].Index]);
-        }
+		std::sort(Entries.begin(), Entries.end(),
+			[](const FAxisEntry& A, const FAxisEntry& B)
+			{
+				if (A.Center == B.Center)
+				{
+					return A.Index < B.Index;
+				}
+				return A.Center < B.Center;
+			});
 
-        Suffix[Count - 1] = ObjectBounds[Entries[Count - 1].Index];
-        for (int32 i = Count - 2; i >= 0; --i)
-        {
-            Suffix[i] = Suffix[i + 1];
-            Suffix[i].ExpandToInclude(ObjectBounds[Entries[i].Index]);
-        }
+		TArray<FAABB> Prefix;
+		TArray<FAABB> Suffix;
+		Prefix.resize(Count);
+		Suffix.resize(Count);
 
-        for (int32 i = 0; i < Count - 1; ++i)
-        {
-            const int32 LeftCount = i + 1;
-            const int32 RightCount = Count - LeftCount;
+		Prefix[0] = ObjectBounds[Entries[0].Index];
+		for (int32 i = 1; i < Count; ++i)
+		{
+			Prefix[i] = Prefix[i - 1];
+			Prefix[i].ExpandToInclude(ObjectBounds[Entries[i].Index]);
+		}
 
-            const float LeftArea = ComputeSurfaceArea(Prefix[i]);
-            const float RightArea = ComputeSurfaceArea(Suffix[i + 1]);
+		Suffix[Count - 1] = ObjectBounds[Entries[Count - 1].Index];
+		for (int32 i = Count - 2; i >= 0; --i)
+		{
+			Suffix[i] = Suffix[i + 1];
+			Suffix[i].ExpandToInclude(ObjectBounds[Entries[i].Index]);
+		}
 
-            const float Cost = (LeftArea / ParentArea) * static_cast<float>(LeftCount) +
-                               (RightArea / ParentArea) * static_cast<float>(RightCount);
+		for (int32 i = 0; i < Count - 1; ++i)
+		{
+			const float CenterA = Entries[i].Center;
+			const float CenterB = Entries[i + 1].Center;
 
-            if (Cost < BestCost)
-            {
-                BestCost = Cost;
-                Best.Axis = static_cast<EBVHAxis>(Axis);
+			// Skip split candidates between nearly identical centers.
+			if (std::abs(CenterA - CenterB) <= MathUtil::Epsilon)
+			{
+				continue;
+			}
 
-                const float CenterA = Entries[i].Center;
-                const float CenterB = Entries[i + 1].Center;
-                Best.Position = 0.5f * (CenterA + CenterB);
-            }
-        }
-    }
+			const int32 LeftCount = i + 1;
+			const int32 RightCount = Count - LeftCount;
 
-    if (!std::isfinite(BestCost))
-    {
-        return FindSplitPositionFromBounds(NodeBounds);
-    }
+			const float LeftArea = ComputeSurfaceArea(Prefix[i]);
+			const float RightArea = ComputeSurfaceArea(Suffix[i + 1]);
 
-    return Best;
+			// ParentArea is constant for all candidates, so omit it in comparison.
+			const float Cost =
+				LeftArea * static_cast<float>(LeftCount) +
+				RightArea * static_cast<float>(RightCount);
+
+			const int32 Balance = std::abs(LeftCount - RightCount);
+
+			// 1) Prefer lower SAH cost.
+			// 2) If costs are near-equal, prefer more balanced partitions.
+			if (!bFound ||
+				Cost < BestCost - MathUtil::Epsilon ||
+				(std::abs(Cost - BestCost) <= MathUtil::Epsilon && Balance < BestBalance))
+			{
+				bFound = true;
+				BestCost = Cost;
+				BestBalance = Balance;
+				Best.Axis = static_cast<EBVHAxis>(Axis);
+				Best.Position = 0.5f * (CenterA + CenterB);
+			}
+		}
+	}
+
+	if (!bFound)
+	{
+		return FindSplitPositionFromBounds(NodeBounds);
+	}
+
+	return Best;
 }
 
 /**
@@ -516,26 +504,26 @@ FSplitCriterion FBVH::FindSplitPosition(const TArray<FAABB>& ObjectBounds, int32
  */
 FSplitCriterion FBVH::FindSplitPositionFromBounds(const FAABB& NodeAABB)
 {
-    // Longest Axis Median Split
-    const FVector   Extent{NodeAABB.Max - NodeAABB.Min};
-    FSplitCriterion SplitCriterion{};
+	// Longest Axis Median Split
+	const FVector   Extent{ NodeAABB.Max - NodeAABB.Min };
+	FSplitCriterion SplitCriterion{};
 
-    if (Extent.X >= Extent.Y && Extent.X >= Extent.Z)
-    {
-        SplitCriterion.Axis = EBVHAxis::X;
-        SplitCriterion.Position = (NodeAABB.Min.X + NodeAABB.Max.X) * 0.5f;
-    }
-    else if (Extent.Y >= Extent.Z)
-    {
-        SplitCriterion.Axis = EBVHAxis::Y;
-        SplitCriterion.Position = (NodeAABB.Min.Y + NodeAABB.Max.Y) * 0.5f;
-    }
-    else
-    {
-        SplitCriterion.Axis = EBVHAxis::Z;
-        SplitCriterion.Position = (NodeAABB.Min.Z + NodeAABB.Max.Z) * 0.5f;
-    }
-    return SplitCriterion;
+	if (Extent.X >= Extent.Y && Extent.X >= Extent.Z)
+	{
+		SplitCriterion.Axis = EBVHAxis::X;
+		SplitCriterion.Position = (NodeAABB.Min.X + NodeAABB.Max.X) * 0.5f;
+	}
+	else if (Extent.Y >= Extent.Z)
+	{
+		SplitCriterion.Axis = EBVHAxis::Y;
+		SplitCriterion.Position = (NodeAABB.Min.Y + NodeAABB.Max.Y) * 0.5f;
+	}
+	else
+	{
+		SplitCriterion.Axis = EBVHAxis::Z;
+		SplitCriterion.Position = (NodeAABB.Min.Z + NodeAABB.Max.Z) * 0.5f;
+	}
+	return SplitCriterion;
 }
 
 /**
@@ -547,56 +535,371 @@ FSplitCriterion FBVH::FindSplitPositionFromBounds(const FAABB& NodeAABB)
  * @return Index separating left and right partitions.
  */
 int32 FBVH::PartitionObjects(const TArray<FAABB>& ObjectBounds, int32 Start, int32 Count,
-                             const FSplitCriterion& Criterion)
+	const FSplitCriterion& Criterion)
 {
-    assert(Count > 0);
+	assert(Count > 0);
 
-    int32 Axis{GetAxisValue(Criterion.Axis)};
-    int32 Left{Start};
-    int32 Right{Start + Count - 1};
+	int32 Axis{ GetAxisValue(Criterion.Axis) };
+	int32 Left{ Start };
+	int32 Right{ Start + Count - 1 };
 
-    while (Left <= Right)
-    {
-        const FAABB&  LeftBox{ObjectBounds[ObjectIndices[Left]]};
-        const FVector LeftCenter{LeftBox.GetCenter()};
-        const float   LeftValue{LeftCenter[Axis]};
+	while (Left <= Right)
+	{
+		const FAABB& LeftBox{ ObjectBounds[ObjectIndices[Left]] };
+		const FVector LeftCenter{ LeftBox.GetCenter() };
+		const float   LeftValue{ LeftCenter[Axis] };
 
-        if (LeftValue < Criterion.Position)
-        {
-            ++Left;
-            continue;
-        }
+		if (LeftValue < Criterion.Position)
+		{
+			++Left;
+			continue;
+		}
 
-        const FAABB&  RightBox{ObjectBounds[ObjectIndices[Right]]};
-        const FVector RightCenter{RightBox.GetCenter()};
-        const float   RightValue{RightCenter[Axis]};
+		const FAABB& RightBox{ ObjectBounds[ObjectIndices[Right]] };
+		const FVector RightCenter{ RightBox.GetCenter() };
+		const float   RightValue{ RightCenter[Axis] };
 
-        if (RightValue >= Criterion.Position)
-        {
-            --Right;
-            continue;
-        }
+		if (RightValue >= Criterion.Position)
+		{
+			--Right;
+			continue;
+		}
 
-        std::swap(ObjectIndices[Left], ObjectIndices[Right]);
-        ++Left;
-        --Right;
-    }
+		std::swap(ObjectIndices[Left], ObjectIndices[Right]);
+		++Left;
+		--Right;
+	}
 
-    const int32 Mid{Left};
+	const int32 Mid{ Left };
 
-    // 한쪽으로 다 몰리는 퇴화 분할 방지
-    if (Mid == Start || Mid == Start + Count)
-    {
-        const int32 ForcedMid{Start + Count / 2};
+	// Prevent degenerate split where all objects end up on one side.
+	if (Mid == Start || Mid == Start + Count)
+	{
+		const int32 ForcedMid{ Start + Count / 2 };
 
-        std::sort(ObjectIndices.begin() + Start, ObjectIndices.begin() + Start + Count,
-                  [&](int32 A, int32 B)
-                  {
-                      const FVector CenterA{ObjectBounds[A].GetCenter()};
-                      const FVector CenterB{ObjectBounds[B].GetCenter()};
-                      return CenterA[Axis] < CenterB[Axis];
-                  });
-        return ForcedMid;
-    }
-    return Mid;
+		std::sort(ObjectIndices.begin() + Start, ObjectIndices.begin() + Start + Count,
+			[&](int32 A, int32 B)
+			{
+				const FVector CenterA{ ObjectBounds[A].GetCenter() };
+				const FVector CenterB{ ObjectBounds[B].GetCenter() };
+				return CenterA[Axis] < CenterB[Axis];
+			});
+		return ForcedMid;
+	}
+	return Mid;
+}
+
+/**
+ * @brief Compute the surface area of an AABB.
+ * @param Box Input AABB.
+ * @return Surface area value.
+ */
+float FBVH::ComputeSurfaceArea(const FAABB& Box)
+{
+	const FVector Extent = Box.Max - Box.Min;
+	return 2.0f * (Extent.X * Extent.Y + Extent.Y * Extent.Z + Extent.Z * Extent.X);
+}
+
+/**
+ * @brief Compute the union bounds of two AABBs.
+ * @param A First AABB.
+ * @param B Second AABB.
+ * @return Merged AABB that encloses both inputs.
+ */
+FAABB FBVH::UnionBounds(const FAABB& A, const FAABB& B)
+{
+	FAABB Result = A;
+	Result.ExpandToInclude(B);
+	return Result;
+}
+
+/**
+ * @brief Refit one node's bounds from either objects (leaf) or children (internal).
+ * @param ObjectBounds Updated per-object AABBs.
+ * @param NodeIndex Node index to refit.
+ */
+void FBVH::RefitNode(const TArray<FAABB>& ObjectBounds, int32 NodeIndex)
+{
+	FNode& Node = Nodes[NodeIndex];
+
+	if (Node.ObjectCount <= 0 || Node.FirstObject == INDEX_NONE)
+	{
+		return;
+	}
+
+	if (Node.IsLeaf())
+	{
+		Node.Bounds = ComputeBounds(ObjectBounds, ObjectIndices, Node.FirstObject, Node.ObjectCount);
+	}
+	else
+	{
+		assert(Node.Left != INDEX_NONE && Node.Right != INDEX_NONE);
+		Node.Bounds = UnionBounds(Nodes[Node.Left].Bounds, Nodes[Node.Right].Bounds);
+	}
+}
+
+/**
+ * @brief Reconstruct parent links by traversing from the root.
+ */
+void FBVH::RebuildParentLinks()
+{
+	for (FNode& Node : Nodes)
+	{
+		Node.Parent = INDEX_NONE;
+	}
+
+	if (RootNodeIndex == INDEX_NONE)
+	{
+		return;
+	}
+
+	TArray<int32> Stack;
+	Stack.reserve(Nodes.size());
+	Stack.push_back(RootNodeIndex);
+
+	while (!Stack.empty())
+	{
+		const int32 NodeIndex = Stack.back();
+		Stack.pop_back();
+
+		FNode& Node = Nodes[NodeIndex];
+
+		if (Node.Left != INDEX_NONE)
+		{
+			Nodes[Node.Left].Parent = NodeIndex;
+			Stack.push_back(Node.Left);
+		}
+		if (Node.Right != INDEX_NONE)
+		{
+			Nodes[Node.Right].Parent = NodeIndex;
+			Stack.push_back(Node.Right);
+		}
+	}
+}
+
+/**
+ * @brief Try rotating against the left child to lower local SAH cost.
+ * @param ObjectBounds Updated per-object AABBs.
+ * @param NodeIndex Target internal node index.
+ * @return True if a beneficial rotation was applied.
+ */
+bool FBVH::TryRotateWithLeftChild(const TArray<FAABB>& ObjectBounds, int32 NodeIndex)
+{
+	FNode& Node = Nodes[NodeIndex];
+	if (Node.IsLeaf() || Node.Left == INDEX_NONE || Node.Right == INDEX_NONE)
+	{
+		return false;
+	}
+
+	const int32 AIndex = Node.Left;
+	const int32 BIndex = Node.Right;
+	FNode& A = Nodes[AIndex];
+
+	if (A.IsLeaf())
+	{
+		return false;
+	}
+
+	const float OldCost = ComputeSurfaceArea(Node.Bounds) + ComputeSurfaceArea(A.Bounds);
+
+	float BestCost = OldCost;
+	int32 BestGrandChild = INDEX_NONE;
+	bool bUseALeft = false;
+
+	// Candidate 1: swap B with A.Left.
+	{
+		const int32 G = A.Left;
+		const int32 O = A.Right;
+
+		const FAABB NewA = UnionBounds(Nodes[BIndex].Bounds, Nodes[O].Bounds);
+		const FAABB NewNode = UnionBounds(NewA, Nodes[G].Bounds);
+		const float NewCost = ComputeSurfaceArea(NewNode) + ComputeSurfaceArea(NewA);
+
+		if (NewCost < BestCost)
+		{
+			BestCost = NewCost;
+			BestGrandChild = G;
+			bUseALeft = true;
+		}
+	}
+
+	// Candidate 2: swap B with A.Right.
+	{
+		const int32 G = A.Right;
+		const int32 O = A.Left;
+
+		const FAABB NewA = UnionBounds(Nodes[BIndex].Bounds, Nodes[O].Bounds);
+		const FAABB NewNode = UnionBounds(NewA, Nodes[G].Bounds);
+		const float NewCost = ComputeSurfaceArea(NewNode) + ComputeSurfaceArea(NewA);
+
+		if (NewCost < BestCost)
+		{
+			BestCost = NewCost;
+			BestGrandChild = G;
+			bUseALeft = false;
+		}
+	}
+
+	if (BestGrandChild == INDEX_NONE)
+	{
+		return false;
+	}
+
+	// Apply chosen rotation.
+	if (bUseALeft)
+	{
+		Node.Right = A.Left;
+		A.Left = BIndex;
+	}
+	else
+	{
+		Node.Right = A.Right;
+		A.Right = BIndex;
+	}
+
+	Nodes[Node.Right].Parent = NodeIndex;
+	Nodes[BIndex].Parent = AIndex;
+	A.Parent = NodeIndex;
+
+	RefitNode(ObjectBounds, AIndex);
+	RefitNode(ObjectBounds, NodeIndex);
+	return true;
+}
+
+/**
+ * @brief Try rotating against the right child to lower local SAH cost.
+ * @param ObjectBounds Updated per-object AABBs.
+ * @param NodeIndex Target internal node index.
+ * @return True if a beneficial rotation was applied.
+ */
+bool FBVH::TryRotateWithRightChild(const TArray<FAABB>& ObjectBounds, int32 NodeIndex)
+{
+	FNode& Node = Nodes[NodeIndex];
+	if (Node.IsLeaf() || Node.Left == INDEX_NONE || Node.Right == INDEX_NONE)
+	{
+		return false;
+	}
+
+	const int32 AIndex = Node.Left;
+	const int32 BIndex = Node.Right;
+	FNode& B = Nodes[BIndex];
+
+	if (B.IsLeaf())
+	{
+		return false;
+	}
+
+	const float OldCost = ComputeSurfaceArea(Node.Bounds) + ComputeSurfaceArea(B.Bounds);
+
+	float BestCost = OldCost;
+	int32 BestGrandChild = INDEX_NONE;
+	bool bUseBLeft = false;
+
+	// Candidate 1: swap A with B.Left.
+	{
+		const int32 G = B.Left;
+		const int32 O = B.Right;
+
+		const FAABB NewB = UnionBounds(Nodes[AIndex].Bounds, Nodes[O].Bounds);
+		const FAABB NewNode = UnionBounds(Nodes[G].Bounds, NewB);
+		const float NewCost = ComputeSurfaceArea(NewNode) + ComputeSurfaceArea(NewB);
+
+		if (NewCost < BestCost)
+		{
+			BestCost = NewCost;
+			BestGrandChild = G;
+			bUseBLeft = true;
+		}
+	}
+
+	// Candidate 2: swap A with B.Right.
+	{
+		const int32 G = B.Right;
+		const int32 O = B.Left;
+
+		const FAABB NewB = UnionBounds(Nodes[AIndex].Bounds, Nodes[O].Bounds);
+		const FAABB NewNode = UnionBounds(Nodes[G].Bounds, NewB);
+		const float NewCost = ComputeSurfaceArea(NewNode) + ComputeSurfaceArea(NewB);
+
+		if (NewCost < BestCost)
+		{
+			BestCost = NewCost;
+			BestGrandChild = G;
+			bUseBLeft = false;
+		}
+	}
+
+	if (BestGrandChild == INDEX_NONE)
+	{
+		return false;
+	}
+
+	// Apply chosen rotation.
+	if (bUseBLeft)
+	{
+		Node.Left = B.Left;
+		B.Left = AIndex;
+	}
+	else
+	{
+		Node.Left = B.Right;
+		B.Right = AIndex;
+	}
+
+	Nodes[Node.Left].Parent = NodeIndex;
+	Nodes[AIndex].Parent = BIndex;
+	B.Parent = NodeIndex;
+
+	RefitNode(ObjectBounds, BIndex);
+	RefitNode(ObjectBounds, NodeIndex);
+	return true;
+}
+
+/**
+ * @brief Try local rotations for a node.
+ * @param ObjectBounds Updated per-object AABBs.
+ * @param NodeIndex Target node index.
+ * @return True if any rotation was applied.
+ */
+bool FBVH::TryRotateNode(const TArray<FAABB>& ObjectBounds, int32 NodeIndex)
+{
+	if (Nodes[NodeIndex].IsLeaf())
+	{
+		return false;
+	}
+
+	// Stop at first successful rotation in this pass.
+	if (TryRotateWithLeftChild(ObjectBounds, NodeIndex))
+	{
+		return true;
+	}
+	if (TryRotateWithRightChild(ObjectBounds, NodeIndex))
+	{
+		return true;
+	}
+	return false;
+}
+
+/**
+ * @brief Validate parent/child topology invariants using assertions.
+ */
+void FBVH::ValidateBVH() const
+{
+	assert(RootNodeIndex == INDEX_NONE || Nodes[RootNodeIndex].Parent == INDEX_NONE);
+
+	for (int32 i = 0; i < static_cast<int32>(Nodes.size()); ++i)
+	{
+		const FBVH::FNode& Node = Nodes[i];
+
+		if (Node.IsLeaf())
+		{
+			assert(Node.Left == INDEX_NONE && Node.Right == INDEX_NONE);
+		}
+		else
+		{
+			assert(Node.Left != INDEX_NONE && Node.Right != INDEX_NONE);
+			assert(Nodes[Node.Left].Parent == i);
+			assert(Nodes[Node.Right].Parent == i);
+		}
+	}
 }
