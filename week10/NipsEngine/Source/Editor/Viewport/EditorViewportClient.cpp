@@ -5,6 +5,7 @@
 #include "Engine/Core/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Slate/SlateApplication.h"
+#include "EditorEngine.h"
 
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
@@ -18,10 +19,16 @@
 #include "Slate/SWidget.h"
 #include <algorithm>
 
-void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
+void FEditorViewportClient::Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor)
 {
 	Window = InWindow;
+	Editor = InEditor;
 	NavigationController.SetCamera(&Camera);
+}
+
+void FEditorViewportClient::SetWorld(UWorld* InWorld)
+{
+	World = InWorld;
 }
 
 void FEditorViewportClient::SetSelectionManager(FSelectionManager* InSelectionManager)
@@ -239,7 +246,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	const bool bAltDown = InputSystem::Get().GetKey(VK_MENU);
 	const bool bCtrlDown = InputSystem::Get().GetKey(VK_CONTROL);
 	const bool bShiftDown = InputSystem::Get().GetKey(VK_SHIFT);
-	
+
 	//	Alt가 눌렸을 때도 동일하게 해제
 	if (!bAltDown)
 	{
@@ -248,6 +255,23 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			bAltRightMouseDollying = false;
 			NavigationController.ResetTargetLocation();
 		}
+	}
+
+	if (World != nullptr &&  World->GetWorldType() == EWorldType::PIE && Editor != nullptr)
+	{
+		if (bShiftDown && InputSystem::Get().GetKeyDown(VK_F1))
+		{
+			UnlockCursor();
+			ShowCursor(TRUE);
+		}
+
+		if (InputSystem::Get().GetKeyDown(VK_ESCAPE))
+		{
+			UnlockCursor();
+			Editor->StopPlaySession();
+		}
+
+		return;
 	}
 
 	// Mouse button begin/end state bridge
@@ -684,6 +708,45 @@ FVector FEditorViewportClient::ResolveOrbitPivot() const
 	}
 
 	return Camera.GetLocation() + Camera.GetForwardVector() * 300.0f;
+}
+
+void FEditorViewportClient::LockCursorToViewport()
+{
+	if (!Window)
+	{
+		return;
+	}
+
+	if(World != nullptr && World->GetWorldType() != EWorldType::PIE)
+	{
+		return;
+	}
+
+	ShowCursor(FALSE);
+
+	HWND hWnd = Window->GetHWND();
+	SetForegroundWindow(hWnd);
+
+	// 1. 뷰포트의 윈도우 내 위치와 크기
+	const int x = State->Rect.X;
+	const int y = State->Rect.Y;
+	const int w = State->Rect.Width;
+	const int h = State->Rect.Height;
+
+	// 2. 윈도우 기준 좌표 → 스크린 좌표 변환
+	POINT ul = { x, y };
+	POINT lr = { x + w, y + h };
+	ClientToScreen(hWnd, &ul);
+	ClientToScreen(hWnd, &lr);
+	RECT clipRect = { ul.x, ul.y, lr.x, lr.y };
+
+	SetCursorPos((ul.x + lr.x) / 2, (ul.y + lr.y) / 2);
+	ClipCursor(&clipRect);
+}
+
+void FEditorViewportClient::UnlockCursor()
+{
+	ClipCursor(nullptr);
 }
 
 bool FEditorViewportClient::TryProjectWorldToViewport(const FVector& WorldPos, float& OutViewportX, float& OutViewportY, float& OutDepth) const
