@@ -103,7 +103,7 @@ void UWorld::MarkWorldPrimitivePickingBVHDirty()
 
 void UWorld::InvalidateVisibleSet()
 {
-	bVisibleSetDirty = true;
+	Scene.InvalidateVisibleSet();
 }
 
 void UWorld::BuildWorldPrimitivePickingBVHNow() const
@@ -194,7 +194,7 @@ static float DistanceSquared(const FVector& A, const FVector& B)
 
 bool UWorld::NeedsVisibleProxyRebuild() const
 {
-	if (bVisibleSetDirty || !bHasVisibleCameraState || !ActiveCamera)
+	if (Scene.IsVisibleSetDirty() || !bHasVisibleCameraState || !ActiveCamera)
 	{
 		return true;
 	}
@@ -254,6 +254,8 @@ void UWorld::RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index)
 
 void UWorld::UpdateVisibleProxies()
 {
+	TArray<FPrimitiveSceneProxy*>& VisibleProxies = Scene.GetVisibleProxiesMutable();
+
 	if (!ActiveCamera)
 	{
 		for (FPrimitiveSceneProxy* Proxy : VisibleProxies)
@@ -336,7 +338,7 @@ void UWorld::UpdateVisibleProxies()
 	}
 
 	CacheVisibleCameraState();
-	bVisibleSetDirty = false;
+	Scene.MarkVisibleSetClean();
 }
 
 FLODUpdateContext UWorld::PrepareLODContext()
@@ -348,7 +350,7 @@ FLODUpdateContext UWorld::PrepareLODContext()
 
 	const uint32 LODUpdateFrame = VisibleProxyBuildFrame++;
 	const uint32 LODUpdateSlice = LODUpdateFrame & (LOD_UPDATE_SLICE_COUNT - 1);
-	const bool bShouldStaggerLOD = VisibleProxies.size() >= LOD_STAGGER_MIN_VISIBLE;
+	const bool bShouldStaggerLOD = Scene.GetVisibleProxies().size() >= LOD_STAGGER_MIN_VISIBLE;
 
 	const bool bForceFullLODRefresh =
 		!bShouldStaggerLOD
