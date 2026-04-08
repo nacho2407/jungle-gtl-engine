@@ -13,6 +13,14 @@ void UUUIDBillboardComponent::PostConstruct()
 	SetTextScale(0.3f); // UUID 빌보드의 기본 스케일 설정
 }
 
+void UUUIDBillboardComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UTextComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	UUUIDBillboardComponent* DuplicatedUUIDBillboardComponent = static_cast<UUUIDBillboardComponent*>(DuplicatedObject);
+	DuplicatedUUIDBillboardComponent->WorldOffset = WorldOffset;
+}
+
 FString UUUIDBillboardComponent::GetDisplayText() const
 {
 	AActor* OwnerActor = GetOwner();

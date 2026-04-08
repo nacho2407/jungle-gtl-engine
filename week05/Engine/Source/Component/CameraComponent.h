@@ -26,6 +26,7 @@ public:
 	void SetFov(float inFov);
 	void SetSpeed(float Inspeed);
 	void SetSensitivity(float InSetSensitivity);
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 private:
 	FCamera* Camera = nullptr;
 };

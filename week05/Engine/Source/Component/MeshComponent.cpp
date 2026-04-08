@@ -6,6 +6,24 @@
 #include "Debug/EngineLog.h"
 #include "Renderer/MaterialManager.h"
 
+namespace
+{
+	std::shared_ptr<FMaterial> DuplicateMaterialInstance(const std::shared_ptr<FMaterial>& SourceMaterial)
+	{
+		if (!SourceMaterial)
+		{
+			return nullptr;
+		}
+
+		if (std::unique_ptr<FDynamicMaterial> DynamicMaterial = SourceMaterial->CreateDynamicMaterial())
+		{
+			return std::shared_ptr<FMaterial>(DynamicMaterial.release());
+		}
+
+		return SourceMaterial;
+	}
+}
+
 IMPLEMENT_RTTI(UMeshComponent, UPrimitiveComponent)
 
 void UMeshComponent::SetMaterial(int32 Index, const std::shared_ptr<FMaterial>& InMaterial)
@@ -24,6 +42,21 @@ std::shared_ptr<FMaterial> UMeshComponent::GetMaterial(int32 Index) const
 {
 	if (Index >= 0 && Index < Materials.size()) return Materials[Index];
 	return nullptr;
+}
+
+void UMeshComponent::DuplicateMaterialsTo(UMeshComponent* DuplicatedComponent) const
+{
+	DuplicatedComponent->Materials.clear();
+	for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(Materials.size()); ++MaterialIndex)
+	{
+		DuplicatedComponent->SetMaterial(MaterialIndex, DuplicateMaterialInstance(Materials[MaterialIndex]));
+	}
+}
+
+void UMeshComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
+	DuplicateMaterialsTo(static_cast<UMeshComponent*>(DuplicatedObject));
 }
 
 void UMeshComponent::Serialize(FArchive& Ar)

@@ -4,6 +4,38 @@
 
 IMPLEMENT_RTTI(USceneComponent, UActorComponent)
 
+void USceneComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	UActorComponent::DuplicateShallow(DuplicatedObject, Context);
+
+	USceneComponent* DuplicatedSceneComponent = static_cast<USceneComponent*>(DuplicatedObject);
+	DuplicatedSceneComponent->RelativeTransform = RelativeTransform;
+	DuplicatedSceneComponent->AttachParent = nullptr;
+	DuplicatedSceneComponent->AttachChildren.clear();
+	DuplicatedSceneComponent->bWorldTransformDirty = true;
+}
+
+void USceneComponent::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	UActorComponent::FixupDuplicatedReferences(DuplicatedObject, Context);
+
+	USceneComponent* DuplicatedSceneComponent = static_cast<USceneComponent*>(DuplicatedObject);
+	if (USceneComponent* DuplicatedParent = Context.FindDuplicate(AttachParent.Get()))
+	{
+		DuplicatedSceneComponent->AttachTo(DuplicatedParent);
+	}
+	else
+	{
+		DuplicatedSceneComponent->DetachFromParent();
+	}
+}
+
+void USceneComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	USceneComponent* DuplicatedSceneComponent = static_cast<USceneComponent*>(DuplicatedObject);
+	DuplicatedSceneComponent->MarkTransformDirty();
+}
+
 void USceneComponent::SetRelativeTransform(const FTransform& InTransform)
 {
 	RelativeTransform = InTransform;

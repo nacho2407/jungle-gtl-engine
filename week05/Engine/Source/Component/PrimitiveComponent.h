@@ -41,6 +41,8 @@ public:
 	virtual bool UseSpherePicking() const { return false; }
 	virtual bool HasMeshIntersection() const { return false; }
 	virtual bool IntersectLocalRay(const FVector& LocalOrigin, const FVector& LocalDir, float& InOutDist) const { return false; }
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 protected:
 	virtual void MarkTransformDirty() override;

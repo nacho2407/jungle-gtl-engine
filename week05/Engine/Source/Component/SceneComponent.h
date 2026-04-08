@@ -33,6 +33,9 @@ public:
 
 	/** 상대 위치/회전/스케일을 직렬화해 씬 저장 데이터와 연결한다. */
 	void Serialize(FArchive& Ar) override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
+	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 protected:
 	/** 자신과 자식들의 월드 트랜스폼 캐시를 무효화한다. */
