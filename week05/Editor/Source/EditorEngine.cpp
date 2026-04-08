@@ -295,6 +295,14 @@ void FEditorEngine::FinalizeInitialize()
 
 void FEditorEngine::PrepareFrame(float DeltaTime)
 {
+	if (bIsPIEActive && PIEViewportId != INVALID_VIEWPORT_ID)
+	{
+		if (SlateApplication && !SlateApplication->IsViewportActive(PIEViewportId))
+		{
+			EndPIE();
+		}
+	}
+
 	SyncViewportClient();
 	SyncFocusedViewportLocalState();
 	CameraSubsystem.PrepareFrame(GetActiveWorld(), GetScene(), DeltaTime);
@@ -546,6 +554,7 @@ bool FEditorEngine::StartPIE()
 
 	if (PIEViewportEntry)
 	{
+		PIEViewportId = PIEViewportEntry->Id;
 		PIEViewportEntry->LocalState.ViewMode = ERenderMode::Lighting;
 		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_UUID, false);
 		PIEViewportEntry->LocalState.ShowFlags.SetFlag(EEngineShowFlags::SF_DebugDraw, false);
@@ -614,6 +623,7 @@ void FEditorEngine::EndPIE()
 
 	bIsPIEActive = false;
 	bIsPIEPaused = false;
+	PIEViewportId = INVALID_VIEWPORT_ID;
 }
 
 void FEditorEngine::TogglePIEPause()
