@@ -56,6 +56,72 @@ bool ULevel::IsGameScene() const
 	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 }
 
+void ULevel::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	ULevel* DuplicatedLevel = static_cast<ULevel*>(DuplicatedObject);
+	DuplicatedLevel->Actors.clear();
+	DuplicatedLevel->bBegunPlay = false;
+	DuplicatedLevel->SpatialBVH.Reset();
+	DuplicatedLevel->bSpatialDirty = true;
+}
+
+void ULevel::DuplicateSubObjects(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	ULevel* DuplicatedLevel = static_cast<ULevel*>(DuplicatedObject);
+
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor || Actor->IsPendingKill() || Actor->IsPendingDestroy())
+		{
+			continue;
+		}
+
+		AActor* DuplicatedActor = static_cast<AActor*>(Actor->Duplicate(DuplicatedLevel, Actor->GetName(), Context));
+		if (!DuplicatedActor)
+		{
+			continue;
+		}
+
+		DuplicatedLevel->RegisterActor(DuplicatedActor);
+	}
+}
+
+void ULevel::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor || Actor->IsPendingKill() || Actor->IsPendingDestroy())
+		{
+			continue;
+		}
+
+		if (AActor* DuplicatedActor = Context.FindDuplicate(Actor))
+		{
+			Actor->FixupDuplicatedReferences(DuplicatedActor, Context);
+		}
+	}
+}
+
+void ULevel::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	ULevel* DuplicatedLevel = static_cast<ULevel*>(DuplicatedObject);
+
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor || Actor->IsPendingKill() || Actor->IsPendingDestroy())
+		{
+			continue;
+		}
+
+		if (AActor* DuplicatedActor = Context.FindDuplicate(Actor))
+		{
+			Actor->PostDuplicate(DuplicatedActor, Context);
+		}
+	}
+
+	DuplicatedLevel->MarkSpatialDirty();
+}
+
 
 
 void ULevel::ClearActors()

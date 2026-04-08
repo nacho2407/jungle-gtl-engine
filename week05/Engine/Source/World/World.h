@@ -67,6 +67,7 @@ public:
 	float GetWorldTime() const { return WorldTime; }
 	float GetDeltaTime() const { return DeltaSeconds; }
 
+	/* Editor Object 보호를 위해 EditorWorld를 복제하는 함수*/
 	static UWorld* DuplicateWorldForPIE(UWorld* EditorWorld);
 
 private:

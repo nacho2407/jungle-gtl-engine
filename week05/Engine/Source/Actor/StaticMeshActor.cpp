@@ -13,3 +13,9 @@ void AStaticMeshActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void AStaticMeshActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<AStaticMeshActor*>(DuplicatedObject)->StaticMeshComp = Context.FindDuplicate(StaticMeshComp);
+}

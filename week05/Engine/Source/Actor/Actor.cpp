@@ -79,6 +79,93 @@ void AActor::RemoveOwnedComponent(UActorComponent* InComponent)
 	InComponent->SetOwner(nullptr);
 }
 
+void AActor::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	AActor* DuplicatedActor = static_cast<AActor*>(DuplicatedObject);
+	DuplicatedActor->Level = nullptr;
+	DuplicatedActor->RootComponent = nullptr;
+	DuplicatedActor->OwnedComponents.clear();
+	DuplicatedActor->bCanEverTick = bCanEverTick;
+	DuplicatedActor->bTickEnabled = bTickEnabled;
+	DuplicatedActor->bActorBegunPlay = false;
+	DuplicatedActor->bPendingDestroy = false;
+	DuplicatedActor->bVisible = bVisible;
+	DuplicatedActor->bTickInEditor = bTickInEditor;
+}
+
+void AActor::DuplicateSubObjects(UObject* DuplicatedObject, FDuplicateContext& Context) const
+{
+	AActor* DuplicatedActor = static_cast<AActor*>(DuplicatedObject);
+
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (!Component || Component->IsPendingKill())
+		{
+			continue;
+		}
+
+		UActorComponent* DuplicatedComponent = static_cast<UActorComponent*>(
+			Component->Duplicate(DuplicatedActor, Component->GetName(), Context));
+		if (!DuplicatedComponent)
+		{
+			continue;
+		}
+
+		DuplicatedActor->AddOwnedComponent(DuplicatedComponent);
+	}
+}
+
+void AActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor* DuplicatedActor = static_cast<AActor*>(DuplicatedObject);
+	DuplicatedActor->Level = Context.FindDuplicate(Level.Get());
+	DuplicatedActor->RootComponent = nullptr;
+
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (!Component)
+		{
+			continue;
+		}
+
+		if (UActorComponent* DuplicatedComponent = Context.FindDuplicate(Component))
+		{
+			Component->FixupDuplicatedReferences(DuplicatedComponent, Context);
+		}
+	}
+
+	if (USceneComponent* DuplicatedRootComponent = Context.FindDuplicate(RootComponent))
+	{
+		DuplicatedActor->SetRootComponent(DuplicatedRootComponent);
+	}
+}
+
+void AActor::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor* DuplicatedActor = static_cast<AActor*>(DuplicatedObject);
+
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (!Component)
+		{
+			continue;
+		}
+
+		UActorComponent* DuplicatedComponent = Context.FindDuplicate(Component);
+		if (!DuplicatedComponent)
+		{
+			continue;
+		}
+
+		if (!DuplicatedComponent->IsRegistered())
+		{
+			DuplicatedComponent->OnRegister();
+		}
+
+		Component->PostDuplicate(DuplicatedComponent, Context);
+	}
+}
+
 void AActor::PostSpawnInitialize()
 {
 	if (GetComponentByClass<UUUIDBillboardComponent>() == nullptr)
@@ -102,8 +189,9 @@ void AActor::PostSpawnInitialize()
 		{
 			Component->OnRegister();
 		}
-		if (UPrimitiveComponent* PrimComp = dynamic_cast<UPrimitiveComponent*>(Component))
+		if (Component && Component->IsA(UPrimitiveComponent::StaticClass()))
 		{
+			UPrimitiveComponent* PrimComp = static_cast<UPrimitiveComponent*>(Component);
 			PrimComp->UpdateBounds();
 		}
 	}

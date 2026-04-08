@@ -20,8 +20,11 @@ public:
 	virtual void BeginPlay() { bBegunPlay = true; }
 	virtual void Tick(float DeltaTime) {}
 	bool HasBegunPlay() const { return bBegunPlay; }
+	bool IsComponentTickEnabled() const { return bTickEnabled; }
 	bool CanTick() const { return bCanEverTick && bTickEnabled; }
 	void SetComponentTickEnabled(bool bEnabled) { bTickEnabled = bEnabled; }
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 	virtual void Serialize(FArchive& Ar);
 

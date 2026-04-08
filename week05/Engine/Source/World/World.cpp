@@ -239,7 +239,55 @@ void UWorld::CleanupWorld()
 
 UWorld* UWorld::DuplicateWorldForPIE(UWorld* EditorWorld)
 {
-	return nullptr;
+	if (!EditorWorld || !EditorWorld->PersistentLevel)
+	{
+		return nullptr;
+	}
+	// Play-In-Editor World를 생성한다.
+	UWorld* PIEWorld = FObjectFactory::ConstructObject<UWorld>(nullptr, EditorWorld->GetName() + "_PIE", EObjectFlags::Transient);
+
+	if (!PIEWorld)
+	{
+		return nullptr;
+	}
+	
+	// DuplicatedObjects로 Object 매핑 관계를 관리하는 Context
+	FDuplicateContext Context;
+	Context.DuplicateFlags = EObjectFlags::Transient;
+
+	auto FailDuplicate = [PIEWorld]() -> UWorld*
+	{
+		if (PIEWorld)
+		{
+			PIEWorld->CleanupWorld();
+			PIEWorld->MarkPendingKill();
+		}
+		return nullptr;
+	};
+	
+	// PIE World 초기 설정
+	PIEWorld->WorldType = EWorldType::PIE;
+	PIEWorld->bBegunPlay = false;
+	PIEWorld->WorldTime = 0.0f;
+	PIEWorld->DeltaSeconds = 0.0f;
+
+	// PIEWorld에 EditorWorld의 PersistentLevel Duplicate(깊은 복사) 수행
+	PIEWorld->PersistentLevel = static_cast<ULevel*>(
+		EditorWorld->PersistentLevel->Duplicate(PIEWorld, EditorWorld->PersistentLevel->GetName(), Context));
+
+	if (!PIEWorld->PersistentLevel)
+	{
+		return FailDuplicate();
+	}
+
+	// Duplicate 이후 참조 재연결 DuplicateCotext 사용
+	EditorWorld->PersistentLevel->FixupDuplicatedReferences(PIEWorld->PersistentLevel, Context);
+	// PIE Objects 후처리 (register 재등록)
+	EditorWorld->PersistentLevel->PostDuplicate(PIEWorld->PersistentLevel, Context);
+
+	PIEWorld->StreamingLevels.clear();
+
+	return PIEWorld;
 }
 
 void UWorld::DestroyActor(AActor* InActor)

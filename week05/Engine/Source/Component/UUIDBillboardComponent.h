@@ -21,6 +21,7 @@ public:
 	void SetWorldOffset(const FVector& InOffset) { WorldOffset = InOffset; }
 
 	virtual FBoxSphereBounds GetWorldBounds() const override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 
 private:
 	FVector WorldOffset = FVector(0.0f, 0.0f, 0.3f);

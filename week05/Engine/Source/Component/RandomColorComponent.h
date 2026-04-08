@@ -19,6 +19,8 @@ public:
 
 	void BeginPlay() override;
 	void Tick(float DeltaTime) override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 private:
 	TObjectPtr<UMeshComponent> CachedMesh;

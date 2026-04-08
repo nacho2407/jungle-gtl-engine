@@ -20,3 +20,9 @@ void APlaneActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void APlaneActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<APlaneActor*>(DuplicatedObject)->PlaneMeshComponent = Context.FindDuplicate(PlaneMeshComponent);
+}

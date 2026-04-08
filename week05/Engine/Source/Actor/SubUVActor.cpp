@@ -14,3 +14,9 @@ void ASubUVActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void ASubUVActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<ASubUVActor*>(DuplicatedObject)->SubUVComponent = Context.FindDuplicate(SubUVComponent);
+}
