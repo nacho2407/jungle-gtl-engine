@@ -59,7 +59,7 @@ FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
 void UBillboardComponent::SetTextureName(FString InName)
 {
 	TextureName = InName;
-	CachedSprite = FResourceManager::Get().FindTexture(FName(InName).ToString());
+	CachedSprite = FResourceManager::Get().FindTexture(InName);
 }
 
 FString UBillboardComponent::GetTextureName()
@@ -68,8 +68,11 @@ FString UBillboardComponent::GetTextureName()
 }
 
 FMaterialResource* UBillboardComponent::GetCachedSprite()
-{
-
+{	
+	if (CachedSprite == nullptr)
+	{
+		CachedSprite = FResourceManager::Get().FindTexture(TextureName.ToString());
+	}
 	return CachedSprite;
 }
 
