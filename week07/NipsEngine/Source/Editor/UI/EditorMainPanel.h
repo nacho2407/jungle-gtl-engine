@@ -26,8 +26,8 @@ private:
 	void RenderViewportHostWindow();
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 private:
-	FWindowsWindow* Window;
-	UEditorEngine* EditorEngine;
+	FWindowsWindow* Window = nullptr;
+	UEditorEngine* EditorEngine = nullptr;
 
 	ImVector<ImWchar> FontGlyphRanges; // 폰트 아틀라스 빌드 전까지 수명 유지 필요
 	FEditorConsoleWidget ConsoleWidget;

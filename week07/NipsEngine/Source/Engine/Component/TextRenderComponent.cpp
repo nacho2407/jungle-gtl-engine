@@ -43,6 +43,8 @@ UTextRenderComponent* UTextRenderComponent::Duplicate()
     NewComp->ScreenX = this->ScreenX;
     NewComp->ScreenY = this->ScreenY;
 
+	NewComp->DuplicateSubObjects();
+
     return NewComp;
 }
 

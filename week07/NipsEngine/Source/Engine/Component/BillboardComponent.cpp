@@ -13,7 +13,7 @@ DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 //{
 //    UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
 //
-//	NewComp->SetActive(this->IsActive());
+//	  NewComp->SetActive(this->IsActive());
 //    NewComp->SetOwner(nullptr);
 //    
 //    NewComp->SetRelativeLocation(this->GetRelativeLocation());
