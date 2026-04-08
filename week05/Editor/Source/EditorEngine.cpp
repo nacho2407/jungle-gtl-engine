@@ -529,15 +529,15 @@ bool FEditorEngine::StartPIE()
 	PrePIEActiveWorldContext = ActiveWorldContext;
 	ActiveWorldContext = PIEWorldContext;
 
+	bIsPIEActive = true;
+	bIsPIEPaused = false;
+
 	PIEWorld->BeginPlay();
 
 	// PIE 모드 진입 시 마우스 커서 숨김
 	// [Minjun] 나중에 UI 상에서 PIE 모드 진입 / 종료 지점이 생기면 아래 코드 활성화할 것
 	//::ShowCursor(FALSE);
 	//bWasCursorHiddenForPIE = true;
-
-	bIsPIEActive = true;
-	bIsPIEPaused = false;
 
 	return true;
 }

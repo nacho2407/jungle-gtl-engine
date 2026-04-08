@@ -18,6 +18,7 @@ public:
 	virtual void OnRegister() { bRegistered = true; }
 	virtual void OnUnregister() { bRegistered = false; }
 	virtual void BeginPlay() { bBegunPlay = true; }
+	virtual void EndPlay() { bBegunPlay = false; }
 	virtual void Tick(float DeltaTime) {}
 	bool HasBegunPlay() const { return bBegunPlay; }
 	bool IsComponentTickEnabled() const { return bTickEnabled; }

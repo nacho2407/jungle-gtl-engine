@@ -253,6 +253,14 @@ void AActor::Tick(float DeltaTime)
 
 void AActor::EndPlay()
 {
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (Component && Component->HasBegunPlay())
+		{
+			Component->EndPlay();
+		}
+	}
+
 	bActorBegunPlay = false;
 }
 
