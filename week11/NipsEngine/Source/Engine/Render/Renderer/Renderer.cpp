@@ -309,6 +309,22 @@ void FRenderer::InitializePassBatchers()
 					SubUV.Height
 				);
 			}
+			// 기존 SubUV 분기 아래에
+			else if (Cmd.Type == ERenderCommandType::Billboard && Cmd.Constants.Billboard.SRV)
+			{
+				SubUVBatcher.AddSprite(
+					Cmd.Constants.Billboard.SRV,
+					Cmd.PerObjectConstants.Model.GetOrigin(),
+					Bus.GetCameraRight(),
+					Bus.GetCameraUp(),
+					Cmd.PerObjectConstants.Model.GetScaleVector(),
+					0,   // FrameIndex 고정
+					1,   // Columns 고정
+					1,   // Rows 고정
+					Cmd.Constants.Billboard.Width,
+					Cmd.Constants.Billboard.Height
+				);
+			}
 		},
 		/*.Flush   =*/ [this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			SubUVBatcher.Flush(Ctx);

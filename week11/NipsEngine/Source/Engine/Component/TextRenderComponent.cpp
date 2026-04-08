@@ -10,6 +10,42 @@
 DEFINE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UTextRenderComponent)
 
+UTextRenderComponent* UTextRenderComponent::Duplicate()
+{
+    UTextRenderComponent* NewComp = UObjectManager::Get().CreateObject<UTextRenderComponent>();
+
+	NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+    
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+    
+    NewComp->SetVisibility(this->IsVisible());
+
+    // 텍스트 및 폰트 리소스 얕은 복사
+    NewComp->Text = this->Text;
+    NewComp->FontName = this->FontName;
+    NewComp->CachedFont = this->CachedFont;
+
+    // 외형(Appearance) 프로퍼티 복사
+    NewComp->Color = this->Color;
+    NewComp->FontSize = this->FontSize;
+    NewComp->Spacing = this->Spacing;
+    NewComp->CharWidth = this->CharWidth;
+    NewComp->CharHeight = this->CharHeight;
+
+    // 공간(Space) 및 정렬(Alignment) 복사
+    NewComp->RenderSpace = this->RenderSpace;
+    NewComp->HAlign = this->HAlign;
+    NewComp->VAlign = this->VAlign;
+
+    NewComp->ScreenX = this->ScreenX;
+    NewComp->ScreenY = this->ScreenY;
+
+    return NewComp;
+}
+
 void UTextRenderComponent::SetFont(const FName& InFontName)
 {
 	FontName = InFontName;
