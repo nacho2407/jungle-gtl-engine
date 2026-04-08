@@ -24,7 +24,7 @@ public:
 	// Texture 정보
     FString DiffuseTexPath;   // map_Kd
 	bool	bHasDiffuseTexture = { false };
-
+		 
     FString AmbientTexPath;   // map_Ka
 	bool	bHasAmbientTexture = { false };
 

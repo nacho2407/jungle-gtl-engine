@@ -210,6 +210,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	{
 		PrimaryActor->SetVisible(bVisible);
 	}
+
 }
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)

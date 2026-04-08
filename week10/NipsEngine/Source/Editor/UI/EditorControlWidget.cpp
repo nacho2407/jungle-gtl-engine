@@ -73,6 +73,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
+			case 3: // Billboard
+			{
+				ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
 			}
 		}
 		NumberOfSpawnedActors = 1;
