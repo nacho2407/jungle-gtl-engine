@@ -66,10 +66,9 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 		return;
 	}
 
-	ULevel* Scene = ResolveScene(Engine);
 	UWorld* ActiveWorld = ResolveWorld(Engine);
 
-	if (Scene && ActiveWorld)
+	if (ActiveWorld)
 	{
 		UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
 		if (ActiveCamera)
@@ -84,7 +83,7 @@ void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
 
 			FrameRequest.SceneView.CameraPosition = FrameRequest.SceneView.ViewMatrix.GetInverse().GetTranslation();
 			FrameRequest.SceneView.TotalTimeSeconds = Engine ? static_cast<float>(Engine->GetTimer().GetTotalTime()) : 0.0f;
-			BuildSceneRenderPacket(Engine, Scene, Frustum, FShowFlags{}, ScenePacket);
+			BuildSceneRenderPacket(Engine, ActiveWorld, Frustum, FShowFlags{}, ScenePacket);
 			FrameRequest.ScenePacket = std::move(ScenePacket);
 			Renderer->RenderGameFrame(FrameRequest);
 		}

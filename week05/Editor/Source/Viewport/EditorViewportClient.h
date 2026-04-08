@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "ViewportTypes.h"
 #include "Core/ViewportClient.h"
@@ -15,6 +15,7 @@ class FEditorUI;
 class FFrustum;
 class FEditorEngine;
 class FEditorViewportRegistry;
+class UWorld;
 #include "Renderer/Material.h"
 
 /**
@@ -59,7 +60,7 @@ public:
 	// 뷰포트별 월드 데이터를 씬 패킷으로 수집한다.
 	void BuildSceneRenderPacket(
 		FEngine* Engine,
-		ULevel* Scene,
+		UWorld* World,
 		const FFrustum& Frustum,
 		const FShowFlags& Flags,
 		FSceneRenderPacket& OutPacket) override;

@@ -1,4 +1,4 @@
-﻿#include "EditorEngine.h"
+#include "EditorEngine.h"
 
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -367,9 +367,9 @@ void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDe
 		AppendSelectedBVH(OutRequest);
 	}
 
-	if (UWorld* ActiveWorld = GetActiveWorld())
+	if (UWorld* EditorWorld = GetEditorWorld())
 	{
-		GetDebugDrawManager().BuildRenderRequest(ShowFlags, ActiveWorld, OutRequest);
+		GetDebugDrawManager().BuildRenderRequest(ShowFlags, EditorWorld, OutRequest);
 	}
 }
 
@@ -511,6 +511,7 @@ bool FEditorEngine::StartPIE()
 
 		FPIEViewportStateBackup Backup;
 		Backup.ViewportId = Entry.Id;
+		Backup.WorldContext = Entry.WorldContext;
 		Backup.LocalState = Entry.LocalState;
 		SavedPIEViewportStates.push_back(Backup);
 	}
@@ -545,6 +546,7 @@ bool FEditorEngine::StartPIE()
 
 	if (PIEViewportEntry)
 	{
+		PIEViewportEntry->WorldContext = PIEWorldContext;
 		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
 		PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
 		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
@@ -574,6 +576,7 @@ void FEditorEngine::EndPIE()
 		FViewportEntry* RestoreViewportEntry = ViewportRegistry.FindEntryByViewportID(Backup.ViewportId);
 		if (RestoreViewportEntry)
 		{
+			RestoreViewportEntry->WorldContext = Backup.WorldContext;
 			RestoreViewportEntry->LocalState = Backup.LocalState;
 		}
 	}
@@ -677,6 +680,11 @@ bool FEditorEngine::InitEditorWorlds()
 		return false;
 	}
 
+	for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+	{
+		Entry.WorldContext = EditorWorldContext;
+	}
+
 	ActivateEditorScene();
 	return true;
 }
@@ -746,9 +754,17 @@ void FEditorEngine::SyncFocusedViewportLocalState()
 	FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
 	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
 	FViewportLocalState* LocalState = nullptr;
-	if (FocusedEntry && FocusedEntry->bActive && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+	if (FocusedEntry && FocusedEntry->bActive)
 	{
-		LocalState = &FocusedEntry->LocalState;
+		if (FocusedEntry->WorldContext && FocusedEntry->WorldContext->World)
+		{
+			ActiveWorldContext = FocusedEntry->WorldContext;
+		}
+
+		if (FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+		{
+			LocalState = &FocusedEntry->LocalState;
+		}
 	}
 
 	CameraSubsystem.GetViewportController()->SetActiveLocalState(LocalState);

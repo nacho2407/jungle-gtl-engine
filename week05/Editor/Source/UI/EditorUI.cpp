@@ -25,6 +25,7 @@
 #include "Serializer/SceneSerializer.h"
 #include "Core/ShowFlags.h"
 #include "Viewport/EditorViewportClient.h"
+#include "World/WorldContext.h"
 
 enum class EFileDialogType
 {
@@ -662,8 +663,9 @@ void FEditorUI::Render()
 
 	if (Engine)
 	{
+		const FWorldContext* ActiveWorldContext = Engine->GetActiveWorldContext();
 		AActor* Selected = Engine->GetSelectedActor();
-		if (Selected != CachedSelectedActor)
+		if (Selected != CachedSelectedActor || ActiveWorldContext != CachedActiveWorldContext)
 		{
 			SyncSelectedActorProperty();
 		}
@@ -678,33 +680,33 @@ void FEditorUI::Render()
 		{
 			if (ImGui::MenuItem("New Scene"))
 			{
-				if (Engine)
+				if (Engine && Engine->GetEditorScene())
 				{
 					Engine->SetSelectedActor(nullptr);
 
-					if (UCameraComponent* Cam = Engine->GetActiveWorld()->GetActiveCameraComponent())
+					if (UCameraComponent* Cam = Engine->GetEditorWorld() ? Engine->GetEditorWorld()->GetActiveCameraComponent() : nullptr)
 					{
 						Cam->GetCamera()->SetPosition({ -5.0f, 0.0f, 2.0f });
 						Cam->GetCamera()->SetRotation(0.f, 0.f);
 					}
-					Engine->GetScene()->ClearActors();
+					Engine->GetEditorScene()->ClearActors();
 					UE_LOG("New scene created");
 				}
 			}
 
 			if (ImGui::MenuItem("Open Scene"))
 			{
-				if (Engine && Engine->GetActiveScene())
+				if (Engine && Engine->GetEditorScene())
 				{
 					FString Path = GetFilePathUsingDialog(EFileDialogType::Open);
 
 					if (!Path.empty())
 					{
 						Engine->SetSelectedActor(nullptr);
-						Engine->GetScene()->ClearActors();
+						Engine->GetEditorScene()->ClearActors();
 
 						FCameraSerializeData CameraData;
-						bool bLoaded = FSceneSerializer::Load(Engine->GetScene(), Path,
+						bool bLoaded = FSceneSerializer::Load(Engine->GetEditorScene(), Path,
 						                                      Engine->GetRenderer()->GetDevice(), &CameraData);
 						if (bLoaded)
 						{
@@ -717,19 +719,31 @@ void FEditorUI::Render()
 									const FViewportId FocusedId = Slate->GetFocusedViewportId();
 									if (FocusedId != INVALID_VIEWPORT_ID)
 									{
-										FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
-										if (FocusedEntry &&
-											FocusedEntry->bActive &&
-											FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
-										{
-											PerspEntry = FocusedEntry;
+									FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+									if (FocusedEntry &&
+										FocusedEntry->bActive &&
+										FocusedEntry->WorldContext &&
+										FocusedEntry->WorldContext->WorldType == EWorldType::Editor &&
+										FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+									{
+										PerspEntry = FocusedEntry;
 										}
 									}
 								}
-								if (!PerspEntry)
+							if (!PerspEntry)
+							{
+								for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
 								{
-									PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+									if (Entry.bActive &&
+										Entry.WorldContext &&
+										Entry.WorldContext->WorldType == EWorldType::Editor &&
+										Entry.LocalState.ProjectionType == EViewportType::Perspective)
+									{
+										PerspEntry = &Entry;
+										break;
+									}
 								}
+							}
 								if (PerspEntry)
 								{
 									PerspEntry->LocalState.Position  = CameraData.Location;
@@ -756,7 +770,7 @@ void FEditorUI::Render()
 
 			if (ImGui::MenuItem("Save Scene As..."))
 			{
-				if (Engine && Engine->GetActiveScene())
+				if (Engine && Engine->GetEditorScene())
 				{
 					FString Path = GetFilePathUsingDialog(EFileDialogType::Save);
 
@@ -770,18 +784,30 @@ void FEditorUI::Render()
 							const FViewportId FocusedId = Slate->GetFocusedViewportId();
 							if (FocusedId != INVALID_VIEWPORT_ID)
 							{
-								const FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
-								if (FocusedEntry &&
-									FocusedEntry->bActive &&
-									FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
-								{
-									PerspEntry = FocusedEntry;
+							const FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+							if (FocusedEntry &&
+								FocusedEntry->bActive &&
+								FocusedEntry->WorldContext &&
+								FocusedEntry->WorldContext->WorldType == EWorldType::Editor &&
+								FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+							{
+								PerspEntry = FocusedEntry;
 								}
 							}
 						}
 						if (!PerspEntry)
 						{
-							PerspEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+							for (const FViewportEntry& Entry : ViewportRegistry.GetEntries())
+							{
+								if (Entry.bActive &&
+									Entry.WorldContext &&
+									Entry.WorldContext->WorldType == EWorldType::Editor &&
+									Entry.LocalState.ProjectionType == EViewportType::Perspective)
+								{
+									PerspEntry = &Entry;
+									break;
+								}
+							}
 						}
 						if (PerspEntry)
 						{
@@ -792,7 +818,7 @@ void FEditorUI::Render()
 							CameraData.FarClip   = PerspEntry->LocalState.FarPlane;
 							CameraData.bValid    = true;
 						}
-						FSceneSerializer::Save(Engine->GetScene(), Path, CameraData);
+						FSceneSerializer::Save(Engine->GetEditorScene(), Path, CameraData);
 					}
 				}
 			}
@@ -1078,7 +1104,17 @@ void FEditorUI::SyncSelectedActorProperty()
 		return;
 	}
 
+	const FWorldContext* ActiveWorldContext = Engine->GetActiveWorldContext();
 	AActor* Selected = Engine->GetSelectedActor();
+	if (Selected)
+	{
+		UWorld* SelectedWorld = Selected->GetWorld();
+		UWorld* ActiveWorld = ActiveWorldContext ? ActiveWorldContext->World : nullptr;
+		if (SelectedWorld != ActiveWorld)
+		{
+			Selected = nullptr;
+		}
+	}
 	if (Selected)
 	{
 		if (USceneComponent* Root = Selected->GetRootComponent())
@@ -1098,6 +1134,7 @@ void FEditorUI::SyncSelectedActorProperty()
 	}
 
 	CachedSelectedActor = Selected;
+	CachedActiveWorldContext = ActiveWorldContext;
 }
 
 bool FEditorUI::GetCentralDockRect(FRect& OutRect) const

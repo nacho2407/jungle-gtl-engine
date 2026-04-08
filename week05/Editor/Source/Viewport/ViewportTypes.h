@@ -3,6 +3,7 @@
 #include "Core/ShowFlags.h"
 
 class FViewport;
+struct FWorldContext;
 
 using FViewportId = uint32;
 constexpr FViewportId INVALID_VIEWPORT_ID = UINT32_MAX;
@@ -112,7 +113,8 @@ struct FViewportLocalState
 struct FViewportEntry
 {
 	FViewportId Id = INVALID_VIEWPORT_ID;
-	FViewport* Viewport;
+	FViewport* Viewport = nullptr;
+	FWorldContext* WorldContext = nullptr;
 	bool bActive = false;
 	FViewportLocalState LocalState;
 };

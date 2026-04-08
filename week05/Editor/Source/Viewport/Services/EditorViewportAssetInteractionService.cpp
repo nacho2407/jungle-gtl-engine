@@ -10,6 +10,7 @@
 #include "Serializer/SceneSerializer.h"
 #include "Slate/SlateApplication.h"
 #include "UI/EditorUI.h"
+#include "World/WorldContext.h"
 #include <Windows.h>
 #include <algorithm>
 #include <filesystem>
@@ -47,17 +48,18 @@ void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 	const FString& FilePath) const
 {
 	FEditorEngine* Engine = EditorUI.GetEngine();
-	if (!Engine || !HasSceneAssetExtension(FilePath))
+	ULevel* EditorScene = Engine ? Engine->GetEditorScene() : nullptr;
+	if (!Engine || !EditorScene || !HasSceneAssetExtension(FilePath))
 	{
 		return;
 	}
 
 	Engine->SetSelectedActor(nullptr);
-	Engine->GetScene()->ClearActors();
+	EditorScene->ClearActors();
 
 	FCameraSerializeData CameraData;
 	const bool bLoaded = FSceneSerializer::Load(
-		Engine->GetScene(),
+		EditorScene,
 		FilePath,
 		Engine->GetRenderer()->GetDevice(),
 		&CameraData);
@@ -83,6 +85,8 @@ void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 				FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
 				if (FocusedEntry &&
 					FocusedEntry->bActive &&
+					FocusedEntry->WorldContext &&
+					FocusedEntry->WorldContext->WorldType == EWorldType::Editor &&
 					FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
 				{
 					PerspectiveEntry = FocusedEntry;
@@ -91,7 +95,17 @@ void FEditorViewportAssetInteractionService::HandleFileDoubleClick(
 		}
 		if (!PerspectiveEntry)
 		{
-			PerspectiveEntry = ViewportRegistry.FindEntryByType(EViewportType::Perspective);
+			for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+			{
+				if (Entry.bActive &&
+					Entry.WorldContext &&
+					Entry.WorldContext->WorldType == EWorldType::Editor &&
+					Entry.LocalState.ProjectionType == EViewportType::Perspective)
+				{
+					PerspectiveEntry = &Entry;
+					break;
+				}
+			}
 		}
 		if (PerspectiveEntry)
 		{
@@ -127,14 +141,22 @@ void FEditorViewportAssetInteractionService::HandleFileDropOnViewport(
 	}
 
 	const FViewportEntry* Entry = ViewportRegistry.FindEntryByViewportID(Slate->GetFocusedViewportId());
-	if (!Entry)
+	if (!Entry ||
+		!Entry->WorldContext ||
+		Entry->WorldContext->WorldType != EWorldType::Editor)
 	{
 		return;
 	}
 
 	const FRay Ray = Picker.ScreenToRay(*Entry, ScreenMouseX, ScreenMouseY);
 
-	AActor* NewActor = Engine->GetScene()->SpawnActor<AActor>("DroppedObjActor");
+	ULevel* EditorScene = Engine->GetEditorScene();
+	if (!EditorScene)
+	{
+		return;
+	}
+
+	AActor* NewActor = EditorScene->SpawnActor<AActor>("DroppedObjActor");
 	if (!NewActor)
 	{
 		return;

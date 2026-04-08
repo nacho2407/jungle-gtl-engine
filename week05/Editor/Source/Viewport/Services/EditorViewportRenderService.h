@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Level/SceneRenderPacket.h"
@@ -15,6 +15,7 @@ class FGizmo;
 class FMaterial;
 class FFrustum;
 class FShowFlags;
+class UWorld;
 class ULevel;
 struct FRenderMesh;
 
@@ -23,7 +24,7 @@ class FEditorViewportRenderService
 public:
 	using FBuildSceneRenderPacket = std::function<void(
 		FEngine*,
-		ULevel*,
+		UWorld*,
 		const FFrustum&,
 		const FShowFlags&,
 		FSceneRenderPacket&)>;
