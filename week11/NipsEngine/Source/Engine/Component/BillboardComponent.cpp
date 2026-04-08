@@ -2,6 +2,7 @@
 #include <cmath>
 #include "GameFramework/World.h"
 #include "Editor/Viewport/ViewportCamera.h"
+#include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UBillboardComponent)
@@ -58,11 +59,18 @@ FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
 void UBillboardComponent::SetTextureName(FString InName)
 {
 	TextureName = InName;
+	CachedSprite = FResourceManager::Get().FindTexture(FName(InName).ToString());
 }
 
 FString UBillboardComponent::GetTextureName()
 {
-	return TextureName;
+	return TextureName.ToString();
+}
+
+FMaterialResource* UBillboardComponent::GetCachedSprite()
+{
+
+	return CachedSprite;
 }
 
 void UBillboardComponent::UpdateWorldAABB() const
