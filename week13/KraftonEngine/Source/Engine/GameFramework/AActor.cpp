@@ -81,18 +81,8 @@ void AActor::RemoveComponent(UActorComponent* Component)
 
 	Component->PrimaryComponentTick.UnRegisterTickFunction();
 
-	// HOTFIX: PrimitiveComponent는 Octree/PickingBVH/VisibleProxies 등 여러 캐시에
-	// 포인터가 잡혀 있으므로, RenderState 파괴 전에 공간 분할에서 먼저 떼어낸다.
-	if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Component))
-	{
-		if (UWorld* World = GetWorld())
-		{
-			World->GetPartition().RemoveSinglePrimitive(Prim);
-			World->MarkWorldPrimitivePickingBVHDirty();
-			World->InvalidateVisibleSet();
-		}
-	}
-
+	// PrimitiveComponent::DestroyRenderState 가 Scene/Partition/PickingBVH/VisibleSet
+	// 정리를 모두 책임지므로 여기서는 단순히 호출만 한다.
 	Component->DestroyRenderState();
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
@@ -133,16 +123,13 @@ void AActor::SetVisible(bool Visible)
 	}
 
 	bVisible = Visible;
-	if (UWorld* World = GetWorld())
-	{
-		World->MarkWorldPrimitivePickingBVHDirty();
-		World->UpdateActorInOctree(this);
-	}
+	// 각 PrimitiveComponent가 자신의 dirty 시퀀스(Proxy/Octree/PickingBVH/VisibleSet)를
+	// 전파하면 액터 단위 캐시도 자연히 무효화된다.
 	for (UPrimitiveComponent* Prim : GetPrimitiveComponents())
 	{
 		if (Prim)
 		{
-			Prim->MarkProxyDirty(EDirtyFlag::Visibility);
+			Prim->MarkRenderVisibilityDirty();
 		}
 	}
 }
