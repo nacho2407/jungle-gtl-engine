@@ -341,6 +341,32 @@ void FEditorUI::OnSlateReady()
 
 	Slate->OnSplitterDragEnd = [this]() { SaveEditorSettings(); };
 	LoadEditorSettings();
+
+	FViewportId PreferredViewportId = INVALID_VIEWPORT_ID;
+	if (Engine)
+	{
+		for (const FViewportEntry& Entry : Engine->GetViewportRegistry().GetEntries())
+		{
+			if (!Entry.bActive)
+			{
+				continue;
+			}
+
+			if (Entry.LocalState.ProjectionType == EViewportType::Perspective)
+			{
+				PreferredViewportId = Entry.Id;
+				break;
+			}
+
+			if (PreferredViewportId == INVALID_VIEWPORT_ID)
+			{
+				PreferredViewportId = Entry.Id;
+			}
+		}
+	}
+
+	Slate->FocusViewport(PreferredViewportId);
+	bRequestViewportFocusOnNextRender = true;
 }
 
 void FEditorUI::DetachFromRenderer(FRenderer* InRenderer)
@@ -1031,6 +1057,16 @@ void FEditorUI::Render()
 	}
 	Outliner.Render(Engine);
 	ContentBrowser.Render();
+
+	if (bRequestViewportFocusOnNextRender)
+	{
+		if (ImGui::GetCurrentContext())
+		{
+			ImGui::SetWindowFocus(nullptr);
+			ImGui::ClearActiveID();
+		}
+		bRequestViewportFocusOnNextRender = false;
+	}
 }
 
 bool FEditorUI::GetViewportMousePosition(int32 WindowMouseX, int32 WindowMouseY, int32& OutViewportX, int32& OutViewportY, int32& OutWidth, int32& OutHeight) const

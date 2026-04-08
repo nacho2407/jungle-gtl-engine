@@ -72,6 +72,17 @@ void FSlateApplication::SetLayout(EViewportLayout Layout)
 	PerformLayout();
 }
 
+void FSlateApplication::FocusViewport(FViewportId ViewportId)
+{
+	if (IsViewportActive(ViewportId))
+	{
+		FocusedViewportId = ViewportId;
+		return;
+	}
+
+	FocusedViewportId = (ActiveViewportCount > 0 && Viewports[0]) ? Viewports[0]->Id : INVALID_VIEWPORT_ID;
+}
+
 // ────────────────────────────────────────────────────────────
 // BuildTree 구현
 //   H-Splitter: SideLT=왼쪽, SideRB=오른쪽
