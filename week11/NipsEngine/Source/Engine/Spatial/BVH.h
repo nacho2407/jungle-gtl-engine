@@ -151,17 +151,66 @@ class FBVH
      */
     bool UpdateObject(const TArray<FAABB>& ObjectBounds, int32 ObjectIndex);
 
+    // Query Scratch --------------------------------------------------------
+
+    /**
+     * @brief Caller-owned scratch buffers for frustum traversal.
+     * @note Reuse one scratch instance per worker/thread to avoid allocations
+     * while keeping concurrent queries on the same `FBVH` instance thread-safe.
+     */
+    struct FFrustumQueryScratch
+    {
+        struct FStackEntry
+        {
+            int32 NodeIndex{INDEX_NONE};
+            bool  bAssumeInside{false};
+        };
+
+        TArray<FStackEntry> TraversalStack;
+    };
+
+    /**
+     * @brief Caller-owned scratch buffers for ray traversal, pruning, and hit sorting.
+     * @note Reuse one scratch instance per worker/thread to avoid allocations
+     * while keeping concurrent queries on the same `FBVH` instance thread-safe.
+     */
+    struct FRayQueryScratch
+    {
+        struct FStackEntry
+        {
+            int32 NodeIndex{INDEX_NONE};
+            float TEnter{0.0f};
+        };
+
+        TArray<FStackEntry> NodeStack;
+        TArray<int32> Order;
+        TArray<int32> SortedIndices;
+        TArray<float> SortedTs;
+    };
+
     // Queries ---------------------------------------------------------------
 
     /**
      * @brief Collect object indices that overlap the input frustum.
      * @param Frustum Query frustum.
      * @param OutIndices Output object indices.
+     * @param Scratch Caller-owned traversal scratch. Use a different instance for each concurrent query.
      * @param bInsideOnly If `true`, return only objects fully inside the frustum.
-     * @note This function reuses internal mutable scratch storage. Concurrent
-     * queries on the same `FBVH` instance are therefore not thread-safe.
      */
-    void FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, bool bInsideOnly = false) const;
+    void FrustumQuery(const FFrustum& Frustum, TArray<int32>& OutIndices, FFrustumQueryScratch& Scratch,
+                      bool bInsideOnly = false) const;
+
+    /**
+     * @brief Return the closest leaf-AABB hit along the ray.
+     * @param Ray Query ray.
+     * @param OutObjectIndex Closest intersected object index, or `INDEX_NONE` on miss.
+     * @param OutT Ray distance to the closest leaf AABB hit.
+     * @param Scratch Caller-owned traversal scratch. Use a different instance for each concurrent query.
+     * @return `true` if any leaf AABB was hit.
+     * @note This is a broad-phase result over BVH leaf bounds. It does not guarantee
+     * the returned object is also the closest triangle-level hit for the mesh.
+     */
+    bool RayQueryClosestAABB(const FRay& Ray, int32& OutObjectIndex, float& OutT, FRayQueryScratch& Scratch) const;
 
     /**
      * @brief Collect object indices intersected by a ray and corresponding hit distances.
@@ -169,11 +218,13 @@ class FBVH
      * @param Ray Query ray.
      * @param OutIndices Output intersected object indices.
      * @param OutTs Output ray hit distances aligned with `OutIndices`.
-     * @note This function reuses internal mutable scratch storage. Concurrent
-     * queries on the same `FBVH` instance are therefore not thread-safe.
+     * @param Scratch Caller-owned traversal and sorting scratch. Use a different
+     * instance for each concurrent query.
+     * @note Results are sorted nearest-first. Small hit sets are reordered in place;
+     * larger ones use the scratch buffers to avoid per-call allocations.
      */
     void RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
-                  TArray<float>& OutTs) const;
+                  TArray<float>& OutTs, FRayQueryScratch& Scratch) const;
 
     // State -----------------------------------------------------------------
 
@@ -198,11 +249,6 @@ class FBVH
         ReachableNodeIndicesScratch.clear();
         TraversalStackScratch.clear();
         TraversalVisitMarks.clear();
-        FrustumQueryStackScratch.clear();
-        RayQueryNodeStackScratch.clear();
-        RayQueryOrderScratch.clear();
-        RayQuerySortedIndicesScratch.clear();
-        RayQuerySortedTsScratch.clear();
         PathToRootScratch.clear();
         RefitMark = 1;
         TraversalVisitMark = 1;
@@ -295,20 +341,7 @@ class FBVH
     /** @brief Refit one node and every ancestor reachable through parent links. */
     void RefitUpwards(const TArray<FAABB>& ObjectBounds, int32 NodeIndex);
 
-    // Query Helpers ---------------------------------------------------------
-
-    struct FFrustumStackEntry
-    {
-        int32 NodeIndex{INDEX_NONE};
-        bool  bAssumeInside{false};
-    };
-
-    mutable TArray<FFrustumStackEntry> FrustumQueryStackScratch; /**< Reused stack for frustum traversal. */
-    mutable TArray<int32>              RayQueryNodeStackScratch; /**< Reused node stack for ray traversal. */
-    mutable TArray<int32> RayQueryOrderScratch; /**< Reused permutation buffer for sorting ray hits by distance. */
-    mutable TArray<int32> RayQuerySortedIndicesScratch; /**< Reused temporary array for sorted ray hit indices. */
-    mutable TArray<float> RayQuerySortedTsScratch;      /**< Reused temporary array for sorted ray hit distances. */
-    TArray<int32>         PathToRootScratch; /**< Reused list of node indices from a local change up to the root. */
+    TArray<int32> PathToRootScratch; /**< Reused list of node indices from a local change up to the root. */
 
     // Rotation Helpers ------------------------------------------------------
 
