@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/MovementComponent.h"
 #include "Core/CollisionTypes.h"
@@ -34,7 +34,6 @@ protected:
 	virtual bool HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult);
 
 	FVector Velocity = FVector(0.0f, 0.0f, 0.0f);
-	FVector Direction = FVector(1.0f, 0.0f, 0.0f);
-	float InitialSpeed = 1200.0f;
-	float MaxSpeed = 3000.0f;
+	float InitialSpeed = 10.0f;
+	float MaxSpeed = 100.0f;
 };
