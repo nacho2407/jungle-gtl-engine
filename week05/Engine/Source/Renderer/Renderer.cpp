@@ -329,6 +329,8 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		MessageBox(0, L"SubUVRenderer Initialize Failed.", 0, 0);
 	}
 
+	if (!BillboardRenderer.Initialize(this)) return false;
+
 	std::filesystem::path FolderIconPath = FPaths::AssetDir() / FString("Textures/FolderIcon.png");
 	std::filesystem::path FileIconPath = FPaths::AssetDir() / FString("Textures/FileIcon.png");
 	CreateTextureFromSTB(Device, FolderIconPath, &FolderIconSRV);
@@ -1075,7 +1077,7 @@ void FRenderer::ExecuteLineCommands()
 void FRenderer::Release()
 {
 	ClearViewportCallbacks(); ClearSceneRenderTarget();
-	TextRenderer.Release(); SubUVRenderer.Release();
+	TextRenderer.Release(); SubUVRenderer.Release(); BillboardRenderer.Release();
 	ShaderManager.Release(); FShaderMap::Get().Clear(); FMaterialManager::Get().Clear();
 	if (NormalSampler) NormalSampler->Release();
 	if (OutlineSampler) OutlineSampler->Release();

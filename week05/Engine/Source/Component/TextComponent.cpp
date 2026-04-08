@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "Serializer/Archive.h"
+#include "Renderer/RenderType.h"
 
 
 IMPLEMENT_RTTI(UTextRenderComponent, UPrimitiveComponent)
@@ -26,6 +27,18 @@ void UTextRenderComponent::SetText(const FString& InText)
 		// NOTE: 실제 정점 데이터 갱신은 RenderCollector에서 TextRenderer를 통해 수행함
 		MarkTextMeshDirty();
 	}
+}
+
+void UTextRenderComponent::SetHorizontalAlignment(EHorizTextAligment value)
+{
+	HorizontalAlignment = value;
+	MarkTextMeshDirty();
+}
+
+void UTextRenderComponent::SetVerticalAlignment(EVerticalTextAligment value)
+{
+	VerticalAlignment = value;
+	MarkTextMeshDirty();
 }
 
 FRenderMesh* UTextRenderComponent::GetRenderMesh() const

@@ -3,6 +3,10 @@
 
 #include "Renderer/MeshData.h"
 
+enum EHorizTextAligment;
+enum EVerticalTextAligment;
+
+
 class ENGINE_API UTextRenderComponent : public UPrimitiveComponent
 {
 public:
@@ -31,6 +35,12 @@ public:
 	void SetWorldScale(float InScale) { TextScale = InScale; }
 	float GetWorldScale() const { return TextScale; }
 
+	void SetHorizontalAlignment(EHorizTextAligment value);
+	EHorizTextAligment GetHorizontalAlignment() const { return HorizontalAlignment; }
+
+	void SetVerticalAlignment(EVerticalTextAligment value);
+	EVerticalTextAligment GetVerticalAlignment() const { return VerticalAlignment; }
+
 	virtual FVector GetRenderWorldPosition() const { return GetWorldLocation(); }
 	virtual FVector GetRenderWorldScale() const { return GetWorldTransform().GetScaleVector() * TextScale; }
 
@@ -48,6 +58,9 @@ protected:
 	FVector4 TextColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float TextScale = 1.0f;
 	bool bBillboard = false;
+
+	EHorizTextAligment HorizontalAlignment = EHorizTextAligment::EHTA_Center;
+	EVerticalTextAligment VerticalAlignment = EVerticalTextAligment::EVRTA_TextBottom;
 
 	std::shared_ptr<struct FDynamicMesh> TextMesh;
 
