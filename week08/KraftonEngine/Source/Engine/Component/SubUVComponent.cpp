@@ -95,9 +95,9 @@ void USubUVComponent::UpdateWorldAABB() const
 	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
 }
 
-void USubUVComponent::Tick(float DeltaTime)
+void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	UBillboardComponent::Tick(DeltaTime);
+	UBillboardComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (!CachedParticle) return;
 	if (!bLoop && bIsExecute) return; // 단발 재생 완료 후 정지

@@ -59,7 +59,8 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
 	}
 }
 
-void UBillboardComponent::Tick(float DeltaTime)
+void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+	
 {
 	if (!GetOwner() || !GetOwner()->GetWorld()) return;
 
