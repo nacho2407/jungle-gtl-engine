@@ -17,7 +17,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
-	
+
 	FObjManager::ScanMeshAssets();
 	FObjManager::ScanMaterialAssets();
 
@@ -89,7 +89,6 @@ void UEditorEngine::Tick(float DeltaTime)
 				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
 				if (Dup)
 				{
-					Dup->AddActorWorldOffset(FVector(100.f, 100.f, 0.f));
 					NewSelection.push_back(Dup);
 				}
 			}
