@@ -2,6 +2,7 @@
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "Object/ActorInterator.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -86,8 +87,9 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 {
 	if (!World) return;
 
-	for (AActor* Actor : World->GetActors())
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
+		AActor* Actor = *Iter;
 		if (!Actor) continue;
 		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
 	}

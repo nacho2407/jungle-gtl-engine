@@ -11,6 +11,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Object/Object.h"
+#include "Object/ActorInterator.h"
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
@@ -96,8 +97,9 @@ json::JSON FSceneSaveManager::SerializeWorldToPrimitives(UWorld* World, const FW
     JSON Primitives = json::Object();
     int32 PrimitiveID = 0;
 
-    for (AActor* Actor : World->GetActors()) 
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
     {
+		AActor* Actor = *Iter;
         if (!Actor) continue;
 
         // 루트 컴포넌트만 추출하여 직렬화
@@ -143,7 +145,9 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	w[SceneKeys::ContextHandle] = Ctx.ContextHandle.ToString();
 
 	JSON Actors = json::Array();
-	for (AActor* Actor : World->GetActors()) {
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
+	{
+		AActor* Actor = *Iter;
 		if (!Actor) continue;
 		Actors.append(SerializeActor(Actor));
 	}
