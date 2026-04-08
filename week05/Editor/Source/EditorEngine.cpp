@@ -76,6 +76,12 @@ FEditorEngine::~FEditorEngine() = default;
 void FEditorEngine::Shutdown()
 {
 	FEngineLog::Get().SetCallback({});
+
+	if (bIsPIEActive)
+	{
+		EndPIE();
+	}
+
 	EditorUI.SaveEditorSettings();
 
 	if (GetViewportClient() == PreviewViewportClient.get())
@@ -691,11 +697,6 @@ bool FEditorEngine::InitEditorWorlds()
 
 void FEditorEngine::ReleaseEditorWorlds()
 {
-	if (bIsPIEActive)
-	{
-		EndPIE();
-	}
-
 	ActiveWorldContext = nullptr;
 
 	for (FWorldContext* PreviewContext : PreviewWorldContexts)
