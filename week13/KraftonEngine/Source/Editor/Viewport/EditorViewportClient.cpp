@@ -199,23 +199,28 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	if (!bIsOrtho)
 	{
 		// ── Perspective: 기존 WASDQE 이동 ──
-		FVector Move = FVector(0, 0, 0);
+		FVector LocalMove = FVector(0, 0, 0);
+		float WorldVerticalMove = 0.0f;
 
 		if (InputSystem::Get().GetKey('W'))
-			Move.X += CameraSpeed;
+			LocalMove.X += CameraSpeed;
 		if (InputSystem::Get().GetKey('A'))
-			Move.Y -= CameraSpeed;
+			LocalMove.Y -= CameraSpeed;
 		if (InputSystem::Get().GetKey('S'))
-			Move.X -= CameraSpeed;
+			LocalMove.X -= CameraSpeed;
 		if (InputSystem::Get().GetKey('D'))
-			Move.Y += CameraSpeed;
+			LocalMove.Y += CameraSpeed;
 		if (InputSystem::Get().GetKey('Q'))
-			Move.Z -= CameraSpeed;
+			WorldVerticalMove -= CameraSpeed;
 		if (InputSystem::Get().GetKey('E'))
-			Move.Z += CameraSpeed;
+			WorldVerticalMove += CameraSpeed;
 
-		Move *= DeltaTime;
-		Camera->MoveLocal(Move);
+		LocalMove *= DeltaTime;
+		Camera->MoveLocal(LocalMove);
+		if (WorldVerticalMove != 0.0f)
+		{
+			Camera->AddWorldOffset(FVector(0.0f, 0.0f, WorldVerticalMove * DeltaTime));
+		}
 
 		// ── Perspective: 키보드 회전 ──
 		FVector Rotation = FVector(0, 0, 0);
