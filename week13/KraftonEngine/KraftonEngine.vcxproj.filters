@@ -251,6 +251,9 @@
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -501,7 +504,12 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
+	  <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
+		  <Filter>Source\Engine\GameFramework</Filter>
+	  </ClCompile>
+	  <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
+		  <Filter>Source\Engine\Component</Filter>
+	  </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -589,6 +597,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
@@ -930,7 +941,12 @@
     <ClInclude Include="Source\Engine\Core\ClassTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\Level.h" />
+	<ClInclude Include="Source\Engine\GameFramework\Level.h">
+	  <Filter>Source\Engine\GameFramework</Filter>
+	</ClInclude>
+	<ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
+	  <Filter>Source\Engine\Component</Filter>
+	</ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
