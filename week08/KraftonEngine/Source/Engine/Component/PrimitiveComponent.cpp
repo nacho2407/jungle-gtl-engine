@@ -51,15 +51,41 @@ void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 {
 	if (bIsVisible == bNewVisible) return;
 	bIsVisible = bNewVisible;
+	MarkRenderVisibilityDirty();
+}
+
+// ============================================================
+// MarkRenderTransformDirty / MarkRenderVisibilityDirty
+//   프록시 dirty + Octree(액터 단위 dirty) + PickingBVH dirty + VisibleSet 무효화
+//   호출자가 외워야 했던 4-step 시퀀스를 단일 진입점으로 통합.
+// ============================================================
+void UPrimitiveComponent::MarkRenderTransformDirty()
+{
+	MarkProxyDirty(EDirtyFlag::Transform);
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor) return;
+	UWorld* World = OwnerActor->GetWorld();
+	if (!World) return;
+
+	World->UpdateActorInOctree(OwnerActor);
+	World->MarkWorldPrimitivePickingBVHDirty();
+	World->InvalidateVisibleSet();
+}
+
+void UPrimitiveComponent::MarkRenderVisibilityDirty()
+{
 	MarkProxyDirty(EDirtyFlag::Visibility);
-	if (AActor* OwnerActor = GetOwner())
-	{
-		if (UWorld* World = OwnerActor->GetWorld())
-		{
-			World->MarkWorldPrimitivePickingBVHDirty();
-			World->UpdateActorInOctree(OwnerActor);
-		}
-	}
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor) return;
+	UWorld* World = OwnerActor->GetWorld();
+	if (!World) return;
+
+	// 가시성 변화는 Octree 포함 여부도 좌우하므로 액터 dirty로 반영한다.
+	World->UpdateActorInOctree(OwnerActor);
+	World->MarkWorldPrimitivePickingBVHDirty();
+	World->InvalidateVisibleSet();
 }
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -75,16 +101,8 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 
 	if (strcmp(PropertyName, "Visible") == 0)
 	{
-		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시/BVH 갱신만 전파한다.
-		MarkProxyDirty(EDirtyFlag::Visibility);
-		if (AActor* OwnerActor = GetOwner())
-		{
-			if (UWorld* World = OwnerActor->GetWorld())
-			{
-				World->MarkWorldPrimitivePickingBVHDirty();
-				World->UpdateActorInOctree(OwnerActor);
-			}
-		}
+		// Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
+		MarkRenderVisibilityDirty();
 	}
 }
 
@@ -97,14 +115,7 @@ FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 void UPrimitiveComponent::MarkWorldBoundsDirty()
 {
 	bWorldAABBDirty = true;
-	if (AActor* OwnerActor = GetOwner())
-	{
-		if (UWorld* World = OwnerActor->GetWorld())
-		{
-			World->MarkWorldPrimitivePickingBVHDirty();
-			World->UpdateActorInOctree(OwnerActor);
-		}
-	}
+	MarkRenderTransformDirty();
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const
@@ -194,14 +205,20 @@ void UPrimitiveComponent::CreateRenderState()
 
 void UPrimitiveComponent::DestroyRenderState()
 {
-	if (!SceneProxy) return;
+	// SceneProxy가 없더라도 Octree에는 등록돼 있을 수 있으므로 partition 정리는 항상 시도한다.
+	if (Owner)
+	{
+		if (UWorld* World = Owner->GetWorld())
+		{
+			World->GetPartition().RemoveSinglePrimitive(this);
+			World->MarkWorldPrimitivePickingBVHDirty();
+			World->InvalidateVisibleSet();
 
-	if (Owner && Owner->GetWorld())
-	{ 
-		FScene& Scene = Owner->GetWorld()->GetScene();
-		Scene.RemovePrimitive(SceneProxy);
-
-		//Owner->GetWorld()->RemoveVisibleProxy(SceneProxy, SceneProxy->VisibleListIndex);
+			if (SceneProxy)
+			{
+				World->GetScene().RemovePrimitive(SceneProxy);
+			}
+		}
 	}
 	SceneProxy = nullptr;
 }
