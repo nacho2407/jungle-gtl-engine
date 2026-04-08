@@ -3,9 +3,9 @@
 #include "ViewportClient.h"
 #include "World/World.h"
 
-bool FGameEngine::InitializeWorlds(int32 Width, int32 Height)
+bool FGameEngine::InitializeWorlds()
 {
-	const float AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+	const float AspectRatio = GetWindowAspectRatio();
 	return CreateWorldContext("GameScene", EWorldType::Game, AspectRatio, true) != nullptr;
 }
 

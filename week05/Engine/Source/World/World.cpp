@@ -88,6 +88,28 @@ void UWorld::BeginPlay()
 	}
 }
 
+void UWorld::EndPlay()
+{
+	if (!bBegunPlay)
+	{
+		return;
+	}
+
+	if (PersistentLevel)
+	{
+		PersistentLevel->EndPlay();
+	}
+	for (ULevel* Level : StreamingLevels)
+	{
+		if (Level)
+		{
+			Level->EndPlay();
+		}
+	}
+
+	bBegunPlay = false;
+}
+
 void UWorld::Tick(float InDeltaTime)
 {
 	DeltaSeconds = InDeltaTime;
@@ -104,6 +126,14 @@ void UWorld::Tick(float InDeltaTime)
 			Level->Tick(InDeltaTime);
 		}
 	}
+}
+
+void UWorld::ResetRuntimeState()
+{
+	bBegunPlay = false;
+	WorldTime = 0.f;
+	DeltaSeconds = 0.f;
+	ActiveCameraComponent = SceneCameraComponent;
 }
 
 void UWorld::CleanupWorld()

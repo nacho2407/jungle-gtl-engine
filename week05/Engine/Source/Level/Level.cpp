@@ -135,6 +135,24 @@ void ULevel::BeginPlay()
 	}
 }
 
+void ULevel::EndPlay()
+{
+	if (!bBegunPlay)
+	{
+		return;
+	}
+
+	for (AActor* Actor : Actors)
+	{
+		if (Actor && Actor->HasBegunPlay() && !Actor->IsPendingDestroy())
+		{
+			Actor->EndPlay();
+		}
+	}
+
+	bBegunPlay = false;
+}
+
 void ULevel::Tick(float DeltaTime)
 {
 	if (!bBegunPlay)

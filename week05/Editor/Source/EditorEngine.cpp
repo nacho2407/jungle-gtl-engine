@@ -103,7 +103,7 @@ AActor* FEditorEngine::GetSelectedActor() const
 
 void FEditorEngine::ActivateEditorScene()
 {
-	ActiveEditorWorldContext = (EditorWorldContext && EditorWorldContext->World) ? EditorWorldContext : nullptr;
+	ActiveWorldContext = (EditorWorldContext && EditorWorldContext->World) ? EditorWorldContext : nullptr;
 }
 
 bool FEditorEngine::ActivatePreviewScene(const FString& ContextName)
@@ -114,7 +114,7 @@ bool FEditorEngine::ActivatePreviewScene(const FString& ContextName)
 		return false;
 	}
 
-	ActiveEditorWorldContext = PreviewContext;
+	ActiveWorldContext = PreviewContext;
 	return true;
 }
 
@@ -175,12 +175,12 @@ ULevel* FEditorEngine::GetActiveScene() const
 
 UWorld* FEditorEngine::GetActiveWorld() const
 {
-	return ActiveEditorWorldContext ? ActiveEditorWorldContext->World : FEngine::GetActiveWorld();
+	return ActiveWorldContext ? ActiveWorldContext->World : FEngine::GetActiveWorld();
 }
 
 const FWorldContext* FEditorEngine::GetActiveWorldContext() const
 {
-	return ActiveEditorWorldContext ? ActiveEditorWorldContext : FEngine::GetActiveWorldContext();
+	return ActiveWorldContext ? ActiveWorldContext : FEngine::GetActiveWorldContext();
 }
 
 void FEditorEngine::HandleResize(int32 Width, int32 Height)
@@ -213,9 +213,9 @@ void FEditorEngine::BindHost(FWindowsWindow* InMainWindow)
 	EditorUI.SetupWindow(InMainWindow);
 }
 
-bool FEditorEngine::InitializeWorlds(int32 Width, int32 Height)
+bool FEditorEngine::InitializeWorlds()
 {
-	return InitEditorWorlds(Width, Height);
+	return InitEditorWorlds();
 }
 
 bool FEditorEngine::InitializeMode()
@@ -413,6 +413,126 @@ void FEditorEngine::CreateInitUI()
 	SlateApplication->AddOverlayWidget(RawOverlay);
 }
 
+bool FEditorEngine::StartPIE()
+{
+	if (bIsPIEActive)
+	{
+		return false;
+	}
+
+	if (EditorWorldContext == nullptr || EditorWorldContext->World == nullptr)
+	{
+		return false;
+	}
+
+	UWorld* PIEWorld = UWorld::DuplicateWorldForPIE(EditorWorldContext->World);
+	if (PIEWorld == nullptr)
+	{
+		return false;
+	}
+
+	PIEWorld->ResetRuntimeState();
+
+	const float AspectRatio = GetWindowAspectRatio();
+	PIEWorldContext = CreateWorldContext("PIE", EWorldType::PIE, PIEWorld);
+	if (PIEWorldContext == nullptr)
+	{
+		PIEWorld->CleanupWorld();
+		delete PIEWorld;
+		return false;
+	}
+
+	UpdateWorldAspectRatio(PIEWorld, AspectRatio);
+
+	// (Minjun) 카메라 관련 로직은 손 볼 필요가 있음
+	FViewportEntry* PIEViewportEntry = nullptr;
+	if (SlateApplication)
+	{
+		const FViewportId FocusedId = SlateApplication->GetFocusedViewportId();
+		if (FocusedId != INVALID_VIEWPORT_ID)
+		{
+			FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(FocusedId);
+			if (FocusedEntry && FocusedEntry->bActive)
+			{
+				PIEViewportEntry = FocusedEntry;
+			}
+		}
+	}
+	if (PIEViewportEntry == nullptr)
+	{
+		for (FViewportEntry& Entry : ViewportRegistry.GetEntries())
+		{
+			if (Entry.bActive)
+			{
+				PIEViewportEntry = &Entry;
+				break;
+			}
+		}
+	}
+	if (PIEViewportEntry)
+	{
+		SavedPIECameraLocalState = PIEViewportEntry->LocalState;
+		SavedPIEViewportId = PIEViewportEntry->Id;
+		bHasSavedPIECameraLocalState = true;
+
+		// PIE 모드에서는 항상 원근 뷰포트로 시작하도록 강제합니다. 나중에 뷰포트가 포커스될 때 저장된 LocalState로 복원할 수 있도록 합니다.
+		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
+
+		// PIE 시작 시점의 카메라는 위치 (0, 0, 0), 회전 (0,0,0)으로 초기화
+		PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
+		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
+	}
+
+	ActiveWorldContext = PIEWorldContext;
+
+	PIEWorld->BeginPlay();
+
+	bIsPIEActive = true;
+	bIsPIEPaused = false;
+
+	return true;
+}
+
+void FEditorEngine::EndPIE()
+{
+	if (!bIsPIEActive)
+	{
+		return;
+	}
+
+	if (bHasSavedPIECameraLocalState)
+	{
+		FViewportEntry* RestoreViewportEntry = ViewportRegistry.FindEntryByViewportID(SavedPIEViewportId);
+		if (RestoreViewportEntry)
+		{
+			RestoreViewportEntry->LocalState = SavedPIECameraLocalState;
+		}
+
+		SavedPIEViewportId = INVALID_VIEWPORT_ID;
+		bHasSavedPIECameraLocalState = false;
+	}
+
+	if (PIEWorldContext && PIEWorldContext->World)
+	{
+		PIEWorldContext->World->EndPlay();
+		PIEWorldContext->World->CleanupWorld();
+	}
+
+	DestroyWorldContext(PIEWorldContext);
+
+	PIEWorldContext = nullptr;
+
+	ActiveWorldContext = EditorWorldContext;
+
+	bIsPIEActive = false;
+	bIsPIEPaused = false;
+}
+
+void FEditorEngine::TogglePIEPause()
+{
+
+}
+
 bool FEditorEngine::InitEditorPreview()
 {
 	// 에디터가 항상 접근 가능한 기본 프리뷰 월드와 프리뷰 뷰포트를 준비한다.
@@ -482,11 +602,9 @@ void FEditorEngine::InitEditorViewportRouting()
 	}
 }
 
-bool FEditorEngine::InitEditorWorlds(int32 Width, int32 Height)
+bool FEditorEngine::InitEditorWorlds()
 {
-	const float AspectRatio = (Height > 0)
-		? (static_cast<float>(Width) / static_cast<float>(Height))
-		: 1.0f;
+	const float AspectRatio = GetWindowAspectRatio();
 
 	EditorWorldContext = CreateWorldContext("EditorScene", EWorldType::Editor, AspectRatio, true);
 	if (!EditorWorldContext)
@@ -500,7 +618,7 @@ bool FEditorEngine::InitEditorWorlds(int32 Width, int32 Height)
 
 void FEditorEngine::ReleaseEditorWorlds()
 {
-	ActiveEditorWorldContext = nullptr;
+	ActiveWorldContext = nullptr;
 
 	for (FWorldContext* PreviewContext : PreviewWorldContexts)
 	{

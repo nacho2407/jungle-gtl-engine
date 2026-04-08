@@ -53,8 +53,12 @@ public:
 	void InitializeWorld(float AspectRatio, ID3D11Device* Device = nullptr);
 	/** 월드 안 모든 레벨과 액터에 BeginPlay를 한 번만 전파한다. */
 	void BeginPlay();
+	/** 월드 안 모든 레벨에 EndPlay를 전파하고 플레이 상태를 해제한다. */
+	void EndPlay();
 	/** 시간 누적 후 Persistent/Streaming 레벨을 모두 Tick한다. */
 	void Tick(float InDeltaTime);
+	/** 월드의 실행 상태를 초기값으로 되돌린다. */
+	void ResetRuntimeState();
 	/** 월드가 소유한 씬, 카메라, 스트리밍 레벨을 정리하고 초기 상태로 되돌린다. */
 	void CleanupWorld();
 
