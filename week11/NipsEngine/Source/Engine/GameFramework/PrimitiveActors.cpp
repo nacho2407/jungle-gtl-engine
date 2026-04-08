@@ -189,4 +189,12 @@ void ABillboardActor::InitDefaultComponents()
 	SetRootComponent(Billboard);
 	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
 	//Billboard->SetTextureName();
+
+    auto* TextUUID = AddComponent<UTextRenderComponent>();
+    TextUUID->AttachToComponent(Billboard);
+    TextUUID->SetFont(FName("Default"));
+    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+
+    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
