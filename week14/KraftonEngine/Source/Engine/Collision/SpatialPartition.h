@@ -21,6 +21,9 @@ class FSpatialPartition
     void RemoveActor(AActor* Actor);
     void UpdateActor(AActor* Actor);
 
+    // 단일 컴포넌트 제거 — overflow / octree leaf 양쪽 모두 정리한다.
+    void RemoveSinglePrimitive(UPrimitiveComponent* Primitive);
+
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
