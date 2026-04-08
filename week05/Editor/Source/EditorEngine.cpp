@@ -545,10 +545,25 @@ bool FEditorEngine::StartPIE()
 
 	if (PIEViewportEntry)
 	{
-		PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
-		PIEViewportEntry->LocalState.Position = FVector::ZeroVector;
-		PIEViewportEntry->LocalState.Rotation = FRotator::ZeroRotator;
-		PIEViewportEntry->LocalState.bShowGrid = false;
+		if (PIEViewportEntry->LocalState.ProjectionType == EViewportType::Perspective)
+		{
+			PIEViewportEntry->LocalState.bShowGrid = false;
+		}
+		else
+		{
+			// PIE should not inherit the last perspective camera when launched from
+			// an ortho viewport. Start from a deterministic perspective state instead.
+			const FViewportLocalState PreviousViewportState = PIEViewportEntry->LocalState;
+			FViewportLocalState PIEViewportState = FViewportLocalState::CreateDefault(EViewportType::Perspective);
+			PIEViewportState.ShowFlags = PreviousViewportState.ShowFlags;
+			PIEViewportState.ViewMode = PreviousViewportState.ViewMode;
+			PIEViewportState.GridSize = PreviousViewportState.GridSize;
+			PIEViewportState.LineThickness = PreviousViewportState.LineThickness;
+			PIEViewportState.NearPlane = PreviousViewportState.NearPlane;
+			PIEViewportState.FarPlane = PreviousViewportState.FarPlane;
+			PIEViewportState.bShowGrid = false;
+			PIEViewportEntry->LocalState = PIEViewportState;
+		}
 	}
 
 	SetSelectedActor(nullptr);
