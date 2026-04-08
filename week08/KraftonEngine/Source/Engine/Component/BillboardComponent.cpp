@@ -49,13 +49,17 @@ void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 
 void UBillboardComponent::PostEditProperty(const char* PropertyName)
 {
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Texture") == 0)
 	{
 		SetTexture(TextureName);
 	}
 	else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
 	{
+		// Width/Height는 빌보드 쿼드 크기를 결정하므로 트랜스폼/월드 바운드 모두 갱신해야 한다.
 		MarkProxyDirty(EDirtyFlag::Transform);
+		MarkWorldBoundsDirty();
 	}
 }
 
