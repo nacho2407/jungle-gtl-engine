@@ -70,6 +70,9 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
+	// 베이스 클래스의 transform 등 공통 프로퍼티 처리 보장
+	USceneComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Visible") == 0)
 	{
 		// Property Editor가 bIsVisible을 직접 수정하므로, 프록시/BVH 갱신만 전파한다.
