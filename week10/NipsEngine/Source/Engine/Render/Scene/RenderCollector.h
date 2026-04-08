@@ -2,6 +2,7 @@
 #include "RenderBus.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Spatial/WorldSpatialIndex.h"
+#include <unordered_set>
 
 class UWorld;
 class AActor;
@@ -41,5 +42,8 @@ private:
 	void CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	bool CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	void CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
+	void CollectBVHInternalNodeAABBs(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
+	                                 std::unordered_set<int32>& SeenNodeIndices);
+	void CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus);
 	void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 };
