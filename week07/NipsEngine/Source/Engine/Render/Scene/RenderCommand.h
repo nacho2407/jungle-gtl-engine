@@ -103,7 +103,12 @@ struct FSubUVConstants
 	float Width  = 1.0f;
 	float Height = 1.0f;
 };
-
+struct FBillboardConstants
+{
+	ID3D11ShaderResourceView* SRV = nullptr;
+	float Width = 1.0f;
+	float Height = 1.0f;
+};
 // StaticMeshBuffer (b6) — ShaderStaticMesh.hlsl 대응
 // 완전 Obj전용입니다. 추후 Bump를 Normal로 바꾸면 됩니다.
 struct FStaticMeshConstants
@@ -156,6 +161,7 @@ struct FRenderCommand
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
+		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
 	} Constants;
 
