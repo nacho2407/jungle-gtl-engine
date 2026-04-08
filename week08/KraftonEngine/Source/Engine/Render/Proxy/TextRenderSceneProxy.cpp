@@ -1,6 +1,7 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
 #include "Render/Pipeline/RenderBus.h"
+#include "Render/Resource/ShaderManager.h"
 
 // ============================================================
 // FTextRenderSceneProxy
@@ -15,7 +16,8 @@ void FTextRenderSceneProxy::UpdateMesh()
 {
 	// Billboard::UpdateMesh의 CachedTexture 기반 분기를 피하고 FontBatcher 경로만 유지한다.
 	MeshBuffer = Owner->GetMeshBuffer();
-	Shader = nullptr;
+	// SelectionMask 아웃라인 패스에서 사용할 shader
+	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	Pass = ERenderPass::Font;
 	bBatcherRendered = true;
 	UpdateSortKey();

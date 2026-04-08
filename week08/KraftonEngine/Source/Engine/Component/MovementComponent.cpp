@@ -13,10 +13,10 @@ void UMovementComponent::BeginPlay()
 	TryAutoRegisterUpdatedComponent();
 }
 
-void UMovementComponent::Tick(float DeltaTime)
+void UMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	// 기본 이동 컴포넌트는 별도 로직 없이 틱 파이프라인만 유지합니다.
-	UActorComponent::Tick(DeltaTime);
+	UActorComponent::TickComponent(DeltaTime,TickType, ThisTickFunction);
 }
 
 void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

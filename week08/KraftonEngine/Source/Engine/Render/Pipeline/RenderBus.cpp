@@ -12,6 +12,7 @@ void FRenderBus::Clear()
 	FontEntries.clear();
 	OverlayFontEntries.clear();
 	SubUVEntries.clear();
+	BillboardEntries.clear();
 	AABBEntries.clear();
 	GridEntries.clear();
 	DebugLineEntries.clear();
@@ -44,6 +45,11 @@ void FRenderBus::AddOverlayFontEntry(FFontEntry&& Entry)
 void FRenderBus::AddSubUVEntry(FSubUVEntry&& Entry)
 {
 	SubUVEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddBillboardEntry(FBillboardEntry&& Entry)
+{
+	BillboardEntries.push_back(std::move(Entry));
 }
 
 void FRenderBus::AddAABBEntry(FAABBEntry&& Entry)
