@@ -4,6 +4,8 @@
 #include "Object/FName.h"
 #include "Core/Singleton.h"
 
+class FArchive;
+
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
     const FTypeInfo* GetTypeInfo() const override {                    \
@@ -53,6 +55,28 @@ public:
 	void SetUUID(uint32 InUUID) { UUID = InUUID; }
 	void SetInternalIndex(uint32 InIndex) { InternalIndex = InIndex; }
 
+	// Outer — 객체의 논리적 스코프 (소유 의미 아님). 직렬화 제외.
+	UObject* GetOuter() const { return Outer; }
+	void SetOuter(UObject* InOuter) { Outer = InOuter; }
+
+	// Outer 체인을 따라 첫 번째 T를 찾는다 (UE의 GetTypedOuter<T>와 동일 시맨틱).
+	template<typename T>
+	T* GetTypedOuter() const
+	{
+		for (UObject* O = Outer; O; O = O->Outer)
+		{
+			if (T* Hit = Cast<T>(O))
+			{
+				return Hit;
+			}
+		}
+		return nullptr;
+	}
+
+	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
+	virtual void Serialize(FArchive& Ar);                 // 있으면 활용, 없으면 도입
+	virtual void PostDuplicate() {}
+
 	static void* operator new(size_t Size)
 	{
 		void* Ptr = std::malloc(Size);
@@ -91,6 +115,7 @@ protected:
 private:
 	uint32 UUID;
 	uint32 InternalIndex;
+	UObject* Outer = nullptr;
 };
 
 extern TArray<UObject*> GUObjectArray;
@@ -101,10 +126,11 @@ class UObjectManager : public TSingleton<UObjectManager>
 
 public:
 	template<typename T>
-	T* CreateObject()
+	T* CreateObject(UObject* InOuter = nullptr)
 	{
 		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
 		T* Obj = new T();
+		Obj->SetOuter(InOuter);
 
 		const char* ClassName = T::s_TypeInfo.name;
 		uint32& Counter = NameCounters[ClassName];

@@ -55,7 +55,7 @@ void UWorld::AddActor(AActor* Actor)
 		return;
 	}
 
-	Actor->SetWorld(this);
+	Actor->SetOuter(this);
 	Actors.push_back(Actor);
 
 	InsertActorToOctree(Actor);

@@ -10,6 +10,7 @@
 #include "Texture/Texture2D.h"
 #include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
 
@@ -186,6 +187,66 @@ primitive AABB 기준으로 후보만 추립니다.
 
 void UStaticMeshComponent::Serialize(bool bIsLoading, json::JSON& Handle)
 {
+}
+
+// FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
+static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
+{
+	Ar << Slot.Path;
+	Ar << Slot.bUVScroll;
+	return Ar;
+}
+
+void UStaticMeshComponent::Serialize(FArchive& Ar)
+{
+	UMeshComponent::Serialize(Ar);
+	Ar << StaticMeshPath;
+	Ar << MaterialSlots;
+}
+
+void UStaticMeshComponent::PostDuplicate()
+{
+	UMeshComponent::PostDuplicate();
+
+	// 메시 에셋 재로딩
+	if (!StaticMeshPath.empty() && StaticMeshPath != "None")
+	{
+		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+		UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+		if (Loaded)
+		{
+			// SetStaticMesh는 MaterialSlots를 덮어쓰므로, 직렬화된 슬롯 정보를 백업·복원한다.
+			TArray<FMaterialSlot> SavedSlots = MaterialSlots;
+			SetStaticMesh(Loaded);
+
+			// Override material 재로딩
+			for (int32 i = 0; i < (int32)MaterialSlots.size() && i < (int32)SavedSlots.size(); ++i)
+			{
+				MaterialSlots[i] = SavedSlots[i];
+				const FString& MatPath = MaterialSlots[i].Path;
+				if (MatPath.empty() || MatPath == "None")
+				{
+					OverrideMaterials[i] = nullptr;
+				}
+				else
+				{
+					UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MatPath);
+					if (LoadedMat)
+					{
+						if (!LoadedMat->DiffuseTexture && !LoadedMat->DiffuseTextureFilePath.empty())
+						{
+							LoadedMat->DiffuseTexture = UTexture2D::LoadFromFile(LoadedMat->DiffuseTextureFilePath, Device);
+						}
+					}
+					OverrideMaterials[i] = LoadedMat;
+				}
+			}
+		}
+	}
+
+	CacheLocalBounds();
+	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
 }
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
