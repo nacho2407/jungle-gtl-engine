@@ -242,9 +242,6 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 			MouseRotation.Y += DeltaX * MouseRotationSpeed;
 			MouseRotation.Z += DeltaY * MouseRotationSpeed;
-
-			MouseRotation.Y = Clamp(MouseRotation.Y, -89.0f, 89.0f);
-			MouseRotation.Z = Clamp(MouseRotation.Z, -89.0f, 89.0f);
 		}
 
 		Rotation *= DeltaTime;
