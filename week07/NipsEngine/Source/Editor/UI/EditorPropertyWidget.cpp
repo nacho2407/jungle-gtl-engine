@@ -1,19 +1,63 @@
 ﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
-
 #include "ImGui/imgui.h"
-#include "Component/GizmoComponent.h"
-#include "Component/PrimitiveComponent.h"
-#include "Component/SceneComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/BillboardComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/GizmoComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
-#include "Component/SubUVComponent.h"
+
+#include <functional>
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+
+// 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
+struct FComponentMenuEntry
+{
+    const char* DisplayName;
+    std::function<USceneComponent*(AActor*)> CreateAndInitFunc;
+};
+
+// 2. 에디터에서 추가 가능한 컴포넌트 배열 (이 리스트만 관리하면 됩니다)
+static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
+    {
+        "StaticMesh Component",
+        [](AActor* Actor) -> USceneComponent* {
+            return Actor->AddComponent<UStaticMeshComponent>();
+        }
+    },
+    {
+        "SubUV Component",
+        [](AActor* Actor) -> USceneComponent* {
+            USubUVComponent* Comp = Actor->AddComponent<USubUVComponent>();
+            Comp->SetParticle(FName("Explosion"));
+            Comp->SetSpriteSize(2.0f, 2.0f);
+            Comp->SetFrameRate(30.f);
+            return Comp;
+        }
+    },
+    {
+        "TextRender Component",
+        [](AActor* Actor) -> USceneComponent* {
+            UTextRenderComponent* Comp = Actor->AddComponent<UTextRenderComponent>();
+            Comp->SetFont(FName("Default"));
+            Comp->SetText("TextRender");
+            return Comp;
+        }
+    },
+    {
+        "Billboard Component",
+        [](AActor* Actor) -> USceneComponent* {
+            UBillboardComponent* Comp = Actor->AddComponent<UBillboardComponent>();
+            Comp->SetTextureName("Asset/Texture/Pawn_64x.png");
+            return Comp;
+        }
+    }
+};
 
 void FEditorPropertyWidget::Render(float DeltaTime)
 {
@@ -118,6 +162,36 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			LastSelectedActor = nullptr;
 			ImGui::End();
 			return;
+		}
+
+		ImGui::Spacing();
+
+		if (ImGui::Button("Add Component", ImVec2(-1, 0)))
+		{
+			ImGui::OpenPopup("AddComponentPopup");
+		}
+
+		if (ImGui::BeginPopup("AddComponentPopup"))
+		{
+			for (const FComponentMenuEntry& Entry : ComponentMenuRegistry)
+			{
+				if (!ImGui::Selectable(Entry.DisplayName)) 
+					continue;
+
+				USceneComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor);
+
+				if (!NewComp) 
+					continue;
+
+				USceneComponent* RootComp = PrimaryActor->GetRootComponent();
+				if (RootComp)
+					NewComp->AttachToComponent(RootComp);
+				else
+					PrimaryActor->SetRootComponent(NewComp);
+
+				SelectedComponent = NewComp;
+			}
+			ImGui::EndPopup();
 		}
 	}
 
