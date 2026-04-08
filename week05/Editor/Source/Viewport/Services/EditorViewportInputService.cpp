@@ -11,6 +11,7 @@
 #include "Input/InputManager.h"
 #include "Picking/Picker.h"
 #include "Level/Level.h"
+#include "Platform/Windows/WindowsWindow.h"
 #include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
 #include "World/World.h"
@@ -26,14 +27,33 @@ namespace
 			Entry->WorldContext->WorldType == EWorldType::Editor;
 	}
 
-	ULevel* GetViewportScene(const FViewportEntry* Entry)
+	bool IsPIEViewportEntry(const FViewportEntry* Entry)
 	{
-		if (!Entry || !Entry->WorldContext || !Entry->WorldContext->World)
+		return Entry &&
+			Entry->WorldContext &&
+			Entry->WorldContext->World &&
+			Entry->WorldContext->WorldType == EWorldType::PIE;
+	}
+
+	UWorld* GetViewportWorld(const FViewportEntry* Entry)
+	{
+		if (!Entry || !Entry->WorldContext)
 		{
 			return nullptr;
 		}
 
-		return Entry->WorldContext->World->GetScene();
+		return Entry->WorldContext->World;
+	}
+
+	ULevel* GetViewportScene(const FViewportEntry* Entry)
+	{
+		UWorld* World = GetViewportWorld(Entry);
+		if (!World)
+		{
+			return nullptr;
+		}
+
+		return World->GetScene();
 	}
 }
 
@@ -64,13 +84,102 @@ void FEditorViewportInputService::TickCameraNavigation(
 	}
 
 	FInputManager* Input = Engine->GetInputManager();
-	if (!Input || !Input->IsMouseButtonDown(FInputManager::MOUSE_RIGHT) || Gizmo.IsDragging())
+	if (!Input)
 	{
 		return;
 	}
 
 	FViewportEntry* FocusedEntry = ViewportRegistry.FindEntryByViewportID(Slate->GetFocusedViewportId());
-	if (!FocusedEntry || !FocusedEntry->bActive || !IsEditorViewportEntry(FocusedEntry))
+	if (!FocusedEntry || !FocusedEntry->bActive)
+	{
+		return;
+	}
+
+	if (IsPIEViewportEntry(FocusedEntry))
+	{
+		if (EditorEngine->IsPIEPaused() || !EditorEngine->IsPIEInputCaptured() || FocusedEntry->Viewport == nullptr)
+		{
+			return;
+		}
+
+		float Sensitivity = 0.2f;
+		float Speed = 5.0f;
+		if (ULevel* Scene = GetViewportScene(FocusedEntry))
+		{
+			if (FCamera* Cam = Scene->GetCamera())
+			{
+				Sensitivity = Cam->GetMouseSensitivity();
+				Speed = Cam->GetSpeed();
+			}
+		}
+
+		const FRect& Rect = FocusedEntry->Viewport->GetRect();
+		if (!Rect.IsValid())
+		{
+			return;
+		}
+
+		HWND Hwnd = nullptr;
+		if (FWindowsWindow* MainWindow = EditorEngine->GetMainWindow())
+		{
+			Hwnd = MainWindow->GetHwnd();
+		}
+
+		if (Hwnd == nullptr)
+		{
+			return;
+		}
+
+		if (::GetForegroundWindow() != Hwnd)
+		{
+			return;
+		}
+
+		POINT Center = { Rect.X + Rect.Width / 2, Rect.Y + Rect.Height / 2 };
+		::ClientToScreen(Hwnd, &Center);
+
+		POINT CursorPos;
+		if (!::GetCursorPos(&CursorPos))
+		{
+			return;
+		}
+
+		const float DeltaX = static_cast<float>(CursorPos.x - Center.x);
+		const float DeltaY = static_cast<float>(CursorPos.y - Center.y);
+
+		FocusedEntry->LocalState.Rotation.Yaw += DeltaX * Sensitivity;
+		FocusedEntry->LocalState.Rotation.Pitch -= DeltaY * Sensitivity;
+		if (FocusedEntry->LocalState.Rotation.Pitch > 89.0f)
+		{
+			FocusedEntry->LocalState.Rotation.Pitch = 89.0f;
+		}
+		if (FocusedEntry->LocalState.Rotation.Pitch < -89.0f)
+		{
+			FocusedEntry->LocalState.Rotation.Pitch = -89.0f;
+		}
+
+		const FVector Forward = FocusedEntry->LocalState.Rotation.Vector().GetSafeNormal();
+		const FVector Right = FVector::CrossProduct(FVector(0.0f, 0.0f, 1.0f), Forward).GetSafeNormal();
+		FVector MoveDelta = FVector::ZeroVector;
+		if (Input->IsKeyDown('W')) MoveDelta += Forward;
+		if (Input->IsKeyDown('S')) MoveDelta -= Forward;
+		if (Input->IsKeyDown('D')) MoveDelta += Right;
+		if (Input->IsKeyDown('A')) MoveDelta -= Right;
+		if (!MoveDelta.IsNearlyZero())
+		{
+			FocusedEntry->LocalState.Position += MoveDelta.GetSafeNormal() * (Speed * EditorEngine->GetDeltaTime());
+		}
+
+		::SetCursorPos(Center.x, Center.y);
+		return;
+	}
+
+	if (!Input->IsMouseButtonDown(FInputManager::MOUSE_RIGHT) || Gizmo.IsDragging())
+	{
+		return;
+	}
+
+	if (!IsEditorViewportEntry(FocusedEntry))
 	{
 		return;
 	}
@@ -242,6 +351,22 @@ void FEditorViewportInputService::HandleMessage(
 	{
 	case WM_KEYDOWN:
 	{
+		if (Entry && IsPIEViewportEntry(Entry))
+		{
+			const bool bShiftDown = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+			if (WParam == VK_F1 && bShiftDown && EditorEngine->IsPIEInputCaptured())
+			{
+				EditorEngine->ReleasePIEInputCapture();
+				return;
+			}
+
+			if (WParam == VK_ESCAPE && EditorEngine->IsPIEInputCaptured())
+			{
+				EditorEngine->EndPIE();
+			}
+			return;
+		}
+
 		if (Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID || bRightMouseDown || !Entry || !IsEditorViewportEntry(Entry))
 		{
 			return;
@@ -272,7 +397,24 @@ void FEditorViewportInputService::HandleMessage(
 
 	case WM_LBUTTONDOWN:
 	{
-		FViewport* Viewport = ViewportRegistry.GetViewportById(Slate->GetFocusedViewportId());
+		FViewport* ClickedViewport = ViewportRegistry.GetViewportById(Slate->GetFocusedViewportId());
+		if (Entry && IsPIEViewportEntry(Entry) && ClickedViewport)
+		{
+			const FRect& ClickedRect = ClickedViewport->GetRect();
+			const bool bHoveringPIEViewport = (Slate->GetHoveredViewportId() == Slate->GetFocusedViewportId());
+			const bool bClickedPIEViewportScene =
+				bHoveringPIEViewport &&
+				ClickedRect.IsValid() &&
+				(ClickedRect.X < MouseX && MouseX < ClickedRect.X + ClickedRect.Width) &&
+				(ClickedRect.Y < MouseY && MouseY < ClickedRect.Y + ClickedRect.Height);
+			if (bClickedPIEViewportScene)
+			{
+				EditorEngine->CapturePIEInput();
+				return;
+			}
+		}
+
+		FViewport* Viewport = ClickedViewport;
 		if (!Viewport || !Entry || !IsEditorViewportEntry(Entry))
 		{
 			return;

@@ -43,11 +43,13 @@ private:
 	EViewportLayout GetCurrentLayout() const;
 	FViewportEntry* GetFocusedEntry() const;
 	FViewportEntry* GetTargetEntry() const;
+	bool IsTargetPIEViewport() const;
 
 	void ApplyLayout(EViewportLayout NewLayout);
 	void ApplyViewportType(EViewportType NewType);
 	void ApplyRenderMode(ERenderMode NewMode);
 	int32 EstimateTitleWidth() const;
+	bool ShouldShowPIECaptureHint() const;
 
 private:
 	FEditorEngine* Engine = nullptr;
@@ -55,6 +57,7 @@ private:
 	SDropdown LayoutDropdown;
 	SDropdown TypeDropdown;
 	SDropdown ModeDropdown;
+	FRect PIECaptureHintRect;
 	bool bShowLayout = true;
 	bool bShowViewportSettings = true;
 	FViewportId TargetViewportId = INVALID_VIEWPORT_ID;
