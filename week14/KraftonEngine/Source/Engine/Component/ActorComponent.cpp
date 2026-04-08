@@ -1,5 +1,6 @@
 ﻿#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UActorComponent, UObject)
 
@@ -14,7 +15,7 @@ void UActorComponent::BeginPlay()
 void UActorComponent::Activate()
 {
 	bIsActive = true;
-	PrimaryComponentTick.SetTickEnabled(true);
+	PrimaryComponentTick.SetTickEnabled(bTickEnable);
 }
 
 void UActorComponent::Deactivate()
@@ -26,22 +27,6 @@ void UActorComponent::Deactivate()
 
 void UActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	if (GetOwner() == nullptr)
-	{
-		return;
-	}
-
-	if (PrimaryComponentTick.bTickEnabled == false)
-	{
-		return;
-	}
-
-	if (bIsActive == false)
-	{
-		return;
-	}
-
-	Tick(DeltaTime);
 }
 
 void UActorComponent::SetActive(bool bNewActive)
@@ -63,12 +48,18 @@ void UActorComponent::SetActive(bool bNewActive)
 	}
 }
 
+void UActorComponent::Serialize(FArchive& Ar)
+{
+	UObject::Serialize(Ar);
+	Ar << bTickEnable;
+}
+
 void UActorComponent::SetOwner(AActor* Actor)
 {
 	Owner = Actor;
 	PrimaryComponentTick.Target = this;
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bTickEnabled = true;
+	PrimaryComponentTick.bTickEnabled = bTickEnable;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
@@ -77,10 +68,12 @@ void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
 	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, &bAutoActivate });
 	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, &bCanEverTick });
-	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, &PrimaryComponentTick.bTickEnabled });
+	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, &bTickEnable });
 }
 
-void UActorComponent::Tick(float DeltaTime)
+void UActorComponent::PostEditProperty(const char* PropertyName)
 {
-	
+	if (strcmp(PropertyName, "bTickEnable") == 0) {
+		PrimaryComponentTick.SetTickEnabled(bTickEnable);
+	}
 }
