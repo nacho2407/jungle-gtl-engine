@@ -62,5 +62,4 @@ private:
 	FRect CentralDockRect;
 	bool bHasCentralDockRect = false;
 	FDebugState DebugState;
-	bool bRequestViewportFocusOnNextRender = false;
 };
