@@ -10,10 +10,47 @@
 #include "Mesh/ObjManager.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "Core/TickFunction.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
 UEngine* GEngine = nullptr;
+
+namespace
+{
+	ELevelTick ToLevelTickType(EWorldType WorldType)
+	{
+		switch (WorldType)
+		{
+		case EWorldType::Editor:
+			return ELevelTick::LEVELTICK_ViewportsOnly;
+		case EWorldType::PIE:
+		case EWorldType::Game:
+			return ELevelTick::LEVELTICK_All;
+		default:
+			return ELevelTick::LEVELTICK_TimeOnly;
+		}
+	}
+
+	bool ShouldDispatchActorTick(const AActor* Actor, EWorldType WorldType)
+	{
+		if (!Actor)
+		{
+			return false;
+		}
+
+		switch (WorldType)
+		{
+		case EWorldType::Editor:
+			return Actor->bTickInEditor;
+		case EWorldType::PIE:
+		case EWorldType::Game:
+			return Actor->bNeedsTick;
+		default:
+			return false;
+		}
+	}
+}
 
 void UEngine::Init(FWindowsWindow* InWindow)
 {
@@ -118,35 +155,51 @@ void UEngine::WorldTick(float DeltaTime)
 		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw)
 		World->Tick(DeltaTime);
 
-		if (Ctx.WorldType == EWorldType::Editor)
+		const ELevelTick TickType = ToLevelTickType(Ctx.WorldType);
+
+		for (AActor* Actor : World->GetActors())
 		{
-			for (AActor* Actor : World->GetActors())
+			if (!ShouldDispatchActorTick(Actor, Ctx.WorldType))
 			{
-				if (Actor && Actor->bTickInEditor)
-				{
-					Actor->Tick(DeltaTime);
-				}
+				continue;
 			}
-		}
-		else if (Ctx.WorldType == EWorldType::PIE)
-		{
-			for (AActor* Actor : World->GetActors())
+
+			FActorTickFunction& TickFn = Actor->PrimaryActorTick;
+			TickFn.bRegistered = true;
+
+			if (!TickFn.CanTick(TickType))
 			{
-				// 추후 Component 단위 Tick으로 세분화할 때 bNeedsTick이 Actor 자체가 아니라 Component 단위로 옮겨질 수 있다.
-				if (Actor && Actor->bNeedsTick)
-				{
-					Actor->Tick(DeltaTime);
-				}
+				continue;
 			}
-		}
-		else if (Ctx.WorldType == EWorldType::Game)
-		{
-			for (AActor* Actor : World->GetActors())
+
+			if (!TickFn.ConsumeInterval(DeltaTime))
 			{
-				if (Actor && Actor->bNeedsTick)
+				continue;
+			}
+
+			TickFn.ExecuteTick(DeltaTime, TickType);
+
+			for (UActorComponent* Comp : Actor->GetComponents())
+			{
+				if (!Comp)
 				{
-					Actor->Tick(DeltaTime);
+					continue;
 				}
+
+				FActorComponentTickFunction& TickFn = Comp->PrimaryComponentTick;
+				TickFn.bRegistered = true;
+
+				if (!TickFn.CanTick(TickType))
+				{
+					continue;
+				}
+
+				if (!TickFn.ConsumeInterval(DeltaTime))
+				{
+					continue;
+				}
+
+				TickFn.ExecuteTick(DeltaTime, TickType);
 			}
 		}
 	}

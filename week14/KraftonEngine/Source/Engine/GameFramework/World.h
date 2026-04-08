@@ -4,6 +4,7 @@
 #include "Core/CollisionTypes.h"
 #include "Collision/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
@@ -39,7 +40,7 @@ public:
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 	void InvalidateVisibleSet();
 
-	const TArray<AActor*>& GetActors() const { return Actors; }
+	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
 	void UpdateVisibleProxies();
 
@@ -74,7 +75,8 @@ private:
 	bool NeedsVisibleProxyRebuild() const;
 	void CacheVisibleCameraState();
 
-	TArray<AActor*> Actors;
+	//TArray<AActor*> Actors;
+	ULevel* PersistentLevel;
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
 
 	UCameraComponent* ActiveCamera = nullptr;
@@ -102,7 +104,7 @@ template<typename T>
 inline T* UWorld::SpawnActor()
 {
 	// create and register an actor
-	T* Actor = UObjectManager::Get().CreateObject<T>(this);
+	T* Actor = UObjectManager::Get().CreateObject<T>(PersistentLevel);
 	AddActor(Actor); // BeginPlay 트리거는 AddActor 내부에서 bHasBegunPlay 가드로 처리
 	return Actor;
 }
