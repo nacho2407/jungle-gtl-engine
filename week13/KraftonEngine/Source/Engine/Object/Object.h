@@ -3,21 +3,24 @@
 #include "Profiling/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
+#include "Core/ClassTypes.h"
 
 class FArchive;
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
-    static const FTypeInfo s_TypeInfo;                                 \
+    static const FTypeInfo s_TypeInfo;								   \
+	static FClassRegistrar s_Registrar;								   \
     const FTypeInfo* GetTypeInfo() const override {                    \
         return &s_TypeInfo;                                            \
-    }                                                                  \
+    }                                                                  
 
 #define DEFINE_CLASS(ClassName, ParentClass)                           \
     const FTypeInfo ClassName::s_TypeInfo = {                          \
         #ClassName,                                                    \
         &ParentClass::s_TypeInfo,                                      \
         sizeof(ClassName)                                              \
-    };
+    };																   \
+	FClassRegistrar ClassName::s_Registrar(&ClassName::s_TypeInfo);	   
 
 enum EClassFlags : uint32_t
 {
