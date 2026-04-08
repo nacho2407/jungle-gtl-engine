@@ -10,7 +10,6 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
-
 #include "Viewport/ViewportCamera.h"
 
 namespace
@@ -166,13 +165,14 @@ void FObjViewerViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FObjViewerViewportClient::Tick(float DeltaTime)
 {
+	TickCameraReset(DeltaTime);
+
 	if (ImGui::GetIO().WantCaptureMouse) 
 	{
 		TickCursorOverlay(DeltaTime);
 		return;
 	}
 
-	TickCameraReset(DeltaTime);
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 	TickCursorOverlay(DeltaTime);

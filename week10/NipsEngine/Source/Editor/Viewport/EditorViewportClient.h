@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Render/Common/RenderTypes.h"
-#include "Core/RayTypes.h"
+#include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 #include "Runtime/ViewportClient.h"
 #include "Viewport/ViewportNavigationController.h"

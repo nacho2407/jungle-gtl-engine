@@ -5,9 +5,15 @@
 #include "Core/ResourceTypes.h"
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
-#include "Render/Common/RenderTypes.h"
+#include "Render/Common/ComPtr.h"
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/VertexTypes.h"
+
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11Buffer;
+struct ID3D11SamplerState;
+struct ID3D11ShaderResourceView;
 
 // SubUV 아틀라스 내 한 프레임의 UV 정보
 struct FSubUVFrameInfo
@@ -73,14 +79,14 @@ private:
     TArray<uint32>         Indices;
 	TArray<FSRVBatch>      Batches;
 
-    ID3D11Buffer* VertexBuffer = nullptr;
-    ID3D11Buffer* IndexBuffer  = nullptr;
+    TComPtr<ID3D11Buffer> VertexBuffer;
+    TComPtr<ID3D11Buffer> IndexBuffer;
 
     uint32 MaxVertexCount = 0;
     uint32 MaxIndexCount  = 0;
 
-    ID3D11Device*       Device       = nullptr; // 소유권 없음
-    ID3D11SamplerState* SamplerState = nullptr;
+    TComPtr<ID3D11Device>       Device;
+    TComPtr<ID3D11SamplerState> SamplerState;
     FShader             SubUVShader;
 
     void CreateBuffers();

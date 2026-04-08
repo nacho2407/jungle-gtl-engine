@@ -17,6 +17,40 @@ USubUVComponent::USubUVComponent()
 	SetVisibility(true);
 }
 
+// 부모 컴포넌트 계층별로 프로퍼티를 복사하며 깊은 복사합니다.
+USubUVComponent* USubUVComponent::Duplicate()
+{
+    USubUVComponent* NewComp = UObjectManager::Get().CreateObject<USubUVComponent>();
+
+	NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+    
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+    
+    NewComp->SetVisibility(this->IsVisible());
+	
+    NewComp->SetBillboardEnabled(this->bIsBillboard);
+
+    // 2. USubUVComponent 고유 리소스 얕은 복사
+    NewComp->ParticleName = this->ParticleName;
+    NewComp->CachedParticle = this->CachedParticle;
+
+    // 3. 재생 상태(State) 및 값 타입 복사
+    // 현재 프레임 인덱스와 누적 시간을 그대로 복사하여, PIE 실행 시 
+	// 에디터에서 보던 파티클 프레임 그대로 이어서 재생되도록 합니다.
+    NewComp->FrameIndex = this->FrameIndex;
+    NewComp->Width = this->Width;
+    NewComp->Height = this->Height;
+    NewComp->PlayRate = this->PlayRate;
+    NewComp->TimeAccumulator = this->TimeAccumulator;
+    NewComp->bLoop = this->bLoop;
+    NewComp->bIsExecute = this->bIsExecute;
+
+    return NewComp;
+}
+
 void USubUVComponent::SetParticle(const FName& InParticleName)
 {
 	ParticleName = InParticleName;

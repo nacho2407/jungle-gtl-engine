@@ -6,6 +6,7 @@
 #include "Core/Singleton.h"
 #include "Core/Logging/Stats.h"
 
+#include "Render/Common/ComPtr.h"
 #include <d3d11.h>
 
 // --- GPU Timestamp Profiler ---
@@ -45,14 +46,14 @@ private:
 
 	struct FTimestampPair
 	{
-		ID3D11Query* BeginQuery = nullptr;
-		ID3D11Query* EndQuery = nullptr;
+		TComPtr<ID3D11Query> BeginQuery;
+		TComPtr<ID3D11Query> EndQuery;
 		const char* Name = nullptr;
 	};
 
 	struct FFrameData
 	{
-		ID3D11Query* DisjointQuery = nullptr;
+		TComPtr<ID3D11Query> DisjointQuery;
 		FTimestampPair Timestamps[MAX_TIMESTAMPS];
 		uint32 UsedCount = 0;
 	};
@@ -60,9 +61,10 @@ private:
 	FFrameData Frames[FRAME_COUNT];
 	uint32 WriteIndex = 0;
 
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* Context = nullptr;
+	TComPtr<ID3D11Device> Device;
+	TComPtr<ID3D11DeviceContext> Context;
 	bool bInitialized = false;
+	bool bSkipFrame = false;
 
 	void CollectPreviousFrame();
 
