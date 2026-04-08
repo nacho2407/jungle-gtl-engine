@@ -27,6 +27,9 @@ public:
 			"AddComponent<T>: T must derive from UActorComponent");
 
 		T* Comp = UObjectManager::Get().CreateObject<T>();
+
+		bPrimitiveCacheDirty = true;
+
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
 		return Comp;
