@@ -6,9 +6,9 @@
 
 IMPLEMENT_CLASS(URotatingMovementComponent, UMovementComponent)
 
-void URotatingMovementComponent::TickComponent(float DeltaTime)
+void URotatingMovementComponent::Tick(float DeltaTime)
 {
-	UMovementComponent::TickComponent(DeltaTime);
+	UMovementComponent::Tick(DeltaTime);
 
 	USceneComponent* UpdatedSceneComponent = GetUpdatedComponent();
 	if (!UpdatedSceneComponent)
