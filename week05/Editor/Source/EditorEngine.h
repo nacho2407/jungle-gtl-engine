@@ -44,11 +44,31 @@ public:
 	void ClearDebugDrawForFrame();
 	void CreateInitUI();
 
+	bool IsPIEActive() const { return bIsPIEActive; }
+	bool IsPIEPaused() const { return bIsPIEPaused; }
+
+	/**
+	 * @brief PIE 모드를 시작합니다
+	 * 
+	 * @return 성공적으로 PIE 모드를 시작한 경우 true
+	 */
+	bool StartPIE();
+
+	/**
+	 * @brief PIE 모드를 종료합니다
+	 */
+	void EndPIE();
+
+	/**
+	 * @brief PIE 모드의 일시정지 상태를 토글합니다
+	 */
+	void TogglePIEPause();
+
 protected:
 	void PreInitialize() override;
 	// 에디터 UI가 나중에 사용할 메인 창 참조만 저장한다.
 	void BindHost(FWindowsWindow* InMainWindow) override;
-	bool InitializeWorlds(int32 Width, int32 Height) override;
+	bool InitializeWorlds() override;
 	// 에디터 전용 초기화는 이 단계 하나로 모은 뒤 내부 단계로 다시 나눈다.
 	bool InitializeMode() override;
 	void FinalizeInitialize() override;
@@ -63,6 +83,12 @@ protected:
 	FViewport* FindViewport(FViewportId Id);
 
 private:
+	struct FPIEViewportStateBackup
+	{
+		FViewportId ViewportId = INVALID_VIEWPORT_ID;
+		FViewportLocalState LocalState;
+	};
+
 	// 프리뷰 씬/프리뷰 뷰포트 준비
 	bool InitEditorPreview();
 	// 에디터 콘솔 UI와 콘솔 변수 시스템 연결
@@ -71,7 +97,7 @@ private:
 	bool InitEditorCamera();
 	// 현재 활성 월드 타입에 맞는 뷰포트 클라이언트 선택
 	void InitEditorViewportRouting();
-	bool InitEditorWorlds(int32 Width, int32 Height);
+	bool InitEditorWorlds();
 	void ReleaseEditorWorlds();
 	FWorldContext* FindPreviewWorld(const FString& ContextName);
 	const FWorldContext* FindPreviewWorld(const FString& ContextName) const;
@@ -84,13 +110,23 @@ private:
 	std::unique_ptr<FPreviewViewportClient> PreviewViewportClient;
 	FEditorSelectionSubsystem SelectionSubsystem;
 	FEditorCameraSubsystem CameraSubsystem;
+
 	FWorldContext* EditorWorldContext = nullptr;
+	FWorldContext* PIEWorldContext = nullptr;
 	TArray<FWorldContext*> PreviewWorldContexts;
-	FWorldContext* ActiveEditorWorldContext = nullptr;
+
+	FWorldContext* ActiveWorldContext = nullptr;
+	FWorldContext* PrePIEActiveWorldContext = nullptr;
 
 	FWindowsWindow* MainWindow = nullptr;
 	FEditorViewportRegistry ViewportRegistry;
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
 
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
+	TArray<FPIEViewportStateBackup> SavedPIEViewportStates;
+	TObjectPtr<AActor> SavedPIESelectedActor;
+	bool bWasCursorHiddenForPIE = false;
+
+	bool bIsPIEActive = false;
+	bool bIsPIEPaused = false;
 };

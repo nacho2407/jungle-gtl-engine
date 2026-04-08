@@ -62,7 +62,7 @@ bool FEngine::Initialize(const FEngineInitArgs& Args)
 	}
 
 	// 4. 시작 모드에 맞는 월드 컨텍스트와 월드를 생성한다.
-	if (!InitializeWorlds(Args.Width, Args.Height))
+	if (!InitializeWorlds())
 	{
 		return FailInitialize();
 	}
@@ -276,11 +276,9 @@ bool FEngine::InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height)
 	return true;
 }
 
-bool FEngine::InitializeWorlds(int32 Width, int32 Height)
+bool FEngine::InitializeWorlds(void)
 {
 	// 월드는 런타임 시스템이 준비된 뒤에만 만든다.
-	(void)Width;
-	(void)Height;
 
 	return true;
 }
@@ -375,6 +373,24 @@ FWorldContext* FEngine::CreateWorldContext(const FString& ContextName, EWorldTyp
 	return CreatedContext;
 }
 
+FWorldContext* FEngine::CreateWorldContext(const FString& ContextName, EWorldType WorldType, UWorld* ExistingWorld)
+{
+	if (!ExistingWorld)
+	{
+		return nullptr;
+	}
+
+	std::unique_ptr<FWorldContext> NewContext = std::make_unique<FWorldContext>();
+	NewContext->ContextName = ContextName;
+	NewContext->WorldType = WorldType;
+	NewContext->World = ExistingWorld;
+	NewContext->World->SetWorldType(WorldType);
+
+	FWorldContext* CreatedContext = NewContext.get();
+	WorldContexts.push_back(std::move(NewContext));
+	return CreatedContext;
+}
+
 void FEngine::DestroyWorldContext(FWorldContext* Context)
 {
 	if (!Context)
@@ -384,8 +400,10 @@ void FEngine::DestroyWorldContext(FWorldContext* Context)
 
 	if (Context->World)
 	{
+		Context->World->EndPlay();
 		Context->World->CleanupWorld();
-		delete Context->World;
+		Context->World->MarkPendingKill();
+		Context->World = nullptr;
 	}
 
 	Context->Reset();

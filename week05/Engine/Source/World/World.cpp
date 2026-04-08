@@ -76,16 +76,74 @@ void UWorld::InitializeWorld(float AspectRatio, ID3D11Device* Device)
 
 void UWorld::BeginPlay()
 {
-	if (bBegunPlay) return;  
-	bBegunPlay = true;     
+	if (bBegunPlay)
+	{
+		return;
+	}
+
+	bBegunPlay = true;
+
 	if (PersistentLevel)
 	{
-		PersistentLevel->BeginPlay();
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (Actor && !Actor->HasBegunPlay())
+			{
+				Actor->BeginPlay();
+			}
+		}
 	}
-	for (ULevel* Level : StreamingLevels)
+
+	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
+	//for (ULevel* Level : StreamingLevels)
+	//{
+	//	if (Level)
+	//	{
+	//		for (AActor* Actor : Level->GetActors())
+	//		{
+	//			if (Actor && !Actor->HasBegunPlay())
+	//			{
+	//				Actor->BeginPlay();
+	//			}
+	//		}
+	//	}
+	//}
+}
+
+void UWorld::EndPlay()
+{
+	if (!bBegunPlay)
 	{
-		if (Level) Level->BeginPlay();
+		return;
 	}
+
+	if (PersistentLevel)
+	{
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (Actor && Actor->HasBegunPlay() && !Actor->IsPendingDestroy())
+			{
+				Actor->EndPlay();
+			}
+		}
+	}
+
+	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
+	//for (ULevel* Level : StreamingLevels)
+	//{
+	//	if (Level)
+	//	{
+	//		for (AActor* Actor : Level->GetActors())
+	//		{
+	//			if (Actor && Actor->HasBegunPlay() && !Actor->IsPendingDestroy())
+	//			{
+	//				Actor->EndPlay();
+	//			}
+	//		}
+	//	}
+	//}
+
+	bBegunPlay = false;
 }
 
 void UWorld::Tick(float InDeltaTime)
@@ -95,15 +153,59 @@ void UWorld::Tick(float InDeltaTime)
 
 	if (PersistentLevel)
 	{
-		PersistentLevel->Tick(InDeltaTime);
-	}
-	for (ULevel* Level : StreamingLevels)
-	{
-		if (Level)
+		const EWorldType CurrentWorldType = GetWorldType();
+		const bool bShouldTickForPlay = (CurrentWorldType == EWorldType::Game || CurrentWorldType == EWorldType::PIE) && bBegunPlay;
+		const bool bShouldTickForEditor = (CurrentWorldType == EWorldType::Editor);
+
+		for (AActor* Actor : PersistentLevel->GetActors())
 		{
-			Level->Tick(InDeltaTime);
+			if (!Actor || Actor->IsPendingDestroy())
+			{
+				continue;
+			}
+
+			if (bShouldTickForEditor)
+			{
+				if (!Actor->IsTickInEditor())
+				{
+					continue;
+				}
+			}
+			else if (bShouldTickForPlay)
+			{
+				if (!Actor->HasBegunPlay())
+				{
+					continue;
+				}
+			}
+			else
+			{
+				// 나중에 월드 타입이 늘어나면 여기서 추가적으로 체크
+				continue;
+			}
+
+			Actor->Tick(InDeltaTime);
 		}
+
+		PersistentLevel->CleanupDestroyedActors();
 	}
+
+	// [Minjun][deprecated] StreamingLevels는 삭제될 예정
+	//for (ULevel* Level : StreamingLevels)
+	//{
+	//	if (Level)
+	//	{
+	//		Level->Tick(InDeltaTime);
+	//	}
+	//}
+}
+
+void UWorld::ResetRuntimeState()
+{
+	bBegunPlay = false;
+	WorldTime = 0.f;
+	DeltaSeconds = 0.f;
+	ActiveCameraComponent = SceneCameraComponent;
 }
 
 void UWorld::CleanupWorld()
@@ -210,53 +312,22 @@ void UWorld::DestroyActor(AActor* InActor)
 
 ULevel* UWorld::LoadStreamingLevel(const FString& LevelName, ID3D11Device* Device)
 {
-	// 이미 로드됐는지 확인
-	if (ULevel* Existing = FindStreamingLevel(LevelName))
-	{
-		return Existing;
-	}
-	ULevel* NewLevel = FObjectFactory::ConstructObject<ULevel>(this, LevelName);
-	if (!NewLevel) return nullptr;
+	(void)LevelName;
+	(void)Device;
 
-	if (Device)
-	{
-		const std::filesystem::path SceneDir = FPaths::SceneDir();
-		TryLoadSceneFromCandidates(NewLevel, Device, {
-			SceneDir / FPaths::ToPath(LevelName + ".json"),
-			SceneDir / FPaths::ToPath(LevelName + ".scene")
-		});
-	}
-	StreamingLevels.push_back(NewLevel);
+	// StreamingLevel은 현재 프로젝트에서 사용하지 않으므로 비활성화
 
-	// 이미 게임 진행 중이면 BeginPlay 호출
-	if (bBegunPlay)
-	{
-		NewLevel->BeginPlay();
-	}
-	return NewLevel;
+	return nullptr;
 }
 
 void UWorld::UnloadStreamingLevel(const FString& LevelName)
 {
-	auto It = std::find_if(StreamingLevels.begin(), StreamingLevels.end(),
-		[&](ULevel* Level) { return Level->GetName() == LevelName; });
-	if (It != StreamingLevels.end())
-	{
-		(*It)->ClearActors();
-		(*It)->MarkPendingKill();
-		StreamingLevels.erase(It);
-	}
+	(void)LevelName;
 }
 
 ULevel* UWorld::FindStreamingLevel(const FString& LevelName) const
 {
-	for (ULevel* Level : StreamingLevels)
-	{
-		if (Level && Level->GetName() == LevelName)
-		{
-			return Level;
-		}
-	}
+	(void)LevelName;
 	return nullptr;
 }
 

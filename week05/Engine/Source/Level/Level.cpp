@@ -60,7 +60,6 @@ void ULevel::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Cont
 {
 	ULevel* DuplicatedLevel = static_cast<ULevel*>(DuplicatedObject);
 	DuplicatedLevel->Actors.clear();
-	DuplicatedLevel->bBegunPlay = false;
 	DuplicatedLevel->SpatialBVH.Reset();
 	DuplicatedLevel->bSpatialDirty = true;
 }
@@ -135,7 +134,6 @@ void ULevel::ClearActors()
 	}
 	Actors.clear();
 
-	bBegunPlay = false;
 	MarkSpatialDirty();
 }
 
@@ -181,42 +179,6 @@ void ULevel::CleanupDestroyedActors()
 	{
 		MarkSpatialDirty();
 	}
-}
-
-void ULevel::BeginPlay()
-{
-	if (bBegunPlay)
-	{
-		return;
-	}
-
-	bBegunPlay = true;
-
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && !Actor->HasBegunPlay())
-		{
-			Actor->BeginPlay();
-		}
-	}
-}
-
-void ULevel::Tick(float DeltaTime)
-{
-	if (!bBegunPlay)
-	{
-		BeginPlay();
-	}
-
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && !Actor->IsPendingDestroy())
-		{
-			Actor->Tick(DeltaTime);
-		}
-	}
-
-	CleanupDestroyedActors();
 }
 
 void ULevel::MarkSpatialDirty()

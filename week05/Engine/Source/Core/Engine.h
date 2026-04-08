@@ -89,7 +89,7 @@ protected:
 	/** 엔진이 창/호스트 객체에 의존해야 할 때 바인딩하는 훅이다. */
 	virtual void BindHost(FWindowsWindow* InMainWindow) {}
 	/** 필요한 월드 컨텍스트를 생성하고 초기 씬을 준비한다. */
-	virtual bool InitializeWorlds(int32 Width, int32 Height);
+	virtual bool InitializeWorlds(void);
 	/** 게임/에디터별 전용 모드 초기화를 수행한다. */
 	virtual bool InitializeMode() { return true; }
 	/** 모든 초기화가 성공한 뒤 마지막 검증이나 후처리를 수행한다. */
@@ -112,6 +112,8 @@ protected:
 	const FWorldContext* FindWorldContext(EWorldType WorldType) const;
 	/** 새 월드 컨텍스트를 만들고, 필요하면 기본 씬까지 바로 초기화한다. */
 	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, float AspectRatio, bool bDefaultScene);
+	/** 이미 생성된 월드를 받아 월드 컨텍스트에 등록한다. */
+	FWorldContext* CreateWorldContext(const FString& ContextName, EWorldType WorldType, UWorld* ExistingWorld);
 	/** 월드 컨텍스트를 정리하고 내부 목록에서 제거한다. */
 	void DestroyWorldContext(FWorldContext* Context);
 	/** 월드의 카메라 종횡비를 창 크기에 맞게 맞춘다. */
@@ -122,6 +124,8 @@ protected:
 	FPhysicsManager* GetPhysicsManager() const { return PhysicsManager.get(); }
 	/** 디버그 선/도형을 쌓아둘 매니저를 반환한다. */
 	FDebugDrawManager& GetDebugDrawManager() { return DebugDrawManager; }
+
+	const float GetWindowAspectRatio() const { return (WindowHeight > 0) ? (static_cast<float>(WindowWidth) / static_cast<float>(WindowHeight)) : 1.0f; }
 
 private:
 	/** 렌더러, 입력, 오브젝트 매니저 등 공통 런타임 시스템을 생성한다. */
