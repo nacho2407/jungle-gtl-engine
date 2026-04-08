@@ -504,6 +504,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RotatingMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -934,6 +937,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ClassTypes.h">
       <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="RotatingMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
