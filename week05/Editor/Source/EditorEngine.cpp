@@ -3,6 +3,7 @@
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 #include "Actor/Actor.h"
+#include "Actor/PlayerCameraActor.h"
 #include "Core/ShowFlags.h"
 #include "Object/Class.h"
 #include "Renderer/MeshData.h"
@@ -584,6 +585,12 @@ bool FEditorEngine::StartPIE()
 		}
 	}
 
+	RefreshPIEPlayerCameraActors();
+	if (ActivePIEPlayerCameraIndex >= 0)
+	{
+		ApplyPIEPlayerCameraByIndex(ActivePIEPlayerCameraIndex);
+	}
+
 	SetSelectedActor(nullptr);
 
 	PrePIEActiveWorldContext = ActiveWorldContext ? ActiveWorldContext : EditorWorldContext;
@@ -641,6 +648,8 @@ void FEditorEngine::EndPIE()
 	bIsPIEPaused = false;
 	bIsPIEInputCaptured = false;
 	PIEViewportId = INVALID_VIEWPORT_ID;
+	PIEPlayerCameraActors.clear();
+	ActivePIEPlayerCameraIndex = -1;
 }
 
 void FEditorEngine::TogglePIEPause()
@@ -673,6 +682,31 @@ void FEditorEngine::ReleasePIEInputCapture()
 
 	bIsPIEInputCaptured = false;
 	SyncPIECursorState();
+}
+
+bool FEditorEngine::CyclePIEPlayerCamera(int32 Direction)
+{
+	const int32 CameraCount = static_cast<int32>(PIEPlayerCameraActors.size());
+	if (!bIsPIEActive || CameraCount <= 0)
+	{
+		return false;
+	}
+
+	int32 NextCameraIndex = ActivePIEPlayerCameraIndex;
+	if (NextCameraIndex < 0 || NextCameraIndex >= CameraCount)
+	{
+		NextCameraIndex = 0;
+	}
+	else
+	{
+		NextCameraIndex = (NextCameraIndex + Direction) % CameraCount;
+		if (NextCameraIndex < 0)
+		{
+			NextCameraIndex += CameraCount;
+		}
+	}
+
+	return ApplyPIEPlayerCameraByIndex(NextCameraIndex);
 }
 
 bool FEditorEngine::InitEditorPreview()
@@ -804,6 +838,79 @@ void FEditorEngine::UpdateEditorWorldAspectRatio(float AspectRatio)
 	{
 		UpdateWorldAspectRatio(PreviewContext ? PreviewContext->World : nullptr, AspectRatio);
 	}
+}
+
+void FEditorEngine::RefreshPIEPlayerCameraActors()
+{
+	PIEPlayerCameraActors.clear();
+	ActivePIEPlayerCameraIndex = -1;
+
+	if (PIEWorldContext == nullptr || PIEWorldContext->World == nullptr)
+	{
+		return;
+	}
+
+	for (AActor* Actor : PIEWorldContext->World->GetActors())
+	{
+		if (Actor && Actor->IsA(APlayerCameraActor::StaticClass()))
+		{
+			Actor->SetVisible(false);
+			PIEPlayerCameraActors.push_back(static_cast<APlayerCameraActor*>(Actor));
+		}
+	}
+
+	if (!PIEPlayerCameraActors.empty())
+	{
+		ActivePIEPlayerCameraIndex = 0;
+	}
+}
+
+bool FEditorEngine::ApplyPIEPlayerCameraByIndex(int32 CameraIndex)
+{
+	if (PIEWorldContext == nullptr || PIEWorldContext->World == nullptr)
+	{
+		return false;
+	}
+
+	const int32 CameraCount = static_cast<int32>(PIEPlayerCameraActors.size());
+	if (CameraIndex < 0 || CameraIndex >= CameraCount)
+	{
+		return false;
+	}
+
+	APlayerCameraActor* PlayerCameraActor = PIEPlayerCameraActors[CameraIndex].Get();
+	if (PlayerCameraActor == nullptr || PlayerCameraActor->IsPendingDestroy())
+	{
+		return false;
+	}
+
+	UCameraComponent* CameraComponent = PlayerCameraActor->GetCameraComponent();
+	if (CameraComponent == nullptr)
+	{
+		return false;
+	}
+
+	PlayerCameraActor->SyncCameraComponentState();
+	if (FCamera* Camera = CameraComponent->GetCamera())
+	{
+		Camera->SetAspectRatio(GetWindowAspectRatio());
+	}
+	PIEWorldContext->World->SetActiveCameraComponent(CameraComponent);
+
+	if (FViewportEntry* PIEViewportEntry = ViewportRegistry.FindEntryByViewportID(PIEViewportId))
+	{
+		if (FCamera* Camera = CameraComponent->GetCamera())
+		{
+			PIEViewportEntry->LocalState.ProjectionType = EViewportType::Perspective;
+			PIEViewportEntry->LocalState.Position = Camera->GetPosition();
+			PIEViewportEntry->LocalState.Rotation = FRotator(Camera->GetPitch(), Camera->GetYaw(), 0.0f);
+			PIEViewportEntry->LocalState.FovY = Camera->GetFOV();
+			PIEViewportEntry->LocalState.bShowGrid = false;
+		}
+	}
+
+	ActivePIEPlayerCameraIndex = CameraIndex;
+	return true;
 }
 
 void FEditorEngine::SyncFocusedViewportLocalState()
