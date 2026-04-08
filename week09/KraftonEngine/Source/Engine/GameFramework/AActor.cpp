@@ -206,6 +206,31 @@ void AActor::Serialize(FArchive& Ar)
 	Ar << bNeedsTick;
 }
 
+// SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들고 AttachToComponent로 재연결.
+static USceneComponent* DuplicateSceneSubtree(
+	const USceneComponent* Src,
+	AActor* DupOwner,
+	TSet<const UActorComponent*>& Visited)
+{
+	if (!Src) return nullptr;
+
+	USceneComponent* DupNode = Cast<USceneComponent>(Src->Duplicate(DupOwner));
+	if (!DupNode) return nullptr;
+
+	DupNode->SetOwner(DupOwner);
+	DupOwner->RegisterComponent(DupNode); // Outer/OwnedComponents/CreateRenderState 일괄 처리
+	Visited.insert(Src);
+
+	for (USceneComponent* Child : Src->GetChildren())
+	{
+		if (USceneComponent* DupChild = DuplicateSceneSubtree(Child, DupOwner, Visited))
+		{
+			DupChild->AttachToComponent(DupNode); // 부모 재연결 (양방향)
+		}
+	}
+	return DupNode;
+}
+
 UObject* AActor::Duplicate(UObject* NewOuter) const
 {
 	// 1) 같은 타입 액터를 팩토리로 생성 (UObject::Duplicate 경유: Serialize 왕복까지 수행)
@@ -217,31 +242,34 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 		return nullptr;
 	}
 
-	// 2) 얕은 복사로 따라온 컴포넌트 컨테이너 즉시 비우기 (UObject::Serialize는 컴포넌트를 다루지 않으므로
-	//    실제로는 비어있지만, 향후 수정을 대비한 안전장치)
+	// 2) 얕은 복사로 따라온 컴포넌트 컨테이너 즉시 비우기 (안전장치)
 	Dup->OwnedComponents.clear();
 	Dup->RootComponent = nullptr;
 	Dup->bPrimitiveCacheDirty = true;
 
-	// 3) 컴포넌트들을 복제 (현 단계에서는 SceneComponent 트리 깊이 1 가정 — Root + 형제들)
+	TSet<const UActorComponent*> Visited;
+
+	// 3a) Root 서브트리 재귀 복제 — 도달 가능한 모든 SceneComponent를 처리
+	if (RootComponent)
+	{
+		USceneComponent* DupRoot = DuplicateSceneSubtree(RootComponent, Dup, Visited);
+		if (DupRoot)
+		{
+			Dup->SetRootComponent(DupRoot);
+		}
+	}
+
+	// 3b) 트리에 포함되지 않은 나머지(비씬 컴포넌트 + 분리된 씬 컴포넌트) 평면 복제
 	for (UActorComponent* Comp : OwnedComponents)
 	{
-		if (!Comp) continue;
+		if (!Comp || Visited.count(Comp)) continue;
 
-		UObject* DupCompBase = Comp->Duplicate(Dup);
-		UActorComponent* DupComp = Cast<UActorComponent>(DupCompBase);
+		UActorComponent* DupComp = Cast<UActorComponent>(Comp->Duplicate(Dup));
 		if (!DupComp) continue;
 
 		DupComp->SetOwner(Dup);
-
-		if (Comp == RootComponent)
-		{
-			USceneComponent* DupRoot = Cast<USceneComponent>(DupComp);
-			Dup->SetRootComponent(DupRoot);
-		}
-
-		Dup->OwnedComponents.push_back(DupComp);
-		DupComp->CreateRenderState();
+		Dup->RegisterComponent(DupComp);
+		Visited.insert(Comp);
 	}
 
 	Dup->bPrimitiveCacheDirty = true;
