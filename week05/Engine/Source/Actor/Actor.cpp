@@ -466,6 +466,16 @@ void AActor::Serialize(FArchive& Ar)
 
 		}
 
+		// 액터 UUID가 저장값으로 덮어써지면, 생성 시점에 잡혀 있던 컴포넌트 Owner TObjectPtr의
+		// UUID도 다시 현재 액터에 맞춰 갱신해야 이후 Serialize/피킹 경로가 정상 동작한다.
+		for (UActorComponent* ExistingComponent : OwnedComponents)
+		{
+			if (ExistingComponent)
+			{
+				ExistingComponent->SetOwner(this);
+			}
+		}
+
 		uint32 SavedRootCompUUID = 0;
 		if (Ar.Contains("RootComponentUUID"))
 		{
