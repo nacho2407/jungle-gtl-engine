@@ -12,6 +12,18 @@ FSubUVSceneProxy::FSubUVSceneProxy(USubUVComponent* InComponent)
 	bShowAABB = false;
 }
 
+void FSubUVSceneProxy::UpdateMesh()
+{
+	// Billboard::UpdateMesh는 base Billboard의 CachedTexture 유무에 따라 batcher/primitive 경로를
+	// 분기시키는데, SubUV는 자체 ParticleResource를 사용하므로 그 분기가 불리하다.
+	// 여기서는 SubUV batcher 경로만 강제한다.
+	MeshBuffer = Owner->GetMeshBuffer();
+	Shader = nullptr;
+	Pass = ERenderPass::SubUV;
+	bBatcherRendered = true;
+	UpdateSortKey();
+}
+
 USubUVComponent* FSubUVSceneProxy::GetSubUVComponent() const
 {
 	return static_cast<USubUVComponent*>(Owner);

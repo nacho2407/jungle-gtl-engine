@@ -2,8 +2,11 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
+#include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
+
+#include <cstring>
 
 IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
 
@@ -16,6 +19,44 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << bIsBillboard;
+	Ar << TextureName;
+	Ar << Width;
+	Ar << Height;
+}
+
+void UBillboardComponent::PostDuplicate()
+{
+	UPrimitiveComponent::PostDuplicate();
+	// 텍스처 SRV 재바인딩
+	SetTexture(TextureName);
+}
+
+void UBillboardComponent::SetTexture(const FName& InTextureName)
+{
+	TextureName = InTextureName;
+	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
+	// 텍스처 유무가 batcher/Primitive 경로 분기를 좌우하므로 Mesh 단계까지 재갱신 필요.
+	MarkProxyDirty(EDirtyFlag::Mesh);
+}
+
+void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	UPrimitiveComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({ "Width",  EPropertyType::Float, &Width,  0.1f, 100.0f, 0.1f });
+	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
+}
+
+void UBillboardComponent::PostEditProperty(const char* PropertyName)
+{
+	if (strcmp(PropertyName, "Texture") == 0)
+	{
+		SetTexture(TextureName);
+	}
+	else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Transform);
+	}
 }
 
 void UBillboardComponent::Tick(float DeltaTime)
