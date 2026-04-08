@@ -136,7 +136,6 @@ public:
 
 	// FTickFunction을(를) 통해 상속됨
 	const char* GetDebugName() const override;
-
 };
 
 struct FActorComponentTickFunction : public FTickFunction {
