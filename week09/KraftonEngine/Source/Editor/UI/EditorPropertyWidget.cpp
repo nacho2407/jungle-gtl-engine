@@ -8,6 +8,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Core/PropertyTypes.h"
+#include "Core/ClassTypes.h"
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
@@ -284,9 +285,42 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
 	ImGui::Text("Components");
-	ImGui::Separator();
+
+	TArray<const FTypeInfo*>& AllClasses = GetClassRegistry();
+
+	TArray<const FTypeInfo*> ComponentClasses;
+	for (const FTypeInfo* Info : AllClasses)
+	{
+		if (Info->IsA(&UActorComponent::s_TypeInfo))
+			ComponentClasses.push_back(Info);
+	}
+
+	static int SelectedIndex = 0;
+	const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->name;
+
+	if (ImGui::BeginCombo("Component Class", Preview))
+	{
+		for (int i = 0; i < (int)ComponentClasses.size(); ++i)
+		{
+			bool bSelected = (SelectedIndex == i);
+			if (ImGui::Selectable(ComponentClasses[i]->name, bSelected))
+				SelectedIndex = i;
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
 
 	USceneComponent* Root = Actor->GetRootComponent();
+
+	if (ImGui::Button("Add"))
+	{
+		UActorComponent* Comp = Actor->AddComponentByClass(ComponentClasses[SelectedIndex]);
+		if (ComponentClasses[SelectedIndex]->IsA(&USceneComponent::s_TypeInfo))
+			Cast<USceneComponent>(Comp)->AttachToComponent(Root);
+	}
+
+	ImGui::Separator();
 
 	if (Root)
 	{
