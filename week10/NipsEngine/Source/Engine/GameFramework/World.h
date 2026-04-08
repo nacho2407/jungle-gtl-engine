@@ -35,9 +35,7 @@ public:
         UObjectManager::Get().DestroyObject(Actor);
     }
 
-	const TArray<AActor*>& GetActors() const {
-		return PersistentLevel->GetActors();
-	}
+	TArray<AActor*> GetActors() const { return PersistentLevel->GetActors(); }
 
 	ULevel* GetPersistentLevel() const { return PersistentLevel; }
 

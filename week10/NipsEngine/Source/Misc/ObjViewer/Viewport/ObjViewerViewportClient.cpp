@@ -10,6 +10,7 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
+#include "Object/ActorInterator.h"
 
 #include "Viewport/ViewportCamera.h"
 
@@ -482,8 +483,9 @@ ObjViewerModelInfo FObjViewerViewportClient::GetModelInfo()
 	ObjViewerModelInfo ModelInfo;
 
     // 스폰된 액터를 순회하며 AABB 박스를 계산한다. (Viewer에서는 보통 하나)
-    for (AActor* Actor : World->GetActors())
+    for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
     {
+		AActor* Actor = *Iter;
         if (!Actor || !Actor->GetRootComponent()) continue;
 
 		for (auto* primitive : Actor->GetPrimitiveComponents())
@@ -546,8 +548,9 @@ void FObjViewerViewportClient::HandleDragStart(const FRay& Ray)
 	AActor* BestActor = nullptr;
 	float ClosestDistance = FLT_MAX;
 
-	for (AActor* Actor : World->GetActors())
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
+		AActor* Actor = *Iter;
 		if (!Actor || !Actor->GetRootComponent())
 		{
 			continue;
