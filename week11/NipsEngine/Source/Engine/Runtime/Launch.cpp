@@ -25,7 +25,7 @@ int Launch(HINSTANCE hInstance, int nShowCmd)
 	{
 		return GuardedMain(hInstance, nShowCmd);
 	}
-	__except (WriteCrashDump(GetExceptionInformation()))
+	__except (ReportCrash(GetExceptionInformation()))
 	{
 		return static_cast<int>(GetExceptionCode());
 	}

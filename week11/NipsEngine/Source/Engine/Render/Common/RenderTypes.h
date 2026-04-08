@@ -12,6 +12,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <dxgi1_5.h>
+#include "Render/Common/ComPtr.h"
 
 #pragma comment(lib, "dxgi")
 #include "Core/CoreTypes.h"

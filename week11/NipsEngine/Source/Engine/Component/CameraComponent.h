@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Engine/Core/RayTypes.h"
+#include "Engine/Geometry/Ray.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Matrix.h"

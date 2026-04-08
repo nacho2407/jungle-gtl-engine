@@ -6,10 +6,14 @@
 	또한 코드가 길어지면, 각 Buffer들의 source를 분리할 수도 있습니다. (이후)
 */
 
-#include "Render/Common/RenderTypes.h"
+#include "Render/Common/ComPtr.h"
 
 #include "Core/CoreMinimal.h"
 #include "Render/Resource/VertexTypes.h"
+
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11Buffer;
 
 
 class FVertexBuffer
@@ -27,7 +31,7 @@ public:
 	ID3D11Buffer* GetBuffer() const;
 
 private:
-	ID3D11Buffer* Buffer = nullptr;
+	TComPtr<ID3D11Buffer> Buffer;
 	uint32 VertexCount = 0;
 	uint32 Stride = 0;
 };
@@ -43,7 +47,7 @@ public:
 	ID3D11Buffer* GetBuffer();
 
 private:
-	ID3D11Buffer* Buffer = nullptr;
+	TComPtr<ID3D11Buffer> Buffer;
 };
 
 
@@ -59,7 +63,7 @@ public:
 	ID3D11Buffer* GetBuffer() const;
 
 private:
-	ID3D11Buffer* Buffer = nullptr;
+	TComPtr<ID3D11Buffer> Buffer;
 	uint32 IndexCount = 0;
 };
 
