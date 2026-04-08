@@ -12,8 +12,9 @@ public:
 	URotatingMovementComponent() = default;
 	~URotatingMovementComponent() override = default;
 
-	void TickComponent(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void Serialize(FArchive& Ar) override;
 
 private:
 	FRotator RotationRate = FRotator(0.0f, 90.0f, 0.0f);

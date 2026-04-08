@@ -9,7 +9,7 @@ class UBillboardComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
-	void TickComponent(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	void Serialize(FArchive& Ar) override;

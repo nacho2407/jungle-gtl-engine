@@ -21,8 +21,16 @@ AActor::AActor()
 
 AActor::~AActor()
 {
+	PrimaryActorTick.UnRegisterTickFunction();
+
 	for (auto* Comp : OwnedComponents)
 	{
+		if (!Comp)
+		{
+			continue;
+		}
+
+		Comp->PrimaryComponentTick.UnRegisterTickFunction();
 		Comp->DestroyRenderState();
 		UObjectManager::Get().DestroyObject(Comp);
 	}
@@ -71,6 +79,7 @@ void AActor::RemoveComponent(UActorComponent* Component)
 {
 	if (!Component) return;
 
+	Component->PrimaryComponentTick.UnRegisterTickFunction();
 	Component->DestroyRenderState();
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
@@ -187,10 +196,15 @@ void AActor::EndPlay()
 {
 	if (!bActorHasBegunPlay) return;
 	bActorHasBegunPlay = false;
+	PrimaryActorTick.UnRegisterTickFunction();
 
 	for (UActorComponent* Comp : OwnedComponents)
 	{
-		if (Comp) Comp->EndPlay();
+		if (Comp)
+		{
+			Comp->PrimaryComponentTick.UnRegisterTickFunction();
+			Comp->EndPlay();
+		}
 	}
 }
 
