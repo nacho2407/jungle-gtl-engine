@@ -68,6 +68,7 @@ class FSlateApplication
 public:
 	void Initialize(const FRect& Area, FViewport* VPs[], int32 Count); // 뷰포트 위젯과 초기 레이아웃 트리를 구성한다.
 	void SetLayout(EViewportLayout Layout); // 활성 뷰포트 레이아웃 프리셋을 바꾼다.
+	void FocusViewport(FViewportId ViewportId); // 지정한 활성 뷰포트로 포커스를 옮긴다.
 	void SetViewportAreaRect(const FRect& Area); // 전체 뷰포트가 사용할 레이아웃 영역을 갱신한다.
 	void PerformLayout(); // 현재 위젯 트리를 다시 만들고 배치한다.
 

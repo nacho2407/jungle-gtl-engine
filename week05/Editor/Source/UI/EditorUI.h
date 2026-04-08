@@ -58,6 +58,7 @@ private:
 	bool bViewportClientActive = false;
 	bool bLayoutInitialized = false;
 	bool bImGuiInitialized = false;
+	bool bRequestViewportFocusOnNextRender = false;
 	FRect CentralDockRect;
 	bool bHasCentralDockRect = false;
 	FDebugState DebugState;

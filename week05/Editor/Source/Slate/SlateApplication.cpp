@@ -140,6 +140,17 @@ void FSlateApplication::SetLayout(EViewportLayout Layout)
 	}
 }
 
+void FSlateApplication::FocusViewport(FViewportId ViewportId)
+{
+	if (IsViewportActive(ViewportId))
+	{
+		FocusedViewportId = ViewportId;
+		return;
+	}
+
+	FocusedViewportId = (ActiveViewportCount > 0 && Viewports[0]) ? Viewports[0]->Id : INVALID_VIEWPORT_ID;
+}
+
 void FSlateApplication::BuildTree_Single()
 {
 	ActiveViewportCount = 1;
@@ -355,7 +366,7 @@ void FSlateApplication::Paint(FSlatePaintContext& Painter)
 				continue;
 			}
 
-			const FRect FocusRect = ViewportHosts[i]->Rect;
+			const FRect FocusRect = Viewports[i]->Rect;
 			if (!FocusRect.IsValid())
 			{
 				break;
