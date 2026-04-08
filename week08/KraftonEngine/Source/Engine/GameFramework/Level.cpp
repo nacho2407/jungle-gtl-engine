@@ -72,13 +72,19 @@ void ULevel::Tick(float DeltaTime) {
 	}
 }
 
-void ULevel::BeginPlay() {
-	for (AActor* Actor : Actors) {
-		if (Actor) {
+void ULevel::BeginPlay()
+{
+	const size_t InitialCount = Actors.size();
+	for (size_t i = 0; i < InitialCount; ++i)
+	{
+		AActor* Actor = Actors[i];
+		if (Actor && !Actor->HasActorBegunPlay())
+		{
 			Actor->BeginPlay();
 		}
 	}
 }
+
 void ULevel::EndPlay()
 {
 	for (AActor* Actor : Actors)
