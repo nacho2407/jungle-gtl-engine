@@ -9,6 +9,7 @@
 #include "Slate/SlateApplication.h"
 
 class AActor;
+class APlayerCameraActor;
 class FEditorViewportClient;
 class FShowFlags;
 
@@ -91,6 +92,7 @@ public:
 	void TogglePIEPause();
 	void CapturePIEInput();
 	void ReleasePIEInputCapture();
+	bool CyclePIEPlayerCamera(int32 Direction);
 
 protected:
 	// 에디터 런타임 초기화 전에 ImGui/로그 라우팅을 준비한다.
@@ -154,6 +156,10 @@ private:
 	void SyncPIECursorState();
 	// PIE 입력 캡쳐 시작 시 커서를 대상 뷰포트 중앙으로 옮긴다.
 	void CenterCursorInPIEViewport();
+	// PIE 월드의 PlayerCamera 액터 목록을 현재 액터 순서대로 갱신한다.
+	void RefreshPIEPlayerCameraActors();
+	// 인덱스로 지정한 PlayerCamera를 PIE 시작/전환용 카메라로 적용한다.
+	bool ApplyPIEPlayerCameraByIndex(int32 CameraIndex);
 	// 활성 월드 종류에 따라 Editor/Preview ViewportClient를 전환한다.
 	void SyncViewportClient();
 	// 선택된 액터의 BVH를 디버그 라인 요청에 추가한다.
@@ -184,4 +190,6 @@ private:
 	bool bIsPIEActive = false;
 	bool bIsPIEPaused = false;
 	bool bIsPIEInputCaptured = false;
+	TArray<TObjectPtr<APlayerCameraActor>> PIEPlayerCameraActors;
+	int32 ActivePIEPlayerCameraIndex = -1;
 };

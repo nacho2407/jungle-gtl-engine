@@ -377,6 +377,22 @@ void FEditorViewportInputService::HandleMessage(
 			if (WParam == VK_ESCAPE && EditorEngine->IsPIEInputCaptured())
 			{
 				EditorEngine->EndPIE();
+				return;
+			}
+
+			if (EditorEngine->IsPIEInputCaptured())
+			{
+				if (WParam == VK_RIGHT)
+				{
+					EditorEngine->CyclePIEPlayerCamera(1);
+					return;
+				}
+
+				if (WParam == VK_LEFT)
+				{
+					EditorEngine->CyclePIEPlayerCamera(-1);
+					return;
+				}
 			}
 			return;
 		}
