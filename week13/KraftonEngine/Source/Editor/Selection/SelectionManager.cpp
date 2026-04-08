@@ -27,6 +27,8 @@ void FSelectionManager::SetWorld(UWorld* InWorld)
 		Gizmo->SetScene(&World->GetScene());
 		Gizmo->CreateRenderState();
 	}
+
+	SyncGizmo();
 }
 
 void FSelectionManager::Shutdown()
@@ -155,6 +157,17 @@ void FSelectionManager::ClearSelection()
 	SyncGizmo();
 }
 
+void FSelectionManager::SetGizmoEnabled(bool bEnabled)
+{
+	if (bGizmoEnabled == bEnabled)
+	{
+		return;
+	}
+
+	bGizmoEnabled = bEnabled;
+	SyncGizmo();
+}
+
 void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
 {
 	if (!Actor || !World) return;
@@ -172,6 +185,12 @@ void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
 void FSelectionManager::SyncGizmo()
 {
 	if (!Gizmo) return;
+
+	if (!bGizmoEnabled)
+	{
+		Gizmo->Deactivate();
+		return;
+	}
 
 	AActor* Primary = GetPrimarySelection();
 	if (Primary)
