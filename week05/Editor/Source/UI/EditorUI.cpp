@@ -936,7 +936,7 @@ void FEditorUI::Render()
 
 		ImGui::Spacing();
 
-		const char* First_Contributors[] = { "Kim Jiwoo", "Kim Sihyun", "Park Seyoon", "Cho Sanghyuk" };
+		const char* First_Contributors[] = { "김지수", "김태현", "박세영", "조상현" };
 		for (const char* Name : First_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
@@ -956,7 +956,7 @@ void FEditorUI::Render()
 
 		ImGui::Spacing();
 
-		const char* Second_Contributors[] = { "Kang Myeongjun", "Lee Sujin", "Jung Gyuho" };
+		const char* Second_Contributors[] = { "강명호", "오준혁", "정찬일" };
 		for (const char* Name : Second_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
@@ -976,7 +976,7 @@ void FEditorUI::Render()
 
 		ImGui::Spacing();
 
-		const char* Third_Contributors[] = { "Nam Yoonji", "Chong Chanil", "Kang Keonwoo", "Jang Minjun" };
+		const char* Third_Contributors[] = { "남윤지", "정찬일", "강건우", "장민준" };
 		for (const char* Name : Third_Contributors)
 		{
 			ImGui::SetCursorPosX(20);
