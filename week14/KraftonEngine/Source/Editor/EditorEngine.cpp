@@ -71,6 +71,17 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
+	// --- PIE 요청 처리 (프레임 경계에서 처리되도록 Tick 선두에서 소비) ---
+	if (bRequestEndPlayMapQueued)
+	{
+		bRequestEndPlayMapQueued = false;
+		EndPlayMap();
+	}
+	if (PlaySessionRequest.has_value())
+	{
+		StartQueuedPlaySessionRequest();
+	}
+
 	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
 		VC->Tick(DeltaTime);
@@ -118,6 +129,143 @@ void UEditorEngine::RenderUI(float DeltaTime)
 	MainPanel.Render(DeltaTime);
 }
 
+// ─── PIE (Play In Editor) ────────────────────────────────
+// UE 패턴 요약: Request는 단일 슬롯(std::optional)에 저장만 하고 즉시 실행하지 않는다.
+// 실제 StartPIE는 다음 Tick 선두의 StartQueuedPlaySessionRequest에서 일어난다.
+// 이유는 UI 콜백/트랜잭션 도중 같은 불안정한 타이밍을 피하기 위함.
+
+void UEditorEngine::RequestPlaySession(const FRequestPlaySessionParams& InParams)
+{
+	// 동시 요청은 UE와 동일하게 덮어쓴다 (진짜 큐 아님 — 단일 슬롯).
+	PlaySessionRequest = InParams;
+}
+
+void UEditorEngine::CancelRequestPlaySession()
+{
+	PlaySessionRequest.reset();
+}
+
+void UEditorEngine::RequestEndPlayMap()
+{
+	if (!PlayInEditorSessionInfo.has_value())
+	{
+		return;
+	}
+	bRequestEndPlayMapQueued = true;
+}
+
+void UEditorEngine::StartQueuedPlaySessionRequest()
+{
+	if (!PlaySessionRequest.has_value())
+	{
+		return;
+	}
+
+	const FRequestPlaySessionParams Params = *PlaySessionRequest;
+	PlaySessionRequest.reset();
+
+	// 이미 PIE 중이면 기존 세션을 정리 후 새로 시작 (단순화).
+	if (PlayInEditorSessionInfo.has_value())
+	{
+		EndPlayMap();
+	}
+
+	switch (Params.SessionDestination)
+	{
+	case EPIESessionDestination::InProcess:
+		StartPlayInEditorSession(Params);
+		break;
+	}
+}
+
+void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Params)
+{
+	// 1) 현재 에디터 월드를 복제해 PIE 월드 생성 (UE의 CreatePIEWorldByDuplication 대응).
+	UWorld* EditorWorld = GetWorld();
+	if (!EditorWorld)
+	{
+		return;
+	}
+	UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate(nullptr));
+	if (!PIEWorld)
+	{
+		return;
+	}
+
+	// 2) PIE WorldContext를 WorldList에 등록.
+	FWorldContext Ctx;
+	Ctx.WorldType = EWorldType::PIE;
+	Ctx.ContextHandle = FName("PIE");
+	Ctx.ContextName = "PIE";
+	Ctx.World = PIEWorld;
+	WorldList.push_back(Ctx);
+
+	// 3) 세션 정보 기록 (이전 활성 핸들 포함 — EndPlayMap에서 복원).
+	FPlayInEditorSessionInfo Info;
+	Info.OriginalRequestParams = Params;
+	Info.PIEStartTime = 0.0;
+	Info.PreviousActiveWorldHandle = GetActiveWorldHandle();
+	PlayInEditorSessionInfo = Info;
+
+	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
+	SetActiveWorld(FName("PIE"));
+
+	// GPU Occlusion readback은 ProxyId 기반이라 월드가 갈리면 stale.
+	// 이전 프레임 결과를 무효화해야 wrong-proxy hit 방지.
+	if (IRenderPipeline* Pipeline = GetRenderPipeline())
+	{
+		Pipeline->OnSceneCleared();
+	}
+
+	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
+	//    UWorld::UpdateVisibleProxies가 ActiveCamera를 기준으로 frustum culling을 수행하므로
+	//    이를 설정하지 않으면 PIE 월드의 VisibleProxies가 비어 있어 아무것도 렌더되지 않음.
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
+		{
+			PIEWorld->SetActiveCamera(VCCamera);
+		}
+	}
+
+	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
+	//    픽킹(=PIE 월드) / outliner / outline 렌더가 모두 어긋난다.
+	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(PIEWorld);
+
+	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
+	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
+	//    SpawnActor로 만든 신규 액터도 자동으로 BeginPlay된다.
+	PIEWorld->BeginPlay();
+}
+
+void UEditorEngine::EndPlayMap()
+{
+	if (!PlayInEditorSessionInfo.has_value())
+	{
+		return;
+	}
+
+	// 활성 월드를 PIE 시작 전 핸들로 복원.
+	const FName PrevHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
+	SetActiveWorld(PrevHandle);
+
+	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
+	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(GetWorld());
+
+	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
+	DestroyWorldContext(FName("PIE"));
+
+	// PIE 월드의 프록시가 모두 파괴됐으므로 GPU Occlusion readback 무효화.
+	if (IRenderPipeline* Pipeline = GetRenderPipeline())
+	{
+		Pipeline->OnSceneCleared();
+	}
+
+	PlayInEditorSessionInfo.reset();
+}
+
 // ─── 기존 메서드 ──────────────────────────────────────────
 
 void UEditorEngine::ResetViewport()
@@ -132,6 +280,7 @@ void UEditorEngine::CloseScene()
 
 void UEditorEngine::NewScene()
 {
+	StopPlayInEditorImmediate();
 	ClearScene();
 	FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
 	Ctx.World->InitWorld();
@@ -143,6 +292,7 @@ void UEditorEngine::NewScene()
 
 void UEditorEngine::ClearScene()
 {
+	StopPlayInEditorImmediate();
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(nullptr);
 
