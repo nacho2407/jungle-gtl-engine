@@ -31,25 +31,6 @@ namespace
 			return ELevelTick::LEVELTICK_TimeOnly;
 		}
 	}
-
-	bool ShouldDispatchActorTick(const AActor* Actor, EWorldType WorldType)
-	{
-		if (!Actor)
-		{
-			return false;
-		}
-
-		switch (WorldType)
-		{
-		case EWorldType::Editor:
-			return Actor->bTickInEditor;
-		case EWorldType::PIE:
-		case EWorldType::Game:
-			return Actor->bNeedsTick;
-		default:
-			return false;
-		}
-	}
 }
 
 void UEngine::Init(FWindowsWindow* InWindow)
@@ -137,10 +118,10 @@ void UEngine::WorldTick(float DeltaTime)
 		}
 	}
 
-	// 월드 타입별 Tick 라우팅 (UE 패턴 참고):
-	// - Editor: bNeedsTick 인 액터만 Tick (현재 bTickInEditor 역할)
-	// - PIE:    모든 액터 Tick
-	// - 기타:   건너뜀
+	// 월드 타입별 Tick 라우팅:
+	// - Editor: bTickInEditor 액터만 TickManager 대상
+	// - PIE/Game: BeginPlay 이후 bNeedsTick 액터만 TickManager 대상
+	// - 기타:   시간 갱신만 유지
 	for (FWorldContext& Ctx : WorldList)
 	{
 		UWorld* World = Ctx.World;
@@ -152,56 +133,10 @@ void UEngine::WorldTick(float DeltaTime)
 			continue;
 		}
 
-		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw)
-		World->Tick(DeltaTime);
-
 		const ELevelTick TickType = ToLevelTickType(Ctx.WorldType);
 
-		for (AActor* Actor : World->GetActors())
-		{
-			if (!ShouldDispatchActorTick(Actor, Ctx.WorldType))
-			{
-				continue;
-			}
-
-			FActorTickFunction& TickFn = Actor->PrimaryActorTick;
-			TickFn.bRegistered = true;
-
-			if (!TickFn.CanTick(TickType))
-			{
-				continue;
-			}
-
-			if (!TickFn.ConsumeInterval(DeltaTime))
-			{
-				continue;
-			}
-
-			TickFn.ExecuteTick(DeltaTime, TickType);
-
-			for (UActorComponent* Comp : Actor->GetComponents())
-			{
-				if (!Comp)
-				{
-					continue;
-				}
-
-				FActorComponentTickFunction& TickFn = Comp->PrimaryComponentTick;
-				TickFn.bRegistered = true;
-
-				if (!TickFn.CanTick(TickType))
-				{
-					continue;
-				}
-
-				if (!TickFn.ConsumeInterval(DeltaTime))
-				{
-					continue;
-				}
-
-				TickFn.ExecuteTick(DeltaTime, TickType);
-			}
-		}
+		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw /s TickManager)
+		World->Tick(DeltaTime, TickType);
 	}
 }
 

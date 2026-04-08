@@ -18,7 +18,7 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 	Ar << bIsBillboard;
 }
 
-void UBillboardComponent::TickComponent(float DeltaTime)
+void UBillboardComponent::Tick(float DeltaTime)
 {
 	if (!GetOwner() || !GetOwner()->GetWorld()) return;
 

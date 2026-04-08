@@ -24,7 +24,7 @@ void UActorComponent::Deactivate()
 }
 
 
-void UActorComponent::TickComponent(float DeltaTime)
+void UActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	if (GetOwner() == nullptr)
 	{
@@ -77,9 +77,10 @@ void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
 	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, &bAutoActivate });
 	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, &bCanEverTick });
+	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, &PrimaryComponentTick.bTickEnabled });
 }
 
 void UActorComponent::Tick(float DeltaTime)
 {
-
+	
 }
