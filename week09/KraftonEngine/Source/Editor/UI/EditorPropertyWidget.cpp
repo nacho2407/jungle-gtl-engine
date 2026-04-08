@@ -341,13 +341,18 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 		if (Comp->IsA<USceneComponent>()) continue;
 
 		FString Name = Comp->GetFName().ToString();
-		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+		const FString TypeName = Comp->GetTypeInfo()->name;
+		const FString DefaultNamePrefix = TypeName + "_";
+		const bool bUseTypeAsLabel = Name.empty()
+			|| Name == TypeName
+			|| Name.rfind(DefaultNamePrefix, 0) == 0;
+		const char* Label = bUseTypeAsLabel ? TypeName.c_str() : Name.c_str();
 
 		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		if (!bActorSelected && SelectedComponent == Comp)
 			Flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx(Comp, Flags, "[%s] %s", Comp->GetTypeInfo()->name, Name.c_str());
+		ImGui::TreeNodeEx(Comp, Flags, "%s", Label);
 		if (ImGui::IsItemClicked())
 		{
 			SelectedComponent = Comp;
