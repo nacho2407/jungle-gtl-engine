@@ -340,6 +340,9 @@
     <ClCompile Include="Source\Actor\BillboardActor.cpp">
       <Filter>Source\Actor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Component\MoveComponent.cpp">
+      <Filter>Source\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\CoreMinimal.h">
@@ -963,6 +966,9 @@
     </ClInclude>
     <ClInclude Include="Source\Actor\BillboardActor.h">
       <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\MoveComponent.h">
+      <Filter>Source\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
