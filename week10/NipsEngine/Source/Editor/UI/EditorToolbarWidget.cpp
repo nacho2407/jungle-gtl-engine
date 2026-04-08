@@ -1,7 +1,8 @@
-#include "Editor/UI/EditorToolbarWidget.h"
+﻿#include "Editor/UI/EditorToolbarWidget.h"
 
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
+#include "Editor/UI/EditorPlayStreamWidget.h"
 #include "Core/ResourceManager.h"
 #include "Serialization/SceneSaveManager.h"
 #include "ImGui/imgui.h"
@@ -108,6 +109,11 @@ void FEditorToolbarWidget::SetSceneWidget(FEditorSceneWidget* InSceneWidget)
 	SceneWidget = InSceneWidget;
 }
 
+void FEditorToolbarWidget::SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget)
+{
+	PlayStreamWidget = InPlayStreamWidget;
+}
+
 void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bool* InShowConsole,
 	bool* InShowControl,
@@ -162,6 +168,11 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 	RenderViewMenu();
 	RenderEditMenu();
 	RenderHelpMenu();
+
+	if (PlayStreamWidget)
+	{
+		PlayStreamWidget->Render(DeltaTime);
+	}
 
 	ImGui::EndMainMenuBar();
 }
