@@ -8,12 +8,32 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/SubUVSceneProxy.h"
+#include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
 FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 {
 	return new FSubUVSceneProxy(this);
+}
+
+void USubUVComponent::Serialize(FArchive& Ar)
+{
+	UBillboardComponent::Serialize(Ar);
+
+	Ar << ParticleName;
+	Ar << FrameIndex;
+	Ar << Width;
+	Ar << Height;
+	Ar << PlayRate;
+	Ar << bLoop;
+}
+
+void USubUVComponent::PostDuplicate()
+{
+	UBillboardComponent::PostDuplicate();
+	// 파티클 리소스 재바인딩
+	SetParticle(ParticleName);
 }
 
 USubUVComponent::USubUVComponent()

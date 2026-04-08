@@ -41,6 +41,9 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
+	void Serialize(FArchive& Ar) override;
+	void PostDuplicate() override;
+
 	// --- Text ---
 	void SetText(const FString& InText) { Text = InText; }
 	const FString& GetText() const { return Text; }

@@ -9,6 +9,7 @@ FSubUVSceneProxy::FSubUVSceneProxy(USubUVComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
 	bBatcherRendered = true;
+	bShowAABB = false;
 }
 
 USubUVComponent* FSubUVSceneProxy::GetSubUVComponent() const

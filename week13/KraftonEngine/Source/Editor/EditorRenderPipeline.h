@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Pipeline/IRenderPipeline.h"
 #include "Render/Pipeline/RenderCollector.h"
 #include "Render/Pipeline/RenderBus.h"

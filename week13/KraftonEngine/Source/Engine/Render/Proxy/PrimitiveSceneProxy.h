@@ -62,6 +62,7 @@ public:
 	bool bSelected = false;
 	bool bSupportsOutline = true;
 	bool bNeverCull = false;		// true면 frustum culling 대상에서 제외 (Gizmo 등 에디터 프록시)
+	bool bShowAABB = true;			// 선택 시 AABB 디버그 라인 표시 여부 (Billboard/SubUV 등은 false)
 
 	// --- 렌더 패스 ---
 	ERenderPass Pass = ERenderPass::Opaque;

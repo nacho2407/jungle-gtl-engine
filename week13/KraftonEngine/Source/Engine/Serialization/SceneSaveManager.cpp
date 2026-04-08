@@ -495,10 +495,9 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			}
 
 			if (!Actor) {
-				UObject* ActorObj = FObjectFactory::Get().Create(ActorClass);
+				UObject* ActorObj = FObjectFactory::Get().Create(ActorClass, World);
 				if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
 				Actor = static_cast<AActor*>(ActorObj);
-				Actor->SetWorld(World);
 				World->AddActor(Actor);
 			}
 
@@ -523,7 +522,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			if (ActorJSON.hasKey(SceneKeys::NonSceneComponents)) {
 				for (auto& CompJSON : ActorJSON[SceneKeys::NonSceneComponents].ArrayRange()) {
 					string CompClass = CompJSON[SceneKeys::ClassName].ToString();
-					UObject* CompObj = FObjectFactory::Get().Create(CompClass);
+					UObject* CompObj = FObjectFactory::Get().Create(CompClass, Actor);
 					if (!CompObj || !CompObj->IsA<UActorComponent>()) continue;
 
 					UActorComponent* Comp = static_cast<UActorComponent*>(CompObj);
@@ -550,7 +549,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner)
 {
 	string ClassName = Node[SceneKeys::ClassName].ToString();
-	UObject* Obj = FObjectFactory::Get().Create(ClassName);
+	UObject* Obj = FObjectFactory::Get().Create(ClassName, Owner);
 	if (!Obj || !Obj->IsA<USceneComponent>()) return nullptr;
 
 	USceneComponent* Comp = static_cast<USceneComponent*>(Obj);
