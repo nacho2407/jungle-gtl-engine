@@ -13,7 +13,7 @@ public:
 	~UWorld() override;
 
 	virtual UWorld* Duplicate() override;
-	virtual UWorld* DuplicateSubObjects() override { return this; }
+	virtual UWorld* DuplicateSubObjects() override;
 
     // Actor lifecycle
     template<typename T>
@@ -29,14 +29,17 @@ public:
 		PersistentLevel->AddActor(Actor);
         return Actor;
     }
+
     void DestroyActor(AActor* Actor) 
 	{
-        // remove and clean up
         if (!Actor) return;
-        Actor->EndPlay();
+
+        Actor->EndPlay(EEndPlayReason::Type::Destroyed);
 		PersistentLevel->RemoveActor(Actor);
         UObjectManager::Get().DestroyObject(Actor);
     }
+
+
 
 	TArray<AActor*> GetActors() const { return PersistentLevel->GetActors(); }
 
@@ -44,7 +47,7 @@ public:
 
     void BeginPlay();      // Triggers BeginPlay on all actors
     void Tick(float DeltaTime);  // Drives the game loop every frame
-    void EndPlay();        // Cleanup before world is destroyed
+    void EndPlay(EEndPlayReason::Type EndPlayReason); // Cleanup before world is destroyed
 
     bool HasBegunPlay() const { return bHasBegunPlay; }
 
@@ -52,7 +55,11 @@ public:
     void SetActiveCamera(FViewportCamera* InCamera) { ActiveCamera = InCamera; }
 	FViewportCamera* GetActiveCamera() const { return ActiveCamera; }
 
+	EWorldType GetWorldType() const { return WorldType; }
+	void SetWorld(EWorldType InWorldType) { WorldType = InWorldType; }
+
 private:
+	EWorldType WorldType = EWorldType::Editor;
 	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
     bool bHasBegunPlay = false;

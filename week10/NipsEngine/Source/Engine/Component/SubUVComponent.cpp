@@ -48,6 +48,8 @@ USubUVComponent* USubUVComponent::Duplicate()
     NewComp->bLoop = this->bLoop;
     NewComp->bIsExecute = this->bIsExecute;
 
+	NewComp->DuplicateSubObjects();
+
     return NewComp;
 }
 
