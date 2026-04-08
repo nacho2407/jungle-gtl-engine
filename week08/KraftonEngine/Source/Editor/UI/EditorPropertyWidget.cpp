@@ -195,7 +195,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 	}
 	else if (SelectedComponent)
 	{
-		RenderComponentProperties();
+		RenderComponentProperties(PrimaryActor);
 	}
 	else
 	{
@@ -396,10 +396,20 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	}
 }
 
-void FEditorPropertyWidget::RenderComponentProperties()
+void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
+	ImGui::SameLine();
+	if (ImGui::Button("Remove"))
+	{
+		//if (SelectedComponent != nullptr)
+		//{
+		//	Actor->RemoveComponent(SelectedComponent);
+		//	SelectedComponent = nullptr;
+		//	return;
+		//}
+	}
 	ImGui::Separator();
 
 	// PropertyDescriptor 기반 자동 위젯 렌더링
