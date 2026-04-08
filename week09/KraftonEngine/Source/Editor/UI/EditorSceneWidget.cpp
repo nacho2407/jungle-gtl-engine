@@ -63,6 +63,8 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Save Scene"))
 	{
+		// PIE 중이면 먼저 종료해 에디터 월드를 활성화한 뒤 저장.
+		EditorEngine->StopPlayInEditorImmediate();
 		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
 		if (Ctx)
 		{

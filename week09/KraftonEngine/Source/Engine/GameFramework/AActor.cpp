@@ -146,6 +146,19 @@ void AActor::AddActorWorldOffset(const FVector& Delta)
 	}
 }
 
+void AActor::BeginPlay()
+{
+	// 재진입 방지 — UE의 HasActorBegunPlay() 가드 대응.
+	if (bActorHasBegunPlay) return;
+	bActorHasBegunPlay = true;
+
+	// UE 순서: 컴포넌트 BeginPlay 먼저, 그다음 Actor 본인 (오버라이드 측 Super 호출 시).
+	for (UActorComponent* Comp : OwnedComponents)
+	{
+		if (Comp) Comp->BeginPlay();
+	}
+}
+
 void AActor::Tick(float DeltaTime)
 {
 	for (UActorComponent* ActorComp : OwnedComponents)
@@ -274,10 +287,10 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 
 	Dup->bPrimitiveCacheDirty = true;
 
-	// 4) 월드에 등록
-	if (UWorld* World = GetWorld())
+	// 4) 월드에 등록 — Dup의 Outer(=대상 World)에 등록해야 PIE 복제 시에도 올바르게 동작.
+	if (UWorld* DestWorld = Dup->GetTypedOuter<UWorld>())
 	{
-		World->AddActor(Dup);
+		DestWorld->AddActor(Dup);
 	}
 
 	return Dup;
