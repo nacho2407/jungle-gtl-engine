@@ -383,6 +383,7 @@
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
     <ClInclude Include="Source\Engine\Geometry\AABB.h" />
+    <ClInclude Include="Source\Engine\Geometry\Edge.h" />
     <ClInclude Include="Source\Engine\Geometry\Frustum.h" />
     <ClInclude Include="Source\Engine\Geometry\Plane.h" />
     <ClInclude Include="Source\Engine\Geometry\Ray.h" />
@@ -401,6 +402,7 @@
     <ClInclude Include="Source\Engine\Object\Object.h" />
     <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
+    <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
