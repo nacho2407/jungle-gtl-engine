@@ -60,6 +60,13 @@ public:
 
 	EEditorState GetEditorState() const { return EditorState; }
 
+	void StartPlaySession();
+	void PausePlaySession();
+	void StopPlaySession();
+
+private:
+	void SetEditorState(EEditorState NewState) { EditorState = NewState; }
+
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;	
