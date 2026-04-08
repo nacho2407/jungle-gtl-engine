@@ -207,7 +207,9 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
 	//    픽킹(=PIE 월드) / outliner / outline 렌더가 모두 어긋난다.
 	SelectionManager.ClearSelection();
+	SelectionManager.SetGizmoEnabled(false);
 	SelectionManager.SetWorld(PIEWorld);
+	MainPanel.HideEditorWindowsForPIE();
 
 	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
 	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
@@ -254,7 +256,9 @@ void UEditorEngine::EndPlayMap()
 
 	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
 	SelectionManager.ClearSelection();
+	SelectionManager.SetGizmoEnabled(true);
 	SelectionManager.SetWorld(GetWorld());
+	MainPanel.RestoreEditorWindowsAfterPIE();
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));

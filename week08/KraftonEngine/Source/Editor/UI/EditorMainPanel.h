@@ -2,6 +2,7 @@
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/EditorPropertyWidget.h"
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
@@ -18,6 +19,8 @@ public:
 	void Release();
 	void Render(float DeltaTime);
 	void Update();
+	void HideEditorWindowsForPIE();
+	void RestoreEditorWindowsAfterPIE();
 
 private:
 #if STATS
@@ -32,4 +35,8 @@ private:
 	FEditorSceneWidget SceneWidget;
 	FEditorStatWidget StatWidget;
 	bool bShowWidgetList = false;
+	bool bHideEditorWindows = false;
+	bool bHasSavedUIVisibility = false;
+	bool bSavedShowWidgetList = false;
+	FEditorSettings::FUIVisibility SavedUIVisibility{};
 };

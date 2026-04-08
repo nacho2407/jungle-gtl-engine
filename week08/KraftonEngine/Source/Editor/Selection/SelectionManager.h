@@ -33,6 +33,7 @@ public:
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 
+	void SetGizmoEnabled(bool bEnabled);
 	void SetWorld(UWorld* InWorld);
 
 private:
@@ -42,4 +43,5 @@ private:
 	TArray<AActor*> SelectedActors;
 	UGizmoComponent* Gizmo = nullptr;
 	UWorld* World = nullptr;
+	bool bGizmoEnabled = true;
 };
