@@ -889,7 +889,7 @@ void FEditorUI::Render()
 			const bool bIsPIEPaused = Engine->IsPIEPaused();
 			const char* PIEPrimaryLabel = !bIsPIEActive
 				? "▶ Start"
-				: (bIsPIEPaused ? "▶ Resume" : "❚❚ Pause");
+				: (bIsPIEPaused ? "▶ Resume" : "▷ Pause");
 
 			if (ImGui::Button(PIEPrimaryLabel))
 			{
