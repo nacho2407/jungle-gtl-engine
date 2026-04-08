@@ -39,10 +39,10 @@ std::string GetFilePathUsingDialog(EFileDialogType Type)
 
 	OPENFILENAMEW Ofn = {};
 	Ofn.lStructSize = sizeof(OPENFILENAMEW);
-	Ofn.lpstrFilter = L"JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
+	Ofn.lpstrFilter = L"Scene Files (*.scene)\0*.scene\0JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
 	Ofn.lpstrFile = FileName;
 	Ofn.nMaxFile = MAX_PATH;
-	Ofn.lpstrDefExt = L"json";
+	Ofn.lpstrDefExt = L"scene";
 	Ofn.lpstrInitialDir = SceneDir.c_str();
 
 	if (Type == EFileDialogType::Save)

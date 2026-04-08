@@ -376,8 +376,6 @@ void FEditorEngine::BuildDebugLineRenderRequest(const FShowFlags& ShowFlags, FDe
 
 void FEditorEngine::AppendSelectedBVH(FDebugLineRenderRequest& InOutRequest) const
 {
-	return;
-
 	AActor* SelectedActor = GetSelectedActor();
 	if (!SelectedActor)
 	{
