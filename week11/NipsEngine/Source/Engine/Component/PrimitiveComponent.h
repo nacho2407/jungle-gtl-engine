@@ -23,7 +23,7 @@ public:
 	void PostEditProperty(const char * PropertyName) override;
 
 	/* Visibility */
-	void SetVisibility(bool bVisible) { bIsVisible = bVisible; }
+	void SetVisibility(bool bVisible);
 	bool IsVisible() const { return bIsVisible; }
 
 	/* Getter */
@@ -48,6 +48,9 @@ public:
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
+    void OnTransformDirty() override;
+    void NotifySpatialIndexDirty() const;
+
 	mutable FAABB WorldAABB;
 	bool bIsVisible = true;
 };
