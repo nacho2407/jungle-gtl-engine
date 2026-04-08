@@ -41,7 +41,8 @@ public:
 	void InvalidateVisibleSet();
 
 	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
-	TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() { return VisibleProxies; }
+	TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() { return Scene.GetVisibleProxiesMutable(); }
+	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return Scene.GetVisibleProxies(); }
 	void RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index);
 	void UpdateVisibleProxies();
 
@@ -79,7 +80,6 @@ private:
 
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
-	TArray<FPrimitiveSceneProxy*> VisibleProxies;
 
 	UCameraComponent* ActiveCamera = nullptr;
 	UCameraComponent* LastLODUpdateCamera = nullptr;
@@ -88,7 +88,6 @@ private:
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;
 	bool bDeferredPickingBVHDirty = false;
-	bool bVisibleSetDirty = true;
 	bool bHasVisibleCameraState = false;
 	uint32 VisibleProxyBuildFrame = 0;
 	FVector LastVisibleCameraPos = FVector(0, 0, 0);
