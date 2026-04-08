@@ -4,6 +4,22 @@
 DEFINE_CLASS(UCameraComponent, USceneComponent)
 REGISTER_FACTORY(UCameraComponent)
 
+UCameraComponent* UCameraComponent::Duplicate()
+{
+	UCameraComponent* NewComp = UObjectManager::Get().CreateObject<UCameraComponent>();
+    
+    NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr); 
+
+    NewComp->SetRelativeLocation(this->GetRelativeLocation());
+    NewComp->SetRelativeRotation(this->GetRelativeRotation());
+    NewComp->SetRelativeScale(this->GetRelativeScale());
+
+    NewComp->CameraState = this->CameraState;
+
+    return NewComp;
+}
+
 FMatrix UCameraComponent::GetViewMatrix() const
 {
 	UpdateWorldMatrix();

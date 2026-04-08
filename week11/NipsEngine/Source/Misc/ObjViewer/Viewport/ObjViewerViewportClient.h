@@ -1,13 +1,12 @@
 ﻿#pragma once
 #include "Render/Common/RenderTypes.h"
-
 #include "Viewport/CursorOverlayState.h"
-#include <string>
-#include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 
-// Editor의 네비게이션 컨트롤러를 포함합니다.
-#include "Editor/Viewport/ViewportNavigationController.h" 
+#include "Engine/Math/Quat.h"
+#include "Engine/Geometry/Ray.h"
+
+#include <string>
 
 class FViewportCamera;
 class UWorld;
@@ -40,11 +39,7 @@ public:
 	void Initialize(FWindowsWindow* InWindow);
 	void SetWorld(UWorld* InWorld) { World = InWorld; }
 	void SetSettings(const FObjViewerSettings* InSettings) { Settings = InSettings; }
-	void SetSelectionManager(FSelectionManager* InSelectionManager) 
-	{ 
-		SelectionManager = InSelectionManager; 
-		NavigationController.SetSelectionManager(InSelectionManager); 
-	}
+	void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
 	void SetViewportSize(float InWidth, float InHeight);
 
 	// Camera lifecycle
@@ -54,6 +49,10 @@ public:
 	void ResetCameraSmoothly();
 	void SaveCameraPosition();
 
+	// 카메라 조작감 개선
+	void ClampCameraPosition();
+	void ClampCameraPanToObject();
+	ObjViewerModelInfo GetModelInfo();
 	FViewportCamera* GetCamera() const { return Camera; }
 
 	// SetViewportSize를 대체
@@ -82,9 +81,6 @@ private:
 	const FObjViewerSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
 
-	// 기존 수동 짐벌락/팬 연산 대신 Editor의 컨트롤러 사용
-	FViewportNavigationController NavigationController;
-
 	float ViewportX = 0.0f;
     float ViewportY = 0.0f;
 	float WindowWidth = 1920.f;
@@ -94,19 +90,15 @@ private:
 	bool bSavedCameraPosition = false;
 	FVector SavedCameraLocation;
 	FQuat SavedCameraRotation;
+	FVector SavedOrbitPivot;
+	float SavedOrbitDistance = 10.0f;
 	
 	FCameraGUIParameters CameraGUIParams;
-
-	// 입력 상태 추적 변수들 (EditorViewportClient에서 차용)
-	bool bRightMouseRotating = false;		// 우클릭 드래그 = 회전
-	bool bRightMousePanning  = false;		// 직교 뷰 우클릭 = 팬
-	bool bMiddleMousePanning = false;		// 중클릭 드래그 = 팬
-	bool bAltRightMouseDollying = false;	// Alt + 우클릭 = Dolly(줌)
-
-	bool bFirstMouseMoveAfterRotateStart   = false;
-	bool bFirstMouseMoveAfterRightPanStart = false;
-	bool bFirstMouseMoveAfterPanStart      = false;
-	bool bFirstMouseMoveAfterDollyStart    = false;
+	
+	// Viewer 전용 중심점 기준 회전 조작에 사용
+	bool bIsOrbiting = false;
+	FVector OrbitPivot = FVector(0.0f, 0.0f, 0.0f);
+	float OrbitDistance = 10.0f;
 
 	FCursorOverlayState CursorOverlayState;
 };

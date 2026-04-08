@@ -8,6 +8,9 @@ class UStaticMeshComponent : public UMeshComponent
 public:
 	DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
 	UStaticMeshComponent();
+	
+	virtual UStaticMeshComponent* Duplicate() override;
+	virtual UStaticMeshComponent* DuplicateSubObjects() override { return this; }
 
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
 	UStaticMesh* GetStaticMesh() const;
