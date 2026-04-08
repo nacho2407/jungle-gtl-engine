@@ -226,6 +226,15 @@ void UEditorEngine::EndPlayMap()
 	const FName PrevHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
 	SetActiveWorld(PrevHandle);
 
+	// 복귀한 Editor 월드의 VisibleProxies/캐시된 카메라 상태를 강제 무효화.
+	// PIE 중 Editor WorldTick이 skip되어 캐시가 PIE 시작 전 시점 그대로 남아 있고,
+	// NeedsVisibleProxyRebuild()가 카메라 변화 기반이라 false를 반환하면 stale
+	// VisibleProxies가 그대로 재사용되어 dangling proxy 참조로 크래시가 날 수 있다.
+	if (UWorld* EditorWorld = GetWorld())
+	{
+		EditorWorld->InvalidateVisibleSet();
+	}
+
 	// Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(GetWorld());
