@@ -34,6 +34,7 @@ namespace EditorKey
 	constexpr const char* bGizmo = "bGizmo";
 	constexpr const char* bBillboardText = "bBillboardText";
 	constexpr const char* bBoundingVolume = "bBoundingVolume";
+	constexpr const char* bBVHBoundingVolume = "bBVHBoundingVolume";
 
 	// Grid
 	constexpr const char* Grid = "Grid";
@@ -87,6 +88,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	ViewObj[EditorKey::bGizmo] = ShowFlags.bGizmo;
 	ViewObj[EditorKey::bBillboardText] = ShowFlags.bBillboardText;
 	ViewObj[EditorKey::bBoundingVolume] = ShowFlags.bBoundingVolume;
+	ViewObj[EditorKey::bBVHBoundingVolume] = ShowFlags.bBVHBoundingVolume;
 	Root[EditorKey::View] = ViewObj;
 
 	// Grid
@@ -210,6 +212,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			ShowFlags.bBillboardText = ViewObj[EditorKey::bBillboardText].ToBool();
 		if (ViewObj.hasKey(EditorKey::bBoundingVolume))
 			ShowFlags.bBoundingVolume = ViewObj[EditorKey::bBoundingVolume].ToBool();
+		if (ViewObj.hasKey(EditorKey::bBVHBoundingVolume))
+			ShowFlags.bBVHBoundingVolume = ViewObj[EditorKey::bBVHBoundingVolume].ToBool();
 	}
 
 	// Grid
