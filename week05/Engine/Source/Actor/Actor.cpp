@@ -547,14 +547,14 @@ void AActor::Serialize(FArchive& Ar)
 		}
 		if (RootComponent)
 		{
-			for (UActorComponent* Comp : OwnedComponents)
-			{
-				if (Comp != RootComponent && Comp->IsA(USceneComponent::StaticClass()))
-				{
-					USceneComponent* SceneComp = static_cast<USceneComponent*>(Comp);
-					SceneComp->AttachTo(RootComponent);
-				}
-			}
+			//for (UActorComponent* Comp : OwnedComponents)
+			//{
+			//	if (Comp != RootComponent && Comp->IsA(USceneComponent::StaticClass()))
+			//	{
+			//		USceneComponent* SceneComp = static_cast<USceneComponent*>(Comp);
+			//		SceneComp->AttachTo(RootComponent);
+			//	}
+			//}
 		}
 	}
 }
