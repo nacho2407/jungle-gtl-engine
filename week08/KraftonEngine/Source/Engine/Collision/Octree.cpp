@@ -118,6 +118,23 @@ void FOctree::TryMergeUpward()
 	}
 }
 
+void FOctree::TryMergeRecursive()
+{
+	if (!IsLeaf())
+	{
+		// Copy children pointers because TryMerge() may delete and clear Children.
+		TArray<FOctree*> Snapshot = Children;
+		for (FOctree* Child : Snapshot)
+		{
+			if (Child)
+			{
+				Child->TryMergeRecursive();
+			}
+		}
+	}
+	TryMerge();
+}
+
 bool FOctree::Remove(UPrimitiveComponent* Primitive)
 {
 	if (!Primitive)
