@@ -384,14 +384,8 @@ void UWorld::Tick(float DeltaTime)
 	DebugDrawQueue.Tick(DeltaTime);
 #endif
 
-#ifndef FPS_OPTIMIZATION
-	// 유효하게 돌아가는 로직이 billboardcomponent 뿐인 것에 비해 오버헤드가 꽤 커서 이번 기간동안 주석
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && Actor->bNeedsTick)
-			Actor->Tick(DeltaTime);
-	}
-#endif
+	// 액터 Tick 루프는 월드 타입별로 다르게 돌아야 하므로 UEngine::WorldTick에서 처리한다.
+	(void)DeltaTime;
 }
 
 void UWorld::EndPlay()
