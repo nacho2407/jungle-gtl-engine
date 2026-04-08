@@ -10,8 +10,9 @@ UActorComponent* UActorComponent::Duplicate()
     NewComp->bIsActive = this->bIsActive;
     NewComp->bAutoActivate = this->bAutoActivate;
     NewComp->bCanEverTick = this->bCanEverTick;
-
     NewComp->Owner = nullptr;
+
+	NewComp->DuplicateSubObjects();
 
     return NewComp;
 }

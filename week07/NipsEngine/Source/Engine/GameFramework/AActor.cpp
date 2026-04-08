@@ -31,6 +31,8 @@ AActor* AActor::Duplicate()
 	AActor* NewActor = UObjectManager::Get().CreateObject<AActor>();
 	NewActor->SetVisible(this->IsVisible());
 	NewActor->PendingActorLocation = this->PendingActorLocation;
+	NewActor->bIsActive = this->bIsActive;
+	NewActor->bTickInEditor = this->bTickInEditor;
 	
 	// 컴포넌트들 간의 부모-자식 관계를 재조립하기 위한 맵을 선언합니다.
 	TMap<USceneComponent*, USceneComponent*> ComponentMap;
@@ -186,13 +188,41 @@ void AActor::SetActorLocation(const FVector& NewLocation) {
 	}
 }
 
+void AActor::BeginPlay()
+{
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            Component->BeginPlay();
+        }
+    }
+}
 
 void AActor::Tick(float DeltaTime)
 {
-	for (UActorComponent* ActorComp : OwnedComponents)
+	FVector CurrentRotation = GetActorRotation();
+	CurrentRotation.Z += 90.0f * DeltaTime;
+	SetActorRotation(CurrentRotation);
+
+	for (UActorComponent* Component : OwnedComponents)
 	{
-		ActorComp->ExecuteTick(DeltaTime);
+		if (Component && Component->IsActive())
+		{
+			Component->ExecuteTick(DeltaTime);
+		}
 	}
+}
+
+void AActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            Component->EndPlay();
+        }
+    }
 }
 
 void AActor::NotifyComponentRegistered(UActorComponent* Component)

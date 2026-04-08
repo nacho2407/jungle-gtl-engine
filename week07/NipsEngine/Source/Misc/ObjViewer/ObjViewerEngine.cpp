@@ -31,7 +31,7 @@ void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 	// 프리뷰 전용 월드 생성
 	if (WorldList.empty())
 	{
-		CreateWorldContext(EWorldType::Preview, FName("ObjViewerPath"), "ObjViewerWorld");
+		CreateWorldContext(EWorldType::ViewerPreview, FName("ObjViewerPath"), "ObjViewerWorld");
 	}
 	SetActiveWorld(WorldList[0].ContextHandle);
 

@@ -24,6 +24,8 @@ USceneComponent* USceneComponent::Duplicate()
     NewComp->ParentComponent = nullptr;
     NewComp->ChildComponents.clear();
 
+	NewComp->DuplicateSubObjects();
+
     return NewComp;
 }
 
