@@ -2,7 +2,7 @@
 
 #include "Actor.h"
 
-class UTextComponent;
+class UTextRenderComponent;
 
 class ENGINE_API ATextActor : public AActor
 {
@@ -12,5 +12,5 @@ public:
 	void PostSpawnInitialize() override;
 
 private:
-	UTextComponent* TextComponent = nullptr;
+	UTextRenderComponent* TextComponent = nullptr;
 };

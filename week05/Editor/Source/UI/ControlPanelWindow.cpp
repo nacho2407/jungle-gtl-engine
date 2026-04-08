@@ -237,7 +237,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 				if (NewActor)
 				{
 					ATextActor* TextActor = static_cast<ATextActor*>(NewActor);
-					if (UTextComponent* TextComponent = TextActor->GetComponentByClass<UTextComponent>())
+					if (UTextRenderComponent* TextComponent = TextActor->GetComponentByClass<UTextRenderComponent>())
 					{
 						if (SpawnTextBuffer[0] != '\0') TextComponent->SetText(SpawnTextBuffer);
 						else TextComponent->SetText("Text");

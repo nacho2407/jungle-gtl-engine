@@ -3,11 +3,11 @@
 #include "Object/Class.h"
 #include <limits>
 
-IMPLEMENT_RTTI(UUUIDBillboardComponent, UTextComponent)
+IMPLEMENT_RTTI(UUUIDBillboardComponent, UTextRenderComponent)
 
 void UUUIDBillboardComponent::PostConstruct()
 {
-	UTextComponent::PostConstruct();
+	UTextRenderComponent::PostConstruct();
 	SetBillboard(true);
 	bDrawDebugBounds = false;
 	SetTextScale(0.3f); // UUID 빌보드의 기본 스케일 설정

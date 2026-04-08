@@ -3,10 +3,10 @@
 
 #include "Renderer/MeshData.h"
 
-class ENGINE_API UTextComponent : public UPrimitiveComponent
+class ENGINE_API UTextRenderComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_RTTI(UTextComponent, UPrimitiveComponent)
+	DECLARE_RTTI(UTextRenderComponent, UPrimitiveComponent)
 
 	void PostConstruct() override;
 
