@@ -272,15 +272,14 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : WindowWidth;
 	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
 	//성능 향상을 위해 필요할 때만 아래 분기에서 Ray 생성.
-	//FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
+	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
 
 	// 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
-	//FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
+	FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
 
 	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
 	{
-		FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 		HandleDragStart(Ray);
 	}
 	else if (InputSystem::Get().GetLeftDragging())
@@ -293,7 +292,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 		if (Gizmo->IsHolding())
 		{
-			FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 			Gizmo->UpdateDrag(Ray);
 		}
 	}
