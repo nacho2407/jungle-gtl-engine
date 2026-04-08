@@ -51,6 +51,10 @@ public:
 	UObject();
 	virtual ~UObject();
 
+	// Shallow, Deep Copy
+	virtual UObject* DuplicateSubObjects();
+	virtual UObject* Duplicate();
+
 	uint32 GetUUID() const { return UUID; }
 	uint32 GetInternalIndex() const { return InternalIndex; }
 	void SetUUID(uint32 InUUID) { UUID = InUUID; }
@@ -59,6 +63,15 @@ public:
 	// FName
 	FName GetFName() const { return ObjectName; }
 	void SetFName(const FName& InName) { ObjectName = InName; }
+
+	struct FObjectNameProxy : public FString
+	{
+		using FString::FString;
+		FObjectNameProxy(const FString& InStr) : FString(InStr) {}
+		const char* operator*() const { return c_str(); }
+	};
+
+	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
 
 	// RTTI stuffs
 	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
@@ -73,15 +86,6 @@ public:
 	const T* Cast() const { return IsA<T>() ? static_cast<const T*>(this) : nullptr; }
 
 	bool IsValidLowLevel() const { return this != nullptr; }
-
-	struct FObjectNameProxy : public FString
-	{
-		using FString::FString;
-		FObjectNameProxy(const FString& InStr) : FString(InStr) {}
-		const char* operator*() const { return c_str(); }
-	};
-
-	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
 
 	static const FTypeInfo s_TypeInfo;
 

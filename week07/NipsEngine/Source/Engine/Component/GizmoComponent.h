@@ -8,7 +8,6 @@ struct FMeshData;
 
 class UGizmoComponent : public UPrimitiveComponent
 {
-
 private:
 	enum EGizmoMode
 	{

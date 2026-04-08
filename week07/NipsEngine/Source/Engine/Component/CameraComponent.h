@@ -22,6 +22,9 @@ public:
 	DECLARE_CLASS(UCameraComponent, USceneComponent)
 
 	UCameraComponent() = default;
+	
+	virtual UCameraComponent* Duplicate() override;
+	virtual UCameraComponent* DuplicateSubObjects() override { return this; }
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 

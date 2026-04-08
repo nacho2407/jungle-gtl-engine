@@ -37,6 +37,9 @@ public:
         UObjectManager::Get().DestroyObject(Actor);
     }
 
+	virtual UWorld* Duplicate() override;
+    virtual UWorld* DuplicateSubObjects() override;
+
     const TArray<AActor*>& GetActors() const { return Actors; }
     void AddActor(AActor* Actor) { Actors.push_back(Actor); }
 

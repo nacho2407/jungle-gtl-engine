@@ -14,6 +14,40 @@ AActor::~AActor() {
 	RootComponent = nullptr;
 }
 
+AActor* AActor::AActor::Duplicate()
+{
+	AActor* NewActor = UObjectManager::Get().CreateObject<AActor>();
+	NewActor->SetVisible(this->IsVisible());
+	NewActor->PendingActorLocation = this->PendingActorLocation;
+
+	for (UActorComponent* OriginalComp : this->OwnedComponents)
+	{
+		if (OriginalComp)
+		{
+			UActorComponent* DuplicatedComp = OriginalComp->Duplicate();
+
+			DuplicatedComp->SetOwner(NewActor);
+			NewActor->OwnedComponents.push_back(DuplicatedComp);
+
+			if (OriginalComp == this->RootComponent)
+			{
+				NewActor->SetRootComponent(Cast<USceneComponent>(DuplicatedComp));
+			}
+		}
+	}
+
+	// 씬 컴포넌트의 부모-자식 관계를 재연결하는 소스코드를 작성할 필요가 있을 수 있다.
+
+	NewActor->bPrimitiveCacheDirty;
+
+	return NewActor;
+}
+
+AActor* AActor::DuplicateSubObjects()
+{
+	return this;
+}
+
 UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 	if (!Class) return nullptr;
 

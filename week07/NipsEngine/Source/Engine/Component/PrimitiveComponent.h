@@ -13,6 +13,11 @@ class UPrimitiveComponent : public USceneComponent
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
 
+	// 순수 가상 함수가 포함되어 있으므로 UPrimitiveComponent 스스로 인스턴스화할 수 없습니다.
+	// Duplicate() 함수를 순수 가상 함수로 만들어 자식에게 구현을 강제합니다.
+    virtual UPrimitiveComponent* Duplicate() override = 0;
+    virtual UPrimitiveComponent* DuplicateSubObjects() override { return this; }
+
 	/* For Property window */
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
