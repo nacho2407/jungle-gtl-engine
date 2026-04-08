@@ -14,3 +14,9 @@ void ATextActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void ATextActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<ATextActor*>(DuplicatedObject)->TextComponent = Context.FindDuplicate(TextComponent);
+}

@@ -10,6 +10,7 @@ public:
 	DECLARE_RTTI(ATextActor, AActor)
 
 	void PostSpawnInitialize() override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 private:
 	UTextComponent* TextComponent = nullptr;

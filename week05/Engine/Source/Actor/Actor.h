@@ -62,9 +62,14 @@ public:
 	virtual void Destroy();
 	/** 액터와 소유 컴포넌트들의 직렬화/역직렬화를 수행한다. */
 	virtual void Serialize(FArchive& Ar);
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void DuplicateSubObjects(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
+	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 	bool HasBegunPlay() const { return bActorBegunPlay; }
 	bool IsPendingDestroy() const { return bPendingDestroy; }
+	bool IsActorTickEnabled() const { return bTickEnabled; }
 	bool CanTick() const { return bCanEverTick && bTickEnabled; }
 	void SetActorTickEnabled(bool bEnabled) { bTickEnabled = bEnabled; }
 	/** 루트 컴포넌트 기준 액터 위치를 반환한다. */

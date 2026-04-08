@@ -20,3 +20,9 @@ void ACubeActor::PostSpawnInitialize()
 
 	AActor::PostSpawnInitialize();
 }
+
+void ACubeActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<ACubeActor*>(DuplicatedObject)->CubeMeshComponent = Context.FindDuplicate(CubeMeshComponent);
+}

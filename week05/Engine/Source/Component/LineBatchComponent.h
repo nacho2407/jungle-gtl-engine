@@ -18,6 +18,7 @@ public:
 
 	virtual FRenderMesh* GetRenderMesh() const override { return LineMesh.get(); }
 	virtual FBoxSphereBounds GetLocalBounds() const override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 
 private:
 	std::shared_ptr<FDynamicMesh> LineMesh;
