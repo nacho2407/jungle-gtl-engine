@@ -80,6 +80,19 @@ void AActor::RemoveComponent(UActorComponent* Component)
 	if (!Component) return;
 
 	Component->PrimaryComponentTick.UnRegisterTickFunction();
+
+	// HOTFIX: PrimitiveComponent는 Octree/PickingBVH/VisibleProxies 등 여러 캐시에
+	// 포인터가 잡혀 있으므로, RenderState 파괴 전에 공간 분할에서 먼저 떼어낸다.
+	if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Component))
+	{
+		if (UWorld* World = GetWorld())
+		{
+			World->GetPartition().RemoveSinglePrimitive(Prim);
+			World->MarkWorldPrimitivePickingBVHDirty();
+			World->InvalidateVisibleSet();
+		}
+	}
+
 	Component->DestroyRenderState();
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Component);
