@@ -109,6 +109,25 @@ void UEditorEngine::RenderUI(float DeltaTime)
 	MainPanel.Render(DeltaTime);
 }
 
+void UEditorEngine::StartPlaySession()
+{
+	SetEditorState(EEditorState::Play);
+
+	//PIE 실행 로직 필요
+}
+
+void UEditorEngine::PausePlaySession()
+{
+	SetEditorState(EEditorState::Pause);
+}
+
+void UEditorEngine::StopPlaySession()
+{
+	SetEditorState(EEditorState::Edit);
+
+	// PIE 종료 로직 필요
+}
+
 void UEditorEngine::ResetViewport()
 {
 	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)

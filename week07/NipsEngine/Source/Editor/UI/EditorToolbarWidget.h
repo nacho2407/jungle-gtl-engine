@@ -1,15 +1,17 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 
 class FEditorViewportOverlayWidget;
 class FEditorSceneWidget;
+class FEditorPlayStreamWidget;
 
 class FEditorToolbarWidget : public FEditorWidget
 {
 public:
 	void SetViewportOverlayWidget(FEditorViewportOverlayWidget* InViewportOverlayWidget);
 	void SetSceneWidget(FEditorSceneWidget* InSceneWidget);
+	void SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget);
 	void SetPanelVisibilityRefs(
 		bool* InShowConsole,
 		bool* InShowControl,
@@ -29,6 +31,7 @@ private:
 
 	FEditorViewportOverlayWidget* ViewportOverlayWidget = nullptr;
 	FEditorSceneWidget* SceneWidget = nullptr;
+	FEditorPlayStreamWidget* PlayStreamWidget = nullptr;
 
 	bool* bShowConsole = nullptr;
 	bool* bShowControl = nullptr;
