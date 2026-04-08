@@ -1,17 +1,64 @@
 ﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
-
 #include "ImGui/imgui.h"
-#include "Component/GizmoComponent.h"
-#include "Component/PrimitiveComponent.h"
-#include "Component/SceneComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/BillboardComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "Component/SubUVComponent.h"
+#include "Component/GizmoComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
+#include <functional>
+#include "Component/SubUVComponent.h"
+#include "Selection/SelectionManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+
+// 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
+struct FComponentMenuEntry
+{
+    const char* DisplayName;
+    std::function<USceneComponent*(AActor*)> CreateAndInitFunc;
+};
+
+// 2. 에디터에서 추가 가능한 컴포넌트 배열 (이 리스트만 관리하면 됩니다)
+static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
+    {
+        "StaticMesh Component",
+        [](AActor* Actor) -> USceneComponent* {
+            return Actor->AddComponent<UStaticMeshComponent>();
+        }
+    },
+    {
+        "SubUV Component",
+        [](AActor* Actor) -> USceneComponent* {
+            USubUVComponent* Comp = Actor->AddComponent<USubUVComponent>();
+            Comp->SetParticle(FName("Explosion"));
+            Comp->SetSpriteSize(2.0f, 2.0f);
+            Comp->SetFrameRate(30.f);
+            return Comp;
+        }
+    },
+    {
+        "TextRender Component",
+        [](AActor* Actor) -> USceneComponent* {
+            UTextRenderComponent* Comp = Actor->AddComponent<UTextRenderComponent>();
+            Comp->SetFont(FName("Default"));
+            Comp->SetText("TextRender");
+            return Comp;
+        }
+    },
+    {
+        "Billboard Component",
+        [](AActor* Actor) -> USceneComponent* {
+            UBillboardComponent* Comp = Actor->AddComponent<UBillboardComponent>();
+            Comp->SetTextureName("Asset/Texture/Pawn_64x.png");
+            return Comp;
+        }
+    }
+};
 
 void FEditorPropertyWidget::Render(float DeltaTime)
 {
@@ -21,8 +68,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	ImGui::Begin("Jungle Property Window");
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
-	AActor* PrimaryActor = Selection.GetPrimarySelection();
+	AActor* PrimaryActor = SelectionManager->GetPrimarySelection();
 	if (!PrimaryActor)
 	{
 		SelectedComponent = nullptr;
@@ -51,7 +97,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		}
 	}
 
-	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+	const TArray<AActor*>& SelectedActors = SelectionManager->GetSelectedActors();
 	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
 	// ========== 고정 영역: Actor Info (clickable) ==========
@@ -83,7 +129,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 					Actor->GetWorld()->DestroyActor(Actor);
 				}
 			}
-			Selection.ClearSelection();
+			SelectionManager->ClearSelection();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
@@ -111,11 +157,41 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			{
 				PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
 			}
-			Selection.ClearSelection();
+			SelectionManager->ClearSelection();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
 			return;
+		}
+
+		ImGui::Spacing();
+
+		if (ImGui::Button("Add Component", ImVec2(-1, 0)))
+		{
+			ImGui::OpenPopup("AddComponentPopup");
+		}
+
+		if (ImGui::BeginPopup("AddComponentPopup"))
+		{
+			for (const FComponentMenuEntry& Entry : ComponentMenuRegistry)
+			{
+				if (!ImGui::Selectable(Entry.DisplayName)) 
+					continue;
+
+				USceneComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor);
+
+				if (!NewComp) 
+					continue;
+
+				USceneComponent* RootComp = PrimaryActor->GetRootComponent();
+				if (RootComp)
+					NewComp->AttachToComponent(RootComp);
+				else
+					PrimaryActor->SetRootComponent(NewComp);
+
+				SelectedComponent = NewComp;
+			}
+			ImGui::EndPopup();
 		}
 	}
 
@@ -138,6 +214,12 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::EndChild();
 
 	ImGui::End();
+}
+
+void FEditorPropertyWidget::Initialize(UEditorEngine* InEditorEngine)
+{
+	FEditorWidget::Initialize(InEditorEngine);
+	SelectionManager = &EditorEngine->GetSelectionManager();
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -209,6 +291,45 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	if (ImGui::Checkbox("Visible", &bVisible))
 	{
 		PrimaryActor->SetVisible(bVisible);
+	}
+
+	ImGui::Separator();
+	// Billboard 타입 체크
+	if (UBillboardComponent* BillboardComp = dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
+	{
+		if (dynamic_cast<USubUVComponent*>(PrimaryActor->GetRootComponent()))
+		{
+			return;
+		}
+		ImGui::Separator();
+		ImGui::Text("Sprite Texture");
+
+		const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
+		const FString CurrentName = BillboardComp->GetTextureName();
+
+		if (ImGui::BeginCombo("##SpriteTexture", CurrentName.empty() ? "None" : CurrentName.c_str()))
+		{
+			for (const FString& TexPath : TextureList)
+			{
+				// 경로 전체 대신 파일명만 표시
+				FString DisplayName = TexPath;
+				bool bSelected = (TexPath == CurrentName);
+
+				if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+				{
+					for (AActor* Actor : SelectedActors)
+					{
+						if (UBillboardComponent* Comp =
+							dynamic_cast<UBillboardComponent*>(Actor->GetRootComponent()))
+						{
+							Comp->SetTextureName(TexPath);
+						}
+					}
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
 	}
 }
 
@@ -321,6 +442,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	if (SelectedComponent->IsA<USceneComponent>())
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
+		SelectionManager->GetGizmo()->UpdateGizmoTransform();
 	}
 }
 

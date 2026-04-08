@@ -34,6 +34,9 @@ REGISTER_FACTORY(ASubUVActor)
 DEFINE_CLASS(ATextRenderActor, AActor) 
 REGISTER_FACTORY(ATextRenderActor)
 
+DEFINE_CLASS(ABillboardActor, AActor) 
+REGISTER_FACTORY(ABillboardActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -173,6 +176,22 @@ void ATextRenderActor::InitDefaultComponents()
     
     auto* TextUUID = AddComponent<UTextRenderComponent>();
     TextUUID->AttachToComponent(Text);
+    TextUUID->SetFont(FName("Default"));
+    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+
+    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
+void ABillboardActor::InitDefaultComponents()
+{	
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	SetRootComponent(Billboard);
+	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+	//Billboard->SetTextureName();
+
+    auto* TextUUID = AddComponent<UTextRenderComponent>();
+    TextUUID->AttachToComponent(Billboard);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
 

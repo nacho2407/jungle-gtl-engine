@@ -6,10 +6,11 @@ class UWorld;
 
 enum class EWorldType : uint32
 {
-    Editor,    // Editor mode — no BeginPlay
-    Game,      // Game mode — BeginPlay/Tick active
-	Preview,   // Object Viewer mode - BeginPlay/Tick active (to check animation)
-    PIE,       // Play In Editor (future use)
+    Editor,          // Editor mode — no BeginPlay
+	PIE,             // Play In Editor
+	EditorPriview,   // Editor Preview mode - BeginPlay/Tick active
+	ViewerPreview,   // Object Viewer mode - BeginPlay/Tick active (to check animation)
+	Game,		     // Game mode — BeginPlay/Tick active
 };
 
 struct FWorldContext
@@ -19,3 +20,15 @@ struct FWorldContext
     FString ContextName;
     FName ContextHandle;
 };
+
+namespace EEndPlayReason
+{
+    enum Type
+    {
+        Destroyed,
+        LevelTransition,
+        EndPlayInEditor,
+        RemovedFromWorld,
+        Quit
+    };
+}

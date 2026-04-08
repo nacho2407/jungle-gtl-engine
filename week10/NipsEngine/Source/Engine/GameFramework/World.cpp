@@ -23,28 +23,37 @@ UWorld* UWorld::Duplicate()
 
     if (NewWorld->PersistentLevel)
     {
-        delete NewWorld->PersistentLevel;
+        UObjectManager::Get().DestroyObject(NewWorld->PersistentLevel);
+        NewWorld->PersistentLevel = nullptr;
     }
 
-    if (this->PersistentLevel)
-    {
-        NewWorld->PersistentLevel = this->PersistentLevel->Duplicate();
+    NewWorld->WorldType = this->WorldType;
+    NewWorld->SetActiveCamera(this->ActiveCamera);
+    NewWorld->bHasBegunPlay = false;
+    NewWorld->PersistentLevel = this->PersistentLevel;
 
-		// 복제된 액터들은 월드 소속을 새 월드로 바꿔주어야 한다.
-        for (AActor* DuplicatedActor : NewWorld->PersistentLevel->GetActors())
+    return NewWorld;
+}
+
+/* @brief Level을 깊은 복사한 뒤, 복제된 액터들의 소속을 자기 자신으로 재설정합니다.*/
+UWorld* UWorld::DuplicateSubObjects()
+{
+    if (PersistentLevel)
+    {
+        PersistentLevel = PersistentLevel->Duplicate();
+
+        for (AActor* DuplicatedActor : PersistentLevel->GetActors())
         {
             if (DuplicatedActor)
             {
-                DuplicatedActor->SetWorld(NewWorld);
+                DuplicatedActor->SetWorld(this);
             }
         }
     }
 
-    NewWorld->SetActiveCamera(this->ActiveCamera);
-    NewWorld->bHasBegunPlay = false;
-    NewWorld->RebuildSpatialIndex();
+    RebuildSpatialIndex();
 
-    return NewWorld;
+	return this;
 }
 
 void UWorld::BeginPlay()
@@ -56,16 +65,30 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime)
 {
-	PersistentLevel->Tick(DeltaTime);
+	if (!PersistentLevel) return;
+
+    for (AActor* Actor : PersistentLevel->GetActors())
+    {
+        if (Actor && Actor->IsActive())
+        {
+            // 에디터 월드일 경우, 에디터 틱이 허용된 액터만 Tick을 수행합니다.
+            if (WorldType == EWorldType::Editor && !Actor->ShouldTickInEditor())
+            {
+                continue;
+            }
+            Actor->Tick(DeltaTime);
+        }
+    }
+
     SyncSpatialIndex();
 }
 
-void UWorld::EndPlay()
+void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
 	if(bHasBegunPlay)
 	{
 		bHasBegunPlay = false;
-		PersistentLevel->EndPlay();
+		PersistentLevel->EndPlay(EndPlayReason);
 	}
 }
 

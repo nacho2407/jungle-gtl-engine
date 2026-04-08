@@ -21,51 +21,56 @@ ULevel* ULevel::Duplicate()
 {
     ULevel* NewLevel = UObjectManager::Get().CreateObject<ULevel>();
 
-    for (AActor* OriginalActor : this->Actors)
-    {
-        if (OriginalActor)
-        {
-            AActor* DuplicatedActor = OriginalActor->Duplicate();
-            
-            if (DuplicatedActor != nullptr)
-            {
-                NewLevel->AddActor(DuplicatedActor);
-            }
-        }
-    }
+    NewLevel->Actors = this->Actors;
+
+	NewLevel->DuplicateSubObjects();
 
     return NewLevel;
 }
 
+/* @brief 복제된 배열을 순회하며 액터를 깊은 복사로 교체합니다. */
+ULevel* ULevel::DuplicateSubObjects()
+{
+    for (int32 i = 0; i < Actors.size(); ++i)
+    {
+        if (Actors[i])
+        {
+            Actors[i] = Actors[i]->Duplicate();
+        }
+    }
+	
+	return this;
+}
+
 void ULevel::BeginPlay()
 {
-		for (AActor* Actor : Actors)
+	for (AActor* Actor : Actors)
 	{
 		if (Actor)
 		{
 			Actor->BeginPlay();
 		}
-		}
+	}
 }
 
 void ULevel::Tick(float DeltaTime)
 {
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+		if (Actor && Actor->IsActive())
 		{
 			Actor->Tick(DeltaTime);
 		}
 	}
 }
 
-void ULevel::EndPlay()
+void ULevel::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
 	for (AActor* Actor : Actors)
 	{
 		if (Actor)
 		{
-			Actor->EndPlay();
+			Actor->EndPlay(EndPlayReason);
 		}
 	}
 }

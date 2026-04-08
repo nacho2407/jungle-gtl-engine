@@ -9,6 +9,7 @@
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
 #include "Editor/UI/EditorToolbarWidget.h"
+#include "Editor/UI/EditorPlayStreamWidget.h"
 
 class FRenderer;
 class UEditorEngine;
@@ -26,8 +27,8 @@ private:
 	void RenderViewportHostWindow();
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 private:
-	FWindowsWindow* Window;
-	UEditorEngine* EditorEngine;
+	FWindowsWindow* Window = nullptr;
+	UEditorEngine* EditorEngine = nullptr;
 
 	ImVector<ImWchar> FontGlyphRanges; // 폰트 아틀라스 빌드 전까지 수명 유지 필요
 	FEditorConsoleWidget ConsoleWidget;
@@ -38,6 +39,7 @@ private:
 	FEditorViewportOverlayWidget ViewportOverlayWidget;
 	FEditorStatWidget StatWidget;
 	FEditorToolbarWidget ToolbarWidget;
+	FEditorPlayStreamWidget PlayStreamWidget;
 
 	bool bShowConsole = true;
 	bool bShowControl = true;
@@ -45,4 +47,5 @@ private:
 	bool bShowSceneManager = true;
 	bool bShowMaterialEditor = true;
 	bool bShowStatProfiler = true;
+	bool bShowPlayStream = true;
 };
