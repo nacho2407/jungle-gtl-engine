@@ -28,9 +28,9 @@ void UProjectileMovementComponent::BeginPlay()
 	Velocity = LaunchDirection * InitialSpeed;
 }
 
-void UProjectileMovementComponent::Tick(float DeltaTime)
+void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	UMovementComponent::Tick(DeltaTime);
+	UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	USceneComponent* UpdatedSceneComponent = GetUpdatedComponent();
 	if (!UpdatedSceneComponent)
