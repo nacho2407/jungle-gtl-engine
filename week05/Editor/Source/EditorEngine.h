@@ -20,6 +20,13 @@ class FShowFlags;
 class FEditorEngine : public FEngine
 {
 public:
+	enum class ESimulationPlaybackState : uint8
+	{
+		Playing,
+		Paused,
+		Stopped
+	};
+
 	FEditorEngine() = default;
 	~FEditorEngine() override;
 
@@ -29,6 +36,14 @@ public:
 	void SetSelectedActor(AActor* InActor);
 	// 현재 선택된 액터를 반환한다.
 	AActor* GetSelectedActor() const;
+	// 에디터 월드 시뮬레이션 재생 상태를 재생으로 전환한다.
+	void PlaySimulation();
+	// 에디터 월드 시뮬레이션 재생 상태를 일시정지로 전환한다.
+	void PauseSimulation();
+	// 에디터 월드 시뮬레이션 재생 상태를 정지로 전환한다.
+	void StopSimulation();
+	// 현재 에디터 월드 시뮬레이션 재생 상태를 반환한다.
+	ESimulationPlaybackState GetSimulationPlaybackState() const { return SimulationPlaybackState; }
 	// 활성 월드를 에디터 월드로 전환한다.
 	void ActivateEditorScene();
 	// 이름으로 지정한 프리뷰 월드를 활성 월드로 전환한다.
@@ -134,6 +149,7 @@ private:
 	FWindowsWindow* MainWindow = nullptr;
 	FEditorViewportRegistry ViewportRegistry;
 	FEditorViewportClient* EditorViewportClientRaw = nullptr;
+	ESimulationPlaybackState SimulationPlaybackState = ESimulationPlaybackState::Playing;
 
 	std::unique_ptr<FSlateApplication> SlateApplication = nullptr;
 };

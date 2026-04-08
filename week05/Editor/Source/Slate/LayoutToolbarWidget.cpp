@@ -42,6 +42,62 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 	Toolbar.AddWidget(&ViewportLabel, 0.0f).SetMinWidth(120.0f).HAlign(EHAlign::Left);
 	Toolbar.AddStretch(1.0f);
 
+	auto& PlayToggle = Toolbar.AddToggle(
+		"Play",
+		[this]() -> bool
+		{
+			return Engine && Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Playing;
+		},
+		[this]()
+		{
+			if (Engine)
+			{
+				Engine->PlaySimulation();
+			}
+		},
+		FMargin(0.0f, 0.0f, 4.0f, 0.0f));
+	PlayToggle.bEnabled = (Engine != nullptr);
+
+	auto& PauseToggle = Toolbar.AddToggle(
+		"Pause",
+		[this]() -> bool
+		{
+			return Engine && Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Paused;
+		},
+		[this]()
+		{
+			if (!Engine)
+			{
+				return;
+			}
+
+			if (Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Paused)
+			{
+				Engine->PlaySimulation();
+				return;
+			}
+
+			Engine->PauseSimulation();
+		},
+		FMargin(0.0f, 0.0f, 4.0f, 0.0f));
+	PauseToggle.bEnabled = (Engine != nullptr);
+
+	auto& StopToggle = Toolbar.AddToggle(
+		"Stop",
+		[this]() -> bool
+		{
+			return Engine && Engine->GetSimulationPlaybackState() == FEditorEngine::ESimulationPlaybackState::Stopped;
+		},
+		[this]()
+		{
+			if (Engine)
+			{
+				Engine->StopSimulation();
+			}
+		},
+		FMargin(0.0f, 0.0f, 6.0f, 0.0f));
+	StopToggle.bEnabled = (Engine != nullptr);
+
 	auto& LayoutDropdown = SWidgetHelpers::MakeDropdown(
 		Toolbar.GetOwnedChildrenStorage(),
 		"Layout",
@@ -73,6 +129,7 @@ SLayoutToolbarWidget::SLayoutToolbarWidget(FEditorEngine* InEngine, FEditorViewp
 		});
 
 	Toolbar.AddWidget(&LayoutDropdown, 0.0f).Padding(FMargin(0.0f, 0.0f, 8.0f, 0.0f));
+
 	Toolbar.AddWidget(&TransformWidget, 0.0f, FMargin(6.0f, 0.0f));
 }
 

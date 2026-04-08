@@ -8,25 +8,29 @@
 
 namespace
 {
-	static FString FitTextToWidth(FSlatePaintContext& Painter, const FString& Text, float FontSize, float LetterSpacing, int32 MaxWidth)
+	constexpr float TextFitTolerancePx = 0.75f;
+
+	static FString FitTextToWidth(const FString& Text, float FontSize, float LetterSpacing, int32 MaxWidth)
 	{
 		if (MaxWidth <= 0 || Text.empty())
 		{
 			return "";
 		}
 
-		const FVector2 FullSize = Painter.MeasureText(Text.c_str(), FontSize, LetterSpacing);
-		if (FullSize.X <= MaxWidth)
+		const float FullWidth = SWidgetTextMetrics::MeasureTextLogicalWidth(Text, FontSize, LetterSpacing);
+		const float MaxWidthWithTolerance = static_cast<float>(MaxWidth) + TextFitTolerancePx;
+		if (FullWidth <= MaxWidthWithTolerance)
 		{
 			return Text;
 		}
 
 		const FString Ellipsis = "...";
-		for (int32 Length = static_cast<int32>(Text.size()) - 1; Length >= 0; --Length)
+		for (size_t PrefixLength = Text.size(); PrefixLength > 0;)
 		{
-			const FString Candidate = Text.substr(0, static_cast<size_t>(Length)) + Ellipsis;
-			const FVector2 CandidateSize = Painter.MeasureText(Candidate.c_str(), FontSize, LetterSpacing);
-			if (CandidateSize.X <= MaxWidth)
+			PrefixLength = SWidgetTextMetrics::PrevUtf8PrefixLength(Text, PrefixLength);
+			const FString Candidate = Text.substr(0, PrefixLength) + Ellipsis;
+			const float CandidateWidth = SWidgetTextMetrics::MeasureTextLogicalWidth(Candidate, FontSize, LetterSpacing);
+			if (CandidateWidth <= MaxWidthWithTolerance)
 			{
 				return Candidate;
 			}
@@ -50,7 +54,7 @@ void SButton::OnPaint(FSlatePaintContext& Painter)
 	Painter.DrawRect(Rect, BorderColor);
 
 	const int32 MaxTextWidth = (std::max)(0, Rect.Width - 8);
-	const FString RenderedText = FitTextToWidth(Painter, Text, FontSize, LetterSpacing, MaxTextWidth);
+	const FString RenderedText = FitTextToWidth(Text, FontSize, LetterSpacing, MaxTextWidth);
 	if (CachedRenderedText != RenderedText || CachedLetterSpacing != LetterSpacing)
 	{
 		CachedRenderedText = RenderedText;

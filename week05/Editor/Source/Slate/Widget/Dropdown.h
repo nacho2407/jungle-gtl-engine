@@ -50,7 +50,7 @@ public:
 private:
 	FString GetSelectedText() const;
 	FRect GetOptionRect(int32 Index) const;
-	FString FitTextToWidth(FSlatePaintContext& Painter, const FString& Text, int32 MaxWidth);
+	FString FitTextToWidth(const FString& Text, int32 MaxWidth);
 	float EstimateTextWidth(const FString& Text) const;
 
 private:

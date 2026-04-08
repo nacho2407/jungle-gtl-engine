@@ -6,6 +6,7 @@
 #include "Slate/SlateApplication.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -272,7 +273,7 @@ void SViewportToolbarWidget::SyncSelectionState()
 
 int32 SViewportToolbarWidget::EstimateTitleWidth() const
 {
-	return static_cast<int32>(TitleButton.ComputeDesiredSize().X + 0.5f);
+	return static_cast<int32>(std::ceil(TitleButton.ComputeDesiredSize().X));
 }
 
 void SViewportToolbarWidget::UpdateGeometry()
@@ -293,12 +294,12 @@ void SViewportToolbarWidget::UpdateGeometry()
 
 	const int32 DesiredTitleWidth = EstimateTitleWidth();
 	const int32 MinTitleWidth = 44;
-	const int32 LayoutDesiredWidth = static_cast<int32>(LayoutDropdown.ComputeDesiredSize().X + 0.5f);
-	const int32 LayoutMinWidth = static_cast<int32>(LayoutDropdown.ComputeMinSize().X + 0.5f);
-	const int32 TypeDesiredWidth = static_cast<int32>(TypeDropdown.ComputeDesiredSize().X + 0.5f);
-	const int32 TypeMinWidth = static_cast<int32>(TypeDropdown.ComputeMinSize().X + 0.5f);
-	const int32 ModeDesiredWidth = static_cast<int32>(ModeDropdown.ComputeDesiredSize().X + 0.5f);
-	const int32 ModeMinWidth = static_cast<int32>(ModeDropdown.ComputeMinSize().X + 0.5f);
+	const int32 LayoutDesiredWidth = static_cast<int32>(std::ceil(LayoutDropdown.ComputeDesiredSize().X));
+	const int32 LayoutMinWidth = static_cast<int32>(std::ceil(LayoutDropdown.ComputeMinSize().X));
+	const int32 TypeDesiredWidth = static_cast<int32>(std::ceil(TypeDropdown.ComputeDesiredSize().X));
+	const int32 TypeMinWidth = static_cast<int32>(std::ceil(TypeDropdown.ComputeMinSize().X));
+	const int32 ModeDesiredWidth = static_cast<int32>(std::ceil(ModeDropdown.ComputeDesiredSize().X));
+	const int32 ModeMinWidth = static_cast<int32>(std::ceil(ModeDropdown.ComputeMinSize().X));
 
 	if (bShowLayout)
 	{
@@ -486,4 +487,3 @@ void SViewportToolbarWidget::ApplyRenderMode(ERenderMode NewMode)
 		Entry->LocalState.ViewMode = NewMode;
 	}
 }
-

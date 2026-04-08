@@ -1,11 +1,73 @@
 #include "Dropdown.h"
 #include "TextMetrics.h"
 #include <algorithm>
-#include <cctype>
+#include <cmath>
 
 #ifdef DrawText
 #undef DrawText
 #endif
+
+namespace
+{
+	constexpr float TextFitTolerancePx = 0.75f;
+
+	static void AllocateHeaderTextWidths(
+		int32 AvailableContentWidth,
+		int32 Gap,
+		int32 DesiredLabelWidth,
+		int32 DesiredValueWidth,
+		int32 EllipsisWidth,
+		int32& OutLabelWidth,
+		int32& OutValueWidth)
+	{
+		OutLabelWidth = 0;
+		OutValueWidth = 0;
+
+		if (AvailableContentWidth <= 0)
+		{
+			return;
+		}
+
+		if (DesiredLabelWidth <= 0)
+		{
+			OutValueWidth = AvailableContentWidth;
+			return;
+		}
+
+		if (DesiredValueWidth <= 0)
+		{
+			OutLabelWidth = (std::min)(DesiredLabelWidth, AvailableContentWidth);
+			return;
+		}
+
+		const int32 AvailableWithoutGap = (std::max)(0, AvailableContentWidth - Gap);
+		if (AvailableWithoutGap <= 0)
+		{
+			OutValueWidth = AvailableContentWidth;
+			return;
+		}
+
+		if (DesiredLabelWidth + DesiredValueWidth <= AvailableWithoutGap)
+		{
+			OutLabelWidth = DesiredLabelWidth;
+			OutValueWidth = DesiredValueWidth;
+			return;
+		}
+
+		const int32 MinValueWidth = (std::min)(DesiredValueWidth, (std::max)(EllipsisWidth, 12));
+		if (AvailableWithoutGap >= DesiredLabelWidth + MinValueWidth)
+		{
+			// Label is shown only when its full text fits.
+			OutLabelWidth = DesiredLabelWidth;
+			OutValueWidth = (std::max)(0, AvailableWithoutGap - DesiredLabelWidth);
+			return;
+		}
+
+		// If label cannot fit fully, hide it and give space to value.
+		OutLabelWidth = 0;
+		OutValueWidth = AvailableWithoutGap;
+	}
+}
 
 void SDropdown::SetOptions(const TArray<FString>& InOptions)
 {
@@ -54,7 +116,7 @@ FRect SDropdown::GetOptionRect(int32 Index) const
 
 float SDropdown::EstimateTextWidth(const FString& Text) const
 {
-	return SWidgetTextMetrics::MeasureTextWidth(Text, FontSize, LetterSpacing);
+	return SWidgetTextMetrics::MeasureTextLogicalWidth(Text, FontSize, LetterSpacing);
 }
 
 FVector2 SDropdown::ComputeDesiredSize() const
@@ -82,24 +144,25 @@ FVector2 SDropdown::ComputeMinSize() const
 	return { Padding * 4.0f + MinLabelWidth + MinValueWidth + ArrowWidth, FontSize + 12.0f };
 }
 
-FString SDropdown::FitTextToWidth(FSlatePaintContext& Painter, const FString& Text, int32 MaxWidth)
+FString SDropdown::FitTextToWidth(const FString& Text, int32 MaxWidth)
 {
 	if (MaxWidth <= 0 || Text.empty())
 	{
 		return "";
 	}
 
-	if (Painter.MeasureText(Text.c_str(), FontSize, LetterSpacing).X <= MaxWidth)
+	const float MaxWidthWithTolerance = static_cast<float>(MaxWidth) + TextFitTolerancePx;
+	if (SWidgetTextMetrics::MeasureTextLogicalWidth(Text, FontSize, LetterSpacing) <= MaxWidthWithTolerance)
 	{
 		return Text;
 	}
 
 	const FString Ellipsis = "...";
-	for (int32 Length = static_cast<int32>(Text.size()) - 1; Length >= 0; --Length)
+	for (size_t PrefixLength = Text.size(); PrefixLength > 0;)
 	{
-		const FString Candidate = Text.substr(0, static_cast<size_t>(Length)) + Ellipsis;
-		const FVector2 CandidateSize = Painter.MeasureText(Candidate.c_str(), FontSize, LetterSpacing);
-		if (CandidateSize.X <= MaxWidth)
+		PrefixLength = SWidgetTextMetrics::PrevUtf8PrefixLength(Text, PrefixLength);
+		const FString Candidate = Text.substr(0, PrefixLength) + Ellipsis;
+		if (SWidgetTextMetrics::MeasureTextLogicalWidth(Candidate, FontSize, LetterSpacing) <= MaxWidthWithTolerance)
 		{
 			return Candidate;
 		}
@@ -135,9 +198,9 @@ void SDropdown::OnPaint(FSlatePaintContext& Painter)
 	const int32 ContentRight = (std::max)(ContentLeft, ArrowX - Padding);
 	const int32 AvailableContentWidth = (std::max)(0, ContentRight - ContentLeft);
 
-	const int32 DesiredLabelWidth = static_cast<int32>(Painter.MeasureText(Label.c_str(), FontSize, LetterSpacing).X + 0.5f);
-	const int32 DesiredValueWidth = static_cast<int32>(Painter.MeasureText(SelectedText.c_str(), FontSize, LetterSpacing).X + 0.5f);
-	const int32 EllipsisWidth = static_cast<int32>(Painter.MeasureText("...", FontSize, LetterSpacing).X + 0.5f);
+	const int32 DesiredLabelWidth = static_cast<int32>(std::ceil(EstimateTextWidth(Label)));
+	const int32 DesiredValueWidth = static_cast<int32>(std::ceil(EstimateTextWidth(SelectedText)));
+	const int32 EllipsisWidth = static_cast<int32>(std::ceil(EstimateTextWidth("...")));
 
 	int32 LabelWidth = 0;
 	int32 ValueWidth = 0;
@@ -154,33 +217,18 @@ void SDropdown::OnPaint(FSlatePaintContext& Painter)
 	}
 	else if (AvailableContentWidth > 0)
 	{
-		const int32 AvailableWithoutGap = (std::max)(0, AvailableContentWidth - Gap);
-		const int32 MinLabelWidth = (std::min)(DesiredLabelWidth, (std::max)(EllipsisWidth, 12));
-		const int32 MinValueWidth = (std::min)(DesiredValueWidth, (std::max)(EllipsisWidth, 12));
-
-		if (DesiredLabelWidth + DesiredValueWidth <= AvailableWithoutGap)
-		{
-			LabelWidth = DesiredLabelWidth;
-			ValueWidth = DesiredValueWidth;
-		}
-		else
-		{
-			const int32 TotalDesired = (std::max)(1, DesiredLabelWidth + DesiredValueWidth);
-			LabelWidth = static_cast<int32>(AvailableWithoutGap * (static_cast<float>(DesiredLabelWidth) / TotalDesired) + 0.5f);
-			LabelWidth = (std::max)(MinLabelWidth, LabelWidth);
-			LabelWidth = (std::min)(LabelWidth, AvailableWithoutGap - MinValueWidth);
-			LabelWidth = (std::max)(0, LabelWidth);
-			ValueWidth = (std::max)(0, AvailableWithoutGap - LabelWidth);
-			if (ValueWidth < MinValueWidth)
-			{
-				ValueWidth = (std::min)(AvailableWithoutGap, MinValueWidth);
-				LabelWidth = (std::max)(0, AvailableWithoutGap - ValueWidth);
-			}
-		}
+		AllocateHeaderTextWidths(
+			AvailableContentWidth,
+			Gap,
+			DesiredLabelWidth,
+			DesiredValueWidth,
+			EllipsisWidth,
+			LabelWidth,
+			ValueWidth);
 	}
 
-	const FString RenderedLabel = FitTextToWidth(Painter, Label, LabelWidth);
-	const FString RenderedValue = FitTextToWidth(Painter, SelectedText, ValueWidth);
+	const FString RenderedLabel = FitTextToWidth(Label, LabelWidth);
+	const FString RenderedValue = FitTextToWidth(SelectedText, ValueWidth);
 
 	const FVector2 LabelSize = Painter.MeasureText(RenderedLabel.c_str(), FontSize, LetterSpacing);
 	const FVector2 ValueSize = Painter.MeasureText(RenderedValue.c_str(), FontSize, LetterSpacing);
@@ -228,7 +276,7 @@ void SDropdown::OnPaint(FSlatePaintContext& Painter)
 		Painter.DrawRectFilled(OptionRect, OptionBackgroundColor);
 		Painter.DrawRect(OptionRect, OptionBorderColor);
 
-		const FString RenderedOption = FitTextToWidth(Painter, Options[OptionIndex], (std::max)(0, OptionRect.Width - 16));
+		const FString RenderedOption = FitTextToWidth(Options[OptionIndex], (std::max)(0, OptionRect.Width - 16));
 		const FVector2 OptionSize = Painter.MeasureText(RenderedOption.c_str(), FontSize, LetterSpacing);
 		const int32 OptionTextWidth = static_cast<int32>(OptionSize.X + 0.5f);
 		const int32 OptionTextHeight = static_cast<int32>(OptionSize.Y + 0.5f);
@@ -313,4 +361,3 @@ bool SDropdown::OnMouseDown(int32 X, int32 Y)
 
 	return true;
 }
-

@@ -44,17 +44,18 @@ public:
 				return FString();
 			}
 
-			if (Painter.MeasureText(SourceText.c_str(), FontSize, LetterSpacing).X <= MaxWidth)
+			const float MaxWidthWithTolerance = static_cast<float>(MaxWidth) + 0.75f;
+			if (SWidgetTextMetrics::MeasureTextLogicalWidth(SourceText, FontSize, LetterSpacing) <= MaxWidthWithTolerance)
 			{
 				return SourceText;
 			}
 
 			const FString Ellipsis = "...";
-			for (int32 Length = static_cast<int32>(SourceText.size()) - 1; Length >= 0; --Length)
+			for (size_t PrefixLength = SourceText.size(); PrefixLength > 0;)
 			{
-				const FString Candidate = SourceText.substr(0, static_cast<size_t>(Length)) + Ellipsis;
-				const FVector2 CandidateSize = Painter.MeasureText(Candidate.c_str(), FontSize, LetterSpacing);
-				if (CandidateSize.X <= MaxWidth)
+				PrefixLength = SWidgetTextMetrics::PrevUtf8PrefixLength(SourceText, PrefixLength);
+				const FString Candidate = SourceText.substr(0, PrefixLength) + Ellipsis;
+				if (SWidgetTextMetrics::MeasureTextLogicalWidth(Candidate, FontSize, LetterSpacing) <= MaxWidthWithTolerance)
 				{
 					return Candidate;
 				}
@@ -108,4 +109,3 @@ private:
 	FString CachedRenderedText;
 	float CachedLetterSpacing = 1.0f;
 };
-

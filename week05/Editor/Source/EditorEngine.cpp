@@ -103,6 +103,21 @@ AActor* FEditorEngine::GetSelectedActor() const
 	return SelectionSubsystem.GetSelectedActor();
 }
 
+void FEditorEngine::PlaySimulation()
+{
+	SimulationPlaybackState = ESimulationPlaybackState::Playing;
+}
+
+void FEditorEngine::PauseSimulation()
+{
+	SimulationPlaybackState = ESimulationPlaybackState::Paused;
+}
+
+void FEditorEngine::StopSimulation()
+{
+	SimulationPlaybackState = ESimulationPlaybackState::Stopped;
+}
+
 void FEditorEngine::ActivateEditorScene()
 {
 	// 에디터 모드의 기본 활성 월드는 메인 에디터 월드다.
@@ -269,6 +284,11 @@ void FEditorEngine::PrepareFrame(float DeltaTime)
 
 void FEditorEngine::TickWorlds(float DeltaTime)
 {
+	if (SimulationPlaybackState != ESimulationPlaybackState::Playing)
+	{
+		return;
+	}
+
 	if (UWorld* ActiveWorld = GetActiveWorld())
 	{
 		ActiveWorld->Tick(DeltaTime);
