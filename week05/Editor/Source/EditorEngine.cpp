@@ -823,7 +823,11 @@ void FEditorEngine::SyncFocusedViewportLocalState()
 			ActiveWorldContext = FocusedEntry->WorldContext;
 		}
 
-		if (FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
+		const bool bIsPIEViewport =
+			FocusedEntry->WorldContext &&
+			FocusedEntry->WorldContext->WorldType == EWorldType::PIE;
+
+		if (!bIsPIEViewport && FocusedEntry->LocalState.ProjectionType == EViewportType::Perspective)
 		{
 			LocalState = &FocusedEntry->LocalState;
 		}
