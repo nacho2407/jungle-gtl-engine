@@ -28,7 +28,13 @@ public:
 
 	FDynamicMesh* GetBillboardMesh() const { return BillboardMesh.get(); }
 
+	void SetHiddenInGame(bool bInHidden) { bHiddenInGame = bInHidden; }
+	bool IsHiddenInGame() const { return bHiddenInGame; }
+
+
 private:
+	bool bHiddenInGame = true;
+
 	std::wstring TexturePath;
 
 	FVector2 Size = FVector2(1.f, 1.f);

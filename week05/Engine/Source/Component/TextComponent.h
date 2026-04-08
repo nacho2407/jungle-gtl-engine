@@ -53,11 +53,16 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+	void SetHiddenInGame(bool bInHidden) { bHiddenInGame = bInHidden; }
+	bool IsHiddenInGame() const { return bHiddenInGame; }
+
 protected:
 	FString Text = "Text";
 	FVector4 TextColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float TextScale = 1.0f;
 	bool bBillboard = false;
+
+	bool bHiddenInGame = true;
 
 	EHorizTextAligment HorizontalAlignment = EHorizTextAligment::EHTA_Center;
 	EVerticalTextAligment VerticalAlignment = EVerticalTextAligment::EVRTA_TextBottom;
