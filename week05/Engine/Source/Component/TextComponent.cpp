@@ -42,11 +42,11 @@ void UTextRenderComponent::SetVerticalAlignment(EVerticalTextAligment value)
 	MarkTextMeshDirty();
 }
 
-void UTextComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
+void UTextRenderComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
 {
 	UPrimitiveComponent::DuplicateShallow(DuplicatedObject, Context);
 
-	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	UTextRenderComponent* DuplicatedTextComponent = static_cast<UTextRenderComponent*>(DuplicatedObject);
 	DuplicatedTextComponent->Text = Text;
 	DuplicatedTextComponent->TextColor = TextColor;
 	DuplicatedTextComponent->TextScale = TextScale;
@@ -64,11 +64,11 @@ FRenderMesh* UTextRenderComponent::GetRenderMesh() const
 }
 
 
-void UTextComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+void UTextRenderComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
 {
 	UPrimitiveComponent::PostDuplicate(DuplicatedObject, Context);
 
-	UTextComponent* DuplicatedTextComponent = static_cast<UTextComponent*>(DuplicatedObject);
+	UTextRenderComponent* DuplicatedTextComponent = static_cast<UTextRenderComponent*>(DuplicatedObject);
 	DuplicatedTextComponent->MarkTextMeshDirty();
 }
 

@@ -166,7 +166,7 @@ bool FTextMeshBuilder::BuildTextMesh(
 	{
 		PenY = -MaxHeight * 0.5f;
 	}
-	else if (VertAlignment == EVerticalTextAligment::EVRTA_TextTop)
+	else if (VertAlignment == EVerticalTextAligment::EVRTA_TextBottom)
 	{
 		PenY = -MaxHeight;
 	}

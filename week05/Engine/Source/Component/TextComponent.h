@@ -67,7 +67,7 @@ protected:
 	bool bHiddenInGame = true;
 
 	EHorizTextAligment HorizontalAlignment = EHorizTextAligment::EHTA_Center;
-	EVerticalTextAligment VerticalAlignment = EVerticalTextAligment::EVRTA_TextBottom;
+	EVerticalTextAligment VerticalAlignment = EVerticalTextAligment::EVRTA_TextCenter;
 
 	std::shared_ptr<struct FDynamicMesh> TextMesh;
 

@@ -6,6 +6,7 @@ class FEditorEngine;
 class AActor;
 class UActorComponent;
 class USceneComponent;
+class UBillboardComponent;
 using FPropertyChangedCallback = std::function<void(const FVector&, const FVector&, const FVector&)>;
 
 class FPropertyWindow
@@ -28,11 +29,12 @@ private:
 	void DrawComponentSection(AActor* SelectedActor);
 	void DrawSceneComponentNode(USceneComponent* Component, int32 Depth = 0);
 	void DrawNonSceneComponentEntry(UActorComponent* Component);
-	void DrawDetailsSection(UActorComponent* Component);
+	void DrawDetailsSection(UActorComponent* Component, FEditorEngine* Engine);
 	void DrawSceneComponentDetails(USceneComponent* SceneComponent);
 	void DrawStaticMeshComponentDetails(class UStaticMeshComponent* MeshComponent);
-	void DrawTextComponentDetails(class UTextComponent* TextComponent);
+	void DrawTextComponentDetails(class UTextRenderComponent* TextComponent);
 	void DrawSubUVComponentDetails(class USubUVComponent* SubUVComponent);
+	void DrawBillboardComponentDetials(class UBillboardComponent* BillboardComponent, FEditorEngine* Engine);
 	bool DrawVector3Control(const char* Label, const FVector& Value, FVector& OutValue, float Speed, const char* Format);
 	bool DrawAddComponentButton(AActor* SelectedActor);
 	bool AddComponentToActor(AActor* SelectedActor, class UClass* ComponentClass, const char* BaseName);

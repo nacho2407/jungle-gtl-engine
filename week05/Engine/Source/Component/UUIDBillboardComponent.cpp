@@ -15,7 +15,7 @@ void UUUIDBillboardComponent::PostConstruct()
 
 void UUUIDBillboardComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
 {
-	UTextComponent::DuplicateShallow(DuplicatedObject, Context);
+	UTextRenderComponent::DuplicateShallow(DuplicatedObject, Context);
 
 	UUUIDBillboardComponent* DuplicatedUUIDBillboardComponent = static_cast<UUUIDBillboardComponent*>(DuplicatedObject);
 	DuplicatedUUIDBillboardComponent->WorldOffset = WorldOffset;
