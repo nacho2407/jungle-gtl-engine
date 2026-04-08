@@ -71,6 +71,17 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
+	// --- PIE 요청 처리 (프레임 경계에서 처리되도록 Tick 선두에서 소비) ---
+	if (bRequestEndPlayMapQueued)
+	{
+		bRequestEndPlayMapQueued = false;
+		EndPlayMap();
+	}
+	if (PlaySessionRequest.has_value())
+	{
+		StartQueuedPlaySessionRequest();
+	}
+
 	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
 		VC->Tick(DeltaTime);
@@ -116,6 +127,75 @@ UCameraComponent* UEditorEngine::GetCamera() const
 void UEditorEngine::RenderUI(float DeltaTime)
 {
 	MainPanel.Render(DeltaTime);
+}
+
+// ─── PIE (Play In Editor) ────────────────────────────────
+// UE 패턴 요약: Request는 단일 슬롯(std::optional)에 저장만 하고 즉시 실행하지 않는다.
+// 실제 StartPIE는 다음 Tick 선두의 StartQueuedPlaySessionRequest에서 일어난다.
+// 이유는 UI 콜백/트랜잭션 도중 같은 불안정한 타이밍을 피하기 위함.
+
+void UEditorEngine::RequestPlaySession(const FRequestPlaySessionParams& InParams)
+{
+	// 동시 요청은 UE와 동일하게 덮어쓴다 (진짜 큐 아님 — 단일 슬롯).
+	PlaySessionRequest = InParams;
+}
+
+void UEditorEngine::CancelRequestPlaySession()
+{
+	PlaySessionRequest.reset();
+}
+
+void UEditorEngine::RequestEndPlayMap()
+{
+	if (!PlayInEditorSessionInfo.has_value())
+	{
+		return;
+	}
+	bRequestEndPlayMapQueued = true;
+}
+
+void UEditorEngine::StartQueuedPlaySessionRequest()
+{
+	if (!PlaySessionRequest.has_value())
+	{
+		return;
+	}
+
+	const FRequestPlaySessionParams Params = *PlaySessionRequest;
+	PlaySessionRequest.reset();
+
+	// 이미 PIE 중이면 기존 세션을 정리 후 새로 시작 (단순화).
+	if (PlayInEditorSessionInfo.has_value())
+	{
+		EndPlayMap();
+	}
+
+	switch (Params.SessionDestination)
+	{
+	case EPIESessionDestination::InProcess:
+		StartPlayInEditorSession(Params);
+		break;
+	}
+}
+
+void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Params)
+{
+	// TODO: 실제 PIE World 복제, GameInstance 기동, 뷰포트 전환 구현.
+	// 현재는 세션 정보만 채워서 IsPlayingInEditor()가 true를 반환하도록 한다.
+	FPlayInEditorSessionInfo Info;
+	Info.OriginalRequestParams = Params;
+	Info.PIEStartTime = 0.0;
+	PlayInEditorSessionInfo = Info;
+}
+
+void UEditorEngine::EndPlayMap()
+{
+	if (!PlayInEditorSessionInfo.has_value())
+	{
+		return;
+	}
+	// TODO: PIE World 파괴, GameInstance Shutdown, 뷰포트 원복.
+	PlayInEditorSessionInfo.reset();
 }
 
 // ─── 기존 메서드 ──────────────────────────────────────────
