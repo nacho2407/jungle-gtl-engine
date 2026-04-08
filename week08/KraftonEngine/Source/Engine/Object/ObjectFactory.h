@@ -10,7 +10,9 @@ namespace {																					\
 		TypeName##_RegisterFactory() {														\
 				FObjectFactory::Get().Register(												\
 					#TypeName,																\
-					[]()->UObject* {return UObjectManager::Get().CreateObject<TypeName>();} \
+					[](UObject* InOuter)->UObject* {										\
+						return UObjectManager::Get().CreateObject<TypeName>(InOuter);		\
+					}																		\
 				);																			\
 		}																					\
 	};																						\
@@ -26,15 +28,15 @@ class FObjectFactory : public TSingleton<FObjectFactory>
 	friend class TSingleton<FObjectFactory>;
 
 public:
-	void Register(const char* TypeName, std::function<UObject*()> Spawner) {
+	void Register(const char* TypeName, std::function<UObject*(UObject*)> Spawner) {
 		Registry[TypeName] = Spawner;
 	}
 
-	UObject* Create(const std::string& TypeName) {
+	UObject* Create(const std::string& TypeName, UObject* InOuter = nullptr) {
 		auto Spawner = Registry.find(TypeName);	// Do NOT use array accessor [] here. it will insert a new key if not found.
-		return (Spawner != Registry.end()) ? Spawner->second() : nullptr;
+		return (Spawner != Registry.end()) ? Spawner->second(InOuter) : nullptr;
 	}
 
 private:
-	TMap<std::string, std::function<UObject*()>> Registry;
+	TMap<std::string, std::function<UObject*(UObject*)>> Registry;
 };

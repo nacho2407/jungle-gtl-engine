@@ -97,8 +97,7 @@ template<typename T>
 inline T* UWorld::SpawnActor()
 {
 	// create and register an actor
-	T* Actor = UObjectManager::Get().CreateObject<T>();
-	Actor->SetWorld(this);
+	T* Actor = UObjectManager::Get().CreateObject<T>(this);
 	if (bHasBegunPlay)
 	{
 		Actor->BeginPlay();

@@ -3,6 +3,8 @@
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 
+class FArchive;
+
 #include <type_traits>
 
 class UWorld;
@@ -19,13 +21,16 @@ public:
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay() {}
 
+	void Serialize(FArchive& Ar) override;
+	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
+
 	// 컴포넌트 생성 + Owner 설정 + 등록 + 렌더 상태 생성
 	template<typename T>
 	T* AddComponent() {
 		static_assert(std::is_base_of_v<UActorComponent, T>,
 			"AddComponent<T>: T must derive from UActorComponent");
 
-		T* Comp = UObjectManager::Get().CreateObject<T>();
+		T* Comp = UObjectManager::Get().CreateObject<T>(this);
 		Comp->SetOwner(this);
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
@@ -64,8 +69,7 @@ public:
 	// Direction
 	FVector GetActorForward() const;
 
-	void SetWorld(UWorld* World) { OwningWorld = World; }
-	UWorld* GetWorld() const { return OwningWorld; }
+	UWorld* GetWorld() const;
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
@@ -81,7 +85,6 @@ protected:
 	void MarkPickingDirty();
 
 	USceneComponent* RootComponent = nullptr;
-	UWorld* OwningWorld = nullptr;
 
 	FVector PendingActorLocation = FVector(0, 0, 0);
 	bool bVisible = true;
