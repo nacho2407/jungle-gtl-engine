@@ -2,6 +2,7 @@
 
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "Object/ActorIterator.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -87,8 +88,9 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 {
 	if (!World) return;
 
-	for (AActor* Actor : World->GetActors())
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
+		AActor* Actor = *Iter;
 		if (!Actor) continue;
 		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
 	}
@@ -309,7 +311,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
 			{
 				FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-				return (Res && Res->SRV) ? Res->SRV : DefaultSRV;
+				return (Res && Res->SRV) ? Res->SRV.Get() : DefaultSRV;
 			};
 
 			// 와이어 프레임이 있는 경우 텍스쳐를 사용하지 않는 메테리얼에게 기본 텍스쳐를 강제 주입
@@ -388,9 +390,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
 		FMaterialResource* Sprite = BillboardComp->GetCachedSprite();
 
-		ID3D11ShaderResourceView* SRV = (Sprite && Sprite->SRV)
-			? Sprite->SRV
-			: FResourceManager::Get().GetDefaultWhiteSRV();
+		ID3D11ShaderResourceView* SRV = (Sprite && Sprite->SRV)	? Sprite->SRV.Get() : FResourceManager::Get().GetDefaultWhiteSRV();
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Billboard;

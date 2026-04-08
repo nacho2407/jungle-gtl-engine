@@ -451,13 +451,10 @@ CMakeLists.txt
 
 # ignore Build Files
 NipsEngine/Build/
-
-# ignore .ini Files
-*.ini
-
 NipsEngine/Saves/**
-NipsEngine/Asset/Mesh/Bin/**
 
-# Asset 파일 살리기 - obj 등 (Bin 폴더 내의 파일은 무시)
+# Asset 폴더 관련 (그때그때 필요한 파일만 저장하도록 변경)
+NipsEngine/Asset/Mesh/Bin/**
+NipsEngine/Asset/Scene/**
 !NipsEngine/Asset/Mesh/**
 !NipsEngine/Asset/**/*.meta

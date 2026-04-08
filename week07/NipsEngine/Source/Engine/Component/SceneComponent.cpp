@@ -4,6 +4,29 @@
 DEFINE_CLASS(USceneComponent, UActorComponent)
 REGISTER_FACTORY(USceneComponent)
 
+// 깊은 복사를 하더라도 SceneComponent의 부모-자식 관계는 초기화됩니다.
+// Actor에서 Duplicate()할 때 이 구조를 Fix-up(복원)해야 합니다.
+USceneComponent* USceneComponent::Duplicate()
+{
+    USceneComponent* NewComp = UObjectManager::Get().CreateObject<USceneComponent>();
+    NewComp->SetActive(this->IsActive());
+    NewComp->SetOwner(nullptr);
+
+    NewComp->RelativeLocation = this->RelativeLocation;
+    NewComp->RelativeRotation = this->RelativeRotation;
+    NewComp->RelativeScale3D  = this->RelativeScale3D;
+
+    // 캐시된 데이터는 복사하지만, 새 부모에 붙을 때 다시 계산되도록 Dirty 플래그를 켭니다.
+    NewComp->CachedWorldMatrix = this->CachedWorldMatrix;
+    NewComp->CachedWorldTransform = this->CachedWorldTransform;
+    NewComp->bTransformDirty = true;
+
+    NewComp->ParentComponent = nullptr;
+    NewComp->ChildComponents.clear();
+
+    return NewComp;
+}
+
 USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;

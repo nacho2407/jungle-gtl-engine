@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Math/Transform.h"
+#include "Engine/Geometry/Transform.h"
 #include "Component/ActorComponent.h"
 #include "Math/Utils.h"
 
@@ -13,6 +13,9 @@ public:
 
 	USceneComponent();
 	~USceneComponent() override;
+
+	virtual USceneComponent* Duplicate() override;
+	virtual USceneComponent* DuplicateSubObjects() override { return this; }
 
 	// Parent Relation Manager
 	void AttachToComponent(USceneComponent* InParent);

@@ -10,6 +10,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
+#include "Object/ActorIterator.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Runtime/SceneView.h"
 #include "EditorUtils.h"
@@ -618,8 +619,9 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 		AActor* BestActor = nullptr;
 		float ClosestDistance = FLT_MAX;
 
-		for (AActor* Actor : World->GetActors())
+		for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 		{
+			AActor* Actor = *Iter;
 			if (!Actor || !Actor->GetRootComponent())
 			{
 				continue;
@@ -732,8 +734,9 @@ void FEditorViewportClient::HandleBoxSelection()
 		SelectionManager->ClearSelection();
 	}
 
-	for (AActor* Actor : World->GetActors())
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
+		AActor* Actor = *Iter;
 		if (!Actor || !Actor->GetRootComponent())
 		{
 			continue;
@@ -828,8 +831,9 @@ void FEditorViewportClient::SelectAllActors()
 	}
 
 	SelectionManager->ClearSelection();
-	for (AActor* Actor : World->GetActors())
+	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
+		AActor* Actor = *Iter;
 		if (!Actor)
 		{
 			continue;

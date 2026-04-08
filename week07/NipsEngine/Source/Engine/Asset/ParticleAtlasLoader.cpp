@@ -32,11 +32,11 @@ bool FParticleAtlasLoader::Load(const FName& ParticleName, const FString& Path, 
 			0,
 			DirectX::DDS_LOADER_DEFAULT,
 			nullptr,
-			&OutResource.SRV);
+			OutResource.SRV.ReleaseAndGetAddressOf());
 	}
 	else
 	{
-		Hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, &OutResource.SRV);
+		Hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, OutResource.SRV.ReleaseAndGetAddressOf());
 	}
 
 	if (FAILED(Hr))

@@ -20,6 +20,9 @@ public:
 
 	USubUVComponent();
 	~USubUVComponent() override = default;
+	
+	virtual USubUVComponent* Duplicate() override;
+	virtual USubUVComponent* DuplicateSubObjects() override { return this; }
 
 	// --- Particle Resource ---
 	// FName 키로 ResourceManager에서 FParticleResource*를 찾아 캐싱

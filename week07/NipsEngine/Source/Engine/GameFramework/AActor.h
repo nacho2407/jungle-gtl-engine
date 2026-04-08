@@ -14,6 +14,9 @@ public:
 	AActor() = default;
 	~AActor() override;
 
+	virtual AActor* DuplicateSubObjects();
+	virtual AActor* Duplicate();
+
 	virtual void BeginPlay() {}
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay() {}
