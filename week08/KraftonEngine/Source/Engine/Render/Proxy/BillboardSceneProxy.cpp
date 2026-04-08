@@ -35,9 +35,10 @@ void FBillboardSceneProxy::UpdateMesh()
 
 	if (bHasTexture)
 	{
-		// SubUV batcher가 자체 셰이더를 사용 — 여기서는 Pass만 SubUV로 분류.
-		Shader = nullptr;
-		Pass = ERenderPass::SubUV;
+		// BillboardBatcher 가 자체 셰이더를 사용 — Shader 는 SelectionMask 아웃라인용으로
+		// Primitive 를 캐싱해 둔다 (Quad 메시는 FVertex 레이아웃).
+		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+		Pass = ERenderPass::Billboard;
 	}
 	else
 	{
@@ -48,7 +49,7 @@ void FBillboardSceneProxy::UpdateMesh()
 }
 
 // ============================================================
-// CollectEntries — 텍스처가 있을 때만 SubUV batcher에 단일 프레임 엔트리 제출
+// CollectEntries — 텍스처가 있을 때만 Billboard batcher에 엔트리 제출
 // ============================================================
 void FBillboardSceneProxy::CollectEntries(FRenderBus& Bus)
 {
@@ -58,13 +59,12 @@ void FBillboardSceneProxy::CollectEntries(FRenderBus& Bus)
 	const FTextureResource* Texture = Comp->GetTexture();
 	if (!Texture || !Texture->IsLoaded()) return;
 
-	FSubUVEntry Entry = {};
+	FBillboardEntry Entry = {};
 	Entry.PerObject = PerObjectConstants;
-	Entry.SubUV.Particle = Texture;	// 1x1 atlas — 단일 프레임 텍스처
-	Entry.SubUV.FrameIndex = 0;
-	Entry.SubUV.Width = Comp->GetWidth();
-	Entry.SubUV.Height = Comp->GetHeight();
-	Bus.AddSubUVEntry(std::move(Entry));
+	Entry.Billboard.Texture = Texture;
+	Entry.Billboard.Width   = Comp->GetWidth();
+	Entry.Billboard.Height  = Comp->GetHeight();
+	Bus.AddBillboardEntry(std::move(Entry));
 }
 
 // ============================================================
