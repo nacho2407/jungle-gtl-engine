@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -48,6 +48,9 @@
     </Filter>
     <Filter Include="Source\Renderer">
       <UniqueIdentifier>{b4935566-c566-3c8c-ae88-5cc13eba9d31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Renderer\Feature">
+      <UniqueIdentifier>{3f10fb4d-7d63-4e08-bb3a-9e9114d8a2b1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Scene">
       <UniqueIdentifier>{f9c008c1-5b68-14f2-ea56-7006fc09bfab}</UniqueIdentifier>
@@ -285,10 +288,22 @@
     <ClCompile Include="Source\Renderer\SubUVRenderer.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\SceneRenderer.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\SceneCommandBuilder.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\ScreenUIRenderer.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer\ViewportCompositor.cpp">
+      <Filter>Source\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Renderer\TextMeshBuilder.cpp">
       <Filter>Source\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Level\RenderCollector.cpp">
+    <ClCompile Include="Source\Level\ScenePacketBuilder.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Level\Level.cpp">
@@ -312,6 +327,10 @@
     <ClCompile Include="Source\Level\MeshBVH.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Renderer\Feature\DebugLineRenderFeature.cpp" />
+    <ClCompile Include="Source\Renderer\Feature\OutlineRenderFeature.cpp" />
+    <ClCompile Include="Source\Renderer\Feature\SubUVRenderFeature.cpp" />
+    <ClCompile Include="Source\Renderer\Feature\TextRenderFeature.cpp" />
     <ClCompile Include="Source\Component\BillboardComponent.cpp">
       <Filter>Source\Component</Filter>
     </ClCompile>
@@ -320,6 +339,9 @@
     </ClCompile>
     <ClCompile Include="Source\Actor\BillboardActor.cpp">
       <Filter>Source\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Component\MoveComponent.cpp">
+      <Filter>Source\Component</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -560,6 +582,21 @@
     <ClInclude Include="Source\Renderer\SubUVRenderer.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\UIDrawList.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneRenderer.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\SceneCommandBuilder.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\ScreenUIRenderer.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer\ViewportCompositor.h">
+      <Filter>Source\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Renderer\TextMeshBuilder.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
@@ -569,7 +606,10 @@
     <ClInclude Include="Source\Renderer\Vertex.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Level\RenderCollector.h">
+    <ClInclude Include="Source\Level\SceneRenderPacket.h">
+      <Filter>Source\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Level\ScenePacketBuilder.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Level\Level.h">
@@ -909,6 +949,12 @@
     <ClInclude Include="Source\Level\MeshBVH.h">
       <Filter>Source\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Renderer\RenderDevice.h" />
+    <ClInclude Include="Source\Renderer\RenderFeatureInterfaces.h" />
+    <ClInclude Include="Source\Renderer\Feature\DebugLineRenderFeature.h" />
+    <ClInclude Include="Source\Renderer\Feature\OutlineRenderFeature.h" />
+    <ClInclude Include="Source\Renderer\Feature\SubUVRenderFeature.h" />
+    <ClInclude Include="Source\Renderer\Feature\TextRenderFeature.h" />
     <ClInclude Include="Source\Renderer\RenderType.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>
@@ -920,6 +966,9 @@
     </ClInclude>
     <ClInclude Include="Source\Actor\BillboardActor.h">
       <Filter>Source\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\MoveComponent.h">
+      <Filter>Source\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

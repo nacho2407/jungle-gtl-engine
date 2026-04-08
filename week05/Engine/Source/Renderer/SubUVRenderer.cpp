@@ -62,6 +62,7 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 	SubUVMaterial->SetOriginName("M_SubUV");
 	SubUVMaterial->SetVertexShader(VS);
 	SubUVMaterial->SetPixelShader(PS);
+	SubUVMaterial->SetPixelTextureBinding(0, TextureSRV, SamplerState);
 
 	// 래스터라이저 설정 (컬링 방지)
 	FRasterizerStateOption rasterizerOption;

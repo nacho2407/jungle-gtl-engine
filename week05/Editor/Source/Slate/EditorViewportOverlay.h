@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Widget/Widget.h"
-#include "ViewportToolbar.h"
-#include "TransformWidget.h"
-#include "FpsStatWidget.h"
+#include "LayoutToolbarWidget.h"
+#include "ViewportChromeWidget.h"
+#include <memory>
 
 class FEditorEngine;
 class FEditorUI;
@@ -14,24 +14,16 @@ class SEditorViewportOverlay : public SWidget
 public:
 	SEditorViewportOverlay(FEditorEngine* InEngine, FEditorUI* InEditorUI, FEditorViewportClient* InViewportClient);
 
-	void OnPaint(SWidget& Painter) override;
-	bool OnMouseDown(int32 X, int32 Y) override;
-	bool HitTest(FPoint Point) const override;
+	bool IsChromeProvider() const override { return true; }
+	SWidget* GetGlobalChromeWidget() override;
+	SWidget* GetViewportChromeWidget(FViewportId ViewportId) override;
+
+	void OnPaint(FSlatePaintContext& Painter) override { (void)Painter; }
+	bool OnMouseDown(int32 X, int32 Y) override { (void)X; (void)Y; return false; }
+	bool HitTest(FPoint Point) const override { (void)Point; return false; }
 
 private:
-	void UpdateLayout() const;
-	bool ComputeViewportBounds(FRect& OutRect) const;
-	bool ShouldShowFPS() const;
-	FRect GetInteractiveRect() const;
-
-	static bool ContainsPoint(const FRect& InRect, FPoint Point);
-	static FRect UnionRects(const FRect& A, const FRect& B);
-
-private:
-	FEditorEngine* Engine = nullptr;
-	FEditorUI* EditorUI = nullptr;
-	mutable FRect ViewportBounds;
-	mutable SViewportToolbarWidget Toolbar;
-	mutable FTransformWidget Transform;
-	mutable FpsStatWidget FpsWidget;
+	std::unique_ptr<SLayoutToolbarWidget> GlobalToolbar;
+	std::unique_ptr<SViewportChromeWidget> ViewportToolbars[MAX_VIEWPORTS];
 };
+

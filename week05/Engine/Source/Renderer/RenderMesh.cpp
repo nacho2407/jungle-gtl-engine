@@ -3,11 +3,18 @@
 
 void FRenderMesh::Bind(ID3D11DeviceContext* Context)
 {
-	if (!VertexBuffer || !IndexBuffer) return;
+	if (!VertexBuffer) return;
 	UINT Stride = sizeof(FVertex);
 	UINT Offset = 0;
 	Context->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-	Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	if (IndexBuffer)
+	{
+		Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	}
+	else
+	{
+		Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+	}
 }
 
 void FRenderMesh::Release()

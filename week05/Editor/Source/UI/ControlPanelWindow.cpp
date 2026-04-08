@@ -22,7 +22,6 @@
 
 #include "Actor/CubeActor.h"
 #include "Actor/PlaneActor.h"
-#include "Actor/SkySphereActor.h"
 #include "Actor/SphereActor.h"
 #include "Actor/StaticMeshActor.h"
 #include "Actor/SubUVActor.h"
@@ -193,7 +192,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 		ImGui::SeparatorText("Spawn");
 
 		static int32 SpawnTypeIndex = 0;
-		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "SubUV", "Text", "SkySphere", "Billboard", "Staticmesh"};
+		const char* SpawnTypes[] = { "Cube", "Sphere", "Plane", "SubUV", "Text", "Billboard", "Staticmesh"};
 
 		ImGui::Combo("Type", &SpawnTypeIndex, SpawnTypes, IM_ARRAYSIZE(SpawnTypes));
 
@@ -247,10 +246,6 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			}
 			else if (SpawnTypeIndex == 5)
 			{
-				NewActor = Scene->SpawnActor<ASkySphereActor>(Name);
-			}
-			else if (SpawnTypeIndex == 6)
-			{
 				NewActor = Scene->SpawnActor<ABillboardActor>(Name);
 			}
 			else
@@ -281,11 +276,7 @@ void FControlPanelWindow::Render(FEditorEngine* Engine)
 			}
 
 			// ─── 마무리: 에디터 선택 및 로그 출력 ───
-			// 하늘(6번)은 배경이므로 에디터에서 자동 선택되지 않게 막아둠
-			if (NewActor && SpawnTypeIndex != 5)
-			{
-				Engine->SetSelectedActor(NewActor);
-			}
+			Engine->SetSelectedActor(NewActor);
 			UE_LOG("Spawned %s: %s", SpawnTypes[SpawnTypeIndex], Name.c_str());
 		}
 

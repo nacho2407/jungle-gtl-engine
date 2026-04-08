@@ -5,6 +5,4 @@ void STextBlock::SetText(const FString& InText)
 	if (Text == InText) return;
 	Text = InText;
 	CachedRenderedText = Text;
-	delete CachedMesh;
-	CachedMesh = nullptr;
 }

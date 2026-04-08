@@ -2,6 +2,7 @@
 #include "PrimitiveComponent.h"
 
 struct FDynamicMesh;
+class FArchive;
 
 class ENGINE_API UBillboardComponent : public UPrimitiveComponent
 {
@@ -13,6 +14,9 @@ public:
 	virtual bool UseSpherePicking() const override { return true; }
 	virtual FBoxSphereBounds GetWorldBounds() const override;
 	virtual FRenderMesh* GetRenderMesh() const override;
+	void Serialize(FArchive& Ar) override;
+	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
+	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
 	void SetSize(const FVector2& InSize) { Size = InSize; }
 	const FVector2& GetSize() const { return Size; }

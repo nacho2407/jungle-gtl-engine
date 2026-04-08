@@ -1,10 +1,9 @@
 #pragma once
 #include "PrimitiveComponent.h"
-
 #include "Renderer/MeshData.h"
 
-enum EHorizTextAligment;
-enum EVerticalTextAligment;
+enum EHorizTextAligment : int;
+enum EVerticalTextAligment : int;
 
 
 class ENGINE_API UTextRenderComponent : public UPrimitiveComponent

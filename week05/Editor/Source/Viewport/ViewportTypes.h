@@ -33,6 +33,32 @@ struct FRect
 	bool IsValid() const { return Width > 0 && Height > 0; }
 };
 
+
+inline bool ContainsPoint(const FRect& Rect, const FPoint& Point)
+{
+	return Rect.IsValid() && Point.X >= Rect.X && Point.X < Rect.X + Rect.Width && Point.Y >= Rect.Y && Point.Y < Rect.Y + Rect.Height;
+}
+
+inline FRect IntersectRect(const FRect& A, const FRect& B)
+{
+	const int32 Left = (A.X > B.X) ? A.X : B.X;
+	const int32 Top = (A.Y > B.Y) ? A.Y : B.Y;
+	const int32 Right = ((A.X + A.Width) < (B.X + B.Width)) ? (A.X + A.Width) : (B.X + B.Width);
+	const int32 Bottom = ((A.Y + A.Height) < (B.Y + B.Height)) ? (A.Y + A.Height) : (B.Y + B.Height);
+	return { Left, Top, Right - Left, Bottom - Top };
+}
+
+inline FRect UnionRect(const FRect& A, const FRect& B)
+{
+	if (!A.IsValid()) return B;
+	if (!B.IsValid()) return A;
+	const int32 Left = (A.X < B.X) ? A.X : B.X;
+	const int32 Top = (A.Y < B.Y) ? A.Y : B.Y;
+	const int32 Right = ((A.X + A.Width) > (B.X + B.Width)) ? (A.X + A.Width) : (B.X + B.Width);
+	const int32 Bottom = ((A.Y + A.Height) > (B.Y + B.Height)) ? (A.Y + A.Height) : (B.Y + B.Height);
+	return { Left, Top, Right - Left, Bottom - Top };
+}
+
 enum class ERenderMode
 {
 	Lighting,

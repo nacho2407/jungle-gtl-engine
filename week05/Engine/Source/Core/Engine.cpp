@@ -1,4 +1,4 @@
-#include "Engine.h"
+﻿#include "Engine.h"
 
 #include "Platform/Windows/WindowsWindow.h"
 #include "Asset/ObjManager.h"
@@ -49,39 +49,30 @@ bool FEngine::Initialize(const FEngineInitArgs& Args)
 	};
 
 	GEngine = this;
-
-	// 1. 파생형이 내부 상태를 먼저 준비한다.
 	PreInitialize();
-	// 2. 엔진이 사용할 호스트 창 참조를 바인딩한다.
 	BindHost(Args.MainWindow);
 
-	// 3. 월드와 무관한 런타임 시스템을 먼저 초기화한다.
 	if (!InitializeRuntimeSystems(Args.Hwnd, Args.Width, Args.Height))
 	{
 		return FailInitialize();
 	}
 
-	// 4. 시작 모드에 맞는 월드 컨텍스트와 월드를 생성한다.
 	if (!InitializeWorlds())
 	{
 		return FailInitialize();
 	}
 
-	// 5. 메인 뷰포트 클라이언트를 만들어 기본 렌더링 경로를 준비한다.
 	if (!InitializePrimaryViewport())
 	{
 		return FailInitialize();
 	}
 
-	// 6. 게임/에디터 전용 초기화는 파생형이 담당한다.
 	if (!InitializeMode())
 	{
 		return FailInitialize();
 	}
 
-	// 7. 마지막 초기 검증이나 동기화를 수행한다.
 	FinalizeInitialize();
-
 	return true;
 }
 
@@ -95,7 +86,6 @@ void FEngine::Tick()
 	BeginFrame();
 
 	const float DeltaTime = GetDeltaTime();
-
 	PrepareFrame(DeltaTime);
 	ProcessInput(DeltaTime);
 	TickPhysics(DeltaTime);
@@ -261,9 +251,7 @@ bool FEngine::InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height)
 		return false;
 	}
 
-	// 런타임 시스템은 월드 생성 전에 모두 준비해 둔다.
 	ObjManager = std::make_unique<FObjectManager>();
-
 	FMaterialManager::Get().LoadAllMaterials(Renderer->GetDevice(), Renderer->GetRenderStateManager().get());
 
 	InputManager = std::make_unique<FInputManager>();
@@ -272,20 +260,16 @@ bool FEngine::InitializeRuntimeSystems(HWND Hwnd, int32 Width, int32 Height)
 
 	Timer.Initialize();
 	RegisterConsoleVariables();
-
 	return true;
 }
 
-bool FEngine::InitializeWorlds(void)
+bool FEngine::InitializeWorlds()
 {
-	// 월드는 런타임 시스템이 준비된 뒤에만 만든다.
-
 	return true;
 }
 
 bool FEngine::InitializePrimaryViewport()
 {
-	// 기본 뷰포트는 월드 생성 이후에 만들어야 활성 씬과 바로 연결할 수 있다.
 	ViewportClient = CreateViewportClient();
 	if (!ViewportClient)
 	{
@@ -312,12 +296,10 @@ void FEngine::ReleaseRuntime()
 
 	EnhancedInput.reset();
 	InputManager.reset();
-
 	PhysicsManager.reset();
 	FPrimitiveGizmo::ClearCache();
 	Renderer.reset();
 
-	CommandQueue.Clear();
 	LastGCTime = 0.0;
 }
 
@@ -454,54 +436,6 @@ void FEngine::ProcessInput(float DeltaTime)
 void FEngine::TickPhysics(float DeltaTime)
 {
 	(void)DeltaTime;
-
-	//if (!PhysicsManager)
-	//{
-	//	return;
-	//}
-
-	//if (!WantsPhysicsDebugVisualization())
-	//{
-	//	return;
-	//}
-
-	//UScene* Scene = ActiveViewportClient ? ActiveViewportClient->ResolveScene(this) : GetActiveScene();
-	//if (!Scene)
-	//{
-	//	return;
-	//}
-
-	//const FVector LineStart(2, 2, 0);
-	//const FVector LineEnd(5, 5, 0);
-	//FHitResult HitResult;
-
-	//const bool bHit = PhysicsManager->Linetrace(Scene, LineStart, LineEnd, HitResult);
-	//if (bHit && !HitResult.HitActor->IsA(ASkySphereActor::StaticClass()))
-	//{
-	//	for (UActorComponent* ActorComp : HitResult.HitActor->GetComponents())
-	//	{
-	//		if (!ActorComp->IsA(UPrimitiveComponent::StaticClass()))
-	//		{
-	//			continue;
-	//		}
-
-	//		UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(ActorComp);
-	//		if (!PrimitiveComponent->ShouldDrawDebugBounds())
-	//		{
-	//			continue;
-	//		}
-
-	//		const FBoxSphereBounds Bounds = PrimitiveComponent->GetWorldBounds();
-	//		DebugDrawManager.DrawCube(Bounds.Center, Bounds.BoxExtent, FVector4(1, 0, 0, 1));
-	//	}
-
-	//	DebugDrawManager.DrawCube(HitResult.HitLocation, FVector(0.1f, 0.1f, 0.1f), FVector4(0, 1, 0, 1));
-	//}
-
-	//if (Renderer)
-	//{
-	//	DebugDrawManager.DrawLine(LineStart, LineEnd, FVector4(0, 1, 1, 1));
-	//}
 }
 
 void FEngine::RenderFrame()
@@ -514,39 +448,15 @@ void FEngine::RenderFrame()
 
 	Renderer->BeginFrame();
 
-	UWorld* ActiveWorld = GetActiveWorld();
-	if (!ActiveWorld)
-	{
-		Renderer->EndFrame();
-		return;
-	}
-
-	UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
-	if (!ActiveCamera)
-	{
-		Renderer->EndFrame();
-		return;
-	}
-
-	CommandQueue.Clear();
-	CommandQueue.Reserve(Renderer->GetPrevCommandCount());
-	CommandQueue.ViewMatrix = ActiveCamera->GetViewMatrix();
-	CommandQueue.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
-
-	FFrustum Frustum;
-	const FMatrix ViewProjection = CommandQueue.ViewMatrix * CommandQueue.ProjectionMatrix;
-	Frustum.ExtractFromVP(ViewProjection);
-
 	if (ActiveViewportClient)
 	{
-		const FVector CameraPosition = CommandQueue.ViewMatrix.GetInverse().GetTranslation();
-		ActiveViewportClient->BuildRenderCommands(this, Scene, Frustum, FShowFlags{}, CameraPosition, CommandQueue);
+		ActiveViewportClient->Render(this, Renderer.get());
 	}
 
-	Renderer->SubmitCommands(CommandQueue);
-	Renderer->ExecuteCommands();
-
-	DebugDrawManager.Flush(Renderer.get(), FShowFlags{}, ActiveWorld);
+	FDebugLineRenderRequest DebugLineRequest;
+	DebugDrawManager.BuildRenderRequest(FShowFlags{}, GetActiveWorld(), DebugLineRequest);
+	Renderer->RenderDebugLines(DebugLineRequest);
+	DebugDrawManager.Clear();
 	Renderer->EndFrame();
 }
 
@@ -556,6 +466,8 @@ void FEngine::SyncPlatformState()
 
 void FEngine::FinalizeFrame(float DeltaTime)
 {
+	(void)DeltaTime;
+
 	if (GCInterval <= 0.0 || !ObjManager)
 	{
 		return;
