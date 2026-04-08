@@ -17,6 +17,17 @@
 
 namespace
 {
+	FColor MakeBVHInternalNodeColor(int32 PathIndexFromLeaf, int32 PathLength)
+	{
+		if (PathLength <= 1)
+		{
+			return FColor::Yellow();
+		}
+
+		const float T = static_cast<float>(PathIndexFromLeaf) / static_cast<float>(PathLength - 1);
+		return FColor::Lerp(FColor::Cyan(), FColor::Yellow(), T);
+	}
+
 	bool UsesCameraDependentRenderBounds(const UPrimitiveComponent* PrimitiveComponent)
 	{
 		if (PrimitiveComponent == nullptr)
@@ -289,6 +300,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	if (!Actor->IsVisible()) return false;
 
 	bool bHasSelectionMask = false;
+	std::unordered_set<int32> SeenBVHNodeIndices;
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
@@ -359,6 +371,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 		bHasSelectionMask = true;
 		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+		CollectBVHInternalNodeAABBs(primitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
 	}
 
 	return bHasSelectionMask;
@@ -523,20 +536,95 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	}
 }
 
+void FRenderCollector::CollectBVHInternalNodeAABBs(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags,
+                                                   FRenderBus& RenderBus, std::unordered_set<int32>& SeenNodeIndices)
+{
+	if (!ShowFlags.bBoundingVolume || !ShowFlags.bBVHBoundingVolume || PrimitiveComponent == nullptr)
+	{
+		return;
+	}
+
+	AActor* Owner = PrimitiveComponent->GetOwner();
+	UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	const FWorldSpatialIndex& SpatialIndex = World->GetSpatialIndex();
+	const int32 ObjectIndex = SpatialIndex.FindObjectIndex(PrimitiveComponent);
+	if (ObjectIndex == FBVH::INDEX_NONE)
+	{
+		return;
+	}
+
+	const FBVH& BVH = SpatialIndex.GetBVH();
+	const TArray<int32>& ObjectToLeafNode = BVH.GetObjectToLeafNode();
+	if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(ObjectToLeafNode.size()))
+	{
+		return;
+	}
+
+	const int32 LeafNodeIndex = ObjectToLeafNode[ObjectIndex];
+	if (LeafNodeIndex == FBVH::INDEX_NONE)
+	{
+		return;
+	}
+
+	const TArray<FBVH::FNode>& Nodes = BVH.GetNodes();
+	if (LeafNodeIndex < 0 || LeafNodeIndex >= static_cast<int32>(Nodes.size()))
+	{
+		return;
+	}
+
+	TArray<int32> PathToRoot;
+	PathToRoot.reserve(16);
+
+	int32 CurrentNodeIndex = Nodes[LeafNodeIndex].Parent;
+	while (CurrentNodeIndex != FBVH::INDEX_NONE)
+	{
+		if (CurrentNodeIndex < 0 || CurrentNodeIndex >= static_cast<int32>(Nodes.size()))
+		{
+			break;
+		}
+
+		PathToRoot.push_back(CurrentNodeIndex);
+		CurrentNodeIndex = Nodes[CurrentNodeIndex].Parent;
+	}
+
+	for (int32 PathIndex = 0; PathIndex < static_cast<int32>(PathToRoot.size()); ++PathIndex)
+	{
+		const int32 NodeIndex = PathToRoot[PathIndex];
+		if (!SeenNodeIndices.insert(NodeIndex).second)
+		{
+			continue;
+		}
+
+		const FBVH::FNode& Node = Nodes[NodeIndex];
+		if (Node.IsLeaf())
+		{
+			continue;
+		}
+
+		const FColor Color = MakeBVHInternalNodeColor(PathIndex, static_cast<int32>(PathToRoot.size()));
+		CollectAABBCommand(Node.Bounds, Color, RenderBus);
+	}
+}
+
+void FRenderCollector::CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus)
+{
+	FRenderCommand AABBCmd = {};
+	AABBCmd.Type = ERenderCommandType::DebugBox;
+	AABBCmd.Constants.AABB.Min = Box.Min;
+	AABBCmd.Constants.AABB.Max = Box.Max;
+	AABBCmd.Constants.AABB.Color = Color;
+	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
+}
+
 void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
 	if (!ShowFlags.bBoundingVolume) return;
 
-	FRenderCommand AABBCmd = {};
-	AABBCmd.Type = ERenderCommandType::DebugBox;
-
 	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
-
-	// 이전에 정의한 union 구조체의 AABB 영역에 데이터를 채웁니다.
-	AABBCmd.Constants.AABB.Min = Box.Min;
-	AABBCmd.Constants.AABB.Max = Box.Max;
-	AABBCmd.Constants.AABB.Color = FColor::White();
-
-	// 렌더러가 마지막에 몰아서 그릴 수 있게 특정 패스(예: Editor/Overlay)에 푸시합니다.
-	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
+	CollectAABBCommand(Box, FColor::White(), RenderBus);
 }
