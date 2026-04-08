@@ -212,10 +212,10 @@ void UPrimitiveComponent::DestroyRenderState()
 		{
 			World->GetPartition().RemoveSinglePrimitive(this);
 			World->MarkWorldPrimitivePickingBVHDirty();
-			World->InvalidateVisibleSet();
 
 			if (SceneProxy)
 			{
+				// Scene.RemovePrimitive 가 VisibleProxies 캐시도 일관되게 정리한다.
 				World->GetScene().RemovePrimitive(SceneProxy);
 			}
 		}
