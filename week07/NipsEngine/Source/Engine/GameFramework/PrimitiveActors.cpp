@@ -34,6 +34,9 @@ REGISTER_FACTORY(ASubUVActor)
 DEFINE_CLASS(ATextRenderActor, AActor) 
 REGISTER_FACTORY(ATextRenderActor)
 
+DEFINE_CLASS(ABillboardActor, AActor) 
+REGISTER_FACTORY(ABillboardActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -138,13 +141,13 @@ void AStaticMeshActor::InitDefaultComponents()
 	SetRootComponent(StaticMesh);
 
 	//// Text attached directly to Root
-	//auto* Text = AddComponent<UTextRenderComponent>();
-	//Text->AttachToComponent(StaticMesh);
-	//Text->SetFont(FName("Default"));
-	//Text->SetText("UUID: " + std::to_string(GetUUID()));
+	auto* Text = AddComponent<UTextRenderComponent>();
+	Text->AttachToComponent(StaticMesh);
+	Text->SetFont(FName("Default"));
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
 
-	//FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
-	//Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+	FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 }
 
 void ASubUVActor::InitDefaultComponents()
@@ -178,4 +181,12 @@ void ATextRenderActor::InitDefaultComponents()
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
+void ABillboardActor::InitDefaultComponents()
+{	
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	SetRootComponent(Billboard);
+	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+	//Billboard->SetTextureName();
 }

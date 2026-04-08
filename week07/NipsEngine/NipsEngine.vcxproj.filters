@@ -2,106 +2,118 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{1b768212-1a2a-41ba-bf05-2756813362cd}</UniqueIdentifier>
+      <UniqueIdentifier>{60bee595-7411-c81f-0e11-0934d02a64bc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source">
-      <UniqueIdentifier>{44bbf779-75b6-492b-942c-85966b92b8e2}</UniqueIdentifier>
+      <UniqueIdentifier>{a2c655c5-b907-4abe-9c4e-0ae260b05ced}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor">
-      <UniqueIdentifier>{1f321b32-c975-e0d0-24d2-8f90e130103b}</UniqueIdentifier>
+      <UniqueIdentifier>{01c06a87-3b33-f1be-c238-04f144aa4c78}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Selection">
-      <UniqueIdentifier>{81ae135d-e3d1-d8b2-7b93-7a1c009f0df2}</UniqueIdentifier>
+      <UniqueIdentifier>{33d96653-88d6-d5dc-f0fa-d752c20ed9ed}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Settings">
-      <UniqueIdentifier>{7be38b02-aa33-dbd0-4839-34726744b247}</UniqueIdentifier>
+      <UniqueIdentifier>{1393aad3-59b4-8a7e-bf2a-94277bd1f371}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI">
-      <UniqueIdentifier>{a7515dde-e398-8606-a62d-ff525faacaae}</UniqueIdentifier>
+      <UniqueIdentifier>{bc6f9cd9-3513-78f0-0505-1eb95e34498d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Viewport">
-      <UniqueIdentifier>{919d84fe-4f1c-ec13-0ca3-557847b5d719}</UniqueIdentifier>
+      <UniqueIdentifier>{1a34369a-b65d-0692-a150-9209617bbd99}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine">
-      <UniqueIdentifier>{2ccf2241-a0b4-3fc7-5e22-9299db9ca5ed}</UniqueIdentifier>
+      <UniqueIdentifier>{bfcd2a84-61fc-3a27-7115-8732c34a60d0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Asset">
-      <UniqueIdentifier>{7b8bbe99-9263-8f95-0760-ddda7add49e9}</UniqueIdentifier>
+      <UniqueIdentifier>{4defec5c-eaae-b334-ca2c-12fdd0abe386}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Component">
-      <UniqueIdentifier>{28d3975f-a4e5-0add-afb6-8b020443fcb4}</UniqueIdentifier>
+      <UniqueIdentifier>{20a3ff62-6666-58c6-dd73-8a4513da2ca3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Core">
-      <UniqueIdentifier>{a0894aed-39f7-9917-f08b-ce8ee4e5d26d}</UniqueIdentifier>
+      <UniqueIdentifier>{8b69df27-06f7-dea9-00be-7dcc5bcae5a6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Core\Containers">
-      <UniqueIdentifier>{f8b26fad-5272-eaaa-f283-5c4d58f42e12}</UniqueIdentifier>
+      <UniqueIdentifier>{d46d3ee9-22aa-c303-1370-edcc47ae1fc1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Core\Logging">
-      <UniqueIdentifier>{5d522166-e9bf-7003-52dd-1aa4ed598dd0}</UniqueIdentifier>
+      <UniqueIdentifier>{6f50ac41-faa1-3726-af8c-a978dcf9482e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\GameFramework">
-      <UniqueIdentifier>{63fb4974-a427-ef9f-44d4-35b09552708b}</UniqueIdentifier>
+      <UniqueIdentifier>{52c13701-c05b-69fd-253f-f87ac22453d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Geometry">
+      <UniqueIdentifier>{c2319dba-1c79-a1ae-80c5-00daeb3389cc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Math">
-      <UniqueIdentifier>{fde6cc26-5e04-9c6b-7a9f-86698b32f569}</UniqueIdentifier>
+      <UniqueIdentifier>{1f95424e-78f3-3176-c345-9ebb635ae099}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Object">
-      <UniqueIdentifier>{85720fb8-7272-308f-30bb-522ece1ac60b}</UniqueIdentifier>
+      <UniqueIdentifier>{bde1343c-f2f0-832e-756d-af7b4ac2f6e7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render">
-      <UniqueIdentifier>{47b4eeb6-bdfd-9623-0a5c-7712251f0b3b}</UniqueIdentifier>
+      <UniqueIdentifier>{c2b26f68-96a9-037f-9122-8cc548e081ff}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Common">
-      <UniqueIdentifier>{215ccdd0-8df9-21c1-4bc1-eaffb989eec4}</UniqueIdentifier>
+      <UniqueIdentifier>{108dc0c1-4479-94be-2910-1d448b2d0fa7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Device">
-      <UniqueIdentifier>{babf246d-6ccf-db8c-aefb-c86c17b67b50}</UniqueIdentifier>
+      <UniqueIdentifier>{b45e8ed3-f2e1-20c4-d86c-d568ca9584c7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Mesh">
-      <UniqueIdentifier>{7afbb453-85d6-2808-7538-2761eaa15a1b}</UniqueIdentifier>
+      <UniqueIdentifier>{5b8a4f7d-aefb-5262-3cbe-770ad254e1c4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Renderer">
-      <UniqueIdentifier>{b79c80e2-92bd-435c-56f7-cf085958798e}</UniqueIdentifier>
+      <UniqueIdentifier>{219c21d6-301e-9889-9891-1ed459003345}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Renderer\OcclusionCulling">
+      <UniqueIdentifier>{a76e0330-83ed-f5dc-21a5-5928e6c20022}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Resource">
-      <UniqueIdentifier>{efdcb608-ffc0-8b40-edec-1fb65af2fe84}</UniqueIdentifier>
+      <UniqueIdentifier>{e531d80c-df7b-302a-eb68-88766c4bbd6b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Scene">
-      <UniqueIdentifier>{46142976-3a19-cb64-6b41-e0e12b4a2948}</UniqueIdentifier>
+      <UniqueIdentifier>{47ff1c07-1c1a-4340-8c8b-82e5729c9fa7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Runtime">
-      <UniqueIdentifier>{1491c33e-23d5-7d16-0271-8655d776a3dd}</UniqueIdentifier>
+      <UniqueIdentifier>{26c2758f-6f33-95db-0d84-95cb2a4bcc52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Runtime\Stats">
+      <UniqueIdentifier>{b73b3ffd-cc3e-3e73-cd5e-4c862ce12d43}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Serialization">
-      <UniqueIdentifier>{7598f92d-b23a-baff-3847-a897894a4b73}</UniqueIdentifier>
+      <UniqueIdentifier>{2da23669-dc56-0f8c-0400-ac456128f1fa}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Slate">
-      <UniqueIdentifier>{05e70bcf-fc96-201c-014e-c965811ef031}</UniqueIdentifier>
+      <UniqueIdentifier>{d41c747e-d34e-c539-1e9a-c8df44ae034e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Spatial">
+      <UniqueIdentifier>{f8334c36-7f14-c751-7bba-2157775fd0eb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Misc">
-      <UniqueIdentifier>{4b43025f-dc6e-30b2-d7e4-72dd3df32cf7}</UniqueIdentifier>
+      <UniqueIdentifier>{80bb3fb1-78dd-ab3e-b9d5-e1cee5602ed0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Misc\ObjViewer">
-      <UniqueIdentifier>{f1618363-e48f-56bc-ebed-6f33128fb1cd}</UniqueIdentifier>
+      <UniqueIdentifier>{00d409af-9f90-b6ea-7791-4069f50caa8d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Misc\ObjViewer\Settings">
-      <UniqueIdentifier>{6c39db87-65ab-e5e3-60a2-077e843b3d1e}</UniqueIdentifier>
+      <UniqueIdentifier>{c00cbebe-d7ae-beca-0474-aebd61a4b52f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Misc\ObjViewer\UI">
-      <UniqueIdentifier>{b0a149f0-24e5-b140-1826-beadc5b8547e}</UniqueIdentifier>
+      <UniqueIdentifier>{72266e28-9f63-7b46-8ace-2ce3ef8fcb5c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Misc\ObjViewer\Viewport">
-      <UniqueIdentifier>{a67717a7-7e5d-25db-5aab-cea36d508a3e}</UniqueIdentifier>
+      <UniqueIdentifier>{a92070af-a018-ee07-ea50-1f65e812c419}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty">
-      <UniqueIdentifier>{613599bf-ceda-afe0-6bbd-c00acdd71840}</UniqueIdentifier>
+      <UniqueIdentifier>{1733db68-5028-c18d-f0ab-eeb42860f9f8}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty\ImGui">
-      <UniqueIdentifier>{c6f69a42-33d5-ec70-45e0-14da86618b45}</UniqueIdentifier>
+      <UniqueIdentifier>{5326d6e3-f339-0d51-b7d9-34f630792b9e}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
-      <UniqueIdentifier>{a6f0f1f9-2d97-8366-5605-f463d5a20808}</UniqueIdentifier>
+      <UniqueIdentifier>{60f3c5d4-2dd4-3746-7c69-104344277d07}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -272,11 +284,26 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\World.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Geometry\AABB.cpp">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Geometry\Frustum.cpp">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Geometry\Plane.cpp">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Geometry\Transform.cpp">
+      <Filter>Source\Engine\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Color.cpp">
       <Filter>Source\Engine\Math</Filter>
@@ -359,6 +386,9 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\WindowsPlatformTime.cpp">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
@@ -388,6 +418,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Slate\SlateApplication.cpp">
       <Filter>Source\Engine\Slate</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Spatial\BVH.cpp">
+      <Filter>Source\Engine\Spatial</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Spatial\KDTree.cpp">
+      <Filter>Source\Engine\Spatial</Filter>
     </ClCompile>
     <ClCompile Include="Source\Misc\ObjViewer\ObjViewerEngine.cpp">
       <Filter>Source\Misc\ObjViewer</Filter>
@@ -435,15 +471,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Geometry\AABB.cpp" />
-    <ClCompile Include="Source\Engine\Geometry\Frustum.cpp" />
-    <ClCompile Include="Source\Engine\Geometry\Plane.cpp" />
-    <ClCompile Include="Source\Engine\Geometry\Transform.cpp" />
-    <ClCompile Include="Source\Engine\Spatial\BVH.cpp" />
-    <ClCompile Include="Source\Engine\Spatial\KDTree.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -653,6 +680,9 @@
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Level.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
@@ -662,7 +692,31 @@
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\AABB.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\Edge.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\Frustum.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\Plane.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\Ray.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\Transform.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\Triangle.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Math\Color.h">
+      <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Math\Edge.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Matrix.h">
@@ -685,6 +739,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Vector4.h">
       <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ActorIterator.h">
+      <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\EngineStatics.h">
       <Filter>Source\Engine\Object</Filter>
@@ -709,6 +766,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h">
       <Filter>Source\Engine\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Common\ComPtr.h">
+      <Filter>Source\Engine\Render\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h">
       <Filter>Source\Engine\Render\Common</Filter>
@@ -785,8 +845,14 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\WindowsPlatformTime.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h">
       <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h">
+      <Filter>Source\Engine\Runtime\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
@@ -820,6 +886,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Slate\SlateUtils.h">
       <Filter>Source\Engine\Slate</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Spatial\BVH.h">
+      <Filter>Source\Engine\Spatial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Spatial\KDTree.h">
+      <Filter>Source\Engine\Spatial</Filter>
     </ClInclude>
     <ClInclude Include="Source\Misc\ObjViewer\ObjViewerEngine.h">
       <Filter>Source\Misc\ObjViewer</Filter>
@@ -875,19 +947,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\Level.h">
-      <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Object\ActorInterator.h">
-      <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Geometry\AABB.h" />
-    <ClInclude Include="Source\Engine\Geometry\Frustum.h" />
-    <ClInclude Include="Source\Engine\Geometry\Plane.h" />
-    <ClInclude Include="Source\Engine\Geometry\Ray.h" />
-    <ClInclude Include="Source\Engine\Geometry\Transform.h" />
-    <ClInclude Include="Source\Engine\Geometry\Triangle.h" />
-    <ClInclude Include="Source\Engine\Spatial\BVH.h" />
-    <ClInclude Include="Source\Engine\Spatial\KDTree.h" />
   </ItemGroup>
 </Project>

@@ -8,10 +8,7 @@
     static const FTypeInfo s_TypeInfo;                                 \
     const FTypeInfo* GetTypeInfo() const override {                    \
         return &s_TypeInfo;                                            \
-    }                                                                  \
-    static ClassName* Cast(UObject* Obj) {                             \
-        return Obj ? Obj->Cast<ClassName>() : nullptr;                 \
-    }
+    }                                                                  
 
 #define DEFINE_CLASS(ClassName, ParentClass)                           \
     const FTypeInfo ClassName::s_TypeInfo = {                          \
@@ -51,6 +48,10 @@ public:
 	UObject();
 	virtual ~UObject();
 
+	// Shallow, Deep Copy
+	virtual UObject* Duplicate() { return nullptr; }
+	virtual UObject* DuplicateSubObjects() { return this; }
+
 	uint32 GetUUID() const { return UUID; }
 	uint32 GetInternalIndex() const { return InternalIndex; }
 	void SetUUID(uint32 InUUID) { UUID = InUUID; }
@@ -60,20 +61,6 @@ public:
 	FName GetFName() const { return ObjectName; }
 	void SetFName(const FName& InName) { ObjectName = InName; }
 
-	// RTTI stuffs
-	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
-
-	template<typename T>
-	bool IsA() const { return GetTypeInfo()->IsA(&T::s_TypeInfo); }
-
-	template<typename T>
-	T* Cast() { return IsA<T>() ? static_cast<T*>(this) : nullptr; }
-
-	template<typename T>
-	const T* Cast() const { return IsA<T>() ? static_cast<const T*>(this) : nullptr; }
-
-	bool IsValidLowLevel() const { return this != nullptr; }
-
 	struct FObjectNameProxy : public FString
 	{
 		using FString::FString;
@@ -82,6 +69,14 @@ public:
 	};
 
 	FObjectNameProxy GetName() const { return FObjectNameProxy(ObjectName.ToString()); }
+
+	// RTTI stuffs
+	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
+
+	template<typename T>
+	bool IsA() const { return GetTypeInfo()->IsA(&T::s_TypeInfo); }
+
+	bool IsValidLowLevel() const { return this != nullptr; }
 
 	static const FTypeInfo s_TypeInfo;
 
@@ -94,6 +89,26 @@ private:
 };
 
 extern TArray<UObject*> GUObjectArray;
+
+template <typename T>
+inline T* Cast(UObject* Src)
+{
+	if (Src && Src->IsA<T>())
+	{
+		return static_cast<T*>(Src);
+	}
+	return nullptr;
+}
+
+template <typename T>
+inline const T* Cast(const UObject* Src)
+{
+	if (Src && Src->IsA<T>())
+	{
+		return static_cast<const T*>(Src);
+	}
+	return nullptr;
+}
 
 class UObjectManager : public TSingleton<UObjectManager>
 {

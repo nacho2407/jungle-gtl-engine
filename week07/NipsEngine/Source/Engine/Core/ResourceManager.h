@@ -26,7 +26,8 @@ enum class EAssetMetaType
 {
 	None,
 	Font,
-	Particle
+	Particle,
+	Texture
 };
 
 struct FTextureAssetMeta
@@ -55,6 +56,10 @@ inline EAssetMetaType ToAssetMetaType(const FString& Value)
 	if (Value == "Particle")
 	{
 		return EAssetMetaType::Particle;
+	}
+	if (Value == "Texture") 
+	{
+		return EAssetMetaType::Texture;
 	}
 	return EAssetMetaType::None;
 }
@@ -111,6 +116,10 @@ public:
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
 	
+
+	// --- TextureFIlePath ---
+	const TArray<FString>& GetTextureFilePath() const;
+
 	// --- Memory ---
 	size_t GetMaterialMemorySize() const;
 	
