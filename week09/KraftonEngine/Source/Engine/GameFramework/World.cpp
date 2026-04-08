@@ -374,7 +374,7 @@ void UWorld::BeginPlay()
 	}
 }
 
-void UWorld::Tick(float DeltaTime)
+void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 {
 	{
 		SCOPE_STAT_CAT("FlushPrimitive", "1_WorldTick");
@@ -387,12 +387,13 @@ void UWorld::Tick(float DeltaTime)
 	DebugDrawQueue.Tick(DeltaTime);
 #endif
 
-	// 액터 Tick 루프는 월드 타입별로 다르게 돌아야 하므로 UEngine::WorldTick에서 처리한다.
+	TickManager.Tick(this, DeltaTime, TickType);
 }
 
 void UWorld::EndPlay()
 {
 	bHasBegunPlay = false;
+	TickManager.Reset();
 
 	if (!PersistentLevel)
 	{

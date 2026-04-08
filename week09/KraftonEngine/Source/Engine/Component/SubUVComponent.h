@@ -45,7 +45,7 @@ public:
 	void UpdateWorldAABB() const override;
 
 protected:
-	void TickComponent(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 
 private:
 	FName ParticleName;

@@ -19,8 +19,9 @@ public:
 	~UMovementComponent() override = default;
 
 	void BeginPlay() override;
-	void TickComponent(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void Serialize(FArchive& Ar) override;
 
 	void SetUpdatedComponent(USceneComponent* NewUpdatedComponent);
 	USceneComponent* GetUpdatedComponent() const { return UpdatedComponent; }
