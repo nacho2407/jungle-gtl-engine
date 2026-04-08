@@ -341,6 +341,11 @@ void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode,
             RootComp->MarkTransformDirty();
         }
     }
+
+    if (World != nullptr)
+    {
+        World->SyncSpatialIndex();
+    }
 }
 
 /* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */

@@ -13,7 +13,10 @@ void FWorldSpatialIndex::Clear()
     DirtyMarks.clear();
     DirtyObjectIndices.clear();
     FreeObjectIndices.clear();
+    BuildObjectIndicesScratch.clear();
+    BatchRefitDirtyObjectIndicesScratch.clear();
     PrimitiveToIndex.clear();
+    ActiveBVHObjectCount = 0;
 }
 
 void FWorldSpatialIndex::Rebuild(UWorld* World)
@@ -25,12 +28,41 @@ void FWorldSpatialIndex::Rebuild(UWorld* World)
         return;
     }
 
+    BuildObjectIndicesScratch.reserve(World->GetActors().size());
+
     for (AActor* Actor : World->GetActors())
     {
-        RegisterActor(Actor);
+        if (Actor == nullptr)
+        {
+            continue;
+        }
+
+        for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+        {
+            if (!ShouldTrackPrimitive(Primitive))
+            {
+                continue;
+            }
+
+            const int32 ObjectIndex = AllocateObjectIndex();
+            PrimitiveToIndex[Primitive] = ObjectIndex;
+            Primitives[ObjectIndex] = Primitive;
+            DirtyMarks[ObjectIndex] = 0u;
+
+            const FAABB BoundsSnapshot = Primitive->GetWorldAABB();
+            Bounds[ObjectIndex] = BoundsSnapshot;
+
+            const bool bShouldBeInBVH = ShouldInsertIntoBVH(Primitive, BoundsSnapshot);
+            SetInBVHState(ObjectIndex, bShouldBeInBVH);
+            if (bShouldBeInBVH)
+            {
+                BuildObjectIndicesScratch.push_back(ObjectIndex);
+            }
+        }
     }
 
-    FlushDirtyBounds();
+    BVH.BuildBVH(Bounds, BuildObjectIndicesScratch);
+    DirtyObjectIndices.clear();
 }
 
 void FWorldSpatialIndex::RegisterActor(AActor* Actor)
@@ -99,7 +131,7 @@ void FWorldSpatialIndex::UnregisterPrimitive(UPrimitiveComponent* Primitive)
     if (ObjectIndex >= 0 && ObjectIndex < static_cast<int32>(InBVH.size()) && InBVH[ObjectIndex] != 0u)
     {
         (void)BVH.RemoveObject(Bounds, ObjectIndex);
-        InBVH[ObjectIndex] = 0u;
+        SetInBVHState(ObjectIndex, false);
     }
 
     PrimitiveToIndex.erase(It);
@@ -141,6 +173,16 @@ void FWorldSpatialIndex::MarkPrimitiveDirty(UPrimitiveComponent* Primitive)
 
 void FWorldSpatialIndex::FlushDirtyBounds()
 {
+    if (DirtyObjectIndices.empty())
+    {
+        return;
+    }
+
+    const int32 TotalDirtyCount = static_cast<int32>(DirtyObjectIndices.size());
+    int32       StructuralChangeCount = 0;
+    BatchRefitDirtyObjectIndicesScratch.clear();
+    BatchRefitDirtyObjectIndicesScratch.reserve(DirtyObjectIndices.size());
+
     for (int32 ObjectIndex : DirtyObjectIndices)
     {
         if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(Primitives.size()))
@@ -165,7 +207,8 @@ void FWorldSpatialIndex::FlushDirtyBounds()
             if (bCurrentlyInBVH)
             {
                 (void)BVH.RemoveObject(Bounds, ObjectIndex);
-                InBVH[ObjectIndex] = 0u;
+                SetInBVHState(ObjectIndex, false);
+                ++StructuralChangeCount;
             }
 
             Bounds[ObjectIndex] = NewBounds;
@@ -176,7 +219,12 @@ void FWorldSpatialIndex::FlushDirtyBounds()
         {
             Bounds[ObjectIndex] = NewBounds;
             const int32 LeafNodeIndex = BVH.InsertObject(Bounds, ObjectIndex);
-            InBVH[ObjectIndex] = (LeafNodeIndex != FBVH::INDEX_NONE) ? 1u : 0u;
+            const bool bInserted = (LeafNodeIndex != FBVH::INDEX_NONE);
+            SetInBVHState(ObjectIndex, bInserted);
+            if (bInserted)
+            {
+                ++StructuralChangeCount;
+            }
             continue;
         }
 
@@ -187,17 +235,81 @@ void FWorldSpatialIndex::FlushDirtyBounds()
         }
 
         Bounds[ObjectIndex] = NewBounds;
-        const bool bUpdated = BVH.UpdateObject(Bounds, ObjectIndex);
-        if (!bUpdated)
+        BatchRefitDirtyObjectIndicesScratch.push_back(ObjectIndex);
+    }
+
+    const bool bUseBatchRefit = ShouldUseBatchRefit(static_cast<int32>(BatchRefitDirtyObjectIndicesScratch.size()));
+    bool       bUsedBatchRefit = false;
+
+    if (bUseBatchRefit)
+    {
+        BVH.RefitBVH(Bounds, BatchRefitDirtyObjectIndicesScratch);
+        bUsedBatchRefit = true;
+    }
+    else
+    {
+        for (int32 ObjectIndex : BatchRefitDirtyObjectIndicesScratch)
         {
-            const bool bRemoved = BVH.RemoveObject(Bounds, ObjectIndex);
-            (void)bRemoved;
-            const int32 LeafNodeIndex = BVH.InsertObject(Bounds, ObjectIndex);
-            InBVH[ObjectIndex] = (LeafNodeIndex != FBVH::INDEX_NONE) ? 1u : 0u;
+            const bool bUpdated = BVH.UpdateObject(Bounds, ObjectIndex);
+            if (!bUpdated)
+            {
+                const bool bRemoved = BVH.RemoveObject(Bounds, ObjectIndex);
+                (void)bRemoved;
+                const int32 LeafNodeIndex = BVH.InsertObject(Bounds, ObjectIndex);
+                const bool  bInserted = (LeafNodeIndex != FBVH::INDEX_NONE);
+                SetInBVHState(ObjectIndex, bInserted);
+                if (bInserted)
+                {
+                    ++StructuralChangeCount;
+                }
+            }
         }
     }
 
+    if (ShouldRunRotation(TotalDirtyCount, StructuralChangeCount, bUsedBatchRefit))
+    {
+        BVH.RotationBVH(Bounds);
+    }
+
     DirtyObjectIndices.clear();
+}
+
+bool FWorldSpatialIndex::RayQueryClosestPrimitive(const FRay& Ray, UPrimitiveComponent*& OutPrimitive, float& OutT,
+                                                  FBVH::FRayQueryScratch& Scratch)
+{
+    FlushDirtyBounds();
+
+    OutPrimitive = nullptr;
+    OutT = 0.0f;
+
+    int32 ObjectIndex = FBVH::INDEX_NONE;
+    if (!BVH.RayQueryClosestAABB(Ray, ObjectIndex, OutT, Scratch))
+    {
+        return false;
+    }
+
+    OutPrimitive = Resolve(ObjectIndex);
+    return OutPrimitive != nullptr;
+}
+
+void FWorldSpatialIndex::FrustumQueryPrimitives(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives,
+                                                FPrimitiveFrustumQueryScratch& Scratch, bool bInsideOnly)
+{
+    FlushDirtyBounds();
+
+    Scratch.ObjectIndices.clear();
+    BVH.FrustumQuery(Frustum, Scratch.ObjectIndices, Scratch.BVHScratch, bInsideOnly);
+
+    OutPrimitives.clear();
+    OutPrimitives.reserve(Scratch.ObjectIndices.size());
+
+    for (int32 ObjectIndex : Scratch.ObjectIndices)
+    {
+        if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
+        {
+            OutPrimitives.push_back(Primitive);
+        }
+    }
 }
 
 UPrimitiveComponent* FWorldSpatialIndex::Resolve(int32 ObjectIndex) const
@@ -247,6 +359,60 @@ void FWorldSpatialIndex::ReleaseObjectIndex(int32 ObjectIndex)
     }
 
     FreeObjectIndices.push_back(ObjectIndex);
+}
+
+void FWorldSpatialIndex::SetInBVHState(int32 ObjectIndex, bool bInBVH)
+{
+    if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(InBVH.size()))
+    {
+        return;
+    }
+
+    const uint8 NewValue = bInBVH ? 1u : 0u;
+    if (InBVH[ObjectIndex] == NewValue)
+    {
+        return;
+    }
+
+    InBVH[ObjectIndex] = NewValue;
+    ActiveBVHObjectCount += bInBVH ? 1 : -1;
+    if (ActiveBVHObjectCount < 0)
+    {
+        ActiveBVHObjectCount = 0;
+    }
+}
+
+bool FWorldSpatialIndex::ShouldUseBatchRefit(int32 DirtyUpdateCount) const
+{
+    if (DirtyUpdateCount <= 0 || ActiveBVHObjectCount <= 0)
+    {
+        return false;
+    }
+
+    return DirtyUpdateCount >= MaintenancePolicy.BatchRefitMinDirtyCount &&
+           (DirtyUpdateCount * 100) >= (ActiveBVHObjectCount * MaintenancePolicy.BatchRefitDirtyPercentThreshold);
+}
+
+bool FWorldSpatialIndex::ShouldRunRotation(int32 TotalDirtyCount, int32 StructuralChangeCount,
+                                           bool bUsedBatchRefit) const
+{
+    if (ActiveBVHObjectCount < 2)
+    {
+        return false;
+    }
+
+    if (StructuralChangeCount >= MaintenancePolicy.RotationStructuralChangeThreshold)
+    {
+        return true;
+    }
+
+    if (bUsedBatchRefit)
+    {
+        return TotalDirtyCount >= MaintenancePolicy.RotationDirtyCountThreshold ||
+               (TotalDirtyCount * 100) >= (ActiveBVHObjectCount * MaintenancePolicy.RotationDirtyPercentThreshold);
+    }
+
+    return false;
 }
 
 bool FWorldSpatialIndex::ShouldTrackPrimitive(const UPrimitiveComponent* Primitive) const

@@ -7,6 +7,12 @@ DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
 
 AActor::~AActor() {
+	if (OwningWorld != nullptr)
+	{
+		OwningWorld->GetSpatialIndex().UnregisterActor(this);
+		OwningWorld = nullptr;
+	}
+
 	for (auto* Comp : OwnedComponents) {
 		UObjectManager::Get().DestroyObject(Comp);
 	}
@@ -138,6 +144,26 @@ void AActor::SetVisible(bool Visible)
 
 	bVisible = Visible;
 	MarkPrimitiveComponentsDirty();
+}
+
+void AActor::SetWorld(UWorld* World)
+{
+	if (OwningWorld == World)
+	{
+		return;
+	}
+
+	if (OwningWorld != nullptr)
+	{
+		OwningWorld->GetSpatialIndex().UnregisterActor(this);
+	}
+
+	OwningWorld = World;
+
+	if (OwningWorld != nullptr)
+	{
+		OwningWorld->GetSpatialIndex().RegisterActor(this);
+	}
 }
 
 void AActor::SetRootComponent(USceneComponent* Comp) {

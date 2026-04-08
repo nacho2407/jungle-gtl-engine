@@ -19,6 +19,27 @@ class UWorld;
 class FWorldSpatialIndex
 {
   public:
+    /** @brief Tunable policy values that decide when batched maintenance paths should run. */
+    struct FMaintenancePolicy
+    {
+        int32 BatchRefitMinDirtyCount{8};
+        int32 BatchRefitDirtyPercentThreshold{15};
+        int32 RotationStructuralChangeThreshold{8};
+        int32 RotationDirtyCountThreshold{24};
+        int32 RotationDirtyPercentThreshold{30};
+    };
+
+    /**
+     * @brief Caller-owned scratch for primitive frustum queries.
+     * @note The wrapper keeps the BVH's integer object-index output hidden from
+     * the caller while still avoiding per-query allocations.
+     */
+    struct FPrimitiveFrustumQueryScratch
+    {
+        FBVH::FFrustumQueryScratch BVHScratch;
+        TArray<int32>             ObjectIndices;
+    };
+
     FWorldSpatialIndex() = default;
     ~FWorldSpatialIndex() = default;
 
@@ -57,6 +78,29 @@ class FWorldSpatialIndex
      */
     void FlushDirtyBounds();
 
+    /**
+     * @brief Return the closest primitive whose BVH leaf AABB is hit by the ray.
+     * @param Ray Query ray.
+     * @param OutPrimitive Closest intersected primitive, or `nullptr` on miss.
+     * @param OutT Ray distance to the closest leaf AABB hit.
+     * @param Scratch Caller-owned BVH ray-query scratch.
+     * @return `true` if any tracked primitive leaf AABB is hit.
+     * @note Pending dirty bounds are flushed before the query executes.
+     */
+    bool RayQueryClosestPrimitive(const FRay& Ray, UPrimitiveComponent*& OutPrimitive, float& OutT,
+                                  FBVH::FRayQueryScratch& Scratch);
+
+    /**
+     * @brief Collect tracked primitives whose leaf AABBs overlap the input frustum.
+     * @param Frustum Query frustum.
+     * @param OutPrimitives Output primitive list.
+     * @param Scratch Caller-owned wrapper scratch.
+     * @param bInsideOnly If `true`, include only primitives fully inside the frustum.
+     * @note Pending dirty bounds are flushed before the query executes.
+     */
+    void FrustumQueryPrimitives(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives,
+                                FPrimitiveFrustumQueryScratch& Scratch, bool bInsideOnly = false);
+
     /** @brief Resolve a tracked object index back to its primitive component. */
     UPrimitiveComponent* Resolve(int32 ObjectIndex) const;
 
@@ -75,9 +119,18 @@ class FWorldSpatialIndex
     /** @brief Access the world BVH. */
     const FBVH& GetBVH() const { return BVH; }
 
+    /** @brief Read the current maintenance thresholds used by `FlushDirtyBounds()`. */
+    const FMaintenancePolicy& GetMaintenancePolicy() const { return MaintenancePolicy; }
+
+    /** @brief Access the maintenance thresholds for tuning. */
+    FMaintenancePolicy& GetMaintenancePolicy() { return MaintenancePolicy; }
+
   private:
     int32 AllocateObjectIndex();
     void ReleaseObjectIndex(int32 ObjectIndex);
+    void SetInBVHState(int32 ObjectIndex, bool bInBVH);
+    bool ShouldUseBatchRefit(int32 DirtyUpdateCount) const;
+    bool ShouldRunRotation(int32 TotalDirtyCount, int32 StructuralChangeCount, bool bUsedBatchRefit) const;
 
     /** @brief Whether this primitive should be tracked at all. */
     bool ShouldTrackPrimitive(const UPrimitiveComponent* Primitive) const;
@@ -95,6 +148,10 @@ class FWorldSpatialIndex
 
     TArray<int32> DirtyObjectIndices;
     TArray<int32> FreeObjectIndices;
+    TArray<int32> BuildObjectIndicesScratch;
+    TArray<int32> BatchRefitDirtyObjectIndicesScratch;
 
     TMap<UPrimitiveComponent*, int32> PrimitiveToIndex;
+    int32                             ActiveBVHObjectCount{0};
+    FMaintenancePolicy                MaintenancePolicy;
 };
