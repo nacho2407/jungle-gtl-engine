@@ -74,6 +74,8 @@ public:
 	void SetWorld(UWorld* InWorld);
 	void ResetViewport(UWorld* InWorld);
 	void DestroyAllCameras();
+	void DisableWorldAxisForPIE();
+	void RestoreWorldAxisAfterPIE();
 
 	static int32 GetSlotCount(EViewportLayout Layout);
 
@@ -110,4 +112,7 @@ private:
 
 	// 뷰포트 상단 Play/Stop 툴바
 	FEditorPlayToolbarWidget PlayToolbar;
+	bool bHasSavedWorldAxisVisibility = false;
+	bool SavedWorldAxisVisibility[MaxViewportSlots] = {};
+	bool SavedGridVisibility[MaxViewportSlots] = {};
 };

@@ -203,7 +203,7 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 	}
 
 	// ── 월드 축 (A0 방향 — A1=0 라인) ──
-	if (bShowAxis0)
+	if (ShowFlags.bWorldAxis && bShowAxis0)
 	{
 		AddLine(
 			MakeGridPoint(A0, A1, N, Min0, 0.0f, AxisBias),
@@ -212,7 +212,7 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 	}
 
 	// ── 월드 축 (A1 방향 — A0=0 라인) ──
-	if (bShowAxis1)
+	if (ShowFlags.bWorldAxis && bShowAxis1)
 	{
 		AddLine(
 			MakeGridPoint(A0, A1, N, 0.0f, Min1, AxisBias),
@@ -221,7 +221,7 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 	}
 
 	// ── 법선축 (A0=0, A1=0 일 때 수직선) ──
-	if (bShowAxis0 && bShowAxis1)
+	if (ShowFlags.bWorldAxis && bShowAxis0 && bShowAxis1)
 	{
 		const float AxisLen = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
 		AddLine(
