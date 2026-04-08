@@ -42,8 +42,7 @@ public:
 	void UpdateWorldAABB() const override;
 
 protected:
-	void Tick(float DeltaTime) override;
-
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 private:
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
