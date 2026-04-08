@@ -151,6 +151,11 @@ void FSlateApplication::FocusViewport(FViewportId ViewportId)
 	FocusedViewportId = (ActiveViewportCount > 0 && Viewports[0]) ? Viewports[0]->Id : INVALID_VIEWPORT_ID;
 }
 
+// ────────────────────────────────────────────────────────────
+// BuildTree 구현
+//   H-Splitter: SideLT=왼쪽, SideRB=오른쪽
+//   V-Splitter: SideLT=위쪽,  SideRB=아래쪽
+// ────────────────────────────────────────────────────────────
 void FSlateApplication::BuildTree_Single()
 {
 	ActiveViewportCount = 1;
