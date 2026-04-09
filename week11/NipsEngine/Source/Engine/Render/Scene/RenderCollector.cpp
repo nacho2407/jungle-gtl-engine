@@ -435,7 +435,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         const int32 ValidLODCount = StaticMesh->GetValidLODCount();
 
         // 2. LOD 레벨 계산
-        int32 SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+		int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
+        if (ShowFlags.bEnableLOD)
+        {
+            SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+        }
 
 		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
         if (!MeshBuffer) return;

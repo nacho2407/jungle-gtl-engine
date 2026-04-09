@@ -19,4 +19,5 @@ struct FShowFlags
 	bool bBillboardText = false;
 	bool bBoundingVolume = false;
 	bool bBVHBoundingVolume = false;
+	bool bEnableLOD = true;
 };
