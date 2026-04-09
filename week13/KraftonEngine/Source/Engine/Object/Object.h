@@ -14,13 +14,17 @@ class FArchive;
         return &s_TypeInfo;                                            \
     }                                                                  
 
-#define DEFINE_CLASS(ClassName, ParentClass)                           \
+#define DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, FlagsValue)    \
     const FTypeInfo ClassName::s_TypeInfo = {                          \
         #ClassName,                                                    \
         &ParentClass::s_TypeInfo,                                      \
-        sizeof(ClassName)                                              \
+        sizeof(ClassName),                                             \
+        FlagsValue                                                     \
     };																   \
 	FClassRegistrar ClassName::s_Registrar(&ClassName::s_TypeInfo);	   
+
+#define DEFINE_CLASS(ClassName, ParentClass)                           \
+    DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_None)
 
 enum EClassFlags : uint32_t
 {
@@ -28,6 +32,8 @@ enum EClassFlags : uint32_t
 	CF_Actor = 1 << 0,
 	CF_Component = 1 << 1,
 	CF_Camera = 1 << 2,
+	// 에디터 Add Component 목록과 런타임 생성 경로에서 모두 제외할 베이스 타입.
+	CF_Abstract = 1 << 3,
 };
 
 struct FTypeInfo
@@ -44,6 +50,11 @@ struct FTypeInfo
 			}
 		}
 		return false;
+	}
+
+	bool HasAnyClassFlags(uint32 Flags) const
+	{
+		return (ClassFlags & Flags) != 0;
 	}
 };
 
