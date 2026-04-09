@@ -343,7 +343,7 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	Dup->bPrimitiveCacheDirty = true;
 
 	// 4) 월드에 등록 — Dup의 Outer(=대상 World)에 등록해야 PIE 복제 시에도 올바르게 동작.
-	if (UWorld* DestWorld = Dup->GetTypedOuter<UWorld>())
+	if (UWorld* DestWorld = Dup->GetWorld())
 	{
 		DestWorld->AddActor(Dup);
 	}
