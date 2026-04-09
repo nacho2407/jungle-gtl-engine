@@ -1,0 +1,264 @@
+﻿#include "Editor/UI/EditorMainPanel.h"
+
+#include "Editor/EditorEngine.h"
+#include "Editor/Settings/EditorSettings.h"
+#include "Engine/Runtime/WindowsWindow.h"
+
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+
+#include "Render/Pipeline/Renderer.h"
+#include "Engine/Input/InputSystem.h"
+
+#if STATS
+#include "Render/Culling/GPUOcclusionCulling.h"
+#endif
+
+void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	Window = InWindow;
+	EditorEngine = InEditorEngine;
+
+	// 한글 지원 폰트 로드 (시스템 맑은 고딕)
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+
+	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
+	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
+
+	ConsoleWidget.Initialize(InEditorEngine);
+	ControlWidget.Initialize(InEditorEngine);
+	PropertyWidget.Initialize(InEditorEngine);
+	SceneWidget.Initialize(InEditorEngine);
+	StatWidget.Initialize(InEditorEngine);
+}
+
+void FEditorMainPanel::Release()
+{
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+}
+
+void FEditorMainPanel::Render(float DeltaTime)
+{
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+
+	// --- 우상단 Windows 토글 버튼 ---
+	if (!bHideEditorWindows)
+	{
+		FEditorSettings& S = FEditorSettings::Get();
+		const ImGuiViewport* VP = ImGui::GetMainViewport();
+		const float ButtonW = 80.0f;
+		const float Margin = 8.0f;
+		ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - ButtonW - Margin, VP->Pos.y + Margin));
+		ImGui::SetNextWindowSize(ImVec2(0, 0));
+		ImGui::Begin("##WidgetToggle", nullptr,
+			ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_NoDocking);
+		if (ImGui::Button("Windows", ImVec2(ButtonW, 0)))
+		{
+			bShowWidgetList = !bShowWidgetList;
+		}
+		ImGui::End();
+
+		if (bShowWidgetList)
+		{
+			ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - 150.0f - Margin, VP->Pos.y + Margin + 30.0f));
+			ImGui::SetNextWindowSize(ImVec2(150.0f, 0));
+			ImGui::Begin("##WidgetList", &bShowWidgetList,
+				ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+				ImGuiWindowFlags_NoDocking);
+			ImGui::Checkbox("Console", &S.UI.bConsole);
+			ImGui::Checkbox("Control", &S.UI.bControl);
+			ImGui::Checkbox("Property", &S.UI.bProperty);
+			ImGui::Checkbox("Scene", &S.UI.bScene);
+			ImGui::Checkbox("Stat", &S.UI.bStat);
+#if STATS
+			ImGui::Checkbox("Hi-Z Debug", &S.UI.bHiZDebug);
+#endif
+			ImGui::End();
+		}
+	}
+
+	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
+	if (EditorEngine)
+	{
+		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "5_UI");
+		EditorEngine->RenderViewportUI(DeltaTime);
+	}
+
+	const FEditorSettings& Settings = FEditorSettings::Get();
+
+	if (!bHideEditorWindows && Settings.UI.bConsole)
+	{
+		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
+		ConsoleWidget.Render(DeltaTime);
+	}
+
+	if (!bHideEditorWindows && Settings.UI.bControl)
+	{
+		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
+		ControlWidget.Render(DeltaTime);
+	}
+
+	if (!bHideEditorWindows && Settings.UI.bProperty)
+	{
+		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
+		PropertyWidget.Render(DeltaTime);
+	}
+
+	if (!bHideEditorWindows && Settings.UI.bScene)
+	{
+		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
+		SceneWidget.Render(DeltaTime);
+	}
+
+	if (!bHideEditorWindows && Settings.UI.bStat)
+	{
+		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
+		StatWidget.Render(DeltaTime);
+	}
+
+#if STATS
+	if (!bHideEditorWindows)
+	{
+		RenderHiZDebug(Settings);
+	}
+#endif
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+#if STATS
+void FEditorMainPanel::RenderHiZDebug(const FEditorSettings& Settings)
+{
+	FGPUOcclusionCulling* Occlusion = EditorEngine ? EditorEngine->GetGPUOcclusion() : nullptr;
+
+	if (!Settings.UI.bHiZDebug || !Occlusion || !Occlusion->IsInitialized() || Occlusion->GetHiZMipCount() == 0)
+	{
+		if (Occlusion) Occlusion->SetDebugMip(-1);
+		return;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(400, 450), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Hi-Z Debug", &FEditorSettings::Get().UI.bHiZDebug))
+	{
+		static int SelectedMip = 0;
+		int maxMip = static_cast<int>(Occlusion->GetHiZMipCount()) - 1;
+		ImGui::SliderInt("Mip Level", &SelectedMip, 0, maxMip);
+		SelectedMip = (SelectedMip < 0) ? 0 : (SelectedMip > maxMip ? maxMip : SelectedMip);
+
+		static int VisMode = 1;
+		static float Exponent = 128.0f;
+		ImGui::Combo("Mode", &VisMode, "Power\0Linear\0");
+		if (VisMode == 0)
+			ImGui::SliderFloat("Exponent", &Exponent, 1.0f, 512.0f, "%.0f");
+
+		Occlusion->SetDebugMip(SelectedMip);
+		Occlusion->SetDebugParams(Exponent, Settings.PerspCamNearClip, Settings.PerspCamFarClip, static_cast<uint32>(VisMode));
+
+		uint32 mipW = Occlusion->GetHiZWidth() >> SelectedMip;
+		uint32 mipH = Occlusion->GetHiZHeight() >> SelectedMip;
+		if (mipW < 1) mipW = 1;
+		if (mipH < 1) mipH = 1;
+		ImGui::Text("Mip %d: %ux%u  (src: %ux%u)", SelectedMip, mipW, mipH,
+			Occlusion->GetHiZWidth(), Occlusion->GetHiZHeight());
+		ImGui::Text("Texture: %s", (SelectedMip & 1) ? "B (odd)" : "A (even)");
+
+		ID3D11ShaderResourceView* srv = Occlusion->GetDebugSRV();
+		if (srv)
+		{
+			float aspect = static_cast<float>(mipW) / static_cast<float>(mipH);
+			float displayW = ImGui::GetContentRegionAvail().x;
+			float displayH = displayW / aspect;
+			ImGui::Image(reinterpret_cast<ImTextureID>(srv), ImVec2(displayW, displayH));
+		}
+	}
+	ImGui::End();
+}
+#endif
+
+void FEditorMainPanel::Update()
+{
+	ImGuiIO& IO = ImGui::GetIO();
+
+	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
+	bool bWantMouse = IO.WantCaptureMouse;
+	bool bWantKeyboard = IO.WantCaptureKeyboard;
+	if (EditorEngine && EditorEngine->IsMouseOverViewport())
+	{
+		bWantMouse = false;
+		bWantKeyboard = false;
+	}
+	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
+
+	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
+	if (Window)
+	{
+		HWND hWnd = Window->GetHWND();
+		if (IO.WantTextInput)
+		{
+			ImmAssociateContextEx(hWnd, NULL, IACE_DEFAULT);
+		}
+		else
+		{
+			ImmAssociateContext(hWnd, NULL);
+		}
+	}
+}
+
+void FEditorMainPanel::HideEditorWindowsForPIE()
+{
+	if (bHasSavedUIVisibility)
+	{
+		bHideEditorWindows = true;
+		bShowWidgetList = false;
+		return;
+	}
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+	SavedUIVisibility = Settings.UI;
+	bSavedShowWidgetList = bShowWidgetList;
+	bHasSavedUIVisibility = true;
+	bHideEditorWindows = true;
+	bShowWidgetList = false;
+
+	Settings.UI.bConsole = false;
+	Settings.UI.bControl = false;
+	Settings.UI.bProperty = false;
+	Settings.UI.bScene = false;
+	Settings.UI.bStat = false;
+#if STATS
+	Settings.UI.bHiZDebug = false;
+#endif
+}
+
+void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
+{
+	if (!bHasSavedUIVisibility)
+	{
+		bHideEditorWindows = false;
+		return;
+	}
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+	Settings.UI = SavedUIVisibility;
+	bShowWidgetList = bSavedShowWidgetList;
+	bHideEditorWindows = false;
+	bHasSavedUIVisibility = false;
+}

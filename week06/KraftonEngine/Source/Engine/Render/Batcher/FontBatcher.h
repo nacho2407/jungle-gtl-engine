@@ -1,0 +1,79 @@
+﻿#pragma once
+
+#include "BatcherBase.h"
+#include "Core/CoreTypes.h"
+#include "Core/EngineTypes.h"
+#include "Core/ResourceTypes.h"
+#include "Math/Vector.h"
+#include "Math/Matrix.h"
+#include "Render/Types/RenderTypes.h"
+#include "Render/Types/VertexTypes.h"
+
+// Texture Atlas UV 정보
+struct FCharacterInfo
+{
+	float U;
+	float V;
+	float Width;
+	float Height;
+};
+
+// FFontBatcher — 텍스트를 배치로 모아 1회 드로우콜로 처리
+//
+// 사용 흐름:
+//   1) Create()   — 장치 초기화 (셰이더, 샘플러, Dynamic VB/IB). 텍스처는 로드하지 않습니다.
+//   2) Clear()    — 매 프레임 시작 시 이전 텍스트 제거
+//   3) AddText()  — 문자별 쿼드 누적
+//   4) DrawBatch()— Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
+//                   SRV는 ResourceManager가 소유하는 FFontResource에서 전달받습니다.
+//   5) Release()  — DX 리소스 해제
+class FFontBatcher : public FBatcherBase
+{
+public:
+	void Create(ID3D11Device* InDevice);
+	void Release();
+
+	// 월드 좌표 위에 빌보드 텍스트 추가 (배치에 누적)
+	void AddText(const FString& Text,
+		const FVector& WorldPos,
+		const FVector& CamRight,
+		const FVector& CamUp,
+		const FVector& WorldScale,
+		float Scale = 1.0f);
+
+	// 오버레이 스탯 렌더링용
+	void AddScreenText(const FString& Text,
+		float ScreenX, float ScreenY,
+		float ViewportWidth, float ViewportHeight,
+		float Scale = 1.0f
+	);
+
+	// 이번 프레임 누적 텍스트 초기화
+	void Clear();        // 빌보드 텍스트 (Vertices/Indices)
+	void ClearScreen();  // 오버레이 텍스트 (ScreenVertices/ScreenIndices)
+
+	// Dynamic VB 업로드 + 드로우콜 1회
+	void DrawBatch(ID3D11DeviceContext* Context, const FFontResource* Resource);
+	void DrawScreenBatch(ID3D11DeviceContext* Context, const FFontResource* Resource);
+
+	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
+
+private:
+	// CPU 누적 배열
+	TArray<FTextureVertex> Vertices;
+	TArray<uint32>         Indices;
+
+	TArray<FTextureVertex> ScreenVertices;
+	TArray<uint32>         ScreenIndices;
+
+	// 고유 리소스
+	ID3D11SamplerState* SamplerState = nullptr;
+
+	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드
+	TMap<uint32, FCharacterInfo> CharInfoMap;
+	uint32 CachedColumns = 0;
+	uint32 CachedRows    = 0;
+
+	void BuildCharInfoMap(uint32 Columns, uint32 Rows);
+	void GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
+};
