@@ -4,6 +4,11 @@
 #include "Geometry/Edge.h"
 #include <queue>
 
+struct FTopoUVBounds 
+{
+    float MinU, MaxU, MinV, MaxV;
+};
+
 struct FTopologicalVertex
 {
 	FVector Position;
@@ -36,6 +41,7 @@ private:
 	void CalculateInitialQuadrics();
 	void FindBoundaryEdges();
 	void AddPlaneQuadric(uint32 VertIdx, const FVector& InNormal, float InD);
+	void BuildTopoUVBounds();
 
 	/* Error Calculation Phase */
 	static float CalculateVertexError(const FMatrix& Q, const FVector& V);
@@ -61,6 +67,8 @@ private:
 	TArray<FMatrix> Quadrics;					    
 	TSet<FIndexEdge> Edges;						    
 	TMap<FIndexEdge, int32> EdgeUsage;				
-	TSet<uint32> BoundaryVertices;					
+	TSet<uint32> BoundaryVertices;
+	// 각 위상 정점의 UV bounding box 캐싱
+	TArray<FTopoUVBounds> TopoUVBounds;
 	TMap<uint32, TSet<uint32>> VertexToTriangleMap; 
 };
