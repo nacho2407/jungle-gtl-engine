@@ -131,7 +131,7 @@ namespace
 
 		if (Dist <= 1e-4f) return 0;
 
-		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[1][1];
+		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
 		const float ScreenCoverage = ProjectedRadius * 2.0f; 
 
 		static constexpr float Thresholds[] = { 0.05f, 0.03f, 0.01f, 0.008f };
