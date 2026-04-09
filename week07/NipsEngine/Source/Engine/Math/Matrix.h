@@ -948,11 +948,10 @@ struct FMatrix
         const float XScale = YScale / AspectRatio;
 
         return FMatrix(
-			XScale, 0.f,    0.f,                          0.f,
-			0.f,    YScale, 0.f,                          0.f,
-			0.f,    0.f,    FarZ / (FarZ - NearZ),        1.f,
-			0.f,    0.f,    -NearZ * FarZ / (FarZ - NearZ), 0.f
-		);
+			0.f, 0.f, FarZ / (FarZ - NearZ), 1.f, 
+			XScale, 0.f, 0.f, 0.f, 
+			0.f, YScale, 0.f, 0.f, 
+			0.f, 0.f, -NearZ * FarZ / (FarZ - NearZ), 0.f);
     }
 
     // Left-Handed 기준 직교 투영 행렬을 생성함
@@ -964,11 +963,10 @@ struct FMatrix
         assert(FarZ != NearZ);
 
         return FMatrix(
-			2.f / ViewWidth, 0.f,             0.f,                    0.f,
-			0.f,             2.f / ViewHeight, 0.f,                   0.f,
-			0.f,             0.f,             1.f / (FarZ - NearZ),   0.f,
-			0.f,             0.f,             -NearZ / (FarZ - NearZ), 1.f
-		);
+			0.f, 0.f, 1.f / (FarZ - NearZ), 0.f, 
+			2.f / ViewWidth, 0.f, 0.f, 0.f, 
+			0.f, 2.f / ViewHeight, 0.f, 0.f, 
+			0.f, 0.f, -NearZ / (FarZ - NearZ), 1.f);
     }
 
     // Left-Handed 기준 View LookAt 행렬을 생성함
@@ -989,9 +987,11 @@ struct FMatrix
 
         const FVector NewUp = FVector::CrossProduct(Forward, Right).GetSafeNormal();
 
-        return FMatrix(Forward.X, Right.X, NewUp.X, 0.f, Forward.Y, Right.Y, NewUp.Y, 0.f,
-                       Forward.Z, Right.Z, NewUp.Z, 0.f, -FVector::DotProduct(Eye, Forward),
-                       -FVector::DotProduct(Eye, Right), -FVector::DotProduct(Eye, NewUp), 1.f);
+        return FMatrix(
+			Forward.X, Right.X, NewUp.X, 0.f, 
+			Forward.Y, Right.Y, NewUp.Y, 0.f,
+            Forward.Z, Right.Z, NewUp.Z, 0.f, 
+			-FVector::DotProduct(Eye, Forward), -FVector::DotProduct(Eye, Right), -FVector::DotProduct(Eye, NewUp), 1.f);
     }
 
     // 지정한 위치에서 카메라를 바라보는 Billboard 행렬을 생성함
@@ -1003,7 +1003,7 @@ struct FMatrix
         {
             return MakeTranslation(Position);
         }
-
+		
         const FVector Right = FVector::CrossProduct(Up, Forward).GetSafeNormal();
         if (Right.IsNearlyZero())
         {
@@ -1012,8 +1012,11 @@ struct FMatrix
 
         const FVector NewUp = FVector::CrossProduct(Forward, Right).GetSafeNormal();
 
-        return FMatrix(Forward.X, Forward.Y, Forward.Z, 0.f, Right.X, Right.Y, Right.Z, 0.f,
-                       NewUp.X, NewUp.Y, NewUp.Z, 0.f, Position.X, Position.Y, Position.Z, 1.f);
+        return FMatrix(
+			Forward.X, Forward.Y, Forward.Z, 0.f, 
+			Right.X, Right.Y, Right.Z, 0.f,
+			NewUp.X, NewUp.Y, NewUp.Z, 0.f,
+			Position.X, Position.Y, Position.Z, 1.f);
     }
 
     // 위치, 회전 행렬, 스케일을 이용하여 월드 행렬을 생성함
