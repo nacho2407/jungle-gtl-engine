@@ -36,6 +36,11 @@ public:
 	T* AddComponent() {
 		static_assert(std::is_base_of_v<UActorComponent, T>,
 			"AddComponent<T>: T must derive from UActorComponent");
+		// 템플릿 경로도 abstract 베이스 컴포넌트 직접 추가를 막는다.
+		if (T::s_TypeInfo.HasAnyClassFlags(CF_Abstract))
+		{
+			return nullptr;
+		}
 
 		T* Comp = UObjectManager::Get().CreateObject<T>(this);
 		Comp->SetOwner(this);

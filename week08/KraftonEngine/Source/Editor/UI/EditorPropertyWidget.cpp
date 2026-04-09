@@ -292,11 +292,20 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	TArray<const FTypeInfo*> ComponentClasses;
 	for (const FTypeInfo* Info : AllClasses)
 	{
-		if (Info->IsA(&UActorComponent::s_TypeInfo))
+		// 베이스 컴포넌트는 reflection에는 남겨 두되 Add Component UI에서는 숨긴다.
+		if (Info->IsA(&UActorComponent::s_TypeInfo) && !Info->HasAnyClassFlags(CF_Abstract))
 			ComponentClasses.push_back(Info);
 	}
 
 	static int SelectedIndex = 0;
+	if (ComponentClasses.empty())
+	{
+		SelectedIndex = 0;
+	}
+	else if (SelectedIndex >= static_cast<int>(ComponentClasses.size()))
+	{
+		SelectedIndex = static_cast<int>(ComponentClasses.size()) - 1;
+	}
 	const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->name;
 
 	if (ImGui::BeginCombo("Component Class", Preview))
@@ -315,9 +324,14 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	USceneComponent* Root = Actor->GetRootComponent();
 
 	// Add Component
-	if (ImGui::Button("Add"))
+	if (!ComponentClasses.empty() && ImGui::Button("Add"))
 	{
 		UActorComponent* Comp = Actor->AddComponentByClass(ComponentClasses[SelectedIndex]);
+		if (!Comp)
+		{
+			return;
+		}
+
 		if (ComponentClasses[SelectedIndex]->IsA(&USceneComponent::s_TypeInfo))
 		{
 			if (SelectedComponent != nullptr && SelectedComponent->GetTypeInfo()->IsA(&USceneComponent::s_TypeInfo))

@@ -5,7 +5,8 @@
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UMovementComponent, UActorComponent)
+// Base movement logic only; concrete movement types should be added instead.
+IMPLEMENT_ABSTRACT_CLASS(UMovementComponent, UActorComponent)
 
 void UMovementComponent::BeginPlay()
 {
