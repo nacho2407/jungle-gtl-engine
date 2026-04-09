@@ -119,7 +119,8 @@ namespace
 
 	int32 SelectLODLevel(const FVector& CameraPos, const FAABB& Bounds, const FMatrix& ProjMatrix, int32 ValidLODCount)
 	{
-		if (ValidLODCount <= 1) return 0;
+		bool IsOrthoGraphic = (std::abs(ProjMatrix.M[3][3] - 1.0f) < 1e-4f);
+		if (ValidLODCount <= 1 || IsOrthoGraphic) return 0;
 
 		// 1. 바운딩 박스를 통해 바운딩 스피어 반지름 및 카메라와의 거리 계산
 		const FVector Center = (Bounds.Min + Bounds.Max) * 0.5f;
@@ -132,17 +133,15 @@ namespace
 		if (Dist <= 1e-4f) return 0;
 
 		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
-		const float ScreenCoverage = ProjectedRadius * 2.0f; 
+		const float ScreenCoverage = ProjectedRadius; 
 
 		static constexpr float Thresholds[] = { 0.05f, 0.03f, 0.01f, 0.008f };
 		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
 
 		const int32 MaxLOD = ValidLODCount - 1;
-    
 		for (int32 LOD = 0; LOD < MaxLOD; ++LOD)
 		{
 			float Threshold = (LOD < ThresholdCount) ? Thresholds[LOD] : 0.0f;
-        
 			if (ScreenCoverage >= Threshold)
 				return LOD;
 		}
@@ -436,7 +435,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         const int32 ValidLODCount = StaticMesh->GetValidLODCount();
 
         // 2. LOD 레벨 계산
-        int32 SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+		int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
+        if (ShowFlags.bEnableLOD)
+        {
+            SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+        }
 
 		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
         if (!MeshBuffer) return;
