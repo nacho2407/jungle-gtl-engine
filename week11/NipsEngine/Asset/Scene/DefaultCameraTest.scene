@@ -10,7 +10,7 @@
   "Primitives" : {
     "10" : {
       "Location" : [-25.000000, -18.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Data/apple_mid.obj",
+      "ObjStaticMeshAsset" : "Asset/Mesh/apple_mid.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
