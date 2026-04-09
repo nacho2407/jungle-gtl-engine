@@ -4,9 +4,6 @@
 #include "Core/ShowFlags.h"
 #include "Level/SceneRenderPacket.h"
 
-class UActorComponent;
-class AActor;
-class FFrustum;
 class UPrimitiveComponent;
 
 /**
@@ -16,17 +13,12 @@ class UPrimitiveComponent;
 class ENGINE_API FScenePacketBuilder
 {
 public:
-	// 액터와 컴포넌트를 순회하며 보이는 프리미티브를 씬 패킷에 기록한다.
+	// 이미 수집된 프리미티브를 ShowFlag 기준으로 분류해 씬 패킷에 기록한다.
 	void BuildScenePacket(
-		const TArray<AActor*>& Actors,
-		const FFrustum& Frustum,
+		const TArray<UPrimitiveComponent*>& VisiblePrimitives,
 		const FShowFlags& ShowFlags,
 		FSceneRenderPacket& OutPacket);
 
-	// 주어진 프러스텀과 ShowFlag 기준으로 보이는 프리미티브 집합을 만든다.
-	void FrustumCull(
-		const TArray<AActor*>& Actors,
-		const FFrustum& Frustum,
-		const FShowFlags& ShowFlags,
-		TArray<UPrimitiveComponent*>& OutVisible);
+private:
+	bool ShouldIncludePrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags) const;
 };

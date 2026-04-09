@@ -1,4 +1,4 @@
-#include "Renderer/SceneCommandBuilder.h"
+﻿#include "Renderer/SceneCommandBuilder.h"
 
 #include <algorithm>
 
@@ -33,54 +33,22 @@ void FSceneCommandBuilder::UpdateSubUVMaterialParams(
 	FMaterial& Material,
 	int32 Columns,
 	int32 Rows,
-	int32 TotalFrames,
-	int32 FirstFrame,
-	int32 LastFrame,
-	float FPS,
-	float ElapsedTime,
-	bool bLoop)
+	int32 CurrentFrame)
 {
 	if (Columns <= 0 || Rows <= 0)
 	{
 		return;
 	}
 
-	const int32 SafeTotalFrames = (std::max)(1, TotalFrames);
-	const int32 SafeFirstFrame = (std::max)(0, (std::min)(FirstFrame, SafeTotalFrames - 1));
-	const int32 SafeLastFrame = (std::max)(0, (std::min)(LastFrame, SafeTotalFrames - 1));
-	const float SafeFPS = (std::max)(0.0f, FPS);
+	const int32 SafeColumns = (std::max)(1, Columns);
+	const int32 SafeRows = (std::max)(1, Rows);
+	const int32 MaxFrameIndex = SafeColumns * SafeRows - 1;
+	const int32 SafeFrameIndex = (std::max)(0, (std::min)(CurrentFrame, MaxFrameIndex));
 
-	const int32 FirstRowRaw = SafeFirstFrame / Columns;
-	const int32 LastRowRaw = SafeLastFrame / Columns;
-	int32 FirstRow = (std::max)(0, (std::min)(FirstRowRaw, Rows - 1));
-	int32 LastRow = (std::max)(0, (std::min)(LastRowRaw, Rows - 1));
-	if (FirstRow > LastRow)
-	{
-		std::swap(FirstRow, LastRow);
-	}
+	const int32 Col = SafeFrameIndex % SafeColumns;
+	const int32 Row = SafeFrameIndex / SafeColumns;
 
-	const int32 PlayableRowCount = LastRow - FirstRow + 1;
-	const int32 AnimationFrame = static_cast<int32>(ElapsedTime * SafeFPS);
-
-	int32 RowIndex = FirstRow;
-	if (PlayableRowCount > 0)
-	{
-		if (bLoop)
-		{
-			RowIndex = FirstRow + (AnimationFrame % PlayableRowCount);
-		}
-		else
-		{
-			RowIndex = FirstRow + (std::min)(AnimationFrame, PlayableRowCount - 1);
-		}
-	}
-
-	const int32 TargetColumn = 0;
-	const int32 FrameIndex = RowIndex * Columns + TargetColumn;
-	const int32 Col = FrameIndex % Columns;
-	const int32 Row = FrameIndex / Columns;
-
-	const FVector2 CellSize(1.0f / static_cast<float>(Columns), 1.0f / static_cast<float>(Rows));
+	const FVector2 CellSize(1.0f / static_cast<float>(SafeColumns), 1.0f / static_cast<float>(SafeRows));
 	const FVector2 UVOffset(static_cast<float>(Col) * CellSize.X, static_cast<float>(Row) * CellSize.Y);
 
 	Material.SetParameterData("CellSize", &CellSize, sizeof(FVector2));
@@ -159,12 +127,7 @@ FMaterial* FSceneCommandBuilder::GetOrCreateSubUVMaterial(
 		*Material,
 		Component->GetColumns(),
 		Component->GetRows(),
-		Component->GetTotalFrames(),
-		Component->GetFirstFrame(),
-		Component->GetLastFrame(),
-		Component->GetFPS(),
-		BuildContext.TotalTimeSeconds,
-		Component->IsLoop());
+		Component->GetCurrentFrame());
 
 	return Material;
 }
@@ -311,12 +274,16 @@ void FSceneCommandBuilder::BuildQueue(
 			continue;
 		}
 
-		if (!BuildContext.SubUVFeature || !BuildContext.SubUVFeature->BuildMesh(SubUVComponent->GetSize(), *SubUVMesh))
+		if (SubUVComponent->IsSubUVMeshDirty())
 		{
-			continue;
-		}
+			if (!BuildContext.SubUVFeature || !BuildContext.SubUVFeature->BuildMesh(SubUVComponent->GetSize(), *SubUVMesh))
+			{
+				continue;
+			}
 
-		SubUVMesh->bIsDirty = true;
+			SubUVMesh->bIsDirty = true;
+			SubUVComponent->ClearSubUVMeshDirty();
+		}
 
 		FMaterial* SubUVMaterial = GetOrCreateSubUVMaterial(BuildContext, SubUVComponent);
 		if (!SubUVMaterial && BuildContext.SubUVFeature)
@@ -331,6 +298,8 @@ void FSceneCommandBuilder::BuildQueue(
 		FRenderCommand Command;
 		Command.RenderMesh = SubUVMesh;
 		Command.Material = SubUVMaterial;
+		Command.RenderLayer = ERenderLayer::Transparent;
+		Command.bDisableDepthWrite = true;
 		Command.WorldMatrix = SubUVComponent->GetWorldTransform();
 
 		if (SubUVComponent->IsBillboard())
@@ -339,6 +308,9 @@ void FSceneCommandBuilder::BuildQueue(
 			const FVector Scale = Command.WorldMatrix.GetScaleVector();
 			Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPosition, CameraPosition);
 		}
+
+		const FVector WorldPosition = Command.WorldMatrix.GetTranslation();
+		Command.TransparentSortDistanceSq = (WorldPosition - CameraPosition).SizeSquared();
 
 		OutQueue.AddCommand(Command);
 		ActiveSubUVComponents.push_back(SubUVComponent);
@@ -363,12 +335,16 @@ void FSceneCommandBuilder::BuildQueue(
 			continue;
 		}
 
-		if (!BuildContext.BillboardFeature->BuildMesh(BillboardComponent->GetSize(), *BillboardMesh))
+		if (BillboardComponent->IsBillboardMeshDirty())
 		{
-			continue;
-		}
+			if (!BuildContext.BillboardFeature->BuildMesh(BillboardComponent->GetSize(), *BillboardMesh))
+			{
+				continue;
+			}
 
-		BillboardMesh->bIsDirty = true;
+			BillboardMesh->bIsDirty = true;
+			BillboardComponent->ClearBillboardMeshDirty();
+		}
 
 		FMaterial* BillboardMaterial = BuildContext.BillboardFeature->GetOrCreateMaterial(*BillboardComponent);
 		if (!BillboardMaterial)
@@ -379,10 +355,13 @@ void FSceneCommandBuilder::BuildQueue(
 		FRenderCommand Command;
 		Command.RenderMesh = BillboardMesh;
 		Command.Material = BillboardMaterial;
+		Command.RenderLayer = ERenderLayer::Transparent;
+		Command.bDisableDepthWrite = true;
 
 		const FVector WorldPosition = BillboardComponent->GetWorldTransform().GetTranslation();
 		const FVector Scale = BillboardComponent->GetWorldTransform().GetScaleVector();
 		Command.WorldMatrix = FMatrix::MakeScale(Scale) * FMatrix::MakeBillboard(WorldPosition, CameraPosition);
+		Command.TransparentSortDistanceSq = (WorldPosition - CameraPosition).SizeSquared();
 
 		OutQueue.AddCommand(Command);
 		ActiveBillboardComponents.push_back(BillboardComponent);
@@ -393,4 +372,3 @@ void FSceneCommandBuilder::BuildQueue(
 		BuildContext.BillboardFeature->PruneMaterials(ActiveBillboardComponents);
 	}
 }
-

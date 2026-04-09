@@ -1,4 +1,4 @@
-#include "Archive.h"
+﻿#include "Archive.h"
 #include "ThirdParty/nlohmann/json.hpp"
 
 using json = nlohmann::json;
@@ -31,6 +31,23 @@ void FArchive::Serialize(const FString& Key, uint32& Value)
 	else if (Json.contains(Key))
 		Value = Json[Key].get<uint32>();
 }
+void FArchive::Serialize(const FString& Key, int32& Value)
+{
+	json& Json = *static_cast<json*>(JsonData);
+	if (bSaving)
+		Json[Key] = Value;
+	else if (Json.contains(Key))
+		Value = Json[Key].get<int32>();
+}
+
+void FArchive::Serialize(const FString& Key, float& Value)
+{
+	json& Json = *static_cast<json*>(JsonData);
+	if (bSaving)
+		Json[Key] = Value;
+	else if (Json.contains(Key))
+		Value = Json[Key].get<float>();
+}
 void FArchive::Serialize(const FString& Key, bool& Value)
 {
 	json& Json = *static_cast<json*>(JsonData);
@@ -38,6 +55,18 @@ void FArchive::Serialize(const FString& Key, bool& Value)
 		Json[Key] = Value;
 	else if (Json.contains(Key))
 		Value = Json[Key].get<bool>();
+}
+
+void FArchive::Serialize(const FString& Key, FVector2& Value)
+{
+	json& Json = *static_cast<json*>(JsonData);
+	if (bSaving)
+		Json[Key] = { Value.X, Value.Y };
+	else if (Json.contains(Key))
+	{
+		auto& xy = Json[Key];
+		Value = { xy[0].get<float>(), xy[1].get<float>() };
+	}
 }
 void FArchive::Serialize(const FString& Key, FVector& Value)
 {

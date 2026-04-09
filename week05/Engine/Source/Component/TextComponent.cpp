@@ -1,4 +1,4 @@
-#include "TextComponent.h"
+﻿#include "TextComponent.h"
 #include "Object/Class.h"
 #include <algorithm>
 
@@ -84,6 +84,7 @@ void UTextRenderComponent::Serialize(FArchive& Ar)
 	{
 		Ar.Serialize("Text", Text);
 		Ar.Serialize("TextColor", TextColor);
+		Ar.Serialize("TextScale", TextScale);
 		Ar.Serialize("Billboard", bBillboard);
 		Ar.Serialize("HiddenInGame", bHiddenInGame);
 		Ar.Serialize("HorizontalAlignment", SavedHorizontalAlignment);
@@ -93,6 +94,7 @@ void UTextRenderComponent::Serialize(FArchive& Ar)
 	{
 		Ar.Serialize("Text", Text);
 		Ar.Serialize("TextColor", TextColor);
+		Ar.Serialize("TextScale", TextScale);
 		Ar.Serialize("Billboard", bBillboard);
 		Ar.Serialize("HiddenInGame", bHiddenInGame);
 		Ar.Serialize("HorizontalAlignment", SavedHorizontalAlignment);
@@ -100,6 +102,7 @@ void UTextRenderComponent::Serialize(FArchive& Ar)
 
 		SetText(Text);
 		SetTextColor(TextColor);
+		SetTextScale(TextScale);
 		SetBillboard(bBillboard);
 		SetHiddenInGame(bHiddenInGame);
 		SetHorizontalAlignment(static_cast<EHorizTextAligment>(static_cast<int32>(SavedHorizontalAlignment)));

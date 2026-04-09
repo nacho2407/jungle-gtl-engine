@@ -1,4 +1,4 @@
-#include "Renderer/SubUVRenderer.h"
+﻿#include "Renderer/SubUVRenderer.h"
 #include "Renderer/Shader.h"
 #include "Renderer/ShaderResource.h"
 #include "Renderer/ShaderType.h"
@@ -75,7 +75,7 @@ bool FSubUVRenderer::Initialize(FRenderer* InRenderer, const std::wstring& Textu
 	// 깊이 설정
 	FDepthStencilStateOption depthOption;
 	depthOption.DepthEnable = true;
-	depthOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	auto DSS = InRenderer->GetRenderStateManager()->GetOrCreateDepthStencilState(depthOption);
 	SubUVMaterial->SetDepthStencilOption(depthOption);
 	SubUVMaterial->SetDepthStencilState(DSS);
@@ -146,45 +146,44 @@ void FSubUVRenderer::UpdateAnimationParams(
 	int32 FirstFrame, int32 LastFrame,
 	float FPS, float ElapsedTime, bool bLoop)
 {
-	if (!SubUVMaterial || Columns <= 0 || Rows <= 0) return;
-
-	float FrameFloat = ElapsedTime * FPS;
-	int32 AnimationFrame = static_cast<int32>(FrameFloat);
-
-	int32 FirstRow = FirstFrame / Columns;
-	int32 LastRow = LastFrame / Columns;
-
-	FirstRow = std::max<int32>(0, std::min<int32>(FirstRow, Rows - 1));
-	LastRow = std::max<int32>(0, std::min<int32>(LastRow, Rows - 1));
-
-	if (FirstRow > LastRow)
+	if (!SubUVMaterial || Columns <= 0 || Rows <= 0)
 	{
-		std::swap(FirstRow, LastRow);
+		return;
 	}
 
-	const int32 PlayableRowCount = LastRow - FirstRow + 1;
+	const int32 SafeColumns = (std::max)(1, Columns);
+	const int32 SafeRows = (std::max)(1, Rows);
+	const int32 MaxFrameCount = SafeColumns * SafeRows;
+	const int32 SafeTotalFrames = (std::max)(1, (std::min)(TotalFrames, MaxFrameCount));
 
-	int32 RowIndex = FirstRow;
+	int32 SafeFirstFrame = (std::max)(0, (std::min)(FirstFrame, SafeTotalFrames - 1));
+	int32 SafeLastFrame = (std::max)(0, (std::min)(LastFrame, SafeTotalFrames - 1));
+	if (SafeFirstFrame > SafeLastFrame)
+	{
+		std::swap(SafeFirstFrame, SafeLastFrame);
+	}
 
-	if (PlayableRowCount > 0)
+	const int32 PlayableFrameCount = SafeLastFrame - SafeFirstFrame + 1;
+	const float SafeFPS = (std::max)(0.0f, FPS);
+	const int32 AnimationFrame = static_cast<int32>((std::max)(0.0f, ElapsedTime) * SafeFPS);
+
+	int32 FrameIndex = SafeFirstFrame;
+	if (PlayableFrameCount > 0 && SafeFPS > 0.0f)
 	{
 		if (bLoop)
 		{
-			RowIndex = FirstRow + (AnimationFrame % PlayableRowCount);
+			FrameIndex = SafeFirstFrame + (AnimationFrame % PlayableFrameCount);
 		}
 		else
 		{
-			RowIndex = FirstRow + std::min<int32>(AnimationFrame, PlayableRowCount - 1);
+			FrameIndex = SafeFirstFrame + (std::min)(AnimationFrame, PlayableFrameCount - 1);
 		}
 	}
 
-	const int32 TargetColumn = 0;
-	int32 FrameIndex = RowIndex * Columns + TargetColumn;
+	const int32 Col = FrameIndex % SafeColumns;
+	const int32 Row = FrameIndex / SafeColumns;
 
-	const int32 Col = FrameIndex % Columns;
-	const int32 Row = FrameIndex / Columns;
-
-	FVector2 CellSize(1.0f / static_cast<float>(Columns), 1.0f / static_cast<float>(Rows));
+	FVector2 CellSize(1.0f / static_cast<float>(SafeColumns), 1.0f / static_cast<float>(SafeRows));
 	FVector2 UVOffset(static_cast<float>(Col) * CellSize.X, static_cast<float>(Row) * CellSize.Y);
 
 	SubUVMaterial->SetParameterData("CellSize", &CellSize, 8);

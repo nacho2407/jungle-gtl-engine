@@ -1,6 +1,7 @@
-#include "CameraComponent.h"
+﻿#include "CameraComponent.h"
 #include "Object/Class.h"
 #include "Camera/Camera.h"
+#include "Serializer/Archive.h"
 #include <cmath>
 
 namespace
@@ -67,7 +68,7 @@ void UCameraComponent::Tick(float DeltaTime)
 {
 	USceneComponent::Tick(DeltaTime);
 
-	//TODO : will be add CameraArm, shake and interpolation  
+	//TODO : will be add CameraArm, shake and interpolation
 }
 
 void UCameraComponent::MoveForward(float Value)
@@ -111,6 +112,49 @@ void UCameraComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateCon
 {
 	USceneComponent::DuplicateShallow(DuplicatedObject, Context);
 	CopyCameraState(this, static_cast<UCameraComponent*>(DuplicatedObject));
+}
+
+void UCameraComponent::Serialize(FArchive& Ar)
+{
+	USceneComponent::Serialize(Ar);
+
+	if (!Camera)
+	{
+		return;
+	}
+
+	float FOV = Camera->GetFOV();
+	float Speed = Camera->GetSpeed();
+	float Sensitivity = Camera->GetMouseSensitivity();
+	float AspectRatio = ExtractAspectRatio(this);
+	float OrthoWidth = Camera->GetOrthoWidth();
+	uint32 ProjectionMode = static_cast<uint32>(Camera->GetProjectionMode());
+
+	if (Ar.IsSaving())
+	{
+		Ar.Serialize("FOV", FOV);
+		Ar.Serialize("Speed", Speed);
+		Ar.Serialize("Sensitivity", Sensitivity);
+		Ar.Serialize("AspectRatio", AspectRatio);
+		Ar.Serialize("ProjectionMode", ProjectionMode);
+		Ar.Serialize("OrthoWidth", OrthoWidth);
+	}
+	else
+	{
+		Ar.Serialize("FOV", FOV);
+		Ar.Serialize("Speed", Speed);
+		Ar.Serialize("Sensitivity", Sensitivity);
+		Ar.Serialize("AspectRatio", AspectRatio);
+		Ar.Serialize("ProjectionMode", ProjectionMode);
+		Ar.Serialize("OrthoWidth", OrthoWidth);
+
+		Camera->SetAspectRatio(AspectRatio);
+		Camera->SetProjectionMode(static_cast<ECameraProjectionMode>(ProjectionMode));
+		Camera->SetOrthoWidth(OrthoWidth);
+		Camera->SetFOV(FOV);
+		Camera->SetSpeed(Speed);
+		Camera->SetMouseSensitivity(Sensitivity);
+	}
 }
 
 void UCameraComponent::SetFov(float inFov)

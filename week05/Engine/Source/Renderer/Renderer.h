@@ -8,7 +8,7 @@
 #include "Renderer/Feature/OutlineRenderFeature.h"
 #include "Renderer/Feature/SubUVRenderFeature.h"
 #include "Renderer/Feature/TextRenderFeature.h"
-#include "Renderer/BillboardRenderer.h"
+#include "Renderer/Feature/BillboardRenderFeature.h"
 #include "Renderer/RenderFeatureInterfaces.h"
 #include "Renderer/RenderStateManager.h"
 #include "Renderer/SceneRenderer.h"
@@ -175,7 +175,7 @@ public:
 	// 렌더 디바이스에 접근한다.
 	FRenderDevice& GetRenderDevice() { return RenderDevice; }
 	// 빌보드 렌더러 구현체에 직접 접근한다.
-	FBillboardRenderer& GetBillboardRenderer() { return *BillboardFeature; }
+	FBillboardRenderer& GetBillboardRenderer() { return BillboardFeature->GetRenderer(); }
 	// 현재 ViewMatrix를 기준으로 카메라 월드 위치를 계산한다.
 	FVector GetCameraPosition() const;
 
@@ -222,7 +222,7 @@ private:
 	FScreenUIRenderer ScreenUIRenderer;
 	std::unique_ptr<FTextRenderFeature> TextFeature;
 	std::unique_ptr<FSubUVRenderFeature> SubUVFeature;
-	std::unique_ptr<FBillboardRenderer> BillboardFeature;
+	std::unique_ptr<FBillboardRenderFeature> BillboardFeature;
 	std::unique_ptr<FOutlineRenderFeature> OutlineFeature;
 	std::unique_ptr<FDebugLineRenderFeature> DebugLineFeature;
 

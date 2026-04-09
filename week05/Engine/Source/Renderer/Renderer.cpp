@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 #include "ShaderType.h"
 #include "Shader.h"
 #include "ShaderMap.h"
@@ -148,7 +148,7 @@ bool FRenderer::Initialize(HWND InHwnd, int32 Width, int32 Height)
 		return false;
 	}
 
-	BillboardFeature = std::make_unique<FBillboardRenderer>();
+	BillboardFeature = std::make_unique<FBillboardRenderFeature>();
 	if (!BillboardFeature || !BillboardFeature->Initialize(*this))
 	{
 		return false;

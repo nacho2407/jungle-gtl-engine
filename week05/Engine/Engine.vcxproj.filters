@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source">
@@ -331,6 +331,7 @@
     <ClCompile Include="Source\Renderer\Feature\OutlineRenderFeature.cpp" />
     <ClCompile Include="Source\Renderer\Feature\SubUVRenderFeature.cpp" />
     <ClCompile Include="Source\Renderer\Feature\TextRenderFeature.cpp" />
+    <ClCompile Include="Source\Renderer\Feature\BillboardRenderFeature.cpp" />
     <ClCompile Include="Source\Component\BillboardComponent.cpp">
       <Filter>Source\Component</Filter>
     </ClCompile>
@@ -955,6 +956,7 @@
     <ClInclude Include="Source\Renderer\Feature\OutlineRenderFeature.h" />
     <ClInclude Include="Source\Renderer\Feature\SubUVRenderFeature.h" />
     <ClInclude Include="Source\Renderer\Feature\TextRenderFeature.h" />
+    <ClInclude Include="Source\Renderer\Feature\BillboardRenderFeature.h" />
     <ClInclude Include="Source\Renderer\RenderType.h">
       <Filter>Source\Renderer</Filter>
     </ClInclude>

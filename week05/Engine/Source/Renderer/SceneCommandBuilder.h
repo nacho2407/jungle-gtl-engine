@@ -41,12 +41,7 @@ private:
 		FMaterial& Material,
 		int32 Columns,
 		int32 Rows,
-		int32 TotalFrames,
-		int32 FirstFrame,
-		int32 LastFrame,
-		float FPS,
-		float ElapsedTime,
-		bool bLoop);
+		int32 CurrentFrame);
 
 private:
 	TMap<uint32, std::shared_ptr<FDynamicMaterial>> TextMaterialsByColor;

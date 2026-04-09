@@ -1,4 +1,4 @@
-#include "StaticMeshComponent.h"
+﻿#include "StaticMeshComponent.h"
 
 #include <filesystem>
 
@@ -75,7 +75,7 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 		FString MeshFileName = "";
 		if (StaticMesh)
 		{
-			MeshFileName = FPaths::FromPath(FPaths::ToPath(StaticMesh->GetAssetPathFileName()).filename());
+			MeshFileName = FPaths::ToRelativePath(StaticMesh->GetAssetPathFileName());
 		}
 		Ar.Serialize("ObjStaticMeshAsset", MeshFileName);
 	}

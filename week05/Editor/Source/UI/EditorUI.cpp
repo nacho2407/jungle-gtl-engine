@@ -918,8 +918,8 @@ void FEditorUI::Render()
 		DrawList->AddRectFilled(WinPos, ImVec2(WinPos.x + WinSize.x, WinPos.y + 60), IM_COL32(30, 30, 60, 255));
 
 		ImGui::SetCursorPosY(12);
-		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("Meteor Engine").x) * 0.5f);
-		ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "Meteor Engine");
+		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("StoneAge Engine").x) * 0.5f);
+		ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "StoneAge Engine");
 
 		ImGui::SetCursorPosY(35);
 		ImGui::SetCursorPosX((WinSize.x - ImGui::CalcTextSize("v2.0.0").x) * 0.5f);

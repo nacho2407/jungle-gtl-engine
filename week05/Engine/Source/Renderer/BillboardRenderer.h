@@ -3,13 +3,12 @@
 #include <d3d11.h>
 
 #include "Renderer/Material.h"
-#include "Renderer/RenderFeatureInterfaces.h"
 
 struct FRenderMesh;
 class FRenderer;
 class UBillboardComponent;
 
-class ENGINE_API FBillboardRenderer final : public ISceneBillboardFeature
+class ENGINE_API FBillboardRenderer
 {
 public:
 	FBillboardRenderer() = default;
@@ -18,10 +17,10 @@ public:
 	bool Initialize(FRenderer& InRenderer);
 	void Release();
 
-	FMaterial* GetBaseMaterial() const override { return BillboardMaterial.get(); }
-	bool BuildMesh(const FVector2& Size, FRenderMesh& OutMesh) const override;
-	FMaterial* GetOrCreateMaterial(const UBillboardComponent& Component) override;
-	void PruneMaterials(const TArray<const UBillboardComponent*>& ActiveComponents) override;
+	FMaterial* GetBaseMaterial() const { return BillboardMaterial.get(); }
+	bool BuildMesh(const FVector2& Size, FRenderMesh& OutMesh) const;
+	FMaterial* GetOrCreateMaterial(const UBillboardComponent& Component);
+	void PruneMaterials(const TArray<const UBillboardComponent*>& ActiveComponents);
 
 	const TMap<std::wstring, std::shared_ptr<FMaterialTexture>>& GetTextureCache() const
 	{

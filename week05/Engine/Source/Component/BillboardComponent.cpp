@@ -1,4 +1,4 @@
-#include "BillboardComponent.h"
+﻿#include "BillboardComponent.h"
 #include "Core/Paths.h"
 #include "Object/Class.h"
 #include "Renderer/MeshData.h"
@@ -6,11 +6,20 @@
 
 IMPLEMENT_RTTI(UBillboardComponent, UPrimitiveComponent)
 
-
 void UBillboardComponent::PostConstruct()
 {
 	bDrawDebugBounds = false;
 	BillboardMesh = std::make_shared<FDynamicMesh>();
+	MarkBillboardMeshDirty();
+}
+
+void UBillboardComponent::MarkBillboardMeshDirty()
+{
+	bBillboardMeshDirty = true;
+	if (BillboardMesh)
+	{
+		BillboardMesh->bIsDirty = true;
+	}
 }
 
 void UBillboardComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const
@@ -23,10 +32,7 @@ void UBillboardComponent::DuplicateShallow(UObject* DuplicatedObject, FDuplicate
 	DuplicatedBillboardComponent->Size = Size;
 	DuplicatedBillboardComponent->UVMin = UVMin;
 	DuplicatedBillboardComponent->UVMax = UVMax;
-	if (DuplicatedBillboardComponent->BillboardMesh)
-	{
-		DuplicatedBillboardComponent->BillboardMesh->bIsDirty = true;
-	}
+	DuplicatedBillboardComponent->MarkBillboardMeshDirty();
 }
 
 void UBillboardComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const
@@ -34,10 +40,7 @@ void UBillboardComponent::PostDuplicate(UObject* DuplicatedObject, const FDuplic
 	UPrimitiveComponent::PostDuplicate(DuplicatedObject, Context);
 
 	UBillboardComponent* DuplicatedBillboardComponent = static_cast<UBillboardComponent*>(DuplicatedObject);
-	if (DuplicatedBillboardComponent->BillboardMesh)
-	{
-		DuplicatedBillboardComponent->BillboardMesh->bIsDirty = true;
-	}
+	DuplicatedBillboardComponent->MarkBillboardMeshDirty();
 	DuplicatedBillboardComponent->UpdateBounds();
 }
 
@@ -50,36 +53,28 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 	{
 		TexturePathString = FPaths::ToRelativePath(FPaths::FromWide(TexturePath));
 	}
-	FVector SavedSize(Size.X, Size.Y, 0.0f);
-	FVector SavedUVMin(UVMin.X, UVMin.Y, 0.0f);
-	FVector SavedUVMax(UVMax.X, UVMax.Y, 0.0f);
 
 	if (Ar.IsSaving())
 	{
 		Ar.Serialize("TexturePath", TexturePathString);
 		Ar.Serialize("HiddenInGame", bHiddenInGame);
-		Ar.Serialize("Size", SavedSize);
-		Ar.Serialize("UVMin", SavedUVMin);
-		Ar.Serialize("UVMax", SavedUVMax);
+		Ar.Serialize("Size", Size);
+		Ar.Serialize("UVMin", UVMin);
+		Ar.Serialize("UVMax", UVMax);
 	}
 	else
 	{
 		Ar.Serialize("TexturePath", TexturePathString);
 		Ar.Serialize("HiddenInGame", bHiddenInGame);
-		Ar.Serialize("Size", SavedSize);
-		Ar.Serialize("UVMin", SavedUVMin);
-		Ar.Serialize("UVMax", SavedUVMax);
+		Ar.Serialize("Size", Size);
+		Ar.Serialize("UVMin", UVMin);
+		Ar.Serialize("UVMax", UVMax);
 
 		TexturePath = TexturePathString.empty()
 			? std::wstring()
 			: FPaths::ToWide(FPaths::ToAbsolutePath(TexturePathString));
-		Size = FVector2(SavedSize.X, SavedSize.Y);
-		UVMin = FVector2(SavedUVMin.X, SavedUVMin.Y);
-		UVMax = FVector2(SavedUVMax.X, SavedUVMax.Y);
-		if (BillboardMesh)
-		{
-			BillboardMesh->bIsDirty = true;
-		}
+
+		MarkBillboardMeshDirty();
 		UpdateBounds();
 	}
 }
@@ -97,7 +92,7 @@ FBoxSphereBounds UBillboardComponent::GetWorldBounds() const
 	return { Center, BoxExtent.Size(), BoxExtent };
 }
 
-FRenderMesh* UBillboardComponent::GetRenderMesh() const 
-{ 
-	return BillboardMesh.get(); 
+FRenderMesh* UBillboardComponent::GetRenderMesh() const
+{
+	return BillboardMesh.get();
 }

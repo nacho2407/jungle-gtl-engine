@@ -64,7 +64,7 @@ bool FBillboardRenderer::Initialize(FRenderer& InRenderer)
 
 	FDepthStencilStateOption DepthOption;
 	DepthOption.DepthEnable = true;
-	DepthOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	DepthOption.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	BillboardMaterial->SetDepthStencilOption(DepthOption);
 	BillboardMaterial->SetDepthStencilState(InRenderer.GetRenderStateManager()->GetOrCreateDepthStencilState(DepthOption));
 

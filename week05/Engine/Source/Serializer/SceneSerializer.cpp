@@ -1,10 +1,12 @@
-#include "SceneSerializer.h"
+﻿#include "SceneSerializer.h"
 #include "ThirdParty/nlohmann/json.hpp"
 #include "Renderer/Material.h"
 #include "Renderer/MaterialManager.h"
+#include "Renderer/Renderer.h"
 #include "Component/CameraComponent.h"
 #include "Camera/Camera.h"
 #include "Core/Paths.h"
+#include "Core/Engine.h"
 #include "Actor/Actor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Level/Level.h"
@@ -113,6 +115,37 @@ namespace
 		OutCameraData->NearClip = NearClip;
 		OutCameraData->FarClip = FarClip;
 		OutCameraData->bValid = true;
+	}
+
+	void PreloadMaterialsFromJson(const json& RootJson, ID3D11Device* Device)
+	{
+		if (!Device || !RootJson.contains("Materials") || !RootJson["Materials"].is_array())
+		{
+			return;
+		}
+
+		FRenderer* Renderer = GEngine ? GEngine->GetRenderer() : nullptr;
+		if (!Renderer || !Renderer->GetRenderStateManager())
+		{
+			return;
+		}
+
+		for (const auto& MaterialValue : RootJson["Materials"])
+		{
+			if (!MaterialValue.is_string())
+			{
+				continue;
+			}
+
+			const FString RelativePath = MaterialValue.get<FString>();
+			if (RelativePath.empty())
+			{
+				continue;
+			}
+
+			const FString AbsolutePath = FPaths::ToAbsolutePath(RelativePath);
+			FMaterialManager::Get().LoadFromFile(Device, Renderer->GetRenderStateManager().get(), AbsolutePath);
+		}
 	}
 
 	bool IsLegacyStaticMeshPrimitiveJson(const json& PrimitiveJson)
@@ -321,6 +354,9 @@ bool FSceneSerializer::Load(ULevel* Scene, const FString& FilePath, ID3D11Device
 		LoadCameraDataFromJson(Json, OutCameraData);
 	}
 
+	PreloadMaterialsFromJson(Json, Device);
+
+	bool bAllActorsLoaded = true;
 	int32 ActorIndex = 0;
 	for (auto& [Key, Value] : Json["Primitives"].items())
 	{
@@ -332,7 +368,7 @@ bool FSceneSerializer::Load(ULevel* Scene, const FString& FilePath, ID3D11Device
 			ActorJson = &LegacyActorJson;
 		}
 
-		DeserializeActorFromJson(Scene, *ActorJson, ActorIndex);
+		bAllActorsLoaded &= DeserializeActorFromJson(Scene, *ActorJson, ActorIndex);
 
 		++ActorIndex;
 	}
@@ -345,5 +381,5 @@ bool FSceneSerializer::Load(ULevel* Scene, const FString& FilePath, ID3D11Device
 		}
 	}
 
-	return true;
+	return bAllActorsLoaded;
 }

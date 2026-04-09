@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
@@ -31,6 +31,7 @@ struct ENGINE_API FRenderCommand
 	FMaterial* Material = nullptr;
 	uint64 SortKey = 0;
 	uint64 SubmissionOrder = 0;
+	float TransparentSortDistanceSq = 0.0f;
 
 	uint32 IndexStart = 0;
 	uint32 IndexCount = 0;

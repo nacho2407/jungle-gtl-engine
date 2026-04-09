@@ -1,4 +1,4 @@
-#include "ViewportClient.h"
+﻿#include "ViewportClient.h"
 #include "World/World.h"
 #include "Input/InputManager.h"
 #include "Camera/Camera.h"
@@ -9,6 +9,7 @@
 #include "Core/Engine.h"
 #include "Component/CameraComponent.h"
 #include "Math/Frustum.h"
+#include "Component/PrimitiveComponent.h"
 
 void IViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
 {
@@ -81,8 +82,16 @@ void IViewportClient::BuildSceneRenderPacket(
 		return;
 	}
 
-	TArray<AActor*> AllActors = World->GetAllActors();
-	ScenePacketBuilder.BuildScenePacket(AllActors, Frustum, Flags, OutPacket);
+	ULevel* Level = World->GetPersistentLevel();
+	if (!Level)
+	{
+		OutPacket.Clear();
+		return;
+	}
+
+	TArray<UPrimitiveComponent*> VisiblePrimitives;
+	Level->QueryPrimitivesByFrustum(Frustum, VisiblePrimitives);
+	ScenePacketBuilder.BuildScenePacket(VisiblePrimitives, Flags, OutPacket);
 }
 
 void IViewportClient::HandleFileDoubleClick(const FString& FilePath)

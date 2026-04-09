@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "SceneComponent.h"
 
 class FCamera;
@@ -26,6 +26,7 @@ public:
 	void SetFov(float inFov);
 	void SetSpeed(float Inspeed);
 	void SetSensitivity(float InSetSensitivity);
+	void Serialize(FArchive& Ar) override;
 	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 private:
 	FCamera* Camera = nullptr;

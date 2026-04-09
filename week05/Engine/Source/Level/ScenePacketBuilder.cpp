@@ -1,27 +1,56 @@
-#include "Level/ScenePacketBuilder.h"
+﻿#include "Level/ScenePacketBuilder.h"
 
-#include "Actor/Actor.h"
 #include "Component/BillboardComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextComponent.h"
 #include "Component/UUIDBillboardComponent.h"
 
+bool FScenePacketBuilder::ShouldIncludePrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags) const
+{
+	if (!Primitive || Primitive->IsPendingKill())
+	{
+		return false;
+	}
+
+	const bool bIsUUID = Primitive->IsA(UUUIDBillboardComponent::StaticClass());
+	const bool bIsSubUV = Primitive->IsA(USubUVComponent::StaticClass());
+	const bool bIsText = Primitive->IsA(UTextRenderComponent::StaticClass());
+	const bool bIsBillboard = Primitive->IsA(UBillboardComponent::StaticClass());
+	if (bIsUUID)
+	{
+		return ShowFlags.HasFlag(EEngineShowFlags::SF_UUID);
+	}
+
+	if (bIsSubUV || bIsBillboard)
+	{
+		return ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard);
+	}
+
+	if (bIsText)
+	{
+		return ShowFlags.HasFlag(EEngineShowFlags::SF_Text);
+	}
+
+	if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives))
+	{
+		return false;
+	}
+
+	return Primitive->GetRenderMesh() != nullptr;
+}
+
 void FScenePacketBuilder::BuildScenePacket(
-	const TArray<AActor*>& Actors,
-	const FFrustum& Frustum,
+	const TArray<UPrimitiveComponent*>& VisiblePrimitives,
 	const FShowFlags& ShowFlags,
 	FSceneRenderPacket& OutPacket)
 {
-	TArray<UPrimitiveComponent*> VisiblePrimitives;
-	FrustumCull(Actors, Frustum, ShowFlags, VisiblePrimitives);
-
 	OutPacket.Clear();
 	OutPacket.Reserve(VisiblePrimitives.size());
 
 	for (UPrimitiveComponent* Primitive : VisiblePrimitives)
 	{
-		if (!Primitive)
+		if (!ShouldIncludePrimitive(Primitive, ShowFlags))
 		{
 			continue;
 		}
@@ -50,78 +79,3 @@ void FScenePacketBuilder::BuildScenePacket(
 		}
 	}
 }
-
-void FScenePacketBuilder::FrustumCull(
-	const TArray<AActor*>& Actors,
-	const FFrustum& Frustum,
-	const FShowFlags& ShowFlags,
-	TArray<UPrimitiveComponent*>& OutVisible)
-{
-	for (AActor* Actor : Actors)
-	{
-		if (!Actor || Actor->IsPendingDestroy() || !Actor->IsVisible())
-		{
-			continue;
-		}
-
-		for (UActorComponent* Component : Actor->GetComponents())
-		{
-			if (!Component->IsA(UPrimitiveComponent::StaticClass()))
-			{
-				continue;
-			}
-
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-
-			const bool bIsUUID = PrimitiveComponent->IsA(UUUIDBillboardComponent::StaticClass());
-			const bool bIsSubUV = PrimitiveComponent->IsA(USubUVComponent::StaticClass());
-			const bool bIsText = PrimitiveComponent->IsA(UTextRenderComponent::StaticClass());
-			const bool bIsBillboard = PrimitiveComponent->IsA(UBillboardComponent::StaticClass());
-			if (bIsUUID)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_UUID))
-				{
-					continue;
-				}
-			}
-			else if (bIsSubUV)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
-				{
-					continue;
-				}
-			}
-			else if (bIsBillboard)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Billboard))
-				{
-					continue;
-				}
-			}
-			else if (bIsText)
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Text))
-				{
-					continue;
-				}
-			}
-			else
-			{
-				if (!ShowFlags.HasFlag(EEngineShowFlags::SF_Primitives))
-				{
-					continue;
-				}
-				if (!PrimitiveComponent->GetRenderMesh())
-				{
-					continue;
-				}
-			}
-
-			if (Frustum.IsVisible(PrimitiveComponent->GetWorldBounds()))
-			{
-				OutVisible.push_back(PrimitiveComponent);
-			}
-		}
-	}
-}
-

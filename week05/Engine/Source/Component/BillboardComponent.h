@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "PrimitiveComponent.h"
 
 struct FDynamicMesh;
@@ -18,7 +18,15 @@ public:
 	void DuplicateShallow(UObject* DuplicatedObject, FDuplicateContext& Context) const override;
 	void PostDuplicate(UObject* DuplicatedObject, const FDuplicateContext& Context) const override;
 
-	void SetSize(const FVector2& InSize) { Size = InSize; }
+	void SetSize(const FVector2& InSize)
+	{
+		if (Size.X != InSize.X || Size.Y != InSize.Y)
+		{
+			Size = InSize;
+			MarkBillboardMeshDirty();
+			UpdateBounds();
+		}
+	}
 	const FVector2& GetSize() const { return Size; }
 
 	void SetTexturePath(const std::wstring& InPath) { TexturePath = InPath; }
@@ -35,6 +43,9 @@ public:
 	void SetHiddenInGame(bool bInHidden) { bHiddenInGame = bInHidden; }
 	bool IsHiddenInGame() const { return bHiddenInGame; }
 
+	void MarkBillboardMeshDirty();
+	bool IsBillboardMeshDirty() const { return bBillboardMeshDirty; }
+	void ClearBillboardMeshDirty() { bBillboardMeshDirty = false; }
 
 private:
 	bool bHiddenInGame = true;
@@ -45,5 +56,6 @@ private:
 	FVector2 UVMin = FVector2(0.f, 0.f);
 	FVector2 UVMax = FVector2(1.f, 1.f);
 
+	bool bBillboardMeshDirty = true;
 	std::shared_ptr<struct FDynamicMesh> BillboardMesh;
 };

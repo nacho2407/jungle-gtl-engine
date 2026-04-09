@@ -130,12 +130,15 @@ void FSceneRenderer::SortRenderPass(TArray<FRenderCommand>& Commands, ERenderLay
 		break;
 
 	case ERenderLayer::Transparent:
-		// 투명체는 이후 깊이 기반 정렬이 들어갈 자리다.
 		std::sort(
 			Commands.begin(),
 			Commands.end(),
 			[](const FRenderCommand& A, const FRenderCommand& B)
 			{
+				if (A.TransparentSortDistanceSq != B.TransparentSortDistanceSq)
+				{
+					return A.TransparentSortDistanceSq > B.TransparentSortDistanceSq;
+				}
 				return A.SubmissionOrder < B.SubmissionOrder;
 			});
 		break;
