@@ -5,60 +5,9 @@
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
-#include "Component/ProjectileMovementComponent.h"
 #include "GameFramework/World.h"
-#include "Math/MathUtils.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
-
-#include <cmath>
-
-namespace
-{
-	void AddProjectileVelocityArrow(FRenderBus& Bus, const FVector& Start, const FVector& Velocity)
-	{
-		constexpr float ProjectileArrowScale = 0.25f;
-		const FVector ScaledVelocity = Velocity * ProjectileArrowScale;
-		const float VelocityLength = ScaledVelocity.Length();
-		if (VelocityLength <= FMath::Epsilon)
-		{
-			return;
-		}
-
-		const FVector Direction = ScaledVelocity / VelocityLength;
-		const FVector End = Start + ScaledVelocity;
-		const FColor ArrowColor(135, 206, 235);
-
-		FDebugLineEntry Shaft;
-		Shaft.Start = Start;
-		Shaft.End = End;
-		Shaft.Color = ArrowColor;
-		Bus.AddDebugLineEntry(std::move(Shaft));
-
-		const float HeadLength = Clamp(VelocityLength * 0.2f, 0.2f, 1.5f);
-		FVector ReferenceUp = FVector(0.0f, 0.0f, 1.0f);
-		if (std::abs(Direction.Dot(ReferenceUp)) > 0.98f)
-		{
-			ReferenceUp = FVector(0.0f, 1.0f, 0.0f);
-		}
-
-		const FVector Side = Direction.Cross(ReferenceUp).Normalized();
-		const FVector Back = Direction * HeadLength;
-		const FVector SideOffset = Side * (HeadLength * 0.45f);
-
-		FDebugLineEntry HeadA;
-		HeadA.Start = End;
-		HeadA.End = End - Back + SideOffset;
-		HeadA.Color = ArrowColor;
-		Bus.AddDebugLineEntry(std::move(HeadA));
-
-		FDebugLineEntry HeadB;
-		HeadB.Start = End;
-		HeadB.End = End - Back - SideOffset;
-		HeadB.Color = ArrowColor;
-		Bus.AddDebugLineEntry(std::move(HeadB));
-	}
-}
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -171,29 +120,12 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 			for (UActorComponent* ActorComponent : SelectedActor->GetComponents())
 			{
-				UProjectileMovementComponent* ProjectileComponent = Cast<UProjectileMovementComponent>(ActorComponent);
-				if (!ProjectileComponent)
+				if (!ActorComponent)
 				{
 					continue;
 				}
 
-				const FVector PreviewVelocity = ProjectileComponent->GetPreviewVelocity();
-				if (PreviewVelocity.Length() <= FMath::Epsilon)
-				{
-					continue;
-				}
-
-				USceneComponent* SourceComponent = ProjectileComponent->GetUpdatedComponent();
-				if (!SourceComponent)
-				{
-					SourceComponent = SelectedActor->GetRootComponent();
-				}
-				if (!SourceComponent)
-				{
-					continue;
-				}
-
-				AddProjectileVelocityArrow(Bus, SourceComponent->GetWorldLocation(), PreviewVelocity);
+				ActorComponent->CollectEditorVisualizations(Bus);
 			}
 		}
 
