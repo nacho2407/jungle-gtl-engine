@@ -16,9 +16,13 @@ class UStaticMesh;
 class FMeshBufferManager
 {
 private:
+	// 최대 LOD 레벨을 양쪽에서 저장하고 있습니다... 
+	// MAX_LOD를 수정하실 필요가 있다면 MeshBufferManager를 찾아 함께 수정해주세요.
+	static constexpr int32 MAX_LOD = 5;
+
 	ID3D11Device* Device = nullptr;
 	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
-	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap;
+	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap[MAX_LOD];
 
 public:
 
@@ -29,6 +33,5 @@ public:
 	void Release();
 
 	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
-	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset);
-
+	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
 };
