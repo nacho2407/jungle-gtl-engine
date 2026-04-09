@@ -157,6 +157,28 @@ void FSelectionManager::ClearSelection()
 	SyncGizmo();
 }
 
+void FSelectionManager::Tick()
+{
+	if (!Gizmo || !bGizmoEnabled)
+	{
+		return;
+	}
+
+	AActor* Primary = GetPrimarySelection();
+	if (!Primary)
+	{
+		return;
+	}
+
+	if (Gizmo->GetTarget() != Primary)
+	{
+		SyncGizmo();
+		return;
+	}
+
+	Gizmo->UpdateGizmoTransform();
+}
+
 void FSelectionManager::SetGizmoEnabled(bool bEnabled)
 {
 	if (bGizmoEnabled == bEnabled)
