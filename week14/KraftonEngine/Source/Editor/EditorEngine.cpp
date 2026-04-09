@@ -182,6 +182,16 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	Info.OriginalRequestParams = Params;
 	Info.PIEStartTime = 0.0;
 	Info.PreviousActiveWorldHandle = GetActiveWorldHandle();
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
+		{
+			Info.SavedViewportCamera.Location = VCCamera->GetWorldLocation();
+			Info.SavedViewportCamera.Rotation = VCCamera->GetRelativeRotation();
+			Info.SavedViewportCamera.CameraState = VCCamera->GetCameraState();
+			Info.SavedViewportCamera.bValid = true;
+		}
+	}
 	PlayInEditorSessionInfo = Info;
 
 	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
@@ -253,6 +263,14 @@ void UEditorEngine::EndPlayMap()
 		{
 			if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
 			{
+				if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
+				{
+					const FPIEViewportCameraSnapshot& SavedCamera = PlayInEditorSessionInfo->SavedViewportCamera;
+					VCCamera->SetWorldLocation(SavedCamera.Location);
+					VCCamera->SetRelativeRotation(SavedCamera.Rotation);
+					VCCamera->SetCameraState(SavedCamera.CameraState);
+				}
+
 				EditorWorld->SetActiveCamera(VCCamera);
 			}
 		}
