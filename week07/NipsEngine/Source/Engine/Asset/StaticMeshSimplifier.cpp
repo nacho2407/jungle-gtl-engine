@@ -21,19 +21,8 @@ void FStaticMeshSimplifier::BuildLODs(UStaticMesh* TargetMesh)
 
 	FStaticMeshSimplifier Builder(TargetMesh);
 
-	// [수정] TArray의 얕은 복사(Shallow Copy)로 인한 원본 데이터 오염을 막기 위해 
-	// 명시적으로 요소를 순회하며 깊은 복사(Deep Copy)를 수행합니다.
-	TArray<FNormalVertex> OriginalVertices;
-	for (size_t i = 0; i < Builder.MeshData->Vertices.size(); ++i)
-	{
-		OriginalVertices.push_back(Builder.MeshData->Vertices[i]);
-	}
-
-	TArray<uint32> OriginalIndices;
-	for (size_t i = 0; i < Builder.MeshData->Indices.size(); ++i)
-	{
-		OriginalIndices.push_back(Builder.MeshData->Indices[i]);
-	}
+	TArray<FNormalVertex> OriginalVertices = Builder.MeshData->Vertices;
+	TArray<uint32>        OriginalIndices  = Builder.MeshData->Indices;
 
 	// LOD 슬롯 사전 할당
 	for (int32 i = 1; i < UStaticMesh::MAX_LOD; ++i)
@@ -44,18 +33,8 @@ void FStaticMeshSimplifier::BuildLODs(UStaticMesh* TargetMesh)
 	Builder.BuildMeshQuadrics();
 	Builder.SimplifyMesh(); 
 
-	// [수정] LOD0 = 원본 메시 복원 (깊은 복사 강제)
-	Builder.MeshData->Vertices.clear();
-	for (size_t i = 0; i < OriginalVertices.size(); ++i)
-	{
-		Builder.MeshData->Vertices.push_back(OriginalVertices[i]);
-	}
-
-	Builder.MeshData->Indices.clear();
-	for (size_t i = 0; i < OriginalIndices.size(); ++i)
-	{
-		Builder.MeshData->Indices.push_back(OriginalIndices[i]);
-	}
+	Builder.MeshData->Vertices = std::move(OriginalVertices);
+	Builder.MeshData->Indices  = std::move(OriginalIndices);
 
 	// 실제로 생성된 LOD 수 집계
 	Builder.TargetMesh->ValidLODCount = 1;
@@ -81,6 +60,7 @@ void FStaticMeshSimplifier::BuildMeshQuadrics()
 	if (!MeshData) return;
 	
 	BuildTopologicalVertices();
+	BuildTopoUVBounds();
 	CalculateInitialQuadrics();
 	FindBoundaryEdges();
 }
@@ -92,51 +72,56 @@ void FStaticMeshSimplifier::BuildTopologicalVertices()
 	RenderToTopoMap.clear();
 
 	const TArray<FNormalVertex>& Vertices = MeshData->Vertices;
+	
+    const float CellSize = 1e-3f;   // 1e-6 SizeSquared 임계값에 대응
+    const float InvCell  = 1.0f / CellSize;
 
-	// 맵 초기화 후 X좌표 기준 정점의 렌더 인덱스를 정렬
-	for (int i = 0; i < Vertices.size(); ++i) RenderToTopoMap[i] = -1;
-	TArray<int32> SortedIndices;
-    SortedIndices.resize(Vertices.size());
+    // 양자화 좌표 → 위상 인덱스 맵
+    auto Quantize = [InvCell](const FVector& P) -> uint64 {
+        int32 ix = static_cast<int32>(std::floor(P.X * InvCell));
+        int32 iy = static_cast<int32>(std::floor(P.Y * InvCell));
+        int32 iz = static_cast<int32>(std::floor(P.Z * InvCell));
+        // 3개의 21비트 값을 64비트에 패킹
+        uint64 ux = static_cast<uint64>(static_cast<uint32>(ix)) & 0x1FFFFF;
+        uint64 uy = static_cast<uint64>(static_cast<uint32>(iy)) & 0x1FFFFF;
+        uint64 uz = static_cast<uint64>(static_cast<uint32>(iz)) & 0x1FFFFF;
+        return (ux << 42) | (uy << 21) | uz;
+    };
 
-    for (int i = 0; i < Vertices.size(); i++) SortedIndices[i] = i;
-    
-    std::sort(SortedIndices.begin(), SortedIndices.end(), [&](int32 A, int32 B) {
-        return Vertices[A].Position.X < Vertices[B].Position.X;
-    });
+    std::unordered_map<uint64, TArray<int32>> CellMap;
+    CellMap.reserve(Vertices.size());
 
-	// 2. 정렬된 순서대로 순회하며 O(N) 속도로 병합
-    for (int i = 0; i < SortedIndices.size(); i++)
+    for (int32 i = 0; i < static_cast<int32>(Vertices.size()); ++i)
     {
-        int32 RenderIdx = SortedIndices[i];
-        const FVector& Pos = Vertices[RenderIdx].Position;
+        const FVector& Pos = Vertices[i].Position;
+        uint64 Key = Quantize(Pos);
         int32 FoundTopoIdx = -1;
 
-        // 내 주변(X좌표가 아주 가까운 녀석)만 뒤로 탐색하며 동일한 위상 정점이 있는지 검사
-        for (int j = i - 1; j >= 0; j--)
+        // 같은 셀 내에서만 정밀 비교 (보통 1~3개)
+        auto It = CellMap.find(Key);
+        if (It != CellMap.end())
         {
-            int32 PrevRenderIdx = SortedIndices[j];
-            
-            // X 거리가 임계값을 넘어가면 더 이상 탐색할 필요가 없음
-            if (Pos.X - Vertices[PrevRenderIdx].Position.X > 1e-3f) break; 
-            
-            if ((Vertices[PrevRenderIdx].Position - Pos).SizeSquared() < 1e-6f)
+            for (int32 TopoIdx : It->second)
             {
-                FoundTopoIdx = RenderToTopoMap[PrevRenderIdx];
-                break;
+                if ((TopologicalVertices[TopoIdx].Position - Pos).SizeSquared() < 1e-6f)
+                {
+                    FoundTopoIdx = TopoIdx;
+                    break;
+                }
             }
         }
 
-        // 일치하는 위상 정점을 못 찾았다면 새로 생성
         if (FoundTopoIdx == -1)
         {
             FTopologicalVertex NewTopoVertex;
             NewTopoVertex.Position = Pos;
             FoundTopoIdx = static_cast<int32>(TopologicalVertices.size());
             TopologicalVertices.push_back(NewTopoVertex);
+            CellMap[Key].push_back(FoundTopoIdx);
         }
 
-        TopologicalVertices[FoundTopoIdx].RenderVertices.push_back(RenderIdx);
-        RenderToTopoMap[RenderIdx] = FoundTopoIdx;
+        TopologicalVertices[FoundTopoIdx].RenderVertices.push_back(i);
+        RenderToTopoMap[i] = FoundTopoIdx;
     }
 }
 
@@ -170,8 +155,8 @@ void FStaticMeshSimplifier::CalculateInitialQuadrics()
 		EdgeUsage[FIndexEdge(V0, V1)]++; EdgeUsage[FIndexEdge(V0, V2)]++; EdgeUsage[FIndexEdge(V1, V2)]++;
 
 		// Quadric 계산: 평면 방정식 Dot(N, V) + d = 0
-		FVector V01 = Vertices[V1].Position - Vertices[V0].Position;
-		FVector V02 = Vertices[V2].Position - Vertices[V0].Position;
+		FVector V01 = TopologicalVertices[V1].Position - TopologicalVertices[V0].Position;
+		FVector V02 = TopologicalVertices[V2].Position - TopologicalVertices[V0].Position;
 		FVector Normal = FVector::CrossProduct(V01, V02).GetSafeNormal();
 		float d = -FVector::DotProduct(Normal, Vertices[V0].Position);
 
@@ -184,6 +169,7 @@ void FStaticMeshSimplifier::CalculateInitialQuadrics()
 		VertexToTriangleMap[V2].emplace(tidx);
 	}
 }
+
 
 // SIMD 최적화된 함수 (Normal과 d값을 통해 Quadric 행렬 계산)
 void FStaticMeshSimplifier::AddPlaneQuadric(uint32 VertIdx, const FVector& InNormal, float InD)
@@ -210,6 +196,24 @@ void FStaticMeshSimplifier::AddPlaneQuadric(uint32 VertIdx, const FVector& InNor
 	DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(&MatrixPtr[4]), Q1);
 	DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(&MatrixPtr[8]), Q2);
 	DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(&MatrixPtr[12]), Q3);
+}
+
+// BuildTopologicalVertices 직후, 혹은 CalculateInitialQuadrics 끝에 한번 구축
+void FStaticMeshSimplifier::BuildTopoUVBounds()
+{
+    TopoUVBounds.resize(TopologicalVertices.size());
+    for (int32 t = 0; t < TopologicalVertices.size(); ++t)
+    {
+        float minU = FLT_MAX, maxU = -FLT_MAX, minV = FLT_MAX, maxV = -FLT_MAX;
+        for (uint32 ri : TopologicalVertices[t].RenderVertices)
+        {
+            float u = MeshData->Vertices[ri].UVs.X;
+            float v = MeshData->Vertices[ri].UVs.Y;
+            minU = std::min(minU, u); maxU = std::max(maxU, u);
+            minV = std::min(minV, v); maxV = std::max(maxV, v);
+        }
+        TopoUVBounds[t] = { minU, maxU, minV, maxV };
+    }
 }
 
 void FStaticMeshSimplifier::FindBoundaryEdges()
@@ -259,10 +263,6 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 	float ErrorB = CalculateVertexError(Q, PosB);
 	float ErrorMid = CalculateVertexError(Q, PosMid);
 
-	// ==========================================================
-	// 모드 1: Half-Edge Collapse (추천)
-	// 텍스쳐 찢어짐(UV 왜곡)을 최소화하고 가장 안정적으로 메쉬를 줄입니다.
-	// ==========================================================
 	// 1. 성게(Spike) 버그를 막기 위한 3x3 수동 행렬식 검사
 	float det3x3 = 
 		Q.M[0][0] * (Q.M[1][1] * Q.M[2][2] - Q.M[1][2] * Q.M[2][1]) -
@@ -293,9 +293,12 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 	{
 		for (uint32 RB : TopologicalVertices[ib].RenderVertices)
 		{
-			float du = MeshData->Vertices[RA].UVs.X - MeshData->Vertices[RB].UVs.X;
-			float dv = MeshData->Vertices[RA].UVs.Y - MeshData->Vertices[RB].UVs.Y;
-			MaxUVDistSq = std::max(MaxUVDistSq, du * du + dv * dv);
+			// 두 바운딩 박스 간 최대 거리의 제곱
+			float du = std::max(std::abs(TopoUVBounds[ia].MaxU - TopoUVBounds[ib].MinU),
+								std::abs(TopoUVBounds[ib].MaxU - TopoUVBounds[ia].MinU));
+			float dv = std::max(std::abs(TopoUVBounds[ia].MaxV - TopoUVBounds[ib].MinV),
+								std::abs(TopoUVBounds[ib].MaxV - TopoUVBounds[ia].MinV));
+			MaxUVDistSq = du * du + dv * dv;
 		}
 	}
 	constexpr float UVSeamPenaltyScale = 1000.0f;
