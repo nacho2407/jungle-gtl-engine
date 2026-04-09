@@ -42,6 +42,8 @@ AActor::~AActor()
 UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 {
 	if (!Class) return nullptr;
+	// UI 외 호출도 있으므로 클래스 기반 추가 경로에서 한 번 더 차단한다.
+	if (Class->HasAnyClassFlags(CF_Abstract)) return nullptr;
 
 	UObject* Obj = FObjectFactory::Get().Create(Class->name, this);
 	if (!Obj) return nullptr;
