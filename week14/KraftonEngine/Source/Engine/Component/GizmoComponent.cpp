@@ -557,26 +557,43 @@ void UGizmoComponent::UpdateGizmoTransform()
 {
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
-	SetWorldLocation(TargetActor->GetActorLocation());
-
-	FRotator ActorRot = TargetActor->GetActorRotation();
+	const FVector DesiredLocation = TargetActor->GetActorLocation();
+	const FRotator ActorRot = TargetActor->GetActorRotation();
+	const FRotator DesiredRotation = (CurMode == EGizmoMode::Scale || !bIsWorldSpace) ? ActorRot : FRotator();
+	const FMeshData* DesiredMeshData = nullptr;
 
 	switch (CurMode)
 	{
 	case EGizmoMode::Scale:
-		SetRelativeRotation(ActorRot);
-		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::ScaleGizmo);
+		DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::ScaleGizmo);
 		break;
 
 	case EGizmoMode::Rotate:
-		SetRelativeRotation(bIsWorldSpace ? FRotator() : ActorRot);
-		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::RotGizmo);
+		DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::RotGizmo);
 		break;
 
 	case EGizmoMode::Translate:
-		SetRelativeRotation(bIsWorldSpace ? FRotator() : ActorRot);
-		MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
+		DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
 		break;
+
+	default:
+		break;
+	}
+
+	if (FVector::DistSquared(GetWorldLocation(), DesiredLocation) > FMath::Epsilon * FMath::Epsilon)
+	{
+		SetWorldLocation(DesiredLocation);
+	}
+
+	if (GetRelativeRotation() != DesiredRotation)
+	{
+		SetRelativeRotation(DesiredRotation);
+	}
+
+	if (MeshData != DesiredMeshData && DesiredMeshData)
+	{
+		MeshData = DesiredMeshData;
+		MarkRenderStateDirty();
 	}
 }
 

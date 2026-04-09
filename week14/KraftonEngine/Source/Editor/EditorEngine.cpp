@@ -89,6 +89,7 @@ void UEditorEngine::Tick(float DeltaTime)
 
 	MainPanel.Update();
 	UEngine::Tick(DeltaTime);
+	SelectionManager.Tick();
 }
 
 UCameraComponent* UEditorEngine::GetCamera() const
