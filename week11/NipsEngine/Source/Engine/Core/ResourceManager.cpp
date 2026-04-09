@@ -14,6 +14,7 @@
 #include "UI/EditorConsoleWidget.h"
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
+#include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
 
 #pragma region __BINARY__
@@ -876,7 +877,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return nullptr;
 	}
 
-	//	1. 메모리 캐시 확인
+	// 메모리 캐시 확인
 	if (UStaticMesh* FoundMesh = FindStaticMesh(Path))
 	{
 		return FoundMesh;
@@ -961,11 +962,21 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		MaterialSlots.push_back(Slot);
 	}
 
-	UStaticMesh* LoadedMesh = new UStaticMesh();
-	LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
+    UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+    LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
 
-	StaticMeshMap.insert({Path, LoadedMesh});
-	return LoadedMesh;
+    const auto LodStart = std::chrono::steady_clock::now();
+    FStaticMeshSimplifier::BuildLODs(LoadedMesh);
+    
+    const auto LodEnd = std::chrono::steady_clock::now();
+    double LodSec = std::chrono::duration<double>(LodEnd - LodStart).count();
+    
+    UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec", 
+           LoadedMesh->GetValidLODCount(), Path.c_str(), LodSec);
+
+    StaticMeshMap.insert({Path, LoadedMesh});
+    
+    return LoadedMesh;
 }
 
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const

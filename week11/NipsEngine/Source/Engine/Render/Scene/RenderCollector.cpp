@@ -12,6 +12,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
+#include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
 #include <unordered_set>
 
@@ -114,6 +115,40 @@ namespace
 		default:
 			return PrimitiveComponent->GetWorldAABB();
 		}
+	}
+
+	int32 SelectLODLevel(const FVector& CameraPos, const FAABB& Bounds, const FMatrix& ProjMatrix, int32 ValidLODCount)
+	{
+		if (ValidLODCount <= 1) return 0;
+
+		// 1. 바운딩 박스를 통해 바운딩 스피어 반지름 및 카메라와의 거리 계산
+		const FVector Center = (Bounds.Min + Bounds.Max) * 0.5f;
+		const FVector Extent = (Bounds.Max - Bounds.Min) * 0.5f;
+		const float SphereRadius = std::sqrt(Extent.X * Extent.X + Extent.Y * Extent.Y + Extent.Z * Extent.Z);
+
+		const FVector Diff = Center - CameraPos;
+		const float Dist = std::sqrt(Diff.X * Diff.X + Diff.Y * Diff.Y + Diff.Z * Diff.Z);
+
+		if (Dist <= 1e-4f) return 0;
+
+		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[1][1];
+		const float ScreenCoverage = ProjectedRadius * 2.0f; 
+
+		static constexpr float Thresholds[] = { 0.05f, 0.03f, 0.01f, 0.008f };
+		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
+
+		const int32 MaxLOD = ValidLODCount - 1;
+    
+		for (int32 LOD = 0; LOD < MaxLOD; ++LOD)
+		{
+			float Threshold = (LOD < ThresholdCount) ? Thresholds[LOD] : 0.0f;
+        
+			if (ScreenCoverage >= Threshold)
+				return LOD;
+		}
+
+		// 화면에 차지하는 비율이 가장 낮을 경우 최하위 LOD 반환
+		return MaxLOD;
 	}
 }
 
@@ -391,11 +426,24 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Primitive);
 		const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
-		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh);
 
-		if (!MeshBuffer) return;
+		if (!StaticMesh || !StaticMesh->HasValidMeshData()) return;
 
-		const TArray<FStaticMeshSection>& Sections = StaticMesh->GetSections();
+		// 1. 카메라 정보 및 AABB 가져오기
+        FVector CameraPos = RenderBus.GetCameraPosition();
+        FMatrix ProjMatrix = RenderBus.GetProj();
+        FAABB Bounds = StaticMeshComp->GetWorldAABB();
+        const int32 ValidLODCount = StaticMesh->GetValidLODCount();
+
+        // 2. LOD 레벨 계산
+        int32 SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+
+		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
+        if (!MeshBuffer) return;
+
+        const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
+        const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
+
 		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
 		{
 			const FStaticMeshSection& Section = Sections[SectionIdx];

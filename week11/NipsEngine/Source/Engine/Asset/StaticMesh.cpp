@@ -6,8 +6,20 @@ DEFINE_CLASS(UStaticMesh, UObject)
 
 UStaticMesh::~UStaticMesh()
 {
-	delete MeshData;
-	MeshData = nullptr;
+    for (int32 i = 0; i < MAX_LOD; ++i)
+    {
+        if (LODMeshData[i] != nullptr && LODMeshData[i] != MeshData)
+        {
+            delete LODMeshData[i];
+            LODMeshData[i] = nullptr;
+        }
+    }
+
+    if (MeshData != nullptr)
+    {
+        delete MeshData;
+        MeshData = nullptr;
+    }
 }
 
 void UStaticMesh::SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshMaterialSlot>& MaterialSlot)
@@ -23,14 +35,31 @@ void UStaticMesh::SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshM
 	RebuildLocalBoundsFromMeshData();
 }
 
-FStaticMesh* UStaticMesh::GetMeshData()
+FStaticMesh* UStaticMesh::GetMeshData(int32 LOD)
 {
-	return MeshData;
+	if (LOD <= 0)
+        return MeshData;
+
+    if (LOD >= ValidLODCount)
+        LOD = ValidLODCount - 1;
+
+    if (LOD <= 0)
+        return MeshData;
+
+    return LODMeshData[LOD];
 }
 
-const FStaticMesh* UStaticMesh::GetMeshData() const
-{
-	return MeshData;
+const FStaticMesh* UStaticMesh::GetMeshData(int32 LOD) const
+{	if (LOD <= 0)
+        return MeshData;
+
+    if (LOD >= ValidLODCount)
+        LOD = ValidLODCount - 1;
+
+    if (LOD <= 0)
+        return MeshData;
+
+    return LODMeshData[LOD];
 }
 
 const FString& UStaticMesh::GetAssetPathFileName() const
