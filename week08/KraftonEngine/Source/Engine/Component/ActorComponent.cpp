@@ -1,6 +1,7 @@
 ﻿#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
+#include "GameFramework/AActor.h"
 
 IMPLEMENT_CLASS(UActorComponent, UObject)
 
@@ -24,6 +25,11 @@ void UActorComponent::Deactivate()
 	PrimaryComponentTick.SetTickEnabled(false);
 }
 
+
+UWorld* UActorComponent::GetWorld() const
+{
+	return Owner ? Owner->GetWorld() : nullptr;
+}
 
 void UActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
