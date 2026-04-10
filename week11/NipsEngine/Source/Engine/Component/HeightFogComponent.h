@@ -23,6 +23,9 @@ public:
 	void     SetFogInscatteringColor(const FVector4& InColor) { FogInscatteringColor = InColor; }
     FVector4 GetFogInscatteringColor() const { return FogInscatteringColor; }
 
+	void SetFogHeight(float InFogHeight) { FogHeight = InFogHeight; }
+    float GetFogHeight() const { return FogHeight; }
+
 	// --- Property / Serialization ---
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
@@ -31,6 +34,7 @@ public:
     FVector4 FogInscatteringColor;
     float FogDensity;
 	float HeightFalloff;
+    float    FogHeight;
 
     // UPrimitiveComponent을(를) 통해 상속됨
     void UpdateWorldAABB() const override;
