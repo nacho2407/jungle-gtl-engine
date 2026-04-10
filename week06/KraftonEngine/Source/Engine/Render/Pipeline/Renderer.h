@@ -27,6 +27,14 @@ struct FPassBatcherBinding
 	explicit operator bool() const { return DrawBatch != nullptr; }
 };
 
+// 패스별 리소스 바인딩 (예: Decal의 DepthSRV)
+struct FPassResourceBinding
+{
+	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> BindResources;
+	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> UnbindResources;
+	explicit operator bool() const { return BindResources != nullptr; }
+};
+
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
 {
@@ -54,6 +62,7 @@ public:
 private:
 	void InitializePassRenderStates();
 	void InitializePassBatchers();
+	void InitializePassResourceBindings();
 
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
@@ -112,4 +121,5 @@ private:
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
+	FPassResourceBinding PassResourceBindings[(uint32)ERenderPass::MAX];
 };

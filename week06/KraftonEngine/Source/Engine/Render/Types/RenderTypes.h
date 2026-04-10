@@ -32,10 +32,10 @@ enum class EMeshShape
 enum class ERenderPass : uint32
 {
 	Opaque,
+	Decal,
 	Font,			// TextRenderComponent → FontBatcher 경유
 	SubUV,			// SubUVComponent     → SubUVBatcher 경유
 	Billboard,		// BillboardComponent → BillboardBatcher 경유
-	Decal,
 	Translucent,
 	SelectionMask,
 	Editor,

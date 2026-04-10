@@ -32,6 +32,7 @@ void FRenderer::Create(HWND hWindow)
 
 	InitializePassRenderStates();
 	InitializePassBatchers();
+	InitializePassResourceBindings();
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
@@ -229,12 +230,20 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
+		const auto& ResourceBinding = PassResourceBindings[i];
+
 		ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
+
+		if(ResourceBinding.BindResources)
+			ResourceBinding.BindResources(CurPass, InRenderBus, Context);
 
 		if (bHasBatcher)
 			PassBatchers[i].DrawBatch(CurPass, InRenderBus, Context);
 		else
 			ExecutePass(CurPass, InRenderBus.GetProxies(CurPass), InRenderBus, Context);
+
+		if(ResourceBinding.UnbindResources)
+			ResourceBinding.UnbindResources(CurPass, InRenderBus, Context);
 	}
 }
 
@@ -319,6 +328,26 @@ void FRenderer::InitializePassBatchers()
 	};
 }
 
+void FRenderer::InitializePassResourceBindings()
+{
+	PassResourceBindings[(uint32)ERenderPass::Decal] = {
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			// DSV 언바인딩 (Depth SRV와 동시 바인딩 불가)
+			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
+			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
+		},
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			Ctx->PSSetShaderResources(1, 1, &nullSRV);
+			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
+			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+			Ctx->OMSetRenderTargets(1, &rtv, dsv);
+		}
+	};
+}
+
 // ============================================================
 // LineBatcher DrawBatch 공통
 // ============================================================
@@ -342,18 +371,6 @@ void FRenderer::ExecutePass(ERenderPass Pass,
 {
 	SortProxies(Proxies);
 
-	ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
-	ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
-
-	if (Pass == ERenderPass::Decal)
-	{
-		// DSV 언바인딩 (Depth SRV와 동시 바인딩 불가)
-		Context->OMSetRenderTargets(1, &rtv, nullptr);
-
-		ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
-		Context->PSSetShaderResources(1, 1, &DepthSRV);
-	}
-
 	FDrawState State;
 
 	{
@@ -374,15 +391,6 @@ void FRenderer::ExecutePass(ERenderPass Pass,
 		}
 	}
 
-	if (Pass == ERenderPass::Decal)
-	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
-		Context->PSSetShaderResources(1, 1, &nullSRV);
-
-		ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
-		ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
-		Context->OMSetRenderTargets(1, &rtv, dsv);
-	}
 	CleanupSRV(Context, State);
 }
 
