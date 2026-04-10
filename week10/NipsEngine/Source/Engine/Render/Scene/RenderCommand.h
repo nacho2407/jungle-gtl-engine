@@ -174,6 +174,13 @@ struct FFogConstants
     float        Padding;
 };
 
+struct FFXAAConstants
+{
+    float InvResolution[2]; // (1/Width, 1/Height)
+    float  Threshold;     // 0.05 ~ 0.2 추천
+    float  Padding;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
@@ -197,6 +204,7 @@ struct FRenderCommand
 		FStaticMeshConstants StaticMesh;
 		FDecalConstants Decal;
         FFogConstants        Fog;
+        FFXAAConstants        FXAA;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);

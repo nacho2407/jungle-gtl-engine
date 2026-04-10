@@ -44,6 +44,7 @@ void FD3DDevice::BeginFrame()
         DeviceContext->ClearRenderTargetView(ViewportSceneLightRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneFogRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneWorldPosRTV.Get(), ClearColor);
+        DeviceContext->ClearRenderTargetView(ViewportSceneFXAARTV.Get(), ClearColor);
 		DeviceContext->ClearRenderTargetView(ViewportSelectionMaskRTV.Get(), ClearMask);
 		DeviceContext->ClearDepthStencilView(ViewportDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -162,6 +163,9 @@ FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
 
 	Targets.SceneWorldPosRTV = ViewportSceneWorldPosRTV.Get();
     Targets.SceneWorldPosSRV = ViewportSceneWorldPosSRV.Get();
+
+	Targets.SceneFXAARTV = ViewportSceneFXAARTV.Get();
+    Targets.SceneFXAASRV = ViewportSceneFXAASRV.Get();
 
     Targets.SceneDepthSRV = ViewportDepthStencilSRV.Get();
 	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV.Get();
@@ -579,6 +583,37 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 
     Device->CreateShaderResourceView(ViewportSceneWorldPosTexture.Get(), &worldPosSRVDesc,
                                      ViewportSceneWorldPosSRV.ReleaseAndGetAddressOf());
+
+	// FXAA Texture
+    D3D11_TEXTURE2D_DESC fxaaDesc = {};
+    fxaaDesc.Width = Width;
+    fxaaDesc.Height = Height;
+    fxaaDesc.MipLevels = 1;
+    fxaaDesc.ArraySize = 1;
+    fxaaDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    fxaaDesc.SampleDesc.Count = 1;
+    fxaaDesc.Usage = D3D11_USAGE_DEFAULT;
+    fxaaDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    Device->CreateTexture2D(&fxaaDesc, nullptr, ViewportSceneFXAATexture.ReleaseAndGetAddressOf());
+
+    // FXAA RTV
+    D3D11_RENDER_TARGET_VIEW_DESC fxaaRTVDesc = {};
+    fxaaRTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    fxaaRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+    Device->CreateRenderTargetView(ViewportSceneFXAATexture.Get(), &fxaaRTVDesc,
+                                   ViewportSceneFXAARTV.ReleaseAndGetAddressOf());
+
+    // FXAA SRV
+    D3D11_SHADER_RESOURCE_VIEW_DESC fxaaSRVDesc = {};
+    fxaaSRVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    fxaaSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    fxaaSRVDesc.Texture2D.MostDetailedMip = 0;
+    fxaaSRVDesc.Texture2D.MipLevels = 1;
+
+    Device->CreateShaderResourceView(ViewportSceneFXAATexture.Get(), &fxaaSRVDesc,
+                                     ViewportSceneFXAASRV.ReleaseAndGetAddressOf());
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
@@ -610,6 +645,10 @@ void FD3DDevice::ReleaseViewportRenderTargets()
 	ViewportSceneWorldPosRTV.Reset();
 	ViewportSceneWorldPosSRV.Reset();
     ViewportSceneWorldPosTexture.Reset();
+
+	ViewportSceneFXAARTV.Reset();
+	ViewportSceneFXAASRV.Reset();
+    ViewportSceneFXAATexture.Reset();
 
 	ViewportRenderTargetWidth = 0;
 	ViewportRenderTargetHeight = 0;
