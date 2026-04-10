@@ -43,7 +43,11 @@ struct FRenderTargetSet
     ID3D11RenderTargetView*   SceneNormalRTV = nullptr;
     ID3D11ShaderResourceView*     SceneNormalSRV = nullptr;
     ID3D11RenderTargetView*     SceneLightRTV = nullptr;
-    ID3D11ShaderResourceView*   SceneLightSRV = nullptr;
+    ID3D11ShaderResourceView*     SceneLightSRV = nullptr;
+    ID3D11RenderTargetView*       SceneFogRTV = nullptr;
+    ID3D11ShaderResourceView*     SceneFogSRV = nullptr;
+    ID3D11RenderTargetView*       SceneWorldPosRTV = nullptr;
+    ID3D11ShaderResourceView*     SceneWorldPosSRV = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
     ID3D11DepthStencilView*   DepthStencilView = nullptr;
@@ -81,10 +85,14 @@ private:
     TComPtr<ID3D11Texture2D>          ViewportSceneLightTexture;
     TComPtr<ID3D11RenderTargetView>   ViewportSceneLightRTV;
     TComPtr<ID3D11ShaderResourceView> ViewportSceneLightSRV;
+	
+    TComPtr<ID3D11Texture2D>          ViewportSceneFogTexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneFogRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneFogSRV;
 
-    TComPtr<ID3D11Texture2D>          ViewportSceneFinalTexture;
-    TComPtr<ID3D11RenderTargetView>   ViewportSceneFinalRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneFinalSRV;
+    TComPtr<ID3D11Texture2D>          ViewportSceneWorldPosTexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneWorldPosRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneWorldPosSRV;
 
 	TComPtr<ID3D11Texture2D> ViewportSelectionMaskTexture;
 	TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;
@@ -178,7 +186,6 @@ public:
     ID3D11ShaderResourceView* GetViewportSceneNormalSRV() const { return ViewportSceneNormalSRV.Get(); }
     ID3D11ShaderResourceView*     GetViewportSceneDepthSRV() const { return ViewportDepthStencilSRV.Get(); }
     ID3D11ShaderResourceView*     GetViewportSceneLightSRV() const { return ViewportSceneLightSRV.Get(); }
-    ID3D11ShaderResourceView*     GetViewportSceneFinalSRV() const { return ViewportSceneFinalSRV.Get(); }
 	float GetViewportWidth() const { return ViewportInfo.Width; }
 	float GetViewportHeight() const { return ViewportInfo.Height; }
 	FRenderTargetSet GetBackBufferRenderTargets() const;

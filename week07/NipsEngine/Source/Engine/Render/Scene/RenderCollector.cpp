@@ -10,10 +10,13 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/DecalComponent.h"
+#include "Component/HeightFogComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
+#include "Object/ObjectIterator.h"
 #include <unordered_set>
 
 namespace
@@ -167,10 +170,11 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
 		AActor* Actor = *Iter;
+
 		if (!Actor || !Actor->IsVisible()) continue;
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
-		{
+		{	
 			if (Primitive != nullptr && Primitive->IsVisible())
 			{
 				++LastCullingStats.TotalVisiblePrimitiveCount;
@@ -179,6 +183,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 
 		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
 	}
+
 }
 
 void FRenderCollector::ResetCullingStats()
@@ -656,6 +661,22 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		break;
 	}
 	
+    case EPrimitiveType::EPT_FOG:
+    {
+        UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
+
+        FRenderCommand Cmd = {};
+        Cmd.Type = ERenderCommandType::Primitive;
+        Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
+        Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
+        Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
+        Cmd.Constants.Fog.FogHeight = HeightFogComp->GetFogHeight();
+        Cmd.BlendState = EBlendState::AlphaBlend;
+        Cmd.DepthStencilState = EDepthStencilState::Default;
+
+        RenderBus.AddCommand(ERenderPass::Fog, Cmd);
+        break;
+    }
 	default:
 		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
 		{

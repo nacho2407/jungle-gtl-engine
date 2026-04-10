@@ -3,6 +3,7 @@
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Component/HeightFogComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
@@ -40,6 +41,9 @@ REGISTER_FACTORY(ABillboardActor)
 
 DEFINE_CLASS(ADecalActor, AActor)
 REGISTER_FACTORY(ADecalActor)
+
+DEFINE_CLASS(AHeightFogActor, AActor)
+REGISTER_FACTORY(AHeightFogActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -203,6 +207,23 @@ void ABillboardActor::InitDefaultComponents()
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
+void AHeightFogActor::InitDefaultComponents()
+{
+	UHeightFogComponent* HeightFog = AddComponent<UHeightFogComponent>();
+	SetRootComponent(HeightFog);
+
+	HeightFog->SetFogDensity(0.5f);
+	HeightFog->SetHeightFalloff(0.2f);
+	HeightFog->SetFogInscatteringColor(FVector4(0.8f, 0.8f, 0.9f, 1.0f));
+	HeightFog->SetFogHeight(0.0f);
+	auto* TextUUID = AddComponent<UTextRenderComponent>();
+	TextUUID->AttachToComponent(HeightFog);
+	TextUUID->SetFont(FName("Default"));
+	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
 void ADecalActor::InitDefaultComponents()
 {
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
@@ -219,3 +240,4 @@ void ADecalActor::InitDefaultComponents()
 	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
 	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
+

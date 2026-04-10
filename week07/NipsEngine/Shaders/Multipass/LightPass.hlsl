@@ -15,6 +15,8 @@ struct VSOutput
 // Fullscreen Triangle VS
 VSOutput mainVS(uint vertexID : SV_VertexID)
 {
+    
+    
     VSOutput output;
 
     float2 pos;
