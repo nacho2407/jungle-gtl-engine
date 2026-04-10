@@ -50,7 +50,7 @@ private:
 	/* Simplification Phase */
 	void SimplifyMesh();
 	void UpdateRenderVertices(uint32 TopoIa, uint32 TopoIb, const FCollapseCandidate& Victim);
-	void UpdateTriangles(uint32 TopoIa, uint32 TopoIb, TArray<uint32>& OutTopologicalIndices, int32& OutCurrentTriangles, TSet<uint32>& OutNewNeighbors);
+	void UpdateTriangles(uint32 TopoIa, uint32 TopoIb, TArray<uint32>& OutTopologicalIndices, int32& OutCurrentTriangles, TArray<uint32>& OutNewNeighbors);
 	void BuildFinalIndices(const TArray<uint32>& TopologicalIndices, int32 CurrentTriangles);
 	
 	/* LOD Output Phase */
@@ -70,5 +70,5 @@ private:
 	TSet<uint32> BoundaryVertices;
 	// 각 위상 정점의 UV bounding box 캐싱
 	TArray<FTopoUVBounds> TopoUVBounds;
-	TMap<uint32, TSet<uint32>> VertexToTriangleMap; 
+	TArray<TArray<uint32>> VertexToTriangleMap;
 };
