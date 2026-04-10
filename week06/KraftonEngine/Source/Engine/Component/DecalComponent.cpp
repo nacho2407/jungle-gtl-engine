@@ -1,10 +1,20 @@
 ﻿#include "DecalComponent.h"
+#include "Component/DecalComponent.h"
+#include "Core/PropertyTypes.h"
+#include "Object/ObjectFactory.h"
+#include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
+#include "Serialization/Archive.h"
+
+#include <cstring>
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
 void UDecalComponent::Serialize(FArchive& Ar)
 {
+	UPrimitiveComponent::Serialize(Ar);
+	Ar << TextureName;
+	Ar << DecalSize;
 }
 
 void UDecalComponent::PostDuplicate()
@@ -15,15 +25,34 @@ void UDecalComponent::PostDuplicate()
 
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+	UPrimitiveComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({ "Decal Size", EPropertyType::Vec3, &DecalSize, 1.0f, 1000.0f, 1.0f });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
 {
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (strcmp(PropertyName, "Texture") == 0)
+	{
+		SetTexture(TextureName);
+	}
+	else if (strcmp(PropertyName, "Decal Size") == 0)
+	{
+		UpdateLocalExtents();
+		MarkWorldBoundsDirty();
+	}
 }
 
 void UDecalComponent::UpdateLocalExtents()
 {
 	LocalExtents = DecalSize * 0.5f;
+}
+
+FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
+{
+	return new FDecalSceneProxy(this);
 }
 
 void UDecalComponent::SetTexture(const FName& InTextureName)
@@ -40,4 +69,31 @@ void UDecalComponent::SetDecalSize(const FVector& InSize)
 	MarkRenderTransformDirty();
 	UpdateLocalExtents();
 	MarkWorldBoundsDirty();
+}
+
+FMatrix& UDecalComponent::GetDecalToWorldMatrix() const
+{
+	if (bDecalMatrixDirty)
+	{
+		UpdateDecalMatrices();
+	}
+	return DecalToWorld;
+}
+
+FMatrix& UDecalComponent::GetWorldToDecalMatrix() const
+{
+	if (bDecalMatrixDirty)
+	{
+		UpdateDecalMatrices();
+	}
+	return WorldToDecal;
+}
+
+void UDecalComponent::UpdateDecalMatrices() const
+{
+	DecalToWorld = GetWorldMatrix();
+	const FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(DecalSize);
+	DecalToWorld = ScaleMatrix * DecalToWorld;
+	WorldToDecal = DecalToWorld.GetInverse();
+	bDecalMatrixDirty = false;
 }
