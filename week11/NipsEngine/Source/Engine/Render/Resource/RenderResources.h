@@ -19,6 +19,7 @@ struct FRenderResources
     FConstantBuffer StaticMeshConstantBuffer;       // b6
     FConstantBuffer LightPassConstantBuffer;		// b7
 	FConstantBuffer DecalConstantBuffer;			// b8
+    FConstantBuffer FogPassConstantBuffer;		// b9
 
     FShader PrimitiveShader;
     FShader GizmoShader;
@@ -27,6 +28,7 @@ struct FRenderResources
 	FShader OutlineShader;
     FShader StaticMeshShader;
     FShader LightPassShader;
+    FShader FogPassShader;
 	FShader DecalShader;
 
 	TComPtr<ID3D11SamplerState> MeshSamplerState;
