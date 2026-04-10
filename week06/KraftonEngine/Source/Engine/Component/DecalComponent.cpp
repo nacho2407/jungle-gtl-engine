@@ -41,6 +41,7 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 	else if (strcmp(PropertyName, "Decal Size") == 0)
 	{
 		UpdateLocalExtents();
+		MarkDecalDirty();
 		MarkWorldBoundsDirty();
 	}
 }
@@ -66,6 +67,7 @@ void UDecalComponent::SetTexture(const FName& InTextureName)
 void UDecalComponent::SetDecalSize(const FVector& InSize)
 {
 	DecalSize = InSize;
+	MarkDecalDirty();
 	MarkRenderTransformDirty();
 	UpdateLocalExtents();
 	MarkWorldBoundsDirty();
@@ -87,6 +89,17 @@ FMatrix& UDecalComponent::GetWorldToDecalMatrix() const
 		UpdateDecalMatrices();
 	}
 	return WorldToDecal;
+}
+
+void UDecalComponent::OnTransformDirty()
+{
+	UPrimitiveComponent::OnTransformDirty();
+	MarkDecalDirty();
+}
+
+void UDecalComponent::MarkDecalDirty()
+{
+	bDecalMatrixDirty = true;
 }
 
 void UDecalComponent::UpdateDecalMatrices() const

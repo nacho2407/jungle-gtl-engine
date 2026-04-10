@@ -25,7 +25,11 @@ public:
 	FMatrix& GetDecalToWorldMatrix() const;
 	FMatrix& GetWorldToDecalMatrix() const;
 
+protected:
+	void OnTransformDirty() override;
+
 private:
+	void MarkDecalDirty();
 	void UpdateDecalMatrices() const;
 private:
 	FTextureResource* CachedTexture = nullptr;
