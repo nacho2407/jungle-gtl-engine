@@ -23,8 +23,10 @@ public:
 	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_Decal; }
 
 	FMatrix GetDecalMatrix() const;
+	FColor GetDecalColor() const { return DecalColor; }
 
 private:
-	FMaterial* Material;
-	FVector Size;
+	FMaterial* Material = nullptr;
+	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
+	FColor DecalColor = FColor::White();
 };
