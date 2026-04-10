@@ -387,12 +387,32 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
 {
-	//	Selection Mask에 대한 것인지 확인하여 RTV를 가져옴
-	ID3D11RenderTargetView* RTV = (Pass == ERenderPass::SelectionMask)
-		? CurrentRenderTargets.SelectionMaskRTV
-		: CurrentRenderTargets.SceneColorRTV;
-	ID3D11DepthStencilView* DSV = CurrentRenderTargets.DepthStencilView;
-	Context->OMSetRenderTargets(1, &RTV, DSV);
+    ID3D11RenderTargetView* RTVs[MaxRTVCount] = {nullptr, nullptr};
+    ID3D11DepthStencilView* DSV = nullptr;
+
+	/** Pass 별 RTV 설정 */
+	switch (Pass)
+	{
+        case ERenderPass::Opaque:
+            RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+            RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
+            break;
+        case ERenderPass::SelectionMask:
+            RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;
+            break;
+        default:
+            RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+            break;
+	}
+
+	switch (Pass)
+	{
+        default:
+            DSV = CurrentRenderTargets.DepthStencilView;
+            break;
+	}
+
+	Context->OMSetRenderTargets(MaxRTVCount, RTVs, DSV);
 
 	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
 
