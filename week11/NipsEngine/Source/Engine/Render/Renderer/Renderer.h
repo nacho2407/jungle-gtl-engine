@@ -104,5 +104,6 @@ private:
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
+	constexpr static uint32 MaxRTVCount = 2;
 };
 

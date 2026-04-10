@@ -41,6 +41,12 @@ struct PSInput
     float2 UV          : TEXCOORD2;
 };
 
+struct PSOutput
+{
+    float4 Color : SV_TARGET0;
+    float4 Normal : SV_TARGET1;
+};
+
 
 PSInput mainVS(VSInput input)
 {
@@ -58,8 +64,9 @@ PSInput mainVS(VSInput input)
 }
 
 
-float4 mainPS(PSInput input) : SV_TARGET
+PSOutput mainPS(PSInput input) : SV_TARGET
 {
+    PSOutput output;
     float3 DiffuseTex = DiffuseMap.Sample(SampleState, input.UV).xyz;
     
     float3 FinalColor;
@@ -101,5 +108,10 @@ float4 mainPS(PSInput input) : SV_TARGET
     //float3 FinalSpecular = SpecularTex * SpecularColor * pow(saturate(dot(HalfVector, ViewDir)), max(Shininess, 32.f));
     //
     //float3 FinalColor = FinalAmbient + FinalDiffuse + FinalSpecular;
-    return float4(FinalColor, 1.f);
+    
+    output.Color = float4(FinalColor, 1.f);
+    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    
+    // return float4(FinalColor, 1.f);
+    return output;
 }
