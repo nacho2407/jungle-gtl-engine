@@ -169,10 +169,11 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 	for (TActorIterator<AActor> Iter(World); Iter; ++Iter)
 	{
 		AActor* Actor = *Iter;
+
 		if (!Actor || !Actor->IsVisible()) continue;
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
-		{
+		{	
 			if (Primitive != nullptr && Primitive->IsVisible())
 			{
 				++LastCullingStats.TotalVisiblePrimitiveCount;
@@ -584,7 +585,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
 	}
-    /*
     case EPrimitiveType::EPT_FOG:
     {
         UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
@@ -600,7 +600,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         RenderBus.AddCommand(ERenderPass::Fog, Cmd);
         break;
     }
-	*/
 	default:
 		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
 		{

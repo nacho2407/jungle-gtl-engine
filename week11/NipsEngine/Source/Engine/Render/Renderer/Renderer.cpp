@@ -217,8 +217,13 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
         else if (CurPass == ERenderPass::Fog)
 		{
             const auto& Commands = InRenderBus.GetCommands(CurPass);
-			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
-			ExecuteFogPass(Commands, InRenderBus, Context);
+            if (Commands.empty())
+                continue;
+			else
+            {
+                ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
+                ExecuteFogPass(Commands, InRenderBus, Context);
+			}
         }
 		else
 		{
@@ -485,18 +490,6 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
 
     Resources.FogPassShader.Bind(Context);
 
-	/**
-    * 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
-    * 버퍼 바인딩이 필요 없다.
-    */
-    Context->IASetInputLayout(nullptr);
-    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    Context->Draw(3, 0);
-
-	/*
     for (const auto& Cmd : Commands)
     {
         EDepthStencilState TargetDepth =
@@ -507,12 +500,16 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
         Device.SetDepthStencilState(TargetDepth);
         Device.SetBlendState(TargetBlend);
 
-		// FFogConstants FogConstants = Cmd.Constants.Fog;
-		// Resources.FogPassConstantBuffer.Update(Context, &FogConstants, sizeof(FFogConstants));
+		FFogConstants FogConstants = Cmd.Constants.Fog;
+		Resources.FogPassConstantBuffer.Update(Context, &FogConstants, sizeof(FFogConstants));
 		ID3D11Buffer* cb7 = Resources.FogPassConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(7, 1, &cb7);
         Context->PSSetConstantBuffers(7, 1, &cb7);
 
+		/**
+        * 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
+        * 버퍼 바인딩이 필요 없다.
+        */
         Context->IASetInputLayout(nullptr);
         Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
         Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
@@ -520,7 +517,6 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
 
         Context->Draw(3, 0);
     }
-	*/
 
     // SRV 해제 (중요!!)
     ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr};
