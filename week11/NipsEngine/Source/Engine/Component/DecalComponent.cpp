@@ -7,7 +7,8 @@ DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
 UDecalComponent::UDecalComponent()
 	: Material(nullptr), Size(5.0f, 5.0f, 5.0f)
 {
-	SetMaterial(FResourceManager::Get().FindMaterial(""));
+	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
+	SetMaterial(FResourceManager::Get().FindMaterial(MatNames[0]));
 }
 
 UDecalComponent* UDecalComponent::Duplicate()
