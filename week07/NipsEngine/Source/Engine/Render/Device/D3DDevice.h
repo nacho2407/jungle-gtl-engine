@@ -82,6 +82,10 @@ private:
     TComPtr<ID3D11RenderTargetView>   ViewportSceneLightRTV;
     TComPtr<ID3D11ShaderResourceView> ViewportSceneLightSRV;
 
+    TComPtr<ID3D11Texture2D>          ViewportSceneFinalTexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneFinalRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneFinalSRV;
+
 	TComPtr<ID3D11Texture2D> ViewportSelectionMaskTexture;
 	TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;
 	TComPtr<ID3D11ShaderResourceView> ViewportSelectionMaskSRV;
@@ -174,6 +178,7 @@ public:
     ID3D11ShaderResourceView* GetViewportSceneNormalSRV() const { return ViewportSceneNormalSRV.Get(); }
     ID3D11ShaderResourceView*     GetViewportSceneDepthSRV() const { return ViewportDepthStencilSRV.Get(); }
     ID3D11ShaderResourceView*     GetViewportSceneLightSRV() const { return ViewportSceneLightSRV.Get(); }
+    ID3D11ShaderResourceView*     GetViewportSceneFinalSRV() const { return ViewportSceneFinalSRV.Get(); }
 	float GetViewportWidth() const { return ViewportInfo.Width; }
 	float GetViewportHeight() const { return ViewportInfo.Height; }
 	FRenderTargetSet GetBackBufferRenderTargets() const;

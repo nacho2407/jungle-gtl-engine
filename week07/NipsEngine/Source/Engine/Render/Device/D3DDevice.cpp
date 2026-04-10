@@ -41,6 +41,8 @@ void FD3DDevice::BeginFrame()
 	{
 		DeviceContext->ClearRenderTargetView(ViewportSceneColorRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneNormalRTV.Get(), ClearColor);
+        DeviceContext->ClearRenderTargetView(ViewportSceneLightRTV.Get(), ClearColor);
+        DeviceContext->ClearRenderTargetView(ViewportSceneFinalRTV.Get(), ClearColor);
 		DeviceContext->ClearRenderTargetView(ViewportSelectionMaskRTV.Get(), ClearMask);
 		DeviceContext->ClearDepthStencilView(ViewportDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -147,10 +149,13 @@ FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
 	FRenderTargetSet Targets;
 	Targets.SceneColorRTV = ViewportSceneColorRTV.Get();
 	Targets.SceneColorSRV = ViewportSceneColorSRV.Get();
+
     Targets.SceneNormalRTV = ViewportSceneNormalRTV.Get();
     Targets.SceneNormalSRV = ViewportSceneNormalSRV.Get();
+
     Targets.SceneLightRTV = ViewportSceneLightRTV.Get();
     Targets.SceneLightSRV = ViewportSceneLightSRV.Get();
+
     Targets.SceneDepthSRV = ViewportDepthStencilSRV.Get();
 	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV.Get();
 	Targets.SelectionMaskSRV = ViewportSelectionMaskSRV.Get();
@@ -490,14 +495,14 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     lightDesc.CPUAccessFlags = 0;
     lightDesc.MiscFlags = 0;
 
-    HRESULT hr = Device->CreateTexture2D(&lightDesc, nullptr, &ViewportSceneLightTexture);
+    Device->CreateTexture2D(&lightDesc, nullptr, &ViewportSceneLightTexture);
 
 	D3D11_RENDER_TARGET_VIEW_DESC lightRtvDesc = {};
     lightRtvDesc.Format = lightDesc.Format;
     lightRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
     lightRtvDesc.Texture2D.MipSlice = 0;
 
-    hr = Device->CreateRenderTargetView(ViewportSceneLightTexture.Get(), &lightRtvDesc, &ViewportSceneLightRTV);
+    Device->CreateRenderTargetView(ViewportSceneLightTexture.Get(), &lightRtvDesc, &ViewportSceneLightRTV);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC lightSrvDesc = {};
     srvDesc.Format = lightDesc.Format;
@@ -505,7 +510,36 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Texture2D.MipLevels = 1;
 
-    hr = Device->CreateShaderResourceView(ViewportSceneLightTexture.Get(), &srvDesc, &ViewportSceneLightSRV);
+    Device->CreateShaderResourceView(ViewportSceneLightTexture.Get(), &srvDesc, &ViewportSceneLightSRV);
+
+	D3D11_TEXTURE2D_DESC finalDesc = {};
+    finalDesc.Width = Width;
+    finalDesc.Height = Height;
+    finalDesc.MipLevels = 1;
+    finalDesc.ArraySize = 1;
+    finalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR finaling buffer
+    finalDesc.SampleDesc.Count = 1;
+    finalDesc.Usage = D3D11_USAGE_DEFAULT;
+    finalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    finalDesc.CPUAccessFlags = 0;
+    finalDesc.MiscFlags = 0;
+
+    Device->CreateTexture2D(&finalDesc, nullptr, &ViewportSceneFinalTexture);
+
+    D3D11_RENDER_TARGET_VIEW_DESC finalRtvDesc = {};
+    finalRtvDesc.Format = finalDesc.Format;
+    finalRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    finalRtvDesc.Texture2D.MipSlice = 0;
+
+    Device->CreateRenderTargetView(ViewportSceneFinalTexture.Get(), &finalRtvDesc, &ViewportSceneFinalRTV);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC finalSrvDesc = {};
+    srvDesc.Format = finalDesc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    Device->CreateShaderResourceView(ViewportSceneFinalTexture.Get(), &srvDesc, &ViewportSceneFinalSRV);
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
@@ -529,6 +563,10 @@ void FD3DDevice::ReleaseViewportRenderTargets()
     ViewportDepthStencilView.Reset();
     ViewportDepthStencilTexture.Reset();
     ViewportDepthStencilSRV.Reset();
+
+	ViewportSceneFinalRTV.Reset();
+	ViewportSceneFinalSRV.Reset();
+    ViewportSceneFinalTexture.Reset();
 
 	ViewportRenderTargetWidth = 0;
 	ViewportRenderTargetHeight = 0;
