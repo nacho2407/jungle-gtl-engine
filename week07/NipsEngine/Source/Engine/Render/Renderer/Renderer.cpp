@@ -182,6 +182,7 @@ void FRenderer::UseViewportRenderTargets()
 		// 현재는 Light 에서 나온 RTV 를 다른 모든 패스에서 사용하므로 SceneFinalRTV 로 설정
 		// TODO: 확장성을 고려할 필요 있음
         SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
+        SceneFinalSRV = CurrentRenderTargets.SceneLightSRV;
 	}
 
 	Device.SetSubViewport(0, 0,

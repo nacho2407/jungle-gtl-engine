@@ -50,10 +50,12 @@ public:
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	void UseViewportRenderTargets();
-    void SetCurrentViewportInfo(int32 LeftTopX, int32 LetfTopY, int32 Width, int32 Height);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
+
+	ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV; }
+    ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV; }
 
 private:
 	void InitializePassRenderStates();
@@ -73,11 +75,6 @@ private:
 
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
-
-	ID3D11RenderTargetView* GetCurrentSceneRTV() const
-	{
-		return SceneFinalRTV;
-    }
 
 private:
 	FD3DDevice Device;
@@ -114,6 +111,7 @@ private:
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	ID3D11RenderTargetView* SceneFinalRTV = nullptr;
+    ID3D11ShaderResourceView* SceneFinalSRV = nullptr;
 	constexpr static uint32 MaxRTVCount = 2;
 };
 
