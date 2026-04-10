@@ -15,7 +15,7 @@ public:
 
 private:
 	void RenderComponentTree(AActor* Actor);
-	void RenderSceneComponentNode(class USceneComponent* Comp);
+	void RenderSceneComponentNode(class USceneComponent* Comp, UActorComponent*& OutCompToDelete);
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties();
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
