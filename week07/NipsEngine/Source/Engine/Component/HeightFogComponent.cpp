@@ -22,6 +22,9 @@ UHeightFogComponent* UHeightFogComponent::Duplicate()
 
 void UHeightFogComponent::UpdateWorldAABB() const 
 {
+    /** 아예 Bounding Box 가 없으면 Collect 자체가 안돼서 임의로 지정 */
+    FAABB AABB(FVector(-1.0f, -1.0f, -1.0f), FVector(1.0f, 1.0f, 1.0f));
+    WorldAABB = AABB;
 }
 
 bool UHeightFogComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) 

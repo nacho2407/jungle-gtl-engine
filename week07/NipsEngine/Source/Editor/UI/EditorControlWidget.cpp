@@ -50,36 +50,43 @@ void FEditorControlWidget::Render(float DeltaTime)
 		{
 			switch (SelectedPrimitiveType)
 			{
-			case 0: // StaticMesh
-			{
-				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
+				case 0: // StaticMesh
+				{
+					AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+					Actor->InitDefaultComponents();
+					Actor->SetActorLocation(CurSpawnPoint);
 
-				break;
-			}
-			case 1: // TextRender
-			{
+					break;
+				}
+				case 1: // TextRender
+				{
 				
-				ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 2: // SubUV
-			{
-				ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 3: // Billboard
-			{
-				ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
+					ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
+					Actor->InitDefaultComponents();
+					Actor->SetActorLocation(CurSpawnPoint);
+					break;
+				}
+				case 2: // SubUV
+				{
+					ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
+					Actor->InitDefaultComponents();
+					Actor->SetActorLocation(CurSpawnPoint);
+					break;
+				}
+				case 3: // Billboard
+				{
+					ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
+					Actor->InitDefaultComponents();
+					Actor->SetActorLocation(CurSpawnPoint);
+					break;
+				}
+                case 4: // HeightFog
+                {
+                    AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
+                    Actor->InitDefaultComponents();
+                    Actor->SetActorLocation(CurSpawnPoint);
+                    break;
+                }
 			}
 		}
 		NumberOfSpawnedActors = 1;

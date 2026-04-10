@@ -43,10 +43,8 @@ float4 mainPS(VSOutput input) : SV_TARGET
     int2 ip = int2(input.ClipPos.xy);
     float depth = SceneDepth.Load(int3(ip, 0)).r;
     float4 lightColor = SceneLightColor.Load(int3(ip, 0));
-    float4 FogColorTest = float4(1, 1, 1, 1);
-    float FogDensityTest = 0.f;
-    float T = exp(-FogDensityTest * depth);
+    float T = exp(-FogDensity * depth);
     
-    return lerp(FogColorTest, lightColor, T);
+    return lerp(FogColor, lightColor, T);
     
 }

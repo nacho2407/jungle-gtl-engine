@@ -171,7 +171,7 @@ struct FRenderCommand
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
-        // FFogConstants        Fog;
+        FFogConstants        Fog;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);

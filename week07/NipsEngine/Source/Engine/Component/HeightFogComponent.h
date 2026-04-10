@@ -14,16 +14,21 @@ public:
 
     EPrimitiveType               GetPrimitiveType() const override { return EPrimitiveType::EPT_FOG; }
 
+	void     SetFogDensity(float InFogDensity) { FogDensity = InFogDensity; }
 	float GetFogDensity() const { return FogDensity; }
+
+	void     SetHeightFalloff(float InHeightFalloff) { HeightFalloff = InHeightFalloff; }
     float GetHeightFalloff() const { return HeightFalloff; }
+
+	void     SetFogInscatteringColor(const FVector4& InColor) { FogInscatteringColor = InColor; }
     FVector4 GetFogInscatteringColor() const { return FogInscatteringColor; }
 
   private:
+    FVector4 FogInscatteringColor;
     float FogDensity;
 	float HeightFalloff;
-    FVector4 FogInscatteringColor;
 
-        // UPrimitiveComponent을(를) 통해 상속됨
-        void UpdateWorldAABB() const override;
+    // UPrimitiveComponent을(를) 통해 상속됨
+    void UpdateWorldAABB() const override;
     bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 };
