@@ -159,7 +159,9 @@ void FRenderer::UseBackBufferRenderTargets()
 	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
 	if (CurrentRenderTargets.IsValid())
 	{
-		ID3D11RenderTargetView* RTV = CurrentRenderTargets.SceneColorRTV;
+        ID3D11RenderTargetView* RTV =
+                CurrentRenderTargets.SceneColorRTV; // Back Buffer 의 경우 SceneColorRTV 가 FinalRTV 역할
+        SceneFinalRTV = RTV;
 		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, CurrentRenderTargets.DepthStencilView);
 		Device.SetSubViewport(0, 0,
 			static_cast<int32>(CurrentRenderTargets.Width),
@@ -174,6 +176,12 @@ void FRenderer::UseViewportRenderTargets()
 	{
 		UseBackBufferRenderTargets();
 		return;
+	}
+	else
+	{
+		// 현재는 Light 에서 나온 RTV 를 다른 모든 패스에서 사용하므로 SceneFinalRTV 로 설정
+		// TODO: 확장성을 고려할 필요 있음
+        SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
 	}
 
 	Device.SetSubViewport(0, 0,
@@ -464,7 +472,8 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
             RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;
             break;
         default:
-            RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+			// 나머지 Pass (UI, ...) 들은 하나의 RTV 에 그린다 가정
+            RTVs[0] = SceneFinalRTV;
             break;
 	}
 
@@ -473,7 +482,7 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	{
         case ERenderPass::Light:
             DSV = nullptr;
-            break;
+			break;
         default:
             DSV = CurrentRenderTargets.DepthStencilView;
             break;
@@ -615,7 +624,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 
 void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 {
-	ID3D11RenderTargetView* RTV = CurrentRenderTargets.SceneColorRTV;
+	ID3D11RenderTargetView* RTV = SceneFinalRTV;
 	InDeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
 	InDeviceContext->OMSetDepthStencilState(nullptr, 0);
 

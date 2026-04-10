@@ -45,8 +45,8 @@ float4 mainPS(VSOutput input) : SV_TARGET
     float depth = SceneDepth.Load(int3(ip, 0)).r;
 
     // return float4(albedo, 1.0f);
-    // return float4(normal, 1.0f);
+    return float4(normal, 1.0f);
     
-    float visual = 1.0f - depth;
-    return float4(visual, visual, visual, 1.0f);
+    // float visual = 1.0f - depth;
+    // return float4(visual, visual, visual, 1.0f);
 }
