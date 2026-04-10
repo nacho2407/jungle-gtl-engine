@@ -51,6 +51,14 @@ cbuffer OutlineConstants : register(b5)
     float OutlinePadding0;
 };
 
+// b6 는 StaticMesh 쪽에서 사용 중이므로 b7 사용
+cbuffer FogBuffer : register(b7)
+{
+    float4 FogColor;
+    float FogDensity;
+    float HeightFalloff;
+};
+
 float4 ApplyMVP(float3 pos)
 {
     float4 world = mul(float4(pos, 1.0f), Model);
