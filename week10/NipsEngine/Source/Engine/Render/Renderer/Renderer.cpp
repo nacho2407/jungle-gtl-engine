@@ -242,7 +242,7 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
+	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
 	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                             ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
                             &Resources.LightPassShader,    false};	
