@@ -39,10 +39,15 @@ enum class ERasterizerState
 struct FRenderTargetSet
 {
 	ID3D11RenderTargetView* SceneColorRTV = nullptr;
-	ID3D11ShaderResourceView* SceneColorSRV = nullptr;
+    ID3D11ShaderResourceView* SceneColorSRV = nullptr;
+    ID3D11RenderTargetView*   SceneNormalRTV = nullptr;
+    ID3D11ShaderResourceView*     SceneNormalSRV = nullptr;
+    ID3D11RenderTargetView*     SceneLightRTV = nullptr;
+    ID3D11ShaderResourceView*   SceneLightSRV = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
-	ID3D11DepthStencilView* DepthStencilView = nullptr;
+    ID3D11DepthStencilView*   DepthStencilView = nullptr;
+    ID3D11ShaderResourceView* SceneDepthSRV = nullptr;
 	float Width = 0.0f;
 	float Height = 0.0f;
 
@@ -64,9 +69,23 @@ private:
 	TComPtr<ID3D11Texture2D> SelectionMaskBuffer;
 	TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
 	TComPtr<ID3D11ShaderResourceView> SelectionMaskSRV;
+
 	TComPtr<ID3D11Texture2D> ViewportSceneColorTexture;
 	TComPtr<ID3D11RenderTargetView> ViewportSceneColorRTV;
 	TComPtr<ID3D11ShaderResourceView> ViewportSceneColorSRV;
+
+	TComPtr<ID3D11Texture2D>          ViewportSceneNormalTexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneNormalRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneNormalSRV;
+
+    TComPtr<ID3D11Texture2D>          ViewportSceneLightTexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneLightRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneLightSRV;
+
+    TComPtr<ID3D11Texture2D>          ViewportSceneFinalTexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneFinalRTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneFinalSRV;
+
 	TComPtr<ID3D11Texture2D> ViewportSelectionMaskTexture;
 	TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;
 	TComPtr<ID3D11ShaderResourceView> ViewportSelectionMaskSRV;
@@ -80,6 +99,7 @@ private:
 	TComPtr<ID3D11DepthStencilView> DepthStencilView;
 	TComPtr<ID3D11Texture2D> ViewportDepthStencilTexture;
 	TComPtr<ID3D11DepthStencilView> ViewportDepthStencilView;
+    TComPtr<ID3D11ShaderResourceView> ViewportDepthStencilSRV;
 
 	TComPtr<ID3D11DepthStencilState> DepthStencilStateDefault;
 	TComPtr<ID3D11DepthStencilState> DepthStencilStateDepthReadOnly;
@@ -154,7 +174,11 @@ public:
 	ID3D11RenderTargetView* GetSelectionMaskRTV() const { return SelectionMaskRTV.Get(); }
 	ID3D11ShaderResourceView* GetSelectionMaskSRV() const { return SelectionMaskSRV.Get(); }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView.Get(); }
-	ID3D11ShaderResourceView* GetViewportSceneColorSRV() const { return ViewportSceneColorSRV.Get(); }
+    ID3D11ShaderResourceView* GetViewportSceneColorSRV() const { return ViewportSceneColorSRV.Get(); }
+    ID3D11ShaderResourceView* GetViewportSceneNormalSRV() const { return ViewportSceneNormalSRV.Get(); }
+    ID3D11ShaderResourceView*     GetViewportSceneDepthSRV() const { return ViewportDepthStencilSRV.Get(); }
+    ID3D11ShaderResourceView*     GetViewportSceneLightSRV() const { return ViewportSceneLightSRV.Get(); }
+    ID3D11ShaderResourceView*     GetViewportSceneFinalSRV() const { return ViewportSceneFinalSRV.Get(); }
 	float GetViewportWidth() const { return ViewportInfo.Width; }
 	float GetViewportHeight() const { return ViewportInfo.Height; }
 	FRenderTargetSet GetBackBufferRenderTargets() const;
