@@ -41,6 +41,7 @@
 //=============================================================================
 #include "Engine/Geometry/Transform.h"
 #include "Engine/Geometry/AABB.h"
+#include "Engine/Geometry/OBB.h"
 #include "Engine/Geometry/Ray.h"
 #include "Engine/Geometry/Plane.h"
 #include "Engine/Geometry/Triangle.h"

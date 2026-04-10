@@ -127,6 +127,7 @@ class FWorldSpatialIndex
     void FrustumQueryPrimitives(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives,
                                 FPrimitiveFrustumQueryScratch& Scratch, bool bInsideOnly = false);
 
+
     /** @brief Resolve a tracked object index back to its primitive component. */
     UPrimitiveComponent* Resolve(int32 ObjectIndex) const;
 

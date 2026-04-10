@@ -230,6 +230,44 @@ void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 		Indices.push_back(BaseVertex + EdgeIndex);
 	}
 }
+void FLineBatcher::AddOBB(const FOBB& Box, const FColor& InColor)
+{
+	const FVector4 BoxColor = InColor.ToVector4();
+	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
+
+	TArray<FVector> Vertices;
+	Box.GetVertices(Vertices);
+	for (const FVector& Vertex : Vertices)
+	{
+		IndexedVertices.emplace_back(Vertex, BoxColor);
+	}
+
+	static constexpr uint32 OBBEdgeIndices[] =
+	{
+		// 바닥면 (Z-)
+		0, 1, // (- - -) -> (+ - -)
+		1, 3, // (+ - -) -> (+ + -)
+		3, 2, // (+ + -) -> (- + -)
+		2, 0, // (- + -) -> (- - -)
+
+		// 윗면 (Z+)
+		4, 5, // (- - +) -> (+ - +)
+		5, 7, // (+ - +) -> (+ + +)
+		7, 6, // (+ + +) -> (- + +)
+		6, 4, // (- + +) -> (- - +)
+
+		// 기둥 (바닥과 위 연결)
+		0, 4,
+		1, 5,
+		2, 6,
+		3, 7
+	};
+
+	for (uint32 EdgeIndex : OBBEdgeIndices)
+	{
+		Indices.push_back(BaseVertex + EdgeIndex);
+	}
+}
 
 void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount,
 	const FVector& CameraPosition, const FVector& CameraForward, bool bOrthographic)
