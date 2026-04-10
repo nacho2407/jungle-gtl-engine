@@ -49,4 +49,14 @@ cbuffer MaterialBuffer : register(b4)
     float4 SectionColor;
 }
 
+cbuffer DecalBuffer : register(b5)
+{
+    float4x4 InvView;
+    float4x4 InvProj;
+    float4x4 DecalWorldToLocal;
+
+    float3 DecalForward;
+    float Padding0;
+};
+
 #endif // CONSTANT_BUFFERS_HLSL

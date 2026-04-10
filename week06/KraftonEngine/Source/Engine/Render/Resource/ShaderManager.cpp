@@ -1,4 +1,4 @@
-#include "ShaderManager.h"
+﻿#include "ShaderManager.h"
 #include "Render/Types/VertexTypes.h"
 
 void FShaderManager::Initialize(ID3D11Device* InDevice)
@@ -20,6 +20,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	// PostProcess outline: fullscreen quad (InputLayout 없음)
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl",
 		"VS", "PS", nullptr, 0);
+
+	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/Decal.hlsl",
+		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
 
 	// Batcher 셰이더 (FTextureVertex: POSITION + TEXCOORD)
 	Shaders[(uint32)EShaderType::Font].Create(InDevice, L"Shaders/ShaderFont.hlsl",
