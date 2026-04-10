@@ -31,7 +31,7 @@ FOBB FOBB::FromAABB(const FAABB& InAABB, const FMatrix& InTransform)
 {
 	FOBB Result;
 
-	Result.Center = InTransform.TransformPosition(InAABB.GetCenter());
+	Result.Center = InAABB.GetCenter();
 
 	FVector Scale;
 	Scale.X = InTransform.GetScaledAxis(EAxis::X).Size();

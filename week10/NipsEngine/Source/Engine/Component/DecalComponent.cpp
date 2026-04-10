@@ -56,3 +56,9 @@ bool UDecalComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	// TODO: OBB Intersection or billboard intersection
 	return false;
 }
+
+FMatrix UDecalComponent::GetDecalMatrix() const
+{
+	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(Size) * GetWorldMatrix();
+	return WorldMatrix;
+}

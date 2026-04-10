@@ -1,8 +1,9 @@
-#include "WorldSpatialIndex.h"
+﻿#include "WorldSpatialIndex.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Geometry/OBB.h"
 
 void FWorldSpatialIndex::Clear()
 {

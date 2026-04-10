@@ -428,6 +428,14 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
+	ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+	auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
+		{
+			FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
+			return (Res && Res->SRV) ? Res->SRV.Get() : DefaultSRV;
+		};
+	static const FMaterial EngineDefaultMaterial{};
+
 	switch (PrimType)
 	{
 	case EPrimitiveType::EPT_StaticMesh:
@@ -475,8 +483,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
 
 			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
-			static const FMaterial EngineDefaultMaterial{};
-
 			const FMaterial* MtlData = StaticMeshComp->GetMaterial(SectionIdx);
 
 			if (!MtlData) MtlData = &EngineDefaultMaterial;
@@ -488,14 +494,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 			Cmd.Constants.StaticMesh.ScrollX = StaticMeshComp->GetScroll().first;
 			Cmd.Constants.StaticMesh.ScrollY = StaticMeshComp->GetScroll().second;
-
-			ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
-
-			auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
-			{
-				FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-				return (Res && Res->SRV) ? Res->SRV.Get() : DefaultSRV;
-			};
 
 			// 와이어 프레임이 있는 경우 텍스쳐를 사용하지 않는 메테리얼에게 기본 텍스쳐를 강제 주입
 			if (ViewMode == EViewMode::Wireframe)
@@ -568,6 +566,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
 	}
+
 	case EPrimitiveType::EPT_Billboard:
 	{
 		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
@@ -589,6 +588,74 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
 	}
+	
+	case EPrimitiveType::EPT_Decal:
+	{
+		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
+		const FMaterial* MtlData = DecalComp->GetMaterial();
+
+		if (!MtlData) MtlData = &EngineDefaultMaterial;
+
+		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetWorld() : nullptr;
+
+		for (AActor* Actor : World->GetActors())
+		{
+			for (UPrimitiveComponent* OtherPrim : Actor->GetPrimitiveComponents())
+			{
+				if (OtherPrim->GetPrimitiveType() != EPrimitiveType::EPT_StaticMesh) continue;
+				if (OtherPrim == DecalComp) continue;
+
+				UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(OtherPrim);
+				const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
+
+				if (!StaticMesh || !StaticMesh->HasValidMeshData()) return;
+
+				// 1. 카메라 정보 및 AABB 가져오기
+				FVector CameraPos = RenderBus.GetCameraPosition();
+				FMatrix ProjMatrix = RenderBus.GetProj();
+				FAABB Bounds = StaticMeshComp->GetWorldAABB();
+				const int32 ValidLODCount = StaticMesh->GetValidLODCount();
+
+				int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
+				if (ShowFlags.bEnableLOD)
+				{
+					SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+				}
+
+				FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
+				if (!MeshBuffer) return;
+
+				const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
+				const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
+
+				for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+				{
+					const FStaticMeshSection& Section = Sections[SectionIdx];
+
+					FRenderCommand Cmd = {};
+					Cmd.Type = ERenderCommandType::Decal;
+					Cmd.PerObjectConstants = FPerObjectConstants{ OtherPrim->GetWorldMatrix(), FColor::White().ToVector4() };
+					Cmd.MeshBuffer = MeshBuffer;
+
+					Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
+					Cmd.Constants.Decal.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+					Cmd.Constants.Decal.FadeAlpha = 1.0f;
+
+					Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->DiffuseTexPath);
+					Cmd.BlendState = EBlendState::AlphaBlend;
+					Cmd.DepthStencilState = EDepthStencilState::Default;
+
+					Cmd.SectionIndexStart = Section.StartIndex;
+					Cmd.SectionIndexCount = Section.IndexCount;
+
+					RenderBus.AddCommand(ERenderPass::Decal, Cmd);
+				}
+			}
+		}
+
+		break;
+	}
+	
 	default:
 		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
 		{
