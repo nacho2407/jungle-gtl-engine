@@ -16,6 +16,45 @@
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
+namespace
+{
+	static bool DrawXButton(const char* id, float size = 20.0f)
+	{
+		ImGui::PushID(id);
+
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		bool bClicked = ImGui::InvisibleButton("##xbtn", ImVec2(size, size));
+
+		ImVec4 col = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+		if      (ImGui::IsItemActive())  col = ImVec4(0.9f, 0.1f, 0.1f, 1.0f);
+		else if (ImGui::IsItemHovered()) col = ImVec4(0.8f, 0.2f, 0.2f, 0.8f);
+
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+
+		// 호버/클릭 시 배경 원
+		ImVec2 center(pos.x + size * 0.5f + 1.0f, pos.y + size * 0.5f + 1.0f);
+		dl->AddCircleFilled(center, size * 0.5f, ImGui::ColorConvertFloat4ToU32(
+			ImGui::IsItemActive()
+				? ImVec4(0.9f, 0.1f, 0.1f, 1.0f)
+				: ImVec4(0.8f, 0.2f, 0.2f, 0.8f)));
+
+		// X 직접 그리기 (폰트 무관)
+		float pad = size * 0.3f;
+		ImU32 color = ImGui::ColorConvertFloat4ToU32(col);
+		dl->AddLine(
+			ImVec2(pos.x + pad,        pos.y + pad),
+			ImVec2(pos.x + size - pad, pos.y + size - pad),
+			color, 2.0f);
+		dl->AddLine(
+			ImVec2(pos.x + size - pad, pos.y + pad),
+			ImVec2(pos.x + pad,        pos.y + size - pad),
+			color, 2.0f);
+
+		ImGui::PopID();
+		return bClicked;
+	}
+}
+
 // 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
 struct FComponentMenuEntry
 {
@@ -120,7 +159,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ImGui::SameLine();
 		char RemoveLabel[64];
 		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
-		if (ImGui::Button(RemoveLabel))
+		if (ImGui::SmallButton(RemoveLabel))
 		{
 			for (AActor* Actor : SelectedActors)
 			{
@@ -138,6 +177,8 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	}
 	else
 	{
+		if (SelectedComponent == nullptr)
+			SelectedComponent = PrimaryActor->GetRootComponent();
 		ImGui::Text("Selected Actor: %s", PrimaryActor->GetFName().ToString().c_str());
 		ImGui::Text("Selected Component: %s", SelectedComponent->GetTypeInfo()->name);
 
@@ -153,7 +194,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			SelectedComponent = nullptr;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Remove"))
+		if (ImGui::SmallButton("Remove"))
 		{
 			if (PrimaryActor->GetWorld())
 			{
@@ -342,10 +383,11 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 	USceneComponent* Root = Actor->GetRootComponent();
 
-	if (Root)
-	{
-		RenderSceneComponentNode(Root);
-	}
+	UActorComponent* ComponentToDelete = nullptr; 
+    if (Root)
+    {
+        RenderSceneComponentNode(Root, ComponentToDelete);
+    }
 
 	// Non-scene ActorComponents
 	for (UActorComponent* Comp : Actor->GetComponents())
@@ -366,10 +408,32 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 			SelectedComponent = Comp;
 			bActorSelected = false;
 		}
+
+		if (Comp != Actor->GetRootComponent())
+		{
+			ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 24.0f);
+			char XId[64];
+			snprintf(XId, sizeof(XId), "xbtn_%p", (void*)Comp);
+			if (DrawXButton(XId))
+			{
+				ComponentToDelete = Comp;
+			}
+		}
 	}
+
+	if (ComponentToDelete)
+    {
+        if (SelectedComponent == ComponentToDelete)
+        {
+            SelectedComponent = nullptr;
+            bActorSelected = true;
+        }
+		
+		Actor->RemoveComponent(ComponentToDelete);
+    }
 }
 
-void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
+void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp, UActorComponent*& OutCompToDelete)
 {
 	if (!Comp) return;
 
@@ -386,12 +450,23 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 		Flags |= ImGuiTreeNodeFlags_Selected;
 
 	bool bIsRoot = (Comp->GetParent() == nullptr);
-	bool bOpen = ImGui::TreeNodeEx(
-		Comp, Flags, "%s%s (%s)",
-		bIsRoot ? "[Root] " : "",
-		Name.c_str(),
-		Comp->GetTypeInfo()->name
-	);
+
+	constexpr float XButtonWidth = 28.0f; // 버튼(20) + 여백(8)
+    if (!bIsRoot)
+    {
+        float ClipMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - XButtonWidth;
+        ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(ClipMaxX, ImGui::GetWindowPos().y + 99999.f), true);
+    }
+
+    bool bOpen = ImGui::TreeNodeEx(
+        Comp, Flags, "%s%s",
+        bIsRoot ? "[Root] " : "",
+        Name.c_str(),
+        Comp->GetTypeInfo()->name
+    );
+
+    if (!bIsRoot)
+        ImGui::PopClipRect();
 
 	if (ImGui::IsItemClicked())
 	{
@@ -403,9 +478,20 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	{
 		for (USceneComponent* Child : Children)
 		{
-			RenderSceneComponentNode(Child);
+			RenderSceneComponentNode(Child, OutCompToDelete);
 		}
 		ImGui::TreePop();
+	}
+
+	if (!bIsRoot)
+	{
+		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 24.0f);
+		char XId[64];
+		snprintf(XId, sizeof(XId), "xbtn_%p", (void*)Comp);
+		if (DrawXButton(XId))
+		{
+			OutCompToDelete = Comp;
+		}
 	}
 }
 
