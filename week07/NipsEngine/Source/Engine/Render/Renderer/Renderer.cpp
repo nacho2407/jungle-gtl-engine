@@ -47,12 +47,16 @@ void FRenderer::Create(HWND hWindow)
     Resources.LightPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS",
                                         nullptr, 0);
 
+	// 8. Decal
+	Resources.DecalShader.Create(Device.GetDevice(), L"Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
 	Resources.StaticMeshConstantBuffer.Create(Device.GetDevice(), sizeof(FStaticMeshConstants));
+	Resources.DecalConstantBuffer.Create(Device.GetDevice(), sizeof(FDecalConstants));
 
 	// TODO : SamplerState 관리
 	D3D11_SAMPLER_DESC SampDesc = {};
@@ -238,7 +242,8 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
-    S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
+	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
+	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                             ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
                             &Resources.LightPassShader,    false};	
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
@@ -467,6 +472,7 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	switch (Pass)
 	{
         case ERenderPass::Opaque:
+		case ERenderPass::Decal:
             RTVs[0] = CurrentRenderTargets.SceneColorRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
             break;
@@ -555,6 +561,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	}
 
     case ERenderCommandType::StaticMesh:
+	{
         Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
         
         if (bTypeChanged)
@@ -586,6 +593,31 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
         }
         break;
     }
+
+	case ERenderCommandType::Decal:
+	{
+		Resources.DecalConstantBuffer.Update(Context, &InCmd.Constants.Decal, sizeof(FDecalConstants));
+
+		if (bTypeChanged)
+		{
+			ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(1, 1, &cb1);
+			Context->PSSetConstantBuffers(1, 1, &cb1);
+
+			ID3D11Buffer* cb8 = Resources.DecalConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(8, 1, &cb8);
+			Context->PSSetConstantBuffers(8, 1, &cb8);
+
+			// 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
+			ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
+			Context->PSSetSamplers(0, 1, Samplers);
+		}
+
+		ID3D11ShaderResourceView* SRVs[1] = { InCmd.Constants.Decal.DiffuseSRV };
+		Context->PSSetShaderResources(0, 1, SRVs);
+		break;
+	}
+	}
 
     LastCommandType = InCmd.Type;
 }

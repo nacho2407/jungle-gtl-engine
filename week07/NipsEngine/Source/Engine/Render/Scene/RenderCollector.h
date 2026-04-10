@@ -9,6 +9,7 @@ class UWorld;
 class AActor;
 class UPrimitiveComponent;
 class UGizmoComponent;
+class UDecalComponent;
 struct FFrustum;
 
 class FRenderCollector {

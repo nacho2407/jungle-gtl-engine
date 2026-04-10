@@ -22,6 +22,8 @@ public:
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_Decal; }
 
+	FMatrix GetDecalMatrix() const;
+
 private:
 	FMaterial* Material;
 	FVector Size;

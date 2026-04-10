@@ -31,6 +31,7 @@ enum class ERenderCommandType
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
+	Decal,
 };
 
 //PerObject
@@ -154,6 +155,16 @@ struct FStaticMeshConstants
 	ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
+struct FDecalConstants
+{
+	FMatrix InvDecalWorld;
+	FVector4 ColorTint;
+	float FadeAlpha = 1.0f;
+	float padding0[3];
+
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
@@ -175,6 +186,7 @@ struct FRenderCommand
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
+		FDecalConstants Decal;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
