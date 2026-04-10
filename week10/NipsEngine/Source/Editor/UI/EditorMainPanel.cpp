@@ -239,10 +239,9 @@ void FEditorMainPanel::RenderViewportHostWindow()
 		GuiState.ViewportHostRect = HostRect;
 		EditorEngine->GetViewportLayout().SetHostRect(HostRect);
 
-        if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetFD3DDevice().GetViewportSceneLightSRV())
-		// if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetFD3DDevice().GetViewportSceneColorSRV())
-        // if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetFD3DDevice().GetViewportSceneNormalSRV())
-		{
+        if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetCurrentSceneSRV())
+		// if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetFD3DDevice().GetViewportSceneLightSRV())
+        {
 			ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
 			ImDrawList* DrawList = ImGui::GetWindowDrawList();
 			DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
