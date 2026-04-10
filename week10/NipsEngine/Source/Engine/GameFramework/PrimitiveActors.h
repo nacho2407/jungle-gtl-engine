@@ -75,3 +75,12 @@ public:
 
     void InitDefaultComponents();
 };
+
+class AHeightFogActor : public AActor
+{
+  public:
+    DECLARE_CLASS(AHeightFogActor, AActor)
+    AHeightFogActor() = default;
+
+    void InitDefaultComponents();
+};
