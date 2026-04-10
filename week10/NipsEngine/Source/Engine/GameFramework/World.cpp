@@ -31,6 +31,8 @@ UWorld* UWorld::Duplicate()
     NewWorld->SetActiveCamera(this->ActiveCamera);
     NewWorld->bHasBegunPlay = false;
     NewWorld->PersistentLevel = this->PersistentLevel;
+	
+	NewWorld->DuplicateSubObjects();
 
     return NewWorld;
 }

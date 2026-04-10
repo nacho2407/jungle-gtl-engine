@@ -20,6 +20,8 @@ UStaticMeshComponent* UStaticMeshComponent::Duplicate()
     UStaticMeshComponent* NewComp = UObjectManager::Get().CreateObject<UStaticMeshComponent>();
 
 	NewComp->SetActive(this->IsActive());
+	NewComp->SetAutoActivate(this->IsAutoActivate());
+	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
     NewComp->SetOwner(nullptr);
     
     NewComp->SetRelativeLocation(this->GetRelativeLocation());
