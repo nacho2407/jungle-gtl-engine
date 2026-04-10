@@ -148,7 +148,8 @@ struct FFogConstants
 	FVector4 FogColor;
     float    FogDensity;
     float    HeightFalloff;
-    FVector2      Paddng;
+    float        FogHeight;
+    float        Padding;
 };
 
 struct FRenderCommand

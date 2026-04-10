@@ -44,9 +44,11 @@ float4 mainPS(VSOutput input) : SV_TARGET
         
     float scaledDensity = FogDensity * 0.1; // 스케일 조정
     float effectiveDist = max(dist - FogStart, 0.0f); // 시작 거리
-    float heightFactor = exp(-HeightFalloff * max(worldPos.z - CameraPosition.z, 0.0f));
-    float fogAmount = 1.0f - exp(-scaledDensity * heightFactor * effectiveDist);
+    // float heightFactor = exp(-HeightFalloff * max(worldPos.z - CameraPosition.z, 0.0f));
+    float heightFactor = exp(-HeightFalloff * max(worldPos.z - FogHeight, 0.0f));
+    float fogAmount = exp(-scaledDensity * heightFactor * effectiveDist);
+    
     fogAmount = saturate(fogAmount);
 
-    return lerp(lightColor, FogColor, fogAmount);
+    return lerp(lightColor, FogColor, 1 - fogAmount);
 }

@@ -212,6 +212,7 @@ void AHeightFogActor::InitDefaultComponents()
 	HeightFog->SetFogDensity(0.5f);
     HeightFog->SetHeightFalloff(0.2f);
 	HeightFog->SetFogInscatteringColor(FVector4(0.8f, 0.8f, 0.9f, 1.0f));
+    HeightFog->SetFogHeight(0.0f);
 	auto* TextUUID = AddComponent<UTextRenderComponent>();
 	TextUUID->AttachToComponent(HeightFog);
 	TextUUID->SetFont(FName("Default"));
