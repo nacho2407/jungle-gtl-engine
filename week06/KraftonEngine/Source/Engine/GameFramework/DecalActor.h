@@ -9,7 +9,7 @@ class ADecalActor : public AActor
 	public:
 	DECLARE_CLASS(ADecalActor, AActor)
 	ADecalActor() {};
-	void InitDefaultComponents(const FString& UTextureFileName);
+	void InitDefaultComponents();
 
 private:
 	UDecalComponent* DecalComponent = nullptr;

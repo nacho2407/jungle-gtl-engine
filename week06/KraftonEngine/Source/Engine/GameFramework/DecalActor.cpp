@@ -3,7 +3,7 @@
 
 IMPLEMENT_CLASS(ADecalActor, AActor)
 
-void ADecalActor::InitDefaultComponents(const FString& UStaticMeshFileName)
+void ADecalActor::InitDefaultComponents()
 {
 	DecalComponent = AddComponent<UDecalComponent>();
 	SetRootComponent(DecalComponent);
