@@ -184,13 +184,6 @@ void FRenderer::UseViewportRenderTargets()
 		UseBackBufferRenderTargets();
 		return;
 	}
-	else
-	{
-		// 현재는 Light 에서 나온 RTV 를 다른 모든 패스에서 사용하므로 SceneFinalRTV 로 설정
-		// TODO: 확장성을 고려할 필요 있음
-        SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
-        SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
-	}
 
 	Device.SetSubViewport(0, 0,
 		static_cast<int32>(CurrentRenderTargets.Width),
@@ -543,6 +536,10 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	/** Pass 별 RTV 설정 */
 	switch (Pass)
 	{
+		/**
+		* TODO: Final 로 쓰이는 경로가 Light, Fog 만 있어서 현재는 해당 패스들만 Final 기록 (추후 확장 필요)
+		* 
+		*/
         case ERenderPass::Opaque:
             RTVs[0] = CurrentRenderTargets.SceneColorRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
@@ -550,9 +547,13 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
             break;
         case ERenderPass::Light:
 			RTVs[0] = CurrentRenderTargets.SceneLightRTV;
+            SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
+            SceneFinalSRV = CurrentRenderTargets.SceneLightSRV;
             break;
         case ERenderPass::Fog:
             RTVs[0] = CurrentRenderTargets.SceneFogRTV;
+            SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
+            SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
             break;
         case ERenderPass::SelectionMask:
             RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;
