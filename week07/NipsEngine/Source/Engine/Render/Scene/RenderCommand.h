@@ -143,6 +143,14 @@ struct FStaticMeshConstants
 	ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
+struct FFogConstants
+{
+	FVector4 FogColor;
+    float    FogDensity;
+    float    HeightFalloff;
+    FVector2      Paddng;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
@@ -163,6 +171,7 @@ struct FRenderCommand
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
+        // FFogConstants        Fog;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
