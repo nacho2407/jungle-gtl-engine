@@ -523,6 +523,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -970,6 +971,7 @@
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
+    <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
