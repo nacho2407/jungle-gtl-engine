@@ -505,12 +505,12 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     Device->CreateRenderTargetView(ViewportSceneLightTexture.Get(), &lightRtvDesc, &ViewportSceneLightRTV);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC lightSrvDesc = {};
-    srvDesc.Format = lightDesc.Format;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.MipLevels = 1;
+    lightSrvDesc.Format = lightDesc.Format;
+    lightSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    lightSrvDesc.Texture2D.MostDetailedMip = 0;
+    lightSrvDesc.Texture2D.MipLevels = 1;
 
-    Device->CreateShaderResourceView(ViewportSceneLightTexture.Get(), &srvDesc, &ViewportSceneLightSRV);
+    Device->CreateShaderResourceView(ViewportSceneLightTexture.Get(), &lightSrvDesc, &ViewportSceneLightSRV);
 
 	D3D11_TEXTURE2D_DESC finalDesc = {};
     finalDesc.Width = Width;
@@ -534,12 +534,12 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     Device->CreateRenderTargetView(ViewportSceneFinalTexture.Get(), &finalRtvDesc, &ViewportSceneFinalRTV);
 
     D3D11_SHADER_RESOURCE_VIEW_DESC finalSrvDesc = {};
-    srvDesc.Format = finalDesc.Format;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.MipLevels = 1;
+    finalSrvDesc.Format = finalDesc.Format;
+    finalSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    finalSrvDesc.Texture2D.MostDetailedMip = 0;
+    finalSrvDesc.Texture2D.MipLevels = 1;
 
-    Device->CreateShaderResourceView(ViewportSceneFinalTexture.Get(), &srvDesc, &ViewportSceneFinalSRV);
+    Device->CreateShaderResourceView(ViewportSceneFinalTexture.Get(), &finalSrvDesc, &ViewportSceneFinalSRV);
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
