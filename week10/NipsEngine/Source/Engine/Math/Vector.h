@@ -139,6 +139,11 @@ public:
 		return { X * Scalar, Y * Scalar, Z * Scalar };
 	}
 
+	constexpr FVector operator*(const FVector& Other) const noexcept
+	{
+		return { X * Other.X, Y * Other.Y, Z * Other.Z };
+	}
+
 	constexpr FVector operator/(float Scalar) const noexcept
 	{
 		assert(Scalar != 0.f);

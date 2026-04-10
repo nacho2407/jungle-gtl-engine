@@ -80,6 +80,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
+			case 4: // Decal
+			{
+				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
 			}
 		}
 		NumberOfSpawnedActors = 1;
