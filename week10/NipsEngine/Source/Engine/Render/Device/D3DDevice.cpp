@@ -40,6 +40,7 @@ void FD3DDevice::BeginFrame()
 	if (ViewportSceneColorRTV && ViewportSelectionMaskRTV && ViewportDepthStencilView)
 	{
 		DeviceContext->ClearRenderTargetView(ViewportSceneColorRTV.Get(), ClearColor);
+            DeviceContext->ClearRenderTargetView(ViewportSceneNormalRTV.Get(), ClearColor);
 		DeviceContext->ClearRenderTargetView(ViewportSelectionMaskRTV.Get(), ClearMask);
 		DeviceContext->ClearDepthStencilView(ViewportDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -146,6 +147,8 @@ FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
 	FRenderTargetSet Targets;
 	Targets.SceneColorRTV = ViewportSceneColorRTV.Get();
 	Targets.SceneColorSRV = ViewportSceneColorSRV.Get();
+    Targets.SceneNormalRTV = ViewportSceneNormalRTV.Get();
+    Targets.SceneNormalSRV = ViewportSceneNormalSRV.Get();
 	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV.Get();
 	Targets.SelectionMaskSRV = ViewportSelectionMaskSRV.Get();
 	Targets.DepthStencilView = ViewportDepthStencilView.Get();
@@ -383,6 +386,34 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 	Device->CreateShaderResourceView(ViewportSceneColorTexture.Get(), &sceneColorSRVDesc,
 		ViewportSceneColorSRV.ReleaseAndGetAddressOf());
 
+	D3D11_TEXTURE2D_DESC sceneNormalDesc = {};
+    sceneNormalDesc.Width = Width;
+    sceneNormalDesc.Height = Height;
+    sceneNormalDesc.MipLevels = 1;
+    sceneNormalDesc.ArraySize = 1;
+    sceneNormalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // ⭐ 중요
+    sceneNormalDesc.SampleDesc.Count = 1;
+    sceneNormalDesc.Usage = D3D11_USAGE_DEFAULT;
+    sceneNormalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    Device->CreateTexture2D(&sceneNormalDesc, nullptr, ViewportSceneNormalTexture.ReleaseAndGetAddressOf());
+
+	D3D11_RENDER_TARGET_VIEW_DESC sceneNormalRTVDesc = {};
+    sceneNormalRTVDesc.Format = sceneNormalDesc.Format;
+    sceneNormalRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+    Device->CreateRenderTargetView(ViewportSceneNormalTexture.Get(), &sceneNormalRTVDesc,
+                                   ViewportSceneNormalRTV.ReleaseAndGetAddressOf());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC sceneNormalSRVDesc = {};
+    sceneNormalSRVDesc.Format = sceneNormalDesc.Format;
+    sceneNormalSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    sceneNormalSRVDesc.Texture2D.MostDetailedMip = 0;
+    sceneNormalSRVDesc.Texture2D.MipLevels = 1;
+
+    Device->CreateShaderResourceView(ViewportSceneNormalTexture.Get(), &sceneNormalSRVDesc,
+                                     ViewportSceneNormalSRV.ReleaseAndGetAddressOf());
+
 	D3D11_TEXTURE2D_DESC selectionMaskDesc = {};
 	selectionMaskDesc.Width = Width;
 	selectionMaskDesc.Height = Height;
@@ -434,6 +465,9 @@ void FD3DDevice::ReleaseViewportRenderTargets()
 	ViewportSceneColorSRV.Reset();
 	ViewportSceneColorRTV.Reset();
 	ViewportSceneColorTexture.Reset();
+    ViewportSceneNormalRTV.Reset();
+    ViewportSceneNormalSRV.Reset();
+    ViewportSceneNormalTexture.Reset();
 	ViewportRenderTargetWidth = 0;
 	ViewportRenderTargetHeight = 0;
 }
