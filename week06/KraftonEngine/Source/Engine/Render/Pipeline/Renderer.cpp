@@ -234,7 +234,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		if (bHasBatcher)
 			PassBatchers[i].DrawBatch(CurPass, InRenderBus, Context);
 		else
-			ExecutePass(InRenderBus.GetProxies(CurPass), Context);
+			ExecutePass(CurPass, InRenderBus.GetProxies(CurPass), InRenderBus, Context);
 	}
 }
 
@@ -335,9 +335,24 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 // ============================================================
 // 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회
 // ============================================================
-void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context)
+void FRenderer::ExecutePass(ERenderPass Pass,
+	const TArray<const FPrimitiveSceneProxy*>& Proxies,
+	const FRenderBus& Bus,
+	ID3D11DeviceContext* Context)
 {
 	SortProxies(Proxies);
+
+	ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+	ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
+
+	if (Pass == ERenderPass::Decal)
+	{
+		// DSV 언바인딩 (Depth SRV와 동시 바인딩 불가)
+		Context->OMSetRenderTargets(1, &rtv, nullptr);
+
+		ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+		Context->PSSetShaderResources(1, 1, &DepthSRV);
+	}
 
 	FDrawState State;
 
@@ -359,6 +374,15 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 		}
 	}
 
+	if (Pass == ERenderPass::Decal)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		Context->PSSetShaderResources(1, 1, &nullSRV);
+
+		ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
+		ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+		Context->OMSetRenderTargets(1, &rtv, dsv);
+	}
 	CleanupSRV(Context, State);
 }
 
@@ -619,6 +643,7 @@ void FRenderer::CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State)
 	{
 		ID3D11ShaderResourceView* nullSRV = nullptr;
 		Ctx->PSSetShaderResources(0, 1, &nullSRV);
+		Ctx->PSSetShaderResources(1, 1, &nullSRV);
 	}
 }
 

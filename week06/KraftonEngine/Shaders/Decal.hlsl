@@ -1,5 +1,6 @@
 #include "Common/VertexLayouts.hlsl"
 #include "Common/ConstantBuffers.hlsl"
+#include "common/Functions.hlsl"
 
 Texture2D g_txColor : register(t0);
 Texture2D DepthTexture : register(t1);
@@ -15,9 +16,7 @@ PS_Input_Decal VS(VS_Input_PC input)
 {
     PS_Input_Decal output;
 
-    float4 world = mul(float4(input.position, 1.0f), Model);
-    float4 view = mul(world, View);
-    float4 clip = mul(view, Projection);
+    float4 clip = ApplyMVP(input.position);
 
     output.position = clip;
     output.clipPos = clip;
@@ -29,6 +28,7 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
 {
     float2 ndc = input.clipPos.xy / input.clipPos.w;
     float2 uv = ndc * 0.5f + 0.5f;
+    uv.y = 1.0f - uv.y; 
 
     float depth = DepthTexture.Sample(g_Sample, uv).r;
     if (depth <= 0.0f)
@@ -58,5 +58,5 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
         discard;
     }
 
-    return decalColor * PrimitiveColor;
+    return decalColor;
 }

@@ -2,10 +2,13 @@
 #include "Component/DecalComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/ConstantBufferPool.h"
+#include "Render/Pipeline/RenderBus.h"
 
 FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
+	bPerViewportUpdate = true;
 }
 
 void FDecalSceneProxy::UpdateTransform()
@@ -23,7 +26,7 @@ void FDecalSceneProxy::UpdateTransform()
 void FDecalSceneProxy::UpdateMesh()
 {
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Cube);
-	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+	Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
 	Pass = ERenderPass::Decal;
 	RebuildSectionDraw();
 }
@@ -31,6 +34,22 @@ void FDecalSceneProxy::UpdateMesh()
 void FDecalSceneProxy::UpdateMaterial()
 {
 	RebuildSectionDraw();
+}
+
+void FDecalSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
+{
+	const UDecalComponent* Comp = GetDecalComponent();
+	if (!Comp) return;
+
+	auto& DecalCB = ExtraCB.Bind<FDecalConstants>(
+		FConstantBufferPool::Get().GetBuffer(ECBSlot::Decal, sizeof(FDecalConstants)),
+		ECBSlot::Decal);
+
+	DecalCB.InvView = Bus.GetView().GetInverseFast();
+	DecalCB.InvProjection = Bus.GetProj().GetInverse();
+	DecalCB.WorldToDecal = Comp->GetWorldToDecalMatrix();
+	DecalCB.DecalForward = FVector(1.0f, 0.0f, 0.0f);
+	DecalCB.Padding0 = 0.0f;
 }
 
 void FDecalSceneProxy::RebuildSectionDraw()

@@ -14,6 +14,9 @@ public:
 	void UpdateMesh() override;
 	void UpdateMaterial() override;
 
+	void UpdatePerViewport(const FRenderBus& Bus) override;
+
+
 private:
 	void RebuildSectionDraw();
 
