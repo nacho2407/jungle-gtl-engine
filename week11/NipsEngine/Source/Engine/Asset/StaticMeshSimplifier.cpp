@@ -377,9 +377,9 @@ void FStaticMeshSimplifier::SimplifyMesh()
 			SaveCurrentStateAsLOD(CurrentLOD, TopologicalIndices);
 			CurrentLOD++;
 			TargetRatio *= 0.6f;
-			TargetTriangles = std::max(16, static_cast<int32>(CurrentTriangles * TargetRatio));
+			TargetTriangles = std::max(96, static_cast<int32>(CurrentTriangles * TargetRatio));
 
-			if (CurrentTriangles < 16) break;
+			if (CurrentTriangles < 96) break;
 		}
 	}
 
