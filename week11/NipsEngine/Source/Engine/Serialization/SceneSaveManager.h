@@ -64,6 +64,7 @@ private:
 	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
 	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);
 	static void DeserializeCameraState(json::JSON& root, FEditorCameraState* OutCameraState = nullptr);
+	static void DeserializeChildComponents(json::JSON& ChildrenNode, USceneComponent* ParentComp, AActor* Owner);
 
 	static string GetCurrentTimeStamp();
 };
