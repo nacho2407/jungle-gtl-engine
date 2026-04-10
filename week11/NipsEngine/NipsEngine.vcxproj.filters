@@ -487,13 +487,13 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPlayStreamWidget.cpp" />
-    <ClCompile Include="RotatingMovementComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="ProjectileMovementComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="MovementComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
   </ItemGroup>
@@ -983,13 +983,13 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
-    <ClInclude Include="ProjectileMovementComponent.h">
+    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="RotatingMovementComponent.h">
+    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="MovementComponent.h">
+    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
   </ItemGroup>
