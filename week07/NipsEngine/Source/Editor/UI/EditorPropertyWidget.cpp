@@ -138,12 +138,14 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	}
 	else
 	{
-		ImGui::Text("Class: %s", PrimaryActor->GetTypeInfo()->name);
+		ImGui::Text("Selected Actor: %s", PrimaryActor->GetFName().ToString().c_str());
+		ImGui::Text("Selected Component: %s", SelectedComponent->GetTypeInfo()->name);
 
 		// Actor 이름: 클릭 가능, 선택 시 하이라이트
 		bool bHighlight = bActorSelected;
 		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
-		ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
+
+
 		if (bHighlight) ImGui::PopStyleColor();
 		if (ImGui::IsItemClicked())
 		{
