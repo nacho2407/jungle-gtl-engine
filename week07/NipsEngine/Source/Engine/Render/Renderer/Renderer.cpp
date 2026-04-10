@@ -43,6 +43,10 @@ void FRenderer::Create(HWND hWindow)
 	Resources.StaticMeshShader.Create(Device.GetDevice(), L"Shaders/ShaderStaticMesh.hlsl",
 		"mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
 
+	// 7. Light Pass (LightPass.hlsl)
+    Resources.LightPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS",
+                                        nullptr, 0);
+
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
@@ -92,6 +96,7 @@ void FRenderer::Release()
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 	Resources.StaticMeshConstantBuffer.Release();
+    Resources.LightPassConstantBuffer.Release();
 	Resources.MeshSamplerState.Reset();
 
 	FGPUProfiler::Get().Shutdown();
@@ -154,7 +159,9 @@ void FRenderer::UseBackBufferRenderTargets()
 	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
 	if (CurrentRenderTargets.IsValid())
 	{
-		ID3D11RenderTargetView* RTV = CurrentRenderTargets.SceneColorRTV;
+        ID3D11RenderTargetView* RTV =
+                CurrentRenderTargets.SceneColorRTV; // Back Buffer 의 경우 SceneColorRTV 가 FinalRTV 역할
+        SceneFinalRTV = RTV;
 		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, CurrentRenderTargets.DepthStencilView);
 		Device.SetSubViewport(0, 0,
 			static_cast<int32>(CurrentRenderTargets.Width),
@@ -169,6 +176,12 @@ void FRenderer::UseViewportRenderTargets()
 	{
 		UseBackBufferRenderTargets();
 		return;
+	}
+	else
+	{
+		// 현재는 Light 에서 나온 RTV 를 다른 모든 패스에서 사용하므로 SceneFinalRTV 로 설정
+		// TODO: 확장성을 고려할 필요 있음
+        SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
 	}
 
 	Device.SetSubViewport(0, 0,
@@ -185,18 +198,32 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
-		const auto& Commands = InRenderBus.GetCommands(CurPass);
-		if (Commands.empty()) continue;
 
-		if (PassBatchers[i])
+		/** TODO: if 문 처리는 아쉬움. 나중에 확장성을 위해 수정 필요 */
+		if (CurPass == ERenderPass::Light)
 		{
-			ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
-			PassBatchers[i].Flush(CurPass, InRenderBus, Context);
+			// Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
+            ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
+
+			ExecuteLightPass(InRenderBus, Context);
 		}
 		else
 		{
-			ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
+            const auto& Commands = InRenderBus.GetCommands(CurPass);
+            if (Commands.empty())
+                continue;
+
+            if (PassBatchers[i])
+            {
+                ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
+                PassBatchers[i].Flush(CurPass, InRenderBus, Context);
+            }
+            else
+            {
+                ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
+            }
 		}
+		
 	}
 }
 
@@ -210,6 +237,9 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
+    S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
+                            ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+                            &Resources.LightPassShader,    false};	
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.SelectionMaskShader, false };
 	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true };
@@ -217,7 +247,10 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
 	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
 	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
-	S[(uint32)E::PostProcessOutline] = { EDepthStencilState::Default, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader, false };
+    S[(uint32)E::PostProcessOutline] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
+                                        ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+                                        &Resources.OutlineShader,      false};
+
 }
 
 // ============================================================
@@ -385,14 +418,77 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 	}
 }
 
+void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+    ApplyPassRenderState(ERenderPass::Light, Context, Bus.GetViewMode());
+
+    const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Light];
+
+    Device.SetDepthStencilState(State.DepthStencil);
+    Device.SetBlendState(State.Blend);
+
+    ID3D11ShaderResourceView* srvs[] = {
+        CurrentRenderTargets.SceneColorSRV,
+        CurrentRenderTargets.SceneNormalSRV,
+        CurrentRenderTargets.SceneDepthSRV
+    };
+
+    Context->PSSetShaderResources(0, 3, srvs);
+
+	Resources.LightPassShader.Bind(Context);
+
+	/**
+     * LightPass 는 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
+     * 버퍼 바인딩이 필요 없다.
+	 */
+    Context->IASetInputLayout(nullptr);
+    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    Context->Draw(3, 0);
+
+    // 6SRV 해제 (중요!!)
+    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr};
+    Context->PSSetShaderResources(0, 3, nullSRVs);
+}
+
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
 {
-	//	Selection Mask에 대한 것인지 확인하여 RTV를 가져옴
-	ID3D11RenderTargetView* RTV = (Pass == ERenderPass::SelectionMask)
-		? CurrentRenderTargets.SelectionMaskRTV
-		: CurrentRenderTargets.SceneColorRTV;
-	ID3D11DepthStencilView* DSV = CurrentRenderTargets.DepthStencilView;
-	Context->OMSetRenderTargets(1, &RTV, DSV);
+    ID3D11RenderTargetView* RTVs[MaxRTVCount] = {nullptr, nullptr};
+    ID3D11DepthStencilView* DSV = nullptr;
+
+	/** Pass 별 RTV 설정 */
+	switch (Pass)
+	{
+        case ERenderPass::Opaque:
+            RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+            RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
+            break;
+        case ERenderPass::Light:
+			RTVs[0] = CurrentRenderTargets.SceneLightRTV;
+            break;
+        case ERenderPass::SelectionMask:
+            RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;
+            break;
+        default:
+			// 나머지 Pass (UI, ...) 들은 하나의 RTV 에 그린다 가정
+            RTVs[0] = SceneFinalRTV;
+            break;
+	}
+
+	/** Pass 별 DSV 설정 */
+	switch (Pass)
+	{
+        case ERenderPass::Light:
+            DSV = nullptr;
+			break;
+        default:
+            DSV = CurrentRenderTargets.DepthStencilView;
+            break;
+	}
+
+	Context->OMSetRenderTargets(MaxRTVCount, RTVs, DSV);
 
 	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
 
@@ -528,7 +624,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 
 void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 {
-	ID3D11RenderTargetView* RTV = CurrentRenderTargets.SceneColorRTV;
+	ID3D11RenderTargetView* RTV = SceneFinalRTV;
 	InDeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
 	InDeviceContext->OMSetDepthStencilState(nullptr, 0);
 

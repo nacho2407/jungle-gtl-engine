@@ -50,6 +50,7 @@ public:
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	void UseViewportRenderTargets();
+    void SetCurrentViewportInfo(int32 LeftTopX, int32 LetfTopY, int32 Width, int32 Height);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
@@ -66,10 +67,17 @@ private:
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
 	// 기본 패스 실행기 — SetupRenderState + DrawCommand 루프
-	void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+    void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
+                            ID3D11DeviceContext* Context);
+    void ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+
+	ID3D11RenderTargetView* GetCurrentSceneRTV() const
+	{
+		return SceneFinalRTV;
+    }
 
 private:
 	FD3DDevice Device;
@@ -104,5 +112,8 @@ private:
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
+	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
+	ID3D11RenderTargetView* SceneFinalRTV = nullptr;
+	constexpr static uint32 MaxRTVCount = 2;
 };
 
