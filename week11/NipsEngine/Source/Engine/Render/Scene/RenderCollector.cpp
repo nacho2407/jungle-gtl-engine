@@ -638,7 +638,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 					Cmd.MeshBuffer = MeshBuffer;
 
 					Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
-					Cmd.Constants.Decal.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+					Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
 					Cmd.Constants.Decal.FadeAlpha = 1.0f;
 
 					Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->DiffuseTexPath);

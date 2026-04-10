@@ -5,7 +5,6 @@
 DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
 
 UDecalComponent::UDecalComponent()
-	: Material(nullptr), Size(5.0f, 5.0f, 5.0f)
 {
 	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
 	SetMaterial(FResourceManager::Get().FindMaterial(MatNames[0]));
@@ -24,7 +23,7 @@ UDecalComponent* UDecalComponent::Duplicate()
 	NewComp->SetVisibility(this->IsVisible());
 
 	NewComp->Material = this->Material;
-	NewComp->Size = this->Size;
+	NewComp->DecalSize = this->DecalSize;
 
 	NewComp->DuplicateSubObjects();
 
@@ -34,8 +33,8 @@ UDecalComponent* UDecalComponent::Duplicate()
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::Name, &Material });
-	OutProps.push_back({ "Size", EPropertyType::Vec3, &Size });
+	OutProps.push_back({ "Size", EPropertyType::Vec3, &DecalSize });
+	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
@@ -47,7 +46,7 @@ void UDecalComponent::UpdateWorldAABB() const
 {
 	// 월드 공간에서의 AABB 계산
 	FVector WorldLocation = GetWorldLocation();
-	FVector HalfSize = Size * 0.5f;
+	FVector HalfSize = DecalSize * 0.5f;
 	WorldAABB.Min = WorldLocation - HalfSize;
 	WorldAABB.Max = WorldLocation + HalfSize;
 }
@@ -60,6 +59,6 @@ bool UDecalComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 
 FMatrix UDecalComponent::GetDecalMatrix() const
 {
-	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(Size) * GetWorldMatrix();
+	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(DecalSize) * GetWorldMatrix();
 	return WorldMatrix;
 }
