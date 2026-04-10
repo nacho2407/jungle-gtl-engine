@@ -42,7 +42,7 @@ void FD3DDevice::BeginFrame()
 		DeviceContext->ClearRenderTargetView(ViewportSceneColorRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneNormalRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneLightRTV.Get(), ClearColor);
-        DeviceContext->ClearRenderTargetView(ViewportSceneFinalRTV.Get(), ClearColor);
+        DeviceContext->ClearRenderTargetView(ViewportSceneFogRTV.Get(), ClearColor);
 		DeviceContext->ClearRenderTargetView(ViewportSelectionMaskRTV.Get(), ClearMask);
 		DeviceContext->ClearDepthStencilView(ViewportDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -155,6 +155,9 @@ FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
 
     Targets.SceneLightRTV = ViewportSceneLightRTV.Get();
     Targets.SceneLightSRV = ViewportSceneLightSRV.Get();
+
+	Targets.SceneFogRTV = ViewportSceneFogRTV.Get();
+    Targets.SceneFogSRV = ViewportSceneFogSRV.Get();
 
     Targets.SceneDepthSRV = ViewportDepthStencilSRV.Get();
 	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV.Get();
@@ -512,34 +515,34 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 
     Device->CreateShaderResourceView(ViewportSceneLightTexture.Get(), &lightSrvDesc, &ViewportSceneLightSRV);
 
-	D3D11_TEXTURE2D_DESC finalDesc = {};
-    finalDesc.Width = Width;
-    finalDesc.Height = Height;
-    finalDesc.MipLevels = 1;
-    finalDesc.ArraySize = 1;
-    finalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR finaling buffer
-    finalDesc.SampleDesc.Count = 1;
-    finalDesc.Usage = D3D11_USAGE_DEFAULT;
-    finalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    finalDesc.CPUAccessFlags = 0;
-    finalDesc.MiscFlags = 0;
+	D3D11_TEXTURE2D_DESC fogDesc = {};
+    fogDesc.Width = Width;
+    fogDesc.Height = Height;
+    fogDesc.MipLevels = 1;
+    fogDesc.ArraySize = 1;
+    fogDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR foging buffer
+    fogDesc.SampleDesc.Count = 1;
+    fogDesc.Usage = D3D11_USAGE_DEFAULT;
+    fogDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    fogDesc.CPUAccessFlags = 0;
+    fogDesc.MiscFlags = 0;
 
-    Device->CreateTexture2D(&finalDesc, nullptr, &ViewportSceneFinalTexture);
+    Device->CreateTexture2D(&fogDesc, nullptr, &ViewportSceneFogTexture);
 
-    D3D11_RENDER_TARGET_VIEW_DESC finalRtvDesc = {};
-    finalRtvDesc.Format = finalDesc.Format;
-    finalRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-    finalRtvDesc.Texture2D.MipSlice = 0;
+    D3D11_RENDER_TARGET_VIEW_DESC fogRtvDesc = {};
+    fogRtvDesc.Format = fogDesc.Format;
+    fogRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    fogRtvDesc.Texture2D.MipSlice = 0;
 
-    Device->CreateRenderTargetView(ViewportSceneFinalTexture.Get(), &finalRtvDesc, &ViewportSceneFinalRTV);
+    Device->CreateRenderTargetView(ViewportSceneFogTexture.Get(), &fogRtvDesc, &ViewportSceneFogRTV);
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC finalSrvDesc = {};
-    finalSrvDesc.Format = finalDesc.Format;
-    finalSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    finalSrvDesc.Texture2D.MostDetailedMip = 0;
-    finalSrvDesc.Texture2D.MipLevels = 1;
+    D3D11_SHADER_RESOURCE_VIEW_DESC fogSrvDesc = {};
+    fogSrvDesc.Format = fogDesc.Format;
+    fogSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    fogSrvDesc.Texture2D.MostDetailedMip = 0;
+    fogSrvDesc.Texture2D.MipLevels = 1;
 
-    Device->CreateShaderResourceView(ViewportSceneFinalTexture.Get(), &finalSrvDesc, &ViewportSceneFinalSRV);
+    Device->CreateShaderResourceView(ViewportSceneFogTexture.Get(), &fogSrvDesc, &ViewportSceneFogSRV);
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
@@ -564,9 +567,9 @@ void FD3DDevice::ReleaseViewportRenderTargets()
     ViewportDepthStencilTexture.Reset();
     ViewportDepthStencilSRV.Reset();
 
-	ViewportSceneFinalRTV.Reset();
-	ViewportSceneFinalSRV.Reset();
-    ViewportSceneFinalTexture.Reset();
+	ViewportSceneFogTexture.Reset();
+    ViewportSceneFogRTV.Reset();
+    ViewportSceneFogSRV.Reset();
 
 	ViewportRenderTargetWidth = 0;
 	ViewportRenderTargetHeight = 0;

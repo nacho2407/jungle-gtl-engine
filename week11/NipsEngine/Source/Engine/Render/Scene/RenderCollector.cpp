@@ -9,11 +9,13 @@
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
+#include "Component/HeightFogComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
+#include "Object/ObjectIterator.h"
 #include <unordered_set>
 
 namespace
@@ -179,6 +181,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 
 		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
 	}
+
 }
 
 void FRenderCollector::ResetCullingStats()
@@ -242,6 +245,9 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
 		}
 	}
+
+
+	
 }
 
 void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
@@ -578,6 +584,23 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
 	}
+    /*
+    case EPrimitiveType::EPT_FOG:
+    {
+        UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
+
+        FRenderCommand Cmd = {};
+        Cmd.Type = ERenderCommandType::Primitive;
+        Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
+        Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
+        Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
+        Cmd.BlendState = EBlendState::AlphaBlend;
+        Cmd.DepthStencilState = EDepthStencilState::Default;
+
+        RenderBus.AddCommand(ERenderPass::Fog, Cmd);
+        break;
+    }
+	*/
 	default:
 		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
 		{
