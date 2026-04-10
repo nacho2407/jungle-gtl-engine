@@ -45,6 +45,7 @@ struct PSOutput
 {
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
+    float4 WorldPos : SV_TARGET2;
 };
 
 
@@ -111,6 +112,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     
     output.Color = float4(FinalColor, 1.f);
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
     
     // return float4(FinalColor, 1.f);
     return output;

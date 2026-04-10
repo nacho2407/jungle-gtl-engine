@@ -23,6 +23,10 @@ public:
 	void     SetFogInscatteringColor(const FVector4& InColor) { FogInscatteringColor = InColor; }
     FVector4 GetFogInscatteringColor() const { return FogInscatteringColor; }
 
+	// --- Property / Serialization ---
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
+
   private:
     FVector4 FogInscatteringColor;
     float FogDensity;
