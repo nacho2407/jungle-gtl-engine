@@ -9,7 +9,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Component/StaticMeshComponent.h"
+#include "Component/DecalComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
@@ -404,7 +404,18 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		MaskCmd.Type = ERenderCommandType::SelectionMask;
 		RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 		bHasSelectionMask = true;
-		CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+
+		// TODO: 리팩토링 필요 (현재는 DecalComponent만 OBB를 그리도록 설정)
+		UDecalComponent* DecalComp = dynamic_cast<UDecalComponent*>(primitiveComponent);
+		if (DecalComp)
+		{
+			CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
+		}
+		else
+		{
+			CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
+		}
+
 		CollectBVHInternalNodeAABBs(primitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
 	}
 
@@ -678,4 +689,24 @@ void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponen
 
 	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
 	CollectAABBCommand(Box, FColor::White(), RenderBus);
+}
+
+void FRenderCollector::CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus)
+{
+	FRenderCommand OBBCmd = {};
+	OBBCmd.Type = ERenderCommandType::DebugOBB;
+	OBBCmd.Constants.OBB.Center = Box.Center;
+	OBBCmd.Constants.OBB.Extents = Box.Extents;
+	OBBCmd.Constants.OBB.Rotation = Box.Rotation.ToMatrix();
+	OBBCmd.Constants.OBB.Color = Color;
+	RenderBus.AddCommand(ERenderPass::Editor, OBBCmd);
+}
+
+void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+
+	const FAABB AABB = PrimitiveComponent->GetWorldAABB();
+	const FOBB Box = FOBB::FromAABB(AABB, PrimitiveComponent->GetWorldMatrix());
+	CollectOBBCommand(Box, FColor::Green(), RenderBus);
 }

@@ -2,6 +2,7 @@
 #include "RenderBus.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Spatial/WorldSpatialIndex.h"
+#include "Geometry/OBB.h"
 #include <unordered_set>
 
 class UWorld;
@@ -46,4 +47,6 @@ private:
 	                                 std::unordered_set<int32>& SeenNodeIndices);
 	void CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus);
 	void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus);
+	void CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 };

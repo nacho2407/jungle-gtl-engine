@@ -29,6 +29,7 @@ enum class EPrimitiveType
 	EPT_Billboard,
 	EPT_Text, // TextRenderComponent — MeshBuffer 없음, FontBatcher가 처리
 	EPT_SubUV, // SubUVComponent     — MeshBuffer 없음, SubUVBatcher가 처리
+	EPT_Decal,
 };
 
 enum class ERenderPass : uint32

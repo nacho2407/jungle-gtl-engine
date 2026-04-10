@@ -1,5 +1,6 @@
 ﻿#include "GameFramework/PrimitiveActors.h"
 
+#include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Core/ResourceManager.h"
@@ -36,6 +37,9 @@ REGISTER_FACTORY(ATextRenderActor)
 
 DEFINE_CLASS(ABillboardActor, AActor) 
 REGISTER_FACTORY(ABillboardActor)
+
+DEFINE_CLASS(ADecalActor, AActor)
+REGISTER_FACTORY(ADecalActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -197,4 +201,21 @@ void ABillboardActor::InitDefaultComponents()
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
+void ADecalActor::InitDefaultComponents()
+{
+	UDecalComponent* Decal = AddComponent<UDecalComponent>();
+	SetRootComponent(Decal);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(Decal);
+	Billboard->SetTextureName(("Asset\\Texture\\DecalActor_64.png"));
+
+	auto* TextUUID = AddComponent<UTextRenderComponent>();
+	TextUUID->AttachToComponent(Decal);
+	TextUUID->SetFont(FName("Default"));
+	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
