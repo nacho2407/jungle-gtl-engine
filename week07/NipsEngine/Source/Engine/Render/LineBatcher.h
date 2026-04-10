@@ -5,6 +5,8 @@
 
 #include "Render/Common/ViewTypes.h"
 
+#include "Geometry/OBB.h"
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Buffer;
@@ -56,6 +58,9 @@ public:
 
 	// AABB 와이어프레임 (12개 Edge)
 	void AddAABB(const FBoundingBox& Box, const FColor& Color);
+
+	// OBB 와이어프레임 (12개 Edge)
+	void AddOBB(const FOBB& Box, const FColor& Color);
 
 	/**
 	 * @brief 카메라 기준의 grid patch와 축 보조선을 생성합니다.
