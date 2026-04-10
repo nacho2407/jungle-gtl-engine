@@ -127,15 +127,8 @@ void FStaticMeshSimplifier::BuildTopologicalVertices()
 
 void FStaticMeshSimplifier::CalculateInitialQuadrics()
 {
-	const TArray<uint32> PrimeTable = { 
-		53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593, 
-		49157, 98317, 196613, 393241, 786433, 1572869, 3145739, 6291469, 
-		12582917, 25165843, 50331653, 100663319, 201326611, 402653189, 805306457
-	};
-	uint32 NextPrime = *std::lower_bound(PrimeTable.begin(), PrimeTable.end(), 2u * MeshData->Vertices.size() + 1u);
-
 	Quadrics.resize(MeshData->Vertices.size());
-	VertexToTriangleMap.reserve(NextPrime);
+	VertexToTriangleMap.resize(TopologicalVertices.size());
 
 	const TArray<FNormalVertex>& Vertices = MeshData->Vertices;
 	const TArray<uint32>& Indices = MeshData->Indices;
@@ -164,9 +157,9 @@ void FStaticMeshSimplifier::CalculateInitialQuadrics()
 		AddPlaneQuadric(V1, Normal, d);
 		AddPlaneQuadric(V2, Normal, d);
 
-		VertexToTriangleMap[V0].emplace(tidx);
-		VertexToTriangleMap[V1].emplace(tidx);
-		VertexToTriangleMap[V2].emplace(tidx);
+		VertexToTriangleMap[V0].push_back(tidx);
+		VertexToTriangleMap[V1].push_back(tidx);
+		VertexToTriangleMap[V2].push_back(tidx);
 	}
 }
 
@@ -288,19 +281,12 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 
 	// UV 찢어짐 방지: 두 위상 정점의 렌더 정점 UV 차이가 클수록 패널티 부여
 	// UV 좌표가 크게 다른 간선(UV seam 경계)은 collapse 우선순위를 낮춘다.
-	float MaxUVDistSq = 0.0f;
-	for (uint32 RA : TopologicalVertices[ia].RenderVertices)
-	{
-		for (uint32 RB : TopologicalVertices[ib].RenderVertices)
-		{
-			// 두 바운딩 박스 간 최대 거리의 제곱
-			float du = std::max(std::abs(TopoUVBounds[ia].MaxU - TopoUVBounds[ib].MinU),
-								std::abs(TopoUVBounds[ib].MaxU - TopoUVBounds[ia].MinU));
-			float dv = std::max(std::abs(TopoUVBounds[ia].MaxV - TopoUVBounds[ib].MinV),
-								std::abs(TopoUVBounds[ib].MaxV - TopoUVBounds[ia].MinV));
-			MaxUVDistSq = du * du + dv * dv;
-		}
-	}
+	float du = std::max(std::abs(TopoUVBounds[ia].MaxU - TopoUVBounds[ib].MinU),
+                    std::abs(TopoUVBounds[ib].MaxU - TopoUVBounds[ia].MinU));
+	float dv = std::max(std::abs(TopoUVBounds[ia].MaxV - TopoUVBounds[ib].MinV),
+                    std::abs(TopoUVBounds[ib].MaxV - TopoUVBounds[ia].MinV));
+	float MaxUVDistSq = du * du + dv * dv;
+
 	constexpr float UVSeamPenaltyScale = 1000.0f;
 	Candidate.Error += UVSeamPenaltyScale * MaxUVDistSq;
 
@@ -340,6 +326,9 @@ void FStaticMeshSimplifier::SimplifyMesh()
 	int32 CurrentLOD = 1;
 
 	TArray<bool> IsVertexDeleted(MeshData->Vertices.size(), false);
+	
+	TArray<uint32> NewNeighbors;
+	NewNeighbors.reserve(32);
 
 	// priority queue에서 계산된 오차가 작은 순서대로 간선이 pop된다.
 	while (!PQ.empty() && CurrentLOD < UStaticMesh::MAX_LOD)
@@ -368,12 +357,12 @@ void FStaticMeshSimplifier::SimplifyMesh()
 		UpdateRenderVertices(ia, ib, CurrentState);
 
 		// 삼각형 위상 갱신 및 삭제 처리
-		TSet<uint32> NewNeighbors;
+		NewNeighbors.clear();
 		UpdateTriangles(ia, ib, TopologicalIndices, CurrentTriangles, NewNeighbors);
 
 		// ib 정점 삭제 표시 및 VertexToTriangleMap에서 제거
 		IsVertexDeleted[ib] = true;
-		VertexToTriangleMap.erase(ib);
+		VertexToTriangleMap[ib].clear();
 
 		// ia의 새 이웃 정점들과의 엣지 오차를 재계산하여 큐에 삽입
 		// priority queue에 저장된 원래 엣지들은 초반의 IsVertexDeleted 조건문에서 삭제
@@ -437,8 +426,12 @@ void FStaticMeshSimplifier::UpdateRenderVertices(uint32 TopoIa, uint32 TopoIb, c
 	TopologicalVertices[TopoIb].RenderVertices.clear();
 }
 
-void FStaticMeshSimplifier::UpdateTriangles(uint32 TopoIa, uint32 TopoIb, TArray<uint32>& OutTopologicalIndices, int32& OutCurrentTriangles, TSet<uint32>& OutNewNeighbors)
+void FStaticMeshSimplifier::UpdateTriangles(uint32 TopoIa, uint32 TopoIb, TArray<uint32>& OutTopologicalIndices, int32& OutCurrentTriangles, TArray<uint32>& OutNewNeighbors)
 {
+	auto AddUnique = [](TArray<uint32>& Arr, uint32 Val) {
+	    if (std::find(Arr.begin(), Arr.end(), Val) == Arr.end()) Arr.push_back(Val);
+	};
+
 	// ib를 포함하는 삼각형을 순회하며 ib -> ia로 교체, 파괴할 간선을 밑변으로 공유하는 삼각형을 삭제한다.
 	for (uint32 TriangleIndex : VertexToTriangleMap[TopoIb])
 	{
@@ -462,10 +455,10 @@ void FStaticMeshSimplifier::UpdateTriangles(uint32 TopoIa, uint32 TopoIb, TArray
 		}
 		else
 		{
-			VertexToTriangleMap[TopoIa].emplace(TriangleIndex);
-			if (I0 != TopoIa) OutNewNeighbors.emplace(I0);
-			if (I1 != TopoIa) OutNewNeighbors.emplace(I1);
-			if (I2 != TopoIa) OutNewNeighbors.emplace(I2);
+			VertexToTriangleMap[TopoIa].push_back(TriangleIndex);
+			if (I0 != TopoIa) AddUnique(OutNewNeighbors, I0);
+			if (I1 != TopoIa) AddUnique(OutNewNeighbors, I1);
+			if (I2 != TopoIa) AddUnique(OutNewNeighbors, I2);
 		}
 	}
 }
