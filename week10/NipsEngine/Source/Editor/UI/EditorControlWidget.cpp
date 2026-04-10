@@ -33,6 +33,8 @@ void FEditorControlWidget::Render(float DeltaTime)
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Jungle Control Panel");
+	
+	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 
 	// Spawn
 	ImGui::Combo("Actor", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
@@ -116,14 +118,14 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	FVector CamPos = Camera->GetLocation();
 	float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
-	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f))
+	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f, 0.0f, 0.0f, "%.1f"))
 	{
 		Camera->SetLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
 	}
 
 	FVector CamRot = Camera->GetRotation().Rotator().Euler();
 	float CameraRotation[3] = { CamRot.X, CamRot.Y, CamRot.Z };
-	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
+	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f, 0.0f, 0.0f, "%.1f"))
 	{
 		CameraRotation[1] = MathUtil::Clamp(CameraRotation[1], -89.9f, 89.9f);
         FRotator NewRotation = FRotator::MakeFromEuler(FVector(CameraRotation[0], CameraRotation[1], CameraRotation[2]));
@@ -131,6 +133,8 @@ void FEditorControlWidget::Render(float DeltaTime)
 		NewRotation.Normalize();
 		Camera->SetRotation(NewRotation);
 	}
+
+	ImGui::PopItemWidth();
 
 	SEPARATOR();
 
