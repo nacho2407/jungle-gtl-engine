@@ -48,6 +48,8 @@ struct FRenderTargetSet
     ID3D11ShaderResourceView*     SceneFogSRV = nullptr;
     ID3D11RenderTargetView*       SceneWorldPosRTV = nullptr;
     ID3D11ShaderResourceView*     SceneWorldPosSRV = nullptr;
+    ID3D11RenderTargetView*       SceneFXAARTV = nullptr;
+    ID3D11ShaderResourceView*     SceneFXAASRV = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
     ID3D11DepthStencilView*   DepthStencilView = nullptr;
@@ -93,6 +95,10 @@ private:
     TComPtr<ID3D11Texture2D>          ViewportSceneWorldPosTexture;
     TComPtr<ID3D11RenderTargetView>   ViewportSceneWorldPosRTV;
     TComPtr<ID3D11ShaderResourceView> ViewportSceneWorldPosSRV;
+
+    TComPtr<ID3D11Texture2D>          ViewportSceneFXAATexture;
+    TComPtr<ID3D11RenderTargetView>   ViewportSceneFXAARTV;
+    TComPtr<ID3D11ShaderResourceView> ViewportSceneFXAASRV;
 
 	TComPtr<ID3D11Texture2D> ViewportSelectionMaskTexture;
 	TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;

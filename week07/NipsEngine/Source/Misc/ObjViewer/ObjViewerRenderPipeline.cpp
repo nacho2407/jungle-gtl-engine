@@ -34,6 +34,7 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Bus.SetFXAAThreshold(0.1f);
 
 		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
 		Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
