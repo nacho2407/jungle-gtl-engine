@@ -201,10 +201,6 @@ void AActor::BeginPlay()
 
 void AActor::Tick(float DeltaTime)
 {
-	FVector CurrentRotation = GetActorRotation();
-	CurrentRotation.Z += 90.0f * DeltaTime;
-	SetActorRotation(CurrentRotation);
-
 	for (UActorComponent* Component : OwnedComponents)
 	{
 		if (Component && Component->IsActive())
