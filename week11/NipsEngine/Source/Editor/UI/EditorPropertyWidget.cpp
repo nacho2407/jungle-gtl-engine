@@ -12,6 +12,7 @@
 #include "Object/FName.h"
 #include <functional>
 #include "Component/SubUVComponent.h"
+#include "Component/HeightFogComponent.h"
 #include "Selection/SelectionManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -57,7 +58,17 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
             Comp->SetTextureName("Asset/Texture/Pawn_64x.png");
             return Comp;
         }
-    }
+    },
+	{
+		"HeightFog Component", 
+		[](AActor* Actor) -> USceneComponent* {
+			 UHeightFogComponent* Comp = Actor->AddComponent<UHeightFogComponent>();
+	         Comp->SetFogDensity(0);
+             Comp->SetFogInscatteringColor(FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+             Comp->SetHeightFalloff(0);
+			 return Comp;
+		}
+	}
 };
 
 void FEditorPropertyWidget::Render(float DeltaTime)

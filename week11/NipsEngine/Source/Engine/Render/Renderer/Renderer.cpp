@@ -484,9 +484,10 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
     const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Fog];
 
     ID3D11ShaderResourceView* srvs[] = {CurrentRenderTargets.SceneColorSRV, CurrentRenderTargets.SceneNormalSRV,
-                                        CurrentRenderTargets.SceneDepthSRV, CurrentRenderTargets.SceneLightSRV};
+                                        CurrentRenderTargets.SceneDepthSRV, CurrentRenderTargets.SceneLightSRV,
+										CurrentRenderTargets.SceneWorldPosSRV};
 
-    Context->PSSetShaderResources(0, 4, srvs);
+    Context->PSSetShaderResources(0, 5, srvs);
 
     Resources.FogPassShader.Bind(Context);
 
@@ -503,8 +504,19 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
 		FFogConstants FogConstants = Cmd.Constants.Fog;
 		Resources.FogPassConstantBuffer.Update(Context, &FogConstants, sizeof(FFogConstants));
 		ID3D11Buffer* cb7 = Resources.FogPassConstantBuffer.GetBuffer();
+
+		const FVector    CameraPosition = Bus.GetView().GetInverse().GetOrigin();
+        FEditorConstants EditorConstants = {};
+        EditorConstants.CameraPosition = CameraPosition;
+        Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
+
+        ID3D11Buffer* cb4 = Resources.EditorConstantBuffer.GetBuffer();
+
 		Context->VSSetConstantBuffers(7, 1, &cb7);
         Context->PSSetConstantBuffers(7, 1, &cb7);
+
+        Context->VSSetConstantBuffers(4, 1, &cb4);
+        Context->PSSetConstantBuffers(4, 1, &cb4);
 
 		/**
         * 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
@@ -519,8 +531,8 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
     }
 
     // SRV 해제 (중요!!)
-    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr};
-    Context->PSSetShaderResources(0, 4, nullSRVs);
+    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr, nullptr};
+    Context->PSSetShaderResources(0, 5, nullSRVs);
 }
 
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
@@ -534,6 +546,7 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
         case ERenderPass::Opaque:
             RTVs[0] = CurrentRenderTargets.SceneColorRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
+            RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
             break;
         case ERenderPass::Light:
 			RTVs[0] = CurrentRenderTargets.SceneLightRTV;
