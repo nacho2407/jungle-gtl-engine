@@ -29,6 +29,7 @@ public:
 	// View
 	EViewMode ViewMode = EViewMode::Lit;
 	FShowFlags ShowFlags;
+	float FXAAThreshold = 0.1f;
 
 	// Grid
 	float GridSpacing = 1.0f;

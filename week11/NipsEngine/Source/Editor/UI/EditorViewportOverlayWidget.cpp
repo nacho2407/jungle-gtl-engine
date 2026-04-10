@@ -100,6 +100,11 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
 
     ImGui::Separator();
+    ImGui::Text("Post Process");
+    ImGui::SetNextItemWidth(ItemWidth);
+    ImGui::SliderFloat("FXAA Threshold", &Settings.FXAAThreshold, 0.0f, 1.0f, "%.3f");
+
+    ImGui::Separator();
 
     // Camera Sensitivity
     ImGui::Text("Camera");
