@@ -246,9 +246,6 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
 		}
 	}
-
-
-	
 }
 
 void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)

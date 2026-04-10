@@ -43,6 +43,7 @@ void FD3DDevice::BeginFrame()
         DeviceContext->ClearRenderTargetView(ViewportSceneNormalRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneLightRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneFogRTV.Get(), ClearColor);
+        DeviceContext->ClearRenderTargetView(ViewportSceneWorldPosRTV.Get(), ClearColor);
 		DeviceContext->ClearRenderTargetView(ViewportSelectionMaskRTV.Get(), ClearMask);
 		DeviceContext->ClearDepthStencilView(ViewportDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -158,6 +159,9 @@ FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
 
 	Targets.SceneFogRTV = ViewportSceneFogRTV.Get();
     Targets.SceneFogSRV = ViewportSceneFogSRV.Get();
+
+	Targets.SceneWorldPosRTV = ViewportSceneWorldPosRTV.Get();
+    Targets.SceneWorldPosSRV = ViewportSceneWorldPosSRV.Get();
 
     Targets.SceneDepthSRV = ViewportDepthStencilSRV.Get();
 	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV.Get();
@@ -543,6 +547,38 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     fogSrvDesc.Texture2D.MipLevels = 1;
 
     Device->CreateShaderResourceView(ViewportSceneFogTexture.Get(), &fogSrvDesc, &ViewportSceneFogSRV);
+
+	D3D11_TEXTURE2D_DESC worldPosDesc = {};
+    worldPosDesc.Width = Width;
+    worldPosDesc.Height = Height;
+    worldPosDesc.MipLevels = 1;
+    worldPosDesc.ArraySize = 1;
+    // 핵심: 월드 좌표는 float 포맷
+    worldPosDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    // worldPosDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // 더 정확히 필요하면
+    worldPosDesc.SampleDesc.Count = 1;
+    worldPosDesc.Usage = D3D11_USAGE_DEFAULT;
+    // RTV + SRV 둘 다 필요
+    worldPosDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    Device->CreateTexture2D(&worldPosDesc, nullptr, ViewportSceneWorldPosTexture.ReleaseAndGetAddressOf());
+
+    // RTV
+    D3D11_RENDER_TARGET_VIEW_DESC worldPosRTVDesc = {};
+    worldPosRTVDesc.Format = worldPosDesc.Format;
+    worldPosRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+    Device->CreateRenderTargetView(ViewportSceneWorldPosTexture.Get(), &worldPosRTVDesc,
+                                   ViewportSceneWorldPosRTV.ReleaseAndGetAddressOf());
+
+    // SRV
+    D3D11_SHADER_RESOURCE_VIEW_DESC worldPosSRVDesc = {};
+    worldPosSRVDesc.Format = worldPosDesc.Format;
+    worldPosSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    worldPosSRVDesc.Texture2D.MostDetailedMip = 0;
+    worldPosSRVDesc.Texture2D.MipLevels = 1;
+
+    Device->CreateShaderResourceView(ViewportSceneWorldPosTexture.Get(), &worldPosSRVDesc,
+                                     ViewportSceneWorldPosSRV.ReleaseAndGetAddressOf());
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
@@ -570,6 +606,10 @@ void FD3DDevice::ReleaseViewportRenderTargets()
 	ViewportSceneFogTexture.Reset();
     ViewportSceneFogRTV.Reset();
     ViewportSceneFogSRV.Reset();
+
+	ViewportSceneWorldPosRTV.Reset();
+	ViewportSceneWorldPosSRV.Reset();
+    ViewportSceneWorldPosTexture.Reset();
 
 	ViewportRenderTargetWidth = 0;
 	ViewportRenderTargetHeight = 0;
