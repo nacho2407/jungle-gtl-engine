@@ -591,6 +591,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
         Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
         Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
+        Cmd.Constants.Fog.FogHeight = HeightFogComp->GetFogHeight();
         Cmd.BlendState = EBlendState::AlphaBlend;
         Cmd.DepthStencilState = EDepthStencilState::Default;
 
