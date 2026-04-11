@@ -24,9 +24,17 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	{
 		FShowFlags ShowFlags;
 		EViewMode ViewMode = EViewMode::Lit;
+		FD3DDevice& Device = Renderer.GetFD3DDevice();
+		const D3D11_VIEWPORT& Viewport = Device.GetViewport();
 
 		Bus.SetCameraInfo(Camera);
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Bus.SetRenderTargetInfo(
+			Viewport.Width,
+			Viewport.Height,
+			Device.GetFrameBufferRTV(),
+			Device.GetDepthStencilView(),
+			Device.GetDepthStencilSRV());
 
 		Collector.CollectWorld(World, Bus);
 		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);

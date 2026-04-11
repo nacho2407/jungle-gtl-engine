@@ -61,4 +61,20 @@ cbuffer DecalBuffer : register(b5)
     float DecalOpacity;
 };
 
+cbuffer HeightFogPostProcessCB : register(b6)
+{
+    float4x4 CameraInvView;
+    float4x4 CameraInvProjection;
+    float4 FogColor;
+    float3 FogCameraPosition;
+    float FogDensity;
+    float FogHeight;
+    float FogHeightFalloff;
+    float FogStartDistance;
+    float FogMaxOpacity;
+    float FogEndDistance;
+    float FogCutoffDistance;
+    float2 FogPadding;
+};
+
 #endif // CONSTANT_BUFFERS_HLSL
