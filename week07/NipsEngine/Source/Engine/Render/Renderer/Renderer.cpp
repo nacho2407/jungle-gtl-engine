@@ -182,6 +182,7 @@ void FRenderer::UseBackBufferRenderTargets()
         ID3D11RenderTargetView* RTV =
                 CurrentRenderTargets.SceneColorRTV; // Back Buffer 의 경우 SceneColorRTV 가 FinalRTV 역할
         SceneFinalRTV = RTV;
+        
 		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, CurrentRenderTargets.DepthStencilView);
 		Device.SetSubViewport(0, 0,
 			static_cast<int32>(CurrentRenderTargets.Width),
@@ -584,7 +585,7 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
 
 void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Context) 
 {
-    ID3D11ShaderResourceView* srvs[] = {SceneFinalSRV}; // FXAA 패스에서는 최종 조명 결과만 필요
+    ID3D11ShaderResourceView* srvs[] = {SceneFinalSRV.Get()}; // FXAA 패스에서는 최종 조명 결과만 필요
     ApplyPassRenderState(ERenderPass::FXAA, Context, Bus.GetViewMode());
 
     const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::FXAA];
@@ -659,7 +660,7 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
             break;
         default:
 			// 나머지 Pass (UI, ...) 들은 하나의 RTV 에 그린다 가정
-            RTVs[0] = SceneFinalRTV;
+            RTVs[0] = SceneFinalRTV.Get();
             break;
 	}
 
@@ -842,7 +843,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 
 void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 {
-	ID3D11RenderTargetView* RTV = SceneFinalRTV;
+	ID3D11RenderTargetView* RTV = SceneFinalRTV.Get();
 	InDeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
 	InDeviceContext->OMSetDepthStencilState(nullptr, 0);
 

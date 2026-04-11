@@ -54,8 +54,8 @@ public:
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
-	ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV; }
-    ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV; }
+	const ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV.Get(); }
+    const ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV.Get(); }
 
 private:
 	void InitializePassRenderStates();
@@ -112,8 +112,8 @@ private:
 	};
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
-	ID3D11RenderTargetView* SceneFinalRTV = nullptr;
-    ID3D11ShaderResourceView* SceneFinalSRV = nullptr;
+	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
+    TComPtr<ID3D11ShaderResourceView> SceneFinalSRV = nullptr;
 	constexpr static uint32 MaxRTVCount = 3;
 };
 
