@@ -21,7 +21,7 @@ struct FDebugDrawItem
 //
 // DrawDebugHelpers에서 호출 → 라인으로 분해하여 축적
 // 매 프레임 Tick()으로 Duration 감소 + 만료 항목 제거
-// RenderCollector가 GetItems()로 읽어서 RenderBus에 제출
+// RenderCollector가 GetItems()로 읽어서 FScene에 제출
 // ============================================================
 class FDebugDrawQueue
 {

@@ -6,7 +6,7 @@
 
 class AActor;
 class UWorld;
-class FRenderBus;
+class FScene;
 
 class UActorComponent : public UObject
 {
@@ -45,7 +45,7 @@ public:
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	virtual void PostEditProperty(const char* PropertyName);
-	virtual void CollectEditorVisualizations(FRenderBus& RenderBus) const;
+	virtual void CollectEditorVisualizations(FScene& Scene) const;
 	
 	FActorComponentTickFunction PrimaryComponentTick;
 

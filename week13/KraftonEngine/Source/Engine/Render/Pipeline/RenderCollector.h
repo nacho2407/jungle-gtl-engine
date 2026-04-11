@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 #include "Engine/Collision/Octree.h"
 
 class UWorld;
@@ -13,12 +13,12 @@ class FRenderer;
 class FRenderCollector
 {
 public:
-	void CollectWorld(UWorld* World, FRenderBus& RenderBus, FRenderer& Renderer);
-	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus);
-	void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus);
-	void CollectDebugDraw(const FDebugDrawQueue& Queue, FRenderBus& RenderBus);
-	void CollectOctreeDebug(const FOctree* Node, FRenderBus& RenderBus, uint32 Depth = 0);
+	void CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer);
+	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
+	void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
+	void CollectDebugDraw(const FDebugDrawQueue& Queue, const FFrameContext& Frame, FScene& Scene);
+	void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
 
 private:
-	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus, FRenderer& Renderer);
+	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
 };
