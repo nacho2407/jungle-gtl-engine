@@ -7,7 +7,7 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterCross.h"
 #include "Slate/SlateApplication.h"
-#include "Core/InputSystem.h"
+#include "Input/InputSystem.h"
 #include "Engine/Component/GizmoComponent.h"
 #include "EditorEngine.h"
 
@@ -307,7 +307,6 @@ void FViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 	LastFocusedViewportIndex = Index;
 
 	FEditorViewportClient& MainViewport = GetViewportClient(LastFocusedViewportIndex);
-	MainViewport.LockCursorToViewport();
 }
 
 void FViewportLayout::SyncViewportRects()

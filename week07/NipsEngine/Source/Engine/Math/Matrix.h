@@ -504,6 +504,11 @@ struct FMatrix
         return FVector(DirectX::XMVector3TransformCoord(V.ToXMVector(), ToXMMatrix()));
     }
 
+	FVector TransformPositionWithW(const FVector& V) const noexcept
+    {
+        return FVector(DirectX::XMVector4Transform(V.ToXMVector(), ToXMMatrix()));
+    }
+
     FVector4 TransformVector4(const FVector4& V, const FMatrix & M) const noexcept
     {
         DirectX::XMVECTOR T = DirectX::XMVector4Transform(V.ToXMVector(), M.ToXMMatrix());
