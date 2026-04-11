@@ -8,18 +8,49 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
+#include "Render/Culling/ConvexVolume.h"
 #include "Render/Pipeline/LODContext.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Profiling/Stats.h"
 #include <Collision/Octree.h>
+#include <Collision/SpatialPartition.h>
 
 void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
 {
 	if (!World) return;
 
-	// Dirty 프록시 갱신 후 visible 리스트만 순회
-	World->GetScene().UpdateDirtyProxies();
-	CollectVisibleProxies(World->GetVisibleProxies(), Frame, World->GetScene(), Renderer);
+	FScene& Scene = World->GetScene();
+
+	// Dirty 프록시 갱신 (프레임당 1회 — 멀티 뷰포트 시 첫 호출만 실제 동작)
+	Scene.UpdateDirtyProxies();
+
+	// Per-viewport frustum culling — Octree 쿼리로 로컬 visible 리스트 생성
+	LastVisibleProxies.clear();
+	{
+		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
+		const uint32 ExpectedCount = Scene.GetProxyCount()
+			+ static_cast<uint32>(Scene.GetNeverCullProxies().size());
+		if (LastVisibleProxies.capacity() < ExpectedCount)
+			LastVisibleProxies.reserve(ExpectedCount);
+
+		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
+
+		// NeverCull 프록시 (Gizmo 등) — frustum과 무관하게 항상 수집
+		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
+		{
+			if (!Proxy) continue;
+			// 중복 방지: ProxyId 기반 체크 (Octree 쿼리가 NeverCull을 반환할 수 있음)
+			bool bAlreadyInList = false;
+			for (const FPrimitiveSceneProxy* Existing : LastVisibleProxies)
+			{
+				if (Existing == Proxy) { bAlreadyInList = true; break; }
+			}
+			if (!bAlreadyInList)
+				LastVisibleProxies.push_back(Proxy);
+		}
+	}
+
+	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
