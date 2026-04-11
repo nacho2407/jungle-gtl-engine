@@ -61,4 +61,15 @@ cbuffer DecalBuffer : register(b5)
     float DecalOpacity;
 };
 
+cbuffer FireballBuffer : register(b6)
+{
+    float4x4 InvViewMatrix;
+    float4x4 InvProjMatrix;
+    float4 Color;
+    float Intensity;
+    float Radius;
+    float RadiusFalloff;
+    float Padding[2];
+};
+
 #endif // CONSTANT_BUFFERS_HLSL

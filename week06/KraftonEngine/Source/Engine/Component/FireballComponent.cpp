@@ -15,6 +15,7 @@ void UFireballComponent::Serialize(FArchive& Ar)
 
 void UFireballComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity, 0.0f, 10.0f, 0.1f });
 	OutProps.push_back({ "Radius", EPropertyType::Float, &Radius, 0.0f, 1000.0f, 1.0f });
 	OutProps.push_back({ "Radius Falloff", EPropertyType::Float, &RadiusFalloff, 0.1f, 10.0f, 0.1f });

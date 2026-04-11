@@ -23,7 +23,10 @@ void FFireballSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 
 	Pass = ERenderPass::Decal;
 
-	FireballCB.Color = Comp->GetColor();
+	FireballCB.FireballInvView = Bus.GetView().GetInverseFast();
+	FireballCB.FireballInvProj = Bus.GetProj().GetInverse();
+	FireballCB.Color = Comp->GetColor().ToVector4();
+	FireballCB.Intensity = Comp->GetIntensity();
 	FireballCB.Radius = Comp->GetRadius();
 	FireballCB.RadiusFalloff = Comp->GetRadiusFalloff();
 }

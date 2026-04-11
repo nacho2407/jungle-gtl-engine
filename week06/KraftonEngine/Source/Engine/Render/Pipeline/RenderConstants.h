@@ -131,7 +131,9 @@ struct FDecalConstants
 
 struct FFireballConstants
 {
-	FColor Color;
+	FMatrix FireballInvView;
+	FMatrix FireballInvProj;
+	FVector4 Color;
 	float Intensity;
 	float Radius;
 	float RadiusFalloff;
