@@ -142,7 +142,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		GPUOcclusion.DispatchOcclusionTest(
 			Ctx,
 			VP->GetDepthSRV(),
-			World->GetVisibleProxies(),
+			Collector.GetLastVisibleProxies(),
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}

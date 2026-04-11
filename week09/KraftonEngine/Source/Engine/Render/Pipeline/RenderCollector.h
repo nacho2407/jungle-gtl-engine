@@ -19,6 +19,11 @@ public:
 	void CollectDebugDraw(const FDebugDrawQueue& Queue, const FFrameContext& Frame, FScene& Scene);
 	void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
 
+	// 마지막 CollectWorld에서 수집된 visible 프록시 (Occlusion Test용)
+	const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return LastVisibleProxies; }
+
 private:
 	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
+
+	TArray<FPrimitiveSceneProxy*> LastVisibleProxies;
 };
