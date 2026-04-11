@@ -20,4 +20,5 @@ struct FShowFlags
 	bool bBoundingVolume = false;
 	bool bBVHBoundingVolume = false;
 	bool bEnableLOD = true;
+	bool bDecals = true;
 };
