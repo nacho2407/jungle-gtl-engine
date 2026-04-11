@@ -87,6 +87,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
         ImGui::Unindent();
     }
 	ImGui::Checkbox("Enable LOD", &Settings.ShowFlags.bEnableLOD);
+	ImGui::Checkbox("Decals", &Settings.ShowFlags.bDecals);
 
     ImGui::Separator();
 

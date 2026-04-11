@@ -596,6 +596,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	
 	case EPrimitiveType::EPT_Decal:
 	{
+		if (!ShowFlags.bDecals) return;
+
 		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
 		const FMaterial* MtlData = DecalComp->GetMaterial();
 
