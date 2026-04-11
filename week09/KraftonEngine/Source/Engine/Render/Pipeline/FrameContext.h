@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -27,6 +27,8 @@ struct FFrameContext
 	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
+	float NearClip = 0.1f;
+	float FarClip = 1000.0f;
 
 	bool  bIsOrtho   = false;
 	float OrthoWidth = 10.0f;
@@ -37,13 +39,16 @@ struct FFrameContext
 
 	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
+	ID3D11ShaderResourceView* ViewportDepthSRV   = nullptr;
 	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
 	// Render Settings
-	EViewMode  ViewMode = EViewMode::Lit;
+	FViewportRenderOptions RenderOptions;
+	EViewMode ViewMode = EViewMode::Lit;
 	FShowFlags ShowFlags;
+
 	FVector    WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
 	// GPU Occlusion Culling
@@ -70,9 +75,18 @@ struct FFrameContext
 		ViewportHeight = InHeight;
 	}
 
+	void SetRenderOptions(const FViewportRenderOptions& InOptions)
+	{
+		RenderOptions = InOptions;
+	}
+	FViewportRenderOptions GetRenderOptions() const { return RenderOptions; }
+
 	void SetRenderSettings(EViewMode InViewMode, const FShowFlags& InShowFlags)
 	{
-		ViewMode  = InViewMode;
+		RenderOptions.ViewMode  = InViewMode;
+		RenderOptions.ShowFlags = InShowFlags;
+
+		ViewMode = InViewMode;
 		ShowFlags = InShowFlags;
 	}
 

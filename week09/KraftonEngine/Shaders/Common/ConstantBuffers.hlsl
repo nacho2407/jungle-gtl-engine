@@ -51,7 +51,7 @@ cbuffer MaterialBuffer : register(b4)
     float4 SectionColor;
 }
 
-cbuffer SceneDepthCB : register(b5)
+cbuffer SceneDepthCB : register(b6)
 {
     float Exponent;
     float NearClip;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -59,6 +59,7 @@ public:
 
 	const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
 
+
 private:
 	void InitializePassRenderStates();
 
@@ -77,7 +78,7 @@ private:
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
 	void DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceContext* Context);
 
-	void DrawPosProcessSceneDepth(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	void DrawPostProcessSceneDepth(const FFrameContext& Frame, ID3D11DeviceContext* Context);
 
 private:
 	FD3DDevice Device;
