@@ -92,7 +92,7 @@ void UProjectileMovementComponent::Serialize(FArchive& Ar)
 	Ar << MaxSpeed;
 }
 
-void UProjectileMovementComponent::CollectEditorVisualizations(FScene& Scene) const
+void UProjectileMovementComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
 	const FVector PreviewVelocity = GetPreviewVelocity();
 	if (PreviewVelocity.Length() <= FMath::Epsilon)
