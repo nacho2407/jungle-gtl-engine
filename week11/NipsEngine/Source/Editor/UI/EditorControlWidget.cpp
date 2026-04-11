@@ -52,16 +52,16 @@ void FEditorControlWidget::Render(float DeltaTime)
 		{
 			switch (SelectedPrimitiveType)
 			{
-			case 0: // StaticMesh
-			{
-				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
+				case 0: // StaticMesh
+				{
+					AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+					Actor->InitDefaultComponents();
+					Actor->SetActorLocation(CurSpawnPoint);
 
-				break;
-			}
-			case 1: // TextRender
-			{
+					break;
+				}
+				case 1: // TextRender
+				{
 				
 				ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
 				Actor->InitDefaultComponents();
@@ -78,6 +78,20 @@ void FEditorControlWidget::Render(float DeltaTime)
 			case 3: // Billboard
 			{
 				ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 4: // Decal
+			{
+				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 5: // HeightFog
+			{
+				AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;

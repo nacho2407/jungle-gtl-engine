@@ -26,10 +26,12 @@ enum class ERenderCommandType
 	PostProcessOutline,
 	Billboard,
 	DebugBox,
+	DebugOBB,
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
+	Decal,
 };
 
 //PerObject
@@ -78,6 +80,16 @@ struct FAABBConstants
 	FVector Max;
 	float Padding1;
 
+	FColor Color;
+};
+
+struct FOBBConstants
+{
+	FVector Center;
+	float Padding0;
+	FVector Extents;
+	float Padding1;
+	FMatrix Rotation; // 월드 회전 행렬 (회전만 포함, 평행 이동과 스케일 제외)
 	FColor Color;
 };
 
@@ -143,6 +155,32 @@ struct FStaticMeshConstants
 	ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
+struct FDecalConstants
+{
+	FMatrix InvDecalWorld;
+	FVector4 ColorTint;
+	float FadeAlpha = 1.0f;
+	float padding0[3];
+
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+};
+
+struct FFogConstants
+{
+	FVector4 FogColor;
+    float    FogDensity;
+    float    HeightFalloff;
+    float        FogHeight;
+    float        Padding;
+};
+
+struct FFXAAConstants
+{
+    float InvResolution[2]; // (1/Width, 1/Height)
+    float  Threshold;     // 0.05 ~ 0.2 추천
+    float  Padding;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
@@ -158,11 +196,15 @@ struct FRenderCommand
 		FEditorConstants Editor;
 		FOutlineConstants Outline;
 		FAABBConstants AABB;
+		FOBBConstants OBB;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
+		FDecalConstants Decal;
+        FFogConstants        Fog;
+        FFXAAConstants        FXAA;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);

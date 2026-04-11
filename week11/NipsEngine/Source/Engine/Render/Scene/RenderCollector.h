@@ -2,12 +2,14 @@
 #include "RenderBus.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Spatial/WorldSpatialIndex.h"
+#include "Geometry/OBB.h"
 #include <unordered_set>
 
 class UWorld;
 class AActor;
 class UPrimitiveComponent;
 class UGizmoComponent;
+class UDecalComponent;
 struct FFrustum;
 
 class FRenderCollector {
@@ -19,11 +21,18 @@ public:
 		int32 FallbackPassedPrimitiveCount{0};
 	};
 
+	struct FDecalStats
+	{
+		int32 TotalDecalCount = 0;
+		int32 CollectTimeMS = 0;
+	};
+
 private:
 	FMeshBufferManager MeshBufferManager;
 	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
 	TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
 	FCullingStats LastCullingStats;
+	FDecalStats LastDecalStats;
 public:
 	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
 	void Release() { MeshBufferManager.Release(); }
@@ -34,9 +43,12 @@ public:
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
+	const FDecalStats& GetLastDecalStats() const { return LastDecalStats; }
 
 private:
 	void ResetCullingStats();
+	void ResetDecalStats();
+
 	void CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,
 	                             FRenderBus& RenderBus);
 	void CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
@@ -46,4 +58,6 @@ private:
 	                                 std::unordered_set<int32>& SeenNodeIndices);
 	void CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus);
 	void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus);
+	void CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 };
