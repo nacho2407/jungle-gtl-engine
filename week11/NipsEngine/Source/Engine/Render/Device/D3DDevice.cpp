@@ -1,6 +1,7 @@
 ﻿#include "D3DDevice.h"
 
 #include <d3d11sdklayers.h>
+#include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 
 
 void FD3DDevice::Create(HWND InHWindow)
@@ -380,6 +381,13 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 	ViewportRenderTargetWidth = Width;
 	ViewportRenderTargetHeight = Height;
 
+	FRenderTarget RT = FRenderTargetFactory::CreateSceneColor(GetDevice(), Width, Height);
+
+	ViewportSceneColorTexture = RT.Texture;
+        ViewportSceneColorRTV = RT.RTV;
+        ViewportSceneColorSRV = RT.SRV;
+
+	/*
 	D3D11_TEXTURE2D_DESC sceneColorDesc = {};
 	sceneColorDesc.Width = Width;
 	sceneColorDesc.Height = Height;
@@ -405,6 +413,7 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 	sceneColorSRVDesc.Texture2D.MipLevels = 1;
 	Device->CreateShaderResourceView(ViewportSceneColorTexture.Get(), &sceneColorSRVDesc,
 		ViewportSceneColorSRV.ReleaseAndGetAddressOf());
+	*/
 
 	D3D11_TEXTURE2D_DESC sceneNormalDesc = {};
     sceneNormalDesc.Width = Width;
