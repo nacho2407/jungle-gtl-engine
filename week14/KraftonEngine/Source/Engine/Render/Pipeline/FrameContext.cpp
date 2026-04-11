@@ -12,6 +12,9 @@ void FFrameContext::SetCameraInfo(const UCameraComponent* Camera)
 	CameraUp        = Camera->GetUpVector();
 	bIsOrtho        = Camera->IsOrthogonal();
 	OrthoWidth      = Camera->GetOrthoWidth();
+
+	// Per-viewport frustum — used by RenderCollector for inline frustum culling
+	FrustumVolume.UpdateFromMatrix(View * Proj);
 }
 
 void FFrameContext::SetViewportInfo(const FViewport* VP)
