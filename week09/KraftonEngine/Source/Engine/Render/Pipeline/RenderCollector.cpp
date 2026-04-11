@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
@@ -103,7 +103,6 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 	}
 }
 
-
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
@@ -167,7 +166,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			Renderer.BuildCommandForProxy(*Proxy, Proxy->Pass);
 		}
 
-		// 선택된 오브젝트
+		// 선택된 오브젝트 — 아웃라인 + AABB + 컴포넌트 디버그 시각화
 		if (Proxy->bSelected)
 		{
 			if (Proxy->bSupportsOutline)
@@ -180,6 +179,9 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 					Proxy->CachedBounds.Max,
 					FColor::White());
 			}
+
+			//TODO: Owner 의존성 제거
+			Proxy->CollectSelectedVisuals(Scene);
 		}
 	}
 

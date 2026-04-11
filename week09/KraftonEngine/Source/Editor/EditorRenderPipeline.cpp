@@ -115,35 +115,19 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
 		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, Scene);
 
-		for (AActor* SelectedActor : Editor->GetSelectionManager().GetSelectedActors())
-		{
-			if (!SelectedActor || SelectedActor->GetWorld() != World)
-			{
-				continue;
-			}
-
-			for (UActorComponent* ActorComponent : SelectedActor->GetComponents())
-			{
-				if (!ActorComponent)
-				{
-					continue;
-				}
-
-				ActorComponent->CollectEditorVisualizations(Scene);
-			}
-		}
-
 		if (ShowFlags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
 
 		if (VC == Editor->GetActiveViewport())
 			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
+
+		Renderer.BuildDynamicCommands(Frame, &Scene);
 	}
 
-	// 3. GPU 드로우 콜 실행 (동적 지오메트리 + 정렬 + 제출)
+	// 3. GPU 정렬 + 제출
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-		Renderer.Render(Frame, &Scene);
+		Renderer.Render(Frame);
 	}
 
 	// 4. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치

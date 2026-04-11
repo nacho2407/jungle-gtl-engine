@@ -45,9 +45,13 @@ public:
 	// Collector가 직접 호출 — Font proxy → FontGeometry 배칭
 	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
 
-	// --- Render phase: 동적 지오메트리 빌드 + 정렬 + 제출 ---
+	// Collect 마무리: FScene 경량 데이터(DebugLine, Grid, OverlayText) →
+	// 라인/폰트 배쳐 → FDrawCommand 변환. Pipeline의 Collect 블록 끝에서 호출.
+	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
+
+	// --- Render phase: 정렬 + GPU 제출 ---
 	void BeginFrame();
-	void Render(const FFrameContext& Frame, const FScene* Scene);
+	void Render(const FFrameContext& Frame);
 	void EndFrame();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }

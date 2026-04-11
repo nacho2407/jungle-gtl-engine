@@ -8,6 +8,7 @@
 class UPrimitiveComponent;
 class FShader;
 class FMeshBuffer;
+class FScene;
 struct FFrameContext;
 
 // ============================================================
@@ -53,6 +54,9 @@ public:
 	// --- Per-viewport 갱신 (bPerViewportUpdate=true 프록시만) ---
 	// 매 프레임, 각 뷰포트의 카메라 데이터로 프록시 상태를 갱신
 	virtual void UpdatePerViewport(const FFrameContext& Frame) {}
+
+	// 선택된 프록시의 소유 액터 컴포넌트에서 디버그 시각화 수집
+	void CollectSelectedVisuals(FScene& Scene) const;
 
 	// --- 가시성·선택 ---
 	bool bVisible  = true;
