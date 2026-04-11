@@ -2,6 +2,9 @@
 # 기본 기반 스타일
 BasedOnStyle: LLVM
 
+# 줄바꿈 방지 설정
+ColumnLimit: 0
+
 # 들여쓰기 설정
 IndentWidth: 4
 TabWidth: 4
@@ -42,7 +45,12 @@ StatementMacros:
 # 접근 제어자(public, private 등) 들여쓰기
 AccessModifierOffset: -4
 
-# 기타 가독성 설정
+# 줄바꿈 및 길이 제어 설정
 PackConstructorInitializers: BinPack
+BinPackParameters: true
+BinPackArguments: true
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# 기타 가독성 설정
 ReferenceAlignment: Left
 Standard: Latest
