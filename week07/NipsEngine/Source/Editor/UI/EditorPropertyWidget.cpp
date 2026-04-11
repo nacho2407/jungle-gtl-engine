@@ -115,7 +115,6 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
             return Comp;
         }
     },
-    },
 	{
 		"HeightFog Component", 
 		[](AActor* Actor) -> USceneComponent* {
@@ -126,7 +125,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
              Comp->SetFogHeight(0);
 			 return Comp;
 		}
-	}
+	},
 };
 
 void FEditorPropertyWidget::Render(float DeltaTime)
@@ -248,37 +247,14 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		{
 			for (const FComponentMenuEntry& Entry : ComponentMenuRegistry)
 			{
-				if (!ImGui::Selectable(Entry.DisplayName)) 
-					continue;
-
-				UActorComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor);
-
-				if (!NewComp) 
-					continue;
-
-				// 선택된 컴포넌트가 SceneComponent라면 해당 컴포넌트를 타겟으로 지정, 아니라면 루트 지정
-				USceneComponent* AttachTarget = nullptr;
-				if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
-					AttachTarget = static_cast<USceneComponent*>(SelectedComponent);
-				else
-					AttachTarget = PrimaryActor->GetRootComponent();
-
-				// SceneComponent인 경우: 트랜스폼 계층에 부착(Attach)
-				if (USceneComponent* SceneComp = Cast<USceneComponent>(NewComp))
+				if (ImGui::Selectable(Entry.DisplayName))
 				{
-					if (AttachTarget)
-						SceneComp->AttachToComponent(AttachTarget);
-					else
-						PrimaryActor->SetRootComponent(SceneComp);
+					if (UActorComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor))
+					{
+						// this(현재 위젯 객체)를 넘겨줍니다.
+						AttachAndSelectNewComponent(PrimaryActor, NewComp);
+					}
 				}
-				// MovementComponent인 경우 Attach Target을 이동 대상으로 삼음
-				else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
-				{
-					if (AttachTarget)
-						MoveComp->SetUpdatedComponent(AttachTarget);
-				}
-
-				SelectedComponent = NewComp;
 			}
 			ImGui::EndPopup();
 		}
@@ -793,4 +769,33 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		SelectedComponent->PostEditProperty(Prop.Name);
 	}
+}
+
+void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp)
+{
+    if (!PrimaryActor || !NewComp) return;
+
+    USceneComponent* AttachTarget = nullptr;
+    // 이제 SelectedComponent 멤버 변수를 정상적으로 사용할 수 있습니다!
+    if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+    {
+        AttachTarget = static_cast<USceneComponent*>(SelectedComponent);
+    }
+    else
+    {
+        AttachTarget = PrimaryActor->GetRootComponent();
+    }
+
+    if (USceneComponent* SceneComp = Cast<USceneComponent>(NewComp))
+    {
+        if (AttachTarget) SceneComp->AttachToComponent(AttachTarget);
+        else PrimaryActor->SetRootComponent(SceneComp);
+    }
+    else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
+    {
+        if (AttachTarget) MoveComp->SetUpdatedComponent(AttachTarget);
+    }
+
+    SelectedComponent = NewComp;
+    bActorSelected = false; 
 }

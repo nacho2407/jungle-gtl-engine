@@ -33,7 +33,8 @@ UProjectileMovementComponent* UProjectileMovementComponent::Duplicate()
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UMovementComponent::GetEditableProperties(OutProps);
-
+	
+	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity });
     OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 1.0f });
     OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 0.0f, 1.0f });
     OutProps.push_back({ "Gravity Scale", EPropertyType::Float, &GravityScale, 0.0f, 5.0f, 0.01f });
@@ -69,7 +70,7 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime)
     }
 
     // 가속도 연산 (언리얼 단위 스케일 적용)
-    FVector Acceleration(0.0f, 0.0f, -980.0f * GravityScale);
+    FVector Acceleration(0.0f, 0.0f, -9.8f * GravityScale);
 
 	// 가속도에 따라 속도 값을 t에 대해 적분한 뒤 최대 속도를 넘지 않도록 제한한다.
     Velocity += Acceleration * DeltaTime;
