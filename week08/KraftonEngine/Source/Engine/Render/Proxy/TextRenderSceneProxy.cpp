@@ -18,7 +18,6 @@ void FTextRenderSceneProxy::UpdateMesh()
 	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	Pass = ERenderPass::AlphaBlend;
 	bFontBatched = true;
-	UpdateSortKey();
 }
 
 UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
