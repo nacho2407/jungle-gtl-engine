@@ -52,7 +52,9 @@ PSOutput mainPS(PSInput input) : SV_Target
 
     clip(0.5f - abs(localPos.xyz));
     
-    float2 decalUV = localPos.xy + 0.5f;
+    float2 decalUV;
+    decalUV.x = localPos.y + 0.5f;
+    decalUV.y = localPos.z + 0.5f;
     decalUV.y = 1.0f - decalUV.y;
 
     float4 decalTex = DiffuseMap.Sample(SampleState, decalUV);
