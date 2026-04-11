@@ -23,6 +23,7 @@ namespace ECBSlot
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
+	constexpr uint32 Decal = 5;		// b5: Decal properties (Color)
 }
 
 //PerObject
