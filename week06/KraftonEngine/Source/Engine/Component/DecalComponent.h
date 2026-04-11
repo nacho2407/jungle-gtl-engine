@@ -16,7 +16,7 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 	void UpdateLocalExtents();
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
-
+	
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
 
 	void SetTexture(const FName& InTextureName);
@@ -24,6 +24,7 @@ public:
 	const FTextureResource* GetTexture() const { return CachedTexture; }
 	const FVector& GetDecalSize() const { return DecalSize; }
 	float GetFadeAlpha() const { return FadeAlpha; }
+	FVector4 GetDecalColor() const { return DecalColor; }
 
 	void ResetFade();
 
@@ -46,6 +47,7 @@ private:
 	mutable bool bDecalMatrixDirty = true;
 
 	FVector DecalSize = { 1.0f, 1.0f, 1.0f };
+	FVector4 DecalColor = { 1.0f, 1.0f, 1.0f , 1.0f};
 
 	float FadeAlpha = 1.0f;
 	float FadeInTime = 1.0f;

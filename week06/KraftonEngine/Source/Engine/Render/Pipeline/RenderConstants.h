@@ -126,6 +126,7 @@ struct FDecalConstants
 
 	FVector DecalForward;
 	float DecalOpacity;
+	FVector4 DecalColor;
 };
 
 // ============================================================

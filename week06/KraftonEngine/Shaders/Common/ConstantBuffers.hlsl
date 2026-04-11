@@ -59,6 +59,7 @@ cbuffer DecalBuffer : register(b5)
 
     float3 DecalForward;
     float DecalOpacity;
+    float4 DecalColor;
 };
 
 #endif // CONSTANT_BUFFERS_HLSL

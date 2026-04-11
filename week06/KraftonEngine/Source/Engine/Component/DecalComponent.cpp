@@ -14,7 +14,11 @@ void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << TextureName;
+	Ar << DecalColor;
 	Ar << DecalSize;
+	Ar << FadeInTime;
+	Ar << FadeOutTime;
+	Ar << TotalLifetime;
 }
 
 void UDecalComponent::PostDuplicate()
@@ -27,6 +31,7 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });
 	OutProps.push_back({ "Decal Size", EPropertyType::Vec3, &DecalSize, 1.0f, 1000.0f, 1.0f });
 	OutProps.push_back({ "Fade In Time", EPropertyType::Float, &FadeInTime, 0.0f, 10.0f, 0.1f });
 	OutProps.push_back({ "Fade Out Time", EPropertyType::Float, &FadeOutTime, 0.0f, 10.0f, 0.1f });

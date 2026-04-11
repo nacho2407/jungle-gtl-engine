@@ -11,32 +11,53 @@ IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
 void UProjectileMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();
+
+	if (Velocity.Length() <= FMath::Epsilon)
+    {
+        USceneComponent* SourceComponent = GetUpdatedComponent();
+        if (!SourceComponent)
+        {
+            AActor* OwnerActor = GetOwner();
+            SourceComponent = OwnerActor ? OwnerActor->GetRootComponent() : nullptr;
+        }
+
+        if (SourceComponent)
+        {
+            FVector Dir = SourceComponent->GetForwardVector().Normalized();
+            Velocity = Dir * InitialSpeed;
+        }
+    }
+
+	Velocity = Velocity.Normalized() * InitialSpeed; 
 }
 
 void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	USceneComponent* UpdatedSceneComponent = GetUpdatedComponent();
-	if (!UpdatedSceneComponent)
-	{
-		return;
-	}
+    USceneComponent* UpdatedSceneComponent = GetUpdatedComponent();
+    if (!UpdatedSceneComponent)
+    {
+        return;
+    }
 
-	FVector EffectiveVelocity = ComputeEffectiveVelocity();
-	const float CurrentSpeed = EffectiveVelocity.Length();
-	if (MaxSpeed > 0.0f && CurrentSpeed > MaxSpeed)
-	{
-		EffectiveVelocity = EffectiveVelocity.Normalized() * MaxSpeed;
-	}
+    const FVector GravityAccel = FVector(0.f, 0.f, -1.f) * GravityScale * 9.8f;
 
-	const FVector MoveDelta = EffectiveVelocity * DeltaTime;
-	if (MoveDelta.Length() <= FMath::Epsilon)
-	{
-		return;
-	}
+    Velocity += GravityAccel * DeltaTime;
 
-	UpdatedSceneComponent->SetWorldLocation(UpdatedSceneComponent->GetWorldLocation() + MoveDelta);
+    const float CurrentSpeed = Velocity.Length();
+    if (MaxSpeed > 0.0f && CurrentSpeed > MaxSpeed)
+    {
+        Velocity = Velocity.Normalized() * MaxSpeed;
+    }
+
+    const FVector MoveDelta = Velocity * DeltaTime;
+    if (MoveDelta.Length() <= FMath::Epsilon)
+    {
+        return;
+    }
+
+    UpdatedSceneComponent->SetWorldLocation(UpdatedSceneComponent->GetWorldLocation() + MoveDelta);
 }
 
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -45,6 +66,7 @@ void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescrip
 	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity, 0.0f, 0.0f, 1.0f });
 	OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 10.0f });
 	OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 0.0f, 10.0f });
+	OutProps.push_back({ "Gravity Scale", EPropertyType::Float, &GravityScale, 0.0f, 1.0f, 0.01f });
 }
 
 void UProjectileMovementComponent::Serialize(FArchive& Ar)
@@ -53,6 +75,7 @@ void UProjectileMovementComponent::Serialize(FArchive& Ar)
 	Ar << Velocity;
 	Ar << InitialSpeed;
 	Ar << MaxSpeed;
+	Ar << GravityScale;
 }
 
 void UProjectileMovementComponent::StopSimulating()
@@ -72,29 +95,24 @@ EProjectileHitBehavior UProjectileMovementComponent::GetHitBehavior() const
 
 FVector UProjectileMovementComponent::ComputeEffectiveVelocity() const
 {
-	FVector EffectiveVelocity = Velocity;
+	if (Velocity.Length() > FMath::Epsilon)
+    {
+        return Velocity;
+    }
 
-	if (EffectiveVelocity.Length() <= FMath::Epsilon)
-	{
-		USceneComponent* SourceComponent = GetUpdatedComponent();
-		if (!SourceComponent)
-		{
-			AActor* OwnerActor = GetOwner();
-			SourceComponent = OwnerActor ? OwnerActor->GetRootComponent() : nullptr;
-		}
+    USceneComponent* SourceComponent = GetUpdatedComponent();
+    if (!SourceComponent)
+    {
+        AActor* OwnerActor = GetOwner();
+        SourceComponent = OwnerActor ? OwnerActor->GetRootComponent() : nullptr;
+    }
 
-		if (SourceComponent)
-		{
-			EffectiveVelocity = SourceComponent->GetForwardVector().Normalized();
-		}
-	}
+    if (SourceComponent)
+    {
+        return SourceComponent->GetForwardVector().Normalized() * InitialSpeed;
+    }
 
-	if (InitialSpeed > 0.0f && EffectiveVelocity.Length() > FMath::Epsilon)
-	{
-		EffectiveVelocity *= InitialSpeed;
-	}
-
-	return EffectiveVelocity;
+    return FVector();
 }
 
 bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult)

@@ -50,6 +50,7 @@ void FDecalSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	DecalCB.WorldToDecal = Comp->GetWorldToDecalMatrix();
 	DecalCB.DecalForward = FVector(1.0f, 0.0f, 0.0f);
 	DecalCB.DecalOpacity = Comp->GetFadeAlpha();
+	DecalCB.DecalColor = Comp->GetDecalColor();
 }
 
 void FDecalSceneProxy::RebuildSectionDraw()

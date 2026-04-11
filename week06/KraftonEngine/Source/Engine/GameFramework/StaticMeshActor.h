@@ -17,5 +17,5 @@ public:
 private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;
 	UTextRenderComponent* TextRenderComponent = nullptr;
-	USubUVComponent* SubUVComponent = nullptr;
+	//USubUVComponent* SubUVComponent = nullptr;
 };

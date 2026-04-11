@@ -41,4 +41,5 @@ protected:
 	FVector Velocity = FVector(0.0f, 0.0f, 0.0f);
 	float InitialSpeed = 10.0f;
 	float MaxSpeed = 100.0f;
+	float GravityScale = 1.0f;
 };
