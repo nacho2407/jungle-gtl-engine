@@ -1,12 +1,24 @@
 ﻿#include "Render/Proxy/DecalSceneProxy.h"
 #include "Component/DecalComponent.h"
+#include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Runtime/Engine.h"
+
+namespace
+{
+	struct FDecalConstants
+	{
+		FVector4 Color;
+	};
+}
 
 FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
-	// 데칼은 머티리얼/메시 정보를 초기화해야 함
+	ExtraCB.Buffer = new FConstantBuffer();
+	ExtraCB.Slot = 5;	// 5번 상수버퍼 슬롯 할당
+	ExtraCB.Size = sizeof(FVector4);	// Color 1개만 사용
+	// 최초 1회 초기화
 	UpdateMesh();
 }
 
@@ -18,10 +30,18 @@ UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 void FDecalSceneProxy::UpdateMaterial()
 {
 	UDecalComponent* DecalComp = GetDecalComponent();
-	if (DecalComp)
+	if (!DecalComp) return;
+	
+	DecalTexture = DecalComp->GetTexture();
+	if (!SectionDraws.empty())
 	{
-		DecalTexture = DecalComp->GetTexture();
+		SectionDraws[0].DiffuseSRV = DecalTexture ? DecalTexture->SRV : nullptr;
 	}
+	
+	auto& CB = ExtraCB.Bind<FDecalConstants>(
+		FConstantBufferPool::Get().GetBuffer(ECBSlot::Decal, sizeof(FDecalConstants)),
+		ECBSlot::Decal);
+	CB.Color = DecalComp->GetColor();
 }
 
 void FDecalSceneProxy::UpdateMesh()
@@ -63,7 +83,7 @@ void FDecalSceneProxy::UpdateMesh()
 
 	this->SectionDraws.push_back(DrawCmd);
 
-	this->Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
-	this->Pass = ERenderPass::Opaque;
+	this->Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
+	this->Pass = ERenderPass::Decal;
 	UpdateSortKey();
 }
