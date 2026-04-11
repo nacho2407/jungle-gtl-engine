@@ -2,6 +2,7 @@
 
 #include "ObjViewer/ObjViewerEngine.h"
 #include "Render/Pipeline/Renderer.h"
+#include "Render/Proxy/FScene.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
@@ -47,23 +48,25 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	const float ClearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
 	VP->BeginRender(Ctx, ClearColor);
 
-	// Bus 설정
-	Bus.Clear();
+	// Frame 설정
+	Frame.ClearViewportResources();
 
 	UWorld* World = Engine->GetWorld();
+	FScene& Scene = World->GetScene();
+	Scene.ClearFrameData();
 
-	Bus.Frame.SetCameraInfo(Camera);
+	Frame.SetCameraInfo(Camera);
 
 	FShowFlags ShowFlags;
 	ShowFlags.bGrid = false;
 	ShowFlags.bGizmo = false;
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
-	Bus.Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
-	Bus.Frame.SetViewportInfo(VP);
+	Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
+	Frame.SetViewportInfo(VP);
 
 	// BeginCollect → 월드 수집 → Render
-	Renderer.BeginCollect(Bus);
-	Collector.CollectWorld(World, Bus, Renderer);
-	Renderer.Render(Bus);
+	Renderer.BeginCollect(Frame);
+	Collector.CollectWorld(World, Frame, Renderer);
+	Renderer.Render(Frame, &Scene);
 }

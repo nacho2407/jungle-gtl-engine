@@ -84,7 +84,7 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 	}
 }
 
-void UActorComponent::CollectEditorVisualizations(FRenderBus& RenderBus) const
+void UActorComponent::CollectEditorVisualizations(FScene& Scene) const
 {
-	(void)RenderBus;
+	(void)Scene;
 }

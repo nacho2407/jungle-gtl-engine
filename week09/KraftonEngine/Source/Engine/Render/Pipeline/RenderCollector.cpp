@@ -13,21 +13,21 @@
 #include "Profiling/Stats.h"
 #include <Collision/Octree.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus, FRenderer& Renderer)
+void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
 {
 	if (!World) return;
 
 	// Dirty 프록시 갱신 후 visible 리스트만 순회
 	World->GetScene().UpdateDirtyProxies();
-	CollectVisibleProxies(World->GetVisibleProxies(), RenderBus, Renderer);
+	CollectVisibleProxies(World->GetVisibleProxies(), Frame, World->GetScene(), Renderer);
 }
 
-void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
+void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
 {
-	RenderBus.SetGrid(GridSpacing, GridHalfLineCount);
+	Scene.SetGrid(GridSpacing, GridHalfLineCount);
 }
 
-void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
+void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
 {
 	TArray<FOverlayStatLine> Lines;
 	OverlaySystem.BuildLines(Editor, Lines);
@@ -35,17 +35,17 @@ void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySyste
 
 	for (FOverlayStatLine& Line : Lines)
 	{
-		RenderBus.AddOverlayText(std::move(Line.Text), Line.ScreenPosition, TextScale);
+		Scene.AddOverlayText(std::move(Line.Text), Line.ScreenPosition, TextScale);
 	}
 }
 
-void FRenderCollector::CollectDebugDraw(const FDebugDrawQueue& Queue, FRenderBus& RenderBus)
+void FRenderCollector::CollectDebugDraw(const FDebugDrawQueue& Queue, const FFrameContext& Frame, FScene& Scene)
 {
-	if (!RenderBus.Frame.ShowFlags.bDebugDraw) return;
+	if (!Frame.ShowFlags.bDebugDraw) return;
 
 	for (const FDebugDrawItem& Item : Queue.GetItems())
 	{
-		RenderBus.AddDebugLine(Item.Start, Item.End, Item.Color);
+		Scene.AddDebugLine(Item.Start, Item.End, Item.Color);
 	}
 }
 
@@ -61,7 +61,7 @@ static const FColor OctreeDepthColors[] = {
 	FColor(0,   0, 255),	// 5: Blue
 };
 
-void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& RenderBus, uint32 Depth)
+void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
 {
 	if (!Node) return;
 
@@ -93,13 +93,13 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 
 	for (const auto& E : Edges)
 	{
-		RenderBus.AddDebugLine(V[E[0]], V[E[1]], Color);
+		Scene.AddDebugLine(V[E[0]], V[E[1]], Color);
 	}
 
 	// 자식 노드 재귀
 	for (const FOctree* Child : Node->GetChildren())
 	{
-		CollectOctreeDebug(Child, RenderBus, Depth + 1);
+		CollectOctreeDebug(Child, Scene, Depth + 1);
 	}
 }
 
@@ -107,14 +107,13 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus, FRenderer& Renderer)
+void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
-	if (!RenderBus.Frame.ShowFlags.bPrimitives) return;
+	if (!Frame.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = RenderBus.Frame.ShowFlags.bBoundingVolume;
+	const bool bShowBoundingVolume = Frame.ShowFlags.bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
-	const FFrameContext& Frame = RenderBus.Frame;
 	const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
 	FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
 	const FLODUpdateContext& LODCtx = Frame.LODContext;
@@ -176,7 +175,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 			if (bShowBoundingVolume && Proxy->bShowAABB)
 			{
-				RenderBus.AddDebugAABB(
+				Scene.AddDebugAABB(
 					Proxy->CachedBounds.Min,
 					Proxy->CachedBounds.Max,
 					FColor::White());

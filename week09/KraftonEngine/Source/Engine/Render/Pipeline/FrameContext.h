@@ -76,7 +76,7 @@ struct FFrameContext
 		ShowFlags = InShowFlags;
 	}
 
-	// Reset D3D pointers (entry arrays are on RenderBus, not here)
+	// Reset D3D pointers
 	void ClearViewportResources()
 	{
 		ViewportRTV        = nullptr;
