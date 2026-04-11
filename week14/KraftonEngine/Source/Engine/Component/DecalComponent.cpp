@@ -235,7 +235,7 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
-	OutProps.push_back({"Color", EPropertyType::Vec4, &Color });
+	OutProps.push_back({"Color", EPropertyType::Color4, &Color });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
