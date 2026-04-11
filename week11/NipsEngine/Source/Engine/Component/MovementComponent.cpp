@@ -22,7 +22,6 @@ void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutP
 {
     // ValuePtr = &UpdatedComponent (USceneComponent**) — 에디터에서 드롭다운으로 결정
     OutProps.push_back({ "Updated Component", EPropertyType::SceneComponentRef, &UpdatedComponent });
-	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity });
 }
 
 // UpdatedComponent를 Delta만큼 이동시킵니다.
