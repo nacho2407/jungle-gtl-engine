@@ -1,6 +1,6 @@
 #include "Common/Functions.hlsl"
 #include "Common/VertexLayouts.hlsl"
-#include "Common/ConstantBuffers.hlsl"
+#include "Common/MaterialBuffer.hlsl"
 
 Texture2D g_txColor : register(t0);
 SamplerState g_Sample : register(s0);
