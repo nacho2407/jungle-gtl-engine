@@ -1,7 +1,8 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 #include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/MeshBufferManager.h"
 
 // ============================================================
 // FSubUVSceneProxy
@@ -9,43 +10,82 @@
 FSubUVSceneProxy::FSubUVSceneProxy(USubUVComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
-	bBatcherRendered = true;
 	bShowAABB = false;
+}
+
+FSubUVSceneProxy::~FSubUVSceneProxy()
+{
+	UVRegionCB.Release();
 }
 
 void FSubUVSceneProxy::UpdateMesh()
 {
-	// Billboard::UpdateMesh는 base Billboard의 CachedTexture 유무에 따라 batcher/primitive 경로를
-	// 분기시키는데, SubUV는 자체 ParticleResource를 사용하므로 그 분기가 불리하다.
-	// 여기서는 SubUV batcher 경로만 강제한다.
-	MeshBuffer = Owner->GetMeshBuffer();
-	// SelectionMask 아웃라인 패스에서 사용할 shader (Quad/Primitive 레이아웃)
-	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
+	USubUVComponent* Comp = GetSubUVComponent();
+
+	// TexturedQuad (FVertexPNCT with UVs) for rendering
+	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
+	Shader = FShaderManager::Get().GetShader(EShaderType::SubUV);
 	Pass = ERenderPass::SubUV;
-	bBatcherRendered = true;
+
+	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
+	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::Gizmo);
+
+	// Set DiffuseSRV from particle resource
+	const FParticleResource* Particle = Comp->GetParticle();
+	if (Particle && Particle->IsLoaded())
+	{
+		DiffuseSRV = Particle->SRV;
+	}
+
 	UpdateSortKey();
+}
+
+void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
+{
+	USubUVComponent* Comp = GetSubUVComponent();
+	bVisible = Comp->IsVisible();
+	if (!bVisible) return;
+
+	const FParticleResource* Particle = Comp->GetParticle();
+	if (!Particle || !Particle->IsLoaded())
+	{
+		bVisible = false;
+		return;
+	}
+
+	// Update DiffuseSRV (may change during play)
+	DiffuseSRV = Particle->SRV;
+
+	// Billboard matrix
+	FVector BillboardForward = Frame.CameraForward * -1.0f;
+	FMatrix RotMatrix;
+	RotMatrix.SetAxes(BillboardForward, Frame.CameraRight * -1.0f, Frame.CameraUp);
+	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale())
+		* RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
+
+	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
+	MarkPerObjectCBDirty();
+
+	// Update UV region from frame index
+	const uint32 Cols = Particle->Columns;
+	const uint32 Rows = Particle->Rows;
+	if (Cols > 0 && Rows > 0)
+	{
+		const float FrameW = 1.0f / static_cast<float>(Cols);
+		const float FrameH = 1.0f / static_cast<float>(Rows);
+		const uint32 FrameIdx = Comp->GetFrameIndex();
+		const uint32 Col = FrameIdx % Cols;
+		const uint32 Row = FrameIdx / Cols;
+
+		FSubUVRegionConstants& Region = ExtraCB.As<FSubUVRegionConstants>();
+		Region.U = Col * FrameW;
+		Region.V = Row * FrameH;
+		Region.Width = FrameW;
+		Region.Height = FrameH;
+	}
 }
 
 USubUVComponent* FSubUVSceneProxy::GetSubUVComponent() const
 {
 	return static_cast<USubUVComponent*>(Owner);
-}
-
-// ============================================================
-// CollectEntries — SubUVBatcher용 FSubUVEntry 생성
-// ============================================================
-void FSubUVSceneProxy::CollectEntries(FRenderBus& Bus)
-{
-	USubUVComponent* Comp = GetSubUVComponent();
-
-	const FParticleResource* Particle = Comp->GetParticle();
-	if (!Particle || !Particle->IsLoaded()) return;
-
-	FSubUVEntry Entry = {};
-	Entry.PerObject = PerObjectConstants;
-	Entry.SubUV.Particle = Particle;
-	Entry.SubUV.FrameIndex = Comp->GetFrameIndex();
-	Entry.SubUV.Width = Comp->GetWidth();
-	Entry.SubUV.Height = Comp->GetHeight();
-	Bus.AddSubUVEntry(std::move(Entry));
 }

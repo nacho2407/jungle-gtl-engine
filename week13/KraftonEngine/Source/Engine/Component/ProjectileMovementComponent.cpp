@@ -25,11 +25,7 @@ namespace
 		const FVector End = Start + ScaledVelocity;
 		const FColor ArrowColor(135, 206, 235);
 
-		FDebugLineEntry Shaft;
-		Shaft.Start = Start;
-		Shaft.End = End;
-		Shaft.Color = ArrowColor;
-		RenderBus.AddDebugLineEntry(std::move(Shaft));
+		RenderBus.AddDebugLine(Start, End, ArrowColor);
 
 		const float HeadLength = Clamp(VelocityLength * 0.2f, 0.2f, 1.5f);
 		FVector ReferenceUp(0.0f, 0.0f, 1.0f);
@@ -42,17 +38,8 @@ namespace
 		const FVector Back = Direction * HeadLength;
 		const FVector SideOffset = Side * (HeadLength * 0.45f);
 
-		FDebugLineEntry HeadA;
-		HeadA.Start = End;
-		HeadA.End = End - Back + SideOffset;
-		HeadA.Color = ArrowColor;
-		RenderBus.AddDebugLineEntry(std::move(HeadA));
-
-		FDebugLineEntry HeadB;
-		HeadB.Start = End;
-		HeadB.End = End - Back - SideOffset;
-		HeadB.Color = ArrowColor;
-		RenderBus.AddDebugLineEntry(std::move(HeadB));
+		RenderBus.AddDebugLine(End, End - Back + SideOffset, ArrowColor);
+		RenderBus.AddDebugLine(End, End - Back - SideOffset, ArrowColor);
 	}
 }
 
