@@ -21,11 +21,18 @@ public:
 		int32 FallbackPassedPrimitiveCount{0};
 	};
 
+	struct FDecalStats
+	{
+		int32 TotalDecalCount = 0;
+		int32 CollectTimeMS = 0;
+	};
+
 private:
 	FMeshBufferManager MeshBufferManager;
 	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
 	TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
 	FCullingStats LastCullingStats;
+	FDecalStats LastDecalStats;
 public:
 	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
 	void Release() { MeshBufferManager.Release(); }
@@ -36,9 +43,12 @@ public:
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
+	const FDecalStats& GetLastDecalStats() const { return LastDecalStats; }
 
 private:
 	void ResetCullingStats();
+	void ResetDecalStats();
+
 	void CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,
 	                             FRenderBus& RenderBus);
 	void CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
