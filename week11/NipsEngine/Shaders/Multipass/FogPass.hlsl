@@ -33,7 +33,6 @@ float4 mainPS(VSOutput input) : SV_TARGET
     int2 ip = int2(input.ClipPos.xy);
     float rawDepth = SceneDepth.Load(int3(ip, 0)).r;
     float4 lightColor = SceneLightColor.Load(int3(ip, 0));
-    float FogStart = 0;
 
     if (FogDensity <= 0.0f)
         return lightColor;
@@ -41,9 +40,13 @@ float4 mainPS(VSOutput input) : SV_TARGET
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).xyz;
 
     float dist = length(worldPos - CameraPosition.xyz);
+    
+    // 일정 거리 이상은 안개 적용 X
+    if (dist >= FogCutoffDistance)
+        return lightColor;
         
     float scaledDensity = FogDensity * 0.1; // 스케일 조정
-    float effectiveDist = max(dist - FogStart, 0.0f); // 시작 거리
+    float effectiveDist = max(dist - FogStartDistance, 0.0f); // 시작 거리
     float heightFactor = exp(-HeightFalloff * max(worldPos.z - FogHeight, 0.0f));
     float fogAmount = 0;
     
@@ -51,7 +54,6 @@ float4 mainPS(VSOutput input) : SV_TARGET
     {
         // depth >= 1.0f 인 경우 far plane 밖이므로 실제 거리가 아닌 임의의 큰 값을 사용하여 처리
         float fakeDist = 1000; 
-        float heightFactor = exp(-HeightFalloff * max(CameraPosition.z - FogHeight, 0.0f));
         fogAmount = exp(-scaledDensity * heightFactor * fakeDist);
     }
     else
@@ -59,6 +61,8 @@ float4 mainPS(VSOutput input) : SV_TARGET
         fogAmount = exp(-scaledDensity * heightFactor * effectiveDist);
         fogAmount = saturate(fogAmount);       
     }
+    
+    fogAmount = min(fogAmount, FogMaxOpacity);
 
     return lerp(lightColor, FogColor, 1 - fogAmount);
 }
