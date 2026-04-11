@@ -8,6 +8,8 @@ namespace MathUtil
     static constexpr float InvPI = 0.31830988618379067154f;
     static constexpr float HalfPI = 1.57079632679489661923f;
     static constexpr float TwoPi = 6.28318530717958647692f;
+    static constexpr float DEG_TO_RAD = PI / 180;
+    static constexpr float RAD_TO_DEG = 180 / PI;
 
     static constexpr float SmallNumber = 1.e-8f;
     static constexpr float KindaSmallNumber = 1.e-4f;

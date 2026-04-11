@@ -3,7 +3,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Engine/Slate/SlateApplication.h"
-#include "Engine/Core/InputSystem.h"
+#include "Engine/Input/InputSystem.h"
 #include "Runtime/ViewportRect.h"
 #include "Component/GizmoComponent.h"
 #include "Component/CameraComponent.h"
@@ -75,9 +75,7 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-	// hover/focus 상태를 먼저 갱신한 뒤 ActiveCamera 를 업데이트합니다.
-	// 이렇게 해야 같은 프레임의 첫 클릭에서도 올바른 카메라로 피킹할 수 있습니다.
-	// ViewportLayout.UpdateHoverStates();
+    InputSystem::Get().Tick();
 	ViewportLayout.Tick(DeltaTime);
 
 	if (UWorld* World = GetWorld())
@@ -89,7 +87,6 @@ void UEditorEngine::Tick(float DeltaTime)
 	}
 
 	MainPanel.Update();
-	InputSystem::Get().Tick();
 	if (GetEditorState() == EEditorState::Play)
 	{
 		WorldTick(DeltaTime);
@@ -112,8 +109,6 @@ void UEditorEngine::StartPlaySession()
         SetEditorState(EEditorState::Play);
         return;
     }
-
-	//ShowCursor(false);
 
 	// 이미 플레이 중이라면 무시
     if (EditorState == EEditorState::Play) return;
@@ -140,10 +135,13 @@ void UEditorEngine::StartPlaySession()
     SetActiveWorld(PIEContext.ContextHandle);
     for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
     {
-        ViewportLayout.GetViewportClient(i).SetWorld(PIEWorld);
+        ViewportLayout.GetViewportClient(i).StartPIE(PIEWorld);
+        ViewportLayout.GetViewportClient(i).SetEndPIECallback([this]() { StopPlaySession(); });
     }
 
 	ViewportLayout.SetLastFocusedViewportIndex(0);
+    ViewportLayout.GetViewportClient(0).LockCursorToViewport();
+    InputSystem::Get().SetCursorVisibility(false);
 
     PIEWorld->SetActiveCamera(GetCamera());
 
@@ -166,7 +164,7 @@ void UEditorEngine::StopPlaySession()
 
     SetEditorState(EEditorState::Edit);
 
-	ShowCursor(true);
+	InputSystem::Get().SetCursorVisibility(true);
 
     UWorld* PIEWorld = nullptr;
     FName EditorContextHandle = FName::None;
@@ -199,7 +197,7 @@ void UEditorEngine::StopPlaySession()
 
         for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
         {
-            ViewportLayout.GetViewportClient(i).SetWorld(EditorWorld);
+            ViewportLayout.GetViewportClient(i).EndPIE(EditorWorld);
         }
         
         if (EditorWorld)
