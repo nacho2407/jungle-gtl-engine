@@ -6,7 +6,7 @@
 
 #include "Render/Types/RenderTypes.h"
 
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/DrawCommandList.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Device/D3DDevice.h"
@@ -16,6 +16,7 @@
 #include "Render/Helper/FontGeometry.h"
 
 class FTextRenderSceneProxy;
+class FScene;
 
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
@@ -34,7 +35,7 @@ public:
 	void Release();
 
 	// --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
-	void BeginCollect(const FRenderBus& Bus);
+	void BeginCollect(const FFrameContext& Frame);
 
 	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
 	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
@@ -44,7 +45,7 @@ public:
 
 	// --- Render phase: 동적 지오메트리 빌드 + 정렬 + 제출 ---
 	void BeginFrame();
-	void Render(const FRenderBus& InRenderBus);
+	void Render(const FFrameContext& Frame, const FScene* Scene);
 	void EndFrame();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
@@ -58,7 +59,7 @@ private:
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 
 	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼
-	void PrepareDynamicGeometry(const FRenderBus& Bus);
+	void PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene);
 
 	// 동적 지오메트리 → FDrawCommand (VB 업로드 + 커맨드 생성)
 	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx);

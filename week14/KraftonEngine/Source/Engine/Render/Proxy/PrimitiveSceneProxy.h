@@ -8,7 +8,6 @@
 class UPrimitiveComponent;
 class FShader;
 class FMeshBuffer;
-class FRenderBus;
 struct FFrameContext;
 
 // ============================================================

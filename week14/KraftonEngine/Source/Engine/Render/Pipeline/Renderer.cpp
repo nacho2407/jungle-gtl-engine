@@ -6,6 +6,7 @@
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
+#include "Render/Proxy/FScene.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Runtime/Engine.h"
@@ -59,10 +60,10 @@ void FRenderer::Release()
 // BeginCollect — DrawCommandList + 동적 지오메트리 초기화
 // Collector가 BuildCommandForProxy/AddWorldText를 호출하기 전에 반드시 호출
 // ============================================================
-void FRenderer::BeginCollect(const FRenderBus& Bus)
+void FRenderer::BeginCollect(const FFrameContext& Frame)
 {
 	DrawCommandList.Reset();
-	CollectViewMode = Bus.Frame.ViewMode;
+	CollectViewMode = Frame.ViewMode;
 	bHasSelectionMaskCommands = false;
 
 	// 동적 지오메트리 초기화
@@ -194,21 +195,21 @@ void FRenderer::BeginFrame()
 // Render — 동적 지오메트리 빌드 + 정렬 + GPU 제출
 // BeginCollect + Collector 호출 이후에 호출. ProxyQueue 불필요.
 // ============================================================
-void FRenderer::Render(const FRenderBus& InRenderBus)
+void FRenderer::Render(const FFrameContext& Frame, const FScene* Scene)
 {
 	FDrawCallStats::Reset();
 
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-		UpdateFrameBuffer(Context, InRenderBus.Frame);
+		UpdateFrameBuffer(Context, Frame);
 	}
 
 	// 동적 지오메트리 준비 + FDrawCommand 변환
 	{
 		SCOPE_STAT_CAT("BuildDrawCommands", "4_ExecutePass");
-		PrepareDynamicGeometry(InRenderBus);
-		BuildDynamicDrawCommands(InRenderBus.Frame, Context);
+		PrepareDynamicGeometry(Frame, Scene);
+		BuildDynamicDrawCommands(Frame, Context);
 	}
 
 	// 커맨드 정렬 (Pass → SortKey 순)
@@ -233,7 +234,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 			const char* PassName = GetRenderPassName(CurPass);
 			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 			GPU_SCOPE_STAT(PassName);
-			DrawPostProcessOutline(InRenderBus.Frame, Context);
+			DrawPostProcessOutline(Frame, Context);
 			continue;
 		}
 
@@ -250,36 +251,38 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 }
 
 // ============================================================
-// PrepareDynamicGeometry — RenderBus의 경량 데이터 → 라인/폰트 지오메트리
+// PrepareDynamicGeometry — FScene의 경량 데이터 → 라인/폰트 지오메트리
 // ============================================================
-void FRenderer::PrepareDynamicGeometry(const FRenderBus& Bus)
+void FRenderer::PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene)
 {
+	if (!Scene) return;
+
 	// --- Editor 패스: AABB 디버그 박스 + DebugDraw 라인 ---
-	for (const auto& AABB : Bus.GetDebugAABBs())
+	for (const auto& AABB : Scene->GetDebugAABBs())
 	{
 		EditorLines.AddAABB(FBoundingBox{ AABB.Min, AABB.Max }, AABB.Color);
 	}
-	for (const auto& Line : Bus.GetDebugLines())
+	for (const auto& Line : Scene->GetDebugLines())
 	{
 		EditorLines.AddLine(Line.Start, Line.End, Line.Color.ToVector4());
 	}
 
 	// --- Grid 패스: 월드 그리드 + 축 ---
-	if (Bus.HasGrid())
+	if (Scene->HasGrid())
 	{
-		const FVector CameraPos = Bus.Frame.View.GetInverseFast().GetLocation();
-		FVector CameraFwd = Bus.Frame.CameraRight.Cross(Bus.Frame.CameraUp);
+		const FVector CameraPos = Frame.View.GetInverseFast().GetLocation();
+		FVector CameraFwd = Frame.CameraRight.Cross(Frame.CameraUp);
 		CameraFwd.Normalize();
 
 		GridLines.AddWorldHelpers(
-			Bus.Frame.ShowFlags,
-			Bus.GetGridSpacing(),
-			Bus.GetGridHalfLineCount(),
-			CameraPos, CameraFwd, Bus.Frame.IsFixedOrtho());
+			Frame.ShowFlags,
+			Scene->GetGridSpacing(),
+			Scene->GetGridHalfLineCount(),
+			CameraPos, CameraFwd, Frame.IsFixedOrtho());
 	}
 
 	// --- OverlayFont 패스: 스크린 공간 텍스트 ---
-	for (const auto& Text : Bus.GetOverlayTexts())
+	for (const auto& Text : Scene->GetOverlayTexts())
 	{
 		if (!Text.Text.empty())
 		{
@@ -287,8 +290,8 @@ void FRenderer::PrepareDynamicGeometry(const FRenderBus& Bus)
 				Text.Text,
 				Text.Position.X,
 				Text.Position.Y,
-				Bus.Frame.ViewportWidth,
-				Bus.Frame.ViewportHeight,
+				Frame.ViewportWidth,
+				Frame.ViewportHeight,
 				Text.Scale
 			);
 		}
