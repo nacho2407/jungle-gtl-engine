@@ -25,6 +25,15 @@ void FConvexVolume::UpdateFromMatrix(const FMatrix& InViewProjectionMatrix)
 	}
 }
 
+// 로컬 좌표 상에서 각 변의 길이가 1인 OBB 기준 WorldMatrix로 ConvexVolume 생성
+void FConvexVolume::UpdateAsOBB(const FMatrix& InWorldMatrix)
+{
+	// 로컬 AABB 범위를 NDC 범위로 매핑
+	FMatrix Scaling = FMatrix::MakeScaleMatrix({2.0f, 2.0f, 1.0f});
+	Scaling.M[3][2] = 0.5f; // Z축을 0.5만큼 밀기
+
+	return UpdateFromMatrix(InWorldMatrix.GetInverse() * Scaling);
+}
 bool FConvexVolume::IntersectAABB(const FBoundingBox& Box) const
 {
 	for (const auto& P : Planes) {

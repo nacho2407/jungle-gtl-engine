@@ -6,10 +6,10 @@
 Texture2D BillboardTex : register(t0);
 SamplerState BillboardSampler : register(s0);
 
-PS_Input_Tex VS(VS_Input_PT input)
+PS_Input_Tex VS(VS_Input_PNCT input)
 {
     PS_Input_Tex output;
-    output.position = ApplyVP(input.position);
+    output.position = ApplyMVP(input.position);
     output.texcoord = input.texcoord;
     return output;
 }

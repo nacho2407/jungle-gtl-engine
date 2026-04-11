@@ -1,6 +1,6 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 #include "Render/Resource/ShaderManager.h"
 
 // ============================================================
@@ -9,17 +9,15 @@
 FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
-	bBatcherRendered = true; // 렌더링은 FontBatcher 경유, 프록시는 SelectionMask 전용
 }
 
 void FTextRenderSceneProxy::UpdateMesh()
 {
-	// Billboard::UpdateMesh의 CachedTexture 기반 분기를 피하고 FontBatcher 경로만 유지한다.
+	// SelectionMask 아웃라인 패스에서 사용할 mesh/shader
 	MeshBuffer = Owner->GetMeshBuffer();
-	// SelectionMask 아웃라인 패스에서 사용할 shader
 	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Pass = ERenderPass::Font;
-	bBatcherRendered = true;
+	Pass = ERenderPass::AlphaBlend;
+	bFontBatched = true;
 	UpdateSortKey();
 }
 
@@ -29,9 +27,9 @@ UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 }
 
 // ============================================================
-// UpdatePerViewport — 빌보드 행렬 계산 + SelectionMask용 아웃라인
+// UpdatePerViewport — 빌보드 행렬 계산 + 텍스트 데이터 캐싱
 // ============================================================
-void FTextRenderSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
+void FTextRenderSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	UTextRenderComponent* TextComp = GetTextRenderComponent();
 
@@ -42,7 +40,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		return;
 	}
 
-	if (!Bus.GetShowFlags().bBillboardText)
+	if (!Frame.ShowFlags.bBillboardText)
 	{
 		bVisible = false;
 		return;
@@ -51,31 +49,19 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	bVisible = TextComp->IsVisible();
 	if (!bVisible) return;
 
-	// 빌보드 행렬 (CollectEntries에서도 사용)
-	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
+	// 빌보드 행렬
+	FVector BillboardForward = Frame.CameraForward * -1.0f;
 	FMatrix RotMatrix;
-	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
+	RotMatrix.SetAxes(BillboardForward, Frame.CameraRight * -1.0f, Frame.CameraUp);
 	CachedBillboardMatrix = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale())
 		* RotMatrix * FMatrix::MakeTranslationMatrix(TextComp->GetWorldLocation());
+
+	// 텍스트 데이터 캐싱 (Renderer::PrepareBatchers에서 사용)
+	CachedText = TextComp->GetText();
+	CachedFontScale = TextComp->GetFontSize();
 
 	// SelectionMask용 아웃라인 행렬 (텍스트 너비·높이 반영)
 	FMatrix OutlineMatrix = TextComp->CalculateOutlineMatrix(CachedBillboardMatrix);
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(OutlineMatrix);
 	MarkPerObjectCBDirty();
-}
-
-// ============================================================
-// CollectEntries — FontBatcher용 FFontEntry 생성
-// ============================================================
-void FTextRenderSceneProxy::CollectEntries(FRenderBus& Bus)
-{
-	UTextRenderComponent* TextComp = GetTextRenderComponent();
-
-	FFontEntry Entry = {};
-	Entry.PerObject = FPerObjectConstants{ CachedBillboardMatrix };
-	Entry.PerObject.Color = TextComp->GetColor();
-	Entry.Font.Text = TextComp->GetText();
-	Entry.Font.Font = TextComp->GetFont();
-	Entry.Font.Scale = TextComp->GetFontSize();
-	Bus.AddFontEntry(std::move(Entry));
 }

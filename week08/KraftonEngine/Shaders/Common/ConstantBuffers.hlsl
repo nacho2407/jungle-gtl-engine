@@ -21,7 +21,8 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor;
 };
 
-// b2: 기즈모 전용
+// b2: 기즈모 전용 — 다른 셰이더가 b2를 재정의할 때 충돌 방지
+#ifndef SKIP_GIZMO_BUFFER
 cbuffer GizmoBuffer : register(b2)
 {
     float4 GizmoColorTint;
@@ -32,6 +33,7 @@ cbuffer GizmoBuffer : register(b2)
     uint AxisMask; // 비트 0=X, 1=Y, 2=Z
     uint3 _gizmoPad;
 };
+#endif
 
 // ── Outline 설정 (b3) ──
 cbuffer OutlinePostProcessCB : register(b3)
