@@ -67,6 +67,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
     float edgeH = abs(GetLuma(left) - GetLuma(right));
     float edgeV = abs(GetLuma(up) - GetLuma(down));
 
+    // edgeH > edgeV = 수평 edge
     int2 dir = (edgeH > edgeV) ? int2(1, 0) : int2(0, 1);
 
     // 방향 따라 샘플링
