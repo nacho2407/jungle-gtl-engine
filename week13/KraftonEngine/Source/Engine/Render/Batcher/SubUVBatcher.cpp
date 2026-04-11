@@ -110,6 +110,24 @@ void FSubUVBatcher::DrawBatch(ID3D11DeviceContext* Context)
     }
 }
 
+bool FSubUVBatcher::UploadBuffers(ID3D11DeviceContext* Context)
+{
+	if (Vertices.empty()) return false;
+
+	const uint32 VertexCount = static_cast<uint32>(Vertices.size());
+	const uint32 IndexCount  = static_cast<uint32>(Indices.size());
+
+	VB.EnsureCapacity(Device, VertexCount);
+	IB.EnsureCapacity(Device, IndexCount);
+	if (!VB.Update(Context, Vertices.data(), VertexCount)) return false;
+	if (!IB.Update(Context, Indices.data(), IndexCount)) return false;
+	return true;
+}
+
+ID3D11Buffer* FSubUVBatcher::GetVBBuffer() const { return VB.GetBuffer(); }
+uint32 FSubUVBatcher::GetVBStride() const { return VB.GetStride(); }
+ID3D11Buffer* FSubUVBatcher::GetIBBuffer() const { return IB.GetBuffer(); }
+
 FSubUVFrameInfo FSubUVBatcher::GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const
 {
     const float FrameW = 1.0f / static_cast<float>(Columns);
