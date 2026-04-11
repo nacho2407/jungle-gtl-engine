@@ -17,6 +17,9 @@ UHeightFogComponent* UHeightFogComponent::Duplicate()
     NewComp->HeightFalloff = HeightFalloff;
     NewComp->FogInscatteringColor = FogInscatteringColor;
     NewComp->FogHeight = FogHeight;
+    NewComp->FogStartDistance = FogStartDistance;
+    NewComp->FogCutoffDistance = FogCutoffDistance;
+    NewComp->FogMaxOpacity = FogMaxOpacity;
 
 	return NewComp;
 }
@@ -28,6 +31,9 @@ void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({"HeightFalloff", EPropertyType::Float, &HeightFalloff, 0.0f, 10.0f, 0.01f});
     OutProps.push_back({"FogInscatteringColor", EPropertyType::Vec4, &FogInscatteringColor});
     OutProps.push_back({"FogHeight", EPropertyType::Float, &FogHeight});
+    OutProps.push_back({"FogStartDistance", EPropertyType::Float, &FogStartDistance, 0.0f});
+    OutProps.push_back({"FogCutoffDistance", EPropertyType::Float, &FogCutoffDistance});
+    OutProps.push_back({"FogMaxOpacity", EPropertyType::Float, &FogMaxOpacity, 0.0f, 1.0f, 0.01f});
 }
 
 void UHeightFogComponent::PostEditProperty(const char* PropertyName)

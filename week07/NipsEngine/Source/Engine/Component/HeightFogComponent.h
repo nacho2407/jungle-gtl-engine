@@ -26,6 +26,15 @@ public:
 	void SetFogHeight(float InFogHeight) { FogHeight = InFogHeight; }
     float GetFogHeight() const { return FogHeight; }
 
+	void  SetFogStartDistance(float InFogStartDistance) { FogStartDistance = InFogStartDistance; }
+    float GetFogStartDistance() const { return FogStartDistance; }
+
+	void SetFogCutoffDistance(float InCutoffDistance) { FogCutoffDistance = InCutoffDistance; }
+    float GetFogCutoffDistance() const { return FogCutoffDistance; }
+
+	void SetFogMaxOpacity(float InFogMaxOpacity) { FogMaxOpacity = InFogMaxOpacity; }
+    float GetFogMaxOpacity() const { return FogMaxOpacity; }
+
 	// --- Property / Serialization ---
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
@@ -35,6 +44,9 @@ public:
     float FogDensity;
 	float HeightFalloff;
     float    FogHeight;
+    float FogStartDistance;
+    float FogCutoffDistance;
+    float FogMaxOpacity;
 
     // UPrimitiveComponent을(를) 통해 상속됨
     void UpdateWorldAABB() const override;
