@@ -16,24 +16,34 @@ FDefaultRenderPipeline::~FDefaultRenderPipeline()
 
 void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
-	Bus.Clear();
+	Frame.ClearViewportResources();
 
 	UWorld* World = Engine->GetWorld();
 	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	FScene* Scene = nullptr;
 	if (Camera)
 	{
 		FShowFlags ShowFlags;
 		EViewMode ViewMode = EViewMode::Lit;
 
-		Bus.SetCameraInfo(Camera);
-		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Frame.SetCameraInfo(Camera);
+		Frame.SetRenderSettings(ViewMode, ShowFlags);
 
-		Collector.CollectWorld(World, Bus);
-		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);
+		Scene = &World->GetScene();
+		Scene->ClearFrameData();
+
+		Renderer.BeginCollect(Frame, Scene->GetProxyCount());
+		Collector.CollectWorld(World, Frame, Renderer);
+		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, *Scene);
+		Renderer.BuildDynamicCommands(Frame, Scene);
+	}
+	else
+	{
+		Renderer.BeginCollect(Frame);
+		Renderer.BuildDynamicCommands(Frame, nullptr);
 	}
 
-	Renderer.PrepareBatchers(Bus);
 	Renderer.BeginFrame();
-	Renderer.Render(Bus);
+	Renderer.Render(Frame);
 	Renderer.EndFrame();
 }

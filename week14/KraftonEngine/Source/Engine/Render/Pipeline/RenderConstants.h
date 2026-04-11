@@ -23,7 +23,8 @@ namespace ECBSlot
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
-	constexpr uint32 SceneDepth = 5;
+	constexpr uint32 Decal = 5;		// b5: Decal properties (Color)
+	constexpr uint32 SceneDepth = 6;
 }
 
 //PerObject
@@ -56,6 +57,15 @@ struct FMaterialConstants
 	FVector4 SectionColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
+// SubUV UV region — atlas frame offset + size (b2 slot, shared with Gizmo)
+struct FSubUVRegionConstants
+{
+	float U = 0.0f;
+	float V = 0.0f;
+	float Width = 1.0f;
+	float Height = 1.0f;
+};
+
 struct FGizmoConstants
 {
 	FVector4 ColorTint;
@@ -83,94 +93,6 @@ struct FSceneDepthPConstants
 	uint32 Mode;
 };
 
-struct FAABBConstants
-{
-	FVector Min;
-	float Padding0;
-
-	FVector Max;
-	float Padding1;
-
-	FColor Color;
-};
-
-struct FGridConstants
-{
-	float GridSpacing;
-	int32 GridHalfLineCount;
-	float Padding0[2];
-};
-
-struct FFontConstants
-{
-	FString Text;							// 렌더링할 문자열 (프레임 내 유효)
-	const FFontResource* Font = nullptr;
-	float Scale = 1.0f;
-
-	uint32 bScreenSpace = 0;	// true면 스크린 공간에서 렌더링, false면 월드 공간
-	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);		// 스크린 공간에서의 위치 (bScreenSpace가 true일 때 사용)
-};
-
-struct FSubUVConstants
-{
-	const FParticleResource* Particle = nullptr;
-	uint32 FrameIndex = 0;
-	float Width = 1.0f;
-	float Height = 1.0f;
-};
-
-struct FBillboardConstants
-{
-	const FTextureResource* Texture = nullptr;
-	float Width  = 1.0f;
-	float Height = 1.0f;
-};
-
-// ============================================================
-// Batcher Entry — 각 Batcher가 필요한 데이터만 담는 경량 구조체
-// ============================================================
-
-struct FFontEntry
-{
-	FPerObjectConstants PerObject;
-	FFontConstants Font;
-};
-
-struct FSubUVEntry
-{
-	FPerObjectConstants PerObject;
-	FSubUVConstants SubUV;
-};
-
-struct FBillboardEntry
-{
-	FPerObjectConstants PerObject;
-	FBillboardConstants Billboard;
-};
-
-struct FAABBEntry
-{
-	FAABBConstants AABB;
-};
-
-struct FGridEntry
-{
-	FGridConstants Grid;
-};
-
-struct FDebugLineEntry
-{
-	FVector Start;
-	FVector End;
-	FColor  Color;
-};
-
-// 스크린 공간 텍스트 — Overlay Stats 등에서 사용
-struct FOverlayStatLine
-{
-	FString Text;
-	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
-};
 
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
