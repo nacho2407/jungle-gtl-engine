@@ -138,6 +138,7 @@ FRenderTargetSet FD3DDevice::GetBackBufferRenderTargets() const
 {
 	FRenderTargetSet Targets;
 	Targets.SceneColorRTV = FrameBufferRTV.Get();
+        
 	Targets.SelectionMaskRTV = SelectionMaskRTV.Get();
 	Targets.SelectionMaskSRV = SelectionMaskSRV.Get();
 	Targets.DepthStencilView = DepthStencilView.Get();
