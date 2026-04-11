@@ -24,7 +24,7 @@ public:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
-	void CollectEditorVisualizations(FRenderBus& RenderBus) const override;
+	void CollectEditorVisualizations(FScene& Scene) const override;
 
 	void SetVelocity(const FVector& InVelocity) { Velocity = InVelocity; }
 	const FVector& GetVelocity() const { return Velocity; }
