@@ -5,6 +5,8 @@
 #include "Geometry/OBB.h"
 #include <unordered_set>
 
+enum class EWorldType : uint32;
+
 class UWorld;
 class AActor;
 class UPrimitiveComponent;
@@ -52,9 +54,9 @@ private:
 
 	void CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,
 	                             FRenderBus& RenderBus);
-	void CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
+	void CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType);
 	bool CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
-	void CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
+	void CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType);
 	void CollectBVHInternalNodeAABBs(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
 	                                 std::unordered_set<int32>& SeenNodeIndices);
 	void CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus);
