@@ -42,8 +42,11 @@ public:
 	// 커맨드 추가 — 기본값으로 초기화된 FDrawCommand 참조 반환
 	FDrawCommand& AddCommand();
 
-	// Pass → SortKey 순 정렬 (상태 전환 최소화)
+	// Pass → SortKey 순 정렬 + 패스별 오프셋 빌드
 	void Sort();
+
+	// 패스별 커맨드 범위 [Start, End)
+	void GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const;
 
 	// StateCache 기반 GPU 제출 (전체)
 	// DefaultSampler: 텍스처 바인딩 시 사용할 s0 샘플러
@@ -75,4 +78,5 @@ private:
 		ID3D11SamplerState* DefaultSampler);
 
 	TArray<FDrawCommand> Commands;
+	uint32 PassOffsets[(uint32)ERenderPass::MAX + 1] = {};
 };

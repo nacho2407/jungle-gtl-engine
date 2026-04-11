@@ -220,21 +220,13 @@ void FRenderer::Render(const FFrameContext& Frame)
 		UpdateFrameBuffer(Context, Frame);
 	}
 
-	// 커맨드 정렬 (Pass → SortKey 순)
+	// 커맨드 정렬 + 패스별 오프셋 빌드
 	DrawCommandList.Sort();
 
-	// 정렬된 커맨드를 패스 순서에 따라 제출
-	const auto& Cmds = DrawCommandList.GetCommands();
-	uint32 CmdIdx = 0;
-
+	// 패스 순서에 따라 제출
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		uint32 PassCmdStart = CmdIdx;
-		while (CmdIdx < Cmds.size() && Cmds[CmdIdx].Pass == CurPass)
-			++CmdIdx;
-		const bool bHasCmds = (CmdIdx > PassCmdStart);
 
 		// PostProcess는 특수 처리 (DSV unbind/rebind 필요)
 		if (CurPass == ERenderPass::PostProcess)
@@ -246,13 +238,15 @@ void FRenderer::Render(const FFrameContext& Frame)
 			continue;
 		}
 
-		if (!bHasCmds) continue;
+		uint32 Start, End;
+		DrawCommandList.GetPassRange(CurPass, Start, End);
+		if (Start >= End) continue;
 
 		const char* PassName = GetRenderPassName(CurPass);
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
-		DrawCommandList.SubmitRange(PassCmdStart, CmdIdx, Device, Context, Resources.DefaultSampler);
+		DrawCommandList.SubmitRange(Start, End, Device, Context, Resources.DefaultSampler);
 	}
 
 	DrawCommandList.Reset();
@@ -326,37 +320,34 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			Cmd.Rasterizer = ERasterizerState::WireFrame;
 	};
 
-	// --- Editor Lines ---
+	// --- Editor Lines + Grid Lines → EditorLines 패스 ---
+	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
+
 	if (EditorLines.GetLineCount() > 0 && EditorLines.UploadBuffers(Ctx))
 	{
-		FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
-
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		ApplyPassState(Cmd, ERenderPass::Editor);
+		ApplyPassState(Cmd, ERenderPass::EditorLines);
 		Cmd.Shader      = EditorShader;
 		Cmd.RawVB       = EditorLines.GetVBBuffer();
 		Cmd.RawVBStride = EditorLines.GetVBStride();
 		Cmd.RawIB       = EditorLines.GetIBBuffer();
 		Cmd.IndexCount   = EditorLines.GetIndexCount();
-		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Editor, EditorShader, nullptr, nullptr);
+		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
 	}
 
-	// --- Grid Lines ---
 	if (GridLines.GetLineCount() > 0 && GridLines.UploadBuffers(Ctx))
 	{
-		FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
-
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		ApplyPassState(Cmd, ERenderPass::Grid);
+		ApplyPassState(Cmd, ERenderPass::EditorLines);
 		Cmd.Shader      = EditorShader;
 		Cmd.RawVB       = GridLines.GetVBBuffer();
 		Cmd.RawVBStride = GridLines.GetVBStride();
 		Cmd.RawIB       = GridLines.GetIBBuffer();
 		Cmd.IndexCount   = GridLines.GetIndexCount();
-		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Grid, EditorShader, nullptr, nullptr);
+		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
 	}
 
-	// --- Font (World + Screen) ---
+	// --- Font (World → AlphaBlend, Screen → OverlayFont) ---
 	{
 		const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 		if (FontRes && FontRes->IsLoaded())
@@ -366,7 +357,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				FShader* FontShader = FShaderManager::Get().GetShader(EShaderType::Font);
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				ApplyPassState(Cmd, ERenderPass::Font);
+				ApplyPassState(Cmd, ERenderPass::AlphaBlend);
 				Cmd.Shader      = FontShader;
 				Cmd.RawVB       = FontGeometry.GetWorldVBBuffer();
 				Cmd.RawVBStride = FontGeometry.GetWorldVBStride();
@@ -374,7 +365,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.IndexCount   = FontGeometry.GetWorldIndexCount();
 				Cmd.DiffuseSRV   = FontRes->SRV;
 				Cmd.Sampler      = FontGeometry.GetSampler();
-				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Font, FontShader, nullptr, FontRes->SRV);
+				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::AlphaBlend, FontShader, nullptr, FontRes->SRV);
 			}
 
 			if (FontGeometry.GetScreenQuadCount() > 0 && FontGeometry.UploadScreenBuffers(Ctx))
@@ -405,18 +396,14 @@ void FRenderer::InitializePassRenderStates()
 	auto& S = PassRenderStates;
 
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,       EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true };
-	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
-	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Billboard] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Opaque]         = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
+	S[(uint32)E::AlphaBlend]     = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
+	S[(uint32)E::SelectionMask]  = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::EditorLines]    = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
+	S[(uint32)E::PostProcess]    = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoOuter]     = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoInner]     = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::OverlayFont]    = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
 // ============================================================
