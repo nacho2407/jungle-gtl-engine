@@ -1,5 +1,7 @@
 ﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Resource/ShaderManager.h"
 
@@ -101,4 +103,17 @@ void FPrimitiveSceneProxy::UpdateSortKey()
 	SortKey = (static_cast<uint64>(reinterpret_cast<uintptr_t>(Shader) >> 4) << 32)
 		| (static_cast<uint64>(reinterpret_cast<uintptr_t>(MeshBuffer) >> 4) & 0xFFFFFFFF);
 	MaterialSortKey = HashMaterialLayout(SectionDraws);
+}
+
+void FPrimitiveSceneProxy::CollectSelectedVisuals(FScene& Scene) const
+{
+	if (!Owner) return;
+	AActor* Actor = Owner->GetOwner();
+	if (!Actor) return;
+
+	for (UActorComponent* Comp : Actor->GetComponents())
+	{
+		if (Comp)
+			Comp->ContributeSelectedVisuals(Scene);
+	}
 }
