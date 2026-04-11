@@ -141,9 +141,6 @@ private:
 	uint32 ViewportRenderTargetWidth = 0;
 	uint32 ViewportRenderTargetHeight = 0;
 
-public:
-
-
 private:
 	void CreateDeviceAndSwapChain(HWND InHWindow);
 	void ReleaseDeviceAndSwapChain();
