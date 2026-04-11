@@ -64,15 +64,15 @@ public:
 	// DeltaPitch: local right(Y) 기준 pitch 입력값(도)
 	void Rotate(float DeltaYaw, float DeltaPitch);
 
+	FQuat GetRelativeQuat() const;
+	void SetRelativeRotationQuat(const FQuat& NewRotationQuat);
+
 protected:
     /** @brief Hook fired when this component becomes transform-dirty. */
     virtual void OnTransformDirty() {}
 
 	FRotator GetRelativeRotator() const;
-	FQuat GetRelativeQuat() const;
-
 	void SetRelativeRotationRotator(const FRotator& NewRotation);
-	void SetRelativeRotationQuat(const FQuat& NewRotationQuat);
 
 	// yaw는 world-up, pitch는 local-right 기준으로 적용
 	void AddRelativeYaw(float DeltaYawDegrees);
