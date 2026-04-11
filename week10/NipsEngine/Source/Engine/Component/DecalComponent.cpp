@@ -15,31 +15,25 @@ UDecalComponent::UDecalComponent()
 
 UDecalComponent* UDecalComponent::Duplicate()
 {
-	UDecalComponent* NewComp = UObjectManager::Get().CreateObject<UDecalComponent>();
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
-	NewComp->SetOwner(nullptr);
-	
-	NewComp->SetRelativeLocation(this->GetRelativeLocation());
-	NewComp->SetRelativeRotation(this->GetRelativeRotation());
-	NewComp->SetRelativeScale(this->GetRelativeScale());
-	
-	NewComp->SetVisibility(this->IsVisible());
+    UDecalComponent* NewComp = UObjectManager::Get().CreateObject<UDecalComponent>();
 
-	NewComp->Material = this->Material;
-	NewComp->DecalSize = this->DecalSize;
-	NewComp->DecalColor = this->DecalColor;
-	
-	NewComp->FadeStartDelay = this->FadeStartDelay;
-	NewComp->FadeDuration = this->FadeDuration;
-	NewComp->FadeInStartDelay = this->FadeInStartDelay;
-	NewComp->FadeInDuration = this->FadeInDuration;
-	NewComp->bDestroyOwnerAfterFade = this->bDestroyOwnerAfterFade;
+    // GetEditableProperties 체인(ActorComponent + SceneComponent + PrimitiveComponent +
+    //   Size, Color, Fade 파라미터, DestroyOwnerAfterFade) 일괄 복사
+    NewComp->CopyPropertiesFrom(this);
 
-	NewComp->DuplicateSubObjects();
+    NewComp->SetOwner(nullptr);
+    NewComp->bTransformDirty = true;
+    NewComp->ParentComponent = nullptr;
+    NewComp->ChildComponents.clear();
 
-	return NewComp;
+    // Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
+    // (얕은 복사 — ResourceManager 가 소유)
+    NewComp->Material = this->Material;
+    // LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
+
+    NewComp->DuplicateSubObjects();
+
+    return NewComp;
 }
 
 void UDecalComponent::BeginPlay()

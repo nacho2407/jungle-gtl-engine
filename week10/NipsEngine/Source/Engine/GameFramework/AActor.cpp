@@ -53,19 +53,24 @@ static USceneComponent* DuplicateSubTree(
 	return DuplicatedComp;
 }
 
-/* 
+void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    OutProps.push_back({ "Visible",        EPropertyType::Bool, &bVisible });
+    OutProps.push_back({ "Active",         EPropertyType::Bool, &bIsActive });
+    OutProps.push_back({ "Tick In Editor", EPropertyType::Bool, &bTickInEditor });
+    OutProps.push_back({ "Pending Location",EPropertyType::Vec3, &PendingActorLocation });
+}
+
+/*
 * @brief 액터들이 가진 여러 컴포넌트는 부모-자식 관계가 있을 수 있습니다.
 * 복제되는 컴포넌트들은 복제된 자기 부모 컴포넌트의 포인터가 어떤 값일지 모르기 때문에,
-* 액터에서 복제할 때 이를 일일이 설정해 줘야 합니다. 
+* 액터에서 복제할 때 이를 일일이 설정해 줘야 합니다.
 */
 AActor* AActor::Duplicate()
 {
 	AActor* NewActor = UObjectManager::Get().CreateObject<AActor>();
 
-	NewActor->SetVisible(this->IsVisible());
-	NewActor->PendingActorLocation = this->PendingActorLocation;
-	NewActor->bIsActive = this->bIsActive;
-	NewActor->bTickInEditor = this->bTickInEditor;
+	NewActor->CopyPropertiesFrom(this);
 
 	// MovementComponent 등 일반 컴포넌트들의 참조를 복원하기 위한 맵을 선언합니다.
 	TMap<USceneComponent*, USceneComponent*> ComponentMap;

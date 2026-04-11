@@ -16,6 +16,12 @@ public:
 	virtual UWorld* Duplicate() override;
 	virtual UWorld* DuplicateSubObjects() override;
 
+	// 프로퍼티 시스템 — UObject 에서 상속
+	// UWorld 는 현재 에디터에 노출할 스칼라 프로퍼티가 없습니다.
+	// (PersistentLevel 은 DuplicateSubObjects 에서 별도 처리)
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
+	void PostEditProperty(const char* PropertyName) override {}
+
     // Actor lifecycle
     template<typename T>
     T* SpawnActor()

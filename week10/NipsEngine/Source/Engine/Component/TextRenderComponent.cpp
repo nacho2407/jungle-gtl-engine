@@ -14,40 +14,25 @@ UTextRenderComponent* UTextRenderComponent::Duplicate()
 {
     UTextRenderComponent* NewComp = UObjectManager::Get().CreateObject<UTextRenderComponent>();
 
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
+    NewComp->CopyPropertiesFrom(this);
+
     NewComp->SetOwner(nullptr);
-    
-    NewComp->SetRelativeLocation(this->GetRelativeLocation());
-    NewComp->SetRelativeRotation(this->GetRelativeRotation());
-    NewComp->SetRelativeScale(this->GetRelativeScale());
-    
-    NewComp->SetVisibility(this->IsVisible());
+    NewComp->bTransformDirty = true;
+    NewComp->ParentComponent = nullptr;
+    NewComp->ChildComponents.clear();
 
-    // 텍스트 및 폰트 리소스 얕은 복사
-    NewComp->Text = this->Text;
-    NewComp->FontName = this->FontName;
-    NewComp->CachedFont = this->CachedFont;
-
-    // 외형(Appearance) 프로퍼티 복사
-    NewComp->Color = this->Color;
-    NewComp->FontSize = this->FontSize;
-    NewComp->Spacing = this->Spacing;
-    NewComp->CharWidth = this->CharWidth;
+    // GetEditableProperties 에 노출되지 않은 나머지 private 필드를 직접 복사합니다.
+    NewComp->Color      = this->Color;
+    NewComp->Spacing    = this->Spacing;
+    NewComp->CharWidth  = this->CharWidth;
     NewComp->CharHeight = this->CharHeight;
+    NewComp->RenderSpace= this->RenderSpace;
+    NewComp->HAlign     = this->HAlign;
+    NewComp->VAlign     = this->VAlign;
+    NewComp->ScreenX    = this->ScreenX;
+    NewComp->ScreenY    = this->ScreenY;
 
-    // 공간(Space) 및 정렬(Alignment) 복사
-    NewComp->RenderSpace = this->RenderSpace;
-    NewComp->HAlign = this->HAlign;
-    NewComp->VAlign = this->VAlign;
-
-    NewComp->ScreenX = this->ScreenX;
-    NewComp->ScreenY = this->ScreenY;
-
-	NewComp->DuplicateSubObjects();
+    NewComp->DuplicateSubObjects();
 
     return NewComp;
 }
