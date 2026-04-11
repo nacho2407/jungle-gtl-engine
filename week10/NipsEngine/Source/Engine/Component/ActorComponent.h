@@ -40,6 +40,9 @@ public:
 	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
 	bool IsTransient() const { return bTransient; }
 
+	void SetEditorOnly(bool bInEditorOnly) { bIsEditorOnly = bInEditorOnly; }
+	bool IsEditorOnly() const { return bIsEditorOnly; }
+
 protected:
 	virtual void TickComponent(float DeltaTime) {}
 
@@ -51,6 +54,7 @@ private:
 	bool bAutoActivate = true;
 	bool bCanEverTick = true;
 	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
+	bool bIsEditorOnly = false;
 };
 
 

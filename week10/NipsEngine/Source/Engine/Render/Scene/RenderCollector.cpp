@@ -182,7 +182,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 			}
 		}
 
-		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
+		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
 	}
 
 }
@@ -211,7 +211,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 		}
 
 		++LastCullingStats.BVHPassedPrimitiveCount;
-		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
 	}
 
 	std::unordered_set<UPrimitiveComponent*> CollectedCameraDependentPrimitives;
@@ -250,7 +250,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			}
 
 			++LastCullingStats.FallbackPassedPrimitiveCount;
-			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
 		}
 	}
 }
@@ -329,13 +329,13 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 	}
 }
 
-void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType)
 {
 	if (!Actor->IsVisible()) return;
 
 	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 	{
-		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
 	}
 }
 
@@ -349,8 +349,13 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-
 		if (!primitiveComponent->IsVisible()) continue;
+		if (primitiveComponent->IsEditorOnly())
+		{
+			UWorld* World = Actor->GetWorld();
+			if (World && World->GetWorldType() != EWorldType::Editor)
+				continue;
+		}
 
 		FMeshBuffer* MeshBuffer = nullptr;
 		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
@@ -433,9 +438,10 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	return bHasSelectionMask;
 }
 
-void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType)
 {
 	if (!Primitive->IsVisible()) return;
+	if (Primitive->IsEditorOnly() && WorldType != EWorldType::Editor) return;
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
@@ -670,7 +676,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		}
 
 		LastDecalStats.TotalDecalCount += 1;
-		LastDecalStats.CollectTimeMS += RenderDecalScope.Finish();
+		LastDecalStats.CollectTimeMS += static_cast<int32>(RenderDecalScope.Finish());
 		break;
 	}
 	
