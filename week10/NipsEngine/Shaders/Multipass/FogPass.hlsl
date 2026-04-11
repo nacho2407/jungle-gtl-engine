@@ -62,7 +62,9 @@ float4 mainPS(VSOutput input) : SV_TARGET
         fogAmount = saturate(fogAmount);       
     }
     
-    fogAmount = min(fogAmount, FogMaxOpacity);
+    float fogOpacity = 1 - fogAmount;
+    fogOpacity = min(fogOpacity, FogMaxOpacity);
+    fogAmount = 1 - fogOpacity;
 
     return lerp(lightColor, FogColor, 1 - fogAmount);
 }
