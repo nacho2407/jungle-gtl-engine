@@ -51,6 +51,14 @@ cbuffer OutlineConstants : register(b5)
     float OutlinePadding0;
 };
 
+cbuffer FogBuffer : register(b9)
+{
+    float4 FogColor;
+    float FogDensity;
+    float HeightFalloff;
+    float FogHeight;
+};
+
 float4 ApplyMVP(float3 pos)
 {
     float4 world = mul(float4(pos, 1.0f), Model);

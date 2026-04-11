@@ -11,7 +11,7 @@
 #include "ImGui/imgui_impl_win32.h"
 
 #include "Render/Renderer/Renderer.h"
-#include "Engine/Core/InputSystem.h"
+#include "Engine/Input/InputSystem.h"
 namespace
 {
 	void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
@@ -239,8 +239,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
 		GuiState.ViewportHostRect = HostRect;
 		EditorEngine->GetViewportLayout().SetHostRect(HostRect);
 
-        if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetCurrentSceneSRV())
-		// if (ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetFD3DDevice().GetViewportSceneLightSRV())
+        if (const ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetCurrentSceneSRV())
         {
 			ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
 			ImDrawList* DrawList = ImGui::GetWindowDrawList();

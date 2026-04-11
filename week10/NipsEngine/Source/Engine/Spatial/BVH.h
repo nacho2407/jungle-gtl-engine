@@ -235,6 +235,7 @@ class FBVH
     void RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
                   TArray<float>& OutTs, FRayQueryScratch& Scratch) const;
 
+
     // State -----------------------------------------------------------------
 
     /**

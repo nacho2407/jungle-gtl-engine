@@ -35,6 +35,8 @@ public:
 	FShowFlags GetShowFlags() const { return ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
+	float GetFXAAThreshold() const { return FXAAThreshold; }
+	void SetFXAAThreshold(float InThreshold) { FXAAThreshold = InThreshold; }
 	bool IsOrthographic() const { return Proj.M[3][3] == 1.0f; }
 
 private:
@@ -51,5 +53,6 @@ private:
 	EViewMode ViewMode;
 	FShowFlags ShowFlags;
 	FVector WireframeColor = FVector(1.0f, 1.0f, 1.0f);
+	float FXAAThreshold = 0.1f;
 };
 

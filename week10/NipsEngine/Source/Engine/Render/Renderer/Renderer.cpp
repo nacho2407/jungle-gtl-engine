@@ -47,12 +47,25 @@ void FRenderer::Create(HWND hWindow)
     Resources.LightPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS",
                                         nullptr, 0);
 
+	// 8. Decal
+	Resources.DecalShader.Create(Device.GetDevice(), L"Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+
+	// 9. Fog Pass
+    Resources.FogPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS",
+                                     nullptr, 0);
+
+	// 10. FXAA Pass
+	Resources.FXAAShader.Create(Device.GetDevice(), L"Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
 	Resources.StaticMeshConstantBuffer.Create(Device.GetDevice(), sizeof(FStaticMeshConstants));
+	Resources.DecalConstantBuffer.Create(Device.GetDevice(), sizeof(FDecalConstants));
+    Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogConstants));
+    Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
 
 	// TODO : SamplerState 관리
 	D3D11_SAMPLER_DESC SampDesc = {};
@@ -61,7 +74,6 @@ void FRenderer::Create(HWND hWindow)
 	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	Device.GetDevice()->CreateSamplerState(&SampDesc, Resources.MeshSamplerState.ReleaseAndGetAddressOf());
-
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -88,7 +100,11 @@ void FRenderer::Release()
 	Resources.EditorShader.Release();
 	Resources.SelectionMaskShader.Release();
 	Resources.OutlineShader.Release();
-	Resources.StaticMeshShader.Release();
+    Resources.StaticMeshShader.Release();
+    Resources.FogPassShader.Release();
+    Resources.DecalShader.Release();
+    Resources.FXAAShader.Release();
+    Resources.LightPassShader.Release();
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
@@ -96,7 +112,11 @@ void FRenderer::Release()
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
 	Resources.StaticMeshConstantBuffer.Release();
+    Resources.FogPassConstantBuffer.Release();
+	Resources.DecalConstantBuffer.Release();
+    Resources.FXAAConstantBuffer.Release();
     Resources.LightPassConstantBuffer.Release();
+
 	Resources.MeshSamplerState.Reset();
 
 	FGPUProfiler::Get().Shutdown();
@@ -162,6 +182,7 @@ void FRenderer::UseBackBufferRenderTargets()
         ID3D11RenderTargetView* RTV =
                 CurrentRenderTargets.SceneColorRTV; // Back Buffer 의 경우 SceneColorRTV 가 FinalRTV 역할
         SceneFinalRTV = RTV;
+        
 		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, CurrentRenderTargets.DepthStencilView);
 		Device.SetSubViewport(0, 0,
 			static_cast<int32>(CurrentRenderTargets.Width),
@@ -176,13 +197,6 @@ void FRenderer::UseViewportRenderTargets()
 	{
 		UseBackBufferRenderTargets();
 		return;
-	}
-	else
-	{
-		// 현재는 Light 에서 나온 RTV 를 다른 모든 패스에서 사용하므로 SceneFinalRTV 로 설정
-		// TODO: 확장성을 고려할 필요 있음
-        SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
-        SceneFinalSRV = CurrentRenderTargets.SceneLightSRV;
 	}
 
 	Device.SetSubViewport(0, 0,
@@ -204,9 +218,22 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		if (CurPass == ERenderPass::Light)
 		{
 			// Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
-            ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
-
 			ExecuteLightPass(InRenderBus, Context);
+		}
+        else if (CurPass == ERenderPass::Fog)
+		{
+            const auto& Commands = InRenderBus.GetCommands(CurPass);
+            if (Commands.empty())
+                continue;
+			else
+            {
+                ExecuteFogPass(Commands, InRenderBus, Context);
+			}
+        }
+		else if (CurPass == ERenderPass::FXAA)
+		{
+            // Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
+            ExecuteFXAAPass(InRenderBus, Context);
 		}
 		else
 		{
@@ -238,10 +265,20 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
-    S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
+	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
+	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                             ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
                             &Resources.LightPassShader,    false};	
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
+    
+	S[(uint32)E::Fog] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
+                           ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+                           &Resources.FogPassShader,    false};
+
+    S[(uint32)E::FXAA] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
+                            ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+                            &Resources.FXAAShader,      false};
+	
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.SelectionMaskShader, false };
 	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true };
 	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    false };
@@ -266,6 +303,10 @@ void FRenderer::InitializePassBatchers()
 			if (Cmd.Type == ERenderCommandType::DebugBox)
 			{
 				EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
+			}
+			else if (Cmd.Type == ERenderCommandType::DebugOBB)
+			{
+				EditorLineBatcher.AddOBB(FOBB{ Cmd.Constants.OBB.Center, Cmd.Constants.OBB.Extents, Cmd.Constants.OBB.Rotation }, Cmd.Constants.OBB.Color);
 			}
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
@@ -449,9 +490,136 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
 
     Context->Draw(3, 0);
 
-    // 6SRV 해제 (중요!!)
+    // SRV 해제 (중요!!)
     ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr};
     Context->PSSetShaderResources(0, 3, nullSRVs);
+}
+
+/**
+ * TODO: 
+ * 현재 Light -> Fog -> FXAA 라는 가정을 바탕으로 작성되어 있는데 패스 간 의존성을 없애야함
+ * Pass 전후 SRV, RTV 갱신에 대한 구조를 새로 짜야함
+ */
+void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
+                               ID3D11DeviceContext*                                    Context)
+{
+    if (!CurrentRenderTargets.SceneLightRTV || !CurrentRenderTargets.SceneLightSRV ||
+        !CurrentRenderTargets.SceneFogRTV || !CurrentRenderTargets.SceneFogSRV ||
+        !CurrentRenderTargets.SceneFXAARTV || !CurrentRenderTargets.SceneFXAASRV)
+    {
+        return;
+    }
+
+    ApplyPassRenderState(ERenderPass::Fog, Context, Bus.GetViewMode());
+    const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Fog];
+
+    Resources.FogPassShader.Bind(Context);
+
+    // Fog 누적: Light는 read-only로 유지하고 Fog/FXAA를 임시 ping-pong 버퍼로 사용한다.
+    // 마지막 결과는 항상 SceneFog에 남도록 시작 타깃을 커맨드 개수 parity로 결정한다.
+    const bool bOddCount = (Commands.size() & 1u) != 0;
+    ID3D11ShaderResourceView* InputSceneSRV = CurrentRenderTargets.SceneLightSRV;
+    ID3D11RenderTargetView* OutputSceneRTV = bOddCount ? CurrentRenderTargets.SceneFogRTV : CurrentRenderTargets.SceneFXAARTV;
+
+    const FVector CameraPosition = Bus.GetView().GetInverse().GetOrigin();
+    FEditorConstants EditorConstants = {};
+    EditorConstants.CameraPosition = CameraPosition;
+    Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
+    ID3D11Buffer* cb4 = Resources.EditorConstantBuffer.GetBuffer();
+    Context->VSSetConstantBuffers(4, 1, &cb4);
+    Context->PSSetConstantBuffers(4, 1, &cb4);
+
+    for (const auto& Cmd : Commands)
+    {
+        EDepthStencilState TargetDepth =
+            (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1)) ? Cmd.DepthStencilState : State.DepthStencil;
+        Device.SetDepthStencilState(TargetDepth);
+
+        // Fog는 소스 장면을 포함해 최종색을 셰이더에서 계산하므로 블렌딩은 Opaque로 고정
+        Device.SetBlendState(EBlendState::Opaque);
+
+        ID3D11RenderTargetView* RTVs[MaxRTVCount] = { OutputSceneRTV, nullptr, nullptr };
+        Context->OMSetRenderTargets(MaxRTVCount, RTVs, nullptr);
+
+        ID3D11ShaderResourceView* srvs[] = {
+            CurrentRenderTargets.SceneColorSRV,
+            CurrentRenderTargets.SceneNormalSRV,
+            CurrentRenderTargets.SceneDepthSRV,
+            InputSceneSRV,
+            CurrentRenderTargets.SceneWorldPosSRV
+        };
+        Context->PSSetShaderResources(0, 5, srvs);
+
+        FFogConstants FogConstants = Cmd.Constants.Fog;
+        Resources.FogPassConstantBuffer.Update(Context, &FogConstants, sizeof(FFogConstants));
+        ID3D11Buffer* cb9 = Resources.FogPassConstantBuffer.GetBuffer();
+        Context->VSSetConstantBuffers(9, 1, &cb9);
+        Context->PSSetConstantBuffers(9, 1, &cb9);
+
+        // 풀스크린 triangle
+        Context->IASetInputLayout(nullptr);
+        Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+        Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+        Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        Context->Draw(3, 0);
+
+        ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr, nullptr};
+        Context->PSSetShaderResources(0, 5, nullSRVs);
+
+        // 다음 Fog 커맨드 입력/출력 swap
+        if (OutputSceneRTV == CurrentRenderTargets.SceneFogRTV)
+        {
+            InputSceneSRV = CurrentRenderTargets.SceneFogSRV;
+            OutputSceneRTV = CurrentRenderTargets.SceneFXAARTV;
+        }
+        else
+        {
+            InputSceneSRV = CurrentRenderTargets.SceneFXAASRV;
+            OutputSceneRTV = CurrentRenderTargets.SceneFogRTV;
+        }
+    }
+
+    SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
+    SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
+}
+
+void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Context) 
+{
+    ID3D11ShaderResourceView* srvs[] = {SceneFinalSRV.Get()}; // FXAA 패스에서는 최종 조명 결과만 필요
+    ApplyPassRenderState(ERenderPass::FXAA, Context, Bus.GetViewMode());
+
+    const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::FXAA];
+
+    Device.SetDepthStencilState(State.DepthStencil);
+    Device.SetBlendState(State.Blend);
+
+    Context->PSSetShaderResources(0, 1, srvs);
+
+	FFXAAConstants FXAAConstants = {};
+    FXAAConstants.InvResolution[0] = (CurrentRenderTargets.Width > 0.0f) ? (1.0f / CurrentRenderTargets.Width) : 0.0f;
+    FXAAConstants.InvResolution[1] = (CurrentRenderTargets.Height > 0.0f) ? (1.0f / CurrentRenderTargets.Height) : 0.0f;
+    FXAAConstants.Threshold = std::clamp(Bus.GetFXAAThreshold(), 0.0f, 1.0f);
+    Resources.FXAAConstantBuffer.Update(Context, &FXAAConstants, sizeof(FFXAAConstants));
+    ID3D11Buffer* cb10 = Resources.FXAAConstantBuffer.GetBuffer();
+
+	Context->PSSetConstantBuffers(10, 1, &cb10);
+
+    Resources.FXAAShader.Bind(Context);
+
+    /**
+     * 풀스크린 쿼드에 그리는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
+     * 버퍼 바인딩이 필요 없다.
+     */
+    Context->IASetInputLayout(nullptr);
+    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    Context->Draw(3, 0);
+
+    // SRV 해제 (중요!!)
+    ID3D11ShaderResourceView* nullSRVs[] = {nullptr};
+    Context->PSSetShaderResources(0, 1, nullSRVs);
 }
 
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
@@ -462,19 +630,37 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	/** Pass 별 RTV 설정 */
 	switch (Pass)
 	{
+		/**
+		* TODO: Final 로 쓰이는 경로가 Light, Fog 만 있어서 현재는 해당 패스들만 Final 기록 (추후 확장 필요)
+		* 
+		*/
         case ERenderPass::Opaque:
+		case ERenderPass::Decal:
             RTVs[0] = CurrentRenderTargets.SceneColorRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
+            RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
             break;
         case ERenderPass::Light:
 			RTVs[0] = CurrentRenderTargets.SceneLightRTV;
+            SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
+            SceneFinalSRV = CurrentRenderTargets.SceneLightSRV;
+            break;
+        case ERenderPass::Fog:
+            RTVs[0] = CurrentRenderTargets.SceneFogRTV;
+            SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
+            SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
             break;
         case ERenderPass::SelectionMask:
             RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;
             break;
+        case ERenderPass::FXAA:
+            RTVs[0] = CurrentRenderTargets.SceneFXAARTV; // FXAA 결과도 최종 출력이므로 SceneFinalRTV 사용
+            SceneFinalRTV = CurrentRenderTargets.SceneFXAARTV;
+            SceneFinalSRV = CurrentRenderTargets.SceneFXAASRV;
+            break;
         default:
 			// 나머지 Pass (UI, ...) 들은 하나의 RTV 에 그린다 가정
-            RTVs[0] = SceneFinalRTV;
+            RTVs[0] = SceneFinalRTV.Get();
             break;
 	}
 
@@ -484,6 +670,12 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
         case ERenderPass::Light:
             DSV = nullptr;
 			break;
+        case ERenderPass::Fog:
+            DSV = nullptr;
+            break;
+        case ERenderPass::FXAA:
+			DSV = nullptr;
+            break;
         default:
             DSV = CurrentRenderTargets.DepthStencilView;
             break;
@@ -551,6 +743,7 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	}
 
     case ERenderCommandType::StaticMesh:
+	{
         Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
         
         if (bTypeChanged)
@@ -582,6 +775,31 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
         }
         break;
     }
+
+	case ERenderCommandType::Decal:
+	{
+		Resources.DecalConstantBuffer.Update(Context, &InCmd.Constants.Decal, sizeof(FDecalConstants));
+
+		if (bTypeChanged)
+		{
+			ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(1, 1, &cb1);
+			Context->PSSetConstantBuffers(1, 1, &cb1);
+
+			ID3D11Buffer* cb8 = Resources.DecalConstantBuffer.GetBuffer();
+			Context->VSSetConstantBuffers(8, 1, &cb8);
+			Context->PSSetConstantBuffers(8, 1, &cb8);
+
+			// 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
+			ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
+			Context->PSSetSamplers(0, 1, Samplers);
+		}
+
+		ID3D11ShaderResourceView* SRVs[1] = { InCmd.Constants.Decal.DiffuseSRV };
+		Context->PSSetShaderResources(0, 1, SRVs);
+		break;
+	}
+	}
 
     LastCommandType = InCmd.Type;
 }
@@ -625,7 +843,7 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 
 void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 {
-	ID3D11RenderTargetView* RTV = SceneFinalRTV;
+	ID3D11RenderTargetView* RTV = SceneFinalRTV.Get();
 	InDeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
 	InDeviceContext->OMSetDepthStencilState(nullptr, 0);
 
