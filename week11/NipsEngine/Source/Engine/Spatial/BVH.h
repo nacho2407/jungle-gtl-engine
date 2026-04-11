@@ -197,6 +197,16 @@ class FBVH
         TArray<float> SortedTs;
     };
 
+	struct FOBBQueryScratch
+	{
+		struct FStackEntry
+		{
+			int32 NodeIndex{INDEX_NONE};
+			bool  bAssumeInside{false};
+		};
+		TArray<FStackEntry> TraversalStack;
+	};
+
     // Queries ---------------------------------------------------------------
 
     /**
@@ -234,6 +244,8 @@ class FBVH
      */
     void RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
                   TArray<float>& OutTs, FRayQueryScratch& Scratch) const;
+
+	void OBBQuery(const TArray<FAABB>& ObjectBounds, const FOBB& OBB, TArray<int32>& OutIndices, FOBBQueryScratch& Scratch) const;
 
 
     // State -----------------------------------------------------------------

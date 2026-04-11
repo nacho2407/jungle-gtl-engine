@@ -613,58 +613,59 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetWorld() : nullptr;
 
-		for (AActor* Actor : World->GetActors())
+		FOBB DecalOBB = FOBB::FromAABB(DecalComp->GetWorldAABB(), DecalComp->GetWorldMatrix());
+
+		TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
+		World->GetSpatialIndex().OBBQueryPrimitives(DecalOBB, VisiblePrimitiveScratch, OBBQueryScratch);
+
+		for (UPrimitiveComponent* Prim : VisiblePrimitiveScratch)
 		{
-			for (UPrimitiveComponent* OtherPrim : Actor->GetPrimitiveComponents())
+			if (Prim->GetPrimitiveType() != EPrimitiveType::EPT_StaticMesh) continue;
+
+			UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Prim);
+			const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
+
+			if (!StaticMesh || !StaticMesh->HasValidMeshData()) return;
+
+			// 1. 카메라 정보 및 AABB 가져오기
+			FVector CameraPos = RenderBus.GetCameraPosition();
+			FMatrix ProjMatrix = RenderBus.GetProj();
+			FAABB Bounds = StaticMeshComp->GetWorldAABB();
+			const int32 ValidLODCount = StaticMesh->GetValidLODCount();
+
+			int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
+			if (ShowFlags.bEnableLOD)
 			{
-				if (OtherPrim->GetPrimitiveType() != EPrimitiveType::EPT_StaticMesh) continue;
-				if (OtherPrim == DecalComp) continue;
+				SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
+			}
 
-				UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(OtherPrim);
-				const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
+			FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
+			if (!MeshBuffer) return;
 
-				if (!StaticMesh || !StaticMesh->HasValidMeshData()) return;
+			const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
+			const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
 
-				// 1. 카메라 정보 및 AABB 가져오기
-				FVector CameraPos = RenderBus.GetCameraPosition();
-				FMatrix ProjMatrix = RenderBus.GetProj();
-				FAABB Bounds = StaticMeshComp->GetWorldAABB();
-				const int32 ValidLODCount = StaticMesh->GetValidLODCount();
+			for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+			{
+				const FStaticMeshSection& Section = Sections[SectionIdx];
 
-				int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
-				if (ShowFlags.bEnableLOD)
-				{
-					SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
-				}
+				FRenderCommand Cmd = {};
+				Cmd.Type = ERenderCommandType::Decal;
+				Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
+				Cmd.MeshBuffer = MeshBuffer;
 
-				FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
-				if (!MeshBuffer) return;
+				Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
+				Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
+				Cmd.Constants.Decal.FadeAlpha = 1.0f;
 
-				const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
-				const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
+				Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->DiffuseTexPath);
+				Cmd.BlendState = EBlendState::AlphaBlend;
+				Cmd.DepthStencilState = EDepthStencilState::Default;
 
-				for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-				{
-					const FStaticMeshSection& Section = Sections[SectionIdx];
+				Cmd.SectionIndexStart = Section.StartIndex;
+				Cmd.SectionIndexCount = Section.IndexCount;
 
-					FRenderCommand Cmd = {};
-					Cmd.Type = ERenderCommandType::Decal;
-					Cmd.PerObjectConstants = FPerObjectConstants{ OtherPrim->GetWorldMatrix(), FColor::White().ToVector4() };
-					Cmd.MeshBuffer = MeshBuffer;
-
-					Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
-					Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
-					Cmd.Constants.Decal.FadeAlpha = 1.0f;
-
-					Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->DiffuseTexPath);
-					Cmd.BlendState = EBlendState::AlphaBlend;
-					Cmd.DepthStencilState = EDepthStencilState::Default;
-
-					Cmd.SectionIndexStart = Section.StartIndex;
-					Cmd.SectionIndexCount = Section.IndexCount;
-
-					RenderBus.AddCommand(ERenderPass::Decal, Cmd);
-				}
+				RenderBus.AddCommand(ERenderPass::Decal, Cmd);
 			}
 		}
 
