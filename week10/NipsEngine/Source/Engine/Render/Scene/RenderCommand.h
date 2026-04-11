@@ -171,7 +171,10 @@ struct FFogConstants
     float    FogDensity;
     float    HeightFalloff;
     float        FogHeight;
-    float        Padding;
+    float        FogStartDistance;
+    float        FogCutoffDistance;
+    float        FogMaxOpacity;
+    float        Padding[2];
 };
 
 struct FFXAAConstants

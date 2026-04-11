@@ -42,9 +42,6 @@ REGISTER_FACTORY(ABillboardActor)
 DEFINE_CLASS(ADecalActor, AActor)
 REGISTER_FACTORY(ADecalActor)
 
-DEFINE_CLASS(AHeightFogActor, AActor)
-REGISTER_FACTORY(AHeightFogActor)
-
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -221,26 +218,6 @@ void ABillboardActor::InitDefaultComponents()
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
-}
-
-void AHeightFogActor::InitDefaultComponents()
-{
-	UHeightFogComponent* HeightFog = AddComponent<UHeightFogComponent>();
-	SetRootComponent(HeightFog);
-
-	HeightFog->SetFogDensity(0.5f);
-	HeightFog->SetHeightFalloff(0.2f);
-	HeightFog->SetFogInscatteringColor(FVector4(0.8f, 0.8f, 0.9f, 1.0f));
-	HeightFog->SetFogHeight(0.0f);
-
-	auto* TextUUID = AddComponent<UTextRenderComponent>();
-	TextUUID->AttachToComponent(HeightFog);
-	TextUUID->SetFont(FName("Default"));
-	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-	TextUUID->SetTransient(true);
-	TextUUID->SetEditorOnly(true);
-	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
-	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
 void ADecalActor::InitDefaultComponents()

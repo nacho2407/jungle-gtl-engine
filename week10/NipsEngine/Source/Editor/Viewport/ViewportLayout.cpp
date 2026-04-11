@@ -157,12 +157,14 @@ void FViewportLayout::Tick(float DeltaTime)
 
 void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 {
+	// 윈도우 리사이즈(최대화/복원 포함) 시 기존 HostRect는 이전 프레임 값일 수 있으므로 무효화합니다.
+	// 이후 RenderViewportHostWindow에서 최신 HostRect가 다시 설정됩니다.
+	HostRect = FViewportRect();
+
 	// 스플리터 트리 재배치 + SViewport → ISlateViewport 동기화
 	if (GetRootSplitterV())
 	{
-		const FViewportRect LayoutRect = (HostRect.Width > 0 && HostRect.Height > 0)
-			? HostRect
-			: FViewportRect(0, 0, static_cast<int32>(Width), static_cast<int32>(Height));
+		const FViewportRect LayoutRect(0, 0, static_cast<int32>(Width), static_cast<int32>(Height));
 		GetRootSplitterV()->SetRect({
 			static_cast<float>(LayoutRect.X),
 			static_cast<float>(LayoutRect.Y),
