@@ -10,6 +10,8 @@ USceneComponent* USceneComponent::Duplicate()
 {
     USceneComponent* NewComp = UObjectManager::Get().CreateObject<USceneComponent>();
     NewComp->SetActive(this->IsActive());
+	NewComp->SetAutoActivate(this->IsAutoActivate());
+	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
     NewComp->SetOwner(nullptr);
 
     NewComp->RelativeLocation = this->RelativeLocation;

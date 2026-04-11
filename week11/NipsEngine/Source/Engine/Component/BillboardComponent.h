@@ -53,11 +53,13 @@ public:
 private:
 	FName TextureName;
 	FMaterialResource* CachedSprite = { nullptr }; // ResourceManager 소유, 여기선 참조만
+
+protected:
 	uint32 FrameIndex = 0;
 	float  Width = 1.0f;
 	float  Height = 1.0f;
 	float  PlayRate = 30.0f; // 초당 프레임 수
 	float  TimeAccumulator = 0.0f;
-	bool bLoop = true;
+	bool   bLoop = true;
 };
 
