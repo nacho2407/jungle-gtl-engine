@@ -757,6 +757,11 @@ FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
 
 FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Device)
 {
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+
 	if (FMaterialResource* Cached = FindTexture(Path))
 	{
 		return Cached;
