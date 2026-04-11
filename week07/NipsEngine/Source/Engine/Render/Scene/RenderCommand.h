@@ -203,8 +203,8 @@ struct FRenderCommand
 		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
 		FDecalConstants Decal;
-        FFogConstants        Fog;
-        FFXAAConstants        FXAA;
+        FFogConstants Fog;
+        FFXAAConstants FXAA;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
