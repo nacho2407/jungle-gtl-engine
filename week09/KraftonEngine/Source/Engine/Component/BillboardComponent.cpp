@@ -35,7 +35,7 @@ void UBillboardComponent::SetTexture(const FName& InTextureName)
 {
 	TextureName = InTextureName;
 	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
-	// 텍스처 유무가 batcher/Primitive 경로 분기를 좌우하므로 Mesh 단계까지 재갱신 필요.
+	// 텍스처 유무가 Billboard/Primitive 셰이더 분기를 좌우하므로 Mesh 단계까지 재갱신 필요.
 	MarkProxyDirty(EDirtyFlag::Mesh);
 }
 

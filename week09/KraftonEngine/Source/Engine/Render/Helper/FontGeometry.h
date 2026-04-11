@@ -16,8 +16,7 @@ struct FCharacterInfo
 	float Height;
 };
 
-// FFontGeometry — FontBatcher의 경량 대체.
-// BatcherBase를 상속하지 않고, 동적 VB/IB와 문자 지오메트리 생성을 직접 소유.
+// FFontGeometry — 동적 VB/IB와 문자 지오메트리 생성을 직접 소유.
 class FFontGeometry
 {
 public:

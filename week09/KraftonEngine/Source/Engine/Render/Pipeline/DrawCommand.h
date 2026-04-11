@@ -34,7 +34,7 @@ struct FDrawCommand
 	uint32       VertexCount = 0;         // IB 없을 때 Draw(VertexCount, 0)
 	int32        BaseVertex  = 0;         // DrawIndexed BaseVertexLocation
 
-	// ===== Raw Buffer (Dynamic Batcher용 — MeshBuffer가 nullptr일 때 사용) =====
+	// ===== Raw Buffer (동적 지오메트리용 — MeshBuffer가 nullptr일 때 사용) =====
 	ID3D11Buffer* RawVB       = nullptr;
 	uint32        RawVBStride = 0;
 	ID3D11Buffer* RawIB       = nullptr;
