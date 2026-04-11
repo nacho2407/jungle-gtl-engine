@@ -2,7 +2,7 @@
 
 #include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
 #include "Editor/UI/EditorConsoleWidget.h"
-#include "Engine/Core/InputSystem.h"
+#include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/GizmoComponent.h"

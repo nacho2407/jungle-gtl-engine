@@ -54,8 +54,8 @@ public:
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
-	ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV; }
-    ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV; }
+	const ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV.Get(); }
+    const ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV.Get(); }
 
 private:
 	void InitializePassRenderStates();
@@ -72,6 +72,8 @@ private:
     void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
                             ID3D11DeviceContext* Context);
     void ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+    void ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
+    void ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
@@ -110,8 +112,8 @@ private:
 	};
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
-	ID3D11RenderTargetView* SceneFinalRTV = nullptr;
-    ID3D11ShaderResourceView* SceneFinalSRV = nullptr;
-	constexpr static uint32 MaxRTVCount = 2;
+	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
+    TComPtr<ID3D11ShaderResourceView> SceneFinalSRV = nullptr;
+	constexpr static uint32 MaxRTVCount = 3;
 };
 

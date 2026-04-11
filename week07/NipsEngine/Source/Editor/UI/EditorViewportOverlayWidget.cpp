@@ -15,7 +15,7 @@
 #include "Slate/SSplitterH.h"
 #include "Slate/SSplitterCross.h"
 #include "Viewport/ViewportLayout.h"
-#include "Core/InputSystem.h"
+#include "Input/InputSystem.h"
 #include <initializer_list>
 #include <utility>
 #include <algorithm>
@@ -87,6 +87,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
         ImGui::Unindent();
     }
 	ImGui::Checkbox("Enable LOD", &Settings.ShowFlags.bEnableLOD);
+	ImGui::Checkbox("Decals", &Settings.ShowFlags.bDecals);
 
     ImGui::Separator();
 
@@ -98,6 +99,11 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     
     ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
     ImGui::SliderInt("Half Line Count", &Settings.GridHalfLineCount, 10, 500);
+
+    ImGui::Separator();
+    ImGui::Text("Post Process");
+    ImGui::SetNextItemWidth(ItemWidth);
+    ImGui::SliderFloat("FXAA Threshold", &Settings.FXAAThreshold, 0.0f, 1.0f, "%.3f");
 
     ImGui::Separator();
 
@@ -218,6 +224,21 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 					ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Fallback Passed: %d",
 					CullingStats->FallbackPassedPrimitiveCount);
 				ImGui::TextColored(ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Culled: %d", CulledPrimitiveCount);
+			}
+
+			const FRenderCollector::FDecalStats* DecalStats =
+				(RenderPipeline != nullptr) ? &RenderPipeline->GetViewportDecalStats(i) : nullptr;
+
+			if (DecalStats != nullptr)
+			{
+				if (CullingStats != nullptr || VS.bShowStatFPS)
+				{
+					ImGui::Separator();
+				}
+
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "Decal");
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Total Decals: %d", DecalStats->TotalDecalCount);
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Decal Time: %.4f ms", DecalStats->CollectTimeMS / 1000.f);
 			}
 
 			// Memory 출력 (노란색 텍스트)

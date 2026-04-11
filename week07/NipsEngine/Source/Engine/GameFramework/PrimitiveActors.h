@@ -75,3 +75,21 @@ public:
 
     void InitDefaultComponents();
 };
+
+class ADecalActor : public AActor
+{
+public:
+	DECLARE_CLASS(ADecalActor, AActor)
+	ADecalActor() = default;
+
+	void InitDefaultComponents();
+};
+
+class AHeightFogActor : public AActor
+{
+  public:
+    DECLARE_CLASS(AHeightFogActor, AActor)
+    AHeightFogActor() = default;
+
+    void InitDefaultComponents();
+};

@@ -1067,6 +1067,7 @@ void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<i
     OutTs.swap(Scratch.SortedTs);
 }
 
+
 // ============================================================================
 // Build Helpers
 // ============================================================================

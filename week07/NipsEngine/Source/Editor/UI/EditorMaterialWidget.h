@@ -2,9 +2,12 @@
 
 #include "Editor/UI/EditorWidget.h"
 #include "Render/Resource/Material.h"
+#include <functional>
 
+class USceneComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
+class UDecalComponent;
 
 /**
  * @brief 섹션 기준 머테리얼 편집 패널.
@@ -19,20 +22,23 @@ public:
     void Render(float DeltaTime) override;
 
 private:
+	void RenderMeshMaterialEditor(UStaticMeshComponent* MeshComp);
+	void RenderDecalMaterialEditor(UDecalComponent* DecalComp);
+
     void RenderSectionList(UStaticMeshComponent* MeshComp);
     void RenderMaterialDetails(UStaticMeshComponent* MeshComp);
+	void RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged);
 
     void RenderColorSection(FMaterial& Mat);
     void RenderScalarSection(FMaterial& Mat);
     void RenderTextureSection(FMaterial& Mat);
 
     UStaticMeshComponent* GetSelectedMeshComponent() const;
+	UDecalComponent* GetSelectedDecalComponent() const;
 
 private:
     int32 SelectedSectionIndex    = -1;
     FMaterial* SelectedMaterialPtr = nullptr;  // 원본 포인터 (Apply 대상)
 
-    // 선택 액터가 바뀔 때 상태 초기화를 위한 추적용
-    UStaticMesh* LastMeshAsset = nullptr;
-    UStaticMeshComponent* LastMeshComp = nullptr;
+	USceneComponent* SelectedComponent = nullptr;
 };

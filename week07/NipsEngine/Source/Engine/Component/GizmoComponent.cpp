@@ -479,7 +479,7 @@ void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)
 {
 	float Distance = FVector::Distance(CameraLocation, GetWorldLocation());
 
-	float NewScale = Distance * 0.1f;
+	float NewScale = Distance * 0.17f;
 
 	if (NewScale < 0.01f) NewScale = 0.01f;
 
@@ -488,7 +488,7 @@ void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)
 
 void UGizmoComponent::ApplyScreenSpaceScalingOrtho(float OrthoHeight)
 {
-	float NewScale = OrthoHeight * 0.1f;
+	float NewScale = OrthoHeight * 0.15f;
 	if (NewScale < 0.01f) NewScale = 0.01f;
 	SetRelativeScale(FVector(NewScale, NewScale, NewScale));
 }
