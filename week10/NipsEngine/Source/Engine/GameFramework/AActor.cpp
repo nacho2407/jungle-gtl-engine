@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/MovementComponent.h"
 #include "GameFramework/World.h"
 
 DEFINE_CLASS(AActor, UObject)
@@ -21,6 +22,37 @@ AActor::~AActor() {
 	RootComponent = nullptr;
 }
 
+/* 액터의 계층 구조를 복원하기 위해 자식들을 재귀적으로 순회합니다. */
+static USceneComponent* DuplicateSubTree(
+	USceneComponent* OriginalComp, AActor* NewActor, TArray<UActorComponent*>& OwnedComponents,
+	TMap<USceneComponent*, USceneComponent*>& OutCompMap)
+{
+	if (!OriginalComp) return nullptr;
+
+	// 현재 노드(부모) 복제
+	USceneComponent* DuplicatedComp = Cast<USceneComponent>(OriginalComp->Duplicate());
+	if (!DuplicatedComp) return nullptr; // 에디터 전용 등이면 nullptr 반환됨
+
+	// 소유자 등록
+	DuplicatedComp->SetOwner(NewActor);
+	OwnedComponents.push_back(DuplicatedComp);
+
+	// 원본 → 복제본 매핑 등록 (MovementComponent의 UpdatedComponent 연결에 사용)
+	OutCompMap[OriginalComp] = DuplicatedComp;
+
+	// 자식들을 재귀적으로 순회하며 방금 복제된 자신(DuplicatedComp)에게 바로 Attach
+	for (USceneComponent* Child : OriginalComp->GetChildren())
+	{
+		USceneComponent* DuplicatedChild = DuplicateSubTree(Child, NewActor, OwnedComponents, OutCompMap);
+		if (DuplicatedChild)
+		{
+			DuplicatedChild->AttachToComponent(DuplicatedComp);
+		}
+	}
+	
+	return DuplicatedComp;
+}
+
 /* 
 * @brief 액터들이 가진 여러 컴포넌트는 부모-자식 관계가 있을 수 있습니다.
 * 복제되는 컴포넌트들은 복제된 자기 부모 컴포넌트의 포인터가 어떤 값일지 모르기 때문에,
@@ -29,54 +61,51 @@ AActor::~AActor() {
 AActor* AActor::Duplicate()
 {
 	AActor* NewActor = UObjectManager::Get().CreateObject<AActor>();
+
 	NewActor->SetVisible(this->IsVisible());
 	NewActor->PendingActorLocation = this->PendingActorLocation;
 	NewActor->bIsActive = this->bIsActive;
 	NewActor->bTickInEditor = this->bTickInEditor;
-	
-	// 컴포넌트들 간의 부모-자식 관계를 재조립하기 위한 맵을 선언합니다.
+
+	// MovementComponent 등 일반 컴포넌트들의 참조를 복원하기 위한 맵을 선언합니다.
 	TMap<USceneComponent*, USceneComponent*> ComponentMap;
 
-	for (UActorComponent* OriginalComp : this->OwnedComponents)
-	{
-		if (OriginalComp)
-		{
-			UActorComponent* DuplicatedComp = OriginalComp->Duplicate();
+	// 1. RootComponent부터 씬 컴포넌트 트리 전체를 복제하여 조립합니다.
+    if (this->RootComponent)
+    {
+        NewActor->SetRootComponent(DuplicateSubTree(this->RootComponent, NewActor, NewActor->OwnedComponents, ComponentMap));
+    }
 
-			// 만약 DuplicatedComp가 nullptr를 반환했다면 에디터 전용이라고 취급합니다.
-			if (DuplicatedComp == nullptr)
-				continue;
+    // 2. SceneComponent가 아닌 일반 컴포넌트들을 복제하기 위해 배열을 순회합니다.
+    for (UActorComponent* OriginalComp : this->OwnedComponents)
+    {
+        if (!OriginalComp) continue;
 
-			DuplicatedComp->SetOwner(NewActor);
-			NewActor->OwnedComponents.push_back(DuplicatedComp);
+        // 씬 컴포넌트는 처리했으므로 건너뜁니다.
+        if (OriginalComp->IsA<USceneComponent>()) continue;
 
-			// 씬 컴포넌트라면 일단 맵에 등록해 두고, 나중에 한꺼번에 처리합니다.
-			USceneComponent *OriginalSceneComp = Cast<USceneComponent>(OriginalComp);
-			if (OriginalSceneComp)
-			{
-				USceneComponent* DuplicatedSceneComp = Cast<USceneComponent>(DuplicatedComp);
-                ComponentMap[OriginalSceneComp] = DuplicatedSceneComp;
+        UActorComponent* DuplicatedComp = OriginalComp->Duplicate();
+        if (!DuplicatedComp) continue;
 
-				if (OriginalComp == this->RootComponent)
-				{
-					NewActor->SetRootComponent(Cast<USceneComponent>(DuplicatedComp));
-				}
-			}
-		}
-	}
+        DuplicatedComp->SetOwner(NewActor);
+        NewActor->OwnedComponents.push_back(DuplicatedComp);
 
-	// 컴포넌트 간의 부모-자식 관계를 재조립한다.
-	for (auto &Pair : ComponentMap) 
-	{
-		USceneComponent *OriginalSceneComp = Pair.first;
-		USceneComponent *DuplicatedSceneComp = Pair.second;
-		USceneComponent *OriginalParent = OriginalSceneComp->GetParent();
+        // MovementComponent도 기존에 제어하던 컴포넌트를 제어하도록 연결해줍니다.
+        if (UMovementComponent* OriginalMoveComp = Cast<UMovementComponent>(OriginalComp))
+        {
+            UMovementComponent* DuplicatedMoveComp = Cast<UMovementComponent>(DuplicatedComp);
+            USceneComponent* OldTarget = OriginalMoveComp->GetUpdatedComponent();
 
-		if (OriginalParent && ComponentMap.find(OriginalParent) != ComponentMap.end()) 
-		{
-			DuplicatedSceneComp->AttachToComponent(ComponentMap[OriginalParent]);
-		}
-	}
+            if (OldTarget && ComponentMap.find(OldTarget) != ComponentMap.end())
+            {
+                DuplicatedMoveComp->SetUpdatedComponent(ComponentMap[OldTarget]);
+            }
+            else
+            {
+                DuplicatedMoveComp->SetUpdatedComponent(NewActor->GetRootComponent());
+            }
+        }
+    }
 
 	NewActor->bPrimitiveCacheDirty = true;
 	
@@ -88,7 +117,8 @@ AActor* AActor::DuplicateSubObjects()
 	return this;
 }
 
-UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
+UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) 
+{
 	if (!Class) return nullptr;
 
 	UObject* Obj = FObjectFactory::Get().Create(Class->name);
@@ -107,7 +137,8 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class) {
 	return Comp;
 }
 
-void AActor::RegisterComponent(UActorComponent* Comp) {
+void AActor::RegisterComponent(UActorComponent* Comp) 
+{
 	if (!Comp) return;
 
 	auto it = std::find(OwnedComponents.begin(), OwnedComponents.end(), Comp);
@@ -119,7 +150,8 @@ void AActor::RegisterComponent(UActorComponent* Comp) {
 	}
 }
 
-void AActor::RemoveComponent(UActorComponent* Component) {
+void AActor::RemoveComponent(UActorComponent* Component) 
+{
 	if (!Component) return;
 
 	NotifyComponentUnregistered(Component);
@@ -201,10 +233,6 @@ void AActor::BeginPlay()
 
 void AActor::Tick(float DeltaTime)
 {
-	FVector CurrentRotation = GetActorRotation();
-	CurrentRotation.Z += 90.0f * DeltaTime;
-	SetActorRotation(CurrentRotation);
-
 	for (UActorComponent* Component : OwnedComponents)
 	{
 		if (Component && Component->IsActive())

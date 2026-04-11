@@ -64,12 +64,5 @@ private:
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
 
-	uint32 FrameIndex = 0;
-	float  Width = 1.0f;
-	float  Height = 1.0f;
-	float  PlayRate = 30.0f; // 초당 프레임 수
-	float  TimeAccumulator = 0.0f;
-
-	bool bLoop = true;
 	bool bIsExecute = false;
 };

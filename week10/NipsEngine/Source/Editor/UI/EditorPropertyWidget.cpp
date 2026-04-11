@@ -7,6 +7,9 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Component/MovementComponent.h"
+#include "Component/RotatingMovementComponent.h"
+#include "Component/ProjectileMovementComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
@@ -17,24 +20,63 @@
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
+namespace
+{
+	static bool DrawXButton(const char* id, float size = 20.0f)
+	{
+		ImGui::PushID(id);
+
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		bool bClicked = ImGui::InvisibleButton("##xbtn", ImVec2(size, size));
+
+		ImVec4 col = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+		if      (ImGui::IsItemActive())  col = ImVec4(0.9f, 0.1f, 0.1f, 1.0f);
+		else if (ImGui::IsItemHovered()) col = ImVec4(0.8f, 0.2f, 0.2f, 0.8f);
+
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+
+		// 호버/클릭 시 배경 원
+		ImVec2 center(pos.x + size * 0.5f + 0.5f, pos.y + size * 0.5f + 0.5f);
+		dl->AddCircleFilled(center, size * 0.5f, ImGui::ColorConvertFloat4ToU32(
+			ImGui::IsItemActive()
+				? ImVec4(0.9f, 0.1f, 0.1f, 1.0f)
+				: ImVec4(0.8f, 0.2f, 0.2f, 0.8f)));
+
+		// X 직접 그리기 (폰트 무관)
+		float pad = size * 0.3f;
+		ImU32 color = ImGui::ColorConvertFloat4ToU32(col);
+		dl->AddLine(
+			ImVec2(pos.x + pad,        pos.y + pad),
+			ImVec2(pos.x + size - pad, pos.y + size - pad),
+			color, 2.0f);
+		dl->AddLine(
+			ImVec2(pos.x + size - pad, pos.y + pad),
+			ImVec2(pos.x + pad,        pos.y + size - pad),
+			color, 2.0f);
+
+		ImGui::PopID();
+		return bClicked;
+	}
+}
+
 // 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
 struct FComponentMenuEntry
 {
     const char* DisplayName;
-    std::function<USceneComponent*(AActor*)> CreateAndInitFunc;
+    std::function<UActorComponent*(AActor*)> CreateAndInitFunc;
 };
 
 // 2. 에디터에서 추가 가능한 컴포넌트 배열 (이 리스트만 관리하면 됩니다)
 static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
     {
         "StaticMesh Component",
-        [](AActor* Actor) -> USceneComponent* {
+        [](AActor* Actor) -> UActorComponent* {
             return Actor->AddComponent<UStaticMeshComponent>();
         }
     },
     {
         "SubUV Component",
-        [](AActor* Actor) -> USceneComponent* {
+        [](AActor* Actor) -> UActorComponent* {
             USubUVComponent* Comp = Actor->AddComponent<USubUVComponent>();
             Comp->SetParticle(FName("Explosion"));
             Comp->SetSpriteSize(2.0f, 2.0f);
@@ -44,7 +86,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
     },
     {
         "TextRender Component",
-        [](AActor* Actor) -> USceneComponent* {
+        [](AActor* Actor) -> UActorComponent* {
             UTextRenderComponent* Comp = Actor->AddComponent<UTextRenderComponent>();
             Comp->SetFont(FName("Default"));
             Comp->SetText("TextRender");
@@ -53,9 +95,23 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
     },
     {
         "Billboard Component",
-        [](AActor* Actor) -> USceneComponent* {
+        [](AActor* Actor) -> UActorComponent* {
             UBillboardComponent* Comp = Actor->AddComponent<UBillboardComponent>();
             Comp->SetTextureName("Asset/Texture/Pawn_64x.png");
+            return Comp;
+        }
+    },
+	{
+        "RotatingMovement Component",
+        [](AActor* Actor) -> UActorComponent* {
+            URotatingMovementComponent* Comp = Actor->AddComponent<URotatingMovementComponent>();
+            return Comp;
+        }
+    },
+	{
+        "ProjectileMovement Component",
+        [](AActor* Actor) -> UActorComponent* {
+            UProjectileMovementComponent* Comp = Actor->AddComponent<UProjectileMovementComponent>();
             return Comp;
         }
     },
@@ -69,7 +125,7 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
              Comp->SetFogHeight(0);
 			 return Comp;
 		}
-	}
+	},
 };
 
 void FEditorPropertyWidget::Render(float DeltaTime)
@@ -132,7 +188,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ImGui::SameLine();
 		char RemoveLabel[64];
 		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
-		if (ImGui::Button(RemoveLabel))
+		if (ImGui::SmallButton(RemoveLabel))
 		{
 			for (AActor* Actor : SelectedActors)
 			{
@@ -150,12 +206,16 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	}
 	else
 	{
-		ImGui::Text("Class: %s", PrimaryActor->GetTypeInfo()->name);
+		if (SelectedComponent == nullptr)
+			SelectedComponent = PrimaryActor->GetRootComponent();
+		ImGui::Text("Selected Actor: %s", PrimaryActor->GetFName().ToString().c_str());
+		ImGui::Text("Selected Component: %s", SelectedComponent->GetTypeInfo()->name);
 
 		// Actor 이름: 클릭 가능, 선택 시 하이라이트
 		bool bHighlight = bActorSelected;
 		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
-		ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
+
+
 		if (bHighlight) ImGui::PopStyleColor();
 		if (ImGui::IsItemClicked())
 		{
@@ -163,7 +223,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			SelectedComponent = nullptr;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Remove"))
+		if (ImGui::SmallButton("Remove"))
 		{
 			if (PrimaryActor->GetWorld())
 			{
@@ -187,21 +247,14 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		{
 			for (const FComponentMenuEntry& Entry : ComponentMenuRegistry)
 			{
-				if (!ImGui::Selectable(Entry.DisplayName)) 
-					continue;
-
-				USceneComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor);
-
-				if (!NewComp) 
-					continue;
-
-				USceneComponent* RootComp = PrimaryActor->GetRootComponent();
-				if (RootComp)
-					NewComp->AttachToComponent(RootComp);
-				else
-					PrimaryActor->SetRootComponent(NewComp);
-
-				SelectedComponent = NewComp;
+				if (ImGui::Selectable(Entry.DisplayName))
+				{
+					if (UActorComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor))
+					{
+						// this(현재 위젯 객체)를 넘겨줍니다.
+						AttachAndSelectNewComponent(PrimaryActor, NewComp);
+					}
+				}
 			}
 			ImGui::EndPopup();
 		}
@@ -352,16 +405,18 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 	USceneComponent* Root = Actor->GetRootComponent();
 
-	if (Root)
-	{
-		RenderSceneComponentNode(Root);
-	}
+	UActorComponent* ComponentToDelete = nullptr; 
+    if (Root)
+    {
+        RenderSceneComponentNode(Actor, Root, ComponentToDelete);
+    }
 
-	// Non-scene ActorComponents
+	// Non-scene ActorComponents (MovementComponent는 SceneComponent 아래에 표시되므로 제외)
 	for (UActorComponent* Comp : Actor->GetComponents())
 	{
 		if (!Comp) continue;
 		if (Comp->IsA<USceneComponent>()) continue;
+		if (Comp->IsA<UMovementComponent>()) continue;
 
 		FString Name = Comp->GetFName().ToString();
 		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
@@ -376,10 +431,32 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 			SelectedComponent = Comp;
 			bActorSelected = false;
 		}
+
+		if (Comp != Actor->GetRootComponent())
+		{
+			ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 24.0f);
+			char XId[64];
+			snprintf(XId, sizeof(XId), "xbtn_%p", (void*)Comp);
+			if (DrawXButton(XId))
+			{
+				ComponentToDelete = Comp;
+			}
+		}
 	}
+
+	if (ComponentToDelete)
+    {
+        if (SelectedComponent == ComponentToDelete)
+        {
+            SelectedComponent = nullptr;
+            bActorSelected = true;
+        }
+		
+		Actor->RemoveComponent(ComponentToDelete);
+    }
 }
 
-void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
+void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneComponent* Comp, UActorComponent*& OutCompToDelete)
 {
 	if (!Comp) return;
 
@@ -387,7 +464,17 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	if (Name.empty()) Name = Comp->GetTypeInfo()->name;
 
 	const auto& Children = Comp->GetChildren();
-	bool bHasChildren = !Children.empty();
+
+	// 이 SceneComponent에 연결된 MovementComponent 수집
+	TArray<UMovementComponent*> AttachedMovements;
+	for (UActorComponent* ActorComp : Actor->GetComponents())
+	{
+		UMovementComponent* MoveComp = Cast<UMovementComponent>(ActorComp);
+		if (MoveComp && MoveComp->GetUpdatedComponent() == Comp)
+			AttachedMovements.push_back(MoveComp);
+	}
+
+	bool bHasChildren = !Children.empty() || !AttachedMovements.empty();
 
 	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 	if (!bHasChildren)
@@ -396,12 +483,23 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 		Flags |= ImGuiTreeNodeFlags_Selected;
 
 	bool bIsRoot = (Comp->GetParent() == nullptr);
-	bool bOpen = ImGui::TreeNodeEx(
-		Comp, Flags, "%s%s (%s)",
-		bIsRoot ? "[Root] " : "",
-		Name.c_str(),
-		Comp->GetTypeInfo()->name
-	);
+
+	constexpr float XButtonWidth = 28.0f; // 버튼(20) + 여백(8)
+    if (!bIsRoot)
+    {
+        float ClipMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - XButtonWidth;
+        ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(ClipMaxX, ImGui::GetWindowPos().y + 99999.f), true);
+    }
+
+    bool bOpen = ImGui::TreeNodeEx(
+        Comp, Flags, "%s%s",
+        bIsRoot ? "[Root] " : "",
+        Name.c_str(),
+        Comp->GetTypeInfo()->name
+    );
+
+    if (!bIsRoot)
+        ImGui::PopClipRect();
 
 	if (ImGui::IsItemClicked())
 	{
@@ -413,9 +511,49 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	{
 		for (USceneComponent* Child : Children)
 		{
-			RenderSceneComponentNode(Child);
+			RenderSceneComponentNode(Actor, Child, OutCompToDelete);
 		}
+
+		// 연결된 MovementComponent들을 자식으로 표시
+		for (UMovementComponent* MoveComp : AttachedMovements)
+		{
+			FString MoveName = MoveComp->GetFName().ToString();
+			if (MoveName.empty()) MoveName = MoveComp->GetTypeInfo()->name;
+
+			ImGuiTreeNodeFlags MoveFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+			if (!bActorSelected && SelectedComponent == MoveComp)
+				MoveFlags |= ImGuiTreeNodeFlags_Selected;
+
+			float ClipMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - XButtonWidth;
+			ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(ClipMaxX, ImGui::GetWindowPos().y + 99999.f), true);
+			ImGui::TreeNodeEx(MoveComp, MoveFlags, "[%s] %s", MoveComp->GetTypeInfo()->name, MoveName.c_str());
+			ImGui::PopClipRect();
+
+			if (ImGui::IsItemClicked())
+			{
+				SelectedComponent = MoveComp;
+				bActorSelected = false;
+			}
+
+			ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 24.0f);
+			char XId[64];
+			snprintf(XId, sizeof(XId), "xbtn_%p", (void*)MoveComp);
+			if (DrawXButton(XId))
+				OutCompToDelete = MoveComp;
+		}
+
 		ImGui::TreePop();
+	}
+
+	if (!bIsRoot)
+	{
+		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 24.0f);
+		char XId[64];
+		snprintf(XId, sizeof(XId), "xbtn_%p", (void*)Comp);
+		if (DrawXButton(XId))
+		{
+			OutCompToDelete = Comp;
+		}
 	}
 }
 
@@ -423,30 +561,26 @@ void FEditorPropertyWidget::RenderComponentProperties()
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
-	ImGui::Separator();
+
+    ImGui::Separator();
 
 	// PropertyDescriptor 기반 자동 위젯 렌더링
 	TArray<FPropertyDescriptor> Props;
 	SelectedComponent->GetEditableProperties(Props);
 
-	bool bIsRoot = false;
-	if (SelectedComponent->IsA<USceneComponent>())
-	{
-		USceneComponent* SceneComp = static_cast<USceneComponent*>(SelectedComponent);
-		bIsRoot = (SceneComp->GetParent() == nullptr);
-	}
+	AActor* Owner = SelectedComponent->GetOwner();
 
-	// Transform 프로퍼티 이름 목록
-	auto IsTransformProp = [](const char* Name) {
-		return strcmp(Name, "Location") == 0
-			|| strcmp(Name, "Rotation") == 0
-			|| strcmp(Name, "Scale") == 0;
-		};
-
-	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
 	for (auto& Prop : Props)
-	{ 
-		RenderPropertyWidget(Prop);
+	{
+		if (Prop.Type == EPropertyType::SceneComponentRef)
+		{
+			// SceneComponentRef는 액터 컨텍스트가 필요한 드롭다운으로 렌더링
+			RenderSceneComponentRefWidget(Prop, Owner);
+		}
+		else
+		{
+			RenderPropertyWidget(Prop);
+		}
 	}
 	ImGui::Separator();
 
@@ -455,6 +589,55 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
 		SelectionManager->GetGizmo()->UpdateGizmoTransform();
+	}
+}
+
+void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
+{
+	// ValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
+	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(Prop.ValuePtr);
+	USceneComponent* CurrentComp = *ValuePtr;
+
+	// 액터 소유 SceneComponent 목록 수집
+	TArray<USceneComponent*> SceneComps;
+	SceneComps.push_back(nullptr); // "None" 선택지
+	if (Owner)
+	{
+		for (UActorComponent* Comp : Owner->GetComponents())
+		{
+			if (USceneComponent* SceneComp = Cast<USceneComponent>(Comp))
+				SceneComps.push_back(SceneComp);
+		}
+	}
+
+	// 드롭다운 레이블 생성: "[Root] ClassName" 또는 "ClassName [FName]"
+	auto GetLabel = [&](USceneComponent* Comp) -> FString {
+		if (!Comp) return "None";
+		FString Name = Comp->GetFName().ToString();
+		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+		bool bIsRoot = Owner && (Comp == Owner->GetRootComponent());
+		return bIsRoot ? ("[Root] " + Name) : Name;
+	};
+
+	FString CurrentLabel = GetLabel(CurrentComp);
+	if (ImGui::BeginCombo(Prop.Name, CurrentLabel.c_str()))
+	{
+		for (USceneComponent* SceneComp : SceneComps)
+		{
+			bool bSelected = (SceneComp == CurrentComp);
+			// ##ptr 으로 포인터를 ID로 사용하여 동일 이름 컴포넌트를 구별
+			char SelectableId[128];
+			snprintf(SelectableId, sizeof(SelectableId), "%s##%p",
+				GetLabel(SceneComp).c_str(), static_cast<void*>(SceneComp));
+			if (ImGui::Selectable(SelectableId, bSelected))
+			{
+				*ValuePtr = SceneComp;
+				SelectedComponent->PostEditProperty(Prop.Name);
+			}
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
 	}
 }
 
@@ -586,4 +769,33 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		SelectedComponent->PostEditProperty(Prop.Name);
 	}
+}
+
+void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp)
+{
+    if (!PrimaryActor || !NewComp) return;
+
+    USceneComponent* AttachTarget = nullptr;
+    // 이제 SelectedComponent 멤버 변수를 정상적으로 사용할 수 있습니다!
+    if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+    {
+        AttachTarget = static_cast<USceneComponent*>(SelectedComponent);
+    }
+    else
+    {
+        AttachTarget = PrimaryActor->GetRootComponent();
+    }
+
+    if (USceneComponent* SceneComp = Cast<USceneComponent>(NewComp))
+    {
+        if (AttachTarget) SceneComp->AttachToComponent(AttachTarget);
+        else PrimaryActor->SetRootComponent(SceneComp);
+    }
+    else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
+    {
+        if (AttachTarget) MoveComp->SetUpdatedComponent(AttachTarget);
+    }
+
+    SelectedComponent = NewComp;
+    bActorSelected = false; 
 }

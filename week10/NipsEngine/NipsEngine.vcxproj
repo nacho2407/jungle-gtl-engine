@@ -202,6 +202,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -323,6 +326,9 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\EditorUtils.h" />
@@ -518,12 +524,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Multipass\FogPass.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\Multipass\FXAAPass.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\OcclusionCull.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -543,9 +543,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderDecal.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
