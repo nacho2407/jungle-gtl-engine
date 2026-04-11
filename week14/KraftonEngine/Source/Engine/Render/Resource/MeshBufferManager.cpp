@@ -12,6 +12,10 @@ void FMeshBufferManager::Initialize(ID3D11Device* InDevice)
 	{
 		MeshBufferMap[Type].Create(InDevice, Data);
 	}
+	for (auto& [Type, Data] : PNCTMeshDataMap)
+	{
+		MeshBufferMap[Type].Create(InDevice, Data);
+	}
 
 	bIsInitialized = true;
 }
@@ -56,6 +60,7 @@ void FMeshBufferManager::CreatePrimitiveMeshData()
 	CreateRotationGizmo();
 	CreateScaleGizmo();
 	CreateQuad();
+	CreateTexturedQuad();
 }
 
 void FMeshBufferManager::CreateCube()
@@ -338,6 +343,24 @@ void FMeshBufferManager::CreateTranslationGizmo()
 			indices.push_back(baseCenterIndex); indices.push_back(next + 2); indices.push_back(curr + 2);
 		}
 	}
+}
+
+void FMeshBufferManager::CreateTexturedQuad()
+{
+	TMeshData<FVertexPNCT>& Data = PNCTMeshDataMap[EMeshShape::TexturedQuad];
+	TArray<FVertexPNCT>& vertices = Data.Vertices;
+	TArray<uint32>& indices = Data.Indices;
+
+	FVector Normal(1.0f, 0.0f, 0.0f);
+	FVector4 Color(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// Same positions as Quad: camera-facing billboard plane
+	vertices.push_back({ FVector(0.0f, -0.5f,  0.5f), Normal, Color, FVector2(0.0f, 0.0f) }); // top-left
+	vertices.push_back({ FVector(0.0f,  0.5f,  0.5f), Normal, Color, FVector2(1.0f, 0.0f) }); // top-right
+	vertices.push_back({ FVector(0.0f,  0.5f, -0.5f), Normal, Color, FVector2(1.0f, 1.0f) }); // bottom-right
+	vertices.push_back({ FVector(0.0f, -0.5f, -0.5f), Normal, Color, FVector2(0.0f, 1.0f) }); // bottom-left
+
+	indices.assign({ 0, 1, 2, 0, 2, 3 });
 }
 
 void FMeshBufferManager::CreatePlane()

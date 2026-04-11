@@ -25,8 +25,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		FShowFlags ShowFlags;
 		EViewMode ViewMode = EViewMode::Lit;
 
-		Bus.SetCameraInfo(Camera);
-		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Bus.Frame.SetCameraInfo(Camera);
+		Bus.Frame.SetRenderSettings(ViewMode, ShowFlags);
 
 		Collector.CollectWorld(World, Bus);
 		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);

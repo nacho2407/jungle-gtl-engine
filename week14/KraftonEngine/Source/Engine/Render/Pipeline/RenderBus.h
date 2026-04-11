@@ -1,119 +1,56 @@
-﻿#pragma once
+#pragma once
 #include "Core/CoreTypes.h"
 #include "Render/Pipeline/RenderConstants.h"
-#include "Render/Types/ViewTypes.h"
+#include "Render/Pipeline/FrameContext.h"
 
-class UCameraComponent;
-class FViewport;
 class FPrimitiveSceneProxy;
-class FGPUOcclusionCulling;
 
-#include "Render/Pipeline/LODContext.h"
-
-
+/*
+	FRenderBus - per-frame data transport.
+	Owns FFrameContext (read-only state) + lightweight data arrays + proxy queues (write targets).
+	Populated by RenderPipeline + RenderCollector, consumed by Renderer.
+*/
 class FRenderBus
 {
 public:
 	void Clear();
 
-	// 프록시 직접 제출 — 포인터만 저장, 데이터는 프록시 소유
+	// ===== Frame Context (camera, viewport, settings) =====
+	FFrameContext Frame;
+
+	// ===== Proxy queues =====
 	void AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy);
 	const TArray<const FPrimitiveSceneProxy*>& GetProxies(ERenderPass Pass) const;
 
-	// Batcher 패스용 — 타입 안전한 전용 큐
-	void AddFontEntry(FFontEntry&& Entry);
-	void AddOverlayFontEntry(FFontEntry&& Entry);
-	void AddSubUVEntry(FSubUVEntry&& Entry);
-	void AddBillboardEntry(FBillboardEntry&& Entry);
-	void AddAABBEntry(FAABBEntry&& Entry);
-	void AddGridEntry(FGridEntry&& Entry);
-	void AddDebugLineEntry(FDebugLineEntry&& Entry);
+	// ===== Overlay text (screen-space) =====
+	struct FOverlayText { FString Text; FVector2 Position; float Scale; };
+	void AddOverlayText(FString Text, const FVector2& Position, float Scale);
+	const TArray<FOverlayText>& GetOverlayTexts() const { return OverlayTexts; }
 
-	const TArray<FFontEntry>& GetFontEntries() const { return FontEntries; }
-	const TArray<FFontEntry>& GetOverlayFontEntries() const { return OverlayFontEntries; }
-	const TArray<FSubUVEntry>& GetSubUVEntries() const { return SubUVEntries; }
-	const TArray<FBillboardEntry>& GetBillboardEntries() const { return BillboardEntries; }
-	const TArray<FAABBEntry>& GetAABBEntries() const { return AABBEntries; }
-	const TArray<FGridEntry>& GetGridEntries() const { return GridEntries; }
-	const TArray<FDebugLineEntry>& GetDebugLineEntries() const { return DebugLineEntries; }
+	// ===== Debug AABB =====
+	struct FDebugAABB { FVector Min; FVector Max; FColor Color; };
+	void AddDebugAABB(const FVector& Min, const FVector& Max, const FColor& Color);
+	const TArray<FDebugAABB>& GetDebugAABBs() const { return DebugAABBs; }
 
-	// Getter,Setter
-	void SetCameraInfo(const UCameraComponent* Camera);
-	void SetViewportInfo(const FViewport* VP);
-	void SetViewportSize(float InWidth, float InHeight);
-	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
+	// ===== Debug lines =====
+	struct FDebugLine { FVector Start; FVector End; FColor Color; };
+	void AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color);
+	const TArray<FDebugLine>& GetDebugLines() const { return DebugLines; }
 
-	const FMatrix& GetView() const { return View; }
-	const FMatrix& GetProj() const { return Proj; }
-	const FVector& GetCameraPosition() const { return CameraPosition; }
-	const FVector& GetCameraForward() const { return CameraForward; }
-	const FVector& GetCameraUp() const { return CameraUp; }
-	const FVector& GetCameraRight() const { return CameraRight; }
-	bool  IsOrtho()        const { return bIsOrtho; }
-	bool  IsFixedOrtho()   const { return bIsOrtho && ViewportType != ELevelViewportType::Perspective && ViewportType != ELevelViewportType::FreeOrthographic; }
-	float GetOrthoWidth()  const { return OrthoWidth; }
-	ELevelViewportType GetViewportType() const { return ViewportType; }
-	void SetViewportType(ELevelViewportType InType) { ViewportType = InType; }
-	EViewMode GetViewMode() const { return ViewMode; }
-	const FShowFlags& GetShowFlags() const { return ShowFlags; }
-	const FVector& GetWireframeColor() const { return WireframeColor; }
-	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
-
-	const float GetViewportWidth() const { return viewportWidth; }
-	const float GetViewportHeight() const { return viewportHeight; }
-	ID3D11RenderTargetView*  GetViewportRTV()        const { return ViewportRTV; }
-	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
-	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
-
-	// GPU Occlusion Culling — set by render pipeline, read by collector
-	void SetOcclusionCulling(FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
-	const FGPUOcclusionCulling* GetOcclusionCulling() const { return OcclusionCulling; }
-	FGPUOcclusionCulling* GetOcclusionCullingMutable() const { return OcclusionCulling; }
-
-	// LOD Update Context — WorldTick에서 설정, Collect에서 사용
-	void SetLODContext(const FLODUpdateContext& InCtx) { LODContext = InCtx; }
-	const FLODUpdateContext& GetLODContext() const { return LODContext; }
+	// ===== Grid =====
+	void SetGrid(float Spacing, int32 HalfLineCount);
+	bool HasGrid() const { return bHasGrid; }
+	float GetGridSpacing() const { return GridSpacing; }
+	int32 GetGridHalfLineCount() const { return GridHalfLineCount; }
 
 private:
-	// 프록시 패스 큐 — 포인터만 저장, 데이터는 프록시 소유
 	TArray<const FPrimitiveSceneProxy*> ProxyQueues[(uint32)ERenderPass::MAX];
 
-	// Batcher 패스 큐
-	TArray<FFontEntry>  FontEntries;
-	TArray<FFontEntry>  OverlayFontEntries;
-	TArray<FSubUVEntry> SubUVEntries;
-	TArray<FBillboardEntry> BillboardEntries;
-	TArray<FAABBEntry>  AABBEntries;
-	TArray<FGridEntry>  GridEntries;
-	TArray<FDebugLineEntry> DebugLineEntries;
+	TArray<FOverlayText> OverlayTexts;
+	TArray<FDebugAABB>   DebugAABBs;
+	TArray<FDebugLine>   DebugLines;
 
-	FMatrix View;
-	FMatrix Proj;
-	FVector CameraPosition;
-	FVector CameraForward;
-	FVector CameraRight;
-	FVector CameraUp;
-
-	float viewportWidth = 0.0f;
-	float viewportHeight = 0.0f;
-
-	bool  bIsOrtho = false;
-	float OrthoWidth = 10.0f;
-	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
-
-	// PostProcess용 뷰포트 D3D 리소스 (프레임 내 유효)
-	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
-	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
-	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
-
-	// GPU Occlusion
-	FGPUOcclusionCulling* OcclusionCulling = nullptr;
-
-	// LOD
-	FLODUpdateContext LODContext;
-
-	//Editor Settings
-	EViewMode ViewMode;
-	FShowFlags ShowFlags;
-	FVector WireframeColor = FVector(0.0f, 0.0f, 0.7f);
+	float GridSpacing = 0.0f;
+	int32 GridHalfLineCount = 0;
+	bool  bHasGrid = false;
 };

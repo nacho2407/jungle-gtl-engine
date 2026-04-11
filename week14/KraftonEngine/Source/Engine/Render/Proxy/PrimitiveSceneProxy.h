@@ -9,6 +9,7 @@ class UPrimitiveComponent;
 class FShader;
 class FMeshBuffer;
 class FRenderBus;
+struct FFrameContext;
 
 // ============================================================
 // FPrimitiveSceneProxy — UPrimitiveComponent의 렌더 데이터 미러 (기본 클래스)
@@ -27,9 +28,6 @@ public:
 	virtual void UpdateMaterial();
 	virtual void UpdateVisibility();
 	virtual void UpdateMesh();
-
-	// --- Batcher Entry 수집 (bBatcherRendered 프록시가 오버라이드) ---
-	virtual void CollectEntries(FRenderBus& Bus) {}
 
 	// --- Dirty 관리 ---
 	void MarkDirty(EDirtyFlag Flag) { DirtyFlags |= Flag; }
@@ -55,7 +53,7 @@ public:
 
 	// --- Per-viewport 갱신 (bPerViewportUpdate=true 프록시만) ---
 	// 매 프레임, 각 뷰포트의 카메라 데이터로 프록시 상태를 갱신
-	virtual void UpdatePerViewport(const FRenderBus& Bus) {}
+	virtual void UpdatePerViewport(const FFrameContext& Frame) {}
 
 	// --- 가시성·선택 ---
 	bool bVisible  = true;
@@ -82,15 +80,15 @@ public:
 	// 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
 	TArray<FMeshSectionDraw> SectionDraws;
 
-	// 특수 CB (Gizmo 등)
+	// 특수 CB (Gizmo, SubUV 등)
 	FConstantBufferBinding ExtraCB;
+
+	// 텍스처 바인딩 (SubUV, Billboard 등 프록시 직접 렌더링용)
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+	ID3D11SamplerState* Sampler = nullptr;
 
 	// 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)
 	bool bPerViewportUpdate = false;
-
-	// true면 렌더링은 Batcher(Font/SubUV)가 담당 — CollectRender 호출 유지
-	// false면 프록시가 직접 ProxyQueue에 제출
-	bool bBatcherRendered = false;
 
 	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
 	uint32 LastLODUpdateFrame = UINT32_MAX;

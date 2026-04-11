@@ -5,6 +5,7 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ConstantBufferPool.h"
+#include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Runtime/Engine.h"
@@ -24,11 +25,9 @@ void FRenderer::Create(HWND hWindow)
 	FConstantBufferPool::Get().Initialize(Device.GetDevice());
 	Resources.Create(Device.GetDevice());
 
-	EditorLineBatcher.Create(Device.GetDevice());
-	GridLineBatcher.Create(Device.GetDevice());
-	FontBatcher.Create(Device.GetDevice());
-	SubUVBatcher.Create(Device.GetDevice());
-	BillboardBatcher.Create(Device.GetDevice());
+	EditorLines.Create(Device.GetDevice());
+	GridLines.Create(Device.GetDevice());
+	FontGeometry.Create(Device.GetDevice());
 
 	InitializePassRenderStates();
 
@@ -40,11 +39,9 @@ void FRenderer::Release()
 {
 	FGPUProfiler::Get().Shutdown();
 
-	EditorLineBatcher.Release();
-	GridLineBatcher.Release();
-	FontBatcher.Release();
-	SubUVBatcher.Release();
-	BillboardBatcher.Release();
+	EditorLines.Release();
+	GridLines.Release();
+	FontGeometry.Release();
 
 	for (FConstantBuffer& CB : PerObjectCBPool)
 	{
@@ -58,135 +55,68 @@ void FRenderer::Release()
 	Device.Release();
 }
 
-//	Bus → Batcher 데이터 수집 (CPU). BeginFrame 이전에 호출.
+//	Bus → dynamic geometry 수집 (CPU). BeginFrame 이전에 호출.
 void FRenderer::PrepareBatchers(const FRenderBus& Bus)
 {
-	// --- Editor 패스: AABB 디버그 박스 + DebugDraw 라인 → EditorLineBatcher ---
-	EditorLineBatcher.Clear();
-	for (const auto& Entry : Bus.GetAABBEntries())
+	// --- Editor 패스: AABB 디버그 박스 + DebugDraw 라인 ---
+	EditorLines.Clear();
+	for (const auto& AABB : Bus.GetDebugAABBs())
 	{
-		EditorLineBatcher.AddAABB(FBoundingBox{ Entry.AABB.Min, Entry.AABB.Max }, Entry.AABB.Color);
+		EditorLines.AddAABB(FBoundingBox{ AABB.Min, AABB.Max }, AABB.Color);
 	}
-	for (const auto& Entry : Bus.GetDebugLineEntries())
+	for (const auto& Line : Bus.GetDebugLines())
 	{
-		EditorLineBatcher.AddLine(Entry.Start, Entry.End, Entry.Color.ToVector4());
+		EditorLines.AddLine(Line.Start, Line.End, Line.Color.ToVector4());
 	}
 
-	// --- Grid 패스: 월드 그리드 + 축 → GridLineBatcher ---
-	GridLineBatcher.Clear();
-	for (const auto& Entry : Bus.GetGridEntries())
+	// --- Grid 패스: 월드 그리드 + 축 ---
+	GridLines.Clear();
+	if (Bus.HasGrid())
 	{
-		const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
-		FVector CameraFwd = Bus.GetCameraRight().Cross(Bus.GetCameraUp());
+		const FVector CameraPos = Bus.Frame.View.GetInverseFast().GetLocation();
+		FVector CameraFwd = Bus.Frame.CameraRight.Cross(Bus.Frame.CameraUp);
 		CameraFwd.Normalize();
 
-		GridLineBatcher.AddWorldHelpers(
-			Bus.GetShowFlags(),
-			Entry.Grid.GridSpacing,
-			Entry.Grid.GridHalfLineCount,
-			CameraPos, CameraFwd, Bus.IsFixedOrtho());
+		GridLines.AddWorldHelpers(
+			Bus.Frame.ShowFlags,
+			Bus.GetGridSpacing(),
+			Bus.GetGridHalfLineCount(),
+			CameraPos, CameraFwd, Bus.Frame.IsFixedOrtho());
 	}
 
-	// --- Font 패스: 월드 공간 텍스트 → FontBatcher ---
-	FontBatcher.Clear();
+	// --- Font 패스: 월드 공간 텍스트 (TextRender proxies in Font queue) ---
+	FontGeometry.Clear();
 	if (const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default")))
-		FontBatcher.EnsureCharInfoMap(FontRes);
-	for (const auto& Entry : Bus.GetFontEntries())
+		FontGeometry.EnsureCharInfoMap(FontRes);
+	for (const FPrimitiveSceneProxy* Proxy : Bus.GetProxies(ERenderPass::Font))
 	{
-		if (!Entry.Font.Text.empty())
+		if (!Proxy || !Proxy->bVisible) continue;
+		const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
+		if (TextProxy->CachedText.empty()) continue;
+		FontGeometry.AddWorldText(
+			TextProxy->CachedText,
+			TextProxy->CachedBillboardMatrix.GetLocation(),
+			Bus.Frame.CameraRight,
+			Bus.Frame.CameraUp,
+			TextProxy->CachedBillboardMatrix.GetScale(),
+			TextProxy->CachedFontScale
+		);
+	}
+
+	// --- OverlayFont 패스: 스크린 공간 텍스트 ---
+	FontGeometry.ClearScreen();
+	for (const auto& Text : Bus.GetOverlayTexts())
+	{
+		if (!Text.Text.empty())
 		{
-			FontBatcher.AddText(
-				Entry.Font.Text,
-				Entry.PerObject.Model.GetLocation(),
-				Bus.GetCameraRight(),
-				Bus.GetCameraUp(),
-				Entry.PerObject.Model.GetScale(),
-				Entry.Font.Scale
+			FontGeometry.AddScreenText(
+				Text.Text,
+				Text.Position.X,
+				Text.Position.Y,
+				Bus.Frame.ViewportWidth,
+				Bus.Frame.ViewportHeight,
+				Text.Scale
 			);
-		}
-	}
-
-	// --- OverlayFont 패스: 스크린 공간 텍스트 → FontBatcher ---
-	FontBatcher.ClearScreen();
-	for (const auto& Entry : Bus.GetOverlayFontEntries())
-	{
-		if (!Entry.Font.Text.empty())
-		{
-			FontBatcher.AddScreenText(
-				Entry.Font.Text,
-				Entry.Font.ScreenPosition.X,
-				Entry.Font.ScreenPosition.Y,
-				Bus.GetViewportWidth(),
-				Bus.GetViewportHeight(),
-				Entry.Font.Scale
-			);
-		}
-	}
-
-	// --- SubUV 패스: 스프라이트 → SubUVBatcher (Particle SRV 기준 정렬) ---
-	SubUVBatcher.Clear();
-	{
-		const auto& Entries = Bus.GetSubUVEntries();
-		SortedSubUVBuffer.clear();
-		SortedSubUVBuffer.insert(SortedSubUVBuffer.end(), Entries.begin(), Entries.end());
-
-		if (SortedSubUVBuffer.size() > 1)
-		{
-			std::sort(SortedSubUVBuffer.begin(), SortedSubUVBuffer.end(),
-				[](const FSubUVEntry& A, const FSubUVEntry& B) {
-					return A.SubUV.Particle < B.SubUV.Particle;
-				});
-		}
-
-		for (const auto& Entry : SortedSubUVBuffer)
-		{
-			if (Entry.SubUV.Particle)
-			{
-				SubUVBatcher.AddSprite(
-					Entry.SubUV.Particle->SRV,
-					Entry.PerObject.Model.GetLocation(),
-					Bus.GetCameraRight(),
-					Bus.GetCameraUp(),
-					Entry.PerObject.Model.GetScale(),
-					Entry.SubUV.FrameIndex,
-					Entry.SubUV.Particle->Columns,
-					Entry.SubUV.Particle->Rows,
-					Entry.SubUV.Width,
-					Entry.SubUV.Height
-				);
-			}
-		}
-	}
-
-	// --- Billboard 패스: 컬러 텍스처 quad → BillboardBatcher (Texture SRV 기준 정렬) ---
-	BillboardBatcher.Clear();
-	{
-		const auto& Entries = Bus.GetBillboardEntries();
-		SortedBillboardBuffer.clear();
-		SortedBillboardBuffer.insert(SortedBillboardBuffer.end(), Entries.begin(), Entries.end());
-
-		if (SortedBillboardBuffer.size() > 1)
-		{
-			std::sort(SortedBillboardBuffer.begin(), SortedBillboardBuffer.end(),
-				[](const FBillboardEntry& A, const FBillboardEntry& B) {
-					return A.Billboard.Texture < B.Billboard.Texture;
-				});
-		}
-
-		for (const auto& Entry : SortedBillboardBuffer)
-		{
-			if (Entry.Billboard.Texture)
-			{
-				BillboardBatcher.AddSprite(
-					Entry.Billboard.Texture->SRV,
-					Entry.PerObject.Model.GetLocation(),
-					Bus.GetCameraRight(),
-					Bus.GetCameraUp(),
-					Entry.PerObject.Model.GetScale(),
-					Entry.Billboard.Width,
-					Entry.Billboard.Height
-				);
-			}
 		}
 	}
 }
@@ -214,14 +144,14 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-		UpdateFrameBuffer(Context, InRenderBus);
+		UpdateFrameBuffer(Context, InRenderBus.Frame);
 	}
 
 	// ProxyQueue → FDrawCommand 변환
 	{
 		SCOPE_STAT_CAT("BuildDrawCommands", "4_ExecutePass");
 		BuildProxyDrawCommands(InRenderBus, Context);
-		BuildBatcherDrawCommands(InRenderBus, Context);
+		BuildDynamicDrawCommands(InRenderBus.Frame, Context);
 	}
 
 	// 커맨드 정렬 (Pass → SortKey 순)
@@ -269,7 +199,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 void FRenderer::BuildProxyDrawCommands(const FRenderBus& InRenderBus, ID3D11DeviceContext* Ctx)
 {
 	DrawCommandList.Reset();
-	EViewMode ViewMode = InRenderBus.GetViewMode();
+	EViewMode ViewMode = InRenderBus.Frame.ViewMode;
 
 	// PerObjectCBPool 재할당 방지: 최대 ProxyId를 미리 스캔하여 풀 pre-allocate
 	uint32 MaxProxyId = 0;
@@ -286,6 +216,10 @@ void FRenderer::BuildProxyDrawCommands(const FRenderBus& InRenderBus, ID3D11Devi
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
+
+		// Font/OverlayFont passes are handled by dynamic commands (FontGeometry)
+		if (CurPass == ERenderPass::Font || CurPass == ERenderPass::OverlayFont)
+			continue;
 
 		const auto& Proxies = InRenderBus.GetProxies(CurPass);
 		if (Proxies.empty()) continue;
@@ -318,9 +252,11 @@ void FRenderer::BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERender
 		Proxy.ClearPerObjectCBDirty();
 	}
 
-	// ExtraCB 업데이트 (Gizmo 등)
+	// ExtraCB 업데이트 (Gizmo, SubUV 등) — lazy creation if buffer not yet allocated
 	if (Proxy.ExtraCB.Buffer)
 	{
+		if (!Proxy.ExtraCB.Buffer->GetBuffer())
+			Proxy.ExtraCB.Buffer->Create(Device.GetDevice(), Proxy.ExtraCB.Size);
 		Proxy.ExtraCB.Buffer->Update(Ctx, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
 	}
 
@@ -369,18 +305,20 @@ void FRenderer::BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERender
 		Cmd.PerObjectCB  = PerObjCB;
 		Cmd.ExtraCB      = Proxy.ExtraCB.Buffer;
 		Cmd.ExtraCBSlot  = Proxy.ExtraCB.Slot;
+		Cmd.DiffuseSRV   = Proxy.DiffuseSRV;
+		Cmd.Sampler      = Proxy.Sampler;
 		Cmd.Pass         = Pass;
-		Cmd.SortKey      = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, nullptr);
+		Cmd.SortKey      = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 		// IndexCount/VertexCount = 0 → Submit에서 MeshBuffer 전체 드로우
 	}
 }
 
 // ============================================================
-// Batcher → FDrawCommand 변환
+// Dynamic geometry → FDrawCommand 변환 (Font, Line)
 // ============================================================
-void FRenderer::BuildBatcherDrawCommands(const FRenderBus& InRenderBus, ID3D11DeviceContext* Ctx)
+void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx)
 {
-	EViewMode ViewMode = InRenderBus.GetViewMode();
+	EViewMode ViewMode = Frame.ViewMode;
 
 	// --- Helper: PassRenderState → FDrawCommand PSO 필드 복사 ---
 	auto ApplyPassState = [&](FDrawCommand& Cmd, ERenderPass Pass)
@@ -396,119 +334,75 @@ void FRenderer::BuildBatcherDrawCommands(const FRenderBus& InRenderBus, ID3D11De
 			Cmd.Rasterizer = ERasterizerState::WireFrame;
 	};
 
-	// --- Editor Line Batcher ---
-	if (EditorLineBatcher.GetLineCount() > 0 && EditorLineBatcher.UploadBuffers(Ctx))
+	// --- Editor Lines ---
+	if (EditorLines.GetLineCount() > 0 && EditorLines.UploadBuffers(Ctx))
 	{
 		FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		ApplyPassState(Cmd, ERenderPass::Editor);
 		Cmd.Shader      = EditorShader;
-		Cmd.RawVB       = EditorLineBatcher.GetVBBuffer();
-		Cmd.RawVBStride = EditorLineBatcher.GetVBStride();
-		Cmd.RawIB       = EditorLineBatcher.GetIBBuffer();
-		Cmd.IndexCount   = EditorLineBatcher.GetIndexCount();
+		Cmd.RawVB       = EditorLines.GetVBBuffer();
+		Cmd.RawVBStride = EditorLines.GetVBStride();
+		Cmd.RawIB       = EditorLines.GetIBBuffer();
+		Cmd.IndexCount   = EditorLines.GetIndexCount();
 		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Editor, EditorShader, nullptr, nullptr);
 	}
 
-	// --- Grid Line Batcher ---
-	if (GridLineBatcher.GetLineCount() > 0 && GridLineBatcher.UploadBuffers(Ctx))
+	// --- Grid Lines ---
+	if (GridLines.GetLineCount() > 0 && GridLines.UploadBuffers(Ctx))
 	{
 		FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		ApplyPassState(Cmd, ERenderPass::Grid);
 		Cmd.Shader      = EditorShader;
-		Cmd.RawVB       = GridLineBatcher.GetVBBuffer();
-		Cmd.RawVBStride = GridLineBatcher.GetVBStride();
-		Cmd.RawIB       = GridLineBatcher.GetIBBuffer();
-		Cmd.IndexCount   = GridLineBatcher.GetIndexCount();
+		Cmd.RawVB       = GridLines.GetVBBuffer();
+		Cmd.RawVBStride = GridLines.GetVBStride();
+		Cmd.RawIB       = GridLines.GetIBBuffer();
+		Cmd.IndexCount   = GridLines.GetIndexCount();
 		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Grid, EditorShader, nullptr, nullptr);
 	}
 
-	// --- Font Batcher (World + Screen) ---
+	// --- Font (World + Screen) ---
 	{
 		const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 		if (FontRes && FontRes->IsLoaded())
 		{
 			// World Font
-			if (FontBatcher.GetQuadCount() > 0 && FontBatcher.UploadWorldBuffers(Ctx))
+			if (FontGeometry.GetWorldQuadCount() > 0 && FontGeometry.UploadWorldBuffers(Ctx))
 			{
 				FShader* FontShader = FShaderManager::Get().GetShader(EShaderType::Font);
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				ApplyPassState(Cmd, ERenderPass::Font);
 				Cmd.Shader      = FontShader;
-				Cmd.RawVB       = FontBatcher.GetWorldVBBuffer();
-				Cmd.RawVBStride = FontBatcher.GetWorldVBStride();
-				Cmd.RawIB       = FontBatcher.GetWorldIBBuffer();
-				Cmd.IndexCount   = FontBatcher.GetWorldIndexCount();
+				Cmd.RawVB       = FontGeometry.GetWorldVBBuffer();
+				Cmd.RawVBStride = FontGeometry.GetWorldVBStride();
+				Cmd.RawIB       = FontGeometry.GetWorldIBBuffer();
+				Cmd.IndexCount   = FontGeometry.GetWorldIndexCount();
 				Cmd.DiffuseSRV   = FontRes->SRV;
-				Cmd.Sampler      = FontBatcher.GetSampler();
+				Cmd.Sampler      = FontGeometry.GetSampler();
 				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Font, FontShader, nullptr, FontRes->SRV);
 			}
 
 			// Screen / Overlay Font
-			if (FontBatcher.GetScreenQuadCount() > 0 && FontBatcher.UploadScreenBuffers(Ctx))
+			if (FontGeometry.GetScreenQuadCount() > 0 && FontGeometry.UploadScreenBuffers(Ctx))
 			{
 				FShader* OverlayShader = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				ApplyPassState(Cmd, ERenderPass::OverlayFont);
 				Cmd.Shader      = OverlayShader;
-				Cmd.RawVB       = FontBatcher.GetScreenVBBuffer();
-				Cmd.RawVBStride = FontBatcher.GetScreenVBStride();
-				Cmd.RawIB       = FontBatcher.GetScreenIBBuffer();
-				Cmd.IndexCount   = FontBatcher.GetScreenIndexCount();
+				Cmd.RawVB       = FontGeometry.GetScreenVBBuffer();
+				Cmd.RawVBStride = FontGeometry.GetScreenVBStride();
+				Cmd.RawIB       = FontGeometry.GetScreenIBBuffer();
+				Cmd.IndexCount   = FontGeometry.GetScreenIndexCount();
 				Cmd.DiffuseSRV   = FontRes->SRV;
-				Cmd.Sampler      = FontBatcher.GetSampler();
+				Cmd.Sampler      = FontGeometry.GetSampler();
 				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::OverlayFont, OverlayShader, nullptr, FontRes->SRV);
 			}
 		}
-	}
-
-	// --- SRV-batched Batcher 공통 헬퍼 (SubUV, Billboard) ---
-	auto EmitSRVBatchCommands = [&](ERenderPass Pass, FShader* Shader,
-		ID3D11Buffer* BatchVB, uint32 BatchVBStride, ID3D11Buffer* BatchIB,
-		ID3D11SamplerState* BatchSampler, const TArray<FSRVBatch>& Batches)
-	{
-		for (const FSRVBatch& Batch : Batches)
-		{
-			if (!Batch.SRV || Batch.IndexCount == 0) continue;
-
-			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			ApplyPassState(Cmd, Pass);
-			Cmd.Shader      = Shader;
-			Cmd.RawVB       = BatchVB;
-			Cmd.RawVBStride = BatchVBStride;
-			Cmd.RawIB       = BatchIB;
-			Cmd.FirstIndex   = Batch.IndexStart;
-			Cmd.IndexCount   = Batch.IndexCount;
-			Cmd.BaseVertex   = Batch.BaseVertex;
-			Cmd.DiffuseSRV   = Batch.SRV;
-			Cmd.Sampler      = BatchSampler;
-			Cmd.SortKey      = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Batch.SRV);
-		}
-	};
-
-	// --- SubUV Batcher ---
-	if (SubUVBatcher.GetSpriteCount() > 0 && SubUVBatcher.UploadBuffers(Ctx))
-	{
-		EmitSRVBatchCommands(ERenderPass::SubUV,
-			FShaderManager::Get().GetShader(EShaderType::SubUV),
-			SubUVBatcher.GetVBBuffer(), SubUVBatcher.GetVBStride(),
-			SubUVBatcher.GetIBBuffer(), SubUVBatcher.GetSampler(),
-			SubUVBatcher.GetBatches());
-	}
-
-	// --- Billboard Batcher ---
-	if (BillboardBatcher.GetSpriteCount() > 0 && BillboardBatcher.UploadBuffers(Ctx))
-	{
-		EmitSRVBatchCommands(ERenderPass::Billboard,
-			FShaderManager::Get().GetShader(EShaderType::Billboard),
-			BillboardBatcher.GetVBBuffer(), BillboardBatcher.GetVBStride(),
-			BillboardBatcher.GetIBBuffer(), BillboardBatcher.GetSampler(),
-			BillboardBatcher.GetBatches());
 	}
 }
 
@@ -572,9 +466,9 @@ FConstantBuffer* FRenderer::GetPerObjectCBForProxy(const FPrimitiveSceneProxy& P
 // ============================================================
 void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context)
 {
-	ID3D11ShaderResourceView* StencilSRV = Bus.GetViewportStencilSRV();
-	ID3D11DepthStencilView* DSV = Bus.GetViewportDSV();
-	ID3D11RenderTargetView* RTV = Bus.GetViewportRTV();
+	ID3D11ShaderResourceView* StencilSRV = Bus.Frame.ViewportStencilSRV;
+	ID3D11DepthStencilView* DSV = Bus.Frame.ViewportDSV;
+	ID3D11RenderTargetView* RTV = Bus.Frame.ViewportRTV;
 	if (!StencilSRV || !RTV) return;
 
 	// SelectionMask 큐가 비어 있으면 선택된 오브젝트 없음 → 스킵
@@ -626,13 +520,13 @@ void FRenderer::EndFrame()
 	Device.Present();
 }
 
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame)
 {
 	FFrameConstants frameConstantData = {};
-	frameConstantData.View = InRenderBus.GetView();
-	frameConstantData.Projection = InRenderBus.GetProj();
-	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
-	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
+	frameConstantData.View = Frame.View;
+	frameConstantData.Projection = Frame.Proj;
+	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
+	frameConstantData.WireframeColor = Frame.WireframeColor;
 
 	if (GEngine && GEngine->GetTimer())
 	{

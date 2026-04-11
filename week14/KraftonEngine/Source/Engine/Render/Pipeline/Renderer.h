@@ -12,10 +12,8 @@
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Batcher/LineBatcher.h"
-#include "Render/Batcher/FontBatcher.h"
-#include "Render/Batcher/SubUVBatcher.h"
-#include "Render/Batcher/BillboardBatcher.h"
+#include "Render/Helper/LineGeometry.h"
+#include "Render/Helper/FontGeometry.h"
 
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
@@ -46,15 +44,15 @@ public:
 private:
 	void InitializePassRenderStates();
 
-	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
+	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 
 	// ProxyQueue → FDrawCommand 변환
 	void BuildProxyDrawCommands(const FRenderBus& InRenderBus, ID3D11DeviceContext* Ctx);
 	void BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass,
 		const FPassRenderState& PassState, EViewMode ViewMode, ID3D11DeviceContext* Ctx);
 
-	// Batcher → FDrawCommand 변환 (Dynamic VB/IB 업로드 + 커맨드 발행)
-	void BuildBatcherDrawCommands(const FRenderBus& InRenderBus, ID3D11DeviceContext* Ctx);
+	// Dynamic geometry → FDrawCommand 변환 (Font, Line)
+	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx);
 
 	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
@@ -66,18 +64,13 @@ private:
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
-	FLineBatcher   EditorLineBatcher;
-	FLineBatcher   GridLineBatcher;
-	FFontBatcher   FontBatcher;
-	FSubUVBatcher  SubUVBatcher;
-	FBillboardBatcher BillboardBatcher;
+	FLineGeometry  EditorLines;
+	FLineGeometry  GridLines;
+	FFontGeometry  FontGeometry;
 
 	// FDrawCommand 기반 렌더링
 	FDrawCommandList DrawCommandList;
 
-	// 정렬용 멤버 버퍼 (재할당 방지)
-	TArray<FSubUVEntry> SortedSubUVBuffer;
-	TArray<FBillboardEntry> SortedBillboardBuffer;
 	TArray<FConstantBuffer> PerObjectCBPool;
 
 	FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];

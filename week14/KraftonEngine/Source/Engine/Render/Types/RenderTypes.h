@@ -24,6 +24,7 @@ enum class EMeshShape
 	Sphere,
 	Plane,
 	Quad,
+	TexturedQuad,
 	TransGizmo,
 	RotGizmo,
 	ScaleGizmo,
