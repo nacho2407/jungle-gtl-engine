@@ -22,16 +22,16 @@ struct FRenderResources
     FConstantBuffer FogPassConstantBuffer;		// b9
     FConstantBuffer FXAAConstantBuffer;                     // b10
 
-    FShader PrimitiveShader;
-    FShader GizmoShader;
-    FShader EditorShader;
-	FShader SelectionMaskShader;
-	FShader OutlineShader;
-    FShader StaticMeshShader;
-    FShader LightPassShader;
-    FShader FogPassShader;
-	FShader DecalShader;
-    FShader     FXAAShader;
+    UShader* PrimitiveShader;
+    UShader* GizmoShader;
+    UShader* EditorShader;
+	UShader* SelectionMaskShader;
+	UShader* OutlineShader;
+	UShader* StaticMeshShader;
+	UShader* LightPassShader;
+	UShader* FogPassShader;
+	UShader* DecalShader;
+	UShader* FXAAShader;
 
 	TComPtr<ID3D11SamplerState> MeshSamplerState;
 };

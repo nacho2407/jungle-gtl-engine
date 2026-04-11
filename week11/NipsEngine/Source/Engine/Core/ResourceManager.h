@@ -9,7 +9,9 @@
 #include "Core/Singleton.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
+#include "Render/Resource/Shader.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/Texture.h"
 #include <d3d11.h>
 
 // 리소스를 관리하는 싱글턴.
@@ -71,10 +73,11 @@ class FResourceManager : public TSingleton<FResourceManager>
 	friend class TSingleton<FResourceManager>;
 
 public:
+	void SetCachedDevice(ID3D11Device* Device) { CachedDevice = Device; }
 	//	초기 설정
-	void LoadFromAssetDirectory(const FString & Path, ID3D11Device* Device);
+	void LoadFromAssetDirectory(const FString& Path);
 	//	Refresh
-	void RefreshFromAssetDirectory(const FString & Path);
+	void RefreshFromAssetDirectory(const FString& Path);
 	
 	// Resource.ini에서 경로/그리드 정보 로드 후 GPU 리소스 생성
 	// void LoadFromFile(const FString& Path, ID3D11Device* InDevice);
@@ -89,15 +92,28 @@ public:
 	// --- Material Texture (SRV) ---
 	FMaterialResource* FindTexture(const FString& Path) const;
 	FMaterialResource* LoadTexture(const FString& Path, ID3D11Device* Device = nullptr);
+
+	UTexture* FindTextureAsset(const FString& Path) const;
+	UTexture* LoadTextureAsset(const FString& Path, ID3D11Device* Device = nullptr);
+
 	// 모든 GPU 리소스 해제
 	void ReleaseGPUResources();
 
+	// --- Shader ---
+	bool LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
+		const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount);
+	UShader* GetShader(const FString& FilePath) const;
+
 	// --- Material ---
 	void LoadMaterialFromPath(const FString& FilePath);
-	bool LoadMaterial(const FString& MtlFilePath);
-	FMaterial* FindMaterial(const FString& MaterialName);
-	const FMaterial* FindMaterial(const FString& MaterialName) const;
+	//bool LoadMaterial(const FString& MtlFilePath);
+	//FMaterial* FindMaterial(const FString& MaterialName);
+	//const FMaterial* FindMaterial(const FString& MaterialName) const;
 	TArray<FString> GetMaterialNames() const;
+
+	UMaterial* FindMaterialAsset(const FString& Path) const;
+	UMaterial* FindOrCreateMaterialAsset(const FString& Path, ID3D11Device* Device = nullptr);
+	bool LoadMaterialAsset(const FString& Path, ID3D11Device* Device = nullptr);
 
 	// --- Font ---
 	FFontResource* FindFont(const FName& FontName);
@@ -152,11 +168,16 @@ private:
 	TMap<FString, FMaterial>         MaterialRegistry;   
 
 	TMap<FString, FStaticMeshResource> StaticMeshRegistry;
-	TMap<FString, UStaticMesh*>        StaticMeshMap;
 
 	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
 	TComPtr<ID3D11ShaderResourceView> DefaultWhiteSRV;
-	
+
+	// New!
+	TMap<FString, UStaticMesh*> StaticMeshes;
+	TMap<FString, UShader*> Shaders;
+	TMap<FString, UTexture*> Textures;
+	TMap<FString, UMaterial*> Materials;
+
 	/* Paths */
 	TArray<FString> ObjFilePaths;
 	TArray<FString> MaterialFilePaths;

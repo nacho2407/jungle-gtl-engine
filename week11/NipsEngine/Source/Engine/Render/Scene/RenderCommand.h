@@ -8,6 +8,7 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Resource/Material.h"
 #include "Render/Device/D3DDevice.h"
 #include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
@@ -206,6 +207,8 @@ struct FRenderCommand
         FFogConstants        Fog;
         FFXAAConstants        FXAA;
 	} Constants;
+
+	UMaterialInterface* Material = nullptr;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
 	EBlendState BlendState = static_cast<EBlendState>(-1);

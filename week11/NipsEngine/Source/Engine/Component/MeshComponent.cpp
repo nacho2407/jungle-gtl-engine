@@ -1,4 +1,5 @@
 ﻿#include "MeshComponent.h"
+#include "Render/Resource/Material.h"
 
 DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 
@@ -25,7 +26,7 @@ DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 //    return NewComp;
 //}
 
-void UMeshComponent::SetMaterial(int32 SlotIndex, FMaterial* InMaterial)
+void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
 {
 	if (SlotIndex < 0)
 	{
@@ -40,7 +41,7 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, FMaterial* InMaterial)
 	OverrideMaterial[SlotIndex] = InMaterial;
 }
 
-FMaterial* UMeshComponent::GetMaterial(int32 SlotIndex) const
+UMaterialInterface* UMeshComponent::GetMaterial(int32 SlotIndex) const
 {
 	if (SlotIndex < 0 || SlotIndex >= static_cast<int32>(OverrideMaterial.size()))
 	{
@@ -50,7 +51,7 @@ FMaterial* UMeshComponent::GetMaterial(int32 SlotIndex) const
 	return OverrideMaterial[SlotIndex];
 }
 
-const TArray<FMaterial*>& UMeshComponent::GetOverrideMaterial() const
+const TArray<UMaterialInterface*>& UMeshComponent::GetOverrideMaterial() const
 {
 	return OverrideMaterial;
 }

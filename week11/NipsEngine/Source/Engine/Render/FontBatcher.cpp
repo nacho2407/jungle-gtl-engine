@@ -1,6 +1,7 @@
 ﻿#include <d3d11.h>
 #include "FontBatcher.h"
 #include "Core/CoreTypes.h"
+#include "Core/ResourceManager.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -19,14 +20,10 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
 
-	// 셰이더 + Input Layout
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	FontShader.Create(Device.Get(), L"Shaders/ShaderFont.hlsl",
-		"VS", "PS", layout, ARRAYSIZE(layout));
+	FontMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("FontMaterial");
+	UMaterial* FontMat = Cast<UMaterial>(FontMaterial);
+	FontMat->ShaderAsset = FResourceManager::Get().GetShader("Shaders/ShaderFont.hlsl");
+	FontMat->MaterialData.Name = "FontMaterial";
 }
 
 void FFontBatcher::CreateBuffers()
@@ -85,8 +82,6 @@ void FFontBatcher::Release()
 	IndexBuffer.Reset();
 	SamplerState.Reset();
 	Device.Reset();
-
-	FontShader.Release();
 }
 
 void FFontBatcher::AddText(const FString& Text,
@@ -257,7 +252,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->Unmap(IndexBuffer.Get(), 0);
 
 	// 셰이더 바인딩
-	FontShader.Bind(Context);
+	FontMaterial->Bind(Context);
 
 	uint32 stride = sizeof(FTextureVertex), offset = 0;
 	ID3D11Buffer* VertexBufferPtr = VertexBuffer.Get();

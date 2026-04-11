@@ -2,6 +2,7 @@
 #include <UI/EditorConsoleWidget.h>
 #include "SubUVBatcher.h"
 #include "Core/CoreTypes.h"
+#include "Core/ResourceManager.h"
 
 void FSubUVBatcher::Create(ID3D11Device* InDevice)
 {
@@ -23,8 +24,12 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-    SubUVShader.Create(Device.Get(), L"Shaders/ShaderSubUV.hlsl",
-        "VS", "PS", layout, ARRAYSIZE(layout));
+
+	SubUVMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("SubUVMaterial");
+	UMaterial* SubUVMat = Cast<UMaterial>(SubUVMaterial);
+	SubUVMat->Name = "SubUVMaterial";
+	SubUVMat->ShaderAsset = FResourceManager::Get().GetShader("Shaders/ShaderSubUV.hlsl");
+	SubUVMat->MaterialData.Name = "SubUVMaterial";
 }
 
 void FSubUVBatcher::CreateBuffers()
@@ -55,8 +60,6 @@ void FSubUVBatcher::Release()
     IndexBuffer.Reset();
     SamplerState.Reset();
 	Device.Reset();
-
-    SubUVShader.Release();
 }
 
 void FSubUVBatcher::AddSprite(ID3D11ShaderResourceView* SRV, 
@@ -134,7 +137,7 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
     memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
     Context->Unmap(IndexBuffer.Get(), 0);
 
-    SubUVShader.Bind(Context);
+    SubUVMaterial->Bind(Context);
 
     uint32 stride = sizeof(FTextureVertex), offset = 0;
 	ID3D11Buffer* VertexBufferPtr = VertexBuffer.Get();

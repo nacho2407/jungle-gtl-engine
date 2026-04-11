@@ -500,6 +500,7 @@
     <ClCompile Include="Source\Engine\Input\Controller\EditorController\PIEController.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -999,5 +1000,6 @@
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h" />
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\PIEController.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
   </ItemGroup>
 </Project>

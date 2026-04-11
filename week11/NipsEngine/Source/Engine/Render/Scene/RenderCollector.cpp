@@ -494,7 +494,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
 
 			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
-			const FMaterial* MtlData = StaticMeshComp->GetMaterial(SectionIdx);
+			const FMaterial* MtlData = &Cast<UMaterial>(StaticMeshComp->GetMaterial(SectionIdx))->MaterialData;
 
 			if (!MtlData) MtlData = &EngineDefaultMaterial;
 	
@@ -525,6 +525,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.Constants.StaticMesh.SpecularSRV = MtlData->bHasSpecularTexture ? ResolveSRV(MtlData->SpecularTexPath) : DefaultSRV;
 				Cmd.Constants.StaticMesh.BumpSRV = MtlData->bHasBumpTexture ? ResolveSRV(MtlData->BumpTexPath) : DefaultSRV;
 			}
+
+			Cmd.Material = StaticMeshComp->GetMaterial(SectionIdx);
 
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
@@ -607,9 +609,12 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		FScopeCycleCounter RenderDecalScope({});
 
 		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
-		const FMaterial* MtlData = DecalComp->GetMaterial();
+		const UMaterial* MtlData = Cast<UMaterial>(DecalComp->GetMaterial());
 
-		if (!MtlData) MtlData = &EngineDefaultMaterial;
+		if (!MtlData)
+		{
+			return;
+		}
 
 		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetWorld() : nullptr;
 
@@ -658,7 +663,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
 				Cmd.Constants.Decal.FadeAlpha = 1.0f;
 
-				Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->DiffuseTexPath);
+				Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->MaterialData.DiffuseTexPath);
 				Cmd.BlendState = EBlendState::AlphaBlend;
 				Cmd.DepthStencilState = EDepthStencilState::Default;
 
