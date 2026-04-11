@@ -15,6 +15,8 @@
 #include "Render/Helper/LineGeometry.h"
 #include "Render/Helper/FontGeometry.h"
 
+class FTextRenderSceneProxy;
+
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
 {
@@ -31,7 +33,16 @@ public:
 	void Create(HWND hWindow);
 	void Release();
 
-	void PrepareBatchers(const FRenderBus& InRenderBus);
+	// --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
+	void BeginCollect(const FRenderBus& Bus);
+
+	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
+	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
+
+	// Collector가 직접 호출 — Font proxy → FontGeometry 배칭
+	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
+
+	// --- Render phase: 동적 지오메트리 빌드 + 정렬 + 제출 ---
 	void BeginFrame();
 	void Render(const FRenderBus& InRenderBus);
 	void EndFrame();
@@ -46,12 +57,10 @@ private:
 
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 
-	// ProxyQueue → FDrawCommand 변환
-	void BuildProxyDrawCommands(const FRenderBus& InRenderBus, ID3D11DeviceContext* Ctx);
-	void BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass,
-		const FPassRenderState& PassState, EViewMode ViewMode, ID3D11DeviceContext* Ctx);
+	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼
+	void PrepareDynamicGeometry(const FRenderBus& Bus);
 
-	// Dynamic geometry → FDrawCommand 변환 (Font, Line)
+	// 동적 지오메트리 → FDrawCommand (VB 업로드 + 커맨드 생성)
 	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx);
 
 	// PerObjectCB 풀 관리
@@ -59,7 +68,7 @@ private:
 	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
 
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
-	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	void DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceContext* Context);
 
 private:
 	FD3DDevice Device;
@@ -74,4 +83,8 @@ private:
 	TArray<FConstantBuffer> PerObjectCBPool;
 
 	FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];
+
+	// BeginCollect에서 저장, BuildCommandForProxy에서 사용
+	EViewMode CollectViewMode = EViewMode::Lit;
+	bool bHasSelectionMaskCommands = false;
 };

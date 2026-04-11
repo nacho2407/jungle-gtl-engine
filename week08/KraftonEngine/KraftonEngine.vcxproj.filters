@@ -70,9 +70,6 @@
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{16ec6128-166d-ab0f-2135-c0c61f984faf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Helper">
-      <UniqueIdentifier>{9f304481-1091-e173-0e96-fea5393d1760}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Render\Culling">
       <UniqueIdentifier>{58ae316b-ca35-389a-0e2c-f4e351055701}</UniqueIdentifier>
     </Filter>
@@ -81,6 +78,9 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Device">
       <UniqueIdentifier>{1c6ca01a-80a0-7c1a-448e-3662768a07e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Helper">
+      <UniqueIdentifier>{3554ce5a-fc6e-fa4d-7be9-bdc90d177118}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Pipeline">
       <UniqueIdentifier>{5ac9b005-2a76-d0b0-3f77-2b89ae10bb53}</UniqueIdentifier>
@@ -356,12 +356,6 @@
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp">
-      <Filter>Source\Engine\Render\Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp">
-      <Filter>Source\Engine\Render\Helper</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
@@ -388,6 +382,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp">
+      <Filter>Source\Engine\Render\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp">
+      <Filter>Source\Engine\Render\Helper</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
@@ -755,12 +755,6 @@
     <ClInclude Include="Source\Engine\Profiling\Timer.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h">
-      <Filter>Source\Engine\Render\Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h">
-      <Filter>Source\Engine\Render\Helper</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
@@ -787,6 +781,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h">
       <Filter>Source\Engine\Render\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h">
+      <Filter>Source\Engine\Render\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h">
+      <Filter>Source\Engine\Render\Helper</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>

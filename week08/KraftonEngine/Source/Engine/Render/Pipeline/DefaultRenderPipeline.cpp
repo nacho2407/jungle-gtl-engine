@@ -28,11 +28,15 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Bus.Frame.SetCameraInfo(Camera);
 		Bus.Frame.SetRenderSettings(ViewMode, ShowFlags);
 
-		Collector.CollectWorld(World, Bus);
+		Renderer.BeginCollect(Bus);
+		Collector.CollectWorld(World, Bus, Renderer);
 		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);
 	}
+	else
+	{
+		Renderer.BeginCollect(Bus);
+	}
 
-	Renderer.PrepareBatchers(Bus);
 	Renderer.BeginFrame();
 	Renderer.Render(Bus);
 	Renderer.EndFrame();

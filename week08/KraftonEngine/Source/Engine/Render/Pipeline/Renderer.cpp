@@ -55,193 +55,39 @@ void FRenderer::Release()
 	Device.Release();
 }
 
-//	Bus → dynamic geometry 수집 (CPU). BeginFrame 이전에 호출.
-void FRenderer::PrepareBatchers(const FRenderBus& Bus)
+// ============================================================
+// BeginCollect — DrawCommandList + 동적 지오메트리 초기화
+// Collector가 BuildCommandForProxy/AddWorldText를 호출하기 전에 반드시 호출
+// ============================================================
+void FRenderer::BeginCollect(const FRenderBus& Bus)
 {
-	// --- Editor 패스: AABB 디버그 박스 + DebugDraw 라인 ---
+	DrawCommandList.Reset();
+	CollectViewMode = Bus.Frame.ViewMode;
+	bHasSelectionMaskCommands = false;
+
+	// 동적 지오메트리 초기화
 	EditorLines.Clear();
-	for (const auto& AABB : Bus.GetDebugAABBs())
-	{
-		EditorLines.AddAABB(FBoundingBox{ AABB.Min, AABB.Max }, AABB.Color);
-	}
-	for (const auto& Line : Bus.GetDebugLines())
-	{
-		EditorLines.AddLine(Line.Start, Line.End, Line.Color.ToVector4());
-	}
-
-	// --- Grid 패스: 월드 그리드 + 축 ---
 	GridLines.Clear();
-	if (Bus.HasGrid())
-	{
-		const FVector CameraPos = Bus.Frame.View.GetInverseFast().GetLocation();
-		FVector CameraFwd = Bus.Frame.CameraRight.Cross(Bus.Frame.CameraUp);
-		CameraFwd.Normalize();
-
-		GridLines.AddWorldHelpers(
-			Bus.Frame.ShowFlags,
-			Bus.GetGridSpacing(),
-			Bus.GetGridHalfLineCount(),
-			CameraPos, CameraFwd, Bus.Frame.IsFixedOrtho());
-	}
-
-	// --- Font 패스: 월드 공간 텍스트 (TextRender proxies in Font queue) ---
 	FontGeometry.Clear();
+	FontGeometry.ClearScreen();
+
 	if (const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default")))
 		FontGeometry.EnsureCharInfoMap(FontRes);
-	for (const FPrimitiveSceneProxy* Proxy : Bus.GetProxies(ERenderPass::Font))
-	{
-		if (!Proxy || !Proxy->bVisible) continue;
-		const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
-		if (TextProxy->CachedText.empty()) continue;
-		FontGeometry.AddWorldText(
-			TextProxy->CachedText,
-			TextProxy->CachedBillboardMatrix.GetLocation(),
-			Bus.Frame.CameraRight,
-			Bus.Frame.CameraUp,
-			TextProxy->CachedBillboardMatrix.GetScale(),
-			TextProxy->CachedFontScale
-		);
-	}
-
-	// --- OverlayFont 패스: 스크린 공간 텍스트 ---
-	FontGeometry.ClearScreen();
-	for (const auto& Text : Bus.GetOverlayTexts())
-	{
-		if (!Text.Text.empty())
-		{
-			FontGeometry.AddScreenText(
-				Text.Text,
-				Text.Position.X,
-				Text.Position.Y,
-				Bus.Frame.ViewportWidth,
-				Bus.Frame.ViewportHeight,
-				Text.Scale
-			);
-		}
-	}
-}
-
-//	스왑체인 백버퍼 복귀 — ImGui 합성 직전에 호출
-void FRenderer::BeginFrame()
-{
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	ID3D11RenderTargetView* RTV = Device.GetFrameBufferRTV();
-	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
-
-	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
-	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
-	Context->RSSetViewports(1, &Viewport);
-	Context->OMSetRenderTargets(1, &RTV, DSV);
-}
-
-//	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
-void FRenderer::Render(const FRenderBus& InRenderBus)
-{
-	FDrawCallStats::Reset();
-
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	{
-		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-		UpdateFrameBuffer(Context, InRenderBus.Frame);
-	}
-
-	// ProxyQueue → FDrawCommand 변환
-	{
-		SCOPE_STAT_CAT("BuildDrawCommands", "4_ExecutePass");
-		BuildProxyDrawCommands(InRenderBus, Context);
-		BuildDynamicDrawCommands(InRenderBus.Frame, Context);
-	}
-
-	// 커맨드 정렬 (Pass → SortKey 순)
-	DrawCommandList.Sort();
-
-	// 정렬된 커맨드를 패스 순서에 따라 제출
-	const auto& Cmds = DrawCommandList.GetCommands();
-	uint32 CmdIdx = 0;
-
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		// 이 패스에 해당하는 DrawCommand 범위 찾기
-		uint32 PassCmdStart = CmdIdx;
-		while (CmdIdx < Cmds.size() && Cmds[CmdIdx].Pass == CurPass)
-			++CmdIdx;
-		const bool bHasCmds = (CmdIdx > PassCmdStart);
-
-		// PostProcess는 특수 처리 (DSV unbind/rebind 필요)
-		if (CurPass == ERenderPass::PostProcess)
-		{
-			const char* PassName = GetRenderPassName(CurPass);
-			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
-			GPU_SCOPE_STAT(PassName);
-			DrawPostProcessOutline(InRenderBus, Context);
-			continue;
-		}
-
-		if (!bHasCmds) continue;
-
-		const char* PassName = GetRenderPassName(CurPass);
-		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
-		GPU_SCOPE_STAT(PassName);
-
-		DrawCommandList.SubmitRange(PassCmdStart, CmdIdx, Device, Context, Resources.DefaultSampler);
-	}
-
-	DrawCommandList.Reset();
 }
 
 // ============================================================
-// ProxyQueue → FDrawCommand 변환
+// BuildCommandForProxy — Collector가 직접 호출하여 Proxy → FDrawCommand 변환
 // ============================================================
-void FRenderer::BuildProxyDrawCommands(const FRenderBus& InRenderBus, ID3D11DeviceContext* Ctx)
-{
-	DrawCommandList.Reset();
-	EViewMode ViewMode = InRenderBus.Frame.ViewMode;
-
-	// PerObjectCBPool 재할당 방지: 최대 ProxyId를 미리 스캔하여 풀 pre-allocate
-	uint32 MaxProxyId = 0;
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		for (const FPrimitiveSceneProxy* Proxy : InRenderBus.GetProxies(static_cast<ERenderPass>(i)))
-		{
-			if (Proxy && Proxy->ProxyId != UINT32_MAX && Proxy->ProxyId > MaxProxyId)
-				MaxProxyId = Proxy->ProxyId;
-		}
-	}
-	EnsurePerObjectCBPoolCapacity(MaxProxyId + 1);
-
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		// Font/OverlayFont passes are handled by dynamic commands (FontGeometry)
-		if (CurPass == ERenderPass::Font || CurPass == ERenderPass::OverlayFont)
-			continue;
-
-		const auto& Proxies = InRenderBus.GetProxies(CurPass);
-		if (Proxies.empty()) continue;
-
-		const FPassRenderState& PassState = PassRenderStates[i];
-
-		for (const FPrimitiveSceneProxy* Proxy : Proxies)
-		{
-			if (!Proxy) continue;
-			BuildCommandsForProxy(*Proxy, CurPass, PassState, ViewMode, Ctx);
-		}
-	}
-}
-
-void FRenderer::BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass,
-	const FPassRenderState& PassState, EViewMode ViewMode, ID3D11DeviceContext* Ctx)
+void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass)
 {
 	if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) return;
 
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	const FPassRenderState& PassState = PassRenderStates[(uint32)Pass];
+
 	// Wireframe 모드 처리
 	ERasterizerState Rasterizer = PassState.Rasterizer;
-	if (PassState.bWireframeAware && ViewMode == EViewMode::Wireframe)
+	if (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
 		Rasterizer = ERasterizerState::WireFrame;
 
 	// PerObjectCB 업데이트
@@ -263,13 +109,16 @@ void FRenderer::BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERender
 	// 공유 MaterialCB 가져오기
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 
+	// SelectionMask 커맨드 존재 추적
+	if (Pass == ERenderPass::SelectionMask)
+		bHasSelectionMaskCommands = true;
+
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
 	if (!Proxy.SectionDraws.empty())
 	{
 		for (const FMeshSectionDraw& Section : Proxy.SectionDraws)
 		{
 			if (Section.IndexCount == 0) continue;
-			// IB 필수
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
@@ -294,7 +143,6 @@ void FRenderer::BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERender
 	}
 	else
 	{
-		// SectionDraw 없음 — MeshBuffer 전체 드로우
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Shader       = Proxy.Shader;
 		Cmd.DepthStencil = PassState.DepthStencil;
@@ -309,7 +157,141 @@ void FRenderer::BuildCommandsForProxy(const FPrimitiveSceneProxy& Proxy, ERender
 		Cmd.Sampler      = Proxy.Sampler;
 		Cmd.Pass         = Pass;
 		Cmd.SortKey      = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
-		// IndexCount/VertexCount = 0 → Submit에서 MeshBuffer 전체 드로우
+	}
+}
+
+// ============================================================
+// AddWorldText — Collector가 Font 프록시를 배칭할 때 호출
+// ============================================================
+void FRenderer::AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame)
+{
+	FontGeometry.AddWorldText(
+		TextProxy->CachedText,
+		TextProxy->CachedBillboardMatrix.GetLocation(),
+		Frame.CameraRight,
+		Frame.CameraUp,
+		TextProxy->CachedBillboardMatrix.GetScale(),
+		TextProxy->CachedFontScale
+	);
+}
+
+//	스왑체인 백버퍼 복귀 — ImGui 합성 직전에 호출
+void FRenderer::BeginFrame()
+{
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
+	ID3D11RenderTargetView* RTV = Device.GetFrameBufferRTV();
+	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
+
+	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
+	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
+	Context->RSSetViewports(1, &Viewport);
+	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+// ============================================================
+// Render — 동적 지오메트리 빌드 + 정렬 + GPU 제출
+// BeginCollect + Collector 호출 이후에 호출. ProxyQueue 불필요.
+// ============================================================
+void FRenderer::Render(const FRenderBus& InRenderBus)
+{
+	FDrawCallStats::Reset();
+
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
+	{
+		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
+		UpdateFrameBuffer(Context, InRenderBus.Frame);
+	}
+
+	// 동적 지오메트리 준비 + FDrawCommand 변환
+	{
+		SCOPE_STAT_CAT("BuildDrawCommands", "4_ExecutePass");
+		PrepareDynamicGeometry(InRenderBus);
+		BuildDynamicDrawCommands(InRenderBus.Frame, Context);
+	}
+
+	// 커맨드 정렬 (Pass → SortKey 순)
+	DrawCommandList.Sort();
+
+	// 정렬된 커맨드를 패스 순서에 따라 제출
+	const auto& Cmds = DrawCommandList.GetCommands();
+	uint32 CmdIdx = 0;
+
+	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
+	{
+		ERenderPass CurPass = static_cast<ERenderPass>(i);
+
+		uint32 PassCmdStart = CmdIdx;
+		while (CmdIdx < Cmds.size() && Cmds[CmdIdx].Pass == CurPass)
+			++CmdIdx;
+		const bool bHasCmds = (CmdIdx > PassCmdStart);
+
+		// PostProcess는 특수 처리 (DSV unbind/rebind 필요)
+		if (CurPass == ERenderPass::PostProcess)
+		{
+			const char* PassName = GetRenderPassName(CurPass);
+			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
+			GPU_SCOPE_STAT(PassName);
+			DrawPostProcessOutline(InRenderBus.Frame, Context);
+			continue;
+		}
+
+		if (!bHasCmds) continue;
+
+		const char* PassName = GetRenderPassName(CurPass);
+		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
+		GPU_SCOPE_STAT(PassName);
+
+		DrawCommandList.SubmitRange(PassCmdStart, CmdIdx, Device, Context, Resources.DefaultSampler);
+	}
+
+	DrawCommandList.Reset();
+}
+
+// ============================================================
+// PrepareDynamicGeometry — RenderBus의 경량 데이터 → 라인/폰트 지오메트리
+// ============================================================
+void FRenderer::PrepareDynamicGeometry(const FRenderBus& Bus)
+{
+	// --- Editor 패스: AABB 디버그 박스 + DebugDraw 라인 ---
+	for (const auto& AABB : Bus.GetDebugAABBs())
+	{
+		EditorLines.AddAABB(FBoundingBox{ AABB.Min, AABB.Max }, AABB.Color);
+	}
+	for (const auto& Line : Bus.GetDebugLines())
+	{
+		EditorLines.AddLine(Line.Start, Line.End, Line.Color.ToVector4());
+	}
+
+	// --- Grid 패스: 월드 그리드 + 축 ---
+	if (Bus.HasGrid())
+	{
+		const FVector CameraPos = Bus.Frame.View.GetInverseFast().GetLocation();
+		FVector CameraFwd = Bus.Frame.CameraRight.Cross(Bus.Frame.CameraUp);
+		CameraFwd.Normalize();
+
+		GridLines.AddWorldHelpers(
+			Bus.Frame.ShowFlags,
+			Bus.GetGridSpacing(),
+			Bus.GetGridHalfLineCount(),
+			CameraPos, CameraFwd, Bus.Frame.IsFixedOrtho());
+	}
+
+	// --- OverlayFont 패스: 스크린 공간 텍스트 ---
+	for (const auto& Text : Bus.GetOverlayTexts())
+	{
+		if (!Text.Text.empty())
+		{
+			FontGeometry.AddScreenText(
+				Text.Text,
+				Text.Position.X,
+				Text.Position.Y,
+				Bus.Frame.ViewportWidth,
+				Bus.Frame.ViewportHeight,
+				Text.Scale
+			);
+		}
 	}
 }
 
@@ -320,7 +302,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 {
 	EViewMode ViewMode = Frame.ViewMode;
 
-	// --- Helper: PassRenderState → FDrawCommand PSO 필드 복사 ---
 	auto ApplyPassState = [&](FDrawCommand& Cmd, ERenderPass Pass)
 	{
 		const FPassRenderState& S = PassRenderStates[(uint32)Pass];
@@ -369,7 +350,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 		const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
 		if (FontRes && FontRes->IsLoaded())
 		{
-			// World Font
 			if (FontGeometry.GetWorldQuadCount() > 0 && FontGeometry.UploadWorldBuffers(Ctx))
 			{
 				FShader* FontShader = FShaderManager::Get().GetShader(EShaderType::Font);
@@ -386,7 +366,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::Font, FontShader, nullptr, FontRes->SRV);
 			}
 
-			// Screen / Overlay Font
 			if (FontGeometry.GetScreenQuadCount() > 0 && FontGeometry.UploadScreenBuffers(Ctx))
 			{
 				FShader* OverlayShader = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
@@ -464,15 +443,15 @@ FConstantBuffer* FRenderer::GetPerObjectCBForProxy(const FPrimitiveSceneProxy& P
 // ============================================================
 // PostProcess Outline — DSV unbind → StencilSRV bind → Fullscreen Draw
 // ============================================================
-void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+void FRenderer::DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceContext* Context)
 {
-	ID3D11ShaderResourceView* StencilSRV = Bus.Frame.ViewportStencilSRV;
-	ID3D11DepthStencilView* DSV = Bus.Frame.ViewportDSV;
-	ID3D11RenderTargetView* RTV = Bus.Frame.ViewportRTV;
+	ID3D11ShaderResourceView* StencilSRV = Frame.ViewportStencilSRV;
+	ID3D11DepthStencilView* DSV = Frame.ViewportDSV;
+	ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
 	if (!StencilSRV || !RTV) return;
 
-	// SelectionMask 큐가 비어 있으면 선택된 오브젝트 없음 → 스킵
-	if (Bus.GetProxies(ERenderPass::SelectionMask).empty()) return;
+	// SelectionMask 커맨드가 없으면 선택된 오브젝트 없음 → 스킵
+	if (!bHasSelectionMaskCommands) return;
 
 	// 1) DSV 언바인딩 (StencilSRV와 동시 바인딩 불가)
 	Context->OMSetRenderTargets(1, &RTV, nullptr);

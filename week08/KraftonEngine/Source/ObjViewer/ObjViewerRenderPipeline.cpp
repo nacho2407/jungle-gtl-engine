@@ -1,4 +1,4 @@
-﻿#include "ObjViewer/ObjViewerRenderPipeline.h"
+#include "ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "ObjViewer/ObjViewerEngine.h"
 #include "Render/Pipeline/Renderer.h"
@@ -62,10 +62,8 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	Bus.Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
 	Bus.Frame.SetViewportInfo(VP);
 
-	// 월드 수집
-	Collector.CollectWorld(World, Bus);
-
-	// GPU 렌더
-	Renderer.PrepareBatchers(Bus);
+	// BeginCollect → 월드 수집 → Render
+	Renderer.BeginCollect(Bus);
+	Collector.CollectWorld(World, Bus, Renderer);
 	Renderer.Render(Bus);
 }

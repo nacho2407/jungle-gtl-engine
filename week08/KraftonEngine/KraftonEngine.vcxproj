@@ -341,8 +341,6 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
@@ -352,6 +350,8 @@
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\DepthStencilStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
@@ -476,8 +476,6 @@
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
-    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h" />
-    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
@@ -487,6 +485,8 @@
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Device\DepthStencilStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h" />

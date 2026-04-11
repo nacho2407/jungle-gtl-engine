@@ -5,19 +5,21 @@
 #include "Editor/EditorEngine.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Render/Pipeline/LODContext.h"
+#include "Render/Pipeline/Renderer.h"
 #include "Profiling/Stats.h"
 #include <Collision/Octree.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus, FRenderer& Renderer)
 {
 	if (!World) return;
 
 	// Dirty 프록시 갱신 후 visible 리스트만 순회
 	World->GetScene().UpdateDirtyProxies();
-	CollectVisibleProxies(World->GetVisibleProxies(), RenderBus);
+	CollectVisibleProxies(World->GetVisibleProxies(), RenderBus, Renderer);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
@@ -103,9 +105,9 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 
 
 // ============================================================
-// Visible 프록시 수집 — UpdateVisibleProxies에서 구축한 dense 리스트만 순회
+// Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus)
+void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus, FRenderer& Renderer)
 {
 	if (!RenderBus.Frame.ShowFlags.bPrimitives) return;
 
@@ -153,14 +155,24 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
 			continue;
 
-		// 모든 프록시를 직접 ProxyQueue에 제출
-		RenderBus.AddProxy(Proxy->Pass, Proxy);
+		// Font 프록시는 동적 VB 배칭 경로 (개별 FDrawCommand가 아닌 FontGeometry)
+		if (Proxy->Pass == ERenderPass::Font)
+		{
+			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
+			if (!TextProxy->CachedText.empty())
+				Renderer.AddWorldText(TextProxy, Frame);
+		}
+		else
+		{
+			// Proxy → FDrawCommand 직접 변환
+			Renderer.BuildCommandForProxy(*Proxy, Proxy->Pass);
+		}
 
 		// 선택된 오브젝트
 		if (Proxy->bSelected)
 		{
 			if (Proxy->bSupportsOutline)
-				RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
+				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
 
 			if (bShowBoundingVolume && Proxy->bShowAABB)
 			{

@@ -3,12 +3,11 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/FrameContext.h"
 
-class FPrimitiveSceneProxy;
-
 /*
 	FRenderBus - per-frame data transport.
-	Owns FFrameContext (read-only state) + lightweight data arrays + proxy queues (write targets).
+	Owns FFrameContext (read-only state) + lightweight data arrays.
 	Populated by RenderPipeline + RenderCollector, consumed by Renderer.
+	ProxyQueues 제거됨 — Collector가 Renderer.BuildCommandForProxy()를 직접 호출.
 */
 class FRenderBus
 {
@@ -17,10 +16,6 @@ public:
 
 	// ===== Frame Context (camera, viewport, settings) =====
 	FFrameContext Frame;
-
-	// ===== Proxy queues =====
-	void AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy);
-	const TArray<const FPrimitiveSceneProxy*>& GetProxies(ERenderPass Pass) const;
 
 	// ===== Overlay text (screen-space) =====
 	struct FOverlayText { FString Text; FVector2 Position; float Scale; };
@@ -44,8 +39,6 @@ public:
 	int32 GetGridHalfLineCount() const { return GridHalfLineCount; }
 
 private:
-	TArray<const FPrimitiveSceneProxy*> ProxyQueues[(uint32)ERenderPass::MAX];
-
 	TArray<FOverlayText> OverlayTexts;
 	TArray<FDebugAABB>   DebugAABBs;
 	TArray<FDebugLine>   DebugLines;
