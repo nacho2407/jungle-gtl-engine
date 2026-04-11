@@ -49,6 +49,10 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     {
         Renderer.GetFD3DDevice().EnsureViewportRenderTargets(TargetWidth, TargetHeight);
     }
+    else
+    {
+        Renderer.InvalidateSceneFinalTargets();
+    }
 
     // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
     Renderer.BeginFrame();

@@ -95,6 +95,8 @@ void FRenderer::Create(HWND hWindow)
 
 void FRenderer::Release()
 {
+	InvalidateSceneFinalTargets();
+
 	Resources.PrimitiveShader.Release();
 	Resources.GizmoShader.Release();
 	Resources.EditorShader.Release();
@@ -177,6 +179,7 @@ void FRenderer::BeginFrame()
 void FRenderer::UseBackBufferRenderTargets()
 {
 	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
+
 	if (CurrentRenderTargets.IsValid())
 	{
         ID3D11RenderTargetView* RTV =
@@ -195,6 +198,7 @@ void FRenderer::UseViewportRenderTargets()
 	CurrentRenderTargets = Device.GetViewportRenderTargets();
 	if (!CurrentRenderTargets.IsValid())
 	{
+		InvalidateSceneFinalTargets();
 		UseBackBufferRenderTargets();
 		return;
 	}
@@ -202,6 +206,13 @@ void FRenderer::UseViewportRenderTargets()
 	Device.SetSubViewport(0, 0,
 		static_cast<int32>(CurrentRenderTargets.Width),
 		static_cast<int32>(CurrentRenderTargets.Height));
+}
+
+void FRenderer::InvalidateSceneFinalTargets()
+{
+	SceneFinalRTV.Reset();
+	SceneFinalSRV.Reset();
+	CurrentRenderTargets = {};
 }
 
 //	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
