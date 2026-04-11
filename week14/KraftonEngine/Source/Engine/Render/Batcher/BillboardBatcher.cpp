@@ -97,3 +97,21 @@ void FBillboardBatcher::DrawBatch(ID3D11DeviceContext* Context)
 		FDrawCallStats::Increment();
 	}
 }
+
+bool FBillboardBatcher::UploadBuffers(ID3D11DeviceContext* Context)
+{
+	if (Vertices.empty()) return false;
+
+	const uint32 VertexCount = static_cast<uint32>(Vertices.size());
+	const uint32 IndexCount  = static_cast<uint32>(Indices.size());
+
+	VB.EnsureCapacity(Device, VertexCount);
+	IB.EnsureCapacity(Device, IndexCount);
+	if (!VB.Update(Context, Vertices.data(), VertexCount)) return false;
+	if (!IB.Update(Context, Indices.data(), IndexCount)) return false;
+	return true;
+}
+
+ID3D11Buffer* FBillboardBatcher::GetVBBuffer() const { return VB.GetBuffer(); }
+uint32 FBillboardBatcher::GetVBStride() const { return VB.GetStride(); }
+ID3D11Buffer* FBillboardBatcher::GetIBBuffer() const { return IB.GetBuffer(); }

@@ -52,11 +52,31 @@ public:
 	void Clear();        // 빌보드 텍스트 (Vertices/Indices)
 	void ClearScreen();  // 오버레이 텍스트 (ScreenVertices/ScreenIndices)
 
-	// Dynamic VB 업로드 + 드로우콜 1회
+	// Dynamic VB 업로드 + 드로우콜 1회 (레거시)
 	void DrawBatch(ID3D11DeviceContext* Context, const FFontResource* Resource);
 	void DrawScreenBatch(ID3D11DeviceContext* Context, const FFontResource* Resource);
 
+	// Phase 3: 버퍼 업로드 + 접근자 (FDrawCommand 경로)
+	bool UploadWorldBuffers(ID3D11DeviceContext* Context);
+	bool UploadScreenBuffers(ID3D11DeviceContext* Context);
+
+	ID3D11Buffer* GetWorldVBBuffer() const;
+	uint32 GetWorldVBStride() const;
+	ID3D11Buffer* GetWorldIBBuffer() const;
+	uint32 GetWorldIndexCount() const { return static_cast<uint32>(Indices.size()); }
+
+	ID3D11Buffer* GetScreenVBBuffer() const;
+	uint32 GetScreenVBStride() const;
+	ID3D11Buffer* GetScreenIBBuffer() const;
+	uint32 GetScreenIndexCount() const { return static_cast<uint32>(ScreenIndices.size()); }
+
+	ID3D11SamplerState* GetSampler() const { return SamplerState; }
+
 	uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
+	uint32 GetScreenQuadCount() const { return static_cast<uint32>(ScreenVertices.size() / 4); }
+
+	// Phase 3: DrawBatch 경로를 거치지 않으므로 CharInfoMap 보장용
+	void EnsureCharInfoMap(const FFontResource* Resource);
 
 private:
 	// CPU 누적 배열
@@ -65,6 +85,10 @@ private:
 
 	TArray<FTextureVertex> ScreenVertices;
 	TArray<uint32>         ScreenIndices;
+
+	// 스크린 전용 Dynamic VB/IB (월드 VB/IB는 BatcherBase에서 상속)
+	FDynamicVertexBuffer ScreenVB_Buf;
+	FDynamicIndexBuffer  ScreenIB_Buf;
 
 	// 고유 리소스
 	ID3D11SamplerState* SamplerState = nullptr;

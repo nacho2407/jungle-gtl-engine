@@ -46,6 +46,13 @@ public:
 	// ---- 렌더링 ----
 	void DrawBatch(ID3D11DeviceContext* Context);
 
+	// Phase 3: 버퍼 업로드 + 접근자 (FDrawCommand 경로)
+	bool UploadBuffers(ID3D11DeviceContext* Context);
+	ID3D11Buffer* GetVBBuffer() const;
+	uint32 GetVBStride() const;
+	ID3D11Buffer* GetIBBuffer() const;
+	uint32 GetIndexCount() const;
+
 	// 현재 축적된 라인 개수
 	uint32 GetLineCount() const;
 

@@ -57,6 +57,14 @@ public:
 	// Dynamic VB/IB 업로드 + SRV별 DrawIndexed
 	void DrawBatch(ID3D11DeviceContext* Context);
 
+	// Phase 3: 버퍼 업로드 + 접근자 (FDrawCommand 경로)
+	bool UploadBuffers(ID3D11DeviceContext* Context);
+	ID3D11Buffer* GetVBBuffer() const;
+	uint32 GetVBStride() const;
+	ID3D11Buffer* GetIBBuffer() const;
+	ID3D11SamplerState* GetSampler() const { return SamplerState; }
+	const TArray<FSRVBatch>& GetBatches() const { return Batches; }
+
 	uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 
 private:
