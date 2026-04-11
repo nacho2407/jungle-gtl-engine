@@ -266,6 +266,9 @@
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -303,6 +306,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
@@ -626,6 +632,9 @@
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -687,6 +696,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
@@ -883,6 +895,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Types\FogParams.h">
+      <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h">
       <Filter>Source\Engine\Render\Types</Filter>
