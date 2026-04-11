@@ -35,7 +35,6 @@ UStaticMeshComponent* UStaticMeshComponent::Duplicate()
 
     // 에셋 포인터는 얕은 복사로 동일한 원본 리소스를 참조하게 합니다.
     NewComp->StaticMeshAsset = this->StaticMeshAsset;
-    NewComp->StaticMeshAssetPath = this->StaticMeshAssetPath;
 
     // Dirty 플래그를 초기화해 복사 후 상태를 업데이트하도록 합니다.
     NewComp->bBoundsDirty = true;
@@ -58,20 +57,14 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 
 	if (StaticMeshAsset != nullptr)
 	{
-		StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
-
 		const auto& Slots    = StaticMeshAsset->GetMaterialSlots();
 		const auto& Sections = StaticMeshAsset->GetSections();
 		OverrideMaterial.reserve(Sections.size());
 
 		for (int32 i = 0; i < static_cast<int32>(Sections.size()); ++i)
 		{
-			OverrideMaterial.push_back(Slots[Sections[i].MaterialSlotIndex].MaterialData);
+			OverrideMaterial.push_back(Slots[Sections[i].MaterialSlotIndex].Material);
 		}
-	}
-	else
-	{
-		StaticMeshAssetPath.clear();
 	}
 
 	MarkBoundsDirty();
@@ -92,7 +85,7 @@ bool UStaticMeshComponent::HasValidMesh() const
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UMeshComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({"StaticMesh", EPropertyType::String, &StaticMeshAssetPath});
+	OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAsset->GetMeshData()->PathFileName });
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
@@ -105,15 +98,12 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		return;
 	}
 	
-	if (StaticMeshAssetPath.empty())
-	{
-		SetStaticMesh(nullptr);
-		return;
-	}
-	
-	UStaticMesh * Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
-	
-	SetStaticMesh(Mesh);
+	//if (StaticMeshAssetPath.empty())
+	//{
+	//	SetStaticMesh(nullptr);
+	//	return;
+	//}
+	//SetStaticMesh(Mesh);
 }
 
 void UStaticMeshComponent::UpdateWorldAABB() const

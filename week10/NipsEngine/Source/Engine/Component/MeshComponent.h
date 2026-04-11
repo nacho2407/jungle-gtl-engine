@@ -1,7 +1,9 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
 
-class FMaterial;
+class UMaterialInterface;
+class UMaterial;
+class UMaterialInstance;
 
 class UMeshComponent : public UPrimitiveComponent
 {
@@ -13,10 +15,10 @@ public:
 	virtual UMeshComponent* Duplicate() override = 0;
 	virtual UMeshComponent* DuplicateSubObjects() override { return this; }
 
-	void SetMaterial(int32 SlotIndex, FMaterial* InMaterial);
-	FMaterial* GetMaterial(int32 SlotIndex) const;
+	void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial);
+	UMaterialInterface* GetMaterial(int32 SlotIndex) const;
 
-	const TArray<FMaterial*>& GetOverrideMaterial() const;
+	const TArray<UMaterialInterface*>& GetOverrideMaterial() const;
 	const std::pair<float, float> GetScroll() const { return ScrollUV; };
 
 	int32 GetMaterialCount() const;
@@ -27,6 +29,6 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 
 protected:
-	TArray<FMaterial*> OverrideMaterial;
+	TArray<UMaterialInterface*> OverrideMaterial;
 	std::pair<float, float> ScrollUV = { };
 };

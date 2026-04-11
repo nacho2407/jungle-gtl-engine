@@ -34,7 +34,6 @@ private:
 
 private:
 	UStaticMesh* StaticMeshAsset = nullptr;
-	FString StaticMeshAssetPath;
 
 	mutable bool bBoundsDirty = true;
 	bool bRenderStateDirty = true;

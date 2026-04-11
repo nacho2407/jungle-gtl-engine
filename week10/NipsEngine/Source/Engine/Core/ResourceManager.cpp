@@ -109,9 +109,8 @@ namespace ResourceKey
 }
 
 //	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
-void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device* Device)
+void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 {
-	CachedDevice = Device;
 	//	초기화
 	ObjFilePaths.clear();
 	FontFilePaths.clear();
@@ -163,7 +162,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 		else if (Extension == L".mtl")
 		{
 			MaterialFilePaths.push_back(RelativePath);
-			LoadMaterial(RelativePath);
+			LoadMaterialAsset(RelativePath, CachedDevice.Get());
 		}
 		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
@@ -182,7 +181,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 			else if (Meta.Type == EAssetMetaType::Texture)
 			{
 				TextureFilePaths.push_back(RelativePath);
-				LoadTexture(RelativePath, Device);
+				LoadTexture(RelativePath, CachedDevice.Get());
 			}
 			//else
 			//{
@@ -193,11 +192,11 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 
 	//	TODO : Material, Texture Load
 
-	InitializeDefaultResources(Device);
+	InitializeDefaultResources(CachedDevice.Get());
 
 	PreloadStaticMeshes();
 
-	if (LoadGPUResources(Device))
+	if (LoadGPUResources(CachedDevice.Get()))
 	{
 		UE_LOG("Complete Load Resources!");
 	}
@@ -265,7 +264,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 
 				// 기존 MaterialRegistry는 지우지 않고 갱신/추가만 한다.
 				// 이미 로드된 StaticMesh가 Material 포인터를 들고 있을 수 있어서 clear는 위험함.
-				LoadMaterial(RelativePath);
+				LoadMaterialAsset(RelativePath, CachedDevice.Get());
 			}
 			else if (
 				Extension == L".png" ||
@@ -642,16 +641,97 @@ void FResourceManager::ReleaseGPUResources()
 
 	MaterialTextureResources.clear();
 
-	for (auto& [Path, StaticMeshAsset] : StaticMeshMap)
+	for (auto& [Path, StaticMeshAsset] : StaticMeshes)
 	{
 		delete StaticMeshAsset;
 	}
-	StaticMeshMap.clear();
+	StaticMeshes.clear();
 	StaticMeshRegistry.clear();
 
 	DefaultWhiteSRV.Reset();
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
+}
+
+bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
+	const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount)
+{
+	UShader* Shader = UObjectManager::Get().CreateObject<UShader>();
+	Shader->FilePath = FilePath;
+
+	TComPtr<ID3DBlob> VSBlob;
+	TComPtr<ID3DBlob> PSBlob;
+	TComPtr<ID3DBlob> ErrorBlob;
+
+	HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		VSEntryPoint.c_str(), "vs_5_0", 0, 0, &VSBlob, &ErrorBlob);
+	if (FAILED(hr))
+	{
+		if (ErrorBlob)
+		{
+			UE_LOG("Vertex Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+		}
+		else
+		{
+			UE_LOG("Failed to compile vertex shader: %s", FilePath.c_str());
+		}
+		return false;
+	}
+	Shader->ReflectShader(VSBlob.Get());
+	ErrorBlob.Reset();
+
+	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		PSEntryPoint.c_str(), "ps_5_0", 0, 0, &PSBlob, &ErrorBlob);
+	if (FAILED(hr))
+	{
+		if (ErrorBlob)
+		{
+			UE_LOG("Pixel Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+		}
+		else
+		{
+			UE_LOG("Failed to compile pixel shader: %s", FilePath.c_str());
+		}
+		return false;
+	}
+	Shader->ReflectShader(PSBlob.Get());
+
+	hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
+		&Shader->ShaderData.VS);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create vertex shader: %s", FilePath.c_str());
+		return false;
+	}
+
+	hr = CachedDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr,
+		&Shader->ShaderData.PS);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
+		return false;
+	}
+
+	if (InputElements != nullptr && InputElementCount > 0)
+	{
+		hr = CachedDevice->CreateInputLayout(InputElements, InputElementCount, VSBlob->GetBufferPointer(),
+			VSBlob->GetBufferSize(), &Shader->ShaderData.InputLayout);
+		if (FAILED(hr))
+		{
+			UE_LOG("Failed to create input layout: %s", FilePath.c_str());
+			return false;
+		}
+	}
+
+	Shaders[FilePath] = Shader;
+
+	return true;
+}
+
+UShader* FResourceManager::GetShader(const FString& FilePath) const
+{
+	auto It = Shaders.find(FilePath);
+	return (It != Shaders.end()) ? It->second : nullptr;
 }
 
 void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
@@ -691,17 +771,94 @@ void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
 
 	// FoundRelPath 는 AbsObjDir 기준 상대 경로이므로 절대 경로로 결합 후 LoadMaterial 호출
 	fs::path AbsMtlPath = (AbsObjDir / FPaths::ToWide(FoundRelPath)).lexically_normal();
-	LoadMaterial(FPaths::ToUtf8(AbsMtlPath.generic_wstring()));
+	LoadMaterialAsset(FPaths::ToUtf8(AbsMtlPath.generic_wstring()), CachedDevice.Get());
+}
+//
+//bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
+//{
+//	if (MtlFilePath.empty())
+//	{
+//		return false;	
+//	}
+//
+//	TMap<FString, FMaterial> Parsed;
+//	if (!FObjMtlLoader::Load(MtlFilePath, Parsed))
+//	{
+//		UE_LOG("Failed to load MTL: %s", MtlFilePath.c_str());
+//		return false;
+//	}
+//
+//	for (auto& [Name, Mat] : Parsed)
+//	{
+//		MaterialRegistry[Name] = Mat;
+//	}
+//
+//	for (auto& [Name, Mat] : MaterialRegistry)
+//	{
+//		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath, CachedDevice.Get());
+//		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath, CachedDevice.Get());
+//		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, CachedDevice.Get());
+//		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath, CachedDevice.Get());
+//	}
+//
+//	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
+//	return true;
+//}
+//
+//FMaterial* FResourceManager::FindMaterial(const FString& MaterialName)
+//{
+//	auto It = MaterialRegistry.find(MaterialName);
+//	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
+//}
+//
+//const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) const
+//{
+//	auto It = MaterialRegistry.find(MaterialName);
+//	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
+//}
+//
+TArray<FString> FResourceManager::GetMaterialNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(Materials.size());
+	for (const auto& [Name, Mat] : Materials)
+	{
+		Names.push_back(Name);
+	}
+	return Names;
 }
 
-bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
+UMaterial* FResourceManager::FindMaterialAsset(const FString& MaterialName) const
+{
+	auto It = Materials.find(MaterialName);
+	return (It != Materials.end()) ? It->second : nullptr;
+}
+
+// 매개변수 없이 가장 간단한 Material을 생성
+UMaterial* FResourceManager::FindOrCreateMaterialAsset(const FString& MaterialName, ID3D11Device* Device)
+{
+	UMaterial* Material = FindMaterialAsset(MaterialName);
+	if (Material)
+	{
+		return FindMaterialAsset(MaterialName);
+	}
+
+	Material = UObjectManager::Get().CreateObject<UMaterial>();
+	Material->Name = MaterialName;
+
+	Materials[MaterialName] = Material;
+
+	return Material;
+}
+
+bool FResourceManager::LoadMaterialAsset(const FString& MtlFilePath, ID3D11Device* Device)
 {
 	if (MtlFilePath.empty())
 	{
-		return false;	
+		return false;
 	}
 
-	TMap<FString, FMaterial> Parsed;
+	TMap<FString, UMaterial*> Parsed;
 	if (!FObjMtlLoader::Load(MtlFilePath, Parsed))
 	{
 		UE_LOG("Failed to load MTL: %s", MtlFilePath.c_str());
@@ -710,42 +867,22 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 
 	for (auto& [Name, Mat] : Parsed)
 	{
-		MaterialRegistry[Name] = Mat;
+		Materials[Name] = Mat;
 	}
 
-	for (auto& [Name, Mat] : MaterialRegistry)
+	// TODO: 개선 필요해보임
+	for (auto& [Name, Mat] : Materials)
 	{
-		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath, CachedDevice.Get());
-		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath, CachedDevice.Get());
-		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, CachedDevice.Get());
-		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath, CachedDevice.Get());
+		FMaterial& MaterialData = Mat->MaterialData;
+
+		if (MaterialData.bHasDiffuseTexture && !MaterialData.DiffuseTexPath.empty())  LoadTextureAsset(MaterialData.DiffuseTexPath, CachedDevice.Get());
+		if (MaterialData.bHasAmbientTexture && !MaterialData.AmbientTexPath.empty())  LoadTextureAsset(MaterialData.AmbientTexPath, CachedDevice.Get());
+		if (MaterialData.bHasSpecularTexture && !MaterialData.SpecularTexPath.empty()) LoadTextureAsset(MaterialData.SpecularTexPath, CachedDevice.Get());
+		if (MaterialData.bHasBumpTexture && !MaterialData.BumpTexPath.empty())     LoadTextureAsset(MaterialData.BumpTexPath, CachedDevice.Get());
 	}
 
 	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
 	return true;
-}
-
-FMaterial* FResourceManager::FindMaterial(const FString& MaterialName)
-{
-	auto It = MaterialRegistry.find(MaterialName);
-	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
-}
-
-const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) const
-{
-	auto It = MaterialRegistry.find(MaterialName);
-	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
-}
-
-TArray<FString> FResourceManager::GetMaterialNames() const
-{
-	TArray<FString> Names;
-	Names.reserve(MaterialRegistry.size());
-	for (const auto& [Name, Mat] : MaterialRegistry)
-	{
-		Names.push_back(Name);
-	}
-	return Names;
 }
 
 FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
@@ -795,6 +932,29 @@ FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Devi
 
 	MaterialTextureResources[Path] = Resource;
 	return &MaterialTextureResources[Path];
+}
+
+UTexture* FResourceManager::FindTextureAsset(const FString& Path) const
+{
+	auto It = Textures.find(Path);
+	return (It != Textures.end()) ? It->second : nullptr;
+}
+
+UTexture* FResourceManager::LoadTextureAsset(const FString& Path, ID3D11Device* Device)
+{
+	if (UTexture* Cached = FindTextureAsset(Path))
+	{
+		return Cached;
+	}
+
+	UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
+	if (!Texture->LoadFromFile(Path, Device))
+	{
+		return nullptr;
+	}
+
+	Textures[Path] = Texture;
+	return Texture;
 }
 
 // --- Font ---
@@ -877,11 +1037,6 @@ TArray<FString> FResourceManager::GetParticleNames() const
 
 UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 {
-	if (Path.empty())
-	{
-		return nullptr;
-	}
-
 	// 메모리 캐시 확인
 	if (UStaticMesh* FoundMesh = FindStaticMesh(Path))
 	{
@@ -957,18 +1112,13 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	}
 
 	// Material 연결
-	TArray<FStaticMeshMaterialSlot> MaterialSlots;
-	MaterialSlots.reserve(LoadedMeshData->SlotNames.size());
-	for (const FString& SlotName : LoadedMeshData->SlotNames)
+	for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)
 	{
-		FStaticMeshMaterialSlot Slot = {};
-		Slot.SlotName = SlotName;
-		Slot.MaterialData = FindMaterial(SlotName);
-		MaterialSlots.push_back(Slot);
+		Slot.Material = FindMaterialAsset(Slot.SlotName);
 	}
 
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
-    LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
+    LoadedMesh->SetMeshData(LoadedMeshData);
 
     const auto LodStart = std::chrono::steady_clock::now();
     FStaticMeshSimplifier::BuildLODs(LoadedMesh);
@@ -979,15 +1129,15 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
     UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec", 
            LoadedMesh->GetValidLODCount(), Path.c_str(), LodSec);
 
-    StaticMeshMap.insert({Path, LoadedMesh});
+    StaticMeshes.insert({Path, LoadedMesh});
     
     return LoadedMesh;
 }
 
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 {
-	auto It = StaticMeshMap.find(Path);
-	if (It == StaticMeshMap.end())
+	auto It = StaticMeshes.find(Path);
+	if (It == StaticMeshes.end())
 	{
 		return nullptr;
 	}

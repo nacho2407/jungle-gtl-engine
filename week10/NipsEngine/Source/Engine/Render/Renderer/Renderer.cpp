@@ -19,43 +19,18 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	// 1. 일반 메쉬 (Primitive.hlsl)
-	Resources.PrimitiveShader.Create(Device.GetDevice(), L"Shaders/Primitive.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 2. 기즈모 (Gizmo.hlsl)
-	Resources.GizmoShader.Create(Device.GetDevice(), L"Shaders/Gizmo.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 3. 에디터/라인 (Editor.hlsl)
-	Resources.EditorShader.Create(Device.GetDevice(), L"Shaders/Editor.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 4. 선택 마스크 (SelectionMask.hlsl)
-	Resources.SelectionMaskShader.Create(Device.GetDevice(), L"Shaders/SelectionMask.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 5. 포스트 프로세스 아웃라인 (OutlinePostProcess.hlsl)
-	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/OutlinePostProcess.hlsl",
-		"VS", "PS", nullptr, 0);
-
-	// 6. 스태틱 메시 (ShaderStaticMesh.hlsl)
-	Resources.StaticMeshShader.Create(Device.GetDevice(), L"Shaders/ShaderStaticMesh.hlsl",
-		"mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-
-	// 7. Light Pass (LightPass.hlsl)
-    Resources.LightPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS",
-                                        nullptr, 0);
-
-	// 8. Decal
-	Resources.DecalShader.Create(Device.GetDevice(), L"Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-
-	// 9. Fog Pass
-    Resources.FogPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS",
-                                     nullptr, 0);
-
-	// 10. FXAA Pass
-	Resources.FXAAShader.Create(Device.GetDevice(), L"Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
+	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
 
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
@@ -95,17 +70,6 @@ void FRenderer::Create(HWND hWindow)
 
 void FRenderer::Release()
 {
-	Resources.PrimitiveShader.Release();
-	Resources.GizmoShader.Release();
-	Resources.EditorShader.Release();
-	Resources.SelectionMaskShader.Release();
-	Resources.OutlineShader.Release();
-    Resources.StaticMeshShader.Release();
-    Resources.FogPassShader.Release();
-    Resources.DecalShader.Release();
-    Resources.FXAAShader.Release();
-    Resources.LightPassShader.Release();
-
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.GizmoPerObjectConstantBuffer.Release();
@@ -263,31 +227,41 @@ void FRenderer::InitializePassRenderStates()
 	using E = ERenderPass;
 	auto& S = PassRenderStates;
 
+	UShader* PrimitiveShader = FResourceManager::Get().GetShader("Shaders/Primitive.hlsl");
+	UShader* DecalShader = FResourceManager::Get().GetShader("Shaders/ShaderDecal.hlsl");
+	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
+	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
+	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
+	UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
+	UShader* EditorShader = FResourceManager::Get().GetShader("Shaders/Editor.hlsl");
+	UShader* GizmoShader = FResourceManager::Get().GetShader("Shaders/Gizmo.hlsl");
+	UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
+
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
+	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, PrimitiveShader, true };
+	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, DecalShader, false };
 	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                             ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-                            &Resources.LightPassShader,    false};	
-	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
+                            LightPassShader,    false};	
+	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, PrimitiveShader, false };
     
 	S[(uint32)E::Fog] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                            ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-                           &Resources.FogPassShader,    false};
+                           FogPassShader,    false};
 
     S[(uint32)E::FXAA] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                             ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-                            &Resources.FXAAShader,      false};
+                            FXAAShader,      false};
 	
-	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.SelectionMaskShader, false };
-	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true };
-	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    false };
-	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
+	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, SelectionMaskShader, false };
+	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     EditorShader,    true };
+	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     EditorShader,    false };
+	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, GizmoShader,     false };
 	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
 	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
     S[(uint32)E::PostProcessOutline] = {EDepthStencilState::Default,   EBlendState::AlphaBlend,
                                         ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-                                        &Resources.OutlineShader,      false};
+                                        OutlineShader,      false};
 
 }
 
@@ -477,7 +451,8 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
 
     Context->PSSetShaderResources(0, 3, srvs);
 
-	Resources.LightPassShader.Bind(Context);
+	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
+	LightPassShader->Bind(Context);
 
 	/**
      * LightPass 는 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
@@ -513,7 +488,8 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
     ApplyPassRenderState(ERenderPass::Fog, Context, Bus.GetViewMode());
     const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Fog];
 
-    Resources.FogPassShader.Bind(Context);
+	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
+    FogPassShader->Bind(Context);
 
     // Fog 누적: Light는 read-only로 유지하고 Fog/FXAA를 임시 ping-pong 버퍼로 사용한다.
     // 마지막 결과는 항상 SceneFog에 남도록 시작 타깃을 커맨드 개수 parity로 결정한다.
@@ -604,7 +580,8 @@ void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Cont
 
 	Context->PSSetConstantBuffers(10, 1, &cb10);
 
-    Resources.FXAAShader.Bind(Context);
+	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
+    FXAAShader->Bind(Context);
 
     /**
      * 풀스크린 쿼드에 그리는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
@@ -717,7 +694,8 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
         
         if (bTypeChanged)
         {
-            Resources.GizmoShader.Bind(Context);
+			UShader* GizmoShader = FResourceManager::Get().GetShader("Shaders/Gizmo.hlsl");
+            GizmoShader->Bind(Context);
             ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
             Context->VSSetConstantBuffers(1, 1, &cb1);
             ID3D11Buffer* cb2 = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
@@ -734,7 +712,8 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 		FOutlineConstants outlineConstants = InCmd.Constants.Outline;
 		outlineConstants.ViewportSize = FVector2(CurrentRenderTargets.Width, CurrentRenderTargets.Height);
 
-		Resources.OutlineShader.Bind(Context);
+		UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
+		OutlineShader->Bind(Context);
 		Resources.OutlineConstantBuffer.Update(Context, &outlineConstants, sizeof(FOutlineConstants));
 		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
 		Context->VSSetConstantBuffers(5, 1, &cb);
@@ -748,7 +727,8 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
         
         if (bTypeChanged)
         {
-            Resources.StaticMeshShader.Bind(Context);
+			UShader* StaticMeshShader = FResourceManager::Get().GetShader("Shaders/ShaderStaticMesh.hlsl");
+            StaticMeshShader->Bind(Context);
             
             ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
             Context->VSSetConstantBuffers(1, 1, &cb1);
@@ -823,6 +803,11 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 	if (vertexCount == 0 || stride == 0)
 	{
 		return;
+	}
+
+	if (InCommand.Material)
+	{
+		InCommand.Material->Bind(InDeviceContext);
 	}
 
 	InDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

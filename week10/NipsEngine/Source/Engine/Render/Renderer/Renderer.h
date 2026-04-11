@@ -34,7 +34,7 @@ struct FPassRenderState
 	EBlendState              Blend          = EBlendState::Opaque;
 	ERasterizerState         Rasterizer     = ERasterizerState::SolidBackCull;
 	D3D11_PRIMITIVE_TOPOLOGY Topology       = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	FShader*                 Shader         = nullptr; // nullptr → batcher가 자체 셰이더 사용
+	UShader*                 Shader         = nullptr; // nullptr → batcher가 자체 셰이더 사용
 	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
 };
 
@@ -109,6 +109,12 @@ private:
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Normal)),   D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	D3D11_INPUT_ELEMENT_DESC FontBatcherInputLayout[2] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
