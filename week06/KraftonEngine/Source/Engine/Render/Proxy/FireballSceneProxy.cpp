@@ -3,6 +3,7 @@
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Pipeline/RenderBus.h"
+#include "Render/Resource/MeshBufferManager.h"
 
 
 FFireballSceneProxy::FFireballSceneProxy(UFireballComponent* InComponent)
@@ -20,6 +21,8 @@ void FFireballSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		FConstantBufferPool::Get().GetBuffer(ECBSlot::Fireball, sizeof(FFireballConstants)),
 		ECBSlot::Fireball);
 
+	Pass = ERenderPass::Decal;
+
 	FireballCB.Color = Comp->GetColor();
 	FireballCB.Radius = Comp->GetRadius();
 	FireballCB.RadiusFalloff = Comp->GetRadiusFalloff();
@@ -27,7 +30,7 @@ void FFireballSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 
 void FFireballSceneProxy::UpdateMesh()
 {
-	MeshBuffer = nullptr;
+	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Sphere);
 	Shader = FShaderManager::Get().GetShader(EShaderType::Fireball);
 }
 
