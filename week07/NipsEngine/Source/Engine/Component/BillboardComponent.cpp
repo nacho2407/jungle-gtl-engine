@@ -5,37 +5,33 @@
 #include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
+REGISTER_FACTORY(UBillboardComponent)
 
-// UpdateWorldAABB 등의 함수를 오버라이드하지 않았기 때문에 UBillboradComponent도 추상 클래스가 됩니다.
-// 추후에 UBillboardComponent를 사용할 일이 있다면 Duplicate의 주석을 해제하고 수정하시면 됩니다.
-
-// 객체를 동적 생성한 뒤, 부모 클래스의 프로퍼티부터 내려오며 깊은 복사합니다.
+// GetEditableProperties 체인을 통해 프로퍼티를 일괄 복사합니다.
 UBillboardComponent* UBillboardComponent::Duplicate()
 {
     UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
 
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
+    // GetEditableProperties 체인(ActorComponent + SceneComponent + PrimitiveComponent +
+    //   Particle(Name), Width, Height, Play Rate, bLoop) 일괄 복사
+    NewComp->CopyPropertiesFrom(this);
+
     NewComp->SetOwner(nullptr);
-    
-    NewComp->SetRelativeLocation(this->GetRelativeLocation());
-    NewComp->SetRelativeRotation(this->GetRelativeRotation());
-    NewComp->SetRelativeScale(this->GetRelativeScale());
-    
-    NewComp->SetVisibility(this->IsVisible());
+    NewComp->bTransformDirty = true;
+    NewComp->ParentComponent = nullptr;
+    NewComp->ChildComponents.clear();
 
-    NewComp->bIsBillboard = this->bIsBillboard;
-    NewComp->SetTextureName(this->GetTextureName());
+    // GetEditableProperties 에 노출되지 않은 필드를 직접 복사합니다.
+    NewComp->bIsBillboard   = this->bIsBillboard;
+    NewComp->CachedSprite   = this->CachedSprite;   // 얕은 복사 (ResourceManager 소유)
+    NewComp->FrameIndex     = this->FrameIndex;
+    NewComp->TimeAccumulator= this->TimeAccumulator;
 
-	DuplicateSubObjects();
+    NewComp->DuplicateSubObjects();
 
     return NewComp;
 }
 
-REGISTER_FACTORY(UBillboardComponent)
 bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
 {
 	OutCamera = nullptr;

@@ -6,22 +6,17 @@ REGISTER_FACTORY(UCameraComponent)
 
 UCameraComponent* UCameraComponent::Duplicate()
 {
-	UCameraComponent* NewComp = UObjectManager::Get().CreateObject<UCameraComponent>();
-    
-    NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
+    UCameraComponent* NewComp = UObjectManager::Get().CreateObject<UCameraComponent>();
+
+    // 부모 컴포넌트의 GetEditableProperties 체인 일괄 복사
+    NewComp->CopyPropertiesFrom(this);
+
     NewComp->SetOwner(nullptr);
+    NewComp->bTransformDirty = true;
+    NewComp->ParentComponent = nullptr;
+    NewComp->ChildComponents.clear();
 
-    NewComp->SetRelativeLocation(this->GetRelativeLocation());
-    NewComp->SetRelativeRotation(this->GetRelativeRotation());
-    NewComp->SetRelativeScale(this->GetRelativeScale());
-
-    NewComp->CameraState = this->CameraState;
-
-	NewComp->DuplicateSubObjects();
+    NewComp->DuplicateSubObjects();
 
     return NewComp;
 }

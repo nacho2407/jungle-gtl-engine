@@ -32,13 +32,13 @@ public:
 	AActor* GetOwner() const { return Owner; }
 
 	// 에디터에 노출할 프로퍼티 목록 반환. 하위 클래스에서 override하여 속성 추가.
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
-	virtual void PostEditProperty(const char* PropertyName) {}
-	
-	// Reflection을 기반으로 Property들을 복사합니다. 단, 액터-컴포넌트, 컴포넌트-컴포넌트 간의 소유 관계 등은 별도로 설정해야 합니다.
-    void CopyPropertiesFrom(UActorComponent* Src);
+	void PostEditProperty(const char* PropertyName) override {}
+
+	// CopyPropertiesFrom 은 UObject 에 정의됩니다.
+	// 컴포넌트-컴포넌트 간 소유 관계(Owner, Parent 등)는 Duplicate() 호출 측에서 별도 처리해야 합니다.
 
 	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
 	bool IsTransient() const { return bTransient; }
