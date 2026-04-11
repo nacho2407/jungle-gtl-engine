@@ -24,6 +24,7 @@ namespace ECBSlot
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
 	constexpr uint32 Decal = 5;    // b5: Decal
+	constexpr uint32 Fireball = 6; // b6: Fireball
 }
 
 //PerObject
@@ -126,6 +127,15 @@ struct FDecalConstants
 
 	FVector DecalForward;
 	float DecalOpacity;
+};
+
+struct FFireballConstants
+{
+	FColor Color;
+	float Intensity;
+	float Radius;
+	float RadiusFalloff;
+	float Padding[2];
 };
 
 // ============================================================
