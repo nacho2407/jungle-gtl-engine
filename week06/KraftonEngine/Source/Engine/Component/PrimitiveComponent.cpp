@@ -44,6 +44,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
 	Ar << bIsVisible;
+	Ar << bSupportsOutline;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -52,6 +53,17 @@ void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 	if (bIsVisible == bNewVisible) return;
 	bIsVisible = bNewVisible;
 	MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetSupportsOutline(bool bInSupportsOutline)
+{
+	if (bSupportsOutline == bInSupportsOutline)
+	{
+		return;
+	}
+
+	bSupportsOutline = bInSupportsOutline;
+	MarkRenderStateDirty();
 }
 
 // ============================================================
@@ -92,6 +104,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+	OutProps.push_back({ "Outline", EPropertyType::Bool, &bSupportsOutline });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -103,6 +116,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	{
 		// Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
 		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "Outline") == 0)
+	{
+		MarkRenderStateDirty();
 	}
 }
 
@@ -230,8 +247,22 @@ void UPrimitiveComponent::DestroyRenderState()
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
 	// 프록시 파괴 후 재생성 — 메시 교체 등 큰 변경 시 사용
+	
+	// 선택된 상태에서 프록시를 다시 만들면 selection mask 대상이 사라지므로 기존 selection 상태를 보존해서 새 프록시에 다시 적용
+	bool bWasSelected = false;
+	UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+	if (World && SceneProxy)
+	{
+		bWasSelected = World->GetScene().IsProxySelected(SceneProxy);
+	}
+
 	DestroyRenderState();
 	CreateRenderState();
+
+	if (bWasSelected && World && SceneProxy)
+	{
+		World->GetScene().SetProxySelected(SceneProxy, true);
+	}
 }
 
 

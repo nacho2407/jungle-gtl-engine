@@ -1,4 +1,4 @@
-#include "GameFramework/DecalActor.h"
+﻿#include "GameFramework/DecalActor.h"
 
 #include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
@@ -19,8 +19,9 @@ void ADecalActor::InitDefaultComponents()
 		IconBillboardComponent = AddComponent<UBillboardComponent>();
 		IconBillboardComponent->AttachToComponent(DecalComponent);
 		IconBillboardComponent->SetTexture(FName("DecalActor"));
-		IconBillboardComponent->SetSpriteSize(0.75f, 0.75f);
+		IconBillboardComponent->SetSpriteSize(1.0f, 1.0f);
 		IconBillboardComponent->SetVisibility(true);
+		IconBillboardComponent->SetSupportsOutline(false);
 	}
 
 	if (!TextRenderComponent)
@@ -31,5 +32,6 @@ void ADecalActor::InitDefaultComponents()
 		TextRenderComponent->SetText("UUID : " + TextRenderComponent->GetOwnerUUIDToString());
 		TextRenderComponent->SetFont(FName("Default"));
 		TextRenderComponent->SetVisibility(true);
+		TextRenderComponent->SetSupportsOutline(false);
 	}
 }

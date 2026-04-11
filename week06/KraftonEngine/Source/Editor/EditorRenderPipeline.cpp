@@ -81,7 +81,7 @@ namespace
 			FDebugLineEntry Entry;
 			Entry.Start = Corners[Edge[0]];
 			Entry.End = Corners[Edge[1]];
-			Entry.Color = FColor::White();
+			Entry.Color = FColor::Blue();
 			Bus.AddDebugLineEntry(std::move(Entry));
 		}
 	}
