@@ -61,7 +61,7 @@ protected:
 
 protected:
     USceneComponent* UpdatedComponent = nullptr;
-    FVector Velocity = FVector::ZeroVector;
+	FVector Velocity = FVector(-1.0f, 0.0f, 1.0f);
     FVector PendingInputVector = FVector::ZeroVector;          // 추후 플레이어 입력을 처리할 때 사용되는 벡터
     FVector PlaneConstraintNormal = FVector(0.0f, 0.0f, 1.0f); // 이동을 특정 평면으로 제한하는 법선 벡터
 

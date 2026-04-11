@@ -21,6 +21,7 @@ private:
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
+	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp);
 
 	FSelectionManager* SelectionManager = nullptr;
 	UActorComponent* SelectedComponent = nullptr;
