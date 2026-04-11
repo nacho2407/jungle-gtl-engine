@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -13,6 +13,7 @@ enum class EViewMode : int32
 struct FShowFlags
 {
 	bool bPrimitives = true;
+	bool bDecals = true;
 	bool bGrid = true;
 	bool bWorldAxis = true;
 	bool bGizmo = true;
