@@ -35,7 +35,7 @@ namespace
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 
 		// 호버/클릭 시 배경 원
-		ImVec2 center(pos.x + size * 0.5f + 1.0f, pos.y + size * 0.5f + 1.0f);
+		ImVec2 center(pos.x + size * 0.5f + 0.5f, pos.y + size * 0.5f + 0.5f);
 		dl->AddCircleFilled(center, size * 0.5f, ImGui::ColorConvertFloat4ToU32(
 			ImGui::IsItemActive()
 				? ImVec4(0.9f, 0.1f, 0.1f, 1.0f)
