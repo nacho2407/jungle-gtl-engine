@@ -154,7 +154,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			continue;
 
 		// Font 프록시는 동적 VB 배칭 경로 (개별 FDrawCommand가 아닌 FontGeometry)
-		if (Proxy->Pass == ERenderPass::Font)
+		if (Proxy->bFontBatched)
 		{
 			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
 			if (!TextProxy->CachedText.empty())
