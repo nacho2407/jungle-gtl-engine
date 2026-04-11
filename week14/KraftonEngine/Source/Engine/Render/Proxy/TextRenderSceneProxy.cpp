@@ -56,7 +56,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	CachedBillboardMatrix = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale())
 		* RotMatrix * FMatrix::MakeTranslationMatrix(TextComp->GetWorldLocation());
 
-	// 텍스트 데이터 캐싱 (Renderer::PrepareBatchers에서 사용)
+	// 텍스트 데이터 캐싱 (Collector가 FFontGeometry 배칭에 사용)
 	CachedText = TextComp->GetText();
 	CachedFontScale = TextComp->GetFontSize();
 
