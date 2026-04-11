@@ -26,6 +26,9 @@ public:
 	// Reset UUID generation to a specific value
 	static void ResetUUIDGeneration(int Value) { NextUUID = Value; }
 
+	// Peek at the next UUID without consuming it
+	static uint32 GetNextUUID() { return NextUUID; }
+
 	inline static uint32 GetTotalAllocationBytes()
 	{
 		return TotalAllocationBytes;
