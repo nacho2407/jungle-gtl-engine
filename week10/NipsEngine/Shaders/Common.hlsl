@@ -57,6 +57,9 @@ cbuffer FogBuffer : register(b9)
     float FogDensity;
     float HeightFalloff;
     float FogHeight;
+    float FogStartDistance;
+    float FogCutoffDistance;
+    float FogMaxOpacity;
 };
 
 float4 ApplyMVP(float3 pos)

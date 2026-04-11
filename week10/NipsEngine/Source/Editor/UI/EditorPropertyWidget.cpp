@@ -123,6 +123,9 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
              Comp->SetFogInscatteringColor(FVector4(0.72f, 0.8f, 0.9f, 1.0f));
              Comp->SetHeightFalloff(0);
              Comp->SetFogHeight(0);
+             Comp->SetFogCutoffDistance(1000);
+             Comp->SetFogMaxOpacity(1.0f);
+             Comp->SetFogStartDistance(0);
 			 return Comp;
 		}
 	},
