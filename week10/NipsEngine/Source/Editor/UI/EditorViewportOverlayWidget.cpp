@@ -15,7 +15,7 @@
 #include "Slate/SSplitterH.h"
 #include "Slate/SSplitterCross.h"
 #include "Viewport/ViewportLayout.h"
-#include "Core/InputSystem.h"
+#include "Input/InputSystem.h"
 #include <initializer_list>
 #include <utility>
 #include <algorithm>
