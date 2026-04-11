@@ -43,13 +43,32 @@ FDrawCommand& FDrawCommandList::AddCommand()
 
 void FDrawCommandList::Sort()
 {
-	if (Commands.size() <= 1) return;
+	if (Commands.size() > 1)
+	{
+		std::sort(Commands.begin(), Commands.end(),
+			[](const FDrawCommand& A, const FDrawCommand& B)
+			{
+				return A.SortKey < B.SortKey;
+			});
+	}
 
-	std::sort(Commands.begin(), Commands.end(),
-		[](const FDrawCommand& A, const FDrawCommand& B)
-		{
-			return A.SortKey < B.SortKey;
-		});
+	// 패스별 오프셋 빌드 — 정렬 후 1회 선형 스캔
+	std::memset(PassOffsets, 0, sizeof(PassOffsets));
+	const uint32 Total = static_cast<uint32>(Commands.size());
+	uint32 Idx = 0;
+	for (uint32 P = 0; P < (uint32)ERenderPass::MAX; ++P)
+	{
+		PassOffsets[P] = Idx;
+		while (Idx < Total && (uint32)Commands[Idx].Pass == P)
+			++Idx;
+	}
+	PassOffsets[(uint32)ERenderPass::MAX] = Total;
+}
+
+void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const
+{
+	OutStart = PassOffsets[(uint32)Pass];
+	OutEnd   = PassOffsets[(uint32)Pass + 1];
 }
 
 void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx,
@@ -102,16 +121,12 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& D
 void FDrawCommandList::Reset()
 {
 	Commands.clear();
+	std::memset(PassOffsets, 0, sizeof(PassOffsets));
 }
 
 uint32 FDrawCommandList::GetCommandCount(ERenderPass Pass) const
 {
-	uint32 Count = 0;
-	for (const FDrawCommand& Cmd : Commands)
-	{
-		if (Cmd.Pass == Pass) ++Count;
-	}
-	return Count;
+	return PassOffsets[(uint32)Pass + 1] - PassOffsets[(uint32)Pass];
 }
 
 // ============================================================
