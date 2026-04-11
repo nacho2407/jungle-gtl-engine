@@ -33,6 +33,7 @@ UDecalComponent* UDecalComponent::Duplicate()
 	NewComp->FadeDuration = this->FadeDuration;
 	NewComp->FadeInStartDelay = this->FadeInStartDelay;
 	NewComp->FadeInDuration = this->FadeInDuration;
+	NewComp->bDestroyOwnerAfterFade = this->bDestroyOwnerAfterFade;
 
 	NewComp->DuplicateSubObjects();
 
@@ -55,6 +56,7 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "Fade Duration", EPropertyType::Float, &FadeDuration });
 	OutProps.push_back({ "Fade In Start Delay", EPropertyType::Float, &FadeInStartDelay });
 	OutProps.push_back({ "Fade In Duration", EPropertyType::Float, &FadeInDuration });
+	OutProps.push_back({ "Destroy Owner After Fade", EPropertyType::Bool, &bDestroyOwnerAfterFade });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)

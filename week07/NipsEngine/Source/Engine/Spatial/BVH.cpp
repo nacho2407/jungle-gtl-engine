@@ -1067,6 +1067,47 @@ void FBVH::RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<i
     OutTs.swap(Scratch.SortedTs);
 }
 
+void FBVH::OBBQuery(const TArray<FAABB>& ObjectBounds, const FOBB& OBB, TArray<int32>& OutIndices, FOBBQueryScratch& Scratch) const
+{
+	OutIndices.clear();
+	if (RootNodeIndex == INDEX_NONE)
+	{
+		return;
+	}
+	// The caller owns this scratch, so separate threads can query the same BVH
+	// concurrently as long as they do not share the scratch instance.
+	Scratch.TraversalStack.clear();
+	Scratch.TraversalStack.reserve(Nodes.size());
+	Scratch.TraversalStack.push_back({ RootNodeIndex, false });
+
+	while (!Scratch.TraversalStack.empty())
+	{
+		const int32 NodeIndex = Scratch.TraversalStack.back().NodeIndex;
+		Scratch.TraversalStack.pop_back();
+		const FNode& Node = Nodes[NodeIndex];
+		if (!OBB.Intersects(Node.Bounds))
+		{
+			continue;
+		}
+		if (Node.IsLeaf())
+		{
+			if (Node.ObjectIndex != INDEX_NONE && Node.ObjectIndex >= 0)
+			{
+				OutIndices.push_back(Node.ObjectIndex);
+			}
+			continue;
+		}
+		if (Node.Left != INDEX_NONE)
+		{
+			Scratch.TraversalStack.push_back({ Node.Left, false });
+		}
+		if (Node.Right != INDEX_NONE)
+		{
+			Scratch.TraversalStack.push_back({ Node.Right, false });
+		}
+	}
+}
+
 
 // ============================================================================
 // Build Helpers
