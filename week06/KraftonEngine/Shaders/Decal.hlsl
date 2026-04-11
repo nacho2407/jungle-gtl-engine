@@ -52,6 +52,7 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
 
     float2 decalUV = localPos.xy + 0.5f;
     float4 decalColor = g_txColor.Sample(g_Sample, decalUV);
+    decalColor.a *= DecalOpacity;
 
     if (decalColor.a <= 0.001f)
     {

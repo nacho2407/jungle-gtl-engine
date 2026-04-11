@@ -28,6 +28,9 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
 	OutProps.push_back({ "Decal Size", EPropertyType::Vec3, &DecalSize, 1.0f, 1000.0f, 1.0f });
+	OutProps.push_back({ "Fade In Time", EPropertyType::Float, &FadeInTime, 0.0f, 10.0f, 0.1f });
+	OutProps.push_back({ "Fade Out Time", EPropertyType::Float, &FadeOutTime, 0.0f, 10.0f, 0.1f });
+	OutProps.push_back({ "Total Lifetime", EPropertyType::Float, &TotalLifetime, 0.0f, 100.0f, 1.0f });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
@@ -56,6 +59,37 @@ FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 	return new FDecalSceneProxy(this);
 }
 
+void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+	UPrimitiveComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	ElapsedTime += DeltaTime;
+
+	float CurrentFadeAlpha = 1.0f;
+
+	if (FadeInTime > 0.0f)
+	{
+		CurrentFadeAlpha = std::min(CurrentFadeAlpha, ElapsedTime / FadeInTime);
+	}
+
+	if (TotalLifetime > 0.0f)
+	{
+		const float RemainingTime = TotalLifetime - ElapsedTime;
+		if(FadeOutTime > 0.0f && RemainingTime < FadeOutTime)
+		{
+			CurrentFadeAlpha = std::min(CurrentFadeAlpha, RemainingTime / FadeOutTime);
+		}
+
+		if(RemainingTime <= 0.0f)
+		{
+			ResetFade();
+			CurrentFadeAlpha = 0.0f;
+		}
+	}
+
+	FadeAlpha = Clamp(CurrentFadeAlpha, 0.0f, 1.0f);
+}
+
 void UDecalComponent::SetTexture(const FName& InTextureName)
 {
 	TextureName = InTextureName;
@@ -71,6 +105,16 @@ void UDecalComponent::SetDecalSize(const FVector& InSize)
 	MarkRenderTransformDirty();
 	UpdateLocalExtents();
 	MarkWorldBoundsDirty();
+}
+
+void UDecalComponent::ResetFade()
+{
+	ElapsedTime = 0.0f;
+	FadeAlpha = 1.0f;
+	bTickEnable = true;
+
+	SetActive(true);
+	SetComponentTickEnabled(true);
 }
 
 FMatrix& UDecalComponent::GetDecalToWorldMatrix() const

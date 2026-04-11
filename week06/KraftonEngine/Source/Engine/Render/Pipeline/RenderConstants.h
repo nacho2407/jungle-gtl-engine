@@ -125,7 +125,7 @@ struct FDecalConstants
 	FMatrix WorldToDecal;
 
 	FVector DecalForward;
-	float Padding0;
+	float DecalOpacity;
 };
 
 // ============================================================

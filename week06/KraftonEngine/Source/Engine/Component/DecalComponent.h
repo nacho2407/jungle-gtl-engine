@@ -17,13 +17,19 @@ public:
 	void UpdateLocalExtents();
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
+
 	void SetTexture(const FName& InTextureName);
 	void SetDecalSize(const FVector& InSize);
 	const FTextureResource* GetTexture() const { return CachedTexture; }
 	const FVector& GetDecalSize() const { return DecalSize; }
+	float GetFadeAlpha() const { return FadeAlpha; }
+
+	void ResetFade();
 
 	FMatrix& GetDecalToWorldMatrix() const;
 	FMatrix& GetWorldToDecalMatrix() const;
+
 
 protected:
 	void OnTransformDirty() override;
@@ -39,6 +45,12 @@ private:
 	mutable FMatrix WorldToDecal = FMatrix::Identity;
 	mutable bool bDecalMatrixDirty = true;
 
-	FVector DecalSize = { 100.0f, 100.0f, 100.0f };
+	FVector DecalSize = { 1.0f, 1.0f, 1.0f };
+
+	float FadeAlpha = 1.0f;
+	float FadeInTime = 1.0f;
+	float FadeOutTime = 1.0f;
+	float TotalLifetime = 5.0f;
+	float ElapsedTime = 0.0f;
 };
 
