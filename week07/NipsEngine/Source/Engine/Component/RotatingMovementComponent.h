@@ -12,9 +12,10 @@ public:
 	virtual URotatingMovementComponent* Duplicate() override;
 	virtual URotatingMovementComponent* DuplicateSubObjects() override { return this; }
 
-	void SetRotationSpeed(const FRotator InRotationRate) { RotationRate = InRotationRate; }
-	const FRotator GetRotationRate() const { return RotationRate; }
-	
+	// RotationRate: X=X축 각속도, Y=Y축 각속도, Z=Z축 각속도 (deg/s)
+	void SetRotationSpeed(const FVector& InRotationRate) { RotationRate = InRotationRate; }
+	const FVector& GetRotationRate() const { return RotationRate; }
+
 	void SetPivotTranslation(const FVector& InPivot) { PivotTranslation = InPivot; }
     const FVector& GetPivotTranslation() const { return PivotTranslation; }
 
@@ -26,8 +27,10 @@ public:
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 private:
-	FRotator RotationRate = FRotator::ZeroRotator; 
-	FVector PivotTranslation = FVector::ZeroVector; // 회전의 중심점을 표시한다.
+	// X=X축(Roll), Y=Y축(Pitch), Z=Z축(Yaw) 각속도 (deg/s)
+	FVector RotationRate = FVector(90.0f, 0.f, 0.f);
+	// 오브젝트 로컬 공간 기준 피벗 오프셋 (오브젝트 → 피벗 방향)
+	FVector PivotTranslation = FVector::ZeroVector;
 	
 	bool bRotationInLocalSpace = true;
 };

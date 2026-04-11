@@ -18,6 +18,13 @@ void UMovementComponent::SetUpdatedComponent(USceneComponent* InComponent)
     UpdatedComponent = InComponent;
 }
 
+void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    // ValuePtr = &UpdatedComponent (USceneComponent**) — 에디터에서 드롭다운으로 결정
+    OutProps.push_back({ "Updated Component", EPropertyType::SceneComponentRef, &UpdatedComponent });
+	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity });
+}
+
 // UpdatedComponent를 Delta만큼 이동시킵니다.
 void UMovementComponent::MoveUpdatedComponent(const FVector& Delta)
 {
@@ -68,7 +75,7 @@ FVector UMovementComponent::ConstrainDirectionToPlane(const FVector& Direction) 
 
 	// 방향벡터를 평면의 정규화된 법선벡터에 내적한다.
     const FVector Normal = PlaneConstraintNormal.GetSafeNormal();
-    const float   Dot    = FVector::DotProduct(Direction, Normal);
+    const float Dot = FVector::DotProduct(Direction, Normal);
     return Direction - Normal * Dot;
 }
 
@@ -81,6 +88,6 @@ FVector UMovementComponent::ConstrainLocationToPlane(const FVector& Location) co
     }
  
     const FVector Normal = PlaneConstraintNormal.GetSafeNormal();
-    const float   Dot    = FVector::DotProduct(Location, Normal);
+    const float Dot = FVector::DotProduct(Location, Normal);
     return Location - Normal * Dot;
 }

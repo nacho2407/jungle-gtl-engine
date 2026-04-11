@@ -243,21 +243,26 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 				if (!NewComp) 
 					continue;
 
-				USceneComponent* RootComp = PrimaryActor->GetRootComponent();
+				// 선택된 컴포넌트가 SceneComponent라면 해당 컴포넌트를 타겟으로 지정, 아니라면 루트 지정
+				USceneComponent* AttachTarget = nullptr;
+				if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+					AttachTarget = static_cast<USceneComponent*>(SelectedComponent);
+				else
+					AttachTarget = PrimaryActor->GetRootComponent();
 
 				// SceneComponent인 경우: 트랜스폼 계층에 부착(Attach)
 				if (USceneComponent* SceneComp = Cast<USceneComponent>(NewComp))
 				{
-					if (RootComp)
-						SceneComp->AttachToComponent(RootComp);
+					if (AttachTarget)
+						SceneComp->AttachToComponent(AttachTarget);
 					else
 						PrimaryActor->SetRootComponent(SceneComp);
 				}
-				// MovementComponent인 경우: 이동 대상으로 RootComponent를 지정 (Attach 하지 않음)
+				// MovementComponent인 경우 Attach Target을 이동 대상으로 삼음
 				else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
 				{
-					if (RootComp)
-						MoveComp->SetUpdatedComponent(RootComp);
+					if (AttachTarget)
+						MoveComp->SetUpdatedComponent(AttachTarget);
 				}
 
 				SelectedComponent = NewComp;
@@ -567,30 +572,26 @@ void FEditorPropertyWidget::RenderComponentProperties()
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
-	ImGui::Separator();
+
+    ImGui::Separator();
 
 	// PropertyDescriptor 기반 자동 위젯 렌더링
 	TArray<FPropertyDescriptor> Props;
 	SelectedComponent->GetEditableProperties(Props);
 
-	bool bIsRoot = false;
-	if (SelectedComponent->IsA<USceneComponent>())
-	{
-		USceneComponent* SceneComp = static_cast<USceneComponent*>(SelectedComponent);
-		bIsRoot = (SceneComp->GetParent() == nullptr);
-	}
+	AActor* Owner = SelectedComponent->GetOwner();
 
-	// Transform 프로퍼티 이름 목록
-	auto IsTransformProp = [](const char* Name) {
-		return strcmp(Name, "Location") == 0
-			|| strcmp(Name, "Rotation") == 0
-			|| strcmp(Name, "Scale") == 0;
-		};
-
-	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
 	for (auto& Prop : Props)
-	{ 
-		RenderPropertyWidget(Prop);
+	{
+		if (Prop.Type == EPropertyType::SceneComponentRef)
+		{
+			// SceneComponentRef는 액터 컨텍스트가 필요한 드롭다운으로 렌더링
+			RenderSceneComponentRefWidget(Prop, Owner);
+		}
+		else
+		{
+			RenderPropertyWidget(Prop);
+		}
 	}
 	ImGui::Separator();
 
@@ -599,6 +600,55 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
 		SelectionManager->GetGizmo()->UpdateGizmoTransform();
+	}
+}
+
+void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& Prop, AActor* Owner)
+{
+	// ValuePtr은 USceneComponent* 변수의 주소 (USceneComponent**)
+	USceneComponent** ValuePtr = reinterpret_cast<USceneComponent**>(Prop.ValuePtr);
+	USceneComponent* CurrentComp = *ValuePtr;
+
+	// 액터 소유 SceneComponent 목록 수집
+	TArray<USceneComponent*> SceneComps;
+	SceneComps.push_back(nullptr); // "None" 선택지
+	if (Owner)
+	{
+		for (UActorComponent* Comp : Owner->GetComponents())
+		{
+			if (USceneComponent* SceneComp = Cast<USceneComponent>(Comp))
+				SceneComps.push_back(SceneComp);
+		}
+	}
+
+	// 드롭다운 레이블 생성: "[Root] ClassName" 또는 "ClassName [FName]"
+	auto GetLabel = [&](USceneComponent* Comp) -> FString {
+		if (!Comp) return "None";
+		FString Name = Comp->GetFName().ToString();
+		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+		bool bIsRoot = Owner && (Comp == Owner->GetRootComponent());
+		return bIsRoot ? ("[Root] " + Name) : Name;
+	};
+
+	FString CurrentLabel = GetLabel(CurrentComp);
+	if (ImGui::BeginCombo(Prop.Name, CurrentLabel.c_str()))
+	{
+		for (USceneComponent* SceneComp : SceneComps)
+		{
+			bool bSelected = (SceneComp == CurrentComp);
+			// ##ptr 으로 포인터를 ID로 사용하여 동일 이름 컴포넌트를 구별
+			char SelectableId[128];
+			snprintf(SelectableId, sizeof(SelectableId), "%s##%p",
+				GetLabel(SceneComp).c_str(), static_cast<void*>(SceneComp));
+			if (ImGui::Selectable(SelectableId, bSelected))
+			{
+				*ValuePtr = SceneComp;
+				SelectedComponent->PostEditProperty(Prop.Name);
+			}
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
 	}
 }
 

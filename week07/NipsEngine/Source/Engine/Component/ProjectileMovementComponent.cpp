@@ -16,6 +16,12 @@ UProjectileMovementComponent* UProjectileMovementComponent::Duplicate()
 
 	NewComp->SetPlaneConstraintNormal(this->GetPlaneConstraintNormal());
 
+	// UpdatedComponent는 Actor 단에서 맵핑해줍니다.
+
+	NewComp->SetVelocity(this->GetVelocity());
+	NewComp->SetPlaneConstraintNormal(this->GetPlaneConstraintNormal());
+	NewComp->SetPendingInputVector(this->GetPendingInputVector());
+
 	NewComp->SetInitialSpeed(this->GetInitialSpeed());
 	NewComp->SetMaxSpeed(this->GetMaxSpeed());
 	NewComp->SetGravityScale(this->GetGravityScale());
@@ -26,6 +32,8 @@ UProjectileMovementComponent* UProjectileMovementComponent::Duplicate()
 
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
+    UMovementComponent::GetEditableProperties(OutProps);
+
     OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 1.0f });
     OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 0.0f, 1.0f });
     OutProps.push_back({ "Gravity Scale", EPropertyType::Float, &GravityScale, 0.0f, 5.0f, 0.01f });
@@ -40,7 +48,15 @@ void UProjectileMovementComponent::BeginPlay()
 	if (UpdatedComponent)
 	{
 		// 별도의 타겟 방향이 없다면 UpdatedComponend의 Forward 방향으로 발사된다.
-		Velocity = UpdatedComponent->GetForwardVector() * InitialSpeed;
+		if (Velocity.IsNearlyZero())
+		{
+			Velocity = UpdatedComponent->GetForwardVector() * InitialSpeed;
+		}
+		else 
+		{
+			Velocity = Velocity.GetSafeNormal() * InitialSpeed;
+		}
+		
 	}
 }
 

@@ -21,6 +21,8 @@ public:
     void SetUpdatedComponent(USceneComponent* InComponent);
     USceneComponent* GetUpdatedComponent() const { return UpdatedComponent; }
 
+    virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
 	// 충돌을 고려하며 UpdatedComponent를 Delta만큼 이동시킨다.
 	// bool SafeMoveUpdatedComponent(const FVector& Delta, FHitResult& OutHit);
 
@@ -39,6 +41,9 @@ public:
 
     FVector GetVelocity() const { return Velocity; }
     void    SetVelocity(const FVector& InVelocity) { Velocity = InVelocity; }
+
+	FVector GetPendingInputVector() const { return PendingInputVector; }
+	void    SetPendingInputVector(const FVector InVector) { PendingInputVector = InVector; }
 
     FVector GetPlaneConstraintNormal() const { return PlaneConstraintNormal; }
     void    SetPlaneConstraintNormal(const FVector& InNormal) { PlaneConstraintNormal = InNormal; }

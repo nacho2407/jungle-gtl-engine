@@ -30,7 +30,7 @@ public:
 private:
 	float InitialSpeed = 5.0f;
 	float MaxSpeed = 100.0f;
-	float GravityScale = 1.0f;
+	float GravityScale = 0.0f;
 
 	bool bRotationFollowsVelocity = true; // 켤 시 화살 및 로켓이 날아가는 궤적을 바라본다.
 };
