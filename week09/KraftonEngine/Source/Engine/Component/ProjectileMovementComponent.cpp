@@ -4,14 +4,14 @@
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Proxy/FScene.h"
 #include "Serialization/Archive.h"
 
 #include <cmath>
 
 namespace
 {
-	void AddProjectileVelocityArrow(FRenderBus& RenderBus, const FVector& Start, const FVector& Velocity)
+	void AddProjectileVelocityArrow(FScene& Scene, const FVector& Start, const FVector& Velocity)
 	{
 		constexpr float ProjectileArrowScale = 0.25f;
 		const FVector ScaledVelocity = Velocity * ProjectileArrowScale;
@@ -25,11 +25,7 @@ namespace
 		const FVector End = Start + ScaledVelocity;
 		const FColor ArrowColor(135, 206, 235);
 
-		FDebugLineEntry Shaft;
-		Shaft.Start = Start;
-		Shaft.End = End;
-		Shaft.Color = ArrowColor;
-		RenderBus.AddDebugLineEntry(std::move(Shaft));
+		Scene.AddDebugLine(Start, End, ArrowColor);
 
 		const float HeadLength = Clamp(VelocityLength * 0.2f, 0.2f, 1.5f);
 		FVector ReferenceUp(0.0f, 0.0f, 1.0f);
@@ -42,17 +38,8 @@ namespace
 		const FVector Back = Direction * HeadLength;
 		const FVector SideOffset = Side * (HeadLength * 0.45f);
 
-		FDebugLineEntry HeadA;
-		HeadA.Start = End;
-		HeadA.End = End - Back + SideOffset;
-		HeadA.Color = ArrowColor;
-		RenderBus.AddDebugLineEntry(std::move(HeadA));
-
-		FDebugLineEntry HeadB;
-		HeadB.Start = End;
-		HeadB.End = End - Back - SideOffset;
-		HeadB.Color = ArrowColor;
-		RenderBus.AddDebugLineEntry(std::move(HeadB));
+		Scene.AddDebugLine(End, End - Back + SideOffset, ArrowColor);
+		Scene.AddDebugLine(End, End - Back - SideOffset, ArrowColor);
 	}
 }
 
@@ -105,7 +92,7 @@ void UProjectileMovementComponent::Serialize(FArchive& Ar)
 	Ar << MaxSpeed;
 }
 
-void UProjectileMovementComponent::CollectEditorVisualizations(FRenderBus& RenderBus) const
+void UProjectileMovementComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
 	const FVector PreviewVelocity = GetPreviewVelocity();
 	if (PreviewVelocity.Length() <= FMath::Epsilon)
@@ -124,7 +111,7 @@ void UProjectileMovementComponent::CollectEditorVisualizations(FRenderBus& Rende
 		return;
 	}
 
-	AddProjectileVelocityArrow(RenderBus, SourceComponent->GetWorldLocation(), PreviewVelocity);
+	AddProjectileVelocityArrow(Scene, SourceComponent->GetWorldLocation(), PreviewVelocity);
 }
 
 void UProjectileMovementComponent::StopSimulating()

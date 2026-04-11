@@ -29,9 +29,11 @@ private:
 	void CreateRotationGizmo();
 	void CreateScaleGizmo();
 	void CreateQuad();
+	void CreateTexturedQuad();
 
 	// CPU 메시 데이터
 	TMap<EMeshShape, FMeshData> MeshDataMap;
+	TMap<EMeshShape, TMeshData<FVertexPNCT>> PNCTMeshDataMap;
 
 	// GPU 버퍼
 	TMap<EMeshShape, FMeshBuffer> MeshBufferMap;
