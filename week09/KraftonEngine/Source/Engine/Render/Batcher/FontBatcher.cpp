@@ -10,6 +10,10 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	CreateBuffers(InDevice, 1024, sizeof(FTextureVertex), 1536);
 	if (!Device) return;
 
+	// 스크린 텍스트용 별도 Dynamic VB/IB 생성
+	ScreenVB_Buf.Create(InDevice, 256, sizeof(FTextureVertex));
+	ScreenIB_Buf.Create(InDevice, 384);
+
 	// Sampler — Point 필터 (폰트는 선명하게)
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -61,6 +65,9 @@ void FFontBatcher::Release()
 	ClearScreen();
 
 	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
+
+	ScreenVB_Buf.Release();
+	ScreenIB_Buf.Release();
 
 	ReleaseBuffers();
 }
@@ -294,6 +301,13 @@ void FFontBatcher::DrawScreenBatch(ID3D11DeviceContext* Context, const FFontReso
 	FDrawCallStats::Increment();
 }
 
+void FFontBatcher::EnsureCharInfoMap(const FFontResource* Resource)
+{
+	if (!Resource || Resource->Columns == 0 || Resource->Rows == 0) return;
+	if (CachedColumns == Resource->Columns && CachedRows == Resource->Rows) return;
+	BuildCharInfoMap(Resource->Columns, Resource->Rows);
+}
+
 void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
 {
 	const auto It = CharInfoMap.find(Codepoint);
@@ -308,3 +322,43 @@ void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& Out
 	OutUVMin = FVector2(Info.U, Info.V);
 	OutUVMax = FVector2(Info.U + Info.Width, Info.V + Info.Height);
 }
+
+// ============================================================
+// Phase 3: 버퍼 업로드 + 접근자
+// ============================================================
+
+bool FFontBatcher::UploadWorldBuffers(ID3D11DeviceContext* Context)
+{
+	if (Vertices.empty()) return false;
+
+	const uint32 VertCount = static_cast<uint32>(Vertices.size());
+	const uint32 IdxCount  = static_cast<uint32>(Indices.size());
+
+	VB.EnsureCapacity(Device, VertCount);
+	IB.EnsureCapacity(Device, IdxCount);
+	if (!VB.Update(Context, Vertices.data(), VertCount)) return false;
+	if (!IB.Update(Context, Indices.data(), IdxCount)) return false;
+	return true;
+}
+
+bool FFontBatcher::UploadScreenBuffers(ID3D11DeviceContext* Context)
+{
+	if (ScreenVertices.empty()) return false;
+
+	const uint32 VertCount = static_cast<uint32>(ScreenVertices.size());
+	const uint32 IdxCount  = static_cast<uint32>(ScreenIndices.size());
+
+	ScreenVB_Buf.EnsureCapacity(Device, VertCount);
+	ScreenIB_Buf.EnsureCapacity(Device, IdxCount);
+	if (!ScreenVB_Buf.Update(Context, ScreenVertices.data(), VertCount)) return false;
+	if (!ScreenIB_Buf.Update(Context, ScreenIndices.data(), IdxCount)) return false;
+	return true;
+}
+
+ID3D11Buffer* FFontBatcher::GetWorldVBBuffer() const { return VB.GetBuffer(); }
+uint32 FFontBatcher::GetWorldVBStride() const { return VB.GetStride(); }
+ID3D11Buffer* FFontBatcher::GetWorldIBBuffer() const { return IB.GetBuffer(); }
+
+ID3D11Buffer* FFontBatcher::GetScreenVBBuffer() const { return ScreenVB_Buf.GetBuffer(); }
+uint32 FFontBatcher::GetScreenVBStride() const { return ScreenVB_Buf.GetStride(); }
+ID3D11Buffer* FFontBatcher::GetScreenIBBuffer() const { return ScreenIB_Buf.GetBuffer(); }

@@ -261,3 +261,21 @@ uint32 FLineBatcher::GetLineCount() const
 {
 	return static_cast<uint32>(Indices.size() / 2);
 }
+
+bool FLineBatcher::UploadBuffers(ID3D11DeviceContext* Context)
+{
+	const uint32 VertexCount = static_cast<uint32>(IndexedVertices.size());
+	const uint32 IndexCount = static_cast<uint32>(Indices.size());
+	if (VertexCount == 0 || IndexCount == 0) return false;
+
+	VB.EnsureCapacity(Device, VertexCount);
+	IB.EnsureCapacity(Device, IndexCount);
+	if (!VB.Update(Context, IndexedVertices.data(), VertexCount)) return false;
+	if (!IB.Update(Context, Indices.data(), IndexCount)) return false;
+	return true;
+}
+
+ID3D11Buffer* FLineBatcher::GetVBBuffer() const { return VB.GetBuffer(); }
+uint32 FLineBatcher::GetVBStride() const { return VB.GetStride(); }
+ID3D11Buffer* FLineBatcher::GetIBBuffer() const { return IB.GetBuffer(); }
+uint32 FLineBatcher::GetIndexCount() const { return static_cast<uint32>(Indices.size()); }
