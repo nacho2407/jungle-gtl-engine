@@ -88,7 +88,7 @@ public:
 
 	// --- Material Texture (SRV) ---
 	FMaterialResource* FindTexture(const FString& Path) const;
-	FMaterialResource* LoadTexture(const FString& Path, ID3D11Device* Device);
+	FMaterialResource* LoadTexture(const FString& Path, ID3D11Device* Device = nullptr);
 	// 모든 GPU 리소스 해제
 	void ReleaseGPUResources();
 

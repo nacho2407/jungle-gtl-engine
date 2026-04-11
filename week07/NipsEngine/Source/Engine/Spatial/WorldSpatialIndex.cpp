@@ -337,6 +337,26 @@ void FWorldSpatialIndex::FrustumQueryPrimitives(const FFrustum& Frustum, TArray<
     }
 }
 
+void FWorldSpatialIndex::OBBQueryPrimitives(const FOBB& OBB, TArray<UPrimitiveComponent*>& OutPrimitives,
+											FPrimitiveOBBQueryScratch& Scratch)
+{
+	FlushDirtyBounds();
+	
+	TArray<int32> ObjectIndices;
+	BVH.OBBQuery(Bounds, OBB, ObjectIndices, Scratch.BVHScratch);
+
+	OutPrimitives.clear();
+	OutPrimitives.reserve(ObjectIndices.size());
+
+	for (int32 ObjectIndex : ObjectIndices)
+	{
+		if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
+		{
+			OutPrimitives.push_back(Primitive);
+		}
+	}
+}
+
 UPrimitiveComponent* FWorldSpatialIndex::Resolve(int32 ObjectIndex) const
 {
     if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(Primitives.size()))
