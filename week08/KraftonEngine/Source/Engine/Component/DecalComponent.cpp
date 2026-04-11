@@ -71,85 +71,217 @@ namespace
 			}
 		}
 	}
+
+	// 메시를 Convex (=OBB of DecalComponent)로 자르기
+	TMeshData<FVertexPNCT> SutherlandHodgman(const FStaticMesh* InMesh, const FMatrix& LocalToDecalMatrix)
+	{
+		TMeshData<FVertexPNCT> Result;
+		if (!InMesh) return Result;
+
+		// Decal 공간(Unit Cube -0.5 ~ 0.5)에서의 클리핑 평면 정의
+		static const FClipPlane Planes[] = {
+			{ FVector( 1,  0,  0), -0.5f }, { FVector(-1,  0,  0), -0.5f },
+			{ FVector( 0,  1,  0), -0.5f }, { FVector( 0, -1,  0), -0.5f },
+			{ FVector( 0,  0,  1), -0.5f }, { FVector( 0,  0, -1), -0.5f }
+		};
+
+		FMatrix NormalMat = LocalToDecalMatrix;
+		NormalMat.M[3][0] = 0.0f; NormalMat.M[3][1] = 0.0f; NormalMat.M[3][2] = 0.0f;
+
+		// 삼각형 단위로 클리핑 수행
+		for (size_t i = 0; i < InMesh->Indices.size(); i += 3)
+		{
+			TArray<FVertexPNCT> Polygon;
+			for (int j = 0; j < 3; ++j)
+			{
+				const FNormalVertex& NV = InMesh->Vertices[InMesh->Indices[i + j]];
+				FVertexPNCT Vert;
+
+				// 타겟 로컬 -> 타겟 월드 -> 데칼 로컬 공간으로 변환
+				Vert.Position = NV.pos * LocalToDecalMatrix;
+				Vert.Normal = (NV.normal * NormalMat).Normalized();
+				Vert.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // Default color
+				Vert.UV = FVector2(0, 0); // 계산 후 적용
+
+				Polygon.push_back(Vert);
+			}
+
+			TArray<FVertexPNCT> ClippedPolygon;
+			TArray<FVertexPNCT> TempPolygon;
+
+			ClippedPolygon = Polygon;
+			for (const auto& Plane : Planes)
+			{
+				ClipAgainstPlane(ClippedPolygon, Plane, TempPolygon);
+				ClippedPolygon = TempPolygon;
+				if (ClippedPolygon.empty()) break;
+			}
+
+			if (ClippedPolygon.size() >= 3)
+			{
+				uint32 BaseIndex = static_cast<uint32>(Result.Vertices.size());
+				for (auto& Vert : ClippedPolygon)
+				{
+					// Decal space is -0.5 to 0.5. U and V map to Y and Z.
+					Vert.UV.X = Vert.Position.Y + 0.5f;
+					Vert.UV.Y = 0.5f - Vert.Position.Z; 
+
+					// 타겟 메쉬와 완전히 겹쳐서 발생하는 Z-Fighting을 막기 위해 로컬 법선 방향으로 아주 미세하게 띄워줌
+					Vert.Position += Vert.Normal * 0.0005f;
+
+					Result.Vertices.push_back(Vert);
+				}
+				for (size_t j = 1; j < ClippedPolygon.size() - 1; ++j)
+				{
+					Result.Indices.push_back(BaseIndex);
+					Result.Indices.push_back(BaseIndex + (uint32)j);
+					Result.Indices.push_back(BaseIndex + (uint32)j + 1);
+				}
+			}
+		}
+
+		return Result;
+	}
+} // namespace
+
+// ==============================================
+//				Public Functions 
+// ==============================================
+
+void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+	// 인게임 도중에만 Fade 효과 업데이트
+	if (TickType == ELevelTick::LEVELTICK_All)
+		HandleFade(DeltaTime);
+	UpdateDecalMesh();
+
+	// ===== Debug line draw ===== 
+	DrawDebugBox();
 }
 
-// 메시를 Convex (=OBB of DecalComponent)로 자르기
-TMeshData<FVertexPNCT> SutherlandHodgman(const FStaticMesh* InMesh, const FMatrix& LocalToDecalMatrix)
+FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 {
-	TMeshData<FVertexPNCT> Result;
-	if (!InMesh) return Result;
+	return new FDecalSceneProxy(this);
+}
 
-	// Decal 공간(Unit Cube -0.5 ~ 0.5)에서의 클리핑 평면 정의
-	static const FClipPlane Planes[] = {
-		{ FVector( 1,  0,  0), -0.5f }, { FVector(-1,  0,  0), -0.5f },
-		{ FVector( 0,  1,  0), -0.5f }, { FVector( 0, -1,  0), -0.5f },
-		{ FVector( 0,  0,  1), -0.5f }, { FVector( 0,  0, -1), -0.5f }
-	};
+void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	UPrimitiveComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({"Color", EPropertyType::Vec4, &Color });
+	OutProps.push_back({"FadeInDelay", EPropertyType::Float, &FadeInDelay});
+	OutProps.push_back({"FadeInDuration", EPropertyType::Float, &FadeInDuration});
+	OutProps.push_back({"FadeOutDelay", EPropertyType::Float, &FadeOutDelay});
+	OutProps.push_back({"FadeOutDuration", EPropertyType::Float, &FadeOutDuration});
+}
 
-	FMatrix NormalMat = LocalToDecalMatrix;
-	NormalMat.M[3][0] = 0.0f; NormalMat.M[3][1] = 0.0f; NormalMat.M[3][2] = 0.0f;
+void UDecalComponent::PostEditProperty(const char* PropertyName)
+{
+	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	// 삼각형 단위로 클리핑 수행
-	for (size_t i = 0; i < InMesh->Indices.size(); i += 3)
+	if (strcmp(PropertyName, "Texture") == 0)
 	{
-		TArray<FVertexPNCT> Polygon;
-		for (int j = 0; j < 3; ++j)
-		{
-			const FNormalVertex& NV = InMesh->Vertices[InMesh->Indices[i + j]];
-			FVertexPNCT Vert;
+		SetTexture(TextureName);
+		MarkRenderStateDirty();
+	}
+	if (strcmp(PropertyName, "Color") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
+	}
+}
 
-			// 타겟 로컬 -> 타겟 월드 -> 데칼 로컬 공간으로 변환
-			Vert.Position = NV.pos * LocalToDecalMatrix;
-			Vert.Normal = (NV.normal * NormalMat).Normalized();
-			Vert.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // Default color
-			Vert.UV = FVector2(0, 0); // 계산 후 적용
+void UDecalComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+	Ar << TextureName;
+	Ar << Color;
+	Ar << FadeInDelay;
+	Ar << FadeInDuration;
+	Ar << FadeOutDelay;
+	Ar << FadeOutDuration;
+}
 
-			Polygon.push_back(Vert);
-		}
+void UDecalComponent::PostDuplicate()
+{
+	// 컴포넌트 복제 후 텍스쳐 재로딩
+	if (TextureName.IsValid())
+	{
+		SetTexture(TextureName);
+	}
+	MarkProxyDirty(EDirtyFlag::Material);
+}
 
-		TArray<FVertexPNCT> ClippedPolygon;
-		TArray<FVertexPNCT> TempPolygon;
+FVector4 UDecalComponent::GetColor() const
+{
+	FVector4 OutColor = this->Color; 
+	OutColor.A = OutColor.A * Clamp(FadeOpacity, 0, 1); 
+	return OutColor;
+}
 
-		ClippedPolygon = Polygon;
-		for (const auto& Plane : Planes)
-		{
-			ClipAgainstPlane(ClippedPolygon, Plane, TempPolygon);
-			ClippedPolygon = TempPolygon;
-			if (ClippedPolygon.empty()) break;
-		}
+void UDecalComponent::SetTexture(const FName& InTextureName)
+{
+	TextureName = InTextureName;
+	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
+	MarkProxyDirty(EDirtyFlag::Material);
+}
 
-		if (ClippedPolygon.size() >= 3)
-		{
-			uint32 BaseIndex = static_cast<uint32>(Result.Vertices.size());
-			for (auto& Vert : ClippedPolygon)
-			{
-				// Decal space is -0.5 to 0.5. U and V map to Y and Z.
-				Vert.UV.X = Vert.Position.Y + 0.5f;
-				Vert.UV.Y = 0.5f - Vert.Position.Z; 
+void UDecalComponent::UpdateOBBFromTransform()
+{
+	OBB.UpdateAsOBB(GetWorldMatrix());
+}
 
-				// 타겟 메쉬와 완전히 겹쳐서 발생하는 Z-Fighting을 막기 위해 로컬 법선 방향으로 아주 미세하게 띄워줌
-				Vert.Position += Vert.Normal * 0.0005f;
+void UDecalComponent::OnTransformDirty()
+{
+	UPrimitiveComponent::OnTransformDirty();
+	UpdateDecalMesh();
+}
 
-				Result.Vertices.push_back(Vert);
-			}
-			for (size_t j = 1; j < ClippedPolygon.size() - 1; ++j)
-			{
-				Result.Indices.push_back(BaseIndex);
-				Result.Indices.push_back(BaseIndex + (uint32)j);
-				Result.Indices.push_back(BaseIndex + (uint32)j + 1);
-			}
-		}
+// ==============================================
+//				Private Functions 
+// ==============================================
+
+void UDecalComponent::HandleFade(float DeltaTime)
+{	
+	FadeTimer += DeltaTime;
+
+	float Alpha = 1;
+
+	// Fade In
+	if (FadeInDuration > 0.0f)
+	{
+		float InStart = FadeInDelay;
+		float InEnd = FadeInDelay + FadeInDuration;
+		if (FadeTimer < InStart) 
+			Alpha = 0.0f;
+		else if (FadeTimer < InEnd) 
+			Alpha = (FadeTimer - InStart) / FadeInDuration;
 	}
 
-	return Result;
+	// Fade Out
+	if (FadeOutDuration > 0.0f)
+	{
+		float OutStart = FadeOutDelay;
+		float OutEnd = FadeOutDelay + FadeOutDuration;
+		if (FadeTimer > OutEnd) 
+			Alpha = 0.0f;
+		else if (FadeTimer > OutStart) 
+			Alpha = std::min(Alpha, 1.0f - (FadeTimer - OutStart) / FadeOutDuration);
+	}
+
+	FadeOpacity = Alpha;
+	UE_LOG("Decal Alpha : %f", FadeOpacity);
+	MarkProxyDirty(EDirtyFlag::Material);
 }
 
 void UDecalComponent::UpdateDecalMesh()
 {
 	UpdateOBBFromTransform();
 
+	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
+	if (!World) return;
+
 	TArray<UPrimitiveComponent*> OverlappingPrimitives;
-	GetOwner()->GetWorld()->GetPartition().QueryFrustumAllPrimitive(OBB, OverlappingPrimitives);
+	World->GetPartition().QueryFrustumAllPrimitive(OBB, OverlappingPrimitives);
 
 	// ===== Calculate Mesh =====
 	DecalMeshData.Vertices.clear();
@@ -159,8 +291,10 @@ void UDecalComponent::UpdateDecalMesh()
 
 	for (auto PrimitiveComp : OverlappingPrimitives)
 	{
-		if (PrimitiveComp->GetOwner() == this->GetOwner()) continue;
-
+		if (PrimitiveComp == this || PrimitiveComp->GetOwner() == GetOwner()) continue;
+		
+		// 260411 NOTE
+		// 현재로썬 정점 데이터 가져올 방법이 StaticMeshComponent의 GetStaticMesh밖에 없어 
 		// 오로지 StaticMeshComponent만 데칼의 대상으로 허용
 		UStaticMeshComponent* SMC = Cast<UStaticMeshComponent>(PrimitiveComp);
 		if (!SMC) continue;
@@ -170,10 +304,12 @@ void UDecalComponent::UpdateDecalMesh()
 		if (!StaticMeshAsset) continue;
 
 		FStaticMesh* RawMesh = StaticMeshAsset->GetStaticMeshAsset();
-		if (!RawMesh) continue;
+		if (!RawMesh || RawMesh->Vertices.empty()) continue;
 
 		FMatrix LocalToDecalMatrix = SMC->GetWorldMatrix() * InvWorld;
 		TMeshData<FVertexPNCT> Sliced = SutherlandHodgman(RawMesh, LocalToDecalMatrix);
+
+		if (Sliced.Vertices.empty()) continue;
 
 		uint32 IndexOffset = static_cast<uint32>(DecalMeshData.Vertices.size());
 		for (const auto& Vertex : Sliced.Vertices)
@@ -183,17 +319,6 @@ void UDecalComponent::UpdateDecalMesh()
 	}
 
 	MarkProxyDirty(EDirtyFlag::Mesh);
-}
-
-void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
-{
-	UpdateDecalMesh();
-
-	// ===== Debug line draw ===== 
-	DrawDebugBox();
-}FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
-{
-	return new FDecalSceneProxy(this);
 }
 
 void UDecalComponent::DrawDebugBox()
@@ -229,44 +354,4 @@ void UDecalComponent::DrawDebugBox()
 	DrawDebugLine(World, P[1], P[5], FColor::Green(), 0.0f);
 	DrawDebugLine(World, P[2], P[6], FColor::Green(), 0.0f);
 	DrawDebugLine(World, P[3], P[7], FColor::Green(), 0.0f);
-}
-
-void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
-	OutProps.push_back({"Color", EPropertyType::Vec4, &Color });
-}
-
-void UDecalComponent::PostEditProperty(const char* PropertyName)
-{
-	UPrimitiveComponent::PostEditProperty(PropertyName);
-
-	if (strcmp(PropertyName, "Texture") == 0)
-	{
-		SetTexture(TextureName);
-		MarkRenderStateDirty();
-	}
-	if (strcmp(PropertyName, "Color") == 0)
-	{
-		MarkProxyDirty(EDirtyFlag::Material);
-	}
-}
-
-void UDecalComponent::SetTexture(const FName& InTextureName)
-{
-	TextureName = InTextureName;
-	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
-	MarkProxyDirty(EDirtyFlag::Material);
-}
-
-void UDecalComponent::UpdateOBBFromTransform()
-{
-	OBB.UpdateAsOBB(GetWorldMatrix());
-}
-
-void UDecalComponent::OnTransformDirty()
-{
-	UPrimitiveComponent::OnTransformDirty();
-	UpdateDecalMesh();
 }
