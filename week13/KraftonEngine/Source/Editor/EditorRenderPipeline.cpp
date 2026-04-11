@@ -1,7 +1,8 @@
-﻿#include "EditorRenderPipeline.h"
+#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
+#include "Render/Proxy/FScene.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
@@ -36,7 +37,6 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		SCOPE_STAT_CAT("RenderViewport", "2_Render");
 		RenderViewport(ViewportClient, Renderer);
 	}
-	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
 
 	// 스왑체인 백버퍼 복귀 → ImGui 합성 → Present
 	Renderer.BeginFrame();
@@ -90,65 +90,48 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// 렌더 시작 (RT 클리어 + DSV 바인딩)
 	VP->BeginRender(Ctx);
 
-	// 1. Bus 수집
-	Bus.Clear();
+	// 1. Frame 설정
+	Frame.ClearViewportResources();
+	FScene& Scene = World->GetScene();
+	Scene.ClearFrameData();
 
-	Bus.SetCameraInfo(Camera);
-	Bus.SetRenderOptions(Opts);
-	Bus.SetViewportInfo(VP);
-	Bus.SetViewportType(Opts.ViewportType);
-	Bus.SetOcclusionCulling(&GPUOcclusion);
-	Bus.SetLODContext(World->PrepareLODContext());
 
-	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
+	Frame.SetCameraInfo(Camera);
+	Frame.SetRenderSettings(ViewMode, ShowFlags);
+	Frame.SetViewportInfo(VP);
+	Frame.ViewportType = Opts.ViewportType;
+	Frame.OcclusionCulling = &GPUOcclusion;
+	Frame.LODContext = World->PrepareLODContext();
+
+	// 2. BeginCollect → Proxy → FDrawCommand 직접 변환
+	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
+
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");
-		Collector.CollectWorld(World, Bus);
+		Collector.CollectWorld(World, Frame, Renderer);
 
 		if (UGizmoComponent* Gizmo = Editor->GetGizmo())
 			Gizmo->UpdateAxisMask(Opts.ViewportType);
 
-		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Bus);
-		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Bus);
-
-		for (AActor* SelectedActor : Editor->GetSelectionManager().GetSelectedActors())
-		{
-			if (!SelectedActor || SelectedActor->GetWorld() != World)
-			{
-				continue;
-			}
-
-			for (UActorComponent* ActorComponent : SelectedActor->GetComponents())
-			{
-				if (!ActorComponent)
-				{
-					continue;
-				}
-
-				ActorComponent->CollectEditorVisualizations(Bus);
-			}
-		}
+		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
+		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, Scene);
 
 		if (ShowFlags.bOctree)
-			Collector.CollectOctreeDebug(World->GetOctree(), Bus);
+			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
 
 		if (VC == Editor->GetActiveViewport())
-			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Bus);
+			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
+
+		Renderer.BuildDynamicCommands(Frame, &Scene);
 	}
 
-	// 3. Batcher 준비
-	{
-		SCOPE_STAT_CAT("PrepareBatcher", "3_Collect");
-		Renderer.PrepareBatchers(Bus);
-	}
-
-	// 4. GPU 드로우 콜 실행
+	// 3. GPU 정렬 + 제출
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-		Renderer.Render(Bus);
+		Renderer.Render(Frame);
 	}
 
-	// 5. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
+	// 4. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
 	if (GPUOcclusion.IsInitialized())
 	{
 		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
@@ -161,7 +144,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Ctx,
 			VP->GetDepthSRV(),
 			World->GetVisibleProxies(),
-			Bus.GetView(), Bus.GetProj(),
+			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}
 }

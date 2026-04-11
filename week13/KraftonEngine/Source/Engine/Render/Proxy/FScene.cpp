@@ -253,3 +253,36 @@ bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
 	return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
 }
+
+// ============================================================
+// Per-frame ephemeral data — 매 뷰포트 렌더 시작 시 Clear
+// ============================================================
+void FScene::ClearFrameData()
+{
+	OverlayTexts.clear();
+	DebugAABBs.clear();
+	DebugLines.clear();
+	bHasGrid = false;
+}
+
+void FScene::AddOverlayText(FString Text, const FVector2& Position, float Scale)
+{
+	OverlayTexts.push_back({ std::move(Text), Position, Scale });
+}
+
+void FScene::AddDebugAABB(const FVector& Min, const FVector& Max, const FColor& Color)
+{
+	DebugAABBs.push_back({ Min, Max, Color });
+}
+
+void FScene::AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color)
+{
+	DebugLines.push_back({ Start, End, Color });
+}
+
+void FScene::SetGrid(float Spacing, int32 HalfLineCount)
+{
+	GridSpacing = Spacing;
+	GridHalfLineCount = HalfLineCount;
+	bHasGrid = true;
+}

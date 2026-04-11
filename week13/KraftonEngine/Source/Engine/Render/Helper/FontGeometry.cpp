@@ -1,14 +1,16 @@
-﻿#include "FontBatcher.h"
-
-#include "Core/CoreTypes.h"
-#include "Profiling/Stats.h"
+#include "FontGeometry.h"
 #include "Resource/ResourceManager.h"
-#include "Render/Resource/ShaderManager.h"
 
-void FFontBatcher::Create(ID3D11Device* InDevice)
+void FFontGeometry::Create(ID3D11Device* InDevice)
 {
-	CreateBuffers(InDevice, 1024, sizeof(FTextureVertex), 1536);
+	Device = InDevice;
 	if (!Device) return;
+	Device->AddRef();
+
+	WorldVB.Create(InDevice, 1024, sizeof(FTextureVertex));
+	WorldIB.Create(InDevice, 1536);
+	ScreenVB.Create(InDevice, 256, sizeof(FTextureVertex));
+	ScreenIB.Create(InDevice, 384);
 
 	// Sampler — Point 필터 (폰트는 선명하게)
 	D3D11_SAMPLER_DESC sampDesc = {};
@@ -27,7 +29,23 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	}
 }
 
-void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
+void FFontGeometry::Release()
+{
+	CharInfoMap.clear();
+	Clear();
+	ClearScreen();
+
+	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
+
+	WorldVB.Release();
+	WorldIB.Release();
+	ScreenVB.Release();
+	ScreenIB.Release();
+
+	if (Device) { Device->Release(); Device = nullptr; }
+}
+
+void FFontGeometry::BuildCharInfoMap(uint32 Columns, uint32 Rows)
 {
 	CharInfoMap.clear();
 	CachedColumns = Columns;
@@ -44,28 +62,50 @@ void FFontBatcher::BuildCharInfoMap(uint32 Columns, uint32 Rows)
 		CharInfoMap[Codepoint] = { Col * CellW, Row * CellH, CellW, CellH };
 	};
 
-	// ASCII 33(!) ~ 126(~) : 슬롯 = 코드포인트 (원본 아틀라스 배치 그대로)
+	// ASCII 32(' ') ~ 126('~')
 	for (uint32 CP = 32; CP <= 126; ++CP)
 		AddChar(CP, CP - 32);
 
-	// 한글 완성형 가(U+AC00) ~ 힣(U+D7A3) : ASCII 다음 슬롯부터
+	// 한글 완성형 가(U+AC00) ~ 힣(U+D7A3)
 	uint32 Slot = 127;
 	for (uint32 CP = 0xAC00; CP <= 0xD7A3; ++CP, ++Slot)
 		AddChar(CP, Slot - 32);
 }
 
-void FFontBatcher::Release()
+void FFontGeometry::EnsureCharInfoMap(const FFontResource* Resource)
 {
-	CharInfoMap.clear();
-	Clear();
-	ClearScreen();
-
-	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
-
-	ReleaseBuffers();
+	if (!Resource || Resource->Columns == 0 || Resource->Rows == 0) return;
+	if (CachedColumns == Resource->Columns && CachedRows == Resource->Rows) return;
+	BuildCharInfoMap(Resource->Columns, Resource->Rows);
 }
 
-void FFontBatcher::AddText(const FString& Text,
+void FFontGeometry::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
+{
+	const auto It = CharInfoMap.find(Codepoint);
+	if (It == CharInfoMap.end())
+	{
+		OutUVMin = FVector2(0, 0);
+		OutUVMax = FVector2(0, 0);
+		return;
+	}
+	const FCharacterInfo& Info = It->second;
+	OutUVMin = FVector2(Info.U, Info.V);
+	OutUVMax = FVector2(Info.U + Info.Width, Info.V + Info.Height);
+}
+
+void FFontGeometry::Clear()
+{
+	WorldVertices.clear();
+	WorldIndices.clear();
+}
+
+void FFontGeometry::ClearScreen()
+{
+	ScreenVertices.clear();
+	ScreenIndices.clear();
+}
+
+void FFontGeometry::AddWorldText(const FString& Text,
 	const FVector& WorldPos,
 	const FVector& CamRight,
 	const FVector& CamUp,
@@ -77,17 +117,15 @@ void FFontBatcher::AddText(const FString& Text,
 	const float CharW = 0.5f * Scale * WorldScale.Y;
 	const float CharH = 0.5f * Scale * WorldScale.Z;
 	float CharCursorX = 0.0f;
-	const uint32 Base = static_cast<uint32>(Vertices.size());
-	const uint32 IdxBase = static_cast<uint32>(Indices.size());
+	const uint32 Base = static_cast<uint32>(WorldVertices.size());
+	const uint32 IdxBase = static_cast<uint32>(WorldIndices.size());
 	const size_t CharCount = Text.size();
 
-	// resize + 포인터 직접 쓰기로 push_back 오버헤드 제거
-	Vertices.resize(Base + CharCount * 4);
-	Indices.resize(IdxBase + CharCount * 6);
-	FTextureVertex* pV = Vertices.data() + Base;
-	uint32* pI = Indices.data() + IdxBase;
+	WorldVertices.resize(Base + CharCount * 4);
+	WorldIndices.resize(IdxBase + CharCount * 6);
+	FTextureVertex* pV = WorldVertices.data() + Base;
+	uint32* pI = WorldIndices.data() + IdxBase;
 
-	// 빌보드 반벡터를 루프 밖에서 미리 계산
 	const FVector HalfRight = CamRight * (CharW * 0.5f);
 	const FVector HalfUp    = CamUp    * (CharH * 0.5f);
 
@@ -102,17 +140,12 @@ void FFontBatcher::AddText(const FString& Text,
 		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End)  { CP = ((Ptr[0] & 0x1F) << 6)  |  (Ptr[1] & 0x3F);                                   Ptr += 2; }
 		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End)  { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6)  |  (Ptr[2] & 0x3F);         Ptr += 3; }
 		else if ((Ptr[0] & 0xF8) == 0xF0 && Ptr + 3 < End)  { CP = ((Ptr[0] & 0x07) << 18) | ((Ptr[1] & 0x3F) << 12) | ((Ptr[2] & 0x3F) << 6) | (Ptr[3] & 0x3F); Ptr += 4; }
-		else												{ ++Ptr; continue; }
+		else                                                  { ++Ptr; continue; }
 
 		FVector2 UVMin, UVMax;
 		GetCharUV(CP, UVMin, UVMax);
 
 		const FVector Center = WorldPos + CamRight * CharCursorX;
-
-		/*pV[0] = { Center - HalfRight + HalfUp, { UVMin.X, UVMin.Y } };
-		pV[1] = { Center + HalfRight + HalfUp, { UVMax.X, UVMin.Y } };
-		pV[2] = { Center - HalfRight - HalfUp, { UVMin.X, UVMax.Y } };
-		pV[3] = { Center + HalfRight - HalfUp, { UVMax.X, UVMax.Y } };*/
 
 		pV[0] = { Center                 + HalfUp, { UVMin.X, UVMin.Y } };
 		pV[1] = { Center + HalfRight * 2 + HalfUp, { UVMax.X, UVMin.Y } };
@@ -129,31 +162,21 @@ void FFontBatcher::AddText(const FString& Text,
 		CharCursorX += CharW;
 	}
 
-	// 실제 출력된 문자 수에 맞게 배열 크기 조정 (멀티바이트 문자 처리 후 잉여 슬롯 제거)
-	Vertices.resize(Base + CharIdx * 4);
-	Indices.resize(IdxBase + CharIdx * 6);
+	WorldVertices.resize(Base + CharIdx * 4);
+	WorldIndices.resize(IdxBase + CharIdx * 6);
 }
 
-
-// 오버레이 텍스트
-void FFontBatcher::AddScreenText(const FString& Text,
+void FFontGeometry::AddScreenText(const FString& Text,
 	float ScreenX, float ScreenY,
 	float ViewportWidth, float ViewportHeight,
 	float Scale)
 {
-	if (Text.empty())
-	{
-		return;
-	}
-
-	if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
-	{
-		return;
-	}
+	if (Text.empty()) return;
+	if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f) return;
 
 	const float CharW = 23.0f * Scale;
 	const float CharH = 23.0f * Scale;
-	const float LetterSpacing = - 0.5f * CharW;
+	const float LetterSpacing = -0.5f * CharW;
 
 	const uint32 Base = static_cast<uint32>(ScreenVertices.size());
 	const uint32 IdxBase = static_cast<uint32>(ScreenIndices.size());
@@ -184,9 +207,9 @@ void FFontBatcher::AddScreenText(const FString& Text,
 	for (size_t i = 0; i < CharCount && Ptr < End; ++i)
 	{
 		uint32 CP = 0;
-		if (Ptr[0] < 0x80) { CP = Ptr[0];                                                                       Ptr += 1; }
-		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End) { CP = ((Ptr[0] & 0x1F) << 6) | (Ptr[1] & 0x3F);                                   Ptr += 2; }
-		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End) { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6) | (Ptr[2] & 0x3F);         Ptr += 3; }
+		if (Ptr[0] < 0x80) { CP = Ptr[0]; Ptr += 1; }
+		else if ((Ptr[0] & 0xE0) == 0xC0 && Ptr + 1 < End) { CP = ((Ptr[0] & 0x1F) << 6) | (Ptr[1] & 0x3F); Ptr += 2; }
+		else if ((Ptr[0] & 0xF0) == 0xE0 && Ptr + 2 < End) { CP = ((Ptr[0] & 0x0F) << 12) | ((Ptr[1] & 0x3F) << 6) | (Ptr[2] & 0x3F); Ptr += 3; }
 		else if ((Ptr[0] & 0xF8) == 0xF0 && Ptr + 3 < End) { CP = ((Ptr[0] & 0x07) << 18) | ((Ptr[1] & 0x3F) << 12) | ((Ptr[2] & 0x3F) << 6) | (Ptr[3] & 0x3F); Ptr += 4; }
 		else { ++Ptr; continue; }
 
@@ -204,17 +227,12 @@ void FFontBatcher::AddScreenText(const FString& Text,
 		pV[3] = { FVector(Right, Bottom, 0.0f), FVector2(UVMax.X, UVMax.Y) };
 
 		const uint32 Vi = Base + CharIdx * 4;
-		pI[0] = Vi;
-		pI[1] = Vi + 1;
-		pI[2] = Vi + 2;
-		pI[3] = Vi + 1;
-		pI[4] = Vi + 3;
-		pI[5] = Vi + 2;
+		pI[0] = Vi;     pI[1] = Vi + 1; pI[2] = Vi + 2;
+		pI[3] = Vi + 1; pI[4] = Vi + 3; pI[5] = Vi + 2;
 
 		pV += 4;
 		pI += 6;
 		++CharIdx;
-
 		CursorX += CharW + LetterSpacing;
 	}
 
@@ -222,89 +240,30 @@ void FFontBatcher::AddScreenText(const FString& Text,
 	ScreenIndices.resize(IdxBase + CharIdx * 6);
 }
 
-void FFontBatcher::Clear()
+bool FFontGeometry::UploadWorldBuffers(ID3D11DeviceContext* Context)
 {
-	Vertices.clear();
-	Indices.clear();
+	if (WorldVertices.empty()) return false;
+
+	const uint32 VertCount = static_cast<uint32>(WorldVertices.size());
+	const uint32 IdxCount  = static_cast<uint32>(WorldIndices.size());
+
+	WorldVB.EnsureCapacity(Device, VertCount);
+	WorldIB.EnsureCapacity(Device, IdxCount);
+	if (!WorldVB.Update(Context, WorldVertices.data(), VertCount)) return false;
+	if (!WorldIB.Update(Context, WorldIndices.data(), IdxCount)) return false;
+	return true;
 }
 
-void FFontBatcher::ClearScreen()
+bool FFontGeometry::UploadScreenBuffers(ID3D11DeviceContext* Context)
 {
-	ScreenVertices.clear();
-	ScreenIndices.clear();
-}
+	if (ScreenVertices.empty()) return false;
 
-void FFontBatcher::DrawBatch(ID3D11DeviceContext* Context, const FFontResource* Resource)
-{
-	if (!Resource || !Resource->IsLoaded()) return;
-	if (Vertices.empty()) return;
+	const uint32 VertCount = static_cast<uint32>(ScreenVertices.size());
+	const uint32 IdxCount  = static_cast<uint32>(ScreenIndices.size());
 
-	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
-	{
-		BuildCharInfoMap(Resource->Columns, Resource->Rows);
-	}
-
-	const uint32 VertexCount = static_cast<uint32>(Vertices.size());
-	const uint32 IndexCount = static_cast<uint32>(Indices.size());
-
-	VB.EnsureCapacity(Device, VertexCount);
-	IB.EnsureCapacity(Device, IndexCount);
-	if (!VB.Update(Context, Vertices.data(), VertexCount)) return;
-	if (!IB.Update(Context, Indices.data(), IndexCount)) return;
-
-	FShaderManager::Get().GetShader(EShaderType::Font)->Bind(Context);
-	VB.Bind(Context);
-	IB.Bind(Context);
-
-	ID3D11ShaderResourceView* SRV = Resource->SRV;
-	Context->PSSetShaderResources(0, 1, &SRV);
-	Context->PSSetSamplers(0, 1, &SamplerState);
-
-	Context->DrawIndexed(IndexCount, 0, 0);
-	FDrawCallStats::Increment();
-}
-
-void FFontBatcher::DrawScreenBatch(ID3D11DeviceContext* Context, const FFontResource* Resource)
-{
-	if (!Resource || !Resource->IsLoaded()) return;
-	if (ScreenVertices.empty()) return;
-
-	if (CachedColumns != Resource->Columns || CachedRows != Resource->Rows)
-	{
-		BuildCharInfoMap(Resource->Columns, Resource->Rows);
-	}
-
-	const uint32 VertexCount = static_cast<uint32>(ScreenVertices.size());
-	const uint32 IndexCount = static_cast<uint32>(ScreenIndices.size());
-
-	VB.EnsureCapacity(Device, VertexCount);
-	IB.EnsureCapacity(Device, IndexCount);
-	if (!VB.Update(Context, ScreenVertices.data(), VertexCount)) return;
-	if (!IB.Update(Context, ScreenIndices.data(), IndexCount)) return;
-
-	FShaderManager::Get().GetShader(EShaderType::OverlayFont)->Bind(Context);
-	VB.Bind(Context);
-	IB.Bind(Context);
-
-	ID3D11ShaderResourceView* SRV = Resource->SRV;
-	Context->PSSetShaderResources(0, 1, &SRV);
-	Context->PSSetSamplers(0, 1, &SamplerState);
-
-	Context->DrawIndexed(IndexCount, 0, 0);
-	FDrawCallStats::Increment();
-}
-
-void FFontBatcher::GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const
-{
-	const auto It = CharInfoMap.find(Codepoint);
-	if (It == CharInfoMap.end())
-	{
-		OutUVMin = FVector2(0, 0);
-		OutUVMax = FVector2(0, 0);
-		return;
-	}
-
-	const FCharacterInfo& Info = It->second;
-	OutUVMin = FVector2(Info.U, Info.V);
-	OutUVMax = FVector2(Info.U + Info.Width, Info.V + Info.Height);
+	ScreenVB.EnsureCapacity(Device, VertCount);
+	ScreenIB.EnsureCapacity(Device, IdxCount);
+	if (!ScreenVB.Update(Context, ScreenVertices.data(), VertCount)) return false;
+	if (!ScreenIB.Update(Context, ScreenIndices.data(), IdxCount)) return false;
+	return true;
 }

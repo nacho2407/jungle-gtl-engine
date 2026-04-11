@@ -126,6 +126,8 @@ public:
 	void Bind(ID3D11DeviceContext* Context, uint32 Slot = 0);
 
 	uint32 GetMaxCount() const { return MaxCount; }
+	ID3D11Buffer* GetBuffer() const { return Buffer; }
+	uint32 GetStride() const { return Stride; }
 
 private:
 	ID3D11Buffer* Buffer = nullptr;
@@ -151,6 +153,7 @@ public:
 	void Bind(ID3D11DeviceContext* Context);
 
 	uint32 GetMaxCount() const { return MaxCount; }
+	ID3D11Buffer* GetBuffer() const { return Buffer; }
 
 private:
 	ID3D11Buffer* Buffer = nullptr;

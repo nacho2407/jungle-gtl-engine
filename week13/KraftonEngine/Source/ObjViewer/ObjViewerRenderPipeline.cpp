@@ -1,7 +1,8 @@
-﻿#include "ObjViewer/ObjViewerRenderPipeline.h"
+#include "ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "ObjViewer/ObjViewerEngine.h"
 #include "Render/Pipeline/Renderer.h"
+#include "Render/Proxy/FScene.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
@@ -47,25 +48,26 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	const float ClearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
 	VP->BeginRender(Ctx, ClearColor);
 
-	// Bus 설정
-	Bus.Clear();
+	// Frame 설정
+	Frame.ClearViewportResources();
 
 	UWorld* World = Engine->GetWorld();
+	FScene& Scene = World->GetScene();
+	Scene.ClearFrameData();
 
-	Bus.SetCameraInfo(Camera);
+	Frame.SetCameraInfo(Camera);
 
 	FShowFlags ShowFlags;
 	ShowFlags.bGrid = false;
 	ShowFlags.bGizmo = false;
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
-	Bus.SetRenderSettings(EViewMode::Lit, ShowFlags);
-	Bus.SetViewportInfo(VP);
+	Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
+	Frame.SetViewportInfo(VP);
 
-	// 월드 수집
-	Collector.CollectWorld(World, Bus);
-
-	// GPU 렌더
-	Renderer.PrepareBatchers(Bus);
-	Renderer.Render(Bus);
+	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
+	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
+	Collector.CollectWorld(World, Frame, Renderer);
+	Renderer.BuildDynamicCommands(Frame, &Scene);
+	Renderer.Render(Frame);
 }

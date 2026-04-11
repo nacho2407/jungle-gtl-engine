@@ -10,8 +10,8 @@ void FBlendStateManager::Create(ID3D11Device* InDevice)
 	Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
 	Desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
 	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	InDevice->CreateBlendState(&Desc, &Alpha);

@@ -46,7 +46,7 @@ public:
 	void RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index);
 	void UpdateVisibleProxies();
 
-	// LOD 컨텍스트를 RenderBus에 전달 (Collect 단계에서 LOD 인라인 갱신용)
+	// LOD 컨텍스트를 FFrameContext에 전달 (Collect 단계에서 LOD 인라인 갱신용)
 	FLODUpdateContext PrepareLODContext();
 
 	void InitWorld();      // Set up the world before gameplay begins
