@@ -2,6 +2,7 @@
 // Fullscreen Quad VS (SV_VertexID) + Stencil Edge Detection PS
 
 #include "Common/ConstantBuffers.hlsl"
+#include "Common/OutlineBuffer.hlsl"
 
 // StencilSRV: X24_TYPELESS_G8_UINT 포맷 → uint2, 스텐실은 .g 채널
 Texture2D<uint2> StencilTex : register(t0);
