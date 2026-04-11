@@ -96,15 +96,15 @@ TMeshData<FVertexPNCT> SutherlandHodgman(const FStaticMesh* InMesh, const FMatri
 		for (int j = 0; j < 3; ++j)
 		{
 			const FNormalVertex& NV = InMesh->Vertices[InMesh->Indices[i + j]];
-			FVertexPNCT V;
+			FVertexPNCT Vert;
 
 			// 타겟 로컬 -> 타겟 월드 -> 데칼 로컬 공간으로 변환
-			V.Position = NV.pos * LocalToDecalMatrix;
-			V.Normal = (NV.normal * NormalMat).Normalized();
-			V.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // Default color
-			V.UV = FVector2(0, 0); // 계산 후 적용
+			Vert.Position = NV.pos * LocalToDecalMatrix;
+			Vert.Normal = (NV.normal * NormalMat).Normalized();
+			Vert.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f); // Default color
+			Vert.UV = FVector2(0, 0); // 계산 후 적용
 
-			Polygon.push_back(V);
+			Polygon.push_back(Vert);
 		}
 
 		TArray<FVertexPNCT> ClippedPolygon;
@@ -121,16 +121,16 @@ TMeshData<FVertexPNCT> SutherlandHodgman(const FStaticMesh* InMesh, const FMatri
 		if (ClippedPolygon.size() >= 3)
 		{
 			uint32 BaseIndex = static_cast<uint32>(Result.Vertices.size());
-			for (auto& V : ClippedPolygon)
+			for (auto& Vert : ClippedPolygon)
 			{
 				// Decal space is -0.5 to 0.5. U and V map to Y and Z.
-				V.UV.X = V.Position.Y + 0.5f;
-				V.UV.Y = 0.5f - V.Position.Z; 
+				Vert.UV.X = Vert.Position.Y + 0.5f;
+				Vert.UV.Y = 0.5f - Vert.Position.Z; 
 
 				// 타겟 메쉬와 완전히 겹쳐서 발생하는 Z-Fighting을 막기 위해 로컬 법선 방향으로 아주 미세하게 띄워줌
-				V.Position += V.Normal * 0.0005f;
+				Vert.Position += Vert.Normal * 0.0005f;
 
-				Result.Vertices.push_back(V);
+				Result.Vertices.push_back(Vert);
 			}
 			for (size_t j = 1; j < ClippedPolygon.size() - 1; ++j)
 			{
@@ -235,6 +235,7 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({"Color", EPropertyType::Vec4, &Color });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
@@ -246,14 +247,17 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 		SetTexture(TextureName);
 		MarkRenderStateDirty();
 	}
+	if (strcmp(PropertyName, "Color") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
+	}
 }
 
 void UDecalComponent::SetTexture(const FName& InTextureName)
 {
 	TextureName = InTextureName;
 	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
-	// 텍스처 유무가 batcher/Primitive 경로 분기를 좌우하므로 Mesh 단계까지 재갱신 필요.
-	MarkProxyDirty(EDirtyFlag::Mesh);
+	MarkProxyDirty(EDirtyFlag::Material);
 }
 
 void UDecalComponent::UpdateOBBFromTransform()
