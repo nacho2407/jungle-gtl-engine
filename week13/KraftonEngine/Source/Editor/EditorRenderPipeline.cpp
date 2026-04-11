@@ -1,4 +1,4 @@
-﻿#include "EditorRenderPipeline.h"
+#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
@@ -36,7 +36,6 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		SCOPE_STAT_CAT("RenderViewport", "2_Render");
 		RenderViewport(ViewportClient, Renderer);
 	}
-	// 뷰포트별 오프스크린 렌더 (각 VP의 RT에 3D 씬 렌더)
 
 	// 스왑체인 백버퍼 복귀 → ImGui 합성 → Present
 	Renderer.BeginFrame();
@@ -90,7 +89,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// 렌더 시작 (RT 클리어 + DSV 바인딩)
 	VP->BeginRender(Ctx);
 
-	// 1. Bus 수집
+	// 1. Bus 설정
 	Bus.Clear();
 
 	Bus.Frame.SetCameraInfo(Camera);
@@ -100,10 +99,12 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.Frame.OcclusionCulling = &GPUOcclusion;
 	Bus.Frame.LODContext = World->PrepareLODContext();
 
-	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
+	// 2. BeginCollect → Proxy → FDrawCommand 직접 변환
+	Renderer.BeginCollect(Bus);
+
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");
-		Collector.CollectWorld(World, Bus);
+		Collector.CollectWorld(World, Bus, Renderer);
 
 		if (UGizmoComponent* Gizmo = Editor->GetGizmo())
 			Gizmo->UpdateAxisMask(Opts.ViewportType);
@@ -136,19 +137,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Bus);
 	}
 
-	// 3. Batcher 준비
-	{
-		SCOPE_STAT_CAT("PrepareBatcher", "3_Collect");
-		Renderer.PrepareBatchers(Bus);
-	}
-
-	// 4. GPU 드로우 콜 실행
+	// 3. GPU 드로우 콜 실행 (동적 지오메트리 + 정렬 + 제출)
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
 		Renderer.Render(Bus);
 	}
 
-	// 5. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
+	// 4. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
 	if (GPUOcclusion.IsInitialized())
 	{
 		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
