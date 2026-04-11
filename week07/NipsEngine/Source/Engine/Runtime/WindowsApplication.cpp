@@ -2,7 +2,7 @@
 
 #include <windowsx.h>
 
-#include "Engine/Core/InputSystem.h"
+#include "Engine/Input/InputSystem.h"
 #include "Engine/Slate/SlateApplication.h"
 #include "Slate/SWidget.h"
 
