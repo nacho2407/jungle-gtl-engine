@@ -4,6 +4,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
+#include "Component/DecalComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/ProjectileMovementComponent.h"
 #include "GameFramework/World.h"
@@ -57,6 +58,32 @@ namespace
 		HeadB.End = End - Back - SideOffset;
 		HeadB.Color = ArrowColor;
 		Bus.AddDebugLineEntry(std::move(HeadB));
+	}
+
+	void AddDecalVolumeWireframe(FRenderBus& Bus, UDecalComponent* DecalComponent)
+	{
+		if (!DecalComponent || !DecalComponent->IsVisible())
+		{
+			return;
+		}
+
+		FVector Corners[8];
+		DecalComponent->GetWorldCorners(Corners);
+
+		static constexpr int32 Edges[][2] = {
+			{0, 1}, {1, 2}, {2, 3}, {3, 0},
+			{4, 5}, {5, 6}, {6, 7}, {7, 4},
+			{0, 4}, {1, 5}, {2, 6}, {3, 7}
+		};
+
+		for (const auto& Edge : Edges)
+		{
+			FDebugLineEntry Entry;
+			Entry.Start = Corners[Edge[0]];
+			Entry.End = Corners[Edge[1]];
+			Entry.Color = FColor::White();
+			Bus.AddDebugLineEntry(std::move(Entry));
+		}
 	}
 }
 
@@ -194,6 +221,25 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 				}
 
 				AddProjectileVelocityArrow(Bus, SourceComponent->GetWorldLocation(), PreviewVelocity);
+			}
+		}
+
+		if (ShowFlags.bDebugDraw)
+		{
+			for (AActor* SelectedActor : Editor->GetSelectionManager().GetSelectedActors())
+			{
+				if (!SelectedActor || SelectedActor->GetWorld() != World)
+				{
+					continue;
+				}
+
+				for (UActorComponent* ActorComponent : SelectedActor->GetComponents())
+				{
+					if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(ActorComponent))
+					{
+						AddDecalVolumeWireframe(Bus, DecalComponent);
+					}
+				}
 			}
 		}
 
