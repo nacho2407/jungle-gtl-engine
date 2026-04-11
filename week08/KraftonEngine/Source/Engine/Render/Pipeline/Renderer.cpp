@@ -197,7 +197,7 @@ void FRenderer::BeginFrame()
 }
 
 // ============================================================
-// BuildDynamicCommands — Collect 마무리: FScene 경량 데이터 → 배쳐 → FDrawCommand
+// BuildDynamicCommands — Collect 마무리: FScene 경량 데이터 → 동적 지오메트리 → FDrawCommand
 // Pipeline의 Collect 블록 끝에서 호출.
 // ============================================================
 void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene)

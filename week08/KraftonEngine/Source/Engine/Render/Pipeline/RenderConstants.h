@@ -11,7 +11,7 @@
 class FShader;
 
 /*
-	GPU Constant Buffer 구조체, Batcher Entry, 섹션별 드로우 정보 등
+	GPU Constant Buffer 구조체, 섹션별 드로우 정보 등
 	렌더링에 필요한 데이터 타입을 정의합니다.
 */
 

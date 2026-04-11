@@ -46,7 +46,7 @@ public:
 	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
 
 	// Collect 마무리: FScene 경량 데이터(DebugLine, Grid, OverlayText) →
-	// 라인/폰트 배쳐 → FDrawCommand 변환. Pipeline의 Collect 블록 끝에서 호출.
+	// 동적 지오메트리 → FDrawCommand 변환. Pipeline의 Collect 블록 끝에서 호출.
 	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
 
 	// --- Render phase: 정렬 + GPU 제출 ---

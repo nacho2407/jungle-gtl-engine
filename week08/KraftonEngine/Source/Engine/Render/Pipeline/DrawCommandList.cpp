@@ -195,7 +195,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	}
 	else if (Cmd.RawVB)
 	{
-		// Dynamic Buffer 경로 (Batcher)
+		// Dynamic Buffer 경로 (LineGeometry, FontGeometry 등)
 		if (Cmd.RawVB != Cache.RawVB)
 		{
 			uint32 Offset = 0;
