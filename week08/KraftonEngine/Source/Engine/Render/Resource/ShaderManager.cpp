@@ -29,10 +29,10 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
 
 	Shaders[(uint32)EShaderType::SubUV].Create(InDevice, L"Shaders/ShaderSubUV.hlsl",
-		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
+		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
 
 	Shaders[(uint32)EShaderType::Billboard].Create(InDevice, L"Shaders/ShaderBillboard.hlsl",
-		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
+		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
 
 	bIsInitialized = true;
 }

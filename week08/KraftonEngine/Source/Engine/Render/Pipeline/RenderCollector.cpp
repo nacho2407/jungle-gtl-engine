@@ -1,4 +1,4 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
@@ -22,10 +22,7 @@ void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
 {
-	FGridEntry Entry = {};
-	Entry.Grid.GridSpacing = GridSpacing;
-	Entry.Grid.GridHalfLineCount = GridHalfLineCount;
-	RenderBus.AddGridEntry(std::move(Entry));
+	RenderBus.SetGrid(GridSpacing, GridHalfLineCount);
 }
 
 void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
@@ -34,30 +31,19 @@ void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySyste
 	OverlaySystem.BuildLines(Editor, Lines);
 	const float TextScale = OverlaySystem.GetLayout().TextScale;
 
-	for (const FOverlayStatLine& Line : Lines)
+	for (FOverlayStatLine& Line : Lines)
 	{
-		FFontEntry Entry = {};
-		Entry.Font.Text = Line.Text;
-		Entry.Font.Font = nullptr;
-		Entry.Font.Scale = TextScale;
-		Entry.Font.bScreenSpace = 1;
-		Entry.Font.ScreenPosition = Line.ScreenPosition;
-
-		RenderBus.AddOverlayFontEntry(std::move(Entry));
+		RenderBus.AddOverlayText(std::move(Line.Text), Line.ScreenPosition, TextScale);
 	}
 }
 
 void FRenderCollector::CollectDebugDraw(const FDebugDrawQueue& Queue, FRenderBus& RenderBus)
 {
-	if (!RenderBus.GetShowFlags().bDebugDraw) return;
+	if (!RenderBus.Frame.ShowFlags.bDebugDraw) return;
 
 	for (const FDebugDrawItem& Item : Queue.GetItems())
 	{
-		FDebugLineEntry Entry;
-		Entry.Start = Item.Start;
-		Entry.End = Item.End;
-		Entry.Color = Item.Color;
-		RenderBus.AddDebugLineEntry(std::move(Entry));
+		RenderBus.AddDebugLine(Item.Start, Item.End, Item.Color);
 	}
 }
 
@@ -105,11 +91,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 
 	for (const auto& E : Edges)
 	{
-		FDebugLineEntry Entry;
-		Entry.Start = V[E[0]];
-		Entry.End = V[E[1]];
-		Entry.Color = Color;
-		RenderBus.AddDebugLineEntry(std::move(Entry));
+		RenderBus.AddDebugLine(V[E[0]], V[E[1]], Color);
 	}
 
 	// 자식 노드 재귀
@@ -125,14 +107,15 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 // ============================================================
 void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus)
 {
-	if (!RenderBus.GetShowFlags().bPrimitives) return;
+	if (!RenderBus.Frame.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = RenderBus.GetShowFlags().bBoundingVolume;
+	const bool bShowBoundingVolume = RenderBus.Frame.ShowFlags.bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
-	const FGPUOcclusionCulling* Occlusion = RenderBus.GetOcclusionCulling();
-	FGPUOcclusionCulling* OcclusionMut = RenderBus.GetOcclusionCullingMutable();
-	const FLODUpdateContext& LODCtx = RenderBus.GetLODContext();
+	const FFrameContext& Frame = RenderBus.Frame;
+	const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
+	FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
+	const FLODUpdateContext& LODCtx = Frame.LODContext;
 
 	// GatherAABB 병합: Collect 순회에서 동시에 AABB 수집 (별도 GatherLoop 제거)
 	if (OcclusionMut && OcclusionMut->IsInitialized())
@@ -158,7 +141,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
-			Proxy->UpdatePerViewport(RenderBus);
+			Proxy->UpdatePerViewport(Frame);
 
 		if (!Proxy->bVisible) continue;
 
@@ -170,11 +153,8 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
 			continue;
 
-		// Batcher 경유 렌더링 (Font, SubUV)
-		if (Proxy->bBatcherRendered)
-			Proxy->CollectEntries(RenderBus);
-		else
-			RenderBus.AddProxy(Proxy->Pass, Proxy);
+		// 모든 프록시를 직접 ProxyQueue에 제출
+		RenderBus.AddProxy(Proxy->Pass, Proxy);
 
 		// 선택된 오브젝트
 		if (Proxy->bSelected)
@@ -184,11 +164,10 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 			if (bShowBoundingVolume && Proxy->bShowAABB)
 			{
-				FAABBEntry Entry = {};
-				Entry.AABB.Min = Proxy->CachedBounds.Min;
-				Entry.AABB.Max = Proxy->CachedBounds.Max;
-				Entry.AABB.Color = FColor::White();
-				RenderBus.AddAABBEntry(std::move(Entry));
+				RenderBus.AddDebugAABB(
+					Proxy->CachedBounds.Min,
+					Proxy->CachedBounds.Max,
+					FColor::White());
 			}
 		}
 	}
@@ -196,4 +175,3 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	if (OcclusionMut && OcclusionMut->IsInitialized())
 		OcclusionMut->EndGatherAABB();
 }
-

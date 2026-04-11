@@ -93,12 +93,12 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// 1. Bus 수집
 	Bus.Clear();
 
-	Bus.SetCameraInfo(Camera);
-	Bus.SetRenderSettings(ViewMode, ShowFlags);
-	Bus.SetViewportInfo(VP);
-	Bus.SetViewportType(Opts.ViewportType);
-	Bus.SetOcclusionCulling(&GPUOcclusion);
-	Bus.SetLODContext(World->PrepareLODContext());
+	Bus.Frame.SetCameraInfo(Camera);
+	Bus.Frame.SetRenderSettings(ViewMode, ShowFlags);
+	Bus.Frame.SetViewportInfo(VP);
+	Bus.Frame.ViewportType = Opts.ViewportType;
+	Bus.Frame.OcclusionCulling = &GPUOcclusion;
+	Bus.Frame.LODContext = World->PrepareLODContext();
 
 	// 2. 프록시 + Batcher Entry를 ERenderPass별로 수집
 	{
@@ -161,7 +161,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Ctx,
 			VP->GetDepthSRV(),
 			World->GetVisibleProxies(),
-			Bus.GetView(), Bus.GetProj(),
+			Bus.Frame.View, Bus.Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}
 }
