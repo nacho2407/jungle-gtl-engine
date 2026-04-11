@@ -22,6 +22,10 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
+	// Color (with Color)
+	void SetColor(FVector4 InColor) { Color = InColor; }
+	FVector4 GetColor() const { return Color; }
+	
 	// --- Texture ---
 	void SetTexture(const FName& InTextureName);
 	const FTextureResource* GetTexture() const { return CachedTexture; }
@@ -41,6 +45,7 @@ private:
 private:
 	FConvexVolume OBB;
 	FName TextureName;
+	FVector4 Color = {1,1,1,1};
 	TMeshData<FVertexPNCT> DecalMeshData;
 	FTextureResource* CachedTexture = nullptr;	// ResourceManager 소유, 참조만
 };
