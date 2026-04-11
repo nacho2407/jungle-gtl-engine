@@ -240,7 +240,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		if (bHasBatcher)
 			PassBatchers[i].DrawBatch(CurPass, InRenderBus, Context);
 		else
-			ExecutePass(CurPass, InRenderBus.GetProxies(CurPass), InRenderBus, Context);
+			ExecutePass(InRenderBus.GetProxies(CurPass), Context);
 
 		if(ResourceBinding.UnbindResources)
 			ResourceBinding.UnbindResources(CurPass, InRenderBus, Context);
@@ -364,10 +364,7 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 // ============================================================
 // 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회
 // ============================================================
-void FRenderer::ExecutePass(ERenderPass Pass,
-	const TArray<const FPrimitiveSceneProxy*>& Proxies,
-	const FRenderBus& Bus,
-	ID3D11DeviceContext* Context)
+void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context)
 {
 	SortProxies(Proxies);
 
