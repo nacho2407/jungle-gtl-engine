@@ -6,7 +6,7 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/Common/ComPtr.h"
-#include "Render/Resource/Shader.h"
+#include "Render/Resource/Material.h"
 #include "Render/Resource/VertexTypes.h"
 
 struct ID3D11Device;
@@ -87,7 +87,7 @@ private:
 
     TComPtr<ID3D11Device>       Device;
     TComPtr<ID3D11SamplerState> SamplerState;
-    FShader             SubUVShader;
+	UMaterialInterface* SubUVMaterial;
 
     void CreateBuffers();
     FSubUVFrameInfo GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const;

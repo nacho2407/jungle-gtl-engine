@@ -69,7 +69,7 @@ static bool IsValidStaticMeshHeader(const FStaticMeshBinaryHeader& Header)
 		return false;
 	}
 
-	if (Header.SlotNameCount > MAX_STATIC_MESH_SLOTNAME_COUNT)
+	if (Header.SlotCount > MAX_STATIC_MESH_SLOTNAME_COUNT)
 	{
 		return false;
 	}
@@ -218,7 +218,7 @@ void FBinarySerializer::WriteHeader(std::ofstream& Out, const FStaticMeshBinaryH
 	WriteUInt32LE(Out, Header.VertexCount);
 	WriteUInt32LE(Out, Header.IndexCount);
 	WriteUInt32LE(Out, Header.SectionCount);
-	WriteUInt32LE(Out, Header.SlotNameCount);
+	WriteUInt32LE(Out, Header.SlotCount);
 	WriteUInt64LE(Out, Header.SourceFileWriteTime);
 }
 
@@ -229,7 +229,7 @@ bool FBinarySerializer::ReadHeader(std::ifstream& In, FStaticMeshBinaryHeader& O
 		&& ReadUInt32LE(In, OutHeader.VertexCount)
 		&& ReadUInt32LE(In, OutHeader.IndexCount)
 		&& ReadUInt32LE(In, OutHeader.SectionCount)
-		&& ReadUInt32LE(In, OutHeader.SlotNameCount)
+		&& ReadUInt32LE(In, OutHeader.SlotCount)
 		&& ReadUInt64LE(In, OutHeader.SourceFileWriteTime);
 }
 
@@ -488,7 +488,7 @@ bool FBinarySerializer::SaveStaticMesh(const FString& BinaryPath, const FString&
 	Header.VertexCount = static_cast<uint32>(Data.Vertices.size());
 	Header.IndexCount = static_cast<uint32>(Data.Indices.size());
 	Header.SectionCount = static_cast<uint32>(Data.Sections.size());
-	Header.SlotNameCount = static_cast<uint32>(Data.SlotNames.size());
+	Header.SlotCount = static_cast<uint32>(Data.Slots.size());
 	Header.SourceFileWriteTime = GetFileWriteTimeTicks(SourcePath);
 
 	if (!IsValidStaticMeshHeader(Header))
@@ -503,11 +503,11 @@ bool FBinarySerializer::SaveStaticMesh(const FString& BinaryPath, const FString&
 	WriteIndexArray(Out, Data.Indices);
 	WriteSections(Out, Data);
 
-	uint32 Count = static_cast<uint32>(Data.SlotNames.size());
+	uint32 Count = static_cast<uint32>(Data.Slots.size());
 	WriteUInt32LE(Out, Count);
-	for (const auto& SlotName : Data.SlotNames)
+	for (const auto& Slot : Data.Slots)
 	{
-		WriteString(Out, SlotName);
+		WriteString(Out, Slot.SlotName);
 	}
 
 	WriteBounds(Out, Data);
@@ -560,16 +560,16 @@ bool FBinarySerializer::LoadStaticMesh(const FString& BinaryPath, FStaticMesh& O
 		return false;
 	}
 
-	if (Count != Header.SlotNameCount || Count > MAX_STATIC_MESH_SLOTNAME_COUNT)
+	if (Count != Header.SlotCount || Count > MAX_STATIC_MESH_SLOTNAME_COUNT)
 	{
 		return false;
 	}
 
-	OutData.SlotNames.resize(Count);
+	OutData.Slots.resize(Count);
 
 	for (uint32 i = 0; i < Count; i++)
 	{
-		if (!ReadString(In, OutData.SlotNames[i]))
+		if (!ReadString(In, OutData.Slots[i].SlotName))
 		{
 			return false;
 		}
@@ -588,7 +588,7 @@ bool FBinarySerializer::LoadStaticMesh(const FString& BinaryPath, FStaticMesh& O
 	return OutData.Vertices.size() == Header.VertexCount
 		&& OutData.Indices.size() == Header.IndexCount
 		&& OutData.Sections.size() == Header.SectionCount
-		&& OutData.SlotNames.size() == Header.SlotNameCount;
+		&& OutData.Slots.size() == Header.SlotCount;
 }
 
 bool FBinarySerializer::ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const

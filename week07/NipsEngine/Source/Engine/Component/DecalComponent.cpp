@@ -10,7 +10,7 @@ DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
 UDecalComponent::UDecalComponent()
 {
 	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
-	SetMaterial(FResourceManager::Get().FindMaterial(MatNames[0]));
+	SetMaterial(FResourceManager::Get().FindMaterialAsset(MatNames[0]));
 }
 
 UDecalComponent* UDecalComponent::Duplicate()
@@ -25,7 +25,7 @@ UDecalComponent* UDecalComponent::Duplicate()
 	
 	NewComp->SetVisibility(this->IsVisible());
 
-	NewComp->Material = this->Material;
+	NewComp->OverrideMaterial = this->OverrideMaterial;
 	NewComp->DecalSize = this->DecalSize;
 	NewComp->DecalColor = this->DecalColor;
 	

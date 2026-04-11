@@ -94,7 +94,7 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 	if (SelectedSectionIndex < 0)
 	{
 		SelectedSectionIndex = 0;
-		SelectedMaterialPtr = MeshComp->GetMaterial(0);
+		SelectedMaterialPtr = &Cast<UMaterial>(MeshComp->GetMaterial(0))->MaterialData;
 	}
 
 	const float SectionPanelWidth = 160.0f;
@@ -116,8 +116,8 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 
 void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp)
 {
-	FMaterial* Mat = DecalComp->GetMaterial();
-	SelectedMaterialPtr = Mat;
+	UMaterial* Mat = Cast<UMaterial>(DecalComp->GetMaterial());
+	SelectedMaterialPtr = Mat ? &Mat->MaterialData : nullptr;
 
 	const float SectionPanelWidth = 160.0f;
 
@@ -130,7 +130,7 @@ void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp
 
 	// 오른쪽: 선택 섹션의 머테리얼 복사본 편집
 	ImGui::BeginChild("##MaterialDetails", ImVec2(0, 0), true);
-	RenderMaterialDetails(Mat, [this, DecalComp](FMaterial* Mat)
+	RenderMaterialDetails(&Mat->MaterialData, [this, DecalComp, Mat](FMaterial* MatData)
 	{
 		DecalComp->SetMaterial(Mat);
 	});
@@ -144,7 +144,7 @@ void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp
 // -----------------------------------------------------------------------
 void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 {
-	const TArray<FMaterial*>& OverrideMaterial = MeshComp->GetOverrideMaterial();
+	const TArray<UMaterialInterface*>& OverrideMaterial = MeshComp->GetOverrideMaterial();
 	const TArray<FStaticMeshSection>& Sections = MeshComp->GetStaticMesh()->GetSections();
 	const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshComp->GetStaticMesh()->GetMaterialSlots();
 
@@ -176,7 +176,7 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 			if (!bSelected)
 			{
 				SelectedSectionIndex = i;
-				SelectedMaterialPtr = MeshComp->GetMaterial(i);
+				SelectedMaterialPtr = &Cast<UMaterial>(MeshComp->GetMaterial(i))->MaterialData;
 			}
         }
 
@@ -241,11 +241,11 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
             bool bIsSelected = (i == CurrentIdx);
             if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
             {
-                FMaterial* NewMat = FResourceManager::Get().FindMaterial(MatNames[i]);
+                UMaterial* NewMat = FResourceManager::Get().FindMaterialAsset(MatNames[i]);
                 if (NewMat)
                 {
                     MeshComp->SetMaterial(SelectedSectionIndex, NewMat);
-                    SelectedMaterialPtr = NewMat;
+                    SelectedMaterialPtr = &NewMat->MaterialData;
                 }
             }
             if (bIsSelected)
@@ -303,11 +303,11 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 			bool bIsSelected = (i == CurrentIdx);
 			if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
 			{
-				FMaterial* NewMat = FResourceManager::Get().FindMaterial(MatNames[i]);
+				UMaterial* NewMat = FResourceManager::Get().FindMaterialAsset(MatNames[i]);
 				if (NewMat)
 				{
-					OnMaterialChanged(NewMat);
-					SelectedMaterialPtr = NewMat;
+					OnMaterialChanged(&NewMat->MaterialData);
+					SelectedMaterialPtr = &NewMat->MaterialData;
 				}
 			}
 			if (bIsSelected)
