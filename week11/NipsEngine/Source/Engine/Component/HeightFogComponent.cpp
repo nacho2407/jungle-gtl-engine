@@ -17,6 +17,8 @@ UHeightFogComponent* UHeightFogComponent::Duplicate()
     NewComp->HeightFalloff = HeightFalloff;
     NewComp->FogInscatteringColor = FogInscatteringColor;
     NewComp->FogHeight = FogHeight;
+	NewComp->SetTransient(this->IsTransient());
+	NewComp->SetEditorOnly(this->IsEditorOnly());
 
 	return NewComp;
 }
