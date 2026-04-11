@@ -23,6 +23,7 @@ namespace ECBSlot
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
+	constexpr uint32 SceneDepth = 5;
 }
 
 //PerObject
@@ -72,6 +73,14 @@ struct FOutlinePostProcessConstants
 	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
 	float OutlineThickness = 1.0f;
 	float Padding[3] = {};
+};
+
+struct FSceneDepthPConstants
+{
+	float Exponent;
+	float NearClip;
+	float FarClip;
+	uint32 Mode;
 };
 
 struct FAABBConstants

@@ -49,4 +49,12 @@ cbuffer MaterialBuffer : register(b4)
     float4 SectionColor;
 }
 
+cbuffer SceneDepthCB : register(b5)
+{
+    float Exponent;
+    float NearClip;
+    float FarClip;
+    uint Mode;
+}
+
 #endif // CONSTANT_BUFFERS_HLSL
