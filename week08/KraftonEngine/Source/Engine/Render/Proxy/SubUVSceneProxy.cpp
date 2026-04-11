@@ -59,7 +59,7 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	// Billboard matrix
 	FVector BillboardForward = Frame.CameraForward * -1.0f;
 	FMatrix RotMatrix;
-	RotMatrix.SetAxes(BillboardForward, Frame.CameraRight * -1.0f, Frame.CameraUp);
+	RotMatrix.SetAxes(BillboardForward, Frame.CameraRight, Frame.CameraUp);
 	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale())
 		* RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
