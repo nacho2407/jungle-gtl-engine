@@ -454,7 +454,8 @@ NipsEngine/Build/
 NipsEngine/Saves/**
 
 # Asset 폴더 관련 (그때그때 필요한 파일만 저장하도록 변경)
-NipsEngine/Asset/Mesh/Bin/**
-NipsEngine/Asset/Scene/**
 !NipsEngine/Asset/Mesh/**
 !NipsEngine/Asset/**/*.meta
+
+NipsEngine/Asset/Mesh/Bin/**
+NipsEngine/Asset/Scene/**
