@@ -83,8 +83,3 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 		PrimaryComponentTick.SetTickEnabled(bTickEnable);
 	}
 }
-
-void UActorComponent::CollectEditorVisualizations(FScene& Scene) const
-{
-	(void)Scene;
-}

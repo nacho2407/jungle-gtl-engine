@@ -197,10 +197,20 @@ void FRenderer::BeginFrame()
 }
 
 // ============================================================
-// Render — 동적 지오메트리 빌드 + 정렬 + GPU 제출
-// BeginCollect + Collector 호출 이후에 호출. ProxyQueue 불필요.
+// BuildDynamicCommands — Collect 마무리: FScene 경량 데이터 → 배쳐 → FDrawCommand
+// Pipeline의 Collect 블록 끝에서 호출.
 // ============================================================
-void FRenderer::Render(const FFrameContext& Frame, const FScene* Scene)
+void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene)
+{
+	PrepareDynamicGeometry(Frame, Scene);
+	BuildDynamicDrawCommands(Frame, Device.GetDeviceContext());
+}
+
+// ============================================================
+// Render — 정렬 + GPU 제출
+// BeginCollect + Collector + BuildDynamicCommands 이후에 호출.
+// ============================================================
+void FRenderer::Render(const FFrameContext& Frame)
 {
 	FDrawCallStats::Reset();
 
@@ -208,13 +218,6 @@ void FRenderer::Render(const FFrameContext& Frame, const FScene* Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, Frame);
-	}
-
-	// 동적 지오메트리 준비 + FDrawCommand 변환
-	{
-		SCOPE_STAT_CAT("BuildDrawCommands", "4_ExecutePass");
-		PrepareDynamicGeometry(Frame, Scene);
-		BuildDynamicDrawCommands(Frame, Context);
 	}
 
 	// 커맨드 정렬 (Pass → SortKey 순)
