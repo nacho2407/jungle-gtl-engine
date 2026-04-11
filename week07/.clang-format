@@ -11,7 +11,6 @@ UseTab: Never
 BreakBeforeBraces: Allman
 
 # 들여쓰기 세부 제어
-NamespaceIndentation: None # All에서 None으로 변경 (일반적인 C++ 선호도 반영)
 AllowShortFunctionsOnASingleLine: Inline # Getter/Setter를 한 줄로 허용
 AllowShortBlocksOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false
@@ -22,9 +21,6 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 
 # 포인터/레퍼런스 정렬 (타입 쪽에 붙임)
 PointerAlignment: Left
-
-# 컬럼 제한 (기존 유지)
-ColumnLimit: 120
 
 # 정렬 관련 (불편함을 유발하는 과도한 정렬 해제)
 AlignConsecutiveAssignments: false
