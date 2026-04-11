@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Types/FogParams.h"
 
 class UPrimitiveComponent;
 
@@ -60,6 +61,12 @@ public:
 	float GetGridSpacing() const { return GridSpacing; }
 	int32 GetGridHalfLineCount() const { return GridHalfLineCount; }
 
+	// --- Height Fog (FogParams.h) ---
+	void SetFog(const FFogParams& Params) { FogParams = Params; FogParams.bEnabled = true; }
+	void ClearFog() { FogParams = FFogParams{}; }
+	const FFogParams& GetFogParams() const { return FogParams; }
+	bool HasFog() const { return FogParams.bEnabled; }
+
 private:
 	// 전체 프록시 목록 (ProxyId = 인덱스)
 	TArray<FPrimitiveSceneProxy*> Proxies;
@@ -84,4 +91,6 @@ private:
 	float GridSpacing = 0.0f;
 	int32 GridHalfLineCount = 0;
 	bool  bHasGrid = false;
+
+	FFogParams FogParams;
 };

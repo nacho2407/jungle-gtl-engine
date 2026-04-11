@@ -544,6 +544,12 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	case EPropertyType::Vec4:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
+		bChanged = ImGui::DragFloat4(Prop.Name.c_str(), Val, Prop.Speed);
+		break;
+	}
+	case EPropertyType::Color4:
+	{
+		float* Val = static_cast<float*>(Prop.ValuePtr);
 		bChanged = ImGui::ColorEdit4(Prop.Name.c_str(), Val);
 		break;
 	}
