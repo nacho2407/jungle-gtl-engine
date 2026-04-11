@@ -37,18 +37,21 @@ void FEditorMaterialWidget::Render(float DeltaTime)
 	if (!SelectedComponent)
 	{
 		ImGui::TextDisabled("Select a StaticMesh actor to edit materials.");
-		ImGui::End();
-		return;
 	}
 
-	if (UStaticMeshComponent* MeshComp = dynamic_cast<UStaticMeshComponent*>(SelectedComponent))
-	{
-		RenderMeshMaterialEditor(MeshComp);
+	else 
+	{	
+		if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(SelectedComponent))
+		{
+			RenderMeshMaterialEditor(MeshComp);
+		}
+		else if (UDecalComponent* DecalComp = Cast<UDecalComponent>(SelectedComponent))
+		{
+			RenderDecalMaterialEditor(DecalComp);
+		}
 	}
-	else if (UDecalComponent* DecalComp = dynamic_cast<UDecalComponent*>(SelectedComponent))
-	{
-		RenderDecalMaterialEditor(DecalComp);
-	}
+	
+	ImGui::End();
 }
 
 void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshComp)
@@ -83,8 +86,6 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 	ImGui::BeginChild("##MaterialDetails", ImVec2(0, 0), true);
 	RenderMaterialDetails(MeshComp);
 	ImGui::EndChild();
-
-	ImGui::End();
 }
 
 void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp)
@@ -108,8 +109,6 @@ void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp
 		DecalComp->SetMaterial(Mat);
 	});
 	ImGui::EndChild();
-
-	ImGui::End();
 }
 
 // -----------------------------------------------------------------------
@@ -396,7 +395,6 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
         }
 
         ImGui::SameLine();
-
 
         ImGui::BeginGroup();
         {

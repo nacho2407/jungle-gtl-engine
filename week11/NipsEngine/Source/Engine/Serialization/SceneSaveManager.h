@@ -2,6 +2,7 @@
 
 #include <string>
 #include <filesystem>
+#include <unordered_map>
 #include "Core/CoreMinimal.h"
 #include "Core/Paths.h"
 #include "GameFramework/WorldContext.h"
@@ -50,8 +51,10 @@ private:
 	// ---- Serialization ----
 
 	static json::JSON SerializeWorldToPrimitives(UWorld* World, const FWorldContext& Ctx);
-	// 컴포넌트들의 자식을 OutPrimitives에 재귀적 직렬화
+	// SceneComponent 트리를 OutPrimitives에 재귀적으로 평탄화 직렬화
 	static void CollectComponentsFlat(USceneComponent* Comp, uint32 ParentID, json::JSON& OutPrimitives);
+	// Actor가 소유한 비씬 ActorComponent(MovementComponent 등)를 직렬화
+	static void CollectNonSceneComponents(AActor* Actor, json::JSON& OutPrimitives);
 	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx);
 	static json::JSON SerializeActor(AActor* Actor);
 	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
@@ -62,8 +65,11 @@ private:
 	// ---- Deserialization ----
 	static void DeserializePrimitivesToWorld(json::JSON& PrimitivesNode, UWorld* World);
 	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
-	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
-	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);
+	// UUIDToSceneComp: SceneComponentRef 타입 역직렬화에 사용. nullptr이면 SceneComponentRef 무시.
+	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON,
+	                                  const std::unordered_map<uint32, USceneComponent*>* UUIDToSceneComp = nullptr);
+	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value,
+	                                     const std::unordered_map<uint32, USceneComponent*>* UUIDToSceneComp = nullptr);
 	static void DeserializeCameraState(json::JSON& root, FEditorCameraState* OutCameraState = nullptr);
 
 	static string GetCurrentTimeStamp();
