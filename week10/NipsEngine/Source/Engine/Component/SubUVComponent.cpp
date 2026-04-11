@@ -25,6 +25,8 @@ USubUVComponent* USubUVComponent::Duplicate()
 	NewComp->SetActive(this->IsActive());
 	NewComp->SetAutoActivate(this->IsAutoActivate());
 	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
+	NewComp->SetTransient(this->IsTransient());
+	NewComp->SetEditorOnly(this->IsEditorOnly());
     NewComp->SetOwner(nullptr);
     
     NewComp->SetRelativeLocation(this->GetRelativeLocation());

@@ -20,6 +20,8 @@ UHeightFogComponent* UHeightFogComponent::Duplicate()
     NewComp->FogStartDistance = FogStartDistance;
     NewComp->FogCutoffDistance = FogCutoffDistance;
     NewComp->FogMaxOpacity = FogMaxOpacity;
+	NewComp->SetTransient(this->IsTransient());
+	NewComp->SetEditorOnly(this->IsEditorOnly());
 
 	return NewComp;
 }

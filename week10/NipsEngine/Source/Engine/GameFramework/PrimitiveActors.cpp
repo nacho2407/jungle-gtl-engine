@@ -54,6 +54,7 @@ void ACubeActor::InitDefaultComponents()
 	Text->AttachToComponent(Cube);
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
 	// SubUV
@@ -75,6 +76,8 @@ void ASphereActor::InitDefaultComponents()
 	Text->SetFont(FName("Default"));
 	Text->AttachToComponent(Sphere);
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
 	// SubUV
@@ -96,6 +99,7 @@ void APlaneActor::InitDefaultComponents()
 	Text->SetFont(FName("Default"));
 	Text->SetText(std::format("UUID: {}", GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->AttachToComponent(Plane);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
@@ -140,6 +144,7 @@ void AAttachTestActor::InitDefaultComponents()
 	Text->AttachToComponent(Cube);
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
 
@@ -154,6 +159,7 @@ void AStaticMeshActor::InitDefaultComponents()
 	Text->SetFont(FName("Default"));
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 
 	FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
@@ -172,6 +178,7 @@ void ASubUVActor::InitDefaultComponents()
     Text->SetFont(FName("Default"));
     Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 
     FVector Extent = SubUV->GetWorldAABB().GetExtent();
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
@@ -188,7 +195,8 @@ void ATextRenderActor::InitDefaultComponents()
     TextUUID->AttachToComponent(Text);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
@@ -205,6 +213,8 @@ void ABillboardActor::InitDefaultComponents()
     TextUUID->AttachToComponent(Billboard);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
@@ -224,6 +234,7 @@ void ADecalActor::InitDefaultComponents()
 	TextUUID->SetFont(FName("Default"));
 	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
 	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
 	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
 	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
