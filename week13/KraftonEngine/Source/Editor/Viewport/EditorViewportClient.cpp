@@ -301,7 +301,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(),
 		Camera->IsOrthogonal(), Camera->GetOrthoWidth());
 
-	Gizmo->UpdateAxisMask(RenderOptions.ViewportType);
+	// LineTrace 히트 판정용 AxisMask 갱신 (렌더링은 Proxy가 per-viewport로 직접 계산)
+	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
 
 	// 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 드래그 종료를 처리해야 함
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding())
