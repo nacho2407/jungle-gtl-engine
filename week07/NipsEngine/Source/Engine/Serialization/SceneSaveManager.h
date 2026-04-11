@@ -48,9 +48,10 @@ public:
 
 private:
 	// ---- Serialization ----
-	
+
 	static json::JSON SerializeWorldToPrimitives(UWorld* World, const FWorldContext& Ctx);
-	static json::JSON SerializeComponentToPrimitive(USceneComponent* SceneComp);
+	// 컴포넌트들의 자식을 OutPrimitives에 재귀적 직렬화
+	static void CollectComponentsFlat(USceneComponent* Comp, uint32 ParentID, json::JSON& OutPrimitives);
 	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx);
 	static json::JSON SerializeActor(AActor* Actor);
 	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
@@ -64,7 +65,6 @@ private:
 	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
 	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);
 	static void DeserializeCameraState(json::JSON& root, FEditorCameraState* OutCameraState = nullptr);
-	static void DeserializeChildComponents(json::JSON& ChildrenNode, USceneComponent* ParentComp, AActor* Owner);
 
 	static string GetCurrentTimeStamp();
 };
