@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <functional>
+#include <unordered_map>
 
 #include "SimpleJSON/json.hpp"
 #include "GameFramework/World.h"
@@ -42,6 +44,8 @@ namespace SceneKeys
 	static constexpr const char* NearClip           = "NearClip";
 	static constexpr const char* FarClip            = "FarClip";
 	static constexpr const char* Type               = "Type";
+	static constexpr const char* NextUUID           = "NextUUID";
+	static constexpr const char* ParentUUID         = "ParentUUID";
 }
 
 static const char* WorldTypeToString(EWorldType Type)
@@ -82,6 +86,7 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
     Root[SceneKeys::WorldType] = WorldTypeToString(WorldContext.WorldType);
     Root[SceneKeys::PerspectiveCamera] = SerializeCameraState(CameraState);
     Root[SceneKeys::Primitives] = SerializeWorldToPrimitives(WorldContext.World, WorldContext);
+    Root[SceneKeys::NextUUID] = static_cast<int>(EngineStatics::GetNextUUID());
 
     std::ofstream File(FileDestination);
     if (File.is_open()) {
@@ -93,59 +98,50 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 
 json::JSON FSceneSaveManager::SerializeWorldToPrimitives(UWorld* World, const FWorldContext& Ctx)
 {
-    using namespace json;
-    JSON Primitives = json::Object();
-    int32 PrimitiveID = 0;
-
-	if (ULevel* PersistentLevel = World->GetPersistentLevel())
+    json::JSON Primitives = json::Object();
+    if (ULevel* PersistentLevel = World->GetPersistentLevel())
     {
         for (AActor* Actor : PersistentLevel->GetActors())
         {
             if (!Actor) continue;
-
-            // 루트 컴포넌트만 추출하여 직렬화
-            if (USceneComponent* RootComp = Actor->GetRootComponent()) 
-            {
-                JSON PrimObj = SerializeComponentToPrimitive(RootComp);
-                Primitives[std::to_string(PrimitiveID++)] = PrimObj;
-            }
+            if (USceneComponent* RootComp = Actor->GetRootComponent())
+                CollectComponentsFlat(RootComp, 0, Primitives);
         }
     }
     return Primitives;
 }
 
-json::JSON FSceneSaveManager::SerializeComponentToPrimitive(USceneComponent* SceneComp)
+// 재귀 함수: Comp 및 모든 자손 컴포넌트를 OutPrimitives 에 평탄하게 수집
+// ParentID == 0 은 부모 없음(루트 컴포넌트)을 의미 (UUID는 1부터 시작)
+void FSceneSaveManager::CollectComponentsFlat(USceneComponent* Comp, uint32 ParentID, json::JSON& OutPrimitives)
 {
-    using namespace json;
-    JSON PrimObj = json::Object();
+    json::JSON PrimObj = json::Object();
 
-    FString ClassName = SceneComp->GetTypeInfo()->name;
-    if (ClassName == "UStaticMeshComponent") { ClassName = "StaticMeshComp"; }
+    // 타입 이름 매핑
+    FString ClassName = Comp->GetTypeInfo()->name;
+    if (ClassName == "UStaticMeshComponent") ClassName = "StaticMeshComp";
     PrimObj[SceneKeys::Type] = ClassName;
 
+    // 루트가 아닌 경우에만 ParentUUID 기록
+    if (ParentID != 0)
+        PrimObj[SceneKeys::ParentUUID] = static_cast<int>(ParentID);
+
+    // 프로퍼티 기반 직렬화
     TArray<FPropertyDescriptor> Descriptors;
-    SceneComp->GetEditableProperties(Descriptors);
-    for (const auto& Prop : Descriptors) 
+    Comp->GetEditableProperties(Descriptors);
+    for (const auto& Prop : Descriptors)
     {
         FString OutKey = Prop.Name;
-        if (strcmp(Prop.Name, "StaticMesh") == 0) { OutKey = "ObjStaticMeshAsset"; }
-        
+        if (strcmp(Prop.Name, "StaticMesh") == 0) OutKey = "ObjStaticMeshAsset";
         PrimObj[OutKey] = SerializePropertyValue(Prop);
     }
 
-    // 자식 컴포넌트 재귀 직렬화
-    const auto& Children = SceneComp->GetChildren();
-    if (!Children.empty())
-    {
-        JSON ChildrenArr = json::Array();
-        for (USceneComponent* Child : Children)
-        {
-            ChildrenArr.append(SerializeComponentToPrimitive(Child));
-        }
-        PrimObj[SceneKeys::Children] = ChildrenArr;
-    }
+    const uint32 MyUUID = Comp->GetUUID();
+    OutPrimitives[std::to_string(MyUUID)] = PrimObj;
 
-    return PrimObj;
+    // 자식 컴포넌트 재귀 수집
+    for (USceneComponent* Child : Comp->GetChildren())
+        CollectComponentsFlat(Child, MyUUID, OutPrimitives);
 }
 
 /* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */
@@ -303,67 +299,110 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
     DeserializeCameraState(root, OutCameraState);
 
-    // Primitives 파싱
-    if (root.hasKey(SceneKeys::Primitives)) 
-    {
+    // Primitives 파싱 (평탄화 포맷)
+    if (root.hasKey(SceneKeys::Primitives))
         DeserializePrimitivesToWorld(root[SceneKeys::Primitives], World);
-    }
+
+    // UUID 카운터 복원 — 저장 시점의 NextUUID 이후 값부터 새 오브젝트에 할당
+    if (root.hasKey(SceneKeys::NextUUID))
+        EngineStatics::ResetUUIDGeneration(root[SceneKeys::NextUUID].ToInt());
 
     OutWorldContext.WorldType = WorldType;
     OutWorldContext.World = World;
 }
-#include <functional>
-#include <unordered_map>
 
 void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode, UWorld* World)
 {
-    for (auto& Pair : PrimitivesNode.ObjectRange()) 
+    // 1단계: UUID → JSON 노드 맵, ParentUUID → 자식 UUID 목록 맵 구성
+    std::unordered_map<uint32, json::JSON*> NodeMap;
+    std::unordered_map<uint32, std::vector<uint32>> ChildrenMap;
+    std::vector<uint32> RootUUIDs;
+
+    for (auto& Pair : PrimitivesNode.ObjectRange())
     {
-        json::JSON& PrimJSON = Pair.second;
+        uint32 UUID = static_cast<uint32>(std::stoul(Pair.first));
+        NodeMap[UUID] = &Pair.second;
 
-        if (!PrimJSON.hasKey(SceneKeys::Type)) continue;
+        if (Pair.second.hasKey(SceneKeys::ParentUUID))
+        {
+            uint32 ParentID = static_cast<uint32>(Pair.second[SceneKeys::ParentUUID].ToInt());
+            ChildrenMap[ParentID].push_back(UUID);
+        }
+        else
+        {
+            RootUUIDs.push_back(UUID);
+        }
+    }
+
+    // 타입 문자열로 Actor 클래스 이름 추론
+    auto InferActorClass = [](const string& CompType) -> string
+    {
+        if (CompType.front() == 'U' && CompType.size() > 10 &&
+            CompType.substr(CompType.size() - 9) == "Component")
+        {
+            return "A" + CompType.substr(1, CompType.size() - 10) + "Actor";
+        }
+        return "AActor";
+    };
+
+    // 2단계: 루트부터 자손을 재귀적으로 생성·연결
+    std::function<void(uint32, USceneComponent*, AActor*)> CreateComponent;
+    CreateComponent = [&](uint32 UUID, USceneComponent* ParentComp, AActor* Owner)
+    {
+        auto NodeIt = NodeMap.find(UUID);
+        if (NodeIt == NodeMap.end()) return;
+
+        json::JSON& PrimJSON = *NodeIt->second;
+        if (!PrimJSON.hasKey(SceneKeys::Type)) return;
+
         string CompType = PrimJSON[SceneKeys::Type].ToString();
-
-		// StaticMeshComponent 예외 처리
         if (CompType == "StaticMeshComp") CompType = "UStaticMeshComponent";
 
-        string ActorClassName = "AActor"; 
-        if (CompType.front() == 'U' && CompType.substr(CompType.length() - 9) == "Component") 
+        USceneComponent* Comp = nullptr;
+        if (!ParentComp)
         {
-            string BaseName = CompType.substr(1, CompType.length() - 10);
-            ActorClassName = "A" + BaseName + "Actor";
+            // 루트 컴포넌트: 대응하는 Actor 생성
+            UObject* Obj = FObjectFactory::Get().Create(InferActorClass(CompType));
+            AActor* NewActor = Cast<AActor>(Obj);
+            if (!NewActor) return;
+
+            NewActor->InitDefaultComponents();
+            NewActor->SetWorld(World);
+            if (ULevel* Level = World->GetPersistentLevel())
+                Level->AddActor(NewActor);
+
+            Comp  = NewActor->GetRootComponent();
+            Owner = NewActor;
         }
-        UObject* Obj = FObjectFactory::Get().Create(ActorClassName);
-
-        AActor* NewActor = Obj ? Cast<AActor>(Obj) : nullptr;
-        if (!NewActor) continue;
-
-        NewActor->InitDefaultComponents();
-        NewActor->SetWorld(World);
-        //World->SpawnActor(NewActor);
-		
-		if (ULevel* PersistentLevel = World->GetPersistentLevel())
+        else
         {
-            PersistentLevel->AddActor(NewActor);
+            // 자식 컴포넌트: 직접 생성 후 부모에 연결
+            UObject* Obj = FObjectFactory::Get().Create(CompType);
+            if (!Obj || !Obj->IsA<USceneComponent>()) return;
+
+            Comp = static_cast<USceneComponent*>(Obj);
+            Owner->RegisterComponent(Comp);
+            Comp->AttachToComponent(ParentComp);
         }
 
-        if (USceneComponent* RootComp = NewActor->GetRootComponent()) 
+        // 프로퍼티 기반 역직렬화
+        DeserializeProperties(Comp, PrimJSON);
+        Comp->MarkTransformDirty();
+
+        // 자식 컴포넌트 재귀 생성
+        auto ChildIt = ChildrenMap.find(UUID);
+        if (ChildIt != ChildrenMap.end())
         {
-            DeserializeProperties(RootComp, PrimJSON);
-            RootComp->MarkTransformDirty();
-
-            // 자식 컴포넌트 계층 재귀 역직렬화
-            if (PrimJSON.hasKey(SceneKeys::Children))
-            {
-                DeserializeChildComponents(PrimJSON[SceneKeys::Children], RootComp, NewActor);
-            }
+            for (uint32 ChildUUID : ChildIt->second)
+                CreateComponent(ChildUUID, Comp, Owner);
         }
-    }
+    };
 
-    if (World != nullptr)
-    {
+    for (uint32 RootUUID : RootUUIDs)
+        CreateComponent(RootUUID, nullptr, nullptr);
+
+    if (World)
         World->SyncSpatialIndex();
-    }
 }
 
 /* @brief 현재 사용하지 않는 함수, 추후 Actor-Component 단위로 계층화를 시켜야 한다면 이쪽을 사용 */
@@ -457,33 +496,6 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	default:
 		break;
 	}
-}
-
-void FSceneSaveManager::DeserializeChildComponents(json::JSON& ChildrenNode, USceneComponent* ParentComp, AActor* Owner)
-{
-    for (auto& ChildJSON : ChildrenNode.ArrayRange())
-    {
-        if (!ChildJSON.hasKey(SceneKeys::Type)) continue;
-
-        string CompType = ChildJSON[SceneKeys::Type].ToString();
-        if (CompType == "StaticMeshComp") CompType = "UStaticMeshComponent";
-
-        UObject* Obj = FObjectFactory::Get().Create(CompType);
-        if (!Obj || !Obj->IsA<USceneComponent>()) continue;
-
-        USceneComponent* ChildComp = static_cast<USceneComponent*>(Obj);
-        Owner->RegisterComponent(ChildComp);
-        ChildComp->AttachToComponent(ParentComp);
-
-        DeserializeProperties(ChildComp, ChildJSON);
-        ChildComp->MarkTransformDirty();
-
-        // 재귀적으로 손자 컴포넌트 처리
-        if (ChildJSON.hasKey(SceneKeys::Children))
-        {
-            DeserializeChildComponents(ChildJSON[SceneKeys::Children], ChildComp, Owner);
-        }
-    }
 }
 
 void FSceneSaveManager::DeserializeCameraState(json::JSON& root, FEditorCameraState* OutCameraState /*= nullptr*/)
