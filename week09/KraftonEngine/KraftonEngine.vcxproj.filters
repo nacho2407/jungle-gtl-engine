@@ -126,6 +126,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\DecalShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Editor.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -166,6 +169,15 @@
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\Functions.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\GizmoBuffer.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\MaterialBuffer.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\OutlineBuffer.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
@@ -248,6 +260,9 @@
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -285,6 +300,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
@@ -398,7 +416,6 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
@@ -406,6 +423,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\FScene.cpp">
@@ -600,6 +620,9 @@
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\DecalComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -661,6 +684,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
@@ -804,7 +830,6 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -815,6 +840,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h">
