@@ -52,6 +52,12 @@ class FWorldSpatialIndex
         TArray<float>         HitTs;
     };
 
+	struct FPrimitiveOBBQueryScratch
+	{
+		FBVH::FOBBQueryScratch BVHScratch;
+		TArray<int32> ObjectIndices;
+	};
+
     FWorldSpatialIndex() = default;
     ~FWorldSpatialIndex() = default;
 
@@ -126,6 +132,9 @@ class FWorldSpatialIndex
      */
     void FrustumQueryPrimitives(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives,
                                 FPrimitiveFrustumQueryScratch& Scratch, bool bInsideOnly = false);
+
+	void OBBQueryPrimitives(const FOBB& OBB, TArray<UPrimitiveComponent*>& OutPrimitives,
+							FPrimitiveOBBQueryScratch& Scratch);
 
 
     /** @brief Resolve a tracked object index back to its primitive component. */

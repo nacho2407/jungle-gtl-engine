@@ -30,6 +30,7 @@ public:
 private:
 	FMeshBufferManager MeshBufferManager;
 	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
+	FWorldSpatialIndex::FPrimitiveOBBQueryScratch OBBQueryScratch;
 	TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
 	FCullingStats LastCullingStats;
 	FDecalStats LastDecalStats;
