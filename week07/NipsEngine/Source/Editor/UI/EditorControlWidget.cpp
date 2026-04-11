@@ -89,13 +89,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 5: // HeightFog
-			{
-				AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
 			}
 		}
 		NumberOfSpawnedActors = 1;
