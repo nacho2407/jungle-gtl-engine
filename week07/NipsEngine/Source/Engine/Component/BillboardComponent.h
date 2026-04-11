@@ -20,7 +20,7 @@ protected:
 
 public:
 	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
-	
+
 	void TickComponent(float DeltaTime) override;
 
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }

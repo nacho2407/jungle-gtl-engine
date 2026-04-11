@@ -17,6 +17,8 @@ UDecalComponent* UDecalComponent::Duplicate()
 {
 	UDecalComponent* NewComp = UObjectManager::Get().CreateObject<UDecalComponent>();
 	NewComp->SetActive(this->IsActive());
+	NewComp->SetTransient(this->IsTransient());
+	NewComp->SetEditorOnly(this->IsEditorOnly());
 	NewComp->SetOwner(nullptr);
 	
 	NewComp->SetRelativeLocation(this->GetRelativeLocation());

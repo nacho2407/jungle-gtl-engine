@@ -12,6 +12,8 @@ URotatingMovementComponent* URotatingMovementComponent::Duplicate()
 	NewComp->SetActive(this->IsActive());
 	NewComp->SetAutoActivate(this->IsAutoActivate());
 	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
+	NewComp->SetTransient(this->IsTransient());
+	NewComp->SetEditorOnly(this->IsEditorOnly());
     NewComp->SetOwner(nullptr);
 	
 	// UpdatedComponent는 Actor 단에서 맵핑해줍니다.
