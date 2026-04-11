@@ -9,7 +9,9 @@ UCameraComponent* UCameraComponent::Duplicate()
 	UCameraComponent* NewComp = UObjectManager::Get().CreateObject<UCameraComponent>();
     
     NewComp->SetActive(this->IsActive());
-    NewComp->SetOwner(nullptr); 
+	NewComp->SetAutoActivate(this->IsAutoActivate());
+	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
+    NewComp->SetOwner(nullptr);
 
     NewComp->SetRelativeLocation(this->GetRelativeLocation());
     NewComp->SetRelativeRotation(this->GetRelativeRotation());

@@ -28,7 +28,7 @@ void FEditorPlayStreamWidget::Render(float DeltaTime)
     });
     
     // 버튼 텍스트 좌우 여백(+30.0f)과 세로 높이(32.0f)를 넉넉하게 지정합니다.
-    float ButtonHeight = 26.0f; 
+    float ButtonHeight = 27.0f; 
     ImVec2 PlayBtnSize = ImVec2(MaxLabelWidth + 16.0f, ButtonHeight);
     ImVec2 StopBtnSize = ImVec2(ImGui::CalcTextSize(StopLabel).x + 30.0f, ButtonHeight);
 

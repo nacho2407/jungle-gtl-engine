@@ -133,6 +133,18 @@ json::JSON FSceneSaveManager::SerializeComponentToPrimitive(USceneComponent* Sce
         PrimObj[OutKey] = SerializePropertyValue(Prop);
     }
 
+    // 자식 컴포넌트 재귀 직렬화
+    const auto& Children = SceneComp->GetChildren();
+    if (!Children.empty())
+    {
+        JSON ChildrenArr = json::Array();
+        for (USceneComponent* Child : Children)
+        {
+            ChildrenArr.append(SerializeComponentToPrimitive(Child));
+        }
+        PrimObj[SceneKeys::Children] = ChildrenArr;
+    }
+
     return PrimObj;
 }
 
@@ -339,6 +351,12 @@ void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode,
         {
             DeserializeProperties(RootComp, PrimJSON);
             RootComp->MarkTransformDirty();
+
+            // 자식 컴포넌트 계층 재귀 역직렬화
+            if (PrimJSON.hasKey(SceneKeys::Children))
+            {
+                DeserializeChildComponents(PrimJSON[SceneKeys::Children], RootComp, NewActor);
+            }
         }
     }
 
@@ -439,6 +457,33 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	default:
 		break;
 	}
+}
+
+void FSceneSaveManager::DeserializeChildComponents(json::JSON& ChildrenNode, USceneComponent* ParentComp, AActor* Owner)
+{
+    for (auto& ChildJSON : ChildrenNode.ArrayRange())
+    {
+        if (!ChildJSON.hasKey(SceneKeys::Type)) continue;
+
+        string CompType = ChildJSON[SceneKeys::Type].ToString();
+        if (CompType == "StaticMeshComp") CompType = "UStaticMeshComponent";
+
+        UObject* Obj = FObjectFactory::Get().Create(CompType);
+        if (!Obj || !Obj->IsA<USceneComponent>()) continue;
+
+        USceneComponent* ChildComp = static_cast<USceneComponent*>(Obj);
+        Owner->RegisterComponent(ChildComp);
+        ChildComp->AttachToComponent(ParentComp);
+
+        DeserializeProperties(ChildComp, ChildJSON);
+        ChildComp->MarkTransformDirty();
+
+        // 재귀적으로 손자 컴포넌트 처리
+        if (ChildJSON.hasKey(SceneKeys::Children))
+        {
+            DeserializeChildComponents(ChildJSON[SceneKeys::Children], ChildComp, Owner);
+        }
+    }
 }
 
 void FSceneSaveManager::DeserializeCameraState(json::JSON& root, FEditorCameraState* OutCameraState /*= nullptr*/)

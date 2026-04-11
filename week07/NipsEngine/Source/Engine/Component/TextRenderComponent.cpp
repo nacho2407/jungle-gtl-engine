@@ -15,6 +15,8 @@ UTextRenderComponent* UTextRenderComponent::Duplicate()
     UTextRenderComponent* NewComp = UObjectManager::Get().CreateObject<UTextRenderComponent>();
 
 	NewComp->SetActive(this->IsActive());
+	NewComp->SetAutoActivate(this->IsAutoActivate());
+	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
     NewComp->SetOwner(nullptr);
     
     NewComp->SetRelativeLocation(this->GetRelativeLocation());

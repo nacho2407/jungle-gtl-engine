@@ -15,6 +15,8 @@ UBillboardComponent* UBillboardComponent::Duplicate()
     UBillboardComponent* NewComp = UObjectManager::Get().CreateObject<UBillboardComponent>();
 
 	NewComp->SetActive(this->IsActive());
+	NewComp->SetAutoActivate(this->IsAutoActivate());
+	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
     NewComp->SetOwner(nullptr);
     
     NewComp->SetRelativeLocation(this->GetRelativeLocation());
@@ -25,6 +27,8 @@ UBillboardComponent* UBillboardComponent::Duplicate()
 
     NewComp->bIsBillboard = this->bIsBillboard;
     NewComp->SetTextureName(this->GetTextureName());
+
+	DuplicateSubObjects();
 
     return NewComp;
 }
