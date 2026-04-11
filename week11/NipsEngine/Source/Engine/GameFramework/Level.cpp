@@ -21,9 +21,13 @@ ULevel* ULevel::Duplicate()
 {
     ULevel* NewLevel = UObjectManager::Get().CreateObject<ULevel>();
 
+    // 현재 ULevel 의 GetEditableProperties 는 비어 있으므로 실질적 복사는 없습니다.
+    NewLevel->CopyPropertiesFrom(this);
+
+    // Actors 배열을 얕은 복사한 뒤 DuplicateSubObjects 에서 각 액터를 깊은 복사합니다.
     NewLevel->Actors = this->Actors;
 
-	NewLevel->DuplicateSubObjects();
+    NewLevel->DuplicateSubObjects();
 
     return NewLevel;
 }

@@ -8,19 +8,11 @@ REGISTER_FACTORY(URotatingMovementComponent)
 URotatingMovementComponent* URotatingMovementComponent::Duplicate()
 {
     URotatingMovementComponent* NewComp = UObjectManager::Get().CreateObject<URotatingMovementComponent>();
-    
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
-    NewComp->SetOwner(nullptr);
-	
-	// UpdatedComponent는 Actor 단에서 맵핑해줍니다.
 
-    NewComp->RotationRate = this->RotationRate;
-    NewComp->PivotTranslation = this->PivotTranslation;
-    NewComp->bRotationInLocalSpace = this->bRotationInLocalSpace;
+    // UpdatedComponent(SceneComponentRef) 는 Actor::Duplicate() 에서 재매핑합니다.
+    NewComp->CopyPropertiesFrom(this);
+
+    NewComp->SetOwner(nullptr);
 
     return NewComp;
 }

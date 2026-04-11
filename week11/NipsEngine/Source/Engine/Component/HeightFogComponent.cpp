@@ -9,26 +9,27 @@ UHeightFogComponent::UHeightFogComponent()
 {
 }
 
-UHeightFogComponent* UHeightFogComponent::Duplicate() 
+UHeightFogComponent* UHeightFogComponent::Duplicate()
 {
     UHeightFogComponent* NewComp = UObjectManager::Get().CreateObject<UHeightFogComponent>();
 
-	NewComp->FogDensity = FogDensity;
-    NewComp->HeightFalloff = HeightFalloff;
-    NewComp->FogInscatteringColor = FogInscatteringColor;
-    NewComp->FogHeight = FogHeight;
-    NewComp->FogStartDistance = FogStartDistance;
-    NewComp->FogCutoffDistance = FogCutoffDistance;
-    NewComp->FogMaxOpacity = FogMaxOpacity;
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
+    // GetEditableProperties 체인(ActorComponent + SceneComponent + PrimitiveComponent +
+    //   Fog 전용 7개 프로퍼티) 일괄 복사 — 모든 필드가 노출되어 있습니다.
+    NewComp->CopyPropertiesFrom(this);
 
-	return NewComp;
+    NewComp->SetOwner(nullptr);
+    NewComp->bTransformDirty = true;
+    NewComp->ParentComponent = nullptr;
+    NewComp->ChildComponents.clear();
+
+    NewComp->DuplicateSubObjects();
+
+    return NewComp;
 }
 
 void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    USceneComponent::GetEditableProperties(OutProps); // 부모 체인 확인 후 맞게 수정
+    UPrimitiveComponent::GetEditableProperties(OutProps); // ActorComp + SceneComp + Visible
     OutProps.push_back({"FogDensity", EPropertyType::Float, &FogDensity, 0.0f, 1.0f, 0.01f});
     OutProps.push_back({"HeightFalloff", EPropertyType::Float, &HeightFalloff, 0.0f, 10.0f, 0.01f});
     OutProps.push_back({"FogInscatteringColor", EPropertyType::Vec4, &FogInscatteringColor});
