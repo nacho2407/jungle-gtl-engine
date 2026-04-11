@@ -94,7 +94,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.Clear();
 
 	Bus.SetCameraInfo(Camera);
-	Bus.SetRenderSettings(ViewMode, ShowFlags);
+	Bus.SetRenderOptions(Opts);
 	Bus.SetViewportInfo(VP);
 	Bus.SetViewportType(Opts.ViewportType);
 	Bus.SetOcclusionCulling(&GPUOcclusion);
