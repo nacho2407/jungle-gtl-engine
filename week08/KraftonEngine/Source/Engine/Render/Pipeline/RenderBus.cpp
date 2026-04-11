@@ -1,4 +1,4 @@
-#include "RenderBus.h"
+﻿#include "RenderBus.h"
 #include "Component/CameraComponent.h"
 #include "Viewport/Viewport.h"
 
@@ -86,12 +86,6 @@ void FRenderBus::SetViewportInfo(const FViewport* VP)
 	ViewportRTV = VP->GetRTV();
 	ViewportDSV = VP->GetDSV();
 	ViewportStencilSRV = VP->GetStencilSRV();
-}
-
-void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)
-{
-	ViewMode = NewViewMode;
-	ShowFlags = NewShowFlags;
 }
 
 void FRenderBus::SetViewportSize(float InWidth, float InHeight)
