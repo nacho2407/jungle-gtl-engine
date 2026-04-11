@@ -35,6 +35,6 @@ float4 PS(PS_Input input) : SV_TARGET
     {
         v = pow(saturate(d), Exponent);
     }
-
+    
     return float4(v, v, v, 1.0f);
 }
