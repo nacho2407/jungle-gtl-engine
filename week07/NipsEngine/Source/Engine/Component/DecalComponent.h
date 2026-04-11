@@ -12,6 +12,8 @@ public:
 	UDecalComponent* Duplicate() override;
 	UDecalComponent* DuplicateSubObjects() override { return this; }
 
+	void BeginPlay() override;
+
 	void SetMaterial(FMaterial* InMaterial) { Material = InMaterial; }
 	FMaterial* GetMaterial() const { return Material; }
 
@@ -25,8 +27,26 @@ public:
 	FMatrix GetDecalMatrix() const;
 	FColor GetDecalColor() const { return DecalColor; }
 
+	void SetFadeIn(float InStartDelay, float InDuration);
+	void SetFadeOut(float InStartDelay, float InDuration, bool bInDestroyOwnerAfterFade = false);
+
+protected:
+	void TickComponent(float DeltaTime) override;
+
+private:
+	void TickFadeIn();
+	void TickFadeOut();
+
 private:
 	FMaterial* Material = nullptr;
 	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
 	FColor DecalColor = FColor::White();
+
+	float FadeStartDelay = 0.0f;
+	float FadeDuration = 0.0f;
+	float FadeInDuration = 0.0f;
+	float FadeInStartDelay = 0.0f;
+	bool bDestroyOwnerAfterFade = false;
+
+	float LifeTime = 0.0f;
 };
