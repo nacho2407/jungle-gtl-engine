@@ -37,6 +37,9 @@ public:
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	virtual void PostEditProperty(const char* PropertyName) {}
 
+	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
+	bool IsTransient() const { return bTransient; }
+
 protected:
 	virtual void TickComponent(float DeltaTime) {}
 
@@ -47,6 +50,7 @@ private:
 	bool bIsActive = true;
 	bool bAutoActivate = true;
 	bool bCanEverTick = true;
+	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
 };
 
 
