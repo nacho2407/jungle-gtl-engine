@@ -341,11 +341,8 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Batcher\BatcherBase.cpp" />
-    <ClCompile Include="Source\Engine\Render\Batcher\BillboardBatcher.cpp" />
-    <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp" />
-    <ClCompile Include="Source\Engine\Render\Batcher\LineBatcher.cpp" />
-    <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
@@ -357,6 +354,7 @@
     <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderBus.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -478,11 +476,8 @@
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
-    <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h" />
-    <ClInclude Include="Source\Engine\Render\Batcher\BillboardBatcher.h" />
-    <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h" />
-    <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h" />
-    <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
@@ -495,6 +490,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderBus.h" />

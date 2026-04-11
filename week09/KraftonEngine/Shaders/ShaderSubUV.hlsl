@@ -4,11 +4,17 @@
 Texture2D SubUVAtlas : register(t0);
 SamplerState SubUVSampler : register(s0);
 
-PS_Input_Tex VS(VS_Input_PT input)
+// b2: SubUV UV region (atlas frame offset + size)
+cbuffer SubUVRegionBuffer : register(b2)
+{
+    float4 UVRegion; // xy = offset, zw = size
+}
+
+PS_Input_Tex VS(VS_Input_PNCT input)
 {
     PS_Input_Tex output;
-    output.position = ApplyVP(input.position);
-    output.texcoord = input.texcoord;
+    output.position = ApplyMVP(input.position);
+    output.texcoord = UVRegion.xy + input.texcoord * UVRegion.zw;
     return output;
 }
 

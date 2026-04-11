@@ -2,7 +2,7 @@
 #include "Component/GizmoComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 
 // ============================================================
 // FGizmoSceneProxy
@@ -35,11 +35,11 @@ void FGizmoSceneProxy::UpdateMesh()
 // ============================================================
 // UpdatePerViewport — 매 프레임 뷰포트별 스케일 + ExtraCB 갱신
 // ============================================================
-void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
+void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 
-	if (!Bus.GetShowFlags().bGizmo || !Gizmo->IsVisible())
+	if (!Frame.ShowFlags.bGizmo || !Gizmo->IsVisible())
 	{
 		bVisible = false;
 		return;
@@ -52,9 +52,9 @@ void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	UpdateSortKey();
 
 	// Per-viewport 스케일 계산
-	const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+	const FVector CameraPos = Frame.View.GetInverseFast().GetLocation();
 	float PerViewScale = Gizmo->ComputeScreenSpaceScale(
-		CameraPos, Bus.IsOrtho(), Bus.GetOrthoWidth());
+		CameraPos, Frame.bIsOrtho, Frame.OrthoWidth);
 
 	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(FVector(PerViewScale, PerViewScale, PerViewScale))
 		* FMatrix::MakeRotationEuler(Gizmo->GetRelativeRotation().ToVector())

@@ -1,25 +1,16 @@
 #include "RenderBus.h"
-#include "Component/CameraComponent.h"
-#include "Viewport/Viewport.h"
 
 void FRenderBus::Clear()
 {
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
 		ProxyQueues[i].clear();
-	}
 
-	FontEntries.clear();
-	OverlayFontEntries.clear();
-	SubUVEntries.clear();
-	BillboardEntries.clear();
-	AABBEntries.clear();
-	GridEntries.clear();
-	DebugLineEntries.clear();
+	OverlayTexts.clear();
+	DebugAABBs.clear();
+	DebugLines.clear();
+	bHasGrid = false;
 
-	ViewportRTV = nullptr;
-	ViewportDSV = nullptr;
-	ViewportStencilSRV = nullptr;
+	Frame.ClearViewportResources();
 }
 
 void FRenderBus::AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy)
@@ -32,70 +23,24 @@ const TArray<const FPrimitiveSceneProxy*>& FRenderBus::GetProxies(ERenderPass Pa
 	return ProxyQueues[(uint32)Pass];
 }
 
-void FRenderBus::AddFontEntry(FFontEntry&& Entry)
+void FRenderBus::AddOverlayText(FString Text, const FVector2& Position, float Scale)
 {
-	FontEntries.push_back(std::move(Entry));
+	OverlayTexts.push_back({ std::move(Text), Position, Scale });
 }
 
-void FRenderBus::AddOverlayFontEntry(FFontEntry&& Entry)
+void FRenderBus::AddDebugAABB(const FVector& Min, const FVector& Max, const FColor& Color)
 {
-	OverlayFontEntries.push_back(std::move(Entry));
+	DebugAABBs.push_back({ Min, Max, Color });
 }
 
-void FRenderBus::AddSubUVEntry(FSubUVEntry&& Entry)
+void FRenderBus::AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color)
 {
-	SubUVEntries.push_back(std::move(Entry));
+	DebugLines.push_back({ Start, End, Color });
 }
 
-void FRenderBus::AddBillboardEntry(FBillboardEntry&& Entry)
+void FRenderBus::SetGrid(float Spacing, int32 HalfLineCount)
 {
-	BillboardEntries.push_back(std::move(Entry));
-}
-
-void FRenderBus::AddAABBEntry(FAABBEntry&& Entry)
-{
-	AABBEntries.push_back(std::move(Entry));
-}
-
-void FRenderBus::AddGridEntry(FGridEntry&& Entry)
-{
-	GridEntries.push_back(std::move(Entry));
-}
-
-void FRenderBus::AddDebugLineEntry(FDebugLineEntry&& Entry)
-{
-	DebugLineEntries.push_back(std::move(Entry));
-}
-
-void FRenderBus::SetCameraInfo(const UCameraComponent* Camera)
-{
-	View = Camera->GetViewMatrix();
-	Proj = Camera->GetProjectionMatrix();
-	CameraPosition = Camera->GetWorldLocation();
-	CameraForward = Camera->GetForwardVector();
-	CameraRight = Camera->GetRightVector();
-	CameraUp = Camera->GetUpVector();
-	bIsOrtho = Camera->IsOrthogonal();
-	OrthoWidth = Camera->GetOrthoWidth();
-}
-
-void FRenderBus::SetViewportInfo(const FViewport* VP)
-{
-	viewportWidth = static_cast<float>(VP->GetWidth());
-	viewportHeight = static_cast<float>(VP->GetHeight());
-	ViewportRTV = VP->GetRTV();
-	ViewportDSV = VP->GetDSV();
-	ViewportStencilSRV = VP->GetStencilSRV();
-}
-
-void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)
-{
-	ViewMode = NewViewMode;
-	ShowFlags = NewShowFlags;
-}
-
-void FRenderBus::SetViewportSize(float InWidth, float InHeight)
-{
-	viewportWidth = InWidth;
-	viewportHeight = InHeight;
+	GridSpacing = Spacing;
+	GridHalfLineCount = HalfLineCount;
+	bHasGrid = true;
 }

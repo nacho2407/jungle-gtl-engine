@@ -52,15 +52,15 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 
 	UWorld* World = Engine->GetWorld();
 
-	Bus.SetCameraInfo(Camera);
+	Bus.Frame.SetCameraInfo(Camera);
 
 	FShowFlags ShowFlags;
 	ShowFlags.bGrid = false;
 	ShowFlags.bGizmo = false;
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
-	Bus.SetRenderSettings(EViewMode::Lit, ShowFlags);
-	Bus.SetViewportInfo(VP);
+	Bus.Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
+	Bus.Frame.SetViewportInfo(VP);
 
 	// 월드 수집
 	Collector.CollectWorld(World, Bus);

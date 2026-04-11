@@ -70,7 +70,7 @@
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{16ec6128-166d-ab0f-2135-c0c61f984faf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Batcher">
+    <Filter Include="Source\Engine\Render\Helper">
       <UniqueIdentifier>{9f304481-1091-e173-0e96-fea5393d1760}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Culling">
@@ -356,20 +356,11 @@
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\BatcherBase.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
+    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp">
+      <Filter>Source\Engine\Render\Helper</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\BillboardBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\LineBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
+    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp">
+      <Filter>Source\Engine\Render\Helper</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
@@ -402,6 +393,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderBus.cpp">
@@ -761,20 +755,11 @@
     <ClInclude Include="Source\Engine\Profiling\Timer.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
+    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h">
+      <Filter>Source\Engine\Render\Helper</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\BillboardBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
+    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h">
+      <Filter>Source\Engine\Render\Helper</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
       <Filter>Source\Engine\Render\Culling</Filter>
@@ -810,6 +795,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h">
