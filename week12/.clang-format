@@ -1,9 +1,52 @@
+---
+# 기본 기반 스타일
 BasedOnStyle: LLVM
+
+# 들여쓰기 설정
 IndentWidth: 4
-NamespaceIndentation: All
-ColumnLimit: 120
+TabWidth: 4
+UseTab: Never
+
+# 중괄호 설정 (Allman 스타일)
 BreakBeforeBraces: Allman
-AlignConsecutiveDeclarations: true
-IncludeBlocks: Merge # 만약 카테고리 별로 띄우고싶으면 Regroup으로 변경
-SortIncludes: false
+
+# 들여쓰기 세부 제어
+NamespaceIndentation: None # All에서 None으로 변경 (일반적인 C++ 선호도 반영)
+AllowShortFunctionsOnASingleLine: Inline # Getter/Setter를 한 줄로 허용
+AllowShortBlocksOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: false
+
+# 빈 줄 및 공백 설정
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# 포인터/레퍼런스 정렬 (타입 쪽에 붙임)
 PointerAlignment: Left
+
+# 컬럼 제한 (기존 유지)
+ColumnLimit: 120
+
+# 정렬 관련 (불편함을 유발하는 과도한 정렬 해제)
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Right
+AlignTrailingComments: true
+
+# 인클루드 설정 (요청 사항)
+SortIncludes: false
+IncludeBlocks: Preserve # 원래 작성한 순서와 그룹을 최대한 보존
+
+# 언리얼 스타일 매크로 인식 (들여쓰기 방지)
+StatementMacros:
+  - DECLARE_CLASS
+  - DEFINE_CLASS
+  - REGISTER_FACTORY
+  - GENERATED_BODY
+
+# 접근 제어자(public, private 등) 들여쓰기
+AccessModifierOffset: -4
+
+# 기타 가독성 설정
+PackConstructorInitializers: BinPack
+ReferenceAlignment: Left
+Standard: Latest
