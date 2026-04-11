@@ -32,7 +32,7 @@ void FBillboardSceneProxy::UpdateMesh()
 		// TexturedQuad (FVertexPNCT with UVs) + Billboard shader
 		MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
 		Shader = FShaderManager::Get().GetShader(EShaderType::Billboard);
-		Pass = ERenderPass::Billboard;
+		Pass = ERenderPass::AlphaBlend;
 		DiffuseSRV = Comp->GetTexture()->SRV;
 	}
 	else

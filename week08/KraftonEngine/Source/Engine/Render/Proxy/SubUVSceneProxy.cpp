@@ -25,7 +25,7 @@ void FSubUVSceneProxy::UpdateMesh()
 	// TexturedQuad (FVertexPNCT with UVs) for rendering
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
 	Shader = FShaderManager::Get().GetShader(EShaderType::SubUV);
-	Pass = ERenderPass::SubUV;
+	Pass = ERenderPass::AlphaBlend;
 
 	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
 	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::Gizmo);

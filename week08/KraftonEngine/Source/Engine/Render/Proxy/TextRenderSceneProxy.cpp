@@ -16,7 +16,8 @@ void FTextRenderSceneProxy::UpdateMesh()
 	// SelectionMask 아웃라인 패스에서 사용할 mesh/shader
 	MeshBuffer = Owner->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Pass = ERenderPass::Font;
+	Pass = ERenderPass::AlphaBlend;
+	bFontBatched = true;
 	UpdateSortKey();
 }
 
