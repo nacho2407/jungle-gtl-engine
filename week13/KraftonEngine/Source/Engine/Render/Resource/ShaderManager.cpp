@@ -24,7 +24,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl",
 		"VS", "PS", nullptr, 0);
 
-	// Batcher 셰이더 (FTextureVertex: POSITION + TEXCOORD)
+	// 텍스처 기반 셰이더 (FTextureVertex: POSITION + TEXCOORD)
 	Shaders[(uint32)EShaderType::Font].Create(InDevice, L"Shaders/ShaderFont.hlsl",
 		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
 
