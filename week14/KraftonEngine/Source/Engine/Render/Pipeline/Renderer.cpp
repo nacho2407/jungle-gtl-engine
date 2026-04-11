@@ -60,11 +60,16 @@ void FRenderer::Release()
 // BeginCollect — DrawCommandList + 동적 지오메트리 초기화
 // Collector가 BuildCommandForProxy/AddWorldText를 호출하기 전에 반드시 호출
 // ============================================================
-void FRenderer::BeginCollect(const FFrameContext& Frame)
+void FRenderer::BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount)
 {
 	DrawCommandList.Reset();
 	CollectViewMode = Frame.ViewMode;
 	bHasSelectionMaskCommands = false;
+
+	// PerObjectCBPool 미리 할당 — Collect 도중 resize로 FDrawCommand.PerObjectCB
+	// 포인터가 무효화되는 것을 방지
+	if (MaxProxyCount > 0)
+		EnsurePerObjectCBPoolCapacity(MaxProxyCount);
 
 	// 동적 지오메트리 초기화
 	EditorLines.Clear();

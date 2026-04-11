@@ -32,7 +32,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();
 
-		Renderer.BeginCollect(Frame);
+		Renderer.BeginCollect(Frame, Scene->GetProxyCount());
 		Collector.CollectWorld(World, Frame, Renderer);
 		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, *Scene);
 	}
