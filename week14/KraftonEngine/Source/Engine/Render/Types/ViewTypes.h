@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -7,6 +7,7 @@ enum class EViewMode : int32
 	Lit = 0,
 	Unlit,
 	Wireframe,
+	SceneDepth,
 	Count
 };
 
@@ -40,9 +41,16 @@ struct FViewportRenderOptions
 {
 	EViewMode ViewMode = EViewMode::Lit;
 	FShowFlags ShowFlags;
+
 	float GridSpacing = 1.0f;
 	int32 GridHalfLineCount = 100;
+
 	float CameraMoveSensitivity = 1.0f;
 	float CameraRotateSensitivity = 1.0f;
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
+
+	// Scene Depth 전용 설정
+	int32 SceneDepthVisMode = 1;
+	float Exponent = 128.0f;
+	float Range = 1000.0f;
 };

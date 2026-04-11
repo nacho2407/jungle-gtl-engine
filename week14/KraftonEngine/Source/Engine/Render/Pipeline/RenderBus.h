@@ -41,7 +41,6 @@ public:
 	void SetCameraInfo(const UCameraComponent* Camera);
 	void SetViewportInfo(const FViewport* VP);
 	void SetViewportSize(float InWidth, float InHeight);
-	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
@@ -54,10 +53,12 @@ public:
 	float GetOrthoWidth()  const { return OrthoWidth; }
 	ELevelViewportType GetViewportType() const { return ViewportType; }
 	void SetViewportType(ELevelViewportType InType) { ViewportType = InType; }
-	EViewMode GetViewMode() const { return ViewMode; }
-	const FShowFlags& GetShowFlags() const { return ShowFlags; }
+	EViewMode GetViewMode() const { return RenderOptions.ViewMode; }
+	const FShowFlags& GetShowFlags() const { return RenderOptions.ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
+	void SetRenderOptions(const FViewportRenderOptions& InOptions) { RenderOptions = InOptions; }
+	const FViewportRenderOptions& GetRenderOptions() const { return RenderOptions; }
 
 	const float GetViewportWidth() const { return viewportWidth; }
 	const float GetViewportHeight() const { return viewportHeight; }
@@ -113,7 +114,6 @@ private:
 	FLODUpdateContext LODContext;
 
 	//Editor Settings
-	EViewMode ViewMode;
-	FShowFlags ShowFlags;
 	FVector WireframeColor = FVector(0.0f, 0.0f, 0.7f);
+	FViewportRenderOptions RenderOptions;
 };
