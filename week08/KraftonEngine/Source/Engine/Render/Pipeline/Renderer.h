@@ -35,7 +35,9 @@ public:
 	void Release();
 
 	// --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
-	void BeginCollect(const FFrameContext& Frame);
+	// MaxProxyCount: Scene의 프록시 수. PerObjectCBPool을 미리 할당하여
+	// Collect 도중 resize로 인한 포인터 무효화를 방지.
+	void BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount = 0);
 
 	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
 	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
