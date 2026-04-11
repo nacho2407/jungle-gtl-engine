@@ -226,6 +226,21 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 				ImGui::TextColored(ImVec4(0.25f, 0.9f, 1.0f, 1.0f), "- Culled: %d", CulledPrimitiveCount);
 			}
 
+			const FRenderCollector::FDecalStats* DecalStats =
+				(RenderPipeline != nullptr) ? &RenderPipeline->GetViewportDecalStats(i) : nullptr;
+
+			if (DecalStats != nullptr)
+			{
+				if (CullingStats != nullptr || VS.bShowStatFPS)
+				{
+					ImGui::Separator();
+				}
+
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "Decal");
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Total Decals: %d", DecalStats->TotalDecalCount);
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Decal Time: %.4f ms", DecalStats->CollectTimeMS / 1000.f);
+			}
+
 			// Memory 출력 (노란색 텍스트)
 			if (VS.bShowStatMemory)
 			{

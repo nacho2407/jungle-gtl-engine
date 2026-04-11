@@ -11,12 +11,12 @@
 #include "Component/SubUVComponent.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
-#include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Render/Resource/Material.h"
 #include "Object/ObjectIterator.h"
+#include "Runtime/Stats/ScopeCycleCounter.h"
 #include <unordered_set>
 
 namespace
@@ -158,6 +158,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
                                     const FFrustum* ViewFrustum)
 {
 	ResetCullingStats();
+	ResetDecalStats();
 
 	if (!World) return;
 
@@ -189,6 +190,11 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 void FRenderCollector::ResetCullingStats()
 {
 	LastCullingStats = {};
+}
+
+void FRenderCollector::ResetDecalStats()
+{
+	LastDecalStats = {};
 }
 
 void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags,
@@ -598,6 +604,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	{
 		if (!ShowFlags.bDecals) return;
 
+		FScopeCycleCounter RenderDecalScope({});
+
 		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
 		const FMaterial* MtlData = DecalComp->GetMaterial();
 
@@ -660,6 +668,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			}
 		}
 
+		LastDecalStats.TotalDecalCount += 1;
+		LastDecalStats.CollectTimeMS += RenderDecalScope.Finish();
 		break;
 	}
 	
