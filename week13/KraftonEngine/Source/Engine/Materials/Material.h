@@ -95,15 +95,20 @@ public:
 		FMaterialTemplate* InTemplate,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
+	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
 	bool SetScalarParameter(const FString& ParamName, float Value);
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value);
 	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value);
-	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
 	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture);
+
+	bool GetScalarParameter(const FString& ParamName, float& OutValue) const;
+	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const;
+	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const;
+	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const;
 
 	void Bind(ID3D11DeviceContext* Context);
 
-	const FString& GetTexturePathFileName(const FString& SlotName)const;
+	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
 	const FString& GetAssetPathFileName() const { return PathFileName;}
 

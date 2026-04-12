@@ -5,11 +5,11 @@
 #include "Platform/Paths.h"
 #include "Render/Resource/ShaderManager.h"
 
-UMaterialInterface* FMaterialManager::CreateMaterial(const FString& MatFilePath)
+UMaterial* FMaterialManager::CreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
-	auto It = InterfaceCache.find(MatFilePath);
-	if (It != InterfaceCache.end())
+	auto It = MaterialCache.find(MatFilePath);
+	if (It != MaterialCache.end())
 	{
 		return It->second;
 	}
@@ -43,12 +43,7 @@ UMaterialInterface* FMaterialManager::CreateMaterial(const FString& MatFilePath)
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
 
-	// 6. UMaterialInterface 래퍼 
-	UMaterialInterface* MatInterface = UObjectManager::Get().CreateObject<UMaterialInterface>();
-	MatInterface->Material = Material;
-
-	InterfaceCache.insert({ MatFilePath, MatInterface });
-	return MatInterface;
+	return Material;
 }
 
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const

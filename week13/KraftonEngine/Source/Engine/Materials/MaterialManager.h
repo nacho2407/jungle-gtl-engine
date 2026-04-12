@@ -8,7 +8,6 @@
 
 class FMaterialTemplate;
 class UMaterial;
-class UMaterialInterface;
 class FMaterialConstantBuffer;
 
 class FMaterialManager : public TSingleton<FMaterialManager>
@@ -17,7 +16,6 @@ class FMaterialManager : public TSingleton<FMaterialManager>
 
     TMap<FString, FMaterialTemplate*> TemplateCache;    // 셰이더 경로 → Template (공유)
 	TMap<FString, UMaterial*> MaterialCache;	//MatFilePath
-	TMap<FString, UMaterialInterface*> InterfaceCache;    // 경로 → Instance
 
 	ID3D11Device* Device = nullptr;
 
@@ -25,7 +23,7 @@ public:
 	void Initialize(ID3D11Device* InDevice) { Device = InDevice; }
 
     // UMaterial 생성
-    UMaterialInterface* CreateMaterial(const FString& MatFilePath);
+	UMaterial* CreateMaterial(const FString& MatFilePath);
 
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환
