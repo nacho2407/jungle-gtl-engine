@@ -62,10 +62,11 @@ public:
 	int32 GetGridHalfLineCount() const { return GridHalfLineCount; }
 
 	// --- Height Fog (FogParams.h) ---
-	void SetFog(const FFogParams& Params) { FogParams = Params; FogParams.bEnabled = true; }
-	void ClearFog() { FogParams = FFogParams{}; }
-	const FFogParams& GetFogParams() const { return FogParams; }
-	bool HasFog() const { return FogParams.bEnabled; }
+	// UE 패턴: 배열에 모두 저장하되, 렌더링은 [0]만 사용
+	void AddFog(const class UHeightFogComponent* Owner, const FFogParams& Params);
+	void RemoveFog(const class UHeightFogComponent* Owner);
+	bool HasFog() const { return !Fogs.empty(); }
+	const FFogParams& GetFogParams() const { return Fogs[0].Params; }
 
 private:
 	// 전체 프록시 목록 (ProxyId = 인덱스)
@@ -92,5 +93,10 @@ private:
 	int32 GridHalfLineCount = 0;
 	bool  bHasGrid = false;
 
-	FFogParams FogParams;
+	struct FFogEntry
+	{
+		const class UHeightFogComponent* Owner = nullptr;
+		FFogParams Params;
+	};
+	TArray<FFogEntry> Fogs;
 };

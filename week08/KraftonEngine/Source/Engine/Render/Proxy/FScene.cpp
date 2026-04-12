@@ -265,3 +265,24 @@ void FScene::SetGrid(float Spacing, int32 HalfLineCount)
 	GridHalfLineCount = HalfLineCount;
 	bHasGrid = true;
 }
+
+void FScene::AddFog(const UHeightFogComponent* Owner, const FFogParams& Params)
+{
+	for (auto& Entry : Fogs)
+	{
+		if (Entry.Owner == Owner)
+		{
+			Entry.Params = Params;
+			return;
+		}
+	}
+	Fogs.push_back({ Owner, Params });
+}
+
+void FScene::RemoveFog(const UHeightFogComponent* Owner)
+{
+	Fogs.erase(
+		std::remove_if(Fogs.begin(), Fogs.end(),
+			[Owner](const FFogEntry& E) { return E.Owner == Owner; }),
+		Fogs.end());
+}
