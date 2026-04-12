@@ -135,6 +135,9 @@
     <FxCompile Include="Shaders\Gizmo.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\HeightFog.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\HiZGenerate.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
