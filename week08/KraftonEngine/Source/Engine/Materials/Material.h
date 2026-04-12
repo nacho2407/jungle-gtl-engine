@@ -91,8 +91,7 @@ private:
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 public:
 	DECLARE_CLASS(UMaterial, UObject)
-	void Create(const FString& InPathFileName,
-		FMaterialTemplate* InTemplate,
+	void Create(const FString& InPathFileName,FMaterialTemplate* InTemplate,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
 	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
@@ -112,7 +111,7 @@ public:
 
 	const FString& GetAssetPathFileName() const { return PathFileName;}
 
-	void Serialize(FArchive& Ar);
+	//void Serialize(FArchive& Ar);>>>>>Manager가 위임
 };
 
 //// ─── 미래 확장용 구조 (현재 미사용) ───
