@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Core/CoreTypes.h"
+
+class AActor;
 
 class FEditorSceneWidget : public FEditorWidget
 {
@@ -12,6 +14,7 @@ public:
 private:
 	void RefreshSceneFileList();
 	void RenderActorOutliner();
+	void FocusOnActor(AActor* InActor);
 
 	TArray<int32> ValidActorIndices;
 	char SceneName[128] = "Default";
@@ -22,4 +25,5 @@ private:
 	float NewSceneNotificationTimer = 0.f;
 	float SceneSaveNotificationTimer = 0.f;
 	float SceneLoadNotificationTimer = 0.f;
+	const float MaxDistance = 40.0f;
 };
