@@ -3,6 +3,7 @@
 #include "common/Functions.hlsl"
 
 Texture2D DepthTexture : register(t1);
+Texture2D NormalTexture : register(t2);
 SamplerState g_Sample : register(s0);
 
 struct PS_Input_Decal
@@ -29,6 +30,9 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     uv.y = 1.0f - uv.y;
 
     float depth = DepthTexture.Sample(g_Sample, uv).r;
+    
+    if (depth >= 0.9999f)
+        discard;
 
     float4 clip = float4(ndc, depth, 1.0f);
     float4 viewPos = mul(clip, InvProjMatrix);
@@ -43,12 +47,20 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     float distMask = step(dist, Radius);
     if (distMask <= 0.0f)
         discard;
+    
+    float3 normalSample = NormalTexture.Sample(g_Sample, uv).xyz;
+    float3 normalWS = normalize(normalSample * 2.0f - 1.0f);
+    
+    float3 toCenter = normalize(fireballPos - worldPos);
+    float normalFactor = saturate(dot(normalWS, toCenter));
 
     float falloff = saturate(1.0f - (dist / (Radius)));
     falloff = pow(falloff, max(RadiusFalloff, 0.01f));
+    
+    float lighting = lerp(0.25f, 1.0f, normalFactor);
 
-    float3 rgb = Color.rgb * Intensity * falloff;
-    float alpha = Color.a * Intensity * falloff;
+    float3 rgb = Color.rgb * Intensity * falloff * lighting;
+    float alpha = Color.a * Intensity * falloff * lighting;
 
     return float4(rgb, alpha);
 }
