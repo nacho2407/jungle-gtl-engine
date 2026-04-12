@@ -24,6 +24,7 @@ namespace ECBSlot
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
 	constexpr uint32 Decal = 5;		// b5: Decal properties (Color)
+	constexpr uint32 Fog = 6;        // b6: Height Fog params
 }
 
 //PerObject
@@ -43,6 +44,7 @@ struct FFrameConstants
 {
 	FMatrix View;
 	FMatrix Projection;
+	FMatrix InvViewProj;
 	float bIsWireframe;
 	FVector WireframeColor;
 	float Time;
@@ -84,6 +86,19 @@ struct FOutlinePostProcessConstants
 	float Padding[3] = {};
 };
 
+
+// Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응
+struct FFogConstants
+{
+	FVector4 InscatteringColor;  // 16B
+	float Density;               // 4B
+	float HeightFalloff;         // 4B
+	float FogBaseHeight;         // 4B
+	float StartDistance;         // 4B  — 16B boundary
+	float CutoffDistance;        // 4B
+	float MaxOpacity;            // 4B
+	float _pad[2];              // 8B  — 16B boundary
+};
 
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관

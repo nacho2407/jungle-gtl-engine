@@ -39,6 +39,7 @@ struct FFrameContext
 	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
 	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
+	ID3D11ShaderResourceView* ViewportDepthSRV   = nullptr;
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
@@ -86,5 +87,6 @@ struct FFrameContext
 		ViewportRTV        = nullptr;
 		ViewportDSV        = nullptr;
 		ViewportStencilSRV = nullptr;
+		ViewportDepthSRV   = nullptr;
 	}
 };

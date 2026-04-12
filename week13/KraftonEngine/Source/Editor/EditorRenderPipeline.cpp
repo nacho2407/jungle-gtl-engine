@@ -127,6 +127,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Renderer.Render(Frame);
 	}
 
+	// 3.5 Height Fog — Opaque 이후 AlphaBlend fullscreen
+	if (Scene.HasFog())
+	{
+		SCOPE_STAT_CAT("HeightFog", "4_ExecutePass");
+		Renderer.DrawHeightFog(Frame, Scene.GetFogParams());
+	}
+
 	// 4. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
 	if (GPUOcclusion.IsInitialized())
 	{
