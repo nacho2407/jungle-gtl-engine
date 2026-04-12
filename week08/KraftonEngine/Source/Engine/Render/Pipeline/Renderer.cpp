@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
+#include "Render/Types/FogParams.h"
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/Proxy/FScene.h"
@@ -503,6 +504,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	FFrameConstants frameConstantData = {};
 	frameConstantData.View = Frame.View;
 	frameConstantData.Projection = Frame.Proj;
+	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
 	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = Frame.WireframeColor;
 
@@ -515,4 +517,62 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+}
+
+// ============================================================
+// DrawHeightFog — DepthSRV → world pos 복원 → exponential height fog → AlphaBlend
+// Render() 이후, GPU Occlusion 이전에 Pipeline에서 호출.
+// ============================================================
+void FRenderer::DrawHeightFog(const FFrameContext& Frame, const FFogParams& Fog)
+{
+	ID3D11ShaderResourceView* DepthSRV = Frame.ViewportDepthSRV;
+	ID3D11DepthStencilView*   DSV      = Frame.ViewportDSV;
+	ID3D11RenderTargetView*   RTV      = Frame.ViewportRTV;
+	if (!DepthSRV || !RTV) return;
+
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
+
+	// 1) DSV 언바인딩 (DepthSRV와 동시 바인딩 불가)
+	Context->OMSetRenderTargets(1, &RTV, nullptr);
+
+	// 2) DepthSRV → PS t0 바인딩
+	Context->PSSetShaderResources(0, 1, &DepthSRV);
+
+	// 3) HeightFog 셰이더 바인딩
+	FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
+	if (!FogShader) return;
+	FogShader->Bind(Context);
+
+	// 4) PSO 상태: 뎁스 쓰기 OFF + AlphaBlend + 래스터라이저 기본
+	Device.SetDepthStencilState(EDepthStencilState::NoDepth);
+	Device.SetBlendState(EBlendState::AlphaBlend);
+	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// 5) Fog CB (b6) 업데이트
+	FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Fog, sizeof(FFogConstants));
+	FFogConstants fogData = {};
+	fogData.InscatteringColor = Fog.InscatteringColor;
+	fogData.Density           = Fog.Density;
+	fogData.HeightFalloff     = Fog.HeightFalloff;
+	fogData.FogBaseHeight     = Fog.FogBaseHeight;
+	fogData.StartDistance     = Fog.StartDistance;
+	fogData.CutoffDistance    = Fog.CutoffDistance;
+	fogData.MaxOpacity        = Fog.MaxOpacity;
+	FogCB->Update(Context, &fogData, sizeof(FFogConstants));
+	ID3D11Buffer* cb = FogCB->GetBuffer();
+	Context->PSSetConstantBuffers(ECBSlot::Fog, 1, &cb);
+
+	// 6) Fullscreen Triangle 드로우
+	Context->IASetInputLayout(nullptr);
+	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+	Context->Draw(3, 0);
+	FDrawCallStats::Increment();
+
+	// 7) DepthSRV 언바인딩
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &nullSRV);
+
+	// 8) DSV 재바인딩
+	Context->OMSetRenderTargets(1, &RTV, DSV);
 }
