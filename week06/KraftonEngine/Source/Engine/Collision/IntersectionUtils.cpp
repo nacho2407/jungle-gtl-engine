@@ -33,7 +33,11 @@ namespace
 		Box.Axis[0] = GetNormalizedAxis(WorldMatrix, FVector(1.0f, 0.0f, 0.0f));
 		Box.Axis[1] = GetNormalizedAxis(WorldMatrix, FVector(0.0f, 1.0f, 0.0f));
 		Box.Axis[2] = GetNormalizedAxis(WorldMatrix, FVector(0.0f, 0.0f, 1.0f));
-		Box.HalfExtents = HalfExtents;
+		const FVector WorldScale = WorldMatrix.GetScale();
+		Box.HalfExtents = FVector(
+			std::fabs(HalfExtents.X * WorldScale.X),
+			std::fabs(HalfExtents.Y * WorldScale.Y),
+			std::fabs(HalfExtents.Z * WorldScale.Z));
 		return Box;
 	}
 

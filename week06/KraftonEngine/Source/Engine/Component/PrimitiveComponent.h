@@ -38,6 +38,8 @@ public:
 	virtual void UpdateWorldAABB() const;
 	virtual bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult);
 	void UpdateWorldMatrix() const override;
+	void SetHitTestEnabled(bool bInHitTestEnabled) { bHitTestEnabled = bInHitTestEnabled; }
+	bool IsHitTestEnabled() const { return bHitTestEnabled; }
 
 	virtual bool SupportsOutline() const { return bSupportsOutline; }
 	void SetSupportsOutline(bool bInSupportsOutline);
@@ -90,6 +92,7 @@ protected:
 	mutable bool bHasValidWorldAABB = false;
 	bool bIsVisible = true;
 	bool bSupportsOutline = true;
+	bool bHitTestEnabled = true;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 	
 	FOctree* OctreeNode = nullptr;

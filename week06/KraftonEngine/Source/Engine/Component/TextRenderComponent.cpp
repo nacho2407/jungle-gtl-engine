@@ -41,6 +41,11 @@ void UTextRenderComponent::UpdateWorldAABB() const
 
 bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	if (!IsHitTestEnabled())
+	{
+		return false;
+	}
+
 	// Ray 방향으로 빌보드 행렬을 계산 (CachedWorldMatrix는 active 카메라 기준이라 다른 뷰포트에서 틀림)
 	FMatrix PerRayBillboard = ComputeBillboardMatrix(Ray.Direction);
 	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(PerRayBillboard);
@@ -62,8 +67,9 @@ bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
 		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
 	{
-		FVector WorldHitPos = OutlineWorldMatrix.TransformVector(LocalHitPos);
+		FVector WorldHitPos = OutlineWorldMatrix.TransformPositionWithW(LocalHitPos);
 		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+		OutHitResult.HitComponent = this;
 		return true;
 	}
 

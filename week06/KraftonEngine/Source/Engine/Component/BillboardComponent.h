@@ -21,8 +21,11 @@ public:
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
+	void SetIgnoreOwnerScale(bool bEnable) { bIgnoreOwnerScale = bEnable; }
+	bool GetIgnoreOwnerScale() const { return bIgnoreOwnerScale; }
 
 	// --- Texture ---
 	void SetTexture(const FName& InTextureName);
@@ -36,12 +39,14 @@ public:
 
 	// 주어진 카메라 방향으로 빌보드 월드 행렬을 계산 (per-view 렌더링용)
 	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
+	FVector GetBillboardScale() const;
 
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
 	const FMeshData* GetMeshData() const override { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad); }
 
 protected:
 	bool bIsBillboard = true;
+	bool bIgnoreOwnerScale = false;
 
 	FName TextureName;
 	FTextureResource* CachedTexture = nullptr;	// ResourceManager 소유, 참조만

@@ -45,6 +45,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	USceneComponent::Serialize(Ar);
 	Ar << bIsVisible;
 	Ar << bSupportsOutline;
+	Ar << bHitTestEnabled;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -159,6 +160,11 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 /* 현재 쓰이지 않는 코드입니다*/
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	if (!bHitTestEnabled)
+	{
+		return false;
+	}
+
 	const FMeshData* Data = GetMeshData();
 	if (!Data || Data->Indices.empty()) return false;
 

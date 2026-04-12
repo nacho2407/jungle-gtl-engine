@@ -59,6 +59,11 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 
 bool UDecalComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	if (!IsHitTestEnabled())
+	{
+		return false;
+	}
+
 	const FMatrix& WorldInverse = GetWorldInverseMatrix();
 
 	FRay LocalRay;
