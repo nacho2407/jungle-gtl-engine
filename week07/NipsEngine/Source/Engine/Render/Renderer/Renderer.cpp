@@ -66,6 +66,8 @@ void FRenderer::Create(HWND hWindow)
 	Resources.DecalConstantBuffer.Create(Device.GetDevice(), sizeof(FDecalConstants));
     Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogConstants));
     Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
+	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
+	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 
 	// TODO : SamplerState 관리
 	D3D11_SAMPLER_DESC SampDesc = {};
@@ -480,13 +482,27 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
     Device.SetDepthStencilState(State.DepthStencil);
     Device.SetBlendState(State.Blend);
 
+	const auto& Lights = Bus.GetLight();
+	Resources.LightStructuredBuffer.Update(Context, Lights.data(), (uint32)Lights.size());
+
+	FLightPassConstants LightPassConstant = {};
+	LightPassConstant.LightCount = (uint32)Lights.size();
+    LightPassConstant.CameraWorldPos = Bus.GetCameraPosition();
+    Resources.LightPassConstantBuffer.Update(Context, &LightPassConstant, sizeof(LightPassConstant));
+	ID3D11Buffer* cb7 = Resources.LightPassConstantBuffer.GetBuffer();
+	Context->PSSetConstantBuffers(7, 1, &cb7);
+
     ID3D11ShaderResourceView* srvs[] = {
         CurrentRenderTargets.SceneColorSRV,
         CurrentRenderTargets.SceneNormalSRV,
-        CurrentRenderTargets.SceneDepthSRV
+        CurrentRenderTargets.SceneDepthSRV,
+		CurrentRenderTargets.SceneWorldPosSRV,
+		Resources.LightStructuredBuffer.GetSRV(),
     };
 
-    Context->PSSetShaderResources(0, 3, srvs);
+    Context->PSSetShaderResources(0, 5, srvs);
+
+	//FLightPassConstants LightConstants = Cmd
 
 	Resources.LightPassShader.Bind(Context);
 
@@ -502,8 +518,8 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
     Context->Draw(3, 0);
 
     // SRV 해제 (중요!!)
-    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr};
-    Context->PSSetShaderResources(0, 3, nullSRVs);
+    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr, nullptr};
+    Context->PSSetShaderResources(0, 5, nullSRVs);
 }
 
 /**
@@ -786,7 +802,16 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
         }
         break;
     }
-
+    case ERenderCommandType::Light:
+    {
+		//Resources.LightPassConstantBuffer.Update(Context, &InCmd.Constants.Light, sizeof(FLightPassConstants));
+		//if (bTypeChanged) {
+		//	ID3D11Buffer* cb7 = Resources.LightPassConstantBuffer.GetBuffer();
+		//	Context->VSSetConstantBuffers(7, 1, &cb7);
+		//	Context->PSSetConstantBuffers(7, 1, &cb7);
+		//}
+		break;
+	}
 	case ERenderCommandType::Decal:
 	{
 		Resources.DecalConstantBuffer.Update(Context, &InCmd.Constants.Decal, sizeof(FDecalConstants));

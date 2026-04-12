@@ -32,6 +32,7 @@ enum class ERenderCommandType
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
 	Decal,
+	Light,
 };
 
 //PerObject
@@ -184,6 +185,32 @@ struct FFXAAConstants
     float  Padding;
 };
 
+// 32 bytes
+//struct FLightData {
+//    FVector LightPos;
+//    float LightRadius;
+//
+//    FVector LightColor;
+//    float LightIntensity;
+//};
+
+struct FLightData
+{
+    FVector WorldPos;
+    float	Radius;
+    FVector Color;
+    float	Intensity;
+	float	RadiusFalloff;
+	float	Padding[2];
+};
+
+struct FLightPassConstants 
+{
+	FVector CameraWorldPos;
+	uint32	LightCount;
+	//float	Pad0;
+};
+
 struct FRenderCommand
 {
 	//	VB, IB 모두 담고 있는 MB
@@ -208,6 +235,7 @@ struct FRenderCommand
 		FDecalConstants Decal;
         FFogConstants Fog;
         FFXAAConstants FXAA;
+		FLightPassConstants Light;
 	} Constants;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);

@@ -31,6 +31,7 @@ enum class EPrimitiveType
 	EPT_SubUV, // SubUVComponent     — MeshBuffer 없음, SubUVBatcher가 처리
 	EPT_FOG,
 	EPT_Decal,
+	EPT_Fireball,
     MAX
 };
 
