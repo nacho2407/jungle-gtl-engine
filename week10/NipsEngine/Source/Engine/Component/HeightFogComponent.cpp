@@ -9,24 +9,6 @@ UHeightFogComponent::UHeightFogComponent()
 {
 }
 
-UHeightFogComponent* UHeightFogComponent::Duplicate()
-{
-    UHeightFogComponent* NewComp = UObjectManager::Get().CreateObject<UHeightFogComponent>();
-
-    // GetEditableProperties 체인(ActorComponent + SceneComponent + PrimitiveComponent +
-    //   Fog 전용 7개 프로퍼티) 일괄 복사 — 모든 필드가 노출되어 있습니다.
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-    NewComp->bTransformDirty = true;
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
-}
-
 void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UPrimitiveComponent::GetEditableProperties(OutProps); // ActorComp + SceneComp + Visible

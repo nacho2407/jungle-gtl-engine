@@ -118,9 +118,8 @@ void UEditorEngine::StartPlaySession()
 
     SetEditorState(EEditorState::Play);
 
-    // 에디터 월드 복제 (Actor 및 Component 깊은 복사)
-    UWorld* PIEWorld = EditorWorld->Duplicate();
-    PIEWorld->DuplicateSubObjects();
+    // 에디터 월드 복제 (Actor 및 Component 깊은 복사) — PostDuplicate 까지 내부에서 처리됩니다.
+    UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate());
     
     // PIE 용도로 타입 변경 후 WorldList에 PIE Context 등록
     PIEWorld->SetWorldType(EWorldType::PIE);

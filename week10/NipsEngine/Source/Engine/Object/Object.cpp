@@ -1,6 +1,7 @@
 ﻿#include "Object.h"
 #include "EngineStatics.h"
 #include "Object/FName.h"
+#include "Object/ObjectFactory.h"
 
 #include <cstring>
 
@@ -28,6 +29,18 @@ UObject::~UObject()
 }
 
 const FTypeInfo UObject::s_TypeInfo = { "UObject", nullptr, sizeof(UObject) };
+
+// FObjectFactory 로 같은 타입의 인스턴스를 생성한 뒤 프로퍼티 복사 → PostDuplicate 훅을 실행합니다.
+// 팩토리에 등록되지 않은 추상 클래스(PrimitiveComponent 등)는 Create() 가 nullptr 를 반환하므로
+// 그대로 nullptr 를 반환합니다.
+UObject* UObject::Duplicate()
+{
+    UObject* Dup = FObjectFactory::Get().Create(GetTypeInfo()->name);
+    if (!Dup) return nullptr;
+    Dup->CopyPropertiesFrom(this);
+    Dup->PostDuplicate(this);
+    return Dup;
+}
 
 // GetEditableProperties 에 노출된 프로퍼티를 이름 기반으로 매칭하여 복사합니다.
 // ・ Bool / Int / Float / Vec3 / Vec4  → memcpy
@@ -71,13 +84,11 @@ void UObject::CopyPropertiesFrom(UObject* Src)
             break;
         }
         case EPropertyType::String:
-            *static_cast<FString*>(DstProp->ValuePtr) =
-                *static_cast<const FString*>(SrcProp.ValuePtr);
+            *static_cast<FString*>(DstProp->ValuePtr) = *static_cast<const FString*>(SrcProp.ValuePtr);
             break;
 
         case EPropertyType::Name:
-            *static_cast<FName*>(DstProp->ValuePtr) =
-                *static_cast<const FName*>(SrcProp.ValuePtr);
+            *static_cast<FName*>(DstProp->ValuePtr) = *static_cast<const FName*>(SrcProp.ValuePtr);
             // FName 은 리소스 키이므로 캐시 갱신을 위해 PostEditProperty 를 호출합니다.
             this->PostEditProperty(SrcProp.Name);
             break;

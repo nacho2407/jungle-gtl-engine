@@ -4,15 +4,6 @@
 DEFINE_CLASS(UActorComponent, UObject)
 REGISTER_FACTORY(UActorComponent)
 
-// 기본 상태 변수를 복사하되, Owner에 대한 정보는 복사하지 않는다.
-UActorComponent* UActorComponent::Duplicate()
-{
-    UActorComponent* NewComp =
-        UObjectManager::Get().CreateObject<UActorComponent>();
-    NewComp->CopyPropertiesFrom(this);
-    return NewComp;
-}
-
 void UActorComponent::BeginPlay()
 {
     if (bAutoActivate)

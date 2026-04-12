@@ -14,29 +14,17 @@ UStaticMeshComponent::UStaticMeshComponent()
 	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
 }
 
-// 객체를 동적 생성한 뒤, GetEditableProperties 체인을 통해 프로퍼티를 일괄 복사합니다.
-UStaticMeshComponent* UStaticMeshComponent::Duplicate()
+// 프로퍼티 시스템에 노출되지 않은 필드를 직접 복사합니다.
+// StaticMeshAsset·OverrideMaterial 은 얕은 복사로 동일한 원본 리소스를 참조하게 합니다.
+void UStaticMeshComponent::PostDuplicate(UObject* Original)
 {
-    UStaticMeshComponent* NewComp = UObjectManager::Get().CreateObject<UStaticMeshComponent>();
+    UMeshComponent::PostDuplicate(Original);
 
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-    NewComp->bTransformDirty = true;
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    // StaticMeshAsset 포인터와 OverrideMaterial 은 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다. 
-	// 에셋 포인터는 얕은 복사로 동일한 원본 리소스를 참조하게 합니다.
-    NewComp->StaticMeshAsset = this->StaticMeshAsset;
-    NewComp->OverrideMaterial = this->OverrideMaterial;
-
-    NewComp->bBoundsDirty = true;
-    NewComp->bRenderStateDirty = true;
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    const UStaticMeshComponent* Orig = Cast<UStaticMeshComponent>(Original);
+    StaticMeshAsset   = Orig->StaticMeshAsset;
+    OverrideMaterial  = Orig->OverrideMaterial;
+    bBoundsDirty      = true;
+    bRenderStateDirty = true;
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)

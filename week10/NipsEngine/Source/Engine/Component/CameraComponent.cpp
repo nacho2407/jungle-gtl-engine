@@ -4,23 +4,6 @@
 DEFINE_CLASS(UCameraComponent, USceneComponent)
 REGISTER_FACTORY(UCameraComponent)
 
-UCameraComponent* UCameraComponent::Duplicate()
-{
-    UCameraComponent* NewComp = UObjectManager::Get().CreateObject<UCameraComponent>();
-
-    // 부모 컴포넌트의 GetEditableProperties 체인 일괄 복사
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-    NewComp->bTransformDirty = true;
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
-}
-
 FMatrix UCameraComponent::GetViewMatrix() const
 {
 	UpdateWorldMatrix();
