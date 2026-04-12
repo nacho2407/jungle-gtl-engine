@@ -5,6 +5,7 @@
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"
 #include "Render/Pipeline/LODContext.h"
+#include "Render/Culling/ConvexVolume.h"
 
 #include <d3d11.h>
 
@@ -53,6 +54,9 @@ struct FFrameContext
 
 	// GPU Occlusion Culling
 	FGPUOcclusionCulling* OcclusionCulling = nullptr;
+
+	// Frustum (per-viewport, computed from View * Proj)
+	FConvexVolume FrustumVolume;
 
 	// LOD
 	FLODUpdateContext LODContext;

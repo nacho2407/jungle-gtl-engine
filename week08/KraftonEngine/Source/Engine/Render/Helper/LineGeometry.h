@@ -16,8 +16,7 @@ struct FLineVertex
 	FLineVertex(const FVector& InPos, const FVector4& InColor) : Position(InPos), Color(InColor) {}
 };
 
-// FLineGeometry — LineBatcher의 경량 대체.
-// BatcherBase를 상속하지 않고, 동적 VB/IB를 직접 소유.
+// FLineGeometry — 동적 VB/IB를 직접 소유하는 라인 지오메트리 헬퍼.
 class FLineGeometry
 {
 public:
