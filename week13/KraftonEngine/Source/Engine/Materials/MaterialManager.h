@@ -38,13 +38,8 @@ private:
 	void ApplyParameters(UMaterial* Material, json::JSON& JsonData);
 	void ApplyTextures(UMaterial* Material, json::JSON& JsonData);
 
-	//UMaterialInterface* LoadFromJSON(const FString& MatFilePath);
-
 	ERenderPass StringToRenderPass(const FString& RenderPassStr) const;
 
 	void SaveToJSON(UMaterial* Mat, const FString& MatFilePath);
-
-	FMaterialTemplate* GetOrCreateTemplate(const FString& ShaderPath, ERenderPass RenderPass);
-
 	
 };

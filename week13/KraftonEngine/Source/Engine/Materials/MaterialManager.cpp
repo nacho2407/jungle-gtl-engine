@@ -86,14 +86,15 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 		ID3D11Buffer* RawGPUBuffer = nullptr;
 		D3D11_BUFFER_DESC desc = {};
 		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.ByteWidth = BufferInfo.second.Size;
+		uint32 AlignedSize = (BufferInfo.second.BufferSize + 15) & ~15;
+		desc.ByteWidth = AlignedSize;
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		Device->CreateBuffer(&desc, nullptr, &RawGPUBuffer);
 
 		// 2. FMaterialConstantBuffer 래퍼 객체 생성 및 초기화
 		auto MatCB = std::make_unique<FMaterialConstantBuffer>();
-		MatCB->Init(RawGPUBuffer, BufferInfo.second.Size, BufferInfo.second.SlotIndex); // 설계하신 Init 호출
+		MatCB->Init(RawGPUBuffer, BufferInfo.second.BufferSize, BufferInfo.second.SlotIndex); // 설계하신 Init 호출
 
 		// 3. 주입할 맵에 추가
 		InjectedBuffers.emplace(BufferInfo.second.BufferName, std::move(MatCB));
@@ -171,13 +172,9 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
 		return nullptr; // 셰이더 로드 실패
 	}
 
-	auto [It, bInserted] = TemplateCache.emplace(ShaderPath, FMaterialTemplate());
-
-	if (bInserted)
-	{
-		It->second->Create(Shader, RenderPass);
-	}
-
-	return It->second;
+	FMaterialTemplate* NewTemplate = new FMaterialTemplate();
+	NewTemplate->Create(Shader, RenderPass);
+	TemplateCache.emplace(ShaderPath, NewTemplate);
+	return NewTemplate;
 }
 

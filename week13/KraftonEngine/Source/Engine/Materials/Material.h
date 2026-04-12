@@ -36,14 +36,14 @@ class FMaterialTemplate
 private:
 	uint32 MaterialTemplateID; // 고유 ID 
 	FShader* Shader; // 어떤 셰이더를 사용하는지 
-	TMap<FString, FMaterialParameterInfo> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보, 텍스처 슬롯 정보 등등
+	TMap<FString, FMaterialParameterInfo> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보
 	ERenderPass RenderPass; // 어떤 패스에서 렌더링되는지(Opaque)
 
 public:
 	const TMap<FString, FMaterialParameterInfo>& GetParameterInfo() const { return ParameterLayout; }
-	FMaterialTemplate Create(FShader* InShader,	ERenderPass InRenderPass);
+	void Create(FShader* InShader,	ERenderPass InRenderPass);
 	FShader* GetShader() const { return Shader; }
-	void GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
+	bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
 };
 
 
@@ -78,7 +78,7 @@ struct FMaterialConstantBuffer
 
 //파라미터 값 + 텍스처 (런타임 데이터)
 //JSON으로 직렬화되는 데이터
-class UMaterial
+class UMaterial : public UObject
 {
 private:
 	FString PathFileName;// 어떤 Material인지 판별하는 고유 이름
@@ -90,6 +90,7 @@ private:
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 public:
+	DECLARE_CLASS(UMaterial, UObject)
 	void Create(const FString& InPathFileName,
 		FMaterialTemplate* InTemplate,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
@@ -105,43 +106,36 @@ public:
 	const FString& GetTexturePathFileName(const FString& SlotName)const;
 
 	const FString& GetAssetPathFileName() const { return PathFileName;}
-};
 
-//에디터/게임플레이 인터페이스/래퍼 (직렬화, GC 대상)
-class UMaterialInterface : public UObject // : public UMaterialInterface
-{
-public:
-	DECLARE_CLASS(UMaterialInterface, UObject)
-	~UMaterialInterface() noexcept override = default;
-
-	UMaterial* Material;
-
-	//레거시
-	FString PathFileName;					// 어떤 Material인지 판별하는 고유 이름
-	FString DiffuseTextureFilePath;
-	FVector4 DiffuseColor = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
-	UTexture2D* DiffuseTexture = nullptr;	// UObjectManager 소유, 여기선 참조만
-	//레거시 끝
-
-	// 편의 함수 (내부적으로 UMaterial에 위임)
-	void SetDiffuseColor(const FVector4& Color)
-	{
-		Material->SetVector4Parameter("DiffuseColor", Color);
-	}
-	void SetDiffuseTexture(UTexture2D* Texture)
-	{
-		Material->SetTextureParameter("DiffuseMap", Texture);
-	}
-
-public:
-
-	//초기화?
 	void Serialize(FArchive& Ar);
-
-	const FString& GetAssetPathFileName() const{ return Material->GetAssetPathFileName(); }
-
-	UMaterial* GetRenderData() const
-	{
-		return Material;
-	}
 };
+
+//// ─── 미래 확장용 구조 (현재 미사용) ───
+//
+////UMaterialInterface: UMaterial / UMaterialInstance 공통 베이스
+//class UMaterialInterface : public UObject
+//{
+//public:
+//	virtual UMaterial* GetRenderData() const = 0;
+//	virtual bool SetScalarParameter(const FString& Name, float Value) = 0;
+//	virtual bool SetVector4Parameter(const FString& Name, const FVector4& Value) = 0;
+//	virtual bool SetTextureParameter(const FString& Name, UTexture2D* Texture) = 0;
+//};
+//
+////UMaterialInstanceDynamic: UMaterial 원본을 공유하며 파라미터만 오버라이드
+//class UMaterialInstanceDynamic : public UMaterialInterface
+//{
+//public:
+//	static UMaterialInstanceDynamic* Create(UMaterial* InParent);
+//
+//	virtual UMaterial* GetRenderData() const override;
+//	virtual bool SetScalarParameter(const FString& Name, float Value) override;
+//	virtual bool SetVector4Parameter(const FString& Name, const FVector4& Value) override;
+//	virtual bool SetTextureParameter(const FString& Name, UTexture2D* Texture) override;
+//
+//private:
+//	UMaterial* Parent = nullptr; // 공유 원본
+//	TMap<FString, float> ScalarOverrides;
+//	TMap<FString, FVector4> VectorOverrides;
+//	TMap<FString, UTexture2D*> TextureOverrides;
+//};
