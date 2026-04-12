@@ -505,10 +505,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 			if (!MtlData) MtlData = &EngineDefaultMaterial;
 	
-			Cmd.Constants.StaticMesh.AmbientColor = MtlData->AmbientColor;
-			Cmd.Constants.StaticMesh.DiffuseColor = MtlData->DiffuseColor;
+			Cmd.Constants.StaticMesh.AmbientColor  = MtlData->AmbientColor;
+			Cmd.Constants.StaticMesh.DiffuseColor  = MtlData->DiffuseColor;
 			Cmd.Constants.StaticMesh.SpecularColor = MtlData->SpecularColor;
-			Cmd.Constants.StaticMesh.Shininess = MtlData->Shininess;
+			Cmd.Constants.StaticMesh.Shininess     = MtlData->Shininess;
+			Cmd.Constants.StaticMesh.EmissiveColor = MtlData->EmissiveColor;
 
 			Cmd.Constants.StaticMesh.ScrollX = StaticMeshComp->GetScroll().first;
 			Cmd.Constants.StaticMesh.ScrollY = StaticMeshComp->GetScroll().second;

@@ -39,5 +39,5 @@ private:
 	float  Intensity		= 1.f;
 	float  Radius			= 15.f;
 	float  RadiusFallOff	= 1.f;
-	FColor Color			= FColor::Red();
+	FColor Color			= FColor(1.0f, 0.8f, 0.04f, 1.f);
 };
