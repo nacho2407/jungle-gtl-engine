@@ -5,7 +5,6 @@
 #include "Render/Proxy/FScene.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
-#include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
@@ -109,10 +108,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");
-		Collector.CollectWorld(World, Frame, Renderer);
 
-		if (UGizmoComponent* Gizmo = Editor->GetGizmo())
-			Gizmo->UpdateAxisMask(Opts.ViewportType);
+		Collector.CollectWorld(World, Frame, Renderer);
 
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
 		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, Scene);
@@ -144,7 +141,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		GPUOcclusion.DispatchOcclusionTest(
 			Ctx,
 			VP->GetDepthSRV(),
-			World->GetVisibleProxies(),
+			Collector.GetLastVisibleProxies(),
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}

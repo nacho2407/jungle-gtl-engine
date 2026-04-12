@@ -9,7 +9,7 @@ class UPrimitiveComponent;
 // FScene — FPrimitiveSceneProxy의 소유자 겸 변경 추적 컨테이너
 // ============================================================
 // UWorld와 1:1 대응. PrimitiveComponent 등록/해제 시 프록시를 관리하고,
-// 프레임마다 DirtyList의 프록시만 갱신한 뒤 Renderer에 전달한다.
+// 프레임마다 DirtyList의 프록시만 갱신한 뒤 RenderCollector에 전달한다.
 // 또한 매 프레임 수집되는 경량 디버그/에디터 데이터(라인, AABB, 텍스트, 그리드)를 소유.
 class FScene
 {
@@ -35,13 +35,6 @@ public:
 	const TArray<FPrimitiveSceneProxy*>& GetAllProxies() const { return Proxies; }
 	const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return NeverCullProxies; }
 	uint32 GetProxyCount() const { return static_cast<uint32>(Proxies.size()); }
-
-	// --- 가시 프록시 캐시 (World가 매 프레임 frustum cull 결과를 채워 넣음) ---
-	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
-	TArray<FPrimitiveSceneProxy*>& GetVisibleProxiesMutable() { return VisibleProxies; }
-	bool IsVisibleSetDirty() const { return bVisibleSetDirty; }
-	void InvalidateVisibleSet() { bVisibleSetDirty = true; }
-	void MarkVisibleSetClean() { bVisibleSetDirty = false; }
 
 	// ===== Per-frame ephemeral data (cleared each viewport render) =====
 	void ClearFrameData();
@@ -82,10 +75,6 @@ private:
 
 	// 삭제된 슬롯 재활용
 	TArray<uint32> FreeSlots;
-
-	// 매 프레임 frustum culling 결과 캐시 (World::UpdateVisibleProxies가 채움)
-	TArray<FPrimitiveSceneProxy*> VisibleProxies;
-	bool bVisibleSetDirty = true;
 
 	// --- Per-frame ephemeral data ---
 	TArray<FOverlayText> OverlayTexts;

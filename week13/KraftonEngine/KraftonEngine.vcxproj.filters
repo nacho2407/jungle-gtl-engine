@@ -70,9 +70,6 @@
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{16ec6128-166d-ab0f-2135-c0c61f984faf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Batcher">
-      <UniqueIdentifier>{9f304481-1091-e173-0e96-fea5393d1760}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Render\Culling">
       <UniqueIdentifier>{58ae316b-ca35-389a-0e2c-f4e351055701}</UniqueIdentifier>
     </Filter>
@@ -81,6 +78,9 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Device">
       <UniqueIdentifier>{1c6ca01a-80a0-7c1a-448e-3662768a07e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Helper">
+      <UniqueIdentifier>{3554ce5a-fc6e-fa4d-7be9-bdc90d177118}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Pipeline">
       <UniqueIdentifier>{5ac9b005-2a76-d0b0-3f77-2b89ae10bb53}</UniqueIdentifier>
@@ -126,6 +126,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\DecalShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Editor.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -168,11 +171,17 @@
     <FxCompile Include="Shaders\Common\Functions.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
+    <FxCompile Include="Shaders\Common\GizmoBuffer.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SceneDepth.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Common\MaterialBuffer.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\OutlineBuffer.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
+      <Filter>Shaders\Common</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -251,19 +260,22 @@
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
@@ -288,6 +300,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
@@ -359,21 +374,6 @@
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\BatcherBase.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\BillboardBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\FontBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\LineBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Batcher\SubUVBatcher.cpp">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
@@ -401,10 +401,19 @@
     <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp">
+      <Filter>Source\Engine\Render\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp">
+      <Filter>Source\Engine\Render\Helper</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\RenderBus.cpp">
+    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
@@ -414,6 +423,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\FScene.cpp">
@@ -608,19 +620,22 @@
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\DecalComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\MovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
@@ -669,6 +684,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
@@ -761,21 +779,6 @@
     <ClInclude Include="Source\Engine\Profiling\Timer.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\BatcherBase.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\BillboardBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\FontBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\LineBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Batcher\SubUVBatcher.h">
-      <Filter>Source\Engine\Render\Batcher</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
@@ -803,16 +806,28 @@
     <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h">
+      <Filter>Source\Engine\Render\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h">
+      <Filter>Source\Engine\Render\Helper</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderBus.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">
@@ -825,6 +840,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h">

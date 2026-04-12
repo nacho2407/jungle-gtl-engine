@@ -624,8 +624,7 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 	UpdateGizmoTransform();
 }
 
-
-void UGizmoComponent::UpdateAxisMask(ELevelViewportType ViewportType)
+uint32 UGizmoComponent::ComputeAxisMask(ELevelViewportType ViewportType, EGizmoMode Mode)
 {
 	constexpr uint32 AllAxes = 0x7;
 	uint32 ViewAxis = AllAxes;
@@ -645,17 +644,12 @@ void UGizmoComponent::UpdateAxisMask(ELevelViewportType ViewportType)
 	}
 
 	if (ViewAxis == AllAxes)
-	{
-		AxisMask = AllAxes;
-	}
-	else if (CurMode == EGizmoMode::Rotate)
-	{
-		AxisMask = ViewAxis;            // Rotate: 시선 축만
-	}
-	else
-	{
-		AxisMask = AllAxes & ~ViewAxis;  // Translate/Scale: 시선 축 제외
-	}
+		return AllAxes;
+
+	if (Mode == EGizmoMode::Rotate)
+		return ViewAxis;            // Rotate: 시선 축만
+
+	return AllAxes & ~ViewAxis;     // Translate/Scale: 시선 축 제외
 }
 
 void UGizmoComponent::Deactivate()

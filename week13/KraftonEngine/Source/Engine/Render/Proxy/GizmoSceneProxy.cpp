@@ -29,7 +29,7 @@ void FGizmoSceneProxy::UpdateMesh()
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
-	UpdateSortKey();
+
 }
 
 // ============================================================
@@ -49,7 +49,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	// 모드 변경 시 메시가 바뀌므로 매 프레임 갱신
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
-	UpdateSortKey();
+
 
 	// Per-viewport 스케일 계산
 	const FVector CameraPos = Frame.View.GetInverseFast().GetLocation();
@@ -74,5 +74,5 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		? static_cast<uint32>(Gizmo->GetSelectedAxis())
 		: 0xFFFFFFFFu;
 	G.HoveredAxisOpacity = 0.7f;
-	G.AxisMask = Gizmo->GetAxisMask();
+	G.AxisMask = UGizmoComponent::ComputeAxisMask(Frame.ViewportType, Gizmo->GetMode());
 }

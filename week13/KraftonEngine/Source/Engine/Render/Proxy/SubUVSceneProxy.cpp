@@ -36,8 +36,6 @@ void FSubUVSceneProxy::UpdateMesh()
 	{
 		DiffuseSRV = Particle->SRV;
 	}
-
-	UpdateSortKey();
 }
 
 void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)

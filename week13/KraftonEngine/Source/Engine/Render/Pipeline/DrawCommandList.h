@@ -17,8 +17,8 @@ struct FStateCache
 	D3D11_PRIMITIVE_TOPOLOGY  Topology     = static_cast<D3D11_PRIMITIVE_TOPOLOGY>(~0u);
 	uint8                     StencilRef   = 0xFF;
 	FMeshBuffer*              MeshBuffer   = nullptr;
-	ID3D11Buffer*             RawVB        = nullptr;   // Dynamic batcher VB 추적
-	ID3D11Buffer*             RawIB        = nullptr;   // Dynamic batcher IB 추적
+	ID3D11Buffer*             RawVB        = nullptr;   // 동적 지오메트리 VB 추적
+	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
 	FConstantBuffer*          PerObjectCB  = nullptr;
 	FConstantBuffer*          ExtraCB      = nullptr;
 	FConstantBuffer*          MaterialCB   = nullptr;
