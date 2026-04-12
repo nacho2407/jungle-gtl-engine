@@ -85,5 +85,4 @@ void FDecalSceneProxy::UpdateMesh()
 
 	this->Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
 	this->Pass = ERenderPass::Decal;
-	UpdateSortKey();
 }

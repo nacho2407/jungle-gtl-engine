@@ -42,7 +42,6 @@ void FBillboardSceneProxy::UpdateMesh()
 		Pass = ERenderPass::Opaque;
 		DiffuseSRV = nullptr;
 	}
-	UpdateSortKey();
 }
 
 // ============================================================

@@ -1,5 +1,6 @@
 #include "Common/Functions.hlsl"
 #include "Common/VertexLayouts.hlsl"
+#include "Common/GizmoBuffer.hlsl"
 
 uint GetAxisFromColor(float3 color)
 {

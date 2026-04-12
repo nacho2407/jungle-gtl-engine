@@ -205,8 +205,22 @@ void FRenderer::BeginFrame()
 	Context->OMSetRenderTargets(1, &RTV, DSV);
 }
 
-//	RenderBus에 담긴 모든 RenderCommand에 대해서 Draw Call 수행 (GPU)
-void FRenderer::Render(const FRenderBus& InRenderBus)
+
+// ============================================================
+// BuildDynamicCommands — Collect 마무리: FScene 경량 데이터 → 동적 지오메트리 → FDrawCommand
+// Pipeline의 Collect 블록 끝에서 호출.
+// ============================================================
+void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene)
+{
+	PrepareDynamicGeometry(Frame, Scene);
+	BuildDynamicDrawCommands(Frame, Device.GetDeviceContext());
+}
+
+// ============================================================
+// Render — 정렬 + GPU 제출
+// BeginCollect + Collector + BuildDynamicCommands 이후에 호출.
+// ============================================================
+void FRenderer::Render(const FFrameContext& Frame)
 {
 	FDrawCallStats::Reset();
 
