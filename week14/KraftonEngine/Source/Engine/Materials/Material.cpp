@@ -118,6 +118,16 @@ void FMaterialConstantBuffer::Release()
 
 // ─── UMaterial ───
 
+void UMaterial::Create(const FString& InPathFileName,
+FMaterialTemplate* InTemplate,
+TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
+{
+	PathFileName = InPathFileName;
+	Template = InTemplate;
+
+	ConstantBufferMap = std::move(InBuffers);
+}
+
 bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 {
 	FMaterialParameterInfo Info;
@@ -132,15 +142,6 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 	return true;
 }
 
-void UMaterial::Create(const FString& InPathFileName,
-FMaterialTemplate* InTemplate,
-TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
-{
-	PathFileName = InPathFileName;
-	Template = InTemplate;
-
-	ConstantBufferMap = std::move(InBuffers);
-}
 
 bool UMaterial::SetScalarParameter(const FString& ParamName, float Value)
 {
@@ -157,6 +158,60 @@ bool UMaterial::SetVector4Parameter(const FString& ParamName, const FVector4& Va
 {
 	float Data[4] = { Value.X, Value.Y, Value.Z, Value.W };
 	return SetParameter(ParamName, Data, sizeof(Data));
+}
+
+bool UMaterial::SetTextureParameter(const FString& ParamName, UTexture2D* Texture)
+{
+	TextureParameters[ParamName] = Texture;
+	return true;
+}
+
+bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) const
+{
+	FMaterialParameterInfo Info;
+	if (!Template->GetParameterInfo(ParamName, Info)) return false;
+
+	auto It = ConstantBufferMap.find(Info.BufferName);
+	if (It == ConstantBufferMap.end()) return false;
+
+	const uint8* Ptr = It->second->CPUData + Info.Offset;
+	OutValue = *reinterpret_cast<const float*>(Ptr);
+	return true;
+}
+
+bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue) const
+{
+	FMaterialParameterInfo Info;
+	if (!Template->GetParameterInfo(ParamName, Info)) return false;
+
+	auto It = ConstantBufferMap.find(Info.BufferName);
+	if (It == ConstantBufferMap.end()) return false;
+
+	const uint8* Ptr = It->second->CPUData + Info.Offset;
+	OutValue = *reinterpret_cast<const FVector*>(Ptr);
+	return true;
+}
+
+bool UMaterial::GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const
+{
+	FMaterialParameterInfo Info;
+	if (!Template->GetParameterInfo(ParamName, Info)) return false;
+
+	auto It = ConstantBufferMap.find(Info.BufferName);
+	if (It == ConstantBufferMap.end()) return false;
+
+	const uint8* Ptr = It->second->CPUData + Info.Offset;
+	OutValue = *reinterpret_cast<const FVector4*>(Ptr);
+	return true;
+}
+
+bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const
+{
+	auto It = TextureParameters.find(ParamName);
+	if (It == TextureParameters.end()) return false;
+
+	OutTexture = It->second;
+	return true;
 }
 
 void UMaterial::Bind(ID3D11DeviceContext* Context)
@@ -188,9 +243,9 @@ void UMaterial::Bind(ID3D11DeviceContext* Context)
 	//텍스쳐 바인딩 로직
 }
 
-const FString& UMaterial::GetTexturePathFileName(const FString& SlotName)const
+const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)const
 {
-	auto it = TextureParameters.find(SlotName);
+	auto it = TextureParameters.find(TextureName);
 	if (it != TextureParameters.end())
 	{
 		UTexture2D* Texture = it->second;
