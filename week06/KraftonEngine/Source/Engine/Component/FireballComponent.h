@@ -13,13 +13,13 @@ class UFireballComponent : public UPrimitiveComponent
 	float GetIntensity() const { return Intensity; }
 	float GetRadius() const { return Radius; }
 	float GetRadiusFalloff() const { return RadiusFalloff; }
-	const FColor& GetColor() const { return Color; }
+	const FVector& GetColor() const { return Color; }
 
 
 private:
 	float Intensity = 1.0f;
 	float Radius = 100.0f;
 	float RadiusFalloff = 1.0f;
-	FColor Color;
+	FVector Color;
 };
 
