@@ -202,10 +202,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Component\FireballComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -237,6 +233,7 @@
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\FireballComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
@@ -330,10 +327,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Engine\Component\FireballComponent.h" />
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h" />
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\EditorUtils.h" />
@@ -371,6 +364,7 @@
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
+    <ClInclude Include="Source\Engine\Component\FireballComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
