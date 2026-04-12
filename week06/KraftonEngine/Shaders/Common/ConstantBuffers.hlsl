@@ -52,8 +52,10 @@ cbuffer MaterialBuffer : register(b4)
 // b5: Decal settings
 cbuffer DecalBuffer : register(b5)
 {
+    float4x4 WorldToDecal;
+    float3 DecalHalfExtents;
     float FadeAlpha;
-    float3 _decalPad;
+    float _decalPad;
 }
 
 #endif // CONSTANT_BUFFERS_HLSL

@@ -121,8 +121,10 @@ struct FBillboardConstants
 
 struct FDecalConstants
 {
+	FMatrix WorldToDecal = FMatrix::Identity;
+	FVector DecalHalfExtents = FVector(0.5f, 0.5f, 0.5f);
 	float FadeAlpha = 1.0f;
-	float Padding[3] = {};
+	float Padding = 0.0f;
 };
 
 // ============================================================

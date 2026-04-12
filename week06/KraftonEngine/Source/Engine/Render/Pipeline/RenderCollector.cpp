@@ -229,6 +229,8 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 				FDecalDrawEntry Entry = {};
 				Entry.ReceiverProxy = VisibleProxy;
 				Entry.Texture = DecalTexture;
+				Entry.Decal.WorldToDecal = DecalComponent->GetWorldInverseMatrix();
+				Entry.Decal.DecalHalfExtents = DecalComponent->GetHalfExtents();
 				Entry.Decal.FadeAlpha = DecalComponent->GetFadeAlpha();
 				RenderBus.AddDecalEntry(std::move(Entry));
 			}
