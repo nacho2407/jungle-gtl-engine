@@ -5,42 +5,14 @@
 DEFINE_CLASS(UProjectileMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UProjectileMovementComponent)
 
-UProjectileMovementComponent* UProjectileMovementComponent::Duplicate()
-{
-    UProjectileMovementComponent* NewComp = UObjectManager::Get().CreateObject<UProjectileMovementComponent>();
-    
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
-    NewComp->SetOwner(nullptr);
-
-	NewComp->SetPlaneConstraintNormal(this->GetPlaneConstraintNormal());
-
-	// UpdatedComponent는 Actor 단에서 맵핑해줍니다.
-
-	NewComp->SetVelocity(this->GetVelocity());
-	NewComp->SetPlaneConstraintNormal(this->GetPlaneConstraintNormal());
-	NewComp->SetPendingInputVector(this->GetPendingInputVector());
-
-	NewComp->SetInitialSpeed(this->GetInitialSpeed());
-	NewComp->SetMaxSpeed(this->GetMaxSpeed());
-	NewComp->SetGravityScale(this->GetGravityScale());
-	NewComp->SetRotationFollowsVelocity(this->GetRotationFollowsVelocity());
-
-    return NewComp;
-}
-
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UMovementComponent::GetEditableProperties(OutProps);
-	
-	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity });
-    OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 1.0f });
-    OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 0.0f, 1.0f });
-    OutProps.push_back({ "Gravity Scale", EPropertyType::Float, &GravityScale, 0.0f, 5.0f, 0.01f });
-    OutProps.push_back({ "Rotation Follows Velocity", EPropertyType::Bool, &bRotationFollowsVelocity });
+    // "Velocity" 는 UMovementComponent::GetEditableProperties 에서 이미 추가됩니다.
+    OutProps.push_back({ "Initial Speed",             EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 1.0f });
+    OutProps.push_back({ "Max Speed",                 EPropertyType::Float, &MaxSpeed,     0.0f, 0.0f, 1.0f });
+    OutProps.push_back({ "Gravity Scale",             EPropertyType::Float, &GravityScale, 0.0f, 5.0f, 0.01f });
+    OutProps.push_back({ "Rotation Follows Velocity", EPropertyType::Bool,  &bRotationFollowsVelocity });
 }
 
 void UProjectileMovementComponent::BeginPlay()

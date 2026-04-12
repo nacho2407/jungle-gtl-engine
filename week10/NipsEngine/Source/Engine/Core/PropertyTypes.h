@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include "CoreTypes.h"      // int32, uint8, …
+#include "Math/Vector.h"    // FVector  (for sizeof in GetPropertySize)
+#include "Math/Vector4.h"   // FVector4 (for sizeof in GetPropertySize)
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
@@ -38,23 +41,16 @@ inline size_t GetPropertySize(EPropertyType Type)
 {
     switch (Type)
     {
-    case EPropertyType::Bool:
-        return sizeof(bool);
-    case EPropertyType::Int:
-        return sizeof(int32);
-    case EPropertyType::Float:
-        return sizeof(float);
-    case EPropertyType::Vec3:
-        return sizeof(FVector);
-	// String, Name 특수 처리
-    case EPropertyType::String:
-        return 0;
-    case EPropertyType::Name:
-        return 0;
-	// 포인터, skip
-    case EPropertyType::SceneComponentRef:
-        return 0;
-	default:
-		return 0;
+    case EPropertyType::Bool:   return sizeof(bool);
+    case EPropertyType::Int:    return sizeof(int32);
+    case EPropertyType::Float:  return sizeof(float);
+    case EPropertyType::Vec3:   return sizeof(FVector);
+    case EPropertyType::Vec4:   return sizeof(FVector4);
+    // String, Name 은 ValuePtr 기반 특수 처리
+    case EPropertyType::String: return 0;
+    case EPropertyType::Name:   return 0;
+    // 포인터 — Duplicate 호출 측에서 직접 처리
+    case EPropertyType::SceneComponentRef: return 0;
+    default: return 0;
     }
 }

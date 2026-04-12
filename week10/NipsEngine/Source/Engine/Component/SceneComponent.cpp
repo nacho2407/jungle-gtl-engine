@@ -4,33 +4,20 @@
 DEFINE_CLASS(USceneComponent, UActorComponent)
 REGISTER_FACTORY(USceneComponent)
 
-// 깊은 복사를 하더라도 SceneComponent의 부모-자식 관계는 초기화됩니다.
-// Actor에서 Duplicate()할 때 이 구조를 Fix-up(복원)해야 합니다.
-USceneComponent* USceneComponent::Duplicate()
+// 소유자와 부모-자식 관계를 초기 상태로 명시적으로 리셋합니다.
+// Actor::Duplicate() 에서 DuplicateSubTree 를 통해 올바른 관계가 복원됩니다.
+void USceneComponent::PostDuplicate(UObject* Original)
 {
-    USceneComponent* NewComp = UObjectManager::Get().CreateObject<USceneComponent>();
-    NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-	NewComp->SetTransient(this->IsTransient());
-	NewComp->SetEditorOnly(this->IsEditorOnly());
-    NewComp->SetOwner(nullptr);
+    UActorComponent::PostDuplicate(Original);
 
-    NewComp->RelativeLocation = this->RelativeLocation;
-    NewComp->RelativeRotation = this->RelativeRotation;
-    NewComp->RelativeScale3D  = this->RelativeScale3D;
+    SetOwner(nullptr);
 
-    // 캐시된 데이터는 복사하지만, 새 부모에 붙을 때 다시 계산되도록 Dirty 플래그를 켭니다.
-    NewComp->CachedWorldMatrix = this->CachedWorldMatrix;
-    NewComp->CachedWorldTransform = this->CachedWorldTransform;
-    NewComp->bTransformDirty = true;
+    // 트랜스폼 캐시는 새 부모에 붙을 때 다시 계산되도록 Dirty 플래그를 켭니다.
+    bTransformDirty = true;
 
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-	NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    // 부모-자식 관계는 Actor::PostDuplicate() 에서 DuplicateSubTree 를 통해 복원됩니다.
+    ParentComponent = nullptr;
+    ChildComponents.clear();
 }
 
 USceneComponent::USceneComponent()
@@ -327,12 +314,6 @@ void USceneComponent::Move(const FVector& Delta)
 
 void USceneComponent::MoveLocal(const FVector& Delta)
 {
-	// 핵심 수정:
-	// 예전 코드는 world 축(GetForwardVector 등)을 구해놓고 relative location에 더해서
-	// 부모가 있을 때 local/world가 섞였음.
-	//
-	// 여기서는 "내 relative rotation" 기준 local delta를 만든 뒤
-	// relative location에 더함.
 	const FQuat LocalQuat = GetRelativeQuat();
 
 	const FVector LocalOffset =
