@@ -3,29 +3,28 @@
 #include "Render/Resource/Shader.h"
 #include "Texture/Texture2D.h"
 
-IMPLEMENT_CLASS(UMaterialInterface, UObject)
+IMPLEMENT_CLASS(UMaterial, UObject)
 
 // ─── FMaterialTemplate ───
 
-FMaterialTemplate FMaterialTemplate::Create(FShader* InShader, ERenderPass InRenderPass)
+void FMaterialTemplate::Create(FShader* InShader, ERenderPass InRenderPass)
 {
 	ParameterLayout = InShader->GetParameterLayout(); // 셰이더에서 리플렉션된 파라미터 레이아웃 정보 확보
+	Shader = InShader;
+	RenderPass = InRenderPass;
 }
 
-void FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const
+bool FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const
 {
 	auto it = ParameterLayout.find(Name);
 	if (it != ParameterLayout.end())
 	{
 		OutInfo = it->second;
+		return true;
 	}
 	else
 	{
-		// 찾는 파라미터가 없으면 OutInfo를 기본값으로 초기화
-		OutInfo.BufferName = "";
-		OutInfo.SlotIndex = 
-		OutInfo.Offset = 14;
-		OutInfo.Size = 0;
+		return false;
 	}
 }
 
@@ -88,28 +87,29 @@ void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Of
 
 void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
 {
-	//if (!bDirty)
-	//{
-	//	return;
-	//}
+	if (!bDirty)
+	{
+		return;
+	}
 
-	//D3D11_MAPPED_SUBRESOURCE Mapped;
-	//HRESULT Hr = DeviceContext->Map(GPUBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
-	//if (SUCCEEDED(Hr))
-	//{
-	//	memcpy(Mapped.pData, CPUData, Size);
-	//	DeviceContext->Unmap(GPUBuffer, 0);
-	//}
+	D3D11_MAPPED_SUBRESOURCE Mapped;
+	HRESULT Hr = DeviceContext->Map(GPUBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
+	if (SUCCEEDED(Hr))
+	{
+		memcpy(Mapped.pData, CPUData, Size);
+		DeviceContext->Unmap(GPUBuffer, 0);
+		bDirty = false;
+	}
 
 }
 
 void FMaterialConstantBuffer::Release()
 {
-	//if (GPUBuffer)
-	//{
-	//	GPUBuffer->Release();
-	//	GPUBuffer = nullptr;
-	//}
+	if (GPUBuffer)
+	{
+		GPUBuffer->Release();
+		GPUBuffer = nullptr;
+	}
 	delete[] CPUData;
 	CPUData = nullptr;
 	Size = 0;
@@ -118,12 +118,12 @@ void FMaterialConstantBuffer::Release()
 
 // ─── UMaterial ───
 
-
 bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 {
 	FMaterialParameterInfo Info;
-	Template->GetParameterInfo(Name, Info);
-
+	if (!Template->GetParameterInfo(Name, Info)) {
+		return false;
+	}
 	// BufferName으로 바로 접근
 	auto It = ConstantBufferMap.find(Info.BufferName);
 	if (It == ConstantBufferMap.end()) return false;
@@ -177,16 +177,12 @@ void UMaterial::Bind(ID3D11DeviceContext* Context)
 		// 데이터가 변경(Dirty)되었다면 
 		Buffer.Upload(Context);
 
-		//Shader에 슬롯 번호와 데이터를 전달해서 셰이더에 바인딩
-		Shader->UploadConstantBuffer(Context, Pair.first, Buffer.SlotIndex, Buffer.bDirty,Buffer.CPUData, Buffer.Size);
+		ID3D11Buffer* Buf = Buffer.GPUBuffer;
+		UINT Slot = static_cast<UINT>(Buffer.SlotIndex); // 캐싱된 슬롯 번호 사용
 
-
-		//ID3D11Buffer* Buf = Buffer.GPUBuffer;
-		//UINT Slot = static_cast<UINT>(Buffer.SlotIndex); // 캐싱된 슬롯 번호 사용
-
-		//// VS, PS 등에 바인딩 (현재 패스에 맞게 세팅)
-		//Context->VSSetConstantBuffers(Slot, 1, &Buf);
-		//Context->PSSetConstantBuffers(Slot, 1, &Buf);
+		// VS, PS 등에 바인딩 (현재 패스에 맞게 세팅)
+		Context->VSSetConstantBuffers(Slot, 1, &Buf);
+		Context->PSSetConstantBuffers(Slot, 1, &Buf);
 	}
 
 	//텍스쳐 바인딩 로직
@@ -207,16 +203,16 @@ const FString& UMaterial::GetTexturePathFileName(const FString& SlotName)const
 	return EmptyString;
 }
 
-// ─── UMaterialInterface ───
-
-void UMaterialInterface::Serialize(FArchive& Ar)
+void UMaterial::Serialize(FArchive& Ar)
 {
-	// 구조체나 기본 데이터 타입은 Archive.h에 정의된 operator<<를 통해 
-	// 읽기(IsLoading)와 쓰기(IsSaving)가 알아서 처리됩니다.
-	Ar << Material->GetAssetPathFileName();
-	Ar << Material->GetTexturePathFileName("DiffuseMap");
-	//Ar << DiffuseColor;
-
-	// 주의: 포인터인 DiffuseTexture는 주소값이므로 절대 직렬화하지 않습니다.
+	/*
+	
+	Ar << PathFileName;
+	Ar << DiffuseTextureFilePath;
+	Ar << DiffuseColor;
+	
+	*/
 }
+
+
 
