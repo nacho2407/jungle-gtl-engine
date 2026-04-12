@@ -1,4 +1,3 @@
-#define SKIP_GIZMO_BUFFER
 #include "Common/Functions.hlsl"
 #include "Common/VertexLayouts.hlsl"
 

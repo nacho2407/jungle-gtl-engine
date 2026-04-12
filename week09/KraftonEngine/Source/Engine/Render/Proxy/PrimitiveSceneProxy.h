@@ -39,12 +39,10 @@ public:
 	uint32 ProxyId = UINT32_MAX;			// FScene 내 인덱스
 	UPrimitiveComponent* Owner = nullptr;	// 소유 컴포넌트 (역참조용)
 	uint32 SelectedListIndex = UINT32_MAX;
-	uint32 VisibleListIndex = UINT32_MAX;
 
 	// --- 변경 추적 ---
 	EDirtyFlag DirtyFlags = EDirtyFlag::All;
 	bool bQueuedForDirtyUpdate = false;
-	bool bInVisibleSet = false;
 
 	// --- LOD ---
 	FVector CachedWorldPos;		// Transform 갱신 시 캐싱 — LOD 거리 계산용
@@ -74,11 +72,6 @@ public:
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox CachedBounds;
 	mutable bool bPerObjectCBDirty = true;
-
-	// --- Sort Keys (Shader|MeshBuffer + Material layout) ---
-	uint64 SortKey = 0;
-	uint32 MaterialSortKey = 0;
-	void UpdateSortKey();
 
 	// 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
 	TArray<FMeshSectionDraw> SectionDraws;

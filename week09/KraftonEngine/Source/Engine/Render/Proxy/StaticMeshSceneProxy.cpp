@@ -92,7 +92,7 @@ void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
 	CurrentLOD = LODLevel;
 	std::swap(MeshBuffer, LODData[LODLevel].MeshBuffer);
 	std::swap(SectionDraws, LODData[LODLevel].SectionDraws);
-	UpdateSortKey();
+
 }
 
 // ============================================================
@@ -114,7 +114,7 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 		CurrentLOD = 0;
 		MeshBuffer = nullptr;
 		SectionDraws.clear();
-		UpdateSortKey();
+	
 		return;
 	}
 
@@ -164,5 +164,5 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 	CurrentLOD = 0;
 	std::swap(MeshBuffer, LODData[0].MeshBuffer);
 	std::swap(SectionDraws, LODData[0].SectionDraws);
-	UpdateSortKey();
+
 }
