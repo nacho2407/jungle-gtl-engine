@@ -22,8 +22,6 @@ public:
 
 	void Bind(ID3D11DeviceContext* InDeviceContext) const;
 
-	void UploadConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, uint32 Slot, bool& bDirty, const void* Data, uint32 Size) const;
-
 	const TMap<FString, FMaterialParameterInfo>& GetParameterLayout() const { return ShaderParameterLayout; }
 private:
 	ID3D11VertexShader* VertexShader = nullptr;
