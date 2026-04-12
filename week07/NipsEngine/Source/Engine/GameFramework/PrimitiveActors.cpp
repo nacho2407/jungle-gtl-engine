@@ -243,7 +243,7 @@ void ADecalActor::InitDefaultComponents()
 	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
-void AFireballActor::InitDefaultComponents() 
+void AFireballActor::InitDefaultComponents()
 {
 	// Base for debugging and demonstration. Remove this later
     auto* Sphere = AddComponent<UStaticMeshComponent>();
@@ -262,4 +262,17 @@ void AFireballActor::InitDefaultComponents()
 	// Flare
     UFireballComponent* Fireball = AddComponent<UFireballComponent>();
 	Fireball->AttachToComponent(Sphere);
+
+	// Emissive glow material for the fireball core
+	static FMaterial FireballCoreMaterial;
+	static bool bFireballMatInit = false;
+	if (!bFireballMatInit)
+	{
+		FColor LightColor = Fireball->GetLinearColor();
+		FVector SurfaceColor = FVector(LightColor.R, LightColor.G, LightColor.B);
+		FireballCoreMaterial.EmissiveColor = SurfaceColor;
+		FireballCoreMaterial.DiffuseColor  = SurfaceColor;
+		bFireballMatInit = true;
+	}
+	Sphere->SetMaterial(0, &FireballCoreMaterial);
 }
