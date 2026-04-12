@@ -11,6 +11,7 @@
 #include "Component/SubUVComponent.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/FireballComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
@@ -699,6 +700,23 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         RenderBus.AddCommand(ERenderPass::Fog, Cmd);
         break;
     }
+    case EPrimitiveType::EPT_Fireball:
+    {
+		UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
+
+		FLightData LightData = {};
+		LightData.Intensity = FireballComp->GetIntensity();
+		LightData.Radius	= FireballComp->GetRadius();
+		LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
+		LightData.WorldPos  = FireballComp->GetWorldLocation();
+
+		FColor Color = FireballComp->GetLinearColor();
+		LightData.Color.X = Color.R;
+		LightData.Color.Y = Color.G;
+		LightData.Color.Z = Color.B;
+		RenderBus.AddLight(LightData);
+		break;
+	}
 	default:
 		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
 		{

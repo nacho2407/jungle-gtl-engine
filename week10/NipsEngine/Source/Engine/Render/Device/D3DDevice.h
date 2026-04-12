@@ -131,6 +131,7 @@ private:
 	D3D11_VIEWPORT ViewportInfo = {};
 
 	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
+	const float ClearNormal[4] = { 0.25f, 0.25f, 0.25f, 0.f };
 
 	ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBackCull;
 	EDepthStencilState CurrentDepthStencilState = EDepthStencilState::Default;
