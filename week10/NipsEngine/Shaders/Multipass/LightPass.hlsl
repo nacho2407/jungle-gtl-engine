@@ -82,7 +82,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
         float  attenuation = saturate(1.0 - (dist / Lights[i].Radius));
         attenuation        = pow(attenuation, Lights[i].RadiusFalloff);
         
-        float3 N     = normalize(normal.rgb);
+        float3 N     = normalize(normal.rgb * 2.0f - 1.0f);
         float3 L     = normalize(toLight);
         float  NdotL = saturate(dot(N, L));
         
