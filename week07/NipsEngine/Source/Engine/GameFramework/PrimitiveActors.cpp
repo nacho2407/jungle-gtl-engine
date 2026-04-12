@@ -282,5 +282,12 @@ void AFireballActor::InitDefaultComponents()
 
 void ASpotlightActor::InitDefaultComponents() {
 	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
+    BillboardIcon->SetTextureName(("Asset\\Texture\\Spotlight_64x.png"));
+	SetRootComponent(BillboardIcon);
+
+	UDecalComponent* Decal = AddComponent<UDecalComponent>();
+	Decal->AttachToComponent(BillboardIcon);
+	Decal->SetRelativeLocation(FVector(0, 0, 10.f));
+
 	
 }
