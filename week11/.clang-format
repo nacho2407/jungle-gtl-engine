@@ -2,6 +2,9 @@
 # 기본 기반 스타일
 BasedOnStyle: LLVM
 
+# 줄바꿈 방지 설정
+ColumnLimit: 0
+
 # 들여쓰기 설정
 IndentWidth: 4
 TabWidth: 4
@@ -9,9 +12,9 @@ UseTab: Never
 
 # 중괄호 설정 (Allman 스타일)
 BreakBeforeBraces: Allman
+Cpp11BracedListStyle: false # 중괄호 앞뒤로 한 칸 띄우기 ex. { 1, 2, 3 }
 
 # 들여쓰기 세부 제어
-NamespaceIndentation: None # All에서 None으로 변경 (일반적인 C++ 선호도 반영)
 AllowShortFunctionsOnASingleLine: Inline # Getter/Setter를 한 줄로 허용
 AllowShortBlocksOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false
@@ -22,9 +25,6 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 
 # 포인터/레퍼런스 정렬 (타입 쪽에 붙임)
 PointerAlignment: Left
-
-# 컬럼 제한 (기존 유지)
-ColumnLimit: 120
 
 # 정렬 관련 (불편함을 유발하는 과도한 정렬 해제)
 AlignConsecutiveAssignments: false
@@ -46,7 +46,12 @@ StatementMacros:
 # 접근 제어자(public, private 등) 들여쓰기
 AccessModifierOffset: -4
 
-# 기타 가독성 설정
+# 줄바꿈 및 길이 제어 설정
 PackConstructorInitializers: BinPack
+BinPackParameters: true
+BinPackArguments: true
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# 기타 가독성 설정
 ReferenceAlignment: Left
 Standard: Latest

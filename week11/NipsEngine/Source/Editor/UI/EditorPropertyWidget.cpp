@@ -175,6 +175,12 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	// 상단 액터 정보 및 컨트롤 영역
 	RenderActorHeaderRegion(PrimaryActor, SelectedActors);
 
+	if (SelectionManager->GetPrimarySelection() == nullptr)
+	{
+		ImGui::End();
+		return;
+	}
+
 	// 컴포넌트 트리 영역
 	SEPARATOR();
 	RenderComponentTree(PrimaryActor);

@@ -5,26 +5,6 @@
 DEFINE_CLASS(URotatingMovementComponent, UMovementComponent)
 REGISTER_FACTORY(URotatingMovementComponent)
 
-URotatingMovementComponent* URotatingMovementComponent::Duplicate()
-{
-    URotatingMovementComponent* NewComp = UObjectManager::Get().CreateObject<URotatingMovementComponent>();
-
-    NewComp->SetActive(this->IsActive());
-    NewComp->SetAutoActivate(this->IsAutoActivate());
-    NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-    NewComp->SetTransient(this->IsTransient());
-    NewComp->SetEditorOnly(this->IsEditorOnly());
-    NewComp->SetOwner(nullptr);
-
-    // UpdatedComponent는 Actor 단에서 맵핑해줍니다.
-
-    NewComp->RotationRate = this->RotationRate;
-    NewComp->PivotTranslation = this->PivotTranslation;
-    NewComp->bRotationInLocalSpace = this->bRotationInLocalSpace;
-
-    return NewComp;
-}
-
 void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UMovementComponent::GetEditableProperties(OutProps);
