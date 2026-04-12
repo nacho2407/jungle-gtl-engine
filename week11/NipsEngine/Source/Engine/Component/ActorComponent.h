@@ -10,9 +10,6 @@ class UActorComponent : public UObject
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
 	
-	virtual UActorComponent* Duplicate() override;
-	virtual UActorComponent* DuplicateSubObjects() override { return this; }
-
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
 

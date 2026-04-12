@@ -4,8 +4,10 @@
 #include "GameFramework/World.h"
 #include "Core/ResourceManager.h"
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
+REGISTER_FACTORY(UDecalComponent)
 
 UDecalComponent::UDecalComponent()
 {
@@ -13,27 +15,14 @@ UDecalComponent::UDecalComponent()
 	SetMaterial(FResourceManager::Get().FindMaterial(MatNames[0]));
 }
 
-UDecalComponent* UDecalComponent::Duplicate()
+// Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
+// LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
+void UDecalComponent::PostDuplicate(UObject* Original)
 {
-    UDecalComponent* NewComp = UObjectManager::Get().CreateObject<UDecalComponent>();
+    UPrimitiveComponent::PostDuplicate(Original);
 
-    // GetEditableProperties 체인(ActorComponent + SceneComponent + PrimitiveComponent +
-    //   Size, Color, Fade 파라미터, DestroyOwnerAfterFade) 일괄 복사
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-    NewComp->bTransformDirty = true;
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    // Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
-    // (얕은 복사 — ResourceManager 가 소유)
-    NewComp->Material = this->Material;
-    // LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
+    Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
 }
 
 void UDecalComponent::BeginPlay()

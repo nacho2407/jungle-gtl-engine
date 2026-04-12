@@ -9,9 +9,6 @@ public:
 	UHeightFogComponent();
     ~UHeightFogComponent() override = default;
 
-	virtual UHeightFogComponent* Duplicate() override;
-    virtual UHeightFogComponent* DuplicateSubObjects() override { return this; }
-
     EPrimitiveType               GetPrimitiveType() const override { return EPrimitiveType::EPT_FOG; }
 
 	void     SetFogDensity(float InFogDensity) { FogDensity = InFogDensity; }

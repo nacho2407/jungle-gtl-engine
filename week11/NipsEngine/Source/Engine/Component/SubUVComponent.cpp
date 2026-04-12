@@ -17,30 +17,16 @@ USubUVComponent::USubUVComponent()
 	SetVisibility(true);
 }
 
-// GetEditableProperties 체인을 통해 프로퍼티를 일괄 복사합니다.
-USubUVComponent* USubUVComponent::Duplicate()
+// 재생 상태 등 GetEditableProperties 에 노출되지 않은 필드를 직접 복사합니다.
+// CachedParticle 은 CopyPropertiesFrom 내부에서 Particle(Name) 처리 시
+// PostEditProperty("Particle") → SetParticle() 를 통해 자동으로 갱신됩니다.
+void USubUVComponent::PostDuplicate(UObject* Original)
 {
-    USubUVComponent* NewComp = UObjectManager::Get().CreateObject<USubUVComponent>();
+    UBillboardComponent::PostDuplicate(Original);
 
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-    NewComp->bTransformDirty = true;
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    // GetEditableProperties 에 노출되지 않은 재생 상태 및 기타 필드를 직접 복사합니다.
+    const USubUVComponent* Orig = Cast<USubUVComponent>(Original);
     // 현재 프레임/누적 시간을 유지해 PIE 진입 시 에디터에서 보던 파티클 상태를 이어 재생합니다.
-    NewComp->bIsBillboard   = this->bIsBillboard;
-    NewComp->FrameIndex     = this->FrameIndex;
-    NewComp->TimeAccumulator= this->TimeAccumulator;
-    NewComp->bIsExecute     = this->bIsExecute;
-    // CachedParticle 은 CopyPropertiesFrom 내부에서 Particle(Name) 처리 시
-    // PostEditProperty("Particle") → SetParticle() 를 통해 자동으로 갱신됩니다.
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    bIsExecute = Orig->bIsExecute;
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)

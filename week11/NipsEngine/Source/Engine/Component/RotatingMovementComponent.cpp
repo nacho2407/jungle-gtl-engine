@@ -5,18 +5,6 @@
 DEFINE_CLASS(URotatingMovementComponent, UMovementComponent)
 REGISTER_FACTORY(URotatingMovementComponent)
 
-URotatingMovementComponent* URotatingMovementComponent::Duplicate()
-{
-    URotatingMovementComponent* NewComp = UObjectManager::Get().CreateObject<URotatingMovementComponent>();
-
-    // UpdatedComponent(SceneComponentRef) 는 Actor::Duplicate() 에서 재매핑합니다.
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-
-    return NewComp;
-}
-
 void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UMovementComponent::GetEditableProperties(OutProps);

@@ -5,17 +5,6 @@
 DEFINE_CLASS(UProjectileMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UProjectileMovementComponent)
 
-UProjectileMovementComponent* UProjectileMovementComponent::Duplicate()
-{
-    UProjectileMovementComponent* NewComp = UObjectManager::Get().CreateObject<UProjectileMovementComponent>();
-	
-    // UpdatedComponent(SceneComponentRef)는 Actor::Duplicate() 에서 ComponentMap을 통해 재매핑합니다.
-    NewComp->CopyPropertiesFrom(this);
-    NewComp->SetOwner(nullptr);
-
-    return NewComp;
-}
-
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UMovementComponent::GetEditableProperties(OutProps);

@@ -10,31 +10,21 @@
 DEFINE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UTextRenderComponent)
 
-UTextRenderComponent* UTextRenderComponent::Duplicate()
+// GetEditableProperties 에 노출되지 않은 private 필드를 직접 복사합니다.
+void UTextRenderComponent::PostDuplicate(UObject* Original)
 {
-    UTextRenderComponent* NewComp = UObjectManager::Get().CreateObject<UTextRenderComponent>();
+    UPrimitiveComponent::PostDuplicate(Original);
 
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
-    NewComp->bTransformDirty = true;
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    // GetEditableProperties 에 노출되지 않은 나머지 private 필드를 직접 복사합니다.
-    NewComp->Color      = this->Color;
-    NewComp->Spacing    = this->Spacing;
-    NewComp->CharWidth  = this->CharWidth;
-    NewComp->CharHeight = this->CharHeight;
-    NewComp->RenderSpace= this->RenderSpace;
-    NewComp->HAlign     = this->HAlign;
-    NewComp->VAlign     = this->VAlign;
-    NewComp->ScreenX    = this->ScreenX;
-    NewComp->ScreenY    = this->ScreenY;
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    const UTextRenderComponent* Orig = Cast<UTextRenderComponent>(Original);
+    Color       = Orig->Color;
+    Spacing     = Orig->Spacing;
+    CharWidth   = Orig->CharWidth;
+    CharHeight  = Orig->CharHeight;
+    RenderSpace = Orig->RenderSpace;
+    HAlign      = Orig->HAlign;
+    VAlign      = Orig->VAlign;
+    ScreenX     = Orig->ScreenX;
+    ScreenY     = Orig->ScreenY;
 }
 
 void UTextRenderComponent::SetFont(const FName& InFontName)

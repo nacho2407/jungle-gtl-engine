@@ -49,9 +49,18 @@ public:
 	UObject();
 	virtual ~UObject();
 
-	// Shallow, Deep Copy
-	virtual UObject* Duplicate() { return nullptr; }
-	virtual UObject* DuplicateSubObjects() { return this; }
+	// -----------------------------------------------------------------------
+	// 복제 시스템
+	// Duplicate()     : FObjectFactory 로 같은 타입의 인스턴스를 생성한 뒤
+	//                   CopyPropertiesFrom → PostDuplicate 순으로 호출합니다.
+	//                   개별 클래스에서 오버라이드할 필요 없습니다.
+	// PostDuplicate() : Duplicate() 내부에서 CopyPropertiesFrom 직후 호출되는 가상 훅.
+	//                   프로퍼티 시스템에 노출되지 않은 필드 복사, 포인터 재연결 등
+	//                   클래스별 후처리를 이곳에 구현합니다.
+	//                   하위 클래스 구현 시 부모의 PostDuplicate 를 먼저 호출해야 합니다.
+	// -----------------------------------------------------------------------
+	virtual UObject* Duplicate();
+	virtual void PostDuplicate(UObject* Original) {}
 
 	uint32 GetUUID() const { return UUID; }
 	uint32 GetInternalIndex() const { return InternalIndex; }
