@@ -10,8 +10,11 @@ public:
 	ULevel() = default;
 	virtual ~ULevel() override;
 
-	virtual ULevel* Duplicate() override;
-    virtual ULevel* DuplicateSubObjects() override;
+	virtual void PostDuplicate(UObject* Original) override;
+
+	// 프로퍼티 시스템 — UObject 에서 상속
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
+	void PostEditProperty(const char* PropertyName) override {}
 
 	void AddActor(AActor* Actor) { Actors.push_back(Actor); }
 	void RemoveActor(AActor* Actor) {
