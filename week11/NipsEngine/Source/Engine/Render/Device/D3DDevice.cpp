@@ -40,7 +40,7 @@ void FD3DDevice::BeginFrame()
 	if (ViewportSceneColorRTV && ViewportSelectionMaskRTV && ViewportDepthStencilView)
 	{
 		DeviceContext->ClearRenderTargetView(ViewportSceneColorRTV.Get(), ClearColor);
-        DeviceContext->ClearRenderTargetView(ViewportSceneNormalRTV.Get(), ClearColor);
+        DeviceContext->ClearRenderTargetView(ViewportSceneNormalRTV.Get(), ClearNormal);
         DeviceContext->ClearRenderTargetView(ViewportSceneLightRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneFogRTV.Get(), ClearColor);
         DeviceContext->ClearRenderTargetView(ViewportSceneWorldPosRTV.Get(), ClearColor);
