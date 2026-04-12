@@ -37,6 +37,10 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::Billboard].Create(InDevice, L"Shaders/ShaderBillboard.hlsl",
 		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
 
+	// HeightFog: fullscreen triangle (InputLayout 없음)
+	Shaders[(uint32)EShaderType::HeightFog].Create(InDevice, L"Shaders/HeightFog.hlsl",
+		"VS", "PS", nullptr, 0);
+
 	bIsInitialized = true;
 }
 

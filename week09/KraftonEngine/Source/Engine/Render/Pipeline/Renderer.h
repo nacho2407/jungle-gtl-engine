@@ -54,6 +54,10 @@ public:
 	void Render(const FFrameContext& Frame);
 	void EndFrame();
 
+	// Height Fog — DepthSRV 읽어 world pos 복원 → exponential fog → AlphaBlend
+	// Render() 직후, GPU Occlusion 이전에 Pipeline에서 호출.
+	void DrawHeightFog(const FFrameContext& Frame, const struct FFogParams& Fog);
+
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
@@ -76,6 +80,7 @@ private:
 
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
 	void DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceContext* Context);
+
 
 private:
 	FD3DDevice Device;
