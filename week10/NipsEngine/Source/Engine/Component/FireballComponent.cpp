@@ -33,9 +33,8 @@ void UFireballComponent::PostDuplicate(UObject* Original)
 
 void UFireballComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    USceneComponent::GetEditableProperties(OutProps);
+    UPrimitiveComponent::GetEditableProperties(OutProps);
 
-    OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
     OutProps.push_back({ "Radius", EPropertyType::Float, &Radius });
     OutProps.push_back({ "Radius Falloff", EPropertyType::Float, &RadiusFallOff });
     OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity });
