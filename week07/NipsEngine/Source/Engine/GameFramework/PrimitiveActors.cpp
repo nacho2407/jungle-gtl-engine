@@ -245,7 +245,7 @@ void ADecalActor::InitDefaultComponents()
 
 void AFireballActor::InitDefaultComponents() 
 {
-	// Base (Cube) for debugging and demonstration. Remove this later
+	// Base for debugging and demonstration. Remove this later
     auto* Sphere = AddComponent<UStaticMeshComponent>();
     Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
     SetRootComponent(Sphere);
@@ -262,7 +262,4 @@ void AFireballActor::InitDefaultComponents()
 	// Flare
     UFireballComponent* Fireball = AddComponent<UFireballComponent>();
 	Fireball->AttachToComponent(Sphere);
-
-	// Movement component (TODO)
-
 }
