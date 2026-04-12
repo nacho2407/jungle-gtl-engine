@@ -9,6 +9,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/MovementComponent.h"
 #include "Component/RotatingMovementComponent.h"
+#include "Component/FireballComponent.h"
 #include "Component/ProjectileMovementComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
@@ -138,13 +139,20 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 	},
 	{
 		"HeightFog Component",
-		// 반환 타입을 UActorComponent*로 통일 (기존 코드의 USceneComponent* 오타 수정)
 		[](AActor* Actor) -> UActorComponent* {
 			UHeightFogComponent* Comp = Actor->AddComponent<UHeightFogComponent>();
 			Comp->SetFogDensity(0);
 			Comp->SetFogInscatteringColor(FVector4(0.72f, 0.8f, 0.9f, 1.0f));
 			Comp->SetHeightFalloff(0);
 			Comp->SetFogHeight(0);
+			return Comp;
+		}
+	},
+	
+	{
+		"Fireball Component",
+		[](AActor* Actor) -> UActorComponent* {
+			UFireballComponent* Comp = Actor->AddComponent<UFireballComponent>();
 			return Comp;
 		}
 	},

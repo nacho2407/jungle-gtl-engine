@@ -5,7 +5,8 @@
 class UFireballComponent : public UPrimitiveComponent {
 public:
 	DECLARE_CLASS(UFireballComponent, UPrimitiveComponent)
-	UFireballComponent() = default;
+
+	UFireballComponent();
 	~UFireballComponent() override = default;
 
 	//virtual UFireballComponent* Duplicate() override;
