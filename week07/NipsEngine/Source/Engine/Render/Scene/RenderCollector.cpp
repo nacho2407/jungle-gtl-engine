@@ -237,7 +237,8 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 			if (!UsesCameraDependentRenderBounds(Primitive))
 			{
-				continue;
+				if (Primitive->IsEnableCull())
+					continue;
 			}
 
 			if (!CollectedCameraDependentPrimitives.insert(Primitive).second)
@@ -247,7 +248,6 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 			if (ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
 			{
-				continue;
 			}
 
 			++LastCullingStats.FallbackPassedPrimitiveCount;

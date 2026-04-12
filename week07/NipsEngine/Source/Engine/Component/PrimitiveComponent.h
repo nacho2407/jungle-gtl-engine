@@ -21,6 +21,9 @@ public:
 	void SetVisibility(bool bVisible);
 	bool IsVisible() const { return bIsVisible; }
 
+	void SetEnableCull(const bool bInEnableCull) { bEnableCull = bInEnableCull; }
+	bool IsEnableCull() const { return bEnableCull; }
+
 	/* Getter */
 	virtual const FAABB& GetWorldAABB() const 
 	{ 
@@ -48,6 +51,7 @@ protected:
 
 	mutable FAABB WorldAABB;
 	bool bIsVisible = true;
+	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
 };
 
 // struct FMeshData;

@@ -13,9 +13,9 @@ void UBillboardComponent::PostDuplicate(UObject* Original)
     UPrimitiveComponent::PostDuplicate(Original);
 
     const UBillboardComponent* Orig = Cast<UBillboardComponent>(Original);
-    bIsBillboard    = Orig->bIsBillboard;
-    CachedSprite    = Orig->CachedSprite; // 얕은 복사 (ResourceManager 소유)
-    FrameIndex      = Orig->FrameIndex;
+    bIsBillboard = Orig->bIsBillboard;
+    CachedSprite = Orig->CachedSprite; // 얕은 복사 (ResourceManager 소유)
+    FrameIndex = Orig->FrameIndex;
     TimeAccumulator = Orig->TimeAccumulator;
 }
 
@@ -115,7 +115,7 @@ void UBillboardComponent::UpdateWorldAABB() const
                                                      FVector(0.0f, 0.0f, 1.0f)); // Up
     }
 
-    FVector LExt = {0.01f, Width * 0.5f, Height * 0.5f};
+    FVector LExt = { 0.01f, Width * 0.5f, Height * 0.5f };
 
     float NewEx = std::abs(CachedWorldMatrix.M[0][0]) * LExt.X +
                   std::abs(CachedWorldMatrix.M[1][0]) * LExt.Y +
@@ -194,11 +194,11 @@ bool UBillboardComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UPrimitiveComponent::GetEditableProperties(OutProps);
-    OutProps.push_back({"Particle", EPropertyType::Name, &TextureName});
-    OutProps.push_back({"Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f});
-    OutProps.push_back({"Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f});
-    OutProps.push_back({"Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f});
-    OutProps.push_back({"bLoop", EPropertyType::Bool, &bLoop});
+    OutProps.push_back({ "Particle", EPropertyType::Name, &TextureName });
+    OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
+    OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
+    OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
+    OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
 }
 
 void UBillboardComponent::TickComponent(float DeltaTime)
