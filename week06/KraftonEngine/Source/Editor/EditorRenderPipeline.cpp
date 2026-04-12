@@ -85,6 +85,43 @@ namespace
 			Bus.AddDebugLineEntry(std::move(Entry));
 		}
 	}
+
+	void AddDecalProjectionArrow(FRenderBus& Bus, UDecalComponent* DecalComponent)
+	{
+		if (!DecalComponent || !DecalComponent->IsVisible())
+		{
+			return;
+		}
+
+		const FVector HalfExtents = DecalComponent->GetHalfExtents();
+		const float ArrowLength = Clamp(HalfExtents.X * 0.75f, 0.15f, 0.75f);
+		const float HeadLength = ArrowLength * 0.35f;
+		const float HeadWidth = ArrowLength * 0.22f;
+
+		const FVector Start = DecalComponent->GetWorldLocation();
+		const FVector Forward = DecalComponent->GetForwardVector().Normalized();
+		const FVector Right = DecalComponent->GetRightVector().Normalized();
+		const FVector End = Start + Forward * ArrowLength;
+		const FColor ArrowColor(255, 196, 0);
+
+		FDebugLineEntry Shaft;
+		Shaft.Start = Start;
+		Shaft.End = End;
+		Shaft.Color = ArrowColor;
+		Bus.AddDebugLineEntry(std::move(Shaft));
+
+		FDebugLineEntry HeadA;
+		HeadA.Start = End;
+		HeadA.End = End - Forward * HeadLength + Right * HeadWidth;
+		HeadA.Color = ArrowColor;
+		Bus.AddDebugLineEntry(std::move(HeadA));
+
+		FDebugLineEntry HeadB;
+		HeadB.Start = End;
+		HeadB.End = End - Forward * HeadLength - Right * HeadWidth;
+		HeadB.Color = ArrowColor;
+		Bus.AddDebugLineEntry(std::move(HeadB));
+	}
 }
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
@@ -238,6 +275,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 					if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(ActorComponent))
 					{
 						AddDecalVolumeWireframe(Bus, DecalComponent);
+						AddDecalProjectionArrow(Bus, DecalComponent);
 					}
 				}
 			}
