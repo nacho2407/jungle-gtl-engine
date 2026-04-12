@@ -128,12 +128,12 @@ UTextRenderComponent::UTextRenderComponent()
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
+	UPrimitiveComponent::GetEditableProperties(OutProps);
+
 	OutProps.push_back({ "Text", EPropertyType::String, &Text });
 	OutProps.push_back({ "Font", EPropertyType::Name, &FontName });
-	//OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
+	// OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
 	OutProps.push_back({ "Font Size", EPropertyType::Float, &FontSize, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
