@@ -72,7 +72,13 @@ float4 mainPS(VSOutput input) : SV_TARGET
     {
         discard;
     }
-    
+
+    // Emissive surfaces (normal.a == 2) skip lighting and glow with their own color
+    if (normal.a > 1.5f)
+    {
+        return float4(albedo, 1.0f);
+    }
+
     float3 light_accumulation = float3(0, 0, 0);
     for (uint i = 0; i < LightCount; i++)
     {
@@ -87,12 +93,6 @@ float4 mainPS(VSOutput input) : SV_TARGET
         float  NdotL = saturate(dot(N, L));
         
         light_accumulation += Lights[i].Color * Lights[i].Intensity * NdotL * attenuation;
-    }
-
-    if (length(light_accumulation) < 1e-4)
-    {
-        // No light accumulation. just return the base color
-        //return float4(albedo, 1.0f);
     }
     
     float3 ambience = albedo * 0.25f;
