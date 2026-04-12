@@ -5,6 +5,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
@@ -282,12 +283,10 @@ void AFireballActor::InitDefaultComponents()
 
 void ASpotlightActor::InitDefaultComponents() {
 	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
-    BillboardIcon->SetTextureName(("Asset\\Texture\\Spotlight_64x.png"));
+    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
 	SetRootComponent(BillboardIcon);
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
 	Decal->AttachToComponent(BillboardIcon);
 	Decal->SetRelativeLocation(FVector(0, 0, 10.f));
-
-	
 }
