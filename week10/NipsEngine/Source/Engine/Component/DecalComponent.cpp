@@ -9,10 +9,12 @@
 DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UDecalComponent)
 
+// Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
 UDecalComponent::UDecalComponent()
 {
 	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
 	SetMaterial(FResourceManager::Get().FindMaterial(MatNames[0]));
+    bEnableCull = false;
 }
 
 // Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
