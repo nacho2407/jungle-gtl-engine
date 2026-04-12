@@ -258,16 +258,17 @@ void FRenderer::InitializePassRenderStates()
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Additive] = { EDepthStencilState::NoDepth, EBlendState::Additive, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,       EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true };
 	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Font] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Billboard] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::SubUV] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Billboard] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
@@ -333,6 +334,22 @@ void FRenderer::InitializePassResourceBindings()
 	PassResourceBindings[(uint32)ERenderPass::Decal] = {
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			// DSV 언바인딩 (Depth SRV와 동시 바인딩 불가)
+			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
+			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
+		},
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			Ctx->PSSetShaderResources(1, 1, &nullSRV);
+			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
+			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+			Ctx->OMSetRenderTargets(1, &rtv, dsv);
+		}
+	};
+
+	PassResourceBindings[(uint32)ERenderPass::Additive] = {
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
 			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
@@ -487,6 +504,7 @@ bool FRenderer::BindPerObjectCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceC
 	if (RawCB != State.LastPerObjectCB)
 	{
 		Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
+		Ctx->PSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
 		State.LastPerObjectCB = RawCB;
 	}
 
@@ -631,6 +649,22 @@ void FRenderer::DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11Devic
 void FRenderer::DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
 {
 	if (!BindPerObjectCB(Proxy, Ctx, State)) return;
+
+	FShader* FireballShader = FShaderManager::Get().GetShader(EShaderType::Fireball);
+	if (FireballShader && Proxy.Shader == FireballShader)
+	{
+		if (!State.bSamplerBound)
+		{
+			Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+			State.bSamplerBound = true;
+		}
+
+		Ctx->IASetInputLayout(nullptr);
+		Ctx->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+		Ctx->Draw(3, 0);
+		FDrawCallStats::Increment();
+		return;
+	}
 
 	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
 

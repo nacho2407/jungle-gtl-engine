@@ -2,7 +2,6 @@
 #include "Common/ConstantBuffers.hlsl"
 #include "common/Functions.hlsl"
 
-Texture2D g_txColor : register(t0);
 Texture2D DepthTexture : register(t1);
 SamplerState g_Sample : register(s0);
 
@@ -12,14 +11,13 @@ struct PS_Input_Decal
     float4 clipPos : TEXCOORD0;
 };
 
-PS_Input_Decal VS(VS_Input_PC input)
+PS_Input_Decal VS(uint vid : SV_VertexID)
 {
     PS_Input_Decal output;
     
-    float4 clip = ApplyMVP(input.position);
-
-    output.position = clip;
-    output.clipPos = clip;
+    float2 pos = float2((vid == 2) ? 3.0f : -1.0f, (vid == 1) ? 3.0f : -1.0f);
+    output.position = float4(pos, 0.0f, 1.0f);
+    output.clipPos = output.position;
 
     return output;
 }
@@ -31,37 +29,26 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     uv.y = 1.0f - uv.y;
 
     float depth = DepthTexture.Sample(g_Sample, uv).r;
-    if (depth <= 0.0f)
-    {
-        discard;
-    }
-    
+
     float4 clip = float4(ndc, depth, 1.0f);
     float4 viewPos = mul(clip, InvProjMatrix);
     viewPos /= viewPos.w;
 
     float4 worldPos4 = mul(viewPos, InvViewMatrix);
     float3 worldPos = worldPos4.xyz;
-    
-    float3 fireballPos = Model[3].xyz;
-    float distance = length(worldPos - fireballPos);
-    if(distance > Radius)
-    {
-        discard;
-    }
-    
-    float RadiusFalloff = saturate(1.0f - (distance / max(Radius, 0.0001f)));
-    RadiusFalloff = pow(RadiusFalloff, max(RadiusFalloff, 0.0001f));
-    
-    float falloff = saturate(1.0f - (distance / max(Radius, 0.0001f)));
-    falloff = pow(falloff, max(RadiusFalloff, 0.0001f));
 
-    float alpha = Color.a * Intensity * falloff;
-    if (alpha <= 0.001f)
-    {
+    float3 fireballPos = Model[3].xyz;
+    float dist = length(worldPos - fireballPos);
+
+    float distMask = step(dist, Radius);
+    if (distMask <= 0.0f)
         discard;
-    }
+
+    float falloff = saturate(1.0f - (dist / (Radius)));
+    falloff = pow(falloff, max(RadiusFalloff, 0.01f));
 
     float3 rgb = Color.rgb * Intensity * falloff;
+    float alpha = Color.a * Intensity * falloff;
+
     return float4(rgb, alpha);
 }

@@ -21,7 +21,6 @@ void FFireballSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		FConstantBufferPool::Get().GetBuffer(ECBSlot::Fireball, sizeof(FFireballConstants)),
 		ECBSlot::Fireball);
 
-	Pass = ERenderPass::Decal;
 
 	FireballCB.FireballInvView = Bus.GetView().GetInverseFast();
 	FireballCB.FireballInvProj = Bus.GetProj().GetInverse();
@@ -35,6 +34,7 @@ void FFireballSceneProxy::UpdateMesh()
 {
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Sphere);
 	Shader = FShaderManager::Get().GetShader(EShaderType::Fireball);
+	Pass = ERenderPass::Additive;
 }
 
 UFireballComponent* FFireballSceneProxy::GetFireballComponent() const

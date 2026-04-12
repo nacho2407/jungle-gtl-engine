@@ -38,7 +38,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
 
 	Shaders[(uint32)EShaderType::Fireball].Create(InDevice, L"Shaders/Fireball.hlsl",
-		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
+		"VS", "PS", nullptr, 0);
 
 	bIsInitialized = true;
 }
