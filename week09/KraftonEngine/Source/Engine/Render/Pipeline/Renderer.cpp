@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 
 #include <iostream>
 #include <algorithm>
@@ -129,41 +129,41 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader       = Proxy.Shader;
+			Cmd.Shader = Proxy.Shader;
 			Cmd.DepthStencil = PassState.DepthStencil;
-			Cmd.Blend        = PassState.Blend;
-			Cmd.Rasterizer   = Rasterizer;
-			Cmd.Topology     = PassState.Topology;
-			Cmd.MeshBuffer   = Proxy.MeshBuffer;
-			Cmd.FirstIndex   = Section.FirstIndex;
-			Cmd.IndexCount   = Section.IndexCount;
-			Cmd.PerObjectCB  = PerObjCB;
-			Cmd.ExtraCB      = Proxy.ExtraCB.Buffer;
-			Cmd.ExtraCBSlot  = Proxy.ExtraCB.Slot;
-			Cmd.MaterialCB   = MaterialCB;
-			Cmd.DiffuseSRV   = Section.DiffuseSRV;
+			Cmd.Blend = PassState.Blend;
+			Cmd.Rasterizer = Rasterizer;
+			Cmd.Topology = PassState.Topology;
+			Cmd.MeshBuffer = Proxy.MeshBuffer;
+			Cmd.FirstIndex = Section.FirstIndex;
+			Cmd.IndexCount = Section.IndexCount;
+			Cmd.PerObjectCB = PerObjCB;
+			Cmd.ExtraCB = Proxy.ExtraCB.Buffer;
+			Cmd.ExtraCBSlot = Proxy.ExtraCB.Slot;
+			Cmd.MaterialCB = MaterialCB;
+			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.SectionColor = Section.DiffuseColor;
-			Cmd.bIsUVScroll  = Section.bIsUVScroll ? 1u : 0u;
-			Cmd.Pass         = Pass;
-			Cmd.SortKey      = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
+			Cmd.bIsUVScroll = Section.bIsUVScroll ? 1u : 0u;
+			Cmd.Pass = Pass;
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
 		}
 	}
 	else
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader       = Proxy.Shader;
+		Cmd.Shader = Proxy.Shader;
 		Cmd.DepthStencil = PassState.DepthStencil;
-		Cmd.Blend        = PassState.Blend;
-		Cmd.Rasterizer   = Rasterizer;
-		Cmd.Topology     = PassState.Topology;
-		Cmd.MeshBuffer   = Proxy.MeshBuffer;
-		Cmd.PerObjectCB  = PerObjCB;
-		Cmd.ExtraCB      = Proxy.ExtraCB.Buffer;
-		Cmd.ExtraCBSlot  = Proxy.ExtraCB.Slot;
-		Cmd.DiffuseSRV   = Proxy.DiffuseSRV;
-		Cmd.Sampler      = Proxy.Sampler;
-		Cmd.Pass         = Pass;
-		Cmd.SortKey      = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
+		Cmd.Blend = PassState.Blend;
+		Cmd.Rasterizer = Rasterizer;
+		Cmd.Topology = PassState.Topology;
+		Cmd.MeshBuffer = Proxy.MeshBuffer;
+		Cmd.PerObjectCB = PerObjCB;
+		Cmd.ExtraCB = Proxy.ExtraCB.Buffer;
+		Cmd.ExtraCBSlot = Proxy.ExtraCB.Slot;
+		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
+		Cmd.Sampler = Proxy.Sampler;
+		Cmd.Pass = Pass;
+		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
 }
 
@@ -309,17 +309,17 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 	EViewMode ViewMode = Frame.ViewMode;
 
 	auto ApplyPassState = [&](FDrawCommand& Cmd, ERenderPass Pass)
-	{
-		const FPassRenderState& S = PassRenderStates[(uint32)Pass];
-		Cmd.DepthStencil = S.DepthStencil;
-		Cmd.Blend        = S.Blend;
-		Cmd.Rasterizer   = S.Rasterizer;
-		Cmd.Topology     = S.Topology;
-		Cmd.Pass         = Pass;
+		{
+			const FPassRenderState& S = PassRenderStates[(uint32)Pass];
+			Cmd.DepthStencil = S.DepthStencil;
+			Cmd.Blend = S.Blend;
+			Cmd.Rasterizer = S.Rasterizer;
+			Cmd.Topology = S.Topology;
+			Cmd.Pass = Pass;
 
-		if (S.bWireframeAware && ViewMode == EViewMode::Wireframe)
-			Cmd.Rasterizer = ERasterizerState::WireFrame;
-	};
+			if (S.bWireframeAware && ViewMode == EViewMode::Wireframe)
+				Cmd.Rasterizer = ERasterizerState::WireFrame;
+		};
 
 	// --- Editor Lines + Grid Lines → EditorLines 패스 ---
 	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
@@ -328,24 +328,24 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		ApplyPassState(Cmd, ERenderPass::EditorLines);
-		Cmd.Shader      = EditorShader;
-		Cmd.RawVB       = EditorLines.GetVBBuffer();
+		Cmd.Shader = EditorShader;
+		Cmd.RawVB = EditorLines.GetVBBuffer();
 		Cmd.RawVBStride = EditorLines.GetVBStride();
-		Cmd.RawIB       = EditorLines.GetIBBuffer();
-		Cmd.IndexCount   = EditorLines.GetIndexCount();
-		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
+		Cmd.RawIB = EditorLines.GetIBBuffer();
+		Cmd.IndexCount = EditorLines.GetIndexCount();
+		Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
 	}
 
 	if (GridLines.GetLineCount() > 0 && GridLines.UploadBuffers(Ctx))
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		ApplyPassState(Cmd, ERenderPass::EditorLines);
-		Cmd.Shader      = EditorShader;
-		Cmd.RawVB       = GridLines.GetVBBuffer();
+		Cmd.Shader = EditorShader;
+		Cmd.RawVB = GridLines.GetVBBuffer();
 		Cmd.RawVBStride = GridLines.GetVBStride();
-		Cmd.RawIB       = GridLines.GetIBBuffer();
-		Cmd.IndexCount   = GridLines.GetIndexCount();
-		Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
+		Cmd.RawIB = GridLines.GetIBBuffer();
+		Cmd.IndexCount = GridLines.GetIndexCount();
+		Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
 	}
 
 	// --- Font (World → AlphaBlend, Screen → OverlayFont) ---
@@ -359,14 +359,14 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				ApplyPassState(Cmd, ERenderPass::AlphaBlend);
-				Cmd.Shader      = FontShader;
-				Cmd.RawVB       = FontGeometry.GetWorldVBBuffer();
+				Cmd.Shader = FontShader;
+				Cmd.RawVB = FontGeometry.GetWorldVBBuffer();
 				Cmd.RawVBStride = FontGeometry.GetWorldVBStride();
-				Cmd.RawIB       = FontGeometry.GetWorldIBBuffer();
-				Cmd.IndexCount   = FontGeometry.GetWorldIndexCount();
-				Cmd.DiffuseSRV   = FontRes->SRV;
-				Cmd.Sampler      = FontGeometry.GetSampler();
-				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::AlphaBlend, FontShader, nullptr, FontRes->SRV);
+				Cmd.RawIB = FontGeometry.GetWorldIBBuffer();
+				Cmd.IndexCount = FontGeometry.GetWorldIndexCount();
+				Cmd.DiffuseSRV = FontRes->SRV;
+				Cmd.Sampler = FontGeometry.GetSampler();
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::AlphaBlend, FontShader, nullptr, FontRes->SRV);
 			}
 
 			if (FontGeometry.GetScreenQuadCount() > 0 && FontGeometry.UploadScreenBuffers(Ctx))
@@ -375,14 +375,14 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				ApplyPassState(Cmd, ERenderPass::OverlayFont);
-				Cmd.Shader      = OverlayShader;
-				Cmd.RawVB       = FontGeometry.GetScreenVBBuffer();
+				Cmd.Shader = OverlayShader;
+				Cmd.RawVB = FontGeometry.GetScreenVBBuffer();
 				Cmd.RawVBStride = FontGeometry.GetScreenVBStride();
-				Cmd.RawIB       = FontGeometry.GetScreenIBBuffer();
-				Cmd.IndexCount   = FontGeometry.GetScreenIndexCount();
-				Cmd.DiffuseSRV   = FontRes->SRV;
-				Cmd.Sampler      = FontGeometry.GetSampler();
-				Cmd.SortKey      = FDrawCommand::BuildSortKey(ERenderPass::OverlayFont, OverlayShader, nullptr, FontRes->SRV);
+				Cmd.RawIB = FontGeometry.GetScreenIBBuffer();
+				Cmd.IndexCount = FontGeometry.GetScreenIndexCount();
+				Cmd.DiffuseSRV = FontRes->SRV;
+				Cmd.Sampler = FontGeometry.GetSampler();
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::OverlayFont, OverlayShader, nullptr, FontRes->SRV);
 			}
 		}
 	}
@@ -397,15 +397,15 @@ void FRenderer::InitializePassRenderStates()
 	auto& S = PassRenderStates;
 
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::Opaque]         = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
-	S[(uint32)E::AlphaBlend]     = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
-	S[(uint32)E::Decal]          = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true  };
-	S[(uint32)E::SelectionMask]  = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::EditorLines]    = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
-	S[(uint32)E::PostProcess]    = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::GizmoOuter]     = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::GizmoInner]     = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::OverlayFont]    = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
+	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
 // ============================================================
@@ -526,8 +526,8 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 void FRenderer::DrawHeightFog(const FFrameContext& Frame, const FFogParams& Fog)
 {
 	ID3D11ShaderResourceView* DepthSRV = Frame.ViewportDepthSRV;
-	ID3D11DepthStencilView*   DSV      = Frame.ViewportDSV;
-	ID3D11RenderTargetView*   RTV      = Frame.ViewportRTV;
+	ID3D11DepthStencilView* DSV = Frame.ViewportDSV;
+	ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
 	if (!DepthSRV || !RTV) return;
 
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
@@ -553,12 +553,12 @@ void FRenderer::DrawHeightFog(const FFrameContext& Frame, const FFogParams& Fog)
 	FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Fog, sizeof(FFogConstants));
 	FFogConstants fogData = {};
 	fogData.InscatteringColor = Fog.InscatteringColor;
-	fogData.Density           = Fog.Density;
-	fogData.HeightFalloff     = Fog.HeightFalloff;
-	fogData.FogBaseHeight     = Fog.FogBaseHeight;
-	fogData.StartDistance     = Fog.StartDistance;
-	fogData.CutoffDistance    = Fog.CutoffDistance;
-	fogData.MaxOpacity        = Fog.MaxOpacity;
+	fogData.Density = Fog.Density;
+	fogData.HeightFalloff = Fog.HeightFalloff;
+	fogData.FogBaseHeight = Fog.FogBaseHeight;
+	fogData.StartDistance = Fog.StartDistance;
+	fogData.CutoffDistance = Fog.CutoffDistance;
+	fogData.MaxOpacity = Fog.MaxOpacity;
 	FogCB->Update(Context, &fogData, sizeof(FFogConstants));
 	ID3D11Buffer* cb = FogCB->GetBuffer();
 	Context->PSSetConstantBuffers(ECBSlot::Fog, 1, &cb);

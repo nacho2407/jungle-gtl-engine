@@ -23,7 +23,7 @@ void UHeightFogComponent::DestroyRenderState()
 	UWorld* World = Owner->GetWorld();
 	if (!World) return;
 
-	World->GetScene().ClearFog();
+	World->GetScene().RemoveFog(this);
 }
 
 void UHeightFogComponent::OnTransformDirty()
@@ -47,7 +47,7 @@ void UHeightFogComponent::PushToScene()
 	Params.FogBaseHeight      = GetWorldLocation().Z;
 	Params.InscatteringColor  = FogInscatteringColor;
 
-	World->GetScene().SetFog(Params);
+	World->GetScene().AddFog(this, Params);
 }
 
 void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
