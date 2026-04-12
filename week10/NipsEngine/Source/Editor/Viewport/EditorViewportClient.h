@@ -98,7 +98,7 @@ public:
 	 * Returns true while a drag operation (RMB or MMB) is in progress for this viewport.
 	 * Used by the renderer to determine gizmo axis highlight behaviour.
 	 */
-	bool IsActiveOperation() const;
+	bool  IsActiveOperation() const;
 	bool  IsBoxSelecting()    const { return bBoxSelecting; }
 	POINT GetBoxSelectStart() const { return BoxSelectStart; }
 	POINT GetBoxSelectEnd()   const { return BoxSelectEnd; }
@@ -113,6 +113,7 @@ private:
 	void TickCursorCapture();                 // hide/lock cursor on editor-world drag begin/end
 	void TickKeyboardInput();                 // poll watched keys -> route to active controller
 	void TickEditorShortcuts();               // editor-only hotkeys (gizmo toggle, delete, select all)
+	void TickPIEShortCuts();				  // PIE-only hotkeys
 	void TickMouseInput(float VX, float VY);  // poll mouse state -> route to active controller
 
 	void TickInteraction(float DeltaTime);    // box selection + gizmo screen-scaling
@@ -126,24 +127,26 @@ private:
 
 private:
 	// Window / Viewport — Window is inherited from FViewportClient
-	UEditorEngine*    Editor   = nullptr;
-	FSceneViewport*   Viewport = nullptr;
+	UEditorEngine*		   Editor			= nullptr;
+	FSceneViewport*		   Viewport			= nullptr;
 
-	EEditorViewportType  ViewportType = EVT_Perspective;
-	FEditorViewportState* State       = nullptr;
+	EEditorViewportType    ViewportType		= EVT_Perspective;
+	FEditorViewportState*  State			= nullptr;
 
-	UWorld*           World            = nullptr;
-	UGizmoComponent*  Gizmo            = nullptr;
-	const FEditorSettings* Settings    = nullptr;
+	UWorld*				   World            = nullptr;
+	UGizmoComponent*	   Gizmo            = nullptr;
+	const FEditorSettings* Settings			= nullptr;
 	FSelectionManager*     SelectionManager = nullptr;
 
-	FViewportCamera    Camera;
-	FEditorInputRouter InputRouter;
-	bool               bHasCamera = false;
+	FViewportCamera		   Camera;
+	FEditorInputRouter	   InputRouter;
+	bool				   bHasCamera		= false;
 
 	bool  bBoxSelecting  = false;
 	POINT BoxSelectStart = { 0, 0 };
 	POINT BoxSelectEnd   = { 0, 0 };
+
+	bool  bControlLocked = false;
 
 	// Caller-owned scratch buffer for frustum queries in HandleBoxSelection
 	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
