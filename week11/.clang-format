@@ -12,6 +12,7 @@ UseTab: Never
 
 # 중괄호 설정 (Allman 스타일)
 BreakBeforeBraces: Allman
+Cpp11BracedListStyle: false # 중괄호 앞뒤로 한 칸 띄우기 ex. { 1, 2, 3 }
 
 # 들여쓰기 세부 제어
 AllowShortFunctionsOnASingleLine: Inline # Getter/Setter를 한 줄로 허용
