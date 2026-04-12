@@ -10,8 +10,7 @@ public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
 	UDecalComponent();
 
-	UDecalComponent* Duplicate() override;
-	UDecalComponent* DuplicateSubObjects() override { return this; }
+	void PostDuplicate(UObject* Original) override;
 
 	void BeginPlay() override;
 

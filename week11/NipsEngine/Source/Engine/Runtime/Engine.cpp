@@ -81,6 +81,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 		return;
 	}
 
+	Renderer.InvalidateSceneFinalTargets();
 	Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
 }
 

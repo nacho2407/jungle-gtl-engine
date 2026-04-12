@@ -1,19 +1,29 @@
 {
+  "ClassName" : "UWorld",
+  "Name" : "DefaultCameraTest",
   "NextUUID" : 50003,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [100.000000],
-    "Location" : [-28.107929, -27.869390, 25.837776],
+    "Location" : [-26.900812, -21.835358, 2.264605],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 0.926283, 0.770000]
+    "Rotation" : [11.753091, 65.379021, -23.964081]
   },
   "Primitives" : {
-    "10" : {
+    "8" : {
+      "Be Serialized" : false,
+      "Editor Only" : false,
+      "Enable Tick" : true,
       "Location" : [-25.000000, -18.000000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Mesh/buddha.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },  
-  }
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "StaticMeshComp",
+      "Visible" : true
+    }
+  },
+  "Version" : 4,
+  "WorldType" : "Editor"
 }

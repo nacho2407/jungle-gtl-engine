@@ -111,7 +111,6 @@ void FFontBatcher::AddText(const FString& Text,
 	FVector UpVector = ModelMatrix.GetUpVector();
 	FVector WorldScale = ModelMatrix.GetScaleVector();
 
-
 	const float CharW = 0.5f * Scale * WorldScale.Y;
 	const float CharH = 0.5f * Scale * WorldScale.Z;
 	float CharCursorX = 0.0f;

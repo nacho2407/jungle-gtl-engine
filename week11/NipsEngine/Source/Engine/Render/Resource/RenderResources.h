@@ -32,6 +32,7 @@ struct FRenderResources
 	UShader* FogPassShader;
 	UShader* DecalShader;
 	UShader* FXAAShader;
+	FStructuredBuffer LightStructuredBuffer;	// t3
 
 	TComPtr<ID3D11SamplerState> MeshSamplerState;
 };

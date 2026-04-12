@@ -85,11 +85,18 @@ public:
 	void InitDefaultComponents();
 };
 
-class AHeightFogActor : public AActor
-{
-  public:
-    DECLARE_CLASS(AHeightFogActor, AActor)
-    AHeightFogActor() = default;
+class AFireballActor : public AActor {
+public:
+    DECLARE_CLASS(AFireballActor, AActor)
+	AFireballActor() = default;
+	
+	void InitDefaultComponents();
+};
 
-    void InitDefaultComponents();
+class ASpotlightActor : public AActor {
+public:
+	DECLARE_CLASS(AFireballActor, AActor)
+	ASpotlightActor() = default;
+
+	void InitDefaultComponents();
 };
