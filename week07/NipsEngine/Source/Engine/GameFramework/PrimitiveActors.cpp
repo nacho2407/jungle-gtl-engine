@@ -46,6 +46,9 @@ REGISTER_FACTORY(ADecalActor)
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
 
+DEFINE_CLASS(ASpotlightActor, AActor)
+REGISTER_FACTORY(ASpotlightActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -275,4 +278,9 @@ void AFireballActor::InitDefaultComponents()
 		bFireballMatInit = true;
 	}
 	Sphere->SetMaterial(0, &FireballCoreMaterial);
+}
+
+void ASpotlightActor::InitDefaultComponents() {
+	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
+	
 }
