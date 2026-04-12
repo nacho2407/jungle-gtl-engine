@@ -30,7 +30,6 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     uv.y = 1.0f - uv.y;
 
     float depth = DepthTexture.Sample(g_Sample, uv).r;
-    
     if (depth >= 0.9999f)
         discard;
 
@@ -44,23 +43,36 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     float3 fireballPos = Model[3].xyz;
     float dist = length(worldPos - fireballPos);
 
-    float distMask = step(dist, Radius);
-    if (distMask <= 0.0f)
+    if (dist > Radius)
         discard;
-    
+
     float3 normalSample = NormalTexture.Sample(g_Sample, uv).xyz;
     float3 normalWS = normalize(normalSample * 2.0f - 1.0f);
-    
+
     float3 toCenter = normalize(fireballPos - worldPos);
     float normalFactor = saturate(dot(normalWS, toCenter));
 
-    float falloff = saturate(1.0f - (dist / (Radius)));
-    falloff = pow(falloff, max(RadiusFalloff, 0.01f));
-    
-    float lighting = lerp(0.25f, 1.0f, normalFactor);
+    // 거리 정규화 (0: 중심, 1: 반지름 경계)
+    float radiusSafe = max(Radius, 0.0001f);
+    float dist01 = saturate(dist / radiusSafe);
 
-    float3 rgb = Color.rgb * Intensity * falloff * lighting;
-    float alpha = Color.a * Intensity * falloff * lighting;
+    // 거리 그라데이션 (중심 강, 가장자리 약)
+    float radial = 1.0f - dist01;
+    float distanceWeight = pow(radial, max(RadiusFalloff, 0.01f));
+
+    // 경계 부드럽게
+    float edgeFade = 1.0f - smoothstep(Radius * 0.85f, Radius, dist);
+    distanceWeight *= edgeFade;
+
+    // 수직(dot=0) 최소 밝기 보장 + 거리 기반 조정
+    // 중심부 최소값 높게, 가장자리 최소값 낮게
+    float normalMin = lerp(0.05f, 0.25f, radial);
+
+    // 노멀 조명
+    float lighting = lerp(normalMin, 1.0f, normalFactor);
+
+    float3 rgb = Color.rgb * Intensity * distanceWeight * lighting;
+    float alpha = Color.a * Intensity * distanceWeight * lighting;
 
     return float4(rgb, alpha);
 }
