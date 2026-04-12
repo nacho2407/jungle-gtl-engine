@@ -116,7 +116,6 @@ void UDecalComponent::ResetFade()
 {
 	ElapsedTime = 0.0f;
 	FadeAlpha = 1.0f;
-	bTickEnable = true;
 
 	SetActive(true);
 	SetComponentTickEnabled(true);

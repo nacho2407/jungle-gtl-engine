@@ -55,6 +55,8 @@ namespace SceneKeys
 	static constexpr const char* ContextHandle = "ContextHandle";
 	static constexpr const char* Actors = "Actors";
 	static constexpr const char* Visible = "bVisible";
+	static constexpr const char* TickEnabled = "bTickEnabled";
+	static constexpr const char* TickInEditor = "bTickInEditor";
 	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
 	static constexpr const char* Properties = "Properties";
@@ -203,6 +205,8 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 	JSON a = json::Object();
 	a[SceneKeys::ClassName] = Actor->GetTypeInfo()->name;
 	a[SceneKeys::Visible] = Actor->IsVisible();
+	a[SceneKeys::TickEnabled] = Actor->IsActorTickEnabled();
+	a[SceneKeys::TickInEditor] = Actor->IsActorTickInEditor();
 
 	// RootComponent 트리 직렬화
 	if (Actor->GetRootComponent()) {
@@ -503,6 +507,12 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
 			if (ActorJSON.hasKey(SceneKeys::Visible)) {
 				Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
+			}
+			if (ActorJSON.hasKey(SceneKeys::TickEnabled)) {
+				Actor->SetActorTickEnabled(ActorJSON[SceneKeys::TickEnabled].ToBool());
+			}
+			if (ActorJSON.hasKey(SceneKeys::TickInEditor)) {
+				Actor->SetActorTickInEditor(ActorJSON[SceneKeys::TickInEditor].ToBool());
 			}
 
 			// RootComponent 트리 복원

@@ -15,6 +15,7 @@
 
 class UCameraComponent;
 class UPrimitiveComponent;
+class UActorComponent;
 
 class UWorld : public UObject {
 public:
@@ -32,6 +33,7 @@ public:
 	T* SpawnActor();
 	void DestroyActor(AActor* Actor);
 	void AddActor(AActor* Actor);
+	void QueueComponentForDestroy(UActorComponent* Component);
 	void MarkWorldPrimitivePickingBVHDirty();
 	void BuildWorldPrimitivePickingBVHNow() const;
 	void BeginDeferredPickingBVHUpdate();
@@ -55,6 +57,7 @@ public:
 	void EndPlay();        // Cleanup before world is destroyed
 
 	bool HasBegunPlay() const { return bHasBegunPlay; }
+	bool IsTicking() const { return bIsTicking; }
 
 	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
 	void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }
@@ -75,6 +78,7 @@ public:
 	void UpdateActorInOctree(AActor* actor);
 
 private:
+	void FlushPendingDestroy();
 	bool NeedsVisibleProxyRebuild() const;
 	void CacheVisibleCameraState();
 
@@ -84,6 +88,7 @@ private:
 	UCameraComponent* ActiveCamera = nullptr;
 	UCameraComponent* LastLODUpdateCamera = nullptr;
 	bool bHasBegunPlay = false;
+	bool bIsTicking = false;
 	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;
@@ -98,6 +103,8 @@ private:
 	FScene Scene;
 	FDebugDrawQueue DebugDrawQueue;
 	FTickManager TickManager;
+	TArray<UActorComponent*> PendingDestroyComponents;
+	TArray<AActor*> PendingDestroyActors;
 
 	FSpatialPartition Partition;
 };

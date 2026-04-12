@@ -4,6 +4,16 @@
 
 IMPLEMENT_CLASS(UActorComponent, UObject)
 
+UActorComponent::UActorComponent()
+{
+	PrimaryComponentTick.Target = this;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;	
+	PrimaryComponentTick.bTickEnabled = true;
+	PrimaryComponentTick.bTickInEditor = false;
+	PrimaryComponentTick.RegisterTickFunction();
+}
+
 void UActorComponent::BeginPlay()
 {
 	if (bAutoActivate)
@@ -15,13 +25,13 @@ void UActorComponent::BeginPlay()
 void UActorComponent::Activate()
 {
 	bIsActive = true;
-	PrimaryComponentTick.SetTickEnabled(bTickEnable);
+	SetComponentTickEnabled(true);
 }
 
 void UActorComponent::Deactivate()
 {
 	bIsActive = false;
-	PrimaryComponentTick.SetTickEnabled(false);
+	SetComponentTickEnabled(false);
 }
 
 
@@ -51,16 +61,13 @@ void UActorComponent::SetActive(bool bNewActive)
 void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
-	Ar << bTickEnable;
+	Ar << PrimaryComponentTick.bTickEnabled;
+	Ar << PrimaryComponentTick.bTickInEditor;
 }
 
 void UActorComponent::SetOwner(AActor* Actor)
 {
 	Owner = Actor;
-	PrimaryComponentTick.Target = this;
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bTickEnabled = bTickEnable;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -68,12 +75,10 @@ void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
 	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, &bAutoActivate });
 	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, &bCanEverTick });
-	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, &bTickEnable });
+	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, &PrimaryComponentTick.bTickEnabled });
+	OutProps.push_back({ "bTickInEditor", EPropertyType::Bool, &PrimaryComponentTick.bTickInEditor });
 }
 
 void UActorComponent::PostEditProperty(const char* PropertyName)
 {
-	if (strcmp(PropertyName, "bTickEnable") == 0) {
-		PrimaryComponentTick.SetTickEnabled(bTickEnable);
-	}
 }

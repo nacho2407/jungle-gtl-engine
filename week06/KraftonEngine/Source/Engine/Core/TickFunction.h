@@ -16,7 +16,7 @@ enum ELevelTick : int
 
 enum ETickingGroup : int
 {
-    TG_PrePhysics,
+    TG_PrePhysics = 0,
     TG_DuringPhysics,
     TG_PostPhysics,
     TG_PostUpdateWork,
@@ -26,87 +26,81 @@ enum ETickingGroup : int
 //TODO: Actor에 PrimaryTick을 구현해야함
 struct FTickFunction
 {
-    ETickingGroup TickGroup = TG_PrePhysics;      // 최소 실행 그룹
-    ETickingGroup EndTickGroup = TG_PrePhysics;   // 완료 보장 그룹
-
-	// Tick 함수가 실행될 초(second) 단위 frequency
-	float TickInterval = 0.0f; 
-	float TickAccumulator = 0.0f;
-	
-public:
-	//tickFunction에 들어가야하는 변수들
-	// Pause시 Tick을 돌리는지 여부
-	bool bTickEvenWhenPaused = false;
-	// 틱으로 절대 등록하지 않음
-	bool bCanEverTick = false; 
-	// BeginPlay이후부터 바로 Tick함수 실행
-	bool bStartWithTickEnabled = true;
-	bool bRegistered = false;
-
-	//현재상태 변수
-	//현재 틱을 사용할건지 여부
-	bool bTickEnabled  = true;
-
 public:
     virtual ~FTickFunction() = default;
 
-	void SetTickGroup(ETickingGroup InGroup) {TickGroup = InGroup;}
-	void SetEndTickGroup(ETickingGroup InGroup) {EndTickGroup = InGroup;}
-	void SetTickInterval(float InInterval) {TickInterval = (InInterval > 0.0f) ? InInterval : 0.0f; }
+    virtual bool IsTargetValid() const = 0;
+    virtual bool HasBegunPlay() const = 0;
+    virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) = 0;
 	
-	ETickingGroup GetTickGroup() const { return TickGroup; }
-	ETickingGroup GetEndTickGroup() const { return EndTickGroup; }
-	float GetTickInterval() const { return TickInterval; }
+    virtual const FString GetDebugName() const = 0;
+protected:
+    ETickingGroup TickGroup = TG_PrePhysics;      // 최소 실행 그룹
+
+	// Tick 함수가 실행될 초(second) 단위 frequency
+	float TickAccumulator = 0.0f;
+	// Tick이 Manager에 등록되었는지 여부
+	bool bRegistered = false;
 	
-    float& GetTickAccumulator() { return TickAccumulator; }
+public:
+	bool bTickEvenWhenPaused	= false;
+	bool bCanEverTick			= true; 
+	bool bStartWithTickEnabled	= true;
 
-	virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) = 0;
-	virtual const char* GetDebugName() const = 0;
+	bool bTickEnabled			= true;
+    bool bTickInEditor			= false;
+	float TickInterval			= 0.0f; 
 
+public:
 	void RegisterTickFunction();
 	void UnRegisterTickFunction();
+	
+	bool IsTickFunctionRegistered() const;
+	bool CanTick(ELevelTick TickType) const;
+	bool ConsumeInterval(float DeltaTime, float& OutTickDeltaTime);
+	bool IsTickEnabled() const { return bTickEnabled && bCanEverTick; }
+	ETickingGroup GetTickGroup() const{ return TickGroup; }
 
-	bool ConsumeInterval(float DeltaTime)
-	{
-		if (TickInterval <= 0.0f)
-		{
-			return true;
-		}
+	void SetTickGroup(ETickingGroup InGroup) {TickGroup = InGroup;}
+	void SetTickAccumulator(float InAccumulator) {TickAccumulator = (InAccumulator > 0.0f) ? InAccumulator : 0.0f; }
+	float GetTickAccumulator() { return TickAccumulator; }
 
-		TickAccumulator += DeltaTime;
-		if (TickAccumulator < TickInterval)
-		{
-			return false;
-		}
-
-		TickAccumulator -= TickInterval;
-		return true;
+	void SetTickEnabled(bool bInEnabled) {
+		bTickEnabled = bCanEverTick && bInEnabled;
 	}
+};
 
-	void SetTickEnabled(bool bInEnabled)
-	{
-		bTickEnabled = bInEnabled;
-	}
+struct FActorTickFunction :public FTickFunction {
+private:
+    AActor* Target = nullptr;
 
-	void ResetInterval()
-	{
-		TickAccumulator = 0.0f;
-	}
 
-	bool CanTick(ELevelTick TickType) const
-	{
-		if (!bCanEverTick || !bTickEnabled || !bRegistered)
-		{
-			return false;
-		}
+public:
+    void SetTarget(AActor* InTarget) { Target = InTarget; }
 
-		if (TickType == LEVELTICK_PauseTick && !bTickEvenWhenPaused)
-		{
-			return false;
-		}
+    bool IsTargetValid() const override;
+    bool HasBegunPlay() const override;
+	
+    virtual void ExecuteTick(
+        float DeltaTime,
+        ELevelTick TickType) override;
 
-		return true;
-	}
+	// FTickFunction을(를) 통해 상속됨
+	const FString GetDebugName() const override;
+};
+
+struct FActorComponentTickFunction : public FTickFunction {
+	UActorComponent* Target= nullptr;;
+	
+public:
+	void SetTarget(UActorComponent* InTarget) { Target = InTarget; }
+
+    bool IsTargetValid() const override;
+    bool HasBegunPlay() const override;
+	virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) override;
+
+	// FTickFunction을(를) 통해 상속됨
+	const FString GetDebugName() const override;
 };
 
 class FTickManager
@@ -119,32 +113,5 @@ private:
 	void GatherTickFunctions(UWorld* World, ELevelTick TickType);
 	void QueueTickFunction(FTickFunction& TickFunction);
 
-	TArray<FTickFunction*> TickFunctions;
-};
-
-struct FActorTickFunction :public FTickFunction {
-private:
-    AActor* Target = nullptr;
-
-public:
-    void SetTarget(AActor* InTarget) { Target = InTarget; }
-
-    virtual void ExecuteTick(
-        float DeltaTime,
-        ELevelTick TickType) override;
-
-
-	// FTickFunction을(를) 통해 상속됨
-	const char* GetDebugName() const override;
-};
-
-struct FActorComponentTickFunction : public FTickFunction {
-	UActorComponent* Target= nullptr;;
-	
-public:
-	void SetTarget(UActorComponent* InTarget) { Target = InTarget; }
-	virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) override;
-
-	// FTickFunction을(를) 통해 상속됨
-	const char* GetDebugName() const override;
+	TArray<FTickFunction*> TickFunctionsByGroup[TG_MAX];
 };

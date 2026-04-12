@@ -13,7 +13,7 @@ class UActorComponent : public UObject
 
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
-
+	UActorComponent();
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
 
@@ -50,7 +50,6 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
 	
 	AActor* Owner = nullptr;
-	bool bTickEnable = true;
 
 private:
 	bool bIsActive = true;

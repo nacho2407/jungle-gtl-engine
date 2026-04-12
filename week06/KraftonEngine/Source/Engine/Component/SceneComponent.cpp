@@ -39,6 +39,7 @@ void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 
 void USceneComponent::PostEditProperty(const char* PropertyName)
 {
+	UActorComponent::PostEditProperty(PropertyName);
 	bool bApplyChangeToPartition = (strcmp(PropertyName, "Location") == 0
 								|| strcmp(PropertyName, "Rotation") == 0
 								|| strcmp(PropertyName, "Scale") == 0);
