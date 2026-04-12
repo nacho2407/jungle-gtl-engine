@@ -5,5 +5,5 @@
 
 struct FIntersectionUtils
 {
-	bool IntersectOBBAndAABB(const FMatrix& OBBWorldMatrix, const FVector& OBBHalfExtents, const FBoundingBox& AABB);
-}
+	static bool IntersectOBBAndAABB(const FMatrix& OBBWorldMatrix, const FVector& OBBHalfExtents, const FBoundingBox& AABB);
+};

@@ -220,11 +220,15 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveSceneProxy*>& VisibleProxies, FRenderBus& RenderBus)
 {
+	SCOPE_STAT_CAT("Decal::Collect", "Decal");
+
 	if (!World) return;
 	if (!RenderBus.GetShowFlags().bPrimitives || !RenderBus.GetShowFlags().bDecals) return;
 
 	TMap<const UStaticMeshComponent*, const FPrimitiveSceneProxy*> VisibleStaticMeshProxies;
 	VisibleStaticMeshProxies.reserve(VisibleProxies.size());
+	FDecalStats::Reset();
+	FDecalFrameStats& DecalStats = FDecalStats::GetMutable();
 
 	for (const FPrimitiveSceneProxy* VisibleProxy : VisibleProxies)
 	{
@@ -235,6 +239,8 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 
 		VisibleStaticMeshProxies[StaticMeshComponent] = VisibleProxy;
 	}
+
+	DecalStats.VisibleReceivers = static_cast<int32>(VisibleStaticMeshProxies.size());
 
 	const FOctree* Octree = World->GetOctree();
 	int32 BroadPhaseCandidateCount = 0;
@@ -252,6 +258,7 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 
 			const FTextureResource* DecalTexture = DecalComponent->GetTexture();
 			if (!DecalTexture) continue;
+			++DecalStats.VisibleDecals;
 
 			TArray<UPrimitiveComponent*> BroadPhaseCandidates;
 			if (Octree)
@@ -287,6 +294,8 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 				continue;
 			}
 
+			DecalStats.UniqueCandidates += static_cast<int32>(UniqueCandidates.size());
+
 			const FMatrix DecalWorldMatrix = DecalComponent->GetWorldMatrix();
 			const FVector DecalHalfExtents = DecalComponent->GetHalfExtents();
 
@@ -312,8 +321,12 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 				Entry.Decal.DecalHalfExtents = DecalHalfExtents;
 				Entry.Decal.FadeAlpha = DecalComponent->GetFadeAlpha();
 				RenderBus.AddDecalEntry(std::move(Entry));
+				++DecalStats.SubmittedDraws;
 			}
 		}
 	}
+
+	DecalStats.BroadCandidates = BroadPhaseCandidateCount;
+	DecalStats.SATAccepted = NarrowPhaseAcceptedCount;
 }
 

@@ -342,6 +342,8 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 
 void FRenderer::DrawDecalPass(const FRenderBus& Bus, ID3D11DeviceContext* Context)
 {
+	SCOPE_STAT_CAT("Decal::Render", "Decal");
+
 	const TArray<FDecalDrawEntry>& Entries = Bus.GetDecalEntries();
 	if (Entries.empty()) return;
 
@@ -357,6 +359,8 @@ void FRenderer::DrawDecalPass(const FRenderBus& Bus, ID3D11DeviceContext* Contex
 
 	FDrawState State;
 	State.bSamplerBound = true;
+	FDecalFrameStats& DecalStats = FDecalStats::GetMutable();
+	DecalStats.RenderedDraws = 0;
 
 	for (const FDecalDrawEntry& Entry : Entries)
 	{
@@ -378,6 +382,7 @@ void FRenderer::DrawDecalPass(const FRenderBus& Bus, ID3D11DeviceContext* Contex
 		}
 
 		DrawDecalGeometry(*Entry.ReceiverProxy, Context, State);
+		++DecalStats.RenderedDraws;
 	}
 
 	CleanupSRV(Context, State);
