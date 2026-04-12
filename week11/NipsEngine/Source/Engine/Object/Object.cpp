@@ -80,11 +80,15 @@ void UObject::CopyPropertiesFrom(UObject* Src)
         {
             const size_t Size = GetPropertySize(SrcProp.Type);
             if (Size > 0)
+			{
                 memcpy(DstProp->ValuePtr, SrcProp.ValuePtr, Size);
+				this->PostEditProperty(SrcProp.Name);
+			}
             break;
         }
         case EPropertyType::String:
             *static_cast<FString*>(DstProp->ValuePtr) = *static_cast<const FString*>(SrcProp.ValuePtr);
+			this->PostEditProperty(SrcProp.Name);
             break;
 
         case EPropertyType::Name:
