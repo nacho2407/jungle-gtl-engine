@@ -22,8 +22,11 @@ class FMaterialManager : public TSingleton<FMaterialManager>
 public:
 	void Initialize(ID3D11Device* InDevice) { Device = InDevice; }
 
+	// 지정된 디렉토리 내의 모든 머티리얼을 미리 로드
+	void LoadAllMaterials(ID3D11Device* Device);
+
     // UMaterial 생성
-	UMaterial* CreateMaterial(const FString& MatFilePath);
+	UMaterial* GetOrCreateMaterial(const FString& MatFilePath);
 
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환

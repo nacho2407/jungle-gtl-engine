@@ -5,7 +5,7 @@
 #include "Platform/Paths.h"
 #include "Render/Resource/ShaderManager.h"
 
-UMaterial* FMaterialManager::CreateMaterial(const FString& MatFilePath)
+UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
 	auto It = MaterialCache.find(MatFilePath);
