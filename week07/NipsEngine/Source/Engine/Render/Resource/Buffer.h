@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 	Vertex Buffer와 Constant Buffer를 관리하는 Class 입니다.
@@ -14,7 +14,7 @@
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Buffer;
-
+struct ID3D11ShaderResourceView;
 
 class FVertexBuffer
 {
@@ -85,4 +85,21 @@ public:
 private:
 	FVertexBuffer VertexBuffer;
 	FIndexBuffer IndexBuffer;
+};
+
+class FStructuredBuffer
+{
+public:
+	void Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements);
+	void Update(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InElementCount);
+	void Release();
+
+	ID3D11ShaderResourceView* GetSRV() const;
+    uint32 GetCount() const { return Count; }
+
+private:
+	TComPtr<ID3D11Buffer>			  Buffer;
+	TComPtr<ID3D11ShaderResourceView> SRV;
+	uint32							  Count;
+	uint32							  ElementSize;
 };

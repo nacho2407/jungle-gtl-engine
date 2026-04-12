@@ -333,6 +333,8 @@ void FStaticMeshSimplifier::SimplifyMesh()
 	// priority queue에서 계산된 오차가 작은 순서대로 간선이 pop된다.
 	while (!PQ.empty() && CurrentLOD < UStaticMesh::MAX_LOD)
 	{
+		if (CurrentTriangles < 96) break;
+
 		FCollapseCandidate Victim = PQ.top();
 		PQ.pop();
 
@@ -378,8 +380,6 @@ void FStaticMeshSimplifier::SimplifyMesh()
 			CurrentLOD++;
 			TargetRatio *= 0.6f;
 			TargetTriangles = std::max(96, static_cast<int32>(CurrentTriangles * TargetRatio));
-
-			if (CurrentTriangles < 96) break;
 		}
 	}
 

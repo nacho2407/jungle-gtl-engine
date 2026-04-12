@@ -4,40 +4,27 @@
 #include "GameFramework/World.h"
 #include "Core/ResourceManager.h"
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(UDecalComponent, UPrimitiveComponent)
+REGISTER_FACTORY(UDecalComponent)
 
+// Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
 UDecalComponent::UDecalComponent()
 {
 	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
 	SetMaterial(FResourceManager::Get().FindMaterialAsset(MatNames[0]));
+    bEnableCull = false;
 }
 
-UDecalComponent* UDecalComponent::Duplicate()
+// Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
+// LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
+void UDecalComponent::PostDuplicate(UObject* Original)
 {
-	UDecalComponent* NewComp = UObjectManager::Get().CreateObject<UDecalComponent>();
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetOwner(nullptr);
-	
-	NewComp->SetRelativeLocation(this->GetRelativeLocation());
-	NewComp->SetRelativeRotation(this->GetRelativeRotation());
-	NewComp->SetRelativeScale(this->GetRelativeScale());
-	
-	NewComp->SetVisibility(this->IsVisible());
+    UPrimitiveComponent::PostDuplicate(Original);
 
-	NewComp->OverrideMaterial = this->OverrideMaterial;
-	NewComp->DecalSize = this->DecalSize;
-	NewComp->DecalColor = this->DecalColor;
-	
-	NewComp->FadeStartDelay = this->FadeStartDelay;
-	NewComp->FadeDuration = this->FadeDuration;
-	NewComp->FadeInStartDelay = this->FadeInStartDelay;
-	NewComp->FadeInDuration = this->FadeInDuration;
-	NewComp->bDestroyOwnerAfterFade = this->bDestroyOwnerAfterFade;
-
-	NewComp->DuplicateSubObjects();
-
-	return NewComp;
+    const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
+    Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
 }
 
 void UDecalComponent::BeginPlay()

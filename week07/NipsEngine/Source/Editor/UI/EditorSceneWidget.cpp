@@ -140,6 +140,10 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 			Cam->SetFOV(LoadedCam.FOV * (3.14159265358979f / 180.f));
 			Cam->SetNearPlane(LoadedCam.NearClip);
 			Cam->SetFarPlane(LoadedCam.FarClip);
+			// ApplyCameraMode 가 설정한 TargetLocation(기본값)이 남아 있으면
+			// 다음 Tick 에서 EditorWorldController 가 카메라를 되돌려 버리므로
+			// 새 위치로 동기화한다.
+			EditorEngine->GetViewportLayout().GetViewportClient(0).SyncCameraTarget();
 		}
 	}
 

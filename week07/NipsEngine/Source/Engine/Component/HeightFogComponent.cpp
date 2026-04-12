@@ -9,25 +9,16 @@ UHeightFogComponent::UHeightFogComponent()
 {
 }
 
-UHeightFogComponent* UHeightFogComponent::Duplicate() 
-{
-    UHeightFogComponent* NewComp = UObjectManager::Get().CreateObject<UHeightFogComponent>();
-
-	NewComp->FogDensity = FogDensity;
-    NewComp->HeightFalloff = HeightFalloff;
-    NewComp->FogInscatteringColor = FogInscatteringColor;
-    NewComp->FogHeight = FogHeight;
-
-	return NewComp;
-}
-
 void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    USceneComponent::GetEditableProperties(OutProps); // 부모 체인 확인 후 맞게 수정
+    UPrimitiveComponent::GetEditableProperties(OutProps); // ActorComp + SceneComp + Visible
     OutProps.push_back({"FogDensity", EPropertyType::Float, &FogDensity, 0.0f, 1.0f, 0.01f});
     OutProps.push_back({"HeightFalloff", EPropertyType::Float, &HeightFalloff, 0.0f, 10.0f, 0.01f});
     OutProps.push_back({"FogInscatteringColor", EPropertyType::Vec4, &FogInscatteringColor});
     OutProps.push_back({"FogHeight", EPropertyType::Float, &FogHeight});
+    OutProps.push_back({"FogStartDistance", EPropertyType::Float, &FogStartDistance, 0.0f});
+    OutProps.push_back({"FogCutoffDistance", EPropertyType::Float, &FogCutoffDistance});
+    OutProps.push_back({"FogMaxOpacity", EPropertyType::Float, &FogMaxOpacity, 0.0f, 1.0f, 0.01f});
 }
 
 void UHeightFogComponent::PostEditProperty(const char* PropertyName)

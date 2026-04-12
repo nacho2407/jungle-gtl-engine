@@ -10,9 +10,6 @@ class UActorComponent : public UObject
 public:
 	DECLARE_CLASS(UActorComponent, UObject)
 	
-	virtual UActorComponent* Duplicate() override;
-	virtual UActorComponent* DuplicateSubObjects() override { return this; }
-
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
 
@@ -32,10 +29,19 @@ public:
 	AActor* GetOwner() const { return Owner; }
 
 	// 에디터에 노출할 프로퍼티 목록 반환. 하위 클래스에서 override하여 속성 추가.
-	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
-	virtual void PostEditProperty(const char* PropertyName) {}
+	void PostEditProperty(const char* PropertyName) override {}
+
+	// CopyPropertiesFrom 은 UObject 에 정의됩니다.
+	// 컴포넌트-컴포넌트 간 소유 관계(Owner, Parent 등)는 Duplicate() 호출 측에서 별도 처리해야 합니다.
+
+	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
+	bool IsTransient() const { return bTransient; }
+
+	void SetEditorOnly(bool bInEditorOnly) { bIsEditorOnly = bInEditorOnly; }
+	bool IsEditorOnly() const { return bIsEditorOnly; }
 
 protected:
 	virtual void TickComponent(float DeltaTime) {}
@@ -47,6 +53,8 @@ private:
 	bool bIsActive = true;
 	bool bAutoActivate = true;
 	bool bCanEverTick = true;
+	bool bTransient = false; // 런타임에만 존재해야 하며, 저장되어서는 안 되는 객체에 붙입니다. (UUID 컴포넌트)
+	bool bIsEditorOnly = false;
 };
 
 

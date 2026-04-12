@@ -11,6 +11,7 @@
 #include "Component/SubUVComponent.h"
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/FireballComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
@@ -182,7 +183,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 			}
 		}
 
-		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus);
+		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
 	}
 
 }
@@ -211,7 +212,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 		}
 
 		++LastCullingStats.BVHPassedPrimitiveCount;
-		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
 	}
 
 	std::unordered_set<UPrimitiveComponent*> CollectedCameraDependentPrimitives;
@@ -236,7 +237,8 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 			if (!UsesCameraDependentRenderBounds(Primitive))
 			{
-				continue;
+				if (Primitive->IsEnableCull())
+					continue;
 			}
 
 			if (!CollectedCameraDependentPrimitives.insert(Primitive).second)
@@ -246,11 +248,10 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 			if (ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
 			{
-				continue;
 			}
 
 			++LastCullingStats.FallbackPassedPrimitiveCount;
-			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
 		}
 	}
 }
@@ -329,13 +330,13 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 	}
 }
 
-void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType)
 {
 	if (!Actor->IsVisible()) return;
 
 	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 	{
-		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
 	}
 }
 
@@ -349,8 +350,13 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
-
 		if (!primitiveComponent->IsVisible()) continue;
+		if (primitiveComponent->IsEditorOnly())
+		{
+			UWorld* World = Actor->GetWorld();
+			if (World && World->GetWorldType() != EWorldType::Editor)
+				continue;
+		}
 
 		FMeshBuffer* MeshBuffer = nullptr;
 		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
@@ -433,9 +439,10 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	return bHasSelectionMask;
 }
 
-void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType)
 {
 	if (!Primitive->IsVisible()) return;
+	if (Primitive->IsEditorOnly() && WorldType != EWorldType::Editor) return;
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
@@ -498,10 +505,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 			if (!MtlData) MtlData = &EngineDefaultMaterial;
 	
-			Cmd.Constants.StaticMesh.AmbientColor = MtlData->AmbientColor;
-			Cmd.Constants.StaticMesh.DiffuseColor = MtlData->DiffuseColor;
+			Cmd.Constants.StaticMesh.AmbientColor  = MtlData->AmbientColor;
+			Cmd.Constants.StaticMesh.DiffuseColor  = MtlData->DiffuseColor;
 			Cmd.Constants.StaticMesh.SpecularColor = MtlData->SpecularColor;
-			Cmd.Constants.StaticMesh.Shininess = MtlData->Shininess;
+			Cmd.Constants.StaticMesh.Shininess     = MtlData->Shininess;
+			Cmd.Constants.StaticMesh.EmissiveColor = MtlData->EmissiveColor;
 
 			Cmd.Constants.StaticMesh.ScrollX = StaticMeshComp->GetScroll().first;
 			Cmd.Constants.StaticMesh.ScrollY = StaticMeshComp->GetScroll().second;
@@ -675,7 +683,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		}
 
 		LastDecalStats.TotalDecalCount += 1;
-		LastDecalStats.CollectTimeMS += RenderDecalScope.Finish();
+		LastDecalStats.CollectTimeMS += static_cast<int32>(RenderDecalScope.Finish());
 		break;
 	}
 	
@@ -689,12 +697,32 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
         Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
         Cmd.Constants.Fog.FogHeight = HeightFogComp->GetFogHeight();
+        Cmd.Constants.Fog.FogStartDistance = HeightFogComp->GetFogStartDistance();
+        Cmd.Constants.Fog.FogMaxOpacity = HeightFogComp->GetFogMaxOpacity();
+        Cmd.Constants.Fog.FogCutoffDistance = HeightFogComp->GetFogCutoffDistance();
         Cmd.BlendState = EBlendState::AlphaBlend;
         Cmd.DepthStencilState = EDepthStencilState::Default;
 
         RenderBus.AddCommand(ERenderPass::Fog, Cmd);
         break;
     }
+    case EPrimitiveType::EPT_Fireball:
+    {
+		UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
+
+		FLightData LightData = {};
+		LightData.Intensity = FireballComp->GetIntensity();
+		LightData.Radius	= FireballComp->GetRadius();
+		LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
+		LightData.WorldPos  = FireballComp->GetWorldLocation();
+
+		FColor Color = FireballComp->GetLinearColor();
+		LightData.Color.X = Color.R;
+		LightData.Color.Y = Color.G;
+		LightData.Color.Z = Color.B;
+		RenderBus.AddLight(LightData);
+		break;
+	}
 	default:
 		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
 		{

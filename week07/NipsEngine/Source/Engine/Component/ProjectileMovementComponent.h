@@ -10,9 +10,6 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 	virtual void BeginPlay() override;
 
-	virtual UProjectileMovementComponent* Duplicate() override;
-	virtual UProjectileMovementComponent* DuplicateSubObjects() override { return this; }
-
     void SetInitialSpeed(const float InSpeed) { InitialSpeed = InSpeed; }
     float GetInitialSpeed() const { return InitialSpeed; }
 

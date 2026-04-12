@@ -13,9 +13,6 @@ class UMovementComponent : public UActorComponent
 public:
     DECLARE_CLASS(UMovementComponent, UActorComponent)
 
-    virtual UMovementComponent* Duplicate() override = 0;
-    virtual UMovementComponent* DuplicateSubObjects() override { return this; }
-
     virtual void TickComponent(float DeltaTime) override = 0;
 
     void SetUpdatedComponent(USceneComponent* InComponent);
