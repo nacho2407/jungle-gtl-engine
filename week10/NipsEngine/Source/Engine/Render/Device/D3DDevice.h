@@ -34,6 +34,7 @@ enum class ERasterizerState
 	SolidFrontCull,
 	SolidNoCull,
 	WireFrame,
+	DepthView,
 };
 
 struct FRenderTargetSet
