@@ -49,6 +49,7 @@ void FEditorViewportClient::EndPIE(UWorld* InWorld)
 	InputRouter.GetEditorWorldController().ResetTargetLocation();
 	ClearEndPIECallback();
 	InputSystem::Get().LockMouse(false);
+	bControlLocked = false;
 }
 
 void FEditorViewportClient::SetSelectionManager(FSelectionManager* InSelectionManager)
@@ -220,6 +221,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	InputRouter.Tick(DeltaTime);
 	TickKeyboardInput();
 	TickEditorShortcuts();
+	TickPIEShortCuts();
 	TickMouseInput(VX, VY);
 }
 
@@ -254,6 +256,7 @@ void FEditorViewportClient::TickKeyboardInput()
 		VK_SPACE, VK_ESCAPE,
 	};
 
+	if (bControlLocked) return;
 	const InputSystem& IS = InputSystem::Get();
 	for (int VK : WatchKeys)
 	{
@@ -283,8 +286,28 @@ void FEditorViewportClient::TickEditorShortcuts()
 		SelectAllActors();
 }
 
+void FEditorViewportClient::TickPIEShortCuts()
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController) return;
+
+	InputSystem& IS = InputSystem::Get();
+
+	if (IS.GetKeyDown(VK_F4)) {
+		if (!bControlLocked) {
+			bControlLocked = true;
+			IS.SetCursorVisibility(true);
+			IS.LockMouse(false);
+		} else {
+            bControlLocked = false;
+            IS.SetCursorVisibility(false);
+            LockCursorToViewport();
+		}
+	}
+}
+
 void FEditorViewportClient::TickMouseInput(float VX, float VY)
 {
+	if (bControlLocked) return;
 	const InputSystem& IS = InputSystem::Get();
 
 	POINT MP = IS.GetMousePos();
