@@ -41,6 +41,7 @@ public:
 	TArray<UPrimitiveComponent*> FindNearestPrimitiveList(const FVector& Pos, const FVector& QueryExtent, uint32 Count);
 
 	void QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	void QuerySphere(const FBoundingSphere& QuerySphere, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	void QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 	// Direct proxy output — skips Component→GetSceneProxy() indirection
 	void QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;

@@ -38,6 +38,8 @@ protected:
 	virtual EProjectileHitBehavior GetHitBehavior() const;
 	virtual bool HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult);
 
+	bool CheckBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, FHitResult& OutHitResult);
+
 	FVector Velocity = FVector(0.0f, 0.0f, 0.0f);
 	float InitialSpeed = 10.0f;
 	float MaxSpeed = 100.0f;

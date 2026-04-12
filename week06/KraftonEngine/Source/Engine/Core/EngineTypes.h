@@ -94,6 +94,134 @@ struct FBoundingBox
 	}
 };
 
+struct FBoundingSphere
+{
+    FVector Center;
+    float Radius;
+
+    FBoundingSphere()
+        : Center(FVector(0.f, 0.f, 0.f))
+        , Radius(0.f)
+    {
+    }
+
+    FBoundingSphere(const FVector& InCenter, float InRadius)
+        : Center(InCenter)
+        , Radius(InRadius)
+    {
+    }
+
+    // 점을 포함하도록 확장
+    void Expand(const FVector& Point)
+    {
+        if (Radius <= 0.0f)
+        {
+            Center = Point;
+            Radius = 0.0f;
+            return;
+        }
+
+        FVector ToPoint = Point - Center;
+        float Dist = ToPoint.Length();
+
+        if (Dist > Radius)
+        {
+            float NewRadius = (Radius + Dist) * 0.5f;
+            FVector Dir = ToPoint.Normalized();
+
+            // 중심 이동 (minimal enclosing sphere)
+            Center += Dir * (NewRadius - Radius);
+            Radius = NewRadius;
+        }
+    }
+
+    FVector GetCenter() const
+    {
+        return Center;
+    }
+
+    float GetRadius() const
+    {
+        return Radius;
+    }
+
+    bool IsValid() const
+    {
+        return Radius >= 0.0f;
+    }
+
+    // Sphere contains another sphere
+    bool IsContains(const FBoundingSphere& Other) const
+    {
+        float Dist = (Other.Center - Center).Length();
+        return Dist + Other.Radius <= Radius;
+    }
+
+    // Sphere contains point
+    bool IsContains(const FVector& Point) const
+    {
+        float DistSq = (Point - Center).Dot(Point - Center);
+        return DistSq <= Radius * Radius;
+    }
+
+    // Sphere-sphere intersection
+    bool IsIntersected(const FBoundingSphere& Other) const
+    {
+        float DistSq = (Other.Center - Center).Dot(Other.Center - Center);
+        float RadiusSum = Radius + Other.Radius;
+        return DistSq <= RadiusSum * RadiusSum;
+    }
+
+	bool IsIntersected(const FBoundingBox& Box) const
+	{
+		float DistSq = 0.0f;
+
+		// X
+		if (Center.X < Box.Min.X)
+		{
+			float d = Box.Min.X - Center.X;
+			DistSq += d * d;
+		}
+		else if (Center.X > Box.Max.X)
+		{
+			float d = Center.X - Box.Max.X;
+			DistSq += d * d;
+		}
+
+		// Y
+		if (Center.Y < Box.Min.Y)
+		{
+			float d = Box.Min.Y - Center.Y;
+			DistSq += d * d;
+		}
+		else if (Center.Y > Box.Max.Y)
+		{
+			float d = Center.Y - Box.Max.Y;
+			DistSq += d * d;
+		}
+
+		// Z
+		if (Center.Z < Box.Min.Z)
+		{
+			float d = Box.Min.Z - Center.Z;
+			DistSq += d * d;
+		}
+		else if (Center.Z > Box.Max.Z)
+		{
+			float d = Center.Z - Box.Max.Z;
+			DistSq += d * d;
+		}
+
+		return DistSq <= Radius * Radius;
+	}
+
+    float GetCenterDistanceSquared(const FVector& Pos) const
+    {
+        FVector Diff = Center - Pos;
+        return Diff.Dot(Diff);
+    }
+};
+
 // ============================================================
 // EViewModeIndex — 렌더링 뷰 모드
 // ============================================================

@@ -2,11 +2,28 @@
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Math/MathUtils.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
+#include "Engine/Core/EngineTypes.h"
+#include <Render/Culling/ConvexVolume.h>
+#include <Core/RayTypes.h>
+#include <UI/EditorConsoleWidget.h>
+#include <GameFramework/StaticMeshActor.h>
+#include <GameFramework/DecalActor.h>
 
 IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
+
+namespace {
+	FBoundingBox BuildSweptAABB(const FBoundingBox & box, const FVector& Delta)
+	{
+        FBoundingBox Swept = box;
+        Swept.Expand(box.Min + Delta);
+        Swept.Expand(box.Max + Delta);
+        return Swept;
+    }
+}
 
 void UProjectileMovementComponent::BeginPlay()
 {
@@ -36,7 +53,7 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick Tic
     UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
     USceneComponent* UpdatedSceneComponent = GetUpdatedComponent();
-    if (!UpdatedSceneComponent)
+    if (!UpdatedSceneComponent || Velocity.Length() <= FMath::Epsilon)
     {
         return;
     }
@@ -57,6 +74,17 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick Tic
         return;
     }
 
+	const FVector Start = UpdatedSceneComponent->GetWorldLocation();
+
+	FHitResult Hit;
+	if (CheckBlockingHit(UpdatedSceneComponent, Start, MoveDelta, Hit))
+	{
+		const float SafeTime = std::max(0.0f, Hit.Time - 0.001f);
+		UpdatedSceneComponent->SetWorldLocation(Start + MoveDelta * SafeTime);
+		HandleBlockingHit(UpdatedSceneComponent, Start, MoveDelta, Hit);
+		return;
+	}
+
     UpdatedSceneComponent->SetWorldLocation(UpdatedSceneComponent->GetWorldLocation() + MoveDelta);
 }
 
@@ -64,8 +92,8 @@ void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescrip
 {
 	UMovementComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity, 0.0f, 0.0f, 1.0f });
-	OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, 0.0f, 10.0f });
-	OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 0.0f, 10.0f });
+	OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, MaxSpeed, 5.0f });
+	OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 1000.0f, 10.0f });
 	OutProps.push_back({ "Gravity Scale", EPropertyType::Float, &GravityScale, 0.0f, 1.0f, 0.01f });
 }
 
@@ -120,6 +148,94 @@ bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSce
 	(void)UpdatedSceneComponent;
 	(void)CurrentLocation;
 	(void)MoveDelta;
-	(void)HitResult;
+	
+	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
+	StopSimulating();
+	UE_LOG("%f %f %f", HitResult.WorldHitLocation.X,HitResult.WorldHitLocation.Y,HitResult.WorldHitLocation.Z);
+    
+	ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+	Actor->InitDefaultComponents();
+	Actor->SetActorLocation(HitResult.WorldHitLocation);
+	World->InsertActorToOctree(Actor);
+
 	return true;
+}
+
+bool UProjectileMovementComponent::CheckBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, FHitResult& OutHitResult)
+{
+	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
+    UPrimitiveComponent* UpdatedPrimitive = Cast<UPrimitiveComponent>(UpdatedSceneComponent);
+    if (!World || !UpdatedPrimitive)
+    {
+        return false;
+    }
+	 
+	const float MoveDistance = MoveDelta.Length();
+    if (MoveDistance <= FMath::Epsilon)
+    {
+        return false;
+    }
+
+	const FVector Direction = MoveDelta / MoveDistance;
+    const FRay SweepRay{ CurrentLocation, Direction };
+
+    TArray<UPrimitiveComponent*> Candidates;
+    const FBoundingBox SweptBounds = BuildSweptAABB(UpdatedPrimitive->GetWorldBoundingBox(), MoveDelta);
+    World->GetPartition().QueryAABBPrimitive(SweptBounds, Candidates);
+
+    bool bFoundHit = false;
+    float ClosestTime = 1.0f;
+
+	for (UPrimitiveComponent* Candidate : Candidates)
+    {
+        if (!Candidate)
+        {
+            continue;
+        }
+
+        if (Candidate == UpdatedPrimitive)
+        {
+            continue;
+        }
+
+        if (Candidate->GetOwner() == GetOwner())
+        {
+            continue;
+        }
+
+        if (!Candidate->IsVisible())
+        {
+            continue;
+        }
+
+        FHitResult CandidateHit{};
+        if (!Candidate->LineTraceComponent(SweepRay, CandidateHit))
+        {
+            continue;
+        }
+
+        if (CandidateHit.Distance < 0.0f || CandidateHit.Distance > MoveDistance)
+        {
+            continue;
+        }
+
+        const float HitTime = CandidateHit.Distance / MoveDistance;
+        if (HitTime >= ClosestTime)
+        {
+            continue;
+        }
+
+        ClosestTime = HitTime;
+        OutHitResult = CandidateHit;
+        OutHitResult.bHit = true;
+        OutHitResult.Time = HitTime;
+        OutHitResult.HitComponent = Candidate;
+
+        const FVector ImpactPoint = CurrentLocation + Direction * CandidateHit.Distance;
+        OutHitResult.WorldHitLocation = ImpactPoint;
+
+        bFoundHit = true;
+    }
+
+    return bFoundHit;
 }

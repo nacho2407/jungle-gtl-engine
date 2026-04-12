@@ -27,7 +27,8 @@ class FSpatialPartition
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
-    //void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+    void QueryAABBPrimitive(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+    void QuerySpherePrimitive(const FBoundingSphere& Sphere, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
     const FOctree* GetOctree() const { return Octree.get(); }
 

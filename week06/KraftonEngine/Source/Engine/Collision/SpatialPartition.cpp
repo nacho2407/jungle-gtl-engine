@@ -422,6 +422,44 @@ void FSpatialPartition::QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveC
 	}
 }
 
+void FSpatialPartition::QueryAABBPrimitive(const FBoundingBox& InBox, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (Octree)
+	{
+		Octree->QueryAABB(InBox, OutPrimitives);
+	}
+
+	for (UPrimitiveComponent* Prim : OverflowPrimitives)
+	{
+		if (!Prim || !Prim->IsVisible()) continue;
+
+		const FBoundingBox Box = Prim->GetWorldBoundingBox();
+		if (Box.IsIntersected(InBox))
+		{
+			OutPrimitives.push_back(Prim);
+		}
+	}
+}
+
+void FSpatialPartition::QuerySpherePrimitive(const FBoundingSphere& Sphere, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (Octree)
+	{
+		Octree->QuerySphere(Sphere, OutPrimitives);
+	}
+
+	for (UPrimitiveComponent* Prim : OverflowPrimitives)
+	{
+		if (!Prim || !Prim->IsVisible()) continue;
+
+		const FBoundingBox Box = Prim->GetWorldBoundingBox();
+		if (Sphere.IsIntersected(Box))
+		{
+			OutPrimitives.push_back(Prim);
+		}
+	}
+}
+
 void FSpatialPartition::InsertPrimitive(UPrimitiveComponent* Primitive)
 {
 	if (!Primitive) return;

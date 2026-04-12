@@ -382,6 +382,29 @@ void FOctree::QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent
     }
 }
 
+void FOctree::QuerySphere(const FBoundingSphere& QuerySphere, TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	if (!QuerySphere.IsIntersected(LooseBounds))
+        return;
+
+    for (UPrimitiveComponent* Primitive : PrimitiveList)
+    {
+		const FBoundingBox & box = Primitive->GetWorldBoundingBox();
+        if (Primitive && QuerySphere.IsIntersected(box))
+        {
+            OutPrimitives.push_back(Primitive);
+        }
+    }
+
+    if (IsLeaf())
+        return;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        Children[i]->QuerySphere(QuerySphere, OutPrimitives);
+    }
+}
+
 void FOctree::QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
 	if (!FRayUtils::CheckRayAABB(Ray, LooseBounds.Min, LooseBounds.Max))
