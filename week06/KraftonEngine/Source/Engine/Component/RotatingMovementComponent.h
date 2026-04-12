@@ -17,5 +17,7 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 private:
-	FRotator RotationRate = FRotator(0.0f, 90.0f, 0.0f);
+	FRotator RotationRate = FRotator(0.0f, 1.0f, 0.0f);
+
+	FVector PivotTranslation;
 };
