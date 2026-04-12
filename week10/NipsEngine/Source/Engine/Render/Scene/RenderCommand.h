@@ -33,6 +33,7 @@ enum class ERenderCommandType
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
 	Decal,
+	Light,
 };
 
 //PerObject
@@ -145,9 +146,8 @@ struct FStaticMeshConstants
 	float  ScrollY          = 0.f;
 	float  Padding0         = 0.0f;
 	uint32 bHasDiffuseMap   = 0;     // cbuffer bytes 76-79  — HLSL uint bHasDiffuseMap 대응
-	uint32 bHasSpecularMap  = 0;     // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
-	float  Padding1         = 0.f;   // cbuffer bytes 84-87
-	float  Padding2         = 0.f;   // cbuffer bytes 88-91  (16바이트 블록 완성)
+	uint32  bHasSpecularMap  = 0;        // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
+	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
 
 	// Texture SRV (CPU-only, cbuffer 범위 밖)
 	ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
@@ -172,7 +172,10 @@ struct FFogConstants
     float    FogDensity;
     float    HeightFalloff;
     float        FogHeight;
-    float        Padding;
+    float        FogStartDistance;
+    float        FogCutoffDistance;
+    float        FogMaxOpacity;
+    float        Padding[2];
 };
 
 struct FFXAAConstants
@@ -180,6 +183,32 @@ struct FFXAAConstants
     float InvResolution[2]; // (1/Width, 1/Height)
     float  Threshold;     // 0.05 ~ 0.2 추천
     float  Padding;
+};
+
+// 32 bytes
+//struct FLightData {
+//    FVector LightPos;
+//    float LightRadius;
+//
+//    FVector LightColor;
+//    float LightIntensity;
+//};
+
+struct FLightData
+{
+    FVector WorldPos;
+    float	Radius;
+    FVector Color;
+    float	Intensity;
+	float	RadiusFalloff;
+	float	Padding[2];
+};
+
+struct FLightPassConstants 
+{
+	FVector CameraWorldPos;
+	uint32	LightCount;
+	//float	Pad0;
 };
 
 struct FRenderCommand
@@ -204,8 +233,9 @@ struct FRenderCommand
 		FBillboardConstants Billboard;  // ← 추가
 		FStaticMeshConstants StaticMesh;
 		FDecalConstants Decal;
-        FFogConstants        Fog;
-        FFXAAConstants        FXAA;
+        FFogConstants Fog;
+        FFXAAConstants FXAA;
+		FLightPassConstants Light;
 	} Constants;
 
 	UMaterialInterface* Material = nullptr;

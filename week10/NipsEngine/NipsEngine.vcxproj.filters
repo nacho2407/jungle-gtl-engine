@@ -4,6 +4,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{60bee595-7411-c81f-0e11-0934d02a64bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Multipass">
+      <UniqueIdentifier>{7e71900e-08bc-2576-2bd3-316530fe3020}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{a2c655c5-b907-4abe-9c4e-0ae260b05ced}</UniqueIdentifier>
     </Filter>
@@ -28,6 +31,12 @@
     <Filter Include="Source\Engine\Asset">
       <UniqueIdentifier>{4defec5c-eaae-b334-ca2c-12fdd0abe386}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Collision">
+      <UniqueIdentifier>{b6e31b62-ff44-29dc-3a64-69f9805cba88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Collision\RayCollision">
+      <UniqueIdentifier>{0f2b32e3-a74a-ee50-a298-95377985483b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{20a3ff62-6666-58c6-dd73-8a4513da2ca3}</UniqueIdentifier>
     </Filter>
@@ -45,6 +54,15 @@
     </Filter>
     <Filter Include="Source\Engine\Geometry">
       <UniqueIdentifier>{c2319dba-1c79-a1ae-80c5-00daeb3389cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Input">
+      <UniqueIdentifier>{8c6fa399-133c-c7dc-8f7f-aef811a985ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Input\Controller">
+      <UniqueIdentifier>{06afad98-66f8-abab-e678-aa97a77e0066}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Input\Controller\EditorController">
+      <UniqueIdentifier>{91ce1396-52b5-8f7a-ca50-e7701f87b985}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Math">
       <UniqueIdentifier>{1f95424e-78f3-3176-c345-9ebb635ae099}</UniqueIdentifier>
@@ -141,6 +159,9 @@
     <FxCompile Include="Shaders\SelectionMask.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\ShaderDecal.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -152,6 +173,15 @@
     </FxCompile>
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
       <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Multipass\FXAAPass.hlsl">
+      <Filter>Shaders\Multipass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Multipass\FogPass.hlsl">
+      <Filter>Shaders\Multipass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Multipass\LightPass.hlsl">
+      <Filter>Shaders\Multipass</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -233,6 +263,9 @@
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp">
+      <Filter>Source\Engine\Collision\RayCollision</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -242,13 +275,31 @@
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\FireballComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
@@ -305,11 +356,29 @@
     <ClCompile Include="Source\Engine\Geometry\Frustum.cpp">
       <Filter>Source\Engine\Geometry</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Geometry\OBB.cpp">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Geometry\Plane.cpp">
       <Filter>Source\Engine\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Geometry\Transform.cpp">
       <Filter>Source\Engine\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
+      <Filter>Source\Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.cpp">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.cpp">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.cpp">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\PIEController.cpp">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Color.cpp">
       <Filter>Source\Engine\Math</Filter>
@@ -387,6 +456,9 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp">
@@ -599,6 +671,9 @@
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h">
+      <Filter>Source\Engine\Collision\RayCollision</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -608,13 +683,31 @@
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\DecalComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\FireballComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
@@ -731,6 +824,9 @@
     <ClInclude Include="Source\Engine\Geometry\Frustum.h">
       <Filter>Source\Engine\Geometry</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Geometry\OBB.h">
+      <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Geometry\Plane.h">
       <Filter>Source\Engine\Geometry</Filter>
     </ClInclude>
@@ -742,6 +838,21 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Geometry\Triangle.h">
       <Filter>Source\Engine\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\InputSystem.h">
+      <Filter>Source\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.h">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\PIEController.h">
+      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Color.h">
       <Filter>Source\Engine\Math</Filter>

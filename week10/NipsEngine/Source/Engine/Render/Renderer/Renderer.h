@@ -50,6 +50,7 @@ public:
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	void UseViewportRenderTargets();
+	void InvalidateSceneFinalTargets();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
