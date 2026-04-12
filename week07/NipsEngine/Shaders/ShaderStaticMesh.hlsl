@@ -12,10 +12,9 @@ cbuffer StaticMeshBuffer : register(b6)
     float2 ScrollUV;
     float  Padding6_1;
     
-    uint   bHasDiffuseMap;   
-    uint   bHasSpecularMap;  
-    float  Padding6_2;       
-    float  Padding6_3;       
+    uint   bHasDiffuseMap;
+    uint   bHasSpecularMap;
+    float3 EmissiveColor;    // emissive glow color; non-zero means emissive
 };
 
 Texture2D DiffuseMap  : register(t0);
@@ -110,10 +109,17 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     //
     //float3 FinalColor = FinalAmbient + FinalDiffuse + FinalSpecular;
     
+    if (any(EmissiveColor > 0.f))
+    {
+        // Emissive surface: write the glow color and mark normal.a = 2
+        output.Color    = float4(EmissiveColor, 1.f);
+        output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
+        output.WorldPos = float4(input.WorldPos, 1.f);
+        return output;
+    }
+
     output.Color = float4(FinalColor, 1.f);
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-    
-    // return float4(FinalColor, 1.f);
     return output;
 }
