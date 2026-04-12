@@ -30,3 +30,13 @@ FConstantBuffer* FConstantBufferPool::GetBuffer(uint32 Slot, uint32 ByteWidth)
 	}
 	return &CB;
 }
+
+FConstantBuffer* FConstantBufferPool::GetCBuffer(uint32 Index, uint32 ByteWidth)
+{
+	if (Index >= ConstantBuffers.size() || Index == -1)
+	{
+		return nullptr;
+	}
+	return &ConstantBuffers[Index];
+
+}
