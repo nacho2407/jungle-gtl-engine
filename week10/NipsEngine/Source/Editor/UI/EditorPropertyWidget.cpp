@@ -84,6 +84,12 @@ struct FComponentMenuEntry
 // 2. 에디터에서 추가 가능한 컴포넌트 배열 (이 리스트만 관리하면 됩니다)
 static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 	{
+		"Scene Component",
+		[](AActor* Actor) -> UActorComponent* {
+			return Actor->AddComponent<USceneComponent>();
+		}
+	},
+	{
 		"StaticMesh Component",
 		[](AActor* Actor) -> UActorComponent* {
 			return Actor->AddComponent<UStaticMeshComponent>();
