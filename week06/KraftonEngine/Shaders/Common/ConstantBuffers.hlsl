@@ -49,4 +49,11 @@ cbuffer MaterialBuffer : register(b4)
     float4 SectionColor;
 }
 
+// b5: Decal settings
+cbuffer DecalBuffer : register(b5)
+{
+    float FadeAlpha;
+    float3 _decalPad;
+}
+
 #endif // CONSTANT_BUFFERS_HLSL

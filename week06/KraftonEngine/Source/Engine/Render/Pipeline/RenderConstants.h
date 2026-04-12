@@ -9,6 +9,7 @@
 #include "Math/Vector.h"
 
 class FShader;
+class FPrimitiveSceneProxy;
 
 /*
 	GPU Constant Buffer 구조체, Batcher Entry, 섹션별 드로우 정보 등
@@ -23,6 +24,7 @@ namespace ECBSlot
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
+	constexpr uint32 Decal = 5;       // b5: Decal properties
 }
 
 //PerObject
@@ -117,6 +119,12 @@ struct FBillboardConstants
 	float Height = 1.0f;
 };
 
+struct FDecalConstants
+{
+	float FadeAlpha = 1.0f;
+	float Padding[3] = {};
+};
+
 // ============================================================
 // Batcher Entry — 각 Batcher가 필요한 데이터만 담는 경량 구조체
 // ============================================================
@@ -137,6 +145,13 @@ struct FBillboardEntry
 {
 	FPerObjectConstants PerObject;
 	FBillboardConstants Billboard;
+};
+
+struct FDecalDrawEntry
+{
+	const FPrimitiveSceneProxy* ReceiverProxy = nullptr;
+	const FTextureResource* Texture = nullptr;
+	FDecalConstants Decal = {};
 };
 
 struct FAABBEntry

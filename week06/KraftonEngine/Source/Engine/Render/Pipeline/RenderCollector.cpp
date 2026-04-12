@@ -8,6 +8,8 @@
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Render/Pipeline/LODContext.h"
+#include "Component/DecalComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Profiling/Stats.h"
 #include <Collision/Octree.h>
 
@@ -17,7 +19,9 @@ void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 
 	// Dirty 프록시 갱신 후 visible 리스트만 순회
 	World->GetScene().UpdateDirtyProxies();
-	CollectVisibleProxies(World->GetVisibleProxies(), RenderBus);
+	const TArray<FPrimitiveSceneProxy*>& VisibleProxies = World->GetVisibleProxies();
+	CollectVisibleProxies(VisibleProxies, RenderBus);
+	CollectDecals(World, VisibleProxies, RenderBus);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
@@ -195,5 +199,40 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
 		OcclusionMut->EndGatherAABB();
+}
+
+void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveSceneProxy*>& VisibleProxies, FRenderBus& RenderBus)
+{
+	if (!World) return;
+	if (!RenderBus.GetShowFlags().bPrimitives || !RenderBus.GetShowFlags().bDecals) return;
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor) continue;
+
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			UDecalComponent* DecalComponent = Cast<UDecalComponent>(Component);
+			if (!DecalComponent || !DecalComponent->IsVisible()) continue;
+			if (DecalComponent->GetFadeAlpha() <= 0.0f) continue;
+
+			const FTextureResource* DecalTexture = DecalComponent->GetTexture();
+			if (!DecalTexture) continue;
+
+			for (const FPrimitiveSceneProxy* VisibleProxy : VisibleProxies)
+			{
+				if (!VisibleProxy || !VisibleProxy->bVisible) continue;
+
+				UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(VisibleProxy->Owner);
+				if (!StaticMeshComponent || !StaticMeshComponent->GetReceivesDecals()) continue;
+
+				FDecalDrawEntry Entry = {};
+				Entry.ReceiverProxy = VisibleProxy;
+				Entry.Texture = DecalTexture;
+				Entry.Decal.FadeAlpha = DecalComponent->GetFadeAlpha();
+				RenderBus.AddDecalEntry(std::move(Entry));
+			}
+		}
+	}
 }
 

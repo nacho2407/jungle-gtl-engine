@@ -1,4 +1,4 @@
-#include "ShaderManager.h"
+﻿#include "ShaderManager.h"
 #include "Render/Types/VertexTypes.h"
 
 void FShaderManager::Initialize(ID3D11Device* InDevice)
@@ -15,6 +15,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
 
 	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/StaticMeshShader.hlsl",
+		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
+
+	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/Decal.hlsl",
 		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
 
 	// PostProcess outline: fullscreen quad (InputLayout 없음)

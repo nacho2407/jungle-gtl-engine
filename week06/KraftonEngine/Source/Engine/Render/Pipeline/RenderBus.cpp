@@ -1,4 +1,4 @@
-#include "RenderBus.h"
+﻿#include "RenderBus.h"
 #include "Component/CameraComponent.h"
 #include "Viewport/Viewport.h"
 
@@ -13,6 +13,7 @@ void FRenderBus::Clear()
 	OverlayFontEntries.clear();
 	SubUVEntries.clear();
 	BillboardEntries.clear();
+	DecalEntries.clear();
 	AABBEntries.clear();
 	GridEntries.clear();
 	DebugLineEntries.clear();
@@ -50,6 +51,11 @@ void FRenderBus::AddSubUVEntry(FSubUVEntry&& Entry)
 void FRenderBus::AddBillboardEntry(FBillboardEntry&& Entry)
 {
 	BillboardEntries.push_back(std::move(Entry));
+}
+
+void FRenderBus::AddDecalEntry(FDecalDrawEntry&& Entry)
+{
+	DecalEntries.push_back(std::move(Entry));
 }
 
 void FRenderBus::AddAABBEntry(FAABBEntry&& Entry)
