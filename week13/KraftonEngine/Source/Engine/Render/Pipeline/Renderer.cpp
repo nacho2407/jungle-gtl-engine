@@ -235,6 +235,12 @@ void FRenderer::Render(const FFrameContext& Frame)
 			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 			GPU_SCOPE_STAT(PassName);
 			DrawPostProcessOutline(Frame, Context);
+
+			if (CollectViewMode == EViewMode::SceneDepth)
+			{
+				DrawPostProcessSceneDepth(Frame, Context);
+			}
+
 			continue;
 		}
 
@@ -490,6 +496,49 @@ void FRenderer::DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceC
 
 	// 8) DSV 재바인딩 (후속 패스에서 뎁스 사용)
 	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+void FRenderer::DrawPostProcessSceneDepth(const FFrameContext& Frame, ID3D11DeviceContext* Context)
+{
+	const FPassRenderState& PPState = PassRenderStates[(uint32)ERenderPass::PostProcess];
+	Device.SetDepthStencilState(PPState.DepthStencil);
+	Device.SetBlendState(PPState.Blend);
+	Device.SetRasterizerState(PPState.Rasterizer);
+	Context->IASetPrimitiveTopology(PPState.Topology);
+
+	FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(0, sizeof(FSceneDepthPConstants));
+	if (SceneDepthCB)
+	{
+		FViewportRenderOptions Opts = Frame.GetRenderOptions();
+		FSceneDepthPConstants DepthConstants;
+		DepthConstants.Exponent = Opts.Exponent;
+		DepthConstants.NearClip = Frame.NearClip;
+		DepthConstants.FarClip = Frame.FarClip;
+		DepthConstants.Mode = Opts.SceneDepthVisMode;
+
+		SceneDepthCB->Update(Context, &DepthConstants, sizeof(DepthConstants));
+		ID3D11Buffer* cb = SceneDepthCB->GetBuffer();
+		Context->PSSetConstantBuffers(ECBSlot::SceneDepth, 1, &cb);
+	}
+
+	ID3D11ShaderResourceView* DepthSRV = Frame.ViewportDepthSRV;
+	ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
+
+	Context->OMSetRenderTargets(1, &RTV, nullptr);
+	Context->PSSetShaderResources(0, 1, &DepthSRV);
+
+	FShader* DepthShader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
+	if (DepthShader)
+	{
+		DepthShader->Bind(Context);
+
+		Context->IASetInputLayout(nullptr);
+		Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+		Context->Draw(3, 0);
+	}
+
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &nullSRV);
 }
 
 
