@@ -21,4 +21,13 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor;
 };
 
+cbuffer SceneDepthCB : register(b6)
+{
+    float Exponent;
+    float NearClip;
+    float FarClip;
+    uint Mode;
+}
+
+
 #endif // CONSTANT_BUFFERS_HLSL
