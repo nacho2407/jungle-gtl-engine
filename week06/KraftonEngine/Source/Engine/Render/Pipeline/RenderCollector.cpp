@@ -10,8 +10,25 @@
 #include "Render/Pipeline/LODContext.h"
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Collision/IntersectionUtils.h"
 #include "Profiling/Stats.h"
 #include <Collision/Octree.h>
+
+namespace
+{
+	FBoundingBox BuildDecalWorldAABB(const UDecalComponent& DecalComponent)
+	{
+		FVector Corners[8] = {};
+		DecalComponent.GetWorldCorners(Corners);
+
+		FBoundingBox Bounds;
+		for (const FVector& Corner : Corners)
+		{
+			Bounds.Expand(Corner);
+		}
+		return Bounds;
+	}
+}
 
 void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 {
@@ -206,6 +223,23 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 	if (!World) return;
 	if (!RenderBus.GetShowFlags().bPrimitives || !RenderBus.GetShowFlags().bDecals) return;
 
+	TMap<const UStaticMeshComponent*, const FPrimitiveSceneProxy*> VisibleStaticMeshProxies;
+	VisibleStaticMeshProxies.reserve(VisibleProxies.size());
+
+	for (const FPrimitiveSceneProxy* VisibleProxy : VisibleProxies)
+	{
+		if (!VisibleProxy || !VisibleProxy->bVisible) continue;
+
+		const UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(VisibleProxy->Owner);
+		if (!StaticMeshComponent || !StaticMeshComponent->GetReceivesDecals()) continue;
+
+		VisibleStaticMeshProxies[StaticMeshComponent] = VisibleProxy;
+	}
+
+	const FOctree* Octree = World->GetOctree();
+	int32 BroadPhaseCandidateCount = 0;
+	int32 NarrowPhaseAcceptedCount = 0;
+
 	for (AActor* Actor : World->GetActors())
 	{
 		if (!Actor) continue;
@@ -219,18 +253,63 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 			const FTextureResource* DecalTexture = DecalComponent->GetTexture();
 			if (!DecalTexture) continue;
 
-			for (const FPrimitiveSceneProxy* VisibleProxy : VisibleProxies)
+			TArray<UPrimitiveComponent*> BroadPhaseCandidates;
+			if (Octree)
 			{
-				if (!VisibleProxy || !VisibleProxy->bVisible) continue;
+				const FBoundingBox DecalAABB = BuildDecalWorldAABB(*DecalComponent);
+				if (DecalAABB.IsValid())
+				{
+					Octree->QueryAABB(DecalAABB, BroadPhaseCandidates);
+				}
+			}
 
-				UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(VisibleProxy->Owner);
+			if (BroadPhaseCandidates.empty())
+			{
+				continue;
+			}
+
+			TSet<const UStaticMeshComponent*> UniqueCandidates;
+			UniqueCandidates.reserve(BroadPhaseCandidates.size());
+
+			for (UPrimitiveComponent* CandidatePrimitive : BroadPhaseCandidates)
+			{
+				UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(CandidatePrimitive);
 				if (!StaticMeshComponent || !StaticMeshComponent->GetReceivesDecals()) continue;
 
+				const auto VisibleProxyIt = VisibleStaticMeshProxies.find(StaticMeshComponent);
+				if (VisibleProxyIt == VisibleStaticMeshProxies.end()) continue;
+
+				UniqueCandidates.insert(StaticMeshComponent);
+			}
+
+			if (UniqueCandidates.empty())
+			{
+				continue;
+			}
+
+			const FMatrix DecalWorldMatrix = DecalComponent->GetWorldMatrix();
+			const FVector DecalHalfExtents = DecalComponent->GetHalfExtents();
+
+			for (const UStaticMeshComponent* StaticMeshComponent : UniqueCandidates)
+			{
+				++BroadPhaseCandidateCount;
+
+				const auto VisibleProxyIt = VisibleStaticMeshProxies.find(StaticMeshComponent);
+				if (VisibleProxyIt == VisibleStaticMeshProxies.end()) continue;
+
+				const FBoundingBox ReceiverBounds = StaticMeshComponent->GetWorldBoundingBox();
+				if (!FIntersectionUtils::IntersectOBBAndAABB(DecalWorldMatrix, DecalHalfExtents, ReceiverBounds))
+				{
+					continue;
+				}
+
+				++NarrowPhaseAcceptedCount;
+
 				FDecalDrawEntry Entry = {};
-				Entry.ReceiverProxy = VisibleProxy;
+				Entry.ReceiverProxy = VisibleProxyIt->second;
 				Entry.Texture = DecalTexture;
 				Entry.Decal.WorldToDecal = DecalComponent->GetWorldInverseMatrix();
-				Entry.Decal.DecalHalfExtents = DecalComponent->GetHalfExtents();
+				Entry.Decal.DecalHalfExtents = DecalHalfExtents;
 				Entry.Decal.FadeAlpha = DecalComponent->GetFadeAlpha();
 				RenderBus.AddDecalEntry(std::move(Entry));
 			}

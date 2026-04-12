@@ -227,6 +227,9 @@
     <ClCompile Include="Source\Engine\Collision\MeshTrianglePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\IntersectionUtils.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\Octree.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
@@ -588,6 +591,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\MeshTrianglePickingBVH.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\IntersectionUtils.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\Octree.h">
