@@ -196,6 +196,50 @@ void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uin
 	//	 Do nothing
 }
 
+void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements) {
+	if (InElementSize == 0) {
+		Release();
+		return;
+	}
+
+	ElementSize = InElementSize;
+
+	D3D11_BUFFER_DESC desc = {};
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.ByteWidth = InElementSize * InMaxElements;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    desc.StructureByteStride = InElementSize;   
+
+	InDevice->CreateBuffer(&desc, nullptr, Buffer.ReleaseAndGetAddressOf());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = InMaxElements;
+	InDevice->CreateShaderResourceView(Buffer.Get(), &srvDesc, SRV.ReleaseAndGetAddressOf());
+}
+
+void FStructuredBuffer::Release() {
+	Buffer.Reset();
+}
+
+void FStructuredBuffer::Update(ID3D11DeviceContext* InContext, const void* InData, uint32 InElementCount) {
+	if (Buffer) {
+		D3D11_MAPPED_SUBRESOURCE structuredMSR;
+        InContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &structuredMSR);
+        std::memcpy(structuredMSR.pData, InData, InElementCount * ElementSize);
+		Count = InElementCount;
+        InContext->Unmap(Buffer.Get(), 0);
+	}
+}
+
+ID3D11ShaderResourceView* FStructuredBuffer::GetSRV() const {
+	return SRV.Get();
+}
+
 ID3D11Buffer * FIndexBuffer::GetBuffer() const
 {
 	return Buffer.Get();

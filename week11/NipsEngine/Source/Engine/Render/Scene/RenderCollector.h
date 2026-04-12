@@ -12,6 +12,7 @@ class AActor;
 class UPrimitiveComponent;
 class UGizmoComponent;
 class UDecalComponent;
+class UFireballComponent;
 struct FFrustum;
 
 class FRenderCollector {
