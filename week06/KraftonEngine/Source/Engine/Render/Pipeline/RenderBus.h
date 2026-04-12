@@ -65,6 +65,8 @@ public:
 	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
 	ID3D11ShaderResourceView* GetViewportDepthSRV() const { return ViewportDepthSRV; }
+	ID3D11RenderTargetView* GetViewportNormalRTV() const { return ViewportNormalRTV; }
+	ID3D11ShaderResourceView* GetViewportNormalSRV() const { return ViewportNormalSRV; }
 
 	// GPU Occlusion Culling — set by render pipeline, read by collector
 	void SetOcclusionCulling(FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
@@ -107,6 +109,10 @@ private:
 	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
 	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
 	ID3D11ShaderResourceView* ViewportDepthSRV = nullptr;
+
+	ID3D11RenderTargetView* ViewportNormalRTV = nullptr;
+	ID3D11ShaderResourceView* ViewportNormalSRV = nullptr;
+
 
 	// GPU Occlusion
 	FGPUOcclusionCulling* OcclusionCulling = nullptr;

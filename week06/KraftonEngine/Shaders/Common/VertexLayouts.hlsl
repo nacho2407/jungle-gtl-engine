@@ -79,3 +79,9 @@ struct PS_Input_ColorWorld
 };
 
 #endif // VERTEX_LAYOUTS_HLSL
+
+struct PS_Output_MRT
+{
+    float4 color : SV_TARGET0;
+    float4 normal : SV_TARGET1;
+};

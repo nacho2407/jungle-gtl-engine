@@ -87,6 +87,9 @@ void FRenderBus::SetViewportInfo(const FViewport* VP)
 	ViewportDSV = VP->GetDSV();
 	ViewportStencilSRV = VP->GetStencilSRV();
 	ViewportDepthSRV = VP->GetDepthSRV();
+	ViewportNormalRTV = VP->GetNormalRTV();
+	ViewportNormalSRV = VP->GetNormalSRV();
+	
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)

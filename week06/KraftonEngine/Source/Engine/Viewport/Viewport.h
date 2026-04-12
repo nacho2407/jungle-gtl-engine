@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
 
@@ -37,6 +37,8 @@ public:
 	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthSRV; }
 	ID3D11ShaderResourceView* GetStencilSRV() const { return StencilSRV; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
+	ID3D11RenderTargetView* GetNormalRTV() const { return NormalRTV; }
+	ID3D11ShaderResourceView* GetNormalSRV() const { return NormalSRV; }
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
 
 private:
@@ -58,6 +60,11 @@ private:
 	ID3D11DepthStencilView* DSV = nullptr;
 	ID3D11ShaderResourceView* DepthSRV = nullptr;		// Hi-Z / GPU Occlusion에서 뎁스 읽기용
 	ID3D11ShaderResourceView* StencilSRV = nullptr;	// PostProcess에서 스텐실 읽기용
+
+	//Normal 
+	ID3D11Texture2D* NormalTexture = nullptr;
+	ID3D11RenderTargetView* NormalRTV = nullptr;
+	ID3D11ShaderResourceView* NormalSRV = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 

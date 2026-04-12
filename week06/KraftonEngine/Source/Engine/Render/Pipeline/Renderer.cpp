@@ -331,6 +331,17 @@ void FRenderer::InitializePassBatchers()
 
 void FRenderer::InitializePassResourceBindings()
 {
+	PassResourceBindings[(uint32)ERenderPass::Opaque] = {
+	[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+		ID3D11RenderTargetView* rtvs[2] = { Bus.GetViewportRTV(), Bus.GetViewportNormalRTV() };
+		Ctx->OMSetRenderTargets(2, rtvs, Bus.GetViewportDSV());
+	},
+	[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+		ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+		Ctx->OMSetRenderTargets(1, &rtv, Bus.GetViewportDSV());
+	}
+	};
+
 	PassResourceBindings[(uint32)ERenderPass::Decal] = {
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			// DSV 언바인딩 (Depth SRV와 동시 바인딩 불가)
@@ -352,12 +363,17 @@ void FRenderer::InitializePassResourceBindings()
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
+			
 			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+			ID3D11ShaderResourceView* NormalSRV = Bus.GetViewportNormalSRV();
 			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
+			Ctx->PSSetShaderResources(2, 1, &NormalSRV);
 		},
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			ID3D11ShaderResourceView* nullSRV = nullptr;
 			Ctx->PSSetShaderResources(1, 1, &nullSRV);
+			Ctx->PSSetShaderResources(2, 1, &nullSRV);
+
 			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, dsv);
