@@ -35,7 +35,6 @@ void UProjectileMovementComponent::BeginPlay()
 	}
 }
 
-
 void UProjectileMovementComponent::TickComponent(float DeltaTime)
 {
     if (UpdatedComponent == nullptr)

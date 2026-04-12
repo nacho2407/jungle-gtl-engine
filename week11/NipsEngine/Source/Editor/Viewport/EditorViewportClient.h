@@ -73,6 +73,8 @@ public:
 	void ResetCamera();
 	FViewportCamera*       GetCamera()       { return bHasCamera ? &Camera : nullptr; }
 	const FViewportCamera* GetCamera() const { return bHasCamera ? &Camera : nullptr; }
+	// 외부에서 카메라 위치를 변경한 후 컨트롤러의 TargetLocation을 동기화할 때 호출
+	void SyncCameraTarget() { InputRouter.GetEditorWorldController().ResetTargetLocation(); }
 
 	void Tick(float DeltaTime) override;
 	void BuildSceneView(FSceneView& OutView) const override;
