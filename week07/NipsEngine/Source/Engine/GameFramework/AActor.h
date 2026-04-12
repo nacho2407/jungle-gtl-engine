@@ -15,8 +15,7 @@ public:
 	AActor() = default;
 	~AActor() override;
 
-	virtual AActor* Duplicate();
-	virtual AActor* DuplicateSubObjects();
+	virtual void PostDuplicate(UObject* Original) override;
 
     virtual void InitDefaultComponents() {}
 

@@ -4,27 +4,20 @@
 DEFINE_CLASS(USceneComponent, UActorComponent)
 REGISTER_FACTORY(USceneComponent)
 
-// 깊은 복사를 하더라도 SceneComponent의 부모-자식 관계는 초기화됩니다.
-// Actor에서 Duplicate()할 때 이 구조를 복원해 줘야 합니다.
-USceneComponent* USceneComponent::Duplicate()
+// 소유자와 부모-자식 관계를 초기 상태로 명시적으로 리셋합니다.
+// Actor::Duplicate() 에서 DuplicateSubTree 를 통해 올바른 관계가 복원됩니다.
+void USceneComponent::PostDuplicate(UObject* Original)
 {
-    USceneComponent* NewComp = UObjectManager::Get().CreateObject<USceneComponent>();
+    UActorComponent::PostDuplicate(Original);
 
-    // GetEditableProperties 에 노출된 모든 프로퍼티를 일괄 복사합니다.
-    NewComp->CopyPropertiesFrom(this);
-
-    NewComp->SetOwner(nullptr);
+    SetOwner(nullptr);
 
     // 트랜스폼 캐시는 새 부모에 붙을 때 다시 계산되도록 Dirty 플래그를 켭니다.
-    NewComp->bTransformDirty = true;
+    bTransformDirty = true;
 
-    // 부모-자식 관계는 Actor::Duplicate() 에서 DuplicateSubTree 를 통해 복원됩니다.
-    NewComp->ParentComponent = nullptr;
-    NewComp->ChildComponents.clear();
-
-    NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    // 부모-자식 관계는 Actor::PostDuplicate() 에서 DuplicateSubTree 를 통해 복원됩니다.
+    ParentComponent = nullptr;
+    ChildComponents.clear();
 }
 
 USceneComponent::USceneComponent()
