@@ -12,14 +12,13 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
     MaxIndexCount  = 384;
     CreateBuffers();
 
-    D3D11_SAMPLER_DESC sampDesc = {};
-    sampDesc.Filter   = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
+	UMaterial* SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMaterial", "Shaders/ShaderSubUV.hlsl");
+	SubUVMaterial->DepthStencilType = EDepthStencilType::Default;
+	SubUVMaterial->BlendType = EBlendType::AlphaBlend;
+	SubUVMaterial->RasterizerType = ERasterizerType::SolidBackCull;
+	SubUVMaterial->SamplerType = ESamplerType::EST_Linear;
 
-	SubUVMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("SubUVMaterial", "Shaders/ShaderSubUV.hlsl");
+	Material = SubUVMaterial;
 }
 
 void FSubUVBatcher::CreateBuffers()
@@ -48,7 +47,6 @@ void FSubUVBatcher::Release()
 
     VertexBuffer.Reset();
     IndexBuffer.Reset();
-    SamplerState.Reset();
 	Device.Reset();
 }
 
@@ -131,10 +129,8 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
     Context->IASetVertexBuffers(0, 1, &VertexBufferPtr, &stride, &offset);
     Context->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
     Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
-	Context->PSSetSamplers(0, 1, Samplers);
 
-	UMaterial* Mat = Cast<UMaterial>(SubUVMaterial);
+	UMaterial* Mat = Cast<UMaterial>(Material);
 
     // Context->PSSetShaderResources(0, 1, &SRV);
 	for (const FSRVBatch& Batch : Batches)
@@ -142,7 +138,7 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 		if (!Batch.Texture || Batch.IndexCount == 0) continue;
 
 		Mat->SetTexture("SubUVAtlas", Batch.Texture);
-		SubUVMaterial->Bind(Context);
+		Material->Bind(Context);
 
 		Context->DrawIndexed(
 			Batch.IndexCount,
@@ -150,8 +146,6 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 			Batch.BaseVertex
 		);
 	}
-
-    /*Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);*/
 }
 
 FSubUVFrameInfo FSubUVBatcher::GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const

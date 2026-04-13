@@ -86,8 +86,7 @@ private:
     uint32 MaxIndexCount  = 0;
 
     TComPtr<ID3D11Device>       Device;
-    TComPtr<ID3D11SamplerState> SamplerState;
-	UMaterialInterface* SubUVMaterial;
+	UMaterialInterface* Material;
 
     void CreateBuffers();
     FSubUVFrameInfo GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const;

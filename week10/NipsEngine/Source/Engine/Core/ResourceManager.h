@@ -12,6 +12,7 @@
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/Texture.h"
+#include "Render/Resource/RenderResources.h"
 #include <d3d11.h>
 
 // 리소스를 관리하는 싱글턴.
@@ -74,69 +75,56 @@ class FResourceManager : public TSingleton<FResourceManager>
 
 public:
 	void SetCachedDevice(ID3D11Device* Device) { CachedDevice = Device; }
-	//	초기 설정
+
 	void LoadFromAssetDirectory(const FString& Path);
-	//	Refresh
 	void RefreshFromAssetDirectory(const FString& Path);
-	
-	// Resource.ini에서 경로/그리드 정보 로드 후 GPU 리소스 생성
-	// void LoadFromFile(const FString& Path, ID3D11Device* InDevice);
 
-	// GPU 리소스 로드 (Device 필요)
-	bool LoadGPUResources(ID3D11Device* Device);
-
-	// --- Default Resources ---
 	void InitializeDefaultResources(ID3D11Device* Device);
-	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const { return DefaultWhiteSRV.Get(); }
+	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const
+	{
+		auto it = Textures.find("DefaultWhite");
+		if (it != Textures.end())
+		{
+			return it->second->GetSRV();
+		}
+		return nullptr;
+	}
 
-	// --- Material Texture (SRV) ---
-	FMaterialResource* FindTexture(const FString& Path) const;
-	FMaterialResource* LoadTexture(const FString& Path, ID3D11Device* Device = nullptr);
-
-	UTexture* FindTextureAsset(const FString& Path) const;
-	UTexture* LoadTextureAsset(const FString& Path, ID3D11Device* Device = nullptr);
-
-	// 모든 GPU 리소스 해제
+	bool LoadGPUResources(ID3D11Device* Device);
 	void ReleaseGPUResources();
 
-	// --- Shader ---
+	UTexture* GetTexture(const FString& Path) const;
+	UTexture* LoadTexture(const FString& Path, ID3D11Device* Device = nullptr);
+	const TArray<FString>& GetTextureFilePath() const;
+
+	UShader* GetShader(const FString& FilePath) const;
 	bool LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
 		const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount);
-	UShader* GetShader(const FString& FilePath) const;
 
-	// --- Material ---
-	void LoadMaterialFromPath(const FString& FilePath, const FString& ShaderName);
-	//bool LoadMaterial(const FString& MtlFilePath);
-	//FMaterial* FindMaterial(const FString& MaterialName);
-	//const FMaterial* FindMaterial(const FString& MaterialName) const;
+	UMaterial* GetMaterial(const FString& Path) const;
+	UMaterial* GetOrCreateMaterial(const FString& Path, const FString& ShaderName);
+	bool LoadMaterial(const FString& Path, const FString& ShaderName, ID3D11Device* Device = nullptr);
 	TArray<FString> GetMaterialNames() const;
 
-	UMaterial* FindMaterialAsset(const FString& Path) const;
-	UMaterial* FindOrCreateMaterialAsset(const FString& Path, const FString& ShaderName);
-	bool LoadMaterialAsset(const FString& Path, const FString& ShaderName, ID3D11Device* Device = nullptr);
-
-	// --- Font ---
 	FFontResource* FindFont(const FName& FontName);
 	const FFontResource* FindFont(const FName& FontName) const;
 	void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns = 16, uint32 Rows = 16);
 	TArray<FString> GetFontNames() const;
 
-	// --- Particle ---
 	FParticleResource* FindParticle(const FName& ParticleName);
 	const FParticleResource* FindParticle(const FName& ParticleName) const;
 	void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
 	TArray<FString> GetParticleNames() const;
 
-	// --- StaticMesh ---
 	UStaticMesh* LoadStaticMesh(const FString& Path);
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
-	
 
-	// --- TextureFIlePath ---
-	const TArray<FString>& GetTextureFilePath() const;
+	ID3D11SamplerState* GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device = nullptr);
+	ID3D11DepthStencilState* GetOrCreateDepthStencilState(EDepthStencilType Type, ID3D11Device* Device = nullptr);
+	ID3D11BlendState* GetOrCreateBlendState(EBlendType Type, ID3D11Device* Device = nullptr);
+	ID3D11RasterizerState* GetOrCreateRasterizerState(ERasterizerType Type, ID3D11Device* Device = nullptr);
 
-	// --- Memory ---
 	size_t GetMaterialMemorySize() const;
 	
 	//	Binary 전체 삭제
@@ -164,19 +152,18 @@ private:
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
 	
-	TMap<FString, FMaterialResource> MaterialTextureResources;
-	TMap<FString, FMaterial>         MaterialRegistry;   
-
 	TMap<FString, FStaticMeshResource> StaticMeshRegistry;
 
 	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
-	TComPtr<ID3D11ShaderResourceView> DefaultWhiteSRV;
 
-	// New!
 	TMap<FString, UStaticMesh*> StaticMeshes;
 	TMap<FString, UShader*> Shaders;
 	TMap<FString, UTexture*> Textures;
 	TMap<FString, UMaterial*> Materials;
+	TMap<ESamplerType, TComPtr<ID3D11SamplerState>> SamplerStates;
+	TMap<EDepthStencilType, TComPtr<ID3D11DepthStencilState>> DepthStencilStates;
+	TMap<EBlendType, TComPtr<ID3D11BlendState>> BlendStates;
+	TMap<ERasterizerType, TComPtr<ID3D11RasterizerState>> RasterizerStates;
 
 	/* Paths */
 	TArray<FString> ObjFilePaths;
