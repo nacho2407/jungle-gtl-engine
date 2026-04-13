@@ -121,17 +121,10 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Renderer.BuildDynamicCommands(Frame, &Scene);
 	}
 
-	// 3. GPU 정렬 + 제출
+	// 3. GPU 정렬 + 제출 (PostProcess 패스에서 Fog/Outline도 자동 처리)
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
 		Renderer.Render(Frame);
-	}
-
-	// 3.5 Height Fog — Opaque 이후 AlphaBlend fullscreen
-	if (Scene.HasFog())
-	{
-		SCOPE_STAT_CAT("HeightFog", "4_ExecutePass");
-		Renderer.DrawHeightFog(Frame, Scene.GetFogParams());
 	}
 
 	// 4. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치

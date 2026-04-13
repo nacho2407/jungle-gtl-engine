@@ -36,10 +36,11 @@ struct FFrameContext
 	float ViewportWidth  = 0.0f;
 	float ViewportHeight = 0.0f;
 
-	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
-	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
-	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
-	ID3D11ShaderResourceView* ViewportDepthSRV   = nullptr;
+	ID3D11RenderTargetView*   ViewportRTV          = nullptr;
+	ID3D11DepthStencilView*   ViewportDSV          = nullptr;
+	ID3D11DepthStencilView*   ViewportDSVReadOnly  = nullptr;  // SRV와 동시 바인딩 가능
+	ID3D11ShaderResourceView* ViewportStencilSRV   = nullptr;
+	ID3D11ShaderResourceView* ViewportDepthSRV     = nullptr;
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
@@ -84,9 +85,10 @@ struct FFrameContext
 	// Reset D3D pointers
 	void ClearViewportResources()
 	{
-		ViewportRTV        = nullptr;
-		ViewportDSV        = nullptr;
-		ViewportStencilSRV = nullptr;
-		ViewportDepthSRV   = nullptr;
+		ViewportRTV         = nullptr;
+		ViewportDSV         = nullptr;
+		ViewportDSVReadOnly = nullptr;
+		ViewportStencilSRV  = nullptr;
+		ViewportDepthSRV    = nullptr;
 	}
 };
