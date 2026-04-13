@@ -1,0 +1,155 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "8",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 6",
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USubUVComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 2.000000],
+              "Particle" : "Explosion",
+              "Play Rate" : 30.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bLoop" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Eyes",
+            "UVScroll" : false
+          },
+          "Element 1" : {
+            "Path" : "EyeWhites",
+            "UVScroll" : false
+          },
+          "Element 10" : {
+            "Path" : "Skirt",
+            "UVScroll" : false
+          },
+          "Element 11" : {
+            "Path" : "Shoes",
+            "UVScroll" : false
+          },
+          "Element 12" : {
+            "Path" : "Gloves",
+            "UVScroll" : false
+          },
+          "Element 2" : {
+            "Path" : "Neck",
+            "UVScroll" : false
+          },
+          "Element 3" : {
+            "Path" : "Face",
+            "UVScroll" : false
+          },
+          "Element 4" : {
+            "Path" : "Hair",
+            "UVScroll" : false
+          },
+          "Element 5" : {
+            "Path" : "Expression",
+            "UVScroll" : false
+          },
+          "Element 6" : {
+            "Path" : "Skin",
+            "UVScroll" : false
+          },
+          "Element 7" : {
+            "Path" : "Clothes",
+            "UVScroll" : false
+          },
+          "Element 8" : {
+            "Path" : "Pants",
+            "UVScroll" : false
+          },
+          "Element 9" : {
+            "Path" : "BackAccessory",
+            "UVScroll" : false
+          },
+          "Location" : [0.000000, 0.000000, -0.687707],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADecalActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 13",
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UDecalComponent",
+        "Properties" : {
+          "Color" : [1.000000, 0.000000, 0.000000, 1.000000],
+          "FadeInDelay" : 1.000000,
+          "FadeInDuration" : 2.000000,
+          "FadeOutDelay" : 4.000000,
+          "FadeOutDuration" : 1.000000,
+          "Location" : [-0.223078, 0.047742, 0.048749],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [0.200000, 0.200000, 0.200000],
+          "Texture" : "Pawn",
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "DecalTest",
+  "PerspectiveCamera" : {
+    "FOV" : 1.570796,
+    "FarClip" : 100.000000,
+    "Location" : [-0.622866, 0.536564, 0.171384],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, -2.522598, -35.379215]
+  },
+  "Primitives" : {
+    "8" : {
+      "Location" : [0.000000, 0.000000, -0.687707],
+      "ObjStaticMeshAsset" : "Data/Lumine/LumineModel.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
