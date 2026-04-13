@@ -21,9 +21,9 @@ void FStateCache::Reset()
 	MeshBuffer   = nullptr;
 	RawVB        = nullptr;
 	RawIB        = nullptr;
-	PerObjectCB  = nullptr;
-	ExtraCB      = nullptr;
-	MaterialCB   = nullptr;
+	PerObjectCB     = nullptr;
+	PerShaderCB[0]  = nullptr;
+	PerShaderCB[1]  = nullptr;
 	DiffuseSRV   = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 	Sampler      = reinterpret_cast<ID3D11SamplerState*>(~0ull);
 
@@ -38,20 +38,20 @@ void FStateCache::Reset()
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
-	// DSV 복원 (ReadOnly → 쓰기 가능)
-	if (bReadOnlyDSV && RTV)
-	{
-		Ctx->OMSetRenderTargets(1, &RTV, DSV);
-		bReadOnlyDSV = false;
-	}
-
-	// SRV 언바인딩
+	// SRV 언바인딩 (DSV 복원 전에 해제해야 hazard 방지)
 	if (DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
 		&& DiffuseSRV != nullptr)
 	{
 		ID3D11ShaderResourceView* nullSRV = nullptr;
 		Ctx->PSSetShaderResources(0, 1, &nullSRV);
 		DiffuseSRV = nullptr;
+	}
+
+	// DSV 복원 (ReadOnly → 쓰기 가능)
+	if (bReadOnlyDSV && RTV)
+	{
+		Ctx->OMSetRenderTargets(1, &RTV, DSV);
+		bReadOnlyDSV = false;
 	}
 }
 
@@ -189,6 +189,15 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩) ---
 	if (Cmd.bReadOnlyDSV != Cache.bReadOnlyDSV && Cache.RTV)
 	{
+		// ReadOnly → Writable 복원 시 depth SRV를 먼저 해제 (hazard 방지)
+		if (!Cmd.bReadOnlyDSV && Cache.DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
+			&& Cache.DiffuseSRV != nullptr)
+		{
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			Ctx->PSSetShaderResources(0, 1, &nullSRV);
+			Cache.DiffuseSRV = nullptr;
+		}
+
 		ID3D11DepthStencilView* TargetDSV = Cmd.bReadOnlyDSV ? Cache.DSVReadOnly : Cache.DSV;
 		Ctx->OMSetRenderTargets(1, &Cache.RTV, TargetDSV);
 		Cache.bReadOnlyDSV = Cmd.bReadOnlyDSV;
@@ -273,33 +282,25 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.PerObjectCB = Cmd.PerObjectCB;
 	}
 
-	// --- Extra CB (b2 등) ---
-	if (Cmd.ExtraCB && Cmd.ExtraCB != Cache.ExtraCB)
+	// --- PerShader CBs (b2, b3) ---
+	for (uint32 i = 0; i < 2; ++i)
 	{
-		ID3D11Buffer* RawCB = Cmd.ExtraCB->GetBuffer();
-		if (RawCB)
+		if (Cmd.PerShaderCB[i] && Cmd.PerShaderCB[i] != Cache.PerShaderCB[i])
 		{
-			Ctx->VSSetConstantBuffers(Cmd.ExtraCBSlot, 1, &RawCB);
-			Ctx->PSSetConstantBuffers(Cmd.ExtraCBSlot, 1, &RawCB);
-		}
-		Cache.ExtraCB = Cmd.ExtraCB;
-	}
-
-	// --- Material CB (b2, PerShader0) — 인라인 데이터 기반 업데이트 ---
-	if (Cmd.MaterialCB)
-	{
-		// MaterialCB 슬롯 바인딩 (최초 1회)
-		if (Cmd.MaterialCB != Cache.MaterialCB)
-		{
-			ID3D11Buffer* RawCB = Cmd.MaterialCB->GetBuffer();
+			ID3D11Buffer* RawCB = Cmd.PerShaderCB[i]->GetBuffer();
 			if (RawCB)
 			{
-				Ctx->VSSetConstantBuffers(ECBSlot::PerShader0, 1, &RawCB);
+				uint32 Slot = ECBSlot::PerShader0 + i;
+				Ctx->VSSetConstantBuffers(Slot, 1, &RawCB);
+				Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
 			}
-			Cache.MaterialCB = Cmd.MaterialCB;
+			Cache.PerShaderCB[i] = Cmd.PerShaderCB[i];
 		}
+	}
 
-		// 데이터 변경 시만 업데이트
+	// --- Material 인라인 데이터 → PerShaderCB[0] 업로드 ---
+	if (Cmd.bInlineMaterialData && Cmd.PerShaderCB[0])
+	{
 		int32 CurUVScroll = static_cast<int32>(Cmd.bIsUVScroll);
 		if (CurUVScroll != Cache.LastUVScroll
 			|| memcmp(&Cmd.SectionColor, &Cache.LastSectionColor, sizeof(FVector4)) != 0)
@@ -307,7 +308,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			FMaterialConstants MatConstants = {};
 			MatConstants.bIsUVScroll = Cmd.bIsUVScroll;
 			MatConstants.SectionColor = Cmd.SectionColor;
-			Cmd.MaterialCB->Update(Ctx, &MatConstants, sizeof(MatConstants));
+			Cmd.PerShaderCB[0]->Update(Ctx, &MatConstants, sizeof(MatConstants));
 			Cache.LastUVScroll = CurUVScroll;
 			Cache.LastSectionColor = Cmd.SectionColor;
 		}
