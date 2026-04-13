@@ -309,8 +309,8 @@ void FEditorPropertyWidget::RenderSingleSelectionHeader(AActor* PrimaryActor)
 	if (SelectedComponent == nullptr)
 		SelectedComponent = PrimaryActor->GetRootComponent();
 
-	ImGui::Text("Selected Actor: %s", PrimaryActor->GetFName().ToString().c_str());
-	ImGui::Text("Selected Component: %s", SelectedComponent ? SelectedComponent->GetTypeInfo()->name : "None");
+	ImGui::Text("Actor: %s", PrimaryActor->GetFName().ToString().c_str());
+	ImGui::Text("Component: %s", SelectedComponent ? SelectedComponent->GetTypeInfo()->name : "None");
 
 	if (bActorSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
 	if (ImGui::IsItemClicked())
