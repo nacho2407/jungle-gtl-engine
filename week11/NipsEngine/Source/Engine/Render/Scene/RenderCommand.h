@@ -191,7 +191,7 @@ struct FLightData
     FVector Color;
     float	Intensity;
 	float	RadiusFalloff;
-	float	Padding[2];
+	float	Padding[3];
 };
 
 struct FLightPassConstants 
