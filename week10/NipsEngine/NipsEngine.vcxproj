@@ -279,14 +279,14 @@
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
@@ -440,9 +440,6 @@
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h" />
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
@@ -452,6 +449,9 @@
     <ClInclude Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
