@@ -125,7 +125,7 @@ struct FConstantBufferBinding
 	uint32 Size = 0;					// 업로드할 바이트 수
 	uint32 Slot = 0;					// VS/PS CB 슬롯
 
-	static constexpr size_t kMaxDataSize = 64;
+	static constexpr size_t kMaxDataSize = 128;
 	alignas(16) uint8 Data[kMaxDataSize] = {};
 
 	// Buffer/Size/Slot
