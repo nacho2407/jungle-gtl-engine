@@ -1,6 +1,4 @@
-﻿#include "LineBatcher.h"
-#include "Core/EngineTypes.h"
-#include "Profiling/Stats.h"
+#include "LineGeometry.h"
 #include "Math/MathUtils.h"
 
 #include <algorithm>
@@ -8,11 +6,8 @@
 
 namespace
 {
+	float Comp(const FVector& V, int I) { return (&V.X)[I]; }
 
-	// FVector 컴포넌트 인덱스 접근 (X=0, Y=1, Z=2)
-	float  Comp(const FVector& V, int I) { return (&V.X)[I]; }
-
-	// 두 그리드축 값 + 법선축 값 → FVector 생성
 	FVector MakeGridPoint(int A0, int A1, int N, float V0, float V1, float VN)
 	{
 		FVector P;
@@ -22,7 +17,6 @@ namespace
 		return P;
 	}
 
-	// 축 인덱스 → 축 색상 (0=X:Red, 1=Y:Green, 2=Z:Blue)
 	FVector4 AxisColor(int Axis)
 	{
 		switch (Axis)
@@ -38,22 +32,11 @@ namespace
 		return std::round(Value / Spacing) * Spacing;
 	}
 
-	float SnapDownToGrid(float Value, float Spacing)
-	{
-		return std::floor(Value / Spacing) * Spacing;
-	}
-
-	float SnapUpToGrid(float Value, float Spacing)
-	{
-		return std::ceil(Value / Spacing) * Spacing;
-	}
-
 	bool IsAxisLine(float Coordinate, float Spacing)
 	{
 		return std::fabs(Coordinate) <= (Spacing * 0.25f);
 	}
 
-	// 카메라 법선축 거리 기반 동적 그리드 확장
 	int32 ComputeDynamicHalfCount(float Spacing, int32 BaseHalfCount, float CameraNormalDist)
 	{
 		const float BaseExtent = Spacing * static_cast<float>(std::max(BaseHalfCount, 1));
@@ -62,7 +45,6 @@ namespace
 		return std::max(BaseHalfCount, static_cast<int32>(std::ceil(RequiredExtent / Spacing)));
 	}
 
-	// 카메라 forward의 dominant axis 인덱스 (절대값이 가장 큰 축)
 	int DominantAxis(const FVector& V)
 	{
 		float AX = std::fabs(V.X), AY = std::fabs(V.Y), AZ = std::fabs(V.Z);
@@ -72,25 +54,32 @@ namespace
 	}
 }
 
-void FLineBatcher::Create(ID3D11Device* InDevice)
+void FLineGeometry::Create(ID3D11Device* InDevice)
 {
 	Release();
-	CreateBuffers(InDevice, 512, sizeof(FLineVertex), 1536);
+	Device = InDevice;
+	if (!Device) return;
+	Device->AddRef();
+
+	VB.Create(Device, 512, sizeof(FLineVertex));
+	IB.Create(Device, 1536);
 }
 
-void FLineBatcher::Release()
+void FLineGeometry::Release()
 {
-	ReleaseBuffers();
+	VB.Release();
+	IB.Release();
 	IndexedVertices.clear();
 	Indices.clear();
+	if (Device) { Device->Release(); Device = nullptr; }
 }
 
-void FLineBatcher::AddLine(const FVector& Start, const FVector& End, const FVector4& InColor)
+void FLineGeometry::AddLine(const FVector& Start, const FVector& End, const FVector4& InColor)
 {
 	AddLine(Start, End, InColor, InColor);
 }
 
-void FLineBatcher::AddLine(const FVector& Start, const FVector& End, const FVector4& StartColor, const FVector4& EndColor)
+void FLineGeometry::AddLine(const FVector& Start, const FVector& End, const FVector4& StartColor, const FVector4& EndColor)
 {
 	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
 	IndexedVertices.emplace_back(Start, StartColor);
@@ -98,7 +87,8 @@ void FLineBatcher::AddLine(const FVector& Start, const FVector& End, const FVect
 	Indices.push_back(BaseVertex);
 	Indices.push_back(BaseVertex + 1);
 }
-void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
+
+void FLineGeometry::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 {
 	const FVector4 BoxColor = InColor.ToVector4();
 	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
@@ -125,31 +115,24 @@ void FLineBatcher::AddAABB(const FBoundingBox& Box, const FColor& InColor)
 	}
 }
 
-void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount, const FVector& CameraPosition, const FVector& CameraForward, bool bIsOrtho)
+void FLineGeometry::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount,
+	const FVector& CameraPosition, const FVector& CameraForward, bool bIsOrtho)
 {
 	const float Spacing = GridSpacing;
 	const int32 BaseHalfCount = std::max(GridHalfLineCount, 1);
 
-	if (Spacing <= 0.0f)
-	{
-		return;
-	}
+	if (Spacing <= 0.0f) return;
 
-	// ── 그리드 평면 결정 ──
-	// Perspective: 항상 XY 평면 (법선=Z)
-	// Ortho: 카메라 forward의 주축을 법선으로 → 해당 축에 수직한 평면
-	int N = 2; // 법선축 인덱스 (기본 Z)
+	int N = 2;
 	if (bIsOrtho)
 	{
 		N = DominantAxis(CameraForward);
 	}
 
-	// 그리드 2축: 법선이 아닌 나머지 두 축
 	const int A0 = (N == 0) ? 1 : 0;
 	const int A1 = (N == 2) ? 1 : 2;
 	constexpr float PlaneOffset = 0.0f;
 
-	// 카메라 위치를 그리드 평면에 투영하여 중심으로 사용
 	const float Center0 = SnapToGrid(Comp(CameraPosition, A0), Spacing);
 	const float Center1 = SnapToGrid(Comp(CameraPosition, A1), Spacing);
 	const float CameraNormalDist = Comp(CameraPosition, N) - PlaneOffset;
@@ -168,33 +151,27 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 
 	const float AxisBias = std::max(Spacing * 0.001f, 0.001f);
 
-	// 원점(0)이 범위 안에 있을 때 축 표시
-	const bool bShowAxis0 = (Min1 <= 0.0f) && (Max1 >= 0.0f); // A0 방향 축 (A1=0 라인)
-	const bool bShowAxis1 = (Min0 <= 0.0f) && (Max0 >= 0.0f); // A1 방향 축 (A0=0 라인)
+	const bool bShowAxis0 = (Min1 <= 0.0f) && (Max1 >= 0.0f);
+	const bool bShowAxis1 = (Min0 <= 0.0f) && (Max0 >= 0.0f);
 
-	// ── 그리드 라인 ──
 	if (ShowFlags.bGrid)
 	{
 		const FVector4 GridColor = FColor::Gray().ToVector4();
 
-		// A1 방향 스윕 → A0 방향 라인
 		for (int32 I = Min1Idx; I <= Max1Idx; ++I)
 		{
 			const float W1 = Center1 + (static_cast<float>(I) * Spacing);
 			if (bShowAxis0 && IsAxisLine(W1, Spacing)) continue;
-
 			AddLine(
 				MakeGridPoint(A0, A1, N, Min0, W1, PlaneOffset),
 				MakeGridPoint(A0, A1, N, Max0, W1, PlaneOffset),
 				GridColor);
 		}
 
-		// A0 방향 스윕 → A1 방향 라인
 		for (int32 I = Min0Idx; I <= Max0Idx; ++I)
 		{
 			const float W0 = Center0 + (static_cast<float>(I) * Spacing);
 			if (bShowAxis1 && IsAxisLine(W0, Spacing)) continue;
-
 			AddLine(
 				MakeGridPoint(A0, A1, N, W0, Min1, PlaneOffset),
 				MakeGridPoint(A0, A1, N, W0, Max1, PlaneOffset),
@@ -202,7 +179,6 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 		}
 	}
 
-	// ── 월드 축 (A0 방향 — A1=0 라인) ──
 	if (ShowFlags.bWorldAxis && bShowAxis0)
 	{
 		AddLine(
@@ -211,7 +187,6 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 			AxisColor(A0));
 	}
 
-	// ── 월드 축 (A1 방향 — A0=0 라인) ──
 	if (ShowFlags.bWorldAxis && bShowAxis1)
 	{
 		AddLine(
@@ -220,7 +195,6 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 			AxisColor(A1));
 	}
 
-	// ── 법선축 (A0=0, A1=0 일 때 수직선) ──
 	if (ShowFlags.bWorldAxis && bShowAxis0 && bShowAxis1)
 	{
 		const float AxisLen = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
@@ -231,33 +205,21 @@ void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacin
 	}
 }
 
-void FLineBatcher::Clear()
+void FLineGeometry::Clear()
 {
 	IndexedVertices.clear();
 	Indices.clear();
 }
 
-void FLineBatcher::DrawBatch(ID3D11DeviceContext* Context)
+bool FLineGeometry::UploadBuffers(ID3D11DeviceContext* Context)
 {
-	if (!Context || !Device) return;
-
 	const uint32 VertexCount = static_cast<uint32>(IndexedVertices.size());
 	const uint32 IndexCount = static_cast<uint32>(Indices.size());
-	if (VertexCount == 0 || IndexCount == 0) return;
+	if (VertexCount == 0 || IndexCount == 0) return false;
 
 	VB.EnsureCapacity(Device, VertexCount);
 	IB.EnsureCapacity(Device, IndexCount);
-
-	if (!VB.Update(Context, IndexedVertices.data(), VertexCount)) return;
-	if (!IB.Update(Context, Indices.data(), IndexCount)) return;
-
-	VB.Bind(Context);
-	IB.Bind(Context);
-	Context->DrawIndexed(IndexCount, 0, 0);
-	FDrawCallStats::Increment();
-}
-
-uint32 FLineBatcher::GetLineCount() const
-{
-	return static_cast<uint32>(Indices.size() / 2);
+	if (!VB.Update(Context, IndexedVertices.data(), VertexCount)) return false;
+	if (!IB.Update(Context, Indices.data(), IndexCount)) return false;
+	return true;
 }

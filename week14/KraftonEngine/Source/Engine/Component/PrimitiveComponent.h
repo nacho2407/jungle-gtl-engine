@@ -18,6 +18,7 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+	~UPrimitiveComponent() override;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
@@ -30,7 +31,7 @@ public:
 	void SetVisibility(bool bNewVisible);
 	inline bool IsVisible() const { return bIsVisible; }
 
-	// 월드 공간 AABB를 FBoundingBox로 반환 (파트 B LineBatcher와의 인터페이스)
+	// 월드 공간 AABB를 FBoundingBox로 반환
 	FBoundingBox GetWorldBoundingBox() const;
 	void MarkWorldBoundsDirty();
 

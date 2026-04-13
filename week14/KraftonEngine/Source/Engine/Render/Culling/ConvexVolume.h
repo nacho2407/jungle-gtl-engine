@@ -16,6 +16,7 @@ struct FConvexVolume
 {
 public:
 	void UpdateFromMatrix(const FMatrix& InViewProjectionMatrix);
+	void UpdateAsOBB(const FMatrix& InWorldMatrix);
 	bool IntersectAABB(const FBoundingBox& Box) const;
 	// Returns true if the AABB is completely inside all 6 frustum planes
 	bool ContainsAABB(const FBoundingBox& Box) const;

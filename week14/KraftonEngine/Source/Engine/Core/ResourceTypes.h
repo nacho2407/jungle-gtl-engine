@@ -8,7 +8,7 @@ struct ID3D11ShaderResourceView;
 
 // Font/Particle 공통 텍스처 아틀라스 리소스.
 // ResourceManager가 소유하며, 컴포넌트는 포인터로 참조만 합니다.
-// Columns × Rows 그리드 정보를 함께 보유해 Batcher에서 UV 계산에 활용합니다.
+// Columns × Rows 그리드 정보를 함께 보유해 UV 계산에 활용합니다.
 struct FTextureAtlasResource
 {
 	FName Name;

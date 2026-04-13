@@ -83,8 +83,3 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 		PrimaryComponentTick.SetTickEnabled(bTickEnable);
 	}
 }
-
-void UActorComponent::CollectEditorVisualizations(FRenderBus& RenderBus) const
-{
-	(void)RenderBus;
-}
