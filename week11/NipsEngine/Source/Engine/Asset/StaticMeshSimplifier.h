@@ -40,12 +40,12 @@ private:
 	void BuildTopologicalVertices();
 	void CalculateInitialQuadrics();
 	void FindBoundaryEdges();
-	void AddPlaneQuadric(uint32 VertIdx, const FVector& InNormal, float InD);
+	void AddPlaneQuadric(uint32 VertIdx, const FVector& InNormal, float InD, float InWeight = 1.0f);
 	void BuildTopoUVBounds();
 
 	/* Error Calculation Phase */
 	static float CalculateVertexError(const FMatrix& Q, const FVector& V);
-	FCollapseCandidate CalculateEdgeError(uint32 ia, uint32 ib);
+	FCollapseCandidate CalculateEdgeError(uint32 ia, uint32 ib, const TArray<uint32>& InTopologicalIndices);
 
 	/* Simplification Phase */
 	void SimplifyMesh();

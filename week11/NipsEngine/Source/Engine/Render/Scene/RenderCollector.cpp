@@ -139,7 +139,7 @@ namespace
 		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
 		const float ScreenCoverage = ProjectedRadius; 
 
-		static constexpr float Thresholds[] = { 0.05f, 0.03f, 0.01f, 0.008f };
+		static constexpr float Thresholds[] = { 0.07f, 0.04f, 0.02f, 0.008f };
 		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
 
 		const int32 MaxLOD = ValidLODCount - 1;
@@ -206,7 +206,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 	for (UPrimitiveComponent* Primitive : VisiblePrimitiveScratch)
 	{
-		if (Primitive == nullptr || UsesCameraDependentRenderBounds(Primitive))
+		if (Primitive == nullptr || UsesCameraDependentRenderBounds(Primitive) || !Primitive->IsEnableCull())
 		{
 			continue;
 		}
@@ -235,10 +235,12 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 			++LastCullingStats.TotalVisiblePrimitiveCount;
 
-			if (!UsesCameraDependentRenderBounds(Primitive))
+			const bool bIsCameraDependent = UsesCameraDependentRenderBounds(Primitive);
+			const bool bIsUncullable = !Primitive->IsEnableCull();
+
+			if (!bIsCameraDependent && !bIsUncullable)
 			{
-				if (Primitive->IsEnableCull())
-					continue;
+				continue;
 			}
 
 			if (!CollectedCameraDependentPrimitives.insert(Primitive).second)
@@ -246,8 +248,10 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 				continue;
 			}
 
-			if (ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
+			if (bIsCameraDependent && !bIsUncullable &&
+				ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
 			{
+				continue;
 			}
 
 			++LastCullingStats.FallbackPassedPrimitiveCount;

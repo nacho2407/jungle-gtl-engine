@@ -36,7 +36,8 @@ namespace EditorKey
 	constexpr const char* bBoundingVolume = "bBoundingVolume";
 	constexpr const char* bEnableLOD = "bEnableLOD";
 	constexpr const char* bBVHBoundingVolume = "bBVHBoundingVolume";
-	constexpr const char* FXAAThreshold = "FXAAThreshold";
+	constexpr const char* FXAAEnabled = "FXAAEnabled";
+	constexpr const char* FXAAThreshold = "FXAAThreshold"; // Backward compatibility
 
 	// Grid
 	constexpr const char* Grid = "Grid";
@@ -92,7 +93,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	ViewObj[EditorKey::bBoundingVolume] = ShowFlags.bBoundingVolume;
 	ViewObj[EditorKey::bEnableLOD] = ShowFlags.bEnableLOD;
 	ViewObj[EditorKey::bBVHBoundingVolume] = ShowFlags.bBVHBoundingVolume;
-	ViewObj[EditorKey::FXAAThreshold] = FXAAThreshold;
+	ViewObj[EditorKey::FXAAEnabled] = bEnableFXAA;
 	Root[EditorKey::View] = ViewObj;
 
 	// Grid
@@ -220,8 +221,13 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			ShowFlags.bEnableLOD = ViewObj[EditorKey::bEnableLOD].ToBool();
 		if (ViewObj.hasKey(EditorKey::bBVHBoundingVolume))
 			ShowFlags.bBVHBoundingVolume = ViewObj[EditorKey::bBVHBoundingVolume].ToBool();
-		if (ViewObj.hasKey(EditorKey::FXAAThreshold))
-			FXAAThreshold = std::clamp(static_cast<float>(ViewObj[EditorKey::FXAAThreshold].ToFloat()), 0.0f, 1.0f);
+		if (ViewObj.hasKey(EditorKey::FXAAEnabled))
+			bEnableFXAA = ViewObj[EditorKey::FXAAEnabled].ToBool();
+		else if (ViewObj.hasKey(EditorKey::FXAAThreshold))
+		{
+			const float LegacyThreshold = std::clamp(static_cast<float>(ViewObj[EditorKey::FXAAThreshold].ToFloat()), 0.0f, 1.0f);
+			bEnableFXAA = (LegacyThreshold > 0.0f);
+		}
 	}
 
 	// Grid
