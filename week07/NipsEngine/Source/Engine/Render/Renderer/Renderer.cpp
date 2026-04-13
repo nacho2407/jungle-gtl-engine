@@ -486,6 +486,18 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
 	Resources.LightStructuredBuffer.Update(Context, Lights.data(), (uint32)Lights.size());
 
 	FLightPassConstants LightPassConstant = {};
+
+	switch (Bus.GetViewMode()) {
+    case (EViewMode::Unlit):
+        LightPassConstant.WorldLit = 0;
+        break;
+	__fallthrough;
+    case (EViewMode::Lit):
+    case (EViewMode::Wireframe):
+    default:
+        LightPassConstant.WorldLit = 1;
+	}
+
 	LightPassConstant.LightCount = (uint32)Lights.size();
     LightPassConstant.CameraWorldPos = Bus.GetCameraPosition();
     Resources.LightPassConstantBuffer.Update(Context, &LightPassConstant, sizeof(LightPassConstant));
