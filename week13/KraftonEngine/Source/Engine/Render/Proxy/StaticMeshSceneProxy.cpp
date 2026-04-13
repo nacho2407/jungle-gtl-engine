@@ -153,7 +153,11 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 					{
 						Draw.DiffuseSRV = DiffuseTex->GetSRV();
 					}
-					Mat->GetVector4Parameter("DiffuseTexture", Draw.DiffuseColor);
+					//Draw.DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // 기본 흰색
+					//Mat->SetVector4Parameter("DiffuseColor", Draw.DiffuseColor);
+					Draw.MaterialCB[0] = Mat->GetGPUBufferBySlot(2);  // b2
+					Draw.MaterialCB[1] = Mat->GetGPUBufferBySlot(3);  // b3
+
 				}
 			}
 

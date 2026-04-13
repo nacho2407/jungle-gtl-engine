@@ -3,7 +3,7 @@
 #include "Core/Singleton.h"
 #include "Render/Resource/Shader.h"
 #include "Core/CoreTypes.h"
-
+#include <memory>
 enum class EShaderType : uint32
 {
 	Default = 0,
@@ -39,7 +39,7 @@ private:
 	FShaderManager() = default;
 
 	FShader Shaders[(uint32)EShaderType::MAX];
-	TMap<FString, FShader> CustomShaderCache; // 커스텀 셰이더 캐시 (경로 → 셰이더)
+	TMap<FString, std::unique_ptr< FShader>> CustomShaderCache; // 커스텀 셰이더 캐시 (경로 → 셰이더)
 
 	bool bIsInitialized = false;
 };
