@@ -17,7 +17,7 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	Mat->SetParam("FontAtlas", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Font/FontAtlas.dds", Device.Get())));
 	Mat->BlendType = EBlendType::AlphaBlend;
 	Mat->DepthStencilType = EDepthStencilType::Default;
-	Mat->RasterizerType = ERasterizerType::SolidBackCull;
+	Mat->RasterizerType = ERasterizerType::SolidNoCull;
 	Mat->SamplerType = ESamplerType::EST_Point;
 
 	FontMaterial = Mat;
