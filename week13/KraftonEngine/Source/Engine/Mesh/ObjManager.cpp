@@ -5,6 +5,7 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
+#include "Materials/MaterialManager.h"
 #include <filesystem>
 #include <algorithm>
 
@@ -380,7 +381,9 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 	}
 
 	// 2. 캐시에 없다면 빈 객체 생성
-	UMaterial* NewMaterial = UObjectManager::Get().CreateObject<UMaterial>();
+	UMaterial* NewMaterial =  UObjectManager::Get().CreateObject<UMaterial>();
+	//UMaterial* NewMaterial = FMaterialManager::GetOrCreateMaterial(FileNameOnly);//   UObjectManager::Get().CreateObject<UMaterial>();
+
 	UE_LOG("Cache Missed MaterialName: %s;", FileNameOnly.c_str());
 
 	FString MBinPath = GetMBinaryFilePath(MaterialName);

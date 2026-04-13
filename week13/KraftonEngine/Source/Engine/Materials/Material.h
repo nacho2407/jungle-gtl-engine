@@ -89,6 +89,9 @@ private:
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
+
+	FString DiffuseTextureFilePath;
+	FVector4 DiffuseColor = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
 public:
 	DECLARE_CLASS(UMaterial, UObject)
 	void Create(const FString& InPathFileName,FMaterialTemplate* InTemplate,
