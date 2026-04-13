@@ -1,6 +1,5 @@
 // SceneDepth.hlsl
-#include "Common/ConstantBuffers.hlsl"
-#include "Common/VertexLayouts.hlsl"
+#include "Common/Functions.hlsl"
 
 // b2 (PerShader0): SceneDepth visualization
 cbuffer SceneDepthCB : register(b2)
@@ -15,10 +14,7 @@ Texture2D<float> DepthTex : register(t0);
 
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
-    PS_Input_UV output;
-    output.uv = float2((vertexID << 1) & 2, vertexID & 2);
-    output.position = float4(output.uv * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
-    return output;
+    return FullscreenTriangleVS(vertexID);
 }
 
 float4 PS(PS_Input_UV input) : SV_TARGET

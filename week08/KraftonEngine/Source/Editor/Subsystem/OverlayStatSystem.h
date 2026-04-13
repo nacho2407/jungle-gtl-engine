@@ -12,11 +12,6 @@ struct FOverlayStatLine
 	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
 };
 
-struct FOverlayStatGroup
-{
-	TArray<FString> Lines;
-};
-
 struct FOverlayStatLayout
 {
 	float StartX = 16.0f;
@@ -51,7 +46,6 @@ public:
 	const FOverlayStatLayout& GetLayout() const { return Layout; }
 	FOverlayStatLayout& GetLayout() { return Layout; }
 
-	TArray<FOverlayStatGroup> BuildGroups(const UEditorEngine& Editor) const;
 	void BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const;
 	TArray<FOverlayStatLine> BuildLines(const UEditorEngine& Editor) const;
 
