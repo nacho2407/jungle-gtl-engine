@@ -206,7 +206,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 	for (UPrimitiveComponent* Primitive : VisiblePrimitiveScratch)
 	{
-		if (Primitive == nullptr || UsesCameraDependentRenderBounds(Primitive))
+		if (Primitive == nullptr || UsesCameraDependentRenderBounds(Primitive) || !Primitive->IsEnableCull())
 		{
 			continue;
 		}
@@ -235,10 +235,12 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 
 			++LastCullingStats.TotalVisiblePrimitiveCount;
 
-			if (!UsesCameraDependentRenderBounds(Primitive))
+			const bool bIsCameraDependent = UsesCameraDependentRenderBounds(Primitive);
+			const bool bIsUncullable = !Primitive->IsEnableCull();
+
+			if (!bIsCameraDependent && !bIsUncullable)
 			{
-				if (Primitive->IsEnableCull())
-					continue;
+				continue;
 			}
 
 			if (!CollectedCameraDependentPrimitives.insert(Primitive).second)
@@ -246,8 +248,10 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 				continue;
 			}
 
-			if (ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
+			if (bIsCameraDependent && !bIsUncullable &&
+				ViewFrustum.Intersects(BuildRenderAABB(Primitive, RenderBus)) == FFrustum::EFrustumIntersectResult::Outside)
 			{
+				continue;
 			}
 
 			++LastCullingStats.FallbackPassedPrimitiveCount;
