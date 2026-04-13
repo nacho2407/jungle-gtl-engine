@@ -29,6 +29,9 @@ cbuffer LightPassConstants : register(b7)
 {
     float3 CameraWorldPos;
     uint LightCount;
+    
+    uint ViewMode;
+    float3 Padding;
 };
 
 // Fullscreen Triangle VS
@@ -65,9 +68,38 @@ float4 mainPS(VSOutput input) : SV_TARGET
     float depth = SceneDepth.Load(int3(ip, 0)).r;
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).rgb;
     
+    if (ViewMode == 3) // Depth View Mode
+    {
+        if (depth >= 1.0f)
+            return float4(0.0f, 0.0f, 0.0f, 1.0f);
+        
+        float visual;
+        
+        // HLSL에서 row-major로 들어온 것을 반영해 원근 투영
+        if (Projection[3][3] < 0.5f)
+        {
+            // return float4(1.0f, 0.0f, 0.0f, 1.0f);
+            float A = Projection[0][2];
+            float B = Projection[3][2];
+            float zView = abs(B / (depth - A));
+            
+            float DepthDensity = 0.05f; // 상황에 따라 0.01f ~ 0.001f 등 조절
+            
+            // 거리가 멀어질수록 exp 안의 음수값이 커져 visual이 0(검정)에 수렴
+            visual = saturate(exp(-zView * DepthDensity));
+
+            // 흰색 = 가까움, 검정 = 멀리 (언리얼 Depth 뷰 모드와 동일)
+        }
+        else // 직교 투영
+        {
+            visual = 1.0f - depth;
+        }
+        
+        return float4(visual, visual, visual, 1.0f);
+    }
+    
     // SceneNormalRTV is cleared every frame using ClearColor = { 0.25f, 0.25f, 0.25f, 1.0f },
     // which is the default background color. (D3DDevice.cpp line 40)
-    
     if (normal.a < 1e-4)
     {
         discard;

@@ -16,8 +16,9 @@ Cpp11BracedListStyle: false # 중괄호 앞뒤로 한 칸 띄우기 ex. { 1, 2, 
 
 # 들여쓰기 세부 제어
 AllowShortFunctionsOnASingleLine: Inline # Getter/Setter를 한 줄로 허용
-AllowShortBlocksOnASingleLine: true
+AllowShortBlocksOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
 
 # 빈 줄 및 공백 설정
 MaxEmptyLinesToKeep: 2

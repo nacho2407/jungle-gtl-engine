@@ -34,6 +34,7 @@ struct FRenderResources
     FShader FogPassShader;
 	FShader DecalShader;
     FShader     FXAAShader;
+    FShader     DepthViewShader;
 
 	TComPtr<ID3D11SamplerState> MeshSamplerState;
 };
