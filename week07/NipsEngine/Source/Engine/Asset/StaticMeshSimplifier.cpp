@@ -2,6 +2,8 @@
 #include "StaticMesh.h"
 #include <algorithm>
 
+#include "Editor/UI/EditorConsoleWidget.h"
+
 FStaticMeshSimplifier::FStaticMeshSimplifier(UStaticMesh* InTargetMesh)
 	: TargetMesh(InTargetMesh)
 {
@@ -38,17 +40,22 @@ void FStaticMeshSimplifier::BuildLODs(UStaticMesh* TargetMesh)
 
 	// 실제로 생성된 LOD 수 집계
 	Builder.TargetMesh->ValidLODCount = 1;
-	for (int32 i = 1; i < UStaticMesh::MAX_LOD; ++i)
-	{
-		if (Builder.TargetMesh->LODMeshData[i] && !Builder.TargetMesh->LODMeshData[i]->Indices.empty())
-		{
-			Builder.TargetMesh->ValidLODCount = i + 1;
-		}
-		else
-		{
-			break;
-		}
-	}
+    FString LogMessage = "LOD Triangles: [LOD 0: " + std::to_string(Builder.MeshData->Indices.size() / 3u) + "]";
+
+    for (int32 i = 1; i < UStaticMesh::MAX_LOD; ++i)
+    {
+        if (Builder.TargetMesh->LODMeshData[i] && !Builder.TargetMesh->LODMeshData[i]->Indices.empty())
+        {
+            Builder.TargetMesh->ValidLODCount = i + 1;
+            LogMessage += ", [LOD " + std::to_string(i) + ": " + std::to_string(Builder.TargetMesh->LODMeshData[i]->Indices.size() / 3u) + "]";
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    UE_LOG("%s", LogMessage.c_str());
 }
 
 // ==============================================================================
@@ -127,10 +134,18 @@ void FStaticMeshSimplifier::BuildTopologicalVertices()
 
 void FStaticMeshSimplifier::CalculateInitialQuadrics()
 {
-	Quadrics.resize(MeshData->Vertices.size());
+	// [개선 2] Quadrics 영행렬 초기화: resize 후 모든 FMatrix를 명시적으로 0으로 초기화하여
+	// 쓰레기 값으로 인한 잘못된 Quadric 누적을 방지한다.
+	Quadrics.resize(TopologicalVertices.size());
+	for (FMatrix& Q : Quadrics)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			memset(&Q.M[i][0], 0, sizeof(float) * 4);
+		}
+	}
 	VertexToTriangleMap.resize(TopologicalVertices.size());
 
-	const TArray<FNormalVertex>& Vertices = MeshData->Vertices;
 	const TArray<uint32>& Indices = MeshData->Indices;
 	uint32 NumTriangles = static_cast<uint32>(Indices.size()) / 3u;
 
@@ -150,12 +165,18 @@ void FStaticMeshSimplifier::CalculateInitialQuadrics()
 		// Quadric 계산: 평면 방정식 Dot(N, V) + d = 0
 		FVector V01 = TopologicalVertices[V1].Position - TopologicalVertices[V0].Position;
 		FVector V02 = TopologicalVertices[V2].Position - TopologicalVertices[V0].Position;
-		FVector Normal = FVector::CrossProduct(V01, V02).GetSafeNormal();
-		float d = -FVector::DotProduct(Normal, Vertices[V0].Position);
 
-		AddPlaneQuadric(V0, Normal, d);
-		AddPlaneQuadric(V1, Normal, d);
-		AddPlaneQuadric(V2, Normal, d);
+		// [개선 3] Area-Weighted Quadrics: 정규화 이전 외적 벡터로 삼각형 면적을 계산한다.
+		// 면적이 큰 삼각형이 Quadric에 더 많이 기여하여 메쉬의 주요 형태가 잘 보존된다.
+		const FVector CrossVec = FVector::CrossProduct(V01, V02);
+		const float TriangleArea = CrossVec.Size() * 0.5f;
+
+		FVector Normal = CrossVec.GetSafeNormal();
+		float d = -FVector::DotProduct(Normal, TopologicalVertices[V0].Position);
+
+		AddPlaneQuadric(V0, Normal, d, TriangleArea);
+		AddPlaneQuadric(V1, Normal, d, TriangleArea);
+		AddPlaneQuadric(V2, Normal, d, TriangleArea);
 
 		VertexToTriangleMap[V0].push_back(tidx);
 		VertexToTriangleMap[V1].push_back(tidx);
@@ -165,7 +186,8 @@ void FStaticMeshSimplifier::CalculateInitialQuadrics()
 
 
 // SIMD 최적화된 함수 (Normal과 d값을 통해 Quadric 행렬 계산)
-void FStaticMeshSimplifier::AddPlaneQuadric(uint32 VertIdx, const FVector& InNormal, float InD)
+// [개선 3] InWeight(삼각형 면적)를 추가 인자로 받아 Quadric에 면적 가중치를 적용한다.
+void FStaticMeshSimplifier::AddPlaneQuadric(uint32 VertIdx, const FVector& InNormal, float InD, float InWeight)
 {
 	// 1. 평면 벡터 p = [a, b, c, d] 생성 (SIMD 레지스터 로드)
 	DirectX::XMVECTOR P = DirectX::XMVectorSet(InNormal.X, InNormal.Y, InNormal.Z, InD);
@@ -177,7 +199,15 @@ void FStaticMeshSimplifier::AddPlaneQuadric(uint32 VertIdx, const FVector& InNor
 	DirectX::XMVECTOR R2 = DirectX::XMVectorMultiply(P, DirectX::XMVectorReplicate(InNormal.Z));
 	DirectX::XMVECTOR R3 = DirectX::XMVectorMultiply(P, DirectX::XMVectorReplicate(InD));
 
-	// 3. 기존 Quadric 행렬에 누적 합산 (SIMD 덧셈)
+	// 3. Area-Weighted: 면적 가중치를 SIMD로 한번에 곱한다.
+	// 큰 삼각형일수록 오차 기여가 커져 해당 정점이 간소화 대상에서 우선 제외된다.
+	const DirectX::XMVECTOR WeightVec = DirectX::XMVectorReplicate(InWeight);
+	R0 = DirectX::XMVectorMultiply(R0, WeightVec);
+	R1 = DirectX::XMVectorMultiply(R1, WeightVec);
+	R2 = DirectX::XMVectorMultiply(R2, WeightVec);
+	R3 = DirectX::XMVectorMultiply(R3, WeightVec);
+
+	// 4. 기존 Quadric 행렬에 누적 합산 (SIMD 덧셈)
 	// FMatrix 구조를 참조하여 기존 데이터를 로드, 더한 후 다시 저장합니다.
 	float* MatrixPtr = Quadrics[VertIdx].M[0];
 	DirectX::XMVECTOR Q0 = DirectX::XMVectorAdd(DirectX::XMLoadFloat4(reinterpret_cast<const DirectX::XMFLOAT4*>(&MatrixPtr[0])), R0);
@@ -241,7 +271,7 @@ float FStaticMeshSimplifier::CalculateVertexError(const FMatrix& Q, const FVecto
 	return DirectX::XMVectorGetX(DirectX::XMVector4Dot(V, VtQ));
 }
 
-FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 ib)
+FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 ib, const TArray<uint32>& InTopologicalIndices)
 {
 	FCollapseCandidate Candidate;
 	Candidate.Edge = FIndexEdge(ia, ib);
@@ -257,7 +287,7 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 	float ErrorMid = CalculateVertexError(Q, PosMid);
 
 	// 1. 성게(Spike) 버그를 막기 위한 3x3 수동 행렬식 검사
-	float det3x3 = 
+	float det3x3 =
 		Q.M[0][0] * (Q.M[1][1] * Q.M[2][2] - Q.M[1][2] * Q.M[2][1]) -
 		Q.M[0][1] * (Q.M[1][0] * Q.M[2][2] - Q.M[1][2] * Q.M[2][0]) +
 		Q.M[0][2] * (Q.M[1][0] * Q.M[2][1] - Q.M[1][1] * Q.M[2][0]);
@@ -277,6 +307,68 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 		if (Candidate.Error == ErrorMid)    Candidate.OptimalPos = PosMid;
 		else if (Candidate.Error == ErrorA) Candidate.OptimalPos = PosA;
 		else                                Candidate.OptimalPos = PosB;
+	}
+
+	// [개선 1] Normal Inversion(삼각형 뒤집힘) 방지
+	// ia-ib 간선을 공유하지 않는 인접 삼각형들의 법선 방향이 붕괴 전후로 뒤집히면 FLT_MAX 패널티를 부여한다.
+	const FVector NewPos(Candidate.OptimalPos.X, Candidate.OptimalPos.Y, Candidate.OptimalPos.Z);
+
+	auto CheckNormalNotInverted = [&](uint32 TriIdx) -> bool
+	{
+		const uint32 I0 = InTopologicalIndices[TriIdx * 3 + 0];
+		const uint32 I1 = InTopologicalIndices[TriIdx * 3 + 1];
+		const uint32 I2 = InTopologicalIndices[TriIdx * 3 + 2];
+
+		// 이미 퇴화된 삼각형은 건너뜀
+		if (I0 == I1 || I1 == I2 || I0 == I2) return true;
+
+		// ia-ib 간선을 공유하는 삼각형(붕괴 후 퇴화될 삼각형)은 검사 대상에서 제외
+		const bool bHasIa = (I0 == ia || I1 == ia || I2 == ia);
+		const bool bHasIb = (I0 == ib || I1 == ib || I2 == ib);
+		if (bHasIa && bHasIb) return true;
+
+		// 붕괴 전 삼각형 법선 계산
+		const FVector P0 = TopologicalVertices[I0].Position;
+		const FVector P1 = TopologicalVertices[I1].Position;
+		const FVector P2 = TopologicalVertices[I2].Position;
+		const FVector OldCross = FVector::CrossProduct(P1 - P0, P2 - P0);
+		if (OldCross.SizeSquared() < 1e-16f) return true; // 원래 퇴화 삼각형
+
+		// 붕괴 후 삼각형 법선 계산 (ia 또는 ib 위치를 최적 위치로 교체)
+		const FVector NP0 = (I0 == ia || I0 == ib) ? NewPos : P0;
+		const FVector NP1 = (I1 == ia || I1 == ib) ? NewPos : P1;
+		const FVector NP2 = (I2 == ia || I2 == ib) ? NewPos : P2;
+		const FVector NewCross = FVector::CrossProduct(NP1 - NP0, NP2 - NP0);
+		if (NewCross.SizeSquared() < 1e-16f) return false; // 붕괴 후 퇴화됨
+
+		// 내적이 0 이하면 법선이 뒤집힌 것으로 판단
+		return FVector::DotProduct(OldCross, NewCross) > 0.0f;
+	};
+
+	bool bNormalInverted = false;
+	for (uint32 TriIdx : VertexToTriangleMap[ia])
+	{
+		if (!CheckNormalNotInverted(TriIdx))
+		{
+			bNormalInverted = true;
+			break;
+		}
+	}
+	if (!bNormalInverted)
+	{
+		for (uint32 TriIdx : VertexToTriangleMap[ib])
+		{
+			if (!CheckNormalNotInverted(TriIdx))
+			{
+				bNormalInverted = true;
+				break;
+			}
+		}
+	}
+	if (bNormalInverted)
+	{
+		Candidate.Error = FLT_MAX;
+		return Candidate;
 	}
 
 	// UV 찢어짐 방지: 두 위상 정점의 렌더 정점 UV 차이가 클수록 패널티 부여
@@ -302,88 +394,101 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 // ==============================================================================
 // 3. Simplification Phase
 // ==============================================================================
-
 void FStaticMeshSimplifier::SimplifyMesh()
 {
-	// [렌더링 정점, 위상 정점]을 추적하는 배열 생성 (런타임에 정보가 바뀌는 배열)
-	TArray<uint32> TopologicalIndices(MeshData->Indices.size());
-	for (int i = 0; i < TopologicalIndices.size(); i++)
-	{
-		TopologicalIndices[i] = RenderToTopoMap[MeshData->Indices[i]];
-	}
+    // [렌더링 정점, 위상 정점] 추적 배열 생성
+    TArray<uint32> TopologicalIndices(MeshData->Indices.size());
+    for (int i = 0; i < TopologicalIndices.size(); i++)
+    {
+        TopologicalIndices[i] = RenderToTopoMap[MeshData->Indices[i]];
+    }
 
-	std::priority_queue<FCollapseCandidate> PQ;
+    std::priority_queue<FCollapseCandidate> PQ;
 
-	// 모든 유효 간선의 오차를 계산하여 큐에 삽입한다.
-	for (auto e : Edges)
-	{
-		PQ.push(CalculateEdgeError(e.A, e.B));
-	}
+    // 모든 유효 간선의 오차 계산 및 큐 삽입
+    for (auto e : Edges)
+    {
+        PQ.push(CalculateEdgeError(e.A, e.B, TopologicalIndices));
+    }
 
-	float TargetRatio = 0.9f;
-	int32 CurrentTriangles = static_cast<int32>(MeshData->Indices.size()) / 3;
-	int32 TargetTriangles = static_cast<int32>(CurrentTriangles * TargetRatio);
-	int32 CurrentLOD = 1;
+    int32 CurrentTriangles = static_cast<int32>(MeshData->Indices.size()) / 3;
+    int32 CurrentLOD = 1;
+    bool bLastLOD = false; // 256개 도달 여부 플래그
 
-	TArray<bool> IsVertexDeleted(MeshData->Vertices.size(), false);
-	
-	TArray<uint32> NewNeighbors;
-	NewNeighbors.reserve(32);
+    // 삼각형 개수에 따른 동적 감소 비율 결정
+    auto GetNextTarget = [&](int32 TriCount) -> int32 {
+        float Ratio = 0.85f;
+        if (TriCount >= 20000)      Ratio = 0.5f;
+        else if (TriCount >= 2000) Ratio = 0.6f;
+        else if (TriCount >= 750)  Ratio = 0.7f;
 
-	// priority queue에서 계산된 오차가 작은 순서대로 간선이 pop된다.
-	while (!PQ.empty() && CurrentLOD < UStaticMesh::MAX_LOD)
-	{
-		if (CurrentTriangles < 96) break;
+        int32 Next = static_cast<int32>(TriCount * Ratio);
+        if (Next <= 256) { Next = 256; bLastLOD = true; }
+        return Next;
+    };
 
-		FCollapseCandidate Victim = PQ.top();
-		PQ.pop();
+    int32 TargetTriangles = GetNextTarget(CurrentTriangles);
 
-		uint32 ia = Victim.Edge.A;
-		uint32 ib = Victim.Edge.B;
+    TArray<bool> IsVertexDeleted(MeshData->Vertices.size(), false);
+    TArray<uint32> NewNeighbors;
+    NewNeighbors.reserve(32);
 
-		if (IsVertexDeleted[ia] || IsVertexDeleted[ib] || ia == ib) continue;
+	if (CurrentTriangles <= 256)
+		return;
 
-		FCollapseCandidate CurrentState = CalculateEdgeError(ia, ib);
-		
-		// [이전 데이터 검증] 계산된 오차가 큐에 있던 오차보다 크다면(쿼드릭이 그동안 누적되었다면) 과거 데이터임
-		if (CurrentState.Error > Victim.Error + 0.0001f)
-		{
-			PQ.push(CurrentState); // 최신 데이터로 다시 큐에 넣고 스킵
-			continue;
-		}
-		
-		// [경계선 파괴 방지] 더 이상 안전하게 간소화할 수 있는 간선이 없으므로 남은 LOD를 건너뛰거나 종료
-		if (CurrentState.Error >= FLT_MAX) break;
+    // 오차가 작은 순서대로 간선 pop 및 간소화 진행
+    while (!PQ.empty() && CurrentLOD < UStaticMesh::MAX_LOD)
+    {
+        FCollapseCandidate Victim = PQ.top();
+        PQ.pop();
 
-		Quadrics[ia] = Quadrics[ia] + Quadrics[ib];
-		UpdateRenderVertices(ia, ib, CurrentState);
+        uint32 ia = Victim.Edge.A;
+        uint32 ib = Victim.Edge.B;
 
-		// 삼각형 위상 갱신 및 삭제 처리
-		NewNeighbors.clear();
-		UpdateTriangles(ia, ib, TopologicalIndices, CurrentTriangles, NewNeighbors);
+        if (IsVertexDeleted[ia] || IsVertexDeleted[ib] || ia == ib) continue;
 
-		// ib 정점 삭제 표시 및 VertexToTriangleMap에서 제거
-		IsVertexDeleted[ib] = true;
-		VertexToTriangleMap[ib].clear();
+        FCollapseCandidate CurrentState = CalculateEdgeError(ia, ib, TopologicalIndices);
+        
+        // [이전 데이터 검증] 큐의 데이터가 과거 값이면 최신화하여 재삽입
+        if (CurrentState.Error > Victim.Error + 0.0001f)
+        {
+            PQ.push(CurrentState);
+            continue;
+        }
+        
+        // [경계선 파괴 방지] 안전하게 간소화할 수 없으면 종료
+        if (CurrentState.Error >= FLT_MAX) break;
 
-		// ia의 새 이웃 정점들과의 엣지 오차를 재계산하여 큐에 삽입
-		// priority queue에 저장된 원래 엣지들은 초반의 IsVertexDeleted 조건문에서 삭제
-		for (uint32 vn : NewNeighbors)
-		{
-			if (!IsVertexDeleted[vn]) PQ.push(CalculateEdgeError(ia, vn));
-		}
+        Quadrics[ia] = Quadrics[ia] + Quadrics[ib];
+        UpdateRenderVertices(ia, ib, CurrentState);
 
-		// 계산한 현재 단계의 LOD 저장
-		if (CurrentTriangles <= TargetTriangles)
-		{
-			SaveCurrentStateAsLOD(CurrentLOD, TopologicalIndices);
-			CurrentLOD++;
-			TargetRatio *= 0.6f;
-			TargetTriangles = std::max(96, static_cast<int32>(CurrentTriangles * TargetRatio));
-		}
-	}
+        // 삼각형 위상 갱신 및 삭제 처리
+        NewNeighbors.clear();
+        UpdateTriangles(ia, ib, TopologicalIndices, CurrentTriangles, NewNeighbors);
 
-	BuildFinalIndices(TopologicalIndices, CurrentTriangles);
+        // ib 정점 삭제 및 맵 제거
+        IsVertexDeleted[ib] = true;
+        VertexToTriangleMap[ib].clear();
+
+        // ia의 새 이웃 정점들과의 엣지 오차 재계산 및 삽입
+        for (uint32 vn : NewNeighbors)
+        {
+            if (!IsVertexDeleted[vn]) PQ.push(CalculateEdgeError(ia, vn, TopologicalIndices));
+        }
+
+        // 현재 단계의 LOD 저장 및 다음 타겟 갱신
+        if (CurrentTriangles <= TargetTriangles)
+        {
+            SaveCurrentStateAsLOD(CurrentLOD, TopologicalIndices);
+            
+            if (bLastLOD) break; // 256개 LOD 생성 후 종료
+
+            CurrentLOD++;
+            TargetTriangles = GetNextTarget(CurrentTriangles);
+        }
+    }
+
+    BuildFinalIndices(TopologicalIndices, CurrentTriangles);
 }
 
 void FStaticMeshSimplifier::UpdateRenderVertices(uint32 TopoIa, uint32 TopoIb, const FCollapseCandidate& Victim)

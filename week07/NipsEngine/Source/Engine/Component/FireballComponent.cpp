@@ -2,22 +2,6 @@
 DEFINE_CLASS(UFireballComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UFireballComponent)
 
-// UFireballComponent* UFireballComponent::Duplicate() {
-//     UFireballComponent* NewComp = UObjectManager::Get().CreateObject<UFireballComponent>();
-//
-//     NewComp->CopyPropertiesFrom(this);
-//
-//     NewComp->SetOwner(nullptr);
-//     NewComp->bTransformDirty = true;
-//     NewComp->ParentComponent = nullptr;
-//     NewComp->ChildComponents.clear();
-//
-//     // GetEditableProperties 에 노출되지 않은 나머지 private 필드를 직접 복사합니다.
-//     NewComp->DuplicateSubObjects();
-//
-//     return NewComp;
-// }
-
 // 화면에서 컬링되지 않도록 수정한다.
 UFireballComponent::UFireballComponent()
 {
