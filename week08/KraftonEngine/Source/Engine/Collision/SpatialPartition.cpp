@@ -398,7 +398,8 @@ void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume
 		if (ConvexVolume.IntersectAABB(Prim->GetWorldBoundingBox()))
 		{
 			if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
-				OutProxies.push_back(Proxy);
+				if (!Proxy->bNeverCull)
+					OutProxies.push_back(Proxy);
 		}
 	}
 }

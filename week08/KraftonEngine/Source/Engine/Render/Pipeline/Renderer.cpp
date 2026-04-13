@@ -124,7 +124,11 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
 	{
 		if (Proxy.ExtraCB.Buffer)
-			Cmd.PerShaderCB[Proxy.ExtraCB.Slot - ECBSlot::PerShader0] = Proxy.ExtraCB.Buffer;
+		{
+			const uint32 Idx = Proxy.ExtraCB.Slot - ECBSlot::PerShader0;
+			check(Idx < 2);
+			Cmd.PerShaderCB[Idx] = Proxy.ExtraCB.Buffer;
+		}
 	};
 
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드

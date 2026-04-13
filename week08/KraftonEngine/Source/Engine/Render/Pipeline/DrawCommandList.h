@@ -10,23 +10,27 @@
 */
 struct FStateCache
 {
+	// 첫 커맨드에서 모든 GPU 상태를 무조건 세팅 (센티넬 불필요)
+	bool bForceAll = true;
+
 	FShader*                  Shader       = nullptr;
-	EDepthStencilState        DepthStencil = static_cast<EDepthStencilState>(~0u);
-	EBlendState               Blend        = static_cast<EBlendState>(~0u);
-	ERasterizerState          Rasterizer   = static_cast<ERasterizerState>(~0u);
-	D3D11_PRIMITIVE_TOPOLOGY  Topology     = static_cast<D3D11_PRIMITIVE_TOPOLOGY>(~0u);
-	uint8                     StencilRef   = 0xFF;
+	EDepthStencilState        DepthStencil = {};
+	EBlendState               Blend        = {};
+	ERasterizerState          Rasterizer   = {};
+	D3D11_PRIMITIVE_TOPOLOGY  Topology     = {};
+	uint8                     StencilRef   = 0;
 	FMeshBuffer*              MeshBuffer   = nullptr;
 	ID3D11Buffer*             RawVB        = nullptr;   // 동적 지오메트리 VB 추적
 	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
 	FConstantBuffer*          PerObjectCB    = nullptr;
 	FConstantBuffer*          PerShaderCB[2] = {};
-	ID3D11ShaderResourceView* DiffuseSRV   = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
-	ID3D11SamplerState*       Sampler      = reinterpret_cast<ID3D11SamplerState*>(~0ull);
+	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
+	ID3D11SamplerState*       Sampler      = nullptr;
 
 	// Material 인라인 데이터 추적 (PerShaderCB[0] 업데이트 최소화)
-	int32    LastUVScroll     = -1;
-	FVector4 LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f };
+	bool     bMaterialDirty   = true;
+	int32    LastUVScroll     = 0;
+	FVector4 LastSectionColor = {};
 
 	// DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩)
 	bool bReadOnlyDSV = false;
