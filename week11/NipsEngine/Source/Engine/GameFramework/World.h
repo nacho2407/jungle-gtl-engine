@@ -5,6 +5,7 @@
 #include "Spatial/WorldSpatialIndex.h"
 
 class UCameraComponent;
+class ULineBatchComponent;
 class FViewportCamera;
 
 class UWorld : public UObject {
@@ -46,8 +47,6 @@ public:
         Actor->SetWorld(nullptr);
         UObjectManager::Get().DestroyObject(Actor);
     }
-
-
 
 	TArray<AActor*> GetActors() const { return PersistentLevel->GetActors(); }
 

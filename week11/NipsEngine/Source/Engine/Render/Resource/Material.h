@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Texture.h"
 #include "Shader.h"
+#include "RenderResources.h"
 #include <variant>
 
 /**
@@ -82,7 +83,13 @@ public:
 	FString Name;
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;
+
 	UShader* Shader = nullptr;
+	ESamplerType SamplerType = ESamplerType::EST_Linear;
+	EDepthStencilType DepthStencilType = EDepthStencilType::Default;
+	EBlendType BlendType = EBlendType::Opaque;
+	ERasterizerType RasterizerType = ERasterizerType::SolidBackCull;
+	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	void SetShader(UShader* InShader)
 	{

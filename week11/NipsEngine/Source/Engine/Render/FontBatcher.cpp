@@ -2,6 +2,7 @@
 #include "FontBatcher.h"
 #include "Core/CoreTypes.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/RenderResources.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -20,10 +21,12 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
 
-	FontMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("FontMaterial", "Shaders/ShaderFont.hlsl");
+	FontMaterial = FResourceManager::Get().GetOrCreateMaterial("FontMaterial", "Shaders/ShaderFont.hlsl");
 
 	UMaterial* Mat = Cast<UMaterial>(FontMaterial);
-	Mat->SetParam("FontAtlas", FMaterialParamValue(FResourceManager::Get().LoadTextureAsset("Asset/Font/FontAtlas.dds", Device.Get())));
+	Mat->SetParam("FontAtlas", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Font/FontAtlas.dds", Device.Get())));
+	Mat->BlendType = EBlendType::AlphaBlend;
+	Mat->DepthStencilType = EDepthStencilType::Default;
 }
 
 void FFontBatcher::CreateBuffers()

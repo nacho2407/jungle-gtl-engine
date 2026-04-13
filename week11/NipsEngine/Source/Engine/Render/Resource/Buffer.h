@@ -74,6 +74,7 @@ class FMeshBuffer
 public:
 	void Create(ID3D11Device* InDevice, const FMeshData& InMeshData);
 	void CreateForStaticMesh(ID3D11Device* InDevice, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices);
+	void CreateDynamicBuffer(ID3D11Device* InDevice, uint32 InVertexByteWidth, uint32 InVertexStride, uint32 InIndexByteWidth);
 	void Release();
 
 	FVertexBuffer& GetVertexBuffer() { return VertexBuffer; }

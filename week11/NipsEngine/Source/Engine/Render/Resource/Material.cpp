@@ -11,6 +11,17 @@ void UMaterial::Bind(ID3D11DeviceContext* Context) const
 	if (!Shader) return;
 	Shader->Bind(Context);
 
+	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthStencilType);
+	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(BlendType);
+	auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(RasterizerType);
+	auto Sampler = FResourceManager::Get().GetOrCreateSamplerState(SamplerType);
+	
+	// TODO: Render Pipeline Stalling 방지 추가 필요
+	Context->OMSetDepthStencilState(DSState, 0);
+	Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+	Context->RSSetState(RasterizerState);
+	Context->PSSetSamplers(0, 1, &Sampler);
+
 	ApplyParams(Context, MaterialParams);
 }
 
@@ -102,14 +113,14 @@ void UMaterialInstance::Bind(ID3D11DeviceContext* Context) const
 {
 	if (!Parent) return;
 
-	TMap<FString, FMaterialParamValue> FinalParams;
+	Parent->Bind(Context);
 
-	Parent->GatherAllParams(FinalParams);
-
+	TMap<FString, FMaterialParamValue> CombinedParams;
+	Parent->GatherAllParams(CombinedParams);
 	for (const auto& [Name, Value] : OverridedParams)
 	{
-		FinalParams[Name] = Value;
+		CombinedParams[Name] = Value;
 	}
 
-	Parent->ApplyParams(Context, FinalParams);
+	Parent->ApplyParams(Context, CombinedParams);
 }

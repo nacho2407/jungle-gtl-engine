@@ -40,6 +40,8 @@ public:
 	float GetFXAAThreshold() const { return FXAAThreshold; }
 	void SetFXAAThreshold(float InThreshold) { FXAAThreshold = InThreshold; }
 	bool IsOrthographic() const { return Proj.M[3][3] == 1.0f; }
+	void SetViewportSize(const FVector2& InViewportSize) { ViewportSize = InViewportSize; }
+	const FVector2& GetViewportSize() const { return ViewportSize; }
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
@@ -51,6 +53,7 @@ private:
 	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
+	FVector2 ViewportSize;
 
 	//Editor Settings
 	EViewMode ViewMode;

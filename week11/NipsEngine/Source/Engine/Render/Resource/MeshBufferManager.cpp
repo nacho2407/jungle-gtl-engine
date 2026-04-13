@@ -17,6 +17,14 @@ namespace
 		QuadMeshData.Indices = { 0, 1, 2, 0, 2, 3 };
 		return QuadMeshData;
 	}
+
+	FMeshBuffer CreateLineBatchMeshBuffer(ID3D11Device* Device)
+	{
+		FMeshBuffer LineBatchMeshBuffer;
+		LineBatchMeshBuffer.CreateDynamicBuffer(Device, 10000 * sizeof(FVertex), sizeof(FVertex), 10000 * sizeof(uint32));
+
+		return LineBatchMeshBuffer;
+	}
 }
 
 void FMeshBufferManager::Create(ID3D11Device* InDevice)
@@ -30,6 +38,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_Billboard].Create(InDevice, QuadMeshData);
 	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, QuadMeshData);
 	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, QuadMeshData);
+	MeshBufferMap[EPrimitiveType::EPT_Line] = CreateLineBatchMeshBuffer(InDevice);
 }
 
 

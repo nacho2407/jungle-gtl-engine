@@ -14,7 +14,7 @@ void UBillboardComponent::PostDuplicate(UObject* Original)
 
     const UBillboardComponent* Orig = Cast<UBillboardComponent>(Original);
     bIsBillboard = Orig->bIsBillboard;
-    CachedSprite = Orig->CachedSprite; // 얕은 복사 (ResourceManager 소유)
+    Texture = Orig->Texture; // 얕은 복사 (ResourceManager 소유)
     FrameIndex = Orig->FrameIndex;
     TimeAccumulator = Orig->TimeAccumulator;
 }
@@ -73,7 +73,7 @@ FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
 void UBillboardComponent::SetTextureName(FString InName)
 {
     TextureName = InName;
-    CachedSprite = FResourceManager::Get().FindTexture(InName);
+    Texture = FResourceManager::Get().GetTexture(InName);
 }
 
 FString UBillboardComponent::GetTextureName()
@@ -81,13 +81,13 @@ FString UBillboardComponent::GetTextureName()
     return TextureName.ToString();
 }
 
-FMaterialResource* UBillboardComponent::GetCachedSprite()
+UTexture* UBillboardComponent::GetTexture()
 {
-    if (CachedSprite == nullptr)
+    if (Texture == nullptr)
     {
-        CachedSprite = FResourceManager::Get().FindTexture(TextureName.ToString());
+        Texture = FResourceManager::Get().GetTexture(TextureName.ToString());
     }
-    return CachedSprite;
+    return Texture;
 }
 
 void UBillboardComponent::UpdateWorldAABB() const
