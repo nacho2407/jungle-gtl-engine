@@ -22,9 +22,9 @@ PS_Input_Full VS(VS_Input_PNCT input)
     return output;
 }
 
-PS_Output_MRT PS(PS_Input_Full input)
+PS_Output PS(PS_Input_Full input)
 {
-    PS_Output_MRT output;
+    PS_Output output;
     
     float4 texColor = g_txColor.Sample(g_Sample, input.texcoord);
 
@@ -42,6 +42,8 @@ PS_Output_MRT PS(PS_Input_Full input)
     
     float3 normal = normalize(input.normal);
     output.normal = float4(normal * 0.5f + 0.5f, 1.0f);
+    
+    output.Albedo = texColor;
     
     return output;
 }

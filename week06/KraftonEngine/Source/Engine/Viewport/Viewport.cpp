@@ -161,6 +161,26 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(DepthTexture, &StencilSRVDesc, &StencilSRV);
 	if (FAILED(hr)) return false;
 
+	// ── Albedo 렌더 타깃 텍스처 (파이어볼 Tint/색조용 재료) ──
+	D3D11_TEXTURE2D_DESC AlbedoDesc = {};
+	AlbedoDesc.Width = Width;
+	AlbedoDesc.Height = Height;
+	AlbedoDesc.MipLevels = 1;
+	AlbedoDesc.ArraySize = 1;
+	AlbedoDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 일반 색상 포맷
+	AlbedoDesc.SampleDesc.Count = 1;
+	AlbedoDesc.Usage = D3D11_USAGE_DEFAULT;
+	AlbedoDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&AlbedoDesc, nullptr, &AlbedoTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(AlbedoTexture, nullptr, &AlbedoRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(AlbedoTexture, nullptr, &AlbedoSRV);
+	if (FAILED(hr)) return false;
+
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;
 	ViewportRect.TopLeftY = 0.0f;
@@ -184,4 +204,7 @@ void FViewport::ReleaseResources()
 	if (NormalSRV) { NormalSRV->Release(); NormalSRV = nullptr; }
 	if (NormalRTV) { NormalRTV->Release(); NormalRTV = nullptr; }
 	if (NormalTexture) { NormalTexture->Release(); NormalTexture = nullptr; }
+	if (AlbedoSRV) { AlbedoSRV->Release(); AlbedoSRV = nullptr; }
+	if (AlbedoRTV) { AlbedoRTV->Release(); AlbedoRTV = nullptr; }
+	if (AlbedoTexture) { AlbedoTexture->Release(); AlbedoTexture = nullptr; }
 }

@@ -258,7 +258,7 @@ void FRenderer::InitializePassRenderStates()
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::Additive] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Additive] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,       EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true };
@@ -331,54 +331,63 @@ void FRenderer::InitializePassBatchers()
 
 void FRenderer::InitializePassResourceBindings()
 {
+	// 1. Opaque Pass: G-Buffer 채우기 (배경색과 법선을 동시에 기록)
 	PassResourceBindings[(uint32)ERenderPass::Opaque] = {
-	[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-		ID3D11RenderTargetView* rtvs[2] = { Bus.GetViewportRTV(), Bus.GetViewportNormalRTV() };
-		Ctx->OMSetRenderTargets(2, rtvs, Bus.GetViewportDSV());
-	},
-	[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-		ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
-		Ctx->OMSetRenderTargets(1, &rtv, Bus.GetViewportDSV());
-	}
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			ID3D11RenderTargetView* rtvs[3] = { Bus.GetViewportRTV() , Bus.GetViewportNormalRTV(), Bus.GetViewportAlbedoRTV()};
+			Ctx->OMSetRenderTargets(3, rtvs, Bus.GetViewportDSV());
+		},
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			// 패스 종료 시 MRT 바인딩 해제
+			ID3D11RenderTargetView* nullRTVs[3] = { nullptr, nullptr, nullptr };
+			Ctx->OMSetRenderTargets(3, nullRTVs, nullptr);
+		}
 	};
 
+	// 2. Decal Pass: 깊이를 읽어 영역 판정 (필요시 Normal도 읽을 수 있게 배치)
 	PassResourceBindings[(uint32)ERenderPass::Decal] = {
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			// DSV 언바인딩 (Depth SRV와 동시 바인딩 불가)
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
-			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
-			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+			Ctx->OMSetRenderTargets(1, &rtv, nullptr); // DSV 해제 (Depth SRV 읽기용)
+
+			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV(); // t1
 			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
 		},
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			ID3D11ShaderResourceView* nullSRV = nullptr;
 			Ctx->PSSetShaderResources(1, 1, &nullSRV);
+
 			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, dsv);
 		}
 	};
 
+	// 3. 광량(Gloss) 처리 패스
 	PassResourceBindings[(uint32)ERenderPass::Additive] = {
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
 
-			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
-			ID3D11ShaderResourceView* NormalSRV = Bus.GetViewportNormalSRV();
+			ID3D11ShaderResourceView* AlbedoSRV = Bus.GetViewportAlbedoSRV();  // t3
+			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();  // t1
+			ID3D11ShaderResourceView* NormalSRV = Bus.GetViewportNormalSRV(); // t2
+
+			Ctx->PSSetShaderResources(0, 1, &AlbedoSRV);
 			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
 			Ctx->PSSetShaderResources(2, 1, &NormalSRV);
 		},
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			ID3D11ShaderResourceView* nullSRV = nullptr;
-			Ctx->PSSetShaderResources(1, 1, &nullSRV);
-			Ctx->PSSetShaderResources(2, 1, &nullSRV);
+			ID3D11ShaderResourceView* nullSRVs[3] = { nullptr, nullptr, nullptr };
+			Ctx->PSSetShaderResources(0, 3, nullSRVs);
 
+			// 다음 패스를 위해 뎁스 스텐실 복구
 			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, dsv);
 		}
 	};
+
 }
 
 // ============================================================
