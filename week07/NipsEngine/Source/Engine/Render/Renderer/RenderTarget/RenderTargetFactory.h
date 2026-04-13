@@ -9,4 +9,9 @@ class FRenderTargetFactory
   public:
     static FRenderTarget CreateSceneColor(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSceneNormal(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateSelectionMask(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateSceneLight(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateSceneFog(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateSceneWorldPos(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateSceneFXAA(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
 };

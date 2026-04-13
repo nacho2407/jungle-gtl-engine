@@ -378,97 +378,49 @@ void FD3DDevice::ReleaseFrameBuffer()
 
 void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 {
+    FRenderTarget RT;
 	ViewportRenderTargetWidth = Width;
 	ViewportRenderTargetHeight = Height;
 
-	FRenderTarget RT = FRenderTargetFactory::CreateSceneColor(GetDevice(), Width, Height);
+	RT = FRenderTargetFactory::CreateSceneColor(GetDevice(), Width, Height);
 
 	ViewportSceneColorTexture = RT.Texture;
         ViewportSceneColorRTV = RT.RTV;
         ViewportSceneColorSRV = RT.SRV;
 
-	/*
-	D3D11_TEXTURE2D_DESC sceneColorDesc = {};
-	sceneColorDesc.Width = Width;
-	sceneColorDesc.Height = Height;
-	sceneColorDesc.MipLevels = 1;
-	sceneColorDesc.ArraySize = 1;
-	sceneColorDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	sceneColorDesc.SampleDesc.Count = 1;
-	sceneColorDesc.Usage = D3D11_USAGE_DEFAULT;
-	sceneColorDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	Device->CreateTexture2D(&sceneColorDesc, nullptr,
-		ViewportSceneColorTexture.ReleaseAndGetAddressOf());
+	RT = FRenderTargetFactory::CreateSceneNormal(GetDevice(), Width, Height);
 
-	D3D11_RENDER_TARGET_VIEW_DESC sceneColorRTVDesc = {};
-	sceneColorRTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	sceneColorRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	Device->CreateRenderTargetView(ViewportSceneColorTexture.Get(), &sceneColorRTVDesc,
-		ViewportSceneColorRTV.ReleaseAndGetAddressOf());
+	ViewportSceneNormalTexture = RT.Texture;
+        ViewportSceneNormalRTV = RT.RTV;
+        ViewportSceneNormalSRV = RT.SRV;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC sceneColorSRVDesc = {};
-	sceneColorSRVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	sceneColorSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	sceneColorSRVDesc.Texture2D.MostDetailedMip = 0;
-	sceneColorSRVDesc.Texture2D.MipLevels = 1;
-	Device->CreateShaderResourceView(ViewportSceneColorTexture.Get(), &sceneColorSRVDesc,
-		ViewportSceneColorSRV.ReleaseAndGetAddressOf());
-	*/
 
-	D3D11_TEXTURE2D_DESC sceneNormalDesc = {};
-    sceneNormalDesc.Width = Width;
-    sceneNormalDesc.Height = Height;
-    sceneNormalDesc.MipLevels = 1;
-    sceneNormalDesc.ArraySize = 1;
-    sceneNormalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // ⭐ 중요
-    sceneNormalDesc.SampleDesc.Count = 1;
-    sceneNormalDesc.Usage = D3D11_USAGE_DEFAULT;
-    sceneNormalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	RT = FRenderTargetFactory::CreateSelectionMask(GetDevice(), Width, Height);
+        ViewportSelectionMaskTexture = RT.Texture;
+        ViewportSelectionMaskRTV = RT.RTV;
+        ViewportSelectionMaskSRV = RT.SRV;
 
-    Device->CreateTexture2D(&sceneNormalDesc, nullptr, ViewportSceneNormalTexture.ReleaseAndGetAddressOf());
+	RT = FRenderTargetFactory::CreateSceneLight(GetDevice(), Width, Height);
+    ViewportSceneLightTexture = RT.Texture;
+    ViewportSceneLightRTV = RT.RTV;
+    ViewportSceneLightSRV = RT.SRV;
 
-	D3D11_RENDER_TARGET_VIEW_DESC sceneNormalRTVDesc = {};
-    sceneNormalRTVDesc.Format = sceneNormalDesc.Format;
-    sceneNormalRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	RT = FRenderTargetFactory::CreateSceneFog(GetDevice(), Width, Height);
+    ViewportSceneFogTexture = RT.Texture;
+    ViewportSceneFogRTV = RT.RTV;
+    ViewportSceneFogSRV = RT.SRV;
 
-    Device->CreateRenderTargetView(ViewportSceneNormalTexture.Get(), &sceneNormalRTVDesc,
-                                   ViewportSceneNormalRTV.ReleaseAndGetAddressOf());
+	RT = FRenderTargetFactory::CreateSceneWorldPos(GetDevice(), Width, Height);
+    ViewportSceneWorldPosTexture = RT.Texture;
+    ViewportSceneWorldPosRTV = RT.RTV;
+    ViewportSceneWorldPosSRV = RT.SRV;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC sceneNormalSRVDesc = {};
-    sceneNormalSRVDesc.Format = sceneNormalDesc.Format;
-    sceneNormalSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    sceneNormalSRVDesc.Texture2D.MostDetailedMip = 0;
-    sceneNormalSRVDesc.Texture2D.MipLevels = 1;
+	RT = FRenderTargetFactory::CreateSceneFXAA(GetDevice(), Width, Height);
+    ViewportSceneFXAATexture = RT.Texture;
+    ViewportSceneFXAARTV = RT.RTV;
+    ViewportSceneFXAASRV = RT.SRV;
 
-    Device->CreateShaderResourceView(ViewportSceneNormalTexture.Get(), &sceneNormalSRVDesc,
-                                     ViewportSceneNormalSRV.ReleaseAndGetAddressOf());
-
-	D3D11_TEXTURE2D_DESC selectionMaskDesc = {};
-	selectionMaskDesc.Width = Width;
-	selectionMaskDesc.Height = Height;
-	selectionMaskDesc.MipLevels = 1;
-	selectionMaskDesc.ArraySize = 1;
-	selectionMaskDesc.Format = DXGI_FORMAT_R8_UNORM;
-	selectionMaskDesc.SampleDesc.Count = 1;
-	selectionMaskDesc.Usage = D3D11_USAGE_DEFAULT;
-	selectionMaskDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	Device->CreateTexture2D(&selectionMaskDesc, nullptr,
-		ViewportSelectionMaskTexture.ReleaseAndGetAddressOf());
-
-	D3D11_RENDER_TARGET_VIEW_DESC selectionMaskRTVDesc = {};
-	selectionMaskRTVDesc.Format = DXGI_FORMAT_R8_UNORM;
-	selectionMaskRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	Device->CreateRenderTargetView(ViewportSelectionMaskTexture.Get(), &selectionMaskRTVDesc,
-		ViewportSelectionMaskRTV.ReleaseAndGetAddressOf());
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC selectionMaskSRVDesc = {};
-	selectionMaskSRVDesc.Format = DXGI_FORMAT_R8_UNORM;
-	selectionMaskSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	selectionMaskSRVDesc.Texture2D.MostDetailedMip = 0;
-	selectionMaskSRVDesc.Texture2D.MipLevels = 1;
-	Device->CreateShaderResourceView(ViewportSelectionMaskTexture.Get(), &selectionMaskSRVDesc,
-		ViewportSelectionMaskSRV.ReleaseAndGetAddressOf());
-
+	
 	D3D11_TEXTURE2D_DESC depthStencilDesc = {};
     depthStencilDesc.Width = Width;
     depthStencilDesc.Height = Height;
@@ -482,7 +434,7 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     depthStencilDesc.CPUAccessFlags = 0;
     depthStencilDesc.MiscFlags = 0;
 
-	Device->CreateTexture2D(&depthStencilDesc, nullptr, ViewportDepthStencilTexture.ReleaseAndGetAddressOf());
+    Device->CreateTexture2D(&depthStencilDesc, nullptr, ViewportDepthStencilTexture.ReleaseAndGetAddressOf());
 
     // DSV: typeless texture -> D24_UNORM_S8_UINT view
     D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
@@ -492,7 +444,7 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     dsvDesc.Texture2D.MipSlice = 0;
 
     Device->CreateDepthStencilView(ViewportDepthStencilTexture.Get(), &dsvDesc,
-                                        ViewportDepthStencilView.ReleaseAndGetAddressOf());
+                                   ViewportDepthStencilView.ReleaseAndGetAddressOf());
 
     // SRV: typeless texture -> R24_UNORM_X8_TYPELESS view
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -502,128 +454,7 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     srvDesc.Texture2D.MipLevels = 1;
 
     Device->CreateShaderResourceView(ViewportDepthStencilTexture.Get(), &srvDesc,
-                                            ViewportDepthStencilSRV.ReleaseAndGetAddressOf());
-        
-	D3D11_TEXTURE2D_DESC lightDesc = {};
-    lightDesc.Width = Width;
-    lightDesc.Height = Height;
-    lightDesc.MipLevels = 1;
-    lightDesc.ArraySize = 1;
-    lightDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR lighting buffer
-    lightDesc.SampleDesc.Count = 1;
-    lightDesc.Usage = D3D11_USAGE_DEFAULT;
-    lightDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    lightDesc.CPUAccessFlags = 0;
-    lightDesc.MiscFlags = 0;
-
-    Device->CreateTexture2D(&lightDesc, nullptr, &ViewportSceneLightTexture);
-
-	D3D11_RENDER_TARGET_VIEW_DESC lightRtvDesc = {};
-    lightRtvDesc.Format = lightDesc.Format;
-    lightRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-    lightRtvDesc.Texture2D.MipSlice = 0;
-
-    Device->CreateRenderTargetView(ViewportSceneLightTexture.Get(), &lightRtvDesc, &ViewportSceneLightRTV);
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC lightSrvDesc = {};
-    lightSrvDesc.Format = lightDesc.Format;
-    lightSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    lightSrvDesc.Texture2D.MostDetailedMip = 0;
-    lightSrvDesc.Texture2D.MipLevels = 1;
-
-    Device->CreateShaderResourceView(ViewportSceneLightTexture.Get(), &lightSrvDesc, &ViewportSceneLightSRV);
-
-	D3D11_TEXTURE2D_DESC fogDesc = {};
-    fogDesc.Width = Width;
-    fogDesc.Height = Height;
-    fogDesc.MipLevels = 1;
-    fogDesc.ArraySize = 1;
-    fogDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR foging buffer
-    fogDesc.SampleDesc.Count = 1;
-    fogDesc.Usage = D3D11_USAGE_DEFAULT;
-    fogDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    fogDesc.CPUAccessFlags = 0;
-    fogDesc.MiscFlags = 0;
-
-    Device->CreateTexture2D(&fogDesc, nullptr, &ViewportSceneFogTexture);
-
-    D3D11_RENDER_TARGET_VIEW_DESC fogRtvDesc = {};
-    fogRtvDesc.Format = fogDesc.Format;
-    fogRtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-    fogRtvDesc.Texture2D.MipSlice = 0;
-
-    Device->CreateRenderTargetView(ViewportSceneFogTexture.Get(), &fogRtvDesc, &ViewportSceneFogRTV);
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC fogSrvDesc = {};
-    fogSrvDesc.Format = fogDesc.Format;
-    fogSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    fogSrvDesc.Texture2D.MostDetailedMip = 0;
-    fogSrvDesc.Texture2D.MipLevels = 1;
-
-    Device->CreateShaderResourceView(ViewportSceneFogTexture.Get(), &fogSrvDesc, &ViewportSceneFogSRV);
-
-	D3D11_TEXTURE2D_DESC worldPosDesc = {};
-    worldPosDesc.Width = Width;
-    worldPosDesc.Height = Height;
-    worldPosDesc.MipLevels = 1;
-    worldPosDesc.ArraySize = 1;
-    // 핵심: 월드 좌표는 float 포맷
-    worldPosDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-    // worldPosDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // 더 정확히 필요하면
-    worldPosDesc.SampleDesc.Count = 1;
-    worldPosDesc.Usage = D3D11_USAGE_DEFAULT;
-    // RTV + SRV 둘 다 필요
-    worldPosDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    Device->CreateTexture2D(&worldPosDesc, nullptr, ViewportSceneWorldPosTexture.ReleaseAndGetAddressOf());
-
-    // RTV
-    D3D11_RENDER_TARGET_VIEW_DESC worldPosRTVDesc = {};
-    worldPosRTVDesc.Format = worldPosDesc.Format;
-    worldPosRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-
-    Device->CreateRenderTargetView(ViewportSceneWorldPosTexture.Get(), &worldPosRTVDesc,
-                                   ViewportSceneWorldPosRTV.ReleaseAndGetAddressOf());
-
-    // SRV
-    D3D11_SHADER_RESOURCE_VIEW_DESC worldPosSRVDesc = {};
-    worldPosSRVDesc.Format = worldPosDesc.Format;
-    worldPosSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    worldPosSRVDesc.Texture2D.MostDetailedMip = 0;
-    worldPosSRVDesc.Texture2D.MipLevels = 1;
-
-    Device->CreateShaderResourceView(ViewportSceneWorldPosTexture.Get(), &worldPosSRVDesc,
-                                     ViewportSceneWorldPosSRV.ReleaseAndGetAddressOf());
-
-	// FXAA Texture
-    D3D11_TEXTURE2D_DESC fxaaDesc = {};
-    fxaaDesc.Width = Width;
-    fxaaDesc.Height = Height;
-    fxaaDesc.MipLevels = 1;
-    fxaaDesc.ArraySize = 1;
-    fxaaDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    fxaaDesc.SampleDesc.Count = 1;
-    fxaaDesc.Usage = D3D11_USAGE_DEFAULT;
-    fxaaDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-    Device->CreateTexture2D(&fxaaDesc, nullptr, ViewportSceneFXAATexture.ReleaseAndGetAddressOf());
-
-    // FXAA RTV
-    D3D11_RENDER_TARGET_VIEW_DESC fxaaRTVDesc = {};
-    fxaaRTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    fxaaRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-
-    Device->CreateRenderTargetView(ViewportSceneFXAATexture.Get(), &fxaaRTVDesc,
-                                   ViewportSceneFXAARTV.ReleaseAndGetAddressOf());
-
-    // FXAA SRV
-    D3D11_SHADER_RESOURCE_VIEW_DESC fxaaSRVDesc = {};
-    fxaaSRVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    fxaaSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    fxaaSRVDesc.Texture2D.MostDetailedMip = 0;
-    fxaaSRVDesc.Texture2D.MipLevels = 1;
-
-    Device->CreateShaderResourceView(ViewportSceneFXAATexture.Get(), &fxaaSRVDesc,
-                                     ViewportSceneFXAASRV.ReleaseAndGetAddressOf());
+                                     ViewportDepthStencilSRV.ReleaseAndGetAddressOf());
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
