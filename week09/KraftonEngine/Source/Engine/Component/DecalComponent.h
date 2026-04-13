@@ -34,8 +34,8 @@ public:
 	const FTextureResource* GetTexture() const { return CachedTexture; }
 	const FName& GetTextureName() const { return TextureName; }
 
-	const FConvexVolume GetOBB() { return OBB; }
-	void SetOBB(FConvexVolume InOBB) { OBB = InOBB; }
+	const FConvexVolume GetOBB() { return ConvexVolume; }
+	void SetOBB(FConvexVolume InOBB) { ConvexVolume = InOBB; }
 	void UpdateOBBFromTransform();
 	void OnTransformDirty() override;
 
@@ -47,7 +47,7 @@ private:
 	void DrawDebugBox();
 
 private:
-	FConvexVolume OBB;
+	FConvexVolume ConvexVolume;
 	FName TextureName;
 	FVector4 Color = {1,1,1,1};
 	float FadeInDelay = 0;

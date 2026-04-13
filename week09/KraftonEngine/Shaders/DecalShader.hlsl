@@ -17,6 +17,8 @@ PS_Input_Full VS(VS_Input_PNCT input)
     output.normal = normalize(mul(input.normal, (float3x3) Model));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
+    // Z fighting 방지를 위한 보정
+    output.position.z *= 0.9999;
     return output;
 }
 
