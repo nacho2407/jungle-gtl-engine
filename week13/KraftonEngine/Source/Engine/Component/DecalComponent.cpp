@@ -5,6 +5,7 @@
 #include "GameFramework/World.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
+#include "Profiling/Stats.h"
 #include "Render/DebugDraw/DrawDebugHelpers.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
@@ -270,6 +271,7 @@ void UDecalComponent::HandleFade(float DeltaTime)
 
 void UDecalComponent::UpdateDecalMesh()
 {
+	SCOPE_STAT_CAT("UpdateDecalMesh", "6_Decal");
 	UpdateOBBFromTransform();
 
 	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
