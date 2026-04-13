@@ -12,7 +12,7 @@ IMPLEMENT_CLASS(UWorld, UObject)
 
 UWorld::~UWorld()
 {
-	if (PersistentLevel && !GetActors().empty())
+	if (PersistentLevel && !PersistentLevel->GetActors().empty())
 	{
 		EndPlay();
 	}
@@ -246,4 +246,8 @@ void UWorld::EndPlay()
 
 	PersistentLevel->Clear();
 	MarkWorldPrimitivePickingBVHDirty();
+
+	// PersistentLevel은 CreateObject로 생성되었으므로 DestroyObject로 해제해야 alloc count가 맞음
+	UObjectManager::Get().DestroyObject(PersistentLevel);
+	PersistentLevel = nullptr;
 }

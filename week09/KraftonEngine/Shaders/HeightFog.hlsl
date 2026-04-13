@@ -1,8 +1,7 @@
 // HeightFog.hlsl
 // Fullscreen Triangle VS (SV_VertexID) + Exponential Height Fog PS
 
-#include "Common/ConstantBuffers.hlsl"
-#include "Common/VertexLayouts.hlsl"
+#include "Common/Functions.hlsl"
 
 // b2 (PerShader0): Fog parameters
 cbuffer FogBuffer : register(b2)
@@ -22,10 +21,7 @@ Texture2D<float> DepthTex : register(t0);
 // ── VS: Fullscreen Triangle ──
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
-    PS_Input_UV output;
-    output.uv = float2((vertexID << 1) & 2, vertexID & 2);
-    output.position = float4(output.uv * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
-    return output;
+    return FullscreenTriangleVS(vertexID);
 }
 
 // ── PS: Exponential Height Fog ──
