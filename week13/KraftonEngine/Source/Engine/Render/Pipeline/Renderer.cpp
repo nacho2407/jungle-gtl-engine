@@ -360,7 +360,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 		const FPassRenderState& PPState = PassRenderStates[(uint32)ERenderPass::PostProcess];
 
 		// HeightFog (UserBits=0 → Outline보다 먼저)
-		if (CollectScene && CollectScene->HasFog())
+		if (Frame.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
 		{
 			FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
 			if (FogShader)
