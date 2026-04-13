@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -58,6 +58,7 @@ public:
 	FRenderResources& GetResources() { return Resources; }
 
 	const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
+
 
 private:
 	void InitializePassRenderStates();

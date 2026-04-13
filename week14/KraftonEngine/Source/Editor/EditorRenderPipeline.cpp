@@ -1,4 +1,4 @@
-#include "EditorRenderPipeline.h"
+﻿#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
@@ -80,6 +80,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	const FShowFlags& ShowFlags = Opts.ShowFlags;
 	EViewMode ViewMode = Opts.ViewMode;
 
+
 	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
 	if (VP->ApplyPendingResize())
 	{
@@ -96,6 +97,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	Frame.SetCameraInfo(Camera);
 	Frame.SetRenderSettings(ViewMode, ShowFlags);
+	Frame.SetRenderOptions(Opts);
 	Frame.SetViewportInfo(VP);
 	Frame.ViewportType = Opts.ViewportType;
 	Frame.OcclusionCulling = &GPUOcclusion;
