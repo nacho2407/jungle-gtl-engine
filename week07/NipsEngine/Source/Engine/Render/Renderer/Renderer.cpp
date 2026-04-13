@@ -1,5 +1,4 @@
 ﻿#include "Renderer.h"
-#include "Renderer.h"
 
 #include <iostream>
 #include <algorithm>
