@@ -204,7 +204,7 @@ void FRenderer::BeginFrame()
 void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene)
 {
 	PrepareDynamicGeometry(Frame, Scene);
-	BuildDynamicDrawCommands(Frame, Device.GetDeviceContext());
+	BuildDynamicDrawCommands(Frame, Device.GetDeviceContext(), Scene);
 }
 
 // ============================================================
@@ -224,20 +224,16 @@ void FRenderer::Render(const FFrameContext& Frame)
 	// 커맨드 정렬 + 패스별 오프셋 빌드
 	DrawCommandList.Sort();
 
-	// 패스 순서에 따라 제출
+	// 단일 StateCache — 패스 간 상태 유지 (DSV Read-Only 전환 등)
+	FStateCache Cache;
+	Cache.Reset();
+	Cache.RTV         = Frame.ViewportRTV;
+	Cache.DSV         = Frame.ViewportDSV;
+	Cache.DSVReadOnly = Frame.ViewportDSVReadOnly;
+
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		// PostProcess는 특수 처리 (DSV unbind/rebind 필요)
-		if (CurPass == ERenderPass::PostProcess)
-		{
-			const char* PassName = GetRenderPassName(CurPass);
-			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
-			GPU_SCOPE_STAT(PassName);
-			DrawPostProcessOutline(Frame, Context);
-			continue;
-		}
 
 		uint32 Start, End;
 		DrawCommandList.GetPassRange(CurPass, Start, End);
@@ -247,9 +243,10 @@ void FRenderer::Render(const FFrameContext& Frame)
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
-		DrawCommandList.SubmitRange(Start, End, Device, Context, Resources.DefaultSampler);
+		DrawCommandList.SubmitRange(Start, End, Device, Context, Cache, Resources.DefaultSampler);
 	}
 
+	Cache.Cleanup(Context);
 	DrawCommandList.Reset();
 }
 
@@ -304,7 +301,7 @@ void FRenderer::PrepareDynamicGeometry(const FFrameContext& Frame, const FScene*
 // ============================================================
 // Dynamic geometry → FDrawCommand 변환 (Font, Line)
 // ============================================================
-void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx)
+void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx, const FScene* CollectScene)
 {
 	EViewMode ViewMode = Frame.ViewMode;
 
@@ -346,6 +343,75 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 		Cmd.RawIB = GridLines.GetIBBuffer();
 		Cmd.IndexCount = GridLines.GetIndexCount();
 		Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::EditorLines, EditorShader, nullptr, nullptr);
+	}
+
+	// --- PostProcess: HeightFog → Outline (SortKey UserBits로 순서 보장) ---
+	{
+		const FPassRenderState& PPState = PassRenderStates[(uint32)ERenderPass::PostProcess];
+
+		// HeightFog (UserBits=0 → Outline보다 먼저)
+		if (CollectScene && CollectScene->HasFog())
+		{
+			FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
+			if (FogShader)
+			{
+				// Fog CB (b6) 업데이트
+				FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Fog, sizeof(FFogConstants));
+				const FFogParams& FogParams = CollectScene->GetFogParams();
+				FFogConstants fogData = {};
+				fogData.InscatteringColor = FogParams.InscatteringColor;
+				fogData.Density = FogParams.Density;
+				fogData.HeightFalloff = FogParams.HeightFalloff;
+				fogData.FogBaseHeight = FogParams.FogBaseHeight;
+				fogData.StartDistance = FogParams.StartDistance;
+				fogData.CutoffDistance = FogParams.CutoffDistance;
+				fogData.MaxOpacity = FogParams.MaxOpacity;
+				FogCB->Update(Ctx, &fogData, sizeof(FFogConstants));
+
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = FogShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.bReadOnlyDSV = true;
+				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
+				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;  // t0: depth
+				Cmd.ExtraCB = FogCB;
+				Cmd.ExtraCBSlot = ECBSlot::Fog;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FogShader, nullptr, Frame.ViewportDepthSRV, 0);
+			}
+		}
+
+		// Outline (UserBits=1 → HeightFog 뒤)
+		if (bHasSelectionMaskCommands)
+		{
+			FShader* PPShader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
+			if (PPShader)
+			{
+				// Outline CB (b3) 업데이트
+				FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::PostProcess, sizeof(FOutlinePostProcessConstants));
+				FOutlinePostProcessConstants ppConstants;
+				ppConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+				ppConstants.OutlineThickness = 3.0f;
+				OutlineCB->Update(Ctx, &ppConstants, sizeof(ppConstants));
+
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = PPShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.bReadOnlyDSV = true;
+				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
+				Cmd.DiffuseSRV = Frame.ViewportStencilSRV;  // t0: stencil
+				Cmd.ExtraCB = OutlineCB;
+				Cmd.ExtraCBSlot = ECBSlot::PostProcess;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, PPShader, nullptr, Frame.ViewportStencilSRV, 1);
+			}
+		}
 	}
 
 	// --- Font (World → AlphaBlend, Screen → OverlayFont) ---
@@ -440,58 +506,6 @@ FConstantBuffer* FRenderer::GetPerObjectCBForProxy(const FPrimitiveSceneProxy& P
 	return &PerObjectCBPool[Proxy.ProxyId];
 }
 
-// ============================================================
-// PostProcess Outline — DSV unbind → StencilSRV bind → Fullscreen Draw
-// ============================================================
-void FRenderer::DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceContext* Context)
-{
-	ID3D11ShaderResourceView* StencilSRV = Frame.ViewportStencilSRV;
-	ID3D11DepthStencilView* DSV = Frame.ViewportDSV;
-	ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
-	if (!StencilSRV || !RTV) return;
-
-	// SelectionMask 커맨드가 없으면 선택된 오브젝트 없음 → 스킵
-	if (!bHasSelectionMaskCommands) return;
-
-	// 1) DSV 언바인딩 (StencilSRV와 동시 바인딩 불가)
-	Context->OMSetRenderTargets(1, &RTV, nullptr);
-
-	// 2) StencilSRV → PS t0 바인딩
-	Context->PSSetShaderResources(0, 1, &StencilSRV);
-
-	// 3) PostProcess 셰이더 바인딩
-	FShader* PPShader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
-	if (PPShader) PPShader->Bind(Context);
-
-	// 4) PSO 상태 적용
-	const FPassRenderState& PPState = PassRenderStates[(uint32)ERenderPass::PostProcess];
-	Device.SetDepthStencilState(PPState.DepthStencil);
-	Device.SetBlendState(PPState.Blend);
-	Device.SetRasterizerState(PPState.Rasterizer);
-	Context->IASetPrimitiveTopology(PPState.Topology);
-
-	// 5) Outline CB (b3) 업데이트
-	FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::PostProcess, sizeof(FOutlinePostProcessConstants));
-	FOutlinePostProcessConstants PPConstants;
-	PPConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
-	PPConstants.OutlineThickness = 3.0f;
-	OutlineCB->Update(Context, &PPConstants, sizeof(PPConstants));
-	ID3D11Buffer* cb = OutlineCB->GetBuffer();
-	Context->PSSetConstantBuffers(ECBSlot::PostProcess, 1, &cb);
-
-	// 6) Fullscreen Triangle 드로우 (vertex buffer 없이 SV_VertexID 사용)
-	Context->IASetInputLayout(nullptr);
-	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-	Context->Draw(3, 0);
-	FDrawCallStats::Increment();
-
-	// 7) StencilSRV 언바인딩
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Context->PSSetShaderResources(0, 1, &nullSRV);
-
-	// 8) DSV 재바인딩 (후속 패스에서 뎁스 사용)
-	Context->OMSetRenderTargets(1, &RTV, DSV);
-}
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
 void FRenderer::EndFrame()
@@ -519,60 +533,3 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-// ============================================================
-// DrawHeightFog — DepthSRV → world pos 복원 → exponential height fog → AlphaBlend
-// Render() 이후, GPU Occlusion 이전에 Pipeline에서 호출.
-// ============================================================
-void FRenderer::DrawHeightFog(const FFrameContext& Frame, const FFogParams& Fog)
-{
-	ID3D11ShaderResourceView* DepthSRV = Frame.ViewportDepthSRV;
-	ID3D11DepthStencilView* DSV = Frame.ViewportDSV;
-	ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
-	if (!DepthSRV || !RTV) return;
-
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-
-	// 1) DSV 언바인딩 (DepthSRV와 동시 바인딩 불가)
-	Context->OMSetRenderTargets(1, &RTV, nullptr);
-
-	// 2) DepthSRV → PS t0 바인딩
-	Context->PSSetShaderResources(0, 1, &DepthSRV);
-
-	// 3) HeightFog 셰이더 바인딩
-	FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
-	if (!FogShader) return;
-	FogShader->Bind(Context);
-
-	// 4) PSO 상태: 뎁스 쓰기 OFF + AlphaBlend + 래스터라이저 기본
-	Device.SetDepthStencilState(EDepthStencilState::NoDepth);
-	Device.SetBlendState(EBlendState::AlphaBlend);
-	Device.SetRasterizerState(ERasterizerState::SolidBackCull);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// 5) Fog CB (b6) 업데이트
-	FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Fog, sizeof(FFogConstants));
-	FFogConstants fogData = {};
-	fogData.InscatteringColor = Fog.InscatteringColor;
-	fogData.Density = Fog.Density;
-	fogData.HeightFalloff = Fog.HeightFalloff;
-	fogData.FogBaseHeight = Fog.FogBaseHeight;
-	fogData.StartDistance = Fog.StartDistance;
-	fogData.CutoffDistance = Fog.CutoffDistance;
-	fogData.MaxOpacity = Fog.MaxOpacity;
-	FogCB->Update(Context, &fogData, sizeof(FFogConstants));
-	ID3D11Buffer* cb = FogCB->GetBuffer();
-	Context->PSSetConstantBuffers(ECBSlot::Fog, 1, &cb);
-
-	// 6) Fullscreen Triangle 드로우
-	Context->IASetInputLayout(nullptr);
-	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-	Context->Draw(3, 0);
-	FDrawCallStats::Increment();
-
-	// 7) DepthSRV 언바인딩
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Context->PSSetShaderResources(0, 1, &nullSRV);
-
-	// 8) DSV 재바인딩
-	Context->OMSetRenderTargets(1, &RTV, DSV);
-}

@@ -29,6 +29,30 @@ void FStateCache::Reset()
 
 	LastUVScroll     = -1;
 	LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f };
+
+	bReadOnlyDSV = false;
+	RTV         = nullptr;
+	DSV         = nullptr;
+	DSVReadOnly = nullptr;
+}
+
+void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
+{
+	// DSV 복원 (ReadOnly → 쓰기 가능)
+	if (bReadOnlyDSV && RTV)
+	{
+		Ctx->OMSetRenderTargets(1, &RTV, DSV);
+		bReadOnlyDSV = false;
+	}
+
+	// SRV 언바인딩
+	if (DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
+		&& DiffuseSRV != nullptr)
+	{
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		Ctx->PSSetShaderResources(0, 1, &nullSRV);
+		DiffuseSRV = nullptr;
+	}
 }
 
 // ============================================================
@@ -86,13 +110,7 @@ void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx,
 		SubmitCommand(Cmd, Device, Ctx, Cache, DefaultSampler);
 	}
 
-	// SRV 클린업 — 마지막에 바인딩된 SRV가 있으면 해제
-	if (Cache.DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
-		&& Cache.DiffuseSRV != nullptr)
-	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
-		Ctx->PSSetShaderResources(0, 1, &nullSRV);
-	}
+	Cache.Cleanup(Ctx);
 }
 
 void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
@@ -109,12 +127,18 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& D
 		SubmitCommand(Commands[i], Device, Ctx, Cache, DefaultSampler);
 	}
 
-	// SRV 클린업
-	if (Cache.DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
-		&& Cache.DiffuseSRV != nullptr)
+	Cache.Cleanup(Ctx);
+}
+
+void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
+	ID3D11DeviceContext* Ctx, FStateCache& Cache, ID3D11SamplerState* DefaultSampler)
+{
+	if (StartIdx >= EndIdx) return;
+	if (EndIdx > Commands.size()) EndIdx = static_cast<uint32>(Commands.size());
+
+	for (uint32 i = StartIdx; i < EndIdx; ++i)
 	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
-		Ctx->PSSetShaderResources(0, 1, &nullSRV);
+		SubmitCommand(Commands[i], Device, Ctx, Cache, DefaultSampler);
 	}
 }
 
@@ -160,6 +184,14 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	{
 		Ctx->IASetPrimitiveTopology(Cmd.Topology);
 		Cache.Topology = Cmd.Topology;
+	}
+
+	// --- DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩) ---
+	if (Cmd.bReadOnlyDSV != Cache.bReadOnlyDSV && Cache.RTV)
+	{
+		ID3D11DepthStencilView* TargetDSV = Cmd.bReadOnlyDSV ? Cache.DSVReadOnly : Cache.DSV;
+		Ctx->OMSetRenderTargets(1, &Cache.RTV, TargetDSV);
+		Cache.bReadOnlyDSV = Cmd.bReadOnlyDSV;
 	}
 
 	// --- Shader ---
