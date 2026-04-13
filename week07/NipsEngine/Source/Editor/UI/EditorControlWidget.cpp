@@ -90,10 +90,19 @@ void FEditorControlWidget::Render(float DeltaTime)
 				break;
 			}
             case 5: // Fireball
+            {
 				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
+			}
+			case 6: // Spotlight
+			{
+				ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
 			}
 		}
 		NumberOfSpawnedActors = 1;

@@ -5,6 +5,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
@@ -45,6 +46,9 @@ REGISTER_FACTORY(ADecalActor)
 
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
+
+DEFINE_CLASS(ASpotlightActor, AActor)
+REGISTER_FACTORY(ASpotlightActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -275,4 +279,14 @@ void AFireballActor::InitDefaultComponents()
 		bFireballMatInit = true;
 	}
 	Sphere->SetMaterial(0, &FireballCoreMaterial);
+}
+
+void ASpotlightActor::InitDefaultComponents() {
+	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
+    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+	SetRootComponent(BillboardIcon);
+
+	UDecalComponent* Decal = AddComponent<UDecalComponent>();
+	Decal->AttachToComponent(BillboardIcon);
+	Decal->SetRelativeLocation(FVector(0, 0, 10.f));
 }
