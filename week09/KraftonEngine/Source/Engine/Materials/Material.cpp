@@ -19,7 +19,7 @@ bool FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameter
 	auto it = ParameterLayout.find(Name);
 	if (it != ParameterLayout.end())
 	{
-		OutInfo = it->second;
+		OutInfo = *(it->second);
 		return true;
 	}
 	else
@@ -118,9 +118,8 @@ void FMaterialConstantBuffer::Release()
 
 // ─── UMaterial ───
 
-void UMaterial::Create(const FString& InPathFileName,
-FMaterialTemplate* InTemplate,
-TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
+void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
 {
 	PathFileName = InPathFileName;
 	Template = InTemplate;

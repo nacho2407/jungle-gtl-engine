@@ -8,7 +8,7 @@
 
 class FMaterialTemplate;
 class UMaterial;
-class FMaterialConstantBuffer;
+struct FMaterialConstantBuffer;
 
 class FMaterialManager : public TSingleton<FMaterialManager>
 {
@@ -43,4 +43,5 @@ private:
 
 	void SaveToJSON(UMaterial* Mat, const FString& MatFilePath);
 	
+	const FString DefaultShaderPath = "Shaders/Primitive.hlsl";
 };

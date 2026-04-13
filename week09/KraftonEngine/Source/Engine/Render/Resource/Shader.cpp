@@ -147,7 +147,7 @@ void FShader::Bind(ID3D11DeviceContext* InDeviceContext) const
 
 
 //셰이더 컴파일 후 호출. 셰이더 코드의 cbuffer, 텍스처 샘플러 선언을 분석해서 outlayout에 채워넣음. 이 정보는 머티리얼 템플릿이 생성될 때 참조되어야 하므로 셰이더 내부에서 제공하는 형태로 존재해야 함.
-void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo>& OutLayout)
+void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo*>& OutLayout)
 {
 	ID3D11ShaderReflection* Reflector = nullptr;
 	D3DReflect(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(),
@@ -183,7 +183,7 @@ void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialPa
 			
 			Info.BufferSize = CBDesc.Size;//cbuffer 크기
 
-			OutLayout[VarDesc.Name] = Info;
+			OutLayout[VarDesc.Name] = &Info;
 		}
 	}
 	Reflector->Release();

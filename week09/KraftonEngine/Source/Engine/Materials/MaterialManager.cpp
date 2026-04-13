@@ -18,7 +18,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	json::JSON JsonData = ReadJsonFile(MatFilePath);
 	if (JsonData.IsNull())
 	{
-		// 파일 없으면 기본 머티리얼 생성
+		// 기본 머티리얼 생성
+		UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
+		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath, ERenderPass::Opaque);
+		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
+		DefaultMaterial->Create(MatFilePath, Template, std::move(Buffers));
+		// DiffuseColor 기본값 세팅
+		DefaultMaterial->SetVector4Parameter("DiffuseColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f)); // 핑크
+		MaterialCache.emplace(MatFilePath, DefaultMaterial);
+		return DefaultMaterial;
 	}
 
 	// 3. JSON에서 기본 정보 추출
@@ -37,7 +45,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	// 4. UMaterial 인스턴스 생성 및 초기화
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
 	Material->Create(PathFileName, Template, std::move(InjectedBuffers));
-	MaterialCache.emplace(PathFileName, Material);
+	MaterialCache.emplace(MatFilePath, Material);
 
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
@@ -69,10 +77,10 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 
 	for (const auto& BufferInfo : RequiredBuffers)
 	{
-		const FMaterialParameterInfo& ParamInfo = BufferInfo.second;
+		const FMaterialParameterInfo* ParamInfo = BufferInfo.second;
 
 		// 1. 이미 생성한 버퍼("PerMaterial" 등)라면 이번 파라미터는 건너뜀
-		if (std::find(CreatedBuffers.begin(), CreatedBuffers.end(), ParamInfo.BufferName) != CreatedBuffers.end())
+		if (std::find(CreatedBuffers.begin(), CreatedBuffers.end(), ParamInfo->BufferName) != CreatedBuffers.end())
 		{
 			continue;
 		}
@@ -81,7 +89,7 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 		ID3D11Buffer* RawGPUBuffer = nullptr;
 		D3D11_BUFFER_DESC desc = {};
 		desc.Usage = D3D11_USAGE_DYNAMIC;
-		uint32 AlignedSize = (BufferInfo.second.BufferSize + 15) & ~15;
+		uint32 AlignedSize = (BufferInfo.second->BufferSize + 15) & ~15;
 		desc.ByteWidth = AlignedSize;
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -89,12 +97,12 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 
 		// 2. FMaterialConstantBuffer 래퍼 객체 생성 및 초기화
 		auto MatCB = std::make_unique<FMaterialConstantBuffer>();
-		MatCB->Init(RawGPUBuffer, BufferInfo.second.BufferSize, BufferInfo.second.SlotIndex); // 설계하신 Init 호출
+		MatCB->Init(RawGPUBuffer, BufferInfo.second->BufferSize, BufferInfo.second->SlotIndex); // 설계하신 Init 호출
 
 		// 3. 주입할 맵에 추가
-		InjectedBuffers.emplace(BufferInfo.second.BufferName, std::move(MatCB));
+		InjectedBuffers.emplace(BufferInfo.second->BufferName, std::move(MatCB));
 
-		CreatedBuffers.push_back(ParamInfo.BufferName);
+		CreatedBuffers.push_back(ParamInfo->BufferName);
 	}
 
 	return InjectedBuffers;
@@ -125,6 +133,15 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 			Material->SetScalarParameter(ParamName, Value.ToFloat());
 		}
 	}
+}
+
+void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
+{
+	// 나중에 여기에 JSON에서 텍스처 경로를 읽어와서
+		// Material->SetTextureParameter()를 호출하는 로직을 구현하시면 됩니다.
+
+		// 예외 처리 방어 코드
+		if (!JsonData.hasKey("Textures")) return;
 }
 
 
