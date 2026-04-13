@@ -412,6 +412,37 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, PPShader, nullptr, Frame.ViewportStencilSRV, 1);
 			}
 		}
+
+		// SceneDepth (UserBits=2 → Outline 뒤)
+		if (CollectViewMode == EViewMode::SceneDepth)
+		{
+			FShader* DepthShader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
+			if (DepthShader)
+			{
+				FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::SceneDepth, sizeof(FSceneDepthPConstants));
+				FViewportRenderOptions Opts = Frame.GetRenderOptions();
+				FSceneDepthPConstants depthData = {};
+				depthData.Exponent = Opts.Exponent;
+				depthData.NearClip = Frame.NearClip;
+				depthData.FarClip = Frame.FarClip;
+				depthData.Mode = Opts.SceneDepthVisMode;
+				SceneDepthCB->Update(Ctx, &depthData, sizeof(FSceneDepthPConstants));
+
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = DepthShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.bReadOnlyDSV = true;
+				Cmd.VertexCount = 3;
+				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;
+				Cmd.ExtraCB = SceneDepthCB;
+				Cmd.ExtraCBSlot = ECBSlot::SceneDepth;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, Frame.ViewportDepthSRV, 2);
+			}
+		}
 	}
 
 	// --- Font (World → AlphaBlend, Screen → OverlayFont) ---
@@ -532,4 +563,3 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
-

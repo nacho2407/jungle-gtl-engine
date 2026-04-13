@@ -25,6 +25,7 @@ namespace ECBSlot
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
 	constexpr uint32 Decal = 5;		// b5: Decal properties (Color)
 	constexpr uint32 Fog = 6;        // b6: Height Fog params
+	constexpr uint32 SceneDepth = 7; // b7: SceneDepth visualization
 }
 
 //PerObject
@@ -84,6 +85,14 @@ struct FOutlinePostProcessConstants
 	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
 	float OutlineThickness = 1.0f;
 	float Padding[3] = {};
+};
+
+struct FSceneDepthPConstants
+{
+	float Exponent;
+	float NearClip;
+	float FarClip;
+	uint32 Mode;
 };
 
 
