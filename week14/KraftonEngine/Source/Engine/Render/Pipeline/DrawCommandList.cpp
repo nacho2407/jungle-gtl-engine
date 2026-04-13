@@ -285,7 +285,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.ExtraCB = Cmd.ExtraCB;
 	}
 
-	// --- Material CB (b4) — 인라인 데이터 기반 업데이트 ---
+	// --- Material CB (b2, PerShader0) — 인라인 데이터 기반 업데이트 ---
 	if (Cmd.MaterialCB)
 	{
 		// MaterialCB 슬롯 바인딩 (최초 1회)
@@ -294,7 +294,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			ID3D11Buffer* RawCB = Cmd.MaterialCB->GetBuffer();
 			if (RawCB)
 			{
-				Ctx->VSSetConstantBuffers(ECBSlot::Material, 1, &RawCB);
+				Ctx->VSSetConstantBuffers(ECBSlot::PerShader0, 1, &RawCB);
 			}
 			Cache.MaterialCB = Cmd.MaterialCB;
 		}

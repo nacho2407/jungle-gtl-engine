@@ -16,7 +16,7 @@ FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
 	ExtraCB.Buffer = new FConstantBuffer();
-	ExtraCB.Slot = 5;	// 5번 상수버퍼 슬롯 할당
+	ExtraCB.Slot = ECBSlot::PerShader1;	// b3: Material(b2)과 분리
 	ExtraCB.Size = sizeof(FVector4);	// Color 1개만 사용
 	// 최초 1회 초기화
 	UpdateMesh();
@@ -39,8 +39,8 @@ void FDecalSceneProxy::UpdateMaterial()
 	}
 	
 	auto& CB = ExtraCB.Bind<FDecalConstants>(
-		FConstantBufferPool::Get().GetBuffer(ECBSlot::Decal, sizeof(FDecalConstants)),
-		ECBSlot::Decal);
+		FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Decal, sizeof(FDecalConstants)),
+		ECBSlot::PerShader1);
 	CB.Color = DecalComp->GetColor();
 }
 

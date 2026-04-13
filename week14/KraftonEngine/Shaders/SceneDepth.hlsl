@@ -2,6 +2,14 @@
 #include "Common/ConstantBuffers.hlsl"
 #include "Common/VertexLayouts.hlsl"
 
+// b2 (PerShader0): SceneDepth visualization
+cbuffer SceneDepthCB : register(b2)
+{
+    float Exponent;
+    float NearClip;
+    float FarClip;
+    uint Mode;
+}
 
 Texture2D<float> DepthTex : register(t0);
 

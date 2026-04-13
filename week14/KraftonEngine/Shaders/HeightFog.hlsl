@@ -4,8 +4,8 @@
 #include "Common/ConstantBuffers.hlsl"
 #include "Common/VertexLayouts.hlsl"
 
-// b6: Fog parameters
-cbuffer FogBuffer : register(b6)
+// b2 (PerShader0): Fog parameters
+cbuffer FogBuffer : register(b2)
 {
     float4 FogInscatteringColor;
     float FogDensity;
