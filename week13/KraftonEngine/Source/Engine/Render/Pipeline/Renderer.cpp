@@ -114,7 +114,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	}
 
 	// 공유 MaterialCB 가져오기
-	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
+	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Material, sizeof(FMaterialConstants));
 
 	// SelectionMask 커맨드 존재 추적
 	if (Pass == ERenderPass::SelectionMask)
@@ -356,7 +356,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			if (FogShader)
 			{
 				// Fog CB (b6) 업데이트
-				FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Fog, sizeof(FFogConstants));
+				FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Fog, sizeof(FFogConstants));
 				const FFogParams& FogParams = CollectScene->GetFogParams();
 				FFogConstants fogData = {};
 				fogData.InscatteringColor = FogParams.InscatteringColor;
@@ -378,7 +378,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
 				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;  // t0: depth
 				Cmd.ExtraCB = FogCB;
-				Cmd.ExtraCBSlot = ECBSlot::Fog;
+				Cmd.ExtraCBSlot = ECBSlot::PerShader0;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FogShader, nullptr, Frame.ViewportDepthSRV, 0);
 			}
@@ -391,7 +391,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			if (PPShader)
 			{
 				// Outline CB (b3) 업데이트
-				FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::PostProcess, sizeof(FOutlinePostProcessConstants));
+				FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Outline, sizeof(FOutlinePostProcessConstants));
 				FOutlinePostProcessConstants ppConstants;
 				ppConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
 				ppConstants.OutlineThickness = 3.0f;
@@ -407,7 +407,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
 				Cmd.DiffuseSRV = Frame.ViewportStencilSRV;  // t0: stencil
 				Cmd.ExtraCB = OutlineCB;
-				Cmd.ExtraCBSlot = ECBSlot::PostProcess;
+				Cmd.ExtraCBSlot = ECBSlot::PerShader0;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, PPShader, nullptr, Frame.ViewportStencilSRV, 1);
 			}
@@ -419,7 +419,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			FShader* DepthShader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
 			if (DepthShader)
 			{
-				FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::SceneDepth, sizeof(FSceneDepthPConstants));
+				FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
 				FViewportRenderOptions Opts = Frame.GetRenderOptions();
 				FSceneDepthPConstants depthData = {};
 				depthData.Exponent = Opts.Exponent;
@@ -438,7 +438,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.VertexCount = 3;
 				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;
 				Cmd.ExtraCB = SceneDepthCB;
-				Cmd.ExtraCBSlot = ECBSlot::SceneDepth;
+				Cmd.ExtraCBSlot = ECBSlot::PerShader0;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, Frame.ViewportDepthSRV, 2);
 			}

@@ -65,8 +65,8 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 	// ExtraCB — FGizmoConstants
 	auto& G = ExtraCB.Bind<FGizmoConstants>(
-		FConstantBufferPool::Get().GetBuffer(ECBSlot::Gizmo, sizeof(FGizmoConstants)),
-		ECBSlot::Gizmo);
+		FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Gizmo, sizeof(FGizmoConstants)),
+		ECBSlot::PerShader0);
 	G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	G.bIsInnerGizmo = bIsInner ? 1 : 0;
 	G.bClicking = Gizmo->IsHolding() ? 1 : 0;
