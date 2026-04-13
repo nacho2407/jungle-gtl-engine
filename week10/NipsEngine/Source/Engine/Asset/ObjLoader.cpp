@@ -24,19 +24,20 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 		return nullptr;
 	}
 
+	NormalizeRawPositionsToUnitCube();
 	
-	/* 단위 큐브의 크기로 변경 및 AABB 기준 가운데로 고정 */
-	if (LoadOptions.bNormalizeToUnitCube)
-	{
-		UE_LOG("[ObjLoader] NormalizeToUnitCube enabled: %s", Path.c_str());
-		
-		NormalizeRawPositionsToUnitCube();
-	}
-	else
-	{
-		/* 중점 좌표를 AABB 기준 가운데로 고정 */
-		NormalizeRawPositionsToUnitCube();
-	}
+	///* 단위 큐브의 크기로 변경 및 AABB 기준 가운데로 고정 */
+	//if (LoadOptions.bNormalizeToUnitCube)
+	//{
+	//	UE_LOG("[ObjLoader] NormalizeToUnitCube enabled: %s", Path.c_str());
+	//	
+	//	NormalizeRawPositionsToUnitCube();
+	//}
+	//else
+	//{
+	//	/* 중점 좌표를 AABB 기준 가운데로 고정 */
+	//	NormalizeRawPositionsToUnitCube();
+	//}
 	
 	/* Build Cooked Data from Raw Data */
 	if (!BuildStaticMesh())
@@ -207,7 +208,6 @@ bool FObjLoader::BuildStaticMesh()
 			StaticMeshAsset.Indices.end(),
 			IndicesPerSlot.begin(),
 			IndicesPerSlot.end());
-
 		
 		StaticMeshAsset.Sections.push_back(NewSection);
 	}
