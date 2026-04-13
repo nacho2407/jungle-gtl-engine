@@ -20,7 +20,7 @@ struct FLightData
     float3 Color;
     float  Intensity;
     float  RadiusFalloff;
-    float  Padding[2];
+    float  Padding[3];
 };
 
 StructuredBuffer<FLightData> Lights : register(t4);
