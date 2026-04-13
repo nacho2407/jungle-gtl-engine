@@ -102,8 +102,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 
     ImGui::Separator();
     ImGui::Text("Post Process");
-    ImGui::SetNextItemWidth(ItemWidth);
-    ImGui::SliderFloat("FXAA Threshold", &Settings.FXAAThreshold, 0.0f, 1.0f, "%.3f");
+    ImGui::Checkbox("Enable FXAA", &Settings.bEnableFXAA);
 
     ImGui::Separator();
 
