@@ -2,6 +2,7 @@
 
 #include "PrimitiveComponent.h"
 #include "Core/CoreMinimal.h"
+#include "Render/Resource/Material.h"
 
 class AActor;
 struct FMeshData;
@@ -92,7 +93,11 @@ public:
 
 	EPrimitiveType GetPrimitiveType() const override;
 
+	UMaterialInterface* GetMaterial() { return Material; }
+
 private:
 	const FMeshData* GizmoMeshData = nullptr;
+	UMaterialInterface* Material = nullptr;
+	
 	FVector LocalExtents = FVector(1.5f, 1.5f, 1.5f);
 };

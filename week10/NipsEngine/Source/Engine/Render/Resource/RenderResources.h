@@ -16,7 +16,6 @@ struct FRenderResources
     FConstantBuffer EditorConstantBuffer;           // b4
 	FConstantBuffer OutlineConstantBuffer;          // b5
 
-    FConstantBuffer StaticMeshConstantBuffer;       // b6
     FConstantBuffer LightPassConstantBuffer;		// b7
 	FConstantBuffer DecalConstantBuffer;			// b8
     FConstantBuffer FogPassConstantBuffer;		// b9
@@ -27,7 +26,6 @@ struct FRenderResources
     UShader* EditorShader;
 	UShader* SelectionMaskShader;
 	UShader* OutlineShader;
-	UShader* StaticMeshShader;
 	UShader* LightPassShader;
 	UShader* FogPassShader;
 	UShader* DecalShader;

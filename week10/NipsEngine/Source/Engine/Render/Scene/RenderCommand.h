@@ -47,6 +47,8 @@ struct FFrameConstants
 {
 	FMatrix View;          
 	FMatrix Projection;    
+	FVector CameraPosition;
+	float Padding0;
 	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
 };
@@ -119,7 +121,7 @@ struct FSubUVConstants
 };
 struct FBillboardConstants
 {
-	ID3D11ShaderResourceView* SRV = nullptr;
+	UTexture* Texture = nullptr;
 	float Width = 1.0f;
 	float Height = 1.0f;
 };
@@ -137,33 +139,26 @@ struct FStaticMeshConstants
 	FVector SpecularColor = { 0.5f, 0.5f, 0.5f };
 	float   Shininess     = 32.0f;
 
-	// Camera
-	FVector CameraWorldPos = { 0.0f, 0.0f, 0.0f };
-	float   _Pad2          = 0.0f;
-
 	// ScrollUV
 	float  ScrollX          = 0.f;
 	float  ScrollY          = 0.f;
-	float  Padding0         = 0.0f;
 	uint32 bHasDiffuseMap   = 0;     // cbuffer bytes 76-79  — HLSL uint bHasDiffuseMap 대응
 	uint32  bHasSpecularMap  = 0;        // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
+
 	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
+	float _Pad2 = 0.0f;
 
 	// Texture SRV (CPU-only, cbuffer 범위 밖)
-	ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
-	ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
-	ID3D11ShaderResourceView* SpecularSRV = { nullptr };
-	ID3D11ShaderResourceView* BumpSRV     = { nullptr };
+	//ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
+	//ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
+	//ID3D11ShaderResourceView* SpecularSRV = { nullptr };
+	//ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
 struct FDecalConstants
 {
 	FMatrix InvDecalWorld;
 	FVector4 ColorTint;
-	float FadeAlpha = 1.0f;
-	float padding0[3];
-
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 };
 
 struct FFogConstants
@@ -226,7 +221,6 @@ struct FRenderCommand
 	{
 		FGizmoConstants Gizmo;
 		FEditorConstants Editor;
-		FOutlineConstants Outline;
 		FAABBConstants AABB;
 		FOBBConstants OBB;
 		FGridConstants Grid;

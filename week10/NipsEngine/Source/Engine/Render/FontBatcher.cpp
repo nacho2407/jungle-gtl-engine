@@ -20,10 +20,10 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
 
-	FontMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("FontMaterial");
-	UMaterial* FontMat = Cast<UMaterial>(FontMaterial);
-	FontMat->Shader = FResourceManager::Get().GetShader("Shaders/ShaderFont.hlsl");
-	FontMat->MaterialData.Name = "FontMaterial";
+	FontMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("FontMaterial", "Shaders/ShaderFont.hlsl");
+
+	UMaterial* Mat = Cast<UMaterial>(FontMaterial);
+	Mat->SetParam("FontAtlas", FMaterialParamValue(FResourceManager::Get().LoadTextureAsset("Asset/Font/FontAtlas.dds", Device.Get())));
 }
 
 void FFontBatcher::CreateBuffers()
@@ -260,9 +260,6 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// ResourceManager 소유 SRV 바인딩
-	ID3D11ShaderResourceView* SRV = Resource->SRV.Get();
-	Context->PSSetShaderResources(0, 1, &SRV);
 	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
 	Context->PSSetSamplers(0, 1, Samplers);
 

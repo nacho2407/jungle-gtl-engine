@@ -1,10 +1,4 @@
-cbuffer Constants : register(b0)
-{
-    // @@@ 넘기는 인자 보고 결정해야함.
-    // 아마도 ViewProj일 거 같음
-    row_major float4x4 View;
-    row_major float4x4 Projection;
-}
+#include "Common.hlsl"
 
 struct VS_INPUT
 {

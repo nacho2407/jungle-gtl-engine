@@ -94,7 +94,7 @@ private:
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
-	ID3D11ShaderResourceView* SubUVCachedSRV = nullptr;
+	UTexture* SubUVCachedTexture = nullptr;
 
 	//	Primitive and Gizmo Input Layout
 	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
