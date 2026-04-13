@@ -19,14 +19,13 @@ struct FStateCache
 	FMeshBuffer*              MeshBuffer   = nullptr;
 	ID3D11Buffer*             RawVB        = nullptr;   // 동적 지오메트리 VB 추적
 	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
-	FConstantBuffer*          PerObjectCB  = nullptr;
-	FConstantBuffer*          ExtraCB      = nullptr;
-	FConstantBuffer*          MaterialCB   = nullptr;
+	FConstantBuffer*          PerObjectCB    = nullptr;
+	FConstantBuffer*          PerShaderCB[2] = {};
 	ID3D11ShaderResourceView* DiffuseSRV   = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
 	ID3D11SamplerState*       Sampler      = reinterpret_cast<ID3D11SamplerState*>(~0ull);
 
-	// Material 인라인 데이터 추적 (MaterialCB 업데이트 최소화)
-	int32    LastUVScroll    = -1;
+	// Material 인라인 데이터 추적 (PerShaderCB[0] 업데이트 최소화)
+	int32    LastUVScroll     = -1;
 	FVector4 LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f };
 
 	// DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩)
