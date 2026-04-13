@@ -49,6 +49,7 @@ protected:
     void OnTransformDirty() override;
     void NotifySpatialIndexDirty() const;
 
+protected:
 	mutable FAABB WorldAABB;
 	bool bIsVisible = true;
 	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
