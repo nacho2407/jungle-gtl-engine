@@ -12,6 +12,10 @@ bool FRenderPipeline::Initialize()
 bool FRenderPipeline::Render(const FRenderPassContext* Context)
 {
     OpaqueRenderPass->Render(Context);
+
+	// 최종 출력
+	OutSRV = OpaqueRenderPass->GetOutSRV();
+
     return true;
 }
 

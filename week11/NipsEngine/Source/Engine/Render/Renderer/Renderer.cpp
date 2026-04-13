@@ -58,6 +58,9 @@ void FRenderer::Create(HWND hWindow)
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
+
+	RenderPipeline.Initialize();
+    RenderPassContext = std::make_shared<FRenderPassContext>();
 }
 
 void FRenderer::Release()
@@ -78,6 +81,9 @@ void FRenderer::Release()
 	SubUVBatcher.Release();
 
 	Device.Release();
+
+	RenderPipeline.Release();
+    RenderPassContext.reset();
 }
 
 //	Bus → Batcher 데이터 수집 (CPU). BeginFrame 이전에 호출.
@@ -170,11 +176,24 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
 
+	/** Opaque 만 테스트 */
+    
+	RenderPassContext->Device = Device.GetDevice();
+    RenderPassContext->DeviceContext = Device.GetDeviceContext();
+    RenderPassContext->RenderState = &PassRenderStates[(uint32)ERenderPass::Opaque];
+    RenderPassContext->RenderBus = &InRenderBus;
+    RenderPassContext->RenderTargets = &CurrentRenderTargets;
+    RenderPassContext->RenderResources = &Resources;
+	RenderPipeline.Render(RenderPassContext.get());
+	
+	SceneFinalSRV = RenderPipeline.GetOutSRV();
+
+	/*
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
 
-		/** TODO: if 문 처리는 아쉬움. 나중에 확장성을 위해 수정 필요 */
+		// TODO: if 문 처리는 아쉬움. 나중에 확장성을 위해 수정 필요
 		if (CurPass == ERenderPass::Light)
 		{
 			// Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
@@ -211,8 +230,8 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
                 ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
             }
 		}
-
 	}
+	*/
 }
 
 // ============================================================
