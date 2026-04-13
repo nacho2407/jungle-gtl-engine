@@ -86,7 +86,6 @@ private:
     uint32 MaxIndexCount  = 0;
 
     TComPtr<ID3D11Device>       Device;
-    TComPtr<ID3D11SamplerState> SamplerState;
 	UMaterialInterface* Material;
 
     void CreateBuffers();
