@@ -175,15 +175,15 @@ void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialPa
 			D3D11_SHADER_VARIABLE_DESC VarDesc;
 			Var->GetDesc(&VarDesc);
 
-			FMaterialParameterInfo Info;
-			Info.BufferName = BufferName;
-			Info.SlotIndex = SlotIndex;
-			Info.Offset = VarDesc.StartOffset;
-			Info.Size = VarDesc.Size;
+			FMaterialParameterInfo* Info = new FMaterialParameterInfo();
+			Info->BufferName = BufferName;
+			Info->SlotIndex = SlotIndex;
+			Info->Offset = VarDesc.StartOffset;
+			Info->Size = VarDesc.Size;
 			
-			Info.BufferSize = CBDesc.Size;//cbuffer 크기
+			Info->BufferSize = CBDesc.Size;//cbuffer 크기
 
-			OutLayout[VarDesc.Name] = &Info;
+			OutLayout[VarDesc.Name] = Info;
 		}
 	}
 	Reflector->Release();
