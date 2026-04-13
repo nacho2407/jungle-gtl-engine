@@ -9,6 +9,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/MovementComponent.h"
 #include "Component/RotatingMovementComponent.h"
+#include "Component/FireballComponent.h"
 #include "Component/ProjectileMovementComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
@@ -84,6 +85,12 @@ struct FComponentMenuEntry
 // 2. 에디터에서 추가 가능한 컴포넌트 배열 (이 리스트만 관리하면 됩니다)
 static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 	{
+		"Scene Component",
+		[](AActor* Actor) -> UActorComponent* {
+			return Actor->AddComponent<USceneComponent>();
+		}
+	},
+	{
 		"StaticMesh Component",
 		[](AActor* Actor) -> UActorComponent* {
 			return Actor->AddComponent<UStaticMeshComponent>();
@@ -132,13 +139,20 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 	},
 	{
 		"HeightFog Component",
-		// 반환 타입을 UActorComponent*로 통일 (기존 코드의 USceneComponent* 오타 수정)
 		[](AActor* Actor) -> UActorComponent* {
 			UHeightFogComponent* Comp = Actor->AddComponent<UHeightFogComponent>();
 			Comp->SetFogDensity(0);
 			Comp->SetFogInscatteringColor(FVector4(0.72f, 0.8f, 0.9f, 1.0f));
 			Comp->SetHeightFalloff(0);
 			Comp->SetFogHeight(0);
+			return Comp;
+		}
+	},
+	
+	{
+		"Fireball Component",
+		[](AActor* Actor) -> UActorComponent* {
+			UFireballComponent* Comp = Actor->AddComponent<UFireballComponent>();
 			return Comp;
 		}
 	},
@@ -174,6 +188,12 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	// 상단 액터 정보 및 컨트롤 영역
 	RenderActorHeaderRegion(PrimaryActor, SelectedActors);
+
+	if (SelectionManager->GetPrimarySelection() == nullptr)
+	{
+		ImGui::End();
+		return;
+	}
 
 	// 컴포넌트 트리 영역
 	SEPARATOR();

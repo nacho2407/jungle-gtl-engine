@@ -10,44 +10,21 @@
 DEFINE_CLASS(UTextRenderComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UTextRenderComponent)
 
-UTextRenderComponent* UTextRenderComponent::Duplicate()
+// GetEditableProperties 에 노출되지 않은 private 필드를 직접 복사합니다.
+void UTextRenderComponent::PostDuplicate(UObject* Original)
 {
-    UTextRenderComponent* NewComp = UObjectManager::Get().CreateObject<UTextRenderComponent>();
+    UPrimitiveComponent::PostDuplicate(Original);
 
-	NewComp->SetActive(this->IsActive());
-	NewComp->SetAutoActivate(this->IsAutoActivate());
-	NewComp->SetComponentTickEnabled(this->IsComponentTickEnabled());
-    NewComp->SetOwner(nullptr);
-    
-    NewComp->SetRelativeLocation(this->GetRelativeLocation());
-    NewComp->SetRelativeRotation(this->GetRelativeRotation());
-    NewComp->SetRelativeScale(this->GetRelativeScale());
-    
-    NewComp->SetVisibility(this->IsVisible());
-
-    // 텍스트 및 폰트 리소스 얕은 복사
-    NewComp->Text = this->Text;
-    NewComp->FontName = this->FontName;
-    NewComp->CachedFont = this->CachedFont;
-
-    // 외형(Appearance) 프로퍼티 복사
-    NewComp->Color = this->Color;
-    NewComp->FontSize = this->FontSize;
-    NewComp->Spacing = this->Spacing;
-    NewComp->CharWidth = this->CharWidth;
-    NewComp->CharHeight = this->CharHeight;
-
-    // 공간(Space) 및 정렬(Alignment) 복사
-    NewComp->RenderSpace = this->RenderSpace;
-    NewComp->HAlign = this->HAlign;
-    NewComp->VAlign = this->VAlign;
-
-    NewComp->ScreenX = this->ScreenX;
-    NewComp->ScreenY = this->ScreenY;
-
-	NewComp->DuplicateSubObjects();
-
-    return NewComp;
+    const UTextRenderComponent* Orig = Cast<UTextRenderComponent>(Original);
+    Color       = Orig->Color;
+    Spacing     = Orig->Spacing;
+    CharWidth   = Orig->CharWidth;
+    CharHeight  = Orig->CharHeight;
+    RenderSpace = Orig->RenderSpace;
+    HAlign      = Orig->HAlign;
+    VAlign      = Orig->VAlign;
+    ScreenX     = Orig->ScreenX;
+    ScreenY     = Orig->ScreenY;
 }
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
@@ -151,12 +128,12 @@ UTextRenderComponent::UTextRenderComponent()
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
+	UPrimitiveComponent::GetEditableProperties(OutProps);
+
 	OutProps.push_back({ "Text", EPropertyType::String, &Text });
 	OutProps.push_back({ "Font", EPropertyType::Name, &FontName });
-	//OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
+	// OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
 	OutProps.push_back({ "Font Size", EPropertyType::Float, &FontSize, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
