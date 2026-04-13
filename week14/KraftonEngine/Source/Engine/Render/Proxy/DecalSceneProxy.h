@@ -21,7 +21,6 @@ public:
 private:
 	UDecalComponent* GetDecalComponent() const;
 
-	FMeshBuffer DecalDynamicMeshBuffer;
-	FConstantBuffer DecalCB;	// Decal Color CB (PerShader1, b3)
+	FConstantBuffer DecalCB;
 	const FTextureResource* DecalTexture = nullptr;
 };

@@ -85,4 +85,12 @@ struct PS_Input_ColorWorld
     float3 worldPos : TEXCOORD0;
 };
 
+struct PS_Input_Decal
+{
+    float4 position : SV_POSITION;
+    float3 worldPos : TEXCOORD0;
+    float3 normal : TEXCOORD1;
+    float4 color : COLOR;
+};
+
 #endif // VERTEX_LAYOUTS_HLSL
