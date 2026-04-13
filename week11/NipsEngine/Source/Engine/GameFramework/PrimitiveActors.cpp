@@ -29,6 +29,9 @@ REGISTER_FACTORY(APlaneActor)
 DEFINE_CLASS(AAttachTestActor, AActor) 
 REGISTER_FACTORY(AAttachTestActor)
 
+DEFINE_CLASS(AEmptyActor, AActor) 
+REGISTER_FACTORY(AEmptyActor)
+
 DEFINE_CLASS(AStaticMeshActor, AActor) 
 REGISTER_FACTORY(AStaticMeshActor)
 
@@ -154,6 +157,12 @@ void AAttachTestActor::InitDefaultComponents()
 	Text->SetTransient(true);
 	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
+}
+
+void AEmptyActor::InitDefaultComponents()
+{
+	auto SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
 }
 
 void AStaticMeshActor::InitDefaultComponents()

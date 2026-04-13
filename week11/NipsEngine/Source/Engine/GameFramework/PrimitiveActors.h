@@ -40,6 +40,15 @@ public:
 	void InitDefaultComponents();
 };
 
+class AEmptyActor : public AActor
+{
+public:
+	DECLARE_CLASS(AEmptyActor, AActor)
+	AEmptyActor() = default;
+
+	void InitDefaultComponents();
+};
+
 class AStaticMeshActor : public AActor
 {
 public:
