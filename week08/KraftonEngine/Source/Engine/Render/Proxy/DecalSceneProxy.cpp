@@ -1,6 +1,5 @@
 ﻿#include "Render/Proxy/DecalSceneProxy.h"
 #include "Component/DecalComponent.h"
-#include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Runtime/Engine.h"
 
@@ -15,11 +14,13 @@ namespace
 FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
-	ExtraCB.Buffer = new FConstantBuffer();
-	ExtraCB.Slot = ECBSlot::PerShader1;	// b3: Material(b2)과 분리
-	ExtraCB.Size = sizeof(FVector4);	// Color 1개만 사용
 	// 최초 1회 초기화
 	UpdateMesh();
+}
+
+FDecalSceneProxy::~FDecalSceneProxy()
+{
+	DecalCB.Release();
 }
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
@@ -31,16 +32,14 @@ void FDecalSceneProxy::UpdateMaterial()
 {
 	UDecalComponent* DecalComp = GetDecalComponent();
 	if (!DecalComp) return;
-	
+
 	DecalTexture = DecalComp->GetTexture();
 	if (!SectionDraws.empty())
 	{
 		SectionDraws[0].DiffuseSRV = DecalTexture ? DecalTexture->SRV : nullptr;
 	}
-	
-	auto& CB = ExtraCB.Bind<FDecalConstants>(
-		FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Decal, sizeof(FDecalConstants)),
-		ECBSlot::PerShader1);
+
+	auto& CB = ExtraCB.Bind<FDecalConstants>(&DecalCB, ECBSlot::PerShader1);
 	CB.Color = DecalComp->GetColor();
 }
 
