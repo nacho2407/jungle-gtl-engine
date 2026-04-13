@@ -252,19 +252,19 @@ void FRenderer::InitializePassRenderStates()
 	UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
 
 	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
-	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.LightPassShader,    false};	
-	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
-	S[(uint32)E::Fog] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.FogPassShader,    false};
-    S[(uint32)E::FXAA] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.FXAAShader,      false};
-	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.SelectionMaskShader, false };
-	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true };
-	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    false };
-	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
+	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, PrimitiveShader, true };
+	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, DecalShader, false };
+	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, LightPassShader,    false};	
+	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, PrimitiveShader, false };
+	S[(uint32)E::Fog] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, FogPassShader,    false};
+    S[(uint32)E::FXAA] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, FXAAShader,      false};
+	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, SelectionMaskShader, false };
+	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     EditorShader,    true };
+	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     EditorShader,    false };
+	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, GizmoShader,     false };
 	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
 	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
-    S[(uint32)E::PostProcessOutline] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,      false};
+    S[(uint32)E::PostProcessOutline] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, OutlineShader,      false};
 
 }
 
