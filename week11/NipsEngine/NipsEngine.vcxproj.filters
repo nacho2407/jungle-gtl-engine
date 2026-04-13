@@ -85,6 +85,9 @@
     <Filter Include="Source\Engine\Render\Renderer">
       <UniqueIdentifier>{219c21d6-301e-9889-9891-1ed459003345}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Renderer\RenderTarget">
+      <UniqueIdentifier>{db165c28-a461-d451-4661-ef5ed2f4c461}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Resource">
       <UniqueIdentifier>{e531d80c-df7b-302a-eb68-88766c4bbd6b}</UniqueIdentifier>
     </Filter>
@@ -430,6 +433,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
@@ -910,6 +922,15 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
       <Filter>Source\Engine\Render\Resource</Filter>
