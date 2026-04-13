@@ -40,7 +40,9 @@ struct FMaterial
 enum class EMaterialParamType
 {
 	Bool,
-	Scalar,
+	Int,
+	UInt,
+	Float,
 	Vector2,
 	Vector3,
 	Vector4,
@@ -50,9 +52,11 @@ enum class EMaterialParamType
 
 struct FMaterialParamValue
 {
-	FMaterialParamValue() : Type(EMaterialParamType::Scalar), Value(0.0f) {}
+	FMaterialParamValue() : Type(EMaterialParamType::Float), Value(0.0f) {}
 	FMaterialParamValue(bool InBool) : Type(EMaterialParamType::Bool), Value(InBool) {}
-	FMaterialParamValue(float InScalar) : Type(EMaterialParamType::Scalar), Value(InScalar) {}
+	FMaterialParamValue(int32 InInt) : Type(EMaterialParamType::Int), Value(InInt) {}
+	FMaterialParamValue(uint32 InUInt) : Type(EMaterialParamType::UInt), Value(InUInt) {}
+	FMaterialParamValue(float InScalar) : Type(EMaterialParamType::Float), Value(InScalar) {}
 	FMaterialParamValue(const FVector2& InVector2) : Type(EMaterialParamType::Vector2), Value(InVector2) {}
 	FMaterialParamValue(const FVector& InVector3) : Type(EMaterialParamType::Vector3), Value(InVector3) {}
 	FMaterialParamValue(const FVector4& InVector4) : Type(EMaterialParamType::Vector4), Value(InVector4) {}
@@ -60,7 +64,7 @@ struct FMaterialParamValue
 	FMaterialParamValue(UTexture* InTexture) : Type(EMaterialParamType::Texture), Value(InTexture) {}
 
 	EMaterialParamType Type;
-	std::variant<bool, float, FVector2, FVector, FVector4, FMatrix, UTexture*> Value;
+	std::variant<bool, int32, uint32, float, FVector2, FVector, FVector4, FMatrix, UTexture*> Value;
 };
 
 class UMaterialInterface : public UObject
@@ -108,10 +112,24 @@ public:
 		ParamValue.Value = Value;
 		SetParam(Name, ParamValue);
 	}
-	void SetScalar(const FString& Name, float Value)
+	void SetInt(const FString& Name, int32 Value)
 	{
 		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Scalar;
+		ParamValue.Type = EMaterialParamType::Int;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetUInt(const FString& Name, uint32 Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::UInt;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetFloat(const FString& Name, float Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Float;
 		ParamValue.Value = Value;
 		SetParam(Name, ParamValue);
 	}
@@ -187,20 +205,4 @@ public:
 	}
 
 	void Bind(ID3D11DeviceContext* Context) const override;
-};
-
-/**
- * @brief Obj전용 .mtl 파일 파서
- */
-class FObjMtlLoader
-{
-public:
-    /**
-     * @brief MTL 파일을 파싱하여 머테리얼 맵을 채웁니다.
-     * @param FilePath
-     * @param OutMaterials 
-     * @return 파일 열기 성공 여부 
-     */
-    static bool Load(const FString& FilePath, TMap<FString, FMaterial>& OutMaterials);
-	static bool Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device);
 };

@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Object/FName.h"
 #include "Render/Common/ComPtr.h"
+#include "Render/Resource/Texture.h"
 #include <d3d11.h>
 
 struct FTextureResource
@@ -10,9 +11,9 @@ struct FTextureResource
 	FName	Name;
 	FString Path;
 
-	TComPtr<ID3D11ShaderResourceView> SRV;
+	UTexture* Texture;
 
-	bool IsLoaded() const { return SRV != nullptr;  }
+	bool IsLoaded() const { return Texture != nullptr && Texture->GetSRV() != nullptr;  }
 };
 
 
@@ -24,12 +25,12 @@ struct FTextureAtlasResource
 	FName   Name;
 	FString Path;							// Asset 상대 경로 (Resource.ini에서 로드)
 
-	TComPtr<ID3D11ShaderResourceView> SRV; // GPU에 로드된 텍스처 SRV
+	UTexture* Texture = nullptr;
 
 	uint32 Columns = 1;						// 아틀라스 가로 프레임(셀) 수
 	uint32 Rows    = 1;						// 아틀라스 세로 프레임(셀) 수
 
-	bool IsLoaded() const { return SRV != nullptr; }
+	bool IsLoaded() const { return Texture != nullptr && Texture->GetSRV() != nullptr; }
 };
 
 //	StaticMesh 리소스 정보 구조체 (ResourceManager에서 관리, ObjLoader로 전달)

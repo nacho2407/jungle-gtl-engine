@@ -1,20 +1,22 @@
 #include "Common.hlsl"
 
-cbuffer StaticMeshBuffer : register(b6)
+cbuffer StaticMeshBuffer : register(b2)
 {
     float3 AmbientColor;    // Ka
-    float3 DiffuseColor;    // Kd
-    float3 SpecularColor;   // Ks
-    float  Shininess;       // Ns
-    // Camera
-    float3 CameraWorldPos;
-    // ScrollUV
-    float2 ScrollUV;
-    float  Padding6_1;
+    float padding0;
     
+    float3 DiffuseColor;    // Kd
+    float padding1;
+    
+    float3 SpecularColor;   // Ks
+    float Shininess; // Ns    
+    
+    float2 ScrollUV;
     uint   bHasDiffuseMap;
     uint   bHasSpecularMap;
+    
     float3 EmissiveColor;    // emissive glow color; non-zero means emissive
+    float padding2;
 };
 
 Texture2D DiffuseMap  : register(t0);

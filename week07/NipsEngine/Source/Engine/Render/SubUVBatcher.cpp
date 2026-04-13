@@ -19,17 +19,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
     sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
 
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-
-	SubUVMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("SubUVMaterial");
-	UMaterial* SubUVMat = Cast<UMaterial>(SubUVMaterial);
-	SubUVMat->Name = "SubUVMaterial";
-	SubUVMat->Shader = FResourceManager::Get().GetShader("Shaders/ShaderSubUV.hlsl");
-	SubUVMat->MaterialData.Name = "SubUVMaterial";
+	SubUVMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("SubUVMaterial", "Shaders/ShaderSubUV.hlsl");
 }
 
 void FSubUVBatcher::CreateBuffers()
@@ -62,7 +52,7 @@ void FSubUVBatcher::Release()
 	Device.Reset();
 }
 
-void FSubUVBatcher::AddSprite(ID3D11ShaderResourceView* SRV, 
+void FSubUVBatcher::AddSprite(UTexture* Texture, 
 							  const FVector& WorldPos,
                               const FVector& CamRight,
                               const FVector& CamUp,
@@ -74,10 +64,10 @@ void FSubUVBatcher::AddSprite(ID3D11ShaderResourceView* SRV,
                               float Height)
 {
 	// Batch�� ����ְų� SRV�� 
-	if (Batches.empty() || Batches.back().SRV != SRV)
+	if (Batches.empty() || Batches.back().Texture != Texture)
 	{
 		FSRVBatch batch;
-		batch.SRV = SRV;
+		batch.Texture = Texture;
 		batch.IndexStart = static_cast<uint32>(Indices.size());
 		batch.IndexCount = 0;
 		batch.BaseVertex = static_cast<int32>(Vertices.size());
@@ -117,7 +107,6 @@ void FSubUVBatcher::Clear()
 
 void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 {
-    //if (!SRV) return;
     if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
 
     if (Vertices.size() > MaxVertexCount || Indices.size() > MaxIndexCount)
@@ -132,12 +121,9 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
     memcpy(mapped.pData, Vertices.data(), sizeof(FTextureVertex) * Vertices.size());
     Context->Unmap(VertexBuffer.Get(), 0);
 
-
     if (FAILED(Context->Map(IndexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return;
     memcpy(mapped.pData, Indices.data(), sizeof(uint32) * Indices.size());
     Context->Unmap(IndexBuffer.Get(), 0);
-
-    SubUVMaterial->Bind(Context);
 
     uint32 stride = sizeof(FTextureVertex), offset = 0;
 	ID3D11Buffer* VertexBufferPtr = VertexBuffer.Get();
@@ -148,14 +134,16 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
 	Context->PSSetSamplers(0, 1, Samplers);
 
+	UMaterial* Mat = Cast<UMaterial>(SubUVMaterial);
+
     // Context->PSSetShaderResources(0, 1, &SRV);
 	for (const FSRVBatch& Batch : Batches)
 	{
-		if (!Batch.SRV || Batch.IndexCount == 0) continue;
+		if (!Batch.Texture || Batch.IndexCount == 0) continue;
 
-		Context->PSSetShaderResources(0, 1, &Batch.SRV);
+		Mat->SetTexture("SubUVAtlas", Batch.Texture);
+		SubUVMaterial->Bind(Context);
 
-	
 		Context->DrawIndexed(
 			Batch.IndexCount,
 			Batch.IndexStart,

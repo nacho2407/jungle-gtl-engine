@@ -1,6 +1,6 @@
 #include "Common.hlsl"
 
-cbuffer DecalBuffer : register(b8)
+cbuffer DecalBuffer : register(b2)
 {
     row_major matrix InvDecalWorld;
     float4 DecalColorTint;

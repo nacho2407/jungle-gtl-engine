@@ -19,8 +19,10 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
+	// TODO: JSON 형태로 데이터 저장/로드해야 할듯
 	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
 	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
 	FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 	FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 	FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
@@ -31,13 +33,13 @@ void FRenderer::Create(HWND hWindow)
 	FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
 	FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
 	FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
 	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
 	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
-	Resources.StaticMeshConstantBuffer.Create(Device.GetDevice(), sizeof(FStaticMeshConstants));
 	Resources.DecalConstantBuffer.Create(Device.GetDevice(), sizeof(FDecalConstants));
     Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogConstants));
     Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
@@ -79,7 +81,6 @@ void FRenderer::Release()
 	Resources.GizmoPerObjectConstantBuffer.Release();
 	Resources.EditorConstantBuffer.Release();
 	Resources.OutlineConstantBuffer.Release();
-	Resources.StaticMeshConstantBuffer.Release();
     Resources.FogPassConstantBuffer.Release();
 	Resources.DecalConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
@@ -347,19 +348,19 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
 		/*.Clear   =*/ [this]() {
 			SubUVBatcher.Clear();
-			SubUVCachedSRV = nullptr;
+			SubUVCachedTexture = nullptr;
 		},
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
 			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Constants.SubUV.Particle)
 			{
 				const auto& SubUV = Cmd.Constants.SubUV;
-				if (!SubUVCachedSRV && SubUV.Particle->IsLoaded())
+				if (!SubUVCachedTexture && SubUV.Particle->IsLoaded())
 				{
-					SubUVCachedSRV = SubUV.Particle->SRV.Get();
+					SubUVCachedTexture = SubUV.Particle->Texture;
 				}
 
 				SubUVBatcher.AddSprite(
-					SubUV.Particle->SRV.Get(),
+					SubUV.Particle->Texture,
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
@@ -372,10 +373,10 @@ void FRenderer::InitializePassBatchers()
 				);
 			}
 			// 기존 SubUV 분기 아래에
-			else if (Cmd.Type == ERenderCommandType::Billboard && Cmd.Constants.Billboard.SRV)
+			else if (Cmd.Type == ERenderCommandType::Billboard && Cmd.Constants.Billboard.Texture)
 			{
 				SubUVBatcher.AddSprite(
-					Cmd.Constants.Billboard.SRV,
+					Cmd.Constants.Billboard.Texture,
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
@@ -717,17 +718,10 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
     switch (InCmd.Type)
     {
     case ERenderCommandType::Gizmo:
-        Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));
-        
         if (bTypeChanged)
         {
-			UShader* GizmoShader = FResourceManager::Get().GetShader("Shaders/Gizmo.hlsl");
-            GizmoShader->Bind(Context);
             ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
             Context->VSSetConstantBuffers(1, 1, &cb1);
-            ID3D11Buffer* cb2 = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
-            Context->VSSetConstantBuffers(2, 1, &cb2);
-            Context->PSSetConstantBuffers(2, 1, &cb2);
         }
         break;
 
@@ -736,50 +730,27 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
 	case ERenderCommandType::PostProcessOutline:
 	{
-		FOutlineConstants outlineConstants = InCmd.Constants.Outline;
-		outlineConstants.ViewportSize = FVector2(CurrentRenderTargets.Width, CurrentRenderTargets.Height);
+		UMaterial* OutlineMaterial = Cast<UMaterial>(InCmd.Material);
+		OutlineMaterial->SetVector2("OutlineViewportSize", FVector2(CurrentRenderTargets.Width, CurrentRenderTargets.Height));
 
-		UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
-		OutlineShader->Bind(Context);
-		Resources.OutlineConstantBuffer.Update(Context, &outlineConstants, sizeof(FOutlineConstants));
-		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(5, 1, &cb);
-		Context->PSSetConstantBuffers(5, 1, &cb);
+		InCmd.Material->Bind(Context);
+
 		break;
 	}
 
     case ERenderCommandType::StaticMesh:
 	{
-        Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
-        
         if (bTypeChanged)
-        {
-			UShader* StaticMeshShader = FResourceManager::Get().GetShader("Shaders/ShaderStaticMesh.hlsl");
-            StaticMeshShader->Bind(Context);
-            
+        {            
             ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
             Context->VSSetConstantBuffers(1, 1, &cb1);
             Context->PSSetConstantBuffers(1, 1, &cb1);
-
-            ID3D11Buffer* cb6 = Resources.StaticMeshConstantBuffer.GetBuffer();
-            Context->VSSetConstantBuffers(6, 1, &cb6);
-            Context->PSSetConstantBuffers(6, 1, &cb6);
 
             // 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
             ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
             Context->PSSetSamplers(0, 1, Samplers);
         }
 
-        // [주의] 텍스처(SRV)는 타입이 같아도 메시의 머티리얼마다 변경될 수 있으므로 분기문 밖에서 매번 바인딩합니다.
-        {
-            ID3D11ShaderResourceView* SRVs[4] = {
-                InCmd.Constants.StaticMesh.DiffuseSRV,
-                InCmd.Constants.StaticMesh.AmbientSRV,
-                InCmd.Constants.StaticMesh.SpecularSRV,
-                InCmd.Constants.StaticMesh.BumpSRV
-            };
-            Context->PSSetShaderResources(0, 4, SRVs);
-        }
         break;
     }
     case ERenderCommandType::Light:
@@ -794,25 +765,15 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 	}
 	case ERenderCommandType::Decal:
 	{
-		Resources.DecalConstantBuffer.Update(Context, &InCmd.Constants.Decal, sizeof(FDecalConstants));
-
 		if (bTypeChanged)
 		{
 			ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
 			Context->VSSetConstantBuffers(1, 1, &cb1);
 			Context->PSSetConstantBuffers(1, 1, &cb1);
 
-			ID3D11Buffer* cb8 = Resources.DecalConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(8, 1, &cb8);
-			Context->PSSetConstantBuffers(8, 1, &cb8);
-
-			// 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
 			ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
 			Context->PSSetSamplers(0, 1, Samplers);
 		}
-
-		ID3D11ShaderResourceView* SRVs[1] = { InCmd.Constants.Decal.DiffuseSRV };
-		Context->PSSetShaderResources(0, 1, SRVs);
 		break;
 	}
 	}
@@ -891,6 +852,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	FFrameConstants frameConstantData;
 	frameConstantData.View = InRenderBus.GetView();
 	frameConstantData.Projection = InRenderBus.GetProj();
+	frameConstantData.CameraPosition = InRenderBus.GetCameraPosition();
 	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
 
