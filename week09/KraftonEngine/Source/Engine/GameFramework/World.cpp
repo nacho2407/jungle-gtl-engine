@@ -222,7 +222,7 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 	}
 
 #if _DEBUG
-	DebugDrawQueue.Tick(DeltaTime);
+	Scene.GetDebugDrawQueue().Tick(DeltaTime);
 #endif
 
 	TickManager.Tick(this, DeltaTime, TickType);
