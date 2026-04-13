@@ -40,11 +40,11 @@ public:
 	void InitDefaultComponents();
 };
 
-class AEmptyActor : public AActor
+class ASceneActor : public AActor
 {
 public:
-	DECLARE_CLASS(AEmptyActor, AActor)
-	AEmptyActor() = default;
+	DECLARE_CLASS(ASceneActor, AActor)
+	ASceneActor() = default;
 
 	void InitDefaultComponents();
 };
