@@ -29,7 +29,16 @@ struct FStateCache
 	int32    LastUVScroll    = -1;
 	FVector4 LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f };
 
+	// DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩)
+	bool bReadOnlyDSV = false;
+	ID3D11RenderTargetView*  RTV         = nullptr;
+	ID3D11DepthStencilView*  DSV         = nullptr;
+	ID3D11DepthStencilView*  DSVReadOnly = nullptr;
+
 	void Reset();
+
+	// 프레임 끝 정리 — DSV 복원 + SRV 언바인딩
+	void Cleanup(ID3D11DeviceContext* Ctx);
 };
 
 /*
@@ -56,6 +65,10 @@ public:
 	// 범위 제출 — [StartIdx, EndIdx) 구간의 커맨드만 제출
 	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
 		ID3D11DeviceContext* Ctx, ID3D11SamplerState* DefaultSampler = nullptr);
+
+	// 외부 FStateCache 공유 — 패스 간 상태 유지 (DSV Read-Only 전환 등)
+	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
+		ID3D11DeviceContext* Ctx, FStateCache& Cache, ID3D11SamplerState* DefaultSampler = nullptr);
 
 	// 프레임 끝 초기화
 	void Reset();
