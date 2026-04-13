@@ -118,6 +118,13 @@ bool FViewport::CreateResources()
 	hr = Device->CreateDepthStencilView(DepthTexture, &DSVDesc, &DSV);
 	if (FAILED(hr)) return false;
 
+	// DSVReadOnly: SRV와 동시 바인딩 가능 (PostProcess에서 depth/stencil 읽기용)
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVRODesc = DSVDesc;
+	DSVRODesc.Flags = D3D11_DSV_READ_ONLY_DEPTH | D3D11_DSV_READ_ONLY_STENCIL;
+
+	hr = Device->CreateDepthStencilView(DepthTexture, &DSVRODesc, &DSVReadOnly);
+	if (FAILED(hr)) return false;
+
 	// DepthSRV: 뎁스 24비트 읽기 (Hi-Z / GPU Occlusion용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSRVDesc = {};
 	DepthSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
@@ -153,6 +160,7 @@ void FViewport::ReleaseResources()
 {
 	if (StencilSRV) { StencilSRV->Release(); StencilSRV = nullptr; }
 	if (DepthSRV) { DepthSRV->Release(); DepthSRV = nullptr; }
+	if (DSVReadOnly) { DSVReadOnly->Release(); DSVReadOnly = nullptr; }
 	if (DSV) { DSV->Release(); DSV = nullptr; }
 	if (DepthTexture) { DepthTexture->Release(); DepthTexture = nullptr; }
 	if (SRV) { SRV->Release(); SRV = nullptr; }

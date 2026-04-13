@@ -22,6 +22,9 @@ public:
 	// 경로로 텍스처를 로드 (캐시 히트 시 기존 객체 반환)
 	static UTexture2D* LoadFromFile(const FString& FilePath, ID3D11Device* Device);
 
+	// 캐시된 모든 텍스처의 GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
+	static void ReleaseAllGPU();
+
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
 	const FString& GetSourcePath() const { return SourceFilePath; }
 	uint32 GetWidth() const { return Width; }

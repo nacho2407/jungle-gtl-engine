@@ -34,6 +34,13 @@ namespace
 
 IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 
+UPrimitiveComponent::~UPrimitiveComponent()
+{
+	// 프록시가 아직 남아 있으면 Owner 역참조를 방지
+	if (SceneProxy)
+		SceneProxy->Owner = nullptr;
+}
+
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 {
 	if (!SceneProxy || !Owner || !Owner->GetWorld()) return;
@@ -56,8 +63,8 @@ void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 
 // ============================================================
 // MarkRenderTransformDirty / MarkRenderVisibilityDirty
-//   프록시 dirty + Octree(액터 단위 dirty) + PickingBVH dirty + VisibleSet 무효화
-//   호출자가 외워야 했던 4-step 시퀀스를 단일 진입점으로 통합.
+//   프록시 dirty + Octree(액터 단위 dirty) + PickingBVH dirty
+//   호출자가 외워야 했던 시퀀스를 단일 진입점으로 통합.
 // ============================================================
 void UPrimitiveComponent::MarkRenderTransformDirty()
 {
@@ -70,7 +77,6 @@ void UPrimitiveComponent::MarkRenderTransformDirty()
 
 	World->UpdateActorInOctree(OwnerActor);
 	World->MarkWorldPrimitivePickingBVHDirty();
-	World->InvalidateVisibleSet();
 }
 
 void UPrimitiveComponent::MarkRenderVisibilityDirty()
@@ -85,7 +91,6 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
 	// 가시성 변화는 Octree 포함 여부도 좌우하므로 액터 dirty로 반영한다.
 	World->UpdateActorInOctree(OwnerActor);
 	World->MarkWorldPrimitivePickingBVHDirty();
-	World->InvalidateVisibleSet();
 }
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

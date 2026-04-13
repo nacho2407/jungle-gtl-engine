@@ -205,8 +205,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	}
 
 	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
-	//    UWorld::UpdateVisibleProxies가 ActiveCamera를 기준으로 frustum culling을 수행하므로
-	//    이를 설정하지 않으면 PIE 월드의 VisibleProxies가 비어 있어 아무것도 렌더되지 않음.
+	//    LOD 갱신 등에서 ActiveCamera를 참조하므로 설정 필요.
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
 		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
@@ -253,7 +252,6 @@ void UEditorEngine::EndPlayMap()
 	// 렌더된다. 모든 Editor 프록시를 PerObjectCB dirty로 마킹해 재업로드 강제.
 	if (UWorld* EditorWorld = GetWorld())
 	{
-		EditorWorld->InvalidateVisibleSet();
 		EditorWorld->GetScene().MarkAllPerObjectCBDirty();
 
 		// ActiveCamera는 PIE 시작 시 PIE 월드로 옮겨졌고 PIE 월드와 함께 파괴됐다.

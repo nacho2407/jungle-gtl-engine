@@ -156,8 +156,29 @@ void FD3DDevice::ReleaseDeviceAndSwapChain()
 	}
 
 	SAFE_RELEASE(SwapChain);
-	SAFE_RELEASE(Device);
 	SAFE_RELEASE(DeviceContext);
+
+#ifdef _DEBUG
+	// 릭 진단: Device 해제 직전 남아있는 D3D 객체 리포트
+	if (Device)
+	{
+		ID3D11Debug* Debug = nullptr;
+		if (SUCCEEDED(Device->QueryInterface(__uuidof(ID3D11Debug), (void**)&Debug)))
+		{
+			OutputDebugStringA("=== ReportLiveDeviceObjects BEGIN ===\n");
+			Debug->ReportLiveDeviceObjects(
+				static_cast<D3D11_RLDO_FLAGS>(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL));
+			OutputDebugStringA("=== ReportLiveDeviceObjects END ===\n");
+			Debug->Release();
+		}
+		else
+		{
+			OutputDebugStringA("=== ID3D11Debug QueryInterface FAILED ===\n");
+		}
+	}
+#endif
+
+	SAFE_RELEASE(Device);
 }
 
 void FD3DDevice::CreateFrameBuffer()

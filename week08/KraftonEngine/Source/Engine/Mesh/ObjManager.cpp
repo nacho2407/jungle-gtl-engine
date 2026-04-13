@@ -448,3 +448,29 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 	MaterialCache[FileNameOnly] = NewMaterial;
 	return NewMaterial;
 }
+
+void FObjManager::ReleaseAllGPU()
+{
+	for (auto& [Key, Mesh] : StaticMeshCache)
+	{
+		if (Mesh)
+		{
+			FStaticMesh* Asset = Mesh->GetStaticMeshAsset();
+			if (Asset && Asset->RenderBuffer)
+			{
+				Asset->RenderBuffer->Release();
+				Asset->RenderBuffer.reset();
+			}
+			// LOD 버퍼도 해제
+			for (uint32 LOD = 1; LOD < UStaticMesh::MAX_LOD_COUNT; ++LOD)
+			{
+				FMeshBuffer* LODBuffer = Mesh->GetLODMeshBuffer(LOD);
+				if (LODBuffer)
+				{
+					LODBuffer->Release();
+				}
+			}
+		}
+	}
+	StaticMeshCache.clear();
+}

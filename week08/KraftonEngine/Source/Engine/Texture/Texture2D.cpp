@@ -33,6 +33,24 @@ UTexture2D::~UTexture2D()
 	}
 }
 
+void UTexture2D::ReleaseAllGPU()
+{
+	for (auto& [Path, Texture] : TextureCache)
+	{
+		if (Texture && Texture->SRV)
+		{
+			if (Texture->TrackedTextureMemory > 0)
+			{
+				MemoryStats::SubTextureMemory(Texture->TrackedTextureMemory);
+				Texture->TrackedTextureMemory = 0;
+			}
+			Texture->SRV->Release();
+			Texture->SRV = nullptr;
+		}
+	}
+	TextureCache.clear();
+}
+
 UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Device)
 {
 	if (FilePath.empty() || !Device) return nullptr;
