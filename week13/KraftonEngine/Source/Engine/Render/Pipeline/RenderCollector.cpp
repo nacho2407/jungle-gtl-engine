@@ -5,59 +5,72 @@
 #include "Editor/EditorEngine.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
+#include "Render/Culling/ConvexVolume.h"
 #include "Render/Pipeline/LODContext.h"
+#include "Render/Pipeline/Renderer.h"
 #include "Profiling/Stats.h"
 #include <Collision/Octree.h>
+#include <Collision/SpatialPartition.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
+void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
 {
 	if (!World) return;
 
-	// Dirty 프록시 갱신 후 visible 리스트만 순회
-	World->GetScene().UpdateDirtyProxies();
-	CollectVisibleProxies(World->GetVisibleProxies(), RenderBus);
+	FScene& Scene = World->GetScene();
+
+	// Dirty 프록시 갱신 (프레임당 1회 — 멀티 뷰포트 시 첫 호출만 실제 동작)
+	Scene.UpdateDirtyProxies();
+
+	// Per-viewport frustum culling — Octree 쿼리로 로컬 visible 리스트 생성
+	LastVisibleProxies.clear();
+	{
+		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
+		const uint32 ExpectedCount = Scene.GetProxyCount()
+			+ static_cast<uint32>(Scene.GetNeverCullProxies().size());
+		if (LastVisibleProxies.capacity() < ExpectedCount)
+			LastVisibleProxies.reserve(ExpectedCount);
+
+		// NeverCull 프록시 (Gizmo 등) — frustum과 무관하게 항상 수집
+		// Octree 쿼리에서 bNeverCull은 제외되므로 중복 없이 먼저 추가
+		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
+		{
+			if (Proxy)
+				LastVisibleProxies.push_back(Proxy);
+		}
+
+		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
+	}
+
+	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 }
 
-void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus)
+void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
 {
-	FGridEntry Entry = {};
-	Entry.Grid.GridSpacing = GridSpacing;
-	Entry.Grid.GridHalfLineCount = GridHalfLineCount;
-	RenderBus.AddGridEntry(std::move(Entry));
+	Scene.SetGrid(GridSpacing, GridHalfLineCount);
 }
 
-void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FRenderBus& RenderBus)
+void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
 {
 	TArray<FOverlayStatLine> Lines;
 	OverlaySystem.BuildLines(Editor, Lines);
 	const float TextScale = OverlaySystem.GetLayout().TextScale;
 
-	for (const FOverlayStatLine& Line : Lines)
+	for (FOverlayStatLine& Line : Lines)
 	{
-		FFontEntry Entry = {};
-		Entry.Font.Text = Line.Text;
-		Entry.Font.Font = nullptr;
-		Entry.Font.Scale = TextScale;
-		Entry.Font.bScreenSpace = 1;
-		Entry.Font.ScreenPosition = Line.ScreenPosition;
-
-		RenderBus.AddOverlayFontEntry(std::move(Entry));
+		Scene.AddOverlayText(std::move(Line.Text), Line.ScreenPosition, TextScale);
 	}
 }
 
-void FRenderCollector::CollectDebugDraw(const FDebugDrawQueue& Queue, FRenderBus& RenderBus)
+void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
 {
-	if (!RenderBus.GetShowFlags().bDebugDraw) return;
+	if (!Frame.ShowFlags.bDebugDraw) return;
 
-	for (const FDebugDrawItem& Item : Queue.GetItems())
+	for (const FDebugDrawItem& Item : Scene.GetDebugDrawQueue().GetItems())
 	{
-		FDebugLineEntry Entry;
-		Entry.Start = Item.Start;
-		Entry.End = Item.End;
-		Entry.Color = Item.Color;
-		RenderBus.AddDebugLineEntry(std::move(Entry));
+		Scene.AddDebugLine(Item.Start, Item.End, Item.Color);
 	}
 }
 
@@ -73,7 +86,7 @@ static const FColor OctreeDepthColors[] = {
 	FColor(0,   0, 255),	// 5: Blue
 };
 
-void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& RenderBus, uint32 Depth)
+void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
 {
 	if (!Node) return;
 
@@ -105,34 +118,29 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FRenderBus& Rende
 
 	for (const auto& E : Edges)
 	{
-		FDebugLineEntry Entry;
-		Entry.Start = V[E[0]];
-		Entry.End = V[E[1]];
-		Entry.Color = Color;
-		RenderBus.AddDebugLineEntry(std::move(Entry));
+		Scene.AddDebugLine(V[E[0]], V[E[1]], Color);
 	}
 
 	// 자식 노드 재귀
 	for (const FOctree* Child : Node->GetChildren())
 	{
-		CollectOctreeDebug(Child, RenderBus, Depth + 1);
+		CollectOctreeDebug(Child, Scene, Depth + 1);
 	}
 }
 
-
 // ============================================================
-// Visible 프록시 수집 — UpdateVisibleProxies에서 구축한 dense 리스트만 순회
+// Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus)
+void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
-	if (!RenderBus.GetShowFlags().bPrimitives) return;
+	if (!Frame.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = RenderBus.GetShowFlags().bBoundingVolume;
+	const bool bShowBoundingVolume = Frame.ShowFlags.bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
-	const FGPUOcclusionCulling* Occlusion = RenderBus.GetOcclusionCulling();
-	FGPUOcclusionCulling* OcclusionMut = RenderBus.GetOcclusionCullingMutable();
-	const FLODUpdateContext& LODCtx = RenderBus.GetLODContext();
+	const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
+	FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
+	const FLODUpdateContext& LODCtx = Frame.LODContext;
 
 	// GatherAABB 병합: Collect 순회에서 동시에 AABB 수집 (별도 GatherLoop 제거)
 	if (OcclusionMut && OcclusionMut->IsInitialized())
@@ -158,7 +166,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
-			Proxy->UpdatePerViewport(RenderBus);
+			Proxy->UpdatePerViewport(Frame);
 
 		if (!Proxy->bVisible) continue;
 
@@ -170,30 +178,38 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
 			continue;
 
-		// Batcher 경유 렌더링 (Font, SubUV)
-		if (Proxy->bBatcherRendered)
-			Proxy->CollectEntries(RenderBus);
+		// Font 프록시는 동적 VB 배칭 경로 (개별 FDrawCommand가 아닌 FontGeometry)
+		if (Proxy->bFontBatched)
+		{
+			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
+			if (!TextProxy->CachedText.empty())
+				Renderer.AddWorldText(TextProxy, Frame);
+		}
 		else
-			RenderBus.AddProxy(Proxy->Pass, Proxy);
+		{
+			// Proxy → FDrawCommand 직접 변환
+			Renderer.BuildCommandForProxy(*Proxy, Proxy->Pass);
+		}
 
-		// 선택된 오브젝트
+		// 선택된 오브젝트 — 아웃라인 + AABB + 컴포넌트 디버그 시각화
 		if (Proxy->bSelected)
 		{
 			if (Proxy->bSupportsOutline)
-				RenderBus.AddProxy(ERenderPass::SelectionMask, Proxy);
+				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
 
 			if (bShowBoundingVolume && Proxy->bShowAABB)
 			{
-				FAABBEntry Entry = {};
-				Entry.AABB.Min = Proxy->CachedBounds.Min;
-				Entry.AABB.Max = Proxy->CachedBounds.Max;
-				Entry.AABB.Color = FColor::White();
-				RenderBus.AddAABBEntry(std::move(Entry));
+				Scene.AddDebugAABB(
+					Proxy->CachedBounds.Min,
+					Proxy->CachedBounds.Max,
+					FColor::White());
 			}
+
+			//TODO: Owner 의존성 제거
+			Proxy->CollectSelectedVisuals(Scene);
 		}
 	}
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
 		OcclusionMut->EndGatherAABB();
 }
-

@@ -6,34 +6,25 @@
 
 #include "Render/Types/RenderTypes.h"
 
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
+#include "Render/Pipeline/DrawCommandList.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Batcher/LineBatcher.h"
-#include "Render/Batcher/FontBatcher.h"
-#include "Render/Batcher/SubUVBatcher.h"
-#include "Render/Batcher/BillboardBatcher.h"
+#include "Render/Helper/LineGeometry.h"
+#include "Render/Helper/FontGeometry.h"
 
-#include <functional>
-
-// 패스별 Batcher DrawBatch 바인딩
-struct FPassBatcherBinding
-{
-	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> DrawBatch;
-	std::function<bool()> IsEmpty;		// true면 이 패스 skip (렌더 상태 적용도 생략)
-
-	explicit operator bool() const { return DrawBatch != nullptr; }
-};
+class FTextRenderSceneProxy;
+class FScene;
 
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
 {
-	EDepthStencilState       DepthStencil   = EDepthStencilState::Default;
-	EBlendState              Blend          = EBlendState::Opaque;
-	ERasterizerState         Rasterizer     = ERasterizerState::SolidBackCull;
-	D3D11_PRIMITIVE_TOPOLOGY Topology       = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	EDepthStencilState       DepthStencil = EDepthStencilState::Default;
+	EBlendState              Blend = EBlendState::Opaque;
+	ERasterizerState         Rasterizer = ERasterizerState::SolidBackCull;
+	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
 };
 
@@ -43,73 +34,62 @@ public:
 	void Create(HWND hWindow);
 	void Release();
 
-	void PrepareBatchers(const FRenderBus& InRenderBus);
+	// --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
+	// MaxProxyCount: Scene의 프록시 수. PerObjectCBPool을 미리 할당하여
+	// Collect 도중 resize로 인한 포인터 무효화를 방지.
+	void BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount = 0);
+
+	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
+	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
+
+	// Collector가 직접 호출 — Font proxy → FontGeometry 배칭
+	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
+
+	// Collect 마무리: FScene 경량 데이터(DebugLine, Grid, OverlayText) →
+	// 동적 지오메트리 → FDrawCommand 변환. Pipeline의 Collect 블록 끝에서 호출.
+	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
+
+	// --- Render phase: 정렬 + GPU 제출 ---
 	void BeginFrame();
-	void Render(const FRenderBus& InRenderBus);
+	void Render(const FFrameContext& Frame);
 	void EndFrame();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
+	const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
+
+
 private:
 	void InitializePassRenderStates();
-	void InitializePassBatchers();
 
-	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
-	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
+	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 
-	// 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회, 필드 직접 접근
-	void ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context);
+	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼
+	void PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene);
 
-	// ExecutePass 내부 헬퍼
-	struct FDrawState
-	{
-		FShader*     LastShader     = nullptr;
-		FMeshBuffer* LastMeshBuffer = nullptr;
-		ID3D11ShaderResourceView* LastSRV = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
-		ID3D11Buffer* LastPerObjectCB = nullptr;
-		int32        LastUVScroll   = -1;
-		FVector4     LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f }; // 초기값: 불일치 보장
+	// 동적 지오메트리 + PostProcess → FDrawCommand (VB 업로드 + 커맨드 생성)
+	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx, const FScene* Scene);
 
-		bool         bSamplerBound  = false;
-		bool         bMaterialBound  = false;
-
-		bool HasBoundSRV() const { return LastSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull); }
-	};
-
-	void SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies);
-	void BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
 	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
-	bool BindPerObjectCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void BindExtraCB(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx);
-	bool BindMeshBuffer(FMeshBuffer* Buffer, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
-	void CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State);
-
-	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
-	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
-
-	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
-	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 private:
 	FD3DDevice Device;
 	FRenderResources Resources;
-	FLineBatcher   EditorLineBatcher;
-	FLineBatcher   GridLineBatcher;
-	FFontBatcher   FontBatcher;
-	FSubUVBatcher  SubUVBatcher;
-	FBillboardBatcher BillboardBatcher;
+	FLineGeometry  EditorLines;
+	FLineGeometry  GridLines;
+	FFontGeometry  FontGeometry;
 
-	// 정렬용 멤버 버퍼 (재할당 방지)
-	TArray<const FPrimitiveSceneProxy*> SortedProxyBuffer;
-	TArray<FSubUVEntry> SortedSubUVBuffer;
-	TArray<FBillboardEntry> SortedBillboardBuffer;
+	// FDrawCommand 기반 렌더링
+	FDrawCommandList DrawCommandList;
+
 	TArray<FConstantBuffer> PerObjectCBPool;
 
-	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
-	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
+	FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];
+
+	// BeginCollect에서 저장, BuildCommandForProxy에서 사용
+	EViewMode CollectViewMode = EViewMode::Lit;
+	bool bHasSelectionMaskCommands = false;
 };

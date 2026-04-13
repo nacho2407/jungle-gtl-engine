@@ -11,11 +11,14 @@ enum class EShaderType : uint32
 	Gizmo,
 	Editor,
 	StaticMesh,
+	Decal,
 	OutlinePostProcess,
 	Font,
 	OverlayFont,
 	SubUV,
 	Billboard,
+	HeightFog,
+	SceneDepth,
 	MAX,
 };
 

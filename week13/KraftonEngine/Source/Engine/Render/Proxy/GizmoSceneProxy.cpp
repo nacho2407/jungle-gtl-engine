@@ -1,8 +1,8 @@
-#include "Render/Proxy/GizmoSceneProxy.h"
+﻿#include "Render/Proxy/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 
 // ============================================================
 // FGizmoSceneProxy
@@ -29,17 +29,17 @@ void FGizmoSceneProxy::UpdateMesh()
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
-	UpdateSortKey();
+
 }
 
 // ============================================================
 // UpdatePerViewport — 매 프레임 뷰포트별 스케일 + ExtraCB 갱신
 // ============================================================
-void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
+void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 
-	if (!Bus.GetShowFlags().bGizmo || !Gizmo->IsVisible())
+	if (!Frame.ShowFlags.bGizmo || !Gizmo->IsVisible())
 	{
 		bVisible = false;
 		return;
@@ -49,12 +49,12 @@ void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	// 모드 변경 시 메시가 바뀌므로 매 프레임 갱신
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
-	UpdateSortKey();
+
 
 	// Per-viewport 스케일 계산
-	const FVector CameraPos = Bus.GetView().GetInverseFast().GetLocation();
+	const FVector CameraPos = Frame.View.GetInverseFast().GetLocation();
 	float PerViewScale = Gizmo->ComputeScreenSpaceScale(
-		CameraPos, Bus.IsOrtho(), Bus.GetOrthoWidth());
+		CameraPos, Frame.bIsOrtho, Frame.OrthoWidth);
 
 	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(FVector(PerViewScale, PerViewScale, PerViewScale))
 		* FMatrix::MakeRotationEuler(Gizmo->GetRelativeRotation().ToVector())
@@ -65,8 +65,8 @@ void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 
 	// ExtraCB — FGizmoConstants
 	auto& G = ExtraCB.Bind<FGizmoConstants>(
-		FConstantBufferPool::Get().GetBuffer(ECBSlot::Gizmo, sizeof(FGizmoConstants)),
-		ECBSlot::Gizmo);
+		FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Gizmo, sizeof(FGizmoConstants)),
+		ECBSlot::PerShader0);
 	G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	G.bIsInnerGizmo = bIsInner ? 1 : 0;
 	G.bClicking = Gizmo->IsHolding() ? 1 : 0;
@@ -74,5 +74,5 @@ void FGizmoSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		? static_cast<uint32>(Gizmo->GetSelectedAxis())
 		: 0xFFFFFFFFu;
 	G.HoveredAxisOpacity = 0.7f;
-	G.AxisMask = Gizmo->GetAxisMask();
+	G.AxisMask = UGizmoComponent::ComputeAxisMask(Frame.ViewportType, Gizmo->GetMode());
 }

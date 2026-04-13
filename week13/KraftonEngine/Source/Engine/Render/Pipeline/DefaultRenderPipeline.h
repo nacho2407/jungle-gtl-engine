@@ -1,7 +1,7 @@
 #pragma once
 #include "IRenderPipeline.h"
 #include "Render/Pipeline/RenderCollector.h"
-#include "Render/Pipeline/RenderBus.h"
+#include "Render/Pipeline/FrameContext.h"
 
 class UEngine;
 
@@ -16,5 +16,5 @@ public:
 private:
 	UEngine* Engine = nullptr;
 	FRenderCollector Collector;
-	FRenderBus Bus;
+	FFrameContext Frame;
 };

@@ -2,28 +2,24 @@
 // Fullscreen Quad VS (SV_VertexID) + Stencil Edge Detection PS
 
 #include "Common/ConstantBuffers.hlsl"
+#include "Common/VertexLayouts.hlsl"
+#include "Common/OutlineBuffer.hlsl"
 
 // StencilSRV: X24_TYPELESS_G8_UINT 포맷 → uint2, 스텐실은 .g 채널
 Texture2D<uint2> StencilTex : register(t0);
 
 // ── VS: Fullscreen Triangle (vertex buffer 없이 SV_VertexID로 생성) ──
-struct PS_Input
-{
-    float4 position : SV_POSITION;
-    float2 uv : TEXCOORD0;
-};
-
-PS_Input VS(uint vertexID : SV_VertexID)
+PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
     // 삼각형 하나로 화면 전체 커버 (0,1,2 → 오버사이즈 삼각형)
-    PS_Input output;
+    PS_Input_UV output;
     output.uv = float2((vertexID << 1) & 2, vertexID & 2);
     output.position = float4(output.uv * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
     return output;
 }
 
 // ── PS: Stencil Edge Detection ──
-float4 PS(PS_Input input) : SV_TARGET
+float4 PS(PS_Input_UV input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
     int offset = max((int) OutlineThickness, 1);

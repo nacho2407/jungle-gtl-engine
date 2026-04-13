@@ -9,7 +9,7 @@ void DrawDebugLine(UWorld* World,
 	const FColor& Color, float Duration)
 {
 	if (!World) return;
-	World->GetDebugDrawQueue().AddLine(Start, End, Color, Duration);
+	World->GetScene().GetDebugDrawQueue().AddLine(Start, End, Color, Duration);
 }
 
 void DrawDebugBox(UWorld* World,
@@ -17,7 +17,7 @@ void DrawDebugBox(UWorld* World,
 	const FColor& Color, float Duration)
 {
 	if (!World) return;
-	World->GetDebugDrawQueue().AddBox(Center, Extent, Color, Duration);
+	World->GetScene().GetDebugDrawQueue().AddBox(Center, Extent, Color, Duration);
 }
 
 void DrawDebugBox(UWorld* World,
@@ -26,7 +26,7 @@ void DrawDebugBox(UWorld* World,
 	const FColor& Color, float Duration)
 {
 	if (!World) return;
-	FDebugDrawQueue& Queue = World->GetDebugDrawQueue();
+	FDebugDrawQueue& Queue = World->GetScene().GetDebugDrawQueue();
 	Queue.AddLine(P0, P1, Color, Duration);
 	Queue.AddLine(P1, P2, Color, Duration);
 	Queue.AddLine(P2, P3, Color, Duration);
@@ -41,7 +41,7 @@ void DrawDebugBox(UWorld* World,
 	const FColor& Color, float Duration)
 {
 	if (!World) return;
-	FDebugDrawQueue& Queue = World->GetDebugDrawQueue();
+	FDebugDrawQueue& Queue = World->GetScene().GetDebugDrawQueue();
 	// 하단면
 	Queue.AddLine(P0, P1, Color, Duration);
 	Queue.AddLine(P1, P2, Color, Duration);
@@ -64,7 +64,7 @@ void DrawDebugSphere(UWorld* World,
 	int32 Segments, const FColor& Color, float Duration)
 {
 	if (!World) return;
-	World->GetDebugDrawQueue().AddSphere(Center, Radius, Segments, Color, Duration);
+	World->GetScene().GetDebugDrawQueue().AddSphere(Center, Radius, Segments, Color, Duration);
 }
 
 void DrawDebugPoint(UWorld* World,
@@ -75,11 +75,11 @@ void DrawDebugPoint(UWorld* World,
 
 	// 점을 3축 십자선으로 표현
 	FVector Half(Size, Size, Size);
-	World->GetDebugDrawQueue().AddLine(
+	World->GetScene().GetDebugDrawQueue().AddLine(
 		Position - FVector(Size, 0, 0), Position + FVector(Size, 0, 0), Color, Duration);
-	World->GetDebugDrawQueue().AddLine(
+	World->GetScene().GetDebugDrawQueue().AddLine(
 		Position - FVector(0, Size, 0), Position + FVector(0, Size, 0), Color, Duration);
-	World->GetDebugDrawQueue().AddLine(
+	World->GetScene().GetDebugDrawQueue().AddLine(
 		Position - FVector(0, 0, Size), Position + FVector(0, 0, Size), Color, Duration);
 }
 

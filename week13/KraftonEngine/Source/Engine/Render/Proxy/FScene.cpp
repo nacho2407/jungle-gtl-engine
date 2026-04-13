@@ -51,7 +51,6 @@ FScene::~FScene()
 	SelectedProxies.clear();
 	NeverCullProxies.clear();
 	FreeSlots.clear();
-	VisibleProxies.clear();
 }
 
 // ============================================================
@@ -130,27 +129,7 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 		if (it != NeverCullProxies.end()) NeverCullProxies.erase(it);
 	}
 
-	// VisibleProxies 캐시에서도 제거 — dangling 포인터 방지
-	if (Proxy->bInVisibleSet && Proxy->VisibleListIndex < VisibleProxies.size())
-	{
-		const uint32 Index = Proxy->VisibleListIndex;
-		const uint32 LastIndex = static_cast<uint32>(VisibleProxies.size() - 1);
-		if (Index != LastIndex)
-		{
-			FPrimitiveSceneProxy* Last = VisibleProxies[LastIndex];
-			VisibleProxies[Index] = Last;
-			if (Last)
-			{
-				Last->VisibleListIndex = Index;
-			}
-		}
-		VisibleProxies.pop_back();
-	}
-	bVisibleSetDirty = true;
-
 	// 슬롯 비우고 재활용 목록에 추가
-	Proxy->bInVisibleSet = false;
-	Proxy->VisibleListIndex = UINT32_MAX;
 	Proxies[Slot] = nullptr;
 	FreeSlots.push_back(Slot);
 
@@ -252,4 +231,58 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
 	return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
+}
+
+// ============================================================
+// Per-frame ephemeral data — 매 뷰포트 렌더 시작 시 Clear
+// ============================================================
+void FScene::ClearFrameData()
+{
+	OverlayTexts.clear();
+	DebugAABBs.clear();
+	DebugLines.clear();
+	Grid = {};
+}
+
+void FScene::AddOverlayText(FString Text, const FVector2& Position, float Scale)
+{
+	OverlayTexts.push_back({ std::move(Text), Position, Scale });
+}
+
+void FScene::AddDebugAABB(const FVector& Min, const FVector& Max, const FColor& Color)
+{
+	DebugAABBs.push_back({ Min, Max, Color });
+}
+
+void FScene::AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color)
+{
+	DebugLines.push_back({ Start, End, Color });
+}
+
+void FScene::SetGrid(float Spacing, int32 HalfLineCount)
+{
+	Grid.Spacing = Spacing;
+	Grid.HalfLineCount = HalfLineCount;
+	Grid.bEnabled = true;
+}
+
+void FScene::AddFog(const UHeightFogComponent* Owner, const FFogParams& Params)
+{
+	for (auto& Entry : Fogs)
+	{
+		if (Entry.Owner == Owner)
+		{
+			Entry.Params = Params;
+			return;
+		}
+	}
+	Fogs.push_back({ Owner, Params });
+}
+
+void FScene::RemoveFog(const UHeightFogComponent* Owner)
+{
+	Fogs.erase(
+		std::remove_if(Fogs.begin(), Fogs.end(),
+			[Owner](const FFogEntry& E) { return E.Owner == Owner; }),
+		Fogs.end());
 }

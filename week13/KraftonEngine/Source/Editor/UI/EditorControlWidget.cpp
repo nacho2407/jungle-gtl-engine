@@ -5,6 +5,8 @@
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "GameFramework/DecalActor.h"
+#include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -52,6 +54,21 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
 				World->InsertActorToOctree(Actor);
+				break;
+			}
+			case 2: // Decal
+			{
+				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				World->InsertActorToOctree(Actor);
+				break;
+			}
+			case 3: // Height Fog
+			{
+				AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
 			}
