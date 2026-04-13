@@ -65,9 +65,9 @@ void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device)
 			ShaderVariables[VarDesc.Name] = Info;
 		}
 
-		// 머티리얼에서 사용하는 상수 버퍼 슬롯은 6번으로 고정되어 있음.
+		// 머티리얼에서 사용하는 상수 버퍼 슬롯은 2번으로 고정되어 있음.
 		// 해당 슬롯의 버퍼 크기를 셰이더의 메인 상수 버퍼 크기로 사용.
-		if (BufferBindPoint == 6)
+		if (BufferBindPoint == 2)
 		{
 			CBufferSize = BufferDesc.Size;
 		}

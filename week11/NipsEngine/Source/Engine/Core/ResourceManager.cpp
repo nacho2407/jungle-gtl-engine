@@ -16,6 +16,7 @@
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
+#include "Render/Resource/ObjMtlLoader.h"
 
 #pragma region __BINARY__
 
@@ -581,7 +582,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 	for (auto& [Key, Resource] : FontResources)
 	{
-		if (Resource.SRV != nullptr)
+		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
 		{
 			continue;
 		}
@@ -595,7 +596,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 	for (auto& [Key, Resource] : ParticleResources)
 	{
-		if (Resource.SRV != nullptr)
+		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
 		{
 			continue;
 		}
@@ -632,6 +633,12 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	{
 		Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultWhiteSRV.ReleaseAndGetAddressOf());
 	}
+
+	// Outline Material
+	UMaterial* OutlineMat = FindOrCreateMaterialAsset("OutlineMaterial", "Shaders/OutlinePostProcess.hlsl");
+	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
+	OutlineMat->SetParam("OutlineThicknessPixels", FMaterialParamValue(5.0f));
+	OutlineMat->SetParam("OutlineViewportSize", FMaterialParamValue(FVector2(800.0f, 600.0f)));
 }
 
 void FResourceManager::ReleaseGPUResources()
@@ -837,7 +844,7 @@ UMaterial* FResourceManager::FindMaterialAsset(const FString& MaterialName) cons
 }
 
 // 매개변수 없이 가장 간단한 Material을 생성
-UMaterial* FResourceManager::FindOrCreateMaterialAsset(const FString& MaterialName, ID3D11Device* Device)
+UMaterial* FResourceManager::FindOrCreateMaterialAsset(const FString& MaterialName, const FString& ShaderName)
 {
 	UMaterial* Material = FindMaterialAsset(MaterialName);
 	if (Material)
@@ -847,6 +854,9 @@ UMaterial* FResourceManager::FindOrCreateMaterialAsset(const FString& MaterialNa
 
 	Material = UObjectManager::Get().CreateObject<UMaterial>();
 	Material->Name = MaterialName;
+
+	UShader* Shader = GetShader(ShaderName);
+	Material->SetShader(Shader);
 
 	Materials[MaterialName] = Material;
 
@@ -923,15 +933,16 @@ FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Devi
 
 	FMaterialResource Resource;
 	Resource.Path = Path;
+	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
 
 	HRESULT hr;
 	if (FullPath.size() >= 4 && FullPath.substr(FullPath.size() - 4) == L".dds")
 	{
-		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.SRV.ReleaseAndGetAddressOf());
+		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.Texture->GetAddressOfSRV());
 	}
 	else
 	{
-		hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.SRV.ReleaseAndGetAddressOf());
+		hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.Texture->GetAddressOfSRV());
 	}
 
 	if (FAILED(hr))
@@ -952,6 +963,11 @@ UTexture* FResourceManager::FindTextureAsset(const FString& Path) const
 
 UTexture* FResourceManager::LoadTextureAsset(const FString& Path, ID3D11Device* Device)
 {
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+
 	if (UTexture* Cached = FindTextureAsset(Path))
 	{
 		return Cached;
@@ -998,6 +1014,7 @@ void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath
 	Resource.Path = InPath;
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
+	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
 	FontResources[FontName.ToString()] = Resource;
 }
 
@@ -1032,6 +1049,7 @@ void FResourceManager::RegisterParticle(const FName& ParticleName, const FString
 	Resource.Path = InPath;
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
+	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
 	ParticleResources[ParticleName.ToString()] = Resource;
 }
 

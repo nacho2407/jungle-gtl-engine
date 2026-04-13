@@ -235,7 +235,7 @@ void ADecalActor::InitDefaultComponents()
 
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	Billboard->AttachToComponent(Decal);
-	Billboard->SetTextureName(("Asset\\Texture\\DecalActor_64.png"));
+	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
 
 	auto* TextUUID = AddComponent<UTextRenderComponent>();
 	TextUUID->AttachToComponent(Decal);

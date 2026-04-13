@@ -1,5 +1,13 @@
 #include "Common.hlsl"
 
+cbuffer OutlineConstants : register(b2)
+{
+    float4 OutlineColor;
+    float OutlineThicknessPixels;
+    float2 OutlineViewportSize;
+    float OutlinePadding0;
+};
+
 Texture2D<float> SelectionMaskTexture : register(t7);
 
 struct VSOutput

@@ -112,7 +112,7 @@ public:
 	TArray<FString> GetMaterialNames() const;
 
 	UMaterial* FindMaterialAsset(const FString& Path) const;
-	UMaterial* FindOrCreateMaterialAsset(const FString& Path, ID3D11Device* Device = nullptr);
+	UMaterial* FindOrCreateMaterialAsset(const FString& Path, const FString& ShaderName);
 	bool LoadMaterialAsset(const FString& Path, const FString& ShaderName, ID3D11Device* Device = nullptr);
 
 	// --- Font ---

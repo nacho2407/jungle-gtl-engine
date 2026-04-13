@@ -26,7 +26,7 @@ struct FSubUVFrameInfo
 
 struct FSRVBatch
 {
-	ID3D11ShaderResourceView* SRV;
+	UTexture* Texture;
 	uint32 IndexStart;   // Indices 배열 내 시작 위치
 	uint32 IndexCount;   // 이 SRV에 해당하는 인덱스 수
 	int32  BaseVertex;   // DrawIndexed의 BaseVertexLocation
@@ -54,7 +54,7 @@ public:
 
     // 월드 좌표 위에 빌보드 스프라이트 쿼드 추가 (배치에 누적).
     // Columns / Rows — 호출 시 FParticleResource에서 전달받은 아틀라스 그리드 크기
-    void AddSprite(ID3D11ShaderResourceView* SRV, 
+    void AddSprite(UTexture* Texture, 
 		           const FVector& WorldPos,
                    const FVector& CamRight,
                    const FVector& CamUp,

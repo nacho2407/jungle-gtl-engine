@@ -360,7 +360,7 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
     {
         if (Path.empty()) return nullptr;
         FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-        return (Res && Res->SRV) ? Res->SRV.Get() : nullptr;
+        return (Res && Res->Texture) ? Res->Texture->GetSRV() : nullptr;
     };
 
     auto TextureRow = [&](const char* MapLabel,

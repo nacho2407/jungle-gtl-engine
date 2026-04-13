@@ -1,6 +1,7 @@
 ﻿#include "ParticleAtlasLoader.h"
 
 #include "Core/Paths.h"
+#include "Render/Resource/Texture.h"
 
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
@@ -32,11 +33,11 @@ bool FParticleAtlasLoader::Load(const FName& ParticleName, const FString& Path, 
 			0,
 			DirectX::DDS_LOADER_DEFAULT,
 			nullptr,
-			OutResource.SRV.ReleaseAndGetAddressOf());
+			OutResource.Texture->GetAddressOfSRV());
 	}
 	else
 	{
-		Hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, OutResource.SRV.ReleaseAndGetAddressOf());
+		Hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, OutResource.Texture->GetAddressOfSRV());
 	}
 
 	if (FAILED(Hr))
