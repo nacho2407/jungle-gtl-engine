@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Render/Types/RenderTypes.h"
-#include "Core/CoreTypes.h"
 
 struct FMaterialParameterInfo;
 
@@ -22,7 +21,7 @@ public:
 
 	void Bind(ID3D11DeviceContext* InDeviceContext) const;
 
-	const TMap<FString, FMaterialParameterInfo>& GetParameterLayout() const { return ShaderParameterLayout; }
+	const TMap<FString, FMaterialParameterInfo*>& GetParameterLayout() const { return ShaderParameterLayout; }
 private:
 	ID3D11VertexShader* VertexShader = nullptr;
 	ID3D11PixelShader* PixelShader = nullptr;
@@ -31,7 +30,7 @@ private:
 	size_t CachedVertexShaderSize = 0;
 	size_t CachedPixelShaderSize = 0;
 
-	void ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo>& OutLayout);
+	void ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo*>& OutLayout);
 	////void ExtractTextureInfo(ID3DBlob* ShaderBlob, TMap<FString, ???>& OutLayout);
-	TMap<FString, FMaterialParameterInfo> ShaderParameterLayout;
+	TMap<FString, FMaterialParameterInfo*> ShaderParameterLayout;
 };

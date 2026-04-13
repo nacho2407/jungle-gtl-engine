@@ -36,11 +36,11 @@ class FMaterialTemplate
 private:
 	uint32 MaterialTemplateID; // 고유 ID 
 	FShader* Shader; // 어떤 셰이더를 사용하는지 
-	TMap<FString, FMaterialParameterInfo> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보
+	TMap<FString, FMaterialParameterInfo*> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보
 	ERenderPass RenderPass; // 어떤 패스에서 렌더링되는지(Opaque)
 
 public:
-	const TMap<FString, FMaterialParameterInfo>& GetParameterInfo() const { return ParameterLayout; }
+	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
 	void Create(FShader* InShader,	ERenderPass InRenderPass);
 	FShader* GetShader() const { return Shader; }
 	bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
@@ -110,8 +110,8 @@ public:
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
 	const FString& GetAssetPathFileName() const { return PathFileName;}
-
-	//void Serialize(FArchive& Ar);>>>>>Manager가 위임
+	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
+	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
 };
 
 //// ─── 미래 확장용 구조 (현재 미사용) ───

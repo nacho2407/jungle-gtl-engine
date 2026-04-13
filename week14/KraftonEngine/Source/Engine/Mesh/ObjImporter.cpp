@@ -4,6 +4,8 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Engine/Platform/Paths.h"
 #include "Mesh/ObjManager.h"
+#include "SimpleJSON/json.hpp"
+#include "Materials/MaterialManager.h"
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
@@ -442,6 +444,39 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 	return true;
 }
 
+// MTL 정보에서 머티리얼 JSON 파일로 변환하는 함수
+FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
+{
+	// "Contents/Materials/SlotName.json" 경로 결정
+	FString JsonPath = "Contents/Materials/" + MtlInfo->MaterialSlotName + ".json";
+
+	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
+	if (std::filesystem::exists(FPaths::ToWide(JsonPath)))
+		return JsonPath;
+
+	json::JSON JsonData;
+	JsonData["PathFileName"] = JsonPath;
+	JsonData["ShaderPath"] = "Shaders/Default.hlsl"; // 기본 셰이더
+	JsonData["RenderPass"] = "Opaque";
+
+	if (!MtlInfo->map_Kd.empty())
+	{
+		JsonData["Textures"]["DiffuseTexture"] = MtlInfo->map_Kd;
+		JsonData["Parameters"]["DiffuseColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	}
+	else
+	{
+		JsonData["Parameters"]["DiffuseColor"] = {
+			MtlInfo->Kd.X, MtlInfo->Kd.Y, MtlInfo->Kd.Z, 1.0f
+		};
+	}
+
+	std::ofstream File(FPaths::ToWide(JsonPath));
+	File << JsonData.dump();
+
+	return JsonPath;
+}
+
 FVector FObjImporter::RemapPosition(const FVector& ObjPos, EForwardAxis Axis)
 {
 	// OBJ 원본 좌표 (Ox, Oy, Oz) → 엔진 (Ex, Ey, Ez)
@@ -508,23 +543,28 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			MatchedMaterial = &(*It);
 			// 섹션 머티리얼 슬롯 이름과 일치하는 머티리얼 이름이 MTL 파일에서 발견된 경우, 해당 머티리얼 로드 또는 생성
 			UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
-			UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
 
-			// 머티리얼 객체가 새로 생성된 경우에만 속성 설정 (캐시에서 로드된 경우 이미 설정되어 있다고 가정)
-			if (MaterialObject->PathFileName.empty())
-			{
-				MaterialObject->PathFileName = TargetSlotName;
+			// Convert() 안에서 기존 직접 세팅 대신
+			FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
+			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
 
-				if (!MatchedMaterial->map_Kd.empty())
-				{
-					MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
-					MaterialObject->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-				}
-				else
-				{
-					MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
-				}
-			}
+			//UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
+
+			//// 머티리얼 객체가 새로 생성된 경우에만 속성 설정 (캐시에서 로드된 경우 이미 설정되어 있다고 가정)
+			//if (MaterialObject->PathFileName.empty())
+			//{
+			//	MaterialObject->PathFileName = TargetSlotName;
+
+			//	if (!MatchedMaterial->map_Kd.empty())
+			//	{
+			//		MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
+			//		MaterialObject->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+			//	}
+			//	else
+			//	{
+			//		MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
+			//	}
+			//}
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
@@ -534,16 +574,18 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 		else // Material Slot이 MTL 파일에 정의되어 있지 않은 경우
 		{
-			UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
-			if (DefaultMaterialObject->PathFileName.empty())
-			{
-				DefaultMaterialObject->PathFileName = "None";
-				DefaultMaterialObject->DiffuseColor = FallbackColor4;
-			}
+			//UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
+			UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
+
+			//if (DefaultMaterialObject->PathFileName.empty())
+			//{
+			//	DefaultMaterialObject->PathFileName = "None";
+			//	DefaultMaterialObject->DiffuseColor = FallbackColor4;
+			//}
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewEmptyStaticMaterial;
-			NewEmptyStaticMaterial.MaterialInterface = DefaultMaterialObject;
+			NewEmptyStaticMaterial.MaterialInterface = DefaultMaterial;
 			NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewEmptyStaticMaterial);
 		}
@@ -552,15 +594,16 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 	// "None" 슬롯이 존재했다면 맨 마지막에 배치
 	if (bHasNoneSlot)
 	{
-		UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
-		if (DefaultMaterialObject->PathFileName.empty())
-		{
-			DefaultMaterialObject->PathFileName = "None";
-			DefaultMaterialObject->DiffuseColor = FallbackColor4;
-		}
+		//UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
+		//if (DefaultMaterialObject->PathFileName.empty())
+		//{
+		//	DefaultMaterialObject->PathFileName = "None";
+		//	DefaultMaterialObject->DiffuseColor = FallbackColor4;
+		//}
+		UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
 
 		FStaticMaterial NewDefaultStaticMaterial;
-		NewDefaultStaticMaterial.MaterialInterface = DefaultMaterialObject;
+		NewDefaultStaticMaterial.MaterialInterface = DefaultMaterial;
 		NewDefaultStaticMaterial.MaterialSlotName = "None";
 
 		OutMaterials.push_back(NewDefaultStaticMaterial);

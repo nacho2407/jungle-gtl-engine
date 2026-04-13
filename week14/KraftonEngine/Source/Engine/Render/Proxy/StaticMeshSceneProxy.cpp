@@ -1,4 +1,4 @@
-#include "Render/Proxy/StaticMeshSceneProxy.h"
+﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
@@ -148,9 +148,12 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 
 				if (Mat)
 				{
-					if (Mat->DiffuseTexture)
-						Draw.DiffuseSRV = Mat->DiffuseTexture->GetSRV();
-					Draw.DiffuseColor = Mat->DiffuseColor;
+					UTexture2D* DiffuseTex = nullptr;
+					if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+					{
+						Draw.DiffuseSRV = DiffuseTex->GetSRV();
+					}
+					Mat->GetVector4Parameter("DiffuseTexture", Draw.DiffuseColor);
 				}
 			}
 
