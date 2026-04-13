@@ -73,6 +73,8 @@ namespace
 		const TArray<uint32>& TriangleStartIndices, 
 		const FMatrix& LocalToDecalMatrix)
 	{
+		SCOPE_STAT_CAT("SutherlandHodgman", "6_Decal");
+		
 		TMeshData<FVertexPNCT> Result;
 		if (Vertices.size() == 0 || TriangleStartIndices.size() == 0) return Result;
 
@@ -89,6 +91,8 @@ namespace
 		// 삼각형 단위로 클리핑 수행
 		for (uint32 TriStartIndex : TriangleStartIndices)
 		{
+			SCOPE_STAT_CAT("SutherlandHodgman_perTriangle", "6_Decal");
+			
 			TArray<FVertexPNCT> Polygon;
 			for (int j = 0; j < 3; ++j)
 			{
@@ -305,8 +309,10 @@ void UDecalComponent::UpdateDecalMesh()
 		FOBB BoundBox;
 		BoundBox.ApplyTransform(GetWorldMatrix());
 		BoundBox.ApplyTransform(SMC->GetWorldMatrix().GetInverse()); // OBB를 Static Mesh의 local 좌표계로 변환
-		StaticMeshAsset->GetOBBIntersection(BoundBox, TriangleStartIndices);
-
+		{
+			SCOPE_STAT_CAT("GetOBBIntersection", "6_Decal");
+			StaticMeshAsset->GetOBBIntersection(BoundBox, TriangleStartIndices);
+		}
 		if (TriangleStartIndices.size() == 0) return;
 
 		FMatrix LocalToDecalMatrix = SMC->GetWorldMatrix() * InvWorld;
