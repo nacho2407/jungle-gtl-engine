@@ -268,17 +268,17 @@ void AFireballActor::InitDefaultComponents()
 	Fireball->AttachToComponent(Sphere);
 
 	// Emissive glow material for the fireball core
-	static FMaterial FireballCoreMaterial;
-	static bool bFireballMatInit = false;
-	if (!bFireballMatInit)
-	{
-		FColor LightColor = Fireball->GetLinearColor();
-		FVector SurfaceColor = FVector(LightColor.R, LightColor.G, LightColor.B);
-		FireballCoreMaterial.EmissiveColor = SurfaceColor;
-		FireballCoreMaterial.DiffuseColor  = SurfaceColor;
-		bFireballMatInit = true;
-	}
-	Sphere->SetMaterial(0, &FireballCoreMaterial);
+	//static FMaterial FireballCoreMaterial;
+	//static bool bFireballMatInit = false;
+	//if (!bFireballMatInit)
+	//{
+	//	FColor LightColor = Fireball->GetLinearColor();
+	//	FVector SurfaceColor = FVector(LightColor.R, LightColor.G, LightColor.B);
+	//	FireballCoreMaterial.EmissiveColor = SurfaceColor;
+	//	FireballCoreMaterial.DiffuseColor  = SurfaceColor;
+	//	bFireballMatInit = true;
+	//}
+	//Sphere->SetMaterial(0, &FireballCoreMaterial);
 }
 
 void ASpotlightActor::InitDefaultComponents() {

@@ -161,8 +161,9 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		}
 		else if (Extension == L".mtl")
 		{
+			// TODO: 현재는 임의로 static mesh shader로 로드하도록 설정
 			MaterialFilePaths.push_back(RelativePath);
-			LoadMaterialAsset(RelativePath, CachedDevice.Get());
+			LoadMaterialAsset(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
 		}
 		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
@@ -264,7 +265,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 
 				// 기존 MaterialRegistry는 지우지 않고 갱신/추가만 한다.
 				// 이미 로드된 StaticMesh가 Material 포인터를 들고 있을 수 있어서 clear는 위험함.
-				LoadMaterialAsset(RelativePath, CachedDevice.Get());
+				LoadMaterialAsset(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
 			}
 			else if (
 				Extension == L".png" ||
@@ -677,7 +678,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		}
 		return false;
 	}
-	Shader->ReflectShader(VSBlob.Get());
+	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get());
 	ErrorBlob.Reset();
 
 	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -694,7 +695,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		}
 		return false;
 	}
-	Shader->ReflectShader(PSBlob.Get());
+	Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get());
 
 	hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
 		&Shader->ShaderData.VS);
@@ -734,7 +735,7 @@ UShader* FResourceManager::GetShader(const FString& FilePath) const
 	return (It != Shaders.end()) ? It->second : nullptr;
 }
 
-void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
+void FResourceManager::LoadMaterialFromPath(const FString& FilePath, const FString& ShaderName)
 {
 	namespace fs = std::filesystem;
 
@@ -771,8 +772,9 @@ void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
 
 	// FoundRelPath 는 AbsObjDir 기준 상대 경로이므로 절대 경로로 결합 후 LoadMaterial 호출
 	fs::path AbsMtlPath = (AbsObjDir / FPaths::ToWide(FoundRelPath)).lexically_normal();
-	LoadMaterialAsset(FPaths::ToUtf8(AbsMtlPath.generic_wstring()), CachedDevice.Get());
+	LoadMaterialAsset(FPaths::ToUtf8(AbsMtlPath.generic_wstring()), ShaderName, CachedDevice.Get());
 }
+
 //
 //bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 //{
@@ -851,15 +853,22 @@ UMaterial* FResourceManager::FindOrCreateMaterialAsset(const FString& MaterialNa
 	return Material;
 }
 
-bool FResourceManager::LoadMaterialAsset(const FString& MtlFilePath, ID3D11Device* Device)
+bool FResourceManager::LoadMaterialAsset(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
 {
 	if (MtlFilePath.empty())
 	{
 		return false;
 	}
 
+	UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
+	if (!Shader)
+	{
+		UE_LOG("Shader not found for material: %s, using default shader", ShaderName.c_str());
+		return false;
+	}
+
 	TMap<FString, UMaterial*> Parsed;
-	if (!FObjMtlLoader::Load(MtlFilePath, Parsed))
+	if (!FObjMtlLoader::Load(MtlFilePath, Parsed, CachedDevice.Get()))
 	{
 		UE_LOG("Failed to load MTL: %s", MtlFilePath.c_str());
 		return false;
@@ -867,6 +876,7 @@ bool FResourceManager::LoadMaterialAsset(const FString& MtlFilePath, ID3D11Devic
 
 	for (auto& [Name, Mat] : Parsed)
 	{
+		Mat->SetShader(Shader);
 		Materials[Name] = Mat;
 	}
 
@@ -1043,7 +1053,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return FoundMesh;
 	}
 
-	LoadMaterialFromPath(Path);
+	LoadMaterialFromPath(Path, "Shaders/ShaderStaticMesh.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
 

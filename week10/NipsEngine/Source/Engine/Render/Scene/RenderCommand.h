@@ -213,12 +213,14 @@ struct FLightPassConstants
 
 struct FRenderCommand
 {
+	FPerObjectConstants PerObjectConstants = {};
+
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
+	UMaterialInterface* Material = nullptr;
 	uint32		 SectionIndexStart = {};
 	uint32		 SectionIndexCount = {};
 
-	FPerObjectConstants PerObjectConstants = {};
 
 	union
 	{
@@ -237,8 +239,6 @@ struct FRenderCommand
         FFXAAConstants FXAA;
 		FLightPassConstants Light;
 	} Constants;
-
-	UMaterialInterface* Material = nullptr;
 
 	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
 	EBlendState BlendState = static_cast<EBlendState>(-1);
