@@ -467,10 +467,30 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
 
     if (!bIsRoot)
     {
-        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
-        char XId[64];
-        MakeXButtonId(XId, sizeof(XId), Comp);
-        if (DrawXButton(XId)) OutCompToDelete = Comp;
+        bool bIsReferencedByMovement = false;
+        
+        // 현재 액터의 모든 컴포넌트를 순회하며 검사
+        for (UActorComponent* ActorComp : Actor->GetComponents())
+        {
+            if (UMovementComponent* MoveComp = Cast<UMovementComponent>(ActorComp))
+            {
+                // 이 노드의 컴포넌트(Comp)를 UpdatedComponent로 쓰고 있는지 확인
+                if (MoveComp->GetUpdatedComponent() == Comp)
+                {
+                    bIsReferencedByMovement = true;
+                    break;
+                }
+            }
+        }
+
+        // 참조 중이 아닐 때만 삭제(X) 버튼을 그림
+        if (!bIsReferencedByMovement)
+        {
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
+            char XId[64];
+            MakeXButtonId(XId, sizeof(XId), Comp);
+            if (DrawXButton(XId)) OutCompToDelete = Comp;
+        }
     }
 }
 
