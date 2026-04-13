@@ -1,15 +1,13 @@
 ﻿#include "Collision/MeshTriangleBVH.h"
 
 #include "Collision/RayUtils.h"
-#include "Collision/CollisionUtilsSIMD.h"
+#include "Collision/RayUtilsSIMD.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Core/EngineTypes.h"
 
 #include <algorithm>
 #include <bit>
 #include <cfloat>
-
-#include "OBB.h"
 
 namespace
 {
@@ -118,7 +116,7 @@ bool FMeshTriangleBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& L
 		return false;
 	}
 
-	const FRaySIMDContext RayContext = FCollisionUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
+	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
 	// 재귀 대신 고정 크기 스택으로 순회해 call overhead와 allocation을 피합니다.
 	NodeStack[StackSize++] = { 0, RootTMin };
@@ -143,7 +141,7 @@ bool FMeshTriangleBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& L
 			const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
 
 			alignas(32) float TValues[8];
-			const int32 Mask = FCollisionUtilsSIMD::IntersectTriangles8Precomputed(
+			const int32 Mask = FRayUtilsSIMD::IntersectTriangles8Precomputed(
 				RayContext,
 				Packet.V0X, Packet.V0Y, Packet.V0Z,
 				Packet.Edge1X, Packet.Edge1Y, Packet.Edge1Z,
@@ -175,7 +173,7 @@ bool FMeshTriangleBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& L
 		//internal node에서는 child AABB 8개를 한 번에 검사한 뒤,
 		//실제로 맞은 child만 추려 가까운 순서대로 방문합니다.
 		alignas(32) float TMinValues[8];
-		const int32 NodeMask = FCollisionUtilsSIMD::IntersectAABB8(
+		const int32 NodeMask = FRayUtilsSIMD::IntersectAABB8(
 			RayContext,
 			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
 			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
@@ -233,60 +231,6 @@ bool FMeshTriangleBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& L
 	}
 
 	return bHit;
-}
-
-bool FMeshTriangleBVH::GetOBBIntersection(FOBB DecalOBB, TArray<uint32>& TriangleStartIndices)
-{
-	FOBBSIMDContext OBBContext = FCollisionUtilsSIMD::MakeOBBContext(DecalOBB);
-
-	TArray<int32> Stack;
-	Stack.reserve(64);
-	Stack.push_back(0); // Root index
-
-	while (!Stack.empty())
-	{
-		int32 NodeIndex = Stack.back();
-		Stack.pop_back();
-
-		const FNode& Node = Nodes[NodeIndex];
-
-		if (Node.IsLeaf())
-		{
-			// 리프 노드의 경우 Packet을 확인하여 삼각형 수집
-			if (Node.PacketIndex != -1)
-			{
-				const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
-				for (uint32 i = 0; i < Packet.TriangleCount; ++i)
-				{
-					if (Packet.TriangleStartIndices[i] != -1)
-					{
-						TriangleStartIndices.push_back(Packet.TriangleStartIndices[i]);
-					}
-				}
-			}
-			continue;
-		}
-
-		// 8개 자식 노드들에 대해 OBB 교차 여부 검사 (SIMD 활용 가속)
-		int32 HitMask = FCollisionUtilsSIMD::IntersectOBBAABB8(
-			OBBContext,
-			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
-			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ);
-
-		uint32 RemainingMask = static_cast<uint32>(HitMask) & ((1u << Node.ChildCount) - 1u);
-		while (RemainingMask != 0)
-		{
-			uint32 BitIndex = std::countr_zero(RemainingMask);
-			RemainingMask &= RemainingMask - 1;
-
-			int32 ChildIdx = Node.Children[BitIndex];
-			if (ChildIdx != -1)
-			{
-				Stack.push_back(ChildIdx);
-			}
-		}
-	}
-	return TriangleStartIndices.size() > 0;
 }
 
 int32 FMeshTriangleBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Start, int32 End)

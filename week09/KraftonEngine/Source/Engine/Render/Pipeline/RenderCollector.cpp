@@ -1,17 +1,21 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
-#include "GameFramework/World.h"
-#include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Component/DecalComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
+#include "GameFramework/World.h"
+#include "Profiling/Stats.h"
+#include "Render/Culling/ConvexVolume.h"
+#include "Render/Culling/GPUOcclusionCulling.h"
+#include "Render/DebugDraw/DebugDrawQueue.h"
+#include "Render/Pipeline/LODContext.h"
+#include "Render/Pipeline/Renderer.h"
+#include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
-#include "Render/DebugDraw/DebugDrawQueue.h"
-#include "Render/Culling/GPUOcclusionCulling.h"
-#include "Render/Culling/ConvexVolume.h"
-#include "Render/Pipeline/LODContext.h"
-#include "Render/Pipeline/Renderer.h"
-#include "Profiling/Stats.h"
+
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
@@ -20,25 +24,24 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	if (!World) return;
 
 	FScene& Scene = World->GetScene();
-
-	// Dirty 프록시 갱신 (프레임당 1회 — 멀티 뷰포트 시 첫 호출만 실제 동작)
 	Scene.UpdateDirtyProxies();
 
-	// Per-viewport frustum culling — Octree 쿼리로 로컬 visible 리스트 생성
 	LastVisibleProxies.clear();
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
 		const uint32 ExpectedCount = Scene.GetProxyCount()
 			+ static_cast<uint32>(Scene.GetNeverCullProxies().size());
 		if (LastVisibleProxies.capacity() < ExpectedCount)
+		{
 			LastVisibleProxies.reserve(ExpectedCount);
+		}
 
-		// NeverCull 프록시 (Gizmo 등) — frustum과 무관하게 항상 수집
-		// Octree 쿼리에서 bNeverCull은 제외되므로 중복 없이 먼저 추가
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
 		{
 			if (Proxy)
+			{
 				LastVisibleProxies.push_back(Proxy);
+			}
 		}
 
 		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
@@ -138,13 +141,25 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	const bool bShowBoundingVolume = Frame.ShowFlags.bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
+	TSet<FPrimitiveSceneProxy*> VisibleProxySet;
+	VisibleProxySet.reserve(Proxies.size());
+	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	{
+		if (Proxy)
+		{
+			VisibleProxySet.insert(Proxy);
+		}
+	}
+
 	const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
 	FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
 	const FLODUpdateContext& LODCtx = Frame.LODContext;
 
 	// GatherAABB 병합: Collect 순회에서 동시에 AABB 수집 (별도 GatherLoop 제거)
 	if (OcclusionMut && OcclusionMut->IsInitialized())
+	{
 		OcclusionMut->BeginGatherAABB(static_cast<uint32>(Proxies.size()));
+	}
 
 	LOD_STATS_RESET();
 
@@ -166,24 +181,73 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
+		{
 			Proxy->UpdatePerViewport(Frame);
+		}
 
-		if (!Proxy->bVisible) continue;
+		if (!Proxy->bVisible)
+		{
+			continue;
+		}
 
 		// AABB 수집 — 오클루전 체크 전에 수집해야 다음 프레임에 재평가 가능
 		if (OcclusionMut)
+		{
 			OcclusionMut->GatherAABB(Proxy);
+		}
 
 		// GPU Occlusion Culling — 이전 프레임에서 가려진 프록시 스킵
 		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
+		{
 			continue;
+		}
 
 		// Font 프록시는 동적 VB 배칭 경로 (개별 FDrawCommand가 아닌 FontGeometry)
 		if (Proxy->bFontBatched)
 		{
 			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
 			if (!TextProxy->CachedText.empty())
+			{
 				Renderer.AddWorldText(TextProxy, Frame);
+			}
+		}
+		// Decal 프록시는 Decal-Receiver에 렌더링 의존하므로 특별 취급
+		else if (Cast<UDecalComponent>(Proxy->Owner))
+		{
+			FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
+			UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
+
+			for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
+			{
+				if (!Receiver)
+				{
+					continue;
+				}
+
+				FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
+				if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
+				{
+					continue;
+				}
+
+				if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(ReceiverProxy->ProxyId, ReceiverProxy->LastLODUpdateFrame))
+				{
+					const FVector& ProxyPos = ReceiverProxy->CachedWorldPos;
+					const float dx = LODCtx.CameraPos.X - ProxyPos.X;
+					const float dy = LODCtx.CameraPos.Y - ProxyPos.Y;
+					const float dz = LODCtx.CameraPos.Z - ProxyPos.Z;
+					const float DistSq = dx * dx + dy * dy + dz * dz;
+					ReceiverProxy->UpdateLOD(SelectLOD(ReceiverProxy->CurrentLOD, DistSq));
+					ReceiverProxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
+				}
+
+				if (ReceiverProxy->bPerViewportUpdate)
+				{
+					ReceiverProxy->UpdatePerViewport(Frame);
+				}
+
+				Renderer.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
+			}
 		}
 		else
 		{
@@ -195,14 +259,13 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		if (Proxy->bSelected)
 		{
 			if (Proxy->bSupportsOutline)
+			{
 				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
+			}
 
 			if (bShowBoundingVolume && Proxy->bShowAABB)
 			{
-				Scene.AddDebugAABB(
-					Proxy->CachedBounds.Min,
-					Proxy->CachedBounds.Max,
-					FColor::White());
+				Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor::White());
 			}
 
 			//TODO: Owner 의존성 제거
@@ -211,5 +274,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	}
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
+	{
 		OcclusionMut->EndGatherAABB();
+	}
 }
