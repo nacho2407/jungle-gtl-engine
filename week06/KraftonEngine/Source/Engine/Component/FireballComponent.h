@@ -8,7 +8,10 @@ class UFireballComponent : public UPrimitiveComponent
 	~UFireballComponent() override = default;
 	void Serialize(FArchive& Ar) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
+
+	void UpdateWorldAABB() const override;
 
 	float GetIntensity() const { return Intensity; }
 	float GetRadius() const { return Radius; }

@@ -22,7 +22,37 @@ void UFireballComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutP
 	OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
 }
 
+
+void UFireballComponent::PostEditProperty(const char* PropertyName)
+{
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (strcmp(PropertyName, "Radius") == 0)
+	{
+		Radius = std::max(Radius, 0.0f);
+		MarkWorldBoundsDirty();
+		MarkProxyDirty(EDirtyFlag::Material);
+		return;
+	}
+
+	if (strcmp(PropertyName, "Intensity") == 0 ||
+		strcmp(PropertyName, "Radius Falloff") == 0 ||
+		strcmp(PropertyName, "Color") == 0)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
+	}
+}
 FPrimitiveSceneProxy* UFireballComponent::CreateSceneProxy()
 {
 	return new FFireballSceneProxy(this);
+}
+
+void UFireballComponent::UpdateWorldAABB() const
+{
+	FVector WorldLocation = GetWorldLocation();
+	FVector RadiusVec = FVector(Radius, Radius, Radius);
+	WorldAABBMinLocation = WorldLocation - RadiusVec;
+	WorldAABBMaxLocation = WorldLocation + RadiusVec;
+	bHasValidWorldAABB = true;
+	bWorldAABBDirty = false;
 }
