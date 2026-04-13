@@ -264,7 +264,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
                 ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
             }
 		}
-		
+
 	}
 }
 
@@ -477,6 +477,7 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
 	FLightPassConstants LightPassConstant = {};
 	LightPassConstant.LightCount = (uint32)Lights.size();
     LightPassConstant.CameraWorldPos = Bus.GetCameraPosition();
+	LightPassConstant.ViewMode = static_cast<uint32>(Bus.GetViewMode());
     Resources.LightPassConstantBuffer.Update(Context, &LightPassConstant, sizeof(LightPassConstant));
 	ID3D11Buffer* cb7 = Resources.LightPassConstantBuffer.GetBuffer();
 	Context->PSSetConstantBuffers(7, 1, &cb7);
