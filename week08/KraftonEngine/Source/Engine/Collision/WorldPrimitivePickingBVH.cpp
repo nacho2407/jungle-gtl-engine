@@ -1,7 +1,7 @@
 ﻿#include "Collision/WorldPrimitivePickingBVH.h"
 
 #include "Collision/RayUtils.h"
-#include "Collision/RayUtilsSIMD.h"
+#include "Collision/CollisionUtilsSIMD.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
@@ -131,7 +131,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 	}
 
 	//SIMD 최적화를 위해 Ray 정보를 미리 SIMD 레지스터에 적재해둡니다. Gather 오버헤드를 줄일 수 있습니다.
-	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
+	const FRaySIMDContext RayContext = FCollisionUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
 
 	//BVH 트리 순회. DFS 방식이나 재귀 없이 로컬 스택을 사용
 	FTraversalEntry NodeStack[WorldBVHMaxTraversalStack];
@@ -160,7 +160,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				const FPrimitivePacket& Packet = PrimitivePackets[Node.FirstPrimitivePacket + PacketIndex];
 				alignas(32) float PrimitiveTMinValues[8]; //32비트 정렬
 				//리프 노드 내부에서 AABB 테스트를 SIMD로 수행하여 hit primitive 후보를 뽑아냅니다.
-				const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
+				const int32 PrimitiveMask = FCollisionUtilsSIMD::IntersectAABB8(
 					RayContext,
 					Packet.MinX, Packet.MinY, Packet.MinZ,
 					Packet.MaxX, Packet.MaxY, Packet.MaxZ,
@@ -251,7 +251,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 		}
 
 		alignas(32) float TMinValues[8];
-		const int32 Mask = FRayUtilsSIMD::IntersectAABB8(
+		const int32 Mask = FCollisionUtilsSIMD::IntersectAABB8(
 			RayContext,
 			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
 			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
