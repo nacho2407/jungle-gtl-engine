@@ -180,7 +180,7 @@ struct FFogConstants
 struct FFXAAConstants
 {
     float InvResolution[2]; // (1/Width, 1/Height)
-    float  Threshold;     // 0.05 ~ 0.2 추천
+    uint32 bEnabled;       // 0: off, 1: on
     float  Padding;
 };
 

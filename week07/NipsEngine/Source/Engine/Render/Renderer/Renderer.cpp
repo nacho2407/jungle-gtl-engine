@@ -627,7 +627,7 @@ void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Cont
 	FFXAAConstants FXAAConstants = {};
     FXAAConstants.InvResolution[0] = (CurrentRenderTargets.Width > 0.0f) ? (1.0f / CurrentRenderTargets.Width) : 0.0f;
     FXAAConstants.InvResolution[1] = (CurrentRenderTargets.Height > 0.0f) ? (1.0f / CurrentRenderTargets.Height) : 0.0f;
-    FXAAConstants.Threshold = std::clamp(Bus.GetFXAAThreshold(), 0.0f, 1.0f);
+    FXAAConstants.bEnabled = Bus.GetFXAAEnabled() ? 1u : 0u;
     Resources.FXAAConstantBuffer.Update(Context, &FXAAConstants, sizeof(FFXAAConstants));
     ID3D11Buffer* cb10 = Resources.FXAAConstantBuffer.GetBuffer();
 
