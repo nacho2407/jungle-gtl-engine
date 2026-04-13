@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Types/FogParams.h"
+#include "Render/DebugDraw/DebugDrawQueue.h"
 
 class UPrimitiveComponent;
 
@@ -62,6 +63,10 @@ public:
 	float GetGridSpacing() const { return Grid.Spacing; }
 	int32 GetGridHalfLineCount() const { return Grid.HalfLineCount; }
 
+	// --- DebugDraw (Duration 기반 디버그 라인) ---
+	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
+	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
+
 	// --- Height Fog (FogParams.h) ---
 	// UE 패턴: 배열에 모두 저장하되, 렌더링은 [0]만 사용
 	void AddFog(const class UHeightFogComponent* Owner, const FFogParams& Params);
@@ -91,6 +96,7 @@ private:
 	TArray<FDebugLine>   DebugLines;
 
 	FGridParams Grid;
+	FDebugDrawQueue DebugDrawQueue;
 
 	struct FFogEntry
 	{

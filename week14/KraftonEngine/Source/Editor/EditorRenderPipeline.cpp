@@ -112,7 +112,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Collector.CollectWorld(World, Frame, Renderer);
 
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
-		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, Scene);
+		Collector.CollectDebugDraw(Frame, Scene);
 
 		if (ShowFlags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);

@@ -18,6 +18,7 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+	~UPrimitiveComponent() override;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;

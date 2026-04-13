@@ -12,23 +12,26 @@
 
 void FStateCache::Reset()
 {
+	bForceAll = true;
+
 	Shader       = nullptr;
-	DepthStencil = static_cast<EDepthStencilState>(~0u);
-	Blend        = static_cast<EBlendState>(~0u);
-	Rasterizer   = static_cast<ERasterizerState>(~0u);
-	Topology     = static_cast<D3D11_PRIMITIVE_TOPOLOGY>(~0u);
-	StencilRef   = 0xFF;
+	DepthStencil = {};
+	Blend        = {};
+	Rasterizer   = {};
+	Topology     = {};
+	StencilRef   = 0;
 	MeshBuffer   = nullptr;
 	RawVB        = nullptr;
 	RawIB        = nullptr;
 	PerObjectCB     = nullptr;
 	PerShaderCB[0]  = nullptr;
 	PerShaderCB[1]  = nullptr;
-	DiffuseSRV   = reinterpret_cast<ID3D11ShaderResourceView*>(~0ull);
-	Sampler      = reinterpret_cast<ID3D11SamplerState*>(~0ull);
+	DiffuseSRV   = nullptr;
+	Sampler      = nullptr;
 
-	LastUVScroll     = -1;
-	LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f };
+	bMaterialDirty = true;
+	LastUVScroll     = 0;
+	LastSectionColor = {};
 
 	bReadOnlyDSV = false;
 	RTV         = nullptr;
@@ -39,8 +42,7 @@ void FStateCache::Reset()
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
 	// SRV 언바인딩 (DSV 복원 전에 해제해야 hazard 방지)
-	if (DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
-		&& DiffuseSRV != nullptr)
+	if (DiffuseSRV)
 	{
 		ID3D11ShaderResourceView* nullSRV = nullptr;
 		Ctx->PSSetShaderResources(0, 1, &nullSRV);
@@ -161,26 +163,28 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	ID3D11DeviceContext* Ctx, FStateCache& Cache,
 	ID3D11SamplerState* DefaultSampler)
 {
+	const bool bForce = Cache.bForceAll;
+
 	// --- PSO 상태 ---
-	if (Cmd.DepthStencil != Cache.DepthStencil)
+	if (bForce || Cmd.DepthStencil != Cache.DepthStencil)
 	{
 		Device.SetDepthStencilState(Cmd.DepthStencil);
 		Cache.DepthStencil = Cmd.DepthStencil;
 	}
 
-	if (Cmd.Blend != Cache.Blend)
+	if (bForce || Cmd.Blend != Cache.Blend)
 	{
 		Device.SetBlendState(Cmd.Blend);
 		Cache.Blend = Cmd.Blend;
 	}
 
-	if (Cmd.Rasterizer != Cache.Rasterizer)
+	if (bForce || Cmd.Rasterizer != Cache.Rasterizer)
 	{
 		Device.SetRasterizerState(Cmd.Rasterizer);
 		Cache.Rasterizer = Cmd.Rasterizer;
 	}
 
-	if (Cmd.Topology != Cache.Topology)
+	if (bForce || Cmd.Topology != Cache.Topology)
 	{
 		Ctx->IASetPrimitiveTopology(Cmd.Topology);
 		Cache.Topology = Cmd.Topology;
@@ -190,8 +194,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	if (Cmd.bReadOnlyDSV != Cache.bReadOnlyDSV && Cache.RTV)
 	{
 		// ReadOnly → Writable 복원 시 depth SRV를 먼저 해제 (hazard 방지)
-		if (!Cmd.bReadOnlyDSV && Cache.DiffuseSRV != reinterpret_cast<ID3D11ShaderResourceView*>(~0ull)
-			&& Cache.DiffuseSRV != nullptr)
+		if (!Cmd.bReadOnlyDSV && Cache.DiffuseSRV)
 		{
 			ID3D11ShaderResourceView* nullSRV = nullptr;
 			Ctx->PSSetShaderResources(0, 1, &nullSRV);
@@ -204,7 +207,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	}
 
 	// --- Shader ---
-	if (Cmd.Shader && Cmd.Shader != Cache.Shader)
+	if (Cmd.Shader && (bForce || Cmd.Shader != Cache.Shader))
 	{
 		Cmd.Shader->Bind(Ctx);
 		Cache.Shader = Cmd.Shader;
@@ -214,7 +217,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	if (Cmd.MeshBuffer)
 	{
 		// Static MeshBuffer 경로
-		if (Cmd.MeshBuffer != Cache.MeshBuffer)
+		if (bForce || Cmd.MeshBuffer != Cache.MeshBuffer)
 		{
 			uint32 Offset = 0;
 			uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
@@ -237,14 +240,14 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	else if (Cmd.RawVB)
 	{
 		// Dynamic Buffer 경로 (LineGeometry, FontGeometry 등)
-		if (Cmd.RawVB != Cache.RawVB)
+		if (bForce || Cmd.RawVB != Cache.RawVB)
 		{
 			uint32 Offset = 0;
 			Ctx->IASetVertexBuffers(0, 1, &Cmd.RawVB, &Cmd.RawVBStride, &Offset);
 			Cache.RawVB = Cmd.RawVB;
 			Cache.MeshBuffer = nullptr;
 		}
-		if (Cmd.RawIB != Cache.RawIB)
+		if (bForce || Cmd.RawIB != Cache.RawIB)
 		{
 			Ctx->IASetIndexBuffer(Cmd.RawIB, DXGI_FORMAT_R32_UINT, 0);
 			Cache.RawIB = Cmd.RawIB;
@@ -264,7 +267,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	{
 		// 커맨드에 명시적 Sampler가 있으면 그것을 사용, 없으면 DefaultSampler
 		ID3D11SamplerState* TargetSampler = Cmd.Sampler ? Cmd.Sampler : DefaultSampler;
-		if (TargetSampler && TargetSampler != Cache.Sampler)
+		if (TargetSampler && (bForce || TargetSampler != Cache.Sampler))
 		{
 			Ctx->PSSetSamplers(0, 1, &TargetSampler);
 			Cache.Sampler = TargetSampler;
@@ -272,7 +275,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	}
 
 	// --- PerObject CB (b1) ---
-	if (Cmd.PerObjectCB && Cmd.PerObjectCB != Cache.PerObjectCB)
+	if (Cmd.PerObjectCB && (bForce || Cmd.PerObjectCB != Cache.PerObjectCB))
 	{
 		ID3D11Buffer* RawCB = Cmd.PerObjectCB->GetBuffer();
 		if (RawCB)
@@ -285,7 +288,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- PerShader CBs (b2, b3) ---
 	for (uint32 i = 0; i < 2; ++i)
 	{
-		if (Cmd.PerShaderCB[i] && Cmd.PerShaderCB[i] != Cache.PerShaderCB[i])
+		if (Cmd.PerShaderCB[i] && (bForce || Cmd.PerShaderCB[i] != Cache.PerShaderCB[i]))
 		{
 			ID3D11Buffer* RawCB = Cmd.PerShaderCB[i]->GetBuffer();
 			if (RawCB)
@@ -302,7 +305,8 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	if (Cmd.bInlineMaterialData && Cmd.PerShaderCB[0])
 	{
 		int32 CurUVScroll = static_cast<int32>(Cmd.bIsUVScroll);
-		if (CurUVScroll != Cache.LastUVScroll
+		if (Cache.bMaterialDirty
+			|| CurUVScroll != Cache.LastUVScroll
 			|| memcmp(&Cmd.SectionColor, &Cache.LastSectionColor, sizeof(FVector4)) != 0)
 		{
 			FMaterialConstants MatConstants = {};
@@ -311,16 +315,19 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			Cmd.PerShaderCB[0]->Update(Ctx, &MatConstants, sizeof(MatConstants));
 			Cache.LastUVScroll = CurUVScroll;
 			Cache.LastSectionColor = Cmd.SectionColor;
+			Cache.bMaterialDirty = false;
 		}
 	}
 
 	// --- Diffuse SRV (t0) ---
-	if (Cmd.DiffuseSRV != Cache.DiffuseSRV)
+	if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
 	{
 		ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
 		Ctx->PSSetShaderResources(0, 1, &SRV);
 		Cache.DiffuseSRV = Cmd.DiffuseSRV;
 	}
+
+	Cache.bForceAll = false;
 
 	// --- Draw ---
 	if (Cmd.IndexCount > 0)

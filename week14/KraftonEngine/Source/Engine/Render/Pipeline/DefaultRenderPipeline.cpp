@@ -34,7 +34,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 		Renderer.BeginCollect(Frame, Scene->GetProxyCount());
 		Collector.CollectWorld(World, Frame, Renderer);
-		Collector.CollectDebugDraw(World->GetDebugDrawQueue(), Frame, *Scene);
+		Collector.CollectDebugDraw(Frame, *Scene);
 		Renderer.BuildDynamicCommands(Frame, Scene);
 	}
 	else
