@@ -22,7 +22,7 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 
 	FontMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("FontMaterial");
 	UMaterial* FontMat = Cast<UMaterial>(FontMaterial);
-	FontMat->ShaderAsset = FResourceManager::Get().GetShader("Shaders/ShaderFont.hlsl");
+	FontMat->Shader = FResourceManager::Get().GetShader("Shaders/ShaderFont.hlsl");
 	FontMat->MaterialData.Name = "FontMaterial";
 }
 

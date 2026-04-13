@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Texture.h"
 #include "Shader.h"
+#include <variant>
 
 /**
  * @brief MTL 파일의 머테리얼 데이터를 표현하는 구조체.
@@ -38,21 +39,28 @@ struct FMaterial
 
 enum class EMaterialParamType
 {
+	Bool,
 	Scalar,
-	Vector,
+	Vector2,
+	Vector3,
+	Vector4,
+	Matrix4,
 	Texture,
 };
 
 struct FMaterialParamValue
 {
-	FMaterialParamValue() : Type(EMaterialParamType::Scalar), Scalar(0.0f) {}
+	FMaterialParamValue() : Type(EMaterialParamType::Scalar), Value(0.0f) {}
+	FMaterialParamValue(bool InBool) : Type(EMaterialParamType::Bool), Value(InBool) {}
+	FMaterialParamValue(float InScalar) : Type(EMaterialParamType::Scalar), Value(InScalar) {}
+	FMaterialParamValue(const FVector2& InVector2) : Type(EMaterialParamType::Vector2), Value(InVector2) {}
+	FMaterialParamValue(const FVector& InVector3) : Type(EMaterialParamType::Vector3), Value(InVector3) {}
+	FMaterialParamValue(const FVector4& InVector4) : Type(EMaterialParamType::Vector4), Value(InVector4) {}
+	FMaterialParamValue(const FMatrix& InMatrix4) : Type(EMaterialParamType::Matrix4), Value(InMatrix4) {}
+	FMaterialParamValue(UTexture* InTexture) : Type(EMaterialParamType::Texture), Value(InTexture) {}
 
 	EMaterialParamType Type;
-	union {
-		float Scalar;
-		FVector Vector;
-		UTexture* Texture;
-	};
+	std::variant<bool, float, FVector2, FVector, FVector4, FMatrix, UTexture*> Value;
 };
 
 class UMaterialInterface : public UObject
@@ -70,7 +78,13 @@ public:
 	FString Name;
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;
-	UShader* ShaderAsset = nullptr;
+	UShader* Shader = nullptr;
+
+	void SetShader(UShader* InShader)
+	{
+		Shader = InShader;
+		if (!Shader) return;
+	}
 
 	void SetParam(const FString& Name, const FMaterialParamValue& Value)
 	{
@@ -87,21 +101,73 @@ public:
 		return false;
 	}
 
+	void SetBool(const FString& Name, bool Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Bool;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetScalar(const FString& Name, float Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Scalar;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetVector2(const FString& Name, const FVector2& Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Vector2;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetVector3(const FString& Name, const FVector& Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Vector3;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetVector4(const FString& Name, const FVector4& Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Vector4;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetMatrix4(const FString& Name, const FMatrix& Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Matrix4;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+	void SetTexture(const FString& Name, UTexture* Value)
+	{
+		FMaterialParamValue ParamValue;
+		ParamValue.Type = EMaterialParamType::Texture;
+		ParamValue.Value = Value;
+		SetParam(Name, ParamValue);
+	}
+
 	virtual void Bind(ID3D11DeviceContext* Context) const;
+
+	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const;
 
 	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
 	{
-		for (const auto& Param : MaterialParams)
+		for (const auto& [Key, Param] : MaterialParams)
 		{
-			OutParams.insert(MaterialParams.begin(), MaterialParams.end());
+			OutParams[Key] = Param;
 		}
 	}
 };
 
-class UMaterialInstance : public UMaterial
+class UMaterialInstance : public UMaterialInterface
 {
 public:
-	DECLARE_CLASS(UMaterialInstance, UMaterial)
+	DECLARE_CLASS(UMaterialInstance, UMaterialInterface)
 	const UMaterial* Parent = nullptr;
 	TMap<FString, FMaterialParamValue> OverridedParams;
 
@@ -136,5 +202,5 @@ public:
      * @return 파일 열기 성공 여부 
      */
     static bool Load(const FString& FilePath, TMap<FString, FMaterial>& OutMaterials);
-	static bool Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets);
+	static bool Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device);
 };

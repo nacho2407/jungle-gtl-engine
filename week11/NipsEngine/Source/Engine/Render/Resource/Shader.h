@@ -24,11 +24,14 @@ struct FShader
 	ID3D11PixelShader* PS;
 	ID3D11InputLayout* InputLayout;
 
+	ID3D11Buffer* ConstantBuffer = nullptr;
+
 	void Release()
 	{
 		if (VS) VS->Release();
 		if (PS) PS->Release();
 		if (InputLayout) InputLayout->Release();
+		if (ConstantBuffer) ConstantBuffer->Release();
 	}
 };
 
@@ -42,6 +45,15 @@ public:
 		Context->IASetInputLayout(ShaderData.InputLayout);
 		Context->VSSetShader(ShaderData.VS, nullptr, 0);
 		Context->PSSetShader(ShaderData.PS, nullptr, 0);
+	}
+
+	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size)
+	{
+		if (!ShaderData.ConstantBuffer || Size == 0) return;
+
+		Context->UpdateSubresource(ShaderData.ConstantBuffer, 0, nullptr, Data, 0, 0);
+		Context->VSSetConstantBuffers(Slot, 1, &ShaderData.ConstantBuffer);
+		Context->PSSetConstantBuffers(Slot, 1, &ShaderData.ConstantBuffer);
 	}
 
 	int32 GetTextureBindSlot(const FString& Name) const
@@ -65,7 +77,9 @@ public:
 		return false;
 	}
 
-	void ReflectShader(ID3DBlob* ShaderBlob);
+	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device);
+
+	uint32 GetCBufferSize() const { return CBufferSize; }
 
 	FShader ShaderData;
 	FString FilePath;
@@ -73,4 +87,6 @@ public:
 private:
 	TMap<FString, uint32> TextureBindSlots;
 	TMap<FString, FShaderVariableInfo> ShaderVariables;
+
+	uint32 CBufferSize = 0;
 };
