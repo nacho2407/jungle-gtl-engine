@@ -17,6 +17,8 @@
 #include <cstddef>
 #include <functional>
 
+#include "Render/Renderer/RenderFlow/RenderPipeline.h"
+
 // 패스별 Batcher 바인딩 — Clear → Collect → Flush 패턴
 struct FPassBatcherBinding
 {
@@ -83,6 +85,10 @@ private:
 	FLineBatcher   GridLineBatcher;
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
+
+	/** 모든 Render Pass 를 관리할 객체 */
+	FRenderPipeline RenderPipeline;
+    std::shared_ptr<FRenderPassContext> RenderPassContext;
 
 	// 패스별 커맨드 정렬이 필요한 경우 정렬된 복사본 반환, 아니면 원본 참조
 	const TArray<FRenderCommand>& GetAlignedCommands(ERenderPass Pass, const TArray<FRenderCommand>& Commands);

@@ -279,6 +279,7 @@
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.cpp" />
@@ -448,6 +449,7 @@
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.h" />
@@ -455,7 +457,6 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\SamplerType.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />

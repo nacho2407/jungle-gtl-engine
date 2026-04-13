@@ -583,6 +583,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1132,5 +1133,6 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
   </ItemGroup>
 </Project>
