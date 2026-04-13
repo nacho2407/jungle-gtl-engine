@@ -456,7 +456,7 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 	json::JSON JsonData;
 	JsonData["PathFileName"] = JsonPath;
-	JsonData["ShaderPath"] = "Shaders/Default.hlsl"; // 기본 셰이더
+	JsonData["ShaderPath"] = "Shaders/StaticMeshShader.hlsl"; // 기본 셰이더
 	JsonData["RenderPass"] = "Opaque";
 
 	if (!MtlInfo->map_Kd.empty())
