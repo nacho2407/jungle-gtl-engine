@@ -12,12 +12,12 @@ REGISTER_FACTORY(UDecalComponent)
 // Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
 UDecalComponent::UDecalComponent()
 {
-	UMaterial* Mat = FResourceManager::Get().FindOrCreateMaterialAsset("DecalMaterial", "Shaders/ShaderDecal.hlsl");
+	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("DecalMaterial", "Shaders/ShaderDecal.hlsl");
 	SetMaterial(Mat);
 
 	Mat->SetParam("InvDecalWorld", FMaterialParamValue(GetWorldMatrix().GetInverse()));
 	Mat->SetParam("DecalColorTint", FMaterialParamValue(DecalColor.ToVector4()));
-	Mat->SetParam("DiffuseMap", FMaterialParamValue(FResourceManager::Get().LoadTextureAsset("Asset/Texture/water.png")));
+	Mat->SetParam("DiffuseMap", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Texture/water.png")));
 
     bEnableCull = false;
 }

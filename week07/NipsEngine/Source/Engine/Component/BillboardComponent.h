@@ -34,7 +34,7 @@ public:
 
 	void SetTextureName(FString InName);
 	FString GetTextureName();
-	FMaterialResource* GetCachedSprite();
+	UTexture* GetTexture();
 
 	//////////////////// override ////////////////////////////
 	void UpdateWorldAABB() const override;
@@ -49,7 +49,7 @@ public:
 
 private:
 	FName TextureName;
-	FMaterialResource* CachedSprite = { nullptr }; // ResourceManager 소유, 여기선 참조만
+	UTexture* Texture = nullptr; // ResourceManager 소유, 여기선 참조만
 
 protected:
 	uint32 FrameIndex = 0;

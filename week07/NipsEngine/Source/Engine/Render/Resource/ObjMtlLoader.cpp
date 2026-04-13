@@ -150,16 +150,16 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 		Mat->MaterialParams["Opacity"] = FMaterialParamValue(Mat->MaterialData.Opacity);
 
 		if (Mat->MaterialData.bHasDiffuseTexture)
-			Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.DiffuseTexPath, Device));
+			Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(Mat->MaterialData.DiffuseTexPath, Device));
 
 		if (Mat->MaterialData.bHasAmbientTexture)
-			Mat->MaterialParams["AmbientMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.AmbientTexPath, Device));
+			Mat->MaterialParams["AmbientMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(Mat->MaterialData.AmbientTexPath, Device));
 
 		if (Mat->MaterialData.bHasSpecularTexture)
-			Mat->MaterialParams["SpecularMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.SpecularTexPath, Device));
+			Mat->MaterialParams["SpecularMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(Mat->MaterialData.SpecularTexPath, Device));
 
 		if (Mat->MaterialData.bHasBumpTexture)
-			Mat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.BumpTexPath, Device));
+			Mat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(Mat->MaterialData.BumpTexPath, Device));
 
 		Mat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(Mat->MaterialData.bHasDiffuseTexture);
 		Mat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(Mat->MaterialData.bHasSpecularTexture);
