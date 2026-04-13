@@ -52,9 +52,9 @@ void FEditorControlWidget::Render(float DeltaTime)
 		{
 			switch (SelectedPrimitiveType)
 			{
-			case 0: // Default (Scene)
+			case 0: // Scene (Empty)
 			{
-				AEmptyActor* Actor = World->SpawnActor<AEmptyActor>();
+				ASceneActor* Actor = World->SpawnActor<ASceneActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
