@@ -4,7 +4,7 @@
 class FBaseRenderPass
 {
 public:
-    virtual ~FBaseRenderPass() = 0;
+    virtual ~FBaseRenderPass() {}
 
 	virtual bool Initialize() = 0;
     virtual bool Begin(const FRenderPassContext* Context) = 0;
@@ -12,5 +12,9 @@ public:
     virtual bool End(const FRenderPassContext* Context) = 0;
     virtual bool Release() = 0;
 
-private:
+    ID3D11ShaderResourceView* GetOutSRV() const { return OutSRV; }
+
+protected:
+	// Viewport 출력용 최종 View
+    ID3D11ShaderResourceView* OutSRV = nullptr;
 };
