@@ -35,6 +35,7 @@ void FFireballSceneProxy::UpdateMesh()
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Sphere);
 	Shader = FShaderManager::Get().GetShader(EShaderType::Fireball);
 	Pass = ERenderPass::Additive;
+	bSupportsOutline = false;
 }
 
 UFireballComponent* FFireballSceneProxy::GetFireballComponent() const
