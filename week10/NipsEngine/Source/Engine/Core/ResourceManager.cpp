@@ -12,6 +12,7 @@
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include "UI/EditorConsoleWidget.h"
+#include "Settings/EditorSettings.h"
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
@@ -1148,14 +1149,19 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
     LoadedMesh->SetMeshData(LoadedMeshData);
 
-    const auto LodStart = std::chrono::steady_clock::now();
-    FStaticMeshSimplifier::BuildLODs(LoadedMesh);
-    
-    const auto LodEnd = std::chrono::steady_clock::now();
-    double LodSec = std::chrono::duration<double>(LodEnd - LodStart).count();
-    
-    UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec", 
-           LoadedMesh->GetValidLODCount(), Path.c_str(), LodSec);
+    if (FEditorSettings::Get().ShowFlags.bEnableLOD)
+    {
+        const auto LodStart = std::chrono::steady_clock::now();
+        FStaticMeshSimplifier::BuildLODs(LoadedMesh);
+        const auto LodEnd = std::chrono::steady_clock::now();
+        double LodSec = std::chrono::duration<double>(LodEnd - LodStart).count();
+        UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec",
+               LoadedMesh->GetValidLODCount(), Path.c_str(), LodSec);
+    }
+    else
+    {
+        UE_LOG("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", Path.c_str());
+    }
 
     StaticMeshes.insert({Path, LoadedMesh});
     

@@ -252,6 +252,7 @@ void AFireballActor::InitDefaultComponents()
 	// Base for debugging and demonstration. Remove this later
     auto* Sphere = AddComponent<UStaticMeshComponent>();
     Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+	Sphere->SetEnableCull(false);
     SetRootComponent(Sphere);
 
 	// Nametag
