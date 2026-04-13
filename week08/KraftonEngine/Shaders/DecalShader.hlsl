@@ -5,7 +5,8 @@
 Texture2D g_txColor : register(t0);
 SamplerState g_Sample : register(s0);
 
-cbuffer DecalBuffer : register(b5)
+// b3 (PerShader1): Material(b2)과 분리
+cbuffer DecalBuffer : register(b3)
 {
     float4 DecalColor;
 }

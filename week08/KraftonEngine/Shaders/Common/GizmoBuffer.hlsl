@@ -1,7 +1,7 @@
 #ifndef GIZMO_BUFFER_HLSL
 #define GIZMO_BUFFER_HLSL
 
-// b2: 기즈모 전용
+// b2 (PerShader0): 기즈모 전용
 cbuffer GizmoBuffer : register(b2)
 {
     float4 GizmoColorTint;

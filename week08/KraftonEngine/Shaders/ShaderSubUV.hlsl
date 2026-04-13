@@ -4,7 +4,7 @@
 Texture2D SubUVAtlas : register(t0);
 SamplerState SubUVSampler : register(s0);
 
-// b2: SubUV UV region (atlas frame offset + size)
+// b2 (PerShader0): SubUV UV region (atlas frame offset + size)
 cbuffer SubUVRegionBuffer : register(b2)
 {
     float4 UVRegion; // xy = offset, zw = size
