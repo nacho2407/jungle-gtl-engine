@@ -276,6 +276,9 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 
 		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
 		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
+		Material->DepthStencilType = EDepthStencilType::Default;
+		Material->RasterizerType = ERasterizerType::SolidBackCull;
+		Material->BlendType = EBlendType::AlphaBlend;
 
 		RenderBus.AddCommand(ERenderPass::PostProcessOutline, PostProcessCmd);
 	}
@@ -409,8 +412,6 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			TextCmd.Constants.Font.Text = &Text;
 			TextCmd.Constants.Font.Font = Font;
 			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-			//TextCmd.BlendState = EBlendState::AlphaBlend;
-			//TextCmd.DepthStencilState = EDepthStencilState::Default;
 			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
@@ -434,7 +435,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		bHasSelectionMask = true;
 
 		// TODO: 리팩토링 필요 (현재는 DecalComponent만 OBB를 그리도록 설정)
-		UDecalComponent* DecalComp = dynamic_cast<UDecalComponent*>(primitiveComponent);
+		UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
 		if (DecalComp)
 		{
 			CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
@@ -631,9 +632,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.Type = ERenderCommandType::Decal;
 				Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
 				Cmd.MeshBuffer = MeshBuffer;
-
-				//Cmd.BlendState = EBlendState::AlphaBlend;
-				//Cmd.DepthStencilState = EDepthStencilState::Default;
 
 				Cmd.SectionIndexStart = Section.StartIndex;
 				Cmd.SectionIndexCount = Section.IndexCount;

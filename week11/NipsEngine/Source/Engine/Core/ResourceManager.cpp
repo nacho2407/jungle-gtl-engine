@@ -1143,6 +1143,7 @@ ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerT
 	case ERasterizerType::SolidNoCull:
 		Desc.FillMode = D3D11_FILL_SOLID;
 		Desc.CullMode = D3D11_CULL_NONE;
+		break;
 	case ERasterizerType::WireFrame:
 		Desc.FillMode = D3D11_FILL_WIREFRAME;
 		Desc.CullMode = D3D11_CULL_NONE;
