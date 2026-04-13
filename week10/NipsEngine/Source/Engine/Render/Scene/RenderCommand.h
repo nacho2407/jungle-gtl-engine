@@ -184,15 +184,6 @@ struct FFXAAConstants
     float  Padding;
 };
 
-// 32 bytes
-//struct FLightData {
-//    FVector LightPos;
-//    float LightRadius;
-//
-//    FVector LightColor;
-//    float LightIntensity;
-//};
-
 struct FLightData
 {
     FVector WorldPos;
@@ -209,7 +200,8 @@ struct FLightPassConstants
 	uint32	LightCount;
 
 	uint32 ViewMode;   // 4 bytes (필요시 더 압축해서 보냅니다.)
-	float  Padding[3]; // 12 bytes
+	uint32 WorldLit;  // 4 bytes
+	float  Padding[2]; // 8 bytes
 };
 
 struct FRenderCommand
