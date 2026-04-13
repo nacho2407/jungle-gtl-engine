@@ -455,6 +455,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\SamplerType.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />

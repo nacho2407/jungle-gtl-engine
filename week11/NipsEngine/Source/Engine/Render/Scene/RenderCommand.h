@@ -207,28 +207,21 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	UMaterialInterface* Material = nullptr;
-	uint32		 SectionIndexStart = {};
-	uint32		 SectionIndexCount = {};
-
+	uint32 SectionIndexStart = 0;
+	uint32 SectionIndexCount = 0;
 
 	union
 	{
-		FGizmoConstants Gizmo;
-		FEditorConstants Editor;
 		FAABBConstants AABB;
 		FOBBConstants OBB;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
-		FStaticMeshConstants StaticMesh;
-		FDecalConstants Decal;
         FFogConstants Fog;
         FFXAAConstants FXAA;
 		FLightPassConstants Light;
 	} Constants;
 
-	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
-	EBlendState BlendState = static_cast<EBlendState>(-1);
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };
