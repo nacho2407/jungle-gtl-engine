@@ -38,12 +38,8 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     decalUV.y = 0.5f - (decalLocalPos.z / (DecalHalfExtents.z * 2.0f));
 
     float4 decalColor = g_txDecal.Sample(g_sampler, decalUV);
-    if (bIsWireframe || decalColor.a < 1e-6f)
-    {
-        discard;
-    }
-    
     decalColor.a *= FadeAlpha;
     decalColor.rgb = ApplyWireframe(decalColor.rgb);
+    
     return decalColor;
 }
