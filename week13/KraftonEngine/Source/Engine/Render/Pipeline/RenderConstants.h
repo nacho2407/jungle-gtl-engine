@@ -18,21 +18,21 @@ class FShader;
 // HLSL CB 바인딩 슬롯 — b0/b1 고정, b2/b3 셰이더별 여분
 namespace ECBSlot
 {
-	constexpr uint32 Frame      = 0; // b0: View/Projection/Wireframe (고정)
-	constexpr uint32 PerObject  = 1; // b1: Model/Color (고정)
+	constexpr uint32 Frame = 0; // b0: View/Projection/Wireframe (고정)
+	constexpr uint32 PerObject = 1; // b1: Model/Color (고정)
 	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1
 }
 
 // FConstantBufferPool 조회 키 — 바인딩 슬롯과 독립적인 고유 식별자
+// [260413 WJ] : Material 개선 이후 다시 생각해본다. 이Key로 공유 상수버퍼를 얻어오는 형태. (@see FScontantBufferPool::GetBuffer)
 namespace ECBPoolKey
 {
-	constexpr uint32 Gizmo      = 0;
-	constexpr uint32 Material   = 1;
-	constexpr uint32 Decal      = 2;
-	constexpr uint32 Fog        = 3;
-	constexpr uint32 Outline    = 4;
-	constexpr uint32 SceneDepth = 5;
+	constexpr uint32 Gizmo = 0;
+	constexpr uint32 Material = 1;
+	constexpr uint32 Fog = 2;
+	constexpr uint32 Outline = 3;
+	constexpr uint32 SceneDepth = 4;
 }
 
 //PerObject

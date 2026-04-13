@@ -13,6 +13,7 @@ class FDecalSceneProxy : public FPrimitiveSceneProxy
 {
 public:
 	FDecalSceneProxy(UDecalComponent* InComponent);
+	~FDecalSceneProxy() override;
 
 	void UpdateMaterial() override;
 	void UpdateMesh() override;
@@ -21,5 +22,6 @@ private:
 	UDecalComponent* GetDecalComponent() const;
 
 	FMeshBuffer DecalDynamicMeshBuffer;
+	FConstantBuffer DecalCB;	// Decal Color CB (PerShader1, b3)
 	const FTextureResource* DecalTexture = nullptr;
 };

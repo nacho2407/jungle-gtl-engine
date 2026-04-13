@@ -49,6 +49,9 @@ public:
 	static void ScanMaterialAssets();
 	static const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles();
 
+	// 캐시된 StaticMesh GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
+	static void ReleaseAllGPU();
+
 private:
 	static bool LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
 		FStaticMesh*& OutMesh, TArray<FStaticMaterial>& OutMaterials);
