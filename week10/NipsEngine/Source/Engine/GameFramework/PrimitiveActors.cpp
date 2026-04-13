@@ -1,9 +1,11 @@
 ﻿#include "GameFramework/PrimitiveActors.h"
 
+#include "Component/FireballComponent.h"
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
@@ -42,6 +44,12 @@ REGISTER_FACTORY(ABillboardActor)
 DEFINE_CLASS(ADecalActor, AActor)
 REGISTER_FACTORY(ADecalActor)
 
+DEFINE_CLASS(AFireballActor, AActor)
+REGISTER_FACTORY(AFireballActor)
+
+DEFINE_CLASS(ASpotlightActor, AActor)
+REGISTER_FACTORY(ASpotlightActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -54,6 +62,7 @@ void ACubeActor::InitDefaultComponents()
 	Text->AttachToComponent(Cube);
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
 	// SubUV
@@ -75,6 +84,8 @@ void ASphereActor::InitDefaultComponents()
 	Text->SetFont(FName("Default"));
 	Text->AttachToComponent(Sphere);
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
 	// SubUV
@@ -96,6 +107,7 @@ void APlaneActor::InitDefaultComponents()
 	Text->SetFont(FName("Default"));
 	Text->SetText(std::format("UUID: {}", GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->AttachToComponent(Plane);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
@@ -140,6 +152,7 @@ void AAttachTestActor::InitDefaultComponents()
 	Text->AttachToComponent(Cube);
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
 
@@ -154,6 +167,7 @@ void AStaticMeshActor::InitDefaultComponents()
 	Text->SetFont(FName("Default"));
 	Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 
 	FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
@@ -172,6 +186,7 @@ void ASubUVActor::InitDefaultComponents()
     Text->SetFont(FName("Default"));
     Text->SetText("UUID: " + std::to_string(GetUUID()));
 	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
 
     FVector Extent = SubUV->GetWorldAABB().GetExtent();
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
@@ -188,7 +203,8 @@ void ATextRenderActor::InitDefaultComponents()
     TextUUID->AttachToComponent(Text);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
@@ -205,6 +221,8 @@ void ABillboardActor::InitDefaultComponents()
     TextUUID->AttachToComponent(Billboard);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
@@ -224,7 +242,51 @@ void ADecalActor::InitDefaultComponents()
 	TextUUID->SetFont(FName("Default"));
 	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
 	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
 	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
 	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
+void AFireballActor::InitDefaultComponents()
+{
+	// Base for debugging and demonstration. Remove this later
+    auto* Sphere = AddComponent<UStaticMeshComponent>();
+    Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+    SetRootComponent(Sphere);
+
+	// Nametag
+    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    Text->SetFont(FName("Default"));
+    Text->AttachToComponent(Sphere);
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+
+	// Flare
+    UFireballComponent* Fireball = AddComponent<UFireballComponent>();
+	Fireball->AttachToComponent(Sphere);
+
+	// Emissive glow material for the fireball core
+	static FMaterial FireballCoreMaterial;
+	static bool bFireballMatInit = false;
+	if (!bFireballMatInit)
+	{
+		FColor LightColor = Fireball->GetLinearColor();
+		FVector SurfaceColor = FVector(LightColor.R, LightColor.G, LightColor.B);
+		FireballCoreMaterial.EmissiveColor = SurfaceColor;
+		FireballCoreMaterial.DiffuseColor  = SurfaceColor;
+		bFireballMatInit = true;
+	}
+	Sphere->SetMaterial(0, &FireballCoreMaterial);
+}
+
+void ASpotlightActor::InitDefaultComponents() {
+	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
+    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+	SetRootComponent(BillboardIcon);
+
+	UDecalComponent* Decal = AddComponent<UDecalComponent>();
+	Decal->AttachToComponent(BillboardIcon);
+	Decal->SetRelativeLocation(FVector(0, 0, 10.f));
+}

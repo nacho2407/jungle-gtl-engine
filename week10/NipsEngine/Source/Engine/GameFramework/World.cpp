@@ -4,46 +4,40 @@ DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)
 
 // FName, UUID 발급, 메모리 추적 등을 위해 UObjectManager를 통해 생성, 삭제한다.
-UWorld::UWorld() 
+UWorld::UWorld()
 {
     PersistentLevel = UObjectManager::Get().CreateObject<ULevel>();
 }
 
 // 소멸 역시 UObjectManager를 통해 처리한다.
 UWorld::~UWorld()
-{ 
+{
     SpatialIndex.Clear();
-    UObjectManager::Get().DestroyObject(PersistentLevel); 
+    UObjectManager::Get().DestroyObject(PersistentLevel);
 }
 
-// 새로운 UWorld 인스턴스를 생성하고, PIE 월드를 사용하기 위해 내부 액터를 깊은 복사한다.
-UWorld* UWorld::Duplicate()
+/* @brief 비노출 필드를 복사하고, Level을 깊은 복사한 뒤, 복제된 액터들의 소속을 자기 자신으로 재설정합니다. */
+void UWorld::PostDuplicate(UObject* Original)
 {
-    UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
-
-    if (NewWorld->PersistentLevel)
-    {
-        UObjectManager::Get().DestroyObject(NewWorld->PersistentLevel);
-        NewWorld->PersistentLevel = nullptr;
-    }
-
-    NewWorld->WorldType = this->WorldType;
-    NewWorld->SetActiveCamera(this->ActiveCamera);
-    NewWorld->bHasBegunPlay = false;
-    NewWorld->PersistentLevel = this->PersistentLevel;
-	
-	NewWorld->DuplicateSubObjects();
-
-    return NewWorld;
-}
-
-/* @brief Level을 깊은 복사한 뒤, 복제된 액터들의 소속을 자기 자신으로 재설정합니다.*/
-UWorld* UWorld::DuplicateSubObjects()
-{
+    // UWorld 생성자가 기본 PersistentLevel을 생성하므로,
+    // 원본의 레벨로 교체하기 전에 먼저 해제합니다.
     if (PersistentLevel)
     {
-        PersistentLevel = PersistentLevel->Duplicate();
+        UObjectManager::Get().DestroyObject(PersistentLevel);
+        PersistentLevel = nullptr;
+    }
 
+    const UWorld* OrigWorld = Cast<UWorld>(Original);
+
+    // 프로퍼티 시스템에 노출되지 않은 필드를 직접 복사합니다.
+    WorldType      = OrigWorld->WorldType;
+    ActiveCamera   = OrigWorld->ActiveCamera;
+    bHasBegunPlay  = false; // 항상 미시작 상태로 시작
+
+    // PersistentLevel 을 깊은 복사한 뒤, 복제된 액터들의 소속을 새 월드로 재설정합니다.
+    if (OrigWorld->PersistentLevel)
+    {
+        PersistentLevel = Cast<ULevel>(OrigWorld->PersistentLevel->Duplicate());
         for (AActor* DuplicatedActor : PersistentLevel->GetActors())
         {
             if (DuplicatedActor)
@@ -54,20 +48,19 @@ UWorld* UWorld::DuplicateSubObjects()
     }
 
     RebuildSpatialIndex();
-
-	return this;
 }
 
 void UWorld::BeginPlay()
 {
-	bHasBegunPlay = true;
-	PersistentLevel->BeginPlay();
+    bHasBegunPlay = true;
+    PersistentLevel->BeginPlay();
     RebuildSpatialIndex();
 }
 
 void UWorld::Tick(float DeltaTime)
 {
-	if (!PersistentLevel) return;
+    if (!PersistentLevel)
+        return;
 
     for (AActor* Actor : PersistentLevel->GetActors())
     {
@@ -87,11 +80,11 @@ void UWorld::Tick(float DeltaTime)
 
 void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
-	if(bHasBegunPlay)
-	{
-		bHasBegunPlay = false;
-		PersistentLevel->EndPlay(EndPlayReason);
-	}
+    if (bHasBegunPlay)
+    {
+        bHasBegunPlay = false;
+        PersistentLevel->EndPlay(EndPlayReason);
+    }
 }
 
 void UWorld::RebuildSpatialIndex()

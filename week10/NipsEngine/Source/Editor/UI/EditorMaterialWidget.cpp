@@ -9,37 +9,10 @@
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 #include <algorithm>
-#include <windows.h>
 
 #include "ImGui/imgui.h"
 
 #define MAT_SEPARATOR() ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-namespace
-{
-	std::string OpenFileDialog()
-	{
-		char szFile[260] = { 0 };
-		OPENFILENAMEA ofn;
-		ZeroMemory(&ofn, sizeof(ofn));
-		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = NULL;  // 메인 윈도우 핸들이 있다면 넣으세요
-		ofn.lpstrFile = szFile;
-		ofn.nMaxFile = sizeof(szFile);
-		ofn.lpstrFilter = "All\0*.*\0Textures\0*.png;*.jpg;*.tga;*.dds\0";
-		ofn.nFilterIndex = 2;
-		ofn.lpstrFileTitle = NULL;
-		ofn.nMaxFileTitle = 0;
-		ofn.lpstrInitialDir = NULL;
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-
-		if (GetOpenFileNameA(&ofn))
-		{
-			return std::string(szFile);
-		}
-		return "";
-	}
-}
 
 // -----------------------------------------------------------------------
 // Render (진입점)
@@ -427,34 +400,22 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
         {
             ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "%s", MapLabel);
 
-			float ButtonWidth = 30.0f;
-			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ButtonWidth - 5.0f);
+            FString Filename = bHasTexture ? ExtractFilename(Path) : FString("(none)");
+            ImGui::TextDisabled("%s", Filename.c_str());
 
-			char Buf[512];
-			strncpy_s(Buf, sizeof(Buf), Path.c_str(), _TRUNCATE);
-			if (ImGui::InputText("##path", Buf, sizeof(Buf), ImGuiInputTextFlags_ReadOnly)) {}
-
-			ImGui::PopItemWidth();
-			ImGui::SameLine();
-
-			if (ImGui::Button("...", ImVec2(ButtonWidth, 0)))
-			{
-				FString SelectedPath = OpenFileDialog();
-				if (!SelectedPath.empty())
-				{
-					Path = SelectedPath.c_str();
-					bHasTexture = true;
-
-					FResourceManager::Get().LoadTexture(Path);
-				}
-			}
-
-            ImGui::SameLine();
-			if (ImGui::Button("X"))
-			{
-				Path = "";
-				bHasTexture = false;
-			}
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+			ImGui::BeginDisabled(true);
+            char Buf[512];
+            strncpy_s(Buf, sizeof(Buf), Path.c_str(), _TRUNCATE);
+            if (ImGui::InputText("##path", Buf, sizeof(Buf)))
+            {
+                Path       = Buf;
+                bHasTexture = !Path.empty();
+            }
+            if (ImGui::IsItemHovered() && !Path.empty())
+                ImGui::SetTooltip("%s", Path.c_str());
+            ImGui::PopItemWidth();
+			ImGui::EndDisabled();
         }
         ImGui::EndGroup();
 

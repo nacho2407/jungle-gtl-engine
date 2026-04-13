@@ -7,6 +7,8 @@ void FRenderBus::Clear()
 	{
 		PassQueues[i].clear();
 	}
+
+	Lights.clear();
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)

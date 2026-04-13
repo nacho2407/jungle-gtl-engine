@@ -11,7 +11,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	USceneComponent::GetEditableProperties(OutProps);
 	
 	OutProps.push_back({"Visible", EPropertyType::Bool, &bIsVisible});
-
+	OutProps.push_back({"Enable Cull", EPropertyType::Bool, &bEnableCull});
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)

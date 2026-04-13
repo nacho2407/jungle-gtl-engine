@@ -38,8 +38,7 @@ public:
 	UTextRenderComponent();
 	~UTextRenderComponent() override = default;
 
-    virtual UTextRenderComponent* Duplicate() override;
-    virtual UTextRenderComponent* DuplicateSubObjects() override { return this; }
+    virtual void PostDuplicate(UObject* Original) override;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
