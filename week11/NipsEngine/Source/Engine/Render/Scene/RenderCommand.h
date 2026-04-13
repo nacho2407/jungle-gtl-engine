@@ -184,15 +184,6 @@ struct FFXAAConstants
     float  Padding;
 };
 
-// 32 bytes
-//struct FLightData {
-//    FVector LightPos;
-//    float LightRadius;
-//
-//    FVector LightColor;
-//    float LightIntensity;
-//};
-
 struct FLightData
 {
     FVector WorldPos;
@@ -207,7 +198,7 @@ struct FLightPassConstants
 {
 	FVector CameraWorldPos;
 	uint32	LightCount;
-	//float	Pad0;
+	uint32	WorldLit;
 };
 
 struct FRenderCommand

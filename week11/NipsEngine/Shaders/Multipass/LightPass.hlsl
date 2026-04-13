@@ -28,7 +28,8 @@ StructuredBuffer<FLightData> Lights : register(t4);
 cbuffer LightPassConstants : register(b7)
 {
     float3 CameraWorldPos;
-    uint LightCount;
+    uint   LightCount;
+    uint   WorldLit;
 };
 
 // Fullscreen Triangle VS
@@ -96,7 +97,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
     }
     
     float3 ambience = albedo * 0.25f;
-    float3 final_rgb = clamp(albedo * light_accumulation + ambience, 0.f, 1.f);
+    float3 final_rgb = WorldLit == 0 ? clamp(albedo * light_accumulation + ambience, 0.f, 1.f) : albedo;
     return float4(final_rgb, 1.0f);
     
     
