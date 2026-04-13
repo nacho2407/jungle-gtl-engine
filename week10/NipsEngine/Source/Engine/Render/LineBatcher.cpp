@@ -183,6 +183,7 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 	LineMaterial->DepthStencilType = EDepthStencilType::Default;
 	LineMaterial->BlendType = EBlendType::AlphaBlend;
 	LineMaterial->RasterizerType = ERasterizerType::SolidBackCull;
+	LineMaterial->SamplerType = ESamplerType::EST_Linear;
 
 	Material = LineMaterial;
 }

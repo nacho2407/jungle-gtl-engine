@@ -13,20 +13,14 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	MaxIndexCount = 1536;
 	CreateBuffers();
 
-	// Sampler ? Point 필터 (폰트는 선명하게)
-	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
-
-	FontMaterial = FResourceManager::Get().GetOrCreateMaterial("FontMaterial", "Shaders/ShaderFont.hlsl");
-
-	UMaterial* Mat = Cast<UMaterial>(FontMaterial);
+	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("FontMaterial", "Shaders/ShaderFont.hlsl");
 	Mat->SetParam("FontAtlas", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Font/FontAtlas.dds", Device.Get())));
 	Mat->BlendType = EBlendType::AlphaBlend;
 	Mat->DepthStencilType = EDepthStencilType::Default;
+	Mat->RasterizerType = ERasterizerType::SolidBackCull;
+	Mat->SamplerType = ESamplerType::EST_Point;
+
+	FontMaterial = Mat;
 }
 
 void FFontBatcher::CreateBuffers()
@@ -83,7 +77,6 @@ void FFontBatcher::Release()
 
 	VertexBuffer.Reset();
 	IndexBuffer.Reset();
-	SamplerState.Reset();
 	Device.Reset();
 }
 
@@ -262,9 +255,6 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->IASetVertexBuffers(0, 1, &VertexBufferPtr, &stride, &offset);
 	Context->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
-	Context->PSSetSamplers(0, 1, Samplers);
 
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 }

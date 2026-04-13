@@ -504,15 +504,15 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
-			//Cmd.DepthStencilState = EDepthStencilState::Default;
-			//Cmd.BlendState = EBlendState::Opaque;
 
 			Cmd.SectionIndexStart = Section.StartIndex;
 			Cmd.SectionIndexCount = Section.IndexCount;
 			Cmd.Material = Material;
 
-			Material->SetFloat("ScrollX", StaticMeshComp->GetScroll().first);
-			Material->SetFloat("ScrollY", StaticMeshComp->GetScroll().second);
+			if (Material)
+			{
+				Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
+			}
 
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
@@ -537,8 +537,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
-		//Cmd.BlendState = EBlendState::AlphaBlend;
-		//Cmd.DepthStencilState = EDepthStencilState::Default;
 		
 		RenderBus.AddCommand(ERenderPass::Font, Cmd);
 		break;
@@ -559,8 +557,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
 		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
 		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
-		//Cmd.BlendState = EBlendState::AlphaBlend;
-		//Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
@@ -579,8 +575,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.Billboard.Texture = Texture;
 		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
 		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
-		//Cmd.BlendState = EBlendState::AlphaBlend;
-		//Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
