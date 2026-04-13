@@ -296,7 +296,7 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
-    <ClCompile Include="Source\Engine\Collision\CollisionUtilsSIMD.cpp" />
+    <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Collision\MeshTriangleBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
@@ -421,7 +421,7 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
-    <ClInclude Include="Source\Engine\Collision\CollisionUtilsSIMD.h" />
+    <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h" />
     <ClInclude Include="Source\Engine\Collision\MeshTriangleBVH.h" />
     <ClInclude Include="Source\Engine\Collision\OBB.h" />
     <ClInclude Include="Source\Engine\Collision\Octree.h" />
