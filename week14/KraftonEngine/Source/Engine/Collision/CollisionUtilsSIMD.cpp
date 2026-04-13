@@ -1,4 +1,5 @@
-﻿#include "Collision/RayUtilsSIMD.h"
+﻿#include "Collision/CollisionUtilsSIMD.h"
+#include "Collision/OBB.h"
 
 #include <cmath>
 
@@ -15,7 +16,7 @@ namespace
 	}
 }
 
-FRaySIMDContext FRayUtilsSIMD::MakeRayContext(const FVector& Origin, const FVector& Direction)
+FRaySIMDContext FCollisionUtilsSIMD::MakeRayContext(const FVector& Origin, const FVector& Direction)
 {
 	// SISD 버전이라면 ray 원점/방향/invDirection/축별 parallel 여부를
 	// float 변수 몇 개로 한 번 계산해 두고, 이후 각 AABB/triangle 테스트에서
@@ -36,7 +37,109 @@ FRaySIMDContext FRayUtilsSIMD::MakeRayContext(const FVector& Origin, const FVect
 	return Context;
 }
 
-int32 FRayUtilsSIMD::IntersectAABB8(
+FOBBSIMDContext FCollisionUtilsSIMD::MakeOBBContext(const FOBB& OBB)
+{
+	FOBBSIMDContext Context;
+	Context.CenterX = _mm256_set1_ps(OBB.Center.X);
+	Context.CenterY = _mm256_set1_ps(OBB.Center.Y);
+	Context.CenterZ = _mm256_set1_ps(OBB.Center.Z);
+
+	Context.ExtentX = _mm256_set1_ps(OBB.Extent.X);
+	Context.ExtentY = _mm256_set1_ps(OBB.Extent.Y);
+	Context.ExtentZ = _mm256_set1_ps(OBB.Extent.Z);
+
+	float r00 = OBB.Rotation.GetForwardVector().X;
+	float r01 = OBB.Rotation.GetForwardVector().Y;
+	float r02 = OBB.Rotation.GetForwardVector().Z;
+
+	float r10 = OBB.Rotation.GetRightVector().X;
+	float r11 = OBB.Rotation.GetRightVector().Y;
+	float r12 = OBB.Rotation.GetRightVector().Z;
+
+	float r20 = OBB.Rotation.GetUpVector().X;
+	float r21 = OBB.Rotation.GetUpVector().Y;
+	float r22 = OBB.Rotation.GetUpVector().Z;
+
+	Context.R00 = _mm256_set1_ps(r00);
+	Context.R01 = _mm256_set1_ps(r01);
+	Context.R02 = _mm256_set1_ps(r02);
+	
+	Context.R10 = _mm256_set1_ps(r10);
+	Context.R11 = _mm256_set1_ps(r11);
+	Context.R12 = _mm256_set1_ps(r12);
+	
+	Context.R20 = _mm256_set1_ps(r20);
+	Context.R21 = _mm256_set1_ps(r21);
+	Context.R22 = _mm256_set1_ps(r22);
+
+	Context.AbsR00 = _mm256_set1_ps(std::abs(r00) + 1e-6f);
+	Context.AbsR01 = _mm256_set1_ps(std::abs(r01) + 1e-6f);
+	Context.AbsR02 = _mm256_set1_ps(std::abs(r02) + 1e-6f);
+
+	Context.AbsR10 = _mm256_set1_ps(std::abs(r10) + 1e-6f);
+	Context.AbsR11 = _mm256_set1_ps(std::abs(r11) + 1e-6f);
+	Context.AbsR12 = _mm256_set1_ps(std::abs(r12) + 1e-6f);
+
+	Context.AbsR20 = _mm256_set1_ps(std::abs(r20) + 1e-6f);
+	Context.AbsR21 = _mm256_set1_ps(std::abs(r21) + 1e-6f);
+	Context.AbsR22 = _mm256_set1_ps(std::abs(r22) + 1e-6f);
+
+	return Context;
+}
+
+int32 FCollisionUtilsSIMD::IntersectOBBAABB8(
+	const FOBBSIMDContext& Context,
+	const float* MinX, const float* MinY, const float* MinZ,
+	const float* MaxX, const float* MaxY, const float* MaxZ)
+{
+	const __m256 MinXVec = _mm256_load_ps(MinX);
+	const __m256 MinYVec = _mm256_load_ps(MinY);
+	const __m256 MinZVec = _mm256_load_ps(MinZ);
+	const __m256 MaxXVec = _mm256_load_ps(MaxX);
+	const __m256 MaxYVec = _mm256_load_ps(MaxY);
+	const __m256 MaxZVec = _mm256_load_ps(MaxZ);
+
+	const __m256 Half = _mm256_set1_ps(0.5f);
+
+	const __m256 AABBCenterX = _mm256_mul_ps(_mm256_add_ps(MaxXVec, MinXVec), Half);
+	const __m256 AABBCenterY = _mm256_mul_ps(_mm256_add_ps(MaxYVec, MinYVec), Half);
+	const __m256 AABBCenterZ = _mm256_mul_ps(_mm256_add_ps(MaxZVec, MinZVec), Half);
+
+	const __m256 AABBExtentX = _mm256_mul_ps(_mm256_sub_ps(MaxXVec, MinXVec), Half);
+	const __m256 AABBExtentY = _mm256_mul_ps(_mm256_sub_ps(MaxYVec, MinYVec), Half);
+	const __m256 AABBExtentZ = _mm256_mul_ps(_mm256_sub_ps(MaxZVec, MinZVec), Half);
+
+	const __m256 LX = _mm256_sub_ps(Context.CenterX, AABBCenterX);
+	const __m256 LY = _mm256_sub_ps(Context.CenterY, AABBCenterY);
+	const __m256 LZ = _mm256_sub_ps(Context.CenterZ, AABBCenterZ);
+
+	const __m256 SignMask = _mm256_castsi256_ps(_mm256_set1_epi32(0x7FFFFFFF));
+	const __m256 AbsLX = _mm256_and_ps(LX, SignMask);
+	const __m256 AbsLY = _mm256_and_ps(LY, SignMask);
+	const __m256 AbsLZ = _mm256_and_ps(LZ, SignMask);
+
+	__m256 RB0 = _mm256_add_ps(
+		_mm256_add_ps(_mm256_mul_ps(Context.ExtentX, Context.AbsR00), _mm256_mul_ps(Context.ExtentY, Context.AbsR10)),
+		_mm256_mul_ps(Context.ExtentZ, Context.AbsR20));
+	__m256 MaxDist0 = _mm256_add_ps(AABBExtentX, RB0);
+	__m256 HitMask = _mm256_cmp_ps(AbsLX, MaxDist0, _CMP_LE_OQ);
+
+	__m256 RB1 = _mm256_add_ps(
+		_mm256_add_ps(_mm256_mul_ps(Context.ExtentX, Context.AbsR01), _mm256_mul_ps(Context.ExtentY, Context.AbsR11)),
+		_mm256_mul_ps(Context.ExtentZ, Context.AbsR21));
+	__m256 MaxDist1 = _mm256_add_ps(AABBExtentY, RB1);
+	HitMask = _mm256_and_ps(HitMask, _mm256_cmp_ps(AbsLY, MaxDist1, _CMP_LE_OQ));
+
+	__m256 RB2 = _mm256_add_ps(
+		_mm256_add_ps(_mm256_mul_ps(Context.ExtentX, Context.AbsR02), _mm256_mul_ps(Context.ExtentY, Context.AbsR12)),
+		_mm256_mul_ps(Context.ExtentZ, Context.AbsR22));
+	__m256 MaxDist2 = _mm256_add_ps(AABBExtentZ, RB2);
+	HitMask = _mm256_and_ps(HitMask, _mm256_cmp_ps(AbsLZ, MaxDist2, _CMP_LE_OQ));
+
+	return _mm256_movemask_ps(HitMask);
+}
+
+int32 FCollisionUtilsSIMD::IntersectAABB8(
 	const FRaySIMDContext& Context,
 	const float* MinX, const float* MinY, const float* MinZ,
 	const float* MaxX, const float* MaxY, const float* MaxZ,
@@ -109,7 +212,7 @@ int32 FRayUtilsSIMD::IntersectAABB8(
 	return _mm256_movemask_ps(HitMask);
 }
 
-int32 FRayUtilsSIMD::IntersectTriangles8(
+int32 FCollisionUtilsSIMD::IntersectTriangles8(
 	const FRaySIMDContext& Context,
 	const float* V0X, const float* V0Y, const float* V0Z,
 	const float* V1X, const float* V1Y, const float* V1Z,
@@ -196,7 +299,7 @@ int32 FRayUtilsSIMD::IntersectTriangles8(
 	return _mm256_movemask_ps(HitMask);
 }
 
-int32 FRayUtilsSIMD::IntersectTriangles8Precomputed(
+int32 FCollisionUtilsSIMD::IntersectTriangles8Precomputed(
 	const FRaySIMDContext& Context,
 	const float* V0X, const float* V0Y, const float* V0Z,
 	const float* Edge1X, const float* Edge1Y, const float* Edge1Z,

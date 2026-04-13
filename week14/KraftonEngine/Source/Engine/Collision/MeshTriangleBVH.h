@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "OBB.h"
 #include "Core/CoreTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
@@ -7,7 +8,7 @@
 
 struct FStaticMesh;
 
-class FMeshTrianglePickingBVH
+class FMeshTriangleBVH
 {
 public:
 	// 메시의 모든 삼각형을 leaf로 수집한 뒤 로컬 공간 BVH를 즉시 다시 빌드합니다.
@@ -15,8 +16,14 @@ public:
 	// 현재는 static mesh asset이 로드 후 고정된다고 보고, 아직 트리가 없을 때만 1회 빌드합니다.
 	void EnsureBuilt(const FStaticMesh& Mesh);
 	// 로컬 공간 ray로 BVH를 순회해 가장 가까운 삼각형 hit를 찾습니다.
-	bool RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const;
-
+	bool RaycastLocal(const FVector& LocalOrigin, 
+		const FVector& LocalDirection, 
+		const FStaticMesh& Mesh, 
+		FHitResult& OutHitResult
+		) const;
+	// OBB와 교차하는 공간 내의 삼각형 리스트를 구합니다. Mesh Decal 최적화에 사용.
+	bool GetOBBIntersection( FOBB DecalOBB, TArray<uint32>& TriangleStartIndices );
+	
 	// 월드 primitive BVH와 dirty 플래그 의미가 겹쳐 혼동을 줄 수 있어,
 	// 메시 변경 대응용 API는 일단 주석으로 남겨 둡니다.
 	// void MarkDirty();
