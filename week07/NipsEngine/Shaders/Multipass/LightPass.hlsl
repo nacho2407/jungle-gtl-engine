@@ -30,7 +30,7 @@ cbuffer LightPassConstants : register(b7)
     float3 CameraWorldPos;
     uint LightCount;
     
-    uint ViewMode;
+    uint   ViewMode;
     uint   WorldLit;
     float2 Padding;
 };
