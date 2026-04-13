@@ -18,6 +18,8 @@ UDecalComponent::UDecalComponent()
 	Mat->SetParam("InvDecalWorld", FMaterialParamValue(GetWorldMatrix().GetInverse()));
 	Mat->SetParam("DecalColorTint", FMaterialParamValue(DecalColor.ToVector4()));
 	Mat->SetParam("DiffuseMap", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Texture/water.png")));
+	Mat->DepthStencilType = EDepthStencilType::Default;
+	Mat->BlendType = EBlendType::AlphaBlend;
 
     bEnableCull = false;
 }
