@@ -447,8 +447,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 // MTL 정보에서 머티리얼 JSON 파일로 변환하는 함수
 FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 {
-	// "Contents/Materials/SlotName.json" 경로 결정
-	FString JsonPath = "Contents/Materials/" + MtlInfo->MaterialSlotName + ".json";
+	FString JsonPath = "Assets/Materials/" + MtlInfo->MaterialSlotName + ".json";
 
 	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
 	if (std::filesystem::exists(FPaths::ToWide(JsonPath)))
