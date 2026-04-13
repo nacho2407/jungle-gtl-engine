@@ -56,10 +56,11 @@ public:
 	const TArray<FDebugLine>& GetDebugLines() const { return DebugLines; }
 
 	// --- Grid ---
+	struct FGridParams { float Spacing = 0.0f; int32 HalfLineCount = 0; bool bEnabled = false; };
 	void SetGrid(float Spacing, int32 HalfLineCount);
-	bool HasGrid() const { return bHasGrid; }
-	float GetGridSpacing() const { return GridSpacing; }
-	int32 GetGridHalfLineCount() const { return GridHalfLineCount; }
+	bool HasGrid() const { return Grid.bEnabled; }
+	float GetGridSpacing() const { return Grid.Spacing; }
+	int32 GetGridHalfLineCount() const { return Grid.HalfLineCount; }
 
 	// --- Height Fog (FogParams.h) ---
 	// UE 패턴: 배열에 모두 저장하되, 렌더링은 [0]만 사용
@@ -89,9 +90,7 @@ private:
 	TArray<FDebugAABB>   DebugAABBs;
 	TArray<FDebugLine>   DebugLines;
 
-	float GridSpacing = 0.0f;
-	int32 GridHalfLineCount = 0;
-	bool  bHasGrid = false;
+	FGridParams Grid;
 
 	struct FFogEntry
 	{

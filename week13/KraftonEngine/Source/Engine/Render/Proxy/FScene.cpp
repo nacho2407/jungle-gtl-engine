@@ -241,7 +241,7 @@ void FScene::ClearFrameData()
 	OverlayTexts.clear();
 	DebugAABBs.clear();
 	DebugLines.clear();
-	bHasGrid = false;
+	Grid = {};
 }
 
 void FScene::AddOverlayText(FString Text, const FVector2& Position, float Scale)
@@ -261,9 +261,9 @@ void FScene::AddDebugLine(const FVector& Start, const FVector& End, const FColor
 
 void FScene::SetGrid(float Spacing, int32 HalfLineCount)
 {
-	GridSpacing = Spacing;
-	GridHalfLineCount = HalfLineCount;
-	bHasGrid = true;
+	Grid.Spacing = Spacing;
+	Grid.HalfLineCount = HalfLineCount;
+	Grid.bEnabled = true;
 }
 
 void FScene::AddFog(const UHeightFogComponent* Owner, const FFogParams& Params)
