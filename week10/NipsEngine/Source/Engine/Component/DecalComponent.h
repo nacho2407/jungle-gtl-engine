@@ -7,8 +7,8 @@ class UDecalComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
-	UDecalComponent();
 
+	UDecalComponent();
 	void PostDuplicate(UObject* Original) override;
 
 	void BeginPlay() override;

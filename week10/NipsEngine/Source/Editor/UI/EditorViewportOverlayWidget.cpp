@@ -9,8 +9,9 @@
 #include "Engine/Object/ObjectIterator.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Engine/Asset/StaticMeshTypes.h"
+#include "Engine/Component/GizmoComponent.h"
+#include "Engine/Object/FName.h"
 #include <cstdio>
-#include "Slate/SSplitter.h"
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Slate/SSplitterCross.h"
@@ -19,7 +20,6 @@
 #include <initializer_list>
 #include <utility>
 #include <algorithm>
-#include "Engine/Component/GizmoComponent.h"
 
 // 뷰포트 타입 → 표시 이름
 static const char* GetViewportTypeName(EEditorViewportType Type)
@@ -139,7 +139,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     bPolicyChanged |= ImGui::SliderInt("Batch Refit Min Dirty", &Settings.SpatialBatchRefitMinDirtyCount, 1, 256);
 
     ImGui::SetNextItemWidth(ItemWidth);
-    bPolicyChanged |= ImGui::SliderInt("Batch Refit Dirty %%", &Settings.SpatialBatchRefitDirtyPercentThreshold, 1, 100);
+    bPolicyChanged |= ImGui::SliderInt("Batch Refit Dirty %", &Settings.SpatialBatchRefitDirtyPercentThreshold, 1, 100);
 
     ImGui::SetNextItemWidth(ItemWidth);
     bPolicyChanged |= ImGui::SliderInt("Rotation Structural Changes", &Settings.SpatialRotationStructuralChangeThreshold, 1, 256);
@@ -148,7 +148,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     bPolicyChanged |= ImGui::SliderInt("Rotation Dirty Count", &Settings.SpatialRotationDirtyCountThreshold, 1, 512);
 
     ImGui::SetNextItemWidth(ItemWidth);
-    bPolicyChanged |= ImGui::SliderInt("Rotation Dirty %%", &Settings.SpatialRotationDirtyPercentThreshold, 1, 100);
+    bPolicyChanged |= ImGui::SliderInt("Rotation Dirty %", &Settings.SpatialRotationDirtyPercentThreshold, 1, 100);
 
     if (bPolicyChanged && EditorEngine)
     {
@@ -178,7 +178,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
 
-		if (!VS.bShowStatFPS && !VS.bShowStatMemory) continue;
+		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable) continue;
 		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0) continue; // 비활성 뷰포트 스킵
 
 		// 툴바 바로 아래 좌측에 고정
@@ -269,11 +269,19 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Mesh: %.2f KB",     MeshMemoryBytes / 1024.f);
 				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Material: %.2f KB", MatMemoryBytes  / 1024.f);
 				ImGui::Separator();
-				
-				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Total Allocated Counts: %d", EngineStatics::GetTotalAllocationCount());
-				ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Total Allocated Bytes: %.2f KB", EngineStatics::GetTotalAllocationBytes() / 1024.f);
+
+				FNamePool& Pool = FNamePool::Get();
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "FName Stat");
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "- Entries: %u",   Pool.GetEntryCount());
+				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.5f, 1.f), "- Size: %.2f KB", Pool.GetTotalBytes() / 1024.f);
+
+				ImGui::Separator();
+
+				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated Counts: %d", EngineStatics::GetTotalAllocationCount());
+				ImGui::TextColored(ImVec4(1.f, 1.f, 1.f, 1.f), "- Total Allocated Bytes: %.2f KB", EngineStatics::GetTotalAllocationBytes() / 1024.f);
 			}
 		}
+
 		ImGui::End();
 	}
 }
