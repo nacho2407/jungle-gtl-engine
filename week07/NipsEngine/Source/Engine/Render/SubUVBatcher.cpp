@@ -28,7 +28,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
 	SubUVMaterial = FResourceManager::Get().FindOrCreateMaterialAsset("SubUVMaterial");
 	UMaterial* SubUVMat = Cast<UMaterial>(SubUVMaterial);
 	SubUVMat->Name = "SubUVMaterial";
-	SubUVMat->ShaderAsset = FResourceManager::Get().GetShader("Shaders/ShaderSubUV.hlsl");
+	SubUVMat->Shader = FResourceManager::Get().GetShader("Shaders/ShaderSubUV.hlsl");
 	SubUVMat->MaterialData.Name = "SubUVMaterial";
 }
 

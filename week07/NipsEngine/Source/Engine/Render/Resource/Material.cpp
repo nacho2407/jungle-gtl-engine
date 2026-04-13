@@ -1,6 +1,7 @@
 ﻿#include "Material.h"
 #include "Asset/FileUtils.h"
 #include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 
 #include <filesystem>
 
@@ -146,7 +147,7 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, FMaterial>& OutM
     return true;
 }
 
-bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets)
+bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device)
 {
 	std::ifstream File(std::filesystem::path(FPaths::ToWide(FilePath)));
 	if (!File.is_open())
@@ -281,74 +282,129 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 		}
 	}
 
+	for (auto& [Name, Mat] : OutMaterialAssets)
+	{
+		Mat->MaterialParams["AmbientColor"] = FMaterialParamValue(Mat->MaterialData.AmbientColor);
+		Mat->MaterialParams["DiffuseColor"] = FMaterialParamValue(Mat->MaterialData.DiffuseColor);
+		Mat->MaterialParams["SpecularColor"] = FMaterialParamValue(Mat->MaterialData.SpecularColor);
+		Mat->MaterialParams["EmissiveColor"] = FMaterialParamValue(Mat->MaterialData.EmissiveColor);
+		Mat->MaterialParams["Shininess"] = FMaterialParamValue(Mat->MaterialData.Shininess);
+		Mat->MaterialParams["Opacity"] = FMaterialParamValue(Mat->MaterialData.Opacity);
+		
+		if (Mat->MaterialData.bHasDiffuseTexture)
+			Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.DiffuseTexPath, Device));
+		
+		if (Mat->MaterialData.bHasAmbientTexture)
+			Mat->MaterialParams["AmbientMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.AmbientTexPath, Device));
+		
+		if (Mat->MaterialData.bHasSpecularTexture)
+			Mat->MaterialParams["SpecularMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.SpecularTexPath, Device));
+		
+		if (Mat->MaterialData.bHasBumpTexture)
+			Mat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTextureAsset(Mat->MaterialData.BumpTexPath, Device));
+
+		Mat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(Mat->MaterialData.bHasDiffuseTexture);
+		Mat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(Mat->MaterialData.bHasSpecularTexture);
+		Mat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(Mat->MaterialData.bHasAmbientTexture);
+		Mat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(Mat->MaterialData.bHasBumpTexture);
+	}
+
 	return true;
 
 }
 
 void UMaterial::Bind(ID3D11DeviceContext* Context) const
 {
-	if (!ShaderAsset) return;
-	ShaderAsset->Bind(Context);
+	if (!Shader) return;
+	Shader->Bind(Context);
 
-	for (const auto& [Name, ParamValue] : MaterialParams)
+	ApplyParams(Context, MaterialParams);
+}
+
+void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const
+{
+	TArray<uint8> CBufferData(Shader->GetCBufferSize());
+
+	for (const auto& [Name, ParamValue] : Params)
 	{
-
-		switch (ParamValue.Type)
+		FShaderVariableInfo VarInfo;
+		if (Shader->GetShaderVariableInfo(Name, VarInfo))
 		{
-		case EMaterialParamType::Scalar:
-			// Set shader scalar parameter
-			break;
-		case EMaterialParamType::Vector:
-			// Set shader vector parameter
-			break;
-		case EMaterialParamType::Texture:
-			int32 BindSlot = ShaderAsset->GetTextureBindSlot(Name);
-			if (ParamValue.Texture)
+			switch (ParamValue.Type)
 			{
-				ID3D11ShaderResourceView* SRV = ParamValue.Texture->GetSRV();
-				Context->PSSetShaderResources(BindSlot, 1, &SRV);
+			case EMaterialParamType::Bool:
+			{
+				uint32 BoolVal = std::get<bool>(ParamValue.Value) ? 1 : 0;
+				std::memcpy(CBufferData.data() + VarInfo.Offset, &BoolVal, sizeof(uint32));
+				break;
 			}
-			break;
-		default:
-			break;
+			case EMaterialParamType::Scalar:
+			{
+				float Val = std::get<float>(ParamValue.Value);
+				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(float));
+				break;
+			}
+			case EMaterialParamType::Vector2:
+			{
+				FVector2 Val = std::get<FVector2>(ParamValue.Value);
+				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector2));
+				break;
+			}
+			case EMaterialParamType::Vector3:
+			{
+				FVector Val = std::get<FVector>(ParamValue.Value);
+				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector));
+				break;
+			}
+			case EMaterialParamType::Vector4:
+			{
+				FVector4 Val = std::get<FVector4>(ParamValue.Value);
+				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FVector4));
+				break;
+			}
+			case EMaterialParamType::Matrix4:
+			{
+				FMatrix Val = std::get<FMatrix>(ParamValue.Value);
+				std::memcpy(CBufferData.data() + VarInfo.Offset, &Val, sizeof(FMatrix));
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		else
+		{
+			if (ParamValue.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(ParamValue.Value))
+			{
+				int32 Slot = Shader->GetTextureBindSlot(Name);
+				if (Slot >= 0)
+				{
+					UTexture* TextureAsset = std::get<UTexture*>(ParamValue.Value);
+					if (TextureAsset)
+					{
+						ID3D11ShaderResourceView* SRV = TextureAsset->GetSRV();
+						Context->PSSetShaderResources(Slot, 1, &SRV);
+					}
+				}
+			}
 		}
 	}
+
+	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 6, CBufferData.size());
 }
 
 void UMaterialInstance::Bind(ID3D11DeviceContext* Context) const
 {
-	if (!ShaderAsset) return;
-	ShaderAsset->Bind(Context);
+	if (!Parent) return;
 
 	TMap<FString, FMaterialParamValue> FinalParams;
-	if (Parent)
+
+	Parent->GatherAllParams(FinalParams);
+
+	for (const auto& [Name, Value] : OverridedParams)
 	{
-		Parent->GatherAllParams(FinalParams);
+		FinalParams[Name] = Value;
 	}
 
-	for (const auto& It : OverridedParams)
-	{
-		FinalParams[It.first] = It.second;
-	}
-
-	for (const auto& Param : FinalParams)
-	{
-		switch (Param.second.Type)
-		{
-		case EMaterialParamType::Scalar:
-			// Set shader scalar parameter
-			break;
-		case EMaterialParamType::Vector:
-			// Set shader vector parameter
-			break;
-		case EMaterialParamType::Texture:
-			if (Param.second.Texture)
-			{
-				// Bind texture to shader
-			}
-			break;
-		default:
-			break;
-		}
-	}
+	Parent->ApplyParams(Context, FinalParams);
 }

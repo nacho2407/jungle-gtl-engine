@@ -501,9 +501,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
 
 			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
-			const FMaterial* MtlData = &Cast<UMaterial>(StaticMeshComp->GetMaterial(SectionIdx))->MaterialData;
-
-			if (!MtlData) MtlData = &EngineDefaultMaterial;
+			UMaterial* Material = Cast<UMaterial>(StaticMeshComp->GetMaterial(SectionIdx));
+			const FMaterial* MtlData = Material ? &Material->MaterialData : &EngineDefaultMaterial;
 	
 			Cmd.Constants.StaticMesh.AmbientColor  = MtlData->AmbientColor;
 			Cmd.Constants.StaticMesh.DiffuseColor  = MtlData->DiffuseColor;

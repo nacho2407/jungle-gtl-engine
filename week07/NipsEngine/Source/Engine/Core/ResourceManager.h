@@ -105,7 +105,7 @@ public:
 	UShader* GetShader(const FString& FilePath) const;
 
 	// --- Material ---
-	void LoadMaterialFromPath(const FString& FilePath);
+	void LoadMaterialFromPath(const FString& FilePath, const FString& ShaderName);
 	//bool LoadMaterial(const FString& MtlFilePath);
 	//FMaterial* FindMaterial(const FString& MaterialName);
 	//const FMaterial* FindMaterial(const FString& MaterialName) const;
@@ -113,7 +113,7 @@ public:
 
 	UMaterial* FindMaterialAsset(const FString& Path) const;
 	UMaterial* FindOrCreateMaterialAsset(const FString& Path, ID3D11Device* Device = nullptr);
-	bool LoadMaterialAsset(const FString& Path, ID3D11Device* Device = nullptr);
+	bool LoadMaterialAsset(const FString& Path, const FString& ShaderName, ID3D11Device* Device = nullptr);
 
 	// --- Font ---
 	FFontResource* FindFont(const FName& FontName);

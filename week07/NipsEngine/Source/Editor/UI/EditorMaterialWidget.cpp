@@ -70,7 +70,8 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 	if (SelectedSectionIndex < 0)
 	{
 		SelectedSectionIndex = 0;
-		SelectedMaterialPtr = &Cast<UMaterial>(MeshComp->GetMaterial(0))->MaterialData;
+		UMaterial* Mat = Cast<UMaterial>(MeshComp->GetMaterial(0));
+		SelectedMaterialPtr = Mat ? &Mat->MaterialData : nullptr;
 	}
 
 	const float SectionPanelWidth = 160.0f;
@@ -148,7 +149,8 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 			if (!bSelected)
 			{
 				SelectedSectionIndex = i;
-				SelectedMaterialPtr = &Cast<UMaterial>(MeshComp->GetMaterial(i))->MaterialData;
+				UMaterial* Mat = Cast<UMaterial>(MeshComp->GetMaterial(i));
+				SelectedMaterialPtr = Mat ? &Mat->MaterialData : nullptr;
 			}
         }
 
