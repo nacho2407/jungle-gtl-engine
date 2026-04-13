@@ -37,6 +37,7 @@ public:
 	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthSRV; }
 	ID3D11ShaderResourceView* GetStencilSRV() const { return StencilSRV; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
+	ID3D11DepthStencilView* GetDSVReadOnly() const { return DSVReadOnly; }
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
 
 private:
@@ -56,6 +57,7 @@ private:
 	// 뎁스/스텐실 (TYPELESS 텍스처 → DSV + DepthSRV + StencilSRV 분리)
 	ID3D11Texture2D* DepthTexture = nullptr;
 	ID3D11DepthStencilView* DSV = nullptr;
+	ID3D11DepthStencilView* DSVReadOnly = nullptr;		// SRV와 동시 바인딩 가능한 읽기전용 DSV
 	ID3D11ShaderResourceView* DepthSRV = nullptr;		// Hi-Z / GPU Occlusion에서 뎁스 읽기용
 	ID3D11ShaderResourceView* StencilSRV = nullptr;	// PostProcess에서 스텐실 읽기용
 

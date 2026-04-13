@@ -54,10 +54,6 @@ public:
 	void Render(const FFrameContext& Frame);
 	void EndFrame();
 
-	// Height Fog — DepthSRV 읽어 world pos 복원 → exponential fog → AlphaBlend
-	// Render() 직후, GPU Occlusion 이전에 Pipeline에서 호출.
-	void DrawHeightFog(const FFrameContext& Frame, const struct FFogParams& Fog);
-
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
@@ -71,16 +67,12 @@ private:
 	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼
 	void PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene);
 
-	// 동적 지오메트리 → FDrawCommand (VB 업로드 + 커맨드 생성)
-	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx);
+	// 동적 지오메트리 + PostProcess → FDrawCommand (VB 업로드 + 커맨드 생성)
+	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx, const FScene* Scene);
 
 	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
 	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
-
-	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
-	void DrawPostProcessOutline(const FFrameContext& Frame, ID3D11DeviceContext* Context);
-
 
 private:
 	FD3DDevice Device;
