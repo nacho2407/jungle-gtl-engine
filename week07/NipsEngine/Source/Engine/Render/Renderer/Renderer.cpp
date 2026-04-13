@@ -8,6 +8,7 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Core/ResourceManager.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -734,6 +735,14 @@ void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 
 	ID3D11ShaderResourceView* maskSRV = CurrentRenderTargets.SelectionMaskSRV;
 	InDeviceContext->PSSetShaderResources(7, 1, &maskSRV);
+
+	auto DepthStencilState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+	auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+
+	InDeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+	InDeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+	InDeviceContext->RSSetState(RasterizerState);
 
 	InDeviceContext->Draw(3, 0);
 
