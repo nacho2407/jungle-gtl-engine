@@ -64,6 +64,13 @@ struct PS_Input_Full
     float2 texcoord : TEXTCOORD;
 };
 
+// SV_POSITION + UV (PostProcess: HeightFog, Outline, SceneDepth)
+struct PS_Input_UV
+{
+    float4 position : SV_POSITION;
+    float2 uv : TEXCOORD0;
+};
+
 // SV_POSITION only (Outline)
 struct PS_Input_PosOnly
 {

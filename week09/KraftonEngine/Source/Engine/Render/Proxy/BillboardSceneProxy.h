@@ -15,8 +15,7 @@ public:
 	FBillboardSceneProxy(UBillboardComponent* InComponent);
 
 	void UpdateMesh() override;
-	void UpdatePerViewport(const FRenderBus& Bus) override;
-	void CollectEntries(FRenderBus& Bus) override;
+	void UpdatePerViewport(const FFrameContext& Frame) override;
 
 private:
 	UBillboardComponent* GetBillboardComponent() const;

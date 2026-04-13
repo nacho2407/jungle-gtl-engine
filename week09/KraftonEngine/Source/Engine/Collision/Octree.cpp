@@ -2,6 +2,7 @@
 #include <Collision/RayUtils.h>
 #include <algorithm>
 #include <UI/EditorConsoleWidget.h>
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 
 namespace {
 	int GetChildIndex(const FVector& Center, const FVector& NodeCenter)
@@ -517,7 +518,8 @@ void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
 		if (Primitive)
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-				OutProxies.push_back(Proxy);
+				if (!Proxy->bNeverCull)
+					OutProxies.push_back(Proxy);
 		}
 	}
 
@@ -555,7 +557,8 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 		if (ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-				OutProxies.push_back(Proxy);
+				if (!Proxy->bNeverCull)
+					OutProxies.push_back(Proxy);
 		}
 	}
 

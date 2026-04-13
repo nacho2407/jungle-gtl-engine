@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <stdint.h>
+#include <cassert>
 #include <vector>
 #include <list>
 #include <unordered_set>
@@ -46,3 +47,12 @@ using TPair = std::pair<T1, T2>;
 
 template <typename T>
 using TQueue = std::queue<T>;
+
+// ===== Assert =====
+#ifdef _DEBUG
+#define check(expr)       assert(expr)
+#define checkf(expr, msg) assert((expr) && (msg))
+#else
+#define check(expr)       ((void)0)
+#define checkf(expr, msg) ((void)0)
+#endif

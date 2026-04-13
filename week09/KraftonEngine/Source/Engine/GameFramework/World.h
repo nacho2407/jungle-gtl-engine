@@ -7,8 +7,6 @@
 #include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/FScene.h"
-#include "Render/DebugDraw/DebugDrawQueue.h"
-#include "Render/Culling/ConvexVolume.h"
 #include "Render/Pipeline/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
@@ -38,15 +36,10 @@ public:
 	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
-	void InvalidateVisibleSet();
 
 	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
-	TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() { return Scene.GetVisibleProxiesMutable(); }
-	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return Scene.GetVisibleProxies(); }
-	void RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index);
-	void UpdateVisibleProxies();
 
-	// LOD 컨텍스트를 RenderBus에 전달 (Collect 단계에서 LOD 인라인 갱신용)
+	// LOD 컨텍스트를 FFrameContext에 전달 (Collect 단계에서 LOD 인라인 갱신용)
 	FLODUpdateContext PrepareLODContext();
 
 	void InitWorld();      // Set up the world before gameplay begins
@@ -64,10 +57,6 @@ public:
 	FScene& GetScene() { return Scene; }
 	const FScene& GetScene() const { return Scene; }
 	
-	// DebugDraw — DrawDebugLine 등 글로벌 함수가 사용
-	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
-	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
-
 	FSpatialPartition& GetPartition() { return Partition; }
 	const FOctree* GetOctree() const { return Partition.GetOctree(); }
 	void InsertActorToOctree(AActor* actor);
@@ -75,9 +64,6 @@ public:
 	void UpdateActorInOctree(AActor* actor);
 
 private:
-	bool NeedsVisibleProxyRebuild() const;
-	void CacheVisibleCameraState();
-
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
 
@@ -88,15 +74,10 @@ private:
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;
 	bool bDeferredPickingBVHDirty = false;
-	bool bHasVisibleCameraState = false;
 	uint32 VisibleProxyBuildFrame = 0;
-	FVector LastVisibleCameraPos = FVector(0, 0, 0);
-	FVector LastVisibleCameraForward = FVector(1, 0, 0);
-	FCameraState LastVisibleCameraState = {};
 	FVector LastFullLODUpdateCameraForward = FVector(1, 0, 0);
 	FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
 	FScene Scene;
-	FDebugDrawQueue DebugDrawQueue;
 	FTickManager TickManager;
 
 	FSpatialPartition Partition;

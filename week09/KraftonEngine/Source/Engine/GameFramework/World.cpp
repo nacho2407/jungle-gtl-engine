@@ -2,25 +2,13 @@
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Engine/Render/Culling/ConvexVolume.h"
 #include "Engine/Component/CameraComponent.h"
 #include "Render/Pipeline/LODContext.h"
-#include <cmath>
 #include <algorithm>
 #include "Profiling/Stats.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
 
-namespace
-{
-	constexpr float VisibleCameraMoveThresholdSq = 0.0001f;
-	constexpr float VisibleCameraRotationDotThreshold = 0.99999f;
-
-	bool NearlyEqual(float A, float B, float Epsilon = 0.0001f)
-	{
-		return std::abs(A - B) <= Epsilon;
-	}
-}
 
 UWorld::~UWorld()
 {
@@ -63,7 +51,6 @@ void UWorld::DestroyActor(AActor* Actor)
 	PersistentLevel->RemoveActor(Actor);
 
 	MarkWorldPrimitivePickingBVHDirty();
-	InvalidateVisibleSet();
 	Partition.RemoveActor(Actor);
 
 	// Mark for garbage collection
@@ -81,7 +68,6 @@ void UWorld::AddActor(AActor* Actor)
 
 	InsertActorToOctree(Actor);
 	MarkWorldPrimitivePickingBVHDirty();
-	InvalidateVisibleSet();
 
 	// PIE 중 Duplicate(Ctrl+D)나 SpawnActor로 들어온 액터에도 BeginPlay를 보장.
 	if (bHasBegunPlay && !Actor->HasActorBegunPlay())
@@ -99,11 +85,6 @@ void UWorld::MarkWorldPrimitivePickingBVHDirty()
 	}
 
 	WorldPrimitivePickingBVH.MarkDirty();
-}
-
-void UWorld::InvalidateVisibleSet()
-{
-	Scene.InvalidateVisibleSet();
 }
 
 void UWorld::BuildWorldPrimitivePickingBVHNow() const
@@ -169,176 +150,16 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 void UWorld::InsertActorToOctree(AActor* Actor)
 {
 	Partition.InsertActor(Actor);
-	InvalidateVisibleSet();
 }
 
 void UWorld::RemoveActorToOctree(AActor* Actor)
 {
 	Partition.RemoveActor(Actor);
-	InvalidateVisibleSet();
 }
 
 void UWorld::UpdateActorInOctree(AActor* Actor)
 {
 	Partition.UpdateActor(Actor);
-	InvalidateVisibleSet();
-}
-
-// LOD 상수 및 SelectLOD는 LODContext.h에 정의
-
-static float DistanceSquared(const FVector& A, const FVector& B)
-{
-	const FVector D = A - B;
-	return D.X * D.X + D.Y * D.Y + D.Z * D.Z;
-}
-
-bool UWorld::NeedsVisibleProxyRebuild() const
-{
-	if (Scene.IsVisibleSetDirty() || !bHasVisibleCameraState || !ActiveCamera)
-	{
-		return true;
-	}
-
-	const FVector CameraPos = ActiveCamera->GetWorldLocation();
-	if (DistanceSquared(CameraPos, LastVisibleCameraPos) >= VisibleCameraMoveThresholdSq)
-	{
-		return true;
-	}
-
-	const FVector CameraForward = ActiveCamera->GetForwardVector();
-	if (CameraForward.Dot(LastVisibleCameraForward) < VisibleCameraRotationDotThreshold)
-	{
-		return true;
-	}
-
-	const FCameraState& CameraState = ActiveCamera->GetCameraState();
-	return !NearlyEqual(CameraState.FOV, LastVisibleCameraState.FOV)
-		|| !NearlyEqual(CameraState.AspectRatio, LastVisibleCameraState.AspectRatio)
-		|| !NearlyEqual(CameraState.NearZ, LastVisibleCameraState.NearZ)
-		|| !NearlyEqual(CameraState.FarZ, LastVisibleCameraState.FarZ)
-		|| !NearlyEqual(CameraState.OrthoWidth, LastVisibleCameraState.OrthoWidth)
-		|| CameraState.bIsOrthogonal != LastVisibleCameraState.bIsOrthogonal;
-}
-
-void UWorld::CacheVisibleCameraState()
-{
-	if (!ActiveCamera)
-	{
-		bHasVisibleCameraState = false;
-		return;
-	}
-
-	LastVisibleCameraPos = ActiveCamera->GetWorldLocation();
-	LastVisibleCameraForward = ActiveCamera->GetForwardVector();
-	LastVisibleCameraState = ActiveCamera->GetCameraState();
-	bHasVisibleCameraState = true;
-}
-
-void UWorld::RemoveVisibleProxy(FPrimitiveSceneProxy* Proxy, uint32 Index)
-{
-	//if (Index != UINT32_MAX)
-	//{
-	//	// swap-pop
-	//	FPrimitiveSceneProxy* Last = VisibleProxies.back();
-	//	VisibleProxies[Index] = Last;
-	//	VisibleProxies.pop_back();
-
-	//	if (Last != Proxy)
-	//		Last->VisibleListIndex = Index;
-
-	//	Proxy->bInVisibleSet = false;
-	//	Proxy->VisibleListIndex = UINT32_MAX;
-	//	delete Proxy;
-	//}
-}
-
-void UWorld::UpdateVisibleProxies()
-{
-	TArray<FPrimitiveSceneProxy*>& VisibleProxies = Scene.GetVisibleProxiesMutable();
-
-	if (!ActiveCamera)
-	{
-		for (FPrimitiveSceneProxy* Proxy : VisibleProxies)
-		{
-			if (!Proxy)
-			{
-				continue;
-			}
-
-			Proxy->bInVisibleSet = false;
-			Proxy->VisibleListIndex = UINT32_MAX;
-		}
-
-		VisibleProxies.clear();
-		bHasVisibleCameraState = false;
-		return;
-	}
-
-	if (!NeedsVisibleProxyRebuild())
-	{
-		return;
-	}
-
-	for (FPrimitiveSceneProxy* Proxy : VisibleProxies)
-	{
-		if (!Proxy)
-		{
-			continue;
-		}
-
-		Proxy->bInVisibleSet = false;
-		Proxy->VisibleListIndex = UINT32_MAX;
-	}
-
-	VisibleProxies.clear();
-
-	// HEAD: capacity 예약으로 재할당 방지
-	const uint32 ExpectedProxyCount = Scene.GetProxyCount();
-	if (VisibleProxies.capacity() < ExpectedProxyCount)
-	{
-		VisibleProxies.reserve(ExpectedProxyCount);
-	}
-
-	const uint32 ExpectedVisibleProxyCount =
-		ExpectedProxyCount + static_cast<uint32>(Scene.GetNeverCullProxies().size());
-	if (VisibleProxies.capacity() < ExpectedVisibleProxyCount)
-	{
-		VisibleProxies.reserve(ExpectedVisibleProxyCount);
-	}
-
-	{
-		SCOPE_STAT_CAT("FrustumCulling", "1_WorldTick");
-		FConvexVolume ConvexVolume = ActiveCamera->GetConvexVolume();
-		Partition.QueryFrustumAllProxies(ConvexVolume, VisibleProxies);
-	}
-
-	for (uint32 Index = 0; Index < static_cast<uint32>(VisibleProxies.size()); ++Index)
-	{
-		FPrimitiveSceneProxy* Proxy = VisibleProxies[Index];
-		if (!Proxy)
-		{
-			continue;
-		}
-
-		Proxy->bInVisibleSet = true;
-		Proxy->VisibleListIndex = Index;
-	}
-
-	// NeverCull 프록시 추가 (LOD 갱신은 Collect 단계에서 병합 처리)
-	for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
-	{
-		if (!Proxy || Proxy->bInVisibleSet)
-		{
-			continue;
-		}
-
-		Proxy->bInVisibleSet = true;
-		Proxy->VisibleListIndex = static_cast<uint32>(VisibleProxies.size());
-		VisibleProxies.push_back(Proxy);
-	}
-
-	CacheVisibleCameraState();
-	Scene.MarkVisibleSetClean();
 }
 
 FLODUpdateContext UWorld::PrepareLODContext()
@@ -350,7 +171,7 @@ FLODUpdateContext UWorld::PrepareLODContext()
 
 	const uint32 LODUpdateFrame = VisibleProxyBuildFrame++;
 	const uint32 LODUpdateSlice = LODUpdateFrame & (LOD_UPDATE_SLICE_COUNT - 1);
-	const bool bShouldStaggerLOD = Scene.GetVisibleProxies().size() >= LOD_STAGGER_MIN_VISIBLE;
+	const bool bShouldStaggerLOD = Scene.GetProxyCount() >= LOD_STAGGER_MIN_VISIBLE;
 
 	const bool bForceFullLODRefresh =
 		!bShouldStaggerLOD
@@ -379,7 +200,6 @@ FLODUpdateContext UWorld::PrepareLODContext()
 void UWorld::InitWorld()
 {
 	Partition.Reset(FBoundingBox());
-	InvalidateVisibleSet();
 	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
 	PersistentLevel->SetWorld(this);
 }
@@ -401,10 +221,8 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		Partition.FlushPrimitive();
 	}
 
-	UpdateVisibleProxies();
-
 #if _DEBUG
-	DebugDrawQueue.Tick(DeltaTime);
+	Scene.GetDebugDrawQueue().Tick(DeltaTime);
 #endif
 
 	TickManager.Tick(this, DeltaTime, TickType);
