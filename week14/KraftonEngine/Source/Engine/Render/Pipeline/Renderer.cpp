@@ -105,7 +105,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Proxy.ClearPerObjectCBDirty();
 	}
 
-	// ExtraCB 업데이트 (Gizmo, SubUV 등) — lazy creation if buffer not yet allocated
+	// PerShaderCB 업데이트 (Gizmo, SubUV, Decal 등) — lazy creation if buffer not yet allocated
 	if (Proxy.ExtraCB.Buffer)
 	{
 		if (!Proxy.ExtraCB.Buffer->GetBuffer())
@@ -113,12 +113,19 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Proxy.ExtraCB.Buffer->Update(Ctx, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
 	}
 
-	// 공유 MaterialCB 가져오기
+	// 공유 Material CB (섹션별 인라인 데이터용)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Material, sizeof(FMaterialConstants));
 
 	// SelectionMask 커맨드 존재 추적
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
+
+	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
+	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
+	{
+		if (Proxy.ExtraCB.Buffer)
+			Cmd.PerShaderCB[Proxy.ExtraCB.Slot - ECBSlot::PerShader0] = Proxy.ExtraCB.Buffer;
+	};
 
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
 	if (!Proxy.SectionDraws.empty())
@@ -138,9 +145,9 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
 			Cmd.PerObjectCB = PerObjCB;
-			Cmd.ExtraCB = Proxy.ExtraCB.Buffer;
-			Cmd.ExtraCBSlot = Proxy.ExtraCB.Slot;
-			Cmd.MaterialCB = MaterialCB;
+			Cmd.PerShaderCB[0] = MaterialCB;
+			Cmd.bInlineMaterialData = true;
+			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.SectionColor = Section.DiffuseColor;
 			Cmd.bIsUVScroll = Section.bIsUVScroll ? 1u : 0u;
@@ -158,8 +165,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Cmd.Topology = PassState.Topology;
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
-		Cmd.ExtraCB = Proxy.ExtraCB.Buffer;
-		Cmd.ExtraCBSlot = Proxy.ExtraCB.Slot;
+		SetProxyExtraCB(Cmd);
 		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
 		Cmd.Sampler = Proxy.Sampler;
 		Cmd.Pass = Pass;
@@ -377,8 +383,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
 				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;  // t0: depth
-				Cmd.ExtraCB = FogCB;
-				Cmd.ExtraCBSlot = ECBSlot::PerShader0;
+				Cmd.PerShaderCB[0] = FogCB;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FogShader, nullptr, Frame.ViewportDepthSRV, 0);
 			}
@@ -406,8 +411,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
 				Cmd.DiffuseSRV = Frame.ViewportStencilSRV;  // t0: stencil
-				Cmd.ExtraCB = OutlineCB;
-				Cmd.ExtraCBSlot = ECBSlot::PerShader0;
+				Cmd.PerShaderCB[0] = OutlineCB;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, PPShader, nullptr, Frame.ViewportStencilSRV, 1);
 			}
@@ -437,8 +441,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;
 				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;
-				Cmd.ExtraCB = SceneDepthCB;
-				Cmd.ExtraCBSlot = ECBSlot::PerShader0;
+				Cmd.PerShaderCB[0] = SceneDepthCB;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, Frame.ViewportDepthSRV, 2);
 			}
