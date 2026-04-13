@@ -194,11 +194,11 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 		{
 			if (Mat.MaterialInterface)
 			{
-				MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
-				if (Mat.MaterialInterface->PathFileName == "None")
+				MaterialCache[Mat.MaterialInterface->GetAssetPathFileName()] = Mat.MaterialInterface;
+				if (Mat.MaterialInterface->GetAssetPathFileName() == "None")
 					continue;
 
-				FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+				FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->GetAssetPathFileName());
 
 				FWindowsBinWriter MatWriter(MatBinPath);
 				if (MatWriter.IsValid())
@@ -271,7 +271,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 			// .mbin 누락 등으로 머티리얼이 비어있으면 OBJ 재파싱으로 전환
 			for (const auto& Mat : StaticMesh->GetStaticMaterials())
 			{
-				if (Mat.MaterialInterface && Mat.MaterialInterface->PathFileName.empty())
+				if (Mat.MaterialInterface && Mat.MaterialInterface->GetAssetPathFileName().empty())
 				{
 					bNeedRebuild = true;
 					break;
@@ -283,14 +283,14 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 			{
 				for (const auto& Mat : StaticMesh->GetStaticMaterials())
 				{
-					if (Mat.MaterialInterface && !Mat.MaterialInterface->PathFileName.empty()
-						&& Mat.MaterialInterface->PathFileName != "None")
+					if (Mat.MaterialInterface && !Mat.MaterialInterface->GetAssetPathFileName().empty()
+						&& Mat.MaterialInterface->GetAssetPathFileName() != "None")
 					{
 						// PostEditProperty 등에서 원본 경로로 조회 시 캐시 히트되도록 등록
-						MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
+						MaterialCache[Mat.MaterialInterface->GetAssetPathFileName()] = Mat.MaterialInterface;
 
 						// .mbin이 없으면 디스크에 저장 (다음 세션용)
-						FString MatBinPath = GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+						FString MatBinPath = GetMBinaryFilePath(Mat.MaterialInterface->GetAssetPathFileName());
 						std::filesystem::path MBinPathW(FPaths::ToWide(MatBinPath));
 						if (!std::filesystem::exists(MBinPathW))
 						{
@@ -327,11 +327,11 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 			{
 				if (Mat.MaterialInterface)
 				{
-					MaterialCache[Mat.MaterialInterface->PathFileName] = Mat.MaterialInterface;
-					if (Mat.MaterialInterface->PathFileName == "None")
+					MaterialCache[Mat.MaterialInterface->GetAssetPathFileName()] = Mat.MaterialInterface;
+					if (Mat.MaterialInterface->GetAssetPathFileName() == "None")
 						continue;
 
-					FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+					FString MatBinPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->GetAssetPathFileName());
 
 					FWindowsBinWriter MatWriter(MatBinPath);
 					if (MatWriter.IsValid())
@@ -431,7 +431,7 @@ UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 		}
 
 		// 속성이 실제로 로드된 경우에만 .mbin 저장 (빈 머티리얼로 .mbin을 덮어쓰지 않음)
-		if (!NewMaterial->PathFileName.empty())
+		if (!NewMaterial->GetAssetPathFileName().empty())
 		{
 			FWindowsBinWriter Writer(MBinPath);
 			if (Writer.IsValid())
