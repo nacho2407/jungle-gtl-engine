@@ -195,16 +195,6 @@ bool UStaticMesh::RaycastMeshTrianglesWithBVHLocal(const FVector& LocalOrigin, c
 	return MeshTrianglePickingBVH.RaycastLocal(LocalOrigin, LocalDirection, *StaticMeshAsset, OutHitResult);
 }
 
-// OBB는 StaticMesh와 동일한 좌표계를 사용해야 함.
-bool UStaticMesh::GetOBBIntersection(FOBB OBB, TArray<uint32>& OutTriangleStartIndices) const
-{
-	if (StaticMeshAsset == nullptr)
-		return false;
-
-	MeshTrianglePickingBVH.EnsureBuilt(*StaticMeshAsset);
-	return MeshTrianglePickingBVH.GetOBBIntersection(OBB, OutTriangleStartIndices);
-}
-
 FMeshBuffer* UStaticMesh::GetLODMeshBuffer(uint32 LODLevel) const
 {
 	if (LODLevel == 0 && StaticMeshAsset)
