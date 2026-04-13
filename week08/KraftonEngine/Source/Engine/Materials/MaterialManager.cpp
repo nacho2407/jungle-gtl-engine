@@ -4,6 +4,8 @@
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
 #include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/Buffer.h"
+#include "Texture/Texture2D.h"
 
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
@@ -69,39 +71,20 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 	
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> InjectedBuffers;
 
-	// Template으로부터 상수버퍼 레이아웃을 받아와 CBuffer 생성 후 UMaterial에 주입
 	const auto& RequiredBuffers = Template->GetParameterInfo();
-
-	// 이미 생성한 버퍼 이름을 기록하여 중복 생성을 막는 벡터(또는 Set)
 	std::vector<FString> CreatedBuffers;
 
 	for (const auto& BufferInfo : RequiredBuffers)
 	{
 		const FMaterialParameterInfo* ParamInfo = BufferInfo.second;
 
-		// 1. 이미 생성한 버퍼("PerMaterial" 등)라면 이번 파라미터는 건너뜀
 		if (std::find(CreatedBuffers.begin(), CreatedBuffers.end(), ParamInfo->BufferName) != CreatedBuffers.end())
-		{
 			continue;
-		}
 
-		// 1. D3D11 버퍼 생성 (Manager가 Device를 가지고 있으므로 여기서 수행)
-		ID3D11Buffer* RawGPUBuffer = nullptr;
-		D3D11_BUFFER_DESC desc = {};
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		uint32 AlignedSize = (BufferInfo.second->BufferSize + 15) & ~15;
-		desc.ByteWidth = AlignedSize;
-		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		Device->CreateBuffer(&desc, nullptr, &RawGPUBuffer);
-
-		// 2. FMaterialConstantBuffer 래퍼 객체 생성 및 초기화
 		auto MatCB = std::make_unique<FMaterialConstantBuffer>();
-		MatCB->Init(RawGPUBuffer, BufferInfo.second->BufferSize, BufferInfo.second->SlotIndex); // 설계하신 Init 호출
+		MatCB->Init(Device, ParamInfo->BufferSize, ParamInfo->SlotIndex);
 
-		// 3. 주입할 맵에 추가
-		InjectedBuffers.emplace(BufferInfo.second->BufferName, std::move(MatCB));
-
+		InjectedBuffers.emplace(ParamInfo->BufferName, std::move(MatCB));
 		CreatedBuffers.push_back(ParamInfo->BufferName);
 	}
 
@@ -137,24 +120,29 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 
 void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
 {
-	// 나중에 여기에 JSON에서 텍스처 경로를 읽어와서
-		// Material->SetTextureParameter()를 호출하는 로직을 구현하시면 됩니다.
+	if (!JsonData.hasKey("Textures")) return;
 
-		// 예외 처리 방어 코드
-		if (!JsonData.hasKey("Textures")) return;
+	for (auto& Pair : JsonData["Textures"].ObjectRange())
+	{
+		FString SlotName = Pair.first.c_str();
+		FString TexturePath = Pair.second.ToString().c_str();
+
+		UTexture2D* Texture = UTexture2D::LoadFromFile(TexturePath, Device);
+		if (Texture)
+		{
+			Material->SetTextureParameter("DiffuseTexture", Texture);
+		}
+	}
 }
 
 
 ERenderPass FMaterialManager::StringToRenderPass(const FString& RenderPassStr) const
 {
 	if (RenderPassStr == "Opaque")        return ERenderPass::Opaque;
-	if (RenderPassStr == "Font")          return ERenderPass::Font;
-	if (RenderPassStr == "SubUV")         return ERenderPass::SubUV;
-	if (RenderPassStr == "Billboard")     return ERenderPass::Billboard;
-	if (RenderPassStr == "Translucent")   return ERenderPass::Translucent;
+	if (RenderPassStr == "AlphaBlend")    return ERenderPass::AlphaBlend;
+	if (RenderPassStr == "Decal")         return ERenderPass::Decal;
 	if (RenderPassStr == "SelectionMask") return ERenderPass::SelectionMask;
-	if (RenderPassStr == "Editor")        return ERenderPass::Editor;
-	if (RenderPassStr == "Grid")          return ERenderPass::Grid;
+	if (RenderPassStr == "EditorLines")   return ERenderPass::EditorLines;
 	if (RenderPassStr == "PostProcess")   return ERenderPass::PostProcess;
 	if (RenderPassStr == "GizmoOuter")    return ERenderPass::GizmoOuter;
 	if (RenderPassStr == "GizmoInner")    return ERenderPass::GizmoInner;

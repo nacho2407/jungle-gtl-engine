@@ -95,7 +95,7 @@ void FShaderManager::Release()
 	}
 
 	for (auto& [Key, Shader] : CustomShaderCache)
-		Shader.Release();
+		Shader->Release();
 
 	CustomShaderCache.clear();
 
@@ -117,7 +117,7 @@ FShader* FShaderManager::GetCustomShader(const FString& Key)
 	auto It = CustomShaderCache.find(Key);
 	if (It != CustomShaderCache.end())
 	{
-		return &It->second;  // 이미 캐시에 있으면 반환
+		return It->second.get();  // 이미 캐시에 있으면 반환
 	}
 	return nullptr;
 }
@@ -129,14 +129,14 @@ FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_
 	auto It = CustomShaderCache.find(Key);
 	if (It != CustomShaderCache.end())
 	{
-		return &It->second;  // 이미 캐시에 있으면 반환
+		return It->second.get();  // 이미 캐시에 있으면 반환
 	}
 
-	FShader NewShader;
-	NewShader.Create(InDevice, InFilePath, "VS", "PS", InInputElements, InInputElementCount);
-
+	auto NewShader = std::make_unique<FShader>();
+	NewShader->Create(InDevice, InFilePath, "VS", "PS", InInputElements, InInputElementCount);
+	auto* RawPtr = NewShader.get();
 	CustomShaderCache[Key] = std::move(NewShader);
-	return &CustomShaderCache[Key];
+	return RawPtr;
 }
 
 

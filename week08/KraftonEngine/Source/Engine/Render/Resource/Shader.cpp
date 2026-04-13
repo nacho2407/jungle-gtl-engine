@@ -2,6 +2,8 @@
 #include "Profiling/MemoryStats.h"
 #include "Materials/Material.h"
 #include <iostream>
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 FShader::FShader(FShader&& Other) noexcept
 	: VertexShader(Other.VertexShader)

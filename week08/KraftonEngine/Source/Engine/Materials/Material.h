@@ -3,7 +3,7 @@
 #include "Object/ObjectFactory.h"
 #include "Math/Vector.h"
 #include "Render/Types/RenderTypes.h"
-
+#include "Render/Resource/Buffer.h"
 #include <memory>
 class UTexture2D;
 class FArchive;
@@ -51,7 +51,8 @@ public:
 struct FMaterialConstantBuffer
 {
 	uint8* CPUData;   // CPU 메모리의 실제 값
-	ID3D11Buffer* GPUBuffer; // GPU에 올라간 버퍼, Shader의 FConstatnbufferpool이 소유
+	//ID3D11Buffer* GPUBuffer; // GPU에 올라간 버퍼
+	FConstantBuffer GPUBuffer;
 	uint32 Size = 0;
 	UINT SlotIndex = 0;	//cbuffer 바인딩 슬롯 (b0, b1 등)
 	bool bDirty = false;
@@ -64,8 +65,8 @@ struct FMaterialConstantBuffer
 	FMaterialConstantBuffer& operator=(const FMaterialConstantBuffer&) = delete;
 
 	// CPU 메모리 할당
-	bool Create(ID3D11Device* Device, uint32 InSize);
-	void Init(ID3D11Buffer* InGPUBuffer, uint32 InSize, uint32 InSlot);	// 변경안
+	//bool Create(ID3D11Device* Device, uint32 InSize);
+	void Init(ID3D11Device* InDevice, uint32 InSize, uint32 InSlot);
 
 	// CPU 데이터의 특정 오프셋에 값 쓰기 (Dirty 마킹)
 	void SetData(const void* Data, uint32 InSize, uint32 Offset = 0);
@@ -74,6 +75,7 @@ struct FMaterialConstantBuffer
 
 	void Release();
 
+	FConstantBuffer* GetConstantBuffer() { return &GPUBuffer; }
 };
 
 //파라미터 값 + 텍스처 (런타임 데이터)
@@ -115,6 +117,16 @@ public:
 	const FString& GetAssetPathFileName() const { return PathFileName;}
 	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
 	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
+
+	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const
+	{
+		for (const auto& Pair : ConstantBufferMap)
+		{
+			if (Pair.second->SlotIndex == InSlot)
+				return Pair.second->GetConstantBuffer();
+		}
+		return nullptr;
+	}
 };
 
 //// ─── 미래 확장용 구조 (현재 미사용) ───

@@ -35,43 +35,42 @@ FMaterialConstantBuffer::~FMaterialConstantBuffer()
 	Release();
 }
 
-bool FMaterialConstantBuffer::Create(ID3D11Device* Device, uint32 InSize)
+//bool FMaterialConstantBuffer::Create(ID3D11Device* Device, uint32 InSize)
+//{
+//	//Release();
+//
+//
+//	//Size = (InSize + 15) & ~15;
+//	//CPUData = new uint8[Size];
+//	//memset(CPUData, 0, Size);
+//
+//	//D3D11_BUFFER_DESC Desc = {};
+//	//Desc.ByteWidth = Size;
+//	//Desc.Usage = D3D11_USAGE_DYNAMIC;
+//	//Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+//	//Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//
+//	//HRESULT Hr = Device->CreateBuffer(&Desc, nullptr, &GPUBuffer);
+//	//if (FAILED(Hr))
+//	//{
+//	//	Release();
+//	//	return false;
+//	//}
+//
+//	//bDirty = true; // 초기 데이터(0)도 업로드 필요
+//	return true;
+//}
+
+void FMaterialConstantBuffer::Init(ID3D11Device* InDevice, uint32 InSize, uint32 InSlot)
 {
 	Release();
 
-
-	Size = (InSize + 15) & ~15;
-	CPUData = new uint8[Size];
-	memset(CPUData, 0, Size);
-
-	D3D11_BUFFER_DESC Desc = {};
-	Desc.ByteWidth = Size;
-	Desc.Usage = D3D11_USAGE_DYNAMIC;
-	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	HRESULT Hr = Device->CreateBuffer(&Desc, nullptr, &GPUBuffer);
-	if (FAILED(Hr))
-	{
-		Release();
-		return false;
-	}
-
-	bDirty = true; // 초기 데이터(0)도 업로드 필요
-	return true;
-}
-
-void FMaterialConstantBuffer::Init(ID3D11Buffer* InGPUBuffer, uint32 InSize, uint32 InSlot)
-{
-	Release();
-
-	Size = (InSize + 15) & ~15;
-	CPUData = new uint8[Size];
-	memset(CPUData, 0, Size);
-	GPUBuffer = InGPUBuffer;
+	uint32 AlignedSize = (InSize + 15) & ~15;
+	GPUBuffer.Create(InDevice, AlignedSize);
+	CPUData = new uint8[AlignedSize]();
+	Size = AlignedSize;
 	SlotIndex = InSlot;
-
-	bDirty = true; // 초기 데이터(0)도 업로드 필요
+	bDirty = true;
 
 }
 
@@ -87,29 +86,17 @@ void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Of
 
 void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
 {
+
 	if (!bDirty)
-	{
 		return;
-	}
 
-	D3D11_MAPPED_SUBRESOURCE Mapped;
-	HRESULT Hr = DeviceContext->Map(GPUBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
-	if (SUCCEEDED(Hr))
-	{
-		memcpy(Mapped.pData, CPUData, Size);
-		DeviceContext->Unmap(GPUBuffer, 0);
-		bDirty = false;
-	}
-
+	GPUBuffer.Update(DeviceContext, CPUData, Size);
+	bDirty = false;
 }
 
 void FMaterialConstantBuffer::Release()
 {
-	if (GPUBuffer)
-	{
-		GPUBuffer->Release();
-		GPUBuffer = nullptr;
-	}
+	GPUBuffer.Release();
 	delete[] CPUData;
 	CPUData = nullptr;
 	Size = 0;
@@ -138,6 +125,10 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 	if (It == ConstantBufferMap.end()) return false;
 
 	It->second->SetData(Data, Size, Info.Offset);
+	It->second->bDirty = true; // 데이터가 변경되었음을 표시
+
+	
+	It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext()); // 변경된 데이터 즉시 GPU에 업로드 (옵션)
 	return true;
 }
 
@@ -215,29 +206,29 @@ bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTe
 
 void UMaterial::Bind(ID3D11DeviceContext* Context)
 {
-	FShader* Shader = Template->GetShader();
-	if (!Shader)
-	{
-		return;
-	}
+	//FShader* Shader = Template->GetShader();
+	//if (!Shader)
+	//{
+	//	return;
+	//}
 
-	Shader->Bind(Context);
+	//Shader->Bind(Context);
 
-	//Map 전용으로 slot 매핑
-	for (auto& Pair : ConstantBufferMap)
-	{
-		FMaterialConstantBuffer& Buffer = *Pair.second;
+	////Map 전용으로 slot 매핑
+	//for (auto& Pair : ConstantBufferMap)
+	//{
+	//	FMaterialConstantBuffer& Buffer = *Pair.second;
 
-		// 데이터가 변경(Dirty)되었다면 
-		Buffer.Upload(Context);
+	//	// 데이터가 변경(Dirty)되었다면 
+	//	Buffer.Upload(Context);
 
-		ID3D11Buffer* Buf = Buffer.GPUBuffer;
-		UINT Slot = static_cast<UINT>(Buffer.SlotIndex); // 캐싱된 슬롯 번호 사용
+	//	ID3D11Buffer* Buf = Buffer.GPUBuffer;
+	//	UINT Slot = static_cast<UINT>(Buffer.SlotIndex); // 캐싱된 슬롯 번호 사용
 
-		// VS, PS 등에 바인딩 (현재 패스에 맞게 세팅)
-		Context->VSSetConstantBuffers(Slot, 1, &Buf);
-		Context->PSSetConstantBuffers(Slot, 1, &Buf);
-	}
+	//	// VS, PS 등에 바인딩 (현재 패스에 맞게 세팅)
+	//	Context->VSSetConstantBuffers(Slot, 1, &Buf);
+	//	Context->PSSetConstantBuffers(Slot, 1, &Buf);
+	//}
 
 	//텍스쳐 바인딩 로직
 }
