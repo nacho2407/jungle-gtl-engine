@@ -22,6 +22,8 @@ struct FRenderResources
     FConstantBuffer FogPassConstantBuffer;		// b9
     FConstantBuffer FXAAConstantBuffer;                     // b10
 
+	FStructuredBuffer LightStructuredBuffer;	// t3
+
     FShader PrimitiveShader;
     FShader GizmoShader;
     FShader EditorShader;

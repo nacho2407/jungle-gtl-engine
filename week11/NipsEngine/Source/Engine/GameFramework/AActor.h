@@ -15,8 +15,7 @@ public:
 	AActor() = default;
 	~AActor() override;
 
-	virtual AActor* Duplicate();
-	virtual AActor* DuplicateSubObjects();
+	virtual void PostDuplicate(UObject* Original) override;
 
     virtual void InitDefaultComponents() {}
 
@@ -99,6 +98,10 @@ public:
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
+
+	// 프로퍼티 시스템 — UObject 에서 상속
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override {}
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
