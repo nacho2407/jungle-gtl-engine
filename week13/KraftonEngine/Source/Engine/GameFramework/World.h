@@ -7,7 +7,6 @@
 #include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/FScene.h"
-#include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Pipeline/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
@@ -58,10 +57,6 @@ public:
 	FScene& GetScene() { return Scene; }
 	const FScene& GetScene() const { return Scene; }
 	
-	// DebugDraw — DrawDebugLine 등 글로벌 함수가 사용
-	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
-	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
-
 	FSpatialPartition& GetPartition() { return Partition; }
 	const FOctree* GetOctree() const { return Partition.GetOctree(); }
 	void InsertActorToOctree(AActor* actor);
@@ -83,7 +78,6 @@ private:
 	FVector LastFullLODUpdateCameraForward = FVector(1, 0, 0);
 	FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
 	FScene Scene;
-	FDebugDrawQueue DebugDrawQueue;
 	FTickManager TickManager;
 
 	FSpatialPartition Partition;

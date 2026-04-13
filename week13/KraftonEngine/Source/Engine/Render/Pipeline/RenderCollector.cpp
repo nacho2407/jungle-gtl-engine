@@ -33,21 +33,15 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 		if (LastVisibleProxies.capacity() < ExpectedCount)
 			LastVisibleProxies.reserve(ExpectedCount);
 
-		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
-
 		// NeverCull 프록시 (Gizmo 등) — frustum과 무관하게 항상 수집
+		// Octree 쿼리에서 bNeverCull은 제외되므로 중복 없이 먼저 추가
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
 		{
-			if (!Proxy) continue;
-			// 중복 방지: ProxyId 기반 체크 (Octree 쿼리가 NeverCull을 반환할 수 있음)
-			bool bAlreadyInList = false;
-			for (const FPrimitiveSceneProxy* Existing : LastVisibleProxies)
-			{
-				if (Existing == Proxy) { bAlreadyInList = true; break; }
-			}
-			if (!bAlreadyInList)
+			if (Proxy)
 				LastVisibleProxies.push_back(Proxy);
 		}
+
+		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
 	}
 
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
@@ -70,11 +64,11 @@ void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySyste
 	}
 }
 
-void FRenderCollector::CollectDebugDraw(const FDebugDrawQueue& Queue, const FFrameContext& Frame, FScene& Scene)
+void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
 {
 	if (!Frame.ShowFlags.bDebugDraw) return;
 
-	for (const FDebugDrawItem& Item : Queue.GetItems())
+	for (const FDebugDrawItem& Item : Scene.GetDebugDrawQueue().GetItems())
 	{
 		Scene.AddDebugLine(Item.Start, Item.End, Item.Color);
 	}
