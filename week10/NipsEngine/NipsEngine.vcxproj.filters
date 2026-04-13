@@ -573,6 +573,16 @@
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1112,5 +1122,15 @@
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\PIEController.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.h" />
   </ItemGroup>
 </Project>
