@@ -74,7 +74,6 @@ private:
 
 	// 공유 DX 리소스
 	TComPtr<ID3D11Device>       Device;
-	TComPtr<ID3D11SamplerState> SamplerState;
 	UMaterialInterface* FontMaterial;
 
 	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드

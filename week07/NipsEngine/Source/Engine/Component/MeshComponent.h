@@ -2,8 +2,6 @@
 #include "PrimitiveComponent.h"
 
 class UMaterialInterface;
-class UMaterial;
-class UMaterialInstance;
 
 class UMeshComponent : public UPrimitiveComponent
 {
