@@ -43,6 +43,77 @@ static FVector ReadVec3(json::JSON& Arr)
 	return out;
 }
 
+static void SetStaticMeshPathAndLoad(UStaticMeshComponent* MeshComp, const FString& MeshPath)
+{
+	if (!MeshComp || MeshPath.empty() || MeshPath == "None")
+	{
+		return;
+	}
+
+	TArray<FPropertyDescriptor> Descriptors;
+	MeshComp->GetEditableProperties(Descriptors);
+
+	for (const FPropertyDescriptor& Prop : Descriptors)
+	{
+		if (Prop.Name != "Static Mesh")
+		{
+			continue;
+		}
+
+		*static_cast<FString*>(Prop.ValuePtr) = MeshPath;
+		MeshComp->PostEditProperty("Static Mesh");
+		return;
+	}
+}
+
+static void ApplyPrimitiveDataToActor(AActor* Actor, const FPrimitiveLoadData& PrimitiveData)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	UStaticMeshComponent* MeshComp = nullptr;
+	if (Actor->GetRootComponent() && Actor->GetRootComponent()->IsA<UStaticMeshComponent>())
+	{
+		MeshComp = static_cast<UStaticMeshComponent*>(Actor->GetRootComponent());
+	}
+
+	if (!MeshComp)
+	{
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			MeshComp = Cast<UStaticMeshComponent>(Comp);
+			if (MeshComp)
+			{
+				break;
+			}
+		}
+	}
+
+	if (!MeshComp)
+	{
+		MeshComp = Actor->AddComponent<UStaticMeshComponent>();
+		if (MeshComp)
+		{
+			Actor->SetRootComponent(MeshComp);
+		}
+	}
+
+	USceneComponent* Root = Actor->GetRootComponent();
+	if (Root)
+	{
+		Root->SetRelativeLocation(PrimitiveData.Location);
+		Root->SetRelativeRotation(PrimitiveData.Rotation);
+		Root->SetRelativeScale(PrimitiveData.Scale);
+	}
+
+	if (MeshComp && (MeshComp->GetStaticMeshPath().empty() || MeshComp->GetStaticMeshPath() == "None"))
+	{
+		SetStaticMeshPathAndLoad(MeshComp, PrimitiveData.MeshPath);
+	}
+}
+
 // ---------------------------------------------------------------------------
 
 namespace SceneKeys
@@ -255,7 +326,6 @@ json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
 	Comp->GetEditableProperties(Descriptors);
 
 	for (const auto& Prop : Descriptors) {
-		if (Prop.Name == "Static Mesh") continue; // Primitives 블록에 이미 저장됨
 		props[Prop.Name] = SerializePropertyValue(Prop);
 	}
 	return props;
@@ -343,13 +413,9 @@ json::JSON FSceneSaveManager::SerializeCamera(UCameraComponent* Cam)
 	return cam;
 }
 
-void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors)
+void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, std::unordered_map<string, FPrimitiveLoadData>& OutPrimitiveData)
 {
 	using namespace json;
-
-	// Octree 일괄 삽입을 위해 생성된 Actor를 모아둠
-	TArray<AActor*> CreatedActors;
-	CreatedActors.reserve(Primitives.size());
 
 	for (auto& kv : Primitives.ObjectRange()) {
 		const string& Key = kv.first;
@@ -358,50 +424,30 @@ void FSceneSaveManager::DeserializePrimitives(json::JSON& Primitives, UWorld* Wo
 		if (!Entry.hasKey("Type")) continue;
 		if (Entry["Type"].ToString() != "StaticMeshComp") continue;
 
-		string MeshPath = Entry.hasKey("ObjStaticMeshAsset") ? Entry["ObjStaticMeshAsset"].ToString() : string("None");
-
-		// Spawn a static mesh actor and initialize
-		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-		if (!Actor) continue;
-		Actor->InitDefaultComponents(FString(MeshPath));
-		OutCreatedActors[Key] = Actor;
-
-		// Location / Rotation / Scale — 인덱스 직접 접근으로 iterator 순회 제거
-		FVector Loc(0, 0, 0), Rot(0, 0, 0), Scale(1, 1, 1);
+		FPrimitiveLoadData PrimitiveData;
+		PrimitiveData.MeshPath = Entry.hasKey("ObjStaticMeshAsset") ? Entry["ObjStaticMeshAsset"].ToString() : string("None");
 
 		if (Entry.hasKey("Location")) {
 			JSON& arr = Entry["Location"];
-			Loc.X = static_cast<float>(arr[0].ToFloat());
-			Loc.Y = static_cast<float>(arr[1].ToFloat());
-			Loc.Z = static_cast<float>(arr[2].ToFloat());
+			PrimitiveData.Location.X = static_cast<float>(arr[0].ToFloat());
+			PrimitiveData.Location.Y = static_cast<float>(arr[1].ToFloat());
+			PrimitiveData.Location.Z = static_cast<float>(arr[2].ToFloat());
 		}
 		if (Entry.hasKey("Rotation")) {
 			JSON& arr = Entry["Rotation"];
-			Rot.X = static_cast<float>(arr[0].ToFloat());
-			Rot.Y = static_cast<float>(arr[1].ToFloat());
-			Rot.Z = static_cast<float>(arr[2].ToFloat());
+			PrimitiveData.Rotation.X = static_cast<float>(arr[0].ToFloat());
+			PrimitiveData.Rotation.Y = static_cast<float>(arr[1].ToFloat());
+			PrimitiveData.Rotation.Z = static_cast<float>(arr[2].ToFloat());
 		}
 		if (Entry.hasKey("Scale")) {
 			JSON& arr = Entry["Scale"];
-			Scale.X = static_cast<float>(arr[0].ToFloat());
-			Scale.Y = static_cast<float>(arr[1].ToFloat());
-			Scale.Z = static_cast<float>(arr[2].ToFloat());
+			PrimitiveData.Scale.X = static_cast<float>(arr[0].ToFloat());
+			PrimitiveData.Scale.Y = static_cast<float>(arr[1].ToFloat());
+			PrimitiveData.Scale.Z = static_cast<float>(arr[2].ToFloat());
 		}
 
-		Actor->SetActorLocation(Loc);
-		Actor->SetActorRotation(Rot);
-		Actor->SetActorScale(Scale);
-		World->RemoveActorToOctree(Actor);
-		World->InsertActorToOctree(Actor);
-
-		CreatedActors.push_back(Actor);
+		OutPrimitiveData[Key] = PrimitiveData;
 	}
-
-	// Octree 일괄 삽입
-	/*for (AActor* Actor : CreatedActors)
-	{
-		World->InsertActorToOctree(Actor);
-	}*/
 }
 
 void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, FPerspectiveCameraData& OutCam)
@@ -467,10 +513,10 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	World->InitWorld();
 
 	// Deserialize Primitives (top-level) and Camera first
-	std::unordered_map<string, AActor*> CreatedFromPrimitives;
+	std::unordered_map<string, FPrimitiveLoadData> PrimitiveDataByKey;
 	if (root.hasKey("Primitives")) {
 		JSON& Prims = root["Primitives"];
-		DeserializePrimitives(Prims, World, CreatedFromPrimitives);
+		DeserializePrimitives(Prims, PrimitiveDataByKey);
 	}
 
 	// "PerspectiveCamera" 우선, 구버전 "Camera" 키도 지원
@@ -487,23 +533,13 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	{
 		for (auto& ActorJSON : root[SceneKeys::Actors].ArrayRange()) {
 			string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
-			// If this actor references a PrimitiveKey and that primitive already created an actor,
-			// prefer the primitive-created actor and update it instead of creating a duplicate.
-			AActor* Actor = nullptr;
-			if (ActorJSON.hasKey("PrimitiveKey")) {
-				string pk = ActorJSON["PrimitiveKey"].ToString();
-				auto it = CreatedFromPrimitives.find(pk);
-				if (it != CreatedFromPrimitives.end()) {
-					Actor = it->second;
-				}
-			}
+			UObject* ActorObj = FObjectFactory::Get().Create(ActorClass, World);
+			if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
 
-			if (!Actor) {
-				UObject* ActorObj = FObjectFactory::Get().Create(ActorClass, World);
-				if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
-				Actor = static_cast<AActor*>(ActorObj);
-				World->AddActor(Actor);
-			}
+			AActor* Actor = static_cast<AActor*>(ActorObj);
+			World->AddActor(Actor);
+			json::JSON* RootJSONPtr = nullptr;
+			bool bNeedsRootPropertyReplayForLegacyPrimitive = false;
 
 			if (ActorJSON.hasKey(SceneKeys::Visible)) {
 				Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
@@ -518,6 +554,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			// RootComponent 트리 복원
 			if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
 				JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
+				RootJSONPtr = &RootJSON;
 				if (Actor->GetRootComponent()) {
 					// Merge properties into existing root component created by primitives
 					DeserializeSceneComponentIntoExisting(Actor->GetRootComponent(), RootJSON, Actor);
@@ -543,6 +580,25 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 						DeserializeProperties(Comp, PropsJSON);
 					}
 				}
+			}
+
+			if (ActorJSON.hasKey("PrimitiveKey")) {
+				string pk = ActorJSON["PrimitiveKey"].ToString();
+				auto it = PrimitiveDataByKey.find(pk);
+				if (it != PrimitiveDataByKey.end()) {
+					if (RootJSONPtr && RootJSONPtr->hasKey(SceneKeys::Properties)) {
+						JSON& RootProps = (*RootJSONPtr)[SceneKeys::Properties];
+						bNeedsRootPropertyReplayForLegacyPrimitive = !RootProps.hasKey("Static Mesh");
+					}
+					ApplyPrimitiveDataToActor(Actor, it->second);
+				}
+			}
+
+			// Legacy scenes stored mesh path only in the primitive block, so replay root props
+			// after the mesh is injected to expose "Element N" material slot descriptors.
+			if (bNeedsRootPropertyReplayForLegacyPrimitive && RootJSONPtr && Actor->GetRootComponent() && RootJSONPtr->hasKey(SceneKeys::Properties)) {
+				JSON& RootProps = (*RootJSONPtr)[SceneKeys::Properties];
+				DeserializeProperties(Actor->GetRootComponent(), RootProps);
 			}
 
 			World->RemoveActorToOctree(Actor);

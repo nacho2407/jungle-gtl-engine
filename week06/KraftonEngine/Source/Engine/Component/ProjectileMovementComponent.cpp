@@ -1,6 +1,8 @@
 ﻿#include "ProjectileMovementComponent.h"
 
 #include "Component/SceneComponent.h"
+#include "Component/DecalComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Math/MathUtils.h"
@@ -10,7 +12,7 @@
 #include <Render/Culling/ConvexVolume.h>
 #include <Core/RayTypes.h>
 #include <UI/EditorConsoleWidget.h>
-#include <GameFramework/StaticMeshActor.h>
+#include <GameFramework/EggActor.h>
 #include <GameFramework/DecalActor.h>
 
 IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
@@ -151,12 +153,45 @@ bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSce
 	
 	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
 	StopSimulating();
-	UE_LOG("%f %f %f", HitResult.WorldHitLocation.X,HitResult.WorldHitLocation.Y,HitResult.WorldHitLocation.Z);
-    
-	ADecalActor* Actor = World->SpawnActor<ADecalActor>();
-	Actor->InitDefaultComponents();
-	Actor->SetActorLocation(HitResult.WorldHitLocation);
-	World->InsertActorToOctree(Actor);
+
+	AEggActor* Egg = Cast<AEggActor>(Owner);
+
+    if (Egg)
+    {
+        if (UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Egg->GetRootComponent()))
+		{
+			Mesh->SetVisibility(false);
+		}
+
+		UDecalComponent* Decal = nullptr;
+		for (UActorComponent* Comp : Egg->GetComponents())
+		{
+			Decal = Cast<UDecalComponent>(Comp);
+			if (Decal)
+			{
+				break;
+			}
+		}
+
+		if (!Decal)
+		{
+			Decal = Egg->AddComponent<UDecalComponent>();
+			if (USceneComponent* Root = Egg->GetRootComponent())
+			{
+				Decal->AttachToComponent(Root);
+			}
+		}
+
+		Decal->SetTexture("Friedegg");
+		Decal->SetWorldLocation(HitResult.WorldHitLocation);
+
+		FFadeSetting Setting{};
+		Setting.bFadeOnceAndDestroy = true;
+		Setting.FadeInTime = 0.1f;
+		Setting.FadeOutTime = 0.1f;
+		Setting.TotalLifetime = 4.0f;
+		Decal->SetFadeSetting(Setting);
+    }
 
 	return true;
 }

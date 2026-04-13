@@ -5,8 +5,8 @@
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
-#include "GameFramework/StaticMeshActor.h"
 #include "GameFramework/DecalActor.h"
+#include "GameFramework/EggActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -63,9 +63,9 @@ void FEditorControlWidget::Render(float DeltaTime)
 				World->InsertActorToOctree(Actor);
 				break;
 			}
-			case 3: //Decal
+			case 3: //Egg
 			{
-				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+				AEggActor* Actor = World->SpawnActor<AEggActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents();
 				World->InsertActorToOctree(Actor);

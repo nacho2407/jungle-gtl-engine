@@ -123,6 +123,9 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
 		if (ImGui::Button(RemoveLabel))
 		{
+			Selection.ClearSelection();
+			SelectedComponent = nullptr;
+			LastSelectedActor = nullptr;
 			for (AActor* Actor : SelectedActors)
 			{
 				if (Actor && Actor->GetWorld())
@@ -130,9 +133,6 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 					Actor->GetWorld()->DestroyActor(Actor);
 				}
 			}
-			Selection.ClearSelection();
-			SelectedComponent = nullptr;
-			LastSelectedActor = nullptr;
 			ImGui::End();
 			return;
 		}
@@ -154,11 +154,11 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ImGui::SameLine();
 		if (ImGui::Button("Remove"))
 		{
+			Selection.ClearSelection();
 			if (PrimaryActor->GetWorld())
 			{
 				PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
 			}
-			Selection.ClearSelection();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
