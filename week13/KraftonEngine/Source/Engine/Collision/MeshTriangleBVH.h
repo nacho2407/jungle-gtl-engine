@@ -21,8 +21,6 @@ public:
 		const FStaticMesh& Mesh, 
 		FHitResult& OutHitResult
 		) const;
-	// OBB와 교차하는 공간 내의 삼각형 리스트를 구합니다. Mesh Decal 최적화에 사용.
-	bool GetOBBIntersection( FOBB DecalOBB, TArray<uint32>& TriangleStartIndices );
 	
 	// 월드 primitive BVH와 dirty 플래그 의미가 겹쳐 혼동을 줄 수 있어,
 	// 메시 변경 대응용 API는 일단 주석으로 남겨 둡니다.
