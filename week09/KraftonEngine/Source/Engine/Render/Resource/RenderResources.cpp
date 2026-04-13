@@ -1,5 +1,5 @@
 ﻿#include "RenderResources.h"
-
+#include "Materials/MaterialManager.h"
 void FRenderResources::Create(ID3D11Device* InDevice)
 {
 	FrameBuffer.Create(InDevice, sizeof(FFrameConstants));
@@ -14,6 +14,8 @@ void FRenderResources::Create(ID3D11Device* InDevice)
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	InDevice->CreateSamplerState(&sampDesc, &DefaultSampler);
+
+	FMaterialManager::Get().Initialize(InDevice);
 }
 
 void FRenderResources::Release()

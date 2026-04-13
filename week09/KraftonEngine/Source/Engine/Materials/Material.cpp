@@ -2,7 +2,7 @@
 #include "Serialization/Archive.h"
 #include "Render/Resource/Shader.h"
 #include "Texture/Texture2D.h"
-
+#include "Engine/Runtime/Engine.h"
 IMPLEMENT_CLASS(UMaterial, UObject)
 
 // ─── FMaterialTemplate ───
@@ -259,13 +259,89 @@ const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)cons
 
 void UMaterial::Serialize(FArchive& Ar)
 {
-	/*
-	
+
 	Ar << PathFileName;
+
+	// 3. 상수 버퍼 CPU 데이터 저장
+	uint32 BufferCount = static_cast<uint32>(ConstantBufferMap.size());
+	Ar << BufferCount;
+
+
+	if (Ar.IsSaving())
+	{
+		for (auto& Pair : ConstantBufferMap)
+		{
+			FString BufferName = Pair.first;
+			uint32 Size = Pair.second->Size;
+
+			Ar << BufferName;
+			Ar << Size;
+			Ar.Serialize(Pair.second->CPUData, Size);
+		}
+	}
+
+	if (Ar.IsLoading())
+	{
+		for (uint32 i = 0; i < BufferCount; ++i)
+		{
+			FString BufferName;
+			uint32 Size = 0;
+
+			Ar << BufferName;
+			Ar << Size;
+
+			auto It = ConstantBufferMap.find(BufferName);
+			if (It != ConstantBufferMap.end())
+			{
+				// 이미 버퍼가 있으면 CPU 데이터만 덮어씀
+				Ar.Serialize(It->second->CPUData, Size);
+				It->second->bDirty = true;
+			}
+			else
+			{
+				// 없으면 스킵 (버퍼 구조가 바뀐 경우 대비)
+				TArray<uint8> Dummy(Size);
+				Ar.Serialize(Dummy.data(), Size);
+			}
+		}
+	}
 	Ar << DiffuseTextureFilePath;
+
 	Ar << DiffuseColor;
 	
-	*/
+	// 4. 텍스처 슬롯 저장 (경로로 저장)
+	uint32 TextureCount = static_cast<uint32>(TextureParameters.size());
+	Ar << TextureCount;
+
+	if (Ar.IsSaving())
+	{
+		for (auto& Pair : TextureParameters)
+		{
+			FString SlotName = Pair.first;
+			FString TexturePath = Pair.second ? Pair.second->GetSourcePath() : FString();
+
+			Ar << SlotName;
+			Ar << TexturePath;
+		}
+	}
+	else // IsLoading
+	{
+		for (uint32 i = 0; i < TextureCount; ++i)
+		{
+			FString SlotName;
+			FString TexturePath;
+
+			Ar << SlotName;
+			Ar << TexturePath;
+
+			if (!TexturePath.empty())
+			{
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+
+				TextureParameters[SlotName] = UTexture2D::LoadFromFile(TexturePath, Device);
+			}
+		}
+	}
 }
 
 
