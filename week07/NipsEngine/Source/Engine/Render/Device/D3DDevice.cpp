@@ -2,6 +2,7 @@
 
 #include <d3d11sdklayers.h>
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
+#include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 
 
 void FD3DDevice::Create(HWND InHWindow)
@@ -378,6 +379,9 @@ void FD3DDevice::ReleaseFrameBuffer()
 
 void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
 {
+    /**
+     * Texture, RTV, SRV 생성
+     */
     FRenderTarget RT;
 	ViewportRenderTargetWidth = Width;
 	ViewportRenderTargetHeight = Height;
@@ -420,41 +424,17 @@ void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
     ViewportSceneFXAARTV = RT.RTV;
     ViewportSceneFXAASRV = RT.SRV;
 
-	
-	D3D11_TEXTURE2D_DESC depthStencilDesc = {};
-    depthStencilDesc.Width = Width;
-    depthStencilDesc.Height = Height;
-    depthStencilDesc.MipLevels = 1;
-    depthStencilDesc.ArraySize = 1;
-    depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.SampleDesc.Quality = 0;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-    depthStencilDesc.CPUAccessFlags = 0;
-    depthStencilDesc.MiscFlags = 0;
+	/**
+	 * DepthStencil Texture, DSV, SRV 생성
+	 */
 
-    Device->CreateTexture2D(&depthStencilDesc, nullptr, ViewportDepthStencilTexture.ReleaseAndGetAddressOf());
+	FDepthStencilResource DSR;
+    
+	DSR = FDepthStencilFactory::CreateDepthStencilView(GetDevice(), Width, Height);
 
-    // DSV: typeless texture -> D24_UNORM_S8_UINT view
-    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    dsvDesc.Flags = 0;
-    dsvDesc.Texture2D.MipSlice = 0;
-
-    Device->CreateDepthStencilView(ViewportDepthStencilTexture.Get(), &dsvDesc,
-                                   ViewportDepthStencilView.ReleaseAndGetAddressOf());
-
-    // SRV: typeless texture -> R24_UNORM_X8_TYPELESS view
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.MipLevels = 1;
-
-    Device->CreateShaderResourceView(ViewportDepthStencilTexture.Get(), &srvDesc,
-                                     ViewportDepthStencilSRV.ReleaseAndGetAddressOf());
+	ViewportDepthStencilTexture = DSR.Texture;
+    ViewportDepthStencilView = DSR.DSV;
+    ViewportDepthStencilSRV = DSR.SRV;
 }
 
 void FD3DDevice::ReleaseViewportRenderTargets()
