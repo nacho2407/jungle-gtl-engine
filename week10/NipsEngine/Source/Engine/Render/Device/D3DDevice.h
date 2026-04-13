@@ -9,34 +9,6 @@
 
 struct ID3D11Debug;
 
-enum class EDepthStencilState
-{
-	Default,
-	DepthReadOnly,
-	StencilWrite,
-	StencilWriteOnlyEqual,
-
-	// --- 기즈모 전용 ---
-	GizmoInside,         
-	GizmoOutside         
-};
-
-enum class EBlendState
-{
-	Opaque,
-	AlphaBlend,
-	NoColor
-};
-
-enum class ERasterizerState
-{
-	SolidBackCull,
-	SolidFrontCull,
-	SolidNoCull,
-	WireFrame,
-	DepthView,
-};
-
 struct FRenderTargetSet
 {
 	ID3D11RenderTargetView* SceneColorRTV = nullptr;
@@ -105,27 +77,11 @@ private:
 	TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;
 	TComPtr<ID3D11ShaderResourceView> ViewportSelectionMaskSRV;
 
-	TComPtr<ID3D11RasterizerState> RasterizerStateBackCull;
-	TComPtr<ID3D11RasterizerState> RasterizerStateFrontCull;
-	TComPtr<ID3D11RasterizerState> RasterizerStateNoCull;
-	TComPtr<ID3D11RasterizerState> RasterizerStateWireFrame;
-
 	TComPtr<ID3D11Texture2D> DepthStencilBuffer;
 	TComPtr<ID3D11DepthStencilView> DepthStencilView;
 	TComPtr<ID3D11Texture2D> ViewportDepthStencilTexture;
 	TComPtr<ID3D11DepthStencilView> ViewportDepthStencilView;
     TComPtr<ID3D11ShaderResourceView> ViewportDepthStencilSRV;
-
-	TComPtr<ID3D11DepthStencilState> DepthStencilStateDefault;
-	TComPtr<ID3D11DepthStencilState> DepthStencilStateDepthReadOnly;
-	TComPtr<ID3D11DepthStencilState> DepthStencilStateStencilWrite;
-	TComPtr<ID3D11DepthStencilState> DepthStencilStateStencilMaskEqual;
-
-	TComPtr<ID3D11DepthStencilState> DepthStencilStateGizmoInside;
-	TComPtr<ID3D11DepthStencilState> DepthStencilStateGizmoOutside;
-
-	TComPtr<ID3D11BlendState> BlendStateAlpha;
-	TComPtr<ID3D11BlendState> BlendStateNoColorWrite;
 
 	TComPtr<ID3D11Debug> DebugDevice;
 
@@ -134,9 +90,9 @@ private:
 	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 	const float ClearNormal[4] = { 0.25f, 0.25f, 0.25f, 0.f };
 
-	ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBackCull;
-	EDepthStencilState CurrentDepthStencilState = EDepthStencilState::Default;
-	EBlendState CurrentBlendState = EBlendState::Opaque;
+	ID3D11RasterizerState* CurrentRasterizerState = nullptr;
+	ID3D11DepthStencilState* CurrentDepthStencilState = nullptr;
+	ID3D11BlendState* CurrentBlendState = nullptr;
 
 	BOOL bTearingSupported = FALSE;
 	UINT SwapChainFlags = 0;
@@ -152,14 +108,8 @@ private:
 	void CreateViewportRenderTargets(uint32 Width, uint32 Height);
 	void ReleaseViewportRenderTargets();
 
-	void CreateRasterizerState();
-	void ReleaseRasterizerState();
-
 	void CreateDepthStencilBuffer();
 	void ReleaseDepthStencilBuffer();
-
-	void CreateBlendState();
-	void ReleaseBlendState();
 
 public:
 	FD3DDevice() = default;
@@ -195,9 +145,5 @@ public:
 	float GetViewportHeight() const { return ViewportInfo.Height; }
 	FRenderTargetSet GetBackBufferRenderTargets() const;
 	FRenderTargetSet GetViewportRenderTargets() const;
-
-	void SetDepthStencilState(EDepthStencilState InState);
-	void SetBlendState(EBlendState InState);
-	void SetRasterizerState(ERasterizerState InState);
 };
 

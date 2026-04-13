@@ -272,7 +272,10 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 	{
 		FRenderCommand PostProcessCmd = {};
 		PostProcessCmd.Type = ERenderCommandType::PostProcessOutline;
-		PostProcessCmd.Material = FResourceManager::Get().FindMaterialAsset("OutlineMaterial");
+		PostProcessCmd.Material = FResourceManager::Get().GetMaterial("OutlineMaterial");
+
+		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
+		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
 
 		RenderBus.AddCommand(ERenderPass::PostProcessOutline, PostProcessCmd);
 	}
@@ -308,19 +311,19 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 
 		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
 
+		UMaterial* Material = Cast<UMaterial>(Gizmo->GetMaterial());
+		Cmd.Material = Material;
+
 		if (bInner)
 		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
-			Cmd.BlendState = EBlendState::AlphaBlend;
+			Material->DepthStencilType = EDepthStencilType::GizmoInside;
+			Material->BlendType = EBlendType::AlphaBlend;
 		}
 		else
 		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
-			Cmd.BlendState = EBlendState::Opaque;
+			Material->DepthStencilType = EDepthStencilType::GizmoOutside;
+			Material->BlendType = EBlendType::Opaque;
 		}
-
-		UMaterial* Material = Cast<UMaterial>(Gizmo->GetMaterial());
-		Cmd.Material = Gizmo->GetMaterial();
 
 		Material->SetVector4("GizmoColorTint", FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 		Material->SetBool("bIsInnerGizmo", bInner);
@@ -351,7 +354,6 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 
 bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
-	(void)ViewMode;
 	if (!Actor->IsVisible()) return false;
 
 	bool bHasSelectionMask = false;
@@ -407,8 +409,8 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			TextCmd.Constants.Font.Text = &Text;
 			TextCmd.Constants.Font.Font = Font;
 			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-			TextCmd.BlendState = EBlendState::AlphaBlend;
-			TextCmd.DepthStencilState = EDepthStencilState::Default;
+			//TextCmd.BlendState = EBlendState::AlphaBlend;
+			//TextCmd.DepthStencilState = EDepthStencilState::Default;
 			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
@@ -458,8 +460,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
 	auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
 		{
-			FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-			return (Res && Res->Texture) ? Res->Texture->GetSRV() : DefaultSRV;
+			UTexture* Texture = FResourceManager::Get().GetTexture(Path);
+			return Texture ? Texture->GetSRV() : DefaultSRV;
 		};
 	static const FMaterial EngineDefaultMaterial{};
 
@@ -502,8 +504,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			Cmd.BlendState = EBlendState::Opaque;
+			//Cmd.DepthStencilState = EDepthStencilState::Default;
+			//Cmd.BlendState = EBlendState::Opaque;
 
 			Cmd.SectionIndexStart = Section.StartIndex;
 			Cmd.SectionIndexCount = Section.IndexCount;
@@ -535,8 +537,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
+		//Cmd.BlendState = EBlendState::AlphaBlend;
+		//Cmd.DepthStencilState = EDepthStencilState::Default;
 		
 		RenderBus.AddCommand(ERenderPass::Font, Cmd);
 		break;
@@ -557,8 +559,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
 		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
 		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
+		//Cmd.BlendState = EBlendState::AlphaBlend;
+		//Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
@@ -567,18 +569,18 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	case EPrimitiveType::EPT_Billboard:
 	{
 		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
-		FMaterialResource* Sprite = BillboardComp->GetCachedSprite();
+		UTexture* Texture = BillboardComp->GetTexture();
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Billboard;
 		Cmd.PerObjectConstants = FPerObjectConstants{
 			MakeViewBillboardMatrix(Primitive, RenderBus),
 			FColor::White().ToVector4() };
-		Cmd.Constants.Billboard.Texture = Sprite->Texture;
+		Cmd.Constants.Billboard.Texture = Texture;
 		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
 		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
+		//Cmd.BlendState = EBlendState::AlphaBlend;
+		//Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
@@ -636,8 +638,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
 				Cmd.MeshBuffer = MeshBuffer;
 
-				Cmd.BlendState = EBlendState::AlphaBlend;
-				Cmd.DepthStencilState = EDepthStencilState::Default;
+				//Cmd.BlendState = EBlendState::AlphaBlend;
+				//Cmd.DepthStencilState = EDepthStencilState::Default;
 
 				Cmd.SectionIndexStart = Section.StartIndex;
 				Cmd.SectionIndexCount = Section.IndexCount;
@@ -668,8 +670,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         Cmd.Constants.Fog.FogStartDistance = HeightFogComp->GetFogStartDistance();
         Cmd.Constants.Fog.FogMaxOpacity = HeightFogComp->GetFogMaxOpacity();
         Cmd.Constants.Fog.FogCutoffDistance = HeightFogComp->GetFogCutoffDistance();
-        Cmd.BlendState = EBlendState::AlphaBlend;
-        Cmd.DepthStencilState = EDepthStencilState::Default;
+        //Cmd.BlendState = EBlendState::AlphaBlend;
+        //Cmd.DepthStencilState = EDepthStencilState::Default;
 
         RenderBus.AddCommand(ERenderPass::Fog, Cmd);
         break;

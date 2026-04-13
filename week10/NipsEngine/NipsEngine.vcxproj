@@ -443,6 +443,7 @@
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\SamplerType.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />

@@ -215,7 +215,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
             bool bIsSelected = (i == CurrentIdx);
             if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
             {
-                UMaterial* NewMat = FResourceManager::Get().FindMaterialAsset(MatNames[i]);
+                UMaterial* NewMat = FResourceManager::Get().GetMaterial(MatNames[i]);
                 if (NewMat)
                 {
                     MeshComp->SetMaterial(SelectedSectionIndex, NewMat);
@@ -277,7 +277,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 			bool bIsSelected = (i == CurrentIdx);
 			if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
 			{
-				UMaterial* NewMat = FResourceManager::Get().FindMaterialAsset(MatNames[i]);
+				UMaterial* NewMat = FResourceManager::Get().GetMaterial(MatNames[i]);
 				if (NewMat)
 				{
 					OnMaterialChanged(&NewMat->MaterialData);
@@ -359,8 +359,8 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
     auto ResolveSRV = [](const FString& Path) -> ID3D11ShaderResourceView*
     {
         if (Path.empty()) return nullptr;
-        FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-        return (Res && Res->Texture) ? Res->Texture->GetSRV() : nullptr;
+        UTexture* Texture = FResourceManager::Get().GetTexture(Path);
+		return Texture ? Texture->GetSRV() : nullptr;
     };
 
     auto TextureRow = [&](const char* MapLabel,
