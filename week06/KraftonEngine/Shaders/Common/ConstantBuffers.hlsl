@@ -49,4 +49,29 @@ cbuffer MaterialBuffer : register(b4)
     float4 SectionColor;
 }
 
+// b5: Decal settings
+// cbuffer DecalBuffer : register(b5)
+// {
+//     float4x4 WorldToDecal;
+//     float3 DecalHalfExtents;
+//     float FadeAlpha;
+//     float _decalPad;
+// }
+
+// b6: FXAA settings
+cbuffer FXAABuffer : register(b6)
+{
+    float2 FxaaRcpFrame;
+    float FXAA_EDGE_THRESHOLD;
+    float FXAA_EDGE_THRESHOLD_MIN;
+
+    float FXAA_SEARCH_THRESHOLD;
+    float FXAA_SUBPIX_TRIM;
+    float FXAA_SUBPIX_CAP;
+    uint FXAA_SUBPIX;
+
+    uint FXAA_SEARCH_STEPS;
+    float2 _FxaaPad0;
+};
+
 #endif // CONSTANT_BUFFERS_HLSL
