@@ -1,13 +1,15 @@
-﻿#include "Collision/MeshTrianglePickingBVH.h"
+﻿#include "Collision/MeshTriangleBVH.h"
 
 #include "Collision/RayUtils.h"
-#include "Collision/RayUtilsSIMD.h"
+#include "Collision/CollisionUtilsSIMD.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Core/EngineTypes.h"
 
 #include <algorithm>
 #include <bit>
 #include <cfloat>
+
+#include "OBB.h"
 
 namespace
 {
@@ -42,7 +44,7 @@ namespace
 
 }
 
-void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
+void FMeshTriangleBVH::BuildNow(const FStaticMesh& Mesh)
 {
 	//메시가 바뀌었을 때 triangle leaf와 packet, node 배열을 통째로 다시 만듭니다.
 	TriangleLeaves.clear();
@@ -76,7 +78,7 @@ void FMeshTrianglePickingBVH::BuildNow(const FStaticMesh& Mesh)
 	}
 }
 
-void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
+void FMeshTriangleBVH::EnsureBuilt(const FStaticMesh& Mesh)
 {
 	//static mesh asset은 로드 후 고정된다고 보고, 아직 비어 있을 때만 1회 빌드합니다.
 	if (!Nodes.empty())
@@ -86,7 +88,7 @@ void FMeshTrianglePickingBVH::EnsureBuilt(const FStaticMesh& Mesh)
 	BuildNow(Mesh);
 }
 
-bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
+bool FMeshTriangleBVH::RaycastLocal(const FVector& LocalOrigin, const FVector& LocalDirection, const FStaticMesh& Mesh, FHitResult& OutHitResult) const
 {
 	//로컬 공간 ray로 메시 BVH를 front-to-back 순회하면서 가장 가까운 삼각형 hit를 찾습니다
 	struct FTraversalEntry
@@ -116,7 +118,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		return false;
 	}
 
-	const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
+	const FRaySIMDContext RayContext = FCollisionUtilsSIMD::MakeRayContext(LocalOrigin, LocalDirection);
 
 	// 재귀 대신 고정 크기 스택으로 순회해 call overhead와 allocation을 피합니다.
 	NodeStack[StackSize++] = { 0, RootTMin };
@@ -141,7 +143,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
 
 			alignas(32) float TValues[8];
-			const int32 Mask = FRayUtilsSIMD::IntersectTriangles8Precomputed(
+			const int32 Mask = FCollisionUtilsSIMD::IntersectTriangles8Precomputed(
 				RayContext,
 				Packet.V0X, Packet.V0Y, Packet.V0Z,
 				Packet.Edge1X, Packet.Edge1Y, Packet.Edge1Z,
@@ -173,7 +175,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 		//internal node에서는 child AABB 8개를 한 번에 검사한 뒤,
 		//실제로 맞은 child만 추려 가까운 순서대로 방문합니다.
 		alignas(32) float TMinValues[8];
-		const int32 NodeMask = FRayUtilsSIMD::IntersectAABB8(
+		const int32 NodeMask = FCollisionUtilsSIMD::IntersectAABB8(
 			RayContext,
 			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
 			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ,
@@ -233,7 +235,61 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 	return bHit;
 }
 
-int32 FMeshTrianglePickingBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Start, int32 End)
+bool FMeshTriangleBVH::GetOBBIntersection(FOBB DecalOBB, TArray<uint32>& TriangleStartIndices)
+{
+	FOBBSIMDContext OBBContext = FCollisionUtilsSIMD::MakeOBBContext(DecalOBB);
+
+	TArray<int32> Stack;
+	Stack.reserve(64);
+	Stack.push_back(0); // Root index
+
+	while (!Stack.empty())
+	{
+		int32 NodeIndex = Stack.back();
+		Stack.pop_back();
+
+		const FNode& Node = Nodes[NodeIndex];
+
+		if (Node.IsLeaf())
+		{
+			// 리프 노드의 경우 Packet을 확인하여 삼각형 수집
+			if (Node.PacketIndex != -1)
+			{
+				const FTrianglePacket& Packet = LeafPackets[Node.PacketIndex];
+				for (uint32 i = 0; i < Packet.TriangleCount; ++i)
+				{
+					if (Packet.TriangleStartIndices[i] != -1)
+					{
+						TriangleStartIndices.push_back(Packet.TriangleStartIndices[i]);
+					}
+				}
+			}
+			continue;
+		}
+
+		// 8개 자식 노드들에 대해 OBB 교차 여부 검사 (SIMD 활용 가속)
+		int32 HitMask = FCollisionUtilsSIMD::IntersectOBBAABB8(
+			OBBContext,
+			Node.ChildMinX, Node.ChildMinY, Node.ChildMinZ,
+			Node.ChildMaxX, Node.ChildMaxY, Node.ChildMaxZ);
+
+		uint32 RemainingMask = static_cast<uint32>(HitMask) & ((1u << Node.ChildCount) - 1u);
+		while (RemainingMask != 0)
+		{
+			uint32 BitIndex = std::countr_zero(RemainingMask);
+			RemainingMask &= RemainingMask - 1;
+
+			int32 ChildIdx = Node.Children[BitIndex];
+			if (ChildIdx != -1)
+			{
+				Stack.push_back(ChildIdx);
+			}
+		}
+	}
+	return TriangleStartIndices.size() > 0;
+}
+
+int32 FMeshTriangleBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Start, int32 End)
 {
 	//triangle leaf 구간 [Start, End)를 하나의 node로 만들고, 필요하면 재귀 분할합니다.
 	const int32 NodeIndex = static_cast<int32>(Nodes.size());
