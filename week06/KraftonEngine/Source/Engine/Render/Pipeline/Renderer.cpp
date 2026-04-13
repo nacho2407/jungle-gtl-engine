@@ -234,7 +234,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 
 		ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
 
-		if(ResourceBinding.BindResources)
+		if (ResourceBinding.BindResources)
 			ResourceBinding.BindResources(CurPass, InRenderBus, Context);
 
 		if (bHasBatcher)
@@ -242,7 +242,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		else
 			ExecutePass(InRenderBus.GetProxies(CurPass), Context);
 
-		if(ResourceBinding.UnbindResources)
+		if (ResourceBinding.UnbindResources)
 			ResourceBinding.UnbindResources(CurPass, InRenderBus, Context);
 	}
 }
@@ -363,7 +363,7 @@ void FRenderer::InitializePassResourceBindings()
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
 			Ctx->OMSetRenderTargets(1, &rtv, nullptr);
-			
+
 			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
 			ID3D11ShaderResourceView* NormalSRV = Bus.GetViewportNormalSRV();
 			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
@@ -409,10 +409,10 @@ void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, 
 		{
 			const FPrimitiveSceneProxy& Proxy = *RawProxy;
 			if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) continue;
-			BindShader(Proxy, Context, State);	
+			BindShader(Proxy, Context, State);
 			BindExtraCB(Proxy, Context);
-			
-			if(Proxy.SectionDraws.size() == 1)
+
+			if (Proxy.SectionDraws.size() == 1)
 				DrawSingleSection(Proxy, Context, State);
 			else if (!Proxy.SectionDraws.empty())
 				DrawSections(Proxy, Context, State);
@@ -433,14 +433,14 @@ void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 	SCOPE_STAT_CAT("ExecutePass::Sort", "4_ExecutePass");
 
 	const auto ProxyLess = [](const FPrimitiveSceneProxy* A, const FPrimitiveSceneProxy* B)
-	{
-		if (A->SortKey != B->SortKey)
 		{
-			return A->SortKey < B->SortKey;
-		}
+			if (A->SortKey != B->SortKey)
+			{
+				return A->SortKey < B->SortKey;
+			}
 
-		return A->MaterialSortKey < B->MaterialSortKey;
-	};
+			return A->MaterialSortKey < B->MaterialSortKey;
+		};
 
 	// A: capacity 유지 — assign() 대신 clear() + insert()
 	SortedProxyBuffer.clear();
@@ -572,7 +572,7 @@ void FRenderer::DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceCont
 		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
 		State.bSamplerBound = true;
 	}
-	
+
 	// Material CB 슬롯 바인딩 (1회)
 	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Material, sizeof(FMaterialConstants));
 	if (!State.bMaterialBound)
@@ -666,29 +666,33 @@ void FRenderer::DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContex
 {
 	if (!BindPerObjectCB(Proxy, Ctx, State)) return;
 
-	FShader* FireballShader = FShaderManager::Get().GetShader(EShaderType::Fireball);
-	if (FireballShader && Proxy.Shader == FireballShader)
-	{
-		if (!State.bSamplerBound)
-		{
-			Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
-			State.bSamplerBound = true;
-		}
 
+	if (!State.bSamplerBound)
+	{
+		Ctx->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+		State.bSamplerBound = true;
+	}
+
+	switch (Proxy.DrawMode)
+	{
+	case EProxyDrawMode::FullscreenTriangle:
 		Ctx->IASetInputLayout(nullptr);
 		Ctx->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 		Ctx->Draw(3, 0);
-		FDrawCallStats::Increment();
-		return;
+		break;
+
+	case EProxyDrawMode::Mesh:
+	default:
+		if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
+
+		uint32 indexCount = Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount();
+		if (indexCount > 0)
+			Ctx->DrawIndexed(indexCount, 0, 0);
+		else
+			Ctx->Draw(Proxy.MeshBuffer->GetVertexBuffer().GetVertexCount(), 0);
 	}
 
-	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
 
-	uint32 indexCount = Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount();
-	if (indexCount > 0)
-		Ctx->DrawIndexed(indexCount, 0, 0);
-	else
-		Ctx->Draw(Proxy.MeshBuffer->GetVertexBuffer().GetVertexCount(), 0);
 	FDrawCallStats::Increment();
 }
 

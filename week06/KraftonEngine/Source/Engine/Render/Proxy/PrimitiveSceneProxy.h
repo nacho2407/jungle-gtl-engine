@@ -5,6 +5,13 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Types/RenderTypes.h"
 
+enum class EProxyDrawMode : uint8
+{
+	Mesh,				// 일반 VB/IB 드로우
+	FullscreenTriangle	// SV_VertexID 기반 Draw(3,0)
+};
+
+
 class UPrimitiveComponent;
 class FShader;
 class FMeshBuffer;
@@ -91,6 +98,9 @@ public:
 	// true면 렌더링은 Batcher(Font/SubUV)가 담당 — CollectRender 호출 유지
 	// false면 프록시가 직접 ProxyQueue에 제출
 	bool bBatcherRendered = false;
+
+	//Draw 방식
+	EProxyDrawMode DrawMode = EProxyDrawMode::Mesh;
 
 	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
 	uint32 LastLODUpdateFrame = UINT32_MAX;
