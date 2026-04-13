@@ -29,7 +29,6 @@ namespace UIConstants
 	constexpr float MinScrollHeight = 50.0f;
 }
 
-// 내부 헬퍼: X 버튼 드로잉
 namespace
 {
 	static bool DrawXButton(const char* id, float size = UIConstants::XButtonSize)
@@ -73,6 +72,30 @@ namespace
 	{
 		snprintf(OutBuf, BufSize, "xbtn_%p", Ptr);
 	}
+
+	static FString GetMovementComponentDisplayName(UMovementComponent* MoveComp)
+    {
+        if (!MoveComp) return "None";
+
+        USceneComponent* UpdatedComp = MoveComp->GetUpdatedComponent();
+        if (UpdatedComp)
+        {
+            FString TargetName = UpdatedComp->GetFName().ToString();
+            if (TargetName.empty())
+            {
+                TargetName = UpdatedComp->GetTypeInfo()->name;
+            }
+            return FString("MC_") + TargetName;
+        }
+
+        // 대상이 없는 경우
+        FString DefaultName = MoveComp->GetFName().ToString();
+        if (DefaultName.empty())
+        {
+            DefaultName = MoveComp->GetTypeInfo()->name;
+        }
+        return DefaultName;
+    }
 }
 
 // 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
@@ -342,141 +365,133 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	UActorComponent* ComponentToDelete = nullptr;
 
 	if (Root)
-	{
-		RenderSceneComponentNode(Actor, Root, ComponentToDelete);
-	}
+    {
+        RenderSceneComponentNode(Actor, Root, ComponentToDelete);
+    }
 
-	// Non-scene ActorComponents (MovementComponent는 SceneComponent 아래에 표시되므로 제외)
-	for (UActorComponent* Comp : Actor->GetComponents())
-	{
-		if (!Comp || Comp->IsA<USceneComponent>() || Comp->IsA<UMovementComponent>())
-			continue;
+    // Non-scene ActorComponents 및 MovementComponent들 하단 출력
+    for (UActorComponent* Comp : Actor->GetComponents())
+    {
+        // SceneComponent는 위의 트리 렌더링에서 처리되었으므로 패스
+        if (!Comp || Comp->IsA<USceneComponent>())
+            continue;
 
-		FString Name = Comp->GetFName().ToString();
-		if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+        ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        if (!bActorSelected && SelectedComponent == Comp)
+            Flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-		if (!bActorSelected && SelectedComponent == Comp)
-			Flags |= ImGuiTreeNodeFlags_Selected;
+        // MovementComponent 일 때와 일반 컴포넌트 일 때의 출력 형식 분리
+        if (UMovementComponent* MoveComp = Cast<UMovementComponent>(Comp))
+        {
+            FString MoveName = GetMovementComponentDisplayName(MoveComp);
+            ImGui::TreeNodeEx(Comp, Flags, "%s", MoveName.c_str());
+        }
+        else
+        {
+            FString Name = Comp->GetFName().ToString();
+            ImGui::TreeNodeEx(Comp, Flags, "%s", Name.c_str());
+        }
 
-		ImGui::TreeNodeEx(Comp, Flags, "[%s] %s", Comp->GetTypeInfo()->name, Name.c_str());
-		if (ImGui::IsItemClicked())
-		{
-			SelectedComponent = Comp;
-			bActorSelected = false;
-		}
+        if (ImGui::IsItemClicked())
+        {
+            SelectedComponent = Comp;
+            bActorSelected = false;
+        }
 
-		if (Comp != Actor->GetRootComponent())
-		{
-			ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
-			char XId[64];
-			MakeXButtonId(XId, sizeof(XId), Comp);
-			if (DrawXButton(XId)) ComponentToDelete = Comp;
-		}
-	}
+        if (Comp != Actor->GetRootComponent())
+        {
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
+            char XId[64];
+            MakeXButtonId(XId, sizeof(XId), Comp);
+            if (DrawXButton(XId)) ComponentToDelete = Comp;
+        }
+    }
 
-	if (ComponentToDelete)
-	{
-		if (SelectedComponent == ComponentToDelete)
-		{
-			SelectedComponent = nullptr;
-			bActorSelected = true;
-		}
-		Actor->RemoveComponent(ComponentToDelete);
-	}
+    if (ComponentToDelete)
+    {
+        if (SelectedComponent == ComponentToDelete)
+        {
+            SelectedComponent = nullptr;
+            bActorSelected = true;
+        }
+        Actor->RemoveComponent(ComponentToDelete);
+    }
 }
 
 void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneComponent* Comp, UActorComponent*& OutCompToDelete)
 {
-	if (!Comp) return;
+    if (!Comp) return;
 
-	FString Name = Comp->GetFName().ToString();
-	if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+    FString Name = Comp->GetFName().ToString();
+    if (Name.empty()) Name = Comp->GetTypeInfo()->name;
 
-	const auto& Children = Comp->GetChildren();
+    const auto& Children = Comp->GetChildren();
 
-	// 이 SceneComponent에 연결된 MovementComponent 수집
-	TArray<UMovementComponent*> AttachedMovements;
-	for (UActorComponent* ActorComp : Actor->GetComponents())
-	{
-		UMovementComponent* MoveComp = Cast<UMovementComponent>(ActorComp);
-		if (MoveComp && MoveComp->GetUpdatedComponent() == Comp)
-			AttachedMovements.push_back(MoveComp);
-	}
+    bool bHasChildren = !Children.empty(); // 자식 무브먼트 체크 제거
 
-	bool bHasChildren = !Children.empty() || !AttachedMovements.empty();
+    ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+    if (!bHasChildren) Flags |= ImGuiTreeNodeFlags_Leaf;
+    if (!bActorSelected && SelectedComponent == Comp) Flags |= ImGuiTreeNodeFlags_Selected;
 
-	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-	if (!bHasChildren) Flags |= ImGuiTreeNodeFlags_Leaf;
-	if (!bActorSelected && SelectedComponent == Comp) Flags |= ImGuiTreeNodeFlags_Selected;
+    bool bIsRoot = (Comp->GetParent() == nullptr);
 
-	bool bIsRoot = (Comp->GetParent() == nullptr);
+    if (!bIsRoot)
+    {
+        float ClipMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - UIConstants::ClipMargin;
+        ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(ClipMaxX, ImGui::GetWindowPos().y + 99999.f), true);
+    }
 
-	// 루트가 아닌 경우 X버튼 영역을 침범하지 않도록 클리핑
-	if (!bIsRoot)
-	{
-		float ClipMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - UIConstants::ClipMargin;
-		ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(ClipMaxX, ImGui::GetWindowPos().y + 99999.f), true);
-	}
+    bool bOpen = ImGui::TreeNodeEx(
+        Comp, Flags, "%s%s",
+        bIsRoot ? "[Root] " : "",
+        Name.c_str()
+    );
 
-	bool bOpen = ImGui::TreeNodeEx(
-		Comp, Flags, "%s%s",
-		bIsRoot ? "[Root] " : "",
-		Name.c_str(),
-		Comp->GetTypeInfo()->name
-	);
+    if (!bIsRoot) ImGui::PopClipRect();
 
-	if (!bIsRoot) ImGui::PopClipRect();
+    if (ImGui::IsItemClicked())
+    {
+        SelectedComponent = Comp;
+        bActorSelected = false;
+    }
 
-	if (ImGui::IsItemClicked())
-	{
-		SelectedComponent = Comp;
-		bActorSelected = false;
-	}
+    if (bOpen)
+    {
+        for (USceneComponent* Child : Children)
+        {
+            RenderSceneComponentNode(Actor, Child, OutCompToDelete);
+        }
 
-	if (bOpen)
-	{
-		for (USceneComponent* Child : Children)
-		{
-			RenderSceneComponentNode(Actor, Child, OutCompToDelete);
-		}
+        ImGui::TreePop();
+    }
 
-		// 연결된 MovementComponent들을 자식으로 표시
-		for (UMovementComponent* MoveComp : AttachedMovements)
-		{
-			FString MoveName = MoveComp->GetFName().ToString();
-			if (MoveName.empty()) MoveName = MoveComp->GetTypeInfo()->name;
+    if (!bIsRoot)
+    {
+        bool bIsReferencedByMovement = false;
+        
+        // 현재 액터의 모든 컴포넌트를 순회하며 검사
+        for (UActorComponent* ActorComp : Actor->GetComponents())
+        {
+            if (UMovementComponent* MoveComp = Cast<UMovementComponent>(ActorComp))
+            {
+                // 이 노드의 컴포넌트(Comp)를 UpdatedComponent로 쓰고 있는지 확인
+                if (MoveComp->GetUpdatedComponent() == Comp)
+                {
+                    bIsReferencedByMovement = true;
+                    break;
+                }
+            }
+        }
 
-			ImGuiTreeNodeFlags MoveFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-			if (!bActorSelected && SelectedComponent == MoveComp) MoveFlags |= ImGuiTreeNodeFlags_Selected;
-
-			float ClipMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x - UIConstants::ClipMargin;
-			ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(ClipMaxX, ImGui::GetWindowPos().y + 99999.f), true);
-			ImGui::TreeNodeEx(MoveComp, MoveFlags, "[%s] %s", MoveComp->GetTypeInfo()->name, MoveName.c_str());
-			ImGui::PopClipRect();
-
-			if (ImGui::IsItemClicked())
-			{
-				SelectedComponent = MoveComp;
-				bActorSelected = false;
-			}
-
-			ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
-			char XId[64];
-			MakeXButtonId(XId, sizeof(XId), MoveComp);
-			if (DrawXButton(XId)) OutCompToDelete = MoveComp;
-		}
-
-		ImGui::TreePop();
-	}
-
-	if (!bIsRoot)
-	{
-		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
-		char XId[64];
-		MakeXButtonId(XId, sizeof(XId), Comp);
-		if (DrawXButton(XId)) OutCompToDelete = Comp;
-	}
+        // 참조 중이 아닐 때만 삭제(X) 버튼을 그림
+        if (!bIsReferencedByMovement)
+        {
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - UIConstants::TreeRightMargin);
+            char XId[64];
+            MakeXButtonId(XId, sizeof(XId), Comp);
+            if (DrawXButton(XId)) OutCompToDelete = Comp;
+        }
+    }
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)

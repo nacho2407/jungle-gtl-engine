@@ -198,7 +198,10 @@ struct FLightPassConstants
 {
 	FVector CameraWorldPos;
 	uint32	LightCount;
-	uint32	WorldLit;
+
+	uint32 ViewMode;   // 4 bytes (필요시 더 압축해서 보냅니다.)
+	uint32 WorldLit;  // 4 bytes
+	float  Padding[2]; // 8 bytes
 };
 
 struct FRenderCommand
