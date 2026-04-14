@@ -7,6 +7,7 @@
 #include "Component/GizmoComponent.h"
 #include "GameFramework/DecalActor.h"
 #include "GameFramework/FakeLightActor.h"
+#include "GameFramework/FireballActor.h"
 #include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
 
@@ -75,6 +76,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 			case 4: // FakeLight
 			{
 				AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 5: // Fireball
+			{
+				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
