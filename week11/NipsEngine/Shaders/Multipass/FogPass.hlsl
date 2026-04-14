@@ -28,43 +28,54 @@ VSOutput mainVS(uint vertexID : SV_VertexID)
     return output;
 }
 
+float ComputeFogTransmittance(FogLayerData fog, float rawDepth, float worldZ, float cameraDistance)
+{
+    if (fog.FogDensity <= 0.0f)
+        return 1.0f;
+
+    if (cameraDistance >= fog.FogCutoffDistance)
+        return 1.0f;
+
+    float scaledDensity = fog.FogDensity * 0.1f;
+    float heightFactor = exp(-fog.HeightFalloff * max(worldZ - fog.FogHeight, 0.0f));
+    float travelDistance = (rawDepth >= 1.0f) ? 1000.0f : max(cameraDistance - fog.FogStartDistance, 0.0f);
+
+    float layerTransmittance = saturate(exp(-scaledDensity * heightFactor * travelDistance));
+    float layerOpacity = min(saturate(1.0f - layerTransmittance), fog.FogMaxOpacity);
+    return saturate(1.0f - layerOpacity);
+}
+
 float4 mainPS(VSOutput input) : SV_TARGET
 {
     int2 ip = int2(input.ClipPos.xy);
     float rawDepth = SceneDepth.Load(int3(ip, 0)).r;
     float4 lightColor = SceneLightColor.Load(int3(ip, 0));
-
-    if (FogDensity <= 0.0f)
-        return lightColor;
-
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).xyz;
-
     float dist = length(worldPos - CameraPosition.xyz);
-    
-    // 일정 거리 이상은 안개 적용 X
-    if (dist >= FogCutoffDistance)
-        return lightColor;
-        
-    float scaledDensity = FogDensity * 0.1; // 스케일 조정
-    float effectiveDist = max(dist - FogStartDistance, 0.0f); // 시작 거리
-    float heightFactor = exp(-HeightFalloff * max(worldPos.z - FogHeight, 0.0f));
-    float fogAmount = 0;
-    
-    if (rawDepth >= 1.0f)
-    {
-        // depth >= 1.0f 인 경우 far plane 밖이므로 실제 거리가 아닌 임의의 큰 값을 사용하여 처리
-        float fakeDist = 1000; 
-        fogAmount = exp(-scaledDensity * heightFactor * fakeDist);
-    }
-    else
-    {
-        fogAmount = exp(-scaledDensity * heightFactor * effectiveDist);
-        fogAmount = saturate(fogAmount);       
-    }
-    
-    float fogOpacity = 1 - fogAmount;
-    fogOpacity = min(fogOpacity, FogMaxOpacity);
-    fogAmount = 1 - fogOpacity;
 
-    return lerp(lightColor, FogColor, 1 - fogAmount);
+    const float MinTransmittance = 1e-4f;
+    float totalOpticalDepth = 0.0f;
+    float3 weightedFogColor = float3(0.0f, 0.0f, 0.0f);
+
+    uint activeFogCount = min(FogLayerCount, (uint)MAX_FOG_LAYER_COUNT);
+    [loop]
+    for (uint fogIndex = 0; fogIndex < activeFogCount; ++fogIndex)
+    {
+        FogLayerData fog = FogLayers[fogIndex];
+        float layerTransmittance = ComputeFogTransmittance(fog, rawDepth, worldPos.z, dist);
+        if (layerTransmittance >= 1.0f)
+            continue;
+
+        float layerOpticalDepth = -log(max(layerTransmittance, MinTransmittance));
+        totalOpticalDepth += layerOpticalDepth;
+        weightedFogColor += fog.FogColor.rgb * layerOpticalDepth;
+    }
+
+    if (totalOpticalDepth <= 0.0f)
+        return lightColor;
+
+    float totalTransmittance = exp(-totalOpticalDepth);
+    float3 fogColor = weightedFogColor / totalOpticalDepth;
+    float3 outRgb = lightColor.rgb * totalTransmittance + fogColor * (1.0f - totalTransmittance);
+    return float4(outRgb, lightColor.a);
 }

@@ -483,11 +483,7 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
 	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
     FogPassShader->Bind(Context);
 
-    // Fog 누적: Light는 read-only로 유지하고 Fog/FXAA를 임시 ping-pong 버퍼로 사용한다.
-    // 마지막 결과는 항상 SceneFog에 남도록 시작 타깃을 커맨드 개수 parity로 결정한다.
-    const bool bOddCount = (Commands.size() & 1u) != 0;
-    ID3D11ShaderResourceView* InputSceneSRV = CurrentRenderTargets.SceneLightSRV;
-    ID3D11RenderTargetView* OutputSceneRTV = bOddCount ? CurrentRenderTargets.SceneFogRTV : CurrentRenderTargets.SceneFXAARTV;
+    ID3D11RenderTargetView* OutputSceneRTV = CurrentRenderTargets.SceneFogRTV;
 
     for (const auto& Cmd : Commands)
     {
@@ -529,15 +525,48 @@ void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRe
         // 다음 Fog 커맨드 입력/출력 swap
         if (OutputSceneRTV == CurrentRenderTargets.SceneFogRTV)
         {
-            InputSceneSRV = CurrentRenderTargets.SceneFogSRV;
-            OutputSceneRTV = CurrentRenderTargets.SceneFXAARTV;
-        }
-        else
-        {
-            InputSceneSRV = CurrentRenderTargets.SceneFXAASRV;
-            OutputSceneRTV = CurrentRenderTargets.SceneFogRTV;
+            TargetDepth = Cmd.DepthStencilState;
+            break;
         }
     }
+    Device.SetDepthStencilState(TargetDepth);
+
+    // Fog는 소스 장면을 포함해 최종색을 셰이더에서 계산하므로 블렌딩은 Opaque로 고정
+    Device.SetBlendState(EBlendState::Opaque);
+
+    ID3D11RenderTargetView* RTVs[MaxRTVCount] = {OutputSceneRTV, nullptr, nullptr};
+    Context->OMSetRenderTargets(MaxRTVCount, RTVs, nullptr);
+
+    ID3D11ShaderResourceView* srvs[] = {
+        CurrentRenderTargets.SceneColorSRV,
+        CurrentRenderTargets.SceneNormalSRV,
+        CurrentRenderTargets.SceneDepthSRV,
+        CurrentRenderTargets.SceneLightSRV,
+        CurrentRenderTargets.SceneWorldPosSRV
+    };
+    Context->PSSetShaderResources(0, 5, srvs);
+
+    FFogPassConstants FogPassConstants = {};
+    FogPassConstants.FogCount = std::min<uint32>(static_cast<uint32>(Commands.size()), MaxFogLayerCount);
+    for (uint32 FogIndex = 0; FogIndex < FogPassConstants.FogCount; ++FogIndex)
+    {
+        FogPassConstants.Layers[FogIndex] = Commands[FogIndex].Constants.Fog;
+    }
+
+    Resources.FogPassConstantBuffer.Update(Context, &FogPassConstants, sizeof(FFogPassConstants));
+    ID3D11Buffer* cb9 = Resources.FogPassConstantBuffer.GetBuffer();
+    Context->VSSetConstantBuffers(9, 1, &cb9);
+    Context->PSSetConstantBuffers(9, 1, &cb9);
+
+    // 풀스크린 triangle
+    Context->IASetInputLayout(nullptr);
+    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->Draw(3, 0);
+
+    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr, nullptr};
+    Context->PSSetShaderResources(0, 5, nullSRVs);
 
     SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
     SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
@@ -558,7 +587,7 @@ void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Cont
 	FFXAAConstants FXAAConstants = {};
     FXAAConstants.InvResolution[0] = (CurrentRenderTargets.Width > 0.0f) ? (1.0f / CurrentRenderTargets.Width) : 0.0f;
     FXAAConstants.InvResolution[1] = (CurrentRenderTargets.Height > 0.0f) ? (1.0f / CurrentRenderTargets.Height) : 0.0f;
-    FXAAConstants.Threshold = std::clamp(Bus.GetFXAAThreshold(), 0.0f, 1.0f);
+    FXAAConstants.bEnabled = Bus.GetFXAAEnabled() ? 1u : 0u;
     Resources.FXAAConstantBuffer.Update(Context, &FXAAConstants, sizeof(FFXAAConstants));
     ID3D11Buffer* cb10 = Resources.FXAAConstantBuffer.GetBuffer();
 
