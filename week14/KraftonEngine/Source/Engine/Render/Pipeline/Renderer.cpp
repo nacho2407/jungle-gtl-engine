@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <functional>
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
@@ -12,6 +13,40 @@
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
+#include "Render/Pipeline/RenderConstants.h"
+
+// ============================================================
+// FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
+// 특정 패스 조건이 만족되면 콜백을 실행합니다.
+// ============================================================
+enum class EPassCompare : uint8 { Equal, Less, Greater, LessEqual, GreaterEqual };
+
+struct FPassEvent
+{
+	ERenderPass    Pass;
+	EPassCompare   Compare;
+	bool           bOnce;
+	bool           bExecuted = false;
+	std::function<void()> Fn;
+
+	bool TryExecute(ERenderPass CurPass)
+	{
+		if (bOnce && bExecuted) return false;
+
+		bool bMatch = false;
+		switch (Compare)
+		{
+		case EPassCompare::Equal:        bMatch = (CurPass == Pass); break;
+		case EPassCompare::Less:         bMatch = ((uint32)CurPass <  (uint32)Pass); break;
+		case EPassCompare::Greater:      bMatch = ((uint32)CurPass >  (uint32)Pass); break;
+		case EPassCompare::LessEqual:    bMatch = ((uint32)CurPass <= (uint32)Pass); break;
+		case EPassCompare::GreaterEqual: bMatch = ((uint32)CurPass >= (uint32)Pass); break;
+		}
+
+		if (bMatch) { Fn(); if (bOnce) bExecuted = true; }
+		return bMatch;
+	}
+};
 
 
 void FRenderer::Create(HWND hWindow)
@@ -122,14 +157,14 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
-	{
-		if (Proxy.ExtraCB.Buffer)
 		{
-			const uint32 Idx = Proxy.ExtraCB.Slot - ECBSlot::PerShader0;
-			check(Idx < 2);
-			Cmd.PerShaderCB[Idx] = Proxy.ExtraCB.Buffer;
-		}
-	};
+			if (Proxy.ExtraCB.Buffer)
+			{
+				const uint32 Idx = Proxy.ExtraCB.Slot - ECBSlot::PerShader0;
+				check(Idx < 2);
+				Cmd.PerShaderCB[Idx] = Proxy.ExtraCB.Buffer;
+			}
+		};
 
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
 	if (!Proxy.SectionDraws.empty())
@@ -160,7 +195,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.bIsUVScroll = Section.bIsUVScroll ? 1u : 0u;
 			Cmd.Pass = Pass;
 			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
-	
+
 		}
 	}
 	else
@@ -212,24 +247,24 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 	}
 
 	auto AddDraw = [&](uint32 FirstIndex, uint32 IndexCount)
-	{
-		if (IndexCount == 0) return;
+		{
+			if (IndexCount == 0) return;
 
-		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader = DecalProxy.Shader;
-		Cmd.DepthStencil = PassState.DepthStencil;
-		Cmd.Blend = PassState.Blend;
-		Cmd.Rasterizer = Rasterizer;
-		Cmd.Topology = PassState.Topology;
-		Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;
-		Cmd.FirstIndex = FirstIndex;
-		Cmd.IndexCount = IndexCount;
-		Cmd.PerObjectCB = ReceiverPerObjCB;
-		Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
-		Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
-		Cmd.Pass = ERenderPass::Decal;
-		Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
-	};
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.Shader = DecalProxy.Shader;
+			Cmd.DepthStencil = PassState.DepthStencil;
+			Cmd.Blend = PassState.Blend;
+			Cmd.Rasterizer = Rasterizer;
+			Cmd.Topology = PassState.Topology;
+			Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;
+			Cmd.FirstIndex = FirstIndex;
+			Cmd.IndexCount = IndexCount;
+			Cmd.PerObjectCB = ReceiverPerObjCB;
+			Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
+			Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
+			Cmd.Pass = ERenderPass::Decal;
+			Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
+		};
 
 	if (!ReceiverProxy.SectionDraws.empty())
 	{
@@ -304,13 +339,19 @@ void FRenderer::Render(const FFrameContext& Frame)
 	// 단일 StateCache — 패스 간 상태 유지 (DSV Read-Only 전환 등)
 	FStateCache Cache;
 	Cache.Reset();
-	Cache.RTV         = Frame.ViewportRTV;
-	Cache.DSV         = Frame.ViewportDSV;
-	Cache.DSVReadOnly = Frame.ViewportDSVReadOnly;
+	Cache.RTV = Frame.ViewportRTV;
+	Cache.DSV = Frame.ViewportDSV;
 
+	// ── Pre/Post 패스 이벤트 등록 ──
+	TArray<FPassEvent> PrePassEvents;
+	BuildPassEvents(PrePassEvents, Context, Frame, Cache);
+
+	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
+
+		for (auto& E : PrePassEvents) E.TryExecute(CurPass);
 
 		uint32 Start, End;
 		DrawCommandList.GetPassRange(CurPass, Start, End);
@@ -323,8 +364,52 @@ void FRenderer::Render(const FFrameContext& Frame)
 		DrawCommandList.SubmitRange(Start, End, Device, Context, Cache, Resources.DefaultSampler);
 	}
 
+	CleanupPassState(Context, Cache);
+}
+
+// ============================================================
+// CleanupPassState — 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
+// ============================================================
+void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache)
+{
+	// 시스템 텍스처 언바인딩
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
+
 	Cache.Cleanup(Context);
 	DrawCommandList.Reset();
+}
+
+// ============================================================
+// BuildPassEvents — 패스 루프 Pre/Post 이벤트 등록
+// ============================================================
+void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
+	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
+{
+	// CopyResource: PostProcess 이상 패스 진입 전 Depth+Stencil 복사 → 시스템 텍스처 바인딩
+	if (Frame.DepthTexture && Frame.DepthCopyTexture)
+	{
+		PrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
+			[Context, &Frame, &Cache]()
+			{
+				Context->OMSetRenderTargets(0, nullptr, nullptr);
+				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
+				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+
+				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
+				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
+
+				if (Frame.StencilCopySRV)
+				{
+					ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
+					Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
+				}
+
+				Cache.bForceAll = true;
+			}
+		});
+	}
 }
 
 // ============================================================
@@ -451,12 +536,10 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.Blend = PPState.Blend;
 				Cmd.Rasterizer = PPState.Rasterizer;
 				Cmd.Topology = PPState.Topology;
-				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
-				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;  // t0: depth
 				Cmd.PerShaderCB[0] = FogCB;
 				Cmd.Pass = ERenderPass::PostProcess;
-				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FogShader, nullptr, Frame.ViewportDepthSRV, 0);
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FogShader, nullptr, nullptr, 0);
 			}
 		}
 
@@ -479,12 +562,10 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.Blend = PPState.Blend;
 				Cmd.Rasterizer = PPState.Rasterizer;
 				Cmd.Topology = PPState.Topology;
-				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
-				Cmd.DiffuseSRV = Frame.ViewportStencilSRV;  // t0: stencil
 				Cmd.PerShaderCB[0] = OutlineCB;
 				Cmd.Pass = ERenderPass::PostProcess;
-				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, PPShader, nullptr, Frame.ViewportStencilSRV, 1);
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, PPShader, nullptr, nullptr, 1);
 			}
 		}
 
@@ -509,12 +590,10 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.Blend = PPState.Blend;
 				Cmd.Rasterizer = PPState.Rasterizer;
 				Cmd.Topology = PPState.Topology;
-				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;
-				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;
 				Cmd.PerShaderCB[0] = SceneDepthCB;
 				Cmd.Pass = ERenderPass::PostProcess;
-				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, Frame.ViewportDepthSRV, 2);
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, nullptr, 2);
 			}
 		}
 	}

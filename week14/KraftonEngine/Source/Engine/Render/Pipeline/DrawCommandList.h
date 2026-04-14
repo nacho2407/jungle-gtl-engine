@@ -32,11 +32,9 @@ struct FStateCache
 	int32    LastUVScroll     = 0;
 	FVector4 LastSectionColor = {};
 
-	// DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩)
-	bool bReadOnlyDSV = false;
+	// Render target 추적 (CopyResource 후 DSV 복원 등)
 	ID3D11RenderTargetView*  RTV         = nullptr;
 	ID3D11DepthStencilView*  DSV         = nullptr;
-	ID3D11DepthStencilView*  DSVReadOnly = nullptr;
 
 	void Reset();
 

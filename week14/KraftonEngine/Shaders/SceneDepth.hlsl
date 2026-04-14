@@ -1,5 +1,6 @@
 // SceneDepth.hlsl
 #include "Common/Functions.hlsl"
+#include "Common/SystemResources.hlsl"
 
 // b2 (PerShader0): SceneDepth visualization
 cbuffer SceneDepthCB : register(b2)
@@ -10,7 +11,7 @@ cbuffer SceneDepthCB : register(b2)
     uint Mode;
 }
 
-Texture2D<float> DepthTex : register(t0);
+// SceneDepth (t10) is declared in Common/ConstantBuffers.hlsl
 
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
@@ -21,7 +22,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
     
-    float d = DepthTex.Load(int3(coord, 0));
+    float d = SceneDepth.Load(int3(coord, 0));
     
     float v = 0.0f;
     
