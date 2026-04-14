@@ -57,6 +57,20 @@ public:
 	// 인덱스로 문자열 조회
 	const FString& Resolve(uint32 Index) const;
 
+	// 풀에 등록된 고유 문자열(엔트리) 수 반환
+	uint32 GetEntryCount() const { return static_cast<uint32>(Entries.size()); }
+
+	// 풀에 등록된 모든 엔트리 목록 반환
+	const TArray<FString>& GetEntries() const { return Entries; }
+
+	// 풀이 차지하는 총 문자열 바이트 크기 반환 (각 FString의 문자 데이터 합산)
+	size_t GetTotalBytes() const
+	{
+		size_t Total = 0;
+		for (const FString& S : Entries) Total += S.size();
+		return Total;
+	}
+
 private:
 	FNamePool() = default;
 

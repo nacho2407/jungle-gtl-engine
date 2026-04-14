@@ -52,51 +52,56 @@ void FEditorControlWidget::Render(float DeltaTime)
 		{
 			switch (SelectedPrimitiveType)
 			{
-				case 0: // StaticMesh
-				{
-					AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-					Actor->InitDefaultComponents();
-					Actor->SetActorLocation(CurSpawnPoint);
-
-					break;
-				}
-				case 1: // TextRender
-				{
-				
+			case 0: // Scene (Empty)
+			{
+				ASceneActor* Actor = World->SpawnActor<ASceneActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 1: // StaticMesh
+			{
+				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 2: // TextRender
+			{
 				ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 2: // SubUV
+			case 3: // SubUV
 			{
 				ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 3: // Billboard
+			case 4: // Billboard
 			{
 				ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 4: // Decal
+			case 5: // Decal
 			{
 				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-            case 5: // Fireball
+            case 6: // Fireball
             {
 				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 6: // Spotlight
+			case 7: // Spotlight
 			{
 				ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
 				Actor->InitDefaultComponents();

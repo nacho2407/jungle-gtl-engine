@@ -161,6 +161,8 @@ struct FDecalConstants
 	FVector4 ColorTint;
 };
 
+constexpr uint32 MaxFogLayerCount = 32;
+
 struct FFogConstants
 {
 	FVector4 FogColor;
@@ -173,10 +175,17 @@ struct FFogConstants
     float        Padding[2];
 };
 
+struct FFogPassConstants
+{
+    uint32 FogCount = 0;
+    float  Padding0[3] = {0.0f, 0.0f, 0.0f};
+    FFogConstants Layers[MaxFogLayerCount] = {};
+};
+
 struct FFXAAConstants
 {
     float InvResolution[2]; // (1/Width, 1/Height)
-    float  Threshold;     // 0.05 ~ 0.2 추천
+    uint32 bEnabled;       // 0: off, 1: on
     float  Padding;
 };
 
