@@ -2,6 +2,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "ImGui/imgui.h"
+#include "GameFramework/PrimitiveActors.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
@@ -15,7 +16,6 @@
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
 #include <functional>
-#include "Component/SubUVComponent.h"
 #include "Component/HeightFogComponent.h"
 #include "Selection/SelectionManager.h"
 
@@ -600,6 +600,35 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				if (bSelected) ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
+		}
+	}
+
+	if (PrimaryActor->IsA<ASpotLightActor>())
+	{
+		ASpotLightActor* SpotActor = static_cast<ASpotLightActor*>(PrimaryActor);
+		ImGui::Separator();
+		ImGui::Text("Spot Light Properties");
+		float Range = SpotActor->GetRange();
+		if (ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f))
+		{
+			for (AActor* Actor : SelectedActors)
+			{
+				if (ASpotLightActor* SA = dynamic_cast<ASpotLightActor*>(Actor))
+				{
+					SA->SetRange(Range);
+				}
+			}
+		}
+		float Angle = SpotActor->GetAngle();
+		if (ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f))
+		{
+			for (AActor* Actor : SelectedActors)
+			{
+				if (ASpotLightActor* SA = dynamic_cast<ASpotLightActor*>(Actor))
+				{
+					SA->SetAngle(Angle);
+				}
+			}
 		}
 	}
 }

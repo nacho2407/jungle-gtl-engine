@@ -3,6 +3,7 @@
 #include "AActor.h"
 
 class UTextRenderComponent;
+class UDecalComponent;
 
 class ACubeActor : public AActor
 {
@@ -108,4 +109,18 @@ public:
 	ASpotLightActor() = default;
 
 	void InitDefaultComponents();
+
+	void Tick(float DeltaTime) override;
+
+	const float GetRange() const { return Range; }
+	void SetRange(float InRange) { Range = InRange; }
+
+	const float GetAngle() const { return Angle; }
+	void SetAngle(float InAngle) { Angle = InAngle; }
+
+private:
+	UDecalComponent* DecalComp = nullptr;
+
+	float Range = 10.0f;
+	float Angle = 30.0f;
 };

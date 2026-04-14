@@ -298,8 +298,19 @@ void ASpotLightActor::InitDefaultComponents() {
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
 	Decal->AttachToComponent(BillboardIcon);
-	Decal->SetRelativeLocation(FVector(10, 0, 0.f));
+	Decal->SetRelativeLocation(FVector(10, 0, 0));
+	DecalComp = Decal;
 
 	UMaterial* DecalMat = FResourceManager::Get().GetMaterial("DecalMat");
 	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+}
+
+void ASpotLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (DecalComp)
+	{
+		DecalComp->SetSize(FVector(Range, Range, Range));
+	}
 }
