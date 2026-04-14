@@ -1,5 +1,6 @@
-#include "SubUVRenderPass.h"
+﻿#include "SubUVRenderPass.h"
 #include "Render/SubUVBatcher.h"
+#include "Render/Scene/RenderBus.h"
 
 bool FSubUVRenderPass::Initialize()
 {
@@ -29,7 +30,8 @@ bool FSubUVRenderPass::DrawCommand(const FRenderPassContext* Context)
         return true;
     }
 
-    Context->SubUVBatcher->Flush(Context->DeviceContext);
+    const bool bWireframe = (Context->RenderBus != nullptr) && (Context->RenderBus->GetViewMode() == EViewMode::Wireframe);
+    Context->SubUVBatcher->Flush(Context->DeviceContext, bWireframe);
     return true;
 }
 

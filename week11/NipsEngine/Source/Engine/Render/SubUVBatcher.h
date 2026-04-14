@@ -70,7 +70,7 @@ public:
 
     // Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
     // SRV — ResourceManager 소유 FParticleResource의 SRV를 전달
-    void Flush(ID3D11DeviceContext* Context);
+    void Flush(ID3D11DeviceContext* Context, bool bWireframe = false);
 
     uint32 GetSpriteCount() const { return static_cast<uint32>(Vertices.size() / 4); }
 

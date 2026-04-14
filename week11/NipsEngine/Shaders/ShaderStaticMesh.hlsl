@@ -118,6 +118,11 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         return output;
     }
 
+    if (bIsWireframe > 0.5f)
+    {
+        FinalColor = WireframeRGB;
+    }
+
     output.Color = float4(FinalColor, 1.f);
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
