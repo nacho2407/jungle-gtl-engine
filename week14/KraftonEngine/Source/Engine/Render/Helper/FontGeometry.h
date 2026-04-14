@@ -55,8 +55,6 @@ public:
 	ID3D11Buffer* GetScreenIBBuffer() const { return ScreenIB.GetBuffer(); }
 	uint32 GetScreenIndexCount() const { return static_cast<uint32>(ScreenIndices.size()); }
 
-	ID3D11SamplerState* GetSampler() const { return SamplerState; }
-
 	uint32 GetWorldQuadCount() const { return static_cast<uint32>(WorldVertices.size() / 4); }
 	uint32 GetScreenQuadCount() const { return static_cast<uint32>(ScreenVertices.size() / 4); }
 
@@ -76,9 +74,8 @@ private:
 	FDynamicVertexBuffer ScreenVB;
 	FDynamicIndexBuffer  ScreenIB;
 
-	// Device + Sampler
+	// Device
 	ID3D11Device* Device = nullptr;
-	ID3D11SamplerState* SamplerState = nullptr;
 
 	// CharInfoMap
 	TMap<uint32, FCharacterInfo> CharInfoMap;

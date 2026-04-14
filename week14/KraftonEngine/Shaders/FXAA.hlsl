@@ -1,6 +1,7 @@
 // FXAA.hlsl
 #include "Common/Functions.hlsl"
 #include "Common/SystemResources.hlsl"
+#include "Common/SystemSamplers.hlsl"
 
 cbuffer FXAABuffer : register(b2)
 {
@@ -11,7 +12,7 @@ cbuffer FXAABuffer : register(b2)
 
 // SceneColor (t11) is declared in Common/SystemResources.hlsl
 #define ColorTex SceneColor
-SamplerState Sampler : register(s0);
+#define Sampler LinearClampSampler
 
 float GetLuma(float3 color)
 {
