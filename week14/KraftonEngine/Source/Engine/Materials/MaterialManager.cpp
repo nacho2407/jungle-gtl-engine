@@ -8,6 +8,36 @@
 #include "Texture/Texture2D.h"
 #include "Engine/Platform/Paths.h"
 
+void FMaterialManager::ScanMaterialAssets()
+{
+	AvailableMaterialFiles.clear();
+
+	const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Asset\\Materials\\";
+
+	if (!std::filesystem::exists(MaterialRoot))
+	{
+		return;
+	}
+
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MaterialRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+
+		// 확장자가 .json인지 확인
+		if (Path.extension() != L".json") continue;
+		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
+
+		FMaterialAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+		AvailableMaterialFiles.push_back(std::move(Item));
+	}
+}
+
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
