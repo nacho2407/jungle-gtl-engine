@@ -19,7 +19,6 @@ PS_Input_Decal VS(VS_Input_PNCT input)
     output.position = mul(mul(worldPos, View), Projection);
     output.worldPos = worldPos.xyz;
     output.normal = normalize(mul(input.normal, (float3x3) Model));
-    output.color = input.color;
     return output;
 }
 
@@ -42,6 +41,6 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
         discard;
     }
 
-    float4 finalColor = texColor * input.color * DecalColor;
+    float4 finalColor = texColor * DecalColor;
     return float4(ApplyWireframe(finalColor.rgb), finalColor.a);
 }
