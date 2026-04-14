@@ -244,7 +244,7 @@ void ADecalActor::InitDefaultComponents()
 
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	Billboard->AttachToComponent(Decal);
-	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+	Billboard->SetTextureName(("Asset\\Texture\\DecalActor_64.png"));
 
 	auto* TextUUID = AddComponent<UTextRenderComponent>();
 	TextUUID->AttachToComponent(Decal);
@@ -293,10 +293,13 @@ void AFireballActor::InitDefaultComponents()
 
 void ASpotLightActor::InitDefaultComponents() {
 	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
-    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+    BillboardIcon->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
 	SetRootComponent(BillboardIcon);
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
 	Decal->AttachToComponent(BillboardIcon);
 	Decal->SetRelativeLocation(FVector(10, 0, 0.f));
+
+	UMaterial* DecalMat = FResourceManager::Get().GetMaterial("DecalMat");
+	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
 }
