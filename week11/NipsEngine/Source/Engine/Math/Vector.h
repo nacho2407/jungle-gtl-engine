@@ -306,6 +306,31 @@ public:
 		return ZeroVector;
 	}
 
+	void FindBestAxisVectors(FVector& Axis1, FVector& Axis2) const noexcept
+	{
+		using namespace DirectX;
+
+		const XMVector N = DirectX::XMVector3Normalize(ToXMVector());
+		
+		XMFLOAT3 nFloat;
+		XMStoreFloat3(&nFloat, N);
+
+		float absX = fabsf(nFloat.x);
+		float absY = fabsf(nFloat.y);
+		float absZ = fabsf(nFloat.z);
+
+		XMVECTOR Temp;
+		if (absX < absY && absX < absZ) Temp = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+		else if (absY < absZ) Temp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		else Temp = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+		XMVECTOR A1 = XMVector3Normalize(XMVector3Cross(Temp, N));
+		XMVECTOR A2 = XMVector3Cross(N, A1);
+
+		Axis1 = FVector(A1);
+		Axis2 = FVector(A2);
+	}
+
 public:
 	// 두 벡터의 내적(Dot Product)을 구함
 	static float DotProduct(const FVector& A, const FVector& B) noexcept
@@ -336,6 +361,13 @@ public:
 
 	// Backward compatibility alias
 	static float Distance(const FVector& A, const FVector& B) noexcept { return Dist(A, B); }
+
+	// Linear interpolation from A to B at time t
+	static FVector Lerp(const FVector& A, const FVector& B, float t)
+    {
+		FVector Delta = B - A;
+		return A + Delta * t;
+	}
 };
 
 namespace std

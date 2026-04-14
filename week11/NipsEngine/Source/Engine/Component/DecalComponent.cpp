@@ -12,17 +12,11 @@ REGISTER_FACTORY(UDecalComponent)
 // Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
 UDecalComponent::UDecalComponent()
 {
-	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("DecalMaterial", "Shaders/ShaderDecal.hlsl");
+	UMaterial* Mat = FResourceManager::Get().GetMaterial("DecalMat");
 	SetMaterial(Mat);
 
-    // Decal should blend over existing scene color/normal without replacing them opaquely.
-    Mat->BlendType = EBlendType::AlphaBlend;
-    Mat->DepthStencilType = EDepthStencilType::DepthReadOnly;
-    Mat->RasterizerType = ERasterizerType::SolidBackCull;
-
-	Mat->SetParam("InvDecalWorld", FMaterialParamValue(GetWorldMatrix().GetInverse()));
-	Mat->SetParam("DecalColorTint", FMaterialParamValue(DecalColor.ToVector4()));
-    Mat->SetParam("DiffuseMap", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Texture/water.png")));
+	Mat->DepthStencilType = EDepthStencilType::Default;
+	Mat->BlendType = EBlendType::AlphaBlend;
 
     bEnableCull = false;
 }
@@ -87,11 +81,11 @@ void UDecalComponent::TickComponent(float DeltaTime)
 
 	LifeTime += DeltaTime;
 
-	if (LifeTime < FadeInStartDelay + FadeInDuration)
+	if (FadeInStartDelay + FadeInDuration > 0 && LifeTime < FadeInStartDelay + FadeInDuration)
 	{
 		TickFadeIn();
 	}
-	else
+	else if (FadeStartDelay + FadeDuration > 0 && LifeTime >= FadeInStartDelay + FadeInDuration)
 	{
 		TickFadeOut();
 	}
@@ -103,6 +97,12 @@ void UDecalComponent::TickFadeIn()
 	if (FadeInTime < 0.0f)
 	{
 		DecalColor.A = 0.0f;
+		return;
+	}
+	
+	if (FadeInDuration <= 0.0f)
+	{
+		DecalColor.A = 1.0f;
 		return;
 	}
 

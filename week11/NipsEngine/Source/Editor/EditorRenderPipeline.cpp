@@ -106,8 +106,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
     Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
-    Bus.SetFXAAThreshold(Settings.FXAAThreshold);
 	Bus.SetViewportSize(FVector2(Rect.Width, Rect.Height));
+    Bus.SetFXAAEnabled(Settings.bEnableFXAA);
 
     const FFrustum& ViewFrustum = Camera->GetFrustum();
     Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);

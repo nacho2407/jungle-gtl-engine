@@ -28,6 +28,7 @@ enum class ERenderCommandType
 	Billboard,
 	DebugBox,
 	DebugOBB,
+	DebugSpotlight,
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
 	SubUV,		// SubUVComponent     — SubUVBatcher 경유
@@ -40,7 +41,15 @@ enum class ERenderCommandType
 struct FPerObjectConstants
 {
 	FMatrix Model;
+	FMatrix WorldInvTrans;
 	FVector4 Color;
+
+	FPerObjectConstants() = default;
+	FPerObjectConstants(const FMatrix& InModel, const FVector4& InColor = FVector4(1, 1, 1, 1))
+		: Model(InModel), Color(InColor)
+	{
+		WorldInvTrans = InModel.GetInverse().GetTransposed();
+	}
 };
 
 struct FFrameConstants
@@ -94,6 +103,16 @@ struct FOBBConstants
 	FVector Extents;
 	float Padding1;
 	FMatrix Rotation; // 월드 회전 행렬 (회전만 포함, 평행 이동과 스케일 제외)
+	FColor Color;
+};
+
+struct FSpotLightConstants
+{
+	FVector Position;
+	FVector Direction;
+	float InnerAngle;
+	float OuterAngle;
+	float Range;
 	FColor Color;
 };
 
@@ -161,6 +180,8 @@ struct FDecalConstants
 	FVector4 ColorTint;
 };
 
+constexpr uint32 MaxFogLayerCount = 32;
+
 struct FFogConstants
 {
 	FVector4 FogColor;
@@ -173,10 +194,17 @@ struct FFogConstants
     float        Padding[2];
 };
 
+struct FFogPassConstants
+{
+    uint32 FogCount = 0;
+    float  Padding0[3] = {0.0f, 0.0f, 0.0f};
+    FFogConstants Layers[MaxFogLayerCount] = {};
+};
+
 struct FFXAAConstants
 {
     float InvResolution[2]; // (1/Width, 1/Height)
-    float  Threshold;     // 0.05 ~ 0.2 추천
+    uint32 bEnabled;       // 0: off, 1: on
     float  Padding;
 };
 
@@ -214,6 +242,7 @@ struct FRenderCommand
 	{
 		FAABBConstants AABB;
 		FOBBConstants OBB;
+		FSpotLightConstants SpotLight;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;

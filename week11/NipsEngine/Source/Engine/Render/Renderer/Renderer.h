@@ -40,6 +40,7 @@ class FRenderer
 {
 public:
 	void Create(HWND hWindow);
+	void CreateResources();
 	void Release();
 
 	void PrepareBatchers(const FRenderBus& InRenderBus);

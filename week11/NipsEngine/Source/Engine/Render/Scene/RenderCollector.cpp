@@ -15,6 +15,7 @@
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
+#include "Engine/GameFramework/PrimitiveActors.h"
 #include "Render/Resource/Material.h"
 #include "Object/ObjectIterator.h"
 #include "Runtime/Stats/ScopeCycleCounter.h"
@@ -139,7 +140,7 @@ namespace
 		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
 		const float ScreenCoverage = ProjectedRadius; 
 
-		static constexpr float Thresholds[] = { 0.05f, 0.03f, 0.01f, 0.008f };
+		static constexpr float Thresholds[] = { 0.12f, 0.08f, 0.05f, 0.02f };
 		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
 
 		const int32 MaxLOD = ValidLODCount - 1;
@@ -226,6 +227,11 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			continue;
 		}
 
+		if (Actor->IsA<ASpotLightActor>())
+		{
+			CollectSpotLightCommand(static_cast<const ASpotLightActor*>(Actor), ShowFlags, RenderBus);
+		}
+
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
 			if (Primitive == nullptr || !Primitive->IsVisible())
@@ -276,6 +282,9 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 
 		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
 		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
+		Material->DepthStencilType = EDepthStencilType::Default;
+		Material->RasterizerType = ERasterizerType::SolidBackCull;
+		Material->BlendType = EBlendType::AlphaBlend;
 
 		RenderBus.AddCommand(ERenderPass::PostProcessOutline, PostProcessCmd);
 	}
@@ -350,6 +359,12 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 	{
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
 	}
+
+	if (Actor->IsA<ASpotLightActor>())
+	{
+		ASpotLightActor* SpotlightActor = Cast<ASpotLightActor>(Actor);
+
+	}
 }
 
 bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
@@ -387,7 +402,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = MeshBuffer;
-		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+		BaseCmd.PerObjectConstants = FPerObjectConstants(primitiveComponent->GetWorldMatrix());
 		BaseCmd.SectionIndexStart = 0;
 		BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
 
@@ -402,15 +417,12 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			FMatrix WorldMatrix = TextComp->GetTextMatrix();
 
 			FRenderCommand TextCmd = BaseCmd;
-			BaseCmd.PerObjectConstants.Model = WorldMatrix;
-			TextCmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix()};
+			BaseCmd.PerObjectConstants = FPerObjectConstants(WorldMatrix);
+			TextCmd.PerObjectConstants = FPerObjectConstants(TextComp->GetWorldMatrix(), TextComp->GetColor());
 			TextCmd.Type = ERenderCommandType::Font;
-			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
 			TextCmd.Constants.Font.Text = &Text;
 			TextCmd.Constants.Font.Font = Font;
 			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-			//TextCmd.BlendState = EBlendState::AlphaBlend;
-			//TextCmd.DepthStencilState = EDepthStencilState::Default;
 			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
@@ -434,7 +446,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		bHasSelectionMask = true;
 
 		// TODO: 리팩토링 필요 (현재는 DecalComponent만 OBB를 그리도록 설정)
-		UDecalComponent* DecalComp = dynamic_cast<UDecalComponent*>(primitiveComponent);
+		UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
 		if (DecalComp)
 		{
 			CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
@@ -509,10 +521,10 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.SectionIndexCount = Section.IndexCount;
 			Cmd.Material = Material;
 
-			if (Material)
-			{
-				Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
-			}
+			//if (Material)
+			//{
+			//	Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
+			//}
 
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
@@ -632,16 +644,12 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
 				Cmd.MeshBuffer = MeshBuffer;
 
-				//Cmd.BlendState = EBlendState::AlphaBlend;
-				//Cmd.DepthStencilState = EDepthStencilState::Default;
-
 				Cmd.SectionIndexStart = Section.StartIndex;
 				Cmd.SectionIndexCount = Section.IndexCount;
 
 				Cmd.Material = Material;
-                // ShaderDecal.hlsl expects inverse decal transform.
-                Material->SetMatrix4("InvDecalWorld", DecalComp->GetDecalMatrix().GetInverse());
-                Material->SetVector4("DecalColorTint", DecalComp->GetDecalColor().ToVector4());
+				Material->SetMatrix4("InvDecalWorld", DecalComp->GetDecalMatrix().GetInverse());
+				Material->SetVector4("DecalColorTint", DecalComp->GetDecalColor().ToVector4());
 
 				RenderBus.AddCommand(ERenderPass::Decal, Cmd);
 			}
@@ -808,4 +816,19 @@ void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent
 	const FAABB AABB = PrimitiveComponent->GetWorldAABB();
 	const FOBB Box = FOBB::FromAABB(AABB, PrimitiveComponent->GetWorldMatrix());
 	CollectOBBCommand(Box, FColor::Green(), RenderBus);
+}
+
+void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugSpotlight;
+	Cmd.Constants.SpotLight.Position = SpotlightActor->GetActorLocation();
+	Cmd.Constants.SpotLight.Direction = SpotlightActor->GetActorForward();
+	Cmd.Constants.SpotLight.InnerAngle = 12.0f;
+	Cmd.Constants.SpotLight.OuterAngle = 30.0f;
+	Cmd.Constants.SpotLight.Range = 10.0f;
+	Cmd.Constants.SpotLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }

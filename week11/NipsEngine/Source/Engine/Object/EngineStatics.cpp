@@ -21,6 +21,5 @@ void operator delete(void* Ptr, size_t Size)
 	{
 		EngineStatics::OnDeallocated(static_cast<uint32>(Size));
 		std::free(Ptr);
-		;
 	}
 }

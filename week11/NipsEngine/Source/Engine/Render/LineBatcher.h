@@ -63,6 +63,9 @@ public:
 	// OBB 와이어프레임 (12개 Edge)
 	void AddOBB(const FOBB& Box, const FColor& Color);
 
+	// SpotLight의 원뿔 와이어프레임
+	void AddSpotLight(const FVector& Position, const FVector& Direction, float Range, float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& Color);
+
 	/**
 	 * @brief 카메라 기준의 grid patch와 축 보조선을 생성합니다.
 	 * @details 카메라 위치와 forward 벡터를 이용해 바닥면 위의 focus point를 계산하고,

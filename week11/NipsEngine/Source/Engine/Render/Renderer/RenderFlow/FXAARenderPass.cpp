@@ -32,7 +32,7 @@ bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
     FFXAAConstants FXAAConstants = {};
     FXAAConstants.InvResolution[0] = (Context->RenderTargets->Width > 0.0f) ? (1.0f / Context->RenderTargets->Width) : 0.0f;
     FXAAConstants.InvResolution[1] = (Context->RenderTargets->Height > 0.0f) ? (1.0f / Context->RenderTargets->Height) : 0.0f;
-    FXAAConstants.Threshold = std::clamp(Context->RenderBus->GetFXAAThreshold(), 0.0f, 1.0f);
+    FXAAConstants.bEnabled = Context->RenderBus->GetFXAAEnabled();
     Context->RenderResources->FXAAConstantBuffer.Update(Context->DeviceContext, &FXAAConstants, sizeof(FFXAAConstants));
     ID3D11Buffer* cb10 = Context->RenderResources->FXAAConstantBuffer.GetBuffer();
 

@@ -13,11 +13,10 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	MaxIndexCount = 1536;
 	CreateBuffers();
 
-	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("FontMaterial", "Shaders/ShaderFont.hlsl");
-	Mat->SetParam("FontAtlas", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Font/FontAtlas.dds", Device.Get())));
+	UMaterial* Mat = FResourceManager::Get().GetMaterial("FontMat");
 	Mat->BlendType = EBlendType::AlphaBlend;
 	Mat->DepthStencilType = EDepthStencilType::Default;
-	Mat->RasterizerType = ERasterizerType::SolidBackCull;
+	Mat->RasterizerType = ERasterizerType::SolidNoCull;
 	Mat->SamplerType = ESamplerType::EST_Point;
 
 	FontMaterial = Mat;
