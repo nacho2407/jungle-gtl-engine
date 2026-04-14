@@ -6,7 +6,6 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
-#include "Profiling/Stats.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
@@ -51,9 +50,6 @@ public:
 		bool bProperty = true;
 		bool bScene = true;
 		bool bStat = false;;
-#endif
-#if STATS
-		bool bHiZDebug = false;
 #endif
 	} UI;
 

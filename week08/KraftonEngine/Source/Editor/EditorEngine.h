@@ -79,14 +79,6 @@ public:
 	// PIE 중이 아니면 no-op.
 	void StopPlayInEditorImmediate() { if (IsPlayingInEditor()) EndPlayMap(); }
 
-#if STATS
-	FGPUOcclusionCulling* GetGPUOcclusion()
-	{
-		auto* Pipeline = static_cast<FEditorRenderPipeline*>(GetRenderPipeline());
-		return Pipeline ? &Pipeline->GetGPUOcclusion() : nullptr;
-	}
-#endif
-
 private:
 	// Tick 내에서 호출 — 큐에 요청이 있으면 StartPlayInEditorSession 실행
 	void StartQueuedPlaySessionRequest();
