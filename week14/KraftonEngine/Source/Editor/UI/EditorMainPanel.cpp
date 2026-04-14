@@ -11,9 +11,6 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Engine/Input/InputSystem.h"
 
-#if STATS
-#include "Render/Culling/GPUOcclusionCulling.h"
-#endif
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
@@ -86,9 +83,6 @@ void FEditorMainPanel::Render(float DeltaTime)
 			ImGui::Checkbox("Property", &S.UI.bProperty);
 			ImGui::Checkbox("Scene", &S.UI.bScene);
 			ImGui::Checkbox("Stat", &S.UI.bStat);
-#if STATS
-			ImGui::Checkbox("Hi-Z Debug", &S.UI.bHiZDebug);
-#endif
 			ImGui::End();
 		}
 	}
@@ -132,66 +126,9 @@ void FEditorMainPanel::Render(float DeltaTime)
 		StatWidget.Render(DeltaTime);
 	}
 
-#if STATS
-	if (!bHideEditorWindows)
-	{
-		RenderHiZDebug(Settings);
-	}
-#endif
-
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
-
-#if STATS
-void FEditorMainPanel::RenderHiZDebug(const FEditorSettings& Settings)
-{
-	FGPUOcclusionCulling* Occlusion = EditorEngine ? EditorEngine->GetGPUOcclusion() : nullptr;
-
-	if (!Settings.UI.bHiZDebug || !Occlusion || !Occlusion->IsInitialized() || Occlusion->GetHiZMipCount() == 0)
-	{
-		if (Occlusion) Occlusion->SetDebugMip(-1);
-		return;
-	}
-
-	ImGui::SetNextWindowSize(ImVec2(400, 450), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("Hi-Z Debug", &FEditorSettings::Get().UI.bHiZDebug))
-	{
-		static int SelectedMip = 0;
-		int maxMip = static_cast<int>(Occlusion->GetHiZMipCount()) - 1;
-		ImGui::SliderInt("Mip Level", &SelectedMip, 0, maxMip);
-		SelectedMip = (SelectedMip < 0) ? 0 : (SelectedMip > maxMip ? maxMip : SelectedMip);
-
-		static int VisMode = 1;
-		static float Exponent = 128.0f;
-		ImGui::Combo("Mode", &VisMode, "Power\0Linear\0");
-		if (VisMode == 0)
-			ImGui::SliderFloat("Exponent", &Exponent, 1.0f, 512.0f, "%.0f");
-
-		Occlusion->SetDebugMip(SelectedMip);
-		Occlusion->SetDebugParams(Exponent, Settings.PerspCamNearClip, Settings.PerspCamFarClip, static_cast<uint32>(VisMode));
-
-		uint32 mipW = Occlusion->GetHiZWidth() >> SelectedMip;
-		uint32 mipH = Occlusion->GetHiZHeight() >> SelectedMip;
-		if (mipW < 1) mipW = 1;
-		if (mipH < 1) mipH = 1;
-		ImGui::Text("Mip %d: %ux%u  (src: %ux%u)", SelectedMip, mipW, mipH,
-			Occlusion->GetHiZWidth(), Occlusion->GetHiZHeight());
-		ImGui::Text("Texture: %s", (SelectedMip & 1) ? "B (odd)" : "A (even)");
-
-		ID3D11ShaderResourceView* srv = Occlusion->GetDebugSRV();
-		if (srv)
-		{
-			float aspect = static_cast<float>(mipW) / static_cast<float>(mipH);
-			float displayW = ImGui::GetContentRegionAvail().x;
-			float displayH = displayW / aspect;
-			ImGui::Image(reinterpret_cast<ImTextureID>(srv), ImVec2(displayW, displayH));
-		}
-	}
-	ImGui::End();
-}
-#endif
-
 
 
 void FEditorMainPanel::Update()
@@ -245,9 +182,6 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 	Settings.UI.bProperty = false;
 	Settings.UI.bScene = false;
 	Settings.UI.bStat = false;
-#if STATS
-	Settings.UI.bHiZDebug = false;
-#endif
 }
 
 void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
