@@ -380,7 +380,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		if (!primitiveComponent->IsVisible()) continue;
 		if (primitiveComponent->IsEditorOnly())
 		{
-			UWorld* World = Actor->GetWorld();
+			UWorld* World = Actor->GetFocusedWorld();
 			if (World && World->GetWorldType() != EWorldType::Editor)
 				continue;
 		}
@@ -602,7 +602,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
 		UMaterial* Material = Cast<UMaterial>(DecalComp->GetMaterial());
 
-		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetWorld() : nullptr;
+		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetFocusedWorld() : nullptr;
 
 		FOBB DecalOBB = FOBB::FromAABB(DecalComp->GetWorldAABB(), DecalComp->GetWorldMatrix());
 
@@ -715,7 +715,7 @@ void FRenderCollector::CollectBVHInternalNodeAABBs(UPrimitiveComponent* Primitiv
 	}
 
 	AActor* Owner = PrimitiveComponent->GetOwner();
-	UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+	UWorld* World = Owner ? Owner->GetFocusedWorld() : nullptr;
 	if (World == nullptr)
 	{
 		return;

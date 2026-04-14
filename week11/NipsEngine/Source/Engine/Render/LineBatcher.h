@@ -90,7 +90,7 @@ public:
 	uint32 GetLineCount() const;
 
 private:
-	UMaterialInterface* Material;
+	UMaterialInterface* Material = nullptr;
 
 	TArray<FLineVertex> IndexedVertices;
 	TArray<uint32> Indices;

@@ -8,19 +8,11 @@
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
-#include "Viewport/ViewportCamera.h"
+#include "Editor/Viewport/ViewportCamera.h"
 #include "Editor/Viewport/ViewportLayout.h"
 
 class UGizmoComponent;
 class FEditorRenderPipeline;
-
-enum class EEditorState : uint8
-{
-	Edit,     // 에셋 배치 및 편집 모드
-	Play,     // PIE (Play In Editor) 실행 중
-	Pause,    // PIE 일시정지
-	Simulate  // 뷰포트 내 시뮬레이션 (선택 사항)
-};
 
 class UEditorEngine : public UEngine
 {
@@ -35,6 +27,7 @@ public:
 	void Shutdown() override;
 	void Tick(float DeltaTime) override;
 	void OnWindowResized(uint32 Width, uint32 Height) override;
+	virtual void WorldTick(float DeltaTime) override;
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
@@ -63,18 +56,30 @@ public:
 
 	void RenderUI(float DeltaTime);
 
-	EEditorState GetEditorState() const { return EditorState; }
+	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
+	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
+	UWorld* GetFocusedWorld() const
+	{
+		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetFocusedWorld();
+	}
+
+	EViewportPlayState GetEditorState() const
+	{
+		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetPlayState();
+	}
+
+	void SetEditorState(EViewportPlayState InState)
+	{
+		ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).SetPlayState(InState);
+	}
 
 	void StartPlaySession();
 	void PausePlaySession();
 	void StopPlaySession();
 
 private:
-	void SetEditorState(EEditorState NewState) { EditorState = NewState; }
-
-private:
 	FSelectionManager SelectionManager;
-	FEditorMainPanel MainPanel;	
-	FViewportLayout ViewportLayout;
-	EEditorState EditorState = EEditorState::Edit;
+	FEditorMainPanel  MainPanel;
+	FViewportLayout   ViewportLayout;
+	TMap<int32, FName> ViewportPIEHandles;  // 뷰포트 인덱스 → PIE 월드 컨텍스트 핸들
 };

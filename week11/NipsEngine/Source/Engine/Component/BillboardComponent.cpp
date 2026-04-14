@@ -23,12 +23,12 @@ bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) 
 {
     OutCamera = nullptr;
 
-    if (GetOwner() == nullptr || GetOwner()->GetWorld() == nullptr)
+    if (GetOwner() == nullptr || GetOwner()->GetFocusedWorld() == nullptr)
     {
         return false;
     }
 
-    OutCamera = GetOwner()->GetWorld()->GetActiveCamera();
+    OutCamera = GetOwner()->GetFocusedWorld()->GetActiveCamera();
     return OutCamera != nullptr;
 }
 
