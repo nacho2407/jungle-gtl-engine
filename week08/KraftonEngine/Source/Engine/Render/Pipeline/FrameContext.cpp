@@ -28,4 +28,8 @@ void FFrameContext::SetViewportInfo(const FViewport* VP)
 	ViewportDSVReadOnly = VP->GetDSVReadOnly();
 	ViewportStencilSRV  = VP->GetStencilSRV();
 	ViewportDepthSRV    = VP->GetDepthSRV();
+	ViewportPingPongRTV = VP->GetPingPongRTV();
+	ViewportPingPongSRV = VP->GetPingPongSRV();
+	ViewportRenderTexture = VP->GetRTTexture();
+	ViewportPingPongTexture = VP->GetPingPongTexture();
 }

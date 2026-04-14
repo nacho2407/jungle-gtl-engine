@@ -37,6 +37,8 @@ struct FStateCache
 	ID3D11RenderTargetView*  RTV         = nullptr;
 	ID3D11DepthStencilView*  DSV         = nullptr;
 	ID3D11DepthStencilView*  DSVReadOnly = nullptr;
+	ID3D11Texture2D* RenderTexture       = nullptr;
+	ID3D11Texture2D* PingPongTexture     = nullptr;
 
 	void Reset();
 

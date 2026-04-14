@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
 
@@ -34,8 +34,12 @@ public:
 	// D3D 리소스 접근자
 	ID3D11RenderTargetView* GetRTV() const { return RTV; }
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
+	ID3D11Texture2D* GetRTTexture() const { return RTTexture; }
 	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthSRV; }
 	ID3D11ShaderResourceView* GetStencilSRV() const { return StencilSRV; }
+	ID3D11ShaderResourceView* GetPingPongSRV() const { return PingPongSRV; }
+	ID3D11RenderTargetView* GetPingPongRTV() const { return PingPongRTV; }
+	ID3D11Texture2D* GetPingPongTexture() const { return PingPongTexture; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
 	ID3D11DepthStencilView* GetDSVReadOnly() const { return DSVReadOnly; }
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
@@ -60,6 +64,10 @@ private:
 	ID3D11DepthStencilView* DSVReadOnly = nullptr;		// SRV와 동시 바인딩 가능한 읽기전용 DSV
 	ID3D11ShaderResourceView* DepthSRV = nullptr;		// Hi-Z / GPU Occlusion에서 뎁스 읽기용
 	ID3D11ShaderResourceView* StencilSRV = nullptr;	// PostProcess에서 스텐실 읽기용
+
+	ID3D11Texture2D* PingPongTexture = nullptr;
+	ID3D11RenderTargetView* PingPongRTV = nullptr;
+	ID3D11ShaderResourceView* PingPongSRV = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 
