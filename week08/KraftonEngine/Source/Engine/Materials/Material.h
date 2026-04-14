@@ -116,6 +116,8 @@ public:
 
 	void Bind(ID3D11DeviceContext* Context);
 
+	FShader* GetShader() const { return Template ? Template->GetShader() : nullptr; }
+
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
 	const FString& GetAssetPathFileName() const { return PathFileName;}
