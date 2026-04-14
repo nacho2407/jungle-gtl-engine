@@ -179,7 +179,7 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 		return;
 	}
 
-	UMaterial* LineMaterial = FResourceManager::Get().GetOrCreateMaterial("LineMaterial", "Shaders/ShaderLine.hlsl");
+	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
 	LineMaterial->DepthStencilType = EDepthStencilType::Default;
 	LineMaterial->BlendType = EBlendType::AlphaBlend;
 	LineMaterial->RasterizerType = ERasterizerType::SolidBackCull;
@@ -275,6 +275,46 @@ void FLineBatcher::AddOBB(const FOBB& Box, const FColor& InColor)
 	for (uint32 EdgeIndex : OBBEdgeIndices)
 	{
 		Indices.push_back(BaseVertex + EdgeIndex);
+	}
+}
+
+void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Direction, float Range,
+	float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& InColor)
+{
+	const FVector4 LineColor = InColor.ToVector4();
+	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
+
+	FVector Forward = Direction.GetSafeNormal();
+	FVector Up, Right;
+	Forward.FindBestAxisVectors(Up, Right);
+
+	const float OuterRad = MathUtil::DegreesToRadians(OuterConeAngleDeg);
+	const float ConeRadius = Range * std::tan(OuterRad);
+	const FVector ConeBaseCenter = Position + (Forward * Range);
+
+	const int32 Segments = 32;
+	for (int32 i = 0; i < Segments; ++i)
+	{
+		float Angle = (static_cast<float>(i) / Segments) * MathUtil::TwoPi;
+		float CosA = std::cos(Angle);
+		float SinA = std::sin(Angle);
+
+		FVector VertexPos = ConeBaseCenter + (Right * CosA * ConeRadius) + (Up * SinA * ConeRadius);
+		IndexedVertices.emplace_back(VertexPos, LineColor);
+	}
+
+	for (int32 i = 0; i < Segments; ++i)
+	{
+		Indices.push_back(BaseVertex + i);
+		Indices.push_back(BaseVertex + ((i + 1) % Segments));
+	
+		{
+			uint32 TipIdx = static_cast<uint32>(IndexedVertices.size());
+			IndexedVertices.emplace_back(Position, LineColor);
+
+			Indices.push_back(TipIdx);
+			Indices.push_back(BaseVertex + i);
+		}
 	}
 }
 

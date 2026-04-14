@@ -29,6 +29,7 @@ private:
     void RenderMaterialDetails(UStaticMeshComponent* MeshComp);
 	void RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged);
 
+	void RenderMaterialProperties();
     void RenderColorSection(FMaterial& Mat);
     void RenderScalarSection(FMaterial& Mat);
     void RenderTextureSection(FMaterial& Mat);
@@ -38,7 +39,7 @@ private:
 
 private:
     int32 SelectedSectionIndex    = -1;
-    FMaterial* SelectedMaterialPtr = nullptr;  // 원본 포인터 (Apply 대상)
+    UMaterialInstance* SelectedMaterialPtr = nullptr;  // 원본 포인터 (Apply 대상)
 
 	USceneComponent* SelectedComponent = nullptr;
 };

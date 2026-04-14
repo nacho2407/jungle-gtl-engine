@@ -40,6 +40,9 @@
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{20a3ff62-6666-58c6-dd73-8a4513da2ca3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Movement">
+      <UniqueIdentifier>{a5b9b888-60c7-ef17-a883-5cc31c907635}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{8b69df27-06f7-dea9-00be-7dcc5bcae5a6}</UniqueIdentifier>
     </Filter>
@@ -84,6 +87,9 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Renderer">
       <UniqueIdentifier>{219c21d6-301e-9889-9891-1ed459003345}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Renderer\RenderTarget">
+      <UniqueIdentifier>{db165c28-a461-d451-4661-ef5ed2f4c461}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Resource">
       <UniqueIdentifier>{e531d80c-df7b-302a-eb68-88766c4bbd6b}</UniqueIdentifier>
@@ -142,6 +148,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Gizmo.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\HeightFogPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\HiZDownsample.hlsl">
@@ -287,19 +296,13 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
@@ -313,6 +316,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -431,6 +446,15 @@
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
@@ -440,7 +464,13 @@
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp">
@@ -715,19 +745,13 @@
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LineBatchComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
@@ -741,6 +765,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h">
       <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
@@ -952,6 +988,15 @@
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h">
+      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
@@ -961,10 +1006,16 @@
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\Texture.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h">

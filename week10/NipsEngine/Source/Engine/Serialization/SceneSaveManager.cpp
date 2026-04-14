@@ -18,6 +18,7 @@
 #include "Core/PropertyTypes.h"
 #include "Object/FName.h"
 #include "Math/Matrix.h"
+#include "Math/Vector.h"
 
 namespace SceneKeys
 {
@@ -108,6 +109,7 @@ json::JSON FSceneSaveManager::SerializeWorldToPrimitives(UWorld* World, const FW
             if (USceneComponent* RootComp = Actor->GetRootComponent())
             {
                 CollectComponentsFlat(RootComp, 0, Primitives);
+                //Primitives[std::to_string(RootComp->GetUUID())]["ActorClass"] = Actor->GetTypeInfo()->name;
                 CollectNonSceneComponents(Actor, Primitives);
             }
         }
@@ -286,6 +288,23 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 		return RefComp ? JSON(static_cast<int>(RefComp->GetUUID())) : JSON(-1);
 	}
 
+	case EPropertyType::Vec3Array: {
+		const auto& Arr = *static_cast<const TArray<FVector>*>(Prop.ValuePtr);
+		JSON arr = json::Array();
+		for (const FVector& v : Arr) {
+			JSON elem = json::Array();
+			elem.append(static_cast<double>(v.X));
+			elem.append(static_cast<double>(v.Y));
+			elem.append(static_cast<double>(v.Z));
+			arr.append(elem);
+		}
+		return arr;
+	}
+
+	case EPropertyType::Enum: {
+		return JSON(*static_cast<int32*>(Prop.ValuePtr));
+	}
+
 	default:
 		return JSON();
 	}
@@ -421,6 +440,11 @@ void FSceneSaveManager::DeserializePrimitivesToWorld(json::JSON& PrimitivesNode,
         if (!ParentComp)
         {
             // 루트 컴포넌트: 대응하는 Actor 생성
+            // ActorClass가 저장되어 있으면 그대로, 없으면 컴포넌트 타입으로 추론 (하위 호환)
+            //string ActorClass = PrimJSON.hasKey("ActorClass")
+            //    ? PrimJSON["ActorClass"].ToString()
+            //    : InferActorClass(CompType);
+            //UObject* Obj = FObjectFactory::Get().Create(ActorClass);
             UObject* Obj = FObjectFactory::Get().Create(InferActorClass(CompType));
             AActor* NewActor = Cast<AActor>(Obj);
             if (!NewActor) return;
@@ -594,6 +618,23 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 		auto It = UUIDToSceneComp->find(static_cast<uint32>(RefUUID));
 		if (It != UUIDToSceneComp->end())
 			*static_cast<USceneComponent**>(Prop.ValuePtr) = It->second;
+		break;
+	}
+
+	case EPropertyType::Vec3Array: {
+		auto& Arr = *static_cast<TArray<FVector>*>(Prop.ValuePtr);
+		Arr.clear();
+		for (auto& elem : Value.ArrayRange()) {
+			float X = static_cast<float>(elem[0].ToFloat());
+			float Y = static_cast<float>(elem[1].ToFloat());
+			float Z = static_cast<float>(elem[2].ToFloat());
+			Arr.push_back(FVector(X, Y, Z));
+		}
+		break;
+	}
+
+	case EPropertyType::Enum: {
+		*static_cast<int*>(Prop.ValuePtr) = Value.ToInt();
 		break;
 	}
 
