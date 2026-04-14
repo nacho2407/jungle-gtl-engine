@@ -59,6 +59,8 @@ public:
 	const FViewportLayout& GetViewportLayout() const { return ViewportLayout; }
 	FEditorRenderPipeline* GetEditorRenderPipeline() const;
 
+	FEditorMainPanel& GetMainPanel() { return MainPanel; }
+
 	void RenderUI(float DeltaTime);
 
 	EEditorState GetEditorState() const { return EditorState; }
