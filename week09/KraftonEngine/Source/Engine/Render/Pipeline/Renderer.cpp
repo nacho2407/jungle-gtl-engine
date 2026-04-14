@@ -175,9 +175,12 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = Proxy.Shader;
-			Cmd.DepthStencil = PassState.DepthStencil;
-			Cmd.Blend = PassState.Blend;
-			Cmd.Rasterizer = Rasterizer;
+
+			// 머티리얼 기반 렌더 상태 우선 적용
+			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
+			Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
+			Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
+
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = Proxy.MeshBuffer;
 			Cmd.FirstIndex = Section.FirstIndex;
@@ -196,9 +199,12 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Shader = Proxy.Shader;
-		Cmd.DepthStencil = PassState.DepthStencil;
-		Cmd.Blend = PassState.Blend;
-		Cmd.Rasterizer = Rasterizer;
+
+		// 프록시 기반 렌더 상태 적용
+		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
+		Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
+		Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+
 		Cmd.Topology = PassState.Topology;
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
@@ -246,9 +252,12 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = DecalProxy.Shader;
-			Cmd.DepthStencil = PassState.DepthStencil;
-			Cmd.Blend = PassState.Blend;
-			Cmd.Rasterizer = Rasterizer;
+
+			// 머티리얼 기반 렌더 상태 우선 적용
+			Cmd.Blend = (DecalProxy.Blend != EBlendState::Opaque || DecalPass == ERenderPass::Opaque) ? DecalProxy.Blend : PassState.Blend;
+			Cmd.DepthStencil = (DecalProxy.DepthStencil != EDepthStencilState::Default || DecalPass == ERenderPass::Opaque) ? DecalProxy.DepthStencil : PassState.DepthStencil;
+			Cmd.Rasterizer = (DecalProxy.Rasterizer != ERasterizerState::SolidBackCull || DecalPass == ERenderPass::Opaque) ? DecalProxy.Rasterizer : Rasterizer;
+
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;
 			Cmd.FirstIndex = FirstIndex;
