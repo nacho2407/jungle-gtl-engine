@@ -7,7 +7,6 @@
 #include "Texture/Texture2D.h"
 
 #include <algorithm>
-#include <cstring>
 
 namespace
 {
@@ -18,17 +17,6 @@ namespace
 		if (ASRV != BSRV)
 		{
 			return ASRV < BSRV;
-		}
-
-		if (A.bIsUVScroll != B.bIsUVScroll)
-		{
-			return A.bIsUVScroll < B.bIsUVScroll;
-		}
-
-		const int ColorCmp = std::memcmp(&A.DiffuseColor, &B.DiffuseColor, sizeof(FVector4));
-		if (ColorCmp != 0)
-		{
-			return ColorCmp < 0;
 		}
 
 		return A.FirstIndex < B.FirstIndex;
@@ -153,8 +141,6 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 					{
 						Draw.DiffuseSRV = DiffuseTex->GetSRV();
 					}
-					//Draw.DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // 기본 흰색
-					//Mat->SetVector4Parameter("DiffuseColor", Draw.DiffuseColor);
 					Draw.MaterialCB[0] = Mat->GetGPUBufferBySlot(2);  // b2
 					Draw.MaterialCB[1] = Mat->GetGPUBufferBySlot(3);  // b3
 

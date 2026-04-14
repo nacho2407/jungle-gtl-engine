@@ -305,7 +305,6 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(Prop.ValuePtr);
 		JSON obj = json::Object();
 		obj["Path"] = JSON(Slot->Path);
-		obj["UVScroll"] = JSON(static_cast<bool>(Slot->bUVScroll != 0));
 		return obj;
 	}
 
@@ -686,7 +685,6 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	case EPropertyType::MaterialSlot: {
 		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
 		if (Value.hasKey("Path"))     Slot->Path = Value["Path"].ToString();
-		if (Value.hasKey("UVScroll")) Slot->bUVScroll = Value["UVScroll"].ToBool() ? 1 : 0;
 		break;
 	}
 
