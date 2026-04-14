@@ -31,7 +31,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
         Stats = {};
     }
 
-    if (!Editor->GetWorld())
+    if (!Editor->GetFocusedWorld())
         return;
 
     // 화면 Resize 목적으로 render 전에 화면 resizing
@@ -99,14 +99,15 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 3. 이 뷰포트용 렌더 데이터 수집
     Bus.Clear();
 
-    UWorld*                World = Editor->GetWorld();
+    // 각 뷰포트는 자신이 참조하는 월드를 렌더링합니다.
+    UWorld*                World = VC.GetFocusedWorld();
     const FEditorSettings& Settings = Editor->GetSettings();
     const FShowFlags&      ShowFlags = Settings.ShowFlags;
     const EViewMode        ViewMode = SceneView.ViewMode;
 
     Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
-	Bus.SetViewportSize(FVector2(Rect.Width, Rect.Height));
+	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA);
 
     const FFrustum& ViewFrustum = Camera->GetFrustum();
@@ -118,7 +119,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 뷰포트별 카메라 기준으로 기즈모 스케일 결정
     // TickInteraction 에서 한 번만 처리하면 마지막 뷰포트가 다른 뷰포트의 스케일을 덮어쓰므로
     // CollectGizmo 직전에 각 뷰포트 카메라로 적용합니다.
-    if (Editor->GetEditorState() == EEditorState::Edit)
+    // 이 뷰포트가 편집 모드일 때만 기즈모·선택 오버레이를 그립니다.
+    if (VC.GetPlayState() == EViewportPlayState::Editing)
     {
         if (UGizmoComponent* Gizmo = Editor->GetGizmo())
         {

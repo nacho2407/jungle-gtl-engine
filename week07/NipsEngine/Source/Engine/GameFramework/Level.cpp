@@ -42,15 +42,26 @@ void ULevel::BeginPlay()
 	}
 }
 
-void ULevel::Tick(float DeltaTime)
+void ULevel::TickEditor(float DeltaTime)
 {
-	for (AActor* Actor : Actors)
-	{
-		if (Actor && Actor->IsActive())
-		{
-			Actor->Tick(DeltaTime);
-		}
-	}
+    for (AActor* Actor : Actors)
+    {
+        if (Actor && Actor->IsActive() && Actor->ShouldTickInEditor())
+        {
+            Actor->Tick(DeltaTime);
+        }
+    }
+}
+
+void ULevel::TickGame(float DeltaTime)
+{
+    for (AActor* Actor : Actors)
+    {
+        if (Actor && Actor->IsActive())
+        {
+            Actor->Tick(DeltaTime);
+        }
+    }
 }
 
 void ULevel::EndPlay(EEndPlayReason::Type EndPlayReason)

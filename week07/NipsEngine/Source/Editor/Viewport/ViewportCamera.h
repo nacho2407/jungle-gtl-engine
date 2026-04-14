@@ -113,3 +113,13 @@ class FViewportCamera
     mutable FFrustum CachedFrustum;
     mutable bool     bIsFrustumDirty = true;
 };
+
+// PIE 시작 전 카메라 상태를 저장하고 정지 시 복원하기 위한 스냅샷
+struct FCameraSnapshot
+{
+    FVector Location  = FVector::ZeroVector;
+    FQuat   Rotation  = FQuat::Identity;
+    float   FOV       = 3.14159265358979f * 90.0f / 180.0f;
+    float   NearPlane = 0.1f;
+    float   FarPlane  = 2000.0f;
+};

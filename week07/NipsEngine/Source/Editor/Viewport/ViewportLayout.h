@@ -35,6 +35,8 @@ public:
 	void Tick(float DeltaTime);
 	void OnWindowResized(uint32 Width, uint32 Height);
 	void SetHostRect(const FViewportRect& InHostRect);
+	
+	const FViewportClient& GetFocusedViewportClient() const { return GetViewportClient(LastFocusedViewportIndex); }
 
 	FViewportCamera* GetIndexedViewportClientCamera(int32 Index) {
 		return GetViewportClient(Index).GetCamera();

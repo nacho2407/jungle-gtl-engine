@@ -41,7 +41,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Spawn"))
 	{
-		UWorld* World = EditorEngine->GetWorld();
+		UWorld* World = EditorEngine->GetFocusedWorld();
 		if (!World)
 		{
 			ImGui::End();
