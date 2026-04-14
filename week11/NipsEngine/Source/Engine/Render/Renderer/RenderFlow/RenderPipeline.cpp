@@ -6,15 +6,18 @@ bool FRenderPipeline::Initialize()
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
 
+	RenderPasses.push_back(OpaqueRenderPass);
+
     return true;
 }
 
 bool FRenderPipeline::Render(const FRenderPassContext* Context)
 {
-    OpaqueRenderPass->Render(Context);
-
-	// 최종 출력
-	OutSRV = OpaqueRenderPass->GetOutSRV();
+	for (std::shared_ptr<FBaseRenderPass> Pass : RenderPasses)
+	{
+        Pass->Render(Context);
+        OutSRV = Pass->GetOutSRV();
+	}
 
     return true;
 }

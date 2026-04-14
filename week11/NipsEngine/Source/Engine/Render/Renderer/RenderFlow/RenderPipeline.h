@@ -3,6 +3,7 @@
 #include "RenderPassContext.h"
 
 class FOpaqueRenderPass;
+class FBaseRenderPass;
 
 class FRenderPipeline
 {
@@ -16,4 +17,6 @@ public:
 private:
     std::shared_ptr<FOpaqueRenderPass> OpaqueRenderPass;
     ID3D11ShaderResourceView* OutSRV = nullptr;
+
+	TArray<std::shared_ptr<FBaseRenderPass>> RenderPasses;
 };

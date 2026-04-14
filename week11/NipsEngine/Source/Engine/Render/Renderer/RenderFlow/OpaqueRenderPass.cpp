@@ -99,14 +99,6 @@ bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
     return true;
 }
 
-void FOpaqueRenderPass::DeclareInputs(TArray<FResourceBinding>& OutInputs) const
-{
-}
-
-void FOpaqueRenderPass::DeclareOutputs(TArray<FResourceBinding>& OutOutputs) const
-{
-}
-
 bool FOpaqueRenderPass::Release()
 {
     return true;
