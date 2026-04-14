@@ -1,32 +1,47 @@
 #include "Common/Functions.hlsl"
 #include "Common/VertexLayouts.hlsl"
-#include "Common/MaterialBuffer.hlsl"
 
 Texture2D g_txColor : register(t0);
 SamplerState g_Sample : register(s0);
 
-// b3 (PerShader1): Material(b2)과 분리
-cbuffer DecalBuffer : register(b3)
+// b2 (PerShader0)
+cbuffer DecalBuffer : register(b2)
 {
+    float4x4 DecalWorldToLocal;
     float4 DecalColor;
 }
 
-PS_Input_Full VS(VS_Input_PNCT input)
+PS_Input_Decal VS(VS_Input_PNCT input)
 {
-    PS_Input_Full output;
-    output.position = ApplyMVP(input.position);
+    PS_Input_Decal output;
+
+    float4 worldPos = mul(float4(input.position, 1.0f), Model);
+    output.position = mul(mul(worldPos, View), Projection);
+    output.worldPos = worldPos.xyz;
     output.normal = normalize(mul(input.normal, (float3x3) Model));
-    output.color = input.color * SectionColor;
-    output.texcoord = input.texcoord;
-    // Z fighting 방지를 위한 보정
-    output.position.z *= 0.9999;
+    output.color = input.color;
     return output;
 }
 
-float4 PS(PS_Input_Full input) : SV_TARGET
+float4 PS(PS_Input_Decal input) : SV_TARGET
 {
-    float4 texColor = g_txColor.Sample(g_Sample, input.texcoord);
-    
+    float3 decalLocalPos = mul(float4(input.worldPos, 1.0f), DecalWorldToLocal).xyz;
+
+    if (abs(decalLocalPos.x) > 0.5f || abs(decalLocalPos.y) > 0.5f || abs(decalLocalPos.z) > 0.5f)
+    {
+        discard;
+    }
+
+    float2 uv;
+    uv.x = decalLocalPos.y + 0.5f;
+    uv.y = 0.5f - decalLocalPos.z;
+
+    float4 texColor = g_txColor.Sample(g_Sample, uv);
+    if (texColor.a < 0.001f)
+    {
+        discard;
+    }
+
     float4 finalColor = texColor * input.color * DecalColor;
     return float4(ApplyWireframe(finalColor.rgb), finalColor.a);
 }
