@@ -827,8 +827,8 @@ void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightA
 	Cmd.Constants.SpotLight.Position = SpotlightActor->GetActorLocation();
 	Cmd.Constants.SpotLight.Direction = SpotlightActor->GetActorForward();
 	Cmd.Constants.SpotLight.InnerAngle = 12.0f;
-	Cmd.Constants.SpotLight.OuterAngle = 30.0f;
-	Cmd.Constants.SpotLight.Range = 10.0f;
+	Cmd.Constants.SpotLight.OuterAngle = SpotlightActor->GetAngle();
+	Cmd.Constants.SpotLight.Range = SpotlightActor->GetRange();
 	Cmd.Constants.SpotLight.Color = FColor::Yellow();
 	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }

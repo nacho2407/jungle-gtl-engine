@@ -28,6 +28,8 @@ public:
 	FMatrix GetDecalMatrix() const;
 	FColor GetDecalColor() const { return DecalColor; }
 
+	void SetSize(const FVector& InSize) { DecalSize = InSize; }
+
 	void SetFadeIn(float InStartDelay, float InDuration);
 	void SetFadeOut(float InStartDelay, float InDuration, bool bInDestroyOwnerAfterFade = false);
 
