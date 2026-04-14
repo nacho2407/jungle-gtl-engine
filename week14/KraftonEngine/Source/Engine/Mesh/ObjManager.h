@@ -30,7 +30,6 @@ class FObjManager
 {
 	// path → UStaticMesh* 캐시 (소유권은 UObjectManager)
 	static TMap<std::string, UStaticMesh*> StaticMeshCache;
-	static TMap<FString, UMaterial*> MaterialCache;
 	static TArray<FMeshAssetListItem> AvailableMeshFiles;
 	static TArray<FMeshAssetListItem> AvailableObjFiles;
 	static TArray< FMaterialAssetListItem> AvailableMaterialFiles;
