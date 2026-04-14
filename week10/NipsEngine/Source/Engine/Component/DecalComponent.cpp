@@ -81,11 +81,11 @@ void UDecalComponent::TickComponent(float DeltaTime)
 
 	LifeTime += DeltaTime;
 
-	if (LifeTime < FadeInStartDelay + FadeInDuration)
+	if (FadeInStartDelay + FadeInDuration > 0 && LifeTime < FadeInStartDelay + FadeInDuration)
 	{
 		TickFadeIn();
 	}
-	else
+	else if (FadeStartDelay + FadeDuration > 0 && LifeTime >= FadeInStartDelay + FadeInDuration)
 	{
 		TickFadeOut();
 	}
@@ -97,6 +97,12 @@ void UDecalComponent::TickFadeIn()
 	if (FadeInTime < 0.0f)
 	{
 		DecalColor.A = 0.0f;
+		return;
+	}
+	
+	if (FadeInDuration <= 0.0f)
+	{
+		DecalColor.A = 1.0f;
 		return;
 	}
 
