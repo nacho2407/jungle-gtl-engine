@@ -59,16 +59,15 @@ void ComputeEdgeOrientation(
     float lumaSW, float lumaS, float lumaSE,
     out bool bHorizontal)
 {
-    // 2차 차분(a - 2b + c)을 이용해서 가로 / 세로 edge 판단
     float edgeHorz =
-        abs(lumaNW - 2.0f * lumaW + lumaSW) +
-        abs(lumaN - 2.0f * lumaM + lumaS) +
-        abs(lumaNE - 2.0f * lumaE + lumaSE);
+        abs(0.25f * lumaNW - 0.5f * lumaW + 0.25f * lumaSW) +
+        abs(0.5f * lumaN - 1.0f * lumaM + 0.5f * lumaS) +
+        abs(0.25f * lumaNE - 0.5f * lumaE + 0.25f * lumaSE);
 
     float edgeVert =
-        abs(lumaNW - 2.0f * lumaN + lumaNE) +
-        abs(lumaW - 2.0f * lumaM + lumaE) +
-        abs(lumaSW - 2.0f * lumaS + lumaSE);
+        abs(0.25f * lumaNW - 0.5f * lumaN + 0.25f * lumaNE) +
+        abs(0.5f * lumaW - 1.0f * lumaM + 0.5f * lumaE) +
+        abs(0.25f * lumaSW - 0.5f * lumaS + 0.25f * lumaSE);
     
     bHorizontal = (edgeHorz >= edgeVert);
 }
@@ -79,7 +78,9 @@ void SearchEdgeSpan(
     float referenceLuma,
     float gradientThreshold,
     out float negDist,
-    out float posDist)
+    out float posDist,
+    out float lumaEndNeg,
+    out float lumaEndPos)
 {
     float2 uvNeg = uvStart - searchStep;
     float2 uvPos = uvStart + searchStep;
@@ -95,8 +96,8 @@ void SearchEdgeSpan(
     {
         if (!doneNeg)
         {
-            float lumaNeg = SampleLuma(uvNeg);
-            doneNeg = abs(lumaNeg - referenceLuma) >= gradientThreshold;
+            lumaEndNeg = SampleLuma(uvNeg);
+            doneNeg = abs(lumaEndNeg - referenceLuma) >= gradientThreshold;
 
             if (!doneNeg)
             {
@@ -107,8 +108,8 @@ void SearchEdgeSpan(
 
         if (!donePos)
         {
-            float lumaPos = SampleLuma(uvPos);
-            donePos = abs(lumaPos - referenceLuma) >= gradientThreshold;
+            lumaEndPos = SampleLuma(uvPos);
+            donePos = abs(lumaEndPos - referenceLuma) >= gradientThreshold;
 
             if (!donePos)
             {
@@ -131,21 +132,11 @@ float4 PS(PS_Input input) : SV_TARGET
     float4 colorS = SampleColor(input.uv + float2(0.0f, px.y));
     float4 colorE = SampleColor(input.uv + float2(px.x, 0.0f));
     float4 colorW = SampleColor(input.uv + float2(-px.x, 0.0f));
-
-    float4 colorNW = SampleColor(input.uv + float2(-px.x, -px.y));
-    float4 colorNE = SampleColor(input.uv + float2(px.x, -px.y));
-    float4 colorSW = SampleColor(input.uv + float2(-px.x, px.y));
-    float4 colorSE = SampleColor(input.uv + float2(px.x, px.y));
-
     float lumaM = FxaaLuma(colorM.rgb);
     float lumaN = FxaaLuma(colorN.rgb);
     float lumaS = FxaaLuma(colorS.rgb);
     float lumaE = FxaaLuma(colorE.rgb);
     float lumaW = FxaaLuma(colorW.rgb);
-    float lumaNW = FxaaLuma(colorNW.rgb);
-    float lumaNE = FxaaLuma(colorNE.rgb);
-    float lumaSW = FxaaLuma(colorSW.rgb);
-    float lumaSE = FxaaLuma(colorSE.rgb);
     
     float rangeMin = min(lumaM, min(min(lumaN, lumaS), min(lumaE, lumaW)));
     float rangeMax = max(lumaM, max(max(lumaN, lumaS), max(lumaE, lumaW)));
@@ -155,6 +146,15 @@ float4 PS(PS_Input input) : SV_TARGET
 
     if (localRange < localThreshold)
         return colorM;
+    
+    float4 colorNW = SampleColor(input.uv + float2(-px.x, -px.y));
+    float4 colorNE = SampleColor(input.uv + float2(px.x, -px.y));
+    float4 colorSW = SampleColor(input.uv + float2(-px.x, px.y));
+    float4 colorSE = SampleColor(input.uv + float2(px.x, px.y));
+    float lumaNW = FxaaLuma(colorNW.rgb);
+    float lumaNE = FxaaLuma(colorNE.rgb);
+    float lumaSW = FxaaLuma(colorSW.rgb);
+    float lumaSE = FxaaLuma(colorSE.rgb);
     
     float subpixBlend = ComputeSubpixBlend(lumaM, lumaN, lumaS, lumaE, lumaW, localRange);
     
@@ -172,7 +172,9 @@ float4 PS(PS_Input input) : SV_TARGET
     float gradPos = abs(lumaPos - lumaM);
 
     bool bUseNeg = (gradNeg >= gradPos);
-
+    
+    // return bUseNeg ? float4(1.0f, 0.0f, 0.0f, 1.0f) : float4(0.0f, 1.0f, 0.0f, 1.0f);
+    
     float2 pairStep = bHorizontal ? float2(0.0f, px.y) : float2(px.x, 0.0f);
     if (bUseNeg)
         pairStep = -pairStep;
@@ -189,15 +191,27 @@ float4 PS(PS_Input input) : SV_TARGET
 
     float negDist = 0.0f;
     float posDist = 0.0f;
-    SearchEdgeSpan(uvStart, searchStep, referenceLuma, gradientThreshold, negDist, posDist);
+    float lumaEndNeg = 0.0f;
+    float lumaEndPos = 0.0f;
+    SearchEdgeSpan(uvStart, searchStep, referenceLuma, gradientThreshold, negDist, posDist, lumaEndNeg, lumaEndPos);
     
     float spanLength = negDist + posDist;
-    float pixelOffset = 0.0f;
-    if (spanLength > 1e-5f)
+    float distNearest = min(negDist, posDist);
+    bool nearestIsNeg = (negDist < posDist);
+    
+    float pixelOffset = 0.5 - distNearest / spanLength;
+    pixelOffset = nearestIsNeg ? -pixelOffset : pixelOffset;
+    
+    float lumaLocalAvg = 0.5 * (lumaM + pairedLuma);
+    float lumaEndNearest = nearestIsNeg ? lumaEndNeg : lumaEndPos;
+    bool centerIsDarker = lumaM < lumaLocalAvg;
+    bool endIsDarker = lumaEndNearest < lumaLocalAvg;
+    
+    if (centerIsDarker == endIsDarker)
     {
-        pixelOffset = (posDist - negDist) / spanLength;
+        pixelOffset = 0.0;
     }
-
+    
     float2 finalOffset = pairStep * pixelOffset;
 
     float4 edgeColor = SampleColor(input.uv + finalOffset);
