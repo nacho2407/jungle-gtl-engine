@@ -7,6 +7,7 @@ class FFogRenderPass;
 class FLightRenderPass;
 class FDecalRenderPass;
 class FFontRenderPass;
+class FSubUVRenderPass;
 class FOpaqueRenderPass;
 class FBaseRenderPass;
 
@@ -26,6 +27,7 @@ private:
     std::shared_ptr<FFogRenderPass> FogRenderPass;
     std::shared_ptr<FFXAARenderPass> FXAARenderPass;
     std::shared_ptr<FFontRenderPass> FontRenderPass;
+    std::shared_ptr<FSubUVRenderPass> SubUVRenderPass;
     ID3D11ShaderResourceView* OutSRV = nullptr;
     ID3D11RenderTargetView* OutRTV = nullptr;
 
