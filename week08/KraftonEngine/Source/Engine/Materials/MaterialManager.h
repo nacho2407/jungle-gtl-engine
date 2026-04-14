@@ -1,10 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
 #include "Render/Types/RenderTypes.h"
 #include "SimpleJSON/json.hpp"
 #include <memory>
+
+#include "Render/Types/RenderStateTypes.h"
 
 class FMaterialTemplate;
 class UMaterial;
@@ -53,6 +55,9 @@ private:
 	void ApplyTextures(UMaterial* Material, json::JSON& JsonData);
 
 	ERenderPass StringToRenderPass(const FString& RenderPassStr) const;
+	EBlendState StringToBlendState(const FString& Str, ERenderPass Pass) const;
+	EDepthStencilState StringToDepthStencilState(const FString& Str, ERenderPass Pass) const;
+	ERasterizerState StringToRasterizerState(const FString& Str, ERenderPass Pass) const;
 
 	void SaveToJSON(json::JSON& JsonData, const FString& MatFilePath);
 	

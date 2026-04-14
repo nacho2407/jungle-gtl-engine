@@ -1,22 +1,17 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/Types/RenderTypes.h"
+#include "Render/Types/RenderStateTypes.h"
 #include "Render/Resource/Buffer.h"
 #include <memory>
+
 class UTexture2D;
 class FArchive;
 class FShader;
 
-/*
-{
-	"ColorTint" : { BufferName = "PerFrame",SloatIndex = b2, Offset=0,  Size=16 }
-	"Roughness" : { BufferName = "PerFrame",SloatIndex = b2, Offset=16, Size=4  }
-	"Metallic"  : { BufferName = "PerFrame",SloatIndex = b2, Offset=20, Size=4  }
-}
-*/
 // 파라미터 이름 → 상수 버퍼 내 위치 매핑
 struct FMaterialParameterInfo
 {
@@ -32,7 +27,6 @@ struct FMaterialParameterInfo
 
 //셰이더 + 레이아웃 (불변, 공유)
 //Template은 셰이더 파일이 있으면 언제든 재생성 가능
-// RenderPass는 UMaterial이 개별 보관 — 같은 셰이더로 다른 패스 사용 가능
 class FMaterialTemplate
 {
 private:
@@ -43,6 +37,7 @@ private:
 public:
 	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
 	void Create(FShader* InShader);
+
 	FShader* GetShader() const { return Shader; }
 	bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
 };
@@ -52,7 +47,6 @@ public:
 struct FMaterialConstantBuffer
 {
 	uint8* CPUData;   // CPU 메모리의 실제 값
-	//ID3D11Buffer* GPUBuffer; // GPU에 올라간 버퍼
 	FConstantBuffer GPUBuffer;
 	uint32 Size = 0;
 	UINT SlotIndex = 0;	//cbuffer 바인딩 슬롯 (b0, b1 등)
@@ -61,19 +55,12 @@ struct FMaterialConstantBuffer
 	FMaterialConstantBuffer() = default;
 	~FMaterialConstantBuffer();
 
-	// 복사 금지
 	FMaterialConstantBuffer(const FMaterialConstantBuffer&) = delete;
 	FMaterialConstantBuffer& operator=(const FMaterialConstantBuffer&) = delete;
 
-	// CPU 메모리 할당
-	//bool Create(ID3D11Device* Device, uint32 InSize);
 	void Init(ID3D11Device* InDevice, uint32 InSize, uint32 InSlot);
-
-	// CPU 데이터의 특정 오프셋에 값 쓰기 (Dirty 마킹)
 	void SetData(const void* Data, uint32 InSize, uint32 Offset = 0);
-
 	void Upload(ID3D11DeviceContext* DeviceContext);
-
 	void Release();
 
 	FConstantBuffer* GetConstantBuffer() { return &GPUBuffer; }
@@ -87,7 +74,12 @@ private:
 	FString PathFileName;// 어떤 Material인지 판별하는 고유 이름
 	uint32 MaterialInstanceID; // 고유 ID
 	FMaterialTemplate* Template; // 공유
-	ERenderPass RenderPass = ERenderPass::Opaque; // 인스턴스별 렌더 패스
+
+	// 렌더링 상태 정보 (인스턴스별)
+	ERenderPass RenderPass = ERenderPass::Opaque;
+	EBlendState BlendState = EBlendState::Opaque;
+	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
+	ERasterizerState RasterizerState = ERasterizerState::SolidBackCull;
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
@@ -100,6 +92,9 @@ public:
 
 	void Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
 		ERenderPass InRenderPass,
+		EBlendState InBlend,
+		EDepthStencilState InDepth,
+		ERasterizerState InRaster,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
 	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
@@ -116,8 +111,13 @@ public:
 	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const;
 
 
+	void Bind(ID3D11DeviceContext* Context);
+
 	FShader* GetShader() const { return Template ? Template->GetShader() : nullptr; }
 	ERenderPass GetRenderPass() const { return RenderPass; }
+	EBlendState GetBlendState() const { return BlendState; }
+	EDepthStencilState GetDepthStencilState() const { return DepthStencilState; }
+	ERasterizerState GetRasterizerState() const { return RasterizerState; }
 
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
@@ -135,33 +135,3 @@ public:
 		return nullptr;
 	}
 };
-
-//// ─── 미래 확장용 구조 (현재 미사용) ───
-//
-////UMaterialInterface: UMaterial / UMaterialInstance 공통 베이스
-//class UMaterialInterface : public UObject
-//{
-//public:
-//	virtual UMaterial* GetRenderData() const = 0;
-//	virtual bool SetScalarParameter(const FString& Name, float Value) = 0;
-//	virtual bool SetVector4Parameter(const FString& Name, const FVector4& Value) = 0;
-//	virtual bool SetTextureParameter(const FString& Name, UTexture2D* Texture) = 0;
-//};
-//
-////UMaterialInstanceDynamic: UMaterial 원본을 공유하며 파라미터만 오버라이드
-//class UMaterialInstanceDynamic : public UMaterialInterface
-//{
-//public:
-//	static UMaterialInstanceDynamic* Create(UMaterial* InParent);
-//
-//	virtual UMaterial* GetRenderData() const override;
-//	virtual bool SetScalarParameter(const FString& Name, float Value) override;
-//	virtual bool SetVector4Parameter(const FString& Name, const FVector4& Value) override;
-//	virtual bool SetTextureParameter(const FString& Name, UTexture2D* Texture) override;
-//
-//private:
-//	UMaterial* Parent = nullptr; // 공유 원본
-//	TMap<FString, float> ScalarOverrides;
-//	TMap<FString, FVector4> VectorOverrides;
-//	TMap<FString, UTexture2D*> TextureOverrides;
-//};
