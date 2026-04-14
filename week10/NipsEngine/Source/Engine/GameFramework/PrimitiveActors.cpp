@@ -67,14 +67,6 @@ void ACubeActor::InitDefaultComponents()
 	Text->SetTransient(true);
 	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
-
-	// SubUV
-	USubUVComponent* SubUV = AddComponent<USubUVComponent>();
-	SubUV->AttachToComponent(Cube);
-	SubUV->SetParticle(FName("Explosion"));
-	SubUV->SetSpriteSize(2.0f, 2.0f);
-	SubUV->SetFrameRate(30.f);
-	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
 }
 
 void ASphereActor::InitDefaultComponents()
@@ -90,14 +82,6 @@ void ASphereActor::InitDefaultComponents()
 	Text->SetTransient(true);
 	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
-
-	// SubUV
-	USubUVComponent* SubUV = AddComponent<USubUVComponent>();
-	SubUV->AttachToComponent(Sphere);
-	SubUV->SetParticle(FName("Explosion"));
-	SubUV->SetSpriteSize(2.0f, 2.0f);
-	SubUV->SetFrameRate(30.f);
-	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
 }
 
 void APlaneActor::InitDefaultComponents()
@@ -113,14 +97,6 @@ void APlaneActor::InitDefaultComponents()
 	Text->SetEditorOnly(true);
 	Text->AttachToComponent(Plane);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
-
-	// SubUV
-	USubUVComponent* SubUV = AddComponent<USubUVComponent>();
-	SubUV->AttachToComponent(Plane);
-	SubUV->SetParticle(FName("Explosion"));
-	SubUV->SetSpriteSize(2.0f, 2.0f);
-	SubUV->SetFrameRate(30.f);
-	SubUV->SetRelativeLocation(FVector(0.0f, 0.0f, 2.3f));
 }
 
 void AAttachTestActor::InitDefaultComponents()
@@ -184,6 +160,8 @@ void AStaticMeshActor::InitDefaultComponents()
 
 void ASubUVActor::InitDefaultComponents()
 {
+	SetTickInEditor(true); // Editor Tick을 받도록 변경
+
     auto* SubUV = AddComponent<USubUVComponent>();
     SetRootComponent(SubUV);
 	SubUV->SetParticle(FName("Explosion"));

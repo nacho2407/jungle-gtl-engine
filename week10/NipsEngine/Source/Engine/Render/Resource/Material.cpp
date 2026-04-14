@@ -106,7 +106,7 @@ void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FM
 		}
 	}
 
-	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, CBufferData.size());
+	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, static_cast<uint32>(CBufferData.size()));
 }
 
 void UMaterialInstance::Bind(ID3D11DeviceContext* Context) const

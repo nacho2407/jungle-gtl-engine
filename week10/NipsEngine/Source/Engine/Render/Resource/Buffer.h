@@ -100,6 +100,6 @@ public:
 private:
 	TComPtr<ID3D11Buffer>			  Buffer;
 	TComPtr<ID3D11ShaderResourceView> SRV;
-	uint32							  Count;
-	uint32							  ElementSize;
+	uint32							  Count = 0;
+	uint32							  ElementSize = 0;
 };
