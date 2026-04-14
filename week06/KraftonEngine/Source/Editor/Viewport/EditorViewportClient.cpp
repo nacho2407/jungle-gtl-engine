@@ -448,16 +448,23 @@ void FEditorViewportClient::UpdateLayoutRect()
 
 void FEditorViewportClient::RenderViewportImage(bool bIsActiveViewport)
 {
-	if (!Viewport || !Viewport->GetSRV()) return;
+	if (!Viewport) return;
 
 	const FRect& R = ViewportScreenRect;
 	if (R.Width <= 0 || R.Height <= 0) return;
+
+	ID3D11ShaderResourceView* DisplaySRV = RenderOptions.bEnableFXAA ? Viewport->GetPostProcessSRV() : Viewport->GetSRV();
+	if (!DisplaySRV)
+	{
+		DisplaySRV = Viewport->GetSRV();
+	}
+	if (!DisplaySRV) return;
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	ImVec2 Min(R.X, R.Y);
 	ImVec2 Max(R.X + R.Width, R.Y + R.Height);
 
-	DrawList->AddImage((ImTextureID)Viewport->GetSRV(), Min, Max);
+	DrawList->AddImage((ImTextureID)DisplaySRV, Min, Max);
 
 	// 활성 뷰포트 테두리 강조
 	if (bIsActiveViewport)

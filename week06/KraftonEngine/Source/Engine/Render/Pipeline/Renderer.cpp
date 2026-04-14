@@ -255,6 +255,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::AntiAliasing] = { EDepthStencilState::NoDepth,      EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
@@ -315,6 +316,13 @@ void FRenderer::InitializePassBatchers()
 			DrawPostProcessOutline(Bus, Ctx);
 		},
 		nullptr  // PostProcess는 내���에서 SelectionMask 체크
+	};
+
+	PassBatchers[(uint32)ERenderPass::AntiAliasing] = {
+		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			DrawPostProcessFXAA(Bus, Ctx);
+		},
+		nullptr
 	};
 }
 
@@ -681,6 +689,45 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 
 	// 7) DSV 재바인딩 (후속 패스에서 뎁스 사용)
 	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+void FRenderer::DrawPostProcessFXAA(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	if (!Bus.IsFXAAEnabled())
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView* SceneSRV = Bus.GetViewportSceneSRV();
+	ID3D11RenderTargetView* PostProcessRTV = Bus.GetViewportPostProcessRTV();
+	if (!SceneSRV || !PostProcessRTV)
+	{
+		return;
+	}
+
+	Context->OMSetRenderTargets(1, &PostProcessRTV, nullptr);
+	Context->PSSetShaderResources(0, 1, &SceneSRV);
+	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+
+	FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
+	if (FXAAShader)
+	{
+		FXAAShader->Bind(Context);
+	}
+
+	FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBSlot::FXAA, sizeof(FFXAAConstants));
+	const FFXAAConstants& FXAAConstants = Bus.GetFXAAConstants();
+	FXAACB->Update(Context, &FXAAConstants, sizeof(FXAAConstants));
+	ID3D11Buffer* cb = FXAACB->GetBuffer();
+	Context->PSSetConstantBuffers(ECBSlot::FXAA, 1, &cb);
+
+	Context->IASetInputLayout(nullptr);
+	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+	Context->Draw(3, 0);
+	FDrawCallStats::Increment();
+
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &nullSRV);
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.

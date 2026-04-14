@@ -906,6 +906,10 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
 			ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
 
+			ImGui::Separator();
+			ImGui::Text("Anti-Aliasing");
+			ImGui::Checkbox("FXAA", &Opts.bEnableFXAA);
+
 			ImGui::EndPopup();
 		}
 		} // SlotIndex guard

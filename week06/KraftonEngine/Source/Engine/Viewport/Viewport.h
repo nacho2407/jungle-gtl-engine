@@ -34,6 +34,8 @@ public:
 	// D3D 리소스 접근자
 	ID3D11RenderTargetView* GetRTV() const { return RTV; }
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
+	ID3D11RenderTargetView* GetPostProcessRTV() const { return PostProcessRTV; }
+	ID3D11ShaderResourceView* GetPostProcessSRV() const { return PostProcessSRV; }
 	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthSRV; }
 	ID3D11ShaderResourceView* GetStencilSRV() const { return StencilSRV; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
@@ -52,6 +54,9 @@ private:
 	ID3D11Texture2D* RTTexture = nullptr;
 	ID3D11RenderTargetView* RTV = nullptr;
 	ID3D11ShaderResourceView* SRV = nullptr;		// ImGui::Image() 출력용
+	ID3D11Texture2D* PostProcessTexture = nullptr;
+	ID3D11RenderTargetView* PostProcessRTV = nullptr;
+	ID3D11ShaderResourceView* PostProcessSRV = nullptr;
 
 	// 뎁스/스텐실 (TYPELESS 텍스처 → DSV + DepthSRV + StencilSRV 분리)
 	ID3D11Texture2D* DepthTexture = nullptr;

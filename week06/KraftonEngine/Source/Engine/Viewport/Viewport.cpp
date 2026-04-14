@@ -95,6 +95,15 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(RTTexture, nullptr, &SRV);
 	if (FAILED(hr)) return false;
 
+	hr = Device->CreateTexture2D(&TexDesc, nullptr, &PostProcessTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(PostProcessTexture, nullptr, &PostProcessRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(PostProcessTexture, nullptr, &PostProcessSRV);
+	if (FAILED(hr)) return false;
+
 	// ── 뎁스/스텐실 (TYPELESS → DSV + StencilSRV) ──
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
 	DepthDesc.Width = Width;
@@ -155,6 +164,9 @@ void FViewport::ReleaseResources()
 	if (DepthSRV) { DepthSRV->Release(); DepthSRV = nullptr; }
 	if (DSV) { DSV->Release(); DSV = nullptr; }
 	if (DepthTexture) { DepthTexture->Release(); DepthTexture = nullptr; }
+	if (PostProcessSRV) { PostProcessSRV->Release(); PostProcessSRV = nullptr; }
+	if (PostProcessRTV) { PostProcessRTV->Release(); PostProcessRTV = nullptr; }
+	if (PostProcessTexture) { PostProcessTexture->Release(); PostProcessTexture = nullptr; }
 	if (SRV) { SRV->Release(); SRV = nullptr; }
 	if (RTV) { RTV->Release(); RTV = nullptr; }
 	if (RTTexture) { RTTexture->Release(); RTTexture = nullptr; }

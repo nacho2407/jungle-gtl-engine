@@ -2,6 +2,7 @@
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "SimpleJSON/json.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 
@@ -32,6 +33,17 @@ namespace Key
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* EnableFXAA = "EnableFXAA";
+
+	// FXAA
+	constexpr const char* FXAA = "FXAA";
+	constexpr const char* EdgeThreshold = "EdgeThreshold";
+	constexpr const char* EdgeThresholdMin = "EdgeThresholdMin";
+	constexpr const char* SearchThreshold = "SearchThreshold";
+	constexpr const char* SubpixTrim = "SubpixTrim";
+	constexpr const char* SubpixCap = "SubpixCap";
+	constexpr const char* EnableSubpix = "EnableSubpix";
+	constexpr const char* SearchSteps = "SearchSteps";
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
@@ -109,6 +121,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
 		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
+		SlotObj[Key::EnableFXAA] = Opts.bEnableFXAA;
 		SlotsArr.append(SlotObj);
 	}
 	LayoutObj[Key::Slots] = SlotsArr;
@@ -138,6 +151,16 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	CamObj[Key::NearClip] = PerspCamNearClip;
 	CamObj[Key::FarClip] = PerspCamFarClip;
 	Root[Key::PerspectiveCamera] = CamObj;
+
+	JSON FXAAObj = Object();
+	FXAAObj[Key::EdgeThreshold] = FXAAEdgeThreshold;
+	FXAAObj[Key::EdgeThresholdMin] = FXAAEdgeThresholdMin;
+	FXAAObj[Key::SearchThreshold] = FXAASearchThreshold;
+	FXAAObj[Key::SubpixTrim] = FXAASubpixTrim;
+	FXAAObj[Key::SubpixCap] = FXAASubpixCap;
+	FXAAObj[Key::EnableSubpix] = bFXAASubpix;
+	FXAAObj[Key::SearchSteps] = FXAASearchSteps;
+	Root[Key::FXAA] = FXAAObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -251,6 +274,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
 				if (S.hasKey(Key::CameraRotateSensitivity))
 					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
+				if (S.hasKey(Key::EnableFXAA))
+					Opts.bEnableFXAA = S[Key::EnableFXAA].ToBool();
 			}
 		}
 
@@ -305,4 +330,36 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (CamObj.hasKey(Key::FarClip))
 			PerspCamFarClip = static_cast<float>(CamObj[Key::FarClip].ToFloat());
 	}
+
+	if (Root.hasKey(Key::FXAA))
+	{
+		JSON FXAAObj = Root[Key::FXAA];
+		if (FXAAObj.hasKey(Key::EdgeThreshold))
+			FXAAEdgeThreshold = static_cast<float>(FXAAObj[Key::EdgeThreshold].ToFloat());
+		if (FXAAObj.hasKey(Key::EdgeThresholdMin))
+			FXAAEdgeThresholdMin = static_cast<float>(FXAAObj[Key::EdgeThresholdMin].ToFloat());
+		if (FXAAObj.hasKey(Key::SearchThreshold))
+			FXAASearchThreshold = static_cast<float>(FXAAObj[Key::SearchThreshold].ToFloat());
+		if (FXAAObj.hasKey(Key::SubpixTrim))
+			FXAASubpixTrim = static_cast<float>(FXAAObj[Key::SubpixTrim].ToFloat());
+		if (FXAAObj.hasKey(Key::SubpixCap))
+			FXAASubpixCap = static_cast<float>(FXAAObj[Key::SubpixCap].ToFloat());
+		if (FXAAObj.hasKey(Key::EnableSubpix))
+			bFXAASubpix = FXAAObj[Key::EnableSubpix].ToBool();
+		if (FXAAObj.hasKey(Key::SearchSteps))
+			FXAASearchSteps = FXAAObj[Key::SearchSteps].ToInt();
+	}
+}
+
+FFXAAConstants FEditorSettings::BuildFXAAConstants() const
+{
+	FFXAAConstants Constants;
+	Constants.FXAA_EDGE_THRESHOLD = FXAAEdgeThreshold;
+	Constants.FXAA_EDGE_THRESHOLD_MIN = FXAAEdgeThresholdMin;
+	Constants.FXAA_SEARCH_THRESHOLD = FXAASearchThreshold;
+	Constants.FXAA_SUBPIX_TRIM = FXAASubpixTrim;
+	Constants.FXAA_SUBPIX_CAP = FXAASubpixCap;
+	Constants.FXAA_SUBPIX = bFXAASubpix ? 1u : 0u;
+	Constants.FXAA_SEARCH_STEPS = static_cast<uint32>(std::clamp(FXAASearchSteps, 1, 32));
+	return Constants;
 }

@@ -6,6 +6,7 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
+#include "Render/Pipeline/RenderConstants.h"
 #include "Profiling/Stats.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
@@ -33,6 +34,15 @@ public:
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
 
+	// Global FXAA tuning
+	float FXAAEdgeThreshold = 1.0f / 8.0f;
+	float FXAAEdgeThresholdMin = 1.0f / 16.0f;
+	float FXAASearchThreshold = 1.0f / 4.0f;
+	float FXAASubpixTrim = 1.0f / 4.0f;
+	float FXAASubpixCap = 3.0f / 4.0f;
+	bool bFXAASubpix = true;
+	int32 FXAASearchSteps = 8;
+
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
@@ -59,6 +69,7 @@ public:
 
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);
+	FFXAAConstants BuildFXAAConstants() const;
 
 	static FString GetDefaultSettingsPath() { return FPaths::ToUtf8(FPaths::SettingsFilePath()); }
 };

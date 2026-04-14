@@ -42,6 +42,7 @@ enum class ERenderPass : uint32
 	PostProcess,
 	GizmoOuter,
 	GizmoInner,
+	AntiAliasing,
 	OverlayFont,
 	MAX
 };
@@ -60,6 +61,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 		"RenderPass::PostProcess",
 		"RenderPass::GizmoOuter",
 		"RenderPass::GizmoInner",
+		"RenderPass::AntiAliasing",
 		"RenderPass::OverlayFont",
 	};
 	static_assert(ARRAYSIZE(Names) == (uint32)ERenderPass::MAX, "Names must match ERenderPass entries");

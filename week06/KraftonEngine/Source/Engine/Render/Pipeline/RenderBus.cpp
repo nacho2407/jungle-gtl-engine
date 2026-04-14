@@ -19,7 +19,12 @@ void FRenderBus::Clear()
 
 	ViewportRTV = nullptr;
 	ViewportDSV = nullptr;
+	ViewportSceneSRV = nullptr;
 	ViewportStencilSRV = nullptr;
+	ViewportPostProcessRTV = nullptr;
+	ViewportPostProcessSRV = nullptr;
+	bFXAAEnabled = false;
+	FXAAConstants = FFXAAConstants{};
 }
 
 void FRenderBus::AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy)
@@ -85,7 +90,10 @@ void FRenderBus::SetViewportInfo(const FViewport* VP)
 	viewportHeight = static_cast<float>(VP->GetHeight());
 	ViewportRTV = VP->GetRTV();
 	ViewportDSV = VP->GetDSV();
+	ViewportSceneSRV = VP->GetSRV();
 	ViewportStencilSRV = VP->GetStencilSRV();
+	ViewportPostProcessRTV = VP->GetPostProcessRTV();
+	ViewportPostProcessSRV = VP->GetPostProcessSRV();
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)

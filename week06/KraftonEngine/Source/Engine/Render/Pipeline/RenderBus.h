@@ -42,6 +42,8 @@ public:
 	void SetViewportInfo(const FViewport* VP);
 	void SetViewportSize(float InWidth, float InHeight);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
+	void SetFXAAEnabled(bool bInEnabled) { bFXAAEnabled = bInEnabled; }
+	void SetFXAAConstants(const FFXAAConstants& InConstants) { FXAAConstants = InConstants; }
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
@@ -63,7 +65,12 @@ public:
 	const float GetViewportHeight() const { return viewportHeight; }
 	ID3D11RenderTargetView*  GetViewportRTV()        const { return ViewportRTV; }
 	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
+	ID3D11ShaderResourceView* GetViewportSceneSRV()   const { return ViewportSceneSRV; }
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
+	ID3D11RenderTargetView*  GetViewportPostProcessRTV() const { return ViewportPostProcessRTV; }
+	ID3D11ShaderResourceView* GetViewportPostProcessSRV() const { return ViewportPostProcessSRV; }
+	bool IsFXAAEnabled() const { return bFXAAEnabled; }
+	const FFXAAConstants& GetFXAAConstants() const { return FXAAConstants; }
 
 	// GPU Occlusion Culling — set by render pipeline, read by collector
 	void SetOcclusionCulling(FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
@@ -104,13 +111,19 @@ private:
 	// PostProcess용 뷰포트 D3D 리소스 (프레임 내 유효)
 	ID3D11RenderTargetView*   ViewportRTV        = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV        = nullptr;
+	ID3D11ShaderResourceView* ViewportSceneSRV   = nullptr;
 	ID3D11ShaderResourceView* ViewportStencilSRV = nullptr;
+	ID3D11RenderTargetView*   ViewportPostProcessRTV = nullptr;
+	ID3D11ShaderResourceView* ViewportPostProcessSRV = nullptr;
 
 	// GPU Occlusion
 	FGPUOcclusionCulling* OcclusionCulling = nullptr;
 
 	// LOD
 	FLODUpdateContext LODContext;
+
+	bool bFXAAEnabled = false;
+	FFXAAConstants FXAAConstants;
 
 	//Editor Settings
 	EViewMode ViewMode;
