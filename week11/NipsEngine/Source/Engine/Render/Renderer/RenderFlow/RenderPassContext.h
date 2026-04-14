@@ -8,6 +8,7 @@ struct FRenderResources;
 class FRenderBus;
 class FFontBatcher;
 class FSubUVBatcher;
+class FLineBatcher;
 
 struct FRenderPassContext
 {
@@ -19,6 +20,8 @@ struct FRenderPassContext
     FRenderResources* RenderResources = nullptr;
     FFontBatcher* FontBatcher = nullptr;
     FSubUVBatcher* SubUVBatcher = nullptr;
+    FLineBatcher* GridLineBatcher = nullptr;
+    FLineBatcher* EditorLineBatcher = nullptr;
 
 	ID3D11RenderTargetView* FinalRTV = nullptr;
     ID3D11ShaderResourceView* FinalSRV = nullptr;
