@@ -191,51 +191,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
-
-	/*
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		// TODO: if 문 처리는 아쉬움. 나중에 확장성을 위해 수정 필요
-		if (CurPass == ERenderPass::Light)
-		{
-			// Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
-			ExecuteLightPass(InRenderBus, Context);
-		}
-        else if (CurPass == ERenderPass::Fog)
-		{
-            const auto& Commands = InRenderBus.GetCommands(CurPass);
-            if (Commands.empty())
-                continue;
-			else
-            {
-                ExecuteFogPass(Commands, InRenderBus, Context);
-			}
-        }
-		else if (CurPass == ERenderPass::FXAA)
-		{
-            // Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
-            ExecuteFXAAPass(InRenderBus, Context);
-		}
-		else
-		{
-            const auto& Commands = InRenderBus.GetCommands(CurPass);
-            if (Commands.empty())
-                continue;
-
-            if (PassBatchers[i])
-            {
-                ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
-                PassBatchers[i].Flush(CurPass, InRenderBus, Context);
-            }
-            else
-            {
-                ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
-            }
-		}
-	}
-	*/
 }
 
 // ============================================================
