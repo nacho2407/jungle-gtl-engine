@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
@@ -582,6 +582,47 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorPlayStreamWidget.cpp" />
+    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
+    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Geometry\OBB.cpp" />
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.cpp" />
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.cpp" />
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.cpp" />
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\PIEController.cpp" />
+    <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SubUVRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\TranslucentRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SelectionMaskRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1121,5 +1162,49 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h" />
+    <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
+    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
+    <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
+    <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Geometry\OBB.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\PIEController.h" />
+    <ClInclude Include="Source\Engine\Input\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SubUVRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\TranslucentRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SelectionMaskRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
   </ItemGroup>
 </Project>
+
+
+

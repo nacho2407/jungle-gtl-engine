@@ -60,11 +60,17 @@ void FRenderer::CreateResources()
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
+
+	RenderPipeline.Initialize();
+    RenderPassContext = std::make_shared<FRenderPassContext>();
 }
 
 void FRenderer::Release()
 {
 	InvalidateSceneFinalTargets();
+
+	RenderPipeline.Release();
+    RenderPassContext.reset();
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
@@ -78,6 +84,9 @@ void FRenderer::Release()
 	GridLineBatcher.Release();
 	FontBatcher.Release();
 	SubUVBatcher.Release();
+
+    // Device::ReportLiveObjects 이전에 ResourceManager가 잡고 있던 D3D 객체를 먼저 해제한다.
+    FResourceManager::Get().ReleaseGPUResources();
 
 	Device.Release();
 }
@@ -172,49 +181,21 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
 
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
-	{
-		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		/** TODO: if 문 처리는 아쉬움. 나중에 확장성을 위해 수정 필요 */
-		if (CurPass == ERenderPass::Light)
-		{
-			// Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
-			ExecuteLightPass(InRenderBus, Context);
-		}
-        else if (CurPass == ERenderPass::Fog)
-		{
-            const auto& Commands = InRenderBus.GetCommands(CurPass);
-            if (Commands.empty())
-                continue;
-			else
-            {
-                ExecuteFogPass(Commands, InRenderBus, Context);
-			}
-        }
-		else if (CurPass == ERenderPass::FXAA)
-		{
-            // Command 로 따로 넣어주지 않아도 무조건 실행되어야하는 Pass
-            ExecuteFXAAPass(InRenderBus, Context);
-		}
-		else
-		{
-            const auto& Commands = InRenderBus.GetCommands(CurPass);
-            if (Commands.empty())
-                continue;
-
-            if (PassBatchers[i])
-            {
-                ApplyPassRenderState(CurPass, Context, InRenderBus.GetViewMode());
-                PassBatchers[i].Flush(CurPass, InRenderBus, Context);
-            }
-            else
-            {
-                ExecuteDefaultPass(CurPass, Commands, InRenderBus, Context);
-            }
-		}
-
-	}
+	/** Opaque 만 테스트 */
+    
+	RenderPassContext->Device = Device.GetDevice();
+    RenderPassContext->DeviceContext = Device.GetDeviceContext();
+    RenderPassContext->RenderState = &PassRenderStates[(uint32)ERenderPass::Opaque];
+    RenderPassContext->RenderBus = &InRenderBus;
+    RenderPassContext->RenderTargets = &CurrentRenderTargets;
+    RenderPassContext->RenderResources = &Resources;
+    RenderPassContext->FontBatcher = &FontBatcher;
+    RenderPassContext->SubUVBatcher = &SubUVBatcher;
+    RenderPassContext->GridLineBatcher = &GridLineBatcher;
+    RenderPassContext->EditorLineBatcher = &EditorLineBatcher;
+	RenderPipeline.Render(RenderPassContext.get());
+	
+	SceneFinalSRV = RenderPipeline.GetOutSRV();
 }
 
 // ============================================================
@@ -402,179 +383,6 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 		}
 		DrawCommand(Context, Cmd);
 	}
-}
-
-void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Context)
-{
-    ApplyPassRenderState(ERenderPass::Light, Context, Bus.GetViewMode());
-
-    const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Light];
-
-    //Device.SetDepthStencilState(State.DepthStencil);
-    //Device.SetBlendState(State.Blend);
-
-	const auto& Lights = Bus.GetLight();
-	Resources.LightStructuredBuffer.Update(Context, Lights.data(), (uint32)Lights.size());
-
-	FLightPassConstants LightPassConstant = {};
-
-	switch (Bus.GetViewMode()) {
-    case (EViewMode::Unlit):
-        LightPassConstant.WorldLit = 0;
-        break;
-	__fallthrough;
-    case (EViewMode::Lit):
-    case (EViewMode::Wireframe):
-    default:
-        LightPassConstant.WorldLit = 1;
-	}
-
-	LightPassConstant.LightCount = (uint32)Lights.size();
-    LightPassConstant.CameraWorldPos = Bus.GetCameraPosition();
-	LightPassConstant.ViewMode = static_cast<uint32>(Bus.GetViewMode());
-    Resources.LightPassConstantBuffer.Update(Context, &LightPassConstant, sizeof(LightPassConstant));
-	ID3D11Buffer* cb7 = Resources.LightPassConstantBuffer.GetBuffer();
-	Context->PSSetConstantBuffers(7, 1, &cb7);
-
-    ID3D11ShaderResourceView* srvs[] = {
-        CurrentRenderTargets.SceneColorSRV,
-        CurrentRenderTargets.SceneNormalSRV,
-        CurrentRenderTargets.SceneDepthSRV,
-		CurrentRenderTargets.SceneWorldPosSRV,
-		Resources.LightStructuredBuffer.GetSRV(),
-    };
-
-    Context->PSSetShaderResources(0, 5, srvs);
-
-	//FLightPassConstants LightConstants = Cmd
-
-	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
-	LightPassShader->Bind(Context);
-
-	/**
-     * LightPass 는 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
-     * 버퍼 바인딩이 필요 없다.
-	 */
-    Context->IASetInputLayout(nullptr);
-    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    Context->Draw(3, 0);
-
-    // SRV 해제 (중요!!)
-    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr, nullptr};
-    Context->PSSetShaderResources(0, 5, nullSRVs);
-}
-
-/**
- * TODO: 
- * 현재 Light -> Fog -> FXAA 라는 가정을 바탕으로 작성되어 있는데 패스 간 의존성을 없애야함
- * Pass 전후 SRV, RTV 갱신에 대한 구조를 새로 짜야함
- */
-void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
-	ID3D11DeviceContext* Context)
-{
-	if (!CurrentRenderTargets.SceneLightRTV || !CurrentRenderTargets.SceneLightSRV ||
-		!CurrentRenderTargets.SceneFogRTV || !CurrentRenderTargets.SceneFogSRV ||
-		!CurrentRenderTargets.SceneFXAARTV || !CurrentRenderTargets.SceneFXAASRV)
-	{
-		return;
-	}
-
-	ApplyPassRenderState(ERenderPass::Fog, Context, Bus.GetViewMode());
-	const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Fog];
-
-	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
-	FogPassShader->Bind(Context);
-
-	ID3D11RenderTargetView* OutputSceneRTV = CurrentRenderTargets.SceneFogRTV;
-
-	EDepthStencilType TargetDepth = EDepthStencilType::StencilWrite;
-	ID3D11DepthStencilState* DSState = FResourceManager::Get().GetOrCreateDepthStencilState(TargetDepth);
-	Context->OMSetDepthStencilState(DSState, 1);
-
-	// Fog는 소스 장면을 포함해 최종색을 셰이더에서 계산하므로 블렌딩은 Opaque로 고정
-	EBlendType BlendType = EBlendType::Opaque;
-	ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(BlendType);
-	Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
-
-	ID3D11RenderTargetView* RTVs[MaxRTVCount] = { OutputSceneRTV, nullptr, nullptr };
-	Context->OMSetRenderTargets(MaxRTVCount, RTVs, nullptr);
-
-	ID3D11ShaderResourceView* srvs[] = {
-		CurrentRenderTargets.SceneColorSRV,
-		CurrentRenderTargets.SceneNormalSRV,
-		CurrentRenderTargets.SceneDepthSRV,
-		CurrentRenderTargets.SceneLightSRV,
-		CurrentRenderTargets.SceneWorldPosSRV
-	};
-	Context->PSSetShaderResources(0, 5, srvs);
-
-	FFogPassConstants FogPassConstants = {};
-	FogPassConstants.FogCount = std::min<uint32>(static_cast<uint32>(Commands.size()), MaxFogLayerCount);
-	for (uint32 FogIndex = 0; FogIndex < FogPassConstants.FogCount; ++FogIndex)
-	{
-		FogPassConstants.Layers[FogIndex] = Commands[FogIndex].Constants.Fog;
-	}
-
-	Resources.FogPassConstantBuffer.Update(Context, &FogPassConstants, sizeof(FFogPassConstants));
-	ID3D11Buffer* cb9 = Resources.FogPassConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(9, 1, &cb9);
-	Context->PSSetConstantBuffers(9, 1, &cb9);
-
-	// 풀스크린 triangle
-	Context->IASetInputLayout(nullptr);
-	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-	Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context->Draw(3, 0);
-
-	ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-	Context->PSSetShaderResources(0, 5, nullSRVs);
-
-	SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
-	SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
-}
-
-void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Context) 
-{
-    ID3D11ShaderResourceView* srvs[] = {SceneFinalSRV.Get()}; // FXAA 패스에서는 최종 조명 결과만 필요
-    ApplyPassRenderState(ERenderPass::FXAA, Context, Bus.GetViewMode());
-
-    const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::FXAA];
-
-    //Device.SetDepthStencilState(State.DepthStencil);
-    //Device.SetBlendState(State.Blend);
-
-    Context->PSSetShaderResources(0, 1, srvs);
-
-	FFXAAConstants FXAAConstants = {};
-    FXAAConstants.InvResolution[0] = (CurrentRenderTargets.Width > 0.0f) ? (1.0f / CurrentRenderTargets.Width) : 0.0f;
-    FXAAConstants.InvResolution[1] = (CurrentRenderTargets.Height > 0.0f) ? (1.0f / CurrentRenderTargets.Height) : 0.0f;
-    FXAAConstants.bEnabled = Bus.GetFXAAEnabled() ? 1u : 0u;
-    Resources.FXAAConstantBuffer.Update(Context, &FXAAConstants, sizeof(FFXAAConstants));
-    ID3D11Buffer* cb10 = Resources.FXAAConstantBuffer.GetBuffer();
-
-	Context->PSSetConstantBuffers(10, 1, &cb10);
-
-	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
-    FXAAShader->Bind(Context);
-
-    /**
-     * 풀스크린 쿼드에 그리는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
-     * 버퍼 바인딩이 필요 없다.
-     */
-    Context->IASetInputLayout(nullptr);
-    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    Context->Draw(3, 0);
-
-    // SRV 해제 (중요!!)
-    ID3D11ShaderResourceView* nullSRVs[] = {nullptr};
-    Context->PSSetShaderResources(0, 1, nullSRVs);
 }
 
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)

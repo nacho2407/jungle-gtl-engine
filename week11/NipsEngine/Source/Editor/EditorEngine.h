@@ -52,6 +52,8 @@ public:
 	const FViewportLayout& GetViewportLayout() const { return ViewportLayout; }
 	FEditorRenderPipeline* GetEditorRenderPipeline() const;
 
+	FEditorMainPanel& GetMainPanel() { return MainPanel; }
+
 	void RenderUI(float DeltaTime);
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
