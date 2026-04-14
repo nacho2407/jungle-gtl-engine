@@ -346,14 +346,46 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			}
 			break;
 		case EMaterialParamType::Texture:
-			if (ImGui::ImageButton(ParamName.c_str(), (void*)std::get<UTexture*>(ParamValue.Value)->GetSRV(), ImVec2(64, 64)))
-			{
+		{
+			UTexture* CurrentTex = std::get<UTexture*>(ParamValue.Value);
+			ID3D11ShaderResourceView* SRV = CurrentTex ? CurrentTex->GetSRV() : nullptr;
 
+			if (ImGui::ImageButton(ParamName.c_str(), (void*)SRV, ImVec2(64, 64)))
+			{
+				// 이미지 버튼 클릭 시 동작 (필요 시 팝업 등 추가)
 			}
 			ImGui::SameLine();
+			
+			ImGui::BeginGroup();
 			ImGui::Text("%s", ParamName.c_str());
+			
+			const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
+			FString CurrentPath = CurrentTex ? CurrentTex->GetName() : "None";
+
+			ImGui::SetNextItemWidth(200.0f);
+			FString ComboId = "##Combo_" + ParamName;
+			if (ImGui::BeginCombo(ComboId.c_str(), CurrentPath.c_str()))
+			{
+				for (const FString& TexPath : TextureList)
+				{
+					bool bSelected = (TexPath == CurrentPath);
+					if (ImGui::Selectable(TexPath.c_str(), bSelected))
+					{
+						UTexture* NewTex = FResourceManager::Get().GetTexture(TexPath);
+						if (NewTex)
+						{
+							ParamValue.Value = NewTex;
+							SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+						}
+					}
+					if (bSelected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::EndGroup();
 
 			break;
+		}
 		}
 	}
 }
