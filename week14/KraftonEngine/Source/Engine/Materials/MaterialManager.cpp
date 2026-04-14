@@ -1,4 +1,4 @@
-﻿#include "MaterialManager.h"
+#include "MaterialManager.h"
 #include <filesystem>
 #include <fstream>
 #include "Materials/Material.h"
@@ -7,6 +7,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Platform/Paths.h"
+#include "Render/Pipeline/Renderer.h"
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -57,7 +58,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 		UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
 		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath);
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-		DefaultMaterial->Create(MatFilePath, Template, ERenderPass::Opaque, std::move(Buffers));
+		DefaultMaterial->Create(MatFilePath, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
 		// 폴백: 핑크색으로 미지정 머티리얼임을 표시
 		DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
 		MaterialCache.emplace(MatFilePath, DefaultMaterial);
@@ -70,6 +71,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	FString RenderPassStr = JsonData["RenderPass"].ToString().c_str();
 	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 
+	// 새로운 렌더 상태 추출 (JSON에 없으면 패스 기반 기본값)
+	FString BlendStr = JsonData.hasKey("BlendState") ? JsonData["BlendState"].ToString().c_str() : "";
+	FString DepthStr = JsonData.hasKey("DepthStencilState") ? JsonData["DepthStencilState"].ToString().c_str() : "";
+	FString RasterStr = JsonData.hasKey("RasterizerState") ? JsonData["RasterizerState"].ToString().c_str() : "";
+
+	EBlendState BlendState = StringToBlendState(BlendStr, RenderPass);
+	EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
+	ERasterizerState RasterState = StringToRasterizerState(RasterStr, RenderPass);
+
 	// 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
 	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
 	if (!Template) return nullptr;
@@ -79,7 +89,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 
 	// 6. UMaterial 인스턴스 생성 및 초기화 (RenderPass는 인스턴스별)
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
-	Material->Create(PathFileName, Template, RenderPass, std::move(InjectedBuffers));
+	Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
 	MaterialCache.emplace(MatFilePath, Material);
 
 	//템플릿을 통해 material에 넣기
@@ -89,9 +99,13 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
 
-	// 새로운 기본 파라미터가 주입된 경우에만 JSON 저장
-	if (bInjected)
-		SaveToJSON(JsonData, MatFilePath);
+	// JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
+	JsonData["BlendState"] = BlendStr.empty() ? "" : BlendStr.c_str();
+	JsonData["DepthStencilState"] = DepthStr.empty() ? "" : DepthStr.c_str();
+	JsonData["RasterizerState"] = RasterStr.empty() ? "" : RasterStr.c_str();
+
+	//최종적으로 material 저장
+	SaveToJSON(JsonData, MatFilePath);
 
 	return Material;
 }
@@ -191,6 +205,63 @@ ERenderPass FMaterialManager::StringToRenderPass(const FString& RenderPassStr) c
 
 	// 매칭되는 게 없으면 기본값 반환
 	return ERenderPass::Opaque;
+}
+
+EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass Pass) const
+{
+	if (Str == "Opaque") return EBlendState::Opaque;
+	if (Str == "AlphaBlend") return EBlendState::AlphaBlend;
+	if (Str == "Additive") return EBlendState::Additive;
+	if (Str == "NoColor") return EBlendState::NoColor;
+
+	// Default by Pass
+	if (Pass == ERenderPass::AlphaBlend || Pass == ERenderPass::Decal || Pass == ERenderPass::EditorLines || Pass == ERenderPass::PostProcess || Pass == ERenderPass::GizmoInner || Pass == ERenderPass::OverlayFont)
+		return EBlendState::AlphaBlend;
+	if (Pass == ERenderPass::AdditiveDecal)
+		return EBlendState::Additive;
+	if (Pass == ERenderPass::SelectionMask)
+		return EBlendState::NoColor;
+
+	return EBlendState::Opaque;
+}
+
+EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& Str, ERenderPass Pass) const
+{
+	if (Str == "Default") return EDepthStencilState::Default;
+	if (Str == "DepthReadOnly") return EDepthStencilState::DepthReadOnly;
+	if (Str == "StencilWrite") return EDepthStencilState::StencilWrite;
+	if (Str == "StencilWriteOnlyEqual") return EDepthStencilState::StencilWriteOnlyEqual;
+	if (Str == "NoDepth") return EDepthStencilState::NoDepth;
+	if (Str == "GizmoInside") return EDepthStencilState::GizmoInside;
+	if (Str == "GizmoOutside") return EDepthStencilState::GizmoOutside;
+
+	// Default by Pass
+	if (Pass == ERenderPass::Decal || Pass == ERenderPass::AdditiveDecal)
+		return EDepthStencilState::DepthReadOnly;
+	if (Pass == ERenderPass::SelectionMask)
+		return EDepthStencilState::StencilWrite;
+	if (Pass == ERenderPass::PostProcess || Pass == ERenderPass::OverlayFont)
+		return EDepthStencilState::NoDepth;
+	if (Pass == ERenderPass::GizmoOuter)
+		return EDepthStencilState::GizmoOutside;
+	if (Pass == ERenderPass::GizmoInner)
+		return EDepthStencilState::GizmoInside;
+
+	return EDepthStencilState::Default;
+}
+
+ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, ERenderPass Pass) const
+{
+	if (Str == "SolidBackCull") return ERasterizerState::SolidBackCull;
+	if (Str == "SolidFrontCull") return ERasterizerState::SolidFrontCull;
+	if (Str == "SolidNoCull") return ERasterizerState::SolidNoCull;
+	if (Str == "WireFrame") return ERasterizerState::WireFrame;
+
+	// Default by Pass
+	if (Pass == ERenderPass::Decal || Pass == ERenderPass::AdditiveDecal || Pass == ERenderPass::SelectionMask || Pass == ERenderPass::PostProcess)
+		return ERasterizerState::SolidNoCull;
+
+	return ERasterizerState::SolidBackCull;
 }
 
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)

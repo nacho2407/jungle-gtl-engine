@@ -179,6 +179,11 @@ struct FMeshSectionDraw
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 
+	// 머티리얼 기반 렌더 상태
+	EBlendState Blend = EBlendState::Opaque;
+	EDepthStencilState DepthStencil = EDepthStencilState::Default;
+	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
+
 	//PerShader
 	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
 };
