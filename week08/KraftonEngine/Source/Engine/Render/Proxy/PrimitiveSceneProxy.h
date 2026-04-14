@@ -81,7 +81,6 @@ public:
 
 	// 텍스처 바인딩 (SubUV, Billboard 등 프록시 직접 렌더링용)
 	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
-	ID3D11SamplerState* Sampler = nullptr;
 
 	// 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)
 	bool bPerViewportUpdate = false;

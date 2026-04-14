@@ -37,8 +37,8 @@ struct FPassEvent
 		switch (Compare)
 		{
 		case EPassCompare::Equal:        bMatch = (CurPass == Pass); break;
-		case EPassCompare::Less:         bMatch = ((uint32)CurPass <  (uint32)Pass); break;
-		case EPassCompare::Greater:      bMatch = ((uint32)CurPass >  (uint32)Pass); break;
+		case EPassCompare::Less:         bMatch = ((uint32)CurPass < (uint32)Pass); break;
+		case EPassCompare::Greater:      bMatch = ((uint32)CurPass > (uint32)Pass); break;
 		case EPassCompare::LessEqual:    bMatch = ((uint32)CurPass <= (uint32)Pass); break;
 		case EPassCompare::GreaterEqual: bMatch = ((uint32)CurPass >= (uint32)Pass); break;
 		}
@@ -210,7 +210,6 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Cmd.PerObjectCB = PerObjCB;
 		SetProxyExtraCB(Cmd);
 		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
-		Cmd.Sampler = Proxy.Sampler;
 		Cmd.Pass = Pass;
 		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
@@ -333,6 +332,9 @@ void FRenderer::Render(const FFrameContext& Frame)
 		UpdateFrameBuffer(Context, Frame);
 	}
 
+	// 시스템 샘플러 영구 바인딩 (s0-s2)
+	Resources.BindSystemSamplers(Context);
+
 	// 커맨드 정렬 + 패스별 오프셋 빌드
 	DrawCommandList.Sort();
 
@@ -351,7 +353,10 @@ void FRenderer::Render(const FFrameContext& Frame)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
 
-		for (auto& E : PrePassEvents) E.TryExecute(CurPass);
+		for (auto& PrePassEvent : PrePassEvents)
+		{
+			PrePassEvent.TryExecute(CurPass);
+		}
 
 		uint32 Start, End;
 		DrawCommandList.GetPassRange(CurPass, Start, End);
@@ -361,7 +366,7 @@ void FRenderer::Render(const FFrameContext& Frame)
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
-		DrawCommandList.SubmitRange(Start, End, Device, Context, Cache, Resources.DefaultSampler);
+		DrawCommandList.SubmitRange(Start, End, Device, Context, Cache);
 	}
 
 	CleanupPassState(Context, Cache);
@@ -409,7 +414,7 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 
 				Cache.bForceAll = true;
 			}
-		});
+			});
 	}
 
 	// CopySceneColor: FXAA 패스 진입 전 현재 화면 복사 → SceneColorCopySRV로 읽기
@@ -426,7 +431,7 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 
 				Cache.bForceAll = true;
 			}
-		});
+			});
 	}
 }
 
@@ -659,7 +664,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.RawIB = FontGeometry.GetWorldIBBuffer();
 				Cmd.IndexCount = FontGeometry.GetWorldIndexCount();
 				Cmd.DiffuseSRV = FontRes->SRV;
-				Cmd.Sampler = FontGeometry.GetSampler();
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::AlphaBlend, FontShader, nullptr, FontRes->SRV);
 			}
 
@@ -675,7 +679,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.RawIB = FontGeometry.GetScreenIBBuffer();
 				Cmd.IndexCount = FontGeometry.GetScreenIndexCount();
 				Cmd.DiffuseSRV = FontRes->SRV;
-				Cmd.Sampler = FontGeometry.GetSampler();
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::OverlayFont, OverlayShader, nullptr, FontRes->SRV);
 			}
 		}
@@ -697,7 +700,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::FXAA]        = { EDepthStencilState::NoDepth,      EBlendState::Opaque,     ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::FXAA] = { EDepthStencilState::NoDepth,      EBlendState::Opaque,     ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };

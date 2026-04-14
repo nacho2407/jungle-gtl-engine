@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "DrawCommand.h"
 #include "Render/Device/D3DDevice.h"
@@ -25,7 +25,6 @@ struct FStateCache
 	FConstantBuffer*          PerObjectCB    = nullptr;
 	FConstantBuffer*          PerShaderCB[2] = {};
 	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
-	ID3D11SamplerState*       Sampler      = nullptr;
 
 	// Material 인라인 데이터 추적 (PerShaderCB[0] 업데이트 최소화)
 	bool     bMaterialDirty   = true;
@@ -38,7 +37,7 @@ struct FStateCache
 
 	void Reset();
 
-	// 프레임 끝 정리 — DSV 복원 + SRV 언바인딩
+	// 프레임 끝 정리 — t0 SRV 언바인딩
 	void Cleanup(ID3D11DeviceContext* Ctx);
 };
 
@@ -59,17 +58,15 @@ public:
 	void GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const;
 
 	// StateCache 기반 GPU 제출 (전체)
-	// DefaultSampler: 텍스처 바인딩 시 사용할 s0 샘플러
-	void Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx,
-		ID3D11SamplerState* DefaultSampler = nullptr);
+	void Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx);
 
 	// 범위 제출 — [StartIdx, EndIdx) 구간의 커맨드만 제출
 	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-		ID3D11DeviceContext* Ctx, ID3D11SamplerState* DefaultSampler = nullptr);
+		ID3D11DeviceContext* Ctx);
 
-	// 외부 FStateCache 공유 — 패스 간 상태 유지 (DSV Read-Only 전환 등)
+	// 외부 FStateCache 공유 — 패스 간 상태 유지
 	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-		ID3D11DeviceContext* Ctx, FStateCache& Cache, ID3D11SamplerState* DefaultSampler = nullptr);
+		ID3D11DeviceContext* Ctx, FStateCache& Cache);
 
 	// 프레임 끝 초기화
 	void Reset();
@@ -88,8 +85,7 @@ public:
 
 private:
 	void SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device,
-		ID3D11DeviceContext* Ctx, FStateCache& Cache,
-		ID3D11SamplerState* DefaultSampler);
+		ID3D11DeviceContext* Ctx, FStateCache& Cache);
 
 	TArray<FDrawCommand> Commands;
 	uint32 PassOffsets[(uint32)ERenderPass::MAX + 1] = {};

@@ -12,14 +12,6 @@ void FFontGeometry::Create(ID3D11Device* InDevice)
 	ScreenVB.Create(InDevice, 256, sizeof(FTextureVertex));
 	ScreenIB.Create(InDevice, 384);
 
-	// Sampler — Point 필터 (폰트는 선명하게)
-	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Device->CreateSamplerState(&sampDesc, &SamplerState);
-
 	if (const FFontResource* DefaultFont = FResourceManager::Get().FindFont(FName("Default")))
 	{
 		if (DefaultFont->Columns > 0 && DefaultFont->Rows > 0)
@@ -34,8 +26,6 @@ void FFontGeometry::Release()
 	CharInfoMap.clear();
 	Clear();
 	ClearScreen();
-
-	if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
 
 	WorldVB.Release();
 	WorldIB.Release();
