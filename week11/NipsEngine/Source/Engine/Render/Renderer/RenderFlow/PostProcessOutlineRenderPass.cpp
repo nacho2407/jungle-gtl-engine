@@ -1,4 +1,4 @@
-#include "PostProcessOutlineRenderPass.h"
+﻿#include "PostProcessOutlineRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/Material.h"
@@ -18,22 +18,8 @@ bool FPostProcessOutlineRenderPass::Begin(const FRenderPassContext* Context)
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
 
-    UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
-    if (OutlineShader != nullptr)
-    {
-        OutlineShader->Bind(Context->DeviceContext);
-    }
-
     ID3D11ShaderResourceView* maskSRV = Context->RenderTargets->SelectionMaskSRV;
     Context->DeviceContext->PSSetShaderResources(7, 1, &maskSRV);
-
-    auto DepthStencilState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-    auto BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
-    auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
-
-    Context->DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
-    Context->DeviceContext->RSSetState(RasterizerState);
 
     Context->DeviceContext->IASetInputLayout(nullptr);
     Context->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
