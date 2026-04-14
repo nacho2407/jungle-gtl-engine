@@ -600,7 +600,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		FScopeCycleCounter RenderDecalScope({});
 
 		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
-		UMaterial* Material = Cast<UMaterial>(DecalComp->GetMaterial());
+		UMaterialInterface* Material = Cast<UMaterialInterface>(DecalComp->GetMaterial());
 
 		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetFocusedWorld() : nullptr;
 
