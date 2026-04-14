@@ -35,13 +35,14 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
     switch (RenderBus->GetViewMode())
     {
     case (EViewMode::Unlit):
-        LightPassConstant.WorldLit = 0;
-        break;
-        __fallthrough;
-    case (EViewMode::Lit):
-    case (EViewMode::Wireframe):
-    default:
+	case (EViewMode::Wireframe):
         LightPassConstant.WorldLit = 1;
+        break;
+    case (EViewMode::Lit):
+		LightPassConstant.WorldLit = 0;
+		break;
+    default:
+		break;
     }
 
     LightPassConstant.LightCount = (uint32)Lights.size();

@@ -56,7 +56,7 @@ const TArray<UMaterialInterface*>& UMeshComponent::GetOverrideMaterial() const
 	return OverrideMaterial;
 }
 
-int32 UMeshComponent::GetMaterialCount() const
+int32 UMeshComponent::GetNumMaterials() const
 {
 	return static_cast<int32>(OverrideMaterial.size());
 }

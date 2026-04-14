@@ -7,15 +7,14 @@ class UMeshComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
-	
-	void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial);
-	UMaterialInterface* GetMaterial(int32 SlotIndex) const;
+
+	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override;
+	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
 
 	const TArray<UMaterialInterface*>& GetOverrideMaterial() const;
 	const std::pair<float, float> GetScroll() const { return ScrollUV; };
 
-	int32 GetMaterialCount() const;
-	
+	virtual int32 GetNumMaterials() const override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
 	
