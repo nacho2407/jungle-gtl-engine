@@ -181,6 +181,69 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	}
 }
 
+void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy)
+{
+	if (!ReceiverProxy.MeshBuffer || !ReceiverProxy.MeshBuffer->IsValid()) return;
+	if (!DecalProxy.Shader || !DecalProxy.DiffuseSRV) return;
+
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	const FPassRenderState& PassState = PassRenderStates[(uint32)ERenderPass::Decal];
+
+	ERasterizerState Rasterizer = PassState.Rasterizer;
+	if (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
+	{
+		Rasterizer = ERasterizerState::WireFrame;
+	}
+
+	FConstantBuffer* ReceiverPerObjCB = GetPerObjectCBForProxy(ReceiverProxy);
+	if (ReceiverPerObjCB && ReceiverProxy.NeedsPerObjectCBUpload())
+	{
+		ReceiverPerObjCB->Update(Ctx, &ReceiverProxy.PerObjectConstants, sizeof(FPerObjectConstants));
+		ReceiverProxy.ClearPerObjectCBDirty();
+	}
+
+	if (DecalProxy.ExtraCB.Buffer)
+	{
+		if (!DecalProxy.ExtraCB.Buffer->GetBuffer())
+		{
+			DecalProxy.ExtraCB.Buffer->Create(Device.GetDevice(), DecalProxy.ExtraCB.Size);
+		}
+		DecalProxy.ExtraCB.Buffer->Update(Ctx, DecalProxy.ExtraCB.Data, DecalProxy.ExtraCB.Size);
+	}
+
+	auto AddDraw = [&](uint32 FirstIndex, uint32 IndexCount)
+	{
+		if (IndexCount == 0) return;
+
+		FDrawCommand& Cmd = DrawCommandList.AddCommand();
+		Cmd.Shader = DecalProxy.Shader;
+		Cmd.DepthStencil = PassState.DepthStencil;
+		Cmd.Blend = PassState.Blend;
+		Cmd.Rasterizer = Rasterizer;
+		Cmd.Topology = PassState.Topology;
+		Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;
+		Cmd.FirstIndex = FirstIndex;
+		Cmd.IndexCount = IndexCount;
+		Cmd.PerObjectCB = ReceiverPerObjCB;
+		Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
+		Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
+		Cmd.Pass = ERenderPass::Decal;
+		Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
+	};
+
+	if (!ReceiverProxy.SectionDraws.empty())
+	{
+		for (const FMeshSectionDraw& Section : ReceiverProxy.SectionDraws)
+		{
+			AddDraw(Section.FirstIndex, Section.IndexCount);
+		}
+	}
+	else if (ReceiverProxy.MeshBuffer->GetIndexBuffer().GetBuffer())
+	{
+		AddDraw(0, ReceiverProxy.MeshBuffer->GetIndexBuffer().GetIndexCount());
+	}
+}
+
 // ============================================================
 // AddWorldText — Collector가 Font 프록시를 배칭할 때 호출
 // ============================================================
@@ -364,7 +427,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 		const FPassRenderState& PPState = PassRenderStates[(uint32)ERenderPass::PostProcess];
 
 		// HeightFog (UserBits=0 → Outline보다 먼저)
-		if (CollectScene && CollectScene->HasFog())
+		if (Frame.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
 		{
 			FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
 			if (FogShader)

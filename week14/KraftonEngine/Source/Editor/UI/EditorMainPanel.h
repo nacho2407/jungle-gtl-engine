@@ -6,7 +6,6 @@
 #include "Editor/UI/EditorPropertyWidget.h"
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
-#include "Profiling/Stats.h"
 
 class FRenderer;
 class UEditorEngine;
@@ -23,10 +22,6 @@ public:
 	void RestoreEditorWindowsAfterPIE();
 
 private:
-#if STATS
-	void RenderHiZDebug(const class FEditorSettings& Settings);
-#endif
-
 	FWindowsWindow* Window = nullptr;
 	UEditorEngine* EditorEngine = nullptr;
 	FEditorConsoleWidget ConsoleWidget;

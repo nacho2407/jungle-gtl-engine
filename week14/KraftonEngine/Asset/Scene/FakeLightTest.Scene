@@ -1,0 +1,155 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "8",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 9",
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USubUVComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 2.000000],
+              "Particle" : "Explosion",
+              "Play Rate" : 30.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bLoop" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Eyes",
+            "UVScroll" : false
+          },
+          "Element 1" : {
+            "Path" : "EyeWhites",
+            "UVScroll" : false
+          },
+          "Element 10" : {
+            "Path" : "Skirt",
+            "UVScroll" : false
+          },
+          "Element 11" : {
+            "Path" : "Shoes",
+            "UVScroll" : false
+          },
+          "Element 12" : {
+            "Path" : "Gloves",
+            "UVScroll" : false
+          },
+          "Element 2" : {
+            "Path" : "Neck",
+            "UVScroll" : false
+          },
+          "Element 3" : {
+            "Path" : "Face",
+            "UVScroll" : false
+          },
+          "Element 4" : {
+            "Path" : "Hair",
+            "UVScroll" : false
+          },
+          "Element 5" : {
+            "Path" : "Expression",
+            "UVScroll" : false
+          },
+          "Element 6" : {
+            "Path" : "Skin",
+            "UVScroll" : false
+          },
+          "Element 7" : {
+            "Path" : "Clothes",
+            "UVScroll" : false
+          },
+          "Element 8" : {
+            "Path" : "Pants",
+            "UVScroll" : false
+          },
+          "Element 9" : {
+            "Path" : "BackAccessory",
+            "UVScroll" : false
+          },
+          "Location" : [-0.077978, 0.000000, -0.880444],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AFakeLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 0.500000, 0.300000, 0.700000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.250000],
+              "Rotation" : [90.000000, 0.000000, 0.000000],
+              "Scale" : [0.500000, 1.000000, 1.000000],
+              "Texture" : "FakeLight_LightArea",
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 1.000000,
+          "Location" : [-0.079967, 0.000000, 0.065705],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Texture" : "FakeLight_Lampshade",
+          "Visible" : true,
+          "Width" : 1.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "FakeLightTest",
+  "PerspectiveCamera" : {
+    "FOV" : 1.570795,
+    "FarClip" : 100.000000,
+    "Location" : [0.064935, 1.114909, 0.365507],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 14.725326, -83.834953]
+  },
+  "Primitives" : {
+    "8" : {
+      "Location" : [-0.077978, 0.000000, -0.880444],
+      "ObjStaticMeshAsset" : "Data/Lumine/LumineModel.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

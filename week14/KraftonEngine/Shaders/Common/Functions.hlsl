@@ -2,6 +2,7 @@
 #define FUNCTIONS_HLSL
 
 #include "Common/ConstantBuffers.hlsl"
+#include "Common/VertexLayouts.hlsl"
 
 // Model -> View -> Projection 변환
 float4 ApplyMVP(float3 pos)
@@ -27,6 +28,15 @@ float3 ApplyWireframe(float3 baseColor)
 bool ShouldDiscardFontPixel(float sampledRed)
 {
     return sampledRed < 0.1f;
+}
+
+// Fullscreen Triangle VS — SV_VertexID 3개로 화면 전체를 덮는 오버사이즈 삼각형 생성
+PS_Input_UV FullscreenTriangleVS(uint vertexID)
+{
+    PS_Input_UV output;
+    output.uv = float2((vertexID << 1) & 2, vertexID & 2);
+    output.position = float4(output.uv * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
+    return output;
 }
 
 #endif // FUNCTIONS_HLSL
