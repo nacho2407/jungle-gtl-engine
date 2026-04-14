@@ -1,8 +1,8 @@
 ﻿#include "OpaqueRenderPass.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Scene/RenderBus.h"
-#include "Render/Renderer/Renderer.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Resource/Material.h"
 
 bool FOpaqueRenderPass::Initialize()
 {
@@ -21,50 +21,33 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 
 	Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
     OutSRV = RenderTargets->SceneColorSRV;
-
     return true;
 }
 
-bool FOpaqueRenderPass::Render(const FRenderPassContext* Context)
+bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
-    Begin(Context);
+    const FRenderBus* RenderBus = Context->RenderBus;
 
-	const FRenderBus* RenderBus = Context->RenderBus;
+    const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);
 
-	const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);
-
-	if (Commands.empty())
+    if (Commands.empty())
         return true;
 
-	ERasterizerType Rasterizer = ERasterizerType::SolidBackCull;
-    const FPassRenderState* RenderState = Context->RenderState;
-    
-	if (RenderState->bWireframeAware && RenderBus->GetViewMode() == EViewMode::Wireframe)
-	{
-		Rasterizer = ERasterizerType::WireFrame;
-	}
+    Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	if (RenderState->Shader)
-        RenderState->Shader->Bind(Context->DeviceContext);
-
-	for (const FRenderCommand& Cmd : Commands)
-	{
+    for (const FRenderCommand& Cmd : Commands)
+    {
         Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
         ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
         Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
         Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
-		{
-			
+        if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+        {
             continue;
-		}
+        }
 
-		// Draw Command (현재 테스트용으로 넣은거고 로직은 따로 뺄 예정)
-
-		if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+        if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
         {
             return false;
         }
@@ -102,9 +85,7 @@ bool FOpaqueRenderPass::Render(const FRenderPassContext* Context)
         {
             Context->DeviceContext->Draw(vertexCount, 0);
         }
-	}
-
-	End(Context);
+    }
 
     return true;
 }
@@ -116,6 +97,14 @@ bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 	Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
     return true;
+}
+
+void FOpaqueRenderPass::DeclareInputs(TArray<FResourceBinding>& OutInputs) const
+{
+}
+
+void FOpaqueRenderPass::DeclareOutputs(TArray<FResourceBinding>& OutOutputs) const
+{
 }
 
 bool FOpaqueRenderPass::Release()
