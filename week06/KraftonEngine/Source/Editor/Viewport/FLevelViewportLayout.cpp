@@ -877,6 +877,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
 			ImGui::SameLine();
 			ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+			ImGui::SameLine();
+			ImGui::RadioButton("SceneDepthBuffer", &CurrentMode, static_cast<int32>(EViewMode::SceneDepthBuffer));
 			Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 
 			ImGui::Separator();
@@ -884,6 +886,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			// Show Flags
 			ImGui::Text("Show");
 			ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+			ImGui::Checkbox("Decals", &Opts.ShowFlags.bDecals);
 			ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
 			ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
 			ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
@@ -891,6 +894,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
 			ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
 			ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
+			ImGui::Checkbox("Decal", &Opts.ShowFlags.bDecal);
 
 			ImGui::Separator();
 

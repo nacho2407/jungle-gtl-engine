@@ -79,3 +79,10 @@ struct PS_Input_ColorWorld
 };
 
 #endif // VERTEX_LAYOUTS_HLSL
+
+struct PS_Output
+{
+    float4 color : SV_TARGET0;
+    float4 normal : SV_TARGET1;
+    float4 Albedo : SV_TARGET2;
+};

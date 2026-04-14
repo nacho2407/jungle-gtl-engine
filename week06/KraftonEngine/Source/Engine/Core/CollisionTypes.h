@@ -6,6 +6,7 @@ struct FHitResult
     class UPrimitiveComponent* HitComponent = nullptr;
 
     float Distance = 3.402823466e+38F; // FLT_MAX
+	float Time = 1.0f;
     FVector WorldHitLocation = { 0, 0, 0 };
     FVector WorldNormal = { 0, 0, 0 };
     int FaceIndex = -1; 

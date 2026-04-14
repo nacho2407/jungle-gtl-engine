@@ -22,8 +22,10 @@ PS_Input_Full VS(VS_Input_PNCT input)
     return output;
 }
 
-float4 PS(PS_Input_Full input) : SV_TARGET
+PS_Output PS(PS_Input_Full input)
 {
+    PS_Output output;
+    
     float4 texColor = g_txColor.Sample(g_Sample, input.texcoord);
 
     // Unbound SRV는 (0,0,0,0)을 반환 — 텍스처 미바인딩 시 white로 대체
@@ -36,6 +38,12 @@ float4 PS(PS_Input_Full input) : SV_TARGET
 
     float4 finalColor = texColor * input.color /* * (diffuse + ambient)*/;
     finalColor.a = texColor.a * input.color.a;
-
-    return float4(ApplyWireframe(finalColor.rgb), finalColor.a);
+    output.color = float4(ApplyWireframe(finalColor.rgb), finalColor.a);
+    
+    float3 normal = normalize(input.normal);
+    output.normal = float4(normal * 0.5f + 0.5f, 1.0f);
+    
+    output.Albedo = texColor;
+    
+    return output;
 }

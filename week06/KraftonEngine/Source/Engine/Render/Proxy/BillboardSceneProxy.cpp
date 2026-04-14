@@ -80,7 +80,7 @@ void FBillboardSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	FVector BillboardForward = Bus.GetCameraForward() * -1.0f;
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(BillboardForward, Bus.GetCameraRight() * -1.0f, Bus.GetCameraUp());
-	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale())
+	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetBillboardScale())
 		* RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);

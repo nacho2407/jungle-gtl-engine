@@ -27,6 +27,14 @@ struct FPassBatcherBinding
 	explicit operator bool() const { return DrawBatch != nullptr; }
 };
 
+// 패스별 리소스 바인딩 (예: Decal의 DepthSRV)
+struct FPassResourceBinding
+{
+	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> BindResources;
+	std::function<void(ERenderPass, const FRenderBus&, ID3D11DeviceContext*)> UnbindResources;
+	explicit operator bool() const { return BindResources != nullptr; }
+};
+
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
 {
@@ -54,6 +62,7 @@ public:
 private:
 	void InitializePassRenderStates();
 	void InitializePassBatchers();
+	void InitializePassResourceBindings();
 
 	void ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode ViewMode);
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
@@ -87,14 +96,18 @@ private:
 	void DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void DrawDecalGeometry(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State);
 
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
+	void DrawDecalPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
+	void DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 	void DrawPostProcessFXAA(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	void DrawPostProcessSceneDepth(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 private:
 	FD3DDevice Device;
@@ -113,4 +126,5 @@ private:
 
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
+	FPassResourceBinding PassResourceBindings[(uint32)ERenderPass::MAX];
 };

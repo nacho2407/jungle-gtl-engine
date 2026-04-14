@@ -22,6 +22,7 @@ namespace Key
 	// Slot Render Options
 	constexpr const char* ViewMode = "ViewMode";
 	constexpr const char* bPrimitives = "bPrimitives";
+	constexpr const char* bDecals = "bDecals";
 	constexpr const char* bGrid = "bGrid";
 	constexpr const char* bWorldAxis = "bWorldAxis";
 	constexpr const char* bGizmo = "bGizmo";
@@ -34,6 +35,7 @@ namespace Key
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
 	constexpr const char* EnableFXAA = "EnableFXAA";
+	constexpr const char* bDecal = "bDecal";
 
 	// FXAA
 	constexpr const char* FXAA = "FXAA";
@@ -111,6 +113,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::ViewMode] = static_cast<int32>(Opts.ViewMode);
 		SlotObj[Key::ViewportType] = static_cast<int32>(Opts.ViewportType);
 		SlotObj[Key::bPrimitives] = Opts.ShowFlags.bPrimitives;
+		SlotObj[Key::bDecals] = Opts.ShowFlags.bDecals;
 		SlotObj[Key::bGrid] = Opts.ShowFlags.bGrid;
 		SlotObj[Key::bWorldAxis] = Opts.ShowFlags.bWorldAxis;
 		SlotObj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
@@ -123,6 +126,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
 		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
 		SlotObj[Key::EnableFXAA] = Opts.bEnableFXAA;
+		SlotObj[Key::bDecal] = Opts.ShowFlags.bDecal;
 		SlotsArr.append(SlotObj);
 	}
 	LayoutObj[Key::Slots] = SlotsArr;
@@ -254,6 +258,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.ViewportType = static_cast<ELevelViewportType>(S[Key::ViewportType].ToInt());
 				if (S.hasKey(Key::bPrimitives))
 					Opts.ShowFlags.bPrimitives = S[Key::bPrimitives].ToBool();
+				if (S.hasKey(Key::bDecals))
+					Opts.ShowFlags.bDecals = S[Key::bDecals].ToBool();
 				if (S.hasKey(Key::bGrid))
 					Opts.ShowFlags.bGrid = S[Key::bGrid].ToBool();
 				if (S.hasKey(Key::bWorldAxis))
@@ -276,6 +282,10 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
 				if (S.hasKey(Key::CameraRotateSensitivity))
 					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
+				if (S.hasKey(Key::EnableFXAA))
+					Opts.bEnableFXAA = S[Key::EnableFXAA].ToBool();
+				if (S.hasKey(Key::bDecal))
+					Opts.ShowFlags.bDecal = S[Key::bDecal].ToBool();
 				if (S.hasKey(Key::EnableFXAA))
 					Opts.bEnableFXAA = S[Key::EnableFXAA].ToBool();
 			}

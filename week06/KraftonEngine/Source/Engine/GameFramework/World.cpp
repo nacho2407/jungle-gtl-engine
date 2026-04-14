@@ -28,6 +28,12 @@ UWorld::~UWorld()
 	{
 		EndPlay();
 	}
+
+	if (PersistentLevel)
+	{
+		UObjectManager::Get().DestroyObject(PersistentLevel);
+		PersistentLevel = nullptr;
+	}
 }
 
 UObject* UWorld::Duplicate(UObject* NewOuter) const
@@ -57,7 +63,17 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
 void UWorld::DestroyActor(AActor* Actor)
 {
 	// remove and clean up
-	if (!Actor) return;
+	if (!Actor || Actor->IsPendingDestroy()) return;
+
+	Actor->MarkPendingDestroy();
+	for (UActorComponent* Component : Actor->GetComponents())
+	{
+		if (Component)
+		{
+			Component->MarkPendingDestroy();
+		}
+	}
+
 	Actor->EndPlay();
 	// Remove from actor list
 	PersistentLevel->RemoveActor(Actor);
@@ -65,6 +81,15 @@ void UWorld::DestroyActor(AActor* Actor)
 	MarkWorldPrimitivePickingBVHDirty();
 	InvalidateVisibleSet();
 	Partition.RemoveActor(Actor);
+
+	if (bIsTicking)
+	{
+		if (std::find(PendingDestroyActors.begin(), PendingDestroyActors.end(), Actor) == PendingDestroyActors.end())
+		{
+			PendingDestroyActors.push_back(Actor);
+		}
+		return;
+	}
 
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
@@ -82,11 +107,32 @@ void UWorld::AddActor(AActor* Actor)
 	InsertActorToOctree(Actor);
 	MarkWorldPrimitivePickingBVHDirty();
 	InvalidateVisibleSet();
+	
+	Actor->PrimaryActorTick.RegisterTickFunction();
 
 	// PIE 중 Duplicate(Ctrl+D)나 SpawnActor로 들어온 액터에도 BeginPlay를 보장.
 	if (bHasBegunPlay && !Actor->HasActorBegunPlay())
 	{
 		Actor->BeginPlay();
+	}
+}
+
+void UWorld::QueueComponentForDestroy(UActorComponent* Component)
+{
+	if (!Component)
+	{
+		return;
+	}
+
+	Component->MarkPendingDestroy();
+
+	if (bIsTicking)
+	{
+		if (std::find(PendingDestroyComponents.begin(), PendingDestroyComponents.end(), Component) == PendingDestroyComponents.end())
+		{
+			PendingDestroyComponents.push_back(Component);
+		}
+		return;
 	}
 }
 
@@ -390,6 +436,13 @@ void UWorld::BeginPlay()
 
 	if (PersistentLevel)
 	{
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (Actor)
+			{
+				Actor->PrimaryActorTick.RegisterTickFunction();
+			}
+		}
 		PersistentLevel->BeginPlay();
 	}
 }
@@ -406,8 +459,11 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 #if _DEBUG
 	DebugDrawQueue.Tick(DeltaTime);
 #endif
-
+	bIsTicking = true;
 	TickManager.Tick(this, DeltaTime, TickType);
+
+	bIsTicking = false;
+	FlushPendingDestroy();
 }
 
 void UWorld::EndPlay()
@@ -425,7 +481,29 @@ void UWorld::EndPlay()
 	// Clear spatial partition while actors/components are still alive.
 	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.
 	Partition.Reset(FBoundingBox());
+	FlushPendingDestroy();
 
 	PersistentLevel->Clear();
 	MarkWorldPrimitivePickingBVHDirty();
+}
+
+void UWorld::FlushPendingDestroy()
+{
+	for (UActorComponent* Component : PendingDestroyComponents)
+	{
+		if (Component)
+		{
+			UObjectManager::Get().DestroyObject(Component);
+		}
+	}
+	PendingDestroyComponents.clear();
+
+	for (AActor* Actor : PendingDestroyActors)
+	{
+		if (Actor)
+		{
+			UObjectManager::Get().DestroyObject(Actor);
+		}
+	}
+	PendingDestroyActors.clear();
 }

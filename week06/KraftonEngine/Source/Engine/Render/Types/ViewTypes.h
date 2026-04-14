@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -7,12 +7,14 @@ enum class EViewMode : int32
 	Lit = 0,
 	Unlit,
 	Wireframe,
+	SceneDepthBuffer,
 	Count
 };
 
 struct FShowFlags
 {
 	bool bPrimitives = true;
+	bool bDecals = true;
 	bool bGrid = true;
 	bool bWorldAxis = true;
 	bool bGizmo = true;
@@ -20,6 +22,7 @@ struct FShowFlags
 	bool bBoundingVolume = false;
 	bool bDebugDraw = true;
 	bool bOctree = false;
+	bool bDecal = true;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

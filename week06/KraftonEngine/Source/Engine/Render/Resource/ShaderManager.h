@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Render/Resource/Shader.h"
@@ -10,12 +10,16 @@ enum class EShaderType : uint32
 	Gizmo,
 	Editor,
 	StaticMesh,
+	Decal,
+	HeightFogPostProcess,
+	SceneDepthProcess,
 	OutlinePostProcess,
 	FXAA,
 	Font,
 	OverlayFont,
 	SubUV,
 	Billboard,
+	Fireball,
 	MAX,
 };
 

@@ -3,31 +3,6 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 
-namespace
-{
-	bool ShouldDispatchActorTick(const AActor* Actor, ELevelTick TickType)
-	{
-		if (!Actor)
-		{
-			return false;
-		}
-
-		switch (TickType)
-		{
-		case LEVELTICK_ViewportsOnly:
-			return Actor->bTickInEditor;
-
-		case LEVELTICK_All:
-		case LEVELTICK_TimeOnly:
-		case LEVELTICK_PauseTick:
-			return Actor->bNeedsTick && Actor->HasActorBegunPlay();
-
-		default:
-			return false;
-		}
-	}
-}
-
 void FTickFunction::RegisterTickFunction()
 {
 	bRegistered = true;
@@ -40,78 +15,76 @@ void FTickFunction::UnRegisterTickFunction()
 	TickAccumulator = 0.0f;
 }
 
-void FTickManager::Tick(UWorld* World, float DeltaTime, ELevelTick TickType)
+
+bool FTickFunction::ConsumeInterval(float DeltaTime, float& OutTickDeltaTime)
 {
-	GatherTickFunctions(World, TickType);
-
-	for (int GroupIndex = 0; GroupIndex < TG_MAX; ++GroupIndex)
+	if (TickInterval <= 0.0f)
 	{
-		const ETickingGroup CurrentGroup = static_cast<ETickingGroup>(GroupIndex);
-		for (FTickFunction* TickFunction : TickFunctions)
-		{
-			if (!TickFunction || TickFunction->GetTickGroup() != CurrentGroup)
-			{
-				continue;
-			}
+		OutTickDeltaTime = DeltaTime;
+		return true;
+	}
+	
+	TickAccumulator += DeltaTime;
+	if (TickAccumulator < TickInterval)
+	{
+		return false;
+	}
+	
+    OutTickDeltaTime = TickAccumulator;
+    TickAccumulator = 0.0f;
+	return true;
+}
 
-			if (!TickFunction->CanTick(TickType))
-			{
-				continue;
-			}
+bool FTickFunction::IsTickFunctionRegistered() const
+{
+	return bRegistered;
+}
 
-			if (!TickFunction->ConsumeInterval(DeltaTime))
-			{
-				continue;
-			}
+bool FTickFunction::CanTick(ELevelTick TickType) const
+{
+    // 1. 기본 유효성 검사 + 나중에 Pendkill관리도 포함해야함
+    if (!IsTargetValid())
+    {
+        return false;
+    }
 
-			TickFunction->ExecuteTick(DeltaTime, TickType);
-		}
+	if(!IsTickEnabled()) return false;
+
+    switch (TickType)
+    {
+    case LEVELTICK_All:
+        // 일반 게임 플레이 — BeginPlay 완료된 것만
+        return HasBegunPlay();
+ 
+    case LEVELTICK_ViewportsOnly:
+        // 에디터 — bTickInEditor 플래그만 확인
+        return bTickInEditor;
+	case LEVELTICK_TimeOnly:
+		// 일시정지 중 시간만 진행
+        // 타이머·딜레이 등 엔진 내부 시간 시스템만 이 타입을 소비함
+        return false;
+	case LEVELTICK_PauseTick:
+        // 일시정지 중 예외적으로 Tick이 허용된 것만
+        // BeginPlay는 완료돼 있어야 하고, bTickEvenWhenPaused도 true여야 함
+		return HasBegunPlay() && bTickEvenWhenPaused;
+ 
+    default:
+        return false;
 	}
 }
 
-void FTickManager::Reset()
+// =======================================================================
+// FActorTickFunction
+// =======================================================================
+
+bool FActorTickFunction::IsTargetValid() const
 {
-	TickFunctions.clear();
+    return Target != nullptr && !Target->IsPendingDestroy();
 }
 
-void FTickManager::GatherTickFunctions(UWorld* World, ELevelTick TickType)
+bool FActorTickFunction::HasBegunPlay() const
 {
-	TickFunctions.clear();
-
-	if (!World)
-	{
-		return;
-	}
-
-	for (AActor* Actor : World->GetActors())
-	{
-		if (!ShouldDispatchActorTick(Actor, TickType))
-		{
-			continue;
-		}
-
-		QueueTickFunction(Actor->PrimaryActorTick);
-
-		for (UActorComponent* Component : Actor->GetComponents())
-		{
-			if (!Component)
-			{
-				continue;
-			}
-
-			QueueTickFunction(Component->PrimaryComponentTick);
-		}
-	}
-}
-
-void FTickManager::QueueTickFunction(FTickFunction& TickFunction)
-{
-	if (!TickFunction.bRegistered)
-	{
-		TickFunction.RegisterTickFunction();
-	}
-
-	TickFunctions.push_back(&TickFunction);
+    return Target && Target->HasActorBegunPlay();
 }
 
 void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
@@ -122,9 +95,25 @@ void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
 	}
 }
 
-const char* FActorTickFunction::GetDebugName() const
+const FString FActorTickFunction::GetDebugName() const
 {
 	return Target ? Target->GetTypeInfo()->name : "FActorTickFunction";
+}
+
+// =======================================================================
+// FActorComponentTickFunction
+// =======================================================================
+ 
+bool FActorComponentTickFunction::IsTargetValid() const
+{
+    return Target != nullptr && !Target->IsPendingDestroy();
+}
+
+bool FActorComponentTickFunction::HasBegunPlay() const
+{
+    if (!Target) { return false; }
+    AActor* Owner = Target->GetOwner();
+    return Owner && Owner->HasActorBegunPlay();
 }
 
 void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
@@ -135,7 +124,95 @@ void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickTy
 	}
 }
 
-const char* FActorComponentTickFunction::GetDebugName() const
+const FString FActorComponentTickFunction::GetDebugName() const
 {
 	return Target ? Target->GetTypeInfo()->name : "FActorComponentTickFunction";
+}
+
+// =======================================================================
+// FTickManager
+// =======================================================================
+
+void FTickManager::Tick(UWorld* World, float DeltaTime, ELevelTick TickType)
+{
+	GatherTickFunctions(World, TickType);
+
+	for (int GroupIndex = 0; GroupIndex < TG_MAX; ++GroupIndex)
+	{
+		TArray<FTickFunction*>& GroupTicks = TickFunctionsByGroup[GroupIndex];
+
+		for (FTickFunction* TickFunction : GroupTicks)
+		{
+			if (!TickFunction)
+			{
+				continue;
+			}
+
+			if (!TickFunction->CanTick(TickType))
+			{
+				continue;
+			}
+
+			float totalTick = 0.0f;
+			if (!TickFunction->ConsumeInterval(DeltaTime, totalTick))
+			{
+				continue;
+			}
+
+			TickFunction->ExecuteTick(totalTick, TickType);
+		}
+	}
+}
+
+void FTickManager::Reset()
+{
+	for (TArray<FTickFunction*>& GroupTicks : TickFunctionsByGroup)
+    {
+        GroupTicks.clear();
+    }
+}
+
+void FTickManager::GatherTickFunctions(UWorld* World, ELevelTick TickType)
+{
+	Reset();
+
+	if (!World)
+	{
+		return;
+	}
+
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor)
+        {
+            continue;
+        }
+ 
+        QueueTickFunction(Actor->PrimaryActorTick);
+ 
+        for (UActorComponent* Component : Actor->GetComponents())
+        {
+            if (!Component)
+            {
+                continue;
+            }
+            QueueTickFunction(Component->PrimaryComponentTick);
+        }
+    }
+}
+
+void FTickManager::QueueTickFunction(FTickFunction& TickFunction)
+{
+    if (!TickFunction.IsTickFunctionRegistered())
+    {
+        return;
+    }
+ 
+    const ETickingGroup Group = TickFunction.GetTickGroup();
+    if (Group < 0 || Group >= TG_MAX)
+    {
+        return;
+    }
+ 
+    TickFunctionsByGroup[Group].push_back(&TickFunction);
 }

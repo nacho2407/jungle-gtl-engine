@@ -184,17 +184,30 @@ void FD3DDevice::CreateDepthStencilBuffer()
 	depthStencilDesc.Height = static_cast<uint32>(ViewportInfo.Height);
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;	//	Depth 24bit + Stencil 8bit
+	depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
 	Device->CreateTexture2D(&depthStencilDesc, nullptr, &DepthStencilBuffer);
-	Device->CreateDepthStencilView(DepthStencilBuffer, nullptr, &DepthStencilView);
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	Device->CreateDepthStencilView(DepthStencilBuffer, &dsvDesc, &DepthStencilView);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = 1;
+	Device->CreateShaderResourceView(DepthStencilBuffer, &srvDesc, &DepthStencilSRV);
 }
 
 void FD3DDevice::ReleaseDepthStencilBuffer()
 {
+	SAFE_RELEASE(DepthStencilSRV);
 	SAFE_RELEASE(DepthStencilView);
 	SAFE_RELEASE(DepthStencilBuffer);
 }

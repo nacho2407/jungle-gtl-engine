@@ -32,7 +32,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 
 			if (Args.size() < 2)
 			{
-				AddLog("Usage: stat fps | stat memory | stat none\n");
+				AddLog("Usage: stat fps | stat memory | stat decal | stat none\n");
 				return;
 			}
 
@@ -47,6 +47,11 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			else if (SubCommand == "memory")
 			{
 				StatSystem.ShowMemory(true);
+				AddLog("Overlay stat enabled: memory\n");
+			}
+			else if (SubCommand == "decal")
+			{
+				StatSystem.ShowDecal(true);
 				AddLog("Overlay stat enabled: memory\n");
 			}
 			else if (SubCommand == "none")

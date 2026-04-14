@@ -120,18 +120,12 @@ void UEngine::WorldTick(float DeltaTime)
 
 	// 월드 타입별 Tick 라우팅:
 	// - Editor: bTickInEditor 액터만 TickManager 대상
-	// - PIE/Game: BeginPlay 이후 bNeedsTick 액터만 TickManager 대상
+	// - PIE/Game: BeginPlay 이후 TickManager 대상
 	// - 기타:   시간 갱신만 유지
 	for (FWorldContext& Ctx : WorldList)
 	{
 		UWorld* World = Ctx.World;
 		if (!World) continue;
-
-		// PIE 활성 시 Editor 월드는 완전히 skip
-		if (bHasPIEWorld && Ctx.WorldType == EWorldType::Editor)
-		{
-			continue;
-		}
 
 		const ELevelTick TickType = ToLevelTickType(Ctx.WorldType);
 

@@ -1,4 +1,4 @@
-#include "Viewport/Viewport.h"
+﻿#include "Viewport/Viewport.h"
 
 FViewport::~FViewport()
 {
@@ -60,15 +60,22 @@ bool FViewport::ApplyPendingResize()
 void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
 {
 	if (!RTV) return;
+	if (!NormalRTV) return;
+	if (!AlbedoRTV) return;
+	if (!PostProcessRTV) return;
 
 	const float DefaultColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 	const float* Color = ClearColor ? ClearColor : DefaultColor;
 	D3D11_VIEWPORT VPRect = GetViewportRect();
 
+	Ctx->ClearRenderTargetView(NormalRTV, Color);
+	Ctx->ClearRenderTargetView(AlbedoRTV, Color);
+	Ctx->ClearRenderTargetView(PostProcessRTV, Color);
 	Ctx->ClearRenderTargetView(RTV, Color);
 	Ctx->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	Ctx->OMSetRenderTargets(1, &RTV, DSV);
 	Ctx->RSSetViewports(1, &VPRect);
+
 }
 
 bool FViewport::CreateResources()
@@ -102,6 +109,26 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 
 	hr = Device->CreateShaderResourceView(PostProcessTexture, nullptr, &PostProcessSRV);
+	if (FAILED(hr)) return false;
+
+	// ── Normal 렌더 타깃 텍스처 ──
+	D3D11_TEXTURE2D_DESC NormalDesc = {};
+	NormalDesc.Width = Width;
+	NormalDesc.Height = Height;
+	NormalDesc.MipLevels = 1;
+	NormalDesc.ArraySize = 1;
+	NormalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	NormalDesc.SampleDesc.Count = 1;
+	NormalDesc.Usage = D3D11_USAGE_DEFAULT;
+	NormalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&NormalDesc, nullptr, &NormalTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(NormalTexture, nullptr, &NormalRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(NormalTexture, nullptr, &NormalSRV);
 	if (FAILED(hr)) return false;
 
 	// ── 뎁스/스텐실 (TYPELESS → DSV + StencilSRV) ──
@@ -147,6 +174,26 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(DepthTexture, &StencilSRVDesc, &StencilSRV);
 	if (FAILED(hr)) return false;
 
+	// ── Albedo 렌더 타깃 텍스처 (파이어볼 Tint/색조용 재료) ──
+	D3D11_TEXTURE2D_DESC AlbedoDesc = {};
+	AlbedoDesc.Width = Width;
+	AlbedoDesc.Height = Height;
+	AlbedoDesc.MipLevels = 1;
+	AlbedoDesc.ArraySize = 1;
+	AlbedoDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 일반 색상 포맷
+	AlbedoDesc.SampleDesc.Count = 1;
+	AlbedoDesc.Usage = D3D11_USAGE_DEFAULT;
+	AlbedoDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&AlbedoDesc, nullptr, &AlbedoTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(AlbedoTexture, nullptr, &AlbedoRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(AlbedoTexture, nullptr, &AlbedoSRV);
+	if (FAILED(hr)) return false;
+
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;
 	ViewportRect.TopLeftY = 0.0f;
@@ -170,4 +217,10 @@ void FViewport::ReleaseResources()
 	if (SRV) { SRV->Release(); SRV = nullptr; }
 	if (RTV) { RTV->Release(); RTV = nullptr; }
 	if (RTTexture) { RTTexture->Release(); RTTexture = nullptr; }
+	if (NormalSRV) { NormalSRV->Release(); NormalSRV = nullptr; }
+	if (NormalRTV) { NormalRTV->Release(); NormalRTV = nullptr; }
+	if (NormalTexture) { NormalTexture->Release(); NormalTexture = nullptr; }
+	if (AlbedoSRV) { AlbedoSRV->Release(); AlbedoSRV = nullptr; }
+	if (AlbedoRTV) { AlbedoRTV->Release(); AlbedoRTV = nullptr; }
+	if (AlbedoTexture) { AlbedoTexture->Release(); AlbedoTexture = nullptr; }
 }

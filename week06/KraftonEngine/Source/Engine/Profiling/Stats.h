@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -100,6 +100,31 @@ struct FDrawCallStats
 	static void Reset() { Count = 0; }
 	static void Increment() { ++Count; }
 	static uint32 Get() { return Count; }
+};
+
+// --- Decal Stats ---
+struct FDecalFrameStats
+{
+	int32 VisibleDecals = 0;
+	int32 VisibleReceivers = 0;
+	int32 BroadCandidates = 0;
+	int32 UniqueCandidates = 0;
+	int32 SATAccepted = 0;
+	int32 SubmittedDraws = 0;
+	int32 RenderedDraws = 0;
+};
+
+struct FDecalStats
+{
+	static FDecalFrameStats Current;
+	static FDecalFrameStats Previous;
+
+	// 프레임 경계에서 이전 프레임을 보존하고 Current를 초기화
+	static void Shift() { Previous = Current; Current = {}; }
+
+	static void Reset() { Current = {}; }
+	static FDecalFrameStats& GetMutable() { return Current; }
+	static const FDecalFrameStats& Get() { return Current; }
 };
 
 // --- LOD Distribution Counter ---

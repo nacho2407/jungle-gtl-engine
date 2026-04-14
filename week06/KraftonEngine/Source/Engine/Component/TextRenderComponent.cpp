@@ -41,6 +41,11 @@ void UTextRenderComponent::UpdateWorldAABB() const
 
 bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
+	if (!IsHitTestEnabled())
+	{
+		return false;
+	}
+
 	// Ray 방향으로 빌보드 행렬을 계산 (CachedWorldMatrix는 active 카메라 기준이라 다른 뷰포트에서 틀림)
 	FMatrix PerRayBillboard = ComputeBillboardMatrix(Ray.Direction);
 	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(PerRayBillboard);
@@ -62,8 +67,9 @@ bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHi
 	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
 		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
 	{
-		FVector WorldHitPos = OutlineWorldMatrix.TransformVector(LocalHitPos);
+		FVector WorldHitPos = OutlineWorldMatrix.TransformPositionWithW(LocalHitPos);
 		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+		OutHitResult.HitComponent = this;
 		return true;
 	}
 
@@ -123,22 +129,21 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
+	SetFont(FontName);
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
+	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Text", EPropertyType::String, &Text });
 	OutProps.push_back({ "Font", EPropertyType::Name, &FontName });
 	//OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
 	OutProps.push_back({ "Font Size", EPropertyType::Float, &FontSize, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
-	// TextRender의 GetEditableProperties는 USceneComponent 베이스를 직접 사용한다.
-	USceneComponent::PostEditProperty(PropertyName);
+	UPrimitiveComponent::PostEditProperty(PropertyName);
 
 	if (strcmp(PropertyName, "Font") == 0)
 	{
