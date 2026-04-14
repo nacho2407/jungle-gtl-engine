@@ -107,8 +107,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 		}
 	}
 	
-	//일단 픽셀 셰이더만 리플렉션 적용 (후에 VS와 PS의 상수 버퍼 레이아웃이 다를 경우 주석 해제 후 별도의 map 작성)
-	//ExtractParameters(vertexShaderCSO, ShaderParameterLayout);
+	ExtractCBufferInfo(vertexShaderCSO, ShaderParameterLayout);
 	ExtractCBufferInfo(pixelShaderCSO, ShaderParameterLayout);
 
 	vertexShaderCSO->Release();
@@ -170,6 +169,9 @@ void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialPa
 		D3D11_SHADER_INPUT_BIND_DESC BindDesc;
 		Reflector->GetResourceBindingDescByName(CBDesc.Name, &BindDesc);
 		UINT SlotIndex = BindDesc.BindPoint; // 이것이 b0, b1의 숫자입니다.
+
+		if (SlotIndex != 2 && SlotIndex != 3)  // b2, b3만 저장
+			continue;
 
 		for (UINT j = 0; j < CBDesc.Variables; ++j)
 		{

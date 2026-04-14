@@ -156,6 +156,11 @@ bool UMaterial::SetTextureParameter(const FString& ParamName, UTexture2D* Textur
 	return true;
 }
 
+bool UMaterial::SetMatrixParameter(const FString& ParamName, const FMatrix& Value)
+{
+	return SetParameter(ParamName, Value.Data, sizeof(float) * 16);
+}
+
 bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) const
 {
 	FMaterialParameterInfo Info;
@@ -204,33 +209,23 @@ bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTe
 	return true;
 }
 
+bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) const
+{
+	/*기존 GetVector4Parameter 패턴이랑 동일하고 reinterpret_cast 대신 memcpy 쓴 건 __m128 유니온 때문에 alignment 문제 생길 수 있어서*/
+	FMaterialParameterInfo Info;
+	if (!Template->GetParameterInfo(ParamName, Info)) return false;
+
+	auto It = ConstantBufferMap.find(Info.BufferName);
+	if (It == ConstantBufferMap.end()) return false;
+
+	const uint8* Ptr = It->second->CPUData + Info.Offset;
+	memcpy(Value.Data, Ptr, sizeof(float) * 16);
+	return true;
+}
+
 void UMaterial::Bind(ID3D11DeviceContext* Context)
 {
-	//FShader* Shader = Template->GetShader();
-	//if (!Shader)
-	//{
-	//	return;
-	//}
 
-	//Shader->Bind(Context);
-
-	////Map 전용으로 slot 매핑
-	//for (auto& Pair : ConstantBufferMap)
-	//{
-	//	FMaterialConstantBuffer& Buffer = *Pair.second;
-
-	//	// 데이터가 변경(Dirty)되었다면 
-	//	Buffer.Upload(Context);
-
-	//	ID3D11Buffer* Buf = Buffer.GPUBuffer;
-	//	UINT Slot = static_cast<UINT>(Buffer.SlotIndex); // 캐싱된 슬롯 번호 사용
-
-	//	// VS, PS 등에 바인딩 (현재 패스에 맞게 세팅)
-	//	Context->VSSetConstantBuffers(Slot, 1, &Buf);
-	//	Context->PSSetConstantBuffers(Slot, 1, &Buf);
-	//}
-
-	//텍스쳐 바인딩 로직
 }
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)const

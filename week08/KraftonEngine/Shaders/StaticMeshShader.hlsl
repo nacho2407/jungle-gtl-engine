@@ -6,11 +6,9 @@ SamplerState g_Sample : register(s0);
 
 cbuffer PerShader1 : register(b2)
 {
-
-    float4 SectionColor;
-    float4 DiffuseColor;
     uint bIsUVScroll;
     float3 _matPad;
+    float4 SectionColor;
 };
 
 cbuffer PerShader2 : register(b3)
@@ -47,7 +45,7 @@ float4 PS(PS_Input_Full input) : SV_TARGET
     //float diffuse = max(dot(input.normal, -lightDir), 0.0f);
     //float ambient = 0.2f;
 
-    float4 finalColor = texColor * input.color * DiffuseColor /* * (diffuse + ambient)*/;
+    float4 finalColor = texColor * input.color; /* * (diffuse + ambient)*/;
     finalColor.a = texColor.a * input.color.a;
 
     return float4(ApplyWireframe(finalColor.rgb), finalColor.a);
