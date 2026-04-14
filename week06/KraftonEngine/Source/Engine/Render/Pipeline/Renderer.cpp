@@ -240,7 +240,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		if (bHasBatcher)
 			PassBatchers[i].DrawBatch(CurPass, InRenderBus, Context);
 		else
-			ExecutePass(InRenderBus.GetProxies(CurPass), Context);
+			ExecutePass(CurPass, InRenderBus.GetProxies(CurPass), Context);
 
 		if (ResourceBinding.UnbindResources)
 			ResourceBinding.UnbindResources(CurPass, InRenderBus, Context);
@@ -341,15 +341,14 @@ void FRenderer::InitializePassResourceBindings()
 {
 	// 1. Opaque Pass: G-Buffer 채우기 (배경색과 법선을 동시에 기록)
 	PassResourceBindings[(uint32)ERenderPass::Opaque] = {
-		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			ID3D11RenderTargetView* rtvs[3] = { Bus.GetViewportRTV() , Bus.GetViewportNormalRTV(), Bus.GetViewportAlbedoRTV()};
-			Ctx->OMSetRenderTargets(3, rtvs, Bus.GetViewportDSV());
-		},
-		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			// 패스 종료 시 MRT 바인딩 해제
-			ID3D11RenderTargetView* nullRTVs[3] = { nullptr, nullptr, nullptr };
-			Ctx->OMSetRenderTargets(3, nullRTVs, nullptr);
-		}
+	[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+		ID3D11RenderTargetView* rtvs[3] = { Bus.GetViewportRTV(), Bus.GetViewportNormalRTV(), Bus.GetViewportAlbedoRTV()};
+		Ctx->OMSetRenderTargets(3, rtvs, Bus.GetViewportDSV());
+	},
+	[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+		ID3D11RenderTargetView* rtvs[3] = {Bus.GetViewportRTV(), nullptr, nullptr};
+		Ctx->OMSetRenderTargets(3, rtvs, Bus.GetViewportDSV());
+	}
 	};
 
 	// 2. Decal Pass: 깊이를 읽어 영역 판정 (필요시 Normal도 읽을 수 있게 배치)
@@ -414,11 +413,12 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 // ============================================================
 // 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회
 // ============================================================
-void FRenderer::ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context)
+void FRenderer::ExecutePass(ERenderPass Pass, const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context)
 {
 	SortProxies(Proxies);
 
 	FDrawState State;
+	SetOverrideShader(Pass, State);
 
 	{
 		SCOPE_STAT_CAT("ExecutePass::Draw", "4_ExecutePass");
@@ -483,6 +483,16 @@ void FRenderer::SortProxies(const TArray<const FPrimitiveSceneProxy*>& Proxies)
 
 void FRenderer::BindShader(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
 {
+	if(Proxy.bCanOverrideShader && State.OverrideShader)
+	{
+		if (State.OverrideShader != State.LastShader)
+		{
+			State.OverrideShader->Bind(Ctx);
+			State.LastShader = State.OverrideShader;
+		}
+		return;
+	}
+
 	if (Proxy.Shader && Proxy.Shader != State.LastShader)
 	{
 		Proxy.Shader->Bind(Ctx);
@@ -783,6 +793,16 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 
 	// 7) DSV 재바인딩 (후속 패스에서 뎁스 사용)
 	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+void FRenderer::SetOverrideShader(ERenderPass Pass, FDrawState& State)
+{
+	switch (Pass)
+	{
+	case ERenderPass::SelectionMask:
+		State.OverrideShader = FShaderManager::Get().GetShader(EShaderType::SelectionMask);
+		break;
+	}
 }
 
 void FRenderer::DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context)

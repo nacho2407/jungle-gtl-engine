@@ -1,4 +1,4 @@
-#include "Render/Proxy/StaticMeshSceneProxy.h"
+﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
@@ -49,6 +49,7 @@ namespace
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
+	bCanOverrideShader = true;
 }
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const

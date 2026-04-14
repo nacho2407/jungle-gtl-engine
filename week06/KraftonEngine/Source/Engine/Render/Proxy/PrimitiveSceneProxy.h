@@ -105,6 +105,8 @@ public:
 	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
 	uint32 LastLODUpdateFrame = UINT32_MAX;
 
+	bool bCanOverrideShader = false;
+
 	void MarkPerObjectCBDirty() const { bPerObjectCBDirty = true; }
 	void ClearPerObjectCBDirty() const { bPerObjectCBDirty = false; }
 	bool NeedsPerObjectCBUpload() const { return bPerObjectCBDirty; }

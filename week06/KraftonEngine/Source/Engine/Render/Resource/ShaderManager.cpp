@@ -20,6 +20,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::HeightFogPostProcess].Create(InDevice, L"Shaders/HeightFogPostProcess.hlsl",
 		"VS", "PS", nullptr, 0);
 
+	Shaders[(uint32)EShaderType::SelectionMask].Create(InDevice, L"Shaders/SelectionMask.hlsl", 
+		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
+
 	// PostProcess outline: fullscreen quad (InputLayout 없음)
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl",
 		"VS", "PS", nullptr, 0);

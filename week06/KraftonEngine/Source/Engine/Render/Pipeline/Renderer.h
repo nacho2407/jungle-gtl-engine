@@ -68,7 +68,7 @@ private:
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
 	// 프록시 패스 실행기 — FPrimitiveSceneProxy* 순회, 필드 직접 접근
-	void ExecutePass(const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context);
+	void ExecutePass(ERenderPass Pass, const TArray<const FPrimitiveSceneProxy*>& Proxies, ID3D11DeviceContext* Context);
 
 	// ExecutePass 내부 헬퍼
 	struct FDrawState
@@ -79,6 +79,7 @@ private:
 		ID3D11Buffer* LastPerObjectCB = nullptr;
 		int32        LastUVScroll   = -1;
 		FVector4     LastSectionColor = { -1.0f, -1.0f, -1.0f, -1.0f }; // 초기값: 불일치 보장
+		FShader*	OverrideShader = nullptr;
 
 		bool         bSamplerBound  = false;
 		bool         bMaterialBound  = false;
@@ -104,6 +105,8 @@ private:
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
 	void DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+
+	void SetOverrideShader(ERenderPass Pass, FDrawState& State);
 
 private:
 	FD3DDevice Device;
