@@ -290,6 +290,9 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -452,7 +455,13 @@
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp">
@@ -564,27 +573,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorPlayStreamWidget.cpp" />
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
-    <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
-    <ClCompile Include="Source\Engine\Geometry\OBB.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\PIEController.cpp" />
-    <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
-    <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -705,6 +693,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LineBatchComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
@@ -962,10 +953,16 @@
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\Texture.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h">
@@ -1112,26 +1109,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h" />
-    <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
-    <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
-    <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
-    <ClInclude Include="Source\Engine\Geometry\OBB.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\PIEController.h" />
-    <ClInclude Include="Source\Engine\Input\InputSystem.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
   </ItemGroup>
 </Project>
