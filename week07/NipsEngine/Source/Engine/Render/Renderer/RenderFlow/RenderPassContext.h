@@ -15,4 +15,7 @@ struct FRenderPassContext
     ID3D11Device* Device;
     ID3D11DeviceContext* DeviceContext;
     FRenderResources* RenderResources;
+
+	ID3D11RenderTargetView* FinalRTV;
+    ID3D11ShaderResourceView* FinalSRV;
 };

@@ -21,6 +21,10 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 
 	Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
     OutSRV = RenderTargets->SceneColorSRV;
+    OutRTV = RenderTargets->SceneColorRTV;
+
+	Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
     return true;
 }
 
@@ -32,8 +36,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
     if (Commands.empty())
         return true;
-
-    Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     for (const FRenderCommand& Cmd : Commands)
     {
@@ -92,10 +94,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 {
-	// 스마트 객체로 처리하면 좀 더 좋을 거 같은데
-	// 썼던 자원은 바인딩 해제해주는 것이 이후 스테이지 오염을 막을 수 있음
-	Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
     return true;
 }
 
