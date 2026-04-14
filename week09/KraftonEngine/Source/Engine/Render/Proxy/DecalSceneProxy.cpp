@@ -18,14 +18,19 @@ namespace
 FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
+	DecalCB = new FConstantBuffer();
 	// 최초 1회 초기화
 	UpdateMesh();
 }
 
 FDecalSceneProxy::~FDecalSceneProxy()
 {
-	if(DecalCB)
+	if (DecalCB)
+	{
 		DecalCB->Release();
+		delete DecalCB;
+		DecalCB = nullptr;
+	}
 }
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
@@ -51,9 +56,6 @@ void FDecalSceneProxy::UpdateMaterial()
 		{
 			DiffuseSRV = DiffuseTex->GetSRV();
 		}
-
-		// 머티리얼 상수 버퍼 바인딩
-		DecalCB = DecalMaterial->GetGPUBufferBySlot(2);
 	}
 
 	auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
