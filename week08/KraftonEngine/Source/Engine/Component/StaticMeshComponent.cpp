@@ -76,10 +76,17 @@ UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 
 void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 {
-	// 인덱스가 배열 범위를 벗어나지 않는지 안전 검사 (IsValidIndex 등 사용)
-	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
+	if (ElementIndex >= 0 && ElementIndex < static_cast<int32>(OverrideMaterials.size()))
 	{
 		OverrideMaterials[ElementIndex] = InMaterial;
+
+		// MaterialSlots 동기화 — 씬 저장 시 경로가 올바르게 직렬화되도록
+		if (ElementIndex < static_cast<int32>(MaterialSlots.size()))
+		{
+			MaterialSlots[ElementIndex].Path = InMaterial
+				? InMaterial->GetAssetPathFileName()
+				: "None";
+		}
 
 		// 프록시에 Material dirty 전파
 		MarkProxyDirty(EDirtyFlag::Material);

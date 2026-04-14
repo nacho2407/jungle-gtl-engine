@@ -150,9 +150,6 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Proxy.ExtraCB.Buffer->Update(Ctx, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
 	}
 
-	// 공유 Material CB (섹션별 인라인 데이터용)
-	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Material, sizeof(FMaterialConstants));
-
 	// SelectionMask 커맨드 존재 추적
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
@@ -186,11 +183,8 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
 			Cmd.PerObjectCB = PerObjCB;
-			//Cmd.PerShaderCB[0] = MaterialCB;
 			Cmd.PerShaderCB[0] = Section.MaterialCB[0];
 			Cmd.PerShaderCB[1] = Section.MaterialCB[1];
-
-			Cmd.bInlineMaterialData = true;
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.Pass = Pass;

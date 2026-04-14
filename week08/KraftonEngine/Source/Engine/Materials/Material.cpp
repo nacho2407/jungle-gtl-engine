@@ -7,16 +7,10 @@ IMPLEMENT_CLASS(UMaterial, UObject)
 
 // ─── FMaterialTemplate ───
 
-void FMaterialTemplate::Create(FShader* InShader, ERenderPass InRenderPass)
+void FMaterialTemplate::Create(FShader* InShader)
 {
 	ParameterLayout = InShader->GetParameterLayout(); // 셰이더에서 리플렉션된 파라미터 레이아웃 정보 확보
 	Shader = InShader;
-	RenderPass = InRenderPass;
-}
-
-ERenderPass FMaterialTemplate::GetRenderPass() const
-{
-	return RenderPass;
 }
 
 bool FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const
@@ -126,10 +120,12 @@ UMaterial::~UMaterial()
 }
 
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
+	ERenderPass InRenderPass,
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
 {
 	PathFileName = InPathFileName;
 	Template = InTemplate;
+	RenderPass = InRenderPass;
 
 	ConstantBufferMap = std::move(InBuffers);
 }
@@ -243,15 +239,6 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
 	return true;
 }
 
-void UMaterial::Bind(ID3D11DeviceContext* Context)
-{
-
-}
-
-ERenderPass UMaterial::GetRenderPass() const
-{
-	return Template ? Template->GetRenderPass() : ERenderPass::Opaque;
-}
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)const
 {
@@ -304,9 +291,10 @@ void UMaterial::Serialize(FArchive& Ar)
 			auto It = ConstantBufferMap.find(BufferName);
 			if (It != ConstantBufferMap.end())
 			{
-				// 이미 버퍼가 있으면 CPU 데이터만 덮어씀
+				// 이미 버퍼가 있으면 CPU 데이터 덮어쓰고 GPU에 즉시 업로드
 				Ar.Serialize(It->second->CPUData, Size);
 				It->second->bDirty = true;
+				It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext());
 			}
 			else
 			{
