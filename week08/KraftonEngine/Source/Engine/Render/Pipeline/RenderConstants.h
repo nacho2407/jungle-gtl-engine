@@ -162,5 +162,9 @@ struct FMeshSectionDraw
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 	bool bIsUVScroll = false;
+
+	//PerShader
+	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
+	uint8* CPUData[2];   // CPU 메모리의 실제 값
 };
 

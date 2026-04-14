@@ -229,9 +229,11 @@ void UStaticMeshComponent::PostDuplicate()
 					UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MatPath);
 					if (LoadedMat)
 					{
-						if (!LoadedMat->DiffuseTexture && !LoadedMat->DiffuseTextureFilePath.empty())
+						UTexture2D* DiffuseTex = nullptr;
+						if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex)&& !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
 						{
-							LoadedMat->DiffuseTexture = UTexture2D::LoadFromFile(LoadedMat->DiffuseTextureFilePath, Device);
+							DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
+							LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
 						}
 					}
 					OverrideMaterials[i] = LoadedMat;
@@ -298,13 +300,17 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			{
 				UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(NewMatPath);
 
+
 				if (LoadedMat)
 				{
-					if (!LoadedMat->DiffuseTexture && !LoadedMat->DiffuseTextureFilePath.empty())
+					UTexture2D* DiffuseTex = nullptr;
+					if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex) && !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
 					{
-						// GEngine을 통해 전역 Device를 가져와서 텍스처를 생성합니다.
 						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-						LoadedMat->DiffuseTexture = UTexture2D::LoadFromFile(LoadedMat->DiffuseTextureFilePath, Device);
+
+						DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
+
+						LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
 					}
 
 					// 로드되거나 찾아진 머티리얼을 슬롯에 적용

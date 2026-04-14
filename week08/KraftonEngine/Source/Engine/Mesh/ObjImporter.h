@@ -69,5 +69,6 @@ private:
 	static bool ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>& OutMaterials);
 	static bool Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInfo>& MtlInfos, const FImportOptions& Options, FStaticMesh& OutMesh, TArray<FStaticMaterial>& OutMaterials);
 
+	static FString ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo);
 	static FVector RemapPosition(const FVector& ObjPos, EForwardAxis Axis);
 };
