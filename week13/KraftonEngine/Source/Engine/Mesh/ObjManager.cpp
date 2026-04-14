@@ -12,7 +12,6 @@
 TMap<FString, UStaticMesh*> FObjManager::StaticMeshCache;
 TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
-TArray<FMaterialAssetListItem> FObjManager::AvailableMaterialFiles;
 
 static void EnsureMeshCacheDirExists()
 {
@@ -94,37 +93,6 @@ void FObjManager::ScanMeshAssets()
 	}
 }
 
-void FObjManager::ScanMaterialAssets()
-{
-	AvailableMaterialFiles.clear();
-
-	// .mbin 파일도 .bin과 동일하게 MeshCache 폴더에 생성됨
-	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
-
-	if (!std::filesystem::exists(MeshCacheRoot))
-	{
-		return;
-	}
-
-	const std::filesystem::path ProjectRoot(FPaths::RootDir());
-
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
-	{
-		if (!Entry.is_regular_file()) continue;
-
-		const std::filesystem::path& Path = Entry.path();
-
-		// 확장자가 .mbin인지 확인
-		if (Path.extension() != L".mbin") continue;
-		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
-
-		FMaterialAssetListItem Item;
-		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
-		AvailableMaterialFiles.push_back(std::move(Item));
-	}
-}
-
 void FObjManager::ScanObjSourceFiles()
 {
 	AvailableObjFiles.clear();
@@ -160,11 +128,6 @@ void FObjManager::ScanObjSourceFiles()
 const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
 {
 	return AvailableMeshFiles;
-}
-
-const TArray<FMaterialAssetListItem>& FObjManager::GetAvailableMaterialFiles()
-{
-	return AvailableMaterialFiles;
 }
 
 const TArray<FMeshAssetListItem>& FObjManager::GetAvailableObjFiles()
@@ -225,7 +188,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 
 	// 리프레시
 	ScanMeshAssets();
-	ScanMaterialAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
 
 	return StaticMesh;
 }
@@ -355,7 +318,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	StaticMeshCache[CacheKey] = StaticMesh;
 
 	ScanMeshAssets();
-	ScanMaterialAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
 
 	return StaticMesh;
 }

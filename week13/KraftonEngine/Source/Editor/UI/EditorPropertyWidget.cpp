@@ -21,6 +21,8 @@
 #include <commdlg.h>
 #include <filesystem>
 
+#include "Materials/MaterialManager.h"
+
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
 static FString RemoveExtension(const FString& Path)
@@ -673,8 +675,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			if (bSelectedNone) ImGui::SetItemDefaultFocus();
 
-			// TObjectIterator 대신 FObjManager 파일 목록 스캔 데이터 사용
-			const TArray<FMaterialAssetListItem>& MatFiles = FObjManager::GetAvailableMaterialFiles();
+			// TObjectIterator 대신 FMaterialManager 파일 목록 스캔 데이터 사용
+			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
 			for (const FMaterialAssetListItem& Item : MatFiles)
 			{
 				bool bSelected = (Slot->Path == Item.FullPath);
