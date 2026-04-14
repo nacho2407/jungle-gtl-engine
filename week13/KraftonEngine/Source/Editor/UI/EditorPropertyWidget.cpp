@@ -533,11 +533,19 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	}
 	case EPropertyType::Rotator:
 	{
-		float* Val = static_cast<float*>(Prop.ValuePtr);
-		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
-		if (bChanged && SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+		// FRotator 메모리 레이아웃 [Pitch,Yaw,Roll] → UI X=Roll(X축), Y=Pitch(Y축), Z=Yaw(Z축)
+		FRotator* Rot = static_cast<FRotator*>(Prop.ValuePtr);
+		float RotXYZ[3] = { Rot->Roll, Rot->Pitch, Rot->Yaw };
+		bChanged = ImGui::DragFloat3(Prop.Name.c_str(), RotXYZ, Prop.Speed);
+		if (bChanged)
 		{
-			static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();
+			Rot->Roll = RotXYZ[0];
+			Rot->Pitch = RotXYZ[1];
+			Rot->Yaw = RotXYZ[2];
+			if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+			{
+				static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();
+			}
 		}
 		break;
 	}

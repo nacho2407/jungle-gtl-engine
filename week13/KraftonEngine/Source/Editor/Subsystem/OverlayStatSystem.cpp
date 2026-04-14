@@ -5,6 +5,23 @@
 #include "Engine/Profiling/MemoryStats.h"
 #include <cstdio>
 
+// バイト数を適切な単位 (B / KB / MB / GB) に変換して文字列化
+static int FormatBytes(char* Buffer, int32 BufferSize, const char* Label, uint64 Bytes)
+{
+	const double B  = static_cast<double>(Bytes);
+	const double KB = B / 1024.0;
+	const double MB = KB / 1024.0;
+	const double GB = MB / 1024.0;
+
+	if (GB >= 1.0)
+		return snprintf(Buffer, BufferSize, "%s : %.2f GB", Label, GB);
+	if (MB >= 1.0)
+		return snprintf(Buffer, BufferSize, "%s : %.2f MB", Label, MB);
+	if (KB >= 1.0)
+		return snprintf(Buffer, BufferSize, "%s : %.2f KB", Label, KB);
+	return snprintf(Buffer, BufferSize, "%s : %llu B", Label, static_cast<unsigned long long>(Bytes));
+}
+
 void FOverlayStatSystem::AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const
 {
 	FOverlayStatLine Line;
@@ -18,101 +35,6 @@ void FOverlayStatSystem::RecordPickingAttempt(double ElapsedMs)
 	LastPickingTimeMs = ElapsedMs;
 	AccumulatedPickingTimeMs += ElapsedMs;
 	++PickingAttemptCount;
-}
-
-TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& Editor) const
-{
-	TArray<FOverlayStatGroup> Groups;
-
-	if (bShowFPS)
-	{
-		FOverlayStatGroup Group;
-
-		const FTimer* Timer = Editor.GetTimer();
-		const float FPS = Timer ? Timer->GetDisplayFPS() : 0.0f;
-		const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "FPS : %.1f (%.2f ms)", FPS, MS);
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		Groups.push_back(std::move(Group));
-	}
-
-	if (bShowPickingTime)
-	{
-		FOverlayStatGroup Group;
-
-		{
-			char Buffer[128] = {};
-			const int32 NumAttempts = static_cast<int32>(PickingAttemptCount);
-			const double PickingTimeMS = LastPickingTimeMs;
-			const double AccumulatedTime = AccumulatedPickingTimeMs;
-			snprintf(Buffer, sizeof(Buffer), "Picking Time %.5f ms : Num Attempts %d : Accumulated Time %.5f ms",
-				PickingTimeMS, NumAttempts, AccumulatedTime);
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		Groups.push_back(std::move(Group));
-	}
-
-	if (bShowMemory)
-	{
-		FOverlayStatGroup Group;
-
-		/*{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Memory Allocated : %u", MemoryStats::GetTotalAllocationBytes());
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", MemoryStats::GetTotalAllocationCount());
-			Group.Lines.push_back(FString(Buffer));
-		}*/
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %.2f KB", static_cast<double>(MemoryStats::GetPixelShaderMemory() / 1024.0f));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexShader Memory : %.2f KB", static_cast<double>(MemoryStats::GetVertexShaderMemory() / 1024.0f));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "VertexBuffer Memory : %.2f KB", static_cast<double>(MemoryStats::GetVertexBufferMemory() / 1024.0f));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "IndexBuffer Memory : %.2f KB", static_cast<double>(MemoryStats::GetIndexBufferMemory() / 1024.0f));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "StaticMesh CPU Memory : %.2f KB", static_cast<double>(MemoryStats::GetStaticMeshCPUMemory() / 1024.0f));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		{
-			char Buffer[128] = {};
-			snprintf(Buffer, sizeof(Buffer), "Texture Memory : %.2f KB", static_cast<double>(MemoryStats::GetTextureMemory() / 1024.0f));
-			Group.Lines.push_back(FString(Buffer));
-		}
-
-		Groups.push_back(std::move(Group));
-	}
-
-	return Groups;
 }
 
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
@@ -130,7 +52,7 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	}
 	if (bShowMemory)
 	{
-		EstimatedLineCount += 6;
+		EstimatedLineCount += 8;
 	}
 	OutLines.reserve(EstimatedLineCount);
 
@@ -162,29 +84,27 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 
 	if (bShowMemory)
 	{
-		constexpr int32 MemoryLineCount = 6;
 		char Buffer[128] = {};
-		const double ValuesKB[MemoryLineCount] = {
-			static_cast<double>(MemoryStats::GetPixelShaderMemory() / 1024.0f),
-			static_cast<double>(MemoryStats::GetVertexShaderMemory() / 1024.0f),
-			static_cast<double>(MemoryStats::GetVertexBufferMemory() / 1024.0f),
-			static_cast<double>(MemoryStats::GetIndexBufferMemory() / 1024.0f),
-			static_cast<double>(MemoryStats::GetStaticMeshCPUMemory() / 1024.0f),
-			static_cast<double>(MemoryStats::GetTextureMemory() / 1024.0f),
+
+		// 할당 횟수 (단위 없음)
+		snprintf(Buffer, sizeof(Buffer), "Allocation Count : %u", MemoryStats::GetTotalAllocationCount());
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// 바이트 단위 메모리 — 자동 단위 변환 (B/KB/MB/GB)
+		struct { const char* Label; uint64 Bytes; } MemEntries[] = {
+			{ "Total Allocated",       MemoryStats::GetTotalAllocationBytes() },
+			{ "PixelShader Memory",    MemoryStats::GetPixelShaderMemory() },
+			{ "VertexShader Memory",   MemoryStats::GetVertexShaderMemory() },
+			{ "VertexBuffer Memory",   MemoryStats::GetVertexBufferMemory() },
+			{ "IndexBuffer Memory",    MemoryStats::GetIndexBufferMemory() },
+			{ "StaticMesh CPU Memory", MemoryStats::GetStaticMeshCPUMemory() },
+			{ "Texture Memory",        MemoryStats::GetTextureMemory() },
 		};
 
-		const char* Labels[MemoryLineCount] = {
-			"PixelShader Memory",
-			"VertexShader Memory",
-			"VertexBuffer Memory",
-			"IndexBuffer Memory",
-			"StaticMesh CPU Memory",
-			"Texture Memory",
-		};
-
-		for (int32 Index = 0; Index < MemoryLineCount; ++Index)
+		for (const auto& Entry : MemEntries)
 		{
-			snprintf(Buffer, sizeof(Buffer), "%s : %.2f KB", Labels[Index], ValuesKB[Index]);
+			FormatBytes(Buffer, sizeof(Buffer), Entry.Label, Entry.Bytes);
 			AppendLine(OutLines, CurrentY, FString(Buffer));
 			CurrentY += Layout.LineHeight;
 		}
