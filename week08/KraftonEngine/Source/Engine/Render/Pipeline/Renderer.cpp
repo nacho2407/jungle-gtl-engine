@@ -339,10 +339,8 @@ void FRenderer::Render(const FFrameContext& Frame)
 	// 단일 StateCache — 패스 간 상태 유지 (DSV Read-Only 전환 등)
 	FStateCache Cache;
 	Cache.Reset();
-	Cache.RTV             = Frame.ViewportRTV;
-	Cache.DSV             = Frame.ViewportDSV;
-	Cache.RenderTexture   = Frame.ViewportRenderTexture;
-	Cache.PingPongTexture = Frame.ViewportPingPongTexture;
+	Cache.RTV = Frame.ViewportRTV;
+	Cache.DSV = Frame.ViewportDSV;
 
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
@@ -377,6 +375,7 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 	// 시스템 텍스처 언바인딩
 	ID3D11ShaderResourceView* nullSRV = nullptr;
 	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
 	Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
 
 	Cache.Cleanup(Context);
@@ -407,6 +406,23 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 					ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
 					Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
 				}
+
+				Cache.bForceAll = true;
+			}
+		});
+	}
+
+	// CopySceneColor: FXAA 패스 진입 전 현재 화면 복사 → SceneColorCopySRV로 읽기
+	if (Frame.SceneColorCopyTexture && Frame.ViewportRenderTexture)
+	{
+		PrePassEvents.push_back({ ERenderPass::FXAA, EPassCompare::Equal, true, false,
+			[Context, &Frame, &Cache]()
+			{
+				Context->CopyResource(Frame.SceneColorCopyTexture, Frame.ViewportRenderTexture);
+				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+
+				ID3D11ShaderResourceView* sceneColorSRV = Frame.SceneColorCopySRV;
+				Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &sceneColorSRV);
 
 				Cache.bForceAll = true;
 			}
@@ -611,18 +627,17 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
 				FXAACB->Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
 
+				const FPassRenderState& FXAAState = PassRenderStates[(uint32)ERenderPass::FXAA];
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				Cmd.Shader = FXAAShader;
-				Cmd.DepthStencil = PPState.DepthStencil;
-				Cmd.Blend = PPState.Blend;
-				Cmd.Rasterizer = PPState.Rasterizer;
-				Cmd.Topology = PPState.Topology;
-				Cmd.bUsePingPongRTV = true;
+				Cmd.DepthStencil = FXAAState.DepthStencil;
+				Cmd.Blend = FXAAState.Blend;
+				Cmd.Rasterizer = FXAAState.Rasterizer;
+				Cmd.Topology = FXAAState.Topology;
 				Cmd.VertexCount = 3;
-				Cmd.DiffuseSRV = Frame.ViewportPingPongSRV;
 				Cmd.PerShaderCB[0] = FXAACB;
-				Cmd.Pass = ERenderPass::PostProcess;
-				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FXAAShader, nullptr, Frame.ViewportPingPongSRV, 3);
+				Cmd.Pass = ERenderPass::FXAA;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::FXAA, FXAAShader, nullptr, nullptr, 0);
 			}
 		}
 	}
@@ -682,6 +697,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::FXAA]        = { EDepthStencilState::NoDepth,      EBlendState::Opaque,     ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };

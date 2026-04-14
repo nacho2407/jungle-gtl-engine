@@ -25,10 +25,9 @@ void FFrameContext::SetViewportInfo(const FViewport* VP)
 	ViewportHeight   = static_cast<float>(VP->GetHeight());
 	ViewportRTV             = VP->GetRTV();
 	ViewportDSV             = VP->GetDSV();
-	ViewportPingPongRTV     = VP->GetPingPongRTV();
-	ViewportPingPongSRV     = VP->GetPingPongSRV();
+	SceneColorCopySRV       = VP->GetSceneColorCopySRV();
+	SceneColorCopyTexture   = VP->GetSceneColorCopyTexture();
 	ViewportRenderTexture   = VP->GetRTTexture();
-	ViewportPingPongTexture = VP->GetPingPongTexture();
 	DepthTexture            = VP->GetDepthTexture();
 	DepthCopyTexture        = VP->GetDepthCopyTexture();
 	DepthCopySRV            = VP->GetDepthCopySRV();

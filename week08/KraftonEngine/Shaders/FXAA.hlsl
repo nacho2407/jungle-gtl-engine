@@ -1,5 +1,6 @@
 // FXAA.hlsl
 #include "Common/Functions.hlsl"
+#include "Common/SystemResources.hlsl"
 
 cbuffer FXAABuffer : register(b2)
 {
@@ -8,7 +9,8 @@ cbuffer FXAABuffer : register(b2)
     float2 _Pad;
 };
 
-Texture2D<float4> ColorTex : register(t0);
+// SceneColor (t11) is declared in Common/SystemResources.hlsl
+#define ColorTex SceneColor
 SamplerState Sampler : register(s0);
 
 float GetLuma(float3 color)
