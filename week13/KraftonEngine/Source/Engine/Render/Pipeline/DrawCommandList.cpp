@@ -33,10 +33,8 @@ void FStateCache::Reset()
 	LastUVScroll     = 0;
 	LastSectionColor = {};
 
-	RTV             = nullptr;
-	DSV             = nullptr;
-	RenderTexture   = nullptr;
-	PingPongTexture = nullptr;
+	RTV         = nullptr;
+	DSV         = nullptr;
 }
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
@@ -183,19 +181,6 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.Topology = Cmd.Topology;
 	}
 
-
-
-	if (Cmd.bUsePingPongRTV)
-	{
-		if (Cache.DiffuseSRV)
-		{
-			ID3D11ShaderResourceView* nullSRV = nullptr;
-			Ctx->PSSetShaderResources(0, 1, &nullSRV);
-			Cache.DiffuseSRV = nullptr;
-		}
-		Ctx->CopyResource(Cache.PingPongTexture, Cache.RenderTexture);
-		Ctx->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-	}
 
 
 	// --- Shader ---
