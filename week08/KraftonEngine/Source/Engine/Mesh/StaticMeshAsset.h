@@ -60,7 +60,7 @@ struct FStaticMaterial
 		// 3. 머티리얼 속성을 인라인으로 직렬화 (.mbin 없이도 복구 가능)
 		FString InlinePathFileName;
 		FString InlineTexturePath;
-		FVector4 InlineDiffuseColor = { 1.0f, 0.0f, 1.0f, 1.0f };
+		FVector4 InlineDiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{

@@ -447,7 +447,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 // MTL 정보에서 머티리얼 JSON 파일로 변환하는 함수
 FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 {
-	FString JsonPath = "Assets/Materials/" + MtlInfo->MaterialSlotName + ".json";
+	FString JsonPath = "Asset/Materials/" + MtlInfo->MaterialSlotName + ".json";
 
 	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
 	if (std::filesystem::exists(FPaths::ToWide(JsonPath)))
@@ -461,13 +461,27 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 	if (!MtlInfo->map_Kd.empty())
 	{
 		JsonData["Textures"]["DiffuseTexture"] = MtlInfo->map_Kd;
-		JsonData["Parameters"]["DiffuseColor"] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		JsonData["Parameters"]["DiffuseColor"][0] = 1.0f;
+		JsonData["Parameters"]["DiffuseColor"][1] = 1.0f;
+		JsonData["Parameters"]["DiffuseColor"][2] = 1.0f;
+		JsonData["Parameters"]["DiffuseColor"][3] = 1.0f;
+
+		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
 	}
 	else
 	{
-		JsonData["Parameters"]["DiffuseColor"] = {
-			MtlInfo->Kd.X, MtlInfo->Kd.Y, MtlInfo->Kd.Z, 1.0f
-		};
+		JsonData["Parameters"]["DiffuseColor"][0] = MtlInfo->Kd.X;
+		JsonData["Parameters"]["DiffuseColor"][1] = MtlInfo->Kd.Y;
+		JsonData["Parameters"]["DiffuseColor"][2] = MtlInfo->Kd.Z;
+		JsonData["Parameters"]["DiffuseColor"][3] = 1.0f;
+
+		JsonData["Parameters"]["SectionColor"][0] = MtlInfo->Kd.X;
+		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
+		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
+		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
 	}
 
 	std::ofstream File(FPaths::ToWide(JsonPath));
