@@ -9,9 +9,10 @@
 #include "Engine/Mesh/ObjManager.h"
 #include "Materials/Material.h"
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Engine/Runtime/Engine.h"
 #include <memory>
 #include <algorithm>
-
+#include "Texture/Texture2D.h"
 // Cooked Data 내부용 정점
 struct FNormalVertex
 {
@@ -52,20 +53,20 @@ struct FStaticMaterial
 		FString MatPath;
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			MatPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->PathFileName);
+			MatPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->GetAssetPathFileName());
 		}
 		Ar << MatPath;
 
 		// 3. 머티리얼 속성을 인라인으로 직렬화 (.mbin 없이도 복구 가능)
 		FString InlinePathFileName;
 		FString InlineTexturePath;
-		FVector4 InlineDiffuseColor = { 1.0f, 0.0f, 1.0f, 1.0f };
+		FVector4 InlineDiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			InlinePathFileName = Mat.MaterialInterface->PathFileName;
-			InlineTexturePath = Mat.MaterialInterface->DiffuseTextureFilePath;
-			InlineDiffuseColor = Mat.MaterialInterface->DiffuseColor;
+			InlinePathFileName = Mat.MaterialInterface->GetAssetPathFileName();
+			InlineTexturePath = Mat.MaterialInterface->GetTexturePathFileName("DiffuseTexture");
+			Mat.MaterialInterface->GetVector4Parameter("DiffuseColor", InlineDiffuseColor);
 		}
 
 		Ar << InlinePathFileName;
@@ -85,11 +86,12 @@ struct FStaticMaterial
 			}
 
 			// .mbin 로드 실패 시 인라인 데이터로 복구
-			if (Mat.MaterialInterface && Mat.MaterialInterface->PathFileName.empty())
+			if (Mat.MaterialInterface && Mat.MaterialInterface->GetAssetPathFileName().empty())
 			{
-				Mat.MaterialInterface->PathFileName = InlinePathFileName;
-				Mat.MaterialInterface->DiffuseTextureFilePath = InlineTexturePath;
-				Mat.MaterialInterface->DiffuseColor = InlineDiffuseColor;
+				Mat.MaterialInterface->SetAssetPathFileName(InlinePathFileName);
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				Mat.MaterialInterface->SetTextureParameter("DiffuseTexture", UTexture2D::LoadFromFile(InlineTexturePath, Device));
+				Mat.MaterialInterface->SetVector4Parameter("DiffuseColor", InlineDiffuseColor);
 			}
 		}
 

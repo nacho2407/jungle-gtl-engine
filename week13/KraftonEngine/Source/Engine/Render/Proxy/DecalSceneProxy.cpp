@@ -1,12 +1,13 @@
-﻿#include "Render/Proxy/DecalSceneProxy.h"
+#include "Render/Proxy/DecalSceneProxy.h"
+
 #include "Component/DecalComponent.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Runtime/Engine.h"
 
 namespace
 {
 	struct FDecalConstants
 	{
+		FMatrix WorldToDecal;
 		FVector4 Color;
 	};
 }
@@ -31,15 +32,16 @@ UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 void FDecalSceneProxy::UpdateMaterial()
 {
 	UDecalComponent* DecalComp = GetDecalComponent();
-	if (!DecalComp) return;
-
-	DecalTexture = DecalComp->GetTexture();
-	if (!SectionDraws.empty())
+	if (!DecalComp)
 	{
-		SectionDraws[0].DiffuseSRV = DecalTexture ? DecalTexture->SRV : nullptr;
+		return;
 	}
 
-	auto& CB = ExtraCB.Bind<FDecalConstants>(&DecalCB, ECBSlot::PerShader1);
+	DecalTexture = DecalComp->GetTexture();
+	DiffuseSRV = DecalTexture ? DecalTexture->SRV : nullptr;
+
+	auto& CB = ExtraCB.Bind<FDecalConstants>(&DecalCB, ECBSlot::PerShader0);
+	CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
 	CB.Color = DecalComp->GetColor();
 }
 
@@ -47,41 +49,9 @@ void FDecalSceneProxy::UpdateMesh()
 {
 	UpdateMaterial();
 
-	UDecalComponent* DecalComp = GetDecalComponent();
-	if (!DecalComp) return;
-
-	// 1. 컴포넌트가 계산해둔 합쳐진 메쉬 데이터(CombinedDecalMeshData)를 가져옵니다.
-	const TMeshData<FVertexPNCT>* NewMeshData = DecalComp->GetDecalMeshData();
-
-	// 2. 데이터가 비어있으면 렌더링하지 않도록 처리
-	if (NewMeshData == nullptr || NewMeshData->Vertices.empty())
-	{
-		this->MeshBuffer = nullptr;
-		this->SectionDraws.clear();
-		return;
-	}
-
-	// 3. FMeshBuffer를 D3D11Device를 통해 생성 및 업데이트 (GPU 버퍼 할당)
-	// ID3D11Device는 GEngine이나 FEngineContext 등을 통해 가져올 수 있습니다.
-	DecalDynamicMeshBuffer.Create(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), *NewMeshData);
-
-	// 4. 기반 클래스(FPrimitiveSceneProxy)의 포인터가 내 동적 버퍼를 가리키게 합니다.
-	this->MeshBuffer = &DecalDynamicMeshBuffer;
-
-	// 5. SectionDraws 세팅 (렌더러가 이 정보를 보고 DrawIndexed를 호출함)
-	this->SectionDraws.clear();
-	FMeshSectionDraw DrawCmd;
-	DrawCmd.FirstIndex = 0;
-	DrawCmd.IndexCount = NewMeshData->Indices.size();
-	DrawCmd.DiffuseColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	if (DecalTexture)
-	{
-		DrawCmd.DiffuseSRV = DecalTexture->SRV;
-	}
-
-	this->SectionDraws.push_back(DrawCmd);
-
-	this->Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
-	this->Pass = ERenderPass::Decal;
+	MeshBuffer = nullptr;
+	SectionDraws.clear();
+	Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
+	Pass = ERenderPass::Decal;
+	bSupportsOutline = false;
 }

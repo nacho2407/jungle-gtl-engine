@@ -6,6 +6,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/DecalActor.h"
+#include "GameFramework/FakeLightActor.h"
 #include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
 
@@ -67,6 +68,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 			case 3: // Height Fog
 			{
 				AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 4: // FakeLight
+			{
+				AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
