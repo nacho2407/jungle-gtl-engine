@@ -133,7 +133,7 @@ struct FConstantBufferBinding
 	uint32 Size = 0;					// 업로드할 바이트 수
 	uint32 Slot = 0;					// VS/PS CB 슬롯
 
-	static constexpr size_t kMaxDataSize = 64;
+	static constexpr size_t kMaxDataSize = 128;
 	alignas(16) uint8 Data[kMaxDataSize] = {};
 
 	// Buffer/Size/Slot
@@ -170,5 +170,9 @@ struct FMeshSectionDraw
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 	bool bIsUVScroll = false;
+
+	//PerShader
+	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
+	uint8* CPUData[2];   // CPU 메모리의 실제 값
 };
 
