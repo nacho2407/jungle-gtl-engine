@@ -579,15 +579,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\FakeLightShader.hlsl">
-      <ObjectFileOutput>C:\Projects\Jungle_Week6_Team1\KraftonEngine\Bin\Release\%(Filename).cso</ObjectFileOutput>
-      <TrackerLogDirectory>C:\Projects\Jungle_Week6_Team1\KraftonEngine\Build\Release\KraftonEngine.tlog\</TrackerLogDirectory>
-      <EntryPointName>main</EntryPointName>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ShaderModel>4.0_level_9_3</ShaderModel>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <DisableOptimizations>false</DisableOptimizations>
-      <EnableDebuggingInformation>false</EnableDebuggingInformation>
-      <ExcludedFromBuild>true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='FPSOptimization|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Gizmo.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

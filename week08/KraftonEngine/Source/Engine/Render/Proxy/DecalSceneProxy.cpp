@@ -1,7 +1,10 @@
-#include "Render/Proxy/DecalSceneProxy.h"
+﻿#include "Render/Proxy/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
 #include "Render/Resource/ShaderManager.h"
+
+#include "Materials/Material.h"
+#include "Texture/Texture2D.h"
 
 namespace
 {
@@ -21,7 +24,8 @@ FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 
 FDecalSceneProxy::~FDecalSceneProxy()
 {
-	DecalCB.Release();
+	if(DecalCB)
+		DecalCB->Release();
 }
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
@@ -37,10 +41,22 @@ void FDecalSceneProxy::UpdateMaterial()
 		return;
 	}
 
-	DecalTexture = DecalComp->GetTexture();
-	DiffuseSRV = DecalTexture ? DecalTexture->SRV : nullptr;
+	DecalMaterial = DecalComp->GetMaterial();
+	DiffuseSRV = nullptr;
 
-	auto& CB = ExtraCB.Bind<FDecalConstants>(&DecalCB, ECBSlot::PerShader0);
+	if (DecalMaterial)
+	{
+		UTexture2D* DiffuseTex = nullptr;
+		if (DecalMaterial->GetTextureParameter("DiffuseTexture", DiffuseTex))
+		{
+			DiffuseSRV = DiffuseTex->GetSRV();
+		}
+
+		// 머티리얼 상수 버퍼 바인딩
+		DecalCB = DecalMaterial->GetGPUBufferBySlot(2);
+	}
+
+	auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
 	CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
 	CB.Color = DecalComp->GetColor();
 }
@@ -51,7 +67,16 @@ void FDecalSceneProxy::UpdateMesh()
 
 	MeshBuffer = nullptr;
 	SectionDraws.clear();
-	Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
+
+	if (DecalMaterial && DecalMaterial->GetShader())
+	{
+		Shader = DecalMaterial->GetShader();
+	}
+	else
+	{
+		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
+	}
+
 	Pass = ERenderPass::Decal;
 	bSupportsOutline = false;
 }
