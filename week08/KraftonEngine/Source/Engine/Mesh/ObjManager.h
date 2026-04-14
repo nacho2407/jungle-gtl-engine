@@ -19,20 +19,12 @@ struct FMeshAssetListItem
 	FString FullPath;
 };
 
-struct FMaterialAssetListItem
-{
-	FString DisplayName;
-	FString FullPath;
-};
-
-// 에셋 로드/캐싱 관리자
 class FObjManager
 {
 	// path → UStaticMesh* 캐시 (소유권은 UObjectManager)
 	static TMap<std::string, UStaticMesh*> StaticMeshCache;
 	static TArray<FMeshAssetListItem> AvailableMeshFiles;
 	static TArray<FMeshAssetListItem> AvailableObjFiles;
-	static TArray< FMaterialAssetListItem> AvailableMaterialFiles;
 
 
 public:
@@ -45,8 +37,6 @@ public:
 	static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
 	static void ScanObjSourceFiles();
 	static const TArray<FMeshAssetListItem>& GetAvailableObjFiles();
-	static void ScanMaterialAssets();
-	static const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles();
 
 	// 캐시된 StaticMesh GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
 	static void ReleaseAllGPU();
