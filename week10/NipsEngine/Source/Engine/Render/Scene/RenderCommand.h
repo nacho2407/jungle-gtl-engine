@@ -165,6 +165,8 @@ struct FDecalConstants
 	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 };
 
+constexpr uint32 MaxFogLayerCount = 32;
+
 struct FFogConstants
 {
 	FVector4 FogColor;
@@ -175,6 +177,13 @@ struct FFogConstants
     float        FogCutoffDistance;
     float        FogMaxOpacity;
     float        Padding[2];
+};
+
+struct FFogPassConstants
+{
+    uint32 FogCount = 0;
+    float  Padding0[3] = {0.0f, 0.0f, 0.0f};
+    FFogConstants Layers[MaxFogLayerCount] = {};
 };
 
 struct FFXAAConstants

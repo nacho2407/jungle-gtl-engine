@@ -51,7 +51,9 @@ cbuffer OutlineConstants : register(b5)
     float OutlinePadding0;
 };
 
-cbuffer FogBuffer : register(b9)
+#define MAX_FOG_LAYER_COUNT 32
+
+struct FogLayerData
 {
     float4 FogColor;
     float FogDensity;
@@ -60,6 +62,14 @@ cbuffer FogBuffer : register(b9)
     float FogStartDistance;
     float FogCutoffDistance;
     float FogMaxOpacity;
+    float2 FogPadding;
+};
+
+cbuffer FogBuffer : register(b9)
+{
+    uint FogLayerCount;
+    float3 FogBufferPadding;
+    FogLayerData FogLayers[MAX_FOG_LAYER_COUNT];
 };
 
 float4 ApplyMVP(float3 pos)
