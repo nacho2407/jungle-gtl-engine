@@ -124,7 +124,7 @@ public:
 		return false;
 	}
 
-	virtual void Bind(ID3D11DeviceContext* Context) const;
+	virtual void Bind(ID3D11DeviceContext* Context) const override;
 
 	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const;
 
