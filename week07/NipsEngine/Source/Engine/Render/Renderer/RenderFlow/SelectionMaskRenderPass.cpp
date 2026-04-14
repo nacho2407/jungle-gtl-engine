@@ -1,4 +1,4 @@
-#include "SelectionMaskRenderPass.h"
+﻿#include "SelectionMaskRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
@@ -20,9 +20,9 @@ bool FSelectionMaskRenderPass::Begin(const FRenderPassContext* Context)
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    auto DepthStencilState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-    auto BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
-    auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+    auto DepthStencilState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::StencilWrite);
+    auto BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+    auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
     Context->DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
     Context->DeviceContext->RSSetState(RasterizerState);
