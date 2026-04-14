@@ -39,7 +39,15 @@ enum class ERenderCommandType
 struct FPerObjectConstants
 {
 	FMatrix Model;
+	FMatrix WorldInvTrans;
 	FVector4 Color;
+
+	FPerObjectConstants() = default;
+	FPerObjectConstants(const FMatrix& InModel, const FVector4& InColor = FVector4(1, 1, 1, 1))
+		: Model(InModel), Color(InColor)
+	{
+		WorldInvTrans = InModel.GetInverse().GetTransposed();
+	}
 };
 
 struct FFrameConstants

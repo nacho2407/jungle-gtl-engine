@@ -12,6 +12,7 @@ cbuffer FrameBuffer : register(b0)
 cbuffer PerObjectBuffer : register(b1)
 {
     row_major float4x4 Model;
+    row_major float4x4 WorldInvTrans;
     float4 PrimitiveColor; 
 };
 

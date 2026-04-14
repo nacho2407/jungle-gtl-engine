@@ -36,8 +36,7 @@ PSInput mainVS(VSInput input)
     PSInput output;
     output.WorldPos = mul(float4(input.Position, 1.0f), Model).xyz;
 
-    float3x3 normalMatrix = transpose(Inverse3x3((float3x3)Model));
-    output.WorldNormal = normalize(mul(input.Normal, normalMatrix));
+    output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     output.ClipPos = ApplyMVP(input.Position);
     output.ClipPos.z -= 0.1f;
     output.UV = input.UV;
@@ -49,20 +48,16 @@ PSOutput mainPS(PSInput input) : SV_Target
     PSOutput output;
     
     float4 localPos = mul(float4(input.WorldPos, 1.0f), InvDecalWorld);
-
+    
     clip(0.5f - abs(localPos.xyz));
     
     float2 decalUV;
-    decalUV.x = localPos.y + 0.5f;
-    decalUV.y = localPos.z + 0.5f;
+    decalUV.xy = localPos.yz + 0.5f;
     decalUV.y = 1.0f - decalUV.y;
-
+    
     float4 decalTex = DiffuseMap.Sample(SampleState, decalUV);
     
-    float3 finalColor = decalTex.rgb * DecalColorTint.rgb;
-    float finalAlpha = decalTex.a * DecalColorTint.a;
-    
-    output.Color = float4(finalColor, finalAlpha);
+    output.Color = decalTex * DecalColorTint;
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     
     return output;
