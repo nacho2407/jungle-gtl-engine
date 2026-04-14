@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -20,6 +20,7 @@ struct FShowFlags
 	bool bBoundingVolume = false;
 	bool bDebugDraw = true;
 	bool bOctree = false;
+	bool bDecal = true;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

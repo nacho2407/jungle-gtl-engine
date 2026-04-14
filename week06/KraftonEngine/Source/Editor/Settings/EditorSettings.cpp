@@ -32,6 +32,7 @@ namespace Key
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* bDecal = "bDecal";
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
@@ -109,6 +110,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
 		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
+		SlotObj[Key::bDecal] = Opts.ShowFlags.bDecal;
 		SlotsArr.append(SlotObj);
 	}
 	LayoutObj[Key::Slots] = SlotsArr;
@@ -251,6 +253,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
 				if (S.hasKey(Key::CameraRotateSensitivity))
 					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
+				if (S.hasKey(Key::bDecal))
+					Opts.ShowFlags.bDecal = S[Key::bDecal].ToBool();
 			}
 		}
 

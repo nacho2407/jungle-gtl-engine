@@ -40,6 +40,17 @@ void FDecalSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 {
 	const UDecalComponent* Comp = GetDecalComponent();
 	if (!Comp) return;
+	if (Bus.GetShowFlags().bDecal == false)
+	{
+		bVisible = false;
+		return;
+	}
+
+	bVisible = Comp->IsVisible();
+	if (bVisible == false)
+	{
+		return;
+	}
 
 	auto& DecalCB = ExtraCB.Bind<FDecalConstants>(
 		FConstantBufferPool::Get().GetBuffer(ECBSlot::Decal, sizeof(FDecalConstants)),
@@ -51,6 +62,7 @@ void FDecalSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 	DecalCB.DecalForward = FVector(1.0f, 0.0f, 0.0f);
 	DecalCB.DecalOpacity = Comp->GetFadeAlpha();
 	DecalCB.DecalColor = Comp->GetDecalColor();
+
 }
 
 void FDecalSceneProxy::RebuildSectionDraw()
