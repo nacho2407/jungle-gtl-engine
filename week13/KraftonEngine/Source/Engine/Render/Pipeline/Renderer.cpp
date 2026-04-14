@@ -222,7 +222,8 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 	if (!DecalProxy.Shader || !DecalProxy.DiffuseSRV) return;
 
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
-	const FPassRenderState& PassState = PassRenderStates[(uint32)ERenderPass::Decal];
+	const ERenderPass DecalPass = DecalProxy.Pass;
+	const FPassRenderState& PassState = PassRenderStates[(uint32)DecalPass];
 
 	ERasterizerState Rasterizer = PassState.Rasterizer;
 	if (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
@@ -262,8 +263,8 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 			Cmd.PerObjectCB = ReceiverPerObjCB;
 			Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
 			Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
-			Cmd.Pass = ERenderPass::Decal;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
+			Cmd.Pass = DecalPass;
+			Cmd.SortKey = FDrawCommand::BuildSortKey(DecalPass, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
 		};
 
 	if (!ReceiverProxy.SectionDraws.empty())
@@ -694,6 +695,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true};
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };

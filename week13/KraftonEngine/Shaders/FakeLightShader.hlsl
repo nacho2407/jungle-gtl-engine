@@ -42,7 +42,9 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     }
     
     float4 finalColor = texColor * DecalColor;
-    finalColor.a *= 0.5f - length(decalLocalPos); // Decal 중심과의 거리에 따라 투명도 조절
+    float distAlpha = saturate(0.5f - length(decalLocalPos));
+    finalColor.a *= distAlpha;
     
-    return float4(ApplyWireframe(finalColor.rgb), finalColor.a);
+    // Additive 블렌딩을 위해 Alpha를 RGB에 미리 곱함 (ONE, ONE 블렌딩 대응)
+    return float4(finalColor.rgb * finalColor.a, 1.0f);
 }
