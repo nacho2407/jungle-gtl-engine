@@ -84,14 +84,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	MaterialCache.emplace(MatFilePath, Material);
 
 	//템플릿을 통해 material에 넣기
-	InjectDefaultParameters(JsonData, Template, Material);
+	bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
 
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
 
-	//최종적으로 material 저장
-	SaveToJSON(JsonData, MatFilePath);
+	// 새로운 기본 파라미터가 주입된 경우에만 JSON 저장
+	if (bInjected)
+		SaveToJSON(JsonData, MatFilePath);
 
 	return Material;
 }
@@ -199,9 +200,10 @@ void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePa
 	File << JsonData.dump();
 }
 
-void FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material)
+bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material)
 {
 	const auto& Layout = Template->GetParameterInfo();
+	bool bInjected = false;
 
 	for (const auto& Pair : Layout)
 	{
@@ -211,6 +213,8 @@ void FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 		// 이미 JSON에 있으면 스킵
 		if (!JsonData["Parameters"][ParamName].IsNull())
 			continue;
+
+		bInjected = true;
 
 		switch (Info->Size)
 		{
@@ -249,6 +253,8 @@ void FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 				break; // uint, bool 등 특수 케이스는 별도 처리 필요
 		}
 	}
+
+	return bInjected;
 }
 
 FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath, ERenderPass RenderPass)

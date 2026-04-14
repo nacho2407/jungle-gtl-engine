@@ -553,24 +553,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
 			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
 
-			//UMaterial* MaterialObject = FObjManager::GetOrLoadMaterial(TargetSlotName);
-
-			//// 머티리얼 객체가 새로 생성된 경우에만 속성 설정 (캐시에서 로드된 경우 이미 설정되어 있다고 가정)
-			//if (MaterialObject->PathFileName.empty())
-			//{
-			//	MaterialObject->PathFileName = TargetSlotName;
-
-			//	if (!MatchedMaterial->map_Kd.empty())
-			//	{
-			//		MaterialObject->DiffuseTextureFilePath = MatchedMaterial->map_Kd;
-			//		MaterialObject->DiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-			//	}
-			//	else
-			//	{
-			//		MaterialObject->DiffuseColor = { MatchedMaterial->Kd.X, MatchedMaterial->Kd.Y, MatchedMaterial->Kd.Z, 1.0f };
-			//	}
-			//}
-
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
 			NewStaticMaterial.MaterialInterface = MaterialObject;
@@ -579,14 +561,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 		else // Material Slot이 MTL 파일에 정의되어 있지 않은 경우
 		{
-			//UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
 			UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
-
-			//if (DefaultMaterialObject->PathFileName.empty())
-			//{
-			//	DefaultMaterialObject->PathFileName = "None";
-			//	DefaultMaterialObject->DiffuseColor = FallbackColor4;
-			//}
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewEmptyStaticMaterial;
@@ -599,12 +574,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 	// "None" 슬롯이 존재했다면 맨 마지막에 배치
 	if (bHasNoneSlot)
 	{
-		//UMaterial* DefaultMaterialObject = FObjManager::GetOrLoadMaterial("None");
-		//if (DefaultMaterialObject->PathFileName.empty())
-		//{
-		//	DefaultMaterialObject->PathFileName = "None";
-		//	DefaultMaterialObject->DiffuseColor = FallbackColor4;
-		//}
 		UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
 
 		FStaticMaterial NewDefaultStaticMaterial;

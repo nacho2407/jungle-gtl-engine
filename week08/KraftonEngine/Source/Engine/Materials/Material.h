@@ -94,8 +94,6 @@ private:
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 
-	FString DiffuseTextureFilePath;
-	FVector4 DiffuseColor = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
 public:
 	DECLARE_CLASS(UMaterial, UObject)
 	~UMaterial() override;
