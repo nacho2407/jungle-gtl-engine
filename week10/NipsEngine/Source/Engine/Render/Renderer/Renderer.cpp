@@ -186,6 +186,8 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
     RenderPassContext->RenderResources = &Resources;
     RenderPassContext->FontBatcher = &FontBatcher;
     RenderPassContext->SubUVBatcher = &SubUVBatcher;
+    RenderPassContext->GridLineBatcher = &GridLineBatcher;
+    RenderPassContext->EditorLineBatcher = &EditorLineBatcher;
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
