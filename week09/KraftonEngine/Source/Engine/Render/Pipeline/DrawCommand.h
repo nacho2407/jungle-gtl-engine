@@ -45,8 +45,7 @@ struct FDrawCommand
 
 	// ===== Material 인라인 데이터 (Submit 시 PerShaderCB[0]에 업로드) =====
 	FVector4 SectionColor        = { 1.0f, 1.0f, 1.0f, 1.0f };
-	uint32   bIsUVScroll         = 0;
-	bool     bInlineMaterialData = false;  // true면 Submit 시 SectionColor/bIsUVScroll → PerShaderCB[0] 업로드
+	bool     bInlineMaterialData = false;  // true면 Submit 시 SectionColor → PerShaderCB[0] 업로드
 
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)

@@ -56,7 +56,7 @@ private:
 
 	void SaveToJSON(json::JSON& JsonData, const FString& MatFilePath);
 	
-	void InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
+	bool InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
 	
 	const FString DefaultShaderPath = "Shaders/StaticMeshShader.hlsl";
 

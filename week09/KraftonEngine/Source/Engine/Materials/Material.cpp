@@ -316,10 +316,6 @@ void UMaterial::Serialize(FArchive& Ar)
 			}
 		}
 	}
-	Ar << DiffuseTextureFilePath;
-
-	Ar << DiffuseColor;
-	
 	// 4. 텍스처 슬롯 저장 (경로로 저장)
 	uint32 TextureCount = static_cast<uint32>(TextureParameters.size());
 	Ar << TextureCount;

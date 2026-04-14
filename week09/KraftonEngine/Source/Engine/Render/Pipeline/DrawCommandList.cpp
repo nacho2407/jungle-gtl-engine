@@ -29,7 +29,6 @@ void FStateCache::Reset()
 	DiffuseSRV   = nullptr;
 
 	bMaterialDirty = true;
-	LastUVScroll     = 0;
 	LastSectionColor = {};
 
 	RTV         = nullptr;
@@ -267,16 +266,12 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- Material 인라인 데이터 → PerShaderCB[0] 업로드 ---
 	if (Cmd.bInlineMaterialData && Cmd.PerShaderCB[0])
 	{
-		int32 CurUVScroll = static_cast<int32>(Cmd.bIsUVScroll);
 		if (Cache.bMaterialDirty
-			|| CurUVScroll != Cache.LastUVScroll
 			|| memcmp(&Cmd.SectionColor, &Cache.LastSectionColor, sizeof(FVector4)) != 0)
 		{
 			FMaterialConstants MatConstants = {};
-			MatConstants.bIsUVScroll = Cmd.bIsUVScroll;
 			MatConstants.SectionColor = Cmd.SectionColor;
 			//Cmd.PerShaderCB[0]->Update(Ctx, &MatConstants, sizeof(MatConstants));
-			Cache.LastUVScroll = CurUVScroll;
 			Cache.LastSectionColor = Cmd.SectionColor;
 			Cache.bMaterialDirty = false;
 		}

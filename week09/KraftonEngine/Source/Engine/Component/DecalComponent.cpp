@@ -59,13 +59,6 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
 			if (LoadedMat)
 			{
-				UTexture2D* DiffuseTex = nullptr;
-				if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex) && !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
-				{
-					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-					DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
-					LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
-				}
 				SetMaterial(LoadedMat);
 			}
 		}
@@ -81,7 +74,6 @@ void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << MaterialSlot.Path;
-	Ar << MaterialSlot.bUVScroll;
 	Ar << Color;
 	Ar << FadeInDelay;
 	Ar << FadeInDuration;
@@ -98,13 +90,6 @@ void UDecalComponent::PostDuplicate()
 		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
 		if (LoadedMat)
 		{
-			UTexture2D* DiffuseTex = nullptr;
-			if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex) && !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
-			{
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
-				LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
-			}
 			SetMaterial(LoadedMat);
 		}
 	}

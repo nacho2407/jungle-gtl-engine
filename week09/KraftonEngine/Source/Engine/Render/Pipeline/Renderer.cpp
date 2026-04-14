@@ -193,8 +193,6 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.bInlineMaterialData = true;
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
-			Cmd.SectionColor = Section.DiffuseColor;
-			Cmd.bIsUVScroll = Section.bIsUVScroll ? 1u : 0u;
 			Cmd.Pass = Pass;
 			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
 

@@ -28,7 +28,6 @@ struct FStateCache
 
 	// Material 인라인 데이터 추적 (PerShaderCB[0] 업데이트 최소화)
 	bool     bMaterialDirty   = true;
-	int32    LastUVScroll     = 0;
 	FVector4 LastSectionColor = {};
 
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
