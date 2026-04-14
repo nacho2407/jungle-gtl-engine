@@ -8,9 +8,7 @@
 #include "Render/DebugDraw/DrawDebugHelpers.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
-
 #include <algorithm>
-#include <cstring>
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
