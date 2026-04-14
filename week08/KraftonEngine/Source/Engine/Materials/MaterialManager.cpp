@@ -179,6 +179,7 @@ ERenderPass FMaterialManager::StringToRenderPass(const FString& RenderPassStr) c
 	if (RenderPassStr == "Opaque")        return ERenderPass::Opaque;
 	if (RenderPassStr == "AlphaBlend")    return ERenderPass::AlphaBlend;
 	if (RenderPassStr == "Decal")         return ERenderPass::Decal;
+	if (RenderPassStr == "AdditiveDecal") return ERenderPass::AdditiveDecal;
 	if (RenderPassStr == "SelectionMask") return ERenderPass::SelectionMask;
 	if (RenderPassStr == "EditorLines")   return ERenderPass::EditorLines;
 	if (RenderPassStr == "PostProcess")   return ERenderPass::PostProcess;

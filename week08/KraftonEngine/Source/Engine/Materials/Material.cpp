@@ -14,6 +14,11 @@ void FMaterialTemplate::Create(FShader* InShader, ERenderPass InRenderPass)
 	RenderPass = InRenderPass;
 }
 
+ERenderPass FMaterialTemplate::GetRenderPass() const
+{
+	return RenderPass;
+}
+
 bool FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const
 {
 	auto it = ParameterLayout.find(Name);
@@ -226,6 +231,11 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
 void UMaterial::Bind(ID3D11DeviceContext* Context)
 {
 
+}
+
+ERenderPass UMaterial::GetRenderPass() const
+{
+	return Template ? Template->GetRenderPass() : ERenderPass::Opaque;
 }
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)const

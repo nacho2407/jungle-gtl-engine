@@ -71,12 +71,12 @@ void FDecalSceneProxy::UpdateMesh()
 	if (DecalMaterial && DecalMaterial->GetShader())
 	{
 		Shader = DecalMaterial->GetShader();
+		Pass = DecalMaterial->GetRenderPass();
 	}
 	else
 	{
 		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
+		Pass = ERenderPass::Decal;
 	}
-
-	Pass = ERenderPass::Decal;
 	bSupportsOutline = false;
 }
