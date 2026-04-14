@@ -6,13 +6,10 @@
 #include "Render/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
-#include "Engine/Mesh/ObjManager.h"
 #include "Materials/Material.h"
-#include "Editor/UI/EditorConsoleWidget.h"
-#include "Engine/Runtime/Engine.h"
+#include "Materials/MaterialManager.h"
 #include <memory>
 #include <algorithm>
-#include "Texture/Texture2D.h"
 // Cooked Data 내부용 정점
 struct FNormalVertex
 {
@@ -49,49 +46,24 @@ struct FStaticMaterial
 		// 1. 슬롯 이름 직렬화 (메시 섹션과 매핑용)
 		Ar << Mat.MaterialSlotName;
 
-		// 2. 매터리얼 레퍼런스(파일 경로) 직렬화
-		FString MatPath;
+		// 2. Material JSON 경로 직렬화 (Source of Truth = Asset/Materials/*.json)
+		FString JsonPath;
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			MatPath = FObjManager::GetMBinaryFilePath(Mat.MaterialInterface->GetAssetPathFileName());
+			JsonPath = Mat.MaterialInterface->GetAssetPathFileName();
 		}
-		Ar << MatPath;
+		Ar << JsonPath;
 
-		// 3. 머티리얼 속성을 인라인으로 직렬화 (.mbin 없이도 복구 가능)
-		FString InlinePathFileName;
-		FString InlineTexturePath;
-		FVector4 InlineDiffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-		if (Ar.IsSaving() && Mat.MaterialInterface)
-		{
-			InlinePathFileName = Mat.MaterialInterface->GetAssetPathFileName();
-			InlineTexturePath = Mat.MaterialInterface->GetTexturePathFileName("DiffuseTexture");
-			Mat.MaterialInterface->GetVector4Parameter("DiffuseColor", InlineDiffuseColor);
-		}
-
-		Ar << InlinePathFileName;
-		Ar << InlineTexturePath;
-		Ar << InlineDiffuseColor;
-
-		// 4. 로딩 시 머티리얼 복원
+		// 3. 로딩 시 FMaterialManager를 통해 머티리얼 복원
 		if (Ar.IsLoading())
 		{
-			if (!MatPath.empty())
+			if (!JsonPath.empty())
 			{
-				Mat.MaterialInterface = FObjManager::GetOrLoadMaterial(MatPath);
+				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
 			}
 			else
 			{
 				Mat.MaterialInterface = nullptr;
-			}
-
-			// .mbin 로드 실패 시 인라인 데이터로 복구
-			if (Mat.MaterialInterface && Mat.MaterialInterface->GetAssetPathFileName().empty())
-			{
-				Mat.MaterialInterface->SetAssetPathFileName(InlinePathFileName);
-				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				Mat.MaterialInterface->SetTextureParameter("DiffuseTexture", UTexture2D::LoadFromFile(InlineTexturePath, Device));
-				Mat.MaterialInterface->SetVector4Parameter("DiffuseColor", InlineDiffuseColor);
 			}
 		}
 

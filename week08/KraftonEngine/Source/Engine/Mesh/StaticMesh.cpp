@@ -83,16 +83,6 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 	StaticMeshAsset->RenderBuffer = std::make_unique<FMeshBuffer>();
 	StaticMeshAsset->RenderBuffer->Create(InDevice, RenderMeshData);
 
-	// 머티리얼 텍스처 프리로드
-	for (auto& Mat : StaticMaterials)
-	{
-		if (Mat.MaterialInterface && !Mat.MaterialInterface->GetTexturePathFileName("DiffuseTexture").empty())
-		{
-			Mat.MaterialInterface->SetTextureParameter("DiffuseTexture", UTexture2D::LoadFromFile(
-				Mat.MaterialInterface->GetTexturePathFileName("DiffuseTexture"), InDevice));
-		}
-	}
-
 	// ── LOD 생성 (LOD1: 90%, LOD2: 55%, LOD3: 15%) ──
 	if (StaticMeshAsset->Vertices.size() >= 100)
 	{
