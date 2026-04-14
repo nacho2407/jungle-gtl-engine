@@ -15,8 +15,13 @@ public:
 
 	void BeginPlay() override;
 
-	void SetMaterial(UMaterialInterface* InMaterial) { Material = InMaterial; }
-	UMaterialInterface* GetMaterial() const { return Material; }
+	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override { if (SlotIndex == 0) Material = InMaterial; }
+	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override { return (SlotIndex == 0) ? Material : nullptr; }
+	virtual int32 GetNumMaterials() const override { return 1; }
+
+	// Legacy single-slot access
+	void SetMaterial(UMaterialInterface* InMaterial) { SetMaterial(0, InMaterial); }
+	UMaterialInterface* GetMaterial() const { return GetMaterial(0); }
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
