@@ -1,6 +1,7 @@
-#include "FontRenderPass.h"
+﻿#include "FontRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/FontBatcher.h"
+#include "Render/Scene/RenderBus.h"
 
 bool FFontRenderPass::Initialize()
 {
@@ -31,7 +32,8 @@ bool FFontRenderPass::DrawCommand(const FRenderPassContext* Context)
     }
 
     const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default"));
-    Context->FontBatcher->Flush(Context->DeviceContext, FontRes);
+    const bool bWireframe = (Context->RenderBus != nullptr) && (Context->RenderBus->GetViewMode() == EViewMode::Wireframe);
+    Context->FontBatcher->Flush(Context->DeviceContext, FontRes, bWireframe);
     return true;
 }
 
