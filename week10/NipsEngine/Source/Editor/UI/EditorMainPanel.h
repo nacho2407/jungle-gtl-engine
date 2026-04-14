@@ -23,6 +23,9 @@ public:
 	void Render(float DeltaTime);
 	void Update();
 
+	FEditorPropertyWidget& GetPropertyWidget() { return PropertyWidget; }
+	FEditorMaterialWidget& GetMaterialWidget() { return MaterialWidget; }
+
 private:
 	void RenderViewportHostWindow();
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);

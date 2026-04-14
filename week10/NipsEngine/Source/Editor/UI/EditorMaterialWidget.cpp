@@ -1,8 +1,9 @@
-﻿#include "Editor/UI/EditorMaterialWidget.h"
+#include "Editor/UI/EditorMaterialWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
 
+#include "Component/PrimitiveComponent.h"
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Asset/StaticMesh.h"
@@ -22,8 +23,15 @@ void FEditorMaterialWidget::Render(float DeltaTime)
     ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Once);
     ImGui::Begin("Material Editor");
 
-	AActor* SelectedActor = EditorEngine->GetSelectionManager().GetPrimarySelection();
-	USceneComponent* CurrentComp = SelectedActor ? SelectedActor->GetRootComponent() : nullptr;
+	FEditorPropertyWidget& PropWidget = EditorEngine->GetMainPanel().GetPropertyWidget();
+	USceneComponent* CurrentComp = Cast<USceneComponent>(PropWidget.GetSelectedComponent());
+
+	// 만약 액터가 선택되어 있고 루트 컴포넌트가 있다면 그것을 기본으로 사용
+	if (PropWidget.IsActorSelected())
+	{
+		AActor* PrimaryActor = EditorEngine->GetSelectionManager().GetPrimarySelection();
+		CurrentComp = PrimaryActor ? PrimaryActor->GetRootComponent() : nullptr;
+	}
 
 	if (CurrentComp != SelectedComponent)
 	{
@@ -34,46 +42,46 @@ void FEditorMaterialWidget::Render(float DeltaTime)
 
 	if (!SelectedComponent)
 	{
-		ImGui::TextDisabled("Select a StaticMesh actor to edit materials.");
+		ImGui::TextDisabled("Select an actor with PrimitiveComponent to edit materials.");
 	}
 	else 
 	{	
-		if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(SelectedComponent))
+		if (UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(SelectedComponent))
 		{
-			RenderMeshMaterialEditor(MeshComp);
+			RenderMaterialEditor(PrimitiveComp);
 		}
-		else if (UDecalComponent* DecalComp = Cast<UDecalComponent>(SelectedComponent))
+		else
 		{
-			RenderDecalMaterialEditor(DecalComp);
+			ImGui::TextDisabled("Selected component is not a PrimitiveComponent.");
 		}
 	}
 	
 	ImGui::End();
 }
 
-void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshComp)
+void FEditorMaterialWidget::RenderMaterialEditor(UPrimitiveComponent* PrimitiveComp)
 {
-	UStaticMesh* MeshAsset = MeshComp->GetStaticMesh();
-
-	const TArray<FStaticMeshSection>& Sections = MeshAsset->GetSections();
-	if (Sections.empty())
+	int32 NumMaterials = PrimitiveComp->GetNumMaterials();
+	if (NumMaterials <= 0)
 	{
-		ImGui::TextDisabled("No sections.");
-		ImGui::End();
+		ImGui::TextDisabled("No material slots found.");
 		return;
 	}
 
 	// 최초 진입 시 첫 번째 섹션 자동 선택
-	if (SelectedSectionIndex < 0)
+	if (SelectedSectionIndex < 0 || SelectedSectionIndex >= NumMaterials)
 	{
 		SelectedSectionIndex = 0;
-		UMaterialInstance* Inst = Cast<UMaterialInstance>(MeshComp->GetMaterial(0));
+		UMaterialInstance* Inst = Cast<UMaterialInstance>(PrimitiveComp->GetMaterial(0));
 
 		if (!Inst)
 		{
-			UMaterial* Mat = Cast<UMaterial>(MeshComp->GetMaterial(0));
-			Inst = UMaterialInstance::Create(Mat);
-			MeshComp->SetMaterial(0, Inst);
+			UMaterial* Mat = Cast<UMaterial>(PrimitiveComp->GetMaterial(0));
+			if (Mat)
+			{
+				Inst = UMaterialInstance::Create(Mat);
+				PrimitiveComp->SetMaterial(0, Inst);
+			}
 		}
 
 		SelectedMaterialPtr = Inst;
@@ -83,70 +91,47 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 
 	// 왼쪽: 섹션 목록
 	ImGui::BeginChild("##SectionList", ImVec2(SectionPanelWidth, 0), true);
-	RenderSectionList(MeshComp);
+	RenderSectionList(PrimitiveComp);
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 
 	// 오른쪽: 선택 섹션의 머테리얼 복사본 편집
 	ImGui::BeginChild("##MaterialDetails", ImVec2(0, 0), true);
-	RenderMaterialDetails(MeshComp);
-	ImGui::EndChild();
-}
-
-void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp)
-{
-	UMaterialInstance* Inst = Cast<UMaterialInstance>(DecalComp->GetMaterial());
-	if (!Inst)
-	{
-		UMaterial* Mat = Cast<UMaterial>(DecalComp->GetMaterial());
-		Inst = UMaterialInstance::Create(Mat);
-		DecalComp->SetMaterial(Inst);
-	}
-	SelectedMaterialPtr = Inst;
-
-	const float SectionPanelWidth = 160.0f;
-
-	// 왼쪽: 섹션 목록
-	ImGui::BeginChild("##SectionList", ImVec2(SectionPanelWidth, 0), true);
-	//RenderSectionList(DecalComp);
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	// 오른쪽: 선택 섹션의 머테리얼 복사본 편집
-	ImGui::BeginChild("##MaterialDetails", ImVec2(0, 0), true);
-	RenderMaterialDetails(&Inst->Parent->MaterialData, [this, DecalComp, Inst](FMaterial* MatData)
-	{
-		DecalComp->SetMaterial(Inst);
-	});
+	RenderMaterialDetails(PrimitiveComp);
 	ImGui::EndChild();
 }
 
 // -----------------------------------------------------------------------
 // 왼쪽: 섹션 목록
 // -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
+void FEditorMaterialWidget::RenderSectionList(UPrimitiveComponent* PrimitiveComp)
 {
-	const TArray<UMaterialInterface*>& OverrideMaterial = MeshComp->GetOverrideMaterial();
-	const TArray<FStaticMeshSection>& Sections = MeshComp->GetStaticMesh()->GetSections();
-	const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshComp->GetStaticMesh()->GetMaterialSlots();
-
-    ImGui::Text("Sections (%d)", static_cast<int32>(OverrideMaterial.size()));
+	int32 NumMaterials = PrimitiveComp->GetNumMaterials();
+    ImGui::Text("Materials (%d)", NumMaterials);
     ImGui::Separator();
 
-    for (int32 i = 0; i < static_cast<int32>(OverrideMaterial.size()); ++i)
+	UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
+	UStaticMesh* MeshAsset = MeshComp ? MeshComp->GetStaticMesh() : nullptr;
+
+    for (int32 i = 0; i < NumMaterials; ++i)
 	{
 		// 슬롯 이름 가져오기
-		FString SlotName = "Unknown";
-		if (i < static_cast<int32>(Sections.size()))
+		FString SlotName = "Slot";
+		if (MeshAsset)
 		{
-			int32 SlotIdx = Sections[i].MaterialSlotIndex;
-			if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
-				SlotName = MatSlots[SlotIdx].SlotName;
+			const TArray<FStaticMeshSection>& Sections = MeshAsset->GetSections();
+			const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshAsset->GetMaterialSlots();
+			if (i < static_cast<int32>(Sections.size()))
+			{
+				int32 SlotIdx = Sections[i].MaterialSlotIndex;
+				if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
+					SlotName = MatSlots[SlotIdx].SlotName;
+			}
 		}
 
-		bool bMissing = (OverrideMaterial[i] == nullptr);
+		UMaterialInterface* Material = PrimitiveComp->GetMaterial(i);
+		bool bMissing = (Material == nullptr);
 
         char Label[128];
         snprintf(Label, sizeof(Label), "[%d] %s%s", i, SlotName.c_str(), bMissing ? " (!)" : "");
@@ -160,7 +145,7 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 			if (!bSelected)
 			{
 				SelectedSectionIndex = i;
-				UMaterialInstance* Mat = Cast<UMaterialInstance>(MeshComp->GetMaterial(i));
+				UMaterialInstance* Mat = Cast<UMaterialInstance>(PrimitiveComp->GetMaterial(i));
 				SelectedMaterialPtr = Mat;
 			}
         }
@@ -173,25 +158,30 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 // -----------------------------------------------------------------------
 // 오른쪽: 머테리얼 상세 (복사본 편집)
 // -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp)
+void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* PrimitiveComp)
 {
-    if (SelectedSectionIndex < 0)
+    if (SelectedSectionIndex < 0 || SelectedSectionIndex >= PrimitiveComp->GetNumMaterials())
     {
-        ImGui::TextDisabled("Select a section to edit.");
+        ImGui::TextDisabled("Select a slot to edit.");
         return;
     }
 
 	// 슬롯 이름 표시
-	const TArray<FStaticMeshSection>& Sections = MeshComp->GetStaticMesh()->GetSections();
-	const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshComp->GetStaticMesh()->GetMaterialSlots();
-	FString SlotName = "Unknown";
-	if (SelectedSectionIndex < static_cast<int32>(Sections.size())) 
+	UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
+	UStaticMesh* MeshAsset = MeshComp ? MeshComp->GetStaticMesh() : nullptr;
+	FString SlotName = "Slot";
+	if (MeshAsset) 
 	{
-		int32 SlotIdx = Sections[SelectedSectionIndex].MaterialSlotIndex;
-		if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
-			SlotName = MatSlots[SlotIdx].SlotName;
+		const TArray<FStaticMeshSection>& Sections = MeshAsset->GetSections();
+		const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshAsset->GetMaterialSlots();
+		if (SelectedSectionIndex < static_cast<int32>(Sections.size())) 
+		{
+			int32 SlotIdx = Sections[SelectedSectionIndex].MaterialSlotIndex;
+			if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
+				SlotName = MatSlots[SlotIdx].SlotName;
+		}
 	}
-	ImGui::Text("Section [%d]  |  Slot: %s", SelectedSectionIndex, SlotName.c_str());
+	ImGui::Text("Slot [%d]  |  Name: %s", SelectedSectionIndex, SlotName.c_str());
 
 	// MTL 못 읽어 머테리얼 없는 경우 경고
 	if (!SelectedMaterialPtr || !SelectedMaterialPtr->Parent)
@@ -230,7 +220,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
                 if (NewMat)
                 {
 					UMaterialInstance* Inst = UMaterialInstance::Create(NewMat);
-					MeshComp->SetMaterial(SelectedSectionIndex, Inst);
+					PrimitiveComp->SetMaterial(SelectedSectionIndex, Inst);
 					SelectedMaterialPtr = Inst;
 				}
             }
@@ -250,7 +240,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
 
 void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged)
 {
-	// MTL 못 읽어 머테리얼 없는 경우 경고
+	// Legacy helper for specific cases if needed
 	if (!SelectedMaterialPtr)
 	{
 		ImGui::Spacing();
@@ -258,7 +248,6 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 		ImGui::Spacing();
 	}
 
-	// ---- 머테리얼 교체 콤보박스 (항상 표시) ----
 	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
 
 	int32 CurrentIdx = -1;
@@ -297,7 +286,6 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 		ImGui::EndCombo();
 	}
 
-	// 머테리얼이 없으면 색상/텍스처 편집 불가
 	if (!SelectedMaterialPtr)
 		return;
 
@@ -358,14 +346,46 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			}
 			break;
 		case EMaterialParamType::Texture:
-			if (ImGui::ImageButton(ParamName.c_str(), (void*)std::get<UTexture*>(ParamValue.Value)->GetSRV(), ImVec2(64, 64)))
-			{
+		{
+			UTexture* CurrentTex = std::get<UTexture*>(ParamValue.Value);
+			ID3D11ShaderResourceView* SRV = CurrentTex ? CurrentTex->GetSRV() : nullptr;
 
+			if (ImGui::ImageButton(ParamName.c_str(), (void*)SRV, ImVec2(64, 64)))
+			{
+				// 이미지 버튼 클릭 시 동작 (필요 시 팝업 등 추가)
 			}
 			ImGui::SameLine();
+			
+			ImGui::BeginGroup();
 			ImGui::Text("%s", ParamName.c_str());
+			
+			const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
+			FString CurrentPath = CurrentTex ? CurrentTex->GetName() : "None";
+
+			ImGui::SetNextItemWidth(200.0f);
+			FString ComboId = "##Combo_" + ParamName;
+			if (ImGui::BeginCombo(ComboId.c_str(), CurrentPath.c_str()))
+			{
+				for (const FString& TexPath : TextureList)
+				{
+					bool bSelected = (TexPath == CurrentPath);
+					if (ImGui::Selectable(TexPath.c_str(), bSelected))
+					{
+						UTexture* NewTex = FResourceManager::Get().GetTexture(TexPath);
+						if (NewTex)
+						{
+							ParamValue.Value = NewTex;
+							SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+						}
+					}
+					if (bSelected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::EndGroup();
 
 			break;
+		}
 		}
 	}
 }
@@ -497,31 +517,16 @@ void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
 }
 
 // -----------------------------------------------------------------------
-// 헬퍼: 선택된 액터에서 StaticMeshComponent 가져오기
+// 헬퍼: 선택된 액터에서 PrimitiveComponent 가져오기
 // -----------------------------------------------------------------------
-UStaticMeshComponent* FEditorMaterialWidget::GetSelectedMeshComponent() const
+UPrimitiveComponent* FEditorMaterialWidget::GetSelectedPrimitiveComponent() const
 {
     AActor* Actor = EditorEngine->GetSelectionManager().GetPrimarySelection();
     if (!Actor) return nullptr;
 
     USceneComponent* Root = Actor->GetRootComponent();
-    if (Root && Root->IsA<UStaticMeshComponent>())
-        return static_cast<UStaticMeshComponent*>(Root);
-
-    return nullptr;
-}
-
-// -----------------------------------------------------------------------
-// 헬퍼: 선택된 액터에서 DecalComponent 가져오기
-// -----------------------------------------------------------------------
-UDecalComponent* FEditorMaterialWidget::GetSelectedDecalComponent() const
-{
-    AActor* Actor = EditorEngine->GetSelectionManager().GetPrimarySelection();
-    if (!Actor) return nullptr;
-
-    USceneComponent* Root = Actor->GetRootComponent();
-    if (Root && Root->IsA<UDecalComponent>())
-        return static_cast<UDecalComponent*>(Root);
+    if (Root && Root->IsA<UPrimitiveComponent>())
+        return static_cast<UPrimitiveComponent*>(Root);
 
     return nullptr;
 }

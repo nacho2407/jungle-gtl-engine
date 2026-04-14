@@ -17,6 +17,8 @@
 #include <cstddef>
 #include <functional>
 
+#include "Render/Renderer/RenderFlow/RenderPipeline.h"
+
 // 패스별 Batcher 바인딩 — Clear → Collect → Flush 패턴
 struct FPassBatcherBinding
 {
@@ -69,9 +71,6 @@ private:
 	// 기본 패스 실행기 — SetupRenderState + DrawCommand 루프
     void ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
                             ID3D11DeviceContext* Context);
-    void ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
-    void ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context);
-    void ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
@@ -84,6 +83,10 @@ private:
 	FLineBatcher   GridLineBatcher;
 	FFontBatcher   FontBatcher;
 	FSubUVBatcher  SubUVBatcher;
+
+	/** 모든 Render Pass 를 관리할 객체 */
+	FRenderPipeline RenderPipeline;
+    std::shared_ptr<FRenderPassContext> RenderPassContext;
 
 	// 패스별 커맨드 정렬이 필요한 경우 정렬된 복사본 반환, 아니면 원본 참조
 	const TArray<FRenderCommand>& GetAlignedCommands(ERenderPass Pass, const TArray<FRenderCommand>& Commands);

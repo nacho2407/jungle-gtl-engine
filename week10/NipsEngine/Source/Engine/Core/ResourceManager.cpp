@@ -594,6 +594,12 @@ void FResourceManager::ReleaseGPUResources()
 	StaticMeshes.clear();
 	StaticMeshRegistry.clear();
 
+	// D3D state object caches
+	SamplerStates.clear();
+	DepthStencilStates.clear();
+	BlendStates.clear();
+	RasterizerStates.clear();
+
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
 }

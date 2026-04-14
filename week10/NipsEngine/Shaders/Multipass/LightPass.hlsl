@@ -131,7 +131,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
     return float4(final_rgb, 1.0f);
     
     
-    //return float4(normal);
+    // return float4(normal);
     // float visual = 1.0f - depth;
     // return float4(visual, visual, visual, 1.0f);
 }
