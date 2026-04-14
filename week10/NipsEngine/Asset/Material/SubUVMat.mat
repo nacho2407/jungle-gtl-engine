@@ -1,0 +1,5 @@
+{
+    "Name": "SubUVMat",
+    "Shader": "Shaders/ShaderSubUV.hlsl",
+    "Params": []
+}

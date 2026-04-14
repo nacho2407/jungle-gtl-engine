@@ -1,7 +1,7 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
-#include "Component/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
 
 DEFINE_CLASS(AActor, UObject)
