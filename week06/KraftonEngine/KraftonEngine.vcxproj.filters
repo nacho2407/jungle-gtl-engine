@@ -194,6 +194,9 @@
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorFXAAWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -546,6 +549,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorFXAAWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">

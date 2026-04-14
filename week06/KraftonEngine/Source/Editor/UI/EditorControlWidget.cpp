@@ -93,15 +93,5 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	SEPARATOR();
 
-	FEditorSettings& Settings = EditorEngine->GetSettings();
-	ImGui::Text("FXAA");
-	ImGui::DragFloat("Edge Threshold", &Settings.FXAAEdgeThreshold, 0.001f, 0.01f, 1.0f, "%.4f");
-	ImGui::DragFloat("Edge Threshold Min", &Settings.FXAAEdgeThresholdMin, 0.001f, 0.001f, 1.0f, "%.4f");
-	ImGui::DragFloat("Search Threshold", &Settings.FXAASearchThreshold, 0.001f, 0.01f, 1.0f, "%.4f");
-	ImGui::DragFloat("Subpix Trim", &Settings.FXAASubpixTrim, 0.001f, 0.0f, 1.0f, "%.4f");
-	ImGui::DragFloat("Subpix Cap", &Settings.FXAASubpixCap, 0.001f, 0.0f, 1.0f, "%.4f");
-	ImGui::Checkbox("Subpix Filtering", &Settings.bFXAASubpix);
-	ImGui::SliderInt("Search Steps", &Settings.FXAASearchSteps, 1, 32);
-
 	ImGui::End();
 }

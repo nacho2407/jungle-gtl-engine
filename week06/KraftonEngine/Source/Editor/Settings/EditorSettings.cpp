@@ -59,6 +59,7 @@ namespace Key
 	constexpr const char* UIWidgets = "UIWidgets";
 	constexpr const char* ShowConsole = "ShowConsole";
 	constexpr const char* ShowControlPanel = "ShowControlPanel";
+	constexpr const char* ShowFXAAPanel = "ShowFXAAPanel";
 	constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
 	constexpr const char* ShowSceneManager = "ShowSceneManager";
 	constexpr const char* ShowStatProfiler = "ShowStatProfiler";
@@ -138,6 +139,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	JSON WidgetsObj = Object();
 	WidgetsObj[Key::ShowConsole] = UI.bConsole;
 	WidgetsObj[Key::ShowControlPanel] = UI.bControl;
+	WidgetsObj[Key::ShowFXAAPanel] = UI.bFXAA;
 	WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
 	WidgetsObj[Key::ShowSceneManager] = UI.bScene;
 	WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
@@ -297,6 +299,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		JSON W = Root[Key::UIWidgets];
 		if (W.hasKey(Key::ShowConsole))        UI.bConsole = W[Key::ShowConsole].ToBool();
 		if (W.hasKey(Key::ShowControlPanel))   UI.bControl = W[Key::ShowControlPanel].ToBool();
+		if (W.hasKey(Key::ShowFXAAPanel))      UI.bFXAA = W[Key::ShowFXAAPanel].ToBool();
 		if (W.hasKey(Key::ShowPropertyWindow)) UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
 		if (W.hasKey(Key::ShowSceneManager))   UI.bScene = W[Key::ShowSceneManager].ToBool();
 		if (W.hasKey(Key::ShowStatProfiler))   UI.bStat = W[Key::ShowStatProfiler].ToBool();

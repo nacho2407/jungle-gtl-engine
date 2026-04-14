@@ -52,12 +52,14 @@ public:
 #ifdef FPS_OPTIMIZATION
 		bool bConsole = false;
 		bool bControl = false;
+		bool bFXAA = false;
 		bool bProperty = false;
 		bool bScene = true;
 		bool bStat = true;
 #else
 		bool bConsole = true;
 		bool bControl = true;
+		bool bFXAA = false;
 		bool bProperty = true;
 		bool bScene = true;
 		bool bStat = false;;

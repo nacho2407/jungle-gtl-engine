@@ -2,6 +2,7 @@
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
+#include "Editor/UI/EditorFXAAWidget.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/EditorPropertyWidget.h"
 #include "Editor/UI/EditorSceneWidget.h"
@@ -31,6 +32,7 @@ private:
 	UEditorEngine* EditorEngine = nullptr;
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorControlWidget ControlWidget;
+	FEditorFXAAWidget FXAAWidget;
 	FEditorPropertyWidget PropertyWidget;
 	FEditorSceneWidget SceneWidget;
 	FEditorStatWidget StatWidget;
