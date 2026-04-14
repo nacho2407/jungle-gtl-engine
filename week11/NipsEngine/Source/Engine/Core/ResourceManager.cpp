@@ -542,7 +542,49 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 
 void FResourceManager::ReleaseGPUResources()
 {
+	for (auto& [Key, Texture] : Textures)
+	{
+		if (Texture)
+		{
+			delete Texture;
+		}
+	}
+	Textures.clear();
+
+	for (auto& [Key, Material] : Materials)
+	{
+		if (Material)
+		{
+			delete Material;
+		}
+	}
+	Materials.clear();
+
+	for (auto& [Key, Shader] : Shaders)
+	{
+		if (Shader)
+		{
+			delete Shader;
+		}
+	}
+	Shaders.clear();
+
+	for (auto& [Key, Font] : FontResources)
+	{
+		if (Font.Texture)
+		{
+			delete Font.Texture;
+		}
+	}
 	FontResources.clear();
+
+	for (auto& [Key, Particle] : ParticleResources)
+	{
+		if (Particle.Texture)
+		{
+			delete Particle.Texture;
+		}
+	}
 	ParticleResources.clear();
 
 	for (auto& [Path, StaticMeshAsset] : StaticMeshes)
@@ -1267,19 +1309,18 @@ ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerT
 size_t FResourceManager::GetMaterialMemorySize() const
 {
 	size_t TotalSize = 0;
-	// 1. FMaterial 구조체 기본 크기
-	//TotalSize += MaterialRegistry.size() * sizeof(FMaterial);
 
-	//// 2. 내부 FString들이 힙(Heap)에 동적 할당한 문자열 길이까지 정밀하게 합산
-	//for (const auto& Pair : MaterialRegistry)
-	//{
-	//	const FMaterial& Mat = Pair.second;
-	//	TotalSize += Mat.Name.capacity();
-	//	TotalSize += Mat.DiffuseTexPath.capacity();
-	//	TotalSize += Mat.AmbientTexPath.capacity();
-	//	TotalSize += Mat.SpecularTexPath.capacity();
-	//	TotalSize += Mat.BumpTexPath.capacity();
-	//}
+	TotalSize += Materials.size() * sizeof(UMaterial);
+
+	for (const auto& Pair : Materials)
+	{
+		const FMaterial& Mat = Pair.second->MaterialData;
+		TotalSize += Mat.Name.capacity();
+		TotalSize += Mat.DiffuseTexPath.capacity();
+		TotalSize += Mat.AmbientTexPath.capacity();
+		TotalSize += Mat.SpecularTexPath.capacity();
+		TotalSize += Mat.BumpTexPath.capacity();
+	}
 
 	return TotalSize;
 }

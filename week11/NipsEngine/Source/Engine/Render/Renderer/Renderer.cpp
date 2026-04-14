@@ -267,6 +267,11 @@ void FRenderer::InitializePassBatchers()
 			{
 				EditorLineBatcher.AddOBB(FOBB{ Cmd.Constants.OBB.Center, Cmd.Constants.OBB.Extents, Cmd.Constants.OBB.Rotation }, Cmd.Constants.OBB.Color);
 			}
+			else if (Cmd.Type == ERenderCommandType::DebugSpotlight)
+			{
+				const auto& S = Cmd.Constants.SpotLight;
+				EditorLineBatcher.AddSpotLight(S.Position, S.Direction, S.Range, S.InnerAngle, S.OuterAngle, S.Color);
+			}
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			FlushLineBatcher(EditorLineBatcher, Pass, Bus, Ctx);
