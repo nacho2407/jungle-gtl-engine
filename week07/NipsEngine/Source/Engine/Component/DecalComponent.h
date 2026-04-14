@@ -10,6 +10,7 @@ public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
 
 	UDecalComponent();
+
 	void PostDuplicate(UObject* Original) override;
 
 	void BeginPlay() override;
@@ -30,6 +31,8 @@ public:
 	void SetFadeIn(float InStartDelay, float InDuration);
 	void SetFadeOut(float InStartDelay, float InDuration, bool bInDestroyOwnerAfterFade = false);
 
+	bool SupportsOutline() const override { return true; }
+
 protected:
 	void TickComponent(float DeltaTime) override;
 
@@ -41,6 +44,7 @@ private:
 	UMaterialInterface* Material = nullptr;
 	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
 	FColor DecalColor = FColor::White();
+	bool bDebugLine = true;
 
 	float FadeStartDelay = 0.0f;
 	float FadeDuration = 0.0f;
