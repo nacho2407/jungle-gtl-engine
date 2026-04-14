@@ -117,6 +117,11 @@ struct FDecalFrameStats
 struct FDecalStats
 {
 	static FDecalFrameStats Current;
+	static FDecalFrameStats Previous;
+
+	// 프레임 경계에서 이전 프레임을 보존하고 Current를 초기화
+	static void Shift() { Previous = Current; Current = {}; }
+
 	static void Reset() { Current = {}; }
 	static FDecalFrameStats& GetMutable() { return Current; }
 	static const FDecalFrameStats& Get() { return Current; }

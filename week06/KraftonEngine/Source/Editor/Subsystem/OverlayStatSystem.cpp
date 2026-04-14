@@ -72,7 +72,7 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 			snprintf(Buffer, sizeof(Buffer), "Times Allocated : %u", MemoryStats::GetTotalAllocationCount());
 			Group.Lines.push_back(FString(Buffer));
 		}*/
-
+		
 		{
 			char Buffer[128] = {};
 			snprintf(Buffer, sizeof(Buffer), "PixelShader Memory : %.2f KB", static_cast<double>(MemoryStats::GetPixelShaderMemory() / 1024.0f));
@@ -111,6 +111,21 @@ TArray<FOverlayStatGroup> FOverlayStatSystem::BuildGroups(const UEditorEngine& E
 
 		Groups.push_back(std::move(Group));
 	}
+	if (bShowDecal)
+	{
+		// Use previous-frame decal stats so overlay (collected before render) shows meaningful values
+		const FDecalFrameStats& DecalStats = FDecalStats::Previous;
+
+		FOverlayStatGroup Group;
+
+		{
+			char Buffer[128] = {};
+			snprintf(Buffer, sizeof(Buffer), "Visible Decals");
+			Group.Lines.push_back(FString(Buffer));
+		}
+
+		Groups.push_back(std::move(Group));
+	}
 
 	return Groups;
 }
@@ -125,6 +140,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 		++EstimatedLineCount;
 	}
 	if (bShowPickingTime)
+	{
+		++EstimatedLineCount;
+	}
+	if (bShowDecal)
 	{
 		++EstimatedLineCount;
 	}
@@ -185,6 +204,41 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 		for (int32 Index = 0; Index < MemoryLineCount; ++Index)
 		{
 			snprintf(Buffer, sizeof(Buffer), "%s : %.2f KB", Labels[Index], ValuesKB[Index]);
+			AppendLine(OutLines, CurrentY, FString(Buffer));
+			CurrentY += Layout.LineHeight;
+		}
+	}
+
+	if (bShowDecal)
+	{
+		// read previous-frame stats so overlay shows values available before current render
+		const FDecalFrameStats& DecalStats = FDecalStats::Previous;
+		
+		constexpr int32 DecalLineCount = 7;
+		char Buffer[128] = {};
+		const int32 ValuesKB[DecalLineCount] = {
+			(DecalStats.VisibleDecals),
+			(DecalStats.VisibleReceivers),
+			(DecalStats.BroadCandidates),
+			(DecalStats.UniqueCandidates),
+			(DecalStats.SATAccepted),
+			(DecalStats.SubmittedDraws),
+			(DecalStats.RenderedDraws)
+		};
+
+		const char* Labels[DecalLineCount] = {
+			"Visible Decals",
+			"Visible Receivers",
+			"Broad Candidates",
+			"Unique Candidates",
+			"SAT Accepted",
+			"Submitted Draws",
+			"Rendered Draws",
+		};
+
+		for (int32 Index = 0; Index < DecalLineCount; ++Index)
+		{
+			snprintf(Buffer, sizeof(Buffer), "%s : %d", Labels[Index], ValuesKB[Index]);
 			AppendLine(OutLines, CurrentY, FString(Buffer));
 			CurrentY += Layout.LineHeight;
 		}

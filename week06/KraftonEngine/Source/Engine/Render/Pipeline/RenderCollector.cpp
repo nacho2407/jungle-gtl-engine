@@ -246,7 +246,7 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 
 	TMap<const UStaticMeshComponent*, const FPrimitiveSceneProxy*> VisibleStaticMeshProxies;
 	VisibleStaticMeshProxies.reserve(VisibleProxies.size());
-	FDecalStats::Reset();
+	FDecalStats::Shift(); // 이전 프레임 통계를 보존하고 Current를 초기화
 	FDecalFrameStats& DecalStats = FDecalStats::GetMutable();
 
 	for (const FPrimitiveSceneProxy* VisibleProxy : VisibleProxies)
