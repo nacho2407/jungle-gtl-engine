@@ -94,11 +94,11 @@ void FRenderBus::SetViewportInfo(const FViewport* VP)
 		VP->GetRTV(),
 		VP->GetDSV(),
 		VP->GetDepthSRV(),
-		VP->GetStencilSRV()
-		VP->GetNormalRTV();
-		VP->GetNormalSRV();
-		VP->GetAlbedoRTV();
-		VP->GetAlbedoSRV();
+		VP->GetStencilSRV(),
+		VP->GetNormalRTV(),
+		VP->GetNormalSRV(),
+		VP->GetAlbedoRTV(), 
+		VP->GetAlbedoSRV()
 	);
 }
 

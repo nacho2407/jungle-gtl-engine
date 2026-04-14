@@ -59,7 +59,11 @@ public:
 		ID3D11RenderTargetView* InRTV,
 		ID3D11DepthStencilView* InDSV,
 		ID3D11ShaderResourceView* InDepthSRV,
-		ID3D11ShaderResourceView* InStencilSRV = nullptr);
+		ID3D11ShaderResourceView* InStencilSRV = nullptr,
+		ID3D11RenderTargetView* InNormalRTV= nullptr,
+		ID3D11ShaderResourceView* InNormalSRV= nullptr,
+		ID3D11RenderTargetView* InAlbedoRTV= nullptr,
+		ID3D11ShaderResourceView* InAlbedoSRV= nullptr);
 	void SetViewportSize(float InWidth, float InHeight);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
 	void SetExponentialHeightFog(const FExponentialHeightFogRenderData& InFogData) { ExponentialHeightFog = InFogData; }

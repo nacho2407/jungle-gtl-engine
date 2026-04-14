@@ -78,7 +78,7 @@ cbuffer HeightFogPostProcessCB : register(b6)
     float2 FogPadding;
 };
 
-cbuffer FireballBuffer : register(b6)
+cbuffer FireballBuffer : register(b7)
 {
     float4x4 InvViewMatrix;
     float4x4 InvProjMatrix;
