@@ -37,7 +37,8 @@ enum class ERenderPass : uint32
 	Decal,			// 데칼 (DepthReadOnly)
 	SelectionMask,	// 선택 스텐실 마스크
 	EditorLines,	// 디버그 라인 + 그리드 (LINELIST)
-	PostProcess,	// 아웃라인 풀스크린
+	PostProcess,	// 아웃라인 풀스크린, Fog, SceneDepth
+	FXAA,			// FXAA 안티앨리어싱 (SceneColor 복사 후 실행)
 	GizmoOuter,		// 기즈모 외곽 (깊이 테스트 O)
 	GizmoInner,		// 기즈모 내부 (깊이 무시)
 	OverlayFont,	// 스크린 공간 텍스트 (깊이 무시)
@@ -53,6 +54,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 		"RenderPass::SelectionMask",
 		"RenderPass::EditorLines",
 		"RenderPass::PostProcess",
+		"RenderPass::FXAA",
 		"RenderPass::GizmoOuter",
 		"RenderPass::GizmoInner",
 		"RenderPass::OverlayFont",
