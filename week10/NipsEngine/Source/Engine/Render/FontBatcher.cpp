@@ -215,7 +215,7 @@ void FFontBatcher::Clear()
 	Indices.clear();
 }
 
-void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource)
+void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Resource, bool bWireframe)
 {
 	if (!Resource || !Resource->IsLoaded()) return;
 	if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
@@ -247,6 +247,11 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 
 	// 셰이더 바인딩
 	FontMaterial->Bind(Context);
+    if (bWireframe)
+    {
+        ID3D11RasterizerState* WireRS = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::WireFrame);
+        Context->RSSetState(WireRS);
+    }
 
 	uint32 stride = sizeof(FTextureVertex), offset = 0;
 	ID3D11Buffer* VertexBufferPtr = VertexBuffer.Get();

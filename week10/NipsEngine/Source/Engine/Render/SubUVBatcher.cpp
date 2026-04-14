@@ -103,7 +103,7 @@ void FSubUVBatcher::Clear()
 	Batches.clear();
 }
 
-void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
+void FSubUVBatcher::Flush(ID3D11DeviceContext* Context, bool bWireframe)
 {
     if (Vertices.empty() || !VertexBuffer || !IndexBuffer) return;
 
@@ -139,6 +139,11 @@ void FSubUVBatcher::Flush(ID3D11DeviceContext* Context)
 
 		Mat->SetTexture("SubUVAtlas", Batch.Texture);
 		Material->Bind(Context);
+        if (bWireframe)
+        {
+            ID3D11RasterizerState* WireRS = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::WireFrame);
+            Context->RSSetState(WireRS);
+        }
 
 		Context->DrawIndexed(
 			Batch.IndexCount,
