@@ -30,10 +30,9 @@ public:
 	void SetColor(FVector4 InColor) { Color = InColor; }
 	FVector4 GetColor() const;
 
-	// --- Texture ---
-	void SetTexture(const FName& InTextureName);
-	const FTextureResource* GetTexture() const { return CachedTexture; }
-	const FName& GetTextureName() const { return TextureName; }
+	// --- Material ---
+	void SetMaterial(class UMaterial* InMaterial);
+	class UMaterial* GetMaterial() const { return Material; }
 
 	const FConvexVolume GetDecalVolume() { return ConvexVolume; }
 	void UpdateDecalVolumeFromTransform();
@@ -49,7 +48,8 @@ private:
 private:
 	FConvexVolume ConvexVolume;
 	TArray<UStaticMeshComponent*> Receivers;
-	FName TextureName;
+	FMaterialSlot MaterialSlot;
+	UMaterial* Material = nullptr;
 	FVector4 Color = {1,1,1,1};
 	float FadeInDelay = 0;
 	float FadeInDuration = 0;
@@ -57,5 +57,4 @@ private:
 	float FadeOutDuration = 0;
 	float FadeTimer = 0;
 	float FadeOpacity = 1.0f;		// 페이드 효과 사용 시 Color.A에 곱함
-	FTextureResource* CachedTexture = nullptr;	// ResourceManager 소유, 참조만
 };
