@@ -659,7 +659,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 		ImGui::SameLine(120);
 
-		// 우측: Material 콤보 + UVScroll 체크박스
+		// 우측: Material 콤보
 		ImGui::BeginGroup();
 		ImGui::SetNextItemWidth(-1);
 
@@ -689,11 +689,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			ImGui::EndCombo();
 		}
-
-		// UVScroll 체크박스 — 렌더러가 매 프레임 직접 읽으므로 PostEditProperty 불필요
-		bool bScroll = (Slot->bUVScroll != 0);
-		if (ImGui::Checkbox("Scroll", &bScroll))
-			Slot->bUVScroll = bScroll ? 1 : 0;
 
 		ImGui::EndGroup();
 		break;

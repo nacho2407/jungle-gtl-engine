@@ -33,7 +33,6 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 		for (int32 i = 0; i < (int32)DefaultMaterials.size(); ++i)
 		{
 			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
-			MaterialSlots[i].bUVScroll = DefaultMaterials[i].bIsUVScroll ? 1 : 0;
 
 			if (OverrideMaterials[i])
 				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
@@ -189,7 +188,6 @@ primitive AABB 기준으로 후보만 추립니다.
 static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
 {
 	Ar << Slot.Path;
-	Ar << Slot.bUVScroll;
 	return Ar;
 }
 
@@ -227,15 +225,6 @@ void UStaticMeshComponent::PostDuplicate()
 				else
 				{
 					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MatPath);
-					if (LoadedMat)
-					{
-						UTexture2D* DiffuseTex = nullptr;
-						if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex)&& !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
-						{
-							DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
-							LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
-						}
-					}
 					OverrideMaterials[i] = LoadedMat;
 				}
 			}
@@ -299,21 +288,8 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			else
 			{
 				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
-
-
 				if (LoadedMat)
 				{
-					UTexture2D* DiffuseTex = nullptr;
-					if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex) && !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
-					{
-						ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-
-						DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
-
-						LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
-					}
-
-					// 로드되거나 찾아진 머티리얼을 슬롯에 적용
 					SetMaterial(Index, LoadedMat);
 				}
 			}
