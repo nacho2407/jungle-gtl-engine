@@ -50,8 +50,8 @@ REGISTER_FACTORY(ADecalActor)
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
 
-DEFINE_CLASS(ASpotlightActor, AActor)
-REGISTER_FACTORY(ASpotlightActor)
+DEFINE_CLASS(ASpotLightActor, AActor)
+REGISTER_FACTORY(ASpotLightActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -291,12 +291,12 @@ void AFireballActor::InitDefaultComponents()
 	//Sphere->SetMaterial(0, &FireballCoreMaterial);
 }
 
-void ASpotlightActor::InitDefaultComponents() {
+void ASpotLightActor::InitDefaultComponents() {
 	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
     BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
 	SetRootComponent(BillboardIcon);
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
 	Decal->AttachToComponent(BillboardIcon);
-	Decal->SetRelativeLocation(FVector(0, 0, 10.f));
+	Decal->SetRelativeLocation(FVector(10, 0, 0.f));
 }

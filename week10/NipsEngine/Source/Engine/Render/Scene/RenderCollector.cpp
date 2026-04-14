@@ -15,6 +15,7 @@
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
+#include "Engine/GameFramework/PrimitiveActors.h"
 #include "Render/Resource/Material.h"
 #include "Object/ObjectIterator.h"
 #include "Runtime/Stats/ScopeCycleCounter.h"
@@ -226,6 +227,11 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			continue;
 		}
 
+		if (Actor->IsA<ASpotLightActor>())
+		{
+			CollectSpotLightCommand(static_cast<const ASpotLightActor*>(Actor), ShowFlags, RenderBus);
+		}
+
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
 			if (Primitive == nullptr || !Primitive->IsVisible())
@@ -352,6 +358,12 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 	{
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
+	}
+
+	if (Actor->IsA<ASpotLightActor>())
+	{
+		ASpotLightActor* SpotlightActor = Cast<ASpotLightActor>(Actor);
+
 	}
 }
 
@@ -804,4 +816,19 @@ void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent
 	const FAABB AABB = PrimitiveComponent->GetWorldAABB();
 	const FOBB Box = FOBB::FromAABB(AABB, PrimitiveComponent->GetWorldMatrix());
 	CollectOBBCommand(Box, FColor::Green(), RenderBus);
+}
+
+void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugSpotlight;
+	Cmd.Constants.SpotLight.Position = SpotlightActor->GetActorLocation();
+	Cmd.Constants.SpotLight.Direction = SpotlightActor->GetActorForward();
+	Cmd.Constants.SpotLight.InnerAngle = 12.0f;
+	Cmd.Constants.SpotLight.OuterAngle = 30.0f;
+	Cmd.Constants.SpotLight.Range = 10.0f;
+	Cmd.Constants.SpotLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }

@@ -103,7 +103,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 			}
 			case 7: // Spotlight
 			{
-				ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
+				ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
