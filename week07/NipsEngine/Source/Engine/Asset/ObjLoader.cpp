@@ -18,6 +18,8 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 	const double StartTime = FPlatformTime::Seconds();
 	UE_LOG("[ObjLoader] Start loading OBJ: %s", Path.c_str());
 
+	volatile int hello = 0;
+
 	FObjRawData RawData;
 
 	/* Obj Parse - Build Raw Data */
@@ -59,7 +61,6 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 	return StaticMesh;
 }
 
-//	TODO : 나중에 다시 확인해보기
 bool FObjLoader::SupportsExtension(const FString& Extension) const
 {
 	return Extension == FString("obj") || Extension == FString(".obj") || Extension == FString("OBJ") || Extension == FString(".OBJ");
@@ -126,6 +127,11 @@ bool FObjLoader::ParseObj(const FString& Path, FObjRawData& InRawData)
 				return false;
 			}
 		}
+	}
+
+	if (InRawData.Normals.empty())
+	{
+		ComputeNormals(InRawData);
 	}
 
 	return !InRawData.Positions.empty() && !InRawData.Faces.empty();
@@ -541,6 +547,61 @@ void FObjLoader::NormalizeRawSizeToUnitCube(FObjRawData& RawData)
 	for (FVector& Position : RawData.Positions)
 	{
 		Position = (Position - Center);
+	}
+}
+
+void FObjLoader::ComputeNormals(FObjRawData& RawData)
+{
+	const int32 PositionCount = static_cast<int32>(RawData.Positions.size());
+
+	TArray<FVector> Accumulated(PositionCount, FVector(0.0f, 0.0f, 0.0f));
+
+	// 각 Face를 삼각형으로 분해하며 면 법선을 누적
+	for (FObjRawFace& Face : RawData.Faces)
+	{
+		if (Face.Vertices.size() < 3) continue;
+
+		// 폴리곤을 fan triangulation 방식으로 분할하여 처리
+		for (int32 i = 0; i < Face.Vertices.size() - 2; ++i)
+		{
+			int32 I0 = Face.Vertices[0].PositionIndex;
+			int32 I1 = Face.Vertices[i + 1].PositionIndex;
+			int32 I2 = Face.Vertices[i + 2].PositionIndex;
+
+			if (I0 < 0 || I1 < 0 || I2 < 0) continue;
+
+			const FVector& P0 = RawData.Positions[I0];
+			const FVector& P1 = RawData.Positions[I1];
+			const FVector& P2 = RawData.Positions[I2];
+
+			FVector E01 = P1 - P0;
+			FVector E02 = P2 - P0;
+
+			// 정규화를 생략하여 면적 가중치 적용
+			FVector FaceNormal = E01.CrossProduct(E02);
+
+			Accumulated[I0] += FaceNormal;
+			Accumulated[I1] += FaceNormal;
+			Accumulated[I2] += FaceNormal;
+		}
+	}
+
+	// 정규화한 뒤 RawData.Normals에 저장한다. (1:1로 Position과 대응된다.
+	RawData.Normals.resize(PositionCount);
+	for (int32 i = 0; i < PositionCount; ++i)
+	{
+		FVector Normal = Accumulated[i];
+		float Length = Normal.Size();
+		RawData.Normals[i] = (Length > 1e-6f) ? Normal / Length : FVector(0.0f, 0.0f, 1.0f);
+	}
+
+	// 각 face의 normal index를 position index와 동일하게 연결한다.
+	for (FObjRawFace& Face : RawData.Faces)
+	{
+		for (FObjRawIndex& Idx : Face.Vertices)
+		{
+			Idx.NormalIndex = Idx.PositionIndex;
+		}
 	}
 }
 
