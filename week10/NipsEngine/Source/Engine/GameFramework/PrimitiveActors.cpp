@@ -5,7 +5,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
-#include "Component/RotatingMovementComponent.h"
+#include "Component/Movement/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>

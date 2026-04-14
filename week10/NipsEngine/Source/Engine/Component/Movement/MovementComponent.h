@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "ActorComponent.h"
+#include "Component/ActorComponent.h"
 #include "Core/CollisionTypes.h"
 
 class USceneComponent;

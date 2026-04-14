@@ -336,6 +336,13 @@ public:
 
 	// Backward compatibility alias
 	static float Distance(const FVector& A, const FVector& B) noexcept { return Dist(A, B); }
+
+	// Linear interpolation from A to B at time t
+	static FVector Lerp(const FVector& A, const FVector& B, float t)
+    {
+		FVector Delta = B - A;
+		return A + Delta * t;
+	}
 };
 
 namespace std
