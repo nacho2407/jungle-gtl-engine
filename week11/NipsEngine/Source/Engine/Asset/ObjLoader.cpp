@@ -550,6 +550,8 @@ void FObjLoader::NormalizeRawSizeToUnitCube(FObjRawData& RawData)
 	}
 }
 
+// vn(normal 벡터 정보)이 없는 .obj 파일을 불러올 때 각 정점의 normal 값을 복원합니다.
+// 각 삼각형의 벡터를 외적하여 법선벡터를 계산합니다. (큰 삼각형일수록 큰 가중치를 갖습니다.)
 void FObjLoader::ComputeNormals(FObjRawData& RawData)
 {
 	const int32 PositionCount = static_cast<int32>(RawData.Positions.size());

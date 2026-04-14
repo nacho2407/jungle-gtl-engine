@@ -126,7 +126,7 @@ void UDecalComponent::TickFadeOut()
 		SetActive(false);
 		if (bDestroyOwnerAfterFade && GetOwner())
 		{
-			GetOwner()->GetWorld()->DestroyActor(GetOwner());
+			GetOwner()->GetFocusedWorld()->DestroyActor(GetOwner());
 		}
 	}
 }

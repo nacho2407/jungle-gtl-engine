@@ -6,6 +6,8 @@
 #include "Runtime/ViewportClient.h"
 #include "Engine/Input/Controller/EditorController/EditorInputRouter.h"
 #include "Spatial/WorldSpatialIndex.h"
+#include "Editor/EditorUtils.h"
+#include "Editor/Viewport/ViewportCamera.h"
 
 enum EEditorViewportType
 {
@@ -34,6 +36,7 @@ class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
 class FSceneViewport;
+class FViewportCamera;
 struct FEditorViewportState;
 
 /*
@@ -46,9 +49,18 @@ class FEditorViewportClient : public FViewportClient
 {
 public:
 	void Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor);
+	UWorld* GetFocusedWorld() const { return World; }
 	void SetWorld(UWorld* InWorld);
 	void StartPIE(UWorld* InWorld);
 	void EndPIE(UWorld* InWorld);
+
+	// PIE 상태 (뷰포트별 독립)
+	EViewportPlayState GetPlayState() const { return PlayState; }
+	void SetPlayState(EViewportPlayState InState) { PlayState = InState; }
+
+	// PIE 시작 전 카메라 상태 저장 / 정지 시 복원
+	void SaveCameraSnapshot();
+	void RestoreCameraSnapshot();
 
 	void SetGizmo(UGizmoComponent* InGizmo)
 	{
@@ -141,6 +153,10 @@ private:
 	FViewportCamera		   Camera;
 	FEditorInputRouter	   InputRouter;
 	bool				   bHasCamera		= false;
+
+	EViewportPlayState     PlayState       = EViewportPlayState::Editing;
+	FCameraSnapshot        SavedCamera;
+	bool                   bHasCameraSnapshot = false;
 
 	bool  bBoxSelecting  = false;
 	POINT BoxSelectStart = { 0, 0 };

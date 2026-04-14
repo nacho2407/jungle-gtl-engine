@@ -163,7 +163,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
     if (!EditorEngine) return;
 
-    UWorld* World = EditorEngine->GetWorld();
+    UWorld* World = EditorEngine->GetFocusedWorld();
     if (!World) return; // Early Exit: 전체 코드의 들여쓰기 깊이를 한 단계 줄임
 
     const TArray<AActor*>& Actors = World->GetActors();
