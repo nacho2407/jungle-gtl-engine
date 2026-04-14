@@ -57,6 +57,8 @@ bool FRenderPipeline::Initialize()
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
+    // RenderPasses.push_back(FogRenderPass);
+    RenderPasses.push_back(FXAARenderPass);
     RenderPasses.push_back(FontRenderPass);
     RenderPasses.push_back(SubUVRenderPass);
     RenderPasses.push_back(TranslucentRenderPass);
@@ -65,8 +67,6 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(EditorRenderPass);
     RenderPasses.push_back(DepthLessRenderPass);
     RenderPasses.push_back(PostProcessOutlineRenderPass);
-    // RenderPasses.push_back(FogRenderPass);
-    // RenderPasses.push_back(FXAARenderPass);
 
     return true;
 }
