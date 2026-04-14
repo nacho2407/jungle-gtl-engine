@@ -74,6 +74,18 @@ public:
 	DECLARE_CLASS(UMaterialInterface, UObject)
 	virtual void Bind(ID3D11DeviceContext* Context) const = 0;
 	virtual bool GetParam(const FString& Name, FMaterialParamValue& OutValue) const = 0;
+
+	virtual void SetParam(const FString& Name, const FMaterialParamValue& Value) = 0;
+
+	void SetBool(const FString& Name, bool Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetInt(const FString& Name, int32 Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetUInt(const FString& Name, uint32 Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetFloat(const FString& Name, float Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetVector2(const FString& Name, const FVector2& Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetVector3(const FString& Name, const FVector& Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetVector4(const FString& Name, const FVector4& Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetMatrix4(const FString& Name, const FMatrix& Value) { SetParam(Name, FMaterialParamValue(Value)); }
+	void SetTexture(const FString& Name, UTexture* Value) { SetParam(Name, FMaterialParamValue(Value)); }
 };
 
 class UMaterial : public UMaterialInterface
@@ -112,70 +124,6 @@ public:
 		return false;
 	}
 
-	void SetBool(const FString& Name, bool Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Bool;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetInt(const FString& Name, int32 Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Int;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetUInt(const FString& Name, uint32 Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::UInt;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetFloat(const FString& Name, float Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Float;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetVector2(const FString& Name, const FVector2& Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Vector2;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetVector3(const FString& Name, const FVector& Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Vector3;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetVector4(const FString& Name, const FVector4& Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Vector4;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetMatrix4(const FString& Name, const FMatrix& Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Matrix4;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-	void SetTexture(const FString& Name, UTexture* Value)
-	{
-		FMaterialParamValue ParamValue;
-		ParamValue.Type = EMaterialParamType::Texture;
-		ParamValue.Value = Value;
-		SetParam(Name, ParamValue);
-	}
-
 	virtual void Bind(ID3D11DeviceContext* Context) const;
 
 	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const;
@@ -193,8 +141,15 @@ class UMaterialInstance : public UMaterialInterface
 {
 public:
 	DECLARE_CLASS(UMaterialInstance, UMaterialInterface)
-	const UMaterial* Parent = nullptr;
+	UMaterial* Parent = nullptr;
 	TMap<FString, FMaterialParamValue> OverridedParams;
+
+	static UMaterialInstance* Create(UMaterial* Material)
+	{
+		UMaterialInstance* Instance = new UMaterialInstance();
+		Instance->Parent = Material;
+		return Instance;
+	}
 
 	void SetParam(const FString& Name, const FMaterialParamValue& Value)
 	{
@@ -212,4 +167,17 @@ public:
 	}
 
 	void Bind(ID3D11DeviceContext* Context) const override;
+
+	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
+	{
+		if (Parent)
+		{
+			Parent->GatherAllParams(OutParams);
+		}
+
+		for (const auto& [Key, Param] : OverridedParams)
+		{
+			OutParams[Key] = Param;
+		}
+	}
 };

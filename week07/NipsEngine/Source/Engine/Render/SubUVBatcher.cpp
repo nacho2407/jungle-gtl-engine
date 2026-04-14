@@ -12,7 +12,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
     MaxIndexCount  = 384;
     CreateBuffers();
 
-	UMaterial* SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMaterial", "Shaders/ShaderSubUV.hlsl");
+	UMaterial* SubUVMaterial = FResourceManager::Get().GetMaterial("SubUVMat");
 	SubUVMaterial->DepthStencilType = EDepthStencilType::Default;
 	SubUVMaterial->BlendType = EBlendType::AlphaBlend;
 	SubUVMaterial->RasterizerType = ERasterizerType::SolidBackCull;
