@@ -1,6 +1,6 @@
 ﻿#include "MovementComponent.h"
 
-#include "SceneComponent.h"
+#include "Component/SceneComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"

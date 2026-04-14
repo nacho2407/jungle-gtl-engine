@@ -5,7 +5,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
-#include "Component/RotatingMovementComponent.h"
+#include "Component/Movement/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
@@ -29,6 +29,9 @@ REGISTER_FACTORY(APlaneActor)
 DEFINE_CLASS(AAttachTestActor, AActor) 
 REGISTER_FACTORY(AAttachTestActor)
 
+DEFINE_CLASS(ASceneActor, AActor) 
+REGISTER_FACTORY(ASceneActor)
+
 DEFINE_CLASS(AStaticMeshActor, AActor) 
 REGISTER_FACTORY(AStaticMeshActor)
 
@@ -47,8 +50,8 @@ REGISTER_FACTORY(ADecalActor)
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
 
-DEFINE_CLASS(ASpotlightActor, AActor)
-REGISTER_FACTORY(ASpotlightActor)
+DEFINE_CLASS(ASpotLightActor, AActor)
+REGISTER_FACTORY(ASpotLightActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -156,6 +159,12 @@ void AAttachTestActor::InitDefaultComponents()
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
 
+void ASceneActor::InitDefaultComponents()
+{
+	auto SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
+}
+
 void AStaticMeshActor::InitDefaultComponents()
 {
 	auto* StaticMesh = AddComponent<UStaticMeshComponent>();;
@@ -235,7 +244,7 @@ void ADecalActor::InitDefaultComponents()
 
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	Billboard->AttachToComponent(Decal);
-	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+	Billboard->SetTextureName(("Asset\\Texture\\DecalActor_64.png"));
 
 	auto* TextUUID = AddComponent<UTextRenderComponent>();
 	TextUUID->AttachToComponent(Decal);
@@ -282,12 +291,15 @@ void AFireballActor::InitDefaultComponents()
 	//Sphere->SetMaterial(0, &FireballCoreMaterial);
 }
 
-void ASpotlightActor::InitDefaultComponents() {
+void ASpotLightActor::InitDefaultComponents() {
 	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
-    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+    BillboardIcon->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
 	SetRootComponent(BillboardIcon);
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
 	Decal->AttachToComponent(BillboardIcon);
-	Decal->SetRelativeLocation(FVector(0, 0, 10.f));
+	Decal->SetRelativeLocation(FVector(10, 0, 0.f));
+
+	UMaterial* DecalMat = FResourceManager::Get().GetMaterial("DecalMat");
+	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
 }

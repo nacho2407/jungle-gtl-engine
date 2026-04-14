@@ -40,6 +40,15 @@ public:
 	void InitDefaultComponents();
 };
 
+class ASceneActor : public AActor
+{
+public:
+	DECLARE_CLASS(ASceneActor, AActor)
+	ASceneActor() = default;
+
+	void InitDefaultComponents();
+};
+
 class AStaticMeshActor : public AActor
 {
 public:
@@ -93,10 +102,10 @@ public:
 	void InitDefaultComponents();
 };
 
-class ASpotlightActor : public AActor {
+class ASpotLightActor : public AActor {
 public:
-	DECLARE_CLASS(AFireballActor, AActor)
-	ASpotlightActor() = default;
+	DECLARE_CLASS(ASpotLightActor, AActor)
+	ASpotLightActor() = default;
 
 	void InitDefaultComponents();
 };

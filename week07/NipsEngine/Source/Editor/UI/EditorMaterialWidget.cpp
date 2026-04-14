@@ -19,8 +19,6 @@
 // -----------------------------------------------------------------------
 void FEditorMaterialWidget::Render(float DeltaTime)
 {
-    (void)DeltaTime;
-
     ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Once);
     ImGui::Begin("Material Editor");
 
@@ -38,7 +36,6 @@ void FEditorMaterialWidget::Render(float DeltaTime)
 	{
 		ImGui::TextDisabled("Select a StaticMesh actor to edit materials.");
 	}
-
 	else 
 	{	
 		if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(SelectedComponent))
@@ -70,8 +67,16 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 	if (SelectedSectionIndex < 0)
 	{
 		SelectedSectionIndex = 0;
-		UMaterial* Mat = Cast<UMaterial>(MeshComp->GetMaterial(0));
-		SelectedMaterialPtr = Mat ? &Mat->MaterialData : nullptr;
+		UMaterialInstance* Inst = Cast<UMaterialInstance>(MeshComp->GetMaterial(0));
+
+		if (!Inst)
+		{
+			UMaterial* Mat = Cast<UMaterial>(MeshComp->GetMaterial(0));
+			Inst = UMaterialInstance::Create(Mat);
+			MeshComp->SetMaterial(0, Inst);
+		}
+
+		SelectedMaterialPtr = Inst;
 	}
 
 	const float SectionPanelWidth = 160.0f;
@@ -91,8 +96,14 @@ void FEditorMaterialWidget::RenderMeshMaterialEditor(UStaticMeshComponent* MeshC
 
 void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp)
 {
-	UMaterial* Mat = Cast<UMaterial>(DecalComp->GetMaterial());
-	SelectedMaterialPtr = Mat ? &Mat->MaterialData : nullptr;
+	UMaterialInstance* Inst = Cast<UMaterialInstance>(DecalComp->GetMaterial());
+	if (!Inst)
+	{
+		UMaterial* Mat = Cast<UMaterial>(DecalComp->GetMaterial());
+		Inst = UMaterialInstance::Create(Mat);
+		DecalComp->SetMaterial(Inst);
+	}
+	SelectedMaterialPtr = Inst;
 
 	const float SectionPanelWidth = 160.0f;
 
@@ -105,9 +116,9 @@ void FEditorMaterialWidget::RenderDecalMaterialEditor(UDecalComponent* DecalComp
 
 	// 오른쪽: 선택 섹션의 머테리얼 복사본 편집
 	ImGui::BeginChild("##MaterialDetails", ImVec2(0, 0), true);
-	RenderMaterialDetails(&Mat->MaterialData, [this, DecalComp, Mat](FMaterial* MatData)
+	RenderMaterialDetails(&Inst->Parent->MaterialData, [this, DecalComp, Inst](FMaterial* MatData)
 	{
-		DecalComp->SetMaterial(Mat);
+		DecalComp->SetMaterial(Inst);
 	});
 	ImGui::EndChild();
 }
@@ -149,8 +160,8 @@ void FEditorMaterialWidget::RenderSectionList(UStaticMeshComponent* MeshComp)
 			if (!bSelected)
 			{
 				SelectedSectionIndex = i;
-				UMaterial* Mat = Cast<UMaterial>(MeshComp->GetMaterial(i));
-				SelectedMaterialPtr = Mat ? &Mat->MaterialData : nullptr;
+				UMaterialInstance* Mat = Cast<UMaterialInstance>(MeshComp->GetMaterial(i));
+				SelectedMaterialPtr = Mat;
 			}
         }
 
@@ -183,7 +194,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
 	ImGui::Text("Section [%d]  |  Slot: %s", SelectedSectionIndex, SlotName.c_str());
 
 	// MTL 못 읽어 머테리얼 없는 경우 경고
-	if (!SelectedMaterialPtr)
+	if (!SelectedMaterialPtr || !SelectedMaterialPtr->Parent)
 	{
 		ImGui::Spacing();
 		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Material not loaded. Assign one below.");
@@ -194,11 +205,11 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
     const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
 
     int32 CurrentIdx = -1;
-	if (SelectedMaterialPtr)
+	if (SelectedMaterialPtr && SelectedMaterialPtr->Parent)
 	{
 		for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
 		{
-			if (MatNames[i] == SelectedMaterialPtr->Name)
+			if (MatNames[i] == SelectedMaterialPtr->Parent->Name)
 			{
 				CurrentIdx = i;
 				break;
@@ -215,12 +226,13 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
             bool bIsSelected = (i == CurrentIdx);
             if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
             {
-                UMaterial* NewMat = FResourceManager::Get().GetMaterial(MatNames[i]);
+                UMaterial* NewMat = Cast<UMaterial>(FResourceManager::Get().GetMaterial(MatNames[i]));
                 if (NewMat)
                 {
-                    MeshComp->SetMaterial(SelectedSectionIndex, NewMat);
-                    SelectedMaterialPtr = &NewMat->MaterialData;
-                }
+					UMaterialInstance* Inst = UMaterialInstance::Create(NewMat);
+					MeshComp->SetMaterial(SelectedSectionIndex, Inst);
+					SelectedMaterialPtr = Inst;
+				}
             }
             if (bIsSelected)
                 ImGui::SetItemDefaultFocus();
@@ -232,14 +244,8 @@ void FEditorMaterialWidget::RenderMaterialDetails(UStaticMeshComponent* MeshComp
 	if (!SelectedMaterialPtr)
 		return;
 
-    MAT_SEPARATOR();
-    RenderColorSection(*SelectedMaterialPtr);
-
-    MAT_SEPARATOR();
-    RenderScalarSection(*SelectedMaterialPtr);
-
-    MAT_SEPARATOR();
-    RenderTextureSection(*SelectedMaterialPtr);
+	MAT_SEPARATOR();
+	RenderMaterialProperties();
 }
 
 void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged)
@@ -260,7 +266,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 	{
 		for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
 		{
-			if (MatNames[i] == SelectedMaterialPtr->Name)
+			if (MatNames[i] == SelectedMaterialPtr->Parent->Name)
 			{
 				CurrentIdx = i;
 				break;
@@ -277,11 +283,12 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 			bool bIsSelected = (i == CurrentIdx);
 			if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
 			{
-				UMaterial* NewMat = FResourceManager::Get().GetMaterial(MatNames[i]);
+				UMaterial* NewMat = Cast<UMaterial>(FResourceManager::Get().GetMaterial(MatNames[i]));
 				if (NewMat)
 				{
-					OnMaterialChanged(&NewMat->MaterialData);
-					SelectedMaterialPtr = &NewMat->MaterialData;
+					UMaterialInstance* Inst = UMaterialInstance::Create(NewMat);
+					OnMaterialChanged(&Inst->Parent->MaterialData);
+					SelectedMaterialPtr = Inst;
 				}
 			}
 			if (bIsSelected)
@@ -295,13 +302,72 @@ void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<
 		return;
 
 	MAT_SEPARATOR();
-	RenderColorSection(*SelectedMaterialPtr);
+	RenderMaterialProperties();
+}
 
-	MAT_SEPARATOR();
-	RenderScalarSection(*SelectedMaterialPtr);
+void FEditorMaterialWidget::RenderMaterialProperties()
+{
+	TMap<FString, FMaterialParamValue> DisplayParams;
 
-	MAT_SEPARATOR();
-	RenderTextureSection(*SelectedMaterialPtr);
+	SelectedMaterialPtr->GatherAllParams(DisplayParams);
+
+	for (auto& [ParamName, ParamValue] : DisplayParams)
+	{
+		switch (ParamValue.Type)
+		{
+		case EMaterialParamType::Bool:
+			if (ImGui::Checkbox(ParamName.c_str(), &std::get<bool>(ParamValue.Value)))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::Int:
+			if (ImGui::DragInt(ParamName.c_str(), &std::get<int32>(ParamValue.Value)))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::UInt:
+			if (ImGui::DragInt(ParamName.c_str(), reinterpret_cast<int32*>(&std::get<uint32>(ParamValue.Value))))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::Float:
+			if (ImGui::DragFloat(ParamName.c_str(), &std::get<float>(ParamValue.Value), 0.01f))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::Vector2:
+			if (ImGui::DragFloat2(ParamName.c_str(), &std::get<FVector2>(ParamValue.Value).X, 0.01f))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::Vector3:
+			if (ImGui::DragFloat3(ParamName.c_str(), &std::get<FVector>(ParamValue.Value).X, 0.01f))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::Vector4:
+			if (ImGui::DragFloat4(ParamName.c_str(), &std::get<FVector4>(ParamValue.Value).X, 0.01f))
+			{
+				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+			}
+			break;
+		case EMaterialParamType::Texture:
+			if (ImGui::ImageButton(ParamName.c_str(), (void*)std::get<UTexture*>(ParamValue.Value)->GetSRV(), ImVec2(64, 64)))
+			{
+
+			}
+			ImGui::SameLine();
+			ImGui::Text("%s", ParamName.c_str());
+
+			break;
+		}
+	}
 }
 
 // -----------------------------------------------------------------------

@@ -236,15 +236,17 @@
     <ClCompile Include="Source\Engine\Component\FireballComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
@@ -308,10 +310,15 @@
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
@@ -391,15 +398,17 @@
     <ClInclude Include="Source\Engine\Component\FireballComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Component\LineBatchComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h" />
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
@@ -494,11 +503,16 @@
     <ClInclude Include="Source\Engine\Render\Renderer\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h" />
@@ -565,6 +579,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Gizmo.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\HeightFogPixelShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
