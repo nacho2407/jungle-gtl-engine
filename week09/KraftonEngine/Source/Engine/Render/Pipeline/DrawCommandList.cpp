@@ -1,4 +1,4 @@
-#include "DrawCommandList.h"
+﻿#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>
@@ -312,7 +312,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			FMaterialConstants MatConstants = {};
 			MatConstants.bIsUVScroll = Cmd.bIsUVScroll;
 			MatConstants.SectionColor = Cmd.SectionColor;
-			Cmd.PerShaderCB[0]->Update(Ctx, &MatConstants, sizeof(MatConstants));
+			//Cmd.PerShaderCB[0]->Update(Ctx, &MatConstants, sizeof(MatConstants));
 			Cache.LastUVScroll = CurUVScroll;
 			Cache.LastSectionColor = Cmd.SectionColor;
 			Cache.bMaterialDirty = false;
@@ -322,9 +322,11 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- Diffuse SRV (t0) ---
 	if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
 	{
-		ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
-		Ctx->PSSetShaderResources(0, 1, &SRV);
-		Cache.DiffuseSRV = Cmd.DiffuseSRV;
+		if (Cmd.DiffuseSRV) {
+			ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
+			Ctx->PSSetShaderResources(0, 1, &SRV);
+			Cache.DiffuseSRV = Cmd.DiffuseSRV;
+		}
 	}
 
 	Cache.bForceAll = false;
