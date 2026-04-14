@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorStatWidget.h"
+﻿#include "Editor/UI/EditorStatWidget.h"
 
 #include "Editor/Settings/EditorSettings.h"
 #include "Profiling/Stats.h"
@@ -70,6 +70,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 			FrozenDrawCalls = FDrawCallStats::Get();
 			FrozenCPUEntries = FStatManager::Get().GetSnapshot();
 			FrozenGPUEntries = FGPUProfiler::Get().GetGPUSnapshot();
+			FrozenDecalStats = FDecalStats::Get();
 			bPaused = true;
 		}
 	}
@@ -98,6 +99,22 @@ void FEditorStatWidget::Render(float DeltaTime)
 	if (ImGui::CollapsingHeader("GPU Stats", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		RenderStatTable("GPUStatTable", GPUSource, GPUSortColumn, bGPUSortDescending, HalfHeight);
+	}
+	
+	const FDecalFrameStats& DecalStats =
+		bPaused ? FrozenDecalStats
+		: FDecalStats::Get();
+
+	if (ImGui::CollapsingHeader("Decal", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::Text("Visible Decals: %d", DecalStats.VisibleDecals);
+		ImGui::Text("Visible Receivers: %d", DecalStats.VisibleReceivers);
+		ImGui::Text("Broad Candidates: %d", DecalStats.BroadCandidates);
+		ImGui::Text("Unique Candidates: %d", DecalStats.UniqueCandidates);
+		ImGui::Text("SAT Accepted: %d", DecalStats.SATAccepted);
+		ImGui::Text("Submitted Draws: %d", DecalStats.SubmittedDraws);
+		ImGui::Text("Rendered Draws: %d", DecalStats.RenderedDraws);
+		ImGui::Separator();
 	}
 
 	ImGui::End();

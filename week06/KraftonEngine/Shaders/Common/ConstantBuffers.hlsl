@@ -49,44 +49,13 @@ cbuffer MaterialBuffer : register(b4)
     float4 SectionColor;
 }
 
-
-// b5: Decal parameters
+// b5: Decal settings
 cbuffer DecalBuffer : register(b5)
 {
-    float4x4 InvView;
-    float4x4 InvProj;
-    float4x4 DecalWorldToLocal;
-
-    float3 DecalForward;
-    float DecalOpacity;
-    float4 DecalColor;
-};
-
-cbuffer HeightFogPostProcessCB : register(b6)
-{
-    float4x4 CameraInvView;
-    float4x4 CameraInvProjection;
-    float4 FogColor;
-    float3 FogCameraPosition;
-    float FogDensity;
-    float FogHeight;
-    float FogHeightFalloff;
-    float FogStartDistance;
-    float FogMaxOpacity;
-    float FogEndDistance;
-    float FogCutoffDistance;
-    float2 FogPadding;
-};
-
-cbuffer FireballBuffer : register(b7)
-{
-    float4x4 InvViewMatrix;
-    float4x4 InvProjMatrix;
-    float4 Color;
-    float Intensity;
-    float Radius;
-    float RadiusFalloff;
-    float Padding[2];
-};
+    float4x4 WorldToDecal;
+    float3 DecalHalfExtents;
+    float FadeAlpha;
+    float _decalPad;
+}
 
 #endif // CONSTANT_BUFFERS_HLSL

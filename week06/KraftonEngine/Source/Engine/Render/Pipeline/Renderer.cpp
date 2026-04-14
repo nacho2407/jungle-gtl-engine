@@ -233,6 +233,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		const bool bHasProxies = !InRenderBus.GetProxies(CurPass).empty();
 		if (!bHasBatcher && !bHasProxies) continue;
 		if (bHasBatcher && !bHasProxies && Batcher.IsEmpty && Batcher.IsEmpty()) continue;
+		if (CurPass == ERenderPass::Decal && InRenderBus.GetDecalEntries().empty()) continue;
 
 		const char* PassName = GetRenderPassName(CurPass);
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
@@ -265,6 +266,7 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlendPreserveAlpha, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Additive] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::FogPostProcess] = { EDepthStencilState::NoDepth,       EBlendState::FogBlend,   ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
@@ -287,6 +289,13 @@ void FRenderer::InitializePassRenderStates()
 // ============================================================
 void FRenderer::InitializePassBatchers()
 {
+	PassBatchers[(uint32)ERenderPass::Decal] = {
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			DrawDecalPass(Bus, Ctx);
+		},
+		nullptr
+	};
+
 	PassBatchers[(uint32)ERenderPass::Editor] = {
 		[this](ERenderPass, const FRenderBus&, ID3D11DeviceContext* Ctx) {
 			DrawLineBatcher(EditorLineBatcher, Ctx);
@@ -425,6 +434,54 @@ void FRenderer::DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Cont
 	if (EditorShader) EditorShader->Bind(Context);
 
 	Batcher.DrawBatch(Context);
+}
+
+void FRenderer::DrawDecalPass(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	SCOPE_STAT_CAT("Decal::Render", "Decal");
+
+	const TArray<FDecalDrawEntry>& Entries = Bus.GetDecalEntries();
+	if (Entries.empty()) return;
+
+	FShader* DecalShader = FShaderManager::Get().GetShader(EShaderType::Decal);
+	if (!DecalShader) return;
+
+	FConstantBuffer* DecalCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Decal, sizeof(FDecalConstants));
+	if (!DecalCB || !DecalCB->GetBuffer()) return;
+
+	ID3D11Buffer* b5 = DecalCB->GetBuffer();
+	Context->PSSetConstantBuffers(ECBSlot::Decal, 1, &b5);
+	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+
+	FDrawState State;
+	State.bSamplerBound = true;
+	FDecalFrameStats& DecalStats = FDecalStats::GetMutable();
+	DecalStats.RenderedDraws = 0;
+
+	for (const FDecalDrawEntry& Entry : Entries)
+	{
+		if (!Entry.ReceiverProxy || !Entry.Texture || !Entry.Texture->SRV) continue;
+
+		DecalCB->Update(Context, &Entry.Decal, sizeof(Entry.Decal));
+
+		if (State.LastShader != DecalShader)
+		{
+			DecalShader->Bind(Context);
+			State.LastShader = DecalShader;
+		}
+
+		if (State.LastSRV != Entry.Texture->SRV)
+		{
+			ID3D11ShaderResourceView* srv = Entry.Texture->SRV;
+			Context->PSSetShaderResources(0, 1, &srv);
+			State.LastSRV = Entry.Texture->SRV;
+		}
+
+		DrawDecalGeometry(*Entry.ReceiverProxy, Context, State);
+		++DecalStats.RenderedDraws;
+	}
+
+	CleanupSRV(Context, State);
 }
 
 // ============================================================
@@ -736,6 +793,43 @@ void FRenderer::CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State)
 		ID3D11ShaderResourceView* nullSRV = nullptr;
 		Ctx->PSSetShaderResources(0, 1, &nullSRV);
 		Ctx->PSSetShaderResources(1, 1, &nullSRV);
+	}
+}
+
+void FRenderer::DrawDecalGeometry(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State)
+{
+	if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) return;
+	if (!BindMeshBuffer(Proxy.MeshBuffer, Ctx, State)) return;
+	if (!BindPerObjectCB(Proxy, Ctx, State)) return;
+
+	ID3D11Buffer* IndexBuffer = Proxy.MeshBuffer->GetIndexBuffer().GetBuffer();
+	if (!Proxy.SectionDraws.empty() && IndexBuffer)
+	{
+		for (const FMeshSectionDraw& Section : Proxy.SectionDraws)
+		{
+			if (Section.IndexCount == 0) continue;
+			Ctx->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
+			FDrawCallStats::Increment();
+		}
+		return;
+	}
+
+	if (IndexBuffer)
+	{
+		const uint32 IndexCount = Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount();
+		if (IndexCount > 0)
+		{
+			Ctx->DrawIndexed(IndexCount, 0, 0);
+			FDrawCallStats::Increment();
+		}
+		return;
+	}
+
+	const uint32 VertexCount = Proxy.MeshBuffer->GetVertexBuffer().GetVertexCount();
+	if (VertexCount > 0)
+	{
+		Ctx->Draw(VertexCount, 0);
+		FDrawCallStats::Increment();
 	}
 }
 

@@ -38,8 +38,12 @@ public:
 	virtual void UpdateWorldAABB() const;
 	virtual bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult);
 	void UpdateWorldMatrix() const override;
+	void SetHitTestEnabled(bool bInHitTestEnabled) { bHitTestEnabled = bInHitTestEnabled; }
+	bool IsHitTestEnabled() const { return bHitTestEnabled; }
 
-	virtual bool SupportsOutline() const { return true; }
+	virtual bool SupportsOutline() const { return bSupportsOutline; }
+	void SetSupportsOutline(bool bInSupportsOutline);
+	bool GetSupportsOutline() const { return bSupportsOutline; }
 
 	// --- 렌더 상태 관리 ---
 	void CreateRenderState() override;
@@ -87,6 +91,8 @@ protected:
 	mutable bool bWorldAABBDirty = true;
 	mutable bool bHasValidWorldAABB = false;
 	bool bIsVisible = true;
+	bool bSupportsOutline = true;
+	bool bHitTestEnabled = true;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 	
 	FOctree* OctreeNode = nullptr;

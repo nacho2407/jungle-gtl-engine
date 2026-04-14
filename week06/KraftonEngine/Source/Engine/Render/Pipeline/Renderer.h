@@ -96,10 +96,12 @@ private:
 	void DrawSections(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSingleSection(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void DrawSimple(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
+	void DrawDecalGeometry(const FPrimitiveSceneProxy& Proxy, ID3D11DeviceContext* Ctx, FDrawState& State);
 	void CleanupSRV(ID3D11DeviceContext* Ctx, const FDrawState& State);
 
 	// LineBatcher DrawBatch 공통 — EditorShader 바인딩 + DrawBatch
 	void DrawLineBatcher(FLineBatcher& Batcher, ID3D11DeviceContext* Context);
+	void DrawDecalPass(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
 	void DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context);

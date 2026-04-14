@@ -1,71 +1,41 @@
-﻿#pragma once
+#pragma once
 
-#include "Component/PrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
-
-struct FFadeSetting
-{
-	float FadeAlpha = 1.0f;
-	float FadeInTime = 1.0f;
-	float FadeOutTime = 1.0f;
-	float TotalLifetime = 5.0f;
-	float ElapsedTime = 0.0f;
-	bool bFadeOnceAndDestroy = false;
-
-	void Reset()
-	{
-		ElapsedTime = 0.0f;
-		FadeAlpha = 1.0f;
-	}
-};
 
 class UDecalComponent : public UPrimitiveComponent
 {
 public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
 
-	UDecalComponent() = default;
-	~UDecalComponent() override = default;
+	UDecalComponent();
 
 	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
-	void UpdateLocalExtents();
-	FPrimitiveSceneProxy* CreateSceneProxy() override;
-	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+
+	bool SupportsOutline() const override { return false; }
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	void SetTexture(const FName& InTextureName);
-	void SetDecalSize(const FVector& InSize);
-	void SetFadeSetting(FFadeSetting setting) { FadeSetting = setting; }
-
+	const FName& GetTextureName() const { return TextureName; }
 	const FTextureResource* GetTexture() const { return CachedTexture; }
+
+	void SetFadeAlpha(float InFadeAlpha);
+	float GetFadeAlpha() const { return FadeAlpha; }
+
+	void SetDecalSize(const FVector& InDecalSize);
 	const FVector& GetDecalSize() const { return DecalSize; }
-	float GetFadeAlpha() const { return FadeSetting.FadeAlpha; }
-	FVector4 GetDecalColor() const { return DecalColor; }
+	FVector GetHalfExtents() const { return DecalSize * 0.5f; }
 
-	void ResetFade();
-
-	FMatrix& GetDecalToWorldMatrix() const;
-	FMatrix& GetWorldToDecalMatrix() const;
-
-protected:
-	void OnTransformDirty() override;
+	void GetWorldCorners(FVector(&OutCorners)[8]) const;
 
 private:
-	void MarkDecalDirty();
-	void UpdateDecalMatrices() const;
-
-private:
+	FName TextureName = FName::None;
 	FTextureResource* CachedTexture = nullptr;
-	FName TextureName;
-
-	mutable FMatrix DecalToWorld = FMatrix::Identity;
-	mutable FMatrix WorldToDecal = FMatrix::Identity;
-	mutable bool bDecalMatrixDirty = true;
-
-	FVector DecalSize = { 1.0f, 1.0f, 1.0f };
-	FVector4 DecalColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-	FFadeSetting FadeSetting;
+	float FadeAlpha = 1.0f;
+	FVector DecalSize = FVector(1.0f, 1.0f, 1.0f);
 };

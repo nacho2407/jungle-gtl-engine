@@ -1,4 +1,4 @@
-#include "BillboardBatcher.h"
+﻿#include "BillboardBatcher.h"
 
 #include "Core/CoreTypes.h"
 #include "Profiling/Stats.h"
@@ -42,8 +42,8 @@ void FBillboardBatcher::AddSprite(ID3D11ShaderResourceView* SRV,
 		Batches.push_back(batch);
 	}
 
-	const float HalfW = Width  * WorldScale.Y * 0.25f;
-	const float HalfH = Height * WorldScale.Z * 0.25f;
+	const float HalfW = Width  * WorldScale.Y * 0.5f;
+	const float HalfH = Height * WorldScale.Z * 0.5f;
 
 	FVector v0 = WorldPos + CamRight * (-HalfW) + CamUp * ( HalfH);
 	FVector v1 = WorldPos + CamRight * ( HalfW) + CamUp * ( HalfH);

@@ -886,6 +886,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			// Show Flags
 			ImGui::Text("Show");
 			ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+			ImGui::Checkbox("Decals", &Opts.ShowFlags.bDecals);
 			ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
 			ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
 			ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);

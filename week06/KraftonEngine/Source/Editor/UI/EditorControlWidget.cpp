@@ -6,9 +6,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/DecalActor.h"
-#include "GameFramework/EggActor.h"
-#include "GameFramework/ExponentialHeightFog.h"
-
+#include "GameFramework/StaticMeshActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -37,8 +35,16 @@ void FEditorControlWidget::Render(float DeltaTime)
 	if (ImGui::Button("Spawn"))
 	{
 		UWorld* World = EditorEngine->GetWorld();
+		FSelectionManager& SM = EditorEngine->GetSelectionManager();
+
+		SM.ClearSelection();
+
+		bool bSelectedFirst = false;
+
 		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
 		{
+			AActor* SpawnedActor = nullptr;
+
 			switch (SelectedPrimitiveType)
 			{
 			case 0: // Cube
@@ -47,6 +53,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
 				World->InsertActorToOctree(Actor);
+				SpawnedActor = Actor;
 				break;
 			}
 			case 1: // Sphere
@@ -55,32 +62,31 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
 				World->InsertActorToOctree(Actor);
+				SpawnedActor = Actor;
 				break;
 			}
-			case 2: //Decal
+			case 2: // Decal
 			{
 				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents();
 				World->InsertActorToOctree(Actor);
+				SpawnedActor = Actor;
 				break;
 			}
-			case 3: //Egg
+			}
+
+			if (SpawnedActor)
 			{
-				AEggActor* Actor = World->SpawnActor<AEggActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
-				World->InsertActorToOctree(Actor);
-				break;
-			}
-			case 4: // ExponentialHeightFog
-			{
-				AExponentialHeightFog* Actor = World->SpawnActor<AExponentialHeightFog>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents();
-				World->InsertActorToOctree(Actor);
-				break;
-			}
+				if (!bSelectedFirst)
+				{
+					SM.Select(SpawnedActor);
+					bSelectedFirst = true;
+				}
+				else
+				{
+					SM.ToggleSelect(SpawnedActor);
+				}
 			}
 		}
 		NumberOfSpawnedActors = 1;

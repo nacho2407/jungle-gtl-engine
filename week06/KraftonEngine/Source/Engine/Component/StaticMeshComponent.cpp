@@ -198,6 +198,7 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 	UMeshComponent::Serialize(Ar);
 	Ar << StaticMeshPath;
 	Ar << MaterialSlots;
+	Ar << bReceivesDecals;
 }
 
 void UStaticMeshComponent::PostDuplicate()
@@ -248,6 +249,7 @@ void UStaticMeshComponent::PostDuplicate()
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Decal Receive", EPropertyType::Bool, &bReceivesDecals });
 	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
 
 	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
@@ -264,7 +266,11 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Static Mesh") == 0)
+	if (strcmp(PropertyName, "Decal Receive") == 0)
+	{
+		SetReceivesDecals(bReceivesDecals);
+	}
+	else if (strcmp(PropertyName, "Static Mesh") == 0)
 	{
 		if (StaticMeshPath.empty() || StaticMeshPath == "None")
 		{

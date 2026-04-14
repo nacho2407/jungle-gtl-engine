@@ -11,14 +11,11 @@ enum class EShaderType : uint32
 	Editor,
 	StaticMesh,
 	Decal,
-	HeightFogPostProcess,
-	SceneDepthProcess,
 	OutlinePostProcess,
 	Font,
 	OverlayFont,
 	SubUV,
 	Billboard,
-	Fireball,
 	MAX,
 };
 

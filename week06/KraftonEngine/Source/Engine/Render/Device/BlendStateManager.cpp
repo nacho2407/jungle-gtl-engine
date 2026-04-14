@@ -1,4 +1,4 @@
-﻿#include "BlendStateManager.h"
+#include "BlendStateManager.h"
 
 #define SAFE_RELEASE(Obj) if (Obj) { Obj->Release(); Obj = nullptr; }
 
@@ -10,23 +10,23 @@ void FBlendStateManager::Create(ID3D11Device* InDevice)
 	Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
 	Desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
-	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	InDevice->CreateBlendState(&Desc, &Alpha);
 
-	// Fog Blend: SceneColor = FogColor + SceneColor * Transmittance
+	// Alpha Blend (Preserve Render Target Alpha)
 	Desc = {};
 	Desc.RenderTarget[0].BlendEnable = TRUE;
-	Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	Desc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
+	Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	Desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
 	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
 	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	InDevice->CreateBlendState(&Desc, &Fog);
+	InDevice->CreateBlendState(&Desc, &AlphaPreserveAlpha);
 
 	// No Color Write
 	Desc = {};
@@ -41,26 +41,13 @@ void FBlendStateManager::Create(ID3D11Device* InDevice)
 	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].RenderTargetWriteMask = 0;
 	InDevice->CreateBlendState(&Desc, &NoColorWrite);
-
-	//Additive Blend
-	Desc = {};
-	Desc.RenderTarget[0].BlendEnable = TRUE;
-	Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	Desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-	Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
-	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	InDevice->CreateBlendState(&Desc, &Additive);
 }
 
 void FBlendStateManager::Release()
 {
 	SAFE_RELEASE(Alpha);
-	SAFE_RELEASE(Fog);
+	SAFE_RELEASE(AlphaPreserveAlpha);
 	SAFE_RELEASE(NoColorWrite);
-	SAFE_RELEASE(Additive);
 }
 
 void FBlendStateManager::Set(ID3D11DeviceContext* InContext, EBlendState InState)
@@ -73,9 +60,8 @@ void FBlendStateManager::Set(ID3D11DeviceContext* InContext, EBlendState InState
 	{
 	case EBlendState::Opaque:     InContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);       break;
 	case EBlendState::AlphaBlend: InContext->OMSetBlendState(Alpha, BlendFactor, 0xffffffff);         break;
-	case EBlendState::FogBlend:   InContext->OMSetBlendState(Fog, BlendFactor, 0xffffffff);           break;
+	case EBlendState::AlphaBlendPreserveAlpha: InContext->OMSetBlendState(AlphaPreserveAlpha, BlendFactor, 0xffffffff); break;
 	case EBlendState::NoColor:    InContext->OMSetBlendState(NoColorWrite, BlendFactor, 0xFFFFFFFF);  break;
-	case EBlendState::Additive:   InContext->OMSetBlendState(Additive, BlendFactor, 0xffffffff);     break;
 	}
 
 	CurrentState = InState;
