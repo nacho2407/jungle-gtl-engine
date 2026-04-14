@@ -98,6 +98,8 @@ private:
 	FVector4 DiffuseColor = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
 public:
 	DECLARE_CLASS(UMaterial, UObject)
+	~UMaterial() override;
+
 	void Create(const FString& InPathFileName,FMaterialTemplate* InTemplate,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
