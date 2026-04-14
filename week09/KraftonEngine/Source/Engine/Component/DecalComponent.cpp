@@ -8,6 +8,10 @@
 #include "Render/DebugDraw/DrawDebugHelpers.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
+#include "Mesh/ObjManager.h"
+#include "Engine/Runtime/Engine.h"
+#include "Texture/Texture2D.h"
+#include "Materials/Material.h"
 #include <algorithm>
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
@@ -31,7 +35,7 @@ FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, &MaterialSlot });
 	OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
 	OutProps.push_back({ "FadeInDelay", EPropertyType::Float, &FadeInDelay });
 	OutProps.push_back({ "FadeInDuration", EPropertyType::Float, &FadeInDuration });
@@ -43,9 +47,27 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Texture") == 0)
+	if (strcmp(PropertyName, "Material") == 0)
 	{
-		SetTexture(TextureName);
+		if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
+		{
+			SetMaterial(nullptr);
+		}
+		else
+		{
+			UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MaterialSlot.Path);
+			if (LoadedMat)
+			{
+				UTexture2D* DiffuseTex = nullptr;
+				if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex) && !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
+				{
+					ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+					DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
+					LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
+				}
+				SetMaterial(LoadedMat);
+			}
+		}
 		MarkRenderStateDirty();
 	}
 	if (strcmp(PropertyName, "Color") == 0)
@@ -57,7 +79,8 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
-	Ar << TextureName;
+	Ar << MaterialSlot.Path;
+	Ar << MaterialSlot.bUVScroll;
 	Ar << Color;
 	Ar << FadeInDelay;
 	Ar << FadeInDuration;
@@ -67,9 +90,22 @@ void UDecalComponent::Serialize(FArchive& Ar)
 
 void UDecalComponent::PostDuplicate()
 {
-	if (TextureName.IsValid())
+	UPrimitiveComponent::PostDuplicate();
+
+	if (!MaterialSlot.Path.empty() && MaterialSlot.Path != "None")
 	{
-		SetTexture(TextureName);
+		UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MaterialSlot.Path);
+		if (LoadedMat)
+		{
+			UTexture2D* DiffuseTex = nullptr;
+			if (!LoadedMat->GetTextureParameter("DiffuseTexture", DiffuseTex) && !LoadedMat->GetTexturePathFileName("DiffuseTexture").empty())
+			{
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				DiffuseTex = UTexture2D::LoadFromFile(LoadedMat->GetTexturePathFileName("DiffuseTexture"), Device);
+				LoadedMat->SetTextureParameter("DiffuseTexture", DiffuseTex);
+			}
+			SetMaterial(LoadedMat);
+		}
 	}
 	MarkProxyDirty(EDirtyFlag::Material);
 }
@@ -81,10 +117,17 @@ FVector4 UDecalComponent::GetColor() const
 	return OutColor;
 }
 
-void UDecalComponent::SetTexture(const FName& InTextureName)
+void UDecalComponent::SetMaterial(UMaterial* InMaterial)
 {
-	TextureName = InTextureName;
-	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
+	Material = InMaterial;
+	if (Material)
+	{
+		MaterialSlot.Path = Material->GetAssetPathFileName();
+	}
+	else
+	{
+		MaterialSlot.Path = "None";
+	}
 	MarkProxyDirty(EDirtyFlag::Material);
 }
 
