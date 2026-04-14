@@ -22,6 +22,7 @@ struct FShowFlags
 	bool bDebugDraw = true;
 	bool bOctree = false;
 	bool bFog = true;
+	bool bFXAA = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)
@@ -54,4 +55,8 @@ struct FViewportRenderOptions
 	int32 SceneDepthVisMode = 1;
 	float Exponent = 128.0f;
 	float Range = 1000.0f;
+
+	// FXAA 전용 설정
+	float EdgeThreshold = 0.125f;
+	float EdgeThresholdMin = 0.0625f;
 };

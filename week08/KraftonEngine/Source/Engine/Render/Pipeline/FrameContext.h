@@ -40,6 +40,10 @@ struct FFrameContext
 
 	ID3D11RenderTargetView*   ViewportRTV          = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV          = nullptr;
+	ID3D11ShaderResourceView* ViewportPingPongSRV  = nullptr;
+	ID3D11RenderTargetView* ViewportPingPongRTV    = nullptr;
+	ID3D11Texture2D* ViewportPingPongTexture       = nullptr;
+	ID3D11Texture2D* ViewportRenderTexture         = nullptr;
 
 	// CopyResource 소스/대상
 	ID3D11Texture2D*          DepthTexture         = nullptr;  // 원본 (CopyResource 소스)
@@ -101,11 +105,15 @@ struct FFrameContext
 	// Reset D3D pointers
 	void ClearViewportResources()
 	{
-		ViewportRTV         = nullptr;
-		ViewportDSV         = nullptr;
-		DepthTexture        = nullptr;
-		DepthCopyTexture    = nullptr;
-		DepthCopySRV        = nullptr;
-		StencilCopySRV      = nullptr;
+		ViewportRTV             = nullptr;
+		ViewportDSV             = nullptr;
+		ViewportPingPongSRV     = nullptr;
+		ViewportPingPongRTV     = nullptr;
+		ViewportPingPongTexture = nullptr;
+		ViewportRenderTexture   = nullptr;
+		DepthTexture            = nullptr;
+		DepthCopyTexture        = nullptr;
+		DepthCopySRV            = nullptr;
+		StencilCopySRV          = nullptr;
 	}
 };
