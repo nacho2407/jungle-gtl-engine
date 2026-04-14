@@ -9,12 +9,6 @@ class FBaseRenderPass
 public:
     virtual ~FBaseRenderPass() {}
 
-	/*
-		Paa 별 Inputs, Outputs 명시용
-	*/
-	virtual void DeclareInputs(TArray<FResourceBinding>& OutInputs) const = 0;
-    virtual void DeclareOutputs(TArray<FResourceBinding>& OutOutputs) const = 0;
-
     virtual bool Initialize() = 0;
     virtual bool Release() = 0;
 
@@ -24,13 +18,6 @@ public:
 	 */
     bool Render(const FRenderPassContext* Context);
     ID3D11ShaderResourceView* GetOutSRV() const { return OutSRV; }
-
-	void SetInput(const FString& Name, ID3D11ShaderResourceView* SRV);
-	ID3D11ShaderResourceView* GetInput(const FString& Name) const;
-
-	void SetOutput(const FString& Name, ID3D11RenderTargetView* RTV);
-    ID3D11RenderTargetView* GetOutput(const FString& Name) const;
-	
 
 protected:
     /** 자원 할당 */
@@ -43,7 +30,4 @@ protected:
 protected:
 	// Viewport 출력용 최종 View
     ID3D11ShaderResourceView* OutSRV = nullptr;
-
-	TMap<FString, ID3D11ShaderResourceView*> Inputs;
-    TMap<FString, ID3D11RenderTargetView*> Outputs;
 };
