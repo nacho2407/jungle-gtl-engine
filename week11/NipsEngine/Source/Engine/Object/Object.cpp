@@ -2,6 +2,7 @@
 #include "EngineStatics.h"
 #include "Object/FName.h"
 #include "Object/ObjectFactory.h"
+#include "Math/Vector.h"
 
 #include <cstring>
 
@@ -101,6 +102,14 @@ void UObject::CopyPropertiesFrom(UObject* Src)
             // Duplicate에서 포인터 복사는 건너뜁니다. 이 부분은 Actor의 Duplicate()가 알아서 잘 복사해줘야 합니다.
 			// 이유: 컴포넌트 입장에선 자기 부모 컴포넌트나 자식 컴포넌트들이 어느 주소로 복사될지 알 수가 없습니다.
             break;
+
+        case EPropertyType::Vec3Array:
+        {
+            auto* Dst = static_cast<TArray<FVector>*>(DstProp->ValuePtr);
+            const auto* Src = static_cast<const TArray<FVector>*>(SrcProp.ValuePtr);
+            *Dst = *Src;
+            break;
+        }
         }
     }
 
