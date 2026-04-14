@@ -1,84 +1,93 @@
 ﻿#include "Shader.h"
 
-#include <iostream>
+DEFINE_CLASS(UShader, UObject)
 
-void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char * InVSEntryPoint, const char * InPSEntryPoint,
-		const D3D11_INPUT_ELEMENT_DESC * InInputElements, UINT InInputElementCount)
+void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device)
 {
-	TComPtr<ID3DBlob> vertexShaderCSO;
-	TComPtr<ID3DBlob> pixelShaderCSO;
-	TComPtr<ID3DBlob> errorBlob;
+	if (!ShaderBlob || !Device) return;
 
-	// Vertex Shader 컴파일
-	HRESULT hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InVSEntryPoint, "vs_5_0", 0, 0,
-		vertexShaderCSO.GetAddressOf(), errorBlob.GetAddressOf());
-	if (FAILED(hr))
+	ID3D11ShaderReflection* Reflector = nullptr;
+	HRESULT hr = D3DReflect(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(),
+		IID_ID3D11ShaderReflection, (void**)&Reflector);
+
+	if (FAILED(hr) || !Reflector) return;
+
+	D3D11_SHADER_DESC ShaderDesc;
+	Reflector->GetDesc(&ShaderDesc);
+
+	for (UINT i = 0; i < ShaderDesc.BoundResources; ++i)
 	{
-		if (errorBlob)
+		D3D11_SHADER_INPUT_BIND_DESC BindDesc;
+		Reflector->GetResourceBindingDesc(i, &BindDesc);
+
+		if (BindDesc.Type == D3D_SIT_TEXTURE)
 		{
-			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Vertex Shader Compile Error", MB_OK | MB_ICONERROR);
-		}
-		return;
-	}
-
-	// Pixel Shader 컴파일
-	errorBlob.Reset();
-	hr = D3DCompileFromFile(InFilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, InPSEntryPoint, "ps_5_0", 0, 0,
-		pixelShaderCSO.GetAddressOf(), errorBlob.GetAddressOf());
-	if (FAILED(hr))
-	{
-		if (errorBlob)
-		{
-			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Pixel Shader Compile Error", MB_OK | MB_ICONERROR);
-		}
-		return;
-	}
-
-	// Vertex Shader 생성
-	hr = InDevice->CreateVertexShader(vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), nullptr,
-		VertexShader.ReleaseAndGetAddressOf());
-	if (FAILED(hr))
-	{
-		std::cerr << "Failed to create Vertex Shader (HRESULT: " << hr << ")" << std::endl;
-		return;
-	}
-
-	// Pixel Shader 생성
-	hr = InDevice->CreatePixelShader(pixelShaderCSO->GetBufferPointer(), pixelShaderCSO->GetBufferSize(), nullptr,
-		PixelShader.ReleaseAndGetAddressOf());
-	if (FAILED(hr))
-	{
-		std::cerr << "Failed to create Pixel Shader (HRESULT: " << hr << ")" << std::endl;
-		return;
-	}
-
-	// Input Layout 생성 (fullscreen triangle 등 입력 레이아웃이 없는 VS 지원)
-	if (InInputElements != nullptr && InInputElementCount > 0)
-	{
-		hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(),
-			vertexShaderCSO->GetBufferSize(), InputLayout.ReleaseAndGetAddressOf());
-		if (FAILED(hr))
-		{
-			std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
-			return;
+			TextureBindSlots[BindDesc.Name] = BindDesc.BindPoint;
 		}
 	}
-	else
+
+	for (UINT i = 0; i < ShaderDesc.ConstantBuffers; ++i)
 	{
-		InputLayout.Reset();
+		ID3D11ShaderReflectionConstantBuffer* ConstantBuffer = Reflector->GetConstantBufferByIndex(i);
+
+		D3D11_SHADER_BUFFER_DESC BufferDesc;
+		ConstantBuffer->GetDesc(&BufferDesc);
+
+		uint32 BufferBindPoint = 0;
+		bool bFoundBindPoint = false;
+		for (UINT j = 0; j < ShaderDesc.BoundResources; ++j)
+		{
+			D3D11_SHADER_INPUT_BIND_DESC ResDesc;
+			Reflector->GetResourceBindingDesc(j, &ResDesc);
+
+			if (ResDesc.Type == D3D_SIT_CBUFFER && strcmp(ResDesc.Name, BufferDesc.Name) == 0)
+			{
+				BufferBindPoint = ResDesc.BindPoint;
+				bFoundBindPoint = true;
+				break;
+			}
+		}
+
+		if (!bFoundBindPoint) continue;
+
+		for (UINT j = 0; j < BufferDesc.Variables; ++j)
+		{
+			ID3D11ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(j);
+
+			D3D11_SHADER_VARIABLE_DESC VarDesc;
+			Variable->GetDesc(&VarDesc);
+
+			FShaderVariableInfo Info;
+			Info.BufferSlot = BufferBindPoint;
+			Info.Offset = VarDesc.StartOffset;
+			Info.Size = VarDesc.Size;
+
+			ShaderVariables[VarDesc.Name] = Info;
+		}
+
+		// 머티리얼에서 사용하는 상수 버퍼 슬롯은 2번으로 고정되어 있음.
+		// 해당 슬롯의 버퍼 크기를 셰이더의 메인 상수 버퍼 크기로 사용.
+		if (BufferBindPoint == 2)
+		{
+			CBufferSize = BufferDesc.Size;
+		}
 	}
-}
 
-void FShader::Release()
-{
-	InputLayout.Reset();
-	PixelShader.Reset();
-	VertexShader.Reset();
-}
+	if (CBufferSize > 0)
+	{
+		if (ShaderData.ConstantBuffer)
+		{
+			ShaderData.ConstantBuffer->Release();
+			ShaderData.ConstantBuffer = nullptr;
+		}
 
-void FShader::Bind(ID3D11DeviceContext* InDeviceContext) const
-{
-	InDeviceContext->IASetInputLayout(InputLayout.Get());
-	InDeviceContext->VSSetShader(VertexShader.Get(), nullptr, 0);
-	InDeviceContext->PSSetShader(PixelShader.Get(), nullptr, 0);
+		D3D11_BUFFER_DESC CBufferDesc = {};
+		CBufferDesc.ByteWidth = CBufferSize;
+		CBufferDesc.Usage = D3D11_USAGE_DEFAULT; // Dynamic 에서 Default로 변경 (UpdateSubresource 사용을 위함)
+		CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		CBufferDesc.CPUAccessFlags = 0;
+		Device->CreateBuffer(&CBufferDesc, nullptr, &ShaderData.ConstantBuffer);
+	}
+
+	Reflector->Release();
 }

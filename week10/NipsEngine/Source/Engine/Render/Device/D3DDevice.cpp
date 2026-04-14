@@ -8,9 +8,7 @@ void FD3DDevice::Create(HWND InHWindow)
 {
 	CreateDeviceAndSwapChain(InHWindow);
 	CreateFrameBuffer();
-	CreateRasterizerState();
 	CreateDepthStencilBuffer();
-	CreateBlendState();
 }
 
 void FD3DDevice::Release()
@@ -21,9 +19,7 @@ void FD3DDevice::Release()
 		DeviceContext->Flush();
 	}
 
-	ReleaseBlendState();
 	ReleaseDepthStencilBuffer();
-	ReleaseRasterizerState();
 	ReleaseViewportRenderTargets();
 	ReleaseFrameBuffer();
 
@@ -54,10 +50,6 @@ void FD3DDevice::BeginFrame()
 
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 
-	SetRasterizerState(ERasterizerState::SolidBackCull);
-	SetDepthStencilState(EDepthStencilState::Default);
-	SetBlendState(EBlendState::Opaque);
-
 	ID3D11RenderTargetView* FrameRTV = FrameBufferRTV.Get();
 	DeviceContext->OMSetRenderTargets(1, &FrameRTV, DepthStencilView.Get());
 }
@@ -85,11 +77,6 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 
 	CreateFrameBuffer();
 	CreateDepthStencilBuffer();
-
-	// 상태 캐시 초기화 — 새로 생성된 state 객체가 BeginFrame에서 재적용되도록
-	CurrentRasterizerState = static_cast<ERasterizerState>(-1);
-	CurrentDepthStencilState = static_cast<EDepthStencilState>(-1);
-	CurrentBlendState = static_cast<EBlendState>(-1);
 }
 
 void FD3DDevice::EnsureViewportRenderTargets(int Width, int Height)
@@ -176,80 +163,6 @@ FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
 	Targets.Width = static_cast<float>(ViewportRenderTargetWidth);
 	Targets.Height = static_cast<float>(ViewportRenderTargetHeight);
 	return Targets;
-}
-
-void FD3DDevice::SetDepthStencilState(EDepthStencilState InState)
-{
-	if (CurrentDepthStencilState == InState) return;
-
-	switch (InState)
-	{
-	case EDepthStencilState::Default:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateDefault.Get(), 0);
-		break;
-	case EDepthStencilState::DepthReadOnly:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateDepthReadOnly.Get(), 0);
-		break;
-	case EDepthStencilState::StencilWrite:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilWrite.Get(), 1);
-		break;
-	case EDepthStencilState::StencilWriteOnlyEqual:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateStencilMaskEqual.Get(), 1);
-		break;
-	case EDepthStencilState::GizmoInside:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateGizmoInside.Get(), 1);
-		break;
-	case EDepthStencilState::GizmoOutside:
-		DeviceContext->OMSetDepthStencilState(DepthStencilStateGizmoOutside.Get(), 1);
-		break;
-	}
-
-	CurrentDepthStencilState = InState;
-}
-
-void FD3DDevice::SetBlendState(EBlendState InState)
-{
-	if (CurrentBlendState == InState) return;
-	const float BlendFactor[4] = { 0, 0, 0, 0 };
-	CurrentBlendState = InState;
-
-	switch (CurrentBlendState)
-	{
-	case EBlendState::Opaque:
-		DeviceContext->OMSetBlendState(nullptr, BlendFactor, 0xffffffff);
-		break;
-
-	case EBlendState::AlphaBlend:
-		DeviceContext->OMSetBlendState(BlendStateAlpha.Get(), BlendFactor, 0xffffffff);
-		break;
-
-	case EBlendState::NoColor:
-		DeviceContext->OMSetBlendState(BlendStateNoColorWrite.Get(), BlendFactor, 0xFFFFFFFF);
-		break;
-	}
-}
-
-void FD3DDevice::SetRasterizerState(ERasterizerState InState)
-{
-	if (CurrentRasterizerState == InState) return;
-
-	switch (InState)
-	{
-	case ERasterizerState::SolidBackCull:
-		DeviceContext->RSSetState(RasterizerStateBackCull.Get());
-		break;
-	case ERasterizerState::SolidFrontCull:
-		DeviceContext->RSSetState(RasterizerStateFrontCull.Get());
-		break;
-	case ERasterizerState::SolidNoCull:
-		DeviceContext->RSSetState(RasterizerStateNoCull.Get());
-		break;
-	case ERasterizerState::WireFrame:
-		DeviceContext->RSSetState(RasterizerStateWireFrame.Get());
-		break;
-	}
-
-	CurrentRasterizerState = InState;
 }
 
 void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
@@ -495,47 +408,6 @@ void FD3DDevice::ReleaseViewportRenderTargets()
 	ViewportRenderTargetHeight = 0;
 }
 
-void FD3DDevice::CreateRasterizerState()
-{
-	D3D11_RASTERIZER_DESC rasterizerDesc = {};
-	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-	rasterizerDesc.CullMode = D3D11_CULL_BACK;
-
-	Device->CreateRasterizerState(&rasterizerDesc,
-		RasterizerStateBackCull.ReleaseAndGetAddressOf());
-
-	D3D11_RASTERIZER_DESC frontCullDesc = {};
-	frontCullDesc.FillMode = D3D11_FILL_SOLID;
-	frontCullDesc.CullMode = D3D11_CULL_FRONT;
-
-	Device->CreateRasterizerState(&frontCullDesc,
-		RasterizerStateFrontCull.ReleaseAndGetAddressOf());
-
-	D3D11_RASTERIZER_DESC noCullDesc = {};
-	noCullDesc.FillMode = D3D11_FILL_SOLID;
-	noCullDesc.CullMode = D3D11_CULL_NONE;
-
-	Device->CreateRasterizerState(&noCullDesc,
-		RasterizerStateNoCull.ReleaseAndGetAddressOf());
-
-	D3D11_RASTERIZER_DESC wireFrameDesc = {};
-	wireFrameDesc.FillMode = D3D11_FILL_WIREFRAME;
-	wireFrameDesc.CullMode = D3D11_CULL_NONE;
-
-	Device->CreateRasterizerState(&wireFrameDesc,
-		RasterizerStateWireFrame.ReleaseAndGetAddressOf());
-
-	CurrentRasterizerState = ERasterizerState::SolidBackCull;
-}
-
-void FD3DDevice::ReleaseRasterizerState()
-{
-	RasterizerStateBackCull.Reset();
-	RasterizerStateFrontCull.Reset();
-	RasterizerStateNoCull.Reset();
-	RasterizerStateWireFrame.Reset();
-}
-
 void FD3DDevice::CreateDepthStencilBuffer()
 {
 	D3D11_TEXTURE2D_DESC depthStencilDesc = {};
@@ -552,158 +424,12 @@ void FD3DDevice::CreateDepthStencilBuffer()
 		DepthStencilBuffer.ReleaseAndGetAddressOf());
 	Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr,
 		DepthStencilView.ReleaseAndGetAddressOf());
-
-	//	Default
-	D3D11_DEPTH_STENCIL_DESC depthStencilStateDefaultDesc = {};
-	depthStencilStateDefaultDesc.DepthEnable = TRUE;
-	depthStencilStateDefaultDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilStateDefaultDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	depthStencilStateDefaultDesc.StencilEnable = FALSE;
-
-	Device->CreateDepthStencilState(&depthStencilStateDefaultDesc,
-		DepthStencilStateDefault.ReleaseAndGetAddressOf());
-
-	//	Depth Read Only
-	D3D11_DEPTH_STENCIL_DESC depthStencilStateDepthReadOnlyDesc = {};
-	depthStencilStateDepthReadOnlyDesc.DepthEnable = TRUE;
-	depthStencilStateDepthReadOnlyDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	depthStencilStateDepthReadOnlyDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-	depthStencilStateDepthReadOnlyDesc.StencilEnable = FALSE;
-
-	Device->CreateDepthStencilState(&depthStencilStateDepthReadOnlyDesc,
-		DepthStencilStateDepthReadOnly.ReleaseAndGetAddressOf());
-
-	// Stencil Write
-	D3D11_DEPTH_STENCIL_DESC depthStencilStateStencilWriteDesc = {};
-	depthStencilStateStencilWriteDesc.DepthEnable = TRUE;
-	depthStencilStateStencilWriteDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	depthStencilStateStencilWriteDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-	depthStencilStateStencilWriteDesc.StencilEnable = TRUE;
-	depthStencilStateStencilWriteDesc.StencilReadMask = 0xFF;
-	depthStencilStateStencilWriteDesc.StencilWriteMask = 0xFF;
-
-	depthStencilStateStencilWriteDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	depthStencilStateStencilWriteDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	depthStencilStateStencilWriteDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilStateStencilWriteDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-
-	depthStencilStateStencilWriteDesc.BackFace = depthStencilStateStencilWriteDesc.FrontFace;
-
-	Device->CreateDepthStencilState(&depthStencilStateStencilWriteDesc,
-		DepthStencilStateStencilWrite.ReleaseAndGetAddressOf());
-
-	{// Gizmo split by selected-object stencil mask (ref=1)
-		D3D11_DEPTH_STENCIL_DESC gizmoInsideDesc = {};
-		gizmoInsideDesc.DepthEnable = TRUE;
-		gizmoInsideDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		gizmoInsideDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-		gizmoInsideDesc.StencilEnable = TRUE;
-		gizmoInsideDesc.StencilReadMask = 0xFF;
-		gizmoInsideDesc.StencilWriteMask = 0x00;
-
-		gizmoInsideDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-		gizmoInsideDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		gizmoInsideDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		gizmoInsideDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-
-		gizmoInsideDesc.BackFace = gizmoInsideDesc.FrontFace;
-
-		Device->CreateDepthStencilState(&gizmoInsideDesc,
-			DepthStencilStateGizmoInside.ReleaseAndGetAddressOf());
-
-
-		D3D11_DEPTH_STENCIL_DESC gizmoOutsideDesc = {};
-		gizmoOutsideDesc.DepthEnable = TRUE;
-		gizmoOutsideDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		gizmoOutsideDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-		gizmoOutsideDesc.StencilEnable = TRUE;
-		gizmoOutsideDesc.StencilReadMask = 0xFF;
-		gizmoOutsideDesc.StencilWriteMask = 0x00;
-
-		gizmoOutsideDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-		gizmoOutsideDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		gizmoOutsideDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		gizmoOutsideDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-
-		gizmoOutsideDesc.BackFace = gizmoOutsideDesc.FrontFace;
-
-		Device->CreateDepthStencilState(&gizmoOutsideDesc,
-			DepthStencilStateGizmoOutside.ReleaseAndGetAddressOf());
-	}
-
-
-
-	//Stencil Mask Equal
-	D3D11_DEPTH_STENCIL_DESC maskDesc = {};
-	maskDesc.DepthEnable = TRUE;
-	maskDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	maskDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-
-	maskDesc.StencilEnable = TRUE;
-	maskDesc.StencilReadMask = 0xFF;
-	maskDesc.StencilWriteMask = 0x00;
-
-	maskDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-	maskDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	maskDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	maskDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-
-	maskDesc.BackFace = maskDesc.FrontFace;
-
-	Device->CreateDepthStencilState(&maskDesc,
-		DepthStencilStateStencilMaskEqual.ReleaseAndGetAddressOf());
-
-}
-
-void FD3DDevice::CreateBlendState()
-{
-	D3D11_BLEND_DESC blendDesc = {};
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	Device->CreateBlendState(&blendDesc, BlendStateAlpha.ReleaseAndGetAddressOf());
-
-	//No Color
-	D3D11_BLEND_DESC noColorWriteDesc = {};
-	noColorWriteDesc.AlphaToCoverageEnable = FALSE;
-	noColorWriteDesc.IndependentBlendEnable = FALSE;
-	noColorWriteDesc.RenderTarget[0].BlendEnable = FALSE;
-	noColorWriteDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	noColorWriteDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
-	noColorWriteDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	noColorWriteDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	noColorWriteDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	noColorWriteDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	noColorWriteDesc.RenderTarget[0].RenderTargetWriteMask = 0;
-
-	Device->CreateBlendState(&noColorWriteDesc, BlendStateNoColorWrite.ReleaseAndGetAddressOf());
 }
 
 void FD3DDevice::ReleaseDepthStencilBuffer()
 {
-	DepthStencilStateDefault.Reset();
-	DepthStencilStateDepthReadOnly.Reset();
-	DepthStencilStateStencilWrite.Reset();
-	DepthStencilStateStencilMaskEqual.Reset();
-	DepthStencilStateGizmoInside.Reset();
-	DepthStencilStateGizmoOutside.Reset();
 	DepthStencilView.Reset();
 	DepthStencilBuffer.Reset();
-}
-
-void FD3DDevice::ReleaseBlendState()
-{
-	BlendStateAlpha.Reset();
-	BlendStateNoColorWrite.Reset();
 }
 
 void FD3DDevice::ReportLiveObjects()

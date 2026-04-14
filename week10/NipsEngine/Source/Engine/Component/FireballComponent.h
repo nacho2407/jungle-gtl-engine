@@ -17,8 +17,7 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
-	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
-    static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Fireball;
+	EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_Fireball; }
 
     bool SupportsOutline() const override { return true; }
 

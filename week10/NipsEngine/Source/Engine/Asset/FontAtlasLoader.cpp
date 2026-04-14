@@ -33,11 +33,11 @@ bool FFontAtlasLoader::Load(const FName& FontName, const FString& Path, uint32 C
 			0,
 			DirectX::DDS_LOADER_DEFAULT,
 			nullptr,
-			OutResource.SRV.ReleaseAndGetAddressOf());
+			OutResource.Texture->GetAddressOfSRV());
 	}
 	else
 	{
-		Hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, OutResource.SRV.ReleaseAndGetAddressOf());
+		Hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, OutResource.Texture->GetAddressOfSRV());
 	}
 
 	if (FAILED(Hr))

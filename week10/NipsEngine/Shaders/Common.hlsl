@@ -5,6 +5,8 @@ cbuffer FrameBuffer : register(b0)
 {
     row_major float4x4 View;
     row_major float4x4 Projection;
+    float3 CameraPosition;
+    float Padding1;
     float bIsWireframe;
     float3 WireframeRGB;
 }
@@ -16,16 +18,6 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor; 
 };
 
-cbuffer GizmoBuffer : register(b2)
-{
-    float4 GizmoColorTint;
-    uint bIsInnerGizmo;
-    uint bClicking;
-    uint SelectedAxis;
-    float HoveredAxisOpacity;
-};
-
-
 cbuffer OverlayBuffer : register(b3)
 {
     float2 OverlayCenterScreen;
@@ -35,21 +27,6 @@ cbuffer OverlayBuffer : register(b3)
     float3 Padding2;
 
     float4 OverlayColor;
-};
-
-cbuffer EditorBuffer : register(b4)
-{
-    float4 CameraPosition;
-    uint EditorFlag;
-    float3 Padding3;
-};
-
-cbuffer OutlineConstants : register(b5)
-{
-    float4 OutlineColor;
-    float OutlineThicknessPixels;
-    float2 OutlineViewportSize;
-    float OutlinePadding0;
 };
 
 #define MAX_FOG_LAYER_COUNT 32

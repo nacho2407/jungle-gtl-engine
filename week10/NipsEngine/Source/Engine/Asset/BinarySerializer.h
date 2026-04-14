@@ -17,7 +17,7 @@ struct FStaticMeshBinaryHeader
 	uint32 VertexCount = 0;
 	uint32 IndexCount = 0;
 	uint32 SectionCount = 0;
-	uint32 SlotNameCount = 0;
+	uint32 SlotCount = 0;
 	
 	uint64 SourceFileWriteTime = 0;
 };

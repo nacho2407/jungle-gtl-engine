@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
-#include "Render/Resource/Material.h"
+
+class UMaterialInterface;
 
 class UDecalComponent : public UPrimitiveComponent
 {
@@ -13,8 +14,8 @@ public:
 
 	void BeginPlay() override;
 
-	void SetMaterial(FMaterial* InMaterial) { Material = InMaterial; }
-	FMaterial* GetMaterial() const { return Material; }
+	void SetMaterial(UMaterialInterface* InMaterial) { Material = InMaterial; }
+	UMaterialInterface* GetMaterial() const { return Material; }
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
@@ -37,7 +38,7 @@ private:
 	void TickFadeOut();
 
 private:
-	FMaterial* Material = nullptr;
+	UMaterialInterface* Material = nullptr;
 	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
 	FColor DecalColor = FColor::White();
 

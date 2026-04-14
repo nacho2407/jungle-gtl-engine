@@ -1,6 +1,7 @@
 ﻿#include "GizmoComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Mesh/MeshManager.h"
+#include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UGizmoComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UGizmoComponent)
@@ -11,6 +12,9 @@ REGISTER_FACTORY(UGizmoComponent)
 UGizmoComponent::UGizmoComponent()
 {
 	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
+
+	// Gizmo 전용 Material 생성
+	Material = FResourceManager::Get().GetOrCreateMaterial("GizmoMaterial", "Shaders/Gizmo.hlsl");
 }
 
 const FMeshData* UGizmoComponent::GetActiveMeshData() const

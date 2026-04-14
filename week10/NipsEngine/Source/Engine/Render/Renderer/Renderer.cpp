@@ -1,5 +1,4 @@
 ﻿#include "Renderer.h"
-#include "Renderer.h"
 
 #include <iostream>
 #include <algorithm>
@@ -9,6 +8,7 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Core/ResourceManager.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -19,63 +19,30 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	// 1. 일반 메쉬 (Primitive.hlsl)
-	Resources.PrimitiveShader.Create(Device.GetDevice(), L"Shaders/Primitive.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
+	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
+	FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+}
 
-	// 2. 기즈모 (Gizmo.hlsl)
-	Resources.GizmoShader.Create(Device.GetDevice(), L"Shaders/Gizmo.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 3. 에디터/라인 (Editor.hlsl)
-	Resources.EditorShader.Create(Device.GetDevice(), L"Shaders/Editor.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 4. 선택 마스크 (SelectionMask.hlsl)
-	Resources.SelectionMaskShader.Create(Device.GetDevice(), L"Shaders/SelectionMask.hlsl",
-		"VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-
-	// 5. 포스트 프로세스 아웃라인 (OutlinePostProcess.hlsl)
-	Resources.OutlineShader.Create(Device.GetDevice(), L"Shaders/OutlinePostProcess.hlsl",
-		"VS", "PS", nullptr, 0);
-
-	// 6. 스태틱 메시 (ShaderStaticMesh.hlsl)
-	Resources.StaticMeshShader.Create(Device.GetDevice(), L"Shaders/ShaderStaticMesh.hlsl",
-		"mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-
-	// 7. Light Pass (LightPass.hlsl)
-    Resources.LightPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS",
-                                        nullptr, 0);
-
-	// 8. Decal
-	Resources.DecalShader.Create(Device.GetDevice(), L"Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-
-	// 9. Fog Pass
-    Resources.FogPassShader.Create(Device.GetDevice(), L"Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS",
-                                     nullptr, 0);
-
-	// 10. FXAA Pass
-	Resources.FXAAShader.Create(Device.GetDevice(), L"Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-
+void FRenderer::CreateResources()
+{
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
-	Resources.GizmoPerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FGizmoConstants));
-	Resources.EditorConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorConstants));
-	Resources.OutlineConstantBuffer.Create(Device.GetDevice(), sizeof(FOutlineConstants));
-	Resources.StaticMeshConstantBuffer.Create(Device.GetDevice(), sizeof(FStaticMeshConstants));
-	Resources.DecalConstantBuffer.Create(Device.GetDevice(), sizeof(FDecalConstants));
-    Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
-    Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
+	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
+	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
-
-	// TODO : SamplerState 관리
-	D3D11_SAMPLER_DESC SampDesc = {};
-	SampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	SampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	SampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	SampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	Device.GetDevice()->CreateSamplerState(&SampDesc, Resources.MeshSamplerState.ReleaseAndGetAddressOf());
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -99,29 +66,11 @@ void FRenderer::Release()
 {
 	InvalidateSceneFinalTargets();
 
-	Resources.PrimitiveShader.Release();
-	Resources.GizmoShader.Release();
-	Resources.EditorShader.Release();
-	Resources.SelectionMaskShader.Release();
-	Resources.OutlineShader.Release();
-    Resources.StaticMeshShader.Release();
-    Resources.FogPassShader.Release();
-    Resources.DecalShader.Release();
-    Resources.FXAAShader.Release();
-    Resources.LightPassShader.Release();
-
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
-	Resources.GizmoPerObjectConstantBuffer.Release();
-	Resources.EditorConstantBuffer.Release();
-	Resources.OutlineConstantBuffer.Release();
-	Resources.StaticMeshConstantBuffer.Release();
     Resources.FogPassConstantBuffer.Release();
-	Resources.DecalConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
     Resources.LightPassConstantBuffer.Release();
-
-	Resources.MeshSamplerState.Reset();
 
 	FGPUProfiler::Get().Shutdown();
 
@@ -276,20 +225,28 @@ void FRenderer::InitializePassRenderStates()
 	using E = ERenderPass;
 	auto& S = PassRenderStates;
 
-	//                              DepthStencil                   Blend                Rasterizer                  Topology                                Shader                   WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.DecalShader, false };
-	S[(uint32)E::Light] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.LightPassShader,    false};	
-	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.PrimitiveShader, false };
-	S[(uint32)E::Fog] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.FogPassShader,    false};
-    S[(uint32)E::FXAA] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.FXAAShader,      false};
-	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.SelectionMaskShader, false };
-	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    true };
-	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     &Resources.EditorShader,    false };
-	S[(uint32)E::DepthLess] = { EDepthStencilState::DepthReadOnly,EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.GizmoShader,     false };
-	S[(uint32)E::Font] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
-	S[(uint32)E::SubUV] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, nullptr,                    true };
-    S[(uint32)E::PostProcessOutline] = {EDepthStencilState::Default,   EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, &Resources.OutlineShader,      false};
+	UShader* PrimitiveShader = FResourceManager::Get().GetShader("Shaders/Primitive.hlsl");
+	UShader* DecalShader = FResourceManager::Get().GetShader("Shaders/ShaderDecal.hlsl");
+	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
+	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
+	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
+	UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
+	UShader* EditorShader = FResourceManager::Get().GetShader("Shaders/Editor.hlsl");
+	UShader* GizmoShader = FResourceManager::Get().GetShader("Shaders/Gizmo.hlsl");
+	UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
+
+	S[(uint32)E::Opaque] = { PrimitiveShader, false };
+	S[(uint32)E::Light] = { LightPassShader, false};	
+	S[(uint32)E::Translucent] = { PrimitiveShader, false };
+	S[(uint32)E::Fog] = { FogPassShader, false};
+    S[(uint32)E::FXAA] = { FXAAShader, false};
+	S[(uint32)E::SelectionMask] = { SelectionMaskShader, false };
+	S[(uint32)E::Editor] = { EditorShader, true };
+	S[(uint32)E::Grid] = { EditorShader, false };
+	S[(uint32)E::DepthLess] = { GizmoShader, false };
+	S[(uint32)E::Font] = { nullptr, true };
+	S[(uint32)E::SubUV] = { nullptr, true };
+    S[(uint32)E::PostProcessOutline] = { OutlineShader, false};
 
 }
 
@@ -362,19 +319,19 @@ void FRenderer::InitializePassBatchers()
 	PassBatchers[(uint32)ERenderPass::SubUV] = {
 		/*.Clear   =*/ [this]() {
 			SubUVBatcher.Clear();
-			SubUVCachedSRV = nullptr;
+			SubUVCachedTexture = nullptr;
 		},
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
 			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Constants.SubUV.Particle)
 			{
 				const auto& SubUV = Cmd.Constants.SubUV;
-				if (!SubUVCachedSRV && SubUV.Particle->IsLoaded())
+				if (!SubUVCachedTexture && SubUV.Particle->IsLoaded())
 				{
-					SubUVCachedSRV = SubUV.Particle->SRV.Get();
+					SubUVCachedTexture = SubUV.Particle->Texture;
 				}
 
 				SubUVBatcher.AddSprite(
-					SubUV.Particle->SRV.Get(),
+					SubUV.Particle->Texture,
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
@@ -387,10 +344,10 @@ void FRenderer::InitializePassBatchers()
 				);
 			}
 			// 기존 SubUV 분기 아래에
-			else if (Cmd.Type == ERenderCommandType::Billboard && Cmd.Constants.Billboard.SRV)
+			else if (Cmd.Type == ERenderCommandType::Billboard && Cmd.Constants.Billboard.Texture)
 			{
 				SubUVBatcher.AddSprite(
-					Cmd.Constants.Billboard.SRV,
+					Cmd.Constants.Billboard.Texture,
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
@@ -416,16 +373,7 @@ void FRenderer::FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const 
 {
 	if (Batcher.GetLineCount() == 0) return;
 
-	const FVector CameraPosition = Bus.GetView().GetInverse().GetOrigin();
-	FEditorConstants EditorConstants = {};
-	EditorConstants.CameraPosition = CameraPosition;
-	Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
-
 	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
-
-	ID3D11Buffer* cb = Resources.EditorConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(4, 1, &cb);
-	Context->PSSetConstantBuffers(4, 1, &cb);
 
 	Batcher.Flush(Context);
 }
@@ -441,17 +389,6 @@ void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand
 	ERenderCommandType LastCommandType = static_cast<ERenderCommandType>(-1);
 	for (const auto& Cmd : Commands)
 	{
-		EDepthStencilState TargetDepth = (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
-			? Cmd.DepthStencilState
-			: State.DepthStencil;
-
-		EBlendState TargetBlend = (Cmd.BlendState != static_cast<EBlendState>(-1))
-			? Cmd.BlendState
-			: State.Blend;
-
-		Device.SetDepthStencilState(TargetDepth);
-		Device.SetBlendState(TargetBlend);
-
 		BindShaderByType(Cmd, Context, LastCommandType);
 		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
 		{
@@ -468,8 +405,8 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
 
     const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Light];
 
-    Device.SetDepthStencilState(State.DepthStencil);
-    Device.SetBlendState(State.Blend);
+    //Device.SetDepthStencilState(State.DepthStencil);
+    //Device.SetBlendState(State.Blend);
 
 	const auto& Lights = Bus.GetLight();
 	Resources.LightStructuredBuffer.Update(Context, Lights.data(), (uint32)Lights.size());
@@ -506,7 +443,8 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
 
 	//FLightPassConstants LightConstants = Cmd
 
-	Resources.LightPassShader.Bind(Context);
+	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
+	LightPassShader->Bind(Context);
 
 	/**
      * LightPass 는 풀스크린 쿼드에 그려지는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
@@ -530,80 +468,68 @@ void FRenderer::ExecuteLightPass(const FRenderBus& Bus, ID3D11DeviceContext* Con
  * Pass 전후 SRV, RTV 갱신에 대한 구조를 새로 짜야함
  */
 void FRenderer::ExecuteFogPass(const TArray<FRenderCommand>& Commands, const FRenderBus& Bus,
-                               ID3D11DeviceContext*                                    Context)
+	ID3D11DeviceContext* Context)
 {
-    if (!CurrentRenderTargets.SceneLightRTV || !CurrentRenderTargets.SceneLightSRV ||
-        !CurrentRenderTargets.SceneFogRTV || !CurrentRenderTargets.SceneFogSRV ||
-        !CurrentRenderTargets.SceneFXAARTV || !CurrentRenderTargets.SceneFXAASRV)
-    {
-        return;
-    }
+	if (!CurrentRenderTargets.SceneLightRTV || !CurrentRenderTargets.SceneLightSRV ||
+		!CurrentRenderTargets.SceneFogRTV || !CurrentRenderTargets.SceneFogSRV ||
+		!CurrentRenderTargets.SceneFXAARTV || !CurrentRenderTargets.SceneFXAASRV)
+	{
+		return;
+	}
 
-    ApplyPassRenderState(ERenderPass::Fog, Context, Bus.GetViewMode());
-    const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Fog];
+	ApplyPassRenderState(ERenderPass::Fog, Context, Bus.GetViewMode());
+	const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::Fog];
 
-    Resources.FogPassShader.Bind(Context);
+	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
+	FogPassShader->Bind(Context);
 
-    ID3D11RenderTargetView* OutputSceneRTV = CurrentRenderTargets.SceneFogRTV;
+	ID3D11RenderTargetView* OutputSceneRTV = CurrentRenderTargets.SceneFogRTV;
 
-    const FVector CameraPosition = Bus.GetView().GetInverse().GetOrigin();
-    FEditorConstants EditorConstants = {};
-    EditorConstants.CameraPosition = CameraPosition;
-    Resources.EditorConstantBuffer.Update(Context, &EditorConstants, sizeof(FEditorConstants));
-    ID3D11Buffer* cb4 = Resources.EditorConstantBuffer.GetBuffer();
-    Context->VSSetConstantBuffers(4, 1, &cb4);
-    Context->PSSetConstantBuffers(4, 1, &cb4);
+	EDepthStencilType TargetDepth = EDepthStencilType::StencilWrite;
+	ID3D11DepthStencilState* DSState = FResourceManager::Get().GetOrCreateDepthStencilState(TargetDepth);
+	Context->OMSetDepthStencilState(DSState, 1);
 
-    EDepthStencilState TargetDepth = State.DepthStencil;
-    for (const auto& Cmd : Commands)
-    {
-        if (Cmd.DepthStencilState != static_cast<EDepthStencilState>(-1))
-        {
-            TargetDepth = Cmd.DepthStencilState;
-            break;
-        }
-    }
-    Device.SetDepthStencilState(TargetDepth);
+	// Fog는 소스 장면을 포함해 최종색을 셰이더에서 계산하므로 블렌딩은 Opaque로 고정
+	EBlendType BlendType = EBlendType::Opaque;
+	ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(BlendType);
+	Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 
-    // Fog는 소스 장면을 포함해 최종색을 셰이더에서 계산하므로 블렌딩은 Opaque로 고정
-    Device.SetBlendState(EBlendState::Opaque);
+	ID3D11RenderTargetView* RTVs[MaxRTVCount] = { OutputSceneRTV, nullptr, nullptr };
+	Context->OMSetRenderTargets(MaxRTVCount, RTVs, nullptr);
 
-    ID3D11RenderTargetView* RTVs[MaxRTVCount] = {OutputSceneRTV, nullptr, nullptr};
-    Context->OMSetRenderTargets(MaxRTVCount, RTVs, nullptr);
+	ID3D11ShaderResourceView* srvs[] = {
+		CurrentRenderTargets.SceneColorSRV,
+		CurrentRenderTargets.SceneNormalSRV,
+		CurrentRenderTargets.SceneDepthSRV,
+		CurrentRenderTargets.SceneLightSRV,
+		CurrentRenderTargets.SceneWorldPosSRV
+	};
+	Context->PSSetShaderResources(0, 5, srvs);
 
-    ID3D11ShaderResourceView* srvs[] = {
-        CurrentRenderTargets.SceneColorSRV,
-        CurrentRenderTargets.SceneNormalSRV,
-        CurrentRenderTargets.SceneDepthSRV,
-        CurrentRenderTargets.SceneLightSRV,
-        CurrentRenderTargets.SceneWorldPosSRV
-    };
-    Context->PSSetShaderResources(0, 5, srvs);
+	FFogPassConstants FogPassConstants = {};
+	FogPassConstants.FogCount = std::min<uint32>(static_cast<uint32>(Commands.size()), MaxFogLayerCount);
+	for (uint32 FogIndex = 0; FogIndex < FogPassConstants.FogCount; ++FogIndex)
+	{
+		FogPassConstants.Layers[FogIndex] = Commands[FogIndex].Constants.Fog;
+	}
 
-    FFogPassConstants FogPassConstants = {};
-    FogPassConstants.FogCount = std::min<uint32>(static_cast<uint32>(Commands.size()), MaxFogLayerCount);
-    for (uint32 FogIndex = 0; FogIndex < FogPassConstants.FogCount; ++FogIndex)
-    {
-        FogPassConstants.Layers[FogIndex] = Commands[FogIndex].Constants.Fog;
-    }
+	Resources.FogPassConstantBuffer.Update(Context, &FogPassConstants, sizeof(FFogPassConstants));
+	ID3D11Buffer* cb9 = Resources.FogPassConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(9, 1, &cb9);
+	Context->PSSetConstantBuffers(9, 1, &cb9);
 
-    Resources.FogPassConstantBuffer.Update(Context, &FogPassConstants, sizeof(FFogPassConstants));
-    ID3D11Buffer* cb9 = Resources.FogPassConstantBuffer.GetBuffer();
-    Context->VSSetConstantBuffers(9, 1, &cb9);
-    Context->PSSetConstantBuffers(9, 1, &cb9);
+	// 풀스크린 triangle
+	Context->IASetInputLayout(nullptr);
+	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+	Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context->Draw(3, 0);
 
-    // 풀스크린 triangle
-    Context->IASetInputLayout(nullptr);
-    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    Context->Draw(3, 0);
+	ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+	Context->PSSetShaderResources(0, 5, nullSRVs);
 
-    ID3D11ShaderResourceView* nullSRVs[] = {nullptr, nullptr, nullptr, nullptr, nullptr};
-    Context->PSSetShaderResources(0, 5, nullSRVs);
-
-    SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
-    SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
+	SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
+	SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
 }
 
 void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Context) 
@@ -613,8 +539,8 @@ void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Cont
 
     const FPassRenderState& State = PassRenderStates[(uint32)ERenderPass::FXAA];
 
-    Device.SetDepthStencilState(State.DepthStencil);
-    Device.SetBlendState(State.Blend);
+    //Device.SetDepthStencilState(State.DepthStencil);
+    //Device.SetBlendState(State.Blend);
 
     Context->PSSetShaderResources(0, 1, srvs);
 
@@ -627,7 +553,8 @@ void FRenderer::ExecuteFXAAPass(const FRenderBus& Bus, ID3D11DeviceContext* Cont
 
 	Context->PSSetConstantBuffers(10, 1, &cb10);
 
-    Resources.FXAAShader.Bind(Context);
+	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
+    FXAAShader->Bind(Context);
 
     /**
      * 풀스크린 쿼드에 그리는데, mainVS 에서	정점 데이터를 생성하기 때문에 IA 단계에서 별도의
@@ -708,16 +635,16 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 
 	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
 
-	ERasterizerState Rasterizer = State.Rasterizer;
+	ERasterizerType Rasterizer = ERasterizerType::SolidBackCull;
 	if (State.bWireframeAware && CurViewMode == EViewMode::Wireframe)
 	{
-		Rasterizer = ERasterizerState::WireFrame;
+		Rasterizer = ERasterizerType::WireFrame;
 	}
 
-	Device.SetDepthStencilState(State.DepthStencil);
-	Device.SetBlendState(State.Blend);
-	Device.SetRasterizerState(Rasterizer);
-	Context->IASetPrimitiveTopology(State.Topology);
+	//Device.SetDepthStencilState(State.DepthStencil);
+	//Device.SetBlendState(State.Blend);
+	//Device.SetRasterizerState(Rasterizer);
+	Context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	if (State.Shader)
 	{
@@ -731,104 +658,17 @@ void FRenderer::BindShaderByType(const FRenderCommand& InCmd, ID3D11DeviceContex
 
     // 객체별 Transform Data는 항상 업데이트해야 한다.
     Resources.PerObjectConstantBuffer.Update(Context, &InCmd.PerObjectConstants, sizeof(FPerObjectConstants));
+	ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(1, 1, &cb1);
+	Context->PSSetConstantBuffers(1, 1, &cb1);
 
 	// 데이터 Update는 항상 수행하지만, 셰이더/상수 버퍼 바인딩은 타입이 변경된 경우에만 수행
     switch (InCmd.Type)
     {
-    case ERenderCommandType::Gizmo:
-        Resources.GizmoPerObjectConstantBuffer.Update(Context, &InCmd.Constants.Gizmo, sizeof(FGizmoConstants));
-        
-        if (bTypeChanged)
-        {
-            Resources.GizmoShader.Bind(Context);
-            ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
-            Context->VSSetConstantBuffers(1, 1, &cb1);
-            ID3D11Buffer* cb2 = Resources.GizmoPerObjectConstantBuffer.GetBuffer();
-            Context->VSSetConstantBuffers(2, 1, &cb2);
-            Context->PSSetConstantBuffers(2, 1, &cb2);
-        }
-        break;
-
-	case ERenderCommandType::SelectionMask:
-		break;
-
 	case ERenderCommandType::PostProcessOutline:
 	{
-		FOutlineConstants outlineConstants = InCmd.Constants.Outline;
-		outlineConstants.ViewportSize = FVector2(CurrentRenderTargets.Width, CurrentRenderTargets.Height);
-
-		Resources.OutlineShader.Bind(Context);
-		Resources.OutlineConstantBuffer.Update(Context, &outlineConstants, sizeof(FOutlineConstants));
-		ID3D11Buffer* cb = Resources.OutlineConstantBuffer.GetBuffer();
-		Context->VSSetConstantBuffers(5, 1, &cb);
-		Context->PSSetConstantBuffers(5, 1, &cb);
-		break;
-	}
-
-    case ERenderCommandType::StaticMesh:
-	{
-        Resources.StaticMeshConstantBuffer.Update(Context, &InCmd.Constants.StaticMesh, sizeof(FStaticMeshConstants));
-        
-        if (bTypeChanged)
-        {
-            Resources.StaticMeshShader.Bind(Context);
-            
-            ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
-            Context->VSSetConstantBuffers(1, 1, &cb1);
-            Context->PSSetConstantBuffers(1, 1, &cb1);
-
-            ID3D11Buffer* cb6 = Resources.StaticMeshConstantBuffer.GetBuffer();
-            Context->VSSetConstantBuffers(6, 1, &cb6);
-            Context->PSSetConstantBuffers(6, 1, &cb6);
-
-            // 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
-            ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
-            Context->PSSetSamplers(0, 1, Samplers);
-        }
-
-        // [주의] 텍스처(SRV)는 타입이 같아도 메시의 머티리얼마다 변경될 수 있으므로 분기문 밖에서 매번 바인딩합니다.
-        {
-            ID3D11ShaderResourceView* SRVs[4] = {
-                InCmd.Constants.StaticMesh.DiffuseSRV,
-                InCmd.Constants.StaticMesh.AmbientSRV,
-                InCmd.Constants.StaticMesh.SpecularSRV,
-                InCmd.Constants.StaticMesh.BumpSRV
-            };
-            Context->PSSetShaderResources(0, 4, SRVs);
-        }
-        break;
-    }
-    case ERenderCommandType::Light:
-    {
-		//Resources.LightPassConstantBuffer.Update(Context, &InCmd.Constants.Light, sizeof(FLightPassConstants));
-		//if (bTypeChanged) {
-		//	ID3D11Buffer* cb7 = Resources.LightPassConstantBuffer.GetBuffer();
-		//	Context->VSSetConstantBuffers(7, 1, &cb7);
-		//	Context->PSSetConstantBuffers(7, 1, &cb7);
-		//}
-		break;
-	}
-	case ERenderCommandType::Decal:
-	{
-		Resources.DecalConstantBuffer.Update(Context, &InCmd.Constants.Decal, sizeof(FDecalConstants));
-
-		if (bTypeChanged)
-		{
-			ID3D11Buffer* cb1 = Resources.PerObjectConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(1, 1, &cb1);
-			Context->PSSetConstantBuffers(1, 1, &cb1);
-
-			ID3D11Buffer* cb8 = Resources.DecalConstantBuffer.GetBuffer();
-			Context->VSSetConstantBuffers(8, 1, &cb8);
-			Context->PSSetConstantBuffers(8, 1, &cb8);
-
-			// 샘플러 상태도 주로 렌더 타입에 종속적이므로 스킵 가능
-			ID3D11SamplerState* Samplers[] = { Resources.MeshSamplerState.Get() };
-			Context->PSSetSamplers(0, 1, Samplers);
-		}
-
-		ID3D11ShaderResourceView* SRVs[1] = { InCmd.Constants.Decal.DiffuseSRV };
-		Context->PSSetShaderResources(0, 1, SRVs);
+		UMaterial* OutlineMaterial = Cast<UMaterial>(InCmd.Material);
+		InCmd.Material->Bind(Context);
 		break;
 	}
 	}
@@ -857,6 +697,11 @@ void FRenderer::DrawCommand(ID3D11DeviceContext* InDeviceContext, const FRenderC
 		return;
 	}
 
+	if (InCommand.Material)
+	{
+		InCommand.Material->Bind(InDeviceContext);
+	}
+
 	InDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
 	ID3D11Buffer* indexBuffer = InCommand.MeshBuffer->GetIndexBuffer().GetBuffer();
@@ -882,6 +727,14 @@ void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 	ID3D11ShaderResourceView* maskSRV = CurrentRenderTargets.SelectionMaskSRV;
 	InDeviceContext->PSSetShaderResources(7, 1, &maskSRV);
 
+	auto DepthStencilState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+	auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+
+	InDeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+	InDeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+	InDeviceContext->RSSetState(RasterizerState);
+
 	InDeviceContext->Draw(3, 0);
 
 	ID3D11ShaderResourceView* nullSRV = nullptr;
@@ -902,6 +755,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	FFrameConstants frameConstantData;
 	frameConstantData.View = InRenderBus.GetView();
 	frameConstantData.Projection = InRenderBus.GetProj();
+	frameConstantData.CameraPosition = InRenderBus.GetCameraPosition();
 	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
 
