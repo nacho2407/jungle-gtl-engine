@@ -13,6 +13,7 @@ public:
 
 private:
 	ID3D11BlendState* Alpha = nullptr;
+	ID3D11BlendState* Additive = nullptr;
 	ID3D11BlendState* NoColorWrite = nullptr;
 
 	EBlendState CurrentState = EBlendState::Opaque;
