@@ -1,5 +1,6 @@
 #include "DecalComponent.h"
 
+#include "Materials/MaterialManager.h"
 #include "Collision/OBB.h"
 #include "Component/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
@@ -55,7 +56,7 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 		}
 		else
 		{
-			UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MaterialSlot.Path);
+			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
 			if (LoadedMat)
 			{
 				UTexture2D* DiffuseTex = nullptr;
@@ -94,7 +95,7 @@ void UDecalComponent::PostDuplicate()
 
 	if (!MaterialSlot.Path.empty() && MaterialSlot.Path != "None")
 	{
-		UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MaterialSlot.Path);
+		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
 		if (LoadedMat)
 		{
 			UTexture2D* DiffuseTex = nullptr;
