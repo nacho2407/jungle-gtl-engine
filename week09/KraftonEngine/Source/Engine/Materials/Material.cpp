@@ -110,6 +110,21 @@ void FMaterialConstantBuffer::Release()
 
 // ─── UMaterial ───
 
+UMaterial::~UMaterial()
+{
+
+	for (auto& Pair : ConstantBufferMap)
+	{
+		Pair.second->Release();
+	}
+	ConstantBufferMap.clear();
+
+	for (auto& Pair : TextureParameters)
+	{
+		Pair.second = nullptr;
+	}
+}
+
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
 {

@@ -38,6 +38,8 @@ void FMaterialManager::ScanMaterialAssets()
 	}
 }
 
+
+
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
@@ -275,3 +277,43 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
 	return NewTemplate;
 }
 
+FMaterialManager::~FMaterialManager()
+{
+	if(!Device)
+	{
+		Release();
+	}
+	
+}
+
+void FMaterialManager::Release()
+{
+	// 1. TemplateCache 메모리 해제
+	// GetOrCreateTemplate()에서 new FMaterialTemplate()로 직접 할당했으므로 여기서 delete 해줍니다.
+	for (auto& Pair : TemplateCache)
+	{
+		if (Pair.second != nullptr)
+		{
+			delete Pair.second;
+			Pair.second = nullptr;
+		}
+	}
+	TemplateCache.clear();
+
+	// 2. MaterialCache 포인터 정리
+	// UMaterial은 UObjectManager가 메모리를 관리(GC 등)한다고 가정하고 캐시만 비웁니다.
+	// 만약 엔진 구조상 여기서 지워야 한다면 `delete Pair.second;` 나 `UObjectManager::Get().DestroyObject(...)` 등을 호출해야 합니다.
+	for (auto& Pair : MaterialCache)
+	{
+		if (Pair.second != nullptr)
+		{
+			delete Pair.second;
+			Pair.second = nullptr;
+		}
+	}
+	MaterialCache.clear();
+
+	// 3. Device 참조 해제
+	// 외부에서 주입받은 리소스이므로 포인터만 초기화합니다.
+	Device = nullptr;
+}

@@ -14,6 +14,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
 #include "Render/Pipeline/RenderConstants.h"
+#include "Materials/MaterialManager.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -89,6 +90,7 @@ void FRenderer::Release()
 	Resources.Release();
 	FConstantBufferPool::Get().Release();
 	FShaderManager::Get().Release();
+	FMaterialManager::Get().Release();
 	Device.Release();
 }
 
