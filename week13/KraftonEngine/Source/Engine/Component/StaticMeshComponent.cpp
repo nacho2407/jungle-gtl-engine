@@ -226,7 +226,7 @@ void UStaticMeshComponent::PostDuplicate()
 				}
 				else
 				{
-					UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(MatPath);
+					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MatPath);
 					if (LoadedMat)
 					{
 						UTexture2D* DiffuseTex = nullptr;
@@ -298,7 +298,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FObjManager::GetOrLoadMaterial(NewMatPath);
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
 
 
 				if (LoadedMat)
