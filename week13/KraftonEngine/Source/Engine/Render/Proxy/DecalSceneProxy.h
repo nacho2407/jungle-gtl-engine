@@ -21,6 +21,6 @@ public:
 private:
 	UDecalComponent* GetDecalComponent() const;
 
-	FConstantBuffer DecalCB;
-	const FTextureResource* DecalTexture = nullptr;
+	FConstantBuffer* DecalCB;
+	class UMaterial* DecalMaterial = nullptr;
 };
