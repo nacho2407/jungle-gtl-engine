@@ -1,4 +1,4 @@
-﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
+#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
@@ -141,6 +141,12 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 					{
 						Draw.DiffuseSRV = DiffuseTex->GetSRV();
 					}
+
+					// 머티리얼 기반 렌더 상태 전파
+					Draw.Blend = Mat->GetBlendState();
+					Draw.DepthStencil = Mat->GetDepthStencilState();
+					Draw.Rasterizer = Mat->GetRasterizerState();
+
 					Draw.MaterialCB[0] = Mat->GetGPUBufferBySlot(2);  // b2
 					Draw.MaterialCB[1] = Mat->GetGPUBufferBySlot(3);  // b3
 

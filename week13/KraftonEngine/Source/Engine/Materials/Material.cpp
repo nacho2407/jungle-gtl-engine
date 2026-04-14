@@ -1,8 +1,10 @@
-﻿#include "Materials/Material.h"
+#include "Materials/Material.h"
 #include "Serialization/Archive.h"
 #include "Render/Resource/Shader.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
+#include "Render/Pipeline/Renderer.h"
+
 IMPLEMENT_CLASS(UMaterial, UObject)
 
 // ─── FMaterialTemplate ───
@@ -34,32 +36,6 @@ FMaterialConstantBuffer::~FMaterialConstantBuffer()
 	Release();
 }
 
-//bool FMaterialConstantBuffer::Create(ID3D11Device* Device, uint32 InSize)
-//{
-//	//Release();
-//
-//
-//	//Size = (InSize + 15) & ~15;
-//	//CPUData = new uint8[Size];
-//	//memset(CPUData, 0, Size);
-//
-//	//D3D11_BUFFER_DESC Desc = {};
-//	//Desc.ByteWidth = Size;
-//	//Desc.Usage = D3D11_USAGE_DYNAMIC;
-//	//Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-//	//Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-//
-//	//HRESULT Hr = Device->CreateBuffer(&Desc, nullptr, &GPUBuffer);
-//	//if (FAILED(Hr))
-//	//{
-//	//	Release();
-//	//	return false;
-//	//}
-//
-//	//bDirty = true; // 초기 데이터(0)도 업로드 필요
-//	return true;
-//}
-
 void FMaterialConstantBuffer::Init(ID3D11Device* InDevice, uint32 InSize, uint32 InSlot)
 {
 	Release();
@@ -70,7 +46,6 @@ void FMaterialConstantBuffer::Init(ID3D11Device* InDevice, uint32 InSize, uint32
 	Size = AlignedSize;
 	SlotIndex = InSlot;
 	bDirty = true;
-
 }
 
 void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Offset)
@@ -85,7 +60,6 @@ void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Of
 
 void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
 {
-
 	if (!bDirty)
 		return;
 
@@ -106,7 +80,6 @@ void FMaterialConstantBuffer::Release()
 
 UMaterial::~UMaterial()
 {
-
 	for (auto& Pair : ConstantBufferMap)
 	{
 		Pair.second->Release();
@@ -121,11 +94,17 @@ UMaterial::~UMaterial()
 
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
 	ERenderPass InRenderPass,
+	EBlendState InBlend,
+	EDepthStencilState InDepth,
+	ERasterizerState InRaster,
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
 {
 	PathFileName = InPathFileName;
 	Template = InTemplate;
 	RenderPass = InRenderPass;
+	BlendState = InBlend;
+	DepthStencilState = InDepth;
+	RasterizerState = InRaster;
 
 	ConstantBufferMap = std::move(InBuffers);
 }
@@ -136,15 +115,13 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 	if (!Template->GetParameterInfo(Name, Info)) {
 		return false;
 	}
-	// BufferName으로 바로 접근
 	auto It = ConstantBufferMap.find(Info.BufferName);
 	if (It == ConstantBufferMap.end()) return false;
 
 	It->second->SetData(Data, Size, Info.Offset);
-	It->second->bDirty = true; // 데이터가 변경되었음을 표시
+	It->second->bDirty = true;
 
-	
-	It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext()); // 변경된 데이터 즉시 GPU에 업로드 (옵션)
+	It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext());
 	return true;
 }
 
@@ -227,7 +204,6 @@ bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTe
 
 bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) const
 {
-	/*기존 GetVector4Parameter 패턴이랑 동일하고 reinterpret_cast 대신 memcpy 쓴 건 __m128 유니온 때문에 alignment 문제 생길 수 있어서*/
 	FMaterialParameterInfo Info;
 	if (!Template->GetParameterInfo(ParamName, Info)) return false;
 
@@ -239,6 +215,9 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
 	return true;
 }
 
+void UMaterial::Bind(ID3D11DeviceContext* Context)
+{
+}
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)const
 {
@@ -257,13 +236,10 @@ const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)cons
 
 void UMaterial::Serialize(FArchive& Ar)
 {
-
 	Ar << PathFileName;
 
-	// 3. 상수 버퍼 CPU 데이터 저장
 	uint32 BufferCount = static_cast<uint32>(ConstantBufferMap.size());
 	Ar << BufferCount;
-
 
 	if (Ar.IsSaving())
 	{
@@ -291,20 +267,18 @@ void UMaterial::Serialize(FArchive& Ar)
 			auto It = ConstantBufferMap.find(BufferName);
 			if (It != ConstantBufferMap.end())
 			{
-				// 이미 버퍼가 있으면 CPU 데이터 덮어쓰고 GPU에 즉시 업로드
 				Ar.Serialize(It->second->CPUData, Size);
 				It->second->bDirty = true;
 				It->second->Upload(GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext());
 			}
 			else
 			{
-				// 없으면 스킵 (버퍼 구조가 바뀐 경우 대비)
 				TArray<uint8> Dummy(Size);
 				Ar.Serialize(Dummy.data(), Size);
 			}
 		}
 	}
-	// 4. 텍스처 슬롯 저장 (경로로 저장)
+	
 	uint32 TextureCount = static_cast<uint32>(TextureParameters.size());
 	Ar << TextureCount;
 
@@ -332,12 +306,8 @@ void UMaterial::Serialize(FArchive& Ar)
 			if (!TexturePath.empty())
 			{
 				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-
 				TextureParameters[SlotName] = UTexture2D::LoadFromFile(TexturePath, Device);
 			}
 		}
 	}
 }
-
-
-
