@@ -12,7 +12,7 @@ public:
 	UStaticMesh() = default;
 	~UStaticMesh() override;
 
-	void SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshMaterialSlot>& MaterialSlot);
+	void SetMeshData(FStaticMesh* InMeshData);
 
 	/* Getters */
 	FStaticMesh* GetMeshData(int32 LOD = 0);
@@ -36,7 +36,6 @@ private:
 
 private:
 	FStaticMesh* MeshData = nullptr;
-	TArray<FStaticMeshMaterialSlot> MaterialSlots;
 
 	// simplifer에서 접근할 수 있도록 friend class 선언한다.
 	friend class FStaticMeshSimplifier;

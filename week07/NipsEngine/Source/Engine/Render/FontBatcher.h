@@ -3,7 +3,7 @@
 #include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
 #include "Render/Common/ComPtr.h"
-#include "Render/Resource/Shader.h"
+#include "Render/Resource/Material.h"
 #include "Render/Resource/VertexTypes.h"
 
 struct ID3D11Device;
@@ -74,8 +74,7 @@ private:
 
 	// 공유 DX 리소스
 	TComPtr<ID3D11Device>       Device;
-	TComPtr<ID3D11SamplerState> SamplerState;
-	FShader             FontShader;
+	UMaterialInterface* FontMaterial;
 
 	// CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드
 	// key: Unicode 코드포인트 (ASCII 33~126, 한글 U+AC00~U+D7A3)

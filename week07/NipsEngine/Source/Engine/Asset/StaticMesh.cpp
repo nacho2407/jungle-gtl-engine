@@ -22,7 +22,7 @@ UStaticMesh::~UStaticMesh()
     }
 }
 
-void UStaticMesh::SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshMaterialSlot>& MaterialSlot)
+void UStaticMesh::SetMeshData(FStaticMesh* InMeshData)
 {
 	if (MeshData == InMeshData)
 	{
@@ -31,7 +31,6 @@ void UStaticMesh::SetMeshData(FStaticMesh* InMeshData, const TArray<FStaticMeshM
 
 	delete MeshData;
 	MeshData = InMeshData;
-	MaterialSlots = MaterialSlot;
 	RebuildLocalBoundsFromMeshData();
 }
 
@@ -89,7 +88,7 @@ const TArray<FStaticMeshSection>& UStaticMesh::GetSections() const
 const TArray<FStaticMeshMaterialSlot>& UStaticMesh::GetMaterialSlots() const
 {
 	static const TArray<FStaticMeshMaterialSlot> Empty = {};
-	return MeshData ? MaterialSlots : Empty;
+	return MeshData ? MeshData->Slots : Empty;
 }
 
 const FAABB& UStaticMesh::GetLocalBounds() const

@@ -5,9 +5,6 @@
 #include "Render/Resource/VertexTypes.h"
 #include "Render/Resource/Material.h"
 
-//	Raw Data -> Cooked Static Mesh
-struct ID3D11ShaderResourceView;
-
 struct FStaticMeshSection
 {
 	uint32 StartIndex = 0;
@@ -18,11 +15,13 @@ struct FStaticMeshSection
 struct FStaticMeshMaterialSlot
 {
 	FString SlotName;
-	FMaterial* MaterialData = nullptr;
+	UMaterialInterface* Material = nullptr;
+};
 
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
-	ID3D11ShaderResourceView* AmbientSRV = nullptr;
-	ID3D11ShaderResourceView* SpecularSRV = nullptr;
+struct FStaticMeshRenderData
+{
+	ID3D11Buffer* VertexBuffer = nullptr;
+	ID3D11Buffer* IndexBuffer = nullptr;
 };
 
 // Cooked
@@ -32,6 +31,8 @@ struct FStaticMesh
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
-	TArray<FString> SlotNames;
+	TArray<FStaticMeshMaterialSlot> Slots;
 	FAABB LocalBounds;
+
+	FStaticMeshRenderData RenderData;
 };

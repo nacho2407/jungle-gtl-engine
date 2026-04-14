@@ -1,6 +1,13 @@
-/* Constant Buffers */
-
 #include "Common.hlsl"
+
+cbuffer GizmoBuffer : register(b2)
+{
+    float4 GizmoColorTint;
+    uint bIsInnerGizmo;
+    uint bClicking;
+    uint SelectedAxis;
+    float HoveredAxisOpacity;
+};
 
 struct VSInput
 {

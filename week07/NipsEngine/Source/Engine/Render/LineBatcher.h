@@ -4,6 +4,7 @@
 #include "Render/Common/ComPtr.h"
 
 #include "Render/Common/ViewTypes.h"
+#include "Render/Resource/Material.h"
 
 #include "Geometry/OBB.h"
 
@@ -86,6 +87,8 @@ public:
 	uint32 GetLineCount() const;
 
 private:
+	UMaterialInterface* Material;
+
 	TArray<FLineVertex> IndexedVertices;
 	TArray<uint32> Indices;
 

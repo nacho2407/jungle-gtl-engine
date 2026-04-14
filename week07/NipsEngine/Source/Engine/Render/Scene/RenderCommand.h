@@ -8,6 +8,7 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Resource/Material.h"
 #include "Render/Device/D3DDevice.h"
 #include "Core/CoreMinimal.h"
 #include "Core/ResourceTypes.h"
@@ -54,6 +55,8 @@ struct FFrameConstants
 {
 	FMatrix View;          
 	FMatrix Projection;    
+	FVector CameraPosition;
+	float Padding0;
 	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
 };
@@ -126,7 +129,7 @@ struct FSubUVConstants
 };
 struct FBillboardConstants
 {
-	ID3D11ShaderResourceView* SRV = nullptr;
+	UTexture* Texture = nullptr;
 	float Width = 1.0f;
 	float Height = 1.0f;
 };
@@ -144,33 +147,26 @@ struct FStaticMeshConstants
 	FVector SpecularColor = { 0.5f, 0.5f, 0.5f };
 	float   Shininess     = 32.0f;
 
-	// Camera
-	FVector CameraWorldPos = { 0.0f, 0.0f, 0.0f };
-	float   _Pad2          = 0.0f;
-
 	// ScrollUV
 	float  ScrollX          = 0.f;
 	float  ScrollY          = 0.f;
-	float  Padding0         = 0.0f;
 	uint32 bHasDiffuseMap   = 0;     // cbuffer bytes 76-79  — HLSL uint bHasDiffuseMap 대응
 	uint32  bHasSpecularMap  = 0;        // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
+
 	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
+	float _Pad2 = 0.0f;
 
 	// Texture SRV (CPU-only, cbuffer 범위 밖)
-	ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
-	ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
-	ID3D11ShaderResourceView* SpecularSRV = { nullptr };
-	ID3D11ShaderResourceView* BumpSRV     = { nullptr };
+	//ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
+	//ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
+	//ID3D11ShaderResourceView* SpecularSRV = { nullptr };
+	//ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
 struct FDecalConstants
 {
 	FMatrix InvDecalWorld;
 	FVector4 ColorTint;
-	float FadeAlpha = 1.0f;
-	float padding0[3];
-
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 };
 
 constexpr uint32 MaxFogLayerCount = 32;
@@ -223,32 +219,26 @@ struct FLightPassConstants
 
 struct FRenderCommand
 {
+	FPerObjectConstants PerObjectConstants = {};
+
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
-	uint32		 SectionIndexStart = {};
-	uint32		 SectionIndexCount = {};
-
-	FPerObjectConstants PerObjectConstants = {};
+	UMaterialInterface* Material = nullptr;
+	uint32 SectionIndexStart = 0;
+	uint32 SectionIndexCount = 0;
 
 	union
 	{
-		FGizmoConstants Gizmo;
-		FEditorConstants Editor;
-		FOutlineConstants Outline;
 		FAABBConstants AABB;
 		FOBBConstants OBB;
 		FGridConstants Grid;
 		FFontConstants Font;
 		FSubUVConstants SubUV;
 		FBillboardConstants Billboard;  // ← 추가
-		FStaticMeshConstants StaticMesh;
-		FDecalConstants Decal;
         FFogConstants Fog;
         FFXAAConstants FXAA;
 		FLightPassConstants Light;
 	} Constants;
 
-	EDepthStencilState DepthStencilState = static_cast<EDepthStencilState>(-1);
-	EBlendState BlendState = static_cast<EBlendState>(-1);
 	ERenderCommandType Type = ERenderCommandType::Primitive;
 };

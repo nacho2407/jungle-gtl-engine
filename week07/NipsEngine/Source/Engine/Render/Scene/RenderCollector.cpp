@@ -272,8 +272,14 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 	{
 		FRenderCommand PostProcessCmd = {};
 		PostProcessCmd.Type = ERenderCommandType::PostProcessOutline;
-		PostProcessCmd.Constants.Outline.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
-		PostProcessCmd.Constants.Outline.OutlineThicknessPixels = 5.0f;
+		PostProcessCmd.Material = FResourceManager::Get().GetMaterial("OutlineMaterial");
+
+		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
+		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
+		Material->DepthStencilType = EDepthStencilType::Default;
+		Material->RasterizerType = ERasterizerType::SolidBackCull;
+		Material->BlendType = EBlendType::AlphaBlend;
+
 		RenderBus.AddCommand(ERenderPass::PostProcessOutline, PostProcessCmd);
 	}
 }
@@ -308,21 +314,26 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 
 		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
 
+		UMaterial* Material = Cast<UMaterial>(Gizmo->GetMaterial());
+		Cmd.Material = Material;
+
 		if (bInner)
 		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoInside;
-			Cmd.BlendState = EBlendState::AlphaBlend;
+			Material->DepthStencilType = EDepthStencilType::GizmoInside;
+			Material->BlendType = EBlendType::AlphaBlend;
 		}
 		else
 		{
-			Cmd.DepthStencilState = EDepthStencilState::GizmoOutside;
-			Cmd.BlendState = EBlendState::Opaque;
+			Material->DepthStencilType = EDepthStencilType::GizmoOutside;
+			Material->BlendType = EBlendType::Opaque;
 		}
-		Cmd.Constants.Gizmo.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		Cmd.Constants.Gizmo.bIsInnerGizmo = bInner ? 1 : 0;
-		Cmd.Constants.Gizmo.bClicking = bHolding ? 1 : 0;
-		Cmd.Constants.Gizmo.SelectedAxis = (SelectedAxis >= 0 && bIsActiveOperation) ? (uint32)SelectedAxis : 0xffffffffu;
-		Cmd.Constants.Gizmo.HoveredAxisOpacity = 0.3f;
+
+		Material->SetVector4("GizmoColorTint", FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+		Material->SetBool("bIsInnerGizmo", bInner);
+		Material->SetBool("bClicking", bHolding);
+		Material->SetUInt("SelectedAxis", (SelectedAxis >= 0 && bIsActiveOperation) ? (uint32)SelectedAxis : 0xffffffffu);
+		Material->SetFloat("HoveredAxisOpacity", 0.3f);
+
 		return Cmd;
 		};
 
@@ -346,7 +357,6 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 
 bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
 {
-	(void)ViewMode;
 	if (!Actor->IsVisible()) return false;
 
 	bool bHasSelectionMask = false;
@@ -401,8 +411,6 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			TextCmd.Constants.Font.Text = &Text;
 			TextCmd.Constants.Font.Font = Font;
 			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-			TextCmd.BlendState = EBlendState::AlphaBlend;
-			TextCmd.DepthStencilState = EDepthStencilState::Default;
 			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
@@ -426,7 +434,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		bHasSelectionMask = true;
 
 		// TODO: 리팩토링 필요 (현재는 DecalComponent만 OBB를 그리도록 설정)
-		UDecalComponent* DecalComp = dynamic_cast<UDecalComponent*>(primitiveComponent);
+		UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
 		if (DecalComp)
 		{
 			CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
@@ -452,8 +460,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
 	auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
 		{
-			FMaterialResource* Res = FResourceManager::Get().FindTexture(Path);
-			return (Res && Res->SRV) ? Res->SRV.Get() : DefaultSRV;
+			UTexture* Texture = FResourceManager::Get().GetTexture(Path);
+			return Texture ? Texture->GetSRV() : DefaultSRV;
 		};
 	static const FMaterial EngineDefaultMaterial{};
 
@@ -490,52 +498,21 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
 		{
 			const FStaticMeshSection& Section = Sections[SectionIdx];
+			UMaterial* Material = Cast<UMaterial>(StaticMeshComp->GetMaterial(SectionIdx));
 
 			FRenderCommand Cmd = {};
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
-			Cmd.DepthStencilState = EDepthStencilState::Default;
-			Cmd.BlendState = EBlendState::Opaque;
 
 			Cmd.SectionIndexStart = Section.StartIndex;
 			Cmd.SectionIndexCount = Section.IndexCount;
+			Cmd.Material = Material;
 
-			Cmd.Constants.StaticMesh.CameraWorldPos = RenderBus.GetCameraPosition();
-
-			// 메테리얼 정보가 없을 시 디폴트 메테리얼을 사용합니다.
-			const FMaterial* MtlData = StaticMeshComp->GetMaterial(SectionIdx);
-
-			if (!MtlData) MtlData = &EngineDefaultMaterial;
-	
-			Cmd.Constants.StaticMesh.AmbientColor  = MtlData->AmbientColor;
-			Cmd.Constants.StaticMesh.DiffuseColor  = MtlData->DiffuseColor;
-			Cmd.Constants.StaticMesh.SpecularColor = MtlData->SpecularColor;
-			Cmd.Constants.StaticMesh.Shininess     = MtlData->Shininess;
-			Cmd.Constants.StaticMesh.EmissiveColor = MtlData->EmissiveColor;
-
-			Cmd.Constants.StaticMesh.ScrollX = StaticMeshComp->GetScroll().first;
-			Cmd.Constants.StaticMesh.ScrollY = StaticMeshComp->GetScroll().second;
-
-			// 와이어 프레임이 있는 경우 텍스쳐를 사용하지 않는 메테리얼에게 기본 텍스쳐를 강제 주입
-			if (ViewMode == EViewMode::Wireframe)
-			{
-				Cmd.Constants.StaticMesh.bHasDiffuseMap =  1u;
-				Cmd.Constants.StaticMesh.bHasSpecularMap = 1u;
-				Cmd.Constants.StaticMesh.DiffuseSRV = DefaultSRV;
-				Cmd.Constants.StaticMesh.AmbientSRV = DefaultSRV;
-				Cmd.Constants.StaticMesh.SpecularSRV = DefaultSRV;
-				Cmd.Constants.StaticMesh.BumpSRV = DefaultSRV;
-			}
-			else
-			{
-				Cmd.Constants.StaticMesh.bHasDiffuseMap = MtlData->bHasDiffuseTexture ? 1u : 0u;
-				Cmd.Constants.StaticMesh.bHasSpecularMap = MtlData->bHasSpecularTexture ? 1u : 0u;
-				Cmd.Constants.StaticMesh.DiffuseSRV = MtlData->bHasDiffuseTexture ? ResolveSRV(MtlData->DiffuseTexPath) : DefaultSRV;
-				Cmd.Constants.StaticMesh.AmbientSRV = MtlData->bHasAmbientTexture ? ResolveSRV(MtlData->AmbientTexPath) : DefaultSRV;
-				Cmd.Constants.StaticMesh.SpecularSRV = MtlData->bHasSpecularTexture ? ResolveSRV(MtlData->SpecularTexPath) : DefaultSRV;
-				Cmd.Constants.StaticMesh.BumpSRV = MtlData->bHasBumpTexture ? ResolveSRV(MtlData->BumpTexPath) : DefaultSRV;
-			}
+			//if (Material)
+			//{
+			//	Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
+			//}
 
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
@@ -560,8 +537,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
 		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
 		
 		RenderBus.AddCommand(ERenderPass::Font, Cmd);
 		break;
@@ -582,8 +557,6 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
 		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
 		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
 		break;
@@ -592,20 +565,16 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	case EPrimitiveType::EPT_Billboard:
 	{
 		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
-		FMaterialResource* Sprite = BillboardComp->GetCachedSprite();
-
-		ID3D11ShaderResourceView* SRV = (Sprite && Sprite->SRV)	? Sprite->SRV.Get() : FResourceManager::Get().GetDefaultWhiteSRV();
+		UTexture* Texture = BillboardComp->GetTexture();
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Billboard;
 		Cmd.PerObjectConstants = FPerObjectConstants{
 			MakeViewBillboardMatrix(Primitive, RenderBus),
 			FColor::White().ToVector4() };
-		Cmd.Constants.Billboard.SRV = SRV;
+		Cmd.Constants.Billboard.Texture = Texture;
 		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
 		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
-		Cmd.BlendState = EBlendState::AlphaBlend;
-		Cmd.DepthStencilState = EDepthStencilState::Default;
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
@@ -618,9 +587,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		FScopeCycleCounter RenderDecalScope({});
 
 		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
-		const FMaterial* MtlData = DecalComp->GetMaterial();
-
-		if (!MtlData) MtlData = &EngineDefaultMaterial;
+		UMaterial* Material = Cast<UMaterial>(DecalComp->GetMaterial());
 
 		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetWorld() : nullptr;
 
@@ -665,16 +632,12 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
 				Cmd.MeshBuffer = MeshBuffer;
 
-				Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
-				Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
-				Cmd.Constants.Decal.FadeAlpha = 1.0f;
-
-				Cmd.Constants.Decal.DiffuseSRV = ResolveSRV(MtlData->DiffuseTexPath);
-				Cmd.BlendState = EBlendState::AlphaBlend;
-				Cmd.DepthStencilState = EDepthStencilState::Default;
-
 				Cmd.SectionIndexStart = Section.StartIndex;
 				Cmd.SectionIndexCount = Section.IndexCount;
+
+				Cmd.Material = Material;
+				Material->SetMatrix4("InvDecalWorld", DecalComp->GetDecalMatrix().GetInverse());
+				Material->SetVector4("DecalColorTint", DecalComp->GetDecalColor().ToVector4());
 
 				RenderBus.AddCommand(ERenderPass::Decal, Cmd);
 			}
@@ -698,8 +661,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         Cmd.Constants.Fog.FogStartDistance = HeightFogComp->GetFogStartDistance();
         Cmd.Constants.Fog.FogMaxOpacity = HeightFogComp->GetFogMaxOpacity();
         Cmd.Constants.Fog.FogCutoffDistance = HeightFogComp->GetFogCutoffDistance();
-        Cmd.BlendState = EBlendState::AlphaBlend;
-        Cmd.DepthStencilState = EDepthStencilState::Default;
+        //Cmd.BlendState = EBlendState::AlphaBlend;
+        //Cmd.DepthStencilState = EDepthStencilState::Default;
 
         RenderBus.AddCommand(ERenderPass::Fog, Cmd);
         break;

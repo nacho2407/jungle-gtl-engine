@@ -47,7 +47,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 
         for (int32 i = 0; i < static_cast<int32>(Sections.size()); ++i)
         {
-            OverrideMaterial.push_back(Slots[Sections[i].MaterialSlotIndex].MaterialData);
+            OverrideMaterial.push_back(Slots[Sections[i].MaterialSlotIndex].Material);
         }
     }
     else
