@@ -17,6 +17,8 @@ UDecalComponent::UDecalComponent()
 
 	Mat->DepthStencilType = EDepthStencilType::Default;
 	Mat->BlendType = EBlendType::AlphaBlend;
+	Mat->RasterizerType = ERasterizerType::SolidBackCull;
+	Mat->SamplerType = ESamplerType::EST_Linear;
 
     bEnableCull = false;
 }

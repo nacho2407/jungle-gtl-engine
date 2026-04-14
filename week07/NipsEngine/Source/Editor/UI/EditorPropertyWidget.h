@@ -13,6 +13,8 @@ public:
 	virtual void Render(float DeltaTime) override;
 	void Initialize(UEditorEngine* InEditorEngine) override;
 
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
+	bool IsActorSelected() const { return bActorSelected; }
 private:
 	// 선택 상태 관리
 	void UpdateSelectionState(AActor* PrimaryActor);

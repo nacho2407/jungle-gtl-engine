@@ -5,6 +5,7 @@
 #include <functional>
 
 class USceneComponent;
+class UPrimitiveComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class UDecalComponent;
@@ -22,11 +23,10 @@ public:
     void Render(float DeltaTime) override;
 
 private:
-	void RenderMeshMaterialEditor(UStaticMeshComponent* MeshComp);
-	void RenderDecalMaterialEditor(UDecalComponent* DecalComp);
+	void RenderMaterialEditor(UPrimitiveComponent* PrimitiveComp);
 
-    void RenderSectionList(UStaticMeshComponent* MeshComp);
-    void RenderMaterialDetails(UStaticMeshComponent* MeshComp);
+    void RenderSectionList(UPrimitiveComponent* PrimitiveComp);
+    void RenderMaterialDetails(UPrimitiveComponent* PrimitiveComp);
 	void RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged);
 
 	void RenderMaterialProperties();
@@ -34,8 +34,7 @@ private:
     void RenderScalarSection(FMaterial& Mat);
     void RenderTextureSection(FMaterial& Mat);
 
-    UStaticMeshComponent* GetSelectedMeshComponent() const;
-	UDecalComponent* GetSelectedDecalComponent() const;
+    UPrimitiveComponent* GetSelectedPrimitiveComponent() const;
 
 private:
     int32 SelectedSectionIndex    = -1;

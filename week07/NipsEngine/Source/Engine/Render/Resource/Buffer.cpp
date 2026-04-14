@@ -224,6 +224,9 @@ void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uin
 
 void FStructuredBuffer::Release() {
 	Buffer.Reset();
+	SRV.Reset();
+	Count = 0;
+	ElementSize = 0;
 }
 
 void FStructuredBuffer::Update(ID3D11DeviceContext* InContext, const void* InData, uint32 InElementCount) {

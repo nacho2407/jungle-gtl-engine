@@ -271,13 +271,26 @@ void AFireballActor::InitDefaultComponents()
 
 void ASpotLightActor::InitDefaultComponents() {
 	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
-    BillboardIcon->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
+    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
 	SetRootComponent(BillboardIcon);
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
 	Decal->AttachToComponent(BillboardIcon);
-	Decal->SetRelativeLocation(FVector(10, 0, 0.f));
+	Decal->SetRelativeLocation(FVector(10, 0, 0));
+	DecalComp = Decal;
 
 	UMaterial* DecalMat = FResourceManager::Get().GetMaterial("DecalMat");
-	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+	UMaterialInstance* DecalMatInst = UMaterialInstance::Create(DecalMat);
+	Decal->SetMaterial(DecalMatInst);
+	DecalMatInst->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+}
+
+void ASpotLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (DecalComp)
+	{
+		DecalComp->SetSize(FVector(Range, Range, Range));
+	}
 }

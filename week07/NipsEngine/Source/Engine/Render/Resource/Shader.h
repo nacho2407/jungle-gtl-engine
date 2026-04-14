@@ -20,18 +20,34 @@ struct FShaderVariableInfo
 //	Shader Set
 struct FShader
 {
-	ID3D11VertexShader* VS;
-	ID3D11PixelShader* PS;
-	ID3D11InputLayout* InputLayout;
+	ID3D11VertexShader* VS = nullptr;
+	ID3D11PixelShader* PS = nullptr;
+	ID3D11InputLayout* InputLayout = nullptr;
 
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
 	void Release()
 	{
-		if (VS) VS->Release();
-		if (PS) PS->Release();
-		if (InputLayout) InputLayout->Release();
-		if (ConstantBuffer) ConstantBuffer->Release();
+		if (VS)
+		{
+			VS->Release();
+			VS = nullptr;
+		}
+		if (PS)
+		{
+			PS->Release();
+			PS = nullptr;
+		}
+		if (InputLayout)
+		{
+			InputLayout->Release();
+			InputLayout = nullptr;
+		}
+		if (ConstantBuffer)
+		{
+			ConstantBuffer->Release();
+			ConstantBuffer = nullptr;
+		}
 	}
 };
 
@@ -39,6 +55,10 @@ class UShader : public UObject
 {
 public:
 	DECLARE_CLASS(UShader, UObject)
+	~UShader() override
+	{
+		ShaderData.Release();
+	}
 	
 	void Bind(ID3D11DeviceContext* Context)
 	{
