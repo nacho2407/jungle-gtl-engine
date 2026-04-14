@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
 
@@ -34,6 +34,10 @@ public:
 	// D3D 리소스 접근자
 	ID3D11RenderTargetView* GetRTV() const { return RTV; }
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
+	ID3D11Texture2D* GetRTTexture() const { return RTTexture; }
+	ID3D11ShaderResourceView* GetPingPongSRV() const { return PingPongSRV; }
+	ID3D11RenderTargetView* GetPingPongRTV() const { return PingPongRTV; }
+	ID3D11Texture2D* GetPingPongTexture() const { return PingPongTexture; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
 	ID3D11Texture2D* GetDepthTexture() const { return DepthTexture; }
 
@@ -65,6 +69,10 @@ private:
 	ID3D11Texture2D* DepthCopyTexture = nullptr;
 	ID3D11ShaderResourceView* DepthCopySRV = nullptr;		// t10: SceneDepth
 	ID3D11ShaderResourceView* StencilCopySRV = nullptr;	// t13: (미래) Stencil
+
+	ID3D11Texture2D* PingPongTexture = nullptr;
+	ID3D11RenderTargetView* PingPongRTV = nullptr;
+	ID3D11ShaderResourceView* PingPongSRV = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 

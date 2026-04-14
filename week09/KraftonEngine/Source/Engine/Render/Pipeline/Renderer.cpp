@@ -339,8 +339,10 @@ void FRenderer::Render(const FFrameContext& Frame)
 	// 단일 StateCache — 패스 간 상태 유지 (DSV Read-Only 전환 등)
 	FStateCache Cache;
 	Cache.Reset();
-	Cache.RTV = Frame.ViewportRTV;
-	Cache.DSV = Frame.ViewportDSV;
+	Cache.RTV             = Frame.ViewportRTV;
+	Cache.DSV             = Frame.ViewportDSV;
+	Cache.RenderTexture   = Frame.ViewportRenderTexture;
+	Cache.PingPongTexture = Frame.ViewportPingPongTexture;
 
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
@@ -594,6 +596,33 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.PerShaderCB[0] = SceneDepthCB;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, nullptr, 2);
+			}
+		}
+
+		if (Frame.ShowFlags.bFXAA)
+		{
+			FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
+			if (FXAAShader)
+			{
+				FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::FXAA, sizeof(FFXAAConstants));
+				FViewportRenderOptions Opts = Frame.GetRenderOptions();
+				FFXAAConstants FXAAData = {};
+				FXAAData.EdgeThreshold = Opts.EdgeThreshold;
+				FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
+				FXAACB->Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
+
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = FXAAShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.bUsePingPongRTV = true;
+				Cmd.VertexCount = 3;
+				Cmd.DiffuseSRV = Frame.ViewportPingPongSRV;
+				Cmd.PerShaderCB[0] = FXAACB;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FXAAShader, nullptr, Frame.ViewportPingPongSRV, 3);
 			}
 		}
 	}
