@@ -22,6 +22,7 @@ public:
 	ID3D11DeviceContext* GetDeviceContext() const;
 	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
+	ID3D11ShaderResourceView* GetDepthStencilSRV() const { return DepthStencilSRV; }
 	const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
 	const float* GetClearColor() const { return ClearColor; }
 
@@ -49,6 +50,7 @@ private:
 
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	ID3D11ShaderResourceView* DepthStencilSRV = nullptr;
 
 	FRasterizerStateManager RasterizerStateManager;
 	FDepthStencilStateManager DepthStencilStateManager;

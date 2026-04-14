@@ -1,6 +1,7 @@
 ﻿#include "RenderCollector.h"
 
 #include "GameFramework/World.h"
+#include "Component/ExponentialHeightFogComponent.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/EditorEngine.h"
 #include "Render/Proxy/FScene.h"
@@ -14,6 +15,24 @@
 void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 {
 	if (!World) return;
+
+	if (!RenderBus.IsOrtho())
+	{
+		if (UExponentialHeightFogComponent* FogComponent = World->GetScene().GetPrimaryExponentialHeightFog())
+		{
+			FExponentialHeightFogRenderData FogData = {};
+			FogData.bEnabled = true;
+			FogData.FogHeight = FogComponent->GetFogHeight();
+			FogData.FogDensity = FogComponent->GetFogDensity();
+			FogData.FogHeightFalloff = FogComponent->GetFogHeightFalloff();
+			FogData.FogColor = FogComponent->GetFogColor();
+			FogData.FogMaxOpacity = FogComponent->GetFogMaxOpacity();
+			FogData.StartDistance = FogComponent->GetStartDistance();
+			FogData.EndDistance = FogComponent->GetEndDistance();
+			FogData.FogCutoffDistance = FogComponent->GetFogCutoffDistance();
+			RenderBus.SetExponentialHeightFog(FogData);
+		}
+	}
 
 	// Dirty 프록시 갱신 후 visible 리스트만 순회
 	World->GetScene().UpdateDirtyProxies();
