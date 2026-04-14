@@ -40,9 +40,12 @@ struct FFrameContext
 
 	ID3D11RenderTargetView*   ViewportRTV          = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV          = nullptr;
-	ID3D11DepthStencilView*   ViewportDSVReadOnly  = nullptr;  // SRV와 동시 바인딩 가능
-	ID3D11ShaderResourceView* ViewportStencilSRV   = nullptr;
-	ID3D11ShaderResourceView* ViewportDepthSRV     = nullptr;
+
+	// CopyResource 소스/대상
+	ID3D11Texture2D*          DepthTexture         = nullptr;  // 원본 (CopyResource 소스)
+	ID3D11Texture2D*          DepthCopyTexture     = nullptr;  // 복사본 (CopyResource 대상)
+	ID3D11ShaderResourceView* DepthCopySRV         = nullptr;
+	ID3D11ShaderResourceView* StencilCopySRV       = nullptr;
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
@@ -100,8 +103,9 @@ struct FFrameContext
 	{
 		ViewportRTV         = nullptr;
 		ViewportDSV         = nullptr;
-		ViewportDSVReadOnly = nullptr;
-		ViewportStencilSRV  = nullptr;
-		ViewportDepthSRV    = nullptr;
+		DepthTexture        = nullptr;
+		DepthCopyTexture    = nullptr;
+		DepthCopySRV        = nullptr;
+		StencilCopySRV      = nullptr;
 	}
 };

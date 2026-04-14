@@ -33,27 +33,18 @@ void FStateCache::Reset()
 	LastUVScroll     = 0;
 	LastSectionColor = {};
 
-	bReadOnlyDSV = false;
 	RTV         = nullptr;
 	DSV         = nullptr;
-	DSVReadOnly = nullptr;
 }
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
-	// SRV 언바인딩 (DSV 복원 전에 해제해야 hazard 방지)
+	// t0 SRV 언바인딩
 	if (DiffuseSRV)
 	{
 		ID3D11ShaderResourceView* nullSRV = nullptr;
 		Ctx->PSSetShaderResources(0, 1, &nullSRV);
 		DiffuseSRV = nullptr;
-	}
-
-	// DSV 복원 (ReadOnly → 쓰기 가능)
-	if (bReadOnlyDSV && RTV)
-	{
-		Ctx->OMSetRenderTargets(1, &RTV, DSV);
-		bReadOnlyDSV = false;
 	}
 }
 
@@ -190,21 +181,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.Topology = Cmd.Topology;
 	}
 
-	// --- DSV Read-Only 전환 (PostProcess에서 SRV + DSV 동시 바인딩) ---
-	if (Cmd.bReadOnlyDSV != Cache.bReadOnlyDSV && Cache.RTV)
-	{
-		// ReadOnly → Writable 복원 시 depth SRV를 먼저 해제 (hazard 방지)
-		if (!Cmd.bReadOnlyDSV && Cache.DiffuseSRV)
-		{
-			ID3D11ShaderResourceView* nullSRV = nullptr;
-			Ctx->PSSetShaderResources(0, 1, &nullSRV);
-			Cache.DiffuseSRV = nullptr;
-		}
 
-		ID3D11DepthStencilView* TargetDSV = Cmd.bReadOnlyDSV ? Cache.DSVReadOnly : Cache.DSV;
-		Ctx->OMSetRenderTargets(1, &Cache.RTV, TargetDSV);
-		Cache.bReadOnlyDSV = Cmd.bReadOnlyDSV;
-	}
 
 	// --- Shader ---
 	if (Cmd.Shader && (bForce || Cmd.Shader != Cache.Shader))

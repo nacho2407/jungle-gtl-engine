@@ -2,6 +2,7 @@
 // Fullscreen Triangle VS (SV_VertexID) + Exponential Height Fog PS
 
 #include "Common/Functions.hlsl"
+#include "Common/SystemResources.hlsl"
 
 // b2 (PerShader0): Fog parameters
 cbuffer FogBuffer : register(b2)
@@ -16,7 +17,7 @@ cbuffer FogBuffer : register(b2)
     float2 _fogPad;
 };
 
-Texture2D<float> DepthTex : register(t0);
+// SceneDepth (t10) is declared in Common/ConstantBuffers.hlsl
 
 // ── VS: Fullscreen Triangle ──
 PS_Input_UV VS(uint vertexID : SV_VertexID)
@@ -30,7 +31,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     int2 coord = int2(input.position.xy);
 
     // Sample hardware depth (0..1)
-    float depth = DepthTex.Load(int3(coord, 0));
+    float depth = SceneDepth.Load(int3(coord, 0));
     if (depth >= 1.0)
         discard;
 

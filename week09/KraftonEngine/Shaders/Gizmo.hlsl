@@ -1,6 +1,17 @@
 #include "Common/Functions.hlsl"
 #include "Common/VertexLayouts.hlsl"
-#include "Common/GizmoBuffer.hlsl"
+
+// b2 (PerShader0): 기즈모 전용
+cbuffer GizmoBuffer : register(b2)
+{
+    float4 GizmoColorTint;
+    uint bIsInnerGizmo;
+    uint bClicking;
+    uint SelectedAxis;
+    float HoveredAxisOpacity;
+    uint AxisMask; // 비트 0=X, 1=Y, 2=Z
+    uint3 _gizmoPad;
+};
 
 uint GetAxisFromColor(float3 color)
 {

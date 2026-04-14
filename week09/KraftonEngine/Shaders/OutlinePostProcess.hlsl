@@ -2,10 +2,17 @@
 // Fullscreen Quad VS (SV_VertexID) + Stencil Edge Detection PS
 
 #include "Common/Functions.hlsl"
-#include "Common/OutlineBuffer.hlsl"
+#include "Common/SystemResources.hlsl"
 
-// StencilSRV: X24_TYPELESS_G8_UINT 포맷 → uint2, 스텐실은 .g 채널
-Texture2D<uint2> StencilTex : register(t0);
+// b2 (PerShader0): Outline 설정
+cbuffer OutlinePostProcessCB : register(b2)
+{
+    float4 OutlineColor; // 아웃라인 색상 + 알파
+    float OutlineThickness; // 샘플링 오프셋 (픽셀 단위, 보통 1.0)
+    float3 _Pad;
+};
+
+// StencilTex (t13) is declared in Common/SystemResources.hlsl
 
 // ── VS: Fullscreen Triangle (vertex buffer 없이 SV_VertexID로 생성) ──
 PS_Input_UV VS(uint vertexID : SV_VertexID)
