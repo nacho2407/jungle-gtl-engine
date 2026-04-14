@@ -134,13 +134,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	{
 		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
 
-		// DSV 언바인딩 (DepthSRV 읽기와 동시 바인딩 불가)
+		// DSV 언바인딩 (DepthCopySRV 읽기와 동시 바인딩 불가)
 		ID3D11RenderTargetView* rtv = VP->GetRTV();
 		Ctx->OMSetRenderTargets(1, &rtv, nullptr);
 
 		GPUOcclusion.DispatchOcclusionTest(
 			Ctx,
-			VP->GetDepthSRV(),
+			VP->GetDepthCopySRV(),
 			Collector.GetLastVisibleProxies(),
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());

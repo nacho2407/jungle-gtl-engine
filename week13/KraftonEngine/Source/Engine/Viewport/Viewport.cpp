@@ -1,4 +1,4 @@
-#include "Viewport/Viewport.h"
+﻿#include "Viewport/Viewport.h"
 
 FViewport::~FViewport()
 {
@@ -118,31 +118,37 @@ bool FViewport::CreateResources()
 	hr = Device->CreateDepthStencilView(DepthTexture, &DSVDesc, &DSV);
 	if (FAILED(hr)) return false;
 
-	// DSVReadOnly: SRV와 동시 바인딩 가능 (PostProcess에서 depth/stencil 읽기용)
-	D3D11_DEPTH_STENCIL_VIEW_DESC DSVRODesc = DSVDesc;
-	DSVRODesc.Flags = D3D11_DSV_READ_ONLY_DEPTH | D3D11_DSV_READ_ONLY_STENCIL;
-
-	hr = Device->CreateDepthStencilView(DepthTexture, &DSVRODesc, &DSVReadOnly);
-	if (FAILED(hr)) return false;
-
-	// DepthSRV: 뎁스 24비트 읽기 (Hi-Z / GPU Occlusion용)
+	// SRV 포맷 (DepthCopy/StencilCopy 생성에 재사용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSRVDesc = {};
 	DepthSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	DepthSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	DepthSRVDesc.Texture2D.MipLevels = 1;
 	DepthSRVDesc.Texture2D.MostDetailedMip = 0;
 
-	hr = Device->CreateShaderResourceView(DepthTexture, &DepthSRVDesc, &DepthSRV);
-	if (FAILED(hr)) return false;
-
-	// StencilSRV: 스텐실 8비트만 읽기 (PostProcess edge detection용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC StencilSRVDesc = {};
 	StencilSRVDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
 	StencilSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	StencilSRVDesc.Texture2D.MipLevels = 1;
 	StencilSRVDesc.Texture2D.MostDetailedMip = 0;
 
-	hr = Device->CreateShaderResourceView(DepthTexture, &StencilSRVDesc, &StencilSRV);
+	// ── Depth 복사 텍스처 (CopyResource 대상, SRV 전용) ──
+	D3D11_TEXTURE2D_DESC CopyDesc = {};
+	CopyDesc.Width = Width;
+	CopyDesc.Height = Height;
+	CopyDesc.MipLevels = 1;
+	CopyDesc.ArraySize = 1;
+	CopyDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	CopyDesc.SampleDesc.Count = 1;
+	CopyDesc.Usage = D3D11_USAGE_DEFAULT;
+	CopyDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&CopyDesc, nullptr, &DepthCopyTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(DepthCopyTexture, &DepthSRVDesc, &DepthCopySRV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(DepthCopyTexture, &StencilSRVDesc, &StencilCopySRV);
 	if (FAILED(hr)) return false;
 
 	// ── 뷰포트 렉트 ──
@@ -158,9 +164,9 @@ bool FViewport::CreateResources()
 
 void FViewport::ReleaseResources()
 {
-	if (StencilSRV) { StencilSRV->Release(); StencilSRV = nullptr; }
-	if (DepthSRV) { DepthSRV->Release(); DepthSRV = nullptr; }
-	if (DSVReadOnly) { DSVReadOnly->Release(); DSVReadOnly = nullptr; }
+	if (StencilCopySRV) { StencilCopySRV->Release(); StencilCopySRV = nullptr; }
+	if (DepthCopySRV) { DepthCopySRV->Release(); DepthCopySRV = nullptr; }
+	if (DepthCopyTexture) { DepthCopyTexture->Release(); DepthCopyTexture = nullptr; }
 	if (DSV) { DSV->Release(); DSV = nullptr; }
 	if (DepthTexture) { DepthTexture->Release(); DepthTexture = nullptr; }
 	if (SRV) { SRV->Release(); SRV = nullptr; }

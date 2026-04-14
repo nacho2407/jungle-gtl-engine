@@ -174,13 +174,7 @@
     <FxCompile Include="Shaders\Common\Functions.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\GizmoBuffer.hlsl">
-      <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\MaterialBuffer.hlsl">
-      <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\OutlineBuffer.hlsl">
+    <FxCompile Include="Shaders\Common\SystemResources.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
@@ -330,6 +324,9 @@
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp">
       <Filter>Source\Engine\Materials</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Matrix.cpp">
@@ -549,9 +546,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp">
-      <Filter>Source\Engine\Materials</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -732,6 +726,9 @@
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\Material.h">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\MaterialManager.h">
       <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\MathUtils.h">
@@ -1018,9 +1015,6 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Materials\MaterialManager.h">
-      <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -25,7 +25,8 @@ void FFrameContext::SetViewportInfo(const FViewport* VP)
 	ViewportHeight   = static_cast<float>(VP->GetHeight());
 	ViewportRTV         = VP->GetRTV();
 	ViewportDSV         = VP->GetDSV();
-	ViewportDSVReadOnly = VP->GetDSVReadOnly();
-	ViewportStencilSRV  = VP->GetStencilSRV();
-	ViewportDepthSRV    = VP->GetDepthSRV();
+	DepthTexture        = VP->GetDepthTexture();
+	DepthCopyTexture    = VP->GetDepthCopyTexture();
+	DepthCopySRV        = VP->GetDepthCopySRV();
+	StencilCopySRV      = VP->GetStencilCopySRV();
 }
