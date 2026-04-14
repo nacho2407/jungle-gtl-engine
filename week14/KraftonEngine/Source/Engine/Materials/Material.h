@@ -43,6 +43,7 @@ private:
 public:
 	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
 	void Create(FShader* InShader,	ERenderPass InRenderPass);
+	ERenderPass GetRenderPass() const;
 	FShader* GetShader() const { return Shader; }
 	bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
 };
@@ -117,6 +118,7 @@ public:
 	void Bind(ID3D11DeviceContext* Context);
 
 	FShader* GetShader() const { return Template ? Template->GetShader() : nullptr; }
+	ERenderPass GetRenderPass() const;
 
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
