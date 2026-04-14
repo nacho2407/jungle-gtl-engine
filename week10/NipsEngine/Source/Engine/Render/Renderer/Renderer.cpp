@@ -69,6 +69,9 @@ void FRenderer::Release()
 {
 	InvalidateSceneFinalTargets();
 
+	RenderPipeline.Release();
+    RenderPassContext.reset();
+
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
     Resources.FogPassConstantBuffer.Release();
@@ -82,10 +85,10 @@ void FRenderer::Release()
 	FontBatcher.Release();
 	SubUVBatcher.Release();
 
-	Device.Release();
+    // Device::ReportLiveObjects 이전에 ResourceManager가 잡고 있던 D3D 객체를 먼저 해제한다.
+    FResourceManager::Get().ReleaseGPUResources();
 
-	RenderPipeline.Release();
-    RenderPassContext.reset();
+	Device.Release();
 }
 
 //	Bus → Batcher 데이터 수집 (CPU). BeginFrame 이전에 호출.
