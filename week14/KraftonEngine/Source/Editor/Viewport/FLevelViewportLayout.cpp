@@ -894,6 +894,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
 			ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
 			ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
+			ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
 
 			ImGui::Separator();
 
@@ -915,6 +916,11 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::Text("SceneDepth");
 			ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
 			ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
+
+			// FXAA Settings
+			ImGui::Text("FXAA");
+			ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
+			ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
 			ImGui::EndPopup();
 		}

@@ -27,6 +27,7 @@ struct FDrawCommand
 	D3D11_PRIMITIVE_TOPOLOGY Topology     = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	uint8                    StencilRef   = 0;
 	bool                     bReadOnlyDSV = false;  // DSVReadOnly + SRV 동시 바인딩 (PostProcess)
+	bool                     bUsePingPongRTV = false;
 
 	// ===== Geometry =====
 	FMeshBuffer* MeshBuffer  = nullptr;   // VB + IB (nullptr → RawVB 또는 SV_VertexID 기반 드로우)

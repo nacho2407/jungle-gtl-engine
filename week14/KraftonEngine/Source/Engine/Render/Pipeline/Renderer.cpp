@@ -240,6 +240,8 @@ void FRenderer::Render(const FFrameContext& Frame)
 	Cache.RTV         = Frame.ViewportRTV;
 	Cache.DSV         = Frame.ViewportDSV;
 	Cache.DSVReadOnly = Frame.ViewportDSVReadOnly;
+	Cache.RenderTexture   = Frame.ViewportRenderTexture;
+	Cache.PingPongTexture = Frame.ViewportPingPongTexture;
 
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
@@ -445,9 +447,38 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.bReadOnlyDSV = true;
 				Cmd.VertexCount = 3;
 				Cmd.DiffuseSRV = Frame.ViewportDepthSRV;
+				Cmd.Sampler = Resources.DefaultSampler;
 				Cmd.PerShaderCB[0] = SceneDepthCB;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, Frame.ViewportDepthSRV, 2);
+			}
+		}
+
+		if (Frame.ShowFlags.bFXAA)
+		{
+			FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
+			if (FXAAShader)
+			{
+				FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::FXAA, sizeof(FFXAAConstants));
+				FViewportRenderOptions Opts = Frame.GetRenderOptions();
+				FFXAAConstants FXAAData = {};
+				FXAAData.EdgeThreshold = Opts.EdgeThreshold;
+				FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
+				FXAACB->Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
+
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = FXAAShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.bReadOnlyDSV = true;
+				Cmd.bUsePingPongRTV = true;
+				Cmd.VertexCount = 3;
+				Cmd.DiffuseSRV = Frame.ViewportPingPongSRV;
+				Cmd.PerShaderCB[0] = FXAACB;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, FXAAShader, nullptr, Frame.ViewportDepthSRV, 3);
 			}
 		}
 	}
