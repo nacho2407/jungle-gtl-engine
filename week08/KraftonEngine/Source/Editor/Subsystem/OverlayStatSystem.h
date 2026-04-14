@@ -52,7 +52,7 @@ public:
 private:
 	void AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const;
 
-	bool bShowFPS = false;	// 260403 이번 경연 동안 fps는 항상 보이도록 설정.
+	bool bShowFPS = false;
 	bool bShowPickingTime = false; // WM_LBUTTONDOWN , VK_LBUTTON 입력 시점이 아닌 오브젝트 충돌 판정에 걸린 시간을 측정합니다.
 	bool bShowMemory = false;
 	double LastPickingTimeMs = 0.0;
