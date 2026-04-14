@@ -167,6 +167,11 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			MaterialFilePaths.push_back(RelativePath);
 			LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
 		}
+		else if (Extension == L".mat")
+		{
+			MaterialFilePaths.push_back(RelativePath);
+			DeserializeMaterial(FPaths::ToString(FilePath));
+		}
 		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
 			const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
@@ -264,10 +269,12 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			else if (Extension == L".mtl")
 			{
 				MaterialFilePaths.push_back(RelativePath);
-
-				// 기존 MaterialRegistry는 지우지 않고 갱신/추가만 한다.
-				// 이미 로드된 StaticMesh가 Material 포인터를 들고 있을 수 있어서 clear는 위험함.
 				LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+			}
+			else if (Extension == L".mat")
+			{
+				MaterialFilePaths.push_back(RelativePath);
+				DeserializeMaterial(RelativePath);
 			}
 			else if (
 				Extension == L".png" ||
@@ -706,6 +713,101 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	}
 
 	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
+	return true;
+}
+
+bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
+{
+	using json::JSON;
+
+	std::ifstream MatFile(FPaths::ToWide(MatFilePath));
+	if (!MatFile.is_open())
+	{
+		UE_LOG("Failed to open material file: %s", MatFilePath.c_str());
+		return false;
+	}
+
+	FString FileContent((std::istreambuf_iterator<char>(MatFile)), std::istreambuf_iterator<char>());
+	JSON Root = JSON::Load(FileContent);
+
+	FString MatName = Root["Name"].ToString();
+	FString ShaderPath = Root["Shader"].ToString();
+	UMaterial* Material = GetOrCreateMaterial(MatName, ShaderPath);
+
+	for (auto& Param : Root["Params"].ArrayRange())
+	{
+		FString ParamName = Param["Name"].ToString();
+		FString Type = Param["Type"].ToString();
+
+		if (Type == "Bool")
+		{
+			bool Value = Param["Value"].ToBool();
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Int")
+		{
+			int Value = Param["Value"].ToInt();
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "UInt")
+		{
+			uint32 Value = static_cast<uint32>(Param["Value"].ToInt());
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Float")
+		{
+			float Value = static_cast<float>(Param["Value"].ToFloat());
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Vector2")
+		{
+			FVector2 Value(
+				static_cast<float>(Param["Value"][0].ToFloat()),
+				static_cast<float>(Param["Value"][1].ToFloat()));
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Vector3")
+		{
+			FVector Value(
+				static_cast<float>(Param["Value"][0].ToFloat()),
+				static_cast<float>(Param["Value"][1].ToFloat()),
+				static_cast<float>(Param["Value"][2].ToFloat()));
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Vector4")
+		{
+			FVector4 Value(
+				static_cast<float>(Param["Value"][0].ToFloat()),
+				static_cast<float>(Param["Value"][1].ToFloat()),
+				static_cast<float>(Param["Value"][2].ToFloat()),
+				static_cast<float>(Param["Value"][3].ToFloat()));
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Matrix4")
+		{
+			FMatrix Value;
+			for (int Row = 0; Row < 4; ++Row)
+			{
+				for (int Col = 0; Col < 4; ++Col)
+				{
+					Value.M[Row][Col] = static_cast<float>(Param["Value"][Row][Col].ToFloat());
+				}
+			}
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Texture")
+		{
+			FString TexPath = Param["Value"].ToString();
+			UTexture* Texture = LoadTexture(TexPath, CachedDevice.Get());
+			if (Texture)
+			{
+				Material->SetParam(ParamName, FMaterialParamValue(Texture));
+			}
+		}
+	}
+
+	Materials[MatName] = Material;
+
 	return true;
 }
 

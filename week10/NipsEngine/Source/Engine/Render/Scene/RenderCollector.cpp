@@ -510,10 +510,10 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.SectionIndexCount = Section.IndexCount;
 			Cmd.Material = Material;
 
-			if (Material)
-			{
-				Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
-			}
+			//if (Material)
+			//{
+			//	Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
+			//}
 
 			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
 		}
