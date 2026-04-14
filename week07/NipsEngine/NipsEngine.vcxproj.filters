@@ -40,6 +40,9 @@
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{20a3ff62-6666-58c6-dd73-8a4513da2ca3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Movement">
+      <UniqueIdentifier>{a5b9b888-60c7-ef17-a883-5cc31c907635}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{8b69df27-06f7-dea9-00be-7dcc5bcae5a6}</UniqueIdentifier>
     </Filter>
@@ -145,6 +148,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Gizmo.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\HeightFogPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\HiZDownsample.hlsl">
@@ -296,16 +302,7 @@
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
@@ -319,6 +316,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -701,16 +710,7 @@
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
@@ -724,6 +724,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h">
       <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>

@@ -7,10 +7,10 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/GizmoComponent.h"
-#include "Component/MovementComponent.h"
-#include "Component/RotatingMovementComponent.h"
+#include "Component/Movement/RotatingMovementComponent.h"
 #include "Component/FireballComponent.h"
-#include "Component/ProjectileMovementComponent.h"
+#include "Component/Movement/ProjectileMovementComponent.h"
+#include "Component/Movement/InterpToMovementComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
@@ -151,6 +151,13 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		[](AActor* Actor) -> UActorComponent* {
 			URotatingMovementComponent* Comp = Actor->AddComponent<URotatingMovementComponent>();
 			return Comp;
+		}
+	},
+    {
+		"InterpToMovement Component",
+		[](AActor* Actor) -> UActorComponent* {
+          UInterpToMovementComponent* Comp = Actor->AddComponent<UInterpToMovementComponent>();
+          return Comp;
 		}
 	},
 	{
@@ -622,6 +629,12 @@ void FEditorPropertyWidget::RenderComponentProperties()
 			RenderPropertyWidget(Prop);
 		}
 	}
+	// Special: InterpToMovementComponent control points + behaviour + actions
+	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
+	{
+		RenderInterpControlPoints(InterpComp);
+	}
+
 	ImGui::Separator();
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
@@ -803,12 +816,80 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		break;
 	}
+    case EPropertyType::Enum:
+	{
+		int* Val = static_cast<int*>(Prop.ValuePtr);
+		if (Prop.EnumNames && Prop.EnumCount)
+			bChanged = ImGui::Combo(Prop.Name, Val, Prop.EnumNames, Prop.EnumCount);
+		break;
+	}
+	case EPropertyType::Vec3Array:
+	{
+		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
+		int32 ToRemove = -1;
+
+		ImGui::Text("%s", Prop.Name);
+		ImGui::Spacing();
+
+		for (int32 i = 0; i < static_cast<int32>(Arr->size()); i++)
+		{
+			ImGui::PushID(i);
+
+			float Val[3] = { (*Arr)[i].X, (*Arr)[i].Y, (*Arr)[i].Z };
+			char Label[32];
+			snprintf(Label, sizeof(Label), "[%d]", i);
+
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - UIConstants::XButtonSize - 8.0f);
+			if (ImGui::DragFloat3(Label, Val, 1.0f))
+			{
+				(*Arr)[i] = FVector(Val[0], Val[1], Val[2]);
+				bChanged = true;
+			}
+
+			ImGui::SameLine();
+			char XId[32];
+			snprintf(XId, sizeof(XId), "##rm_%d", i);
+			if (DrawXButton(XId)) ToRemove = i;
+
+			ImGui::PopID();
+		}
+
+		if (ToRemove >= 0)
+		{
+			Arr->erase(Arr->begin() + ToRemove);
+			bChanged = true;
+		}
+
+		char AddLabel[64];
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Prop.Name);
+		if (ImGui::Button(AddLabel, ImVec2(-1, 0)))
+		{
+			Arr->push_back(Arr->empty() ? FVector(0.f, 0.f, 0.f) : Arr->back());
+			bChanged = true;
+		}
+		break;
+	}
 	}
 
 	if (bChanged && SelectedComponent)
 	{
 		SelectedComponent->PostEditProperty(Prop.Name);
 	}
+}
+
+void FEditorPropertyWidget::RenderInterpControlPoints(UInterpToMovementComponent* Comp)
+{
+	// --- Playback actions -----------------------------------------------
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Text("Playback");
+	ImGui::Spacing();
+
+	float HalfWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+	if (ImGui::Button("Initiate", ImVec2(HalfWidth, 0))) Comp->Initiate();
+	ImGui::SameLine();
+	if (ImGui::Button("Stop",     ImVec2(HalfWidth, 0))) Comp->ResetAndHalt();
+	if (ImGui::Button("Reset",    ImVec2(-1,        0))) Comp->Reset();
 }
 
 void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp)

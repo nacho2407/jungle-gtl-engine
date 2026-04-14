@@ -18,7 +18,9 @@ enum class EPropertyType : uint8_t
     String,
     Name,              // FName — 문자열 풀 기반 이름 (리소스 키 등)
     SceneComponentRef, // USceneComponent* 변수의 주소 (MovementComponent를 위한 Enum값
+    Vec3Array,         // TArray<FVector>* - variable-length array of FVector
                        // 필요 시 Enum, Color 등 추가
+	Enum,
 };
 
 // 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
@@ -29,9 +31,13 @@ struct FPropertyDescriptor
     void*         ValuePtr;
 
     // float 범위 힌트 (DragFloat 등에서 사용)
-    float Min = 0.0f;
-    float Max = 0.0f;
+    float Min	= 0.0f;
+    float Max	= 0.0f;
     float Speed = 0.1f;
+
+	// Enum Metadata
+	const char** EnumNames  = nullptr;
+	uint32		 EnumCount  = 0;
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.
