@@ -6,16 +6,20 @@ struct FPassRenderState;
 struct FRenderTargetSet;
 struct FRenderResources;
 class FRenderBus;
+class FFontBatcher;
+class FSubUVBatcher;
 
 struct FRenderPassContext
 {
-    const FRenderBus* RenderBus;
-    const FRenderTargetSet* RenderTargets;
-    const FPassRenderState* RenderState;
-    ID3D11Device* Device;
-    ID3D11DeviceContext* DeviceContext;
-    FRenderResources* RenderResources;
+    const FRenderBus* RenderBus = nullptr;
+    const FRenderTargetSet* RenderTargets = nullptr;
+    const FPassRenderState* RenderState = nullptr;
+    ID3D11Device* Device = nullptr;
+    ID3D11DeviceContext* DeviceContext = nullptr;
+    FRenderResources* RenderResources = nullptr;
+    FFontBatcher* FontBatcher = nullptr;
+    FSubUVBatcher* SubUVBatcher = nullptr;
 
-	ID3D11RenderTargetView* FinalRTV;
-    ID3D11ShaderResourceView* FinalSRV;
+	ID3D11RenderTargetView* FinalRTV = nullptr;
+    ID3D11ShaderResourceView* FinalSRV = nullptr;
 };
