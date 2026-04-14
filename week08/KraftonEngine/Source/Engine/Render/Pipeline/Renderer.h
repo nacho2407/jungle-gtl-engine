@@ -72,6 +72,13 @@ private:
 	// 동적 지오메트리 + PostProcess → FDrawCommand (VB 업로드 + 커맨드 생성)
 	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx, const FScene* Scene);
 
+	// 패스 루프 Pre/Post 이벤트 등록
+	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
+		ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache);
+
+	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
+	void CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache);
+
 	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
 	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);

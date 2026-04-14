@@ -34,10 +34,13 @@ public:
 	// D3D 리소스 접근자
 	ID3D11RenderTargetView* GetRTV() const { return RTV; }
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
-	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthSRV; }
-	ID3D11ShaderResourceView* GetStencilSRV() const { return StencilSRV; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
-	ID3D11DepthStencilView* GetDSVReadOnly() const { return DSVReadOnly; }
+	ID3D11Texture2D* GetDepthTexture() const { return DepthTexture; }
+
+	// CopyResource 대상 — 패스 간 안전하게 Depth/Stencil 읽기용
+	ID3D11Texture2D* GetDepthCopyTexture() const { return DepthCopyTexture; }
+	ID3D11ShaderResourceView* GetDepthCopySRV() const { return DepthCopySRV; }
+	ID3D11ShaderResourceView* GetStencilCopySRV() const { return StencilCopySRV; }
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
 
 private:
@@ -54,12 +57,14 @@ private:
 	ID3D11RenderTargetView* RTV = nullptr;
 	ID3D11ShaderResourceView* SRV = nullptr;		// ImGui::Image() 출력용
 
-	// 뎁스/스텐실 (TYPELESS 텍스처 → DSV + DepthSRV + StencilSRV 분리)
+	// 뎁스/스텐실
 	ID3D11Texture2D* DepthTexture = nullptr;
 	ID3D11DepthStencilView* DSV = nullptr;
-	ID3D11DepthStencilView* DSVReadOnly = nullptr;		// SRV와 동시 바인딩 가능한 읽기전용 DSV
-	ID3D11ShaderResourceView* DepthSRV = nullptr;		// Hi-Z / GPU Occlusion에서 뎁스 읽기용
-	ID3D11ShaderResourceView* StencilSRV = nullptr;	// PostProcess에서 스텐실 읽기용
+
+	// CopyResource 대상 — DSV 전환 없이 안전하게 Depth/Stencil 읽기
+	ID3D11Texture2D* DepthCopyTexture = nullptr;
+	ID3D11ShaderResourceView* DepthCopySRV = nullptr;		// t10: SceneDepth
+	ID3D11ShaderResourceView* StencilCopySRV = nullptr;	// t13: (미래) Stencil
 
 	D3D11_VIEWPORT ViewportRect = {};
 

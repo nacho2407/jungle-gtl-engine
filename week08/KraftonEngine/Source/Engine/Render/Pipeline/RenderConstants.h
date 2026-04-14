@@ -24,6 +24,15 @@ namespace ECBSlot
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1
 }
 
+// HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
+namespace ESystemTexSlot
+{
+	constexpr uint32 SceneDepth  = 10; // t10: CopyResource된 Depth (R24_UNORM)
+	// constexpr uint32 SceneNormal  = 11; // t11: (미래)
+	// constexpr uint32 SceneAlbedo  = 12; // t12: (미래)
+	constexpr uint32 Stencil      = 13; // t13: CopyResource된 Stencil (X24_G8_UINT)
+}
+
 // FConstantBufferPool 조회 키 — 바인딩 슬롯과 독립적인 고유 식별자
 // [260413 WJ] : Material 개선 이후 다시 생각해본다. 이Key로 공유 상수버퍼를 얻어오는 형태. (@see FScontantBufferPool::GetBuffer)
 namespace ECBPoolKey
