@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Editor/UI/EditorPlayToolbarWidget.h"
@@ -71,7 +71,6 @@ public:
 	void SetActiveViewport(FLevelEditorViewportClient* InClient);
 	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
 
-	void SetWorld(UWorld* InWorld);
 	void ResetViewport(UWorld* InWorld);
 	void DestroyAllCameras();
 	void DisableWorldAxisForPIE();
