@@ -56,9 +56,8 @@ private:
 	FVector2 ViewportSize;
 
 	//Editor Settings
-	EViewMode ViewMode;
+	EViewMode ViewMode = EViewMode::Lit;
 	FShowFlags ShowFlags;
 	FVector WireframeColor = FVector(1.0f, 1.0f, 1.0f);
 	bool bFXAAEnabled = true;
 };
-

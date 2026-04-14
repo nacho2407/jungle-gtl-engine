@@ -26,10 +26,10 @@ struct FSubUVFrameInfo
 
 struct FSRVBatch
 {
-	UTexture* Texture;
-	uint32 IndexStart;   // Indices 배열 내 시작 위치
-	uint32 IndexCount;   // 이 SRV에 해당하는 인덱스 수
-	int32  BaseVertex;   // DrawIndexed의 BaseVertexLocation
+    UTexture* Texture;
+    uint32 IndexStart; // Indices 배열 내 시작 위치
+    uint32 IndexCount; // 이 SRV에 해당하는 인덱스 수
+    int32 BaseVertex;  // DrawIndexed의 BaseVertexLocation
 };
 
 // FSubUVBatcher — SubUV 스프라이트를 배치로 모아 1회 드로우콜로 처리
@@ -44,7 +44,7 @@ struct FSRVBatch
 class FSubUVBatcher
 {
 public:
-    FSubUVBatcher()  = default;
+    FSubUVBatcher() = default;
     ~FSubUVBatcher() = default;
 
     // 공유 리소스 초기화 (셰이더, 샘플러, Dynamic VB/IB).
@@ -54,15 +54,15 @@ public:
 
     // 월드 좌표 위에 빌보드 스프라이트 쿼드 추가 (배치에 누적).
     // Columns / Rows — 호출 시 FParticleResource에서 전달받은 아틀라스 그리드 크기
-    void AddSprite(UTexture* Texture, 
-		           const FVector& WorldPos,
+    void AddSprite(UTexture* Texture,
+                   const FVector& WorldPos,
                    const FVector& CamRight,
                    const FVector& CamUp,
-				   const FVector& WorldScale,
+                   const FVector& WorldScale,
                    uint32 FrameIndex,
                    uint32 Columns,
                    uint32 Rows,
-                   float Width  = 1.0f,
+                   float Width = 1.0f,
                    float Height = 1.0f);
 
     // 이번 프레임에 누적된 스프라이트 전체 제거
@@ -76,17 +76,17 @@ public:
 
 private:
     TArray<FTextureVertex> Vertices;
-    TArray<uint32>         Indices;
-	TArray<FSRVBatch>      Batches;
+    TArray<uint32> Indices;
+    TArray<FSRVBatch> Batches;
 
     TComPtr<ID3D11Buffer> VertexBuffer;
     TComPtr<ID3D11Buffer> IndexBuffer;
 
     uint32 MaxVertexCount = 0;
-    uint32 MaxIndexCount  = 0;
+    uint32 MaxIndexCount = 0;
 
-    TComPtr<ID3D11Device>       Device;
-	UMaterialInterface* Material;
+    TComPtr<ID3D11Device> Device;
+    UMaterialInterface* Material = nullptr;
 
     void CreateBuffers();
     FSubUVFrameInfo GetFrameUV(uint32 FrameIndex, uint32 Columns, uint32 Rows) const;
