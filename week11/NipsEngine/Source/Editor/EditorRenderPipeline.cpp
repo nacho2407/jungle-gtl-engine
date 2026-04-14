@@ -107,6 +107,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportSize(FVector2(Rect.Width, Rect.Height));
+    Bus.SetViewportOrigin(FVector2(static_cast<float>(LocalX), static_cast<float>(LocalY)));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA);
 
     const FFrustum& ViewFrustum = Camera->GetFrustum();
