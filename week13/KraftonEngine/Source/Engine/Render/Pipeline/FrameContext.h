@@ -43,6 +43,10 @@ struct FFrameContext
 	ID3D11DepthStencilView*   ViewportDSVReadOnly  = nullptr;  // SRV와 동시 바인딩 가능
 	ID3D11ShaderResourceView* ViewportStencilSRV   = nullptr;
 	ID3D11ShaderResourceView* ViewportDepthSRV     = nullptr;
+	ID3D11ShaderResourceView* ViewportPingPongSRV  = nullptr;
+	ID3D11RenderTargetView* ViewportPingPongRTV    = nullptr;
+	ID3D11Texture2D* ViewportPingPongTexture       = nullptr;
+	ID3D11Texture2D* ViewportRenderTexture         = nullptr;
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 

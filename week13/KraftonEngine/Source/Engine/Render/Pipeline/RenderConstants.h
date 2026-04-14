@@ -33,6 +33,7 @@ namespace ECBPoolKey
 	constexpr uint32 Fog = 2;
 	constexpr uint32 Outline = 3;
 	constexpr uint32 SceneDepth = 4;
+	constexpr uint32 FXAA = 5;
 }
 
 //PerObject
@@ -114,6 +115,13 @@ struct FFogConstants
 	float CutoffDistance;        // 4B
 	float MaxOpacity;            // 4B
 	float _pad[2];              // 8B  — 16B boundary
+};
+
+struct FFXAAConstants
+{
+	float EdgeThreshold;
+	float EdgeThresholdMin;
+	float _pad[2];
 };
 
 // ============================================================

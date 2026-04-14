@@ -1,4 +1,4 @@
-#include "DrawCommandList.h"
+﻿#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>
@@ -205,6 +205,19 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Ctx->OMSetRenderTargets(1, &Cache.RTV, TargetDSV);
 		Cache.bReadOnlyDSV = Cmd.bReadOnlyDSV;
 	}
+
+	if (Cmd.bUsePingPongRTV)
+	{
+		if (Cache.DiffuseSRV)
+		{
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			Ctx->PSSetShaderResources(0, 1, &nullSRV);
+			Cache.DiffuseSRV = nullptr;
+		}
+		Ctx->CopyResource(Cache.PingPongTexture, Cache.RenderTexture);
+		Ctx->OMSetRenderTargets(1, &Cache.RTV, Cache.DSVReadOnly);
+	}
+
 
 	// --- Shader ---
 	if (Cmd.Shader && (bForce || Cmd.Shader != Cache.Shader))
