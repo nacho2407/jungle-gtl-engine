@@ -33,6 +33,15 @@ namespace ESystemTexSlot
 	constexpr uint32 Stencil      = 13; // t13: CopyResource된 Stencil (X24_G8_UINT)
 }
 
+// HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩
+namespace ESamplerSlot
+{
+	constexpr uint32 LinearClamp = 0; // s0: PostProcess, UI, 기본
+	constexpr uint32 LinearWrap  = 1; // s1: 메시 텍스처, 데칼
+	constexpr uint32 PointClamp  = 2; // s2: 폰트, 깊이/스텐실 정밀 읽기
+	// s3-s4: 셰이더별 커스텀 용도
+}
+
 // FConstantBufferPool 조회 키 — 바인딩 슬롯과 독립적인 고유 식별자
 // [260413 WJ] : Material 개선 이후 다시 생각해본다. 이Key로 공유 상수버퍼를 얻어오는 형태. (@see FScontantBufferPool::GetBuffer)
 namespace ECBPoolKey

@@ -27,7 +27,6 @@ void FStateCache::Reset()
 	PerShaderCB[0]  = nullptr;
 	PerShaderCB[1]  = nullptr;
 	DiffuseSRV   = nullptr;
-	Sampler      = nullptr;
 
 	bMaterialDirty = true;
 	LastUVScroll     = 0;
@@ -88,8 +87,7 @@ void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& 
 	OutEnd   = PassOffsets[(uint32)Pass + 1];
 }
 
-void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx,
-	ID3D11SamplerState* DefaultSampler)
+void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
 {
 	if (Commands.empty()) return;
 
@@ -100,14 +98,14 @@ void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx,
 
 	for (const FDrawCommand& Cmd : Commands)
 	{
-		SubmitCommand(Cmd, Device, Ctx, Cache, DefaultSampler);
+		SubmitCommand(Cmd, Device, Ctx, Cache);
 	}
 
 	Cache.Cleanup(Ctx);
 }
 
 void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-	ID3D11DeviceContext* Ctx, ID3D11SamplerState* DefaultSampler)
+	ID3D11DeviceContext* Ctx)
 {
 	if (StartIdx >= EndIdx) return;
 	if (EndIdx > Commands.size()) EndIdx = static_cast<uint32>(Commands.size());
@@ -117,21 +115,21 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& D
 
 	for (uint32 i = StartIdx; i < EndIdx; ++i)
 	{
-		SubmitCommand(Commands[i], Device, Ctx, Cache, DefaultSampler);
+		SubmitCommand(Commands[i], Device, Ctx, Cache);
 	}
 
 	Cache.Cleanup(Ctx);
 }
 
 void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-	ID3D11DeviceContext* Ctx, FStateCache& Cache, ID3D11SamplerState* DefaultSampler)
+	ID3D11DeviceContext* Ctx, FStateCache& Cache)
 {
 	if (StartIdx >= EndIdx) return;
 	if (EndIdx > Commands.size()) EndIdx = static_cast<uint32>(Commands.size());
 
 	for (uint32 i = StartIdx; i < EndIdx; ++i)
 	{
-		SubmitCommand(Commands[i], Device, Ctx, Cache, DefaultSampler);
+		SubmitCommand(Commands[i], Device, Ctx, Cache);
 	}
 }
 
@@ -151,8 +149,7 @@ uint32 FDrawCommandList::GetCommandCount(ERenderPass Pass) const
 // ============================================================
 
 void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device,
-	ID3D11DeviceContext* Ctx, FStateCache& Cache,
-	ID3D11SamplerState* DefaultSampler)
+	ID3D11DeviceContext* Ctx, FStateCache& Cache)
 {
 	const bool bForce = Cache.bForceAll;
 
@@ -238,17 +235,6 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.MeshBuffer = nullptr;
 		Cache.RawVB = nullptr;
 		Cache.RawIB = nullptr;
-	}
-
-	// --- Sampler (s0) ---
-	{
-		// 커맨드에 명시적 Sampler가 있으면 그것을 사용, 없으면 DefaultSampler
-		ID3D11SamplerState* TargetSampler = Cmd.Sampler ? Cmd.Sampler : DefaultSampler;
-		if (TargetSampler && (bForce || TargetSampler != Cache.Sampler))
-		{
-			Ctx->PSSetSamplers(0, 1, &TargetSampler);
-			Cache.Sampler = TargetSampler;
-		}
 	}
 
 	// --- PerObject CB (b1) ---

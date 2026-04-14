@@ -9,7 +9,6 @@ class FShader;
 class FMeshBuffer;
 class FConstantBuffer;
 struct ID3D11ShaderResourceView;
-struct ID3D11SamplerState;
 struct ID3D11Buffer;
 
 /*
@@ -43,7 +42,6 @@ struct FDrawCommand
 	FConstantBuffer*         PerObjectCB    = nullptr;   // b1: Model + Color
 	FConstantBuffer*         PerShaderCB[2] = {};        // [0]=b2 (PerShader0), [1]=b3 (PerShader1)
 	ID3D11ShaderResourceView* DiffuseSRV    = nullptr;   // t0: 디퓨즈 텍스처
-	ID3D11SamplerState*       Sampler       = nullptr;   // s0: 샘플러 오버라이드 (nullptr → 기본 샘플러)
 
 	// ===== Material 인라인 데이터 (Submit 시 PerShaderCB[0]에 업로드) =====
 	FVector4 SectionColor        = { 1.0f, 1.0f, 1.0f, 1.0f };
