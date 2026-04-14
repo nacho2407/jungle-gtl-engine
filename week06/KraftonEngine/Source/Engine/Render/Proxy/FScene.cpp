@@ -1,5 +1,7 @@
 ﻿#include "Render/Proxy/FScene.h"
+#include "Component/ExponentialHeightFogComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include <algorithm>
 
@@ -50,6 +52,7 @@ FScene::~FScene()
 	DirtyProxies.clear();
 	SelectedProxies.clear();
 	NeverCullProxies.clear();
+	ExponentialHeightFogs.clear();
 	FreeSlots.clear();
 	VisibleProxies.clear();
 }
@@ -252,4 +255,52 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
 	return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
+}
+
+void FScene::RegisterExponentialHeightFog(UExponentialHeightFogComponent* FogComponent)
+{
+	if (!FogComponent)
+	{
+		return;
+	}
+
+	if (std::find(ExponentialHeightFogs.begin(), ExponentialHeightFogs.end(), FogComponent) == ExponentialHeightFogs.end())
+	{
+		ExponentialHeightFogs.push_back(FogComponent);
+	}
+}
+
+void FScene::UnregisterExponentialHeightFog(UExponentialHeightFogComponent* FogComponent)
+{
+	if (!FogComponent)
+	{
+		return;
+	}
+
+	auto It = std::find(ExponentialHeightFogs.begin(), ExponentialHeightFogs.end(), FogComponent);
+	if (It != ExponentialHeightFogs.end())
+	{
+		ExponentialHeightFogs.erase(It);
+	}
+}
+
+UExponentialHeightFogComponent* FScene::GetPrimaryExponentialHeightFog() const
+{
+	for (UExponentialHeightFogComponent* FogComponent : ExponentialHeightFogs)
+	{
+		if (!FogComponent || !FogComponent->IsActive())
+		{
+			continue;
+		}
+
+		AActor* Owner = FogComponent->GetOwner();
+		if (!Owner || !Owner->IsVisible())
+		{
+			continue;
+		}
+
+		return FogComponent;
+	}
+
+	return nullptr;
 }

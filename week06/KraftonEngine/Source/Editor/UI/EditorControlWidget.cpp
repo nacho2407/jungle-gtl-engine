@@ -7,6 +7,7 @@
 #include "Component/GizmoComponent.h"
 #include "GameFramework/StaticMeshActor.h"
 #include "GameFramework/DecalActor.h"
+#include "GameFramework/ExponentialHeightFog.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -58,6 +59,14 @@ void FEditorControlWidget::Render(float DeltaTime)
 			case 2: //Decal
 			{
 				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
+				World->InsertActorToOctree(Actor);
+				break;
+			}
+			case 3: // ExponentialHeightFog
+			{
+				AExponentialHeightFog* Actor = World->SpawnActor<AExponentialHeightFog>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents();
 				World->InsertActorToOctree(Actor);
