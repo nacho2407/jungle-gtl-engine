@@ -32,6 +32,8 @@ protected:
     /** 자원 해제 */
 	virtual bool End(const FRenderPassContext* Context) = 0;
 
+	void CheckOverrideViewMode(const FRenderPassContext* Context);
+
 protected:
 	// 현재 Pass 출력용 최종 View
     ID3D11ShaderResourceView* OutSRV = nullptr;

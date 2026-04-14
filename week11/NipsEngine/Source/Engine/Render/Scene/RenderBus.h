@@ -42,6 +42,8 @@ public:
 	bool IsOrthographic() const { return Proj.M[3][3] == 1.0f; }
 	void SetViewportSize(const FVector2& InViewportSize) { ViewportSize = InViewportSize; }
 	const FVector2& GetViewportSize() const { return ViewportSize; }
+	void SetViewportOrigin(const FVector2& InViewportOrigin) { ViewportOrigin = InViewportOrigin; }
+	const FVector2& GetViewportOrigin() const { return ViewportOrigin; }
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
@@ -54,6 +56,7 @@ private:
 	FVector CameraRight;
 	FVector CameraUp;
 	FVector2 ViewportSize;
+	FVector2 ViewportOrigin = FVector2(0.0f, 0.0f);
 
 	//Editor Settings
 	EViewMode ViewMode = EViewMode::Lit;

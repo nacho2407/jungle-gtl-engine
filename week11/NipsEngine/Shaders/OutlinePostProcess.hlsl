@@ -5,7 +5,8 @@ cbuffer OutlineConstants : register(b2)
     float4 OutlineColor;
     float OutlineThicknessPixels;
     float2 OutlineViewportSize;
-    float OutlinePadding0;
+    float2 OutlineViewportOrigin;
+    float2 OutlinePadding0;
 };
 
 Texture2D<float> SelectionMaskTexture : register(t7);
@@ -33,12 +34,15 @@ VSOutput VS(uint vertexId : SV_VertexID)
 float4 PS(VSOutput input) : SV_TARGET
 {
     const int2 viewportSize = int2(max(OutlineViewportSize, float2(1.0f, 1.0f)));
-    const int2 pixelCoord = int2(input.position.xy);
-    
-	//	Viewport 범위 내 Clamp
-    const int2 clampedCoord = clamp(pixelCoord, int2(0, 0), viewportSize - 1);
+    const int2 viewportOrigin = int2(OutlineViewportOrigin);
+    const int2 pixelCoordAbs = int2(input.position.xy);
+    const int2 pixelCoordLocal = pixelCoordAbs - viewportOrigin;
 
-    const float centerMask = SelectionMaskTexture.Load(int3(clampedCoord, 0));
+	//	Subviewport local 범위 내 clamp 후, 다시 absolute 좌표로 환산
+    const int2 clampedLocal = clamp(pixelCoordLocal, int2(0, 0), viewportSize - 1);
+    const int2 clampedAbs = clampedLocal + viewportOrigin;
+
+    const float centerMask = SelectionMaskTexture.Load(int3(clampedAbs, 0));
 	
     //	만일 0.5f 이상이라는 것은 Mask 자체라는 것
     if (centerMask > 0.5f)
@@ -63,8 +67,9 @@ float4 PS(VSOutput input) : SV_TARGET
         [unroll]
         for (int i = 0; i < 8; ++i)
         {
-            const int2 sampleCoord = clamp(clampedCoord + neighborOffsets[i] * r, int2(0, 0), viewportSize - 1);
-            float mask = SelectionMaskTexture.Load(int3(sampleCoord, 0));
+            const int2 sampleLocal = clamp(clampedLocal + neighborOffsets[i] * r, int2(0, 0), viewportSize - 1);
+            const int2 sampleAbs = sampleLocal + viewportOrigin;
+            float mask = SelectionMaskTexture.Load(int3(sampleAbs, 0));
     
 			//	선택된 픽셀인지 0, 1로 check
             float hit = step(0.5f, mask);

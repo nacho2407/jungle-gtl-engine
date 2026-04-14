@@ -75,6 +75,20 @@ bool FRenderPipeline::Render(const FRenderPassContext* Context)
 {
 	for (std::shared_ptr<FBaseRenderPass> Pass : RenderPasses)
 	{
+        /*
+			Wireframe 모드에선 다음과 같은 Render Pass 무시
+		*/
+        const bool bWireframeView = (Context->RenderBus != nullptr) && (Context->RenderBus->GetViewMode() == EViewMode::Wireframe);
+        const bool bSkipForWireframe =
+            (Pass.get() == LightRenderPass.get()) ||
+            (Pass.get() == FogRenderPass.get()) ||
+            (Pass.get() == FXAARenderPass.get());
+
+        if (bWireframeView && bSkipForWireframe)
+        {
+            continue;
+        }
+
         Pass->SetPrevPassSRV(OutSRV);
         Pass->SetPrevPassRTV(OutRTV);
         Pass->Render(Context);
