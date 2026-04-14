@@ -1,12 +1,27 @@
 ﻿#include "RenderPipeline.h"
 #include "OpaqueRenderPass.h"
+#include "LightRenderPass.h"
+#include "FogRenderPass.h"
+#include "FXAARenderPass.h"
 
 bool FRenderPipeline::Initialize()
 {
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
 
+	LightRenderPass = std::make_shared<FLightRenderPass>();
+    LightRenderPass->Initialize();
+
+	FogRenderPass = std::make_shared<FFogRenderPass>();
+    FogRenderPass->Initialize();
+
+	FXAARenderPass = std::make_shared<FFXAARenderPass>();
+    FXAARenderPass->Initialize();
+
 	RenderPasses.push_back(OpaqueRenderPass);
+    RenderPasses.push_back(LightRenderPass);
+    RenderPasses.push_back(FogRenderPass);
+    RenderPasses.push_back(FXAARenderPass);
 
     return true;
 }
@@ -15,8 +30,11 @@ bool FRenderPipeline::Render(const FRenderPassContext* Context)
 {
 	for (std::shared_ptr<FBaseRenderPass> Pass : RenderPasses)
 	{
+        Pass->SetPrevPassSRV(OutSRV);
+        Pass->SetPrevPassRTV(OutRTV);
         Pass->Render(Context);
         OutSRV = Pass->GetOutSRV();
+        OutRTV = Pass->GetOutRTV();
 	}
 
     return true;
@@ -28,5 +46,11 @@ void FRenderPipeline::Release()
     {
         OpaqueRenderPass->Release();
         OpaqueRenderPass.reset();
+	}
+
+	if (LightRenderPass)
+	{
+        LightRenderPass->Release();
+        LightRenderPass.reset();
 	}
 }
