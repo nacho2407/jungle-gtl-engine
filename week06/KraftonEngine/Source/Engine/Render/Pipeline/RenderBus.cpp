@@ -17,9 +17,15 @@ void FRenderBus::Clear()
 	GridEntries.clear();
 	DebugLineEntries.clear();
 
+	viewportWidth = 0.0f;
+	viewportHeight = 0.0f;
 	ViewportRTV = nullptr;
 	ViewportDSV = nullptr;
 	ViewportStencilSRV = nullptr;
+	ViewportDepthSRV = nullptr;
+	OcclusionCulling = nullptr;
+	LODContext = {};
+	ExponentialHeightFog = {};
 }
 
 void FRenderBus::AddProxy(ERenderPass Pass, const FPrimitiveSceneProxy* Proxy)
@@ -81,16 +87,43 @@ void FRenderBus::SetCameraInfo(const UCameraComponent* Camera)
 
 void FRenderBus::SetViewportInfo(const FViewport* VP)
 {
-	viewportWidth = static_cast<float>(VP->GetWidth());
-	viewportHeight = static_cast<float>(VP->GetHeight());
-	ViewportRTV = VP->GetRTV();
-	ViewportDSV = VP->GetDSV();
-	ViewportStencilSRV = VP->GetStencilSRV();
-	ViewportDepthSRV = VP->GetDepthSRV();
-	ViewportNormalRTV = VP->GetNormalRTV();
-	ViewportNormalSRV = VP->GetNormalSRV();
-	ViewportAlbedoRTV = VP->GetAlbedoRTV();
-	ViewportAlbedoSRV = VP->GetAlbedoSRV();
+
+	SetRenderTargetInfo(
+		static_cast<float>(VP->GetWidth()),
+		static_cast<float>(VP->GetHeight()),
+		VP->GetRTV(),
+		VP->GetDSV(),
+		VP->GetDepthSRV(),
+		VP->GetStencilSRV()
+		VP->GetNormalRTV();
+		VP->GetNormalSRV();
+		VP->GetAlbedoRTV();
+		VP->GetAlbedoSRV();
+	);
+}
+
+void FRenderBus::SetRenderTargetInfo(
+	float InWidth,
+	float InHeight,
+	ID3D11RenderTargetView* InRTV,
+	ID3D11DepthStencilView* InDSV,
+	ID3D11ShaderResourceView* InDepthSRV,
+	ID3D11ShaderResourceView* InStencilSRV,
+	ID3D11RenderTargetView* InNormalRTV,
+	ID3D11ShaderResourceView* InNormalSRV,
+	ID3D11RenderTargetView* InAlbedoRTV,
+	ID3D11ShaderResourceView* InAlbedoSRV)
+{
+	viewportWidth = InWidth;
+	viewportHeight = InHeight;
+	ViewportRTV = InRTV;
+	ViewportDSV = InDSV;
+	ViewportDepthSRV = InDepthSRV;
+	ViewportStencilSRV = InStencilSRV;
+	ViewportNormalRTV = InNormalRTV;
+	ViewportNormalSRV = InNormalSRV;
+	ViewportAlbedoRTV = InAlbedoRTV;
+	ViewportAlbedoSRV = InAlbedoSRV;
 }
 
 void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)

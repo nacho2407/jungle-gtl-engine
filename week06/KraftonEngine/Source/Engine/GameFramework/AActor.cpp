@@ -15,8 +15,9 @@ AActor::AActor()
 {
 	PrimaryActorTick.SetTarget(this);
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bTickEnabled = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+	SetActorTickEnabled(bNeedsTick);
+	SetActorTickInEditor(bTickInEditor);
 }
 
 AActor::~AActor()
@@ -52,11 +53,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 		return nullptr;
 	}
 
-	Comp->SetOwner(this);
-	OwnedComponents.push_back(Comp);
-	bPrimitiveCacheDirty = true;
-	Comp->CreateRenderState();
-	MarkPickingDirty();
+	RegisterComponent(Comp);
 	return Comp;
 }
 
@@ -72,12 +69,22 @@ void AActor::RegisterComponent(UActorComponent* Comp)
 		bPrimitiveCacheDirty = true;
 		MarkPickingDirty();
 		Comp->CreateRenderState();
+		Comp->PrimaryComponentTick.RegisterTickFunction();
+
+		if (bActorHasBegunPlay)
+		{
+			Comp->BeginPlay();
+		}
 	}
 }
 
 void AActor::RemoveComponent(UActorComponent* Component)
 {
 	if (!Component) return;
+	if (bActorHasBegunPlay)
+	{
+		Component->EndPlay();
+	}
 
 	Component->PrimaryComponentTick.UnRegisterTickFunction();
 
@@ -96,7 +103,14 @@ void AActor::RemoveComponent(UActorComponent* Component)
 	if (RootComponent == Component)
 		RootComponent = nullptr;
 
-	UObjectManager::Get().DestroyObject(Component);
+	if (UWorld* World = GetWorld())
+	{
+		World->QueueComponentForDestroy(Component);
+	}
+	else
+	{
+		UObjectManager::Get().DestroyObject(Component);
+	}
 }
 
 void AActor::SetRootComponent(USceneComponent* Comp)
@@ -173,6 +187,7 @@ void AActor::BeginPlay()
 {
 	// 재진입 방지 — UE의 HasActorBegunPlay() 가드 대응.
 	if (bActorHasBegunPlay) return;
+	PrimaryActorTick.RegisterTickFunction();
 	bActorHasBegunPlay = true;
 
 	// UE 순서: 컴포넌트 BeginPlay 먼저, 그다음 Actor 본인 (오버라이드 측 Super 호출 시).
@@ -194,7 +209,7 @@ void AActor::TickActor(float DeltaSeconds, ELevelTick TickType, FActorTickFuncti
 
 void AActor::EndPlay()
 {
-	if (!bActorHasBegunPlay) return;
+	const bool bWasBegunPlay = bActorHasBegunPlay;
 	bActorHasBegunPlay = false;
 	PrimaryActorTick.UnRegisterTickFunction();
 
@@ -203,7 +218,10 @@ void AActor::EndPlay()
 		if (Comp)
 		{
 			Comp->PrimaryComponentTick.UnRegisterTickFunction();
-			Comp->EndPlay();
+			if (bWasBegunPlay)
+			{
+				Comp->EndPlay();
+			}
 		}
 	}
 }
@@ -264,8 +282,21 @@ void AActor::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	// 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
+	if (Ar.IsSaving())
+	{
+		bNeedsTick = PrimaryActorTick.bTickEnabled;
+		bTickInEditor = PrimaryActorTick.bTickInEditor;
+	}
+
 	Ar << bVisible;
 	Ar << bNeedsTick;
+	Ar << bTickInEditor;
+
+	if (Ar.IsLoading())
+	{
+		SetActorTickEnabled(bNeedsTick);
+		SetActorTickInEditor(bTickInEditor);
+	}
 }
 
 // SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들되,
@@ -366,4 +397,16 @@ const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 		bPrimitiveCacheDirty = false;
 	}
 	return PrimitiveCache;
+}
+
+void AActor::SetActorTickEnabled(bool bEnabled)
+{
+	bNeedsTick = bEnabled;
+	PrimaryActorTick.SetTickEnabled(bEnabled);
+}
+
+void AActor::SetActorTickInEditor(bool bEnabled)
+{
+	bTickInEditor = bEnabled;
+	PrimaryActorTick.bTickInEditor = bEnabled;
 }

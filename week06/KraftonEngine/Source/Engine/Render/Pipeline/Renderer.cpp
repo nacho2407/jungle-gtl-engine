@@ -259,6 +259,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Additive] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::FogPostProcess] = { EDepthStencilState::NoDepth,       EBlendState::FogBlend,   ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite,  EBlendState::NoColor,    ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,       EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true };
@@ -319,6 +320,13 @@ void FRenderer::InitializePassBatchers()
 			BillboardBatcher.DrawBatch(Ctx);
 		},
 		[this]() { return BillboardBatcher.GetSpriteCount() == 0; }
+	};
+
+	PassBatchers[(uint32)ERenderPass::FogPostProcess] = {
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			DrawPostProcessFog(Bus, Ctx);
+		},
+		nullptr
 	};
 
 	PassBatchers[(uint32)ERenderPass::PostProcess] = {
@@ -774,6 +782,65 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 	Context->PSSetShaderResources(0, 1, &nullSRV);
 
 	// 7) DSV 재바인딩 (후속 패스에서 뎁스 사용)
+	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+void FRenderer::DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	const FExponentialHeightFogRenderData& FogData = Bus.GetExponentialHeightFog();
+	if (!FogData.bEnabled || Bus.IsOrtho())
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+	ID3D11DepthStencilView* DSV = Bus.GetViewportDSV();
+	ID3D11RenderTargetView* RTV = Bus.GetViewportRTV();
+	if (!DepthSRV || !RTV)
+	{
+		return;
+	}
+
+	Context->OMSetRenderTargets(1, &RTV, nullptr);
+	Context->PSSetShaderResources(0, 1, &DepthSRV);
+	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+
+	FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFogPostProcess);
+	if (!FogShader)
+	{
+		ID3D11ShaderResourceView* NullSRV = nullptr;
+		Context->PSSetShaderResources(0, 1, &NullSRV);
+		Context->OMSetRenderTargets(1, &RTV, DSV);
+		return;
+	}
+	FogShader->Bind(Context);
+
+	FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBSlot::Fog, sizeof(FHeightFogPostProcessConstants));
+	FHeightFogPostProcessConstants FogConstants = {};
+	FogConstants.CameraInvView = Bus.GetView().GetInverseFast();
+	FogConstants.CameraInvProjection = Bus.GetProj().GetInverse();
+	FogConstants.FogColor = FogData.FogColor;
+	FogConstants.CameraPosition = Bus.GetCameraPosition();
+	FogConstants.FogDensity = FogData.FogDensity;
+	FogConstants.FogHeight = FogData.FogHeight;
+	FogConstants.FogHeightFalloff = FogData.FogHeightFalloff;
+	FogConstants.StartDistance = FogData.StartDistance;
+	FogConstants.FogMaxOpacity = FogData.FogMaxOpacity;
+	FogConstants.EndDistance = FogData.EndDistance;
+	FogConstants.FogCutoffDistance = FogData.FogCutoffDistance;
+	FogCB->Update(Context, &FogConstants, sizeof(FogConstants));
+
+	ID3D11Buffer* FogBuffer = FogCB->GetBuffer();
+	Context->VSSetConstantBuffers(ECBSlot::Fog, 1, &FogBuffer);
+	Context->PSSetConstantBuffers(ECBSlot::Fog, 1, &FogBuffer);
+
+	Context->IASetInputLayout(nullptr);
+	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+	Context->Draw(3, 0);
+	FDrawCallStats::Increment();
+
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &NullSRV);
 	Context->OMSetRenderTargets(1, &RTV, DSV);
 }
 

@@ -10,6 +10,19 @@ class FGPUOcclusionCulling;
 
 #include "Render/Pipeline/LODContext.h"
 
+struct FExponentialHeightFogRenderData
+{
+	bool bEnabled = false;
+	float FogHeight = 0.0f;
+	float FogDensity = 0.0f;
+	float FogHeightFalloff = 0.0f;
+	FVector4 FogColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+	float FogMaxOpacity = 1.0f;
+	float StartDistance = 0.0f;
+	float EndDistance = 0.0f;
+	float FogCutoffDistance = 0.0f;
+};
+
 
 class FRenderBus
 {
@@ -40,8 +53,16 @@ public:
 	// Getter,Setter
 	void SetCameraInfo(const UCameraComponent* Camera);
 	void SetViewportInfo(const FViewport* VP);
+	void SetRenderTargetInfo(
+		float InWidth,
+		float InHeight,
+		ID3D11RenderTargetView* InRTV,
+		ID3D11DepthStencilView* InDSV,
+		ID3D11ShaderResourceView* InDepthSRV,
+		ID3D11ShaderResourceView* InStencilSRV = nullptr);
 	void SetViewportSize(float InWidth, float InHeight);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
+	void SetExponentialHeightFog(const FExponentialHeightFogRenderData& InFogData) { ExponentialHeightFog = InFogData; }
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
@@ -65,11 +86,13 @@ public:
 	ID3D11DepthStencilView*  GetViewportDSV()        const { return ViewportDSV; }
 	ID3D11ShaderResourceView* GetViewportStencilSRV() const { return ViewportStencilSRV; }
 	ID3D11ShaderResourceView* GetViewportDepthSRV() const { return ViewportDepthSRV; }
+
 	ID3D11RenderTargetView* GetViewportNormalRTV() const { return ViewportNormalRTV; }
 	ID3D11ShaderResourceView* GetViewportNormalSRV() const { return ViewportNormalSRV; }
 	ID3D11RenderTargetView* GetViewportAlbedoRTV() const { return ViewportAlbedoRTV; }
 	ID3D11ShaderResourceView* GetViewportAlbedoSRV() const { return ViewportAlbedoSRV; }
 
+	const FExponentialHeightFogRenderData& GetExponentialHeightFog() const { return ExponentialHeightFog; }
 
 	// GPU Occlusion Culling — set by render pipeline, read by collector
 	void SetOcclusionCulling(FGPUOcclusionCulling* InOcclusion) { OcclusionCulling = InOcclusion; }
@@ -125,6 +148,8 @@ private:
 
 	// LOD
 	FLODUpdateContext LODContext;
+
+	FExponentialHeightFogRenderData ExponentialHeightFog;
 
 	//Editor Settings
 	EViewMode ViewMode;

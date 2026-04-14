@@ -1,12 +1,39 @@
 ﻿#include "DecalComponent.h"
-#include "Component/DecalComponent.h"
+
 #include "Core/PropertyTypes.h"
+#include "Editor/EditorEngine.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 
+#include <algorithm>
 #include <cstring>
+
+namespace
+{
+	void DeselectOwnerIfSelected(AActor* OwnerActor)
+	{
+		if (!OwnerActor)
+		{
+			return;
+		}
+
+		UEditorEngine* Editor = Cast<UEditorEngine>(GEngine);
+		if (!Editor)
+		{
+			return;
+		}
+
+		FSelectionManager& Selection = Editor->GetSelectionManager();
+		if (Selection.IsSelected(OwnerActor))
+		{
+			Selection.Deselect(OwnerActor);
+		}
+	}
+}
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
@@ -14,7 +41,12 @@ void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << TextureName;
+	Ar << DecalColor;
 	Ar << DecalSize;
+	Ar << FadeSetting.FadeInTime;
+	Ar << FadeSetting.FadeOutTime;
+	Ar << FadeSetting.TotalLifetime;
+	Ar << FadeSetting.bFadeOnceAndDestroy;
 }
 
 void UDecalComponent::PostDuplicate()
@@ -27,10 +59,12 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });
 	OutProps.push_back({ "Decal Size", EPropertyType::Vec3, &DecalSize, 1.0f, 1000.0f, 1.0f });
-	OutProps.push_back({ "Fade In Time", EPropertyType::Float, &FadeInTime, 0.0f, 10.0f, 0.1f });
-	OutProps.push_back({ "Fade Out Time", EPropertyType::Float, &FadeOutTime, 0.0f, 10.0f, 0.1f });
-	OutProps.push_back({ "Total Lifetime", EPropertyType::Float, &TotalLifetime, 0.0f, 100.0f, 1.0f });
+	OutProps.push_back({ "Fade In Time", EPropertyType::Float, &FadeSetting.FadeInTime, 0.0f, 10.0f, 0.1f });
+	OutProps.push_back({ "Fade Out Time", EPropertyType::Float, &FadeSetting.FadeOutTime, 0.0f, 10.0f, 0.1f });
+	OutProps.push_back({ "Total Lifetime", EPropertyType::Float, &FadeSetting.TotalLifetime, 0.0f, 100.0f, 1.0f });
+	OutProps.push_back({ "Fade Once And Destroy", EPropertyType::Bool, &FadeSetting.bFadeOnceAndDestroy });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)
@@ -63,38 +97,51 @@ void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 {
 	UPrimitiveComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	ElapsedTime += DeltaTime;
+	if (FadeSetting.TotalLifetime <= 0.0f)
+	{
+		return;
+	}
+
+	FadeSetting.ElapsedTime += DeltaTime;
 
 	float CurrentFadeAlpha = 1.0f;
-
-	if (FadeInTime > 0.0f)
+	if (FadeSetting.FadeInTime > 0.0f)
 	{
-		CurrentFadeAlpha = std::min(CurrentFadeAlpha, ElapsedTime / FadeInTime);
+		CurrentFadeAlpha = std::min(CurrentFadeAlpha, FadeSetting.ElapsedTime / FadeSetting.FadeInTime);
 	}
 
-	if (TotalLifetime > 0.0f)
+	const float RemainingTime = FadeSetting.TotalLifetime - FadeSetting.ElapsedTime;
+	if (FadeSetting.FadeOutTime > 0.0f && RemainingTime < FadeSetting.FadeOutTime)
 	{
-		const float RemainingTime = TotalLifetime - ElapsedTime;
-		if(FadeOutTime > 0.0f && RemainingTime < FadeOutTime)
-		{
-			CurrentFadeAlpha = std::min(CurrentFadeAlpha, RemainingTime / FadeOutTime);
-		}
-
-		if(RemainingTime <= 0.0f)
-		{
-			ResetFade();
-			CurrentFadeAlpha = 0.0f;
-		}
+		CurrentFadeAlpha = std::min(CurrentFadeAlpha, RemainingTime / FadeSetting.FadeOutTime);
 	}
 
-	FadeAlpha = Clamp(CurrentFadeAlpha, 0.0f, 1.0f);
+	if (RemainingTime <= 0.0f)
+	{
+		if (FadeSetting.bFadeOnceAndDestroy)
+		{
+			DeselectOwnerIfSelected(Owner);
+			SetActive(false);
+			SetComponentTickEnabled(false);
+			
+			if (Owner && Owner->GetWorld())
+			{
+				Owner->GetWorld()->DestroyActor(Owner);
+			}
+			return;
+		}
+
+		ResetFade();
+		CurrentFadeAlpha = 0.0f;
+	}
+
+	FadeSetting.FadeAlpha = Clamp(CurrentFadeAlpha, 0.0f, 1.0f);
 }
 
 void UDecalComponent::SetTexture(const FName& InTextureName)
 {
 	TextureName = InTextureName;
 	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
-	// 텍스처 유무가 batcher/Primitive 경로 분기를 좌우하므로 Mesh 단계까지 재갱신 필요.
 	MarkProxyDirty(EDirtyFlag::Material);
 }
 
@@ -109,10 +156,7 @@ void UDecalComponent::SetDecalSize(const FVector& InSize)
 
 void UDecalComponent::ResetFade()
 {
-	ElapsedTime = 0.0f;
-	FadeAlpha = 1.0f;
-	bTickEnable = true;
-
+	FadeSetting.Reset();
 	SetActive(true);
 	SetComponentTickEnabled(true);
 }

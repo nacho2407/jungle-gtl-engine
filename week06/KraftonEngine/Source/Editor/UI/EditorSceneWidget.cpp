@@ -10,6 +10,7 @@
 #include "Component/GizmoComponent.h"
 #include "Serialization/SceneSaveManager.h"
 #include "Profiling/Stats.h"
+#include "Math/MathUtils.h"
 
 #include <filesystem>
 
@@ -226,8 +227,113 @@ void FEditorSceneWidget::RenderActorOutliner()
 					Selection.Select(Actor);
 				}
 			}
+			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				UE_LOG("FocusOnActor clicked");
+				FocusOnActor(Actor);
+			}
 		}
 	}
 
 	ImGui::EndChild();
+}
+
+void FEditorSceneWidget::FocusOnActor(AActor* InActor)
+{
+	if (!InActor || !EditorEngine)
+	{
+		return;
+	}
+
+	USceneComponent* RootComp = InActor ->GetRootComponent();
+	if (!RootComp)
+	{
+		return;
+	}
+
+	UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(RootComp);
+	if (!Prim)
+	{
+		return;
+	}
+
+	FBoundingBox Box = Prim->GetWorldBoundingBox();
+	const FVector Max = Box.Max;
+	const FVector Min = Box.Min;
+
+	const FVector Center = (Min + Max) * 0.5f;
+	const FVector HalfExtent = (Max - Min) * 0.5f;
+	const float BoundingRadius = std::max({ HalfExtent.X, HalfExtent.Y, HalfExtent.Z });
+	
+	if (BoundingRadius <= 0.0f)
+	{
+		return;
+	}
+
+	const FMatrix& WorldMat = RootComp->GetWorldMatrix();
+
+	// 액터의 정면 방향
+	FVector Forward = FVector(WorldMat.M[0][0], WorldMat.M[0][1], WorldMat.M[0][2]).Normalized();
+	if (Forward.Length() <= 1e-6f)
+	{
+		Forward = FVector(1.0f, 0.0f, 0.0f);
+	}
+
+	auto& Viewports = EditorEngine->GetAllViewportClients();
+	if (Viewports.empty())
+	{
+		return;
+	}
+
+	for (FEditorViewportClient* ActiveVC : Viewports)
+	{
+		if (!ActiveVC)
+		{
+			continue;
+		}
+
+		UCameraComponent* VCCamera = ActiveVC->GetCamera();
+		if (!VCCamera)
+		{
+			continue;
+		}
+
+		const auto& CameraState = VCCamera->GetCameraState();
+
+		if (CameraState.bIsOrthogonal)
+		{
+			VCCamera->SetWorldLocation(Center);
+			continue;
+		}
+
+		// FOV가 degree라고 가정
+		const float FovYDegree = CameraState.FOV;
+		const float HalfFovRadian = (FovYDegree * 0.5f);
+
+		// 화면에 물체가 들어오도록 거리 계산
+		float Distance = (BoundingRadius / sinf(HalfFovRadian)) * 1.8f;
+
+		// 위에서 내려다보는 각도(도 단위)
+		const float AngleDegree = 30.0f;
+		const float AngleRadian = AngleDegree * DEG_TO_RAD;
+		UE_LOG("%f %f",HalfFovRadian, Distance);
+
+		Distance = std::min(Distance, MaxDistance);
+
+		// Forward 방향으로 cos, 위쪽으로 sin
+		const FVector NewLocation =
+			Center
+			+ Forward * (Distance * cosf(AngleRadian))
+			+ FVector(0.0f, 0.0f, Distance * sinf(AngleRadian));
+
+		const FVector LookDir = (Center - NewLocation).Normalized();
+		
+		// yaw, pitch 계산
+		const float YawDegree = atan2f(LookDir.Y, LookDir.X) * RAD_TO_DEG;
+		const float PitchDegree = asinf(-LookDir.Z) * RAD_TO_DEG;
+
+		VCCamera->SetWorldLocation(NewLocation);
+		UE_LOG("%f %f %f", NewLocation.X, NewLocation.Y, NewLocation.Z);
+		VCCamera->SetRelativeRotation(FVector(0.0f, PitchDegree, YawDegree));
+	}
 }

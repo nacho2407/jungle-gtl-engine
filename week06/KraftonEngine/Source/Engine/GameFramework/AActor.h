@@ -38,11 +38,7 @@ public:
 			"AddComponent<T>: T must derive from UActorComponent");
 
 		T* Comp = UObjectManager::Get().CreateObject<T>(this);
-		Comp->SetOwner(this);
-		OwnedComponents.push_back(Comp);
-		bPrimitiveCacheDirty = true;
-		Comp->CreateRenderState();
-		MarkPickingDirty();
+		RegisterComponent(Comp);
 		return Comp;
 	}
 
@@ -81,8 +77,13 @@ public:
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
+	void SetActorTickEnabled(bool bEnabled);
+	bool IsActorTickEnabled() const { return PrimaryActorTick.IsTickEnabled(); }
+	void SetActorTickInEditor(bool bEnabled);
+	bool IsActorTickInEditor() const { return PrimaryActorTick.bTickInEditor; }
 
-	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
+	// Legacy mirrors for duplicated/editor-authored actor settings.
+	// Runtime source of truth is PrimaryActorTick.
 	bool bNeedsTick = true;
 	bool bTickInEditor = false;
 

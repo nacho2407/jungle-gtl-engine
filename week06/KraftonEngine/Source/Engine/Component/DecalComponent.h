@@ -1,7 +1,24 @@
 ﻿#pragma once
+
 #include "Component/PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
+
+struct FFadeSetting
+{
+	float FadeAlpha = 1.0f;
+	float FadeInTime = 1.0f;
+	float FadeOutTime = 1.0f;
+	float TotalLifetime = 5.0f;
+	float ElapsedTime = 0.0f;
+	bool bFadeOnceAndDestroy = false;
+
+	void Reset()
+	{
+		ElapsedTime = 0.0f;
+		FadeAlpha = 1.0f;
+	}
+};
 
 class UDecalComponent : public UPrimitiveComponent
 {
@@ -10,26 +27,28 @@ public:
 
 	UDecalComponent() = default;
 	~UDecalComponent() override = default;
+
 	void Serialize(FArchive& Ar) override;
 	void PostDuplicate() override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 	void UpdateLocalExtents();
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
-
-	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
 	void SetTexture(const FName& InTextureName);
 	void SetDecalSize(const FVector& InSize);
+	void SetFadeSetting(FFadeSetting setting) { FadeSetting = setting; }
+
 	const FTextureResource* GetTexture() const { return CachedTexture; }
 	const FVector& GetDecalSize() const { return DecalSize; }
-	float GetFadeAlpha() const { return FadeAlpha; }
+	float GetFadeAlpha() const { return FadeSetting.FadeAlpha; }
+	FVector4 GetDecalColor() const { return DecalColor; }
 
 	void ResetFade();
 
 	FMatrix& GetDecalToWorldMatrix() const;
 	FMatrix& GetWorldToDecalMatrix() const;
-
 
 protected:
 	void OnTransformDirty() override;
@@ -37,6 +56,7 @@ protected:
 private:
 	void MarkDecalDirty();
 	void UpdateDecalMatrices() const;
+
 private:
 	FTextureResource* CachedTexture = nullptr;
 	FName TextureName;
@@ -46,11 +66,6 @@ private:
 	mutable bool bDecalMatrixDirty = true;
 
 	FVector DecalSize = { 1.0f, 1.0f, 1.0f };
-
-	float FadeAlpha = 1.0f;
-	float FadeInTime = 1.0f;
-	float FadeOutTime = 1.0f;
-	float TotalLifetime = 5.0f;
-	float ElapsedTime = 0.0f;
+	FVector4 DecalColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	FFadeSetting FadeSetting;
 };
-

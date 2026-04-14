@@ -11,6 +11,7 @@ enum class EShaderType : uint32
 	Editor,
 	StaticMesh,
 	Decal,
+	HeightFogPostProcess,
 	OutlinePostProcess,
 	Font,
 	OverlayFont,

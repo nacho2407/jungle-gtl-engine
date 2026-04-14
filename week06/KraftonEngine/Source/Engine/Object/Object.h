@@ -105,6 +105,8 @@ public:
 
 	// RTTI stuffs
 	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
+	bool IsPendingDestroy() const { return bPendingDestroy; }
+	void MarkPendingDestroy() { bPendingDestroy = true; }
 
 	template<typename T>
 	bool IsA() const { return GetTypeInfo()->IsA(&T::s_TypeInfo); }
@@ -119,6 +121,7 @@ private:
 	uint32 UUID;
 	uint32 InternalIndex;
 	UObject* Outer = nullptr;
+	bool bPendingDestroy = false;
 };
 
 extern TArray<UObject*> GUObjectArray;
@@ -149,6 +152,7 @@ public:
 		{
 			return;
 		}
+		Obj->MarkPendingDestroy();
 		delete Obj;
 	}
 

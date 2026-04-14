@@ -21,7 +21,8 @@ enum class EBlendState
 {
 	Opaque,
 	AlphaBlend,
-	NoColor,
+	FogBlend,
+	NoColor
 	Additive,
 };
 

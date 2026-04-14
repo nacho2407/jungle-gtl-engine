@@ -123,6 +123,7 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
+	SetFont(FontName);
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

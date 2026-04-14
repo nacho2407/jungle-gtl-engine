@@ -4,6 +4,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 class UPrimitiveComponent;
+class UExponentialHeightFogComponent;
 
 // ============================================================
 // FScene — FPrimitiveSceneProxy의 소유자 겸 변경 추적 컨테이너
@@ -47,6 +48,10 @@ public:
 	const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return NeverCullProxies; }
 	uint32 GetProxyCount() const { return static_cast<uint32>(Proxies.size()); }
 
+	void RegisterExponentialHeightFog(UExponentialHeightFogComponent* FogComponent);
+	void UnregisterExponentialHeightFog(UExponentialHeightFogComponent* FogComponent);
+	UExponentialHeightFogComponent* GetPrimaryExponentialHeightFog() const;
+
 	// --- 가시 프록시 캐시 (World가 매 프레임 frustum cull 결과를 채워 넣음) ---
 	const TArray<FPrimitiveSceneProxy*>& GetVisibleProxies() const { return VisibleProxies; }
 	TArray<FPrimitiveSceneProxy*>& GetVisibleProxiesMutable() { return VisibleProxies; }
@@ -66,6 +71,9 @@ private:
 
 	// bNeverCull 프록시 (Gizmo 등) — Frustum 쿼리와 무관하게 항상 수집
 	TArray<FPrimitiveSceneProxy*> NeverCullProxies;
+
+	// 높이 안개 컴포넌트 — v1은 첫 번째 활성 fog만 사용
+	TArray<UExponentialHeightFogComponent*> ExponentialHeightFogs;
 
 	// 삭제된 슬롯 재활용
 	TArray<uint32> FreeSlots;
