@@ -139,7 +139,7 @@ namespace
 		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
 		const float ScreenCoverage = ProjectedRadius; 
 
-		static constexpr float Thresholds[] = { 0.07f, 0.04f, 0.02f, 0.008f };
+		static constexpr float Thresholds[] = { 0.12f, 0.08f, 0.05f, 0.02f };
 		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
 
 		const int32 MaxLOD = ValidLODCount - 1;
@@ -390,7 +390,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = MeshBuffer;
-		BaseCmd.PerObjectConstants = FPerObjectConstants{ primitiveComponent->GetWorldMatrix() };
+		BaseCmd.PerObjectConstants = FPerObjectConstants(primitiveComponent->GetWorldMatrix());
 		BaseCmd.SectionIndexStart = 0;
 		BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
 
@@ -405,10 +405,9 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 			FMatrix WorldMatrix = TextComp->GetTextMatrix();
 
 			FRenderCommand TextCmd = BaseCmd;
-			BaseCmd.PerObjectConstants.Model = WorldMatrix;
-			TextCmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix()};
+			BaseCmd.PerObjectConstants = FPerObjectConstants(WorldMatrix);
+			TextCmd.PerObjectConstants = FPerObjectConstants(TextComp->GetWorldMatrix(), TextComp->GetColor());
 			TextCmd.Type = ERenderCommandType::Font;
-			TextCmd.PerObjectConstants.Color = TextComp->GetColor();
 			TextCmd.Constants.Font.Text = &Text;
 			TextCmd.Constants.Font.Font = Font;
 			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
