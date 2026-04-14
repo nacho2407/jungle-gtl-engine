@@ -55,9 +55,9 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	{
 		// 기본 머티리얼 생성
 		UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
-		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath, ERenderPass::Opaque);
+		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath);
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-		DefaultMaterial->Create(MatFilePath, Template, std::move(Buffers));
+		DefaultMaterial->Create(MatFilePath, Template, ERenderPass::Opaque, std::move(Buffers));
 		// 폴백: 핑크색으로 미지정 머티리얼임을 표시
 		DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
 		MaterialCache.emplace(MatFilePath, DefaultMaterial);
@@ -71,16 +71,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 
 	// 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
-	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath, RenderPass);
+	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
 	if (!Template) return nullptr;
 
-
-	// 3. D3D 상수 버퍼 생성
+	// 5. D3D 상수 버퍼 생성
 	auto InjectedBuffers = CreateConstantBuffers(Template);
 
-	// 4. UMaterial 인스턴스 생성 및 초기화
+	// 6. UMaterial 인스턴스 생성 및 초기화 (RenderPass는 인스턴스별)
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
-	Material->Create(PathFileName, Template, std::move(InjectedBuffers));
+	Material->Create(PathFileName, Template, RenderPass, std::move(InjectedBuffers));
 	MaterialCache.emplace(MatFilePath, Material);
 
 	//템플릿을 통해 material에 넣기
@@ -257,28 +256,24 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 	return bInjected;
 }
 
-FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath, ERenderPass RenderPass)
+FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath)
 {
-	
-	// 1. 템플릿이 캐시에 있는지 확인
-	// (셰이더 경로를 키값으로 사용)
+	// 1. 템플릿이 캐시에 있는지 확인 (셰이더 경로를 키값으로 사용)
 	auto It = TemplateCache.find(ShaderPath);
 	if (It != TemplateCache.end())
 	{
-		return It->second; // 이미 누군가 만들어둔 게 있으면 즉시 반환!
+		return It->second;
 	}
 
-	// 2. 템플릿이 기존에 없다면 새로 제작
-	// - 셰이더 파일 읽고 컴파일
+	// 2. 템플릿이 기존에 없다면 새로 제작 — 셰이더 파일 읽고 컴파일
 	FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(ShaderPath).c_str());
-
 	if (!Shader)
 	{
-		return nullptr; // 셰이더 로드 실패
+		return nullptr;
 	}
 
 	FMaterialTemplate* NewTemplate = new FMaterialTemplate();
-	NewTemplate->Create(Shader, RenderPass);
+	NewTemplate->Create(Shader);
 	TemplateCache.emplace(ShaderPath, NewTemplate);
 	return NewTemplate;
 }
@@ -306,17 +301,7 @@ void FMaterialManager::Release()
 	}
 	TemplateCache.clear();
 
-	// 2. MaterialCache 포인터 정리
-	// UMaterial은 UObjectManager가 메모리를 관리(GC 등)한다고 가정하고 캐시만 비웁니다.
-	// 만약 엔진 구조상 여기서 지워야 한다면 `delete Pair.second;` 나 `UObjectManager::Get().DestroyObject(...)` 등을 호출해야 합니다.
-	for (auto& Pair : MaterialCache)
-	{
-		if (Pair.second != nullptr)
-		{
-			delete Pair.second;
-			Pair.second = nullptr;
-		}
-	}
+	// 2. MaterialCache — UMaterial은 UObjectManager가 수명을 관리하므로 캐시 맵만 비움
 	MaterialCache.clear();
 
 	// 3. Device 참조 해제

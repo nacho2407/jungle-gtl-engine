@@ -43,7 +43,7 @@ public:
 	void Release();
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환
-	FMaterialTemplate* GetOrCreateTemplate(const FString& ShaderPath, ERenderPass RenderPass);
+	FMaterialTemplate* GetOrCreateTemplate(const FString& ShaderPath);
 
 	json::JSON ReadJsonFile(const FString& FilePath) const;
 
