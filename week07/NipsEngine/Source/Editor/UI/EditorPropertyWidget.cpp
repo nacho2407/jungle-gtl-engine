@@ -358,13 +358,18 @@ void FEditorPropertyWidget::RenderAddComponentPopup(AActor* PrimaryActor)
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
-	ImGui::Text("Components");
-	ImGui::Separator();
+    ImGui::Text("Components");
+    ImGui::Separator();
 
-	USceneComponent* Root = Actor->GetRootComponent();
-	UActorComponent* ComponentToDelete = nullptr;
+    float TreeHeight = std::max(100.0f, ImGui::GetContentRegionAvail().y * 0.4f);
+    
+    // BeginChild를 호출하여 내부 스크롤이 가능한 Child Window를 생성합니다.
+    ImGui::BeginChild("##ComponentTreeChild", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-	if (Root)
+    USceneComponent* Root = Actor->GetRootComponent();
+    UActorComponent* ComponentToDelete = nullptr;
+
+    if (Root)
     {
         RenderSceneComponentNode(Actor, Root, ComponentToDelete);
     }
@@ -407,6 +412,9 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
         }
     }
 
+    ImGui::EndChild();
+
+    // 삭제 처리는 렌더링 루프 바깥(Child Window 종료 후)에서 안전하게 수행
     if (ComponentToDelete)
     {
         if (SelectedComponent == ComponentToDelete)

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Core/CoreMinimal.h"
@@ -21,6 +21,7 @@ private:
 	char SceneName[128] = "Default";
 
 	TArray<FString> SceneFiles;
+	int32 LastClickedActorIndex = -1;
 	int32 SelectedSceneIndex = -1;
 
 	float NewSceneNotificationTimer = 0.f;
