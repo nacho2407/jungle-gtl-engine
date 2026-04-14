@@ -43,7 +43,8 @@ public:
 
 	// Accessors
 	FWindowsWindow* GetWindow() const { return Window; }
-	UWorld* GetWorld() const;
+	virtual UWorld* GetWorld() const;
+
 	const TArray<FWorldContext>& GetWorldList() const { return WorldList; }
 	TArray<FWorldContext>& GetWorldList() { return WorldList; }
 
@@ -56,7 +57,7 @@ public:
 protected:
 	void Render(float DeltaTime);
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
-	void WorldTick(float DeltaTime);
+	virtual void WorldTick(float DeltaTime);
 
 protected:
 	FWindowsWindow* Window = nullptr;

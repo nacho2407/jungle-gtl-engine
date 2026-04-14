@@ -302,7 +302,7 @@ void FEditorPropertyWidget::RenderMultiSelectionHeader(AActor* PrimaryActor, con
 	{
 		for (AActor* Actor : SelectedActors)
 		{
-			if (Actor && Actor->GetWorld()) Actor->GetWorld()->DestroyActor(Actor);
+			if (Actor && Actor->GetFocusedWorld()) Actor->GetFocusedWorld()->DestroyActor(Actor);
 		}
 		SelectionManager->ClearSelection();
 		SelectedComponent = nullptr;
@@ -330,7 +330,7 @@ void FEditorPropertyWidget::RenderSingleSelectionHeader(AActor* PrimaryActor)
 	ImGui::SameLine();
 	if (ImGui::SmallButton("Remove"))
 	{
-		if (PrimaryActor->GetWorld()) PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
+		if (PrimaryActor->GetFocusedWorld()) PrimaryActor->GetFocusedWorld()->DestroyActor(PrimaryActor);
 		SelectionManager->ClearSelection();
 		SelectedComponent = nullptr;
 		LastSelectedActor = nullptr;

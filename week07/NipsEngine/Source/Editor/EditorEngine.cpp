@@ -36,7 +36,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// Selection & Gizmo
 	SelectionManager.Init();
 	ViewportLayout.Init(InWindow, GetWorld(), &SelectionManager, this);
-	GetWorld()->SetActiveCamera(GetCamera());
+	GetFocusedWorld()->SetActiveCamera(GetCamera());
 
 	// Slate 초기화 및 Viewport Layout 추가
 	FSlateApplication::Get().Initialize();
@@ -73,25 +73,36 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 	ViewportLayout.OnWindowResized(Width, Height);
 }
 
+
 void UEditorEngine::Tick(float DeltaTime)
 {
     InputSystem::Get().Tick();
 	ViewportLayout.Tick(DeltaTime);
-
-	if (UWorld* World = GetWorld())
-	{
-		// 활성화된 카메라 갱신
-		const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
-		if (FViewportCamera* FocusedCam = ViewportLayout.GetIndexedViewportClientCamera(FocusedIdx))
-			World->SetActiveCamera(FocusedCam);
-	}
-
 	MainPanel.Update();
-	if (GetEditorState() == EEditorState::Play)
-	{
-		WorldTick(DeltaTime);
-	}
+	WorldTick(DeltaTime);
 	Render(DeltaTime);
+}
+
+void UEditorEngine::WorldTick(float DeltaTime)
+{
+	// 포커스된 뷰포트의 카메라를 해당 월드의 ActiveCamera로 설정
+	const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+	FEditorViewportClient& FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+	if (UWorld* FocusedWorld = FocusedClient.GetFocusedWorld())
+	{
+		if (FViewportCamera* Cam = FocusedClient.GetCamera())
+		{
+			FocusedWorld->SetActiveCamera(Cam);
+		}
+	}
+
+	// WorldList의 모든 월드에 대해 Tick()을 넣어줍니다.
+	// UWorld::Tick에서 EWorldType에 따라 TickEditor / TickGame이 분기됩니다.
+	for (FWorldContext& Ctx : WorldList)
+	{
+		if (!Ctx.World || Ctx.bPaused) continue;
+		Ctx.World->Tick(DeltaTime);
+	}
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
@@ -103,109 +114,119 @@ void UEditorEngine::RenderUI(float DeltaTime)
 
 void UEditorEngine::StartPlaySession()
 {
-	// 일시정지 상태라면, 새로 복제하지 않고 Early Return
-	if (EditorState == EEditorState::Pause)
+	// 일시정지 → 재개
+	if (GetEditorState() == EViewportPlayState::Paused)
     {
-        SetEditorState(EEditorState::Play);
+        SetEditorState(EViewportPlayState::Playing);
+        const int32 ResumeIdx = ViewportLayout.GetLastFocusedViewportIndex();
+        auto ResumeIt = ViewportPIEHandles.find(ResumeIdx);
+        if (ResumeIt != ViewportPIEHandles.end())
+            if (FWorldContext* Ctx = GetWorldContextFromHandle(ResumeIt->second))
+                Ctx->bPaused = false;
         return;
     }
 
-	// 이미 플레이 중이라면 무시
-    if (EditorState == EEditorState::Play) return;
+    if (GetEditorState() == EViewportPlayState::Playing) return;
 
-    UWorld* EditorWorld = GetWorld();
+    const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+    FEditorViewportClient& FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+
+    UWorld* EditorWorld = FocusedClient.GetFocusedWorld();
     if (!EditorWorld) return;
 
-    SetEditorState(EEditorState::Play);
+    FocusedClient.SaveCameraSnapshot();
+    SetEditorState(EViewportPlayState::Playing);
 
     // 에디터 월드 복제 (Actor 및 Component 깊은 복사) — PostDuplicate 까지 내부에서 처리됩니다.
     UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate());
     
-    // PIE 용도로 타입 변경 후 WorldList에 PIE Context 등록
     PIEWorld->SetWorldType(EWorldType::PIE);
+
+    FName PIEHandle(("PIE_" + std::to_string(FocusedIdx)).c_str());
     FWorldContext PIEContext;
-    PIEContext.WorldType = EWorldType::PIE;
-    PIEContext.World = PIEWorld;
-    PIEContext.ContextName = "PIE_World";
-    PIEContext.ContextHandle = FName("PIE_World_Handle");
+    PIEContext.WorldType     = EWorldType::PIE;
+    PIEContext.World         = PIEWorld;
+    PIEContext.ContextName   = "PIE_World_" + std::to_string(FocusedIdx);
+    PIEContext.ContextHandle = PIEHandle;
     WorldList.push_back(PIEContext);
+    ViewportPIEHandles[FocusedIdx] = PIEHandle;
 
-    // 활성 월드를 전환하고, 뷰포트가 바라보는 월드를 PIE 월드로 교체
-    SetActiveWorld(PIEContext.ContextHandle);
-    for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
-    {
-        ViewportLayout.GetViewportClient(i).StartPIE(PIEWorld);
-        ViewportLayout.GetViewportClient(i).SetEndPIECallback([this]() { StopPlaySession(); });
-    }
+    // 포커스된 뷰포트만 PIE 월드로 전환
+    SetActiveWorld(PIEHandle);
+    FocusedClient.StartPIE(PIEWorld);
+    FocusedClient.SetEndPIECallback([this]() { StopPlaySession(); });
 
-	ViewportLayout.SetLastFocusedViewportIndex(0);
-    ViewportLayout.GetViewportClient(0).LockCursorToViewport();
+    FocusedClient.LockCursorToViewport();
     InputSystem::Get().SetCursorVisibility(false);
 
-    PIEWorld->SetActiveCamera(GetCamera());
-
-    // 이전 에디터에서 선택했던 액터 포인터 해제 (복제본과 섞이지 않도록)
     SelectionManager.ClearSelection();
-
+    PIEWorld->SetActiveCamera(FocusedClient.GetCamera());
     PIEWorld->BeginPlay();
 }
 
 void UEditorEngine::PausePlaySession()
 {
-	if (EditorState != EEditorState::Play) return;
-    
-    SetEditorState(EEditorState::Pause);
+    if (GetEditorState() != EViewportPlayState::Playing) return;
+
+    SetEditorState(EViewportPlayState::Paused);
+
+    // PIE 컨텍스트를 일시정지 상태로 표시해 WorldTick에서 제외합니다.
+    const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+    auto HandleIt = ViewportPIEHandles.find(FocusedIdx);
+    if (HandleIt != ViewportPIEHandles.end())
+        if (FWorldContext* Ctx = GetWorldContextFromHandle(HandleIt->second))
+            Ctx->bPaused = true;
 }
 
 void UEditorEngine::StopPlaySession()
 {
-	if (EditorState == EEditorState::Edit) return;
+    if (GetEditorState() == EViewportPlayState::Editing) return;
 
-    SetEditorState(EEditorState::Edit);
+    const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+    FEditorViewportClient& FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
 
-	InputSystem::Get().SetCursorVisibility(true);
-
-    UWorld* PIEWorld = nullptr;
-    FName EditorContextHandle = FName::None;
-
-    // WorldList를 순회하며 PIE 월드를 찾아 파괴하고, Editor 월드 핸들을 찾습니다.
-    for (auto it = WorldList.begin(); it != WorldList.end(); )
+    // 포커스된 뷰포트의 PIE 핸들 조회
+    auto HandleIt = ViewportPIEHandles.find(FocusedIdx);
+    if (HandleIt != ViewportPIEHandles.end())
     {
-        if (it->WorldType == EWorldType::PIE)
+        FName PIEHandle = HandleIt->second;
+        ViewportPIEHandles.erase(HandleIt);
+
+        for (auto it = WorldList.begin(); it != WorldList.end(); ++it)
         {
-            PIEWorld = it->World;
-            PIEWorld->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
-            UObjectManager::Get().DestroyObject(PIEWorld);
-            it = WorldList.erase(it);
-        }
-        else
-        {
-            if (it->WorldType == EWorldType::Editor)
+            if (it->ContextHandle == PIEHandle)
             {
-                EditorContextHandle = it->ContextHandle;
+                it->World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
+                UObjectManager::Get().DestroyObject(it->World);
+                WorldList.erase(it);
+                break;
             }
-            ++it;
         }
     }
 
-    // 기존 에디터 월드로 원상 복구
-    if (EditorContextHandle != FName::None)
+    // 에디터 월드로 복구
+    UWorld* EditorWorld = nullptr;
+    FName EditorHandle = FName::None;
+    for (FWorldContext& Ctx : WorldList)
     {
-        SetActiveWorld(EditorContextHandle);
-        UWorld* EditorWorld = GetWorld();
-
-        for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+        if (Ctx.WorldType == EWorldType::Editor)
         {
-            ViewportLayout.GetViewportClient(i).EndPIE(EditorWorld);
-        }
-        
-        if (EditorWorld)
-        {
-            EditorWorld->SetActiveCamera(GetCamera());
+            EditorWorld = Ctx.World;
+            EditorHandle = Ctx.ContextHandle;
+            break;
         }
     }
 
-    // 삭제된 PIE 액터의 쓰레기 포인터가 남아있을 수 있으므로 선택 상태 강제 초기화
+    FocusedClient.EndPIE(EditorWorld);
+    SetEditorState(EViewportPlayState::Editing);
+    FocusedClient.RestoreCameraSnapshot();
+
+    if (EditorHandle != FName::None)
+        SetActiveWorld(EditorHandle);
+
+    if (ViewportPIEHandles.empty())
+        InputSystem::Get().SetCursorVisibility(true);
+
     SelectionManager.ClearSelection();
 }
 
@@ -215,12 +236,12 @@ void UEditorEngine::ResetViewport()
 	{
 		FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
 		ViewportClient.CreateCamera();
-		ViewportClient.SetWorld(GetWorld());
+		ViewportClient.SetWorld(GetFocusedWorld());
 		ViewportClient.ApplyCameraMode();
 	}
 	
 	// 디폴트로 0번 뷰포트의 카메라를 월드 활성 카메라로 재등록
-	GetWorld()->SetActiveCamera(ViewportLayout.GetIndexedViewportClientCamera(0));
+	GetFocusedWorld()->SetActiveCamera(ViewportLayout.GetIndexedViewportClientCamera(0));
 }
 
 void UEditorEngine::CloseScene()
@@ -254,7 +275,7 @@ void UEditorEngine::NewScene()
 
 void UEditorEngine::ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld)
 {
-	UWorld* World = (TargetWorld != nullptr) ? TargetWorld : GetWorld();
+	UWorld* World = (TargetWorld != nullptr) ? TargetWorld : GetFocusedWorld();
 	if (World == nullptr)
 	{
 		return;

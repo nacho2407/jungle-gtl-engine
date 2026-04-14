@@ -94,7 +94,7 @@ public:
 	}
 
 	void SetWorld(UWorld* World);
-	UWorld* GetWorld() const { return OwningWorld; }
+	UWorld* GetFocusedWorld() const { return OwningWorld; }
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);

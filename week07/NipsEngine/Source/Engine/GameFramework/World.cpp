@@ -62,18 +62,10 @@ void UWorld::Tick(float DeltaTime)
     if (!PersistentLevel)
         return;
 
-    for (AActor* Actor : PersistentLevel->GetActors())
-    {
-        if (Actor && Actor->IsActive())
-        {
-            // 에디터 월드일 경우, 에디터 틱이 허용된 액터만 Tick을 수행합니다.
-            if (WorldType == EWorldType::Editor && !Actor->ShouldTickInEditor())
-            {
-                continue;
-            }
-            Actor->Tick(DeltaTime);
-        }
-    }
+	if (WorldType == EWorldType::Editor)
+		PersistentLevel->TickEditor(DeltaTime);
+	else
+		PersistentLevel->TickGame(DeltaTime);
 
     SyncSpatialIndex();
 }

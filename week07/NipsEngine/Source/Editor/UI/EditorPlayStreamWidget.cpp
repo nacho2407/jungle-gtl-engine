@@ -6,16 +6,17 @@
 void FEditorPlayStreamWidget::Render(float DeltaTime)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 0));
-    
+
 	// 그려지는 텍스트의 크기를 1.25배로 키웁니다.
     // (원하는 크기에 맞춰 1.3f, 1.5f 등으로 조절 가능합니다)
     ImGui::SetWindowFontScale(1.1f);
 
-    // 1. 현재 엔진 상태(PIE 상태)
-    EEditorState CurrentState = EditorEngine->GetEditorState();
-    bool bIsEditing = (CurrentState == EEditorState::Edit);
-    bool bIsPlaying = (CurrentState == EEditorState::Play);
-    bool bIsPaused  = (CurrentState == EEditorState::Pause);
+    // 포커스된 뷰포트의 PIE 상태를 기준으로 버튼을 표시합니다.
+    const int32 FocusedIdx = EditorEngine->GetViewportLayout().GetLastFocusedViewportIndex();
+    EViewportPlayState CurrentState = EditorEngine->GetEditorState();
+    bool bIsEditing = (CurrentState == EViewportPlayState::Editing);
+    bool bIsPlaying = (CurrentState == EViewportPlayState::Playing);
+    bool bIsPaused  = (CurrentState == EViewportPlayState::Paused);
 
     const char* CurrentPlayPauseLabel = bIsPlaying ? PauseLabel : (bIsPaused ? ResumeLabel : PlayLabel);
 
@@ -53,7 +54,7 @@ void FEditorPlayStreamWidget::Render(float DeltaTime)
         if (ImGui::Button(CurrentPlayPauseLabel, PlayBtnSize))
         {
             if (bIsPlaying) EditorEngine->PausePlaySession();
-            else EditorEngine->StartPlaySession(); 
+            else            EditorEngine->StartPlaySession();  // Paused → Resume 포함
 			ImGui::SetWindowFocus(nullptr);
         }
         ImGui::PopStyleColor(3);
@@ -67,7 +68,7 @@ void FEditorPlayStreamWidget::Render(float DeltaTime)
         
         if (ImGui::Button(CurrentPlayPauseLabel, PlayBtnSize))
         {
-            EditorEngine->StartPlaySession(); 
+            EditorEngine->StartPlaySession();
         }
         ImGui::PopStyleColor(3);
     }

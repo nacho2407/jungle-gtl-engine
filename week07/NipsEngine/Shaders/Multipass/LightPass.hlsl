@@ -88,8 +88,6 @@ float4 mainPS(VSOutput input) : SV_TARGET
             
             // 거리가 멀어질수록 exp 안의 음수값이 커져 visual이 0(검정)에 수렴
             visual = saturate(exp(-zView * DepthDensity));
-
-            // 흰색 = 가까움, 검정 = 멀리 (언리얼 Depth 뷰 모드와 동일)
         }
         else // 직교 투영
         {
