@@ -32,7 +32,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
-		Bus.SetFXAAThreshold(0.1f);
+		Bus.SetFXAAEnabled(true);
 
 		const FFrustum& ViewFrustum = Camera->GetFrustum();
 		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);

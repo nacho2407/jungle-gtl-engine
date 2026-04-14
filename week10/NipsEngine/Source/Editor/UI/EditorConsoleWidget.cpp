@@ -4,6 +4,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "Engine/Object/FName.h"
 
 // 콘솔 초기화 시점에 입력될 명령어를 등록한다.
 FEditorConsoleWidget::FEditorConsoleWidget() 
@@ -218,7 +219,8 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 {
 	if (Args.size() < 2)
 	{
-		AddLog("[WARN] Usage: stat <fps|memory|none>\n");
+		AddLog("[WARN] Usage: stat <fps|memory|nametable|none>\n");
+		AddLog("[WARN]        stat nametable list  -- dump all entries\n");
 		return;
 	}
 
@@ -242,12 +244,34 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 		bFlag = !bFlag;
 		AddLog("Stat Memory %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
 	}
+	else if (Target == "nametable")
+	{
+		// "stat nametable list" → 콘솔에 전체 덤프
+		if (Args.size() >= 3 && Args[2] == "list")
+		{
+			FNamePool& Pool = FNamePool::Get();
+			const uint32 Count = Pool.GetEntryCount();
+			AddLog("--- FNamePool NameTable (%u entries) ---\n", Count);
+			const TArray<FString>& Entries = Pool.GetEntries();
+			for (uint32 j = 0; j < Count; ++j)
+			{
+				AddLog("  [%u] %s\n", j, Entries[j].c_str());
+			}
+			AddLog("----------------------------------------\n");
+		}
+		else
+		{
+			// 뷰포트 오버레이 토글
+			AddLog("  'stat nametable list' to dump all entries to console.\n");
+		}
+	}
 	else if (Target == "none")
 	{
 		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
 		{
-			Layout.GetViewportState(i).bShowStatFPS    = false;
-			Layout.GetViewportState(i).bShowStatMemory = false;
+			Layout.GetViewportState(i).bShowStatFPS       = false;
+			Layout.GetViewportState(i).bShowStatMemory    = false;
+			Layout.GetViewportState(i).bShowStatNameTable = false;
 		}
 		AddLog("All Stats Disabled\n");
 	}
