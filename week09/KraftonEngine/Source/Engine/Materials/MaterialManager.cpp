@@ -58,8 +58,8 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath, ERenderPass::Opaque);
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
 		DefaultMaterial->Create(MatFilePath, Template, std::move(Buffers));
-		// DiffuseColor 기본값 세팅
-		DefaultMaterial->SetVector4Parameter("DiffuseColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f)); // 핑크
+		// 폴백: 핑크색으로 미지정 머티리얼임을 표시
+		DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
 		MaterialCache.emplace(MatFilePath, DefaultMaterial);
 		return DefaultMaterial;
 	}
@@ -170,7 +170,7 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
 		UTexture2D* Texture = UTexture2D::LoadFromFile(TexturePath, Device);
 		if (Texture)
 		{
-			Material->SetTextureParameter("DiffuseTexture", Texture);
+			Material->SetTextureParameter(SlotName, Texture);
 		}
 	}
 }

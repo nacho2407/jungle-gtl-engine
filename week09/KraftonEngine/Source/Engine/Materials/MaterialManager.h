@@ -58,7 +58,7 @@ private:
 	
 	void InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
 	
-	const FString DefaultShaderPath = "Shaders/Primitive.hlsl";
+	const FString DefaultShaderPath = "Shaders/StaticMeshShader.hlsl";
 
 
 };

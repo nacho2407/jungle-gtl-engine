@@ -11,7 +11,6 @@ struct FStaticMesh;
 struct FStaticMaterial;
 struct FImportOptions;
 class UStaticMesh;
-class UMaterial;
 
 struct FMeshAssetListItem
 {
@@ -29,10 +28,8 @@ class FObjManager
 
 public:
 	static std::string GetBinaryFilePath(const std::string& OriginalPath);
-	static FString GetMBinaryFilePath(const FString& OriginalPath);
 	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName, ID3D11Device* InDevice);
 	static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
-	static UMaterial* GetOrLoadMaterial(const FString& MaterialName);
 	static void ScanMeshAssets();
 	static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
 	static void ScanObjSourceFiles();
