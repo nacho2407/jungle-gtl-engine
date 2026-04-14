@@ -33,6 +33,7 @@ private:
 	void RenderComponentProperties();
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
+	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
 
 	// 유틸리티
 	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp);
