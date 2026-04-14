@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "6",
+      "PrimitiveKey" : "35",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11,7 +11,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 6",
               "Visible" : true,
@@ -21,13 +22,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "BasicShapeMaterial",
             "UVScroll" : false
           },
           "Location" : [6.999371, 0.000000, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 7.040062, 10.364974],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -50,7 +54,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "12",
+      "PrimitiveKey" : "38",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -59,7 +63,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 12",
               "Visible" : true,
@@ -69,13 +74,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "mat_66990170",
             "UVScroll" : false
           },
           "Location" : [0.000000, 0.000000, 2.323977],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -98,7 +106,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "33",
+      "PrimitiveKey" : "43",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -107,7 +115,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 12",
               "Visible" : true,
@@ -117,13 +126,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "mat_66990170",
             "UVScroll" : false
           },
           "Location" : [0.000000, -2.291961, 2.323977],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -146,7 +158,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "37",
+      "PrimitiveKey" : "47",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -155,7 +167,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 12",
               "Visible" : true,
@@ -165,13 +178,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "mat_66990170",
             "UVScroll" : false
           },
           "Location" : [0.000000, 2.858790, 2.323977],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -187,14 +203,14 @@
           "Properties" : {
             "Auto Register Updated" : true,
             "Gravity Scale" : 1.000000,
-            "Initial Speed" : 10.000000,
+            "Initial Speed" : 20.000000,
             "Max Speed" : 100.000000,
-            "Velocity" : [8.000000, 0.000000, 22.000000],
+            "Velocity" : [15.000000, 0.000000, 15.000000],
             "bTickEnable" : true,
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "81",
+      "PrimitiveKey" : "51",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -203,7 +219,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 12",
               "Visible" : true,
@@ -213,13 +230,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "mat_66990170",
             "UVScroll" : false
           },
-          "Location" : [0.000000, 0.000000, -1.268812],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Location" : [-3.489912, 1.167494, -1.268812],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -242,7 +262,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "85",
+      "PrimitiveKey" : "55",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -251,7 +271,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 12",
               "Visible" : true,
@@ -261,13 +282,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "mat_66990170",
             "UVScroll" : false
           },
           "Location" : [0.000000, -2.291961, -1.268812],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -290,7 +314,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "89",
+      "PrimitiveKey" : "59",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -299,7 +323,8 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 12",
               "Visible" : true,
@@ -309,13 +334,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Decal Receive" : true,
           "Element 0" : {
             "Path" : "mat_66990170",
             "UVScroll" : false
           },
           "Location" : [0.000000, 2.858790, -1.268812],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
           "Visible" : true,
           "bTickEnable" : true,
           "bTickInEditor" : false
@@ -328,60 +356,60 @@
   "ClassName" : "UWorld",
   "ContextHandle" : "Default",
   "ContextName" : "Default",
-  "Name" : "EggScene",
+  "Name" : "Week6_EggScene",
   "PerspectiveCamera" : {
     "FOV" : 1.570795,
     "FarClip" : 100.000000,
-    "Location" : [-8.064006, -1.645525, 2.040042],
+    "Location" : [-4.151924, -5.285409, 3.180030],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 5.762451, 13.062911]
+    "Rotation" : [0.000000, -1.437195, 37.963024]
   },
   "Primitives" : {
-    "12" : {
-      "Location" : [0.000000, 0.000000, 2.323977],
-      "ObjStaticMeshAsset" : "Data/Egg/egg2.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "33" : {
-      "Location" : [0.000000, -2.291961, 2.323977],
-      "ObjStaticMeshAsset" : "Data/Egg/egg2.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "37" : {
-      "Location" : [0.000000, 2.858790, 2.323977],
-      "ObjStaticMeshAsset" : "Data/Egg/egg2.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "6" : {
+    "35" : {
       "Location" : [6.999371, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 7.040062, 10.364974],
       "Type" : "StaticMeshComp"
     },
-    "81" : {
-      "Location" : [0.000000, 0.000000, -1.268812],
-      "ObjStaticMeshAsset" : "Data/Egg/egg2.OBJ",
+    "38" : {
+      "Location" : [0.000000, 0.000000, 2.323977],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "85" : {
+    "43" : {
+      "Location" : [0.000000, -2.291961, 2.323977],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "47" : {
+      "Location" : [0.000000, 2.858790, 2.323977],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "51" : {
+      "Location" : [-3.489912, 1.167494, -1.268812],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "55" : {
       "Location" : [0.000000, -2.291961, -1.268812],
-      "ObjStaticMeshAsset" : "Data/Egg/egg2.OBJ",
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "89" : {
+    "59" : {
       "Location" : [0.000000, 2.858790, -1.268812],
-      "ObjStaticMeshAsset" : "Data/Egg/egg2.OBJ",
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"

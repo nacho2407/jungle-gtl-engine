@@ -58,4 +58,33 @@ cbuffer DecalBuffer : register(b5)
     float _decalPad;
 }
 
+// b6: Height fog postprocess params
+cbuffer HeightFogPostProcessCB : register(b6)
+{
+    float4x4 CameraInvView;
+    float4x4 CameraInvProjection;
+    float4 FogColor;
+    float3 FogCameraPosition;
+    float FogDensity;
+    float FogHeight;
+    float FogHeightFalloff;
+    float FogStartDistance;
+    float FogMaxOpacity;
+    float FogEndDistance;
+    float FogCutoffDistance;
+    float2 FogPadding;
+}
+
+// b7: Fireball params
+cbuffer FireballBuffer : register(b7)
+{
+    float4x4 InvViewMatrix;
+    float4x4 InvProjMatrix;
+    float4 Color;
+    float Intensity;
+    float Radius;
+    float RadiusFalloff;
+    float Padding[2];
+}
+
 #endif // CONSTANT_BUFFERS_HLSL

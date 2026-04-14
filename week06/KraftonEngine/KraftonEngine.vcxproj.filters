@@ -257,6 +257,9 @@
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ExponentialHeightFogComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -297,6 +300,12 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\ExponentialHeightFog.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\EggActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
@@ -423,6 +432,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\FScene.cpp">
@@ -623,6 +635,9 @@
     <ClInclude Include="Source\Engine\Component\DecalComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\ExponentialHeightFogComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -687,6 +702,12 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\ExponentialHeightFog.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\EggActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
@@ -843,6 +864,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h">

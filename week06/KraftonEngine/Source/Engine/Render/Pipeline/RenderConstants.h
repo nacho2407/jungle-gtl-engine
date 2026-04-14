@@ -25,6 +25,8 @@ namespace ECBSlot
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
 	constexpr uint32 Decal = 5;       // b5: Decal properties
+	constexpr uint32 Fog = 6;         // b6: Height fog postprocess params
+	constexpr uint32 Fireball = 7;    // b7: Fireball params
 }
 
 //PerObject
@@ -127,6 +129,35 @@ struct FDecalConstants
 	float Padding = 0.0f;
 };
 
+struct FFireballConstants
+{
+	FMatrix FireballInvView = FMatrix::Identity;
+	FMatrix FireballInvProj = FMatrix::Identity;
+	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float Intensity = 1.0f;
+	float Radius = 1.0f;
+	float RadiusFalloff = 1.0f;
+	float Padding[2] = {};
+};
+
+struct FHeightFogPostProcessConstants
+{
+	FMatrix CameraInvView = FMatrix::Identity;
+	FMatrix CameraInvProjection = FMatrix::Identity;
+	FVector4 FogColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+	FVector CameraPosition = FVector(0.0f, 0.0f, 0.0f);
+	float FogDensity = 0.0f;
+	float FogHeight = 0.0f;
+	float FogHeightFalloff = 0.0f;
+	float StartDistance = 0.0f;
+	float FogMaxOpacity = 1.0f;
+	float EndDistance = 0.0f;
+	float FogCutoffDistance = 0.0f;
+	FVector2 Padding = FVector2(0.0f, 0.0f);
+};
+
+static_assert(sizeof(FHeightFogPostProcessConstants) % 16 == 0, "Height fog constant buffer must stay 16-byte aligned.");
+
 // ============================================================
 // Batcher Entry — 각 Batcher가 필요한 데이터만 담는 경량 구조체
 // ============================================================
@@ -189,7 +220,7 @@ struct FConstantBufferBinding
 	uint32 Size = 0;					// 업로드할 바이트 수
 	uint32 Slot = 0;					// VS/PS CB 슬롯
 
-	static constexpr size_t kMaxDataSize = 64;
+	static constexpr size_t kMaxDataSize = 256;
 	alignas(16) uint8 Data[kMaxDataSize] = {};
 
 	// Buffer/Size/Slot

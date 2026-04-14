@@ -233,7 +233,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		const bool bHasProxies = !InRenderBus.GetProxies(CurPass).empty();
 		if (!bHasBatcher && !bHasProxies) continue;
 		if (bHasBatcher && !bHasProxies && Batcher.IsEmpty && Batcher.IsEmpty()) continue;
-		if (CurPass == ERenderPass::Decal && InRenderBus.GetDecalEntries().empty()) continue;
 
 		const char* PassName = GetRenderPassName(CurPass);
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
@@ -266,7 +265,7 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlendPreserveAlpha, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Translucent] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Additive] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::FogPostProcess] = { EDepthStencilState::NoDepth,       EBlendState::FogBlend,   ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
@@ -371,9 +370,10 @@ void FRenderer::InitializePassResourceBindings()
 			Ctx->OMSetRenderTargets(3, rtvs, Bus.GetViewportDSV());
 		},
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			// 패스 종료 시 MRT 바인딩 해제
-			ID3D11RenderTargetView* nullRTVs[3] = { Bus.GetViewportRTV(), nullptr, nullptr};
-			Ctx->OMSetRenderTargets(3, nullRTVs, nullptr);
+			// 패스 종료 시 MRT만 해제하고 깊이 타깃은 유지한다.
+			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
+			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
+			Ctx->OMSetRenderTargets(1, &rtv, dsv);
 		}
 	};
 

@@ -6,6 +6,8 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/DecalActor.h"
+#include "GameFramework/EggActor.h"
+#include "GameFramework/ExponentialHeightFog.h"
 #include "GameFramework/StaticMeshActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -68,6 +70,24 @@ void FEditorControlWidget::Render(float DeltaTime)
 			case 2: // Decal
 			{
 				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
+				World->InsertActorToOctree(Actor);
+				SpawnedActor = Actor;
+				break;
+			}
+			case 3: // Decal
+			{
+				AEggActor* Actor = World->SpawnActor<AEggActor>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
+				World->InsertActorToOctree(Actor);
+				SpawnedActor = Actor;
+				break;
+			}
+			case 4: // Decal
+			{
+				AExponentialHeightFog* Actor = World->SpawnActor<AExponentialHeightFog>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents();
 				World->InsertActorToOctree(Actor);
