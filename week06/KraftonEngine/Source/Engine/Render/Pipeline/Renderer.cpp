@@ -216,10 +216,18 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, InRenderBus);
 	}
-
+	
+	const bool bSceneDepthOnly = (InRenderBus.GetViewMode() == EViewMode::SceneDepthBuffer);
+	
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
+
+		if (bSceneDepthOnly &&
+        CurPass == ERenderPass::Grid )
+		{
+			continue;
+		}
 		const auto& Batcher = PassBatchers[i];
 		const bool bHasBatcher = static_cast<bool>(Batcher);
 		const bool bHasProxies = !InRenderBus.GetProxies(CurPass).empty();
@@ -264,6 +272,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,       EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Editor] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     true };
 	S[(uint32)E::Grid] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
+	S[(uint32)E::SceneDepthProcess] = { EDepthStencilState::NoDepth,       EBlendState::Opaque,   ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Font] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
@@ -329,6 +338,13 @@ void FRenderer::InitializePassBatchers()
 		nullptr
 	};
 
+	PassBatchers[(uint32)ERenderPass::SceneDepthProcess] = {
+		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			DrawPostProcessSceneDepth(Bus, Ctx);
+		},
+		nullptr
+	};
+
 	PassBatchers[(uint32)ERenderPass::PostProcess] = {
 		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			DrawPostProcessOutline(Bus, Ctx);
@@ -347,7 +363,7 @@ void FRenderer::InitializePassResourceBindings()
 		},
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
 			// 패스 종료 시 MRT 바인딩 해제
-			ID3D11RenderTargetView* nullRTVs[3] = { nullptr, nullptr, nullptr };
+			ID3D11RenderTargetView* nullRTVs[3] = { Bus.GetViewportRTV(), nullptr, nullptr};
 			Ctx->OMSetRenderTargets(3, nullRTVs, nullptr);
 		}
 	};
@@ -783,6 +799,53 @@ void FRenderer::DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContex
 
 	// 7) DSV 재바인딩 (후속 패스에서 뎁스 사용)
 	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+void FRenderer::DrawPostProcessSceneDepth(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	if(Bus.GetViewMode() != EViewMode::SceneDepthBuffer) return;
+
+	struct FSceneDepthPostProcessConstants
+    {
+        float NearClip;
+        float FarClip;
+        uint32 bIsOrtho;
+        float Exponent;
+    };
+
+	ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV();
+	ID3D11RenderTargetView* RTV= Bus.GetViewportRTV();
+	if(!DepthSRV || !RTV) return;
+
+	Context->OMSetRenderTargets(1, &RTV, nullptr);
+	Context->PSSetShaderResources(0, 1, &DepthSRV);
+	Context->PSSetSamplers(0,1, &Resources.DefaultSampler);
+
+	FShader* Shader = FShaderManager::Get().GetShader(EShaderType::SceneDepthProcess);
+	if(!Shader) return;
+
+	Shader->Bind(Context);
+
+	FSceneDepthPostProcessConstants Data = {};
+	Data.NearClip = Bus.GetNearClip();
+	Data.FarClip = Bus.GetFarClip();
+	Data.bIsOrtho = Bus.IsOrtho()? 1u : 0u;
+	Data.Exponent = 1.0f;
+
+	FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(
+		ECBSlot::PostProcess, sizeof(FSceneDepthPostProcessConstants));
+
+	CB->Update(Context, &Data, sizeof(Data));
+	ID3D11Buffer* RawCB = CB->GetBuffer();
+    Context->VSSetConstantBuffers(ECBSlot::PostProcess, 1, &RawCB);
+    Context->PSSetConstantBuffers(ECBSlot::PostProcess, 1, &RawCB);
+
+    Context->IASetInputLayout(nullptr);
+    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Context->Draw(3, 0);
+
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Context->PSSetShaderResources(0, 1, &NullSRV);
 }
 
 void FRenderer::DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context)

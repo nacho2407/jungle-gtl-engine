@@ -99,9 +99,10 @@ struct FBoundingBox
 // ============================================================
 enum class EViewModeIndex
 {
-	Lit,        // 기본 라이팅 적용
-	Unlit,      // 라이팅 없음
-	Wireframe   // 와이어프레임
+	Lit,				// 기본 라이팅 적용
+	Unlit,				// 라이팅 없음
+	Wireframe,			// 와이어프레임
+	SceneDepthBuffer	// 뎁스버퍼
 };
 
 // ============================================================

@@ -83,6 +83,8 @@ public:
 	const FShowFlags& GetShowFlags() const { return ShowFlags; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
+    float GetNearClip() const { return NearClip; }
+    float GetFarClip() const { return FarClip; }
 
 	const float GetViewportWidth() const { return viewportWidth; }
 	const float GetViewportHeight() const { return viewportHeight; }
@@ -126,6 +128,8 @@ private:
 	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
+    float NearClip = 0.1f;
+    float FarClip = 1000.0f;
 
 	float viewportWidth = 0.0f;
 	float viewportHeight = 0.0f;

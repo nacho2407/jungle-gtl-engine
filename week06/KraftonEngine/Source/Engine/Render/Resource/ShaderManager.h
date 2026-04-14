@@ -12,6 +12,7 @@ enum class EShaderType : uint32
 	StaticMesh,
 	Decal,
 	HeightFogPostProcess,
+	SceneDepthProcess,
 	OutlinePostProcess,
 	Font,
 	OverlayFont,

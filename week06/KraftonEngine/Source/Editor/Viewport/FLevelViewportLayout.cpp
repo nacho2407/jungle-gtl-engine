@@ -877,6 +877,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
 			ImGui::SameLine();
 			ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+			ImGui::SameLine();
+			ImGui::RadioButton("SceneDepthBuffer", &CurrentMode, static_cast<int32>(EViewMode::SceneDepthBuffer));
 			Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 
 			ImGui::Separator();

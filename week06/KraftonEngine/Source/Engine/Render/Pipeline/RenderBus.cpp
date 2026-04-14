@@ -83,6 +83,8 @@ void FRenderBus::SetCameraInfo(const UCameraComponent* Camera)
 	CameraUp = Camera->GetUpVector();
 	bIsOrtho = Camera->IsOrthogonal();
 	OrthoWidth = Camera->GetOrthoWidth();
+	FarClip = Camera->GetFarPlane();
+	NearClip = Camera->GetNearPlane();
 }
 
 void FRenderBus::SetViewportInfo(const FViewport* VP)
