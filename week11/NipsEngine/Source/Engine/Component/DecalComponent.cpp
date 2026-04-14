@@ -15,9 +15,14 @@ UDecalComponent::UDecalComponent()
 	UMaterial* Mat = FResourceManager::Get().GetOrCreateMaterial("DecalMaterial", "Shaders/ShaderDecal.hlsl");
 	SetMaterial(Mat);
 
+    // Decal should blend over existing scene color/normal without replacing them opaquely.
+    Mat->BlendType = EBlendType::AlphaBlend;
+    Mat->DepthStencilType = EDepthStencilType::DepthReadOnly;
+    Mat->RasterizerType = ERasterizerType::SolidBackCull;
+
 	Mat->SetParam("InvDecalWorld", FMaterialParamValue(GetWorldMatrix().GetInverse()));
 	Mat->SetParam("DecalColorTint", FMaterialParamValue(DecalColor.ToVector4()));
-	Mat->SetParam("DiffuseMap", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Texture/water.png")));
+    Mat->SetParam("DiffuseMap", FMaterialParamValue(FResourceManager::Get().LoadTexture("Asset/Texture/water.png")));
 
     bEnableCull = false;
 }
