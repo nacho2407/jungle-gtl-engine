@@ -3,6 +3,7 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Core/ResourceManager.h"
 
 bool FOpaqueRenderPass::Initialize()
 {

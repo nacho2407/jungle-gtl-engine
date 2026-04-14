@@ -43,6 +43,11 @@ public:
 	void AddWorldOffset(const FVector& WorldDelta) override;
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
 
+	/* For Material */
+	virtual int32 GetNumMaterials() const { return 0; }
+	virtual class UMaterialInterface* GetMaterial(int32 SlotIndex) const { return nullptr; }
+	virtual void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) {}
+
 	virtual bool SupportsOutline() const { return true; }
 
 protected:
