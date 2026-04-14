@@ -5,6 +5,7 @@
 #include "FogRenderPass.h"
 #include "FXAARenderPass.h"
 #include "FontRenderPass.h"
+#include "SubUVRenderPass.h"
 
 bool FRenderPipeline::Initialize()
 {
@@ -26,10 +27,14 @@ bool FRenderPipeline::Initialize()
     FontRenderPass = std::make_shared<FFontRenderPass>();
     FontRenderPass->Initialize();
 
+    SubUVRenderPass = std::make_shared<FSubUVRenderPass>();
+    SubUVRenderPass->Initialize();
+
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
     RenderPasses.push_back(FontRenderPass);
+    RenderPasses.push_back(SubUVRenderPass);
     // RenderPasses.push_back(FogRenderPass);
     // RenderPasses.push_back(FXAARenderPass);
 
@@ -86,5 +91,11 @@ void FRenderPipeline::Release()
     {
         FontRenderPass->Release();
         FontRenderPass.reset();
+    }
+
+    if (SubUVRenderPass)
+    {
+        SubUVRenderPass->Release();
+        SubUVRenderPass.reset();
     }
 }
