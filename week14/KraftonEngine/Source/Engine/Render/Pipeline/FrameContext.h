@@ -40,10 +40,10 @@ struct FFrameContext
 
 	ID3D11RenderTargetView*   ViewportRTV          = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV          = nullptr;
-	ID3D11ShaderResourceView* ViewportPingPongSRV  = nullptr;
-	ID3D11RenderTargetView* ViewportPingPongRTV    = nullptr;
-	ID3D11Texture2D* ViewportPingPongTexture       = nullptr;
-	ID3D11Texture2D* ViewportRenderTexture         = nullptr;
+	// SceneColor 복사 — FXAA 등 PostProcess에서 최종 화면 읽기용
+	ID3D11ShaderResourceView* SceneColorCopySRV     = nullptr;
+	ID3D11Texture2D* SceneColorCopyTexture          = nullptr;
+	ID3D11Texture2D* ViewportRenderTexture          = nullptr;
 
 	// CopyResource 소스/대상
 	ID3D11Texture2D*          DepthTexture         = nullptr;  // 원본 (CopyResource 소스)
@@ -107,9 +107,8 @@ struct FFrameContext
 	{
 		ViewportRTV             = nullptr;
 		ViewportDSV             = nullptr;
-		ViewportPingPongSRV     = nullptr;
-		ViewportPingPongRTV     = nullptr;
-		ViewportPingPongTexture = nullptr;
+		SceneColorCopySRV       = nullptr;
+		SceneColorCopyTexture   = nullptr;
 		ViewportRenderTexture   = nullptr;
 		DepthTexture            = nullptr;
 		DepthCopyTexture        = nullptr;

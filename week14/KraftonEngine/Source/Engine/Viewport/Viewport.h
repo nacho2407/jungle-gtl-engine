@@ -35,9 +35,8 @@ public:
 	ID3D11RenderTargetView* GetRTV() const { return RTV; }
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
 	ID3D11Texture2D* GetRTTexture() const { return RTTexture; }
-	ID3D11ShaderResourceView* GetPingPongSRV() const { return PingPongSRV; }
-	ID3D11RenderTargetView* GetPingPongRTV() const { return PingPongRTV; }
-	ID3D11Texture2D* GetPingPongTexture() const { return PingPongTexture; }
+	ID3D11ShaderResourceView* GetSceneColorCopySRV() const { return SceneColorCopySRV; }
+	ID3D11Texture2D* GetSceneColorCopyTexture() const { return SceneColorCopyTexture; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
 	ID3D11Texture2D* GetDepthTexture() const { return DepthTexture; }
 
@@ -70,9 +69,9 @@ private:
 	ID3D11ShaderResourceView* DepthCopySRV = nullptr;		// t10: SceneDepth
 	ID3D11ShaderResourceView* StencilCopySRV = nullptr;	// t13: (미래) Stencil
 
-	ID3D11Texture2D* PingPongTexture = nullptr;
-	ID3D11RenderTargetView* PingPongRTV = nullptr;
-	ID3D11ShaderResourceView* PingPongSRV = nullptr;
+	// SceneColor 복사본 — FXAA 등 PostProcess에서 최종 화면을 읽기 위한 CopyResource 대상
+	ID3D11Texture2D* SceneColorCopyTexture = nullptr;
+	ID3D11ShaderResourceView* SceneColorCopySRV = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 

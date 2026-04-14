@@ -28,7 +28,7 @@ namespace ECBSlot
 namespace ESystemTexSlot
 {
 	constexpr uint32 SceneDepth  = 10; // t10: CopyResource된 Depth (R24_UNORM)
-	// constexpr uint32 SceneNormal  = 11; // t11: (미래)
+	constexpr uint32 SceneColor  = 11; // t11: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	// constexpr uint32 SceneAlbedo  = 12; // t12: (미래)
 	constexpr uint32 Stencil      = 13; // t13: CopyResource된 Stencil (X24_G8_UINT)
 }

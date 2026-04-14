@@ -95,11 +95,10 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(RTTexture, nullptr, &SRV);
 	if (FAILED(hr)) return false;
 
-	D3D11_TEXTURE2D_DESC PPDesc = TexDesc;
-	hr = Device->CreateTexture2D(&PPDesc, nullptr, &PingPongTexture);
-	if (FAILED(hr)) return false;
-
-	hr = Device->CreateRenderTargetView(PingPongTexture, nullptr, &PingPongRTV);
+	// ── SceneColor 복사 텍스처 (FXAA 등 PostProcess용 CopyResource 대상) ──
+	D3D11_TEXTURE2D_DESC SceneColorCopyDesc = TexDesc;
+	SceneColorCopyDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;  // SRV 읽기 전용
+	hr = Device->CreateTexture2D(&SceneColorCopyDesc, nullptr, &SceneColorCopyTexture);
 	if (FAILED(hr)) return false;
 
 	// ── 뎁스/스텐실 (TYPELESS → DSV + StencilSRV) ──
@@ -158,16 +157,14 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(DepthCopyTexture, &StencilSRVDesc, &StencilCopySRV);
 	if (FAILED(hr)) return false;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC PingPongSRVDesc = {};
-	PingPongSRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	PingPongSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	PingPongSRVDesc.Texture2D.MipLevels = 1;
-	PingPongSRVDesc.Texture2D.MostDetailedMip = 0;
+	D3D11_SHADER_RESOURCE_VIEW_DESC SceneColorCopySRVDesc = {};
+	SceneColorCopySRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	SceneColorCopySRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SceneColorCopySRVDesc.Texture2D.MipLevels = 1;
+	SceneColorCopySRVDesc.Texture2D.MostDetailedMip = 0;
 
-	hr = Device->CreateShaderResourceView(PingPongTexture, &PingPongSRVDesc, &PingPongSRV);
+	hr = Device->CreateShaderResourceView(SceneColorCopyTexture, &SceneColorCopySRVDesc, &SceneColorCopySRV);
 	if (FAILED(hr)) return false;
-
-
 
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;
@@ -190,7 +187,6 @@ void FViewport::ReleaseResources()
 	if (SRV) { SRV->Release(); SRV = nullptr; }
 	if (RTV) { RTV->Release(); RTV = nullptr; }
 	if (RTTexture) { RTTexture->Release(); RTTexture = nullptr; }
-	if (PingPongRTV) { PingPongRTV->Release();     PingPongRTV = nullptr; }
-	if (PingPongSRV) { PingPongSRV->Release(); PingPongSRV = nullptr; }
-	if (PingPongTexture) { PingPongTexture->Release();  PingPongTexture = nullptr; }
+	if (SceneColorCopySRV) { SceneColorCopySRV->Release(); SceneColorCopySRV = nullptr; }
+	if (SceneColorCopyTexture) { SceneColorCopyTexture->Release(); SceneColorCopyTexture = nullptr; }
 }
