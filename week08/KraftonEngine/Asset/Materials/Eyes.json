@@ -1,0 +1,13 @@
+{
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_matPad" : [0.000000, 0.000000, 0.000000],
+    "bIsUVScroll" : 0.000000
+  },
+  "PathFileName" : "Asset/Materials/Eyes.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/Lumine/Texture/Hair.png"
+  }
+}

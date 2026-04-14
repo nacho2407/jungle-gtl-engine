@@ -10,6 +10,7 @@
 #include "Mesh/ObjManager.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
+#include "Materials/MaterialManager.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -19,7 +20,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	UEngine::Init(InWindow);
 
 	FObjManager::ScanMeshAssets();
-	FObjManager::ScanMaterialAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());

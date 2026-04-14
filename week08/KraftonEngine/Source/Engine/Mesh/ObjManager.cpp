@@ -10,10 +10,8 @@
 #include <algorithm>
 
 TMap<FString, UStaticMesh*> FObjManager::StaticMeshCache;
-TMap<FString, UMaterial*> FObjManager::MaterialCache;
 TArray<FMeshAssetListItem> FObjManager::AvailableMeshFiles;
 TArray<FMeshAssetListItem> FObjManager::AvailableObjFiles;
-TArray<FMaterialAssetListItem> FObjManager::AvailableMaterialFiles;
 
 static void EnsureMeshCacheDirExists()
 {
@@ -95,37 +93,6 @@ void FObjManager::ScanMeshAssets()
 	}
 }
 
-void FObjManager::ScanMaterialAssets()
-{
-	AvailableMaterialFiles.clear();
-
-	// .mbin 파일도 .bin과 동일하게 MeshCache 폴더에 생성됨
-	const std::filesystem::path MeshCacheRoot = FPaths::RootDir() + L"Asset\\MeshCache\\";
-
-	if (!std::filesystem::exists(MeshCacheRoot))
-	{
-		return;
-	}
-
-	const std::filesystem::path ProjectRoot(FPaths::RootDir());
-
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(MeshCacheRoot))
-	{
-		if (!Entry.is_regular_file()) continue;
-
-		const std::filesystem::path& Path = Entry.path();
-
-		// 확장자가 .mbin인지 확인
-		if (Path.extension() != L".mbin") continue;
-		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
-
-		FMaterialAssetListItem Item;
-		Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
-		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
-		AvailableMaterialFiles.push_back(std::move(Item));
-	}
-}
-
 void FObjManager::ScanObjSourceFiles()
 {
 	AvailableObjFiles.clear();
@@ -163,11 +130,6 @@ const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
 	return AvailableMeshFiles;
 }
 
-const TArray<FMaterialAssetListItem>& FObjManager::GetAvailableMaterialFiles()
-{
-	return AvailableMaterialFiles;
-}
-
 const TArray<FMeshAssetListItem>& FObjManager::GetAvailableObjFiles()
 {
 	return AvailableObjFiles;
@@ -195,7 +157,6 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 		{
 			if (Mat.MaterialInterface)
 			{
-				MaterialCache[Mat.MaterialInterface->GetAssetPathFileName()] = Mat.MaterialInterface;
 				if (Mat.MaterialInterface->GetAssetPathFileName() == "None")
 					continue;
 
@@ -227,7 +188,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 
 	// 리프레시
 	ScanMeshAssets();
-	ScanMaterialAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
 
 	return StaticMesh;
 }
@@ -279,7 +240,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 				}
 			}
 
-			// 인라인 복구된 머티리얼의 .mbin 저장 + PathFileName 키로 캐시 등록
+			// 인라인 복구된 머티리얼의 .mbin 저장
 			if (!bNeedRebuild)
 			{
 				for (const auto& Mat : StaticMesh->GetStaticMaterials())
@@ -287,9 +248,6 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 					if (Mat.MaterialInterface && !Mat.MaterialInterface->GetAssetPathFileName().empty()
 						&& Mat.MaterialInterface->GetAssetPathFileName() != "None")
 					{
-						// PostEditProperty 등에서 원본 경로로 조회 시 캐시 히트되도록 등록
-						MaterialCache[Mat.MaterialInterface->GetAssetPathFileName()] = Mat.MaterialInterface;
-
 						// .mbin이 없으면 디스크에 저장 (다음 세션용)
 						FString MatBinPath = GetMBinaryFilePath(Mat.MaterialInterface->GetAssetPathFileName());
 						std::filesystem::path MBinPathW(FPaths::ToWide(MatBinPath));
@@ -328,7 +286,6 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 			{
 				if (Mat.MaterialInterface)
 				{
-					MaterialCache[Mat.MaterialInterface->GetAssetPathFileName()] = Mat.MaterialInterface;
 					if (Mat.MaterialInterface->GetAssetPathFileName() == "None")
 						continue;
 
@@ -361,7 +318,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 	StaticMeshCache[CacheKey] = StaticMesh;
 
 	ScanMeshAssets();
-	ScanMaterialAssets();
+	FMaterialManager::Get().ScanMaterialAssets();
 
 	return StaticMesh;
 }
@@ -369,84 +326,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
 UMaterial* FObjManager::GetOrLoadMaterial(const FString& MaterialName)
 {
-	// 머티리얼 슬롯 이름을 그대로 캐시 키로 사용
-	// stem()을 쓰면 "MatID_1.001" 같은 블렌더 이름에서 ".001"이 확장자로 잘려나감
-	const FString& FileNameOnly = MaterialName;
-
-	// 1. 캐시(RAM)에 이미 있는지 검사
-	if (MaterialCache.contains(FileNameOnly))
-	{
-		UE_LOG("Cached MaterialName: %s;", FileNameOnly.c_str());
-		return MaterialCache[FileNameOnly];
-	}
-
-	// 2. 캐시에 없다면 빈 객체 생성
-	UMaterial* NewMaterial =  UObjectManager::Get().CreateObject<UMaterial>();
-	//UMaterial* NewMaterial = FMaterialManager::GetOrCreateMaterial(FileNameOnly);//   UObjectManager::Get().CreateObject<UMaterial>();
-
-	UE_LOG("Cache Missed MaterialName: %s;", FileNameOnly.c_str());
-
-	FString MBinPath = GetMBinaryFilePath(MaterialName);
-	std::filesystem::path MBinPathW = FPaths::ToWide(MBinPath);
-	std::filesystem::path SrcPath = FPaths::ToWide(MaterialName);
-	bool bNeedRebuild = true;
-
-	if (std::filesystem::exists(MBinPathW))
-	{
-		// 원본 파일이 없거나, 이미 mbin 경로가 들어왔거나,
-		// mbin 파일의 수정 날짜가 원본 파일보다 최신(또는 같음)인 경우 리빌드 생략
-		if (!std::filesystem::exists(SrcPath) || MaterialName == MBinPath ||
-			std::filesystem::last_write_time(MBinPathW) >= std::filesystem::last_write_time(SrcPath))
-		{
-			bNeedRebuild = false;
-		}
-	}
-
-	if (!bNeedRebuild)
-	{
-		// MBIN 파일에서 통째로 로드
-		FWindowsBinReader Reader(MBinPath);
-		if (Reader.IsValid())
-		{
-			NewMaterial->Serialize(Reader);
-		}
-		else
-		{
-			bNeedRebuild = true; // 파일 읽기 실패 시 강제 리빌드로 전환
-		}
-	}
-
-	// 3. 하드디스크(.bin)에 있다면 로드
-	if (bNeedRebuild)
-	{
-		// [리빌드 진행 영역]
-		// 현재 첨부된 코드 상에는 ObjImporter에서 Material을 같이 추출하지만,
-		// 추후 Material 단독 파일(예: .mat, .json 등)을 파싱하는 전용 Importer가 있다면 이 부분에서 파싱을 수행해야 합니다.
-
-		// 기존 코드 동작 유지 보장: 파일이 존재하면 기존처럼 읽어들이기 시도
-		if (std::filesystem::exists(SrcPath))
-		{
-			FWindowsBinReader Reader(MaterialName);
-			if (Reader.IsValid())
-			{
-				NewMaterial->Serialize(Reader);
-			}
-		}
-
-		// 속성이 실제로 로드된 경우에만 .mbin 저장 (빈 머티리얼로 .mbin을 덮어쓰지 않음)
-		if (!NewMaterial->GetAssetPathFileName().empty())
-		{
-			FWindowsBinWriter Writer(MBinPath);
-			if (Writer.IsValid())
-			{
-				NewMaterial->Serialize(Writer);
-			}
-		}
-	}
-
-	// 4. 캐시에 등록 후 반환
-	MaterialCache[FileNameOnly] = NewMaterial;
-	return NewMaterial;
+	return FMaterialManager::Get().GetOrCreateMaterial(MaterialName);
 }
 
 void FObjManager::ReleaseAllGPU()
