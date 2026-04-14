@@ -14,6 +14,8 @@ void FBlendStateManager::Create(ID3D11Device* InDevice)
 	Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
 	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	InDevice->CreateBlendState(&Desc, &Alpha);
+
 	// Additive (ONE, ONE) — RGB = Src*1 + Dest*1
 	Desc = {};
 	Desc.AlphaToCoverageEnable = FALSE;
@@ -41,17 +43,17 @@ void FBlendStateManager::Create(ID3D11Device* InDevice)
 	Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	Desc.RenderTarget[0].RenderTargetWriteMask = 0;
 	InDevice->CreateBlendState(&Desc, &NoColorWrite);
-	}
+}
 
-	void FBlendStateManager::Release()
-	{
+void FBlendStateManager::Release()
+{
 	SAFE_RELEASE(Alpha);
 	SAFE_RELEASE(Additive);
 	SAFE_RELEASE(NoColorWrite);
-	}
+}
 
-	void FBlendStateManager::Set(ID3D11DeviceContext* InContext, EBlendState InState)
-	{
+void FBlendStateManager::Set(ID3D11DeviceContext* InContext, EBlendState InState)
+{
 	if (CurrentState == InState) return;
 
 	const float BlendFactor[4] = { 0, 0, 0, 0 };
