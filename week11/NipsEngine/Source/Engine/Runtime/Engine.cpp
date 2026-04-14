@@ -25,12 +25,9 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 	Renderer.Create(Window->GetHWND());
 
-	FResourceManager::Get().LoadFromAssetDirectory(
-		FPaths::ToUtf8(FPaths::AssetDirectoryPath()), Renderer.GetFD3DDevice().GetDevice());
-	
-	// FResourceManager::Get().LoadFromFile(
-	// 	FPaths::ToUtf8(FPaths::ResourceFilePath()), Renderer.GetFD3DDevice().GetDevice());
+	FResourceManager::Get().LoadFromAssetDirectory(FPaths::ToUtf8(FPaths::AssetDirectoryPath()));
 
+	Renderer.CreateResources();
 
 	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 }

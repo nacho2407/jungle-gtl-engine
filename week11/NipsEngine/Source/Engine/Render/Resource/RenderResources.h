@@ -10,31 +10,47 @@
 
 struct FRenderResources
 {
-    FConstantBuffer FrameBuffer;                  // b0
-    FConstantBuffer PerObjectConstantBuffer;      // b1
-    FConstantBuffer GizmoPerObjectConstantBuffer; // b2
-    FConstantBuffer EditorConstantBuffer;         // b4
-    FConstantBuffer OutlineConstantBuffer;        // b5
+	FConstantBuffer FrameBuffer;					// b0
+    FConstantBuffer PerObjectConstantBuffer;        // b1
 
-    FConstantBuffer StaticMeshConstantBuffer; // b6
-    FConstantBuffer LightPassConstantBuffer;  // b7
-    FConstantBuffer DecalConstantBuffer;      // b8
-    FConstantBuffer FogPassConstantBuffer;    // b9
-    FConstantBuffer FXAAConstantBuffer;       // b10
+    FConstantBuffer LightPassConstantBuffer;		// b7
+    FConstantBuffer FogPassConstantBuffer;		// b9
+    FConstantBuffer FXAAConstantBuffer;                     // b10
 
-    FStructuredBuffer LightStructuredBuffer; // t3
+	FStructuredBuffer LightStructuredBuffer;	// t3
+};
 
-    FShader PrimitiveShader;
-    FShader GizmoShader;
-    FShader EditorShader;
-    FShader SelectionMaskShader;
-    FShader OutlineShader;
-    FShader StaticMeshShader;
-    FShader LightPassShader;
-    FShader FogPassShader;
-    FShader DecalShader;
-    FShader FXAAShader;
-    FShader DepthViewShader;
+enum class ESamplerType
+{
+	EST_Point,
+	EST_Linear,
+	EST_Anisotropic,
+};
 
-    TComPtr<ID3D11SamplerState> MeshSamplerState;
+enum class EDepthStencilType
+{
+	Default,
+	DepthReadOnly,
+	StencilWrite,
+	StencilWriteOnlyEqual,
+
+	// --- 기즈모 전용 ---
+	GizmoInside,
+	GizmoOutside
+};
+
+enum class EBlendType
+{
+	Opaque,
+	AlphaBlend,
+	NoColor
+};
+
+enum class ERasterizerType
+{
+	SolidBackCull,
+	SolidFrontCull,
+	SolidNoCull,
+	WireFrame,
+	DepthView,
 };

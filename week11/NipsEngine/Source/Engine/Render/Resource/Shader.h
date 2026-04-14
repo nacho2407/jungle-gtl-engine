@@ -8,26 +8,85 @@
 #include "Render/Common/RenderTypes.h"
 
 #include "Core/CoreTypes.h"
+#include "Object/Object.h"
 
-//	Shader Set
-class FShader
+struct FShaderVariableInfo
 {
-private:
-	TComPtr<ID3D11VertexShader> VertexShader;
-	TComPtr<ID3D11PixelShader> PixelShader;
-	TComPtr<ID3D11InputLayout> InputLayout;
-
-public:
-
-private:
-
-public:
-	void Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-		const D3D11_INPUT_ELEMENT_DESC* InInputElements, uint32 InInputElementCount);
-	void Release();
-
-	void Bind(ID3D11DeviceContext* InDeviceContext) const;
+	uint32 BufferSlot = 0;
+	uint32 Offset = 0;
+	uint32 Size = 0;
 };
 
+//	Shader Set
+struct FShader
+{
+	ID3D11VertexShader* VS;
+	ID3D11PixelShader* PS;
+	ID3D11InputLayout* InputLayout;
 
+	ID3D11Buffer* ConstantBuffer = nullptr;
 
+	void Release()
+	{
+		if (VS) VS->Release();
+		if (PS) PS->Release();
+		if (InputLayout) InputLayout->Release();
+		if (ConstantBuffer) ConstantBuffer->Release();
+	}
+};
+
+class UShader : public UObject
+{
+public:
+	DECLARE_CLASS(UShader, UObject)
+	
+	void Bind(ID3D11DeviceContext* Context)
+	{
+		Context->IASetInputLayout(ShaderData.InputLayout);
+		Context->VSSetShader(ShaderData.VS, nullptr, 0);
+		Context->PSSetShader(ShaderData.PS, nullptr, 0);
+	}
+
+	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size)
+	{
+		if (!ShaderData.ConstantBuffer || Size == 0) return;
+
+		Context->UpdateSubresource(ShaderData.ConstantBuffer, 0, nullptr, Data, 0, 0);
+		Context->VSSetConstantBuffers(Slot, 1, &ShaderData.ConstantBuffer);
+		Context->PSSetConstantBuffers(Slot, 1, &ShaderData.ConstantBuffer);
+	}
+
+	int32 GetTextureBindSlot(const FString& Name) const
+	{
+		auto It = TextureBindSlots.find(Name);
+		if (It != TextureBindSlots.end())
+		{
+			return It->second;
+		}
+		return -1;
+	}
+
+	bool GetShaderVariableInfo(const FString& Name, FShaderVariableInfo& OutInfo) const
+	{
+		auto It = ShaderVariables.find(Name);
+		if (It != ShaderVariables.end())
+		{
+			OutInfo = It->second;
+			return true;
+		}
+		return false;
+	}
+
+	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device);
+
+	uint32 GetCBufferSize() const { return CBufferSize; }
+
+	FShader ShaderData;
+	FString FilePath;
+
+private:
+	TMap<FString, uint32> TextureBindSlots;
+	TMap<FString, FShaderVariableInfo> ShaderVariables;
+
+	uint32 CBufferSize = 0;
+};

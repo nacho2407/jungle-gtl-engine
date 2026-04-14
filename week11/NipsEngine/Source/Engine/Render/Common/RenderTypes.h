@@ -23,6 +23,7 @@ enum class EPrimitiveType
 	EPT_TransGizmo,
 	EPT_RotGizmo,
 	EPT_ScaleGizmo,
+	EPT_Line,
 	EPT_Axis,
 	EPT_Grid,
 	EPT_StaticMesh,

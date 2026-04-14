@@ -1,6 +1,8 @@
 ﻿#include <d3d11.h>
 #include "FontBatcher.h"
 #include "Core/CoreTypes.h"
+#include "Core/ResourceManager.h"
+#include "Render/Resource/RenderResources.h"
 
 void FFontBatcher::Create(ID3D11Device* InDevice)
 {
@@ -11,22 +13,13 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	MaxIndexCount = 1536;
 	CreateBuffers();
 
-	// Sampler ? Point 필터 (폰트는 선명하게)
-	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Device->CreateSamplerState(&sampDesc, SamplerState.ReleaseAndGetAddressOf());
+	UMaterial* Mat = FResourceManager::Get().GetMaterial("FontMat");
+	Mat->BlendType = EBlendType::AlphaBlend;
+	Mat->DepthStencilType = EDepthStencilType::Default;
+	Mat->RasterizerType = ERasterizerType::SolidNoCull;
+	Mat->SamplerType = ESamplerType::EST_Point;
 
-	// 셰이더 + Input Layout
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	FontShader.Create(Device.Get(), L"Shaders/ShaderFont.hlsl",
-		"VS", "PS", layout, ARRAYSIZE(layout));
+	FontMaterial = Mat;
 }
 
 void FFontBatcher::CreateBuffers()
@@ -83,10 +76,7 @@ void FFontBatcher::Release()
 
 	VertexBuffer.Reset();
 	IndexBuffer.Reset();
-	SamplerState.Reset();
 	Device.Reset();
-
-	FontShader.Release();
 }
 
 void FFontBatcher::AddText(const FString& Text,
@@ -256,7 +246,7 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->Unmap(IndexBuffer.Get(), 0);
 
 	// 셰이더 바인딩
-	FontShader.Bind(Context);
+	FontMaterial->Bind(Context);
 
 	uint32 stride = sizeof(FTextureVertex), offset = 0;
 	ID3D11Buffer* VertexBufferPtr = VertexBuffer.Get();
@@ -264,12 +254,6 @@ void FFontBatcher::Flush(ID3D11DeviceContext* Context, const FFontResource* Reso
 	Context->IASetVertexBuffers(0, 1, &VertexBufferPtr, &stride, &offset);
 	Context->IASetIndexBuffer(IndexBufferPtr, DXGI_FORMAT_R32_UINT, 0);
 	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// ResourceManager 소유 SRV 바인딩
-	ID3D11ShaderResourceView* SRV = Resource->SRV.Get();
-	Context->PSSetShaderResources(0, 1, &SRV);
-	ID3D11SamplerState* Samplers[] = { SamplerState.Get() };
-	Context->PSSetSamplers(0, 1, Samplers);
 
 	Context->DrawIndexed(static_cast<uint32>(Indices.size()), 0, 0);
 }

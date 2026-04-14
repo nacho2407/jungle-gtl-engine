@@ -17,6 +17,7 @@
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
+#include "Render/Resource/ObjMtlLoader.h"
 
 #pragma region __BINARY__
 
@@ -110,9 +111,8 @@ namespace ResourceKey
 }
 
 //	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
-void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device* Device)
+void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 {
-	CachedDevice = Device;
 	//	초기화
 	ObjFilePaths.clear();
 	FontFilePaths.clear();
@@ -163,8 +163,14 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 		}
 		else if (Extension == L".mtl")
 		{
+			// TODO: 현재는 임의로 static mesh shader로 로드하도록 설정
 			MaterialFilePaths.push_back(RelativePath);
-			LoadMaterial(RelativePath);
+			LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+		}
+		else if (Extension == L".mat")
+		{
+			MaterialFilePaths.push_back(RelativePath);
+			DeserializeMaterial(FPaths::ToString(FilePath));
 		}
 		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
@@ -183,7 +189,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 			else if (Meta.Type == EAssetMetaType::Texture)
 			{
 				TextureFilePaths.push_back(RelativePath);
-				LoadTexture(RelativePath, Device);
+				LoadTexture(RelativePath, CachedDevice.Get());
 			}
 			//else
 			//{
@@ -194,11 +200,11 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path, ID3D11Device*
 
 	//	TODO : Material, Texture Load
 
-	InitializeDefaultResources(Device);
+	InitializeDefaultResources(CachedDevice.Get());
 
 	PreloadStaticMeshes();
 
-	if (LoadGPUResources(Device))
+	if (LoadGPUResources(CachedDevice.Get()))
 	{
 		UE_LOG("Complete Load Resources!");
 	}
@@ -263,10 +269,12 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			else if (Extension == L".mtl")
 			{
 				MaterialFilePaths.push_back(RelativePath);
-
-				// 기존 MaterialRegistry는 지우지 않고 갱신/추가만 한다.
-				// 이미 로드된 StaticMesh가 Material 포인터를 들고 있을 수 있어서 clear는 위험함.
-				LoadMaterial(RelativePath);
+				LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+			}
+			else if (Extension == L".mat")
+			{
+				MaterialFilePaths.push_back(RelativePath);
+				DeserializeMaterial(RelativePath);
 			}
 			else if (
 				Extension == L".png" ||
@@ -461,118 +469,6 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 	return Meta;
 }
 
-// void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
-// {
-// 	using namespace json;
-//
-// 	std::ifstream File(std::filesystem::path(FPaths::ToWide(Path)));
-// 	if (!File.is_open())
-// 	{
-// 		return;
-// 	}
-//
-// 	FString Content((std::istreambuf_iterator<char>(File)),
-// 	                std::istreambuf_iterator<char>());
-//
-// 	InitializeDefaultResources(InDevice);
-//
-// 	JSON Root = JSON::Load(Content);
-//
-// 	// Font — { "Name": { "Path": "...", "Columns": 16, "Rows": 16 } }
-// 	if (Root.hasKey(ResourceKey::Font))
-// 	{
-// 		JSON FontSection = Root[ResourceKey::Font];
-// 		for (auto& Pair : FontSection.ObjectRange())
-// 		{
-// 			JSON Entry = Pair.second;
-// 			FFontResource Resource;
-// 			Resource.Name = FName(Pair.first.c_str());
-// 			Resource.Path = Entry[ResourceKey::Path].ToString();
-// 			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-// 			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-// 			Resource.SRV = nullptr;
-// 			FontResources[Pair.first] = Resource;
-// 		}
-// 	}
-//
-// 	// StaticMesh — { "Name": { "Path": "Asset/Mesh/xxx.obj" } }
-// 	// StaticMesh — { "Name": { "Path": "...", "Preload": true, "NormalizeToUnitCube": true } }
-// 	if (Root.hasKey(ResourceKey::StaticMesh))
-// 	{
-// 		JSON StaticMeshSection = Root[ResourceKey::StaticMesh];
-// 		for (auto& Pair : StaticMeshSection.ObjectRange())
-// 		{
-// 			JSON Entry = Pair.second;
-// 			if (!Entry.hasKey(ResourceKey::Path))
-// 			{
-// 				continue;
-// 			}
-//
-// 			FStaticMeshResource Resource;
-// 			Resource.Name = Pair.first;
-// 			Resource.Path = Entry[ResourceKey::Path].ToString();
-// 			Resource.bPreload = Entry.hasKey(ResourceKey::Preload)
-// 				                    ? Entry[ResourceKey::Preload].ToBool()
-// 				                    : false;
-// 			Resource.bNormalizeToUnitCube = Entry.hasKey(ResourceKey::NormalizeToUnitCube)
-// 				                                ? Entry[ResourceKey::NormalizeToUnitCube].ToBool()
-// 				                                : false;
-//
-// 			StaticMeshRegistry[Pair.first] = Resource;
-// 		}
-// 	}
-//
-// 	// Material — { "Name": { "Path": "Asset/Material/xxx.mtl" } }
-// 	if (Root.hasKey(ResourceKey::Material))
-// 	{
-// 		JSON MaterialSection = Root[ResourceKey::Material];
-// 		for (auto& Pair : MaterialSection.ObjectRange())
-// 		{
-// 			JSON Entry = Pair.second;
-// 			if (!Entry.hasKey(ResourceKey::Path))
-// 			{
-// 				continue;
-// 			}
-//
-// 			FString MtlPath = Entry[ResourceKey::Path].ToString();
-// 			if (!LoadMaterial(MtlPath))
-// 			{
-// 				UE_LOG("Failed to load material from Resource.ini: %s", MtlPath.c_str());
-// 			}
-// 		}
-// 	}
-//
-// 	// Particle — { "Name": { "Path": "...", "Columns": 6, "Rows": 6 } }
-// 	if (Root.hasKey(ResourceKey::Particle))
-// 	{
-// 		JSON ParticleSection = Root[ResourceKey::Particle];
-// 		for (auto& Pair : ParticleSection.ObjectRange())
-// 		{
-// 			JSON Entry = Pair.second;
-// 			FParticleResource Resource;
-// 			Resource.Name = FName(Pair.first.c_str());
-// 			Resource.Path = Entry[ResourceKey::Path].ToString();
-// 			Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-// 			Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-// 			Resource.SRV = nullptr;
-// 			ParticleResources[Pair.first] = Resource;
-// 		}
-// 	}
-//
-// 	// Material 로딩 이후 StaticMesh Preload를 수행해야 SlotName->Material resolve가 가능합니다.
-// 	PreloadStaticMeshes();
-//
-//
-// 	if (LoadGPUResources(InDevice))
-// 	{
-// 		UE_LOG("Complete Load Resources!");
-// 	}
-// 	else
-// 	{
-// 		UE_LOG("Failed to Load Resources...");
-// 	}
-// }
-
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 {
 	if (!Device)
@@ -582,7 +478,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 	for (auto& [Key, Resource] : FontResources)
 	{
-		if (Resource.SRV != nullptr)
+		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
 		{
 			continue;
 		}
@@ -596,7 +492,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 	for (auto& [Key, Resource] : ParticleResources)
 	{
-		if (Resource.SRV != nullptr)
+		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
 		{
 			continue;
 		}
@@ -613,7 +509,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 {
-	if (!Device || DefaultWhiteSRV) return;
+	if (!Device) return;
 
 	D3D11_TEXTURE2D_DESC Desc = {};
 	Desc.Width = 1;
@@ -628,82 +524,172 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
 	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
 
+	UTexture* DefaultTexture = UObjectManager::Get().CreateObject<UTexture>();
+
 	Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
 	if (DefaultWhiteTexture)
 	{
-		Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultWhiteSRV.ReleaseAndGetAddressOf());
+		Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultTexture->GetAddressOfSRV());
+		Textures["DefaultWhite"] = DefaultTexture;
 	}
+
+	// Outline Material
+	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", "Shaders/OutlinePostProcess.hlsl");
+	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
+	OutlineMat->SetParam("OutlineThicknessPixels", FMaterialParamValue(5.0f));
+	OutlineMat->SetParam("OutlineViewportSize", FMaterialParamValue(FVector2(800.0f, 600.0f)));
 }
 
 void FResourceManager::ReleaseGPUResources()
 {
 	FontResources.clear();
-
 	ParticleResources.clear();
 
-	MaterialTextureResources.clear();
-
-	for (auto& [Path, StaticMeshAsset] : StaticMeshMap)
+	for (auto& [Path, StaticMeshAsset] : StaticMeshes)
 	{
 		delete StaticMeshAsset;
 	}
-	StaticMeshMap.clear();
+	StaticMeshes.clear();
 	StaticMeshRegistry.clear();
 
-	DefaultWhiteSRV.Reset();
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
 }
 
-void FResourceManager::LoadMaterialFromPath(const FString& FilePath)
+bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
+	const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount)
 {
-	namespace fs = std::filesystem;
+	UShader* Shader = UObjectManager::Get().CreateObject<UShader>();
+	Shader->FilePath = FilePath;
 
-	// 1. OBJ 파일에서 mtllib 키워드로 참조된 mtl 파일명 파싱
-	TArray<FString> Lines;
-	FString MtlFileName;
-	if (FFileUtils::LoadFileToLines(FilePath, Lines))
+	TComPtr<ID3DBlob> VSBlob;
+	TComPtr<ID3DBlob> PSBlob;
+	TComPtr<ID3DBlob> ErrorBlob;
+
+	HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		VSEntryPoint.c_str(), "vs_5_0", 0, 0, &VSBlob, &ErrorBlob);
+	if (FAILED(hr))
 	{
-		for (const FString& RawLine : Lines)
+		if (ErrorBlob)
 		{
-			FString Line = StringUtils::Trim(RawLine);
-			if (Line.rfind("mtllib ", 0) == 0 && Line.size() > 7)
-			{
-				MtlFileName = StringUtils::Trim(Line.substr(7));
-				break;
-			}
+			UE_LOG("Vertex Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+		}
+		else
+		{
+			UE_LOG("Failed to compile vertex shader: %s", FilePath.c_str());
+		}
+		return false;
+	}
+	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get());
+	ErrorBlob.Reset();
+
+	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		PSEntryPoint.c_str(), "ps_5_0", 0, 0, &PSBlob, &ErrorBlob);
+	if (FAILED(hr))
+	{
+		if (ErrorBlob)
+		{
+			UE_LOG("Pixel Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+		}
+		else
+		{
+			UE_LOG("Failed to compile pixel shader: %s", FilePath.c_str());
+		}
+		return false;
+	}
+	Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get());
+
+	hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
+		&Shader->ShaderData.VS);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create vertex shader: %s", FilePath.c_str());
+		return false;
+	}
+
+	hr = CachedDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr,
+		&Shader->ShaderData.PS);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
+		return false;
+	}
+
+	if (InputElements != nullptr && InputElementCount > 0)
+	{
+		hr = CachedDevice->CreateInputLayout(InputElements, InputElementCount, VSBlob->GetBufferPointer(),
+			VSBlob->GetBufferSize(), &Shader->ShaderData.InputLayout);
+		if (FAILED(hr))
+		{
+			UE_LOG("Failed to create input layout: %s", FilePath.c_str());
+			return false;
 		}
 	}
 
-	if (MtlFileName.empty())
-	{
-		UE_LOG("[ResourceManager] No mtllib keyword found in: %s", FilePath.c_str());
-		return;
-	}
+	Shaders[FilePath] = Shader;
 
-	// 2. OBJ 파일 위치를 기준으로 FindFileRecursively 로 mtl 파일 탐색
-	fs::path AbsObjDir = fs::path(FPaths::ToAbsolute(FPaths::ToWide(FilePath))).parent_path();
-	FString FoundRelPath;
-	if (!FFileUtils::FindFileRecursively(FPaths::ToUtf8(AbsObjDir.generic_wstring()), MtlFileName, FoundRelPath))
-	{
-		UE_LOG("[ResourceManager] mtl not found via FindFileRecursively: %s", MtlFileName.c_str());
-		return;
-	}
-
-	// FoundRelPath 는 AbsObjDir 기준 상대 경로이므로 절대 경로로 결합 후 LoadMaterial 호출
-	fs::path AbsMtlPath = (AbsObjDir / FPaths::ToWide(FoundRelPath)).lexically_normal();
-	LoadMaterial(FPaths::ToUtf8(AbsMtlPath.generic_wstring()));
+	return true;
 }
 
-bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
+UShader* FResourceManager::GetShader(const FString& FilePath) const
+{
+	auto It = Shaders.find(FilePath);
+	return (It != Shaders.end()) ? It->second : nullptr;
+}
+
+TArray<FString> FResourceManager::GetMaterialNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(Materials.size());
+	for (const auto& [Name, Mat] : Materials)
+	{
+		Names.push_back(Name);
+	}
+	return Names;
+}
+
+UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
+{
+	auto It = Materials.find(MaterialName);
+	return (It != Materials.end()) ? It->second : nullptr;
+}
+
+// 매개변수 없이 가장 간단한 Material을 생성
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& MaterialName, const FString& ShaderName)
+{
+	UMaterial* Material = GetMaterial(MaterialName);
+	if (Material)
+	{
+		return GetMaterial(MaterialName);
+	}
+
+	Material = UObjectManager::Get().CreateObject<UMaterial>();
+	Material->Name = MaterialName;
+
+	UShader* Shader = GetShader(ShaderName);
+	Material->SetShader(Shader);
+
+	Materials[MaterialName] = Material;
+
+	return Material;
+}
+
+bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
 {
 	if (MtlFilePath.empty())
 	{
-		return false;	
+		return false;
 	}
 
-	TMap<FString, FMaterial> Parsed;
-	if (!FObjMtlLoader::Load(MtlFilePath, Parsed))
+	UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
+	if (!Shader)
+	{
+		UE_LOG("Shader not found for material: %s, using default shader", ShaderName.c_str());
+		return false;
+	}
+
+	TMap<FString, UMaterial*> Parsed;
+	if (!FObjMtlLoader::Load(MtlFilePath, Parsed, CachedDevice.Get()))
 	{
 		UE_LOG("Failed to load MTL: %s", MtlFilePath.c_str());
 		return false;
@@ -711,91 +697,146 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath)
 
 	for (auto& [Name, Mat] : Parsed)
 	{
-		MaterialRegistry[Name] = Mat;
+		Mat->SetShader(Shader);
+		Materials[Name] = Mat;
 	}
 
-	for (auto& [Name, Mat] : MaterialRegistry)
+	// TODO: 개선 필요해보임
+	for (auto& [Name, Mat] : Materials)
 	{
-		if (Mat.bHasDiffuseTexture && !Mat.DiffuseTexPath.empty())  LoadTexture(Mat.DiffuseTexPath, CachedDevice.Get());
-		if (Mat.bHasAmbientTexture && !Mat.AmbientTexPath.empty())  LoadTexture(Mat.AmbientTexPath, CachedDevice.Get());
-		if (Mat.bHasSpecularTexture && !Mat.SpecularTexPath.empty()) LoadTexture(Mat.SpecularTexPath, CachedDevice.Get());
-		if (Mat.bHasBumpTexture && !Mat.BumpTexPath.empty())     LoadTexture(Mat.BumpTexPath, CachedDevice.Get());
+		FMaterial& MaterialData = Mat->MaterialData;
+
+		if (MaterialData.bHasDiffuseTexture && !MaterialData.DiffuseTexPath.empty())  LoadTexture(MaterialData.DiffuseTexPath, CachedDevice.Get());
+		if (MaterialData.bHasAmbientTexture && !MaterialData.AmbientTexPath.empty())  LoadTexture(MaterialData.AmbientTexPath, CachedDevice.Get());
+		if (MaterialData.bHasSpecularTexture && !MaterialData.SpecularTexPath.empty()) LoadTexture(MaterialData.SpecularTexPath, CachedDevice.Get());
+		if (MaterialData.bHasBumpTexture && !MaterialData.BumpTexPath.empty())     LoadTexture(MaterialData.BumpTexPath, CachedDevice.Get());
 	}
 
 	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
 	return true;
 }
 
-FMaterial* FResourceManager::FindMaterial(const FString& MaterialName)
+bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 {
-	auto It = MaterialRegistry.find(MaterialName);
-	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
-}
+	using json::JSON;
 
-const FMaterial* FResourceManager::FindMaterial(const FString& MaterialName) const
-{
-	auto It = MaterialRegistry.find(MaterialName);
-	return (It != MaterialRegistry.end()) ? &It->second : nullptr;
-}
-
-TArray<FString> FResourceManager::GetMaterialNames() const
-{
-	TArray<FString> Names;
-	Names.reserve(MaterialRegistry.size());
-	for (const auto& [Name, Mat] : MaterialRegistry)
+	std::ifstream MatFile(FPaths::ToWide(MatFilePath));
+	if (!MatFile.is_open())
 	{
-		Names.push_back(Name);
+		UE_LOG("Failed to open material file: %s", MatFilePath.c_str());
+		return false;
 	}
-	return Names;
+
+	FString FileContent((std::istreambuf_iterator<char>(MatFile)), std::istreambuf_iterator<char>());
+	JSON Root = JSON::Load(FileContent);
+
+	FString MatName = Root["Name"].ToString();
+	FString ShaderPath = Root["Shader"].ToString();
+	UMaterial* Material = GetOrCreateMaterial(MatName, ShaderPath);
+
+	for (auto& Param : Root["Params"].ArrayRange())
+	{
+		FString ParamName = Param["Name"].ToString();
+		FString Type = Param["Type"].ToString();
+
+		if (Type == "Bool")
+		{
+			bool Value = Param["Value"].ToBool();
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Int")
+		{
+			int Value = Param["Value"].ToInt();
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "UInt")
+		{
+			uint32 Value = static_cast<uint32>(Param["Value"].ToInt());
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Float")
+		{
+			float Value = static_cast<float>(Param["Value"].ToFloat());
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Vector2")
+		{
+			FVector2 Value(
+				static_cast<float>(Param["Value"][0].ToFloat()),
+				static_cast<float>(Param["Value"][1].ToFloat()));
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Vector3")
+		{
+			FVector Value(
+				static_cast<float>(Param["Value"][0].ToFloat()),
+				static_cast<float>(Param["Value"][1].ToFloat()),
+				static_cast<float>(Param["Value"][2].ToFloat()));
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Vector4")
+		{
+			FVector4 Value(
+				static_cast<float>(Param["Value"][0].ToFloat()),
+				static_cast<float>(Param["Value"][1].ToFloat()),
+				static_cast<float>(Param["Value"][2].ToFloat()),
+				static_cast<float>(Param["Value"][3].ToFloat()));
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Matrix4")
+		{
+			FMatrix Value;
+			for (int Row = 0; Row < 4; ++Row)
+			{
+				for (int Col = 0; Col < 4; ++Col)
+				{
+					Value.M[Row][Col] = static_cast<float>(Param["Value"][Row][Col].ToFloat());
+				}
+			}
+			Material->SetParam(ParamName, FMaterialParamValue(Value));
+		}
+		else if (Type == "Texture")
+		{
+			FString TexPath = Param["Value"].ToString();
+			UTexture* Texture = LoadTexture(TexPath, CachedDevice.Get());
+			if (Texture)
+			{
+				Material->SetParam(ParamName, FMaterialParamValue(Texture));
+			}
+		}
+	}
+
+	Materials[MatName] = Material;
+
+	return true;
 }
 
-FMaterialResource* FResourceManager::FindTexture(const FString& Path) const
+UTexture* FResourceManager::GetTexture(const FString& Path) const
 {
-	FString Degug = Path;
-	auto It = MaterialTextureResources.find(Path);
-	return (It != MaterialTextureResources.end()) ? const_cast<FMaterialResource*>(&It->second) : nullptr;
+	auto It = Textures.find(Path);
+	return (It != Textures.end()) ? It->second : nullptr;
 }
 
-FMaterialResource* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Device)
+UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Device)
 {
 	if (Device == nullptr)
 	{
 		Device = CachedDevice.Get();
 	}
 
-	if (FMaterialResource* Cached = FindTexture(Path))
+	if (UTexture* Cached = GetTexture(Path))
 	{
 		return Cached;
 	}
 
-	if (!Device)
+	UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
+	if (!Texture->LoadFromFile(Path, Device))
 	{
 		return nullptr;
 	}
 
-	std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Path));
-
-	FMaterialResource Resource;
-	Resource.Path = Path;
-
-	HRESULT hr;
-	if (FullPath.size() >= 4 && FullPath.substr(FullPath.size() - 4) == L".dds")
-	{
-		hr = DirectX::CreateDDSTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.SRV.ReleaseAndGetAddressOf());
-	}
-	else
-	{
-		hr = DirectX::CreateWICTextureFromFile(Device, FullPath.c_str(), nullptr, Resource.SRV.ReleaseAndGetAddressOf());
-	}
-
-	if (FAILED(hr))
-	{
-		UE_LOG("Failed to load texture: %s", Path.c_str());
-		return nullptr;
-	}
-
-	MaterialTextureResources[Path] = Resource;
-	return &MaterialTextureResources[Path];
+	Textures[Path] = Texture;
+	return Texture;
 }
 
 // --- Font ---
@@ -829,6 +870,7 @@ void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath
 	Resource.Path = InPath;
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
+	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
 	FontResources[FontName.ToString()] = Resource;
 }
 
@@ -863,6 +905,7 @@ void FResourceManager::RegisterParticle(const FName& ParticleName, const FString
 	Resource.Path = InPath;
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
+	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
 	ParticleResources[ParticleName.ToString()] = Resource;
 }
 
@@ -878,18 +921,13 @@ TArray<FString> FResourceManager::GetParticleNames() const
 
 UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 {
-	if (Path.empty())
-	{
-		return nullptr;
-	}
-
 	// 메모리 캐시 확인
 	if (UStaticMesh* FoundMesh = FindStaticMesh(Path))
 	{
 		return FoundMesh;
 	}
 
-	LoadMaterialFromPath(Path);
+	LoadMaterial(Path, "Shaders/ShaderStaticMesh.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
 
@@ -958,18 +996,13 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	}
 
 	// Material 연결
-	TArray<FStaticMeshMaterialSlot> MaterialSlots;
-	MaterialSlots.reserve(LoadedMeshData->SlotNames.size());
-	for (const FString& SlotName : LoadedMeshData->SlotNames)
+	for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)
 	{
-		FStaticMeshMaterialSlot Slot = {};
-		Slot.SlotName = SlotName;
-		Slot.MaterialData = FindMaterial(SlotName);
-		MaterialSlots.push_back(Slot);
+		Slot.Material = GetMaterial(Slot.SlotName);
 	}
 
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
-    LoadedMesh->SetMeshData(LoadedMeshData, MaterialSlots);
+    LoadedMesh->SetMeshData(LoadedMeshData);
 
     if (FEditorSettings::Get().ShowFlags.bEnableLOD)
     {
@@ -985,15 +1018,15 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
         UE_LOG("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", Path.c_str());
     }
 
-    StaticMeshMap.insert({Path, LoadedMesh});
+    StaticMeshes.insert({Path, LoadedMesh});
     
     return LoadedMesh;
 }
 
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 {
-	auto It = StaticMeshMap.find(Path);
-	if (It == StaticMeshMap.end())
+	auto It = StaticMeshes.find(Path);
+	if (It == StaticMeshes.end())
 	{
 		return nullptr;
 	}
@@ -1011,22 +1044,242 @@ const TArray<FString>& FResourceManager::GetTextureFilePath() const
 	return TextureFilePaths;
 }
 
+ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+
+	auto It = SamplerStates.find(Type);
+	if (It != SamplerStates.end())
+	{
+		return It->second.Get();
+	}
+
+	D3D11_SAMPLER_DESC Desc = {};
+	Desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	Desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	Desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	Desc.MinLOD = 0;
+	Desc.MaxLOD = D3D11_FLOAT32_MAX;
+	switch (Type)
+	{
+	case ESamplerType::EST_Point:
+		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		break;
+	case ESamplerType::EST_Linear:
+		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case ESamplerType::EST_Anisotropic:
+		Desc.Filter = D3D11_FILTER_ANISOTROPIC;
+		Desc.MaxAnisotropy = 16;
+		break;
+	default:
+		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	}
+
+	TComPtr<ID3D11SamplerState> SamplerState;
+	HRESULT hr = CachedDevice->CreateSamplerState(&Desc, &SamplerState);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create sampler state");
+		return nullptr;
+	}
+
+	SamplerStates[Type] = SamplerState;
+	return SamplerState.Get();
+}
+
+ID3D11DepthStencilState* FResourceManager::GetOrCreateDepthStencilState(EDepthStencilType Type, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+	auto It = DepthStencilStates.find(Type);
+	if (It != DepthStencilStates.end())
+	{
+		return It->second.Get();
+	}
+
+	D3D11_DEPTH_STENCIL_DESC Desc = {};
+	switch (Type)
+	{
+	case EDepthStencilType::Default:
+		Desc.DepthEnable = TRUE;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		Desc.DepthFunc = D3D11_COMPARISON_LESS;
+		Desc.StencilEnable = FALSE;
+		break;
+	case EDepthStencilType::DepthReadOnly:
+		Desc.DepthEnable = TRUE;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+		Desc.StencilEnable = FALSE;
+		break;
+	case EDepthStencilType::StencilWrite:
+		Desc.DepthEnable = TRUE;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		Desc.StencilEnable = TRUE;
+		Desc.StencilWriteMask = 0xFF;
+		Desc.StencilWriteMask = 0xFF;
+		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		Desc.BackFace = Desc.FrontFace;
+		break;
+	case EDepthStencilType::GizmoInside:
+		Desc.DepthEnable = TRUE;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		Desc.StencilEnable = TRUE;
+		Desc.StencilReadMask = 0xFF;
+		Desc.StencilWriteMask = 0x00;
+		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		Desc.BackFace = Desc.FrontFace;
+		break;
+	case EDepthStencilType::GizmoOutside:
+		Desc.DepthEnable = TRUE;
+		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		Desc.StencilEnable = TRUE;
+		Desc.StencilReadMask = 0xFF;
+		Desc.StencilWriteMask = 0x00;
+		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+		Desc.BackFace = Desc.FrontFace;
+		break;
+	}
+
+	TComPtr<ID3D11DepthStencilState> DepthStencilState;
+	HRESULT hr = CachedDevice->CreateDepthStencilState(&Desc, &DepthStencilState);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create depth stencil state");
+		return nullptr;
+	}
+
+	DepthStencilStates[Type] = DepthStencilState;
+	return DepthStencilState.Get();
+}
+
+ID3D11BlendState* FResourceManager::GetOrCreateBlendState(EBlendType Type, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+	auto It = BlendStates.find(Type);
+	if (It != BlendStates.end())
+	{
+		return It->second.Get();
+	}
+
+	D3D11_BLEND_DESC Desc = {};
+	switch (Type)
+	{
+	case EBlendType::Opaque:
+		Desc.RenderTarget[0].BlendEnable = FALSE;
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		break;
+	case EBlendType::AlphaBlend:
+		Desc.RenderTarget[0].BlendEnable = TRUE;
+		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		break;
+	case EBlendType::NoColor:
+		Desc.RenderTarget[0].BlendEnable = FALSE;
+		Desc.RenderTarget[0].RenderTargetWriteMask = 0;
+		break;
+	}
+
+	TComPtr<ID3D11BlendState> BlendState;
+	HRESULT hr = CachedDevice->CreateBlendState(&Desc, &BlendState);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create blend state");
+		return nullptr;
+	}
+
+	BlendStates[Type] = BlendState;
+	return BlendState.Get();
+}
+
+ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerType Type, ID3D11Device* Device)
+{
+	if (Device == nullptr)
+	{
+		Device = CachedDevice.Get();
+	}
+	auto It = RasterizerStates.find(Type);
+	if (It != RasterizerStates.end())
+	{
+		return It->second.Get();
+	}
+
+	D3D11_RASTERIZER_DESC Desc = {};
+	switch (Type)
+	{
+	case ERasterizerType::SolidBackCull:
+		Desc.FillMode = D3D11_FILL_SOLID;
+		Desc.CullMode = D3D11_CULL_BACK;
+		break;
+	case ERasterizerType::SolidFrontCull:
+		Desc.FillMode = D3D11_FILL_SOLID;
+		Desc.CullMode = D3D11_CULL_FRONT;
+		break;
+	case ERasterizerType::SolidNoCull:
+		Desc.FillMode = D3D11_FILL_SOLID;
+		Desc.CullMode = D3D11_CULL_NONE;
+		break;
+	case ERasterizerType::WireFrame:
+		Desc.FillMode = D3D11_FILL_WIREFRAME;
+		Desc.CullMode = D3D11_CULL_NONE;
+		break;
+	}
+
+	TComPtr<ID3D11RasterizerState> RasterizerState;
+	HRESULT hr = CachedDevice->CreateRasterizerState(&Desc, &RasterizerState);
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to create rasterizer state");
+		return nullptr;
+	}
+	RasterizerStates[Type] = RasterizerState;
+	return RasterizerState.Get();
+}
+
+// TODO: 변경된 구조에 맞춰서 수정하기
 size_t FResourceManager::GetMaterialMemorySize() const
 {
 	size_t TotalSize = 0;
 	// 1. FMaterial 구조체 기본 크기
-	TotalSize += MaterialRegistry.size() * sizeof(FMaterial);
+	//TotalSize += MaterialRegistry.size() * sizeof(FMaterial);
 
-	// 2. 내부 FString들이 힙(Heap)에 동적 할당한 문자열 길이까지 정밀하게 합산
-	for (const auto& Pair : MaterialRegistry)
-	{
-		const FMaterial& Mat = Pair.second;
-		TotalSize += Mat.Name.capacity();
-		TotalSize += Mat.DiffuseTexPath.capacity();
-		TotalSize += Mat.AmbientTexPath.capacity();
-		TotalSize += Mat.SpecularTexPath.capacity();
-		TotalSize += Mat.BumpTexPath.capacity();
-	}
+	//// 2. 내부 FString들이 힙(Heap)에 동적 할당한 문자열 길이까지 정밀하게 합산
+	//for (const auto& Pair : MaterialRegistry)
+	//{
+	//	const FMaterial& Mat = Pair.second;
+	//	TotalSize += Mat.Name.capacity();
+	//	TotalSize += Mat.DiffuseTexPath.capacity();
+	//	TotalSize += Mat.AmbientTexPath.capacity();
+	//	TotalSize += Mat.SpecularTexPath.capacity();
+	//	TotalSize += Mat.BumpTexPath.capacity();
+	//}
 
 	return TotalSize;
 }

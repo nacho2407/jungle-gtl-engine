@@ -1,6 +1,7 @@
 ﻿#include <d3d11.h>
 #include "LineBatcher.h"
 #include "Core/EngineTypes.h"
+#include "Core/ResourceManager.h"
 #include "Math/Utils.h"
 
 #include <algorithm>
@@ -177,6 +178,14 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 		Release();
 		return;
 	}
+
+	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
+	LineMaterial->DepthStencilType = EDepthStencilType::Default;
+	LineMaterial->BlendType = EBlendType::AlphaBlend;
+	LineMaterial->RasterizerType = ERasterizerType::SolidBackCull;
+	LineMaterial->SamplerType = ESamplerType::EST_Linear;
+
+	Material = LineMaterial;
 }
 
 void FLineBatcher::Release()
@@ -450,6 +459,8 @@ void FLineBatcher::Flush(ID3D11DeviceContext* Context)
 
 	memcpy(MappedResource.pData, Indices.data(), sizeof(uint32) * RequiredIndexCount);
 	Context->Unmap(IndexBuffer.Get(), 0);
+
+	Material->Bind(Context);
 
 	UINT Stride = sizeof(FLineVertex);
 	UINT Offset = 0;
