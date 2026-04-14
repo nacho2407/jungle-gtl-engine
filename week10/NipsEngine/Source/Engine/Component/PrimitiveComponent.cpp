@@ -114,7 +114,7 @@ void UPrimitiveComponent::NotifySpatialIndexDirty() const
 		return;
 	}
 
-	UWorld* World = Owner->GetWorld();
+	UWorld* World = Owner->GetFocusedWorld();
 	if (World == nullptr)
 	{
 		return;

@@ -529,7 +529,7 @@ void FEditorViewportClient::DeleteSelectedActors()
 	{
 		if (!Actor)
 			continue;
-		if (UWorld* ActorWorld = Actor->GetWorld())
+		if (UWorld* ActorWorld = Actor->GetFocusedWorld())
 			ActorWorld->DestroyActor(Actor);
 	}
 	SelectionManager->ClearSelection();
@@ -546,4 +546,14 @@ void FEditorViewportClient::SelectAllActors()
 		if (AActor* Actor = *Iter)
 			SelectionManager->AddSelect(Actor);
 	}
+}
+
+void FEditorViewportClient::SaveCameraSnapshot()
+{
+	FViewportCamera CameraStae;
+}
+
+void FEditorViewportClient::RestoreCameraSnapshot()
+{
+
 }
