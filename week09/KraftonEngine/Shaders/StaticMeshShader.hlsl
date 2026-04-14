@@ -9,11 +9,6 @@ cbuffer PerShader1 : register(b2)
     float4 SectionColor;
 };
 
-cbuffer PerShader2 : register(b3)
-{
-    float3 lightDir;
-};
-
 PS_Input_Full VS(VS_Input_PNCT input)
 {
     PS_Input_Full output;

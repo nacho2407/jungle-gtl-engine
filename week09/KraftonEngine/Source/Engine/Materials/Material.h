@@ -32,18 +32,17 @@ struct FMaterialParameterInfo
 
 //셰이더 + 레이아웃 (불변, 공유)
 //Template은 셰이더 파일이 있으면 언제든 재생성 가능
+// RenderPass는 UMaterial이 개별 보관 — 같은 셰이더로 다른 패스 사용 가능
 class FMaterialTemplate
 {
 private:
-	uint32 MaterialTemplateID; // 고유 ID 
-	FShader* Shader; // 어떤 셰이더를 사용하는지 
+	uint32 MaterialTemplateID; // 고유 ID
+	FShader* Shader; // 어떤 셰이더를 사용하는지
 	TMap<FString, FMaterialParameterInfo*> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보
-	ERenderPass RenderPass; // 어떤 패스에서 렌더링되는지(Opaque)
 
 public:
 	const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
-	void Create(FShader* InShader,	ERenderPass InRenderPass);
-	ERenderPass GetRenderPass() const;
+	void Create(FShader* InShader);
 	FShader* GetShader() const { return Shader; }
 	bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
 };
@@ -88,6 +87,7 @@ private:
 	FString PathFileName;// 어떤 Material인지 판별하는 고유 이름
 	uint32 MaterialInstanceID; // 고유 ID
 	FMaterialTemplate* Template; // 공유
+	ERenderPass RenderPass = ERenderPass::Opaque; // 인스턴스별 렌더 패스
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
@@ -98,7 +98,8 @@ public:
 	DECLARE_CLASS(UMaterial, UObject)
 	~UMaterial() override;
 
-	void Create(const FString& InPathFileName,FMaterialTemplate* InTemplate,
+	void Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
+		ERenderPass InRenderPass,
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
 	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
@@ -115,10 +116,8 @@ public:
 	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const;
 
 
-	void Bind(ID3D11DeviceContext* Context);
-
 	FShader* GetShader() const { return Template ? Template->GetShader() : nullptr; }
-	ERenderPass GetRenderPass() const;
+	ERenderPass GetRenderPass() const { return RenderPass; }
 
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
