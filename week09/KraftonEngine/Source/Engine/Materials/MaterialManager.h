@@ -10,12 +10,19 @@ class FMaterialTemplate;
 class UMaterial;
 struct FMaterialConstantBuffer;
 
+struct FMaterialAssetListItem
+{
+	FString DisplayName;
+	FString FullPath;
+};
+
 class FMaterialManager : public TSingleton<FMaterialManager>
 {
 	friend class TSingleton<FMaterialManager>;
 
     TMap<FString, FMaterialTemplate*> TemplateCache;    // 셰이더 경로 → Template (공유)
 	TMap<FString, UMaterial*> MaterialCache;	//MatFilePath
+	TArray<FMaterialAssetListItem> AvailableMaterialFiles;
 
 	ID3D11Device* Device = nullptr;
 
@@ -27,6 +34,9 @@ public:
 
     // UMaterial 생성
 	UMaterial* GetOrCreateMaterial(const FString& MatFilePath);
+
+	void ScanMaterialAssets();
+	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
 
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환

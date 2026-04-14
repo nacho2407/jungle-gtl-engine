@@ -1,0 +1,12 @@
+{
+  "Parameters" : {
+    "DecalColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "DecalWorldToLocal" : [0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Asset/Materials/FakeLight_LightArea.json",
+  "RenderPass" : "Decal",
+  "ShaderPath" : "Shaders/FakeLightShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/FakeLight/FakeLight_LightArea.png"
+  }
+}

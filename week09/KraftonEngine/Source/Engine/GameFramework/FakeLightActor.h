@@ -19,5 +19,5 @@ private:
 	
 	// TODO: Remove Magic Numbers
 	FString LampshadeImage = "FakeLight_Lampshade";
-	FString DecalImage = "FakeLight_LightArea";
+	FString DecalMaterialPath = "Asset/Materials/FakeLight_LightArea.json";
 };
