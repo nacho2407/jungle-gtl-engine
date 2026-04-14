@@ -41,7 +41,11 @@ private:
 
 	ERenderPass StringToRenderPass(const FString& RenderPassStr) const;
 
-	void SaveToJSON(UMaterial* Mat, const FString& MatFilePath);
+	void SaveToJSON(json::JSON& JsonData, const FString& MatFilePath);
+	
+	void InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
 	
 	const FString DefaultShaderPath = "Shaders/Primitive.hlsl";
+
+
 };

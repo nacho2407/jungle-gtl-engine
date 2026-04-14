@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
+#include "Engine/Platform/Paths.h"
 
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
@@ -41,6 +42,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath, RenderPass);
 	if (!Template) return nullptr;
 
+
 	// 3. D3D 상수 버퍼 생성
 	auto InjectedBuffers = CreateConstantBuffers(Template);
 
@@ -49,9 +51,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	Material->Create(PathFileName, Template, std::move(InjectedBuffers));
 	MaterialCache.emplace(MatFilePath, Material);
 
+	//템플릿을 통해 material에 넣기
+	InjectDefaultParameters(JsonData, Template, Material);
+
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
+
+	//최종적으로 material 저장
+	SaveToJSON(JsonData, MatFilePath);
 
 	return Material;
 }
@@ -150,6 +158,64 @@ ERenderPass FMaterialManager::StringToRenderPass(const FString& RenderPassStr) c
 
 	// 매칭되는 게 없으면 기본값 반환
 	return ERenderPass::Opaque;
+}
+
+void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
+{
+	std::ofstream File(FPaths::ToWide(MatFilePath));
+	File << JsonData.dump();
+}
+
+void FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material)
+{
+	const auto& Layout = Template->GetParameterInfo();
+
+	for (const auto& Pair : Layout)
+	{
+		const FString& ParamName = Pair.first;
+		const FMaterialParameterInfo* Info = Pair.second;
+
+		// 이미 JSON에 있으면 스킵
+		if (!JsonData["Parameters"][ParamName].IsNull())
+			continue;
+
+		switch (Info->Size)
+		{
+			case sizeof(float) : // 4바이트 - Scalar
+			{
+				float Value = 0.f;
+				Material->GetScalarParameter(ParamName, Value);
+				JsonData["Parameters"][ParamName] = Value;
+				break;
+			}
+			case sizeof(float) * 3: // 12바이트 - Vector3
+			{
+				FVector Value;
+				Material->GetVector3Parameter(ParamName, Value);
+				JsonData["Parameters"][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
+				break;
+			}
+			case sizeof(float) * 4: // 16바이트 - Vector4
+			{
+				FVector4 Value;
+				Material->GetVector4Parameter(ParamName, Value);
+				JsonData["Parameters"][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
+				break;
+			}
+			case sizeof(float) * 16: // 64바이트 - Matrix
+			{
+				FMatrix Value;
+				Material->GetMatrixParameter(ParamName, Value);
+				auto MatArray = json::Array();
+				for (int i = 0; i < 16; ++i)
+					MatArray.append(Value.Data[i]);
+				JsonData["Parameters"][ParamName] = MatArray;
+				break;
+			}
+			default:
+				break; // uint, bool 등 특수 케이스는 별도 처리 필요
+		}
+	}
 }
 
 FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath, ERenderPass RenderPass)

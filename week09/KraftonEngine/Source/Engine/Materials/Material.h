@@ -2,6 +2,7 @@
 
 #include "Object/ObjectFactory.h"
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include <memory>
@@ -104,11 +105,14 @@ public:
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value);
 	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value);
 	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture);
+	bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value);
 
 	bool GetScalarParameter(const FString& ParamName, float& OutValue) const;
 	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const;
 	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const;
 	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const;
+	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const;
+
 
 	void Bind(ID3D11DeviceContext* Context);
 
