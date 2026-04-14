@@ -129,14 +129,10 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Renderer.Render(Frame);
 	}
 
-	// 4. GPU Occlusion — DSV 언바인딩 후 Hi-Z 생성 + Occlusion Test 디스패치
+	// 4. GPU Occlusion — Hi-Z 생성 + Occlusion Test 디스패치
 	if (GPUOcclusion.IsInitialized())
 	{
 		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
-
-		// DSV 언바인딩 (DepthCopySRV 읽기와 동시 바인딩 불가)
-		ID3D11RenderTargetView* rtv = VP->GetRTV();
-		Ctx->OMSetRenderTargets(1, &rtv, nullptr);
 
 		GPUOcclusion.DispatchOcclusionTest(
 			Ctx,

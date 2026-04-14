@@ -1,4 +1,4 @@
-#include "MaterialManager.h"
+﻿#include "MaterialManager.h"
 #include <filesystem>
 #include <fstream>
 #include "Materials/Material.h"
@@ -105,7 +105,10 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	JsonData["RasterizerState"] = RasterStr.empty() ? "" : RasterStr.c_str();
 
 	//최종적으로 material 저장
-	SaveToJSON(JsonData, MatFilePath);
+	if (bInjected)
+	{
+		SaveToJSON(JsonData, MatFilePath);
+	}
 
 	return Material;
 }
@@ -122,7 +125,7 @@ json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 
 TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::CreateConstantBuffers(FMaterialTemplate* Template)
 {
-	
+
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> InjectedBuffers;
 
 	const auto& RequiredBuffers = Template->GetParameterInfo();
@@ -351,11 +354,11 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
 
 FMaterialManager::~FMaterialManager()
 {
-	if(!Device)
+	if (!Device)
 	{
 		Release();
 	}
-	
+
 }
 
 void FMaterialManager::Release()
