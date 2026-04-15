@@ -476,11 +476,11 @@ void UWorld::EndPlay()
 		return;
 	}
 
-	PersistentLevel->EndPlay();
-
 	// Clear spatial partition while actors/components are still alive.
 	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.
 	Partition.Reset(FBoundingBox());
+
+	PersistentLevel->EndPlay();
 	FlushPendingDestroy();
 
 	PersistentLevel->Clear();

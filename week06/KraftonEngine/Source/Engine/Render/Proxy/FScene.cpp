@@ -134,10 +134,16 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	}
 
 	// VisibleProxies 캐시에서도 제거 — dangling 포인터 방지
-	if (Proxy->bInVisibleSet && Proxy->VisibleListIndex < VisibleProxies.size())
+	for (int32 i = static_cast<int32>(VisibleProxies.size()) - 1; i >= 0; --i)
 	{
-		const uint32 Index = Proxy->VisibleListIndex;
+		if (VisibleProxies[i] != Proxy)
+		{
+			continue;
+		}
+
+		const uint32 Index = static_cast<uint32>(i);
 		const uint32 LastIndex = static_cast<uint32>(VisibleProxies.size() - 1);
+
 		if (Index != LastIndex)
 		{
 			FPrimitiveSceneProxy* Last = VisibleProxies[LastIndex];
@@ -147,6 +153,7 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 				Last->VisibleListIndex = Index;
 			}
 		}
+
 		VisibleProxies.pop_back();
 	}
 	bVisibleSetDirty = true;
