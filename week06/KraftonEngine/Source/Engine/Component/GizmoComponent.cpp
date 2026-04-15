@@ -472,6 +472,13 @@ void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 	FVector CenterToCurrent = (CurrentIntersectionLocation - GetWorldLocation()).Normalized();
 
 	float DotProduct = Clamp(CenterToLast.Dot(CenterToCurrent), -1.0f, 1.0f);
+
+	// Rotation 시 내적값의 불안정성으로 인해 자동으로 회전하는 현상 방지 로직
+	if (DotProduct > 0.99999f) 
+	{
+		LastIntersectionLocation = CurrentIntersectionLocation;
+		return;
+	}
 	float AngleRadians = std::acos(DotProduct);
 
 	FVector CrossProduct = CenterToLast.Cross(CenterToCurrent);
