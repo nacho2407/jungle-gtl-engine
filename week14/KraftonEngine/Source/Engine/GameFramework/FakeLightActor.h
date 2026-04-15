@@ -21,6 +21,6 @@ private:
 	
 	// TODO: Remove Magic Numbers
 	FString LampMeshDir = "Data/Retro-light/RetroLight.OBJ";
-	FString LampshadeImage = "FakeLight_Lampshade";
+	FString LampshadeMaterialPath = "Asset/Materials/Lampshade.json";
 	FString DecalMaterialPath = "Asset/Materials/FakeLight_LightArea.json";
 };
