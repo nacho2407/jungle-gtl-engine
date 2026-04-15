@@ -2,8 +2,8 @@
 
 #include "GameFramework/AActor.h"
 
-class UDecalComponent;
-class UBillboardComponent;
+class UCylindricalBillboardComponent;
+class UDecalComponent;;
 
 class AFakeLightActor : public AActor
 {
@@ -14,7 +14,7 @@ public:
 	void InitDefaultComponents();
 
 private:
-	UBillboardComponent* BillboardComponent = nullptr;
+	UCylindricalBillboardComponent* BillboardComponent = nullptr;
 	UDecalComponent* DecalComponent = nullptr;
 	
 	// TODO: Remove Magic Numbers
