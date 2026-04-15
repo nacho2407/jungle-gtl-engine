@@ -239,8 +239,6 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveSceneProxy*>& VisibleProxies, FRenderBus& RenderBus)
 {
-	SCOPE_STAT_CAT("Decal::Collect", "Decal");
-
 	if (!World) return;
 	if (!RenderBus.GetShowFlags().bPrimitives || !RenderBus.GetShowFlags().bDecals) return;
 
@@ -279,66 +277,83 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 			if (!DecalTexture) continue;
 			++DecalStats.VisibleDecals;
 
-			TArray<UPrimitiveComponent*> BroadPhaseCandidates;
-			if (Octree)
-			{
-				const FBoundingBox DecalAABB = BuildDecalWorldAABB(*DecalComponent);
-				if (DecalAABB.IsValid())
-				{
-					Octree->QueryAABB(DecalAABB, BroadPhaseCandidates);
-				}
-			}
-
-			if (BroadPhaseCandidates.empty())
-			{
-				continue;
-			}
-
-			TSet<const UStaticMeshComponent*> UniqueCandidates;
-			UniqueCandidates.reserve(BroadPhaseCandidates.size());
-
-			for (UPrimitiveComponent* CandidatePrimitive : BroadPhaseCandidates)
-			{
-				UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(CandidatePrimitive);
-				if (!StaticMeshComponent || !StaticMeshComponent->GetReceivesDecals()) continue;
-
-				const auto VisibleProxyIt = VisibleStaticMeshProxies.find(StaticMeshComponent);
-				if (VisibleProxyIt == VisibleStaticMeshProxies.end()) continue;
-
-				UniqueCandidates.insert(StaticMeshComponent);
-			}
-
-			if (UniqueCandidates.empty())
-			{
-				continue;
-			}
-
-			DecalStats.UniqueCandidates += static_cast<int32>(UniqueCandidates.size());
-
 			const FMatrix DecalWorldMatrix = DecalComponent->GetWorldMatrix();
 			const FVector DecalHalfExtents = DecalComponent->GetHalfExtents();
+			TArray<const FPrimitiveSceneProxy*> AcceptedReceiverProxies;
 
-			for (const UStaticMeshComponent* StaticMeshComponent : UniqueCandidates)
 			{
-				++BroadPhaseCandidateCount;
+				SCOPE_STAT_CAT("Decal::Collect", "Decal");
 
-				const auto VisibleProxyIt = VisibleStaticMeshProxies.find(StaticMeshComponent);
-				if (VisibleProxyIt == VisibleStaticMeshProxies.end()) continue;
+				TArray<UPrimitiveComponent*> BroadPhaseCandidates;
+				if (Octree)
+				{
+					const FBoundingBox DecalAABB = BuildDecalWorldAABB(*DecalComponent);
+					if (DecalAABB.IsValid())
+					{
+						Octree->QueryAABB(DecalAABB, BroadPhaseCandidates);
+					}
+				}
 
-				const FBoundingBox ReceiverBounds = StaticMeshComponent->GetWorldBoundingBox();
-				if (!FIntersectionUtils::IntersectOBBAndAABB(DecalWorldMatrix, DecalHalfExtents, ReceiverBounds))
+				if (BroadPhaseCandidates.empty())
 				{
 					continue;
 				}
 
-				++NarrowPhaseAcceptedCount;
+				TSet<const UStaticMeshComponent*> UniqueCandidates;
+				UniqueCandidates.reserve(BroadPhaseCandidates.size());
 
+				for (UPrimitiveComponent* CandidatePrimitive : BroadPhaseCandidates)
+				{
+					UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(CandidatePrimitive);
+					if (!StaticMeshComponent || !StaticMeshComponent->GetReceivesDecals()) continue;
+
+					const auto VisibleProxyIt = VisibleStaticMeshProxies.find(StaticMeshComponent);
+					if (VisibleProxyIt == VisibleStaticMeshProxies.end()) continue;
+
+					UniqueCandidates.insert(StaticMeshComponent);
+				}
+
+				if (UniqueCandidates.empty())
+				{
+					continue;
+				}
+
+				DecalStats.UniqueCandidates += static_cast<int32>(UniqueCandidates.size());
+				AcceptedReceiverProxies.reserve(UniqueCandidates.size());
+
+				for (const UStaticMeshComponent* StaticMeshComponent : UniqueCandidates)
+				{
+					++BroadPhaseCandidateCount;
+
+					const auto VisibleProxyIt = VisibleStaticMeshProxies.find(StaticMeshComponent);
+					if (VisibleProxyIt == VisibleStaticMeshProxies.end()) continue;
+
+					const FBoundingBox ReceiverBounds = StaticMeshComponent->GetWorldBoundingBox();
+					if (!FIntersectionUtils::IntersectOBBAndAABB(DecalWorldMatrix, DecalHalfExtents, ReceiverBounds))
+					{
+						continue;
+					}
+
+					++NarrowPhaseAcceptedCount;
+					AcceptedReceiverProxies.push_back(VisibleProxyIt->second);
+				}
+			}
+
+			if (AcceptedReceiverProxies.empty())
+			{
+				continue;
+			}
+
+			const FMatrix DecalWorldToDecal = DecalComponent->GetWorldInverseMatrix();
+			const float FadeAlpha = DecalComponent->GetFadeAlpha();
+			for (const FPrimitiveSceneProxy* ReceiverProxy : AcceptedReceiverProxies)
+			{
 				FDecalDrawEntry Entry = {};
-				Entry.ReceiverProxy = VisibleProxyIt->second;
+				Entry.ReceiverProxy = ReceiverProxy;
 				Entry.Texture = DecalTexture;
-				Entry.Decal.WorldToDecal = DecalComponent->GetWorldInverseMatrix();
+				Entry.Decal.WorldToDecal = DecalWorldToDecal;
 				Entry.Decal.DecalHalfExtents = DecalHalfExtents;
-				Entry.Decal.FadeAlpha = DecalComponent->GetFadeAlpha();
+				Entry.Decal.FadeAlpha = FadeAlpha;
 				RenderBus.AddDecalEntry(std::move(Entry));
 				++DecalStats.SubmittedDraws;
 			}
