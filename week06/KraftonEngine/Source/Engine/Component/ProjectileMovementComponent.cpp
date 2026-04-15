@@ -42,7 +42,7 @@ void UProjectileMovementComponent::BeginPlay()
 
         if (SourceComponent)
         {
-            FVector Dir = SourceComponent->GetForwardVector().Normalized();
+            FVector Dir = Velocity.Normalized();
             Velocity = Dir * InitialSpeed;
         }
     }
@@ -83,8 +83,11 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	{
 		const float SafeTime = std::max(0.0f, Hit.Time - 0.001f);
 		UpdatedSceneComponent->SetWorldLocation(Start + MoveDelta * SafeTime);
-		HandleBlockingHit(UpdatedSceneComponent, Start, MoveDelta, Hit);
-		return;
+		const bool bShouldStop = HandleBlockingHit(UpdatedSceneComponent, Start, MoveDelta, Hit);
+		if (bShouldStop)
+		{
+			return;
+		}
 	}
 
     UpdatedSceneComponent->SetWorldLocation(UpdatedSceneComponent->GetWorldLocation() + MoveDelta);
@@ -93,7 +96,7 @@ void UProjectileMovementComponent::TickComponent(float DeltaTime, ELevelTick Tic
 void UProjectileMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Velocity", EPropertyType::Vec3, &Velocity, 0.0f, 0.0f, 1.0f });
+	OutProps.push_back({ "Direction", EPropertyType::Vec3, &Velocity, 0.0f, 0.0f, 1.0f });
 	OutProps.push_back({ "Initial Speed", EPropertyType::Float, &InitialSpeed, 0.0f, MaxSpeed, 5.0f });
 	OutProps.push_back({ "Max Speed", EPropertyType::Float, &MaxSpeed, 0.0f, 1000.0f, 10.0f });
 	OutProps.push_back({ "Gravity Scale", EPropertyType::Float, &GravityScale, 0.0f, 1.0f, 0.01f });
@@ -146,6 +149,7 @@ FVector UProjectileMovementComponent::ComputeEffectiveVelocity() const
     return FVector();
 }
 
+//버그 해결을 위해 eggActor만 멈추게 바꿈
 bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult)
 {
 	(void)UpdatedSceneComponent;
@@ -153,12 +157,12 @@ bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSce
 	(void)MoveDelta;
 	
 	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
-	StopSimulating();
-
 	AEggActor* Egg = Cast<AEggActor>(Owner);
 
     if (Egg)
     {
+		StopSimulating();
+
         if (UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Egg->GetRootComponent()))
 		{
 			Mesh->SetVisibility(false);
@@ -195,9 +199,9 @@ bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSce
 		Setting.FadeOutTime = 0.1f;
 		Setting.TotalLifetime = 4.0f;
 		Decal->SetFadeSetting(Setting);
+		return true;
     }
-
-	return true;
+	return false;
 }
 
 bool UProjectileMovementComponent::CheckBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, FHitResult& OutHitResult)
