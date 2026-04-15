@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/AActor.h"
 
 class UHeightFogComponent;
+class UBillboardComponent;
 
 class AHeightFogActor : public AActor
 {
@@ -16,4 +17,5 @@ public:
 
 private:
 	UHeightFogComponent* FogComponent = nullptr;
+	UBillboardComponent* BillboardComponent = nullptr;
 };
