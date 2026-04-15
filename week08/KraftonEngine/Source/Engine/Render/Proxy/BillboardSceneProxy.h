@@ -17,6 +17,6 @@ public:
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
 
-private:
+protected:
 	UBillboardComponent* GetBillboardComponent() const;
 };
