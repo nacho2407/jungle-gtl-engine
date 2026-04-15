@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "250",
+      "PrimitiveKey" : "8",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -120,7 +120,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -146,12 +146,12 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [0.324429, -6.369399, -32.778778],
+          "Location" : [0.324429, -6.000000, -34.568130],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
           "Rotation" : [90.000000, 90.000000, -6.100006],
-          "Scale" : [24.100000, 7.900000, 21.400000],
+          "Scale" : [24.000000, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
         }
@@ -163,7 +163,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -189,12 +189,12 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [-15.616149, -6.407476, -34.584602],
+          "Location" : [-15.616149, -6.000000, -34.568130],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
           "Rotation" : [90.000000, 90.000793, -6.100006],
-          "Scale" : [28.200001, 7.900000, 21.400000],
+          "Scale" : [24.000000, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
         }
@@ -206,7 +206,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -232,12 +232,12 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [-31.718283, -5.833162, -37.583469],
+          "Location" : [-31.718283, -6.000000, -34.568130],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
           "Rotation" : [90.000000, 90.000793, -6.100006],
-          "Scale" : [32.299999, 7.900000, 21.400000],
+          "Scale" : [24.000000, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
         }
@@ -249,7 +249,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -275,12 +275,12 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [-47.411156, -5.745357, -38.650204],
+          "Location" : [-47.411156, -6.000000, -34.568130],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
           "Rotation" : [90.000000, 90.000793, -6.100006],
-          "Scale" : [34.900002, 7.900000, 21.400000],
+          "Scale" : [24.000000, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
         }
@@ -306,6 +306,350 @@
         }
       },
       "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [1.547532, -25.900146, -22.011225],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [9.100000, 5.500000, 33.000000],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [-13.877405, -25.900146, -22.011225],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [9.100000, 5.500000, 33.000000],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [-30.208361, -25.900146, -22.011225],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [9.100000, 5.500000, 33.000000],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [-45.329262, -25.900146, -22.011225],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [9.100000, 5.500000, 33.000000],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [1.547532, -27.771666, 1.777375],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [20.299999, 12.000000, 44.099998],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [-13.877405, -27.771666, 1.777375],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [11.900000, 10.400001, 44.099998],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [-30.208361, -27.771666, 1.777375],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [11.900000, 10.400001, 44.099998],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.100000],
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 0.600000],
+              "Height" : 5.800000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Material" : {
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Width" : 21.299999,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Height Falloff" : 0.200000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
+          "Location" : [-45.329262, -27.771666, 1.777375],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 72.500000],
+          "Scale" : [11.900000, 10.400001, 44.099998],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Default",
@@ -314,12 +658,12 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-11.734076, 9.275374, -7.421498],
+    "Location" : [-42.306187, 12.092099, -10.257293],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 46.836483, -118.031876]
+    "Rotation" : [0.000000, 23.136015, -93.280411]
   },
   "Primitives" : {
-    "250" : {
+    "8" : {
       "Location" : [1.749607, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Data/church/eglise-sketchfab5.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
