@@ -36,9 +36,7 @@ IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
-	// 프록시가 아직 남아 있으면 Owner 역참조를 방지
-	if (SceneProxy)
-		SceneProxy->Owner = nullptr;
+	DestroyRenderState();
 }
 
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
