@@ -54,6 +54,10 @@ bool FRenderPipeline::Initialize()
     PostProcessOutlineRenderPass = std::make_shared<FPostProcessOutlineRenderPass>();
     PostProcessOutlineRenderPass->Initialize();
 
+	LightRenderPass->SetSkipWireframe(true);
+    FogRenderPass->SetSkipWireframe(true);
+    FXAARenderPass->SetSkipWireframe(true);
+
 	/**
 	 * 하나의 Render Pass 가 다음 Rneder Pass 에 넘기는 OutSRV 에 대해선 주의가 필요하다.
 	 * LightRenderPass -> FogRenderPass 로 갈 때 LightSRV 를 넘겨도 되지만
@@ -84,20 +88,6 @@ bool FRenderPipeline::Render(const FRenderPassContext* Context)
 
 	for (std::shared_ptr<FBaseRenderPass> Pass : RenderPasses)
 	{
-        /*
-			Wireframe 모드에선 다음과 같은 Render Pass 무시
-		*/
-        const bool bWireframeView = (Context->RenderBus != nullptr) && (Context->RenderBus->GetViewMode() == EViewMode::Wireframe);
-        const bool bSkipForWireframe =
-            (Pass.get() == LightRenderPass.get()) ||
-            (Pass.get() == FogRenderPass.get()) ||
-            (Pass.get() == FXAARenderPass.get());
-
-        if (bWireframeView && bSkipForWireframe)
-        {
-            continue;
-        }
-
         Pass->SetPrevPassSRV(OutSRV);
         Pass->SetPrevPassRTV(OutRTV);
         Pass->Render(Context);
