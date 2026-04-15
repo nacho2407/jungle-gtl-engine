@@ -99,7 +99,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
     KoreanBuilder.BuildRanges(&FontGlyphRanges);
 
-    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
+    IO.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/malgun.ttf", 16.0f, nullptr, FontGlyphRanges.Data);
 
     ImFontConfig icon_config;
     icon_config.MergeMode = true;  // 중요: 앞서 로드한 맑은 고딕에 폰트를 병합합니다.
@@ -114,12 +114,12 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
         0,              // 배열의 끝을 알리는 0
     };
 
-    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisym.ttf", 16.0f, &icon_config, icon_ranges);
+    IO.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/seguisym.ttf", 16.0f, &icon_config, icon_ranges);
 
     // 2차: msyh.ttc — 한자 전체를 malgun이 없는 글리프에만 병합 (fallback)
     ImFontConfig MergeConfig;
     MergeConfig.MergeMode = true;
-    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 16.0f, &MergeConfig,
+    IO.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/msyh.ttc", 16.0f, &MergeConfig,
                                  IO.Fonts->GetGlyphRangesChineseFull());
 
     ImGui_ImplWin32_Init((void*)InWindow->GetHWND());

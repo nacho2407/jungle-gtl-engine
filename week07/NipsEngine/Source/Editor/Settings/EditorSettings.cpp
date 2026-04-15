@@ -31,6 +31,7 @@ namespace EditorKey
 	constexpr const char* ViewMode = "ViewMode";
 	constexpr const char* bPrimitives = "bPrimitives";
 	constexpr const char* bGrid = "bGrid";
+	constexpr const char* bAxis = "bAxis";
 	constexpr const char* bGizmo = "bGizmo";
 	constexpr const char* bBillboardText = "bBillboardText";
 	constexpr const char* bBoundingVolume = "bBoundingVolume";
@@ -88,6 +89,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	ViewObj[EditorKey::ViewMode] = static_cast<int32>(ViewMode);
 	ViewObj[EditorKey::bPrimitives] = ShowFlags.bPrimitives;
 	ViewObj[EditorKey::bGrid] = ShowFlags.bGrid;
+	ViewObj[EditorKey::bAxis] = ShowFlags.bAxis;
 	ViewObj[EditorKey::bGizmo] = ShowFlags.bGizmo;
 	ViewObj[EditorKey::bBillboardText] = ShowFlags.bBillboardText;
 	ViewObj[EditorKey::bBoundingVolume] = ShowFlags.bBoundingVolume;
@@ -211,6 +213,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			ShowFlags.bPrimitives = ViewObj[EditorKey::bPrimitives].ToBool();
 		if (ViewObj.hasKey(EditorKey::bGrid))
 			ShowFlags.bGrid = ViewObj[EditorKey::bGrid].ToBool();
+		if (ViewObj.hasKey(EditorKey::bAxis))
+			ShowFlags.bAxis = ViewObj[EditorKey::bAxis].ToBool();
 		if (ViewObj.hasKey(EditorKey::bGizmo))
 			ShowFlags.bGizmo = ViewObj[EditorKey::bGizmo].ToBool();
 		if (ViewObj.hasKey(EditorKey::bBillboardText))
