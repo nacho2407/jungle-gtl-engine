@@ -1,0 +1,11 @@
+{
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/vitrail-droite.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/church/TexturesCom_WindowStainedGlass0098_1_M.jpg"
+  }
+}

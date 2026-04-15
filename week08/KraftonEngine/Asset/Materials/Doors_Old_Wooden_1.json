@@ -1,14 +1,11 @@
 {
-  "BlendState" : "",
-  "DepthStencilState" : "",
   "Parameters" : {
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
   },
-  "PathFileName" : "Asset/Materials/Skin.json",
-  "RasterizerState" : "",
+  "PathFileName" : "Asset/Materials/Doors_Old_Wooden_1.json",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/Lumine/Texture/Clothes.png"
+    "DiffuseTexture" : "Data/church/TextureAtlasEntree.png"
   }
 }
