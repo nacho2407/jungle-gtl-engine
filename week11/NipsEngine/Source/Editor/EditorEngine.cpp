@@ -238,12 +238,12 @@ void UEditorEngine::ResetViewport()
     {
         FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
         ViewportClient.CreateCamera();
-        ViewportClient.SetWorld(GetFocusedWorld());
+        ViewportClient.SetWorld(GetWorld());
         ViewportClient.ApplyCameraMode();
     }
 
     // 디폴트로 0번 뷰포트의 카메라를 월드 활성 카메라로 재등록
-    GetFocusedWorld()->SetActiveCamera(ViewportLayout.GetIndexedViewportClientCamera(0));
+    GetWorld()->SetActiveCamera(ViewportLayout.GetIndexedViewportClientCamera(0));
 }
 
 void UEditorEngine::CloseScene()
