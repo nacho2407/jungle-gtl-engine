@@ -38,7 +38,7 @@ PSInput mainVS(VSInput input)
 
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     output.ClipPos = ApplyMVP(input.Position);
-    output.ClipPos.z -= 0.1f;
+    output.ClipPos.z -= 0.0001f;
     output.UV = input.UV;
     return output;
 }
@@ -48,16 +48,21 @@ PSOutput mainPS(PSInput input) : SV_Target
     PSOutput output;
     
     float4 localPos = mul(float4(input.WorldPos, 1.0f), InvDecalWorld);
-    
     clip(0.5f - abs(localPos.xyz));
+    
+    float3 decalForward = normalize(InvDecalWorld[0].xyz);
+    
+    float cosAngle = saturate(dot(input.WorldNormal, -decalForward));
+    float angleFade = saturate(cosAngle * 4.0f);
     
     float2 decalUV;
     decalUV.xy = localPos.yz + 0.5f;
     decalUV.y = 1.0f - decalUV.y;
     
     float4 decalTex = DiffuseMap.Sample(SampleState, decalUV);
-    
+        
     output.Color = decalTex * DecalColorTint;
+    output.Color.a *= angleFade;
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     
     return output;
