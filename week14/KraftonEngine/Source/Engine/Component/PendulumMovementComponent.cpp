@@ -2,7 +2,7 @@
 
 #include "Component/SceneComponent.h"
 #include "Math/MathUtils.h"
-#include "Math/Quat.h"
+
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
@@ -14,6 +14,11 @@ void UPendulumMovementComponent::BeginPlay()
 {
 	UMovementComponent::BeginPlay();
 	ElapsedTime = 0.0f;
+
+	if (USceneComponent* Target = GetUpdatedComponent())
+	{
+		InitialRelativeRotation = Target->GetRelativeQuat();
+	}
 }
 
 void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
@@ -25,7 +30,7 @@ void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	{
 		return;
 	}
-
+	
 	ElapsedTime += DeltaTime;
 
 	// angle = Amplitude * sin(2π * Frequency * t + Phase)
@@ -41,7 +46,10 @@ void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	}
 
 	FQuat SwingQuat = FQuat::FromAxisAngle(NormalizedAxis, AngleRad);
-	Target->SetRelativeRotation(SwingQuat);
+
+	FQuat FinalQuat = InitialRelativeRotation * SwingQuat;
+
+	Target->SetRelativeRotation(FinalQuat);
 }
 
 void UPendulumMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
