@@ -1,4 +1,4 @@
-#include "GPUOcclusionCulling.h"
+﻿#include "GPUOcclusionCulling.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Profiling/Stats.h"
 
@@ -102,6 +102,7 @@ void FGPUOcclusionCulling::Release()
 	for (uint32 i = 0; i < STAGING_COUNT; i++)
 	{
 		StagingProxies[i].clear();
+		StagingProxyIds[i].clear();
 		StagingProxyCount[i] = 0;
 	}
 	WriteIndex = 0;
@@ -115,6 +116,7 @@ void FGPUOcclusionCulling::InvalidateResults()
 	for (uint32 i = 0; i < STAGING_COUNT; i++)
 	{
 		StagingProxies[i].clear();
+		StagingProxyIds[i].clear();
 		StagingProxyCount[i] = 0;
 		StagingMaxProxyId[i] = 0;
 	}
@@ -288,6 +290,7 @@ void FGPUOcclusionCulling::ReleaseBuffers()
 	{
 		if (StagingBuffers[i]) { StagingBuffers[i]->Release(); StagingBuffers[i] = nullptr; }
 		StagingProxies[i].clear();
+		StagingProxyIds[i].clear();
 		StagingProxyCount[i] = 0;
 	}
 	AABBBufferCapacity = VisibilityBufferCapacity = 0;
@@ -403,12 +406,16 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 		OccludedBits.resize(wordCount);
 		memset(OccludedBits.data(), 0, wordCount * sizeof(uint32));
 
+		// proxies[]에 저장된 포인터가 해제되었을 수 있으므로, 안전하게 저장해둔 ProxyId 배열을 사용
+		const auto& proxyIds = StagingProxyIds[ReadIdx];
 		for (uint32 i = 0; i < count; i++)
 		{
 			if (vis[i] == 0)
 			{
-				uint32 id = proxies[i]->ProxyId;
-				OccludedBits[id >> 5] |= (1u << (id & 31));
+				uint32 id = proxyIds[i];
+				// id가 wordCount 범위를 벗어나지 않도록 방어적 체크
+				if (id / 32 < OccludedBits.size())
+					OccludedBits[id >> 5] |= (1u << (id & 31));
 			}
 		}
 
@@ -426,6 +433,7 @@ void FGPUOcclusionCulling::BeginGatherAABB(uint32 ExpectedCount)
 	auto& curProxies = StagingProxies[WriteIndex];
 	curProxies.resize(ExpectedCount);
 	CPUAABBStaging.resize(ExpectedCount);
+	StagingProxyIds[WriteIndex].resize(ExpectedCount);
 	PreGatherWritePos = 0;
 	PreGatherMaxId = 0;
 	bPreGathered = false;
@@ -438,6 +446,7 @@ void FGPUOcclusionCulling::GatherAABB(FPrimitiveSceneProxy* Proxy)
 	auto& curProxies = StagingProxies[WriteIndex];
 	uint32 pos = PreGatherWritePos;
 	curProxies[pos] = Proxy;
+	StagingProxyIds[WriteIndex][pos] = Proxy->ProxyId;
 	if (Proxy->ProxyId > PreGatherMaxId) PreGatherMaxId = Proxy->ProxyId;
 	const FBoundingBox& B = Proxy->CachedBounds;
 	CPUAABBStaging[pos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
@@ -477,6 +486,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 			auto& curProxies = StagingProxies[WriteIndex];
 			curProxies.resize(visCount);
 			CPUAABBStaging.resize(visCount);
+			StagingProxyIds[WriteIndex].resize(visCount);
 			FGPUOcclusionAABB* staging = CPUAABBStaging.data();
 			uint32 writePos = 0;
 			uint32 maxId = 0;
@@ -487,10 +497,11 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 				if (!Proxy || Proxy->bNeverCull) continue;
 
 				curProxies[writePos] = Proxy;
+				StagingProxyIds[WriteIndex][writePos] = Proxy->ProxyId;
 				if (Proxy->ProxyId > maxId) maxId = Proxy->ProxyId;
 				const FBoundingBox& B = Proxy->CachedBounds;
 				staging[writePos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
-				                      B.Max.X, B.Max.Y, B.Max.Z, 0.0f };
+									   B.Max.X, B.Max.Y, B.Max.Z, 0.0f };
 				writePos++;
 			}
 

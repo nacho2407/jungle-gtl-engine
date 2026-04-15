@@ -9,6 +9,7 @@
 #include "GameFramework/EggActor.h"
 #include "GameFramework/ExponentialHeightFog.h"
 #include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/SpotlightActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -76,7 +77,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 				SpawnedActor = Actor;
 				break;
 			}
-			case 3: // Decal
+			case 3: // Egg
 			{
 				AEggActor* Actor = World->SpawnActor<AEggActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
@@ -85,9 +86,18 @@ void FEditorControlWidget::Render(float DeltaTime)
 				SpawnedActor = Actor;
 				break;
 			}
-			case 4: // Decal
+			case 4: // Fog
 			{
 				AExponentialHeightFog* Actor = World->SpawnActor<AExponentialHeightFog>();
+				Actor->SetActorLocation(CurSpawnPoint);
+				Actor->InitDefaultComponents();
+				World->InsertActorToOctree(Actor);
+				SpawnedActor = Actor;
+				break;
+			}
+			case 5: // Decal
+			{
+				ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
 				Actor->InitDefaultComponents();
 				World->InsertActorToOctree(Actor);

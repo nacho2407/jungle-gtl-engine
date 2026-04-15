@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
 #include "Core/CoreTypes.h"
@@ -104,6 +104,8 @@ private:
 	static constexpr uint32 STAGING_COUNT = 3;
 	ID3D11Buffer* StagingBuffers[STAGING_COUNT] = {};
 	TArray<const FPrimitiveSceneProxy*> StagingProxies[STAGING_COUNT];
+	// 안전한 ID 참조를 위해 포인터와 별도로 ProxyId를 저장
+	TArray<uint32> StagingProxyIds[STAGING_COUNT];
 	uint32 StagingProxyCount[STAGING_COUNT] = {};
 	uint32 StagingMaxProxyId[STAGING_COUNT] = {};
 	uint32 WriteIndex = 0;   // 현재 프레임 기록용
