@@ -819,7 +819,15 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	{
 		Mat->FilePath = MtlFilePath;
 		Mat->SetShader(Shader);
-		Materials[Name] = Mat;
+
+		if (Materials.find(Name) != Materials.end())
+		{
+			UE_LOG("Warning: Material with name '%s' already exists. Overwriting.", Name.c_str());
+		}
+		else
+		{
+			Materials[Name] = Mat;
+		}
 	}
 
 	// TODO: 개선 필요해보임
