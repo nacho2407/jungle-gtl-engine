@@ -21,6 +21,7 @@ class FEditorMaterialWidget : public FEditorWidget
 {
 public:
     void Render(float DeltaTime) override;
+    void ResetSelection();
 
 private:
 	void RenderMaterialEditor(UPrimitiveComponent* PrimitiveComp);

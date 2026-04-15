@@ -36,6 +36,7 @@ void FEditorSceneWidget::NewScene()
 		return;
 	}
 
+	EditorEngine->GetMainPanel().ResetWidgetSelections();
 	EditorEngine->NewScene();
 	NewSceneNotificationTimer = common::constants::ImGui::NotificationTimer;
 }
@@ -118,6 +119,7 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 		return;
 	}
 
+	EditorEngine->GetMainPanel().ResetWidgetSelections();
 	EditorEngine->ClearScene();
 	FWorldContext LoadCtx;
 	FEditorCameraState LoadedCam;
