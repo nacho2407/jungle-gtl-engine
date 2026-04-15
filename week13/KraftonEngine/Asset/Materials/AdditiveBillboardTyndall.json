@@ -1,0 +1,10 @@
+{
+  "PathFileName" : "Asset/Materials/AdditiveBillboardTyndall.json",
+  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
+  "RenderPass" : "AlphaBlend",
+  "BlendState" : "Additive",
+  "DepthStencilState" : "DepthReadOnly",
+  "Textures" : {
+    "DiffuseTexture" : "Data/FakeLight/Tyndall.png"
+  }
+}
