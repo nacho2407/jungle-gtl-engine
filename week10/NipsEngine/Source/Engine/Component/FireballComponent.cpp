@@ -12,17 +12,18 @@ void UFireballComponent::PostDuplicate(UObject* Original)
 {
     UPrimitiveComponent::PostDuplicate(Original);
 
-    const UPrimitiveComponent* Orig = Cast<UFireballComponent>(Original);
+    const UFireballComponent* Orig = Cast<UFireballComponent>(Original);
+	Color = Orig->Color;
 }
 
 void UFireballComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UPrimitiveComponent::GetEditableProperties(OutProps);
 
-    OutProps.push_back({ "Radius", EPropertyType::Float, &Radius });
+    OutProps.push_back({ "Radius",		   EPropertyType::Float, &Radius });
     OutProps.push_back({ "Radius Falloff", EPropertyType::Float, &RadiusFallOff });
-    OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity });
-    OutProps.push_back({ "Color", EPropertyType::Color, &Color });
+    OutProps.push_back({ "Intensity",	   EPropertyType::Float, &Intensity });
+    OutProps.push_back({ "Color",		   EPropertyType::Color, &Color });
 }
 
 void UFireballComponent::PostEditProperty(const char* PropertyName)
