@@ -125,7 +125,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 
 	namespace fs = std::filesystem;
 	
-	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
+	const fs::path RootPath = fs::path(FPaths::RootDir()); // Hack: 임시방편으로 프로젝트 루트에서 탐색
 	
 	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
 
