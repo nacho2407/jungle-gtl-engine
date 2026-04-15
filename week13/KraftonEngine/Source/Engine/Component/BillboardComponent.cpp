@@ -2,10 +2,11 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
-#include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 
 #include <cstring>
 
@@ -20,7 +21,7 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << bIsBillboard;
-	Ar << TextureName;
+	Ar << MaterialSlot.Path;
 	Ar << Width;
 	Ar << Height;
 }
@@ -28,22 +29,37 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 void UBillboardComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
-	// 텍스처 SRV 재바인딩
-	SetTexture(TextureName);
+
+	if (!MaterialSlot.Path.empty() && MaterialSlot.Path != "None")
+	{
+		UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+		if (LoadedMat)
+		{
+			SetMaterial(LoadedMat);
+		}
+	}
 }
 
-void UBillboardComponent::SetTexture(const FName& InTextureName)
+void UBillboardComponent::SetMaterial(UMaterial* InMaterial)
 {
-	TextureName = InTextureName;
-	CachedTexture = FResourceManager::Get().FindTexture(InTextureName);
-	// 텍스처 유무가 Billboard/Primitive 셰이더 분기를 좌우하므로 Mesh 단계까지 재갱신 필요.
+	Material = InMaterial;
+	if (Material)
+	{
+		MaterialSlot.Path = Material->GetAssetPathFileName();
+	}
+	else
+	{
+		MaterialSlot.Path = "None";
+	}
+	// 머티리얼 변경 시 렌더 스테이트와 프록시 갱신
+	MarkProxyDirty(EDirtyFlag::Material);
 	MarkProxyDirty(EDirtyFlag::Mesh);
 }
 
 void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Texture", EPropertyType::Name, &TextureName });
+	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, &MaterialSlot });
 	OutProps.push_back({ "Width",  EPropertyType::Float, &Width,  0.1f, 100.0f, 0.1f });
 	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
 }
@@ -52,9 +68,21 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Texture") == 0)
+	if (strcmp(PropertyName, "Material") == 0)
 	{
-		SetTexture(TextureName);
+		if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
+		{
+			SetMaterial(nullptr);
+		}
+		else
+		{
+			UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+			if (LoadedMat)
+			{
+				SetMaterial(LoadedMat);
+			}
+		}
+		MarkRenderStateDirty();
 	}
 	else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
 	{
