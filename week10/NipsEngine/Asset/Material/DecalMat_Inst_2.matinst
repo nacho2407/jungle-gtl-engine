@@ -1,5 +1,5 @@
 {
-        "Name" : "DecalMat_Inst_2.matinst",
+        "Name" : "Asset/Material/DecalMat_Inst_2.matinst",
         "OverridedParams" : [{
             "Name" : "InvDecalWorld",
             "Type" : "Matrix4",
