@@ -3,6 +3,8 @@
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Editor/Viewport/ViewportCamera.h"
+#include "Editor/EditorEngine.h"
+#include "Engine/Runtime/Engine.h"
 
 DEFINE_CLASS(UPursuitMovementComponent, UMovementComponent)
 REGISTER_FACTORY(UPursuitMovementComponent)
@@ -27,7 +29,13 @@ float GetPitch(const FVector& NormDir)
 }
 } // namespace
 
-void UPursuitMovementComponent::BeginPlay() {}
+void UPursuitMovementComponent::BeginPlay() {
+	if (bAutoTargetPerspCamera && !Target) {
+		if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine)) {
+			Target = EditorEngine->GetCamera();
+		}
+	}
+}
 
 void UPursuitMovementComponent::TickComponent(float DeltaTime) {
 	if (!IsInPursuit()) return;
