@@ -22,6 +22,8 @@ bool FBaseRenderPass::Render(const FRenderPassContext* Context)
 
 void FBaseRenderPass::CheckOverrideViewMode(const FRenderPassContext* Context)
 {
+    if (bSkipWireframe && Context->RenderBus->GetViewMode() == EViewMode::Wireframe)
+        return;
     /*
         RasterizerState 를 Material 에서 들고 있는 상태라, 전역 설정인 ViewMode 간의 override 가 필요한데
         현재는 우선 Bind 이후 Override 하는 방식으로 임시 처리
