@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMaterialWidget.h"
+﻿#include "Editor/UI/EditorMaterialWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -24,7 +24,16 @@ void FEditorMaterialWidget::Render(float DeltaTime)
     ImGui::Begin("Material Editor");
 
 	FEditorPropertyWidget& PropWidget = EditorEngine->GetMainPanel().GetPropertyWidget();
-	USceneComponent* CurrentComp = Cast<USceneComponent>(PropWidget.GetSelectedComponent());
+	
+	UActorComponent* ActorComp = PropWidget.GetSelectedComponent();
+	
+	if (ActorComp == nullptr)
+	{
+		ImGui::End();
+		return;
+	}
+
+	USceneComponent* CurrentComp = Cast<USceneComponent>(ActorComp);
 
 	// 만약 액터가 선택되어 있고 루트 컴포넌트가 있다면 그것을 기본으로 사용
 	if (PropWidget.IsActorSelected())
@@ -33,7 +42,7 @@ void FEditorMaterialWidget::Render(float DeltaTime)
 		CurrentComp = PrimaryActor ? PrimaryActor->GetRootComponent() : nullptr;
 	}
 
-	if (CurrentComp != SelectedComponent)
+	if (CurrentComp && CurrentComp != SelectedComponent)
 	{
 		SelectedComponent = CurrentComp;
 		SelectedSectionIndex = -1;
