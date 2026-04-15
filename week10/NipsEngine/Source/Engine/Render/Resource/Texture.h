@@ -29,6 +29,8 @@ public:
 
 	bool LoadFromFile(const FString& InFilePath, ID3D11Device* InDevice);
 
+	const FString& GetFilePath() const { return FilePath; }
+
 	ID3D11ShaderResourceView** GetAddressOfSRV() { return &TextureData.SRV; }
 	ID3D11ShaderResourceView* GetSRV() const { return TextureData.SRV; }
 
