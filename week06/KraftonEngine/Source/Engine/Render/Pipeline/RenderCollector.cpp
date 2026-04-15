@@ -35,7 +35,7 @@ void FRenderCollector::CollectWorld(UWorld* World, FRenderBus& RenderBus)
 {
 	if (!World) return;
 
-	if (!RenderBus.IsOrtho())
+	if (!RenderBus.IsOrtho() && RenderBus.GetShowFlags().bFog)
 	{
 		if (UExponentialHeightFogComponent* FogComponent = World->GetScene().GetPrimaryExponentialHeightFog())
 		{
