@@ -511,7 +511,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
 		{
 			const FStaticMeshSection& Section = Sections[SectionIdx];
-			UMaterial* Material = Cast<UMaterial>(StaticMeshComp->GetMaterial(SectionIdx));
+			UMaterialInterface* Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
 
 			FRenderCommand Cmd = {};
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
