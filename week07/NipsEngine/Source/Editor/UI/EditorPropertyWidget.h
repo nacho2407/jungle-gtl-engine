@@ -15,6 +15,9 @@ public:
 
 	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
 	bool IsActorSelected() const { return bActorSelected; }
+
+	void ResetSelection();
+
 private:
 	// 선택 상태 관리
 	void UpdateSelectionState(AActor* PrimaryActor);
