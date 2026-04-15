@@ -289,11 +289,6 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 	FVector PosB = TopologicalVertices[ib].Position;
 	FVector PosMid = (PosA + PosB) * 0.5f;
 
-	// [중요] 이전 코드에서 빠져있었던 에러 사전 계산 (FLT_MAX 방지)
-	float ErrorA = CalculateVertexError(Q, PosA);
-	float ErrorB = CalculateVertexError(Q, PosB);
-	float ErrorMid = CalculateVertexError(Q, PosMid);
-
 	// 1. 성게(Spike) 버그를 막기 위한 3x3 수동 행렬식 검사
 	float det3x3 =
 		Q.M[0][0] * (Q.M[1][1] * Q.M[2][2] - Q.M[1][2] * Q.M[2][1]) -
@@ -303,14 +298,36 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 	FMatrix Q_Opt = Q;
 	Q_Opt.M[3][0] = 0.0f; Q_Opt.M[3][1] = 0.0f; Q_Opt.M[3][2] = 0.0f; Q_Opt.M[3][3] = 1.0f;
 
-	if (std::abs(det3x3) > 1e-3f && Q_Opt.IsInvertible())
+	if (std::abs(det3x3) > 1e-3f)
 	{
-		FMatrix Q_Inv = Q_Opt.GetInverse();
-		Candidate.OptimalPos = FVector(Q_Inv.M[0][3], Q_Inv.M[1][3], Q_Inv.M[2][3]);
-		Candidate.Error = CalculateVertexError(Q, FVector(Q_Inv.M[0][3], Q_Inv.M[1][3], Q_Inv.M[2][3]));
+		// Q의 3x3 부분의 역행렬 × [-Q[0][3], -Q[1][3], -Q[2][3]] 만 계산
+		// Cramer's Rule: 3x3 adjugate의 마지막 열만 구하면 됨
+		float invDet = 1.0f / det3x3;
+
+		float optX = invDet * (
+			-(Q.M[1][1] * Q.M[2][2] - Q.M[1][2] * Q.M[2][1]) * Q.M[0][3]
+			+(Q.M[0][1] * Q.M[2][2] - Q.M[0][2] * Q.M[2][1]) * Q.M[1][3]
+			-(Q.M[0][1] * Q.M[1][2] - Q.M[0][2] * Q.M[1][1]) * Q.M[2][3]);
+
+		float optY = invDet * (
+			+(Q.M[1][0] * Q.M[2][2] - Q.M[1][2] * Q.M[2][0]) * Q.M[0][3]
+			-(Q.M[0][0] * Q.M[2][2] - Q.M[0][2] * Q.M[2][0]) * Q.M[1][3]
+			+(Q.M[0][0] * Q.M[1][2] - Q.M[0][2] * Q.M[1][0]) * Q.M[2][3]);
+
+		float optZ = invDet * (
+			-(Q.M[1][0] * Q.M[2][1] - Q.M[1][1] * Q.M[2][0]) * Q.M[0][3]
+			+(Q.M[0][0] * Q.M[2][1] - Q.M[0][1] * Q.M[2][0]) * Q.M[1][3]
+			-(Q.M[0][0] * Q.M[1][1] - Q.M[0][1] * Q.M[1][0]) * Q.M[2][3]);
+
+		Candidate.OptimalPos = FVector(optX, optY, optZ);
+		Candidate.Error = CalculateVertexError(Q, FVector(Candidate.OptimalPos));
 	}
 	else
 	{
+		float ErrorA   = CalculateVertexError(Q, PosA);
+		float ErrorB   = CalculateVertexError(Q, PosB);
+		float ErrorMid = CalculateVertexError(Q, PosMid);
+
 		Candidate.Error = std::min({ErrorA, ErrorB, ErrorMid});
 		if (Candidate.Error == ErrorMid)    Candidate.OptimalPos = PosMid;
 		else if (Candidate.Error == ErrorA) Candidate.OptimalPos = PosA;

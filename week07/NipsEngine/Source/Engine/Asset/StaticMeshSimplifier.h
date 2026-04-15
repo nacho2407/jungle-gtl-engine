@@ -18,7 +18,7 @@ struct FTopologicalVertex
 struct FCollapseCandidate
 {
 	FIndexEdge Edge;         
-	FVector4 OptimalPos; 
+	FVector OptimalPos; 
 	float Error = FLT_MAX;
 
 	bool operator<(const FCollapseCandidate& Other) const
