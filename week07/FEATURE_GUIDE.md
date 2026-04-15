@@ -1,8 +1,4 @@
-# NipsEngine 신규 기능 개발 가이드 (Decal, Fog, Fireball/SubUV)
-
-본 문서는 NipsEngine에 최근 구현된 Decal, Height Fog, Fireball 및 SubUV 시스템의 기술적 상세와 사용법을 설명합니다.
-
----
+# Week06 Team4 엔진 설명 문서
 
 ## 1. Decal (데칼 시스템)
 
@@ -23,7 +19,7 @@
 
 ---
 
-## 2. Height Fog (하이트 포그 시스템)
+## 2. Height Fog
 
 공기 중의 안개 효과를 시뮬레이션하며, 고도에 따른 밀도 변화를 지원합니다.
 
@@ -45,7 +41,7 @@
 
 ---
 
-## 3. Fireball & SubUV (파티클 및 스프라이트 시스템)
+## 3. Fireball
 
 ### 3.1 Fireball (파이어볼)
 파이어볼은 태양과 같은 발광체를 표현하기 위한 복합 액터입니다.
@@ -53,18 +49,6 @@
   - `StaticMesh`: 구체(Sphere) 형태의 메시 (`Asset/Mesh/Sun/sun.obj`).
   - `UFireballComponent`: 광원 정보를 담는 컴포넌트로, `RenderCollector`에서 감지되어 라이팅 계산에 활용됩니다.
 - **주요 속성**: `Intensity`, `Radius`, `RadiusFallOff`, `Color`.
-
-### 3.2 SubUV (애니메이션 스프라이트)
-텍스처 아틀라스를 사용한 애니메이션 스프라이트 렌더링 시스템입니다.
-- **컴포넌트**: `USubUVComponent` (또는 `ASubUVActor`)
-- **렌더 패스**: `ERenderPass::SubUV`
-- **배처**: `FSubUVBatcher`를 통한 효율적인 일괄 렌더링.
-- **쉐이더**: `ShaderSubUV.hlsl`
-- **주요 기능**:
-  - **아틀라스 지원**: `Columns` x `Rows` 그리드 기반 텍스처 아틀라스 지원.
-  - **재생 제어**: `PlayRate`(FPS), `Loop`(반복 여부) 설정 및 실시간 프레임 인덱스 업데이트.
-  - **빌보딩**: `UBillboardComponent`를 상속받아 항상 카메라를 향하도록 설계되었습니다.
-- **렌더링 최적화**: `FSubUVBatcher`가 동일한 텍스처를 사용하는 스프라이트들을 정렬하여 드로우콜을 최소화합니다.
 
 ---
 
