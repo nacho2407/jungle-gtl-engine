@@ -54,9 +54,6 @@ FScene::~FScene()
 }
 
 // ============================================================
-// AddPrimitive — Component의 CreateSceneProxy()로 구체 프록시 생성 후 등록
-// ============================================================
-// ============================================================
 // RegisterProxy — 프록시를 슬롯에 배치하고 DirtyList에 추가
 // ============================================================
 void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
@@ -85,6 +82,9 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 		NeverCullProxies.push_back(Proxy);
 }
 
+// ============================================================
+// AddPrimitive — Component의 CreateSceneProxy()로 구체 프록시 생성 후 등록
+// ============================================================
 FPrimitiveSceneProxy* FScene::AddPrimitive(UPrimitiveComponent* Component)
 {
 	if (!Component) return nullptr;
