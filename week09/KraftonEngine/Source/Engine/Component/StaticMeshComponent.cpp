@@ -110,6 +110,21 @@ FMeshBuffer* UStaticMeshComponent::GetMeshBuffer() const
 	return Asset->RenderBuffer.get();
 }
 
+FMeshDataView UStaticMeshComponent::GetMeshDataView() const
+{
+	if (!StaticMesh) return {};
+	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
+	if (!Asset || Asset->Vertices.empty()) return {};
+
+	FMeshDataView View;
+	View.VertexData  = Asset->Vertices.data();
+	View.VertexCount = (uint32)Asset->Vertices.size();
+	View.Stride      = sizeof(FNormalVertex);
+	View.IndexData   = Asset->Indices.data();
+	View.IndexCount  = (uint32)Asset->Indices.size();
+	return View;
+}
+
 void UStaticMeshComponent::UpdateWorldAABB() const
 {
 	if (!bHasValidBounds)

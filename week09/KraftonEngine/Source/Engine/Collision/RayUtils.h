@@ -27,6 +27,16 @@ struct FRayUtils
 		const FMatrix& InverseWorldMatrix,
 		const void* PositionData,
 		uint32 PositionStride,
+		const uint32* IndexData,
+		uint32 IndexCount,
+		FHitResult& OutHitResult);
+
+	static bool RaycastTriangles(
+		const FRay& WorldRay,
+		const FMatrix& WorldMatrix,
+		const FMatrix& InverseWorldMatrix,
+		const void* PositionData,
+		uint32 PositionStride,
 		const TArray<uint32>& Indices,
 		FHitResult& OutHitResult);
 
