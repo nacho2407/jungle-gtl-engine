@@ -1,0 +1,11 @@
+{
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/clean_bulb_light_mat.002.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/Retro-light/Texture/Clean_light_bulb_albedo.png"
+  }
+}
