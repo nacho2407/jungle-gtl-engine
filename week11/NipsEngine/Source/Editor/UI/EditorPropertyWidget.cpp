@@ -404,6 +404,14 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
         {
             FString MoveName = GetMovementComponentDisplayName(MoveComp);
             ImGui::TreeNodeEx(Comp, Flags, "%s", MoveName.c_str());
+
+            // --- DRAG SOURCE (MovementComponent) ---
+            if (ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("DND_MOVE_COMP", &Comp, sizeof(UActorComponent*));
+                ImGui::Text("Moving %s", MoveName.c_str());
+                ImGui::EndDragDropSource();
+            }
         }
         else
         {
@@ -470,6 +478,45 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
     );
 
     if (!bIsRoot) ImGui::PopClipRect();
+
+    // --- DRAG SOURCE (SceneComponent) ---
+    if (ImGui::BeginDragDropSource())
+    {
+        ImGui::SetDragDropPayload("DND_SCENE_COMP", &Comp, sizeof(USceneComponent*));
+        ImGui::Text("Dragging %s", Name.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    // --- DROP TARGET ---
+    if (ImGui::BeginDragDropTarget())
+    {
+        // 1. SceneComponent를 SceneComponent에 드롭 (부착)
+        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_SCENE_COMP"))
+        {
+            USceneComponent* DraggedComp = *(USceneComponent**)Payload->Data;
+            // 자기 자신이나 자신의 조상에게 부착하는 것을 방지
+            bool bIsAncestor = false;
+            for (USceneComponent* P = Comp; P; P = P->GetParent())
+            {
+                if (P == DraggedComp) { bIsAncestor = true; break; }
+            }
+
+            if (DraggedComp && DraggedComp != Comp && !bIsAncestor)
+            {
+                DraggedComp->AttachToComponent(Comp);
+            }
+        }
+        // 2. MovementComponent를 SceneComponent에 드롭 (UpdatedComponent 설정)
+        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_MOVE_COMP"))
+        {
+            UMovementComponent* DraggedMoveComp = *(UMovementComponent**)Payload->Data;
+            if (DraggedMoveComp)
+            {
+                DraggedMoveComp->SetUpdatedComponent(Comp);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
 
     if (ImGui::IsItemClicked())
     {
