@@ -3,6 +3,8 @@
 #include "Editor/Viewport/ViewportCamera.h"
 #include "Engine/Component/GizmoComponent.h"
 #include "GameFramework/World.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/Level.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Collision/RayCollision/RayCollision.h"
 #include "Math/Utils.h"
@@ -86,6 +88,8 @@ void FEditorWorldController::OnLeftMouseClick(float X, float Y)
     TArray<float>                CandidateTs;
     World->GetSpatialIndex().RayQueryPrimitives(Ray, CandidatePrimitives, CandidateTs, RayQueryScratch);
 
+	InputSystem& IS = InputSystem::Get();
+
 	for (int32 CandidateIndex = 0; CandidateIndex < static_cast<int32>(CandidatePrimitives.size()); ++CandidateIndex)
     {
         if (CandidateTs[CandidateIndex] > ClosestDist)
@@ -108,7 +112,7 @@ void FEditorWorldController::OnLeftMouseClick(float X, float Y)
         }
     }
 
-    bool bCtrl = InputSystem::Get().GetKey(VK_CONTROL);
+    bool bCtrl = IS.GetKey(VK_CONTROL);
     if (!BestActor)
     {
         if (!bCtrl)
@@ -191,8 +195,45 @@ void FEditorWorldController::OnRightMouseDrag(float DeltaX, float DeltaY)
 
 void FEditorWorldController::OnKeyPressed(int VK)
 {
+	InputSystem& IS = InputSystem::Get();
+
     switch (VK)
     {
+    case 'D':
+        if (IS.GetKey(VK_CONTROL))
+        {
+            if (World && SelectionManager && !SelectionManager->IsEmpty())
+            {
+                TArray<AActor*> DuplicatedActors;
+                const TArray<AActor*>& SelectedActors = SelectionManager->GetSelectedActors();
+                for (AActor* OriginalActor : SelectedActors)
+                {
+                    if (!OriginalActor) continue;
+
+                    AActor* NewActor = Cast<AActor>(OriginalActor->Duplicate());
+                    if (NewActor)
+                    {
+                        NewActor->SetWorld(World);
+                        if (World->HasBegunPlay())
+                        {
+                            NewActor->BeginPlay();
+                        }
+                        World->GetPersistentLevel()->AddActor(NewActor);
+                        DuplicatedActors.push_back(NewActor);
+                    }
+                }
+
+                if (!DuplicatedActors.empty())
+                {
+                    SelectionManager->ClearSelection();
+                    for (AActor* NewActor : DuplicatedActors)
+                    {
+                        SelectionManager->AddSelect(NewActor);
+                    }
+                }
+            }
+        }
+        break;
     case VK_SPACE:
         if (Gizmo)
             Gizmo->SetNextMode();
