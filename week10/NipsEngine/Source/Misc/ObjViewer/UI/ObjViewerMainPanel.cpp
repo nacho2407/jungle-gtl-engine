@@ -21,7 +21,7 @@ void FObjViewerMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer
 	Window = InWindow;
 
 	// 한글 지원 폰트 로드
-	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+	IO.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
 
 	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
