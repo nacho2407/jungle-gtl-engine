@@ -82,9 +82,25 @@ cbuffer FireballBuffer : register(b7)
     float4x4 InvProjMatrix;
     float4 Color;
     float Intensity;
-    float Radius;
-    float RadiusFalloff;
-    float Padding[2];
-}
+     float Radius;
+     float RadiusFalloff;
+     float Padding[2];
+ }
+
+// b8: FXAA settings
+cbuffer FXAABuffer : register(b8)
+{
+    float2 FxaaRcpFrame;
+    float FXAA_EDGE_THRESHOLD;
+    float FXAA_EDGE_THRESHOLD_MIN;
+
+    float FXAA_SEARCH_THRESHOLD;
+    float FXAA_SUBPIX_TRIM;
+    float FXAA_SUBPIX_CAP;
+    uint FXAA_SUBPIX;
+
+    uint FXAA_SEARCH_STEPS;
+    float2 _FxaaPad0;
+};
 
 #endif // CONSTANT_BUFFERS_HLSL

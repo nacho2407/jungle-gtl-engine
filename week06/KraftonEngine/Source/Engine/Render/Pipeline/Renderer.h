@@ -106,6 +106,7 @@ private:
 	// PostProcess Outline — StencilSRV 읽어 edge detection 후 fullscreen draw
 	void DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 	void DrawPostProcessOutline(const FRenderBus& Bus, ID3D11DeviceContext* Context);
+	void DrawPostProcessFXAA(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 	void DrawPostProcessSceneDepth(const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
 private:

@@ -34,6 +34,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			Viewport.Height,
 			Device.GetFrameBufferRTV(),
 			Device.GetDepthStencilView(),
+			nullptr,
 			Device.GetDepthStencilSRV());
 
 		Collector.CollectWorld(World, Bus);

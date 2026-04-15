@@ -144,5 +144,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 		Camera->SetRelativeRotation(FRotator(CameraRotation[1], CameraRotation[2], CamRot.Roll));
 	}
 
+	SEPARATOR();
+
 	ImGui::End();
 }

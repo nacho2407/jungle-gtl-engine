@@ -61,12 +61,16 @@ void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
 {
 	if (!RTV) return;
 	if (!NormalRTV) return;
+	if (!AlbedoRTV) return;
+	if (!PostProcessRTV) return;
 
 	const float DefaultColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 	const float* Color = ClearColor ? ClearColor : DefaultColor;
 	D3D11_VIEWPORT VPRect = GetViewportRect();
 
 	Ctx->ClearRenderTargetView(NormalRTV, Color);
+	Ctx->ClearRenderTargetView(AlbedoRTV, Color);
+	Ctx->ClearRenderTargetView(PostProcessRTV, Color);
 	Ctx->ClearRenderTargetView(RTV, Color);
 	Ctx->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	Ctx->OMSetRenderTargets(1, &RTV, DSV);
@@ -96,6 +100,15 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 
 	hr = Device->CreateShaderResourceView(RTTexture, nullptr, &SRV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateTexture2D(&TexDesc, nullptr, &PostProcessTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(PostProcessTexture, nullptr, &PostProcessRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(PostProcessTexture, nullptr, &PostProcessSRV);
 	if (FAILED(hr)) return false;
 
 	// ── Normal 렌더 타깃 텍스처 ──
@@ -198,6 +211,9 @@ void FViewport::ReleaseResources()
 	if (DepthSRV) { DepthSRV->Release(); DepthSRV = nullptr; }
 	if (DSV) { DSV->Release(); DSV = nullptr; }
 	if (DepthTexture) { DepthTexture->Release(); DepthTexture = nullptr; }
+	if (PostProcessSRV) { PostProcessSRV->Release(); PostProcessSRV = nullptr; }
+	if (PostProcessRTV) { PostProcessRTV->Release(); PostProcessRTV = nullptr; }
+	if (PostProcessTexture) { PostProcessTexture->Release(); PostProcessTexture = nullptr; }
 	if (SRV) { SRV->Release(); SRV = nullptr; }
 	if (RTV) { RTV->Release(); RTV = nullptr; }
 	if (RTTexture) { RTTexture->Release(); RTTexture = nullptr; }

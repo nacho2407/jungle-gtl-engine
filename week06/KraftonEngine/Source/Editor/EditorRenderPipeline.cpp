@@ -195,6 +195,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
 	const FShowFlags& ShowFlags = Opts.ShowFlags;
 	EViewMode ViewMode = Opts.ViewMode;
+	FFXAAConstants FXAAConstants = Editor->GetSettings().BuildFXAAConstants();
+	if (VP->GetWidth() > 0 && VP->GetHeight() > 0)
+	{
+		FXAAConstants.RcpFrame = FVector2(
+			1.0f / static_cast<float>(VP->GetWidth()),
+			1.0f / static_cast<float>(VP->GetHeight()));
+	}
 
 	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
 	if (VP->ApplyPendingResize())
@@ -212,6 +219,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportInfo(VP);
 	Bus.SetViewportType(Opts.ViewportType);
+	Bus.SetFXAAEnabled(Opts.bEnableFXAA);
+	Bus.SetFXAAConstants(FXAAConstants);
 	Bus.SetOcclusionCulling(&GPUOcclusion);
 	Bus.SetLODContext(World->PrepareLODContext());
 

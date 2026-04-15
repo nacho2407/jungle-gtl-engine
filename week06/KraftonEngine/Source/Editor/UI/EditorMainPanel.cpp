@@ -34,6 +34,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
 	ConsoleWidget.Initialize(InEditorEngine);
 	ControlWidget.Initialize(InEditorEngine);
+	FXAAWidget.Initialize(InEditorEngine);
 	PropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
@@ -83,6 +84,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 				ImGuiWindowFlags_NoDocking);
 			ImGui::Checkbox("Console", &S.UI.bConsole);
 			ImGui::Checkbox("Control", &S.UI.bControl);
+			ImGui::Checkbox("FXAA", &S.UI.bFXAA);
 			ImGui::Checkbox("Property", &S.UI.bProperty);
 			ImGui::Checkbox("Scene", &S.UI.bScene);
 			ImGui::Checkbox("Stat", &S.UI.bStat);
@@ -112,6 +114,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
 		ControlWidget.Render(DeltaTime);
+	}
+
+	if (!bHideEditorWindows && Settings.UI.bFXAA)
+	{
+		SCOPE_STAT_CAT("FXAAWidget.Render", "5_UI");
+		FXAAWidget.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bProperty)
@@ -240,6 +248,7 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 
 	Settings.UI.bConsole = false;
 	Settings.UI.bControl = false;
+	Settings.UI.bFXAA = false;
 	Settings.UI.bProperty = false;
 	Settings.UI.bScene = false;
 	Settings.UI.bStat = false;

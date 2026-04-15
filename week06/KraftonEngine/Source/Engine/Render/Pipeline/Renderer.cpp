@@ -222,6 +222,10 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
 	{
 		ERenderPass CurPass = static_cast<ERenderPass>(i);
+		if (CurPass == ERenderPass::AntiAliasing)
+		{
+			continue;
+		}
 
 		if (bSceneDepthOnly &&
         CurPass == ERenderPass::Grid )
@@ -253,6 +257,15 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 		if (ResourceBinding.UnbindResources)
 			ResourceBinding.UnbindResources(CurPass, InRenderBus, Context);
 	}
+
+	const auto& AABatcher = PassBatchers[(uint32)ERenderPass::AntiAliasing];
+	if (AABatcher)
+	{
+		SCOPE_STAT_CAT("RenderPass::AntiAliasing", "4_ExecutePass");
+		GPU_SCOPE_STAT("RenderPass::AntiAliasing");
+		ApplyPassRenderState(ERenderPass::AntiAliasing, Context, InRenderBus.GetViewMode());
+		AABatcher.DrawBatch(ERenderPass::AntiAliasing, InRenderBus, Context);
+	}
 }
 
 // ============================================================
@@ -276,11 +289,11 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::SceneDepthProcess] = { EDepthStencilState::NoDepth,       EBlendState::Opaque,   ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::AntiAliasing] = { EDepthStencilState::NoDepth,      EBlendState::Opaque,     ERasterizerState::SolidNoCull,    D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::Font] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::SubUV] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Billboard] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
 // ============================================================
@@ -358,6 +371,13 @@ void FRenderer::InitializePassBatchers()
 			DrawPostProcessOutline(Bus, Ctx);
 		},
 		nullptr  // PostProcess는 내���에서 SelectionMask 체크
+	};
+
+	PassBatchers[(uint32)ERenderPass::AntiAliasing] = {
+		[this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
+			DrawPostProcessFXAA(Bus, Ctx);
+		},
+		nullptr
 	};
 }
 
@@ -980,6 +1000,49 @@ void FRenderer::DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* C
 	ID3D11ShaderResourceView* NullSRV = nullptr;
 	Context->PSSetShaderResources(0, 1, &NullSRV);
 	Context->OMSetRenderTargets(1, &RTV, DSV);
+}
+
+void FRenderer::DrawPostProcessFXAA(const FRenderBus& Bus, ID3D11DeviceContext* Context)
+{
+	if (!Bus.IsFXAAEnabled())
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView* SceneSRV = Bus.GetViewportSceneSRV();
+	ID3D11RenderTargetView* PostProcessRTV = Bus.GetViewportPostProcessRTV();
+	if (!SceneSRV || !PostProcessRTV)
+	{
+		return;
+	}
+
+	Context->OMSetRenderTargets(1, &PostProcessRTV, nullptr);
+	Context->PSSetShaderResources(0, 1, &SceneSRV);
+	Context->PSSetSamplers(0, 1, &Resources.DefaultSampler);
+
+	FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
+	if (!FXAAShader)
+	{
+		ID3D11ShaderResourceView* NullSRV = nullptr;
+		Context->PSSetShaderResources(0, 1, &NullSRV);
+		return;
+	}
+
+	FXAAShader->Bind(Context);
+
+	FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBSlot::FXAA, sizeof(FFXAAConstants));
+	const FFXAAConstants& FXAAConstants = Bus.GetFXAAConstants();
+	FXAACB->Update(Context, &FXAAConstants, sizeof(FXAAConstants));
+	ID3D11Buffer* FXAABuffer = FXAACB->GetBuffer();
+	Context->PSSetConstantBuffers(ECBSlot::FXAA, 1, &FXAABuffer);
+
+	Context->IASetInputLayout(nullptr);
+	Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+	Context->Draw(3, 0);
+	FDrawCallStats::Increment();
+
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	Context->PSSetShaderResources(0, 1, &NullSRV);
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.

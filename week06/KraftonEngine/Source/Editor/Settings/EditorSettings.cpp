@@ -2,6 +2,7 @@
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "SimpleJSON/json.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 
@@ -33,7 +34,18 @@ namespace Key
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* EnableFXAA = "EnableFXAA";
 	constexpr const char* bDecal = "bDecal";
+
+	// FXAA
+	constexpr const char* FXAA = "FXAA";
+	constexpr const char* EdgeThreshold = "EdgeThreshold";
+	constexpr const char* EdgeThresholdMin = "EdgeThresholdMin";
+	constexpr const char* SearchThreshold = "SearchThreshold";
+	constexpr const char* SubpixTrim = "SubpixTrim";
+	constexpr const char* SubpixCap = "SubpixCap";
+	constexpr const char* EnableSubpix = "EnableSubpix";
+	constexpr const char* SearchSteps = "SearchSteps";
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
@@ -49,6 +61,7 @@ namespace Key
 	constexpr const char* UIWidgets = "UIWidgets";
 	constexpr const char* ShowConsole = "ShowConsole";
 	constexpr const char* ShowControlPanel = "ShowControlPanel";
+	constexpr const char* ShowFXAAPanel = "ShowFXAAPanel";
 	constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
 	constexpr const char* ShowSceneManager = "ShowSceneManager";
 	constexpr const char* ShowStatProfiler = "ShowStatProfiler";
@@ -112,6 +125,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
 		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
+		SlotObj[Key::EnableFXAA] = Opts.bEnableFXAA;
 		SlotObj[Key::bDecal] = Opts.ShowFlags.bDecal;
 		SlotsArr.append(SlotObj);
 	}
@@ -129,6 +143,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	JSON WidgetsObj = Object();
 	WidgetsObj[Key::ShowConsole] = UI.bConsole;
 	WidgetsObj[Key::ShowControlPanel] = UI.bControl;
+	WidgetsObj[Key::ShowFXAAPanel] = UI.bFXAA;
 	WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
 	WidgetsObj[Key::ShowSceneManager] = UI.bScene;
 	WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
@@ -142,6 +157,16 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	CamObj[Key::NearClip] = PerspCamNearClip;
 	CamObj[Key::FarClip] = PerspCamFarClip;
 	Root[Key::PerspectiveCamera] = CamObj;
+
+	JSON FXAAObj = Object();
+	FXAAObj[Key::EdgeThreshold] = FXAAEdgeThreshold;
+	FXAAObj[Key::EdgeThresholdMin] = FXAAEdgeThresholdMin;
+	FXAAObj[Key::SearchThreshold] = FXAASearchThreshold;
+	FXAAObj[Key::SubpixTrim] = FXAASubpixTrim;
+	FXAAObj[Key::SubpixCap] = FXAASubpixCap;
+	FXAAObj[Key::EnableSubpix] = bFXAASubpix;
+	FXAAObj[Key::SearchSteps] = FXAASearchSteps;
+	Root[Key::FXAA] = FXAAObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -257,8 +282,12 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
 				if (S.hasKey(Key::CameraRotateSensitivity))
 					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
+				if (S.hasKey(Key::EnableFXAA))
+					Opts.bEnableFXAA = S[Key::EnableFXAA].ToBool();
 				if (S.hasKey(Key::bDecal))
 					Opts.ShowFlags.bDecal = S[Key::bDecal].ToBool();
+				if (S.hasKey(Key::EnableFXAA))
+					Opts.bEnableFXAA = S[Key::EnableFXAA].ToBool();
 			}
 		}
 
@@ -280,6 +309,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		JSON W = Root[Key::UIWidgets];
 		if (W.hasKey(Key::ShowConsole))        UI.bConsole = W[Key::ShowConsole].ToBool();
 		if (W.hasKey(Key::ShowControlPanel))   UI.bControl = W[Key::ShowControlPanel].ToBool();
+		if (W.hasKey(Key::ShowFXAAPanel))      UI.bFXAA = W[Key::ShowFXAAPanel].ToBool();
 		if (W.hasKey(Key::ShowPropertyWindow)) UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
 		if (W.hasKey(Key::ShowSceneManager))   UI.bScene = W[Key::ShowSceneManager].ToBool();
 		if (W.hasKey(Key::ShowStatProfiler))   UI.bStat = W[Key::ShowStatProfiler].ToBool();
@@ -313,4 +343,36 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (CamObj.hasKey(Key::FarClip))
 			PerspCamFarClip = static_cast<float>(CamObj[Key::FarClip].ToFloat());
 	}
+
+	if (Root.hasKey(Key::FXAA))
+	{
+		JSON FXAAObj = Root[Key::FXAA];
+		if (FXAAObj.hasKey(Key::EdgeThreshold))
+			FXAAEdgeThreshold = static_cast<float>(FXAAObj[Key::EdgeThreshold].ToFloat());
+		if (FXAAObj.hasKey(Key::EdgeThresholdMin))
+			FXAAEdgeThresholdMin = static_cast<float>(FXAAObj[Key::EdgeThresholdMin].ToFloat());
+		if (FXAAObj.hasKey(Key::SearchThreshold))
+			FXAASearchThreshold = static_cast<float>(FXAAObj[Key::SearchThreshold].ToFloat());
+		if (FXAAObj.hasKey(Key::SubpixTrim))
+			FXAASubpixTrim = static_cast<float>(FXAAObj[Key::SubpixTrim].ToFloat());
+		if (FXAAObj.hasKey(Key::SubpixCap))
+			FXAASubpixCap = static_cast<float>(FXAAObj[Key::SubpixCap].ToFloat());
+		if (FXAAObj.hasKey(Key::EnableSubpix))
+			bFXAASubpix = FXAAObj[Key::EnableSubpix].ToBool();
+		if (FXAAObj.hasKey(Key::SearchSteps))
+			FXAASearchSteps = FXAAObj[Key::SearchSteps].ToInt();
+	}
+}
+
+FFXAAConstants FEditorSettings::BuildFXAAConstants() const
+{
+	FFXAAConstants Constants;
+	Constants.FXAA_EDGE_THRESHOLD = FXAAEdgeThreshold;
+	Constants.FXAA_EDGE_THRESHOLD_MIN = FXAAEdgeThresholdMin;
+	Constants.FXAA_SEARCH_THRESHOLD = FXAASearchThreshold;
+	Constants.FXAA_SUBPIX_TRIM = FXAASubpixTrim;
+	Constants.FXAA_SUBPIX_CAP = FXAASubpixCap;
+	Constants.FXAA_SUBPIX = bFXAASubpix ? 1u : 0u;
+	Constants.FXAA_SEARCH_STEPS = static_cast<uint32>(std::clamp(FXAASearchSteps, 1, 32));
+	return Constants;
 }

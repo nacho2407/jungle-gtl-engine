@@ -14,6 +14,7 @@ enum class EShaderType : uint32
 	HeightFogPostProcess,
 	SceneDepthProcess,
 	OutlinePostProcess,
+	FXAA,
 	Font,
 	OverlayFont,
 	SubUV,
