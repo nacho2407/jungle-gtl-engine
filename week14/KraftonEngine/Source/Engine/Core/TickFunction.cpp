@@ -124,7 +124,7 @@ void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
 
 const char* FActorTickFunction::GetDebugName() const
 {
-	return Target ? Target->GetTypeInfo()->name : "FActorTickFunction";
+	return Target ? Target->GetClass()->GetName() : "FActorTickFunction";
 }
 
 void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
@@ -137,5 +137,5 @@ void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickTy
 
 const char* FActorComponentTickFunction::GetDebugName() const
 {
-	return Target ? Target->GetTypeInfo()->name : "FActorComponentTickFunction";
+	return Target ? Target->GetClass()->GetName() : "FActorComponentTickFunction";
 }
