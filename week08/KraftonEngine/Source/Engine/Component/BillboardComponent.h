@@ -38,7 +38,7 @@ public:
 	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
 
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
-	const FMeshData* GetMeshData() const override { return &FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad); }
+	FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
 
 protected:
 	bool bIsBillboard = true;
