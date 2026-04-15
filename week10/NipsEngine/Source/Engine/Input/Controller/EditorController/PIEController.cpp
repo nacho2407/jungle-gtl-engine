@@ -97,35 +97,59 @@ void FPIEController::OnKeyDown(int VK)
 
     const float MoveSpeed = 10.f;
     FVector     Move = FVector(0, 0, 0);
-    switch (VK)
+    //switch (VK)
+    //{
+    //case 'W':
+    //    Move.X += MoveSpeed;
+    //    break;
+    //case 'A':
+    //    Move.Y -= MoveSpeed;
+    //    break;
+    //case 'S':
+    //    Move.X -= MoveSpeed;
+    //    break;
+    //case 'D':
+    //    Move.Y += MoveSpeed;
+    //    break;
+    //}
+
+    //if (Move.X != 0.f || Move.Y != 0.f)
+    //{
+    //    // Constrain movement to the horizontal plane (no flying)
+    //    Move *= DeltaTime;
+    //    FVector Forward = Camera->GetForwardVector();
+    //    Forward.Z = 0.f;
+    //    if (Forward.Size() > 1e-4f)
+    //        Forward.Normalize();
+    //    FVector Right = Camera->GetRightVector();
+    //    Right.Z = 0.f;
+    //    if (Right.Size() > 1e-4f)
+    //        Right.Normalize();
+    //    TargetLocation += Forward * Move.X + Right * Move.Y;
+    //}
+
+	// Allow flying
+	switch (VK)
     {
     case 'W':
-        Move.X += MoveSpeed;
-        break;
-    case 'A':
-        Move.Y -= MoveSpeed;
+        Move += Camera->GetForwardVector() * MoveSpeed;
         break;
     case 'S':
-        Move.X -= MoveSpeed;
+        Move += Camera->GetForwardVector() * -MoveSpeed;
         break;
     case 'D':
-        Move.Y += MoveSpeed;
+        Move += Camera->GetRightVector() * MoveSpeed;
         break;
-    }
+    case 'A':
+        Move += Camera->GetRightVector() * -MoveSpeed;
+        break;
+	}
 
     if (Move.X != 0.f || Move.Y != 0.f)
     {
         // Constrain movement to the horizontal plane (no flying)
         Move *= DeltaTime;
-        FVector Forward = Camera->GetForwardVector();
-        Forward.Z = 0.f;
-        if (Forward.Size() > 1e-4f)
-            Forward.Normalize();
-        FVector Right = Camera->GetRightVector();
-        Right.Z = 0.f;
-        if (Right.Size() > 1e-4f)
-            Right.Normalize();
-        TargetLocation += Forward * Move.X + Right * Move.Y;
+        TargetLocation += Move;
     }
 
     // Arrow key rotation
@@ -156,6 +180,7 @@ void FPIEController::OnKeyDown(int VK)
         UpdateCameraRotation();
     }
 }
+
 
 void FPIEController::OnKeyReleased(int VK)
 {
