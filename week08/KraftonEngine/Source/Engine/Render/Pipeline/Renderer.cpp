@@ -758,6 +758,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
 	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = Frame.WireframeColor;
+	frameConstantData.CameraWorldPos = Frame.CameraPosition;
 
 	if (GEngine && GEngine->GetTimer())
 	{
