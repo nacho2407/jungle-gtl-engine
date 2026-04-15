@@ -377,25 +377,6 @@ void FRenderer::InitializePassResourceBindings()
 		}
 	};
 
-	// 2. Decal Pass: 깊이를 읽어 영역 판정 (필요시 Normal도 읽을 수 있게 배치)
-	PassResourceBindings[(uint32)ERenderPass::Decal] = {
-		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
-			Ctx->OMSetRenderTargets(1, &rtv, nullptr); // DSV 해제 (Depth SRV 읽기용)
-
-			ID3D11ShaderResourceView* DepthSRV = Bus.GetViewportDepthSRV(); // t1
-			Ctx->PSSetShaderResources(1, 1, &DepthSRV);
-		},
-		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
-			ID3D11ShaderResourceView* nullSRV = nullptr;
-			Ctx->PSSetShaderResources(1, 1, &nullSRV);
-
-			ID3D11DepthStencilView* dsv = Bus.GetViewportDSV();
-			ID3D11RenderTargetView* rtv = Bus.GetViewportRTV();
-			Ctx->OMSetRenderTargets(1, &rtv, dsv);
-		}
-	};
-
 	// 3. 광량(Gloss) 처리 패스
 	PassResourceBindings[(uint32)ERenderPass::Additive] = {
 		[this](ERenderPass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {
