@@ -13,6 +13,7 @@ public:
 
 private:
 	void RenderComponentTree(AActor* Actor);
+	void RenderActorAndSceneComponentNode(class AActor* Actor);
 	void RenderSceneComponentNode(class USceneComponent* Comp);
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties(AActor* Actor);

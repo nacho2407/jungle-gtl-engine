@@ -331,7 +331,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 	if (Root)
 	{
-		RenderSceneComponentNode(Root);
+		RenderActorAndSceneComponentNode(Actor);
 	}
 
 	// Non-scene ActorComponents
@@ -361,6 +361,46 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	}
 }
 
+void FEditorPropertyWidget::RenderActorAndSceneComponentNode(AActor* Actor)
+{
+	if (!Actor) return;
+
+    FString ActorName = Actor->GetFName().ToString();
+    if (ActorName.empty()) ActorName = Actor->GetTypeInfo()->name;
+
+    ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+    if (bActorSelected && LastSelectedActor == Actor)
+        Flags |= ImGuiTreeNodeFlags_Selected;
+
+    USceneComponent* RootComp = Actor->GetRootComponent();
+    if (!RootComp)
+        Flags |= ImGuiTreeNodeFlags_Leaf;
+
+    bool bOpen = ImGui::TreeNodeEx(
+        Actor,
+        Flags,
+        "%s (%s)",
+        ActorName.c_str(),
+        Actor->GetTypeInfo()->name
+    );
+
+    if (ImGui::IsItemClicked())
+    {
+        LastSelectedActor = Actor;
+        SelectedComponent = nullptr;
+        bActorSelected = true;
+    }
+
+    if (bOpen)
+    {
+        if (RootComp)
+        {
+            RenderSceneComponentNode(RootComp);
+        }
+        ImGui::TreePop();
+    }
+}
+
 void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 {
 	if (!Comp) return;
@@ -388,6 +428,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	if (ImGui::IsItemClicked())
 	{
 		SelectedComponent = Comp;
+        LastSelectedActor = Comp->GetOwner();
 		bActorSelected = false;
 	}
 
