@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "6",
+      "PrimitiveKey" : "250",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -77,7 +77,7 @@
             "Path" : "Asset/Materials/mur-bas.json"
           },
           "Element 3" : {
-            "Path" : "Asset/Materials/or.json"
+            "Path" : "Asset/Materials/chain.json"
           },
           "Element 30" : {
             "Path" : "Asset/Materials/pied-colonne.json"
@@ -104,10 +104,10 @@
             "Path" : "Asset/Materials/drap.json"
           },
           "Element 9" : {
-            "Path" : "Asset/Materials/estrade-contour.json"
+            "Path" : "Asset/Materials/estrade-centre.json"
           },
           "Location" : [1.749607, 0.000000, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "bTickEnable" : true
@@ -120,7 +120,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -132,7 +132,7 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
               "Visible" : true,
@@ -146,11 +146,11 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [0.093267, -6.369399, -33.733196],
+          "Location" : [0.324429, -6.369399, -32.778778],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
-          "Rotation" : [90.000000, 90.000000, 0.000000],
+          "Rotation" : [90.000000, 90.000000, -6.100006],
           "Scale" : [24.100000, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
@@ -163,7 +163,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -175,7 +175,7 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
               "Visible" : true,
@@ -189,11 +189,11 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [-15.847311, -6.407476, -33.733196],
+          "Location" : [-15.616149, -6.407476, -34.584602],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
-          "Rotation" : [90.000000, 90.000778, 0.000000],
+          "Rotation" : [90.000000, 90.000793, -6.100006],
           "Scale" : [28.200001, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
@@ -206,7 +206,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -218,7 +218,7 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
               "Visible" : true,
@@ -232,11 +232,11 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [-32.868431, -5.833162, -33.733196],
+          "Location" : [-31.718283, -5.833162, -37.583469],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
-          "Rotation" : [90.000000, 90.000778, 0.000000],
+          "Rotation" : [90.000000, 90.000793, -6.100006],
           "Scale" : [32.299999, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
@@ -249,7 +249,7 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [2.000000, 0.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -261,7 +261,7 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
               "Visible" : true,
@@ -275,11 +275,11 @@
           "FadeInDuration" : 0.000000,
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
-          "Location" : [-48.561306, -5.745357, -33.733196],
+          "Location" : [-47.411156, -5.745357, -38.650204],
           "Material" : {
             "Path" : "Asset/Materials/StainedGlass02Decal.json"
           },
-          "Rotation" : [90.000000, 90.000778, 0.000000],
+          "Rotation" : [90.000000, 90.000793, -6.100006],
           "Scale" : [34.900002, 7.900000, 21.400000],
           "Visible" : true,
           "bTickEnable" : true
@@ -299,7 +299,7 @@
           "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
           "Location" : [0.000000, 0.000000, 0.000000],
           "Max Opacity" : 1.000000,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Start Distance" : 0.000000,
           "bTickEnable" : true
@@ -314,12 +314,12 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [12.519896, -8.157583, -27.814722],
+    "Location" : [-11.734076, 9.275374, -7.421498],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 12.487427, 173.268967]
+    "Rotation" : [0.000000, 46.836483, -118.031876]
   },
   "Primitives" : {
-    "6" : {
+    "250" : {
       "Location" : [1.749607, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Data/church/eglise-sketchfab5.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
