@@ -147,15 +147,16 @@ void UPrimitiveComponent::UpdateWorldAABB() const
 /* 현재 쓰이지 않는 코드입니다*/
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	const FMeshData* Data = GetMeshData();
-	if (!Data || Data->Indices.empty()) return false;
+	FMeshDataView View = GetMeshDataView();
+	if (!View.IsValid()) return false;
 
 	bool bHit = FRayUtils::RaycastTriangles(
 		Ray, GetWorldMatrix(),
 		GetWorldInverseMatrix(),
-		&Data->Vertices[0].Position,
-		sizeof(FVertex),
-		Data->Indices,
+		View.VertexData,
+		View.Stride,
+		View.IndexData,
+		View.IndexCount,
 		OutHitResult);
 
 	if (bHit)
