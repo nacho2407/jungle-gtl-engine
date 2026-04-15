@@ -77,6 +77,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     ImGui::Text("Show");
     ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
     ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
+	ImGui::Checkbox("Axis", &Settings.ShowFlags.bAxis);
     ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
     ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
     ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
