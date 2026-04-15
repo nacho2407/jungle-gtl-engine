@@ -1,4 +1,4 @@
-#include "HeightFogComponent.h"
+﻿#include "HeightFogComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -39,13 +39,13 @@ void UHeightFogComponent::PushToScene()
 	if (!World) return;
 
 	FFogParams Params;
-	Params.Density            = FogDensity;
-	Params.HeightFalloff      = FogHeightFalloff;
-	Params.StartDistance      = StartDistance;
-	Params.CutoffDistance     = FogCutoffDistance;
-	Params.MaxOpacity         = FogMaxOpacity;
-	Params.FogBaseHeight      = GetWorldLocation().Z;
-	Params.InscatteringColor  = FogInscatteringColor;
+	Params.Density = FogDensity;
+	Params.HeightFalloff = FogHeightFalloff;
+	Params.StartDistance = StartDistance;
+	Params.CutoffDistance = FogCutoffDistance;
+	Params.MaxOpacity = FogMaxOpacity;
+	Params.FogBaseHeight = GetWorldLocation().Z;
+	Params.InscatteringColor = FogInscatteringColor;
 
 	World->GetScene().AddFog(this, Params);
 }
@@ -54,11 +54,12 @@ void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	USceneComponent::GetEditableProperties(OutProps);
 
-	OutProps.push_back({ "Fog Density",       EPropertyType::Float,  &FogDensity });
-	OutProps.push_back({ "Height Falloff",    EPropertyType::Float,  &FogHeightFalloff });
-	OutProps.push_back({ "Start Distance",    EPropertyType::Float,  &StartDistance });
-	OutProps.push_back({ "Cutoff Distance",   EPropertyType::Float,  &FogCutoffDistance });
-	OutProps.push_back({ "Max Opacity",       EPropertyType::Float,  &FogMaxOpacity });
+	//                                                                     Min      Max        Speed
+	OutProps.push_back({ "Fog Density",       EPropertyType::Float,  &FogDensity,        0.0f, 0.05f,     0.001f });
+	OutProps.push_back({ "Height Falloff",    EPropertyType::Float,  &FogHeightFalloff,  0.001f, 5.0f,    0.01f });
+	OutProps.push_back({ "Start Distance",    EPropertyType::Float,  &StartDistance,     0.0f, 100000.0f, 1.0f });
+	OutProps.push_back({ "Cutoff Distance",   EPropertyType::Float,  &FogCutoffDistance, 0.0f, 100000.0f, 1.0f });
+	OutProps.push_back({ "Max Opacity",       EPropertyType::Float,  &FogMaxOpacity,     0.0f, 1.0f,      0.01f });
 	OutProps.push_back({ "Inscattering Color", EPropertyType::Color4, &FogInscatteringColor });
 }
 
