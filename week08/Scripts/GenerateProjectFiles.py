@@ -30,7 +30,6 @@ CONFIGURATIONS = [
     ("Debug", "x64"),
     ("Release", "x64"),
     ("ObjViewDebug", "x64"),
-    ("FPSOptimization", "x64"),
     ("Demo", "x64"),
 ]
 
@@ -43,13 +42,9 @@ CONFIG_PROPS = {
         "release_like": True,
         "extra_defines": ["IS_OBJ_VIEWER=1"],
     },
-    "FPSOptimization": {
-        "release_like": True,
-        "extra_defines": ["FPS_OPTIMIZATION=1"],
-    },
     "Demo": {
         "release_like": True,
-        "extra_defines": ["FPS_OPTIMIZATION=1", "STATS=0"],
+        "extra_defines": ["STATS=0"],
     },
 }
 

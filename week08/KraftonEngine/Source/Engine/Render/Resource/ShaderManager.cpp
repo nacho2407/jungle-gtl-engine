@@ -1,5 +1,4 @@
 ﻿#include "ShaderManager.h"
-#include "Render/Types/VertexTypes.h"
 #include <string>
 #include <Windows.h>
 
@@ -43,47 +42,19 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
 	if (bIsInitialized) return;
 
-	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl",
-		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
-
-	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl",
-		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
-
-	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl",
-		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
-
-	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/StaticMeshShader.hlsl",
-		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
-
-	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl",
-		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
-	
-	// PostProcess outline: fullscreen quad (InputLayout 없음)
-	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl",
-		"VS", "PS", nullptr, 0);
-
-	Shaders[(uint32)EShaderType::SceneDepth].Create(InDevice, L"Shaders/SceneDepth.hlsl",
-		"VS", "PS", nullptr, 0);
-
-	Shaders[(uint32)EShaderType::FXAA].Create(InDevice, L"Shaders/FXAA.hlsl",
-		"VS", "PS", nullptr, 0);
-
-	// Batcher 셰이더 (FTextureVertex: POSITION + TEXCOORD)
-	Shaders[(uint32)EShaderType::Font].Create(InDevice, L"Shaders/ShaderFont.hlsl",
-		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
-
-	Shaders[(uint32)EShaderType::OverlayFont].Create(InDevice, L"Shaders/ShaderOverlayFont.hlsl",
-		"VS", "PS", FTextureVertexInputLayout, ARRAYSIZE(FTextureVertexInputLayout));
-
-	Shaders[(uint32)EShaderType::SubUV].Create(InDevice, L"Shaders/ShaderSubUV.hlsl",
-		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
-
-	Shaders[(uint32)EShaderType::Billboard].Create(InDevice, L"Shaders/ShaderBillboard.hlsl",
-		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
-
-	// HeightFog: fullscreen triangle (InputLayout 없음)
-	Shaders[(uint32)EShaderType::HeightFog].Create(InDevice, L"Shaders/HeightFog.hlsl",
-		"VS", "PS", nullptr, 0);
+	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/StaticMeshShader.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::SceneDepth].Create(InDevice, L"Shaders/SceneDepth.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::FXAA].Create(InDevice, L"Shaders/FXAA.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::Font].Create(InDevice, L"Shaders/ShaderFont.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::OverlayFont].Create(InDevice, L"Shaders/ShaderOverlayFont.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::SubUV].Create(InDevice, L"Shaders/ShaderSubUV.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::Billboard].Create(InDevice, L"Shaders/ShaderBillboard.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::HeightFog].Create(InDevice, L"Shaders/HeightFog.hlsl", "VS", "PS");
 
 	bIsInitialized = true;
 }
@@ -125,7 +96,7 @@ FShader* FShaderManager::GetCustomShader(const FString& Key)
 	return nullptr;
 }
 
-FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath, const D3D11_INPUT_ELEMENT_DESC* InInputElements, uint32 InInputElementCount)
+FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath)
 {
 	FString Key = WStringToString(InFilePath);
 
@@ -136,7 +107,7 @@ FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_
 	}
 
 	auto NewShader = std::make_unique<FShader>();
-	NewShader->Create(InDevice, InFilePath, "VS", "PS", InInputElements, InInputElementCount);
+	NewShader->Create(InDevice, InFilePath, "VS", "PS");
 	auto* RawPtr = NewShader.get();
 	CustomShaderCache[Key] = std::move(NewShader);
 	return RawPtr;

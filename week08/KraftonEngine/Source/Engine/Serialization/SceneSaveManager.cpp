@@ -111,7 +111,7 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 {
 	using namespace json;
 	JSON w = json::Object();
-	w[SceneKeys::ClassName] = World->GetTypeInfo()->name;
+	w[SceneKeys::ClassName] = World->GetClass()->GetName();
 	w[SceneKeys::WorldType] = WorldTypeToString(Ctx.WorldType);
 	w[SceneKeys::ContextName] = Ctx.ContextName;
 	w[SceneKeys::ContextHandle] = Ctx.ContextHandle.ToString();
@@ -201,7 +201,7 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 {
 	using namespace json;
 	JSON a = json::Object();
-	a[SceneKeys::ClassName] = Actor->GetTypeInfo()->name;
+	a[SceneKeys::ClassName] = Actor->GetClass()->GetName();
 	a[SceneKeys::Visible] = Actor->IsVisible();
 
 	// RootComponent 트리 직렬화
@@ -216,7 +216,7 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 		if (Comp->IsA<USceneComponent>()) continue;
 
 		JSON c = json::Object();
-		c[SceneKeys::ClassName] = Comp->GetTypeInfo()->name;
+		c[SceneKeys::ClassName] = Comp->GetClass()->GetName();
 		c[SceneKeys::Properties] = SerializeProperties(Comp);
 		NonScene.append(c);
 	}
@@ -229,7 +229,7 @@ json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp)
 {
 	using namespace json;
 	JSON c = json::Object();
-	c[SceneKeys::ClassName] = Comp->GetTypeInfo()->name;
+	c[SceneKeys::ClassName] = Comp->GetClass()->GetName();
 	c[SceneKeys::Properties] = SerializeProperties(Comp);
 
 	JSON Children = json::Array();

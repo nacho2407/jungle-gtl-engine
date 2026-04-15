@@ -69,6 +69,7 @@ public:
 	void Deactivate() override;
 
 	FMeshBuffer* GetMeshBuffer() const override;
+	FMeshDataView GetMeshDataView() const override { return MeshData ? FMeshDataView::FromMeshData(*MeshData) : FMeshDataView{}; }
 	FPrimitiveSceneProxy* CreateSceneProxy() override;
 	void CreateRenderState() override;
 	void DestroyRenderState() override;

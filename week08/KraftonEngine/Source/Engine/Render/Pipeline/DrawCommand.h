@@ -43,10 +43,6 @@ struct FDrawCommand
 	FConstantBuffer*         PerShaderCB[2] = {};        // [0]=b2 (PerShader0), [1]=b3 (PerShader1)
 	ID3D11ShaderResourceView* DiffuseSRV    = nullptr;   // t0: 디퓨즈 텍스처
 
-	// ===== Material 인라인 데이터 (Submit 시 PerShaderCB[0]에 업로드) =====
-	FVector4 SectionColor        = { 1.0f, 1.0f, 1.0f, 1.0f };
-	bool     bInlineMaterialData = false;  // true면 Submit 시 SectionColor → PerShaderCB[0] 업로드
-
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
 

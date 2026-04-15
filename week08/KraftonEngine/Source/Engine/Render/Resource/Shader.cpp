@@ -32,7 +32,6 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 }
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-	const D3D11_INPUT_ELEMENT_DESC* InInputElements, UINT InInputElementCount,
 	const D3D_SHADER_MACRO* InDefines)
 {
 	Release();
@@ -93,20 +92,9 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	CachedPixelShaderSize = pixelShaderCSO->GetBufferSize();
 	MemoryStats::AddPixelShaderMemory(static_cast<uint32>(CachedPixelShaderSize));
 
-	// Input Layout 생성 (fullscreen quad 등 vertex buffer 없는 셰이더는 스킵)
-	if (InInputElements && InInputElementCount > 0)
-	{
-		hr = InDevice->CreateInputLayout(InInputElements, InInputElementCount, vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), &InputLayout);
-		if (FAILED(hr))
-		{
-			std::cerr << "Failed to create Input Layout (HRESULT: " << hr << ")" << std::endl;
-			Release();
-			vertexShaderCSO->Release();
-			pixelShaderCSO->Release();
-			return;
-		}
-	}
-	
+	// Input Layout 생성 (VS input signature로부터 자동 추출)
+	CreateInputLayoutFromReflection(InDevice, vertexShaderCSO);
+
 	ExtractCBufferInfo(vertexShaderCSO, ShaderParameterLayout);
 	ExtractCBufferInfo(pixelShaderCSO, ShaderParameterLayout);
 
@@ -146,6 +134,98 @@ void FShader::Bind(ID3D11DeviceContext* InDeviceContext) const
 	InDeviceContext->PSSetShader(PixelShader, nullptr, 0);
 }
 
+
+namespace
+{
+	DXGI_FORMAT MaskToFormat(D3D_REGISTER_COMPONENT_TYPE ComponentType, BYTE Mask)
+	{
+		// Mask 비트 수 세기 (사용되는 컴포넌트 개수)
+		int Count = 0;
+		if (Mask & 0x1) ++Count;
+		if (Mask & 0x2) ++Count;
+		if (Mask & 0x4) ++Count;
+		if (Mask & 0x8) ++Count;
+
+		if (ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
+		{
+			switch (Count)
+			{
+			case 1: return DXGI_FORMAT_R32_FLOAT;
+			case 2: return DXGI_FORMAT_R32G32_FLOAT;
+			case 3: return DXGI_FORMAT_R32G32B32_FLOAT;
+			case 4: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			}
+		}
+		else if (ComponentType == D3D_REGISTER_COMPONENT_UINT32)
+		{
+			switch (Count)
+			{
+			case 1: return DXGI_FORMAT_R32_UINT;
+			case 2: return DXGI_FORMAT_R32G32_UINT;
+			case 3: return DXGI_FORMAT_R32G32B32_UINT;
+			case 4: return DXGI_FORMAT_R32G32B32A32_UINT;
+			}
+		}
+		else if (ComponentType == D3D_REGISTER_COMPONENT_SINT32)
+		{
+			switch (Count)
+			{
+			case 1: return DXGI_FORMAT_R32_SINT;
+			case 2: return DXGI_FORMAT_R32G32_SINT;
+			case 3: return DXGI_FORMAT_R32G32B32_SINT;
+			case 4: return DXGI_FORMAT_R32G32B32A32_SINT;
+			}
+		}
+		return DXGI_FORMAT_UNKNOWN;
+	}
+}
+
+void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* VSBlob)
+{
+	ID3D11ShaderReflection* Reflector = nullptr;
+	HRESULT hr = D3DReflect(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(),
+		IID_ID3D11ShaderReflection, (void**)&Reflector);
+	if (FAILED(hr)) return;
+
+	D3D11_SHADER_DESC ShaderDesc;
+	Reflector->GetDesc(&ShaderDesc);
+
+	TArray<D3D11_INPUT_ELEMENT_DESC> Elements;
+
+	for (UINT i = 0; i < ShaderDesc.InputParameters; ++i)
+	{
+		D3D11_SIGNATURE_PARAMETER_DESC ParamDesc;
+		Reflector->GetInputParameterDesc(i, &ParamDesc);
+
+		// SV_VertexID, SV_InstanceID 등 시스템 시맨틱은 스킵
+		if (ParamDesc.SystemValueType != D3D_NAME_UNDEFINED)
+			continue;
+
+		D3D11_INPUT_ELEMENT_DESC Elem = {};
+		Elem.SemanticName = ParamDesc.SemanticName;
+		Elem.SemanticIndex = ParamDesc.SemanticIndex;
+		Elem.Format = MaskToFormat(ParamDesc.ComponentType, ParamDesc.Mask);
+		Elem.InputSlot = 0;
+		Elem.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		Elem.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		Elem.InstanceDataStepRate = 0;
+
+		Elements.push_back(Elem);
+	}
+
+	Reflector->Release();
+
+	// Fullscreen quad 등 vertex input이 없는 셰이더는 InputLayout 불필요
+	if (Elements.empty())
+		return;
+
+	hr = InDevice->CreateInputLayout(Elements.data(), (UINT)Elements.size(),
+		VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		std::cerr << "Failed to create Input Layout from reflection (HRESULT: " << hr << ")" << std::endl;
+	}
+}
 
 //셰이더 컴파일 후 호출. 셰이더 코드의 cbuffer, 텍스처 샘플러 선언을 분석해서 outlayout에 채워넣음. 이 정보는 머티리얼 템플릿이 생성될 때 참조되어야 하므로 셰이더 내부에서 제공하는 형태로 존재해야 함.
 void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo*>& OutLayout)
