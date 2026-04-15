@@ -1,0 +1,11 @@
+{
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/vitrail-fond.002.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/church/TexturesCom_WindowStainedGlass0126_8_M.jpg"
+  }
+}
