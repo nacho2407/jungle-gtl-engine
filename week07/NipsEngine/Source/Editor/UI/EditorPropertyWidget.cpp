@@ -14,6 +14,7 @@
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/PursuitMovementComponent.h"
 #include "Core/PropertyTypes.h"
+#include "Math/Color.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
 #include <functional>
@@ -775,6 +776,12 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		bChanged = ImGui::ColorEdit4(Prop.Name, Val);
+		break;
+	}
+	case EPropertyType::Color:
+	{
+		FColor* Val = static_cast<FColor*>(Prop.ValuePtr);
+		bChanged = ImGui::ColorEdit4(Prop.Name, &Val->R);
 		break;
 	}
 	case EPropertyType::String:
