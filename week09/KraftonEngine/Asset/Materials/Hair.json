@@ -1,0 +1,14 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/Hair.json",
+  "RasterizerState" : "",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/Lumine/Texture/Hair.png"
+  }
+}
