@@ -126,7 +126,7 @@ void UPursuitMovementComponent::FaceTargetDir(float DeltaTime)
 
     // Slerp from the current rotation towards the target over RotateDuration
     FQuat Current = UpdatedComponent->GetRelativeQuat();
-    float Alpha = 0.35f;
+    float Alpha = 0.85f;
 
     UpdatedComponent->SetRelativeRotationQuat(FQuat::Slerp(Current, TargetQuat, Alpha));
 }

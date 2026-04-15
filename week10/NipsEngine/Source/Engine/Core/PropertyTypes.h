@@ -21,6 +21,7 @@ enum class EPropertyType : uint8_t
     Vec3Array,         // TArray<FVector>* - variable-length array of FVector
                        // 필요 시 Enum, Color 등 추가
 	Enum,
+	Color,
 };
 
 // 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
@@ -51,6 +52,7 @@ inline size_t GetPropertySize(EPropertyType Type)
     case EPropertyType::Int:    return sizeof(int32);
     case EPropertyType::Float:  return sizeof(float);
     case EPropertyType::Vec3:   return sizeof(FVector);
+    case EPropertyType::Color:	return sizeof(FColor);
     case EPropertyType::Vec4:   return sizeof(FVector4);
     // String, Name 은 ValuePtr 기반 특수 처리
     case EPropertyType::String: return 0;
