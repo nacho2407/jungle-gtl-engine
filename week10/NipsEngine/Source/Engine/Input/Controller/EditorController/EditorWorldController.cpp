@@ -174,6 +174,11 @@ void FEditorWorldController::OnRightMouseDrag(float DeltaX, float DeltaY)
     if (!Camera)
         return;
 
+    // 수식 키(Ctrl, Alt, Shift)가 눌려 있으면 뷰포트 이동을 차단합니다.
+    const InputSystem& IS = InputSystem::Get();
+    if (IS.GetKey(VK_CONTROL) || IS.GetKey(VK_MENU) || IS.GetKey(VK_SHIFT))
+        return;
+
     if (Camera->IsOrthographic())
     {
         // Pan: scale movement proportionally to current ortho zoom level
@@ -256,6 +261,12 @@ void FEditorWorldController::OnKeyDown(int VK)
 {
     if (!Camera)
         return;
+
+    // 수식 키(Ctrl, Alt, Shift)가 눌려 있으면 뷰포트 이동을 차단합니다.
+    const InputSystem& IS = InputSystem::Get();
+    if (IS.GetKey(VK_CONTROL) || IS.GetKey(VK_MENU) || IS.GetKey(VK_SHIFT))
+        return;
+
     if (Camera->IsOrthographic())
         return; // no WASD/arrow input in ortho views
 
@@ -316,6 +327,12 @@ void FEditorWorldController::OnMiddleMouseDrag(float DeltaX, float DeltaY)
 {
     if (!Camera)
         return;
+
+    // 수식 키(Ctrl, Alt, Shift)가 눌려 있으면 뷰포트 이동을 차단합니다.
+    const InputSystem& IS = InputSystem::Get();
+    if (IS.GetKey(VK_CONTROL) || IS.GetKey(VK_MENU) || IS.GetKey(VK_SHIFT))
+        return;
+
     const float   PanScale = Camera->IsOrthographic()
                                  ? Camera->GetOrthoHeight() * 0.002f
                                  : 20.0f;
