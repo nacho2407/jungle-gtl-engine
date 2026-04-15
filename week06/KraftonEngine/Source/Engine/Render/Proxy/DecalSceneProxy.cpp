@@ -56,13 +56,9 @@ void FDecalSceneProxy::UpdatePerViewport(const FRenderBus& Bus)
 		FConstantBufferPool::Get().GetBuffer(ECBSlot::Decal, sizeof(FDecalConstants)),
 		ECBSlot::Decal);
 
-	DecalCB.InvView = Bus.GetView().GetInverseFast();
-	DecalCB.InvProjection = Bus.GetProj().GetInverse();
 	DecalCB.WorldToDecal = Comp->GetWorldToDecalMatrix();
-	DecalCB.DecalForward = FVector(1.0f, 0.0f, 0.0f);
-	DecalCB.DecalOpacity = Comp->GetFadeAlpha();
-	DecalCB.DecalColor = Comp->GetDecalColor();
-
+	DecalCB.DecalHalfExtents = Comp->GetHalfExtents();
+	DecalCB.FadeAlpha = Comp->GetFadeAlpha();
 }
 
 void FDecalSceneProxy::RebuildSectionDraw()

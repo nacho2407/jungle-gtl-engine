@@ -28,6 +28,12 @@ UWorld::~UWorld()
 	{
 		EndPlay();
 	}
+
+	if (PersistentLevel)
+	{
+		UObjectManager::Get().DestroyObject(PersistentLevel);
+		PersistentLevel = nullptr;
+	}
 }
 
 UObject* UWorld::Duplicate(UObject* NewOuter) const

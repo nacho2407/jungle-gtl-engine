@@ -7,12 +7,14 @@ enum class EViewMode : int32
 	Lit = 0,
 	Unlit,
 	Wireframe,
+	SceneDepthBuffer,
 	Count
 };
 
 struct FShowFlags
 {
 	bool bPrimitives = true;
+	bool bDecals = true;
 	bool bGrid = true;
 	bool bWorldAxis = true;
 	bool bGizmo = true;
@@ -46,4 +48,5 @@ struct FViewportRenderOptions
 	float CameraMoveSensitivity = 1.0f;
 	float CameraRotateSensitivity = 1.0f;
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
+	bool bEnableFXAA = true;
 };

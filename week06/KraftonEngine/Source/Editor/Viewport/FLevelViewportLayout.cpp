@@ -877,6 +877,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
 			ImGui::SameLine();
 			ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+			ImGui::SameLine();
+			ImGui::RadioButton("SceneDepthBuffer", &CurrentMode, static_cast<int32>(EViewMode::SceneDepthBuffer));
 			Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 
 			ImGui::Separator();
@@ -884,6 +886,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			// Show Flags
 			ImGui::Text("Show");
 			ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+			ImGui::Checkbox("Decals", &Opts.ShowFlags.bDecals);
 			ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
 			ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
 			ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
@@ -906,6 +909,10 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::Text("Camera");
 			ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
 			ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+
+			ImGui::Separator();
+			ImGui::Text("Anti-Aliasing");
+			ImGui::Checkbox("FXAA", &Opts.bEnableFXAA);
 
 			ImGui::EndPopup();
 		}

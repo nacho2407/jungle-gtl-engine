@@ -1,8 +1,10 @@
-#include "Profiling/Stats.h"
+﻿#include "Profiling/Stats.h"
 
 #include <algorithm>
 
 uint32 FDrawCallStats::Count = 0;
+FDecalFrameStats FDecalStats::Current = {};
+FDecalFrameStats FDecalStats::Previous = {};
 
 #if STATS
 uint32 FLODStats::LODCount[4] = { 0, 0, 0, 0 };

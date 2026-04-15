@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
@@ -13,9 +13,10 @@ public:
 
 private:
 	ID3D11BlendState* Alpha = nullptr;
+	ID3D11BlendState* AlphaPreserveAlpha = nullptr;
 	ID3D11BlendState* Fog = nullptr;
-	ID3D11BlendState* NoColorWrite = nullptr;
 	ID3D11BlendState* Additive = nullptr;
+	ID3D11BlendState* NoColorWrite = nullptr;
 
 	EBlendState CurrentState = EBlendState::Opaque;
 };

@@ -19,4 +19,5 @@ public:
 
 private:
 	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, FRenderBus& RenderBus);
+	void CollectDecals(UWorld* World, const TArray<FPrimitiveSceneProxy*>& VisibleProxies, FRenderBus& RenderBus);
 };

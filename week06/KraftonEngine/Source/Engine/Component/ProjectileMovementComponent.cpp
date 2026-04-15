@@ -110,6 +110,7 @@ void UProjectileMovementComponent::Serialize(FArchive& Ar)
 
 void UProjectileMovementComponent::StopSimulating()
 {
+	SetComponentTickEnabled(false);
 	Velocity = FVector(0.0f, 0.0f, 0.0f);
 }
 

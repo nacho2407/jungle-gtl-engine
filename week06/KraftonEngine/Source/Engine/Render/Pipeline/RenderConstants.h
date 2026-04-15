@@ -9,6 +9,7 @@
 #include "Math/Vector.h"
 
 class FShader;
+class FPrimitiveSceneProxy;
 
 /*
 	GPU Constant Buffer 구조체, Batcher Entry, 섹션별 드로우 정보 등
@@ -23,10 +24,10 @@ namespace ECBSlot
 	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
 	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
 	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
-	constexpr uint32 Decal = 5;    // b5: Decal
-	constexpr uint32 Fog = 6;      // b6: Height fog postprocess params
-	constexpr uint32 Fireball = 7; // b7: Fireball
-
+	constexpr uint32 Decal = 5;       // b5: Decal properties
+	constexpr uint32 Fog = 6;         // b6: Height fog postprocess params
+	constexpr uint32 Fireball = 7;    // b7: Fireball params
+	constexpr uint32 FXAA = 8;        // b8: FXAA parameters
 }
 
 //PerObject
@@ -121,32 +122,44 @@ struct FBillboardConstants
 	float Height = 1.0f;
 };
 
+struct FFXAAConstants
+{
+	FVector2 RcpFrame = FVector2(0.0f, 0.0f);   // 픽셀 사이즈에 해당하는 프레임 크기 역수(reciprocal)
+	float FXAA_EDGE_THRESHOLD = 1.0f / 8.0f;
+	float FXAA_EDGE_THRESHOLD_MIN = 1.0f / 16.0f;
+
+	float FXAA_SEARCH_THRESHOLD = 1.0f / 4.0f; // 검색 중단 시점 제어
+	float FXAA_SUBPIX_TRIM = 1.0f / 4.0f; // 서브픽셀 앨리어싱 제거 제어
+	float FXAA_SUBPIX_CAP = 3.0f / 4.0f; // 세밀한 디테일이 완전히 제거되지 않도록 보장. 이 설정은 FXAA_SUBPIX_TRIM을 부분적으로 무시합니다.
+	uint32 FXAA_SUBPIX = 1; // 서브픽셀 필터링 켜기/끄기
+
+	uint32 FXAA_SEARCH_STEPS = 8; // 최대 검색 단계 수
+	FVector2 Padding = FVector2(0.0f, 0.0f);
+};
+
 struct FDecalConstants
 {
-	FMatrix InvView;
-	FMatrix InvProjection;
-	FMatrix WorldToDecal;
-
-	FVector DecalForward;
-	float DecalOpacity;
-	FVector4 DecalColor;
+	FMatrix WorldToDecal = FMatrix::Identity;
+	FVector DecalHalfExtents = FVector(0.5f, 0.5f, 0.5f);
+	float FadeAlpha = 1.0f;
+	float Padding = 0.0f;
 };
 
 struct FFireballConstants
 {
-	FMatrix FireballInvView;
-	FMatrix FireballInvProj;
-	FVector4 Color;
-	float Intensity;
-	float Radius;
-	float RadiusFalloff;
-	float Padding[2];
+	FMatrix FireballInvView = FMatrix::Identity;
+	FMatrix FireballInvProj = FMatrix::Identity;
+	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float Intensity = 1.0f;
+	float Radius = 1.0f;
+	float RadiusFalloff = 1.0f;
+	float Padding[2] = {};
 };
 
 struct FHeightFogPostProcessConstants
 {
-	FMatrix CameraInvView;
-	FMatrix CameraInvProjection;
+	FMatrix CameraInvView = FMatrix::Identity;
+	FMatrix CameraInvProjection = FMatrix::Identity;
 	FVector4 FogColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
 	FVector CameraPosition = FVector(0.0f, 0.0f, 0.0f);
 	float FogDensity = 0.0f;
@@ -160,7 +173,6 @@ struct FHeightFogPostProcessConstants
 };
 
 static_assert(sizeof(FHeightFogPostProcessConstants) % 16 == 0, "Height fog constant buffer must stay 16-byte aligned.");
-
 // ============================================================
 // Batcher Entry — 각 Batcher가 필요한 데이터만 담는 경량 구조체
 // ============================================================
@@ -181,6 +193,13 @@ struct FBillboardEntry
 {
 	FPerObjectConstants PerObject;
 	FBillboardConstants Billboard;
+};
+
+struct FDecalDrawEntry
+{
+	const FPrimitiveSceneProxy* ReceiverProxy = nullptr;
+	const FTextureResource* Texture = nullptr;
+	FDecalConstants Decal = {};
 };
 
 struct FAABBEntry

@@ -4,6 +4,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
+#include "Component/DecalComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/ProjectileMovementComponent.h"
 #include "GameFramework/World.h"
@@ -55,6 +56,69 @@ namespace
 		FDebugLineEntry HeadB;
 		HeadB.Start = End;
 		HeadB.End = End - Back - SideOffset;
+		HeadB.Color = ArrowColor;
+		Bus.AddDebugLineEntry(std::move(HeadB));
+	}
+
+	void AddDecalVolumeWireframe(FRenderBus& Bus, UDecalComponent* DecalComponent)
+	{
+		if (!DecalComponent || !DecalComponent->IsVisible())
+		{
+			return;
+		}
+
+		FVector Corners[8];
+		DecalComponent->GetWorldCorners(Corners);
+
+		static constexpr int32 Edges[][2] = {
+			{0, 1}, {1, 2}, {2, 3}, {3, 0},
+			{4, 5}, {5, 6}, {6, 7}, {7, 4},
+			{0, 4}, {1, 5}, {2, 6}, {3, 7}
+		};
+
+		for (const auto& Edge : Edges)
+		{
+			FDebugLineEntry Entry;
+			Entry.Start = Corners[Edge[0]];
+			Entry.End = Corners[Edge[1]];
+			Entry.Color = FColor::Blue();
+			Bus.AddDebugLineEntry(std::move(Entry));
+		}
+	}
+
+	void AddDecalProjectionArrow(FRenderBus& Bus, UDecalComponent* DecalComponent)
+	{
+		if (!DecalComponent || !DecalComponent->IsVisible())
+		{
+			return;
+		}
+
+		const FVector HalfExtents = DecalComponent->GetHalfExtents();
+		const float ArrowLength = Clamp(HalfExtents.X * 0.75f, 0.15f, 0.75f);
+		const float HeadLength = ArrowLength * 0.35f;
+		const float HeadWidth = ArrowLength * 0.22f;
+
+		const FVector Start = DecalComponent->GetWorldLocation();
+		const FVector Forward = DecalComponent->GetForwardVector().Normalized();
+		const FVector Right = DecalComponent->GetRightVector().Normalized();
+		const FVector End = Start + Forward * ArrowLength;
+		const FColor ArrowColor(255, 196, 0);
+
+		FDebugLineEntry Shaft;
+		Shaft.Start = Start;
+		Shaft.End = End;
+		Shaft.Color = ArrowColor;
+		Bus.AddDebugLineEntry(std::move(Shaft));
+
+		FDebugLineEntry HeadA;
+		HeadA.Start = End;
+		HeadA.End = End - Forward * HeadLength + Right * HeadWidth;
+		HeadA.Color = ArrowColor;
+		Bus.AddDebugLineEntry(std::move(HeadA));
+
+		FDebugLineEntry HeadB;
+		HeadB.Start = End;
+		HeadB.End = End - Forward * HeadLength - Right * HeadWidth;
 		HeadB.Color = ArrowColor;
 		Bus.AddDebugLineEntry(std::move(HeadB));
 	}
@@ -131,6 +195,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
 	const FShowFlags& ShowFlags = Opts.ShowFlags;
 	EViewMode ViewMode = Opts.ViewMode;
+	FFXAAConstants FXAAConstants = Editor->GetSettings().BuildFXAAConstants();
+	if (VP->GetWidth() > 0 && VP->GetHeight() > 0)
+	{
+		FXAAConstants.RcpFrame = FVector2(
+			1.0f / static_cast<float>(VP->GetWidth()),
+			1.0f / static_cast<float>(VP->GetHeight()));
+	}
 
 	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
 	if (VP->ApplyPendingResize())
@@ -148,6 +219,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportInfo(VP);
 	Bus.SetViewportType(Opts.ViewportType);
+	Bus.SetFXAAEnabled(Opts.bEnableFXAA);
+	Bus.SetFXAAConstants(FXAAConstants);
 	Bus.SetOcclusionCulling(&GPUOcclusion);
 	Bus.SetLODContext(World->PrepareLODContext());
 
@@ -194,6 +267,26 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 				}
 
 				AddProjectileVelocityArrow(Bus, SourceComponent->GetWorldLocation(), PreviewVelocity);
+			}
+		}
+
+		if (ShowFlags.bDebugDraw)
+		{
+			for (AActor* SelectedActor : Editor->GetSelectionManager().GetSelectedActors())
+			{
+				if (!SelectedActor || SelectedActor->GetWorld() != World)
+				{
+					continue;
+				}
+
+				for (UActorComponent* ActorComponent : SelectedActor->GetComponents())
+				{
+					if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(ActorComponent))
+					{
+						AddDecalVolumeWireframe(Bus, DecalComponent);
+						AddDecalProjectionArrow(Bus, DecalComponent);
+					}
+				}
 			}
 		}
 

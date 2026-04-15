@@ -23,12 +23,18 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::SelectionMask].Create(InDevice, L"Shaders/SelectionMask.hlsl", 
 		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
 
+	Shaders[(uint32)EShaderType::SceneDepthProcess].Create(InDevice, L"Shaders/SceneDepthShader.hlsl",
+		"VS", "PS", nullptr, 0);
+
+	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/Decal.hlsl",
+		"VS", "PS", FVertexPNCTInputLayout, ARRAYSIZE(FVertexPNCTInputLayout));
+
 	// PostProcess outline: fullscreen quad (InputLayout 없음)
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl",
 		"VS", "PS", nullptr, 0);
 
-	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/Decal.hlsl",
-		"VS", "PS", FVertexInputLayout, ARRAYSIZE(FVertexInputLayout));
+	Shaders[(uint32)EShaderType::FXAA].Create(InDevice, L"Shaders/FXAA.hlsl",
+		"VS", "PS", nullptr, 0);
 
 	// Batcher 셰이더 (FTextureVertex: POSITION + TEXCOORD)
 	Shaders[(uint32)EShaderType::Font].Create(InDevice, L"Shaders/ShaderFont.hlsl",

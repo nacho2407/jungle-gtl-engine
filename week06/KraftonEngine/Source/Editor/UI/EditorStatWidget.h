@@ -19,4 +19,5 @@ private:
 	uint32 FrozenDrawCalls = 0;
 	TArray<FStatEntry> FrozenCPUEntries;
 	TArray<FStatEntry> FrozenGPUEntries;
+	FDecalFrameStats FrozenDecalStats;
 };
