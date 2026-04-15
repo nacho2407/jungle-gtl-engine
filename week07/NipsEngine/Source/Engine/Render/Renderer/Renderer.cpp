@@ -369,20 +369,19 @@ void FRenderer::FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const 
 // ============================================================
 void FRenderer::ExecuteDefaultPass(ERenderPass Pass, const TArray<FRenderCommand>& Commands, const FRenderBus& Bus, ID3D11DeviceContext* Context)
 {
-	ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
+	//ApplyPassRenderState(Pass, Context, Bus.GetViewMode());
 
-	const FPassRenderState& State = PassRenderStates[(uint32)Pass];
-	ERenderCommandType LastCommandType = static_cast<ERenderCommandType>(-1);
-	for (const auto& Cmd : Commands)
-	{
-		BindShaderByType(Cmd, Context, LastCommandType);
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
-		{
-			DrawPostProcessOutline(Context);
-			continue;
-		}
-		DrawCommand(Context, Cmd);
-	}
+	//ERenderCommandType LastCommandType = static_cast<ERenderCommandType>(-1);
+	//for (const auto& Cmd : Commands)
+	//{
+	//	BindShaderByType(Cmd, Context, LastCommandType);
+	//	if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+	//	{
+	//		DrawPostProcessOutline(Context);
+	//		continue;
+	//	}
+	//	DrawCommand(Context, Cmd);
+	//}
 }
 
 void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Context, EViewMode CurViewMode)
@@ -398,6 +397,10 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 		* 
 		*/
         case ERenderPass::Opaque:
+			RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+            RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
+            RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
+			break;
 		case ERenderPass::Decal:
             RTVs[0] = CurrentRenderTargets.SceneColorRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
