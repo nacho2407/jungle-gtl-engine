@@ -1,10 +1,11 @@
-﻿#include "BillboardComponent.h"
+#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/BillboardSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
+#include "GameFramework/AActor.h"
 
 #include <cstring>
 
@@ -64,7 +65,6 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
 }
 
 void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
-	
 {
 	if (!GetOwner() || !GetOwner()->GetWorld()) return;
 

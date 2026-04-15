@@ -266,6 +266,9 @@
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -444,6 +447,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp">
@@ -642,6 +648,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\DecalComponent.h">
@@ -882,6 +891,9 @@
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h">
