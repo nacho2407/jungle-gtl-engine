@@ -163,7 +163,7 @@ bool FObjLoader::BuildStaticMesh(const FString& Path, FStaticMesh* InStaticMesh,
 			continue;
 		}
 
-		const FString MaterialName = Face.MaterialName.empty() ? FString("Default") : Face.MaterialName;
+		const FString MaterialName = Face.MaterialName.empty() ? FString("DefaultWhite") : Face.MaterialName;
 		const int32 SlotIdx = GetOrAddMaterialSlot(MaterialName);
 		
 		if (SlotIdx >= static_cast<int32>(SlotIndices.size()))
@@ -218,7 +218,7 @@ bool FObjLoader::BuildStaticMesh(const FString& Path, FStaticMesh* InStaticMesh,
 
 int32 FObjLoader::GetOrAddMaterialSlot(const FString& MaterialName)
 {
-	FString SlotName = MaterialName.empty() ? FString("Default") : MaterialName;
+	FString SlotName = MaterialName.empty() ? FString("DefaultWhite") : MaterialName;
 	
 	for (int32 i = 0; i < static_cast<int32>(BuiltMaterialSlotName.size()); i++)
 	{
