@@ -377,7 +377,7 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 				for (TObjectIterator<UTexture> It; It; ++It)
 				{
 					UTexture* Texture = *It;
-					if (Texture)
+					if (Texture && !Texture->GetFilePath().empty())
 					{
 						const FString& TexPath = Texture->GetFilePath().empty() ? "None" : Texture->GetFilePath();
 						bool bSelected = (TexPath == CurrentPath);
