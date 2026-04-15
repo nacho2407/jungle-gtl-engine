@@ -201,7 +201,7 @@ void ABillboardActor::InitDefaultComponents()
 {	
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	SetRootComponent(Billboard);
-	Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+	Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
 	//Billboard->SetTextureName();
 
     auto* TextUUID = AddComponent<UTextRenderComponent>();
@@ -222,7 +222,8 @@ void ADecalActor::InitDefaultComponents()
 
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
 	Billboard->AttachToComponent(Decal);
-	Billboard->SetTextureName(("Asset\\Texture\\DecalActor_64.png"));
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName(("Asset/Texture/DecalActor_64.png"));
 
 	auto* TextUUID = AddComponent<UTextRenderComponent>();
 	TextUUID->AttachToComponent(Decal);
@@ -257,12 +258,13 @@ void AFireballActor::InitDefaultComponents()
 }
 
 void ASpotLightActor::InitDefaultComponents() {
-	UBillboardComponent* BillboardIcon = AddComponent<UBillboardComponent>();
-    BillboardIcon->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
-	SetRootComponent(BillboardIcon);
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
+	Billboard->SetEditorOnly(true);
+	SetRootComponent(Billboard);
 
 	UDecalComponent* Decal = AddComponent<UDecalComponent>();
-	Decal->AttachToComponent(BillboardIcon);
+	Decal->AttachToComponent(Billboard);
 	Decal->SetRelativeLocation(FVector(10, 0, 0));
 	DecalComp = Decal;
 
