@@ -413,6 +413,14 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
         {
             FString MoveName = GetMovementComponentDisplayName(MoveComp);
             ImGui::TreeNodeEx(Comp, Flags, "%s", MoveName.c_str());
+
+            // --- DRAG SOURCE (MovementComponent) ---
+            if (ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("DND_MOVE_COMP", &Comp, sizeof(UActorComponent*));
+                ImGui::Text("Moving %s", MoveName.c_str());
+                ImGui::EndDragDropSource();
+            }
         }
         else
         {
@@ -480,6 +488,45 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
 
     if (!bIsRoot) ImGui::PopClipRect();
 
+    // --- DRAG SOURCE (SceneComponent) ---
+    if (ImGui::BeginDragDropSource())
+    {
+        ImGui::SetDragDropPayload("DND_SCENE_COMP", &Comp, sizeof(USceneComponent*));
+        ImGui::Text("Dragging %s", Name.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    // --- DROP TARGET ---
+    if (ImGui::BeginDragDropTarget())
+    {
+        // 1. SceneComponent를 SceneComponent에 드롭 (부착)
+        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_SCENE_COMP"))
+        {
+            USceneComponent* DraggedComp = *(USceneComponent**)Payload->Data;
+            // 자기 자신이나 자신의 조상에게 부착하는 것을 방지
+            bool bIsAncestor = false;
+            for (USceneComponent* P = Comp; P; P = P->GetParent())
+            {
+                if (P == DraggedComp) { bIsAncestor = true; break; }
+            }
+
+            if (DraggedComp && DraggedComp != Comp && !bIsAncestor)
+            {
+                DraggedComp->AttachToComponent(Comp);
+            }
+        }
+        // 2. MovementComponent를 SceneComponent에 드롭 (UpdatedComponent 설정)
+        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_MOVE_COMP"))
+        {
+            UMovementComponent* DraggedMoveComp = *(UMovementComponent**)Payload->Data;
+            if (DraggedMoveComp)
+            {
+                DraggedMoveComp->SetUpdatedComponent(Comp);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
     if (ImGui::IsItemClicked())
     {
         SelectedComponent = Comp;
@@ -544,7 +591,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
-	ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
+	RenderEditableName("Name##Actor", PrimaryActor); // 편집 가능한 UI
 
 	if (PrimaryActor->GetRootComponent())
 	{
@@ -652,7 +699,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 void FEditorPropertyWidget::RenderComponentProperties()
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
-	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
+	RenderEditableName("Name##Component", SelectedComponent); // 편집 가능한 UI
 
 	ImGui::Separator();
 
@@ -970,4 +1017,19 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 
 	SelectedComponent = NewComp;
 	bActorSelected = false;
+}
+
+template<typename T>
+void FEditorPropertyWidget::RenderEditableName(const char* Label, T* TargetObject)
+{
+	if (!TargetObject) return;
+
+	char NameBuf[256];
+	strncpy_s(NameBuf, sizeof(NameBuf), TargetObject->GetFName().ToString().c_str(), _TRUNCATE);
+
+	// Enter 키를 누르거나 포커스를 잃었을 경우에 이름이 변경되도록 설정
+	if (ImGui::InputText(Label, NameBuf, sizeof(NameBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+	{
+		TargetObject->SetFName(FName(NameBuf));
+	}
 }
