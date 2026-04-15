@@ -1,6 +1,7 @@
 ﻿#include "HeightFogActor.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/BillboardComponent.h"
+#include "Materials/MaterialManager.h"
 
 IMPLEMENT_CLASS(AHeightFogActor, AActor)
 
@@ -15,5 +16,7 @@ void AHeightFogActor::InitDefaultComponents()
 
 	BillboardComponent = AddComponent<UBillboardComponent>();
 	BillboardComponent->AttachToComponent(FogComponent);
-	BillboardComponent->SetTexture("HeightFog");
+	
+	auto FogMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/HeightFog.json");
+	BillboardComponent->SetMaterial(FogMaterial);
 }
