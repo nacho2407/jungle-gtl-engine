@@ -20,5 +20,6 @@ private:
 	ID3D11DepthStencilState* GizmoInside = nullptr;
 	ID3D11DepthStencilState* GizmoOutside = nullptr;
 
-	EDepthStencilState CurrentState = EDepthStencilState::Default;
+	// 무효 값으로 초기화 — 첫 Set() 호출이 반드시 GPU에 도달하도록 보장
+	EDepthStencilState CurrentState = static_cast<EDepthStencilState>(-1);
 };

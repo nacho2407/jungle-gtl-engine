@@ -305,7 +305,7 @@ void FRenderer::BeginFrame()
 	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
 
 	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
-	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
 	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
 	Context->RSSetViewports(1, &Viewport);
