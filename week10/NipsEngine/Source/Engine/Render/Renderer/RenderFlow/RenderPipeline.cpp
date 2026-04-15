@@ -54,12 +54,22 @@ bool FRenderPipeline::Initialize()
     PostProcessOutlineRenderPass = std::make_shared<FPostProcessOutlineRenderPass>();
     PostProcessOutlineRenderPass->Initialize();
 
+	LightRenderPass->SetSkipWireframe(true);
+    FogRenderPass->SetSkipWireframe(true);
+    FXAARenderPass->SetSkipWireframe(true);
+
+	/**
+	 * 하나의 Render Pass 가 다음 Rneder Pass 에 넘기는 OutSRV 에 대해선 주의가 필요하다.
+	 * LightRenderPass -> FogRenderPass 로 갈 때 LightSRV 를 넘겨도 되지만
+	 * FXAARenderPass -> FontRenderPass 일 때 FXAASRV 가 아닌 ColorSRV 를 넘겨야 한다.
+	 * ColorSRV 가 최종 결과물 버퍼라고 생각하면 된다.
+	 */
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
     RenderPasses.push_back(FogRenderPass);
-    RenderPasses.push_back(FXAARenderPass);
-    RenderPasses.push_back(FontRenderPass);
+    RenderPasses.push_back(FXAARenderPass);   
+	RenderPasses.push_back(FontRenderPass);
     RenderPasses.push_back(SubUVRenderPass);
     RenderPasses.push_back(TranslucentRenderPass);
     RenderPasses.push_back(SelectionMaskRenderPass);
@@ -73,22 +83,11 @@ bool FRenderPipeline::Initialize()
 
 bool FRenderPipeline::Render(const FRenderPassContext* Context)
 {
+    OutSRV = nullptr;
+    OutRTV = nullptr;
+
 	for (std::shared_ptr<FBaseRenderPass> Pass : RenderPasses)
 	{
-        /*
-			Wireframe 모드에선 다음과 같은 Render Pass 무시
-		*/
-        const bool bWireframeView = (Context->RenderBus != nullptr) && (Context->RenderBus->GetViewMode() == EViewMode::Wireframe);
-        const bool bSkipForWireframe =
-            (Pass.get() == LightRenderPass.get()) ||
-            (Pass.get() == FogRenderPass.get()) ||
-            (Pass.get() == FXAARenderPass.get());
-
-        if (bWireframeView && bSkipForWireframe)
-        {
-            continue;
-        }
-
         Pass->SetPrevPassSRV(OutSRV);
         Pass->SetPrevPassRTV(OutRTV);
         Pass->Render(Context);

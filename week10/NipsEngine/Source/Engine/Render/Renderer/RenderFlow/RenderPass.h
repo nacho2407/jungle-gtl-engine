@@ -24,6 +24,8 @@ public:
 	void SetPrevPassSRV(ID3D11ShaderResourceView* InSRV) { PrevPassSRV = InSRV; }
     void SetPrevPassRTV(ID3D11RenderTargetView* InRTV) { PrevPassRTV = InRTV; }
 
+	void SetSkipWireframe(bool bInSkipWireframe) { bSkipWireframe = bInSkipWireframe; }
+
 protected:
     /** 자원 할당 */
     virtual bool Begin(const FRenderPassContext* Context) = 0;
@@ -42,4 +44,6 @@ protected:
     // 이전 Pass 출력 SRV / RTV 세트
     ID3D11ShaderResourceView* PrevPassSRV = nullptr;
     ID3D11RenderTargetView* PrevPassRTV = nullptr;
+
+	bool bSkipWireframe = false;
 };
