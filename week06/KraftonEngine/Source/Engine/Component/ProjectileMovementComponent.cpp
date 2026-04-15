@@ -186,6 +186,9 @@ bool UProjectileMovementComponent::HandleBlockingHit(USceneComponent* UpdatedSce
 		Decal->SetTexture("Friedegg");
 		Decal->SetWorldLocation(HitResult.WorldHitLocation);
 
+		FRotator Rot = FMatrix::MakeFromX(HitResult.WorldNormal).ToRotator();
+		Decal->SetRelativeRotation(Rot);
+
 		FFadeSetting Setting{};
 		Setting.bFadeOnceAndDestroy = true;
 		Setting.FadeInTime = 0.1f;
@@ -269,7 +272,8 @@ bool UProjectileMovementComponent::CheckBlockingHit(USceneComponent* UpdatedScen
 
         const FVector ImpactPoint = CurrentLocation + Direction * CandidateHit.Distance;
         OutHitResult.WorldHitLocation = ImpactPoint;
-
+        OutHitResult.WorldNormal = CandidateHit.WorldNormal;
+		
         bFoundHit = true;
     }
 

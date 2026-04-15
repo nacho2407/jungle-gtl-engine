@@ -162,6 +162,7 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 						OutHitResult.bHit = true;
 						OutHitResult.Distance = TValues[Lane];
 						OutHitResult.FaceIndex = Packet.TriangleStartIndices[Lane];
+
 						bHit = true;
 					}
 					RemainingMask &= (RemainingMask - 1);
@@ -229,6 +230,27 @@ bool FMeshTrianglePickingBVH::RaycastLocal(const FVector& LocalOrigin, const FVe
 			NodeStack[StackSize++] = ChildEntries[I];
 		}
 	}
+
+	if (bHit)
+    {
+        const int32 FaceIndex = OutHitResult.FaceIndex;
+
+        const uint32 Index0 = Mesh.Indices[FaceIndex];
+        const uint32 Index1 = Mesh.Indices[FaceIndex + 1];
+        const uint32 Index2 = Mesh.Indices[FaceIndex + 2];
+
+        const FVector& V0 = Mesh.Vertices[Index0].pos;
+        const FVector& V1 = Mesh.Vertices[Index1].pos;
+        const FVector& V2 = Mesh.Vertices[Index2].pos;
+
+        const FVector Edge1 = V1 - V0;
+        const FVector Edge2 = V2 - V0;
+
+        FVector LocalNormal = Edge1.Cross(Edge2);
+        LocalNormal.Normalize();
+
+        OutHitResult.WorldNormal = LocalNormal;
+    }
 
 	return bHit;
 }

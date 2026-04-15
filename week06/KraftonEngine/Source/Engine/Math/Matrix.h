@@ -87,6 +87,8 @@ struct FMatrix {
 	static FMatrix MakeScaleMatrix(const FVector& Scale);
 	static FMatrix MakeRotationEuler(const FVector& Rotation);
 	static FMatrix MakeRotationAxis(const FVector& Axis, float Angle);
+	
+	static FMatrix MakeFromX(const FVector& Rotation);
 
 	static FMatrix MakeRotationX(float Angle);
 	static FMatrix MakeRotationY(float Angle);

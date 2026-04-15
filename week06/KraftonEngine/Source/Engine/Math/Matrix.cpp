@@ -533,6 +533,23 @@ FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)
 	return ret;
 }
 
+FMatrix FMatrix::MakeFromX(const FVector& InX)
+{
+    FVector X = InX.Normalized();
+
+    // X와 평행하지 않은 Up 선택
+    FVector Up = (abs(X.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
+
+    FVector Y = Up.Cross(X).Normalized();   // right
+    FVector Z = X.Cross(Y).Normalized();    // up
+
+    return FMatrix(
+        X.X, X.Y, X.Z, 0,
+        Y.X, Y.Y, Y.Z, 0,
+        Z.X, Z.Y, Z.Z, 0,
+        0,   0,   0,   1);
+}
+
 FQuat FMatrix::ToQuat() const
 {
 	return FQuat::FromMatrix(*this);
