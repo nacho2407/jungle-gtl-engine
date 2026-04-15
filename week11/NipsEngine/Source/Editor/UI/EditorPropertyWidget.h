@@ -43,6 +43,10 @@ private:
 	// 유틸리티
 	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp);
 
+	// 이름 변경 및 UI 렌더링
+	template<typename T>
+	void RenderEditableName(const char* Label, T* TargetObject);
+
 	// 멤버 변수
 	FSelectionManager* SelectionManager  = nullptr;
 	UActorComponent* SelectedComponent = nullptr;
