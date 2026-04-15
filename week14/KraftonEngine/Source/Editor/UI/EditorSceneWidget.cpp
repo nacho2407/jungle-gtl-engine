@@ -207,7 +207,7 @@ void FEditorSceneWidget::RenderActorOutliner()
 
 			const FString& StoredName = Actor->GetFName().ToString();
 			const char* DisplayName = StoredName.empty()
-				? Actor->GetTypeInfo()->name
+				? Actor->GetClass()->GetName()
 				: StoredName.c_str();
 
 			bool bIsSelected = Selection.IsSelected(Actor);

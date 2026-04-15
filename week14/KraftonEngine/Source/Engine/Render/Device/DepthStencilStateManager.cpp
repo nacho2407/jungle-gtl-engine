@@ -4,19 +4,19 @@
 
 void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 {
-	// Default
+	// Default (Reversed-Z: near=1, far=0 → GREATER passes closer fragments)
 	D3D11_DEPTH_STENCIL_DESC Desc = {};
 	Desc.DepthEnable = TRUE;
 	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	Desc.DepthFunc = D3D11_COMPARISON_LESS;
+	Desc.DepthFunc = D3D11_COMPARISON_GREATER;
 	Desc.StencilEnable = FALSE;
 	InDevice->CreateDepthStencilState(&Desc, &Default);
 
-	// Depth Read Only
+	// Depth Read Only (Reversed-Z)
 	Desc = {};
 	Desc.DepthEnable = TRUE;
 	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	Desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
 	Desc.StencilEnable = FALSE;
 	InDevice->CreateDepthStencilState(&Desc, &DepthReadOnly);
 

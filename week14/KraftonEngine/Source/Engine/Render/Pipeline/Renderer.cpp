@@ -150,9 +150,6 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Proxy.ExtraCB.Buffer->Update(Ctx, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
 	}
 
-	// 공유 Material CB (섹션별 인라인 데이터용)
-	FConstantBuffer* MaterialCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Material, sizeof(FMaterialConstants));
-
 	// SelectionMask 커맨드 존재 추적
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
@@ -178,19 +175,19 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = Proxy.Shader;
-			Cmd.DepthStencil = PassState.DepthStencil;
-			Cmd.Blend = PassState.Blend;
-			Cmd.Rasterizer = Rasterizer;
+
+			// 머티리얼 기반 렌더 상태 우선 적용
+			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
+			Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
+			Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
+
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = Proxy.MeshBuffer;
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
 			Cmd.PerObjectCB = PerObjCB;
-			//Cmd.PerShaderCB[0] = MaterialCB;
 			Cmd.PerShaderCB[0] = Section.MaterialCB[0];
 			Cmd.PerShaderCB[1] = Section.MaterialCB[1];
-
-			Cmd.bInlineMaterialData = true;
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.Pass = Pass;
@@ -202,9 +199,12 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Shader = Proxy.Shader;
-		Cmd.DepthStencil = PassState.DepthStencil;
-		Cmd.Blend = PassState.Blend;
-		Cmd.Rasterizer = Rasterizer;
+
+		// 프록시 기반 렌더 상태 적용
+		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
+		Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
+		Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+
 		Cmd.Topology = PassState.Topology;
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
@@ -252,9 +252,12 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = DecalProxy.Shader;
-			Cmd.DepthStencil = PassState.DepthStencil;
-			Cmd.Blend = PassState.Blend;
-			Cmd.Rasterizer = Rasterizer;
+
+			// 머티리얼 기반 렌더 상태 우선 적용
+			Cmd.Blend = (DecalProxy.Blend != EBlendState::Opaque || DecalPass == ERenderPass::Opaque) ? DecalProxy.Blend : PassState.Blend;
+			Cmd.DepthStencil = (DecalProxy.DepthStencil != EDepthStencilState::Default || DecalPass == ERenderPass::Opaque) ? DecalProxy.DepthStencil : PassState.DepthStencil;
+			Cmd.Rasterizer = (DecalProxy.Rasterizer != ERasterizerState::SolidBackCull || DecalPass == ERenderPass::Opaque) ? DecalProxy.Rasterizer : Rasterizer;
+
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;
 			Cmd.FirstIndex = FirstIndex;
@@ -302,7 +305,7 @@ void FRenderer::BeginFrame()
 	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
 
 	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
-	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
 	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
 	Context->RSSetViewports(1, &Viewport);
@@ -755,6 +758,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
 	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = Frame.WireframeColor;
+	frameConstantData.CameraWorldPos = Frame.CameraPosition;
 
 	if (GEngine && GEngine->GetTimer())
 	{

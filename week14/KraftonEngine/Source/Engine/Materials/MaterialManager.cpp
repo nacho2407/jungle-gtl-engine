@@ -6,7 +6,19 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
-#include "Engine/Platform/Paths.h"
+#include "Render/Pipeline/Renderer.h"
+
+namespace MatKeys
+{
+	static constexpr const char* PathFileName     = "PathFileName";
+	static constexpr const char* ShaderPath       = "ShaderPath";
+	static constexpr const char* RenderPass       = "RenderPass";
+	static constexpr const char* BlendState       = "BlendState";
+	static constexpr const char* DepthStencilState = "DepthStencilState";
+	static constexpr const char* RasterizerState  = "RasterizerState";
+	static constexpr const char* Parameters       = "Parameters";
+	static constexpr const char* Textures         = "Textures";
+}
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -38,8 +50,6 @@ void FMaterialManager::ScanMaterialAssets()
 	}
 }
 
-
-
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
@@ -55,9 +65,9 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	{
 		// 기본 머티리얼 생성
 		UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
-		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath, ERenderPass::Opaque);
+		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath);
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-		DefaultMaterial->Create(MatFilePath, Template, std::move(Buffers));
+		DefaultMaterial->Create(MatFilePath, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
 		// 폴백: 핑크색으로 미지정 머티리얼임을 표시
 		DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
 		MaterialCache.emplace(MatFilePath, DefaultMaterial);
@@ -65,34 +75,52 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	}
 
 	// 3. JSON에서 기본 정보 추출
-	FString PathFileName = JsonData["PathFileName"].ToString().c_str();
-	FString ShaderPath = JsonData["ShaderPath"].ToString().c_str();
-	FString RenderPassStr = JsonData["RenderPass"].ToString().c_str();
+	FString PathFileName = JsonData[MatKeys::PathFileName].ToString().c_str();
+	FString ShaderPath = JsonData[MatKeys::ShaderPath].ToString().c_str();
+	FString RenderPassStr = JsonData[MatKeys::RenderPass].ToString().c_str();
 	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 
+	// 새로운 렌더 상태 추출 (JSON에 없으면 패스 기반 기본값)
+	FString BlendStr = JsonData.hasKey(MatKeys::BlendState) ? JsonData[MatKeys::BlendState].ToString().c_str() : "";
+	FString DepthStr = JsonData.hasKey(MatKeys::DepthStencilState) ? JsonData[MatKeys::DepthStencilState].ToString().c_str() : "";
+	FString RasterStr = JsonData.hasKey(MatKeys::RasterizerState) ? JsonData[MatKeys::RasterizerState].ToString().c_str() : "";
+
+	EBlendState BlendState = StringToBlendState(BlendStr, RenderPass);
+	EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
+	ERasterizerState RasterState = StringToRasterizerState(RasterStr, RenderPass);
+
 	// 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
-	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath, RenderPass);
+	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
 	if (!Template) return nullptr;
 
-
-	// 3. D3D 상수 버퍼 생성
+	// 5. D3D 상수 버퍼 생성
 	auto InjectedBuffers = CreateConstantBuffers(Template);
 
-	// 4. UMaterial 인스턴스 생성 및 초기화
+	// 6. UMaterial 인스턴스 생성 및 초기화 (RenderPass는 인스턴스별)
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
-	Material->Create(PathFileName, Template, std::move(InjectedBuffers));
+	Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
 	MaterialCache.emplace(MatFilePath, Material);
 
 	//템플릿을 통해 material에 넣기
 	bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
 
+	// 이전 셰이더의 찌꺼기 파라미터 정리
+	bool bPurged = PurgeStaleParameters(JsonData, Template);
+
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
 
-	// 새로운 기본 파라미터가 주입된 경우에만 JSON 저장
-	if (bInjected)
+	// JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
+	JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
+	JsonData[MatKeys::DepthStencilState] = DepthStr.empty() ? "" : DepthStr.c_str();
+	JsonData[MatKeys::RasterizerState] = RasterStr.empty() ? "" : RasterStr.c_str();
+
+	//최종적으로 material 저장
+	if (bInjected || bPurged)
+	{
 		SaveToJSON(JsonData, MatFilePath);
+	}
 
 	return Material;
 }
@@ -109,7 +137,7 @@ json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 
 TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::CreateConstantBuffers(FMaterialTemplate* Template)
 {
-	
+
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> InjectedBuffers;
 
 	const auto& RequiredBuffers = Template->GetParameterInfo();
@@ -134,9 +162,9 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 
 void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData)
 {
-	if (!JsonData.hasKey("Parameters")) return;
+	if (!JsonData.hasKey(MatKeys::Parameters)) return;
 
-	for (auto& Pair : JsonData["Parameters"].ObjectRange())
+	for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
 	{
 		FString ParamName = Pair.first.c_str();
 		json::JSON& Value = Pair.second;
@@ -161,9 +189,9 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 
 void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
 {
-	if (!JsonData.hasKey("Textures")) return;
+	if (!JsonData.hasKey(MatKeys::Textures)) return;
 
-	for (auto& Pair : JsonData["Textures"].ObjectRange())
+	for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
 	{
 		FString SlotName = Pair.first.c_str();
 		FString TexturePath = Pair.second.ToString().c_str();
@@ -177,21 +205,80 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
 }
 
 
-ERenderPass FMaterialManager::StringToRenderPass(const FString& RenderPassStr) const
+ERenderPass FMaterialManager::StringToRenderPass(const FString& Str) const
 {
-	if (RenderPassStr == "Opaque")        return ERenderPass::Opaque;
-	if (RenderPassStr == "AlphaBlend")    return ERenderPass::AlphaBlend;
-	if (RenderPassStr == "Decal")         return ERenderPass::Decal;
-	if (RenderPassStr == "AdditiveDecal") return ERenderPass::AdditiveDecal;
-	if (RenderPassStr == "SelectionMask") return ERenderPass::SelectionMask;
-	if (RenderPassStr == "EditorLines")   return ERenderPass::EditorLines;
-	if (RenderPassStr == "PostProcess")   return ERenderPass::PostProcess;
-	if (RenderPassStr == "GizmoOuter")    return ERenderPass::GizmoOuter;
-	if (RenderPassStr == "GizmoInner")    return ERenderPass::GizmoInner;
-	if (RenderPassStr == "OverlayFont")   return ERenderPass::OverlayFont;
+	using namespace RenderStateStrings;
+	return FromString(RenderPassMap, Str, ERenderPass::Opaque);
+}
 
-	// 매칭되는 게 없으면 기본값 반환
-	return ERenderPass::Opaque;
+EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass Pass) const
+{
+	using namespace RenderStateStrings;
+	if (!Str.empty())
+		return FromString(BlendStateMap, Str, EBlendState::Opaque);
+
+	// 문자열이 비어있으면 Pass 기반 기본값
+	switch (Pass)
+	{
+	case ERenderPass::AlphaBlend:
+	case ERenderPass::Decal:
+	case ERenderPass::EditorLines:
+	case ERenderPass::PostProcess:
+	case ERenderPass::GizmoInner:
+	case ERenderPass::OverlayFont:
+		return EBlendState::AlphaBlend;
+	case ERenderPass::AdditiveDecal:
+		return EBlendState::Additive;
+	case ERenderPass::SelectionMask:
+		return EBlendState::NoColor;
+	default:
+		return EBlendState::Opaque;
+	}
+}
+
+EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& Str, ERenderPass Pass) const
+{
+	using namespace RenderStateStrings;
+	if (!Str.empty())
+		return FromString(DepthStencilStateMap, Str, EDepthStencilState::Default);
+
+	// 문자열이 비어있으면 Pass 기반 기본값
+	switch (Pass)
+	{
+	case ERenderPass::Decal:
+	case ERenderPass::AdditiveDecal:
+		return EDepthStencilState::DepthReadOnly;
+	case ERenderPass::SelectionMask:
+		return EDepthStencilState::StencilWrite;
+	case ERenderPass::PostProcess:
+	case ERenderPass::OverlayFont:
+		return EDepthStencilState::NoDepth;
+	case ERenderPass::GizmoOuter:
+		return EDepthStencilState::GizmoOutside;
+	case ERenderPass::GizmoInner:
+		return EDepthStencilState::GizmoInside;
+	default:
+		return EDepthStencilState::Default;
+	}
+}
+
+ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, ERenderPass Pass) const
+{
+	using namespace RenderStateStrings;
+	if (!Str.empty())
+		return FromString(RasterizerStateMap, Str, ERasterizerState::SolidBackCull);
+
+	// 문자열이 비어있으면 Pass 기반 기본값
+	switch (Pass)
+	{
+	case ERenderPass::Decal:
+	case ERenderPass::AdditiveDecal:
+	case ERenderPass::SelectionMask:
+	case ERenderPass::PostProcess:
+		return ERasterizerState::SolidNoCull;
+	default:
+		return ERasterizerState::SolidBackCull;
+	}
 }
 
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
@@ -211,7 +298,7 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 		const FMaterialParameterInfo* Info = Pair.second;
 
 		// 이미 JSON에 있으면 스킵
-		if (!JsonData["Parameters"][ParamName].IsNull())
+		if (!JsonData[MatKeys::Parameters][ParamName].IsNull())
 			continue;
 
 		bInjected = true;
@@ -222,21 +309,21 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 			{
 				float Value = 0.f;
 				Material->GetScalarParameter(ParamName, Value);
-				JsonData["Parameters"][ParamName] = Value;
+				JsonData[MatKeys::Parameters][ParamName] = Value;
 				break;
 			}
 			case sizeof(float) * 3: // 12바이트 - Vector3
 			{
 				FVector Value;
 				Material->GetVector3Parameter(ParamName, Value);
-				JsonData["Parameters"][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
+				JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
 				break;
 			}
 			case sizeof(float) * 4: // 16바이트 - Vector4
 			{
 				FVector4 Value;
 				Material->GetVector4Parameter(ParamName, Value);
-				JsonData["Parameters"][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
+				JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
 				break;
 			}
 			case sizeof(float) * 16: // 64바이트 - Matrix
@@ -246,7 +333,7 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 				auto MatArray = json::Array();
 				for (int i = 0; i < 16; ++i)
 					MatArray.append(Value.Data[i]);
-				JsonData["Parameters"][ParamName] = MatArray;
+				JsonData[MatKeys::Parameters][ParamName] = MatArray;
 				break;
 			}
 			default:
@@ -257,39 +344,64 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 	return bInjected;
 }
 
-FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath, ERenderPass RenderPass)
+bool FMaterialManager::PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template)
 {
-	
-	// 1. 템플릿이 캐시에 있는지 확인
-	// (셰이더 경로를 키값으로 사용)
+	if (!JsonData.hasKey(MatKeys::Parameters)) return false;
+
+	const auto& Layout = Template->GetParameterInfo();
+	json::JSON CleanParams = json::JSON::Make(json::JSON::Class::Object);
+	bool bPurged = false;
+
+	for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
+	{
+		FString ParamName = Pair.first.c_str();
+		if (Layout.find(ParamName) != Layout.end())
+		{
+			CleanParams[Pair.first] = Pair.second;
+		}
+		else
+		{
+			bPurged = true;
+		}
+	}
+
+	if (bPurged)
+	{
+		JsonData[MatKeys::Parameters] = std::move(CleanParams);
+	}
+
+	return bPurged;
+}
+
+FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath)
+{
+	// 1. 템플릿이 캐시에 있는지 확인 (셰이더 경로를 키값으로 사용)
 	auto It = TemplateCache.find(ShaderPath);
 	if (It != TemplateCache.end())
 	{
-		return It->second; // 이미 누군가 만들어둔 게 있으면 즉시 반환!
+		return It->second;
 	}
 
-	// 2. 템플릿이 기존에 없다면 새로 제작
-	// - 셰이더 파일 읽고 컴파일
+	// 2. 템플릿이 기존에 없다면 새로 제작 — 셰이더 파일 읽고 컴파일
 	FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(ShaderPath).c_str());
-
 	if (!Shader)
 	{
-		return nullptr; // 셰이더 로드 실패
+		return nullptr;
 	}
 
 	FMaterialTemplate* NewTemplate = new FMaterialTemplate();
-	NewTemplate->Create(Shader, RenderPass);
+	NewTemplate->Create(Shader);
 	TemplateCache.emplace(ShaderPath, NewTemplate);
 	return NewTemplate;
 }
 
 FMaterialManager::~FMaterialManager()
 {
-	if(!Device)
+	if (!Device)
 	{
 		Release();
 	}
-	
+
 }
 
 void FMaterialManager::Release()
@@ -306,17 +418,7 @@ void FMaterialManager::Release()
 	}
 	TemplateCache.clear();
 
-	// 2. MaterialCache 포인터 정리
-	// UMaterial은 UObjectManager가 메모리를 관리(GC 등)한다고 가정하고 캐시만 비웁니다.
-	// 만약 엔진 구조상 여기서 지워야 한다면 `delete Pair.second;` 나 `UObjectManager::Get().DestroyObject(...)` 등을 호출해야 합니다.
-	for (auto& Pair : MaterialCache)
-	{
-		if (Pair.second != nullptr)
-		{
-			delete Pair.second;
-			Pair.second = nullptr;
-		}
-	}
+	// 2. MaterialCache — UMaterial은 UObjectManager가 수명을 관리하므로 캐시 맵만 비움
 	MaterialCache.clear();
 
 	// 3. Device 참조 해제

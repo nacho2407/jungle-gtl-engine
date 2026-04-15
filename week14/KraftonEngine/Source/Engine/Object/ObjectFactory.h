@@ -37,10 +37,9 @@ public:
 	}
 
 	UObject* Create(const std::string& TypeName, UObject* InOuter = nullptr) {
-		// 등록은 유지하되, 베이스 타입은 문자열 생성 경로에서 직접 인스턴스화하지 않는다.
-		for (const FTypeInfo* Info : GetClassRegistry())
+		for (UClass* Cls : UClass::GetAllClasses())
 		{
-			if (Info && TypeName == Info->name && Info->HasAnyClassFlags(CF_Abstract))
+			if (Cls && TypeName == Cls->GetName() && Cls->HasAnyClassFlags(CF_Abstract))
 			{
 				return nullptr;
 			}

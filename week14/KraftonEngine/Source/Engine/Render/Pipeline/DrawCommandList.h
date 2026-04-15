@@ -26,10 +26,6 @@ struct FStateCache
 	FConstantBuffer*          PerShaderCB[2] = {};
 	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
 
-	// Material 인라인 데이터 추적 (PerShaderCB[0] 업데이트 최소화)
-	bool     bMaterialDirty   = true;
-	FVector4 LastSectionColor = {};
-
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
 	ID3D11RenderTargetView*  RTV         = nullptr;
 	ID3D11DepthStencilView*  DSV         = nullptr;
