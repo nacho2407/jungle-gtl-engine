@@ -275,6 +275,14 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 {
 	FCollapseCandidate Candidate;
 	Candidate.Edge = FIndexEdge(ia, ib);
+	
+	// Nanite 엣지 보존 로직, BoundaryVertex인 경우 무한대 오차 부여 후 return
+	if (BoundaryVertices.contains(ia) || BoundaryVertices.contains(ib))
+	{
+		Candidate.Error = FLT_MAX;
+        Candidate.OptimalPos = TopologicalVertices[ia].Position;
+        return Candidate;
+	}
 
 	FMatrix Q = Quadrics[ia] + Quadrics[ib];
 	FVector PosA = TopologicalVertices[ia].Position;
@@ -381,12 +389,6 @@ FCollapseCandidate FStaticMeshSimplifier::CalculateEdgeError(uint32 ia, uint32 i
 
 	constexpr float UVSeamPenaltyScale = 1000.0f;
 	Candidate.Error += UVSeamPenaltyScale * MaxUVDistSq;
-
-	// Nanite 엣지 보존 로직, BoundaryVertex인 경우 무한대 오차 부여
-	if (BoundaryVertices.contains(ia) || BoundaryVertices.contains(ib))
-	{
-		Candidate.Error = FLT_MAX;
-	}
 
 	return Candidate;
 }
