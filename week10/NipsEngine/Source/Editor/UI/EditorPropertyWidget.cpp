@@ -591,7 +591,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
-	ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
+	RenderEditableName("Name##Actor", PrimaryActor); // 편집 가능한 UI
 
 	if (PrimaryActor->GetRootComponent())
 	{
@@ -699,7 +699,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 void FEditorPropertyWidget::RenderComponentProperties()
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
-	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
+	RenderEditableName("Name##Component", SelectedComponent); // 편집 가능한 UI
 
 	ImGui::Separator();
 
@@ -1017,4 +1017,19 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 
 	SelectedComponent = NewComp;
 	bActorSelected = false;
+}
+
+template<typename T>
+void FEditorPropertyWidget::RenderEditableName(const char* Label, T* TargetObject)
+{
+	if (!TargetObject) return;
+
+	char NameBuf[256];
+	strncpy_s(NameBuf, sizeof(NameBuf), TargetObject->GetFName().ToString().c_str(), _TRUNCATE);
+
+	// Enter 키를 누르거나 포커스를 잃었을 경우에 이름이 변경되도록 설정
+	if (ImGui::InputText(Label, NameBuf, sizeof(NameBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+	{
+		TargetObject->SetFName(FName(NameBuf));
+	}
 }
