@@ -42,10 +42,11 @@ private:
 	float Elapsed					= 0.f;
 	float UpdateLerpInterval		= 2.0f;
 	float DetectionRadius			= 20.f;
-	float PursuitSpeedMultiplier	= 1.f;
-    float TargetPitch = 0.f;
-    float TargetYaw = 0.f;
+	float PursuitSpeed				= 1.f;
+    float TargetPitch				= 0.f;
+    float TargetYaw					= 0.f;
 
-	bool bIsActive		= true;
-	bool bFaceTargetDir = true;
+	bool bIsActive					= true;
+	bool bFaceTargetDir				= true;
+	bool bAutoTargetPerspCamera		= true;		// If no target is set, default to the primary perspective camera on BeginPlay
 };
