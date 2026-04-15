@@ -28,7 +28,10 @@ void AFakeLightActor::InitDefaultComponents()
 	// light beam Billboard
 	BillboardComponent = AddComponent<UCylindricalBillboardComponent>();
 	BillboardComponent->SetBillboardAxis(FVector(0.0f, 0.0f, 1.0f));
-	BillboardComponent->SetTexture(LampshadeImage);
+	
+	auto LampshadeMaterial = FMaterialManager::Get().GetOrCreateMaterial(LampshadeMaterialPath);
+	BillboardComponent->SetMaterial(LampshadeMaterial);
+
 	BillboardComponent->SetRelativeLocation(FVector( 0, 0, -0.7f ));
 	BillboardComponent->SetRelativeScale(FVector( 3.0f, 3.0f, 3.0f ));
 	BillboardComponent->AttachToComponent(StaticMeshComponent);
