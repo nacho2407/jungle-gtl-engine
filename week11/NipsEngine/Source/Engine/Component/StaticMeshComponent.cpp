@@ -25,18 +25,18 @@ void UStaticMeshComponent::PostDuplicate(UObject* Original)
     bBoundsDirty = true;
     bRenderStateDirty = true;
 
-	OverrideMaterial = TArray<UMaterialInterface*>(Orig->OverrideMaterial.size());
-	for (int32 i = 0; i < static_cast<int32>(Orig->OverrideMaterial.size()); ++i)
+	Materials = TArray<UMaterialInterface*>(Orig->Materials.size());
+	for (int32 i = 0; i < static_cast<int32>(Orig->Materials.size()); ++i)
 	{
-		if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->OverrideMaterial[i]))
+		if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Materials[i]))
 		{
 			UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
 			MatInst->OverridedParams = OrigMatInst->OverridedParams;
-			OverrideMaterial[i] = MatInst;
+			Materials[i] = MatInst;
 		}
 		else
 		{
-			OverrideMaterial[i] = Orig->OverrideMaterial[i]; // 얕은 복사 — ResourceManager 가 소유
+			Materials[i] = Orig->Materials[i]; // 얕은 복사 — ResourceManager 가 소유
 		}
 	}
 }
@@ -49,7 +49,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
     }
 
     StaticMeshAsset = InStaticMesh;
-    OverrideMaterial.clear();
+    Materials.clear();
 
     if (StaticMeshAsset != nullptr)
     {
@@ -57,11 +57,11 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 
 		const auto& Slots = StaticMeshAsset->GetMaterialSlots();
         const auto& Sections = StaticMeshAsset->GetSections();
-        OverrideMaterial.reserve(Sections.size());
+        Materials.reserve(Sections.size());
 
         for (int32 i = 0; i < static_cast<int32>(Sections.size()); ++i)
         {
-            OverrideMaterial.push_back(Slots[Sections[i].MaterialSlotIndex].Material);
+            Materials.push_back(Slots[Sections[i].MaterialSlotIndex].Material);
         }
     }
     else
@@ -88,6 +88,7 @@ void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 {
     UMeshComponent::GetEditableProperties(OutProps);
     OutProps.push_back({ "StaticMesh", EPropertyType::String, &StaticMeshAssetPath });
+	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
@@ -95,20 +96,25 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
     UMeshComponent::PostEditProperty(PropertyName);
 
     //	추후에 FNAme으로 바꿔도 될 듯 싶긴한데 보류
-    if (std::strcmp(PropertyName, "StaticMesh") != 0)
+    if (std::strcmp(PropertyName, "StaticMesh") == 0)
     {
-        return;
+		if (StaticMeshAssetPath.empty())
+		{
+			SetStaticMesh(nullptr);
+			return;
+		}
+
+		UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
+
+		SetStaticMesh(Mesh);
     }
-
-    if (StaticMeshAssetPath.empty())
-    {
-        SetStaticMesh(nullptr);
-        return;
-    }
-
-    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath);
-
-    SetStaticMesh(Mesh);
+	else if (std::strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
+		{
+			SetMaterial(i, Materials[i]);
+		}
+	}
 }
 
 void UStaticMeshComponent::UpdateWorldAABB() const

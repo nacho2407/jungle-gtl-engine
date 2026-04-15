@@ -10,14 +10,13 @@ public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
 
 	UDecalComponent();
-	~UDecalComponent() override;
 
 	void PostDuplicate(UObject* Original) override;
 
 	void BeginPlay() override;
 
-	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override { if (SlotIndex == 0) Material = InMaterial; }
-	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override { return (SlotIndex == 0) ? Material : nullptr; }
+	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override { if (SlotIndex == 0) Materials[0] = InMaterial; }
+	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override { return (SlotIndex == 0) ? Materials[0] : nullptr; }
 	virtual int32 GetNumMaterials() const override { return 1; }
 
 	// Legacy single-slot access
@@ -49,7 +48,7 @@ private:
 	void TickFadeOut();
 
 private:
-	UMaterialInterface* Material = nullptr;
+	TArray<UMaterialInterface*> Materials;
 	FVector DecalSize = FVector(5.0f, 5.0f, 5.0f);
 	FColor DecalColor = FColor::White();
 	bool bDebugLine = true;

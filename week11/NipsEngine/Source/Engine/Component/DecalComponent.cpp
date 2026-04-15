@@ -12,6 +12,8 @@ REGISTER_FACTORY(UDecalComponent)
 // Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
 UDecalComponent::UDecalComponent()
 {
+	Materials.resize(1);
+
 	UMaterial* Mat = FResourceManager::Get().GetMaterial("DecalMat");
 	SetMaterial(Mat);
 
@@ -23,14 +25,6 @@ UDecalComponent::UDecalComponent()
     bEnableCull = false;
 }
 
-UDecalComponent::~UDecalComponent()
-{
-	if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Material))
-	{
-		delete MatInst;
-	}
-}
-
 // Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
 // LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
 void UDecalComponent::PostDuplicate(UObject* Original)
@@ -39,15 +33,15 @@ void UDecalComponent::PostDuplicate(UObject* Original)
 
     const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
 
-	if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Material))
+	if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Materials[0]))
 	{
 		UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
 		MatInst->OverridedParams = OrigMatInst->OverridedParams;
-		Material = MatInst;
+		SetMaterial(MatInst);
 	}
 	else
 	{
-		Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
+		SetMaterial(Orig->GetMaterial()); // 얕은 복사 — ResourceManager 가 소유
 	}
 }
 
@@ -61,6 +55,7 @@ void UDecalComponent::BeginPlay()
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 	OutProps.push_back({ "Size", EPropertyType::Vec3, &DecalSize });
 	OutProps.push_back({ "Color", EPropertyType::Vec4, &DecalColor });
 	OutProps.push_back({ "Fade Start Delay", EPropertyType::Float, &FadeStartDelay });

@@ -19,6 +19,8 @@
 #include "Object/FName.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
+#include "Render/Resource/Material.h"
+#include "Core/ResourceManager.h"
 
 namespace SceneKeys
 {
@@ -311,6 +313,15 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 
 	case EPropertyType::Enum: {
 		return JSON(*static_cast<int32*>(Prop.ValuePtr));
+	}
+
+	case EPropertyType::Material: {
+		const auto& Arr = *static_cast<const TArray<UMaterialInterface*>*>(Prop.ValuePtr);
+		JSON arr = json::Array();
+		for (const UMaterialInterface* s : Arr) {
+			arr.append(s->GetName());
+		}
+		return arr;
 	}
 
 	default:
@@ -654,6 +665,17 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 
 	case EPropertyType::Enum: {
 		*static_cast<int*>(Prop.ValuePtr) = Value.ToInt();
+		break;
+	}
+
+	case EPropertyType::Material: {
+		auto& Arr = *static_cast<TArray<UMaterialInterface*>*>(Prop.ValuePtr);
+		Arr.clear();
+		for (auto& elem : Value.ArrayRange())
+		{
+			UMaterialInterface* Mat = FResourceManager::Get().GetMaterialInterface(elem.ToString());
+			Arr.push_back(Mat);
+		}
 		break;
 	}
 

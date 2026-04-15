@@ -142,3 +142,9 @@ std::string FPaths::ToAbsoluteString(const std::wstring &RelativePath)
 {
 	return ToUtf8(ToAbsolute(RelativePath));
 }
+
+FString FPaths::Normalize(const FString& Path)
+{
+	std::filesystem::path Normalized(Path);
+	return Normalized.generic_string();
+}

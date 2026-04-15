@@ -72,6 +72,10 @@ class UMaterialInterface : public UObject
 {
 public:
 	DECLARE_CLASS(UMaterialInterface, UObject)
+
+	virtual const FString& GetName() const = 0;
+	virtual const FString& GetFilePath() const = 0;
+	
 	virtual void Bind(ID3D11DeviceContext* Context) const = 0;
 	virtual bool GetParam(const FString& Name, FMaterialParamValue& OutValue) const = 0;
 
@@ -86,22 +90,31 @@ public:
 	void SetVector4(const FString& Name, const FVector4& Value) { SetParam(Name, FMaterialParamValue(Value)); }
 	void SetMatrix4(const FString& Name, const FMatrix& Value) { SetParam(Name, FMaterialParamValue(Value)); }
 	void SetTexture(const FString& Name, UTexture* Value) { SetParam(Name, FMaterialParamValue(Value)); }
+
+	virtual void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const = 0;
 };
 
 class UMaterial : public UMaterialInterface
 {
 public:
 	DECLARE_CLASS(UMaterial, UMaterialInterface)
+
 	FString Name;
+	FString FilePath;
+
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;
 
 	UShader* Shader = nullptr;
+
 	ESamplerType SamplerType = ESamplerType::EST_Linear;
 	EDepthStencilType DepthStencilType = EDepthStencilType::Default;
 	EBlendType BlendType = EBlendType::Opaque;
 	ERasterizerType RasterizerType = ERasterizerType::SolidBackCull;
 	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+	const FString& GetName() const override { return Name; }
+	const FString& GetFilePath() const override { return FilePath; }
 
 	void SetShader(UShader* InShader)
 	{
@@ -141,8 +154,16 @@ class UMaterialInstance : public UMaterialInterface
 {
 public:
 	DECLARE_CLASS(UMaterialInstance, UMaterialInterface)
+
+	FString Name;
+	FString FilePath;
+
 	UMaterial* Parent = nullptr;
+
 	TMap<FString, FMaterialParamValue> OverridedParams;
+
+	const FString& GetName() const override { return Name; }
+	const FString& GetFilePath() const override { return FilePath; }
 
 	static UMaterialInstance* Create(UMaterial* Material)
 	{
