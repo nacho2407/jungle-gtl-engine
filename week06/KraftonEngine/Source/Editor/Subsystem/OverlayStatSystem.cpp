@@ -1,6 +1,7 @@
 ﻿#include "Editor/Subsystem/OverlayStatSystem.h"
 
 #include "Editor/EditorEngine.h"
+#include "Engine/Profiling/Stats.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
 #include <cstdio>
@@ -145,7 +146,7 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	}
 	if (bShowDecal)
 	{
-		++EstimatedLineCount;
+		EstimatedLineCount += 10;
 	}
 	if (bShowMemory)
 	{
@@ -213,10 +214,16 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	{
 		// read previous-frame stats so overlay shows values available before current render
 		const FDecalFrameStats& DecalStats = FDecalStats::Previous;
-		
-		constexpr int32 DecalLineCount = 7;
+		const TArray<FStatEntry>& CPUSnapshot = FStatManager::Get().GetSnapshot();
+		const FStatEntry* CollectEntry = FindStatEntry(CPUSnapshot, "Decal::Collect", "Decal");
+		const FStatEntry* RenderEntry = FindStatEntry(CPUSnapshot, "Decal::Render", "Decal");
+		const double CollectTimeMs = CollectEntry ? CollectEntry->TotalTime * 1000.0 : 0.0;
+		const double RenderTimeMs = RenderEntry ? RenderEntry->TotalTime * 1000.0 : 0.0;
+		const double TotalTimeMs = CollectTimeMs + RenderTimeMs;
+
+		constexpr int32 DecalCountLineCount = 7;
 		char Buffer[128] = {};
-		const int32 ValuesKB[DecalLineCount] = {
+		const int32 Values[DecalCountLineCount] = {
 			(DecalStats.VisibleDecals),
 			(DecalStats.VisibleReceivers),
 			(DecalStats.BroadCandidates),
@@ -226,7 +233,7 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 			(DecalStats.RenderedDraws)
 		};
 
-		const char* Labels[DecalLineCount] = {
+		const char* Labels[DecalCountLineCount] = {
 			"Visible Decals",
 			"Visible Receivers",
 			"Broad Candidates",
@@ -236,12 +243,24 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 			"Rendered Draws",
 		};
 
-		for (int32 Index = 0; Index < DecalLineCount; ++Index)
+		for (int32 Index = 0; Index < DecalCountLineCount; ++Index)
 		{
-			snprintf(Buffer, sizeof(Buffer), "%s : %d", Labels[Index], ValuesKB[Index]);
+			snprintf(Buffer, sizeof(Buffer), "%s : %d", Labels[Index], Values[Index]);
 			AppendLine(OutLines, CurrentY, FString(Buffer));
 			CurrentY += Layout.LineHeight;
 		}
+
+		snprintf(Buffer, sizeof(Buffer), "Collect Time : %.3f ms", CollectTimeMs);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		snprintf(Buffer, sizeof(Buffer), "Render Time : %.3f ms", RenderTimeMs);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		snprintf(Buffer, sizeof(Buffer), "Total Time : %.3f ms", TotalTimeMs);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
 	}
 }
 

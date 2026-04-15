@@ -52,7 +52,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			else if (SubCommand == "decal")
 			{
 				StatSystem.ShowDecal(true);
-				AddLog("Overlay stat enabled: memory\n");
+				AddLog("Overlay stat enabled: decal\n");
 			}
 			else if (SubCommand == "none")
 			{
@@ -62,7 +62,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			else
 			{
 				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
-				AddLog("Usage: stat fps | stat memory | stat none\n");
+				AddLog("Usage: stat fps | stat memory | stat decal | stat none\n");
 			}
 		});
 }

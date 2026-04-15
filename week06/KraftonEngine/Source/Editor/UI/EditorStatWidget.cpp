@@ -70,7 +70,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 			FrozenDrawCalls = FDrawCallStats::Get();
 			FrozenCPUEntries = FStatManager::Get().GetSnapshot();
 			FrozenGPUEntries = FGPUProfiler::Get().GetGPUSnapshot();
-			FrozenDecalStats = FDecalStats::Get();
+			FrozenDecalStats = FDecalStats::Previous;
 			bPaused = true;
 		}
 	}
@@ -103,7 +103,12 @@ void FEditorStatWidget::Render(float DeltaTime)
 	
 	const FDecalFrameStats& DecalStats =
 		bPaused ? FrozenDecalStats
-		: FDecalStats::Get();
+		: FDecalStats::Previous;
+	const FStatEntry* DecalCollectEntry = FindStatEntry(CPUSource, "Decal::Collect", "Decal");
+	const FStatEntry* DecalRenderEntry = FindStatEntry(CPUSource, "Decal::Render", "Decal");
+	const double DecalCollectMs = DecalCollectEntry ? DecalCollectEntry->TotalTime * 1000.0 : 0.0;
+	const double DecalRenderMs = DecalRenderEntry ? DecalRenderEntry->TotalTime * 1000.0 : 0.0;
+	const double DecalTotalMs = DecalCollectMs + DecalRenderMs;
 
 	if (ImGui::CollapsingHeader("Decal", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -114,6 +119,9 @@ void FEditorStatWidget::Render(float DeltaTime)
 		ImGui::Text("SAT Accepted: %d", DecalStats.SATAccepted);
 		ImGui::Text("Submitted Draws: %d", DecalStats.SubmittedDraws);
 		ImGui::Text("Rendered Draws: %d", DecalStats.RenderedDraws);
+		ImGui::Text("Collect Time: %.3f ms", DecalCollectMs);
+		ImGui::Text("Render Time: %.3f ms", DecalRenderMs);
+		ImGui::Text("Total Time: %.3f ms", DecalTotalMs);
 		ImGui::Separator();
 	}
 

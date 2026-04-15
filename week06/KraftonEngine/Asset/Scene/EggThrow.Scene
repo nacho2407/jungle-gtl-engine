@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "8",
+      "PrimitiveKey" : "11",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -29,7 +29,7 @@
           },
           "Location" : [0.000000, 0.000000, 0.000000],
           "Outline" : true,
-          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Data/Pan/10262_12_Frying_Pan_max2011_v2_it2.obj",
           "Visible" : true,
@@ -54,7 +54,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "24",
+      "PrimitiveKey" : "17",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -106,7 +106,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "223",
+      "PrimitiveKey" : "24",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -116,7 +116,7 @@
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
               "Outline" : true,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 50",
               "Visible" : true,
@@ -158,7 +158,7 @@
             "bTickInEditor" : false
           }
         }],
-      "PrimitiveKey" : "307",
+      "PrimitiveKey" : "28",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -168,7 +168,7 @@
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
               "Outline" : true,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 50",
               "Visible" : true,
@@ -204,37 +204,37 @@
   "PerspectiveCamera" : {
     "FOV" : 1.570796,
     "FarClip" : 100.000000,
-    "Location" : [-39.126579, -18.627316, 25.317261],
+    "Location" : [-33.963917, -16.600138, 27.200464],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 11.999969, 24.302444]
+    "Rotation" : [0.000000, 20.249634, 27.152376]
   },
   "Primitives" : {
-    "223" : {
-      "Location" : [1.268502, -22.831924, 25.463003],
-      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+    "11" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/Pan/10262_12_Frying_Pan_max2011_v2_it2.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [30.000000, 30.000000, 30.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "24" : {
+    "17" : {
       "Location" : [-15.904524, 0.000000, 25.463003],
       "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 30.000000, 30.000000],
       "Type" : "StaticMeshComp"
     },
-    "307" : {
-      "Location" : [1.268502, 0.000000, 25.463003],
+    "24" : {
+      "Location" : [1.268502, -22.831924, 25.463003],
       "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 30.000000, 30.000000],
       "Type" : "StaticMeshComp"
     },
-    "8" : {
-      "Location" : [0.000000, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Data/Pan/10262_12_Frying_Pan_max2011_v2_it2.obj",
+    "28" : {
+      "Location" : [1.268502, 0.000000, 25.463003],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scale" : [30.000000, 30.000000, 30.000000],
       "Type" : "StaticMeshComp"
     }
   },

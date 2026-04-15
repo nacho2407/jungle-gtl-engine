@@ -1,0 +1,311 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "11",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 145",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "Asset/MeshCache/backplate.mbin",
+            "UVScroll" : false
+          },
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [90.000000, -0.000000, 0.000000],
+          "Scale" : [99.999985, 100.000000, 99.999985],
+          "Static Mesh" : "Data/LOD_2.obj",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "PivotTransform" : [5.000000, 5.000000, 0.000000],
+            "Rotation Rate" : [0.000000, 180.000000, 0.000000],
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "PrimitiveKey" : "17",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 154",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UFireballComponent",
+            "Properties" : {
+              "Color" : [1.000000, 0.000000, 0.000000, 0.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Radius" : 100.000000,
+              "Radius Falloff" : 5.300000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "BasicShapeMaterial",
+            "UVScroll" : false
+          },
+          "Location" : [14.797980, 4.896774, 32.011925],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/BasicShape/Sphere.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AExponentialHeightFog",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UExponentialHeightFogComponent",
+        "Properties" : {
+          "End Distance" : 0.000000,
+          "Fog Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Fog Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.020000,
+          "Fog Height Falloff" : 0.200000,
+          "Fog Max Opacity" : 1.000000,
+          "Location" : [0.000000, 0.000000, 22.126015],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "PivotTransform" : [5.000000, 5.000000, 0.000000],
+            "Rotation Rate" : [0.000000, -180.000000, 0.000000],
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "PrimitiveKey" : "27",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 154",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UFireballComponent",
+            "Properties" : {
+              "Color" : [0.000000, 0.000000, 1.000000, 0.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Radius" : 100.000000,
+              "Radius Falloff" : 5.300000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "BasicShapeMaterial",
+            "UVScroll" : false
+          },
+          "Location" : [3.087103, 6.306376, 32.011925],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/BasicShape/Sphere.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "UProjectileMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Gravity Scale" : 0.000000,
+            "Initial Speed" : 10.000000,
+            "Max Speed" : 100.000000,
+            "Velocity" : [1.000000, 0.000000, 0.000000],
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "PrimitiveKey" : "32",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 154",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UFireballComponent",
+            "Properties" : {
+              "Color" : [0.000000, 1.000000, 0.000000, 0.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Outline" : true,
+              "Radius" : 100.000000,
+              "Radius Falloff" : 5.300000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "BasicShapeMaterial",
+            "UVScroll" : false
+          },
+          "Location" : [9.479832, 16.069695, 32.011925],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/BasicShape/Sphere.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "FogScene",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [-3.545822, 16.454134, 45.622856],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 46.512173, -30.906523]
+  },
+  "Primitives" : {
+    "11" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/LOD_2.obj",
+      "Rotation" : [0.000000, 90.000000, -0.000000],
+      "Scale" : [99.999977, 100.000000, 99.999977],
+      "Type" : "StaticMeshComp"
+    },
+    "17" : {
+      "Location" : [14.797980, 4.896774, 32.011925],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Sphere.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "27" : {
+      "Location" : [3.087103, 6.306376, 32.011925],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Sphere.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "32" : {
+      "Location" : [9.479832, 16.069695, 32.011925],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Sphere.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

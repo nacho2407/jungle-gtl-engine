@@ -267,7 +267,7 @@ void FRenderCollector::CollectDecals(UWorld* World, const TArray<FPrimitiveScene
 
 	for (AActor* Actor : World->GetActors())
 	{
-		if (!Actor) continue;
+		if (!Actor || !Actor->IsVisible()) continue;
 
 		for (UActorComponent* Component : Actor->GetComponents())
 		{

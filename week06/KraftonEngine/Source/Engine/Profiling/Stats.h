@@ -6,6 +6,7 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <cfloat>
+#include <cstring>
 
 // --- 빌드 설정 ---
 #ifndef STATS
@@ -31,6 +32,26 @@ struct FStatEntry
 	double MinTime = 0.0;		// 최근 N프레임 최소
 	double LastTime = 0.0;		// 직전 프레임 시간
 };
+
+inline const FStatEntry* FindStatEntry(const TArray<FStatEntry>& Entries, const char* Name, const char* Category = nullptr)
+{
+	for (const FStatEntry& Entry : Entries)
+	{
+		if (!Entry.Name || strcmp(Entry.Name, Name) != 0)
+		{
+			continue;
+		}
+
+		if (Category && (!Entry.Category || strcmp(Entry.Category, Category) != 0))
+		{
+			continue;
+		}
+
+		return &Entry;
+	}
+
+	return nullptr;
+}
 
 // --- 내부 누적용 Entry ---
 struct FStatAccum

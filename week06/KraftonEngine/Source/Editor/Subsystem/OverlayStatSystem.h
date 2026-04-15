@@ -41,6 +41,7 @@ public:
 		bShowFPS = false;
 		bShowPickingTime = false;
 		bShowMemory = false;
+		bShowDecal = false;
 	}
 
 	const FOverlayStatLayout& GetLayout() const { return Layout; }
