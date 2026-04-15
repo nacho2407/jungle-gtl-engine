@@ -106,10 +106,10 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	// ========== 고정 영역: Actor Info (clickable) ==========
 	if (SelectionCount > 1)
 	{
-		ImGui::Text("Class: %s", PrimaryActor->GetTypeInfo()->name);
+		ImGui::Text("Class: %s", PrimaryActor->GetClass()->GetName());
 
 		FString PrimaryName = PrimaryActor->GetFName().ToString();
-		if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetTypeInfo()->name;
+		if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetClass()->GetName();
 
 		bool bHighlight = bActorSelected;
 		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
@@ -141,7 +141,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	}
 	else
 	{
-		ImGui::Text("Class: %s", PrimaryActor->GetTypeInfo()->name);
+		ImGui::Text("Class: %s", PrimaryActor->GetClass()->GetName());
 
 		// Actor 이름: 클릭 가능, 선택 시 하이라이트
 		bool bHighlight = bActorSelected;
@@ -207,7 +207,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
-	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
+	ImGui::Text("Actor: %s", PrimaryActor->GetClass()->GetName());
 	ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
 
 	if (PrimaryActor->GetRootComponent())
@@ -289,14 +289,13 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	ImGui::Text("Components");
 
 	// Get All Component Classes
-	TArray<const FTypeInfo*>& AllClasses = GetClassRegistry();
+	TArray<UClass*>& AllClasses = UClass::GetAllClasses();
 
-	TArray<const FTypeInfo*> ComponentClasses;
-	for (const FTypeInfo* Info : AllClasses)
+	TArray<UClass*> ComponentClasses;
+	for (UClass* Cls : AllClasses)
 	{
-		// 베이스 컴포넌트는 reflection에는 남겨 두되 Add Component UI에서는 숨긴다.
-		if (Info->IsA(&UActorComponent::s_TypeInfo) && !Info->HasAnyClassFlags(CF_Abstract))
-			ComponentClasses.push_back(Info);
+		if (Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_Abstract))
+			ComponentClasses.push_back(Cls);
 	}
 
 	static int SelectedIndex = 0;
@@ -308,14 +307,14 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	{
 		SelectedIndex = static_cast<int>(ComponentClasses.size()) - 1;
 	}
-	const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->name;
+	const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->GetName();
 
 	if (ImGui::BeginCombo("Component Class", Preview))
 	{
 		for (int i = 0; i < (int)ComponentClasses.size(); ++i)
 		{
 			bool bSelected = (SelectedIndex == i);
-			if (ImGui::Selectable(ComponentClasses[i]->name, bSelected))
+			if (ImGui::Selectable(ComponentClasses[i]->GetName(), bSelected))
 				SelectedIndex = i;
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
@@ -334,9 +333,9 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 			return;
 		}
 
-		if (ComponentClasses[SelectedIndex]->IsA(&USceneComponent::s_TypeInfo))
+		if (ComponentClasses[SelectedIndex]->IsA(USceneComponent::StaticClass()))
 		{
-			if (SelectedComponent != nullptr && SelectedComponent->GetTypeInfo()->IsA(&USceneComponent::s_TypeInfo))
+			if (SelectedComponent != nullptr && SelectedComponent->GetClass()->IsA(USceneComponent::StaticClass()))
 				Cast<USceneComponent>(Comp)->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
 			else
 				Cast<USceneComponent>(Comp)->AttachToComponent(Root);
@@ -357,7 +356,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 		if (Comp->IsA<USceneComponent>()) continue;
 
 		FString Name = Comp->GetFName().ToString();
-		const FString TypeName = Comp->GetTypeInfo()->name;
+		const FString TypeName = Comp->GetClass()->GetName();
 		const FString DefaultNamePrefix = TypeName + "_";
 		const bool bUseTypeAsLabel = Name.empty()
 			|| Name == TypeName
@@ -382,7 +381,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	if (!Comp) return;
 
 	FString Name = Comp->GetFName().ToString();
-	if (Name.empty()) Name = Comp->GetTypeInfo()->name;
+	if (Name.empty()) Name = Comp->GetClass()->GetName();
 
 	const auto& Children = Comp->GetChildren();
 	bool bHasChildren = !Children.empty();
@@ -398,7 +397,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 		Comp, Flags, "%s%s (%s)",
 		bIsRoot ? "[Root] " : "",
 		Name.c_str(),
-		Comp->GetTypeInfo()->name
+		Comp->GetClass()->GetName()
 	);
 
 	if (ImGui::IsItemClicked())
@@ -419,7 +418,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 
 void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 {
-	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
+	ImGui::Text("Component: %s", SelectedComponent->GetClass()->GetName());
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
 	ImGui::SameLine();
 	if (SelectedComponent != Actor->GetRootComponent())
