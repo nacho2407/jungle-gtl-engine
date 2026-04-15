@@ -73,6 +73,11 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 	{
 		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
 		{
+			if (Materials[i] == nullptr)
+			{
+				SetMaterial(i, FResourceManager::Get().GetMaterialInterface("DecalMat"));
+				continue;
+			}
 			SetMaterial(i, Materials[i]);
 		}
 	}
