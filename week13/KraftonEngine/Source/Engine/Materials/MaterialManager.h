@@ -54,7 +54,7 @@ private:
 	void ApplyParameters(UMaterial* Material, json::JSON& JsonData);
 	void ApplyTextures(UMaterial* Material, json::JSON& JsonData);
 
-	ERenderPass StringToRenderPass(const FString& RenderPassStr) const;
+	ERenderPass StringToRenderPass(const FString& Str) const;
 	EBlendState StringToBlendState(const FString& Str, ERenderPass Pass) const;
 	EDepthStencilState StringToDepthStencilState(const FString& Str, ERenderPass Pass) const;
 	ERasterizerState StringToRasterizerState(const FString& Str, ERenderPass Pass) const;
@@ -62,6 +62,7 @@ private:
 	void SaveToJSON(json::JSON& JsonData, const FString& MatFilePath);
 	
 	bool InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
+	bool PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template);
 	
 	const FString DefaultShaderPath = "Shaders/StaticMeshShader.hlsl";
 
