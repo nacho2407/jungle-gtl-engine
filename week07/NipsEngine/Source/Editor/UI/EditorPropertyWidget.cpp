@@ -12,7 +12,9 @@
 #include "Component/FireballComponent.h"
 #include "Component/Movement/ProjectileMovementComponent.h"
 #include "Component/Movement/InterpToMovementComponent.h"
+#include "Component/Movement/PursuitMovementComponent.h"
 #include "Core/PropertyTypes.h"
+#include "Math/Color.h"
 #include "Core/ResourceManager.h"
 #include "Object/FName.h"
 #include <functional>
@@ -158,6 +160,13 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		[](AActor* Actor) -> UActorComponent* {
           UInterpToMovementComponent* Comp = Actor->AddComponent<UInterpToMovementComponent>();
           return Comp;
+		}
+	},
+    {
+		"PursuitMovement Component",
+		[](AActor* Actor) -> UActorComponent* {
+			UPursuitMovementComponent* Comp = Actor->AddComponent<UPursuitMovementComponent>();
+			return Comp;
 		}
 	},
 	{
@@ -814,6 +823,12 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		bChanged = ImGui::ColorEdit4(Prop.Name, Val);
+		break;
+	}
+	case EPropertyType::Color:
+	{
+		FColor* Val = static_cast<FColor*>(Prop.ValuePtr);
+		bChanged = ImGui::ColorEdit4(Prop.Name, &Val->R);
 		break;
 	}
 	case EPropertyType::String:

@@ -121,6 +121,8 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 	ParticleFilePaths.clear();
 	StaticMeshRegistry.clear();
 
+	InitializeDefaultResources(CachedDevice.Get());
+
 	namespace fs = std::filesystem;
 	
 	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
@@ -533,6 +535,43 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 		Textures["DefaultWhite"] = DefaultTexture;
 	}
 
+	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/ShaderStaticMesh.hlsl");
+	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
+	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
+	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
+	DefaultMat->MaterialParams["EmissiveColor"] = FMaterialParamValue(DefaultMat->MaterialData.EmissiveColor);
+	DefaultMat->MaterialParams["Shininess"] = FMaterialParamValue(DefaultMat->MaterialData.Shininess);
+	DefaultMat->MaterialParams["Opacity"] = FMaterialParamValue(DefaultMat->MaterialData.Opacity);
+
+	UTexture* DefaultWhite = FResourceManager::Get().GetTexture("DefaultWhite");
+
+	if (DefaultMat->MaterialData.bHasDiffuseTexture)
+		DefaultMat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.DiffuseTexPath, Device));
+	else
+		DefaultMat->MaterialParams["DiffuseMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasAmbientTexture)
+		DefaultMat->MaterialParams["AmbientMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.AmbientTexPath, Device));
+	else
+		DefaultMat->MaterialParams["AmbientMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasSpecularTexture)
+		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.SpecularTexPath, Device));
+	else
+		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasBumpTexture)
+		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.BumpTexPath, Device));
+	else
+		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(DefaultWhite);
+
+	DefaultMat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasDiffuseTexture);
+	DefaultMat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasSpecularTexture);
+	DefaultMat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasAmbientTexture);
+	DefaultMat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasBumpTexture);
+
+	DefaultMat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
+	
 	// Outline Material
 	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", "Shaders/OutlinePostProcess.hlsl");
 	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
@@ -547,7 +586,7 @@ void FResourceManager::ReleaseGPUResources()
 	{
 		if (Texture)
 		{
-			delete Texture;
+			UObjectManager::Get().DestroyObject(Texture);
 		}
 	}
 	Textures.clear();
@@ -556,7 +595,7 @@ void FResourceManager::ReleaseGPUResources()
 	{
 		if (Material)
 		{
-			delete Material;
+			UObjectManager::Get().DestroyObject(Material);
 		}
 	}
 	Materials.clear();
@@ -565,7 +604,7 @@ void FResourceManager::ReleaseGPUResources()
 	{
 		if (Shader)
 		{
-			delete Shader;
+			UObjectManager::Get().DestroyObject(Shader);
 		}
 	}
 	Shaders.clear();
@@ -574,7 +613,7 @@ void FResourceManager::ReleaseGPUResources()
 	{
 		if (Font.Texture)
 		{
-			delete Font.Texture;
+			UObjectManager::Get().DestroyObject(Font.Texture);
 		}
 	}
 	FontResources.clear();
@@ -583,14 +622,14 @@ void FResourceManager::ReleaseGPUResources()
 	{
 		if (Particle.Texture)
 		{
-			delete Particle.Texture;
+			UObjectManager::Get().DestroyObject(Particle.Texture);
 		}
 	}
 	ParticleResources.clear();
 
 	for (auto& [Path, StaticMeshAsset] : StaticMeshes)
 	{
-		delete StaticMeshAsset;
+		UObjectManager::Get().DestroyObject(StaticMeshAsset);
 	}
 	StaticMeshes.clear();
 	StaticMeshRegistry.clear();
@@ -709,7 +748,7 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& MaterialName, co
 	UMaterial* Material = GetMaterial(MaterialName);
 	if (Material)
 	{
-		return GetMaterial(MaterialName);
+		return Material;
 	}
 
 	Material = UObjectManager::Get().CreateObject<UMaterial>();
@@ -744,6 +783,11 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 		return false;
 	}
 
+	if (Parsed.empty())
+	{
+		Parsed["DefaultWhite"] = GetMaterial("DefaultWhite");
+	}
+
 	for (auto& [Name, Mat] : Parsed)
 	{
 		Mat->SetShader(Shader);
@@ -751,7 +795,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	}
 
 	// TODO: 개선 필요해보임
-	for (auto& [Name, Mat] : Materials)
+	for (auto& [Name, Mat] : Parsed)
 	{
 		FMaterial& MaterialData = Mat->MaterialData;
 
@@ -976,7 +1020,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return FoundMesh;
 	}
 
-	LoadMaterial(Path, "Shaders/ShaderStaticMesh.hlsl");
+ 	LoadMaterial(Path, "Shaders/ShaderStaticMesh.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
 
@@ -1048,6 +1092,11 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)
 	{
 		Slot.Material = GetMaterial(Slot.SlotName);
+
+		if (Slot.Material == nullptr)
+		{
+			Slot.Material = GetMaterial("DefaultWhite");
+		}
 	}
 
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
