@@ -67,53 +67,19 @@ PSInput mainVS(VSInput input)
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
-    float3 DiffuseTex = DiffuseMap.Sample(SampleState, input.UV).xyz;
     
-    float3 FinalColor;
-    
-    if (!(bool)bHasDiffuseMap)
+    float3 DiffuseTex = float3(1.f, 1.f, 1.f);
+    if ((bool)bHasDiffuseMap)
     {
-        DiffuseTex = float3(1.f, 1.f, 1.f);
-        FinalColor = DiffuseColor;
+        DiffuseTex = DiffuseMap.Sample(SampleState, input.UV).xyz;
     }
-    else
-    {
-        FinalColor = DiffuseTex;
-    }
-    //
-    //float3 SpecularTex = SpecularMap.Sample(SampleState, input.UV).xyz;
-    //
-    //if (!(bool)bHasSpecularMap)
-    //{
-    //    SpecularTex = float3(1.f, 1.f, 1.f);
-    //}
-    //
-    //float3 fixedLightDir = {1.f, -1.f, 1.f}; 
-    //fixedLightDir = normalize(fixedLightDir);
-    //
-    //float3 N = normalize(input.WorldNormal);
-    //
-    // 퐁 셰이딩
-    //float3 RelfectLightDir = 2.0f * dot(N, fixedLightDir) * N - fixedLightDir; 
-    //RelfectLightDir = normalize(RelfectLightDir);
-   
-    //float3 ViewDir = CameraWorldPos - input.WorldPos;
-    //ViewDir = normalize(ViewDir);
     
-    // 블린 퐁 셰이딩 -> 반사 벡터 대신에 어정쩡한 벡터를 사용한다.
-    //float3 HalfVector = normalize(fixedLightDir + ViewDir);
-    //
-    //float3 FinalAmbient = AmbientColor * DiffuseTex * 0.4f;
-    //float3 FinalDiffuse = DiffuseTex * DiffuseColor * max(0, dot(N, fixedLightDir));
-    //float3 FinalSpecular = SpecularTex * SpecularColor * pow(saturate(dot(HalfVector, ViewDir)), max(Shininess, 32.f));
-    //
-    //float3 FinalColor = FinalAmbient + FinalDiffuse + FinalSpecular;
+    float3 FinalColor = DiffuseColor * DiffuseTex;
     
     if (any(EmissiveColor > 0.f))
     {
         // Emissive surface: write the glow color and mark normal.a = 2
-        float3 TexColor = bHasDiffuseMap ? DiffuseMap.Sample(SampleState, input.UV).xyz : float3(1.0f, 1.0f, 1.0f);
-        output.Color    = float4(EmissiveColor * TexColor, 1.f);
+        output.Color    = float4(EmissiveColor * DiffuseTex, 1.f);
         output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
         output.WorldPos = float4(input.WorldPos, 1.f);
         return output;

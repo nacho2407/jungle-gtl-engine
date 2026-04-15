@@ -11,7 +11,7 @@ REGISTER_FACTORY(UStaticMeshComponent)
 UStaticMeshComponent::UStaticMeshComponent()
 {
     //	기본 도형은 Cube로 설정
-    SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
+    SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset\\Mesh\\Dice\\Dice.obj"));
 }
 
 // 프로퍼티 시스템에 노출되지 않은 필드를 직접 복사합니다.
@@ -55,7 +55,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
     {
         StaticMeshAssetPath = StaticMeshAsset->GetAssetPathFileName();
 
-        const auto& Slots = StaticMeshAsset->GetMaterialSlots();
+		const auto& Slots = StaticMeshAsset->GetMaterialSlots();
         const auto& Sections = StaticMeshAsset->GetSections();
         OverrideMaterial.reserve(Sections.size());
 
