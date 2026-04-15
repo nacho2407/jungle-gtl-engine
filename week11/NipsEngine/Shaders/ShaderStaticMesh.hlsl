@@ -63,23 +63,23 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
-
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
     
-    float3 DiffuseTex = float3(1.f, 1.f, 1.f);
+    float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
     if ((bool)bHasDiffuseMap)
     {
-        DiffuseTex = DiffuseMap.Sample(SampleState, input.UV).xyz;
+        DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
+        clip(DiffuseTex.a - 0.001f);
     }
     
-    float3 FinalColor = DiffuseColor * DiffuseTex;
+    float3 FinalColor = DiffuseColor * DiffuseTex.rgb;
     
     if (any(EmissiveColor > 0.f))
     {
         // Emissive surface: write the glow color and mark normal.a = 2
-        output.Color    = float4(EmissiveColor * DiffuseTex, 1.f);
+        output.Color = float4(EmissiveColor, 1.f) * DiffuseTex;
         output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
         output.WorldPos = float4(input.WorldPos, 1.f);
         return output;
