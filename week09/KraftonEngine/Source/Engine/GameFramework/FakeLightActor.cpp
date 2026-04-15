@@ -1,6 +1,6 @@
 ﻿#include "FakeLightActor.h"
 #include "AActor.h"
-#include "Component/BillboardComponent.h"
+#include "Component/CylindricalBillboardComponent.h"
 #include "Component/DecalComponent.h"
 #include "Materials/MaterialManager.h"
 
@@ -15,7 +15,8 @@ AFakeLightActor::AFakeLightActor()
 void AFakeLightActor::InitDefaultComponents()
 {
 	// Billboard 전등
-	BillboardComponent = AddComponent<UBillboardComponent>();
+	BillboardComponent = AddComponent<UCylindricalBillboardComponent>();
+	BillboardComponent->SetBillboardAxis(FVector(0.0f, 0.0f, 1.0f));
 	BillboardComponent->SetTexture(LampshadeImage);
 	SetRootComponent(BillboardComponent);
 	

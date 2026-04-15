@@ -6,8 +6,6 @@
 
 class FPrimitiveSceneProxy;
 
-// 카메라 페이싱 quad. 선택적으로 정적 텍스처(FTextureResource)를 표시할 수 있다.
-// 스프라이트 시트 애니메이션이 필요하면 USubUVComponent를 사용한다.
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
