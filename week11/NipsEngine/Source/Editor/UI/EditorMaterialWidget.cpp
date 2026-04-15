@@ -272,6 +272,7 @@ void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* Primitive
             {
 				PrimitiveComp->SetMaterial(SelectedSectionIndex, Materials[i]);
 				SelectedMaterialPtr = Materials[i];
+				break;
             }
 
             if (bIsSelected)
