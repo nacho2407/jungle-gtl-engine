@@ -4,6 +4,8 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "GameFramework/AActor.h"
+#include "Materials/Material.h"
+#include "Texture/Texture2D.h"
 
 // ============================================================
 // FBillboardSceneProxy
@@ -21,20 +23,40 @@ UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const
 }
 
 // ============================================================
-// UpdateMesh — TexturedQuad + Billboard shader for textured, Quad + Primitive for plain
+// UpdateMesh — TexturedQuad + Material shader/states
 // ============================================================
 void FBillboardSceneProxy::UpdateMesh()
 {
 	UBillboardComponent* Comp = GetBillboardComponent();
-	const bool bHasTexture = (Comp && Comp->GetTexture() != nullptr);
+	UMaterial* Mat = Comp ? Comp->GetMaterial() : nullptr;
 
-	if (bHasTexture)
+	if (Mat)
 	{
-		// TexturedQuad (FVertexPNCT with UVs) + Billboard shader
+		// TexturedQuad (FVertexPNCT with UVs)
 		MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
-		Shader = FShaderManager::Get().GetShader(EShaderType::Billboard);
-		Pass = ERenderPass::AlphaBlend;
-		DiffuseSRV = Comp->GetTexture()->SRV;
+		
+		Shader = Mat->GetShader();
+		if (!Shader)
+		{
+			Shader = FShaderManager::Get().GetShader(EShaderType::Billboard);
+		}
+
+		Pass = Mat->GetRenderPass();
+		
+		// 머티리얼 기반 렌더 상태 전파
+		Blend = Mat->GetBlendState();
+		DepthStencil = Mat->GetDepthStencilState();
+		Rasterizer = Mat->GetRasterizerState();
+
+		UTexture2D* DiffuseTex = nullptr;
+		if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+		{
+			DiffuseSRV = DiffuseTex->GetSRV();
+		}
+		else
+		{
+			DiffuseSRV = nullptr;
+		}
 	}
 	else
 	{
@@ -42,6 +64,11 @@ void FBillboardSceneProxy::UpdateMesh()
 		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 		Pass = ERenderPass::Opaque;
 		DiffuseSRV = nullptr;
+
+		// 기본 상태
+		Blend = EBlendState::Opaque;
+		DepthStencil = EDepthStencilState::Default;
+		Rasterizer = ERasterizerState::SolidBackCull;
 	}
 }
 
@@ -54,10 +81,16 @@ void FBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	bVisible = Comp->IsVisible();
 	if (!bVisible) return;
 
-	// Update DiffuseSRV (texture may have changed)
-	const FTextureResource* Tex = Comp->GetTexture();
-	if (Tex)
-		DiffuseSRV = Tex->SRV;
+	// Update DiffuseSRV (material or texture may have changed)
+	UMaterial* Mat = Comp->GetMaterial();
+	if (Mat)
+	{
+		UTexture2D* DiffuseTex = nullptr;
+		if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+		{
+			DiffuseSRV = DiffuseTex->GetSRV();
+		}
+	}
 
 	// Frame 카메라 벡터로 per-view 빌보드 행렬 계산
 	FVector BillboardForward = Frame.CameraForward * -1.0f;
