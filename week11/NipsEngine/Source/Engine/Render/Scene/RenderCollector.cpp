@@ -663,6 +663,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	
     case EPrimitiveType::EPT_FOG:
     {
+        if (!ShowFlags.bFog)
+            return;
         UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
 
         FRenderCommand Cmd = {};
