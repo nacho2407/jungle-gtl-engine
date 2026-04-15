@@ -979,7 +979,7 @@ void FRenderer::DrawPostProcessSceneDepth(const FRenderBus& Bus, ID3D11DeviceCon
 void FRenderer::DrawPostProcessFog(const FRenderBus& Bus, ID3D11DeviceContext* Context)
 {
 	const FExponentialHeightFogRenderData& FogData = Bus.GetExponentialHeightFog();
-	if (!FogData.bEnabled || Bus.IsOrtho())
+	if (!FogData.bEnabled || Bus.IsOrtho() || !Bus.GetShowFlags().bFog)
 	{
 		return;
 	}
