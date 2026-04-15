@@ -194,6 +194,13 @@ void FEditorPropertyWidget::Initialize(UEditorEngine* InEditorEngine)
 	SelectionManager = &EditorEngine->GetSelectionManager();
 }
 
+void FEditorPropertyWidget::ResetSelection()
+{
+	SelectedComponent = nullptr;
+	LastSelectedActor = nullptr;
+	bActorSelected = true;
+}
+
 void FEditorPropertyWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;

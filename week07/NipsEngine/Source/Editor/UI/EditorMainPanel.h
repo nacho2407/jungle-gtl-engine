@@ -26,6 +26,12 @@ public:
 	FEditorPropertyWidget& GetPropertyWidget() { return PropertyWidget; }
 	FEditorMaterialWidget& GetMaterialWidget() { return MaterialWidget; }
 
+	void ResetWidgetSelections()
+	{
+		PropertyWidget.ResetSelection();
+		MaterialWidget.ResetSelection();
+	}
+
 private:
 	void RenderViewportHostWindow();
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
