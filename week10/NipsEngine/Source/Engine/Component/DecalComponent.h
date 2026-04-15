@@ -10,6 +10,7 @@ public:
 	DECLARE_CLASS(UDecalComponent, UPrimitiveComponent)
 
 	UDecalComponent();
+	~UDecalComponent() override;
 
 	void PostDuplicate(UObject* Original) override;
 
