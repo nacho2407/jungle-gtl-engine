@@ -34,7 +34,7 @@ public:
 	FShader* GetShader(EShaderType InType);
 	FShader* GetCustomShader(const FString& Key);
 
-	FShader* CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath,const D3D11_INPUT_ELEMENT_DESC* InInputElements = nullptr,uint32 InInputElementCount = 0);
+	FShader* CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath);
 
 private:
 	FShaderManager() = default;
