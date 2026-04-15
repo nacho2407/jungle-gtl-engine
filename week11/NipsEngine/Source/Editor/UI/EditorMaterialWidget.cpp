@@ -9,6 +9,7 @@
 #include "Asset/StaticMesh.h"
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
+#include "Object/ObjectIterator.h"
 #include <algorithm>
 
 #include "ImGui/imgui.h"
@@ -64,6 +65,12 @@ void FEditorMaterialWidget::Render(float DeltaTime)
 	{	
 		if (UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(SelectedComponent))
 		{
+			if (SelectedMaterialPtr != PrimitiveComp->GetMaterial(SelectedSectionIndex))
+			{
+				SelectedSectionIndex = -1;
+				SelectedMaterialPtr = nullptr;
+			}
+
 			RenderMaterialEditor(PrimitiveComp);
 		}
 		else
@@ -382,19 +389,20 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			FString ComboId = "##Combo_" + ParamName;
 			if (ImGui::BeginCombo(ComboId.c_str(), CurrentPath.c_str()))
 			{
-				for (const FString& TexPath : TextureList)
+				for (TObjectIterator<UTexture> It; It; ++It)
 				{
-					bool bSelected = (TexPath == CurrentPath);
-					if (ImGui::Selectable(TexPath.c_str(), bSelected))
+					UTexture* Texture = *It;
+					if (Texture)
 					{
-						UTexture* NewTex = FResourceManager::Get().GetTexture(TexPath);
-						if (NewTex)
+						const FString& TexPath = Texture->GetFilePath().empty() ? "None" : Texture->GetFilePath();
+						bool bSelected = (TexPath == CurrentPath);
+						if (ImGui::Selectable(TexPath.c_str(), bSelected))
 						{
-							ParamValue.Value = NewTex;
+							ParamValue.Value = Texture;
 							SelectedMaterialPtr->SetParam(ParamName, ParamValue);
 						}
+						if (bSelected) ImGui::SetItemDefaultFocus();
 					}
-					if (bSelected) ImGui::SetItemDefaultFocus();
 				}
 				ImGui::EndCombo();
 			}

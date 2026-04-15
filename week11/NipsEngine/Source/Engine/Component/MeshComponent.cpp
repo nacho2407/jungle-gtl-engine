@@ -32,7 +32,7 @@ UMeshComponent::~UMeshComponent()
 	{
 		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Mat))
 		{
-			delete MatInst;
+			//UObjectManager::Get().DestroyObject(MatInst);
 		}
 	}
 }
