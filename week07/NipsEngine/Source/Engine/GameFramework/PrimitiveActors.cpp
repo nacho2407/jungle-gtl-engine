@@ -13,7 +13,7 @@
 namespace
 {
 	constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
-	constexpr const char* SphereMeshPath = "Asset/Mesh/Sphere.obj";
+	constexpr const char* FireballMeshPath = "Asset/Mesh/Sun/sun.obj";
 	constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
 }
 
@@ -72,7 +72,7 @@ void ACubeActor::InitDefaultComponents()
 void ASphereActor::InitDefaultComponents()
 {
 	auto* Sphere = AddComponent<UStaticMeshComponent>();
-	Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+	//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
 	SetRootComponent(Sphere);
 
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
@@ -121,7 +121,7 @@ void AAttachTestActor::InitDefaultComponents()
 	for (int i = 0; i < 4; ++i)
 	{
 		auto* Sphere = AddComponent<UStaticMeshComponent>();
-		Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+		//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
 		Sphere->AttachToComponent(Primitives);
 		Sphere->SetRelativeLocation(Positions[i]);
 	}
@@ -238,7 +238,7 @@ void AFireballActor::InitDefaultComponents()
 {
 	// Base for debugging and demonstration. Remove this later
     auto* Sphere = AddComponent<UStaticMeshComponent>();
-    Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+    Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(FireballMeshPath));
 	Sphere->SetEnableCull(false);
     SetRootComponent(Sphere);
 
@@ -254,19 +254,6 @@ void AFireballActor::InitDefaultComponents()
 	// Flare
     UFireballComponent* Fireball = AddComponent<UFireballComponent>();
 	Fireball->AttachToComponent(Sphere);
-
-	// Emissive glow material for the fireball core
-	//static FMaterial FireballCoreMaterial;
-	//static bool bFireballMatInit = false;
-	//if (!bFireballMatInit)
-	//{
-	//	FColor LightColor = Fireball->GetLinearColor();
-	//	FVector SurfaceColor = FVector(LightColor.R, LightColor.G, LightColor.B);
-	//	FireballCoreMaterial.EmissiveColor = SurfaceColor;
-	//	FireballCoreMaterial.DiffuseColor  = SurfaceColor;
-	//	bFireballMatInit = true;
-	//}
-	//Sphere->SetMaterial(0, &FireballCoreMaterial);
 }
 
 void ASpotLightActor::InitDefaultComponents() {

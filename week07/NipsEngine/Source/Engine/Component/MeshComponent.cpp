@@ -26,6 +26,17 @@ DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 //    return NewComp;
 //}
 
+UMeshComponent::~UMeshComponent()
+{
+	for (auto* Mat : OverrideMaterial)
+	{
+		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Mat))
+		{
+			delete MatInst;
+		}
+	}
+}
+
 void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
 {
 	if (SlotIndex < 0)
@@ -36,6 +47,14 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial
 	if (SlotIndex >= static_cast<int32>(OverrideMaterial.size()))
 	{
 		OverrideMaterial.resize(SlotIndex + 1, nullptr);
+	}
+
+	if (OverrideMaterial[SlotIndex] != InMaterial)
+	{
+		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(OverrideMaterial[SlotIndex]))
+		{
+			delete MatInst;
+		}
 	}
 
 	OverrideMaterial[SlotIndex] = InMaterial;
