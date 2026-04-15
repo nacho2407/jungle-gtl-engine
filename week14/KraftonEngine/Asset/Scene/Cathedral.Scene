@@ -1,8 +1,199 @@
 {
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "8",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/Eyes.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/EyeWhites.json"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Skirt.json"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Shoes.json"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Gloves.json"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Neck.json"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Face.json"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Hair.json"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Expression.json"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Skin.json"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Clothes.json"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Pants.json"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/BackAccessory.json"
+          },
+          "Location" : [14.321032, 0.000000, -31.548086],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "27",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCylindricalBillboardComponent",
+            "Properties" : {
+              "BillboardAxis" : [0.000000, 0.000000, 1.000000],
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, -0.700000],
+              "Material" : {
+                "Path" : "Asset/Materials/Lampshade.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [3.000000, 3.000000, 3.000000],
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [90.000000, 0.000000, 0.000000],
+              "Scale" : [3.000000, 3.000000, 3.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/clean_bulb_light_mat.002.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/clean_retro_light_mat.002.json"
+          },
+          "Location" : [14.073861, 0.000000, -29.836563],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "34",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [70.000000, 70.000000, 70.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [90.000000, 0.000000, 0.000000],
+              "Scale" : [10.000000, 10.000000, 10.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [0.000000, 90.000000, 0.000000],
+              "Scale" : [10.000000, 10.000000, 10.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/BasicShapeMaterial.json"
+          },
+          "Location" : [-7.556620, -0.654142, -22.255745],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : false
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "39",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -139,7 +330,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
-              "Visible" : true,
+              "Visible" : false,
               "bTickEnable" : true
             }
           }],
@@ -186,7 +377,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
-              "Visible" : true,
+              "Visible" : false,
               "bTickEnable" : true
             }
           }],
@@ -233,7 +424,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
-              "Visible" : true,
+              "Visible" : false,
               "bTickEnable" : true
             }
           }],
@@ -280,7 +471,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 11",
-              "Visible" : true,
+              "Visible" : false,
               "bTickEnable" : true
             }
           }],
@@ -674,14 +865,35 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-42.306187, 12.092099, -10.257293],
+    "Location" : [-54.188820, 8.565728, -21.803761],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000000, 6.486022, -36.130402]
+    "Rotation" : [0.000000, 1.688049, -38.534027]
   },
   "Primitives" : {
-    "8" : {
+    "27" : {
+      "Location" : [14.073861, 0.000000, -29.836563],
+      "ObjStaticMeshAsset" : "Data/Retro-light/RetroLight.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "34" : {
+      "Location" : [-7.556620, -0.654142, -22.255745],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Sphere.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "39" : {
       "Location" : [1.749607, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Data/church/eglise-sketchfab5.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "8" : {
+      "Location" : [14.321032, 0.000000, -31.548086],
+      "ObjStaticMeshAsset" : "C:/JungleProjects/Week5/Jungle_Week5_Team3/KraftonEngine/Data/Lumine/LumineModel.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
