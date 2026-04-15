@@ -24,13 +24,7 @@ struct FOverlayStatLayout
 class FOverlayStatSystem
 {
 public:
-	FOverlayStatSystem()
-	{
-#if FPS_OPTIMIZATION
-		ShowFPS();
-		ShowPickingTime();
-#endif
-	}
+	FOverlayStatSystem() = default;
 
 	void ShowFPS(bool bEnable = true) { bShowFPS = bEnable; }
 	void ShowPickingTime(bool bEnable = true) { bShowPickingTime = bEnable; }
