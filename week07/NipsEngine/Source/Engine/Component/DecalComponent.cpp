@@ -68,6 +68,14 @@ void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void UDecalComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (std::strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
+		{
+			SetMaterial(i, Materials[i]);
+		}
+	}
 }
 
 void UDecalComponent::UpdateWorldAABB() const
