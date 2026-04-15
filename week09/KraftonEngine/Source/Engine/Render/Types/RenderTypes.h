@@ -34,9 +34,9 @@ enum class EMeshShape
 enum class ERenderPass : uint32
 {
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
-	AlphaBlend,		// 반투명 지오메트리 (Font, SubUV, Billboard, Translucent)
 	Decal,			// 데칼 (DepthReadOnly)
 	AdditiveDecal,	// FakeLight 등
+	AlphaBlend,		// 반투명 지오메트리 (Font, SubUV, Billboard, Translucent)
 	SelectionMask,	// 선택 스텐실 마스크
 	EditorLines,	// 디버그 라인 + 그리드 (LINELIST)
 	PostProcess,	// 아웃라인 풀스크린, Fog, SceneDepth
@@ -51,9 +51,9 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 {
 	static const char* Names[] = {
 		"RenderPass::Opaque",
-		"RenderPass::AlphaBlend",
 		"RenderPass::Decal",
 		"RenderPass::AdditiveDecal",
+		"RenderPass::AlphaBlend",
 		"RenderPass::SelectionMask",
 		"RenderPass::EditorLines",
 		"RenderPass::PostProcess",
@@ -71,9 +71,9 @@ namespace RenderStateStrings
 	inline constexpr FEnumEntry RenderPassMap[] =
 	{
 		{ "Opaque",        (int)ERenderPass::Opaque },
-		{ "AlphaBlend",    (int)ERenderPass::AlphaBlend },
 		{ "Decal",         (int)ERenderPass::Decal },
 		{ "AdditiveDecal", (int)ERenderPass::AdditiveDecal },
+		{ "AlphaBlend",    (int)ERenderPass::AlphaBlend },
 		{ "SelectionMask", (int)ERenderPass::SelectionMask },
 		{ "EditorLines",   (int)ERenderPass::EditorLines },
 		{ "PostProcess",   (int)ERenderPass::PostProcess },

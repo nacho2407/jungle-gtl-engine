@@ -1,4 +1,4 @@
-#include "Render/Proxy/CylindricalBillboardSceneProxy.h"
+﻿#include "Render/Proxy/CylindricalBillboardSceneProxy.h"
 #include "Component/CylindricalBillboardComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/MeshBufferManager.h"
@@ -44,7 +44,7 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Fra
 	}
 
 	FVector BillboardPos = Comp->GetWorldLocation();
-	FVector BillboardForward = Frame.CameraForward * -1.0f;
+	FVector BillboardForward = Frame.CameraForward * 1.0f;
 
 	// 로컬 축 구하기
 	FVector LocalAxis = Comp->GetBillboardAxis();
