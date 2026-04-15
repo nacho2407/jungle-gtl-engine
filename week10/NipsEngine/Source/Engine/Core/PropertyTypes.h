@@ -22,6 +22,8 @@ enum class EPropertyType : uint8_t
                        // 필요 시 Enum, Color 등 추가
 	Enum,
 	Color,
+
+	Material, // TODO: 수정필요
 };
 
 // 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
