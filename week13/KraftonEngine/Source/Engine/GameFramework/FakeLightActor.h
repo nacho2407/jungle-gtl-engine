@@ -2,6 +2,7 @@
 
 #include "GameFramework/AActor.h"
 
+class UStaticMeshComponent;
 class UCylindricalBillboardComponent;
 class UDecalComponent;;
 
@@ -14,10 +15,12 @@ public:
 	void InitDefaultComponents();
 
 private:
+	UStaticMeshComponent* StaticMeshComponent = nullptr;
 	UCylindricalBillboardComponent* BillboardComponent = nullptr;
 	UDecalComponent* DecalComponent = nullptr;
 	
 	// TODO: Remove Magic Numbers
+	FString LampMeshDir = "Data/Retro-light/RetroLight.OBJ";
 	FString LampshadeImage = "FakeLight_Lampshade";
 	FString DecalMaterialPath = "Asset/Materials/FakeLight_LightArea.json";
 };
