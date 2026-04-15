@@ -85,22 +85,28 @@ USceneComponent::USceneComponent()
 
 USceneComponent::~USceneComponent()
 {
-	if (ParentComponent != nullptr)
+	// 1. 부모로부터 자신을 제거 (댕글링 방지)
+	if (ParentComponent)
 	{
 		ParentComponent->RemoveChild(this);
 		ParentComponent = nullptr;
 	}
 
-	for (auto* Child : ChildComponents)
+	// 2. 자식들을 먼저 제거 (재귀적으로 subtree 파괴)
+	while (!ChildComponents.empty())
 	{
-		if (Child)
+		USceneComponent* Child = ChildComponents.back();
+		if (Child && Owner)
 		{
-			Child->ParentComponent = nullptr;
-			Child->MarkTransformDirty();
+			Owner->RemoveComponent(Child);
+		}
+		else
+		{
+			ChildComponents.pop_back();
 		}
 	}
-	ChildComponents.clear();
 }
+
 
 void USceneComponent::SetParent(USceneComponent* NewParent)
 {
