@@ -63,6 +63,7 @@ public:
 		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetFocusedWorld();
 	}
 
+	// 주의! Editor State가 따로 존재하는 것이 아닙니다. 에디터가 현재 포커스한 뷰포트의 상태를 Get/Set합니다.
 	EViewportPlayState GetEditorState() const
 	{
 		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetPlayState();
@@ -73,9 +74,15 @@ public:
 		ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).SetPlayState(InState);
 	}
 
+	// PIE 모드 컨트롤 함수
 	void StartPlaySession();
 	void PausePlaySession();
+	void ResumePlaySession();
 	void StopPlaySession();
+
+	FWorldContext& RegisterWorld(UWorld* InWorld, EWorldType Type, const FName& Handler, const FString& Name);
+	void UnregisterWorld(const FName& Handle);
+	FName GetEditorWorldHandle() const;
 
 private:
 	FSelectionManager SelectionManager;
