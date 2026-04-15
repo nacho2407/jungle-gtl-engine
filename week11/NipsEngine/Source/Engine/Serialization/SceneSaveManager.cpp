@@ -267,6 +267,14 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 		arr.append(static_cast<double>(v[2]));
 		return arr;
 	}
+    case EPropertyType::Color: {
+        float* v = static_cast<float*>(Prop.ValuePtr);
+        JSON arr = json::Array();
+        arr.append(static_cast<double>(v[0]));
+        arr.append(static_cast<double>(v[1]));
+        arr.append(static_cast<double>(v[2]));
+        return arr;
+	}
 	case EPropertyType::Vec4: {
 		float* v = static_cast<float*>(Prop.ValuePtr);
 		JSON arr = json::Array();
@@ -591,6 +599,17 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 			if (i < 3) v[i] = static_cast<float>(elem.ToFloat());
 			i++;
 		}
+		break;
+	}
+    case EPropertyType::Color: {
+        float* v = static_cast<float*>(Prop.ValuePtr);
+        int i = 0;
+        for (auto& elem : Value.ArrayRange())
+        {
+            if (i < 3)
+                v[i] = static_cast<float>(elem.ToFloat());
+            i++;
+        }
 		break;
 	}
 	case EPropertyType::Vec4: {
