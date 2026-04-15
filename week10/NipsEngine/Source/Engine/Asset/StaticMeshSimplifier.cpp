@@ -449,7 +449,7 @@ void FStaticMeshSimplifier::SimplifyMesh()
 
         FCollapseCandidate CurrentState = CalculateEdgeError(ia, ib, TopologicalIndices);
         
-        // [이전 데이터 검증] 큐의 데이터가 과거 값이면 최신화하여 재삽입
+        // 큐의 데이터가 과거 값이면 최신화하여 다시 삽입합니다.
         if (CurrentState.Error > Victim.Error + 0.0001f)
         {
             PQ.push(CurrentState);
