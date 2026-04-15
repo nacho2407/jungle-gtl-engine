@@ -1,6 +1,6 @@
 // Hi-Z Mip Chain Generator
 // CSCopyDepth: depth buffer → Hi-Z mip 0
-// CSDownsample: Hi-Z mip N-1 → Hi-Z mip N (max downsample)
+// CSDownsample: Hi-Z mip N-1 → Hi-Z mip N (min downsample, Reversed-Z: closer = larger)
 
 cbuffer HiZParams : register(b0)
 {
@@ -36,5 +36,6 @@ void CSDownsample(uint3 DTid : SV_DispatchThreadID)
     float d01 = SrcTexture[min(srcCoord + uint2(0, 1), srcMax)];
     float d11 = SrcTexture[min(srcCoord + uint2(1, 1), srcMax)];
 
-    DstTexture[DTid.xy] = max(max(d00, d10), max(d01, d11));
+    // Reversed-Z: keep the farthest (smallest) depth for conservative occlusion
+    DstTexture[DTid.xy] = min(min(d00, d10), min(d01, d11));
 }

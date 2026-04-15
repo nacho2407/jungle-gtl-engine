@@ -28,12 +28,14 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     
     if (Mode == 1)
     {
-        float linZ = NearClip * FarClip / (FarClip - d * (FarClip - NearClip));
+        // Reversed-Z linearization: d=1 at near, d=0 at far
+        float linZ = NearClip * FarClip / (NearClip - d * (NearClip - FarClip));
         v = saturate((linZ - NearClip) / (FarClip - NearClip));
     }
     else
     {
-        v = pow(saturate(d), Exponent);
+        // Reversed-Z: invert so near=dark, far=bright (matching Forward-Z visual)
+        v = pow(saturate(1.0 - d), Exponent);
     }
     
     return float4(v, v, v, 1.0f);

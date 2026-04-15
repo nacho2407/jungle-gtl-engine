@@ -1,20 +1,4 @@
-﻿#pragma once
+#pragma once
 
-#include "Engine/Object/Object.h"
-
-struct FTypeInfo;
-
-inline TArray<const FTypeInfo*>& GetClassRegistry()
-{
-	static TArray<const FTypeInfo*> Registry;
-	return Registry;
-}
-
-// Define Class 저장소
-struct FClassRegistrar
-{
-	FClassRegistrar(const FTypeInfo* Info)
-	{
-		GetClassRegistry().push_back(Info);
-	}
-};
+// ClassTypes.h — UClass.h 로 통합됨. 기존 include 호환을 위해 유지.
+#include "Object/UClass.h"

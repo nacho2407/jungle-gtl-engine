@@ -16,6 +16,7 @@
 
 #pragma comment(lib, "dxgi")
 #include "Core/CoreTypes.h"
+#include "Render/Types/RenderStateTypes.h"
 
 //	Mesh Shape Enum — MeshBufferManager 조회용 (순수 기하 형상)
 enum class EMeshShape
@@ -63,4 +64,24 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 	};
 	static_assert(ARRAYSIZE(Names) == (uint32)ERenderPass::MAX, "Names must match ERenderPass entries");
 	return Names[(uint32)Pass];
+}
+
+namespace RenderStateStrings
+{
+	inline constexpr FEnumEntry RenderPassMap[] =
+	{
+		{ "Opaque",        (int)ERenderPass::Opaque },
+		{ "AlphaBlend",    (int)ERenderPass::AlphaBlend },
+		{ "Decal",         (int)ERenderPass::Decal },
+		{ "AdditiveDecal", (int)ERenderPass::AdditiveDecal },
+		{ "SelectionMask", (int)ERenderPass::SelectionMask },
+		{ "EditorLines",   (int)ERenderPass::EditorLines },
+		{ "PostProcess",   (int)ERenderPass::PostProcess },
+		{ "FXAA",          (int)ERenderPass::FXAA },
+		{ "GizmoOuter",    (int)ERenderPass::GizmoOuter },
+		{ "GizmoInner",    (int)ERenderPass::GizmoInner },
+		{ "OverlayFont",   (int)ERenderPass::OverlayFont },
+	};
+
+	static_assert(ARRAYSIZE(RenderPassMap) == (int)ERenderPass::MAX, "RenderPassMap must match ERenderPass entries");
 }

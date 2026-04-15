@@ -37,7 +37,7 @@ public:
 		static_assert(std::is_base_of_v<UActorComponent, T>,
 			"AddComponent<T>: T must derive from UActorComponent");
 		// 템플릿 경로도 abstract 베이스 컴포넌트 직접 추가를 막는다.
-		if (T::s_TypeInfo.HasAnyClassFlags(CF_Abstract))
+		if (T::StaticClass()->HasAnyClassFlags(CF_Abstract))
 		{
 			return nullptr;
 		}
@@ -51,8 +51,8 @@ public:
 		return Comp;
 	}
 
-	// FTypeInfo 기반 런타임 컴포넌트 생성
-	UActorComponent* AddComponentByClass(const FTypeInfo* Class);
+	// UClass 기반 런타임 컴포넌트 생성
+	UActorComponent* AddComponentByClass(UClass* Class);
 
 	void RemoveComponent(UActorComponent* Component);
 
