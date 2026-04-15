@@ -2,10 +2,10 @@
   "Parameters" : {
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
   },
-  "PathFileName" : "Asset/Materials/Face.json",
+  "PathFileName" : "Asset/Materials/sol.json",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/Lumine/Texture/Face.png"
+    "DiffuseTexture" : "Data/church/TextureAtlasSol.png"
   }
 }
