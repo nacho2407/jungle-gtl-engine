@@ -33,7 +33,12 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     // Sample hardware depth (Reversed-Z: 1=near, 0=far)
     float depth = SceneDepth.Load(int3(coord, 0));
     if (depth <= 0.0)
-        depth = 0.001f;
+    {
+        // Sky/background: no geometry to reconstruct world position
+        if (FogCutoffDistance > 0.0)
+            discard; // CutoffDistance 설정 시 sky는 안개 범위 밖으로 취급
+        return float4(FogInscatteringColor.rgb, FogMaxOpacity);
+    }
 
     // Reconstruct world position from depth
     float2 ndc = float2(input.uv.x * 2.0 - 1.0, 1.0 - input.uv.y * 2.0);
@@ -41,44 +46,40 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     float4 worldH = mul(clipPos, InvViewProj);
     float3 worldPos = worldH.xyz / worldH.w;
 
-    // Reconstruct camera world position at near plane (Reversed-Z: near=1)
-    float4 camClip = float4(0, 0, 1, 1);
-    float4 camWorldH = mul(camClip, InvViewProj);
-    float3 camPos = camWorldH.xyz / camWorldH.w;
+    // Camera position from FrameBuffer (b0)
+    float3 camPos = CameraWorldPos;
 
     float3 rayDir = worldPos - camPos;
     float rayLength = length(rayDir);
 
-    // Start distance culling
-    if (rayLength < FogStartDistance)
-        discard;
-
-    // Cutoff distance
-    float effectiveLength = rayLength - FogStartDistance;
+    // Effective integration length (0 when inside StartDistance → fog naturally fades to 0)
+    float effectiveLength = max(rayLength - FogStartDistance, 0.0);
     if (FogCutoffDistance > 0.0)
         effectiveLength = min(effectiveLength, FogCutoffDistance - FogStartDistance);
 
-    // Exponential height fog (UE-style)
-    // f = FogDensity * exp(-FogHeightFalloff * (camPos.z - FogBaseHeight))
-    // integrated along ray direction
+    // Exponential height fog — numerically stable form
+    // Density at height h: FogDensity * exp(-falloff * (h - FogBaseHeight))
+    // Line integral along ray, computed with exp at both endpoints separately
+    // to avoid float precision loss when camera is far above FogBaseHeight.
     float rayDirZ = rayDir.z / max(rayLength, 0.001);
     float falloff = max(FogHeightFalloff, 0.001);
 
-    // Height factor at camera
-    float camRelHeight = camPos.z - FogBaseHeight;
-    float densityAtCam = FogDensity * exp(-falloff * camRelHeight);
+    // Heights relative to FogBaseHeight at actual integration endpoints
+    // Integration starts at FogStartDistance along the ray, not at camera
+    float startHeight = camPos.z + rayDirZ * FogStartDistance - FogBaseHeight;
+    float endHeight = startHeight + rayDirZ * effectiveLength;
 
-    // Analytical line integral of exp(-falloff * (camH + t * rayDirZ)) dt from 0 to effectiveLength
     float dz = rayDirZ * effectiveLength;
     float lineIntegral;
     if (abs(dz * falloff) > 0.001)
     {
-        lineIntegral = densityAtCam * (1.0 - exp(-falloff * dz)) / (falloff * rayDirZ);
+        // Stable: exp(-falloff * endHeight) survives even when exp(-falloff * startHeight) ≈ 0
+        lineIntegral = FogDensity * (exp(-falloff * startHeight) - exp(-falloff * endHeight)) / (falloff * rayDirZ);
     }
     else
     {
-        // Taylor approximation for near-horizontal rays
-        lineIntegral = densityAtCam * effectiveLength;
+        // Near-horizontal rays: density approximately constant along ray
+        lineIntegral = FogDensity * exp(-falloff * startHeight) * effectiveLength;
     }
 
     lineIntegral = max(lineIntegral, 0.0);
