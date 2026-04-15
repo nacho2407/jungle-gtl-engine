@@ -23,6 +23,14 @@ UDecalComponent::UDecalComponent()
     bEnableCull = false;
 }
 
+UDecalComponent::~UDecalComponent()
+{
+	if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Material))
+	{
+		delete MatInst;
+	}
+}
+
 // Material 포인터는 프로퍼티 시스템에 노출되지 않으므로 직접 복사합니다.
 // LifeTime 은 런타임 상태이므로 복사하지 않습니다 (BeginPlay 에서 0 으로 초기화).
 void UDecalComponent::PostDuplicate(UObject* Original)
@@ -30,7 +38,17 @@ void UDecalComponent::PostDuplicate(UObject* Original)
     UPrimitiveComponent::PostDuplicate(Original);
 
     const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
-    Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
+
+	if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Material))
+	{
+		UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
+		MatInst->OverridedParams = OrigMatInst->OverridedParams;
+		Material = MatInst;
+	}
+	else
+	{
+		Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
+	}
 }
 
 void UDecalComponent::BeginPlay()

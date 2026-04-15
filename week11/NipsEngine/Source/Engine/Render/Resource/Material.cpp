@@ -3,7 +3,7 @@
 
 DEFINE_CLASS(UMaterialInterface, UObject)
 DEFINE_CLASS(UMaterial, UMaterialInterface)
-DEFINE_CLASS(UMaterialInstance, UMaterial)
+DEFINE_CLASS(UMaterialInstance, UMaterialInterface)
 
 
 void UMaterial::Bind(ID3D11DeviceContext* Context) const
