@@ -74,7 +74,7 @@ struct FFrameConstants
 	float bIsWireframe;
 	FVector WireframeColor;
 	float Time;
-	float _pad[3];
+	FVector CameraWorldPos;
 };
 
 // SubUV UV region — atlas frame offset + size (b2 slot, shared with Gizmo)
