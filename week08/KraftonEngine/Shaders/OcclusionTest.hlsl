@@ -54,7 +54,8 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
 
         // Approximate sphere depth extent in NDC (linear approximation)
         float depthExtent = radius / centerClip.w;
-        float nearDepth = centerDepth - depthExtent;
+        // Reversed-Z: closest point has largest depth
+        float nearDepth = centerDepth + depthExtent;
 
         // Screen-space radius for sub-pixel check and mip selection
         float screenRadius = radius / centerClip.w * max(ViewportSize.x, ViewportSize.y) * 0.5;
@@ -81,8 +82,8 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
                 ? HiZTextureB.Load(int3(texel, mip))
                 : HiZTextureA.Load(int3(texel, mip));
 
-            // Sphere's nearest point is behind the farthest occluder → definitely occluded
-            if (nearDepth > hiZ + DEPTH_BIAS)
+            // Reversed-Z: nearest point (large depth) behind farthest occluder (small depth) → occluded
+            if (nearDepth < hiZ - DEPTH_BIAS)
             {
                 VisibilityFlags[idx] = 0;
                 return;
@@ -106,7 +107,8 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
     // Project each corner: collect screen UV, depth, and screen-space AABB
     float2 minUV = float2(1.0, 1.0);
     float2 maxUV = float2(0.0, 0.0);
-    float minDepth = 1.0;
+    // Reversed-Z: track closest vertex (largest depth)
+    float maxDepth = 0.0;
     float2 projUV[8];
     float projDepth[8];
     bool onScreen[8];
@@ -136,7 +138,7 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
         // Accumulate screen-space AABB (unclamped for rect coverage)
         minUV = min(minUV, uv);
         maxUV = max(maxUV, uv);
-        minDepth = min(minDepth, ndc.z);
+        maxDepth = max(maxDepth, ndc.z);
 
         onScreen[i] = (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0);
         if (onScreen[i])
@@ -150,8 +152,8 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
         return;
     }
 
-    // Near plane intersection → visible
-    if (minDepth < 0.0)
+    // Near plane intersection → visible (Reversed-Z: near=1, past near plane > 1)
+    if (maxDepth > 1.0)
     {
         VisibilityFlags[idx] = 1;
         return;
@@ -175,7 +177,8 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
         texel = clamp(texel, int2(0, 0), int2(vpW - 1, vpH - 1));
         float hiZ = HiZTextureA.Load(int3(texel, 0));
 
-        if (projDepth[j] <= hiZ + DEPTH_BIAS)
+        // Reversed-Z: vertex in front of occluder = larger depth
+        if (projDepth[j] >= hiZ - DEPTH_BIAS)
         {
             VisibilityFlags[idx] = 1;
             return;
@@ -221,8 +224,8 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
         maxTexel = clamp(int2(clampedMax * float2(mipW, mipH)), int2(0, 0), int2(mipW - 1, mipH - 1));
     }
 
-    // Sample Hi-Z rect: if max depth in region >= minDepth → visible
-    float maxHiZDepth = 0.0;
+    // Reversed-Z: find farthest occluder in region (smallest depth)
+    float minHiZDepth = 1.0;
     for (int y = minTexel.y; y <= maxTexel.y; y++)
     {
         for (int x = minTexel.x; x <= maxTexel.x; x++)
@@ -230,9 +233,10 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
             float d = (mipLevel & 1)
                 ? HiZTextureB.Load(int3(x, y, mipLevel))
                 : HiZTextureA.Load(int3(x, y, mipLevel));
-            maxHiZDepth = max(maxHiZDepth, d);
+            minHiZDepth = min(minHiZDepth, d);
         }
     }
 
-    VisibilityFlags[idx] = (minDepth > maxHiZDepth + DEPTH_BIAS) ? 0 : 1;
+    // Reversed-Z: closest vertex behind farthest occluder → occluded
+    VisibilityFlags[idx] = (maxDepth < minHiZDepth - DEPTH_BIAS) ? 0 : 1;
 }

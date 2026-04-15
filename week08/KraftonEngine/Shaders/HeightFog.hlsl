@@ -30,10 +30,10 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
 
-    // Sample hardware depth (0..1)
+    // Sample hardware depth (Reversed-Z: 1=near, 0=far)
     float depth = SceneDepth.Load(int3(coord, 0));
-    if (depth >= 1.0)
-        depth = 0.999f;
+    if (depth <= 0.0)
+        depth = 0.001f;
 
     // Reconstruct world position from depth
     float2 ndc = float2(input.uv.x * 2.0 - 1.0, 1.0 - input.uv.y * 2.0);
@@ -41,15 +41,10 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     float4 worldH = mul(clipPos, InvViewProj);
     float3 worldPos = worldH.xyz / worldH.w;
 
-    // Camera-to-pixel vector
-    float3 camPos = float3(View._41, View._42, View._43);
-    // View matrix stores camera position in translation row for row-major
-    // Actually, extract from inverse: use InvViewProj-based camera pos
-    // For row-major View, camera world pos = -transpose(rotation) * translation
-    // Simpler: reconstruct camera at depth=0
-    float4 camClip = float4(0, 0, 0, 1);
+    // Reconstruct camera world position at near plane (Reversed-Z: near=1)
+    float4 camClip = float4(0, 0, 1, 1);
     float4 camWorldH = mul(camClip, InvViewProj);
-    camPos = camWorldH.xyz / camWorldH.w;
+    float3 camPos = camWorldH.xyz / camWorldH.w;
 
     float3 rayDir = worldPos - camPos;
     float rayLength = length(rayDir);
