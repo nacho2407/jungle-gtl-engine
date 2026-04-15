@@ -112,7 +112,8 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     if (any(EmissiveColor > 0.f))
     {
         // Emissive surface: write the glow color and mark normal.a = 2
-        output.Color    = float4(EmissiveColor, 1.f);
+        float3 TexColor = bHasDiffuseMap ? DiffuseMap.Sample(SampleState, input.UV).xyz : float3(1.0f, 1.0f, 1.0f);
+        output.Color    = float4(EmissiveColor * TexColor, 1.f);
         output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
         output.WorldPos = float4(input.WorldPos, 1.f);
         return output;
