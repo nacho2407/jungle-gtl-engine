@@ -18,26 +18,23 @@ AActor::AActor()
 	PrimaryActorTick.bTickEnabled = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 }
-
 AActor::~AActor()
 {
 	PrimaryActorTick.UnRegisterTickFunction();
 
-	for (auto* Comp : OwnedComponents)
+	// 계층 구조 파괴 시 OwnedComponents가 재귀적으로 수정되므로
+	// 리스트가 비워질 때까지 뒤에서부터 하나씩 제거
+	// (Iterator Invalidation 방지)
+	while (!OwnedComponents.empty())
 	{
-		if (!Comp)
-		{
-			continue;
-		}
-
-		Comp->PrimaryComponentTick.UnRegisterTickFunction();
-		Comp->DestroyRenderState();
-		UObjectManager::Get().DestroyObject(Comp);
+		UActorComponent* Comp = OwnedComponents.back();
+		// OwnedComponents.erase()는 RemoveComponent 내부에서 실행되므로 따로 해 줄 필요 없음
+		RemoveComponent(Comp);
 	}
 
-	OwnedComponents.clear();
 	RootComponent = nullptr;
 }
+
 
 UActorComponent* AActor::AddComponentByClass(UClass* Class)
 {
