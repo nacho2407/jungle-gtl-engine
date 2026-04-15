@@ -104,8 +104,15 @@ public:
 	UMaterial* GetMaterial(const FString& Path) const;
 	UMaterial* GetOrCreateMaterial(const FString& Path, const FString& ShaderName);
 	bool LoadMaterial(const FString& Path, const FString& ShaderName, ID3D11Device* Device = nullptr);
+
+	bool SerializeMaterial(const FString& Path, const UMaterial* Material);
+	bool SerializeMaterialInstance(const FString& Path, const UMaterialInstance* MaterialInstance);
 	bool DeserializeMaterial(const FString& Path);
 	TArray<FString> GetMaterialNames() const;
+
+	UMaterialInstance* CreateMaterialInstance(const FString& Path, UMaterial* Parent);
+	UMaterialInstance* GetMaterialInstance(const FString& Path) const;
+	UMaterialInterface* GetMaterialInterface(const FString& Path) const;
 
 	FFontResource* FindFont(const FName& FontName);
 	const FFontResource* FindFont(const FName& FontName) const;
@@ -161,6 +168,7 @@ private:
 	TMap<FString, UShader*> Shaders;
 	TMap<FString, UTexture*> Textures;
 	TMap<FString, UMaterial*> Materials;
+	TMap<FString, UMaterialInstance*> MaterialInstances;
 	TMap<ESamplerType, TComPtr<ID3D11SamplerState>> SamplerStates;
 	TMap<EDepthStencilType, TComPtr<ID3D11DepthStencilState>> DepthStencilStates;
 	TMap<EBlendType, TComPtr<ID3D11BlendState>> BlendStates;

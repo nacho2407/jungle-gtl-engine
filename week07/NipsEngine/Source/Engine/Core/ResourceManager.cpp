@@ -135,6 +135,9 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		return;
 	}
 
+	TArray<FString> MaterialFiles;
+	TArray<FString> MaterialInstanceFiles;
+
 	for (const auto& Entry : fs::recursive_directory_iterator(RootPath))
 	{
 		if (!Entry.is_regular_file())
@@ -172,7 +175,11 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		else if (Extension == L".mat")
 		{
 			MaterialFilePaths.push_back(RelativePath);
-			DeserializeMaterial(FPaths::ToString(FilePath));
+			MaterialFiles.push_back(RelativePath);
+		}
+		else if (Extension == L".matinst")
+		{
+			MaterialInstanceFiles.push_back(RelativePath);
 		}
 		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
@@ -198,6 +205,16 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			//	TextureFilePaths.push_back(RelativePath);
 			//}
 		}
+	}
+
+	for (const FString& MaterialPath : MaterialFiles)
+	{
+		DeserializeMaterial(MaterialPath);
+	}
+
+	for (const FString& MaterialInstancePath : MaterialInstanceFiles)
+	{
+		DeserializeMaterial(MaterialInstancePath);
 	}
 
 	//	TODO : Material, Texture Load
@@ -600,6 +617,15 @@ void FResourceManager::ReleaseGPUResources()
 	}
 	Materials.clear();
 
+	for (auto& [Key, MaterialInst] : MaterialInstances)
+	{
+		if (MaterialInst)
+		{
+			UObjectManager::Get().DestroyObject(MaterialInst);
+		}
+	}
+	MaterialInstances.clear();
+
 	for (auto& [Key, Shader] : Shaders)
 	{
 		if (Shader)
@@ -743,21 +769,22 @@ UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 }
 
 // 매개변수 없이 가장 간단한 Material을 생성
-UMaterial* FResourceManager::GetOrCreateMaterial(const FString& MaterialName, const FString& ShaderName)
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FString& ShaderName)
 {
-	UMaterial* Material = GetMaterial(MaterialName);
+	UMaterial* Material = GetMaterial(Path);
 	if (Material)
 	{
 		return Material;
 	}
 
 	Material = UObjectManager::Get().CreateObject<UMaterial>();
-	Material->Name = MaterialName;
+	Material->Name = Path;
+	Material->FilePath = Path;
 
 	UShader* Shader = GetShader(ShaderName);
 	Material->SetShader(Shader);
 
-	Materials[MaterialName] = Material;
+	Materials[Path] = Material;
 
 	return Material;
 }
@@ -790,6 +817,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
 	for (auto& [Name, Mat] : Parsed)
 	{
+		Mat->FilePath = MtlFilePath;
 		Mat->SetShader(Shader);
 		Materials[Name] = Mat;
 	}
@@ -809,6 +837,210 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	return true;
 }
 
+UMaterialInstance* FResourceManager::CreateMaterialInstance(const FString& Path, UMaterial* Parent)
+{
+	UMaterialInstance* Instance = UObjectManager::Get().CreateObject<UMaterialInstance>();
+	Instance->Parent = Parent;
+	Instance->Name = Path;
+	Instance->FilePath = Path;
+	MaterialInstances[Path] = Instance;
+	return Instance;
+}
+
+UMaterialInstance* FResourceManager::GetMaterialInstance(const FString& Path) const
+{
+	auto It = MaterialInstances.find(Path);
+	return (It != MaterialInstances.end()) ? It->second : nullptr;
+}
+
+UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name) const
+{
+	UMaterial* Mat = GetMaterial(Name);
+	if (Mat)
+	{
+		return Mat;
+	}
+	return GetMaterialInstance(Name);
+}
+
+bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMaterial* Material)
+{
+	using json::JSON;
+	JSON Root = JSON::Make(JSON::Class::Object);
+	Root["Name"] = Material->Name;
+	Root["Shader"] = Material->Shader ? Material->Shader->FilePath : "";
+
+	JSON Params = JSON::Make(JSON::Class::Array);
+	for (const auto& [ParamName, ParamValue] : Material->MaterialParams)
+	{
+		JSON Param = JSON::Make(JSON::Class::Object);
+		Param["Name"] = ParamName;
+		if (std::holds_alternative<bool>(ParamValue.Value))
+		{
+			Param["Type"] = "Bool";
+			Param["Value"] = std::get<bool>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<int>(ParamValue.Value))
+		{
+			Param["Type"] = "Int";
+			Param["Value"] = std::get<int>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<uint32>(ParamValue.Value))
+		{
+			Param["Type"] = "UInt";
+			Param["Value"] = std::get<uint32>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<float>(ParamValue.Value))
+		{
+			Param["Type"] = "Float";
+			Param["Value"] = std::get<float>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<FVector2>(ParamValue.Value))
+		{
+			const FVector2& Vec = std::get<FVector2>(ParamValue.Value);
+			Param["Type"] = "Vector2";
+			Param["Value"] = {Vec.X, Vec.Y};
+		}
+		else if (std::holds_alternative<FVector>(ParamValue.Value))
+		{
+			const FVector& Vec = std::get<FVector>(ParamValue.Value);
+			Param["Type"] = "Vector3";
+			Param["Value"] = {Vec.X, Vec.Y, Vec.Z};
+		}
+		else if (std::holds_alternative<FVector4>(ParamValue.Value))
+		{
+			const FVector4& Vec = std::get<FVector4>(ParamValue.Value);
+			Param["Type"] = "Vector4";
+			Param["Value"] = { Vec.X, Vec.Y, Vec.Z, Vec.W };
+		}
+		else if (std::holds_alternative<FMatrix>(ParamValue.Value))
+		{
+			const FMatrix& Mat = std::get<FMatrix>(ParamValue.Value);
+			Param["Type"] = "Matrix4";
+			JSON MatArray = JSON::Make(JSON::Class::Array);
+			for (int Row = 0; Row < 4; ++Row)
+			{
+				JSON RowArray = JSON::Make(JSON::Class::Array);
+				for (int Col = 0; Col < 4; ++Col)
+				{
+					RowArray.append(Mat.M[Row][Col]);
+				}
+				MatArray.append(RowArray);
+			}
+			Param["Value"] = MatArray;
+		}
+		else if (std::holds_alternative<UTexture*>(ParamValue.Value))
+		{
+			UTexture* Texture = std::get<UTexture*>(ParamValue.Value);
+			Param["Type"] = "Texture";
+			Param["Value"] = Texture ? Texture->GetFilePath() : "";
+		}
+		Params.append(Param);
+	}
+	Root["Params"] = Params;
+	std::ofstream OutFile(FPaths::ToWide(MatFilePath));
+	if (!OutFile.is_open())
+	{
+		UE_LOG("Failed to open material file for writing: %s", MatFilePath.c_str());
+		return false;
+	}
+	OutFile << Root.dump(4);
+	return true;
+}
+
+bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath, const UMaterialInstance* MaterialInstance)
+{
+	using json::JSON;
+	JSON Root = JSON::Make(JSON::Class::Object);
+	Root["Name"] = MaterialInstance->GetName();
+	Root["Parent"] = MaterialInstance->Parent->Name;
+	JSON Params = JSON::Make(JSON::Class::Array);
+	for (const auto& [ParamName, ParamValue] : MaterialInstance->OverridedParams)
+	{
+		JSON Param = JSON::Make(JSON::Class::Object);
+		Param["Name"] = ParamName;
+		if (std::holds_alternative<bool>(ParamValue.Value))
+		{
+			Param["Type"] = "Bool";
+			Param["Value"] = std::get<bool>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<int>(ParamValue.Value))
+		{
+			Param["Type"] = "Int";
+			Param["Value"] = std::get<int>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<uint32>(ParamValue.Value))
+		{
+			Param["Type"] = "UInt";
+			Param["Value"] = std::get<uint32>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<float>(ParamValue.Value))
+		{
+			Param["Type"] = "Float";
+			Param["Value"] = std::get<float>(ParamValue.Value);
+		}
+		else if (std::holds_alternative<FVector2>(ParamValue.Value))
+		{
+			const FVector2& Vec = std::get<FVector2>(ParamValue.Value);
+			Param["Type"] = "Vector2";
+			Param["Value"] = JSON::Make(JSON::Class::Array);
+			Param["Value"].append(Vec.X);
+			Param["Value"].append(Vec.Y);
+		}
+		else if (std::holds_alternative<FVector>(ParamValue.Value))
+		{
+			const FVector& Vec = std::get<FVector>(ParamValue.Value);
+			Param["Type"] = "Vector3";
+			Param["Value"] = JSON::Make(JSON::Class::Array);
+			Param["Value"].append(Vec.X);
+			Param["Value"].append(Vec.Y);
+			Param["Value"].append(Vec.Z);
+		}
+		else if (std::holds_alternative<FVector4>(ParamValue.Value))
+		{
+			const FVector4& Vec = std::get<FVector4>(ParamValue.Value);
+			Param["Type"] = "Vector4";
+			Param["Value"] = JSON::Make(JSON::Class::Array);
+			Param["Value"].append(Vec.X);
+			Param["Value"].append(Vec.Y);
+			Param["Value"].append(Vec.Z);
+			Param["Value"].append(Vec.W);
+		}
+		else if (std::holds_alternative<FMatrix>(ParamValue.Value))
+		{
+			const FMatrix& Mat = std::get<FMatrix>(ParamValue.Value);
+			Param["Type"] = "Matrix4";
+			JSON MatArray = JSON::Make(JSON::Class::Array);
+			for (int Row = 0; Row < 4; ++Row)
+			{
+				JSON RowArray = JSON::Make(JSON::Class::Array);
+				for (int Col = 0; Col < 4; ++Col)
+				{
+					RowArray.append(Mat.M[Row][Col]);
+				}
+				MatArray.append(RowArray);
+			}
+			Param["Value"] = MatArray;
+		}
+		else if (std::holds_alternative<UTexture*>(ParamValue.Value))
+		{
+			UTexture* Texture = std::get<UTexture*>(ParamValue.Value);
+			Param["Type"] = "Texture";
+			Param["Value"] = Texture ? Texture->GetFilePath() : "";
+		}
+		Params.append(Param);
+	}
+	Root["OverridedParams"] = Params;
+	std::ofstream OutFile(FPaths::ToWide(MatInstFilePath));
+	if (!OutFile.is_open())
+	{
+		UE_LOG("Failed to open material instance file for writing: %s", MatInstFilePath.c_str());
+		return false;
+	}
+	OutFile << Root.dump(4);
+	return true;
+}
+
 bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 {
 	using json::JSON;
@@ -822,6 +1054,94 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 
 	FString FileContent((std::istreambuf_iterator<char>(MatFile)), std::istreambuf_iterator<char>());
 	JSON Root = JSON::Load(FileContent);
+
+	if (Root.hasKey("Parent"))
+	{
+		FString MatName = Root["Name"].ToString();
+		UMaterial* ParentMat = GetMaterial(FPaths::Normalize(Root["Parent"].ToString()));
+
+		if (!ParentMat)
+		{
+			UE_LOG("Parent material not found: %s", Root["Parent"].ToString().c_str());
+			return false;
+		}
+
+		UMaterialInstance* MatInstance = CreateMaterialInstance(MatName, ParentMat);
+
+		for (auto& Param : Root["OverridedParams"].ArrayRange())
+		{
+			FString ParamName = Param["Name"].ToString();
+			FString Type = Param["Type"].ToString();
+			if (Type == "Bool")
+			{
+				bool Value = Param["Value"].ToBool();
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Int")
+			{
+				int Value = Param["Value"].ToInt();
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "UInt")
+			{
+				uint32 Value = static_cast<uint32>(Param["Value"].ToInt());
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Float")
+			{
+				float Value = static_cast<float>(Param["Value"].ToFloat());
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Vector2")
+			{
+				FVector2 Value(
+					static_cast<float>(Param["Value"][0].ToFloat()),
+					static_cast<float>(Param["Value"][1].ToFloat()));
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Vector3")
+			{
+				FVector Value(
+					static_cast<float>(Param["Value"][0].ToFloat()),
+					static_cast<float>(Param["Value"][1].ToFloat()),
+					static_cast<float>(Param["Value"][2].ToFloat()));
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Vector4")
+			{
+				FVector4 Value(
+					static_cast<float>(Param["Value"][0].ToFloat()),
+					static_cast<float>(Param["Value"][1].ToFloat()),
+					static_cast<float>(Param["Value"][2].ToFloat()),
+					static_cast<float>(Param["Value"][3].ToFloat()));
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Matrix4")
+			{
+				FMatrix Value;
+				for (int Row = 0; Row < 4; ++Row)
+				{
+					for (int Col = 0; Col < 4; ++Col)
+					{
+						Value.M[Row][Col] = static_cast<float>(Param["Value"][Row][Col].ToFloat());
+					}
+				}
+				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
+			}
+			else if (Type == "Texture")
+			{
+				FString TexPath = Param["Value"].ToString();
+				UTexture* Texture = LoadTexture(TexPath, CachedDevice.Get());
+				if (Texture)
+				{
+					MatInstance->SetParam(ParamName, FMaterialParamValue(Texture));
+				}
+			}
+		}
+
+		MaterialInstances[MatName] = MatInstance;
+		return true;
+	}
 
 	FString MatName = Root["Name"].ToString();
 	FString ShaderPath = Root["Shader"].ToString();

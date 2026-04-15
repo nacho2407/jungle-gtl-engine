@@ -28,18 +28,11 @@ private:
 
     void RenderSectionList(UPrimitiveComponent* PrimitiveComp);
     void RenderMaterialDetails(UPrimitiveComponent* PrimitiveComp);
-	void RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged);
-
 	void RenderMaterialProperties();
-    void RenderColorSection(FMaterial& Mat);
-    void RenderScalarSection(FMaterial& Mat);
-    void RenderTextureSection(FMaterial& Mat);
-
-    UPrimitiveComponent* GetSelectedPrimitiveComponent() const;
 
 private:
     int32 SelectedSectionIndex    = -1;
-    UMaterialInstance* SelectedMaterialPtr = nullptr;  // 원본 포인터 (Apply 대상)
+    UMaterialInterface* SelectedMaterialPtr = nullptr;  // 원본 포인터 (Apply 대상)
 
 	USceneComponent* SelectedComponent = nullptr;
 };

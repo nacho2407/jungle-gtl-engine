@@ -26,17 +26,6 @@ DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 //    return NewComp;
 //}
 
-UMeshComponent::~UMeshComponent()
-{
-	for (auto* Mat : OverrideMaterial)
-	{
-		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Mat))
-		{
-			//UObjectManager::Get().DestroyObject(MatInst);
-		}
-	}
-}
-
 void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
 {
 	if (SlotIndex < 0)
@@ -44,40 +33,40 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial
 		return;
 	}
 	
-	if (SlotIndex >= static_cast<int32>(OverrideMaterial.size()))
+	if (SlotIndex >= static_cast<int32>(Materials.size()))
 	{
-		OverrideMaterial.resize(SlotIndex + 1, nullptr);
+		Materials.resize(SlotIndex + 1, nullptr);
 	}
 
-	if (OverrideMaterial[SlotIndex] != InMaterial)
+	if (Materials[SlotIndex] != InMaterial)
 	{
-		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(OverrideMaterial[SlotIndex]))
+		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Materials[SlotIndex]))
 		{
 			delete MatInst;
 		}
 	}
 
-	OverrideMaterial[SlotIndex] = InMaterial;
+	Materials[SlotIndex] = InMaterial;
 }
 
 UMaterialInterface* UMeshComponent::GetMaterial(int32 SlotIndex) const
 {
-	if (SlotIndex < 0 || SlotIndex >= static_cast<int32>(OverrideMaterial.size()))
+	if (SlotIndex < 0 || SlotIndex >= static_cast<int32>(Materials.size()))
 	{
 		return nullptr;
 	}
 	
-	return OverrideMaterial[SlotIndex];
+	return Materials[SlotIndex];
 }
 
 const TArray<UMaterialInterface*>& UMeshComponent::GetOverrideMaterial() const
 {
-	return OverrideMaterial;
+	return Materials;
 }
 
 int32 UMeshComponent::GetNumMaterials() const
 {
-	return static_cast<int32>(OverrideMaterial.size());
+	return static_cast<int32>(Materials.size());
 }
 
 void UMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

@@ -11,8 +11,13 @@
 #include "Core/ResourceManager.h"
 #include "Object/ObjectIterator.h"
 #include <algorithm>
+#include <filesystem>
 
 #include "ImGui/imgui.h"
+
+namespace
+{
+}
 
 #define MAT_SEPARATOR() ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
@@ -95,19 +100,7 @@ void FEditorMaterialWidget::RenderMaterialEditor(UPrimitiveComponent* PrimitiveC
 	if (SelectedSectionIndex < 0 || SelectedSectionIndex >= NumMaterials)
 	{
 		SelectedSectionIndex = 0;
-		UMaterialInstance* Inst = Cast<UMaterialInstance>(PrimitiveComp->GetMaterial(0));
-
-		if (!Inst)
-		{
-			UMaterial* Mat = Cast<UMaterial>(PrimitiveComp->GetMaterial(0));
-			if (Mat)
-			{
-				Inst = UMaterialInstance::Create(Mat);
-				PrimitiveComp->SetMaterial(0, Inst);
-			}
-		}
-
-		SelectedMaterialPtr = Inst;
+		SelectedMaterialPtr = PrimitiveComp->GetMaterial(0);
 	}
 
 	const float SectionPanelWidth = 160.0f;
@@ -168,8 +161,7 @@ void FEditorMaterialWidget::RenderSectionList(UPrimitiveComponent* PrimitiveComp
 			if (!bSelected)
 			{
 				SelectedSectionIndex = i;
-				UMaterialInstance* Mat = Cast<UMaterialInstance>(PrimitiveComp->GetMaterial(i));
-				SelectedMaterialPtr = Mat;
+				SelectedMaterialPtr = PrimitiveComp->GetMaterial(i);
 			}
         }
 
@@ -207,22 +199,61 @@ void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* Primitive
 	ImGui::Text("Slot [%d]  |  Name: %s", SelectedSectionIndex, SlotName.c_str());
 
 	// MTL 못 읽어 머테리얼 없는 경우 경고
-	if (!SelectedMaterialPtr || !SelectedMaterialPtr->Parent)
+	if (!SelectedMaterialPtr)
 	{
 		ImGui::Spacing();
 		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Material not loaded. Assign one below.");
 		ImGui::Spacing();
 	}
 
+	if (ImGui::Button("Create Instance"))
+	{
+		UMaterial* BaseMat = Cast<UMaterial>(SelectedMaterialPtr);
+		if (BaseMat)
+		{
+			std::filesystem::path MatPath = std::filesystem::path(BaseMat->FilePath);
+			std::filesystem::path MatDir = MatPath.parent_path();
+			FString PureName = MatPath.stem().string();
+
+			int32 Index = 0;
+			std::filesystem::path FinalPath;
+			do
+			{
+				FString NewName = PureName + "_Inst_" + std::to_string(Index) + ".matinst";
+				FinalPath = MatDir / NewName;
+				Index++;
+			} while (std::filesystem::exists(FinalPath));
+
+			FString InstancePath = FPaths::Normalize(FinalPath.string());
+
+			UMaterialInstance* NewInstance = FResourceManager::Get().CreateMaterialInstance(InstancePath, BaseMat);
+			if (NewInstance)
+			{
+				PrimitiveComp->SetMaterial(SelectedSectionIndex, NewInstance);
+				SelectedMaterialPtr = NewInstance;
+
+				FResourceManager::Get().SerializeMaterialInstance(InstancePath, NewInstance);
+			}
+		}
+	}
+
     // ---- 머테리얼 교체 콤보박스 (항상 표시) ----
-    const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
+	TArray<UMaterialInterface*> Materials;
+	for (TObjectIterator<UMaterialInterface> It; It; ++It)
+	{
+		UMaterialInterface* Mat = *It;
+		if (Mat)
+		{
+			Materials.push_back(Mat);
+		}
+	}
 
     int32 CurrentIdx = -1;
-	if (SelectedMaterialPtr && SelectedMaterialPtr->Parent)
+	if (SelectedMaterialPtr)
 	{
-		for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
+		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
 		{
-			if (MatNames[i] == SelectedMaterialPtr->Parent->Name)
+			if (Materials[i]->GetName()  == SelectedMaterialPtr->GetName())
 			{
 				CurrentIdx = i;
 				break;
@@ -230,23 +261,19 @@ void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* Primitive
 		}
 	}
 
-    const char* PreviewLabel = (CurrentIdx >= 0) ? MatNames[CurrentIdx].c_str() : "(none)";
+    const char* PreviewLabel = (CurrentIdx >= 0) ? Materials[CurrentIdx]->GetName().c_str() : "(none)";
     ImGui::SetNextItemWidth(-1);
     if (ImGui::BeginCombo("##MaterialCombo", PreviewLabel))
     {
-        for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
+        for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
         {
             bool bIsSelected = (i == CurrentIdx);
-            if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
+            if (ImGui::Selectable(Materials[i]->GetName().c_str(), bIsSelected))
             {
-                UMaterial* NewMat = Cast<UMaterial>(FResourceManager::Get().GetMaterial(MatNames[i]));
-                if (NewMat)
-                {
-					UMaterialInstance* Inst = UMaterialInstance::Create(NewMat);
-					PrimitiveComp->SetMaterial(SelectedSectionIndex, Inst);
-					SelectedMaterialPtr = Inst;
-				}
+				PrimitiveComp->SetMaterial(SelectedSectionIndex, Materials[i]);
+				SelectedMaterialPtr = Materials[i];
             }
+
             if (bIsSelected)
                 ImGui::SetItemDefaultFocus();
         }
@@ -261,66 +288,17 @@ void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* Primitive
 	RenderMaterialProperties();
 }
 
-void FEditorMaterialWidget::RenderMaterialDetails(FMaterial* Mat, std::function<void(FMaterial*)> OnMaterialChanged)
-{
-	// Legacy helper for specific cases if needed
-	if (!SelectedMaterialPtr)
-	{
-		ImGui::Spacing();
-		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Material not loaded. Assign one below.");
-		ImGui::Spacing();
-	}
-
-	const TArray<FString> MatNames = FResourceManager::Get().GetMaterialNames();
-
-	int32 CurrentIdx = -1;
-	if (SelectedMaterialPtr)
-	{
-		for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
-		{
-			if (MatNames[i] == SelectedMaterialPtr->Parent->Name)
-			{
-				CurrentIdx = i;
-				break;
-			}
-		}
-	}
-
-	const char* PreviewLabel = (CurrentIdx >= 0) ? MatNames[CurrentIdx].c_str() : "(none)";
-	ImGui::SetNextItemWidth(-1);
-	if (ImGui::BeginCombo("##MaterialCombo", PreviewLabel))
-	{
-		for (int32 i = 0; i < static_cast<int32>(MatNames.size()); ++i)
-		{
-			bool bIsSelected = (i == CurrentIdx);
-			if (ImGui::Selectable(MatNames[i].c_str(), bIsSelected))
-			{
-				UMaterial* NewMat = Cast<UMaterial>(FResourceManager::Get().GetMaterial(MatNames[i]));
-				if (NewMat)
-				{
-					UMaterialInstance* Inst = UMaterialInstance::Create(NewMat);
-					OnMaterialChanged(&Inst->Parent->MaterialData);
-					SelectedMaterialPtr = Inst;
-				}
-			}
-			if (bIsSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-
-	if (!SelectedMaterialPtr)
-		return;
-
-	MAT_SEPARATOR();
-	RenderMaterialProperties();
-}
-
 void FEditorMaterialWidget::RenderMaterialProperties()
 {
 	TMap<FString, FMaterialParamValue> DisplayParams;
 
 	SelectedMaterialPtr->GatherAllParams(DisplayParams);
+	bool bIsInstanced = SelectedMaterialPtr->IsA<UMaterialInstance>();
+
+	if (!bIsInstanced)
+	{
+		ImGui::BeginDisabled();
+	}
 
 	for (auto& [ParamName, ParamValue] : DisplayParams)
 	{
@@ -330,42 +308,49 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 			if (ImGui::Checkbox(ParamName.c_str(), &std::get<bool>(ParamValue.Value)))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::Int:
 			if (ImGui::DragInt(ParamName.c_str(), &std::get<int32>(ParamValue.Value)))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::UInt:
 			if (ImGui::DragInt(ParamName.c_str(), reinterpret_cast<int32*>(&std::get<uint32>(ParamValue.Value))))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::Float:
 			if (ImGui::DragFloat(ParamName.c_str(), &std::get<float>(ParamValue.Value), 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::Vector2:
 			if (ImGui::DragFloat2(ParamName.c_str(), &std::get<FVector2>(ParamValue.Value).X, 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::Vector3:
 			if (ImGui::DragFloat3(ParamName.c_str(), &std::get<FVector>(ParamValue.Value).X, 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::Vector4:
 			if (ImGui::DragFloat4(ParamName.c_str(), &std::get<FVector4>(ParamValue.Value).X, 0.01f))
 			{
 				SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+				FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 			}
 			break;
 		case EMaterialParamType::Texture:
@@ -375,7 +360,6 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 
 			if (ImGui::ImageButton(ParamName.c_str(), (void*)SRV, ImVec2(64, 64)))
 			{
-				// 이미지 버튼 클릭 시 동작 (필요 시 팝업 등 추가)
 			}
 			ImGui::SameLine();
 			
@@ -400,6 +384,7 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 						{
 							ParamValue.Value = Texture;
 							SelectedMaterialPtr->SetParam(ParamName, ParamValue);
+							FResourceManager::Get().SerializeMaterialInstance(SelectedMaterialPtr->GetFilePath(), Cast<UMaterialInstance>(SelectedMaterialPtr));
 						}
 						if (bSelected) ImGui::SetItemDefaultFocus();
 					}
@@ -412,145 +397,9 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 		}
 		}
 	}
-}
 
-// -----------------------------------------------------------------------
-// Colors 섹션
-// -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderColorSection(FMaterial& Mat)
-{
-    ImGui::Text("Colors");
-    ImGui::Separator();
-    ImGui::Spacing();
-
-	ImGui::ColorButton("Diffuse (Kd)", ImVec4(Mat.DiffuseColor.X, Mat.DiffuseColor.Y, Mat.DiffuseColor.Z, 1.0f));
-	ImGui::SameLine();
-	ImGui::ColorButton("Ambient (Ka)", ImVec4(Mat.AmbientColor.X, Mat.AmbientColor.Y, Mat.AmbientColor.Z, 1.0f));
-	ImGui::SameLine();
-	ImGui::ColorButton("Specular (Ks)", ImVec4(Mat.SpecularColor.X, Mat.SpecularColor.Y, Mat.SpecularColor.Z, 1.0f));
-	ImGui::SameLine();
-	ImGui::ColorButton("Emissive (Ke)", ImVec4(Mat.EmissiveColor.X, Mat.EmissiveColor.Y, Mat.EmissiveColor.Z, 1.0f));
-}
-
-// -----------------------------------------------------------------------
-// Scalars 섹션
-// -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderScalarSection(FMaterial& Mat)
-{
-    ImGui::Text("Scalars");
-    ImGui::Separator();
-    ImGui::Spacing();
-
-	ImGui::BeginDisabled(true);
-	ImGui::DragFloat("Shininess (Ns)", &Mat.Shininess, 0.5f, 0.0f, 1000.0f);
-	ImGui::DragFloat("Opacity (d)", &Mat.Opacity, 0.01f, 0.0f, 1.0f);
-	ImGui::EndDisabled();
-}
-
-// -----------------------------------------------------------------------
-// Textures 섹션
-// -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderTextureSection(FMaterial& Mat)
-{
-    ImGui::Text("Textures");
-    ImGui::Separator();
-    ImGui::Spacing();
-
-    constexpr float ThumbSize = 64.0f;
-    const ImVec4    EmptyColor(0.2f, 0.2f, 0.2f, 1.0f);
-
-    auto ExtractFilename = [](const FString& Path) -> FString
-    {
-        size_t Pos = Path.find_last_of("/\\");
-        return (Pos != FString::npos) ? Path.substr(Pos + 1) : Path;
-    };
-
-    // SRV는 ResourceManager에서 경로로 직접 조회
-    auto ResolveSRV = [](const FString& Path) -> ID3D11ShaderResourceView*
-    {
-        if (Path.empty()) return nullptr;
-        UTexture* Texture = FResourceManager::Get().GetTexture(Path);
-		return Texture ? Texture->GetSRV() : nullptr;
-    };
-
-    auto TextureRow = [&](const char* MapLabel,
-                          FString& Path, bool& bHasTexture,
-                          ID3D11ShaderResourceView* SRV)
-    {
-        ImGui::PushID(MapLabel);
-
-        // ---- 왼쪽: 썸네일 ----
-        if (SRV && bHasTexture)
-        {
-            ImGui::Image((ImTextureID)SRV, ImVec2(ThumbSize, ThumbSize));
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::Image((ImTextureID)SRV, ImVec2(128.0f, 128.0f));
-                ImGui::EndTooltip();
-            }
-        }
-        else
-        {
-            ImVec2 Pos = ImGui::GetCursorScreenPos();
-            ImGui::GetWindowDrawList()->AddRectFilled(
-                Pos,
-                ImVec2(Pos.x + ThumbSize, Pos.y + ThumbSize),
-                ImGui::ColorConvertFloat4ToU32(EmptyColor)
-            );
-            ImGui::GetWindowDrawList()->AddRect(
-                Pos,
-                ImVec2(Pos.x + ThumbSize, Pos.y + ThumbSize),
-                IM_COL32(100, 100, 100, 255)
-            );
-            ImGui::Dummy(ImVec2(ThumbSize, ThumbSize));
-        }
-
-        ImGui::SameLine();
-
-        ImGui::BeginGroup();
-        {
-            ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.3f, 1.0f), "%s", MapLabel);
-
-            FString Filename = bHasTexture ? ExtractFilename(Path) : FString("(none)");
-            ImGui::TextDisabled("%s", Filename.c_str());
-
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-			ImGui::BeginDisabled(true);
-            char Buf[512];
-            strncpy_s(Buf, sizeof(Buf), Path.c_str(), _TRUNCATE);
-            if (ImGui::InputText("##path", Buf, sizeof(Buf)))
-            {
-                Path       = Buf;
-                bHasTexture = !Path.empty();
-            }
-            if (ImGui::IsItemHovered() && !Path.empty())
-                ImGui::SetTooltip("%s", Path.c_str());
-            ImGui::PopItemWidth();
-			ImGui::EndDisabled();
-        }
-        ImGui::EndGroup();
-
-        ImGui::Spacing();
-        ImGui::PopID();
-    };
-    TextureRow("Diffuse Map  (map_Kd)",   Mat.DiffuseTexPath,  Mat.bHasDiffuseTexture,  ResolveSRV(Mat.DiffuseTexPath));
-    TextureRow("Ambient Map  (map_Ka)",   Mat.AmbientTexPath,  Mat.bHasAmbientTexture,  ResolveSRV(Mat.AmbientTexPath));
-    TextureRow("Specular Map (map_Ks)",   Mat.SpecularTexPath, Mat.bHasSpecularTexture, ResolveSRV(Mat.SpecularTexPath));
-    TextureRow("Bump Map     (map_bump)", Mat.BumpTexPath,     Mat.bHasBumpTexture,     ResolveSRV(Mat.BumpTexPath));
-}
-
-// -----------------------------------------------------------------------
-// 헬퍼: 선택된 액터에서 PrimitiveComponent 가져오기
-// -----------------------------------------------------------------------
-UPrimitiveComponent* FEditorMaterialWidget::GetSelectedPrimitiveComponent() const
-{
-    AActor* Actor = EditorEngine->GetSelectionManager().GetPrimarySelection();
-    if (!Actor) return nullptr;
-
-    USceneComponent* Root = Actor->GetRootComponent();
-    if (Root && Root->IsA<UPrimitiveComponent>())
-        return static_cast<UPrimitiveComponent*>(Root);
-
-    return nullptr;
+	if (!bIsInstanced)
+	{
+		ImGui::EndDisabled();
+	}
 }

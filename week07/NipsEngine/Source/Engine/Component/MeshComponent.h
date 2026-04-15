@@ -8,8 +8,6 @@ class UMeshComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
 
-	~UMeshComponent() override;
-
 	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override;
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
 
@@ -23,6 +21,6 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 
 protected:
-	TArray<UMaterialInterface*> OverrideMaterial;
+	TArray<UMaterialInterface*> Materials;
 	std::pair<float, float> ScrollUV = { };
 };

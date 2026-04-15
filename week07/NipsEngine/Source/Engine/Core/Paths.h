@@ -41,4 +41,6 @@ public:
 	static std::wstring ToWide(const std::string& Utf8Str);
 	static std::string ToUtf8(const std::wstring& WideStr);
 	static FString ToString(const std::wstring& wstring);
+
+	static FString Normalize(const FString& Path);
 };
