@@ -22,10 +22,9 @@ public:
 
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
 
-	// --- Texture ---
-	void SetTexture(const FName& InTextureName);
-	const FTextureResource* GetTexture() const { return CachedTexture; }
-	const FName& GetTextureName() const { return TextureName; }
+	// --- Material ---
+	void SetMaterial(class UMaterial* InMaterial);
+	class UMaterial* GetMaterial() const { return Material; }
 
 	// --- Sprite Size (월드 공간) ---
 	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
@@ -41,8 +40,8 @@ public:
 protected:
 	bool bIsBillboard = true;
 
-	FName TextureName;
-	FTextureResource* CachedTexture = nullptr;	// ResourceManager 소유, 참조만
+	FMaterialSlot MaterialSlot;
+	UMaterial* Material = nullptr;
 
 	float Width  = 1.0f;
 	float Height = 1.0f;
