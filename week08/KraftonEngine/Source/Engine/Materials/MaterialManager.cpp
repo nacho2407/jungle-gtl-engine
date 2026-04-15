@@ -6,8 +6,19 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
-#include "Engine/Platform/Paths.h"
 #include "Render/Pipeline/Renderer.h"
+
+namespace MatKeys
+{
+	static constexpr const char* PathFileName     = "PathFileName";
+	static constexpr const char* ShaderPath       = "ShaderPath";
+	static constexpr const char* RenderPass       = "RenderPass";
+	static constexpr const char* BlendState       = "BlendState";
+	static constexpr const char* DepthStencilState = "DepthStencilState";
+	static constexpr const char* RasterizerState  = "RasterizerState";
+	static constexpr const char* Parameters       = "Parameters";
+	static constexpr const char* Textures         = "Textures";
+}
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -39,8 +50,6 @@ void FMaterialManager::ScanMaterialAssets()
 	}
 }
 
-
-
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
@@ -66,15 +75,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	}
 
 	// 3. JSON에서 기본 정보 추출
-	FString PathFileName = JsonData["PathFileName"].ToString().c_str();
-	FString ShaderPath = JsonData["ShaderPath"].ToString().c_str();
-	FString RenderPassStr = JsonData["RenderPass"].ToString().c_str();
+	FString PathFileName = JsonData[MatKeys::PathFileName].ToString().c_str();
+	FString ShaderPath = JsonData[MatKeys::ShaderPath].ToString().c_str();
+	FString RenderPassStr = JsonData[MatKeys::RenderPass].ToString().c_str();
 	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 
 	// 새로운 렌더 상태 추출 (JSON에 없으면 패스 기반 기본값)
-	FString BlendStr = JsonData.hasKey("BlendState") ? JsonData["BlendState"].ToString().c_str() : "";
-	FString DepthStr = JsonData.hasKey("DepthStencilState") ? JsonData["DepthStencilState"].ToString().c_str() : "";
-	FString RasterStr = JsonData.hasKey("RasterizerState") ? JsonData["RasterizerState"].ToString().c_str() : "";
+	FString BlendStr = JsonData.hasKey(MatKeys::BlendState) ? JsonData[MatKeys::BlendState].ToString().c_str() : "";
+	FString DepthStr = JsonData.hasKey(MatKeys::DepthStencilState) ? JsonData[MatKeys::DepthStencilState].ToString().c_str() : "";
+	FString RasterStr = JsonData.hasKey(MatKeys::RasterizerState) ? JsonData[MatKeys::RasterizerState].ToString().c_str() : "";
 
 	EBlendState BlendState = StringToBlendState(BlendStr, RenderPass);
 	EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
@@ -95,17 +104,20 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	//템플릿을 통해 material에 넣기
 	bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
 
+	// 이전 셰이더의 찌꺼기 파라미터 정리
+	bool bPurged = PurgeStaleParameters(JsonData, Template);
+
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
 
 	// JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
-	JsonData["BlendState"] = BlendStr.empty() ? "" : BlendStr.c_str();
-	JsonData["DepthStencilState"] = DepthStr.empty() ? "" : DepthStr.c_str();
-	JsonData["RasterizerState"] = RasterStr.empty() ? "" : RasterStr.c_str();
+	JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
+	JsonData[MatKeys::DepthStencilState] = DepthStr.empty() ? "" : DepthStr.c_str();
+	JsonData[MatKeys::RasterizerState] = RasterStr.empty() ? "" : RasterStr.c_str();
 
 	//최종적으로 material 저장
-	if (bInjected)
+	if (bInjected || bPurged)
 	{
 		SaveToJSON(JsonData, MatFilePath);
 	}
@@ -150,9 +162,9 @@ TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> FMaterialManager::Create
 
 void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData)
 {
-	if (!JsonData.hasKey("Parameters")) return;
+	if (!JsonData.hasKey(MatKeys::Parameters)) return;
 
-	for (auto& Pair : JsonData["Parameters"].ObjectRange())
+	for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
 	{
 		FString ParamName = Pair.first.c_str();
 		json::JSON& Value = Pair.second;
@@ -177,9 +189,9 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 
 void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
 {
-	if (!JsonData.hasKey("Textures")) return;
+	if (!JsonData.hasKey(MatKeys::Textures)) return;
 
-	for (auto& Pair : JsonData["Textures"].ObjectRange())
+	for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
 	{
 		FString SlotName = Pair.first.c_str();
 		FString TexturePath = Pair.second.ToString().c_str();
@@ -193,78 +205,80 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
 }
 
 
-ERenderPass FMaterialManager::StringToRenderPass(const FString& RenderPassStr) const
+ERenderPass FMaterialManager::StringToRenderPass(const FString& Str) const
 {
-	if (RenderPassStr == "Opaque")        return ERenderPass::Opaque;
-	if (RenderPassStr == "AlphaBlend")    return ERenderPass::AlphaBlend;
-	if (RenderPassStr == "Decal")         return ERenderPass::Decal;
-	if (RenderPassStr == "AdditiveDecal") return ERenderPass::AdditiveDecal;
-	if (RenderPassStr == "SelectionMask") return ERenderPass::SelectionMask;
-	if (RenderPassStr == "EditorLines")   return ERenderPass::EditorLines;
-	if (RenderPassStr == "PostProcess")   return ERenderPass::PostProcess;
-	if (RenderPassStr == "GizmoOuter")    return ERenderPass::GizmoOuter;
-	if (RenderPassStr == "GizmoInner")    return ERenderPass::GizmoInner;
-	if (RenderPassStr == "OverlayFont")   return ERenderPass::OverlayFont;
-
-	// 매칭되는 게 없으면 기본값 반환
-	return ERenderPass::Opaque;
+	using namespace RenderStateStrings;
+	return FromString(RenderPassMap, Str, ERenderPass::Opaque);
 }
 
 EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass Pass) const
 {
-	if (Str == "Opaque") return EBlendState::Opaque;
-	if (Str == "AlphaBlend") return EBlendState::AlphaBlend;
-	if (Str == "Additive") return EBlendState::Additive;
-	if (Str == "NoColor") return EBlendState::NoColor;
+	using namespace RenderStateStrings;
+	if (!Str.empty())
+		return FromString(BlendStateMap, Str, EBlendState::Opaque);
 
-	// Default by Pass
-	if (Pass == ERenderPass::AlphaBlend || Pass == ERenderPass::Decal || Pass == ERenderPass::EditorLines || Pass == ERenderPass::PostProcess || Pass == ERenderPass::GizmoInner || Pass == ERenderPass::OverlayFont)
+	// 문자열이 비어있으면 Pass 기반 기본값
+	switch (Pass)
+	{
+	case ERenderPass::AlphaBlend:
+	case ERenderPass::Decal:
+	case ERenderPass::EditorLines:
+	case ERenderPass::PostProcess:
+	case ERenderPass::GizmoInner:
+	case ERenderPass::OverlayFont:
 		return EBlendState::AlphaBlend;
-	if (Pass == ERenderPass::AdditiveDecal)
+	case ERenderPass::AdditiveDecal:
 		return EBlendState::Additive;
-	if (Pass == ERenderPass::SelectionMask)
+	case ERenderPass::SelectionMask:
 		return EBlendState::NoColor;
-
-	return EBlendState::Opaque;
+	default:
+		return EBlendState::Opaque;
+	}
 }
 
 EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& Str, ERenderPass Pass) const
 {
-	if (Str == "Default") return EDepthStencilState::Default;
-	if (Str == "DepthReadOnly") return EDepthStencilState::DepthReadOnly;
-	if (Str == "StencilWrite") return EDepthStencilState::StencilWrite;
-	if (Str == "StencilWriteOnlyEqual") return EDepthStencilState::StencilWriteOnlyEqual;
-	if (Str == "NoDepth") return EDepthStencilState::NoDepth;
-	if (Str == "GizmoInside") return EDepthStencilState::GizmoInside;
-	if (Str == "GizmoOutside") return EDepthStencilState::GizmoOutside;
+	using namespace RenderStateStrings;
+	if (!Str.empty())
+		return FromString(DepthStencilStateMap, Str, EDepthStencilState::Default);
 
-	// Default by Pass
-	if (Pass == ERenderPass::Decal || Pass == ERenderPass::AdditiveDecal)
+	// 문자열이 비어있으면 Pass 기반 기본값
+	switch (Pass)
+	{
+	case ERenderPass::Decal:
+	case ERenderPass::AdditiveDecal:
 		return EDepthStencilState::DepthReadOnly;
-	if (Pass == ERenderPass::SelectionMask)
+	case ERenderPass::SelectionMask:
 		return EDepthStencilState::StencilWrite;
-	if (Pass == ERenderPass::PostProcess || Pass == ERenderPass::OverlayFont)
+	case ERenderPass::PostProcess:
+	case ERenderPass::OverlayFont:
 		return EDepthStencilState::NoDepth;
-	if (Pass == ERenderPass::GizmoOuter)
+	case ERenderPass::GizmoOuter:
 		return EDepthStencilState::GizmoOutside;
-	if (Pass == ERenderPass::GizmoInner)
+	case ERenderPass::GizmoInner:
 		return EDepthStencilState::GizmoInside;
-
-	return EDepthStencilState::Default;
+	default:
+		return EDepthStencilState::Default;
+	}
 }
 
 ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, ERenderPass Pass) const
 {
-	if (Str == "SolidBackCull") return ERasterizerState::SolidBackCull;
-	if (Str == "SolidFrontCull") return ERasterizerState::SolidFrontCull;
-	if (Str == "SolidNoCull") return ERasterizerState::SolidNoCull;
-	if (Str == "WireFrame") return ERasterizerState::WireFrame;
+	using namespace RenderStateStrings;
+	if (!Str.empty())
+		return FromString(RasterizerStateMap, Str, ERasterizerState::SolidBackCull);
 
-	// Default by Pass
-	if (Pass == ERenderPass::Decal || Pass == ERenderPass::AdditiveDecal || Pass == ERenderPass::SelectionMask || Pass == ERenderPass::PostProcess)
+	// 문자열이 비어있으면 Pass 기반 기본값
+	switch (Pass)
+	{
+	case ERenderPass::Decal:
+	case ERenderPass::AdditiveDecal:
+	case ERenderPass::SelectionMask:
+	case ERenderPass::PostProcess:
 		return ERasterizerState::SolidNoCull;
-
-	return ERasterizerState::SolidBackCull;
+	default:
+		return ERasterizerState::SolidBackCull;
+	}
 }
 
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
@@ -284,7 +298,7 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 		const FMaterialParameterInfo* Info = Pair.second;
 
 		// 이미 JSON에 있으면 스킵
-		if (!JsonData["Parameters"][ParamName].IsNull())
+		if (!JsonData[MatKeys::Parameters][ParamName].IsNull())
 			continue;
 
 		bInjected = true;
@@ -295,21 +309,21 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 			{
 				float Value = 0.f;
 				Material->GetScalarParameter(ParamName, Value);
-				JsonData["Parameters"][ParamName] = Value;
+				JsonData[MatKeys::Parameters][ParamName] = Value;
 				break;
 			}
 			case sizeof(float) * 3: // 12바이트 - Vector3
 			{
 				FVector Value;
 				Material->GetVector3Parameter(ParamName, Value);
-				JsonData["Parameters"][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
+				JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
 				break;
 			}
 			case sizeof(float) * 4: // 16바이트 - Vector4
 			{
 				FVector4 Value;
 				Material->GetVector4Parameter(ParamName, Value);
-				JsonData["Parameters"][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
+				JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
 				break;
 			}
 			case sizeof(float) * 16: // 64바이트 - Matrix
@@ -319,7 +333,7 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 				auto MatArray = json::Array();
 				for (int i = 0; i < 16; ++i)
 					MatArray.append(Value.Data[i]);
-				JsonData["Parameters"][ParamName] = MatArray;
+				JsonData[MatKeys::Parameters][ParamName] = MatArray;
 				break;
 			}
 			default:
@@ -328,6 +342,35 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 	}
 
 	return bInjected;
+}
+
+bool FMaterialManager::PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template)
+{
+	if (!JsonData.hasKey(MatKeys::Parameters)) return false;
+
+	const auto& Layout = Template->GetParameterInfo();
+	json::JSON CleanParams = json::JSON::Make(json::JSON::Class::Object);
+	bool bPurged = false;
+
+	for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
+	{
+		FString ParamName = Pair.first.c_str();
+		if (Layout.find(ParamName) != Layout.end())
+		{
+			CleanParams[Pair.first] = Pair.second;
+		}
+		else
+		{
+			bPurged = true;
+		}
+	}
+
+	if (bPurged)
+	{
+		JsonData[MatKeys::Parameters] = std::move(CleanParams);
+	}
+
+	return bPurged;
 }
 
 FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath)
