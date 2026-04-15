@@ -33,7 +33,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     // Sample hardware depth (0..1)
     float depth = SceneDepth.Load(int3(coord, 0));
     if (depth >= 1.0)
-        discard;
+        depth = 0.999f;
 
     // Reconstruct world position from depth
     float2 ndc = float2(input.uv.x * 2.0 - 1.0, 1.0 - input.uv.y * 2.0);
