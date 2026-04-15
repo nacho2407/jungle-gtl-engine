@@ -6,15 +6,15 @@ Texture2D DepthTexture : register(t1);
 Texture2D NormalTexture : register(t2);
 SamplerState g_Sample : register(s0);
 
-struct PS_Input_Decal
+struct PS_Input_Fireball
 {
     float4 position : SV_POSITION;
     float4 clipPos : TEXCOORD0;
 };
 
-PS_Input_Decal VS(uint vid : SV_VertexID)
+PS_Input_Fireball VS(uint vid : SV_VertexID)
 {
-    PS_Input_Decal output;
+    PS_Input_Fireball output;
     
     float2 pos = float2((vid == 2) ? 3.0f : -1.0f, (vid == 1) ? 3.0f : -1.0f);
     output.position = float4(pos, 0.0f, 1.0f);
@@ -23,7 +23,7 @@ PS_Input_Decal VS(uint vid : SV_VertexID)
     return output;
 }
 
-float4 PS(PS_Input_Decal input) : SV_TARGET
+float4 PS(PS_Input_Fireball input) : SV_TARGET
 {
     float2 ndc = input.clipPos.xy / input.clipPos.w;
     float2 uv = ndc * 0.5f + 0.5f;
