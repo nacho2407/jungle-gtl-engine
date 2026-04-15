@@ -4,6 +4,8 @@
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "GameFramework/AActor.h"
+#include "Materials/Material.h"
+#include "Texture/Texture2D.h"
 
 // ============================================================
 // FCylindricalBillboardSceneProxy
@@ -30,10 +32,16 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Fra
 	bVisible = Comp->IsVisible();
 	if (!bVisible) return;
 
-	// Update DiffuseSRV
-	const FTextureResource* Tex = Comp->GetTexture();
-	if (Tex)
-		DiffuseSRV = Tex->SRV;
+	// Update DiffuseSRV (material or texture may have changed)
+	UMaterial* Mat = Comp->GetMaterial();
+	if (Mat)
+	{
+		UTexture2D* DiffuseTex = nullptr;
+		if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+		{
+			DiffuseSRV = DiffuseTex->GetSRV();
+		}
+	}
 
 	FVector BillboardPos = Comp->GetWorldLocation();
 	FVector BillboardForward = Frame.CameraForward * -1.0f;
