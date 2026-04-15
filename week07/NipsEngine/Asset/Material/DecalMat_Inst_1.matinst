@@ -1,9 +1,9 @@
 {
-        "Name" : "DecalMat_Inst_0.matinst",
+        "Name" : "Asset/Material/DecalMat_Inst_1.matinst",
         "OverridedParams" : [{
             "Name" : "InvDecalWorld",
             "Type" : "Matrix4",
-            "Value" : [[-0.032856, 0.094411, -0.002671, 0.000000], [0.016522, 0.002961, -0.098581, -0.000000], [-0.092992, -0.032831, -0.016572, 0.000000], [-9.188801, -2.265608, -1.734193, 1.000000]]
+            "Value" : [[0.049503, 0.086847, -0.002671, -0.000000], [0.013097, -0.010497, -0.098581, 0.000000], [-0.085895, 0.048450, -0.016571, 0.000000], [-7.171459, 4.526248, -6.831930, 1.000000]]
           }, {
             "Name" : "DecalColorTint",
             "Type" : "Vector4",
@@ -11,7 +11,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset\\Texture\\Blood_Stain_sgfjdepc_1K.png"
+            "Value" : "Asset\\Texture\\Hand_Smear_se0wefxp_1K.png"
           }],
         "Parent" : "DecalMat"
       }

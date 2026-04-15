@@ -125,7 +125,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 
 	namespace fs = std::filesystem;
 	
-	const fs::path RootPath = fs::path(FPaths::RootDir()); // Hack: 임시방편으로 프로젝트 루트에서 탐색
+	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
 	
 	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
 
@@ -789,6 +789,26 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FStr
 	return Material;
 }
 
+UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FString& Path, const FString& ShaderName)
+{
+	UMaterial* Material = GetMaterial(Name);
+	if (Material)
+	{
+		return Material;
+	}
+
+	Material = UObjectManager::Get().CreateObject<UMaterial>();
+	Material->Name = Name;
+	Material->FilePath = Path;
+
+	UShader* Shader = GetShader(ShaderName);
+	Material->SetShader(Shader);
+
+	Materials[Name] = Material;
+
+	return Material;
+}
+
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
 {
 	if (MtlFilePath.empty())
@@ -1153,7 +1173,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 
 	FString MatName = Root["Name"].ToString();
 	FString ShaderPath = Root["Shader"].ToString();
-	UMaterial* Material = GetOrCreateMaterial(MatName, ShaderPath);
+	UMaterial* Material = GetOrCreateMaterial(MatName, MatFilePath, ShaderPath);
 
 	for (auto& Param : Root["Params"].ArrayRange())
 	{

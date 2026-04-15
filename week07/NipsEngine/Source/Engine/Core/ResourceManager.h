@@ -103,6 +103,7 @@ public:
 
 	UMaterial* GetMaterial(const FString& Path) const;
 	UMaterial* GetOrCreateMaterial(const FString& Path, const FString& ShaderName);
+	UMaterial* GetOrCreateMaterial(const FString& Name, const FString& Path, const FString& ShaderName);
 	bool LoadMaterial(const FString& Path, const FString& ShaderName, ID3D11Device* Device = nullptr);
 
 	bool SerializeMaterial(const FString& Path, const UMaterial* Material);
