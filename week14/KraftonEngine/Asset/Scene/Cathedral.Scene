@@ -117,10 +117,14 @@
     }, {
       "ClassName" : "ADecalActor",
       "NonSceneComponents" : [{
-          "ClassName" : "URotatingMovementComponent",
+          "ClassName" : "UPendulumMovementComponent",
           "Properties" : {
+            "Amplitude (deg)" : 45.000000,
+            "Angle Offset (deg)" : 0.000000,
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Frequency (Hz)" : 0.010000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -160,10 +164,14 @@
     }, {
       "ClassName" : "ADecalActor",
       "NonSceneComponents" : [{
-          "ClassName" : "URotatingMovementComponent",
+          "ClassName" : "UPendulumMovementComponent",
           "Properties" : {
+            "Amplitude (deg)" : 45.000000,
+            "Angle Offset (deg)" : 0.000000,
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Frequency (Hz)" : 0.010000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -203,10 +211,14 @@
     }, {
       "ClassName" : "ADecalActor",
       "NonSceneComponents" : [{
-          "ClassName" : "URotatingMovementComponent",
+          "ClassName" : "UPendulumMovementComponent",
           "Properties" : {
+            "Amplitude (deg)" : 45.000000,
+            "Angle Offset (deg)" : 0.000000,
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Frequency (Hz)" : 0.010000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -246,10 +258,14 @@
     }, {
       "ClassName" : "ADecalActor",
       "NonSceneComponents" : [{
-          "ClassName" : "URotatingMovementComponent",
+          "ClassName" : "UPendulumMovementComponent",
           "Properties" : {
+            "Amplitude (deg)" : 45.000000,
+            "Angle Offset (deg)" : 0.000000,
             "Auto Register Updated" : true,
-            "Rotation Rate" : [-2.000000, 0.000000, 0.000000],
+            "Frequency (Hz)" : 0.010000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
             "bTickEnable" : true
           }
         }],
@@ -660,7 +676,7 @@
     "FarClip" : 1000.000000,
     "Location" : [-42.306187, 12.092099, -10.257293],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 23.136015, -93.280411]
+    "Rotation" : [-0.000000, 6.486022, -36.130402]
   },
   "Primitives" : {
     "8" : {

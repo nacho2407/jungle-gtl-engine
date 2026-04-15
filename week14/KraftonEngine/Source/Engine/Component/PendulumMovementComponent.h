@@ -2,6 +2,7 @@
 
 #include "MovementComponent.h"
 #include "Math/Vector.h"
+#include "Math/Quat.h"
 
 // 그네(진자)처럼 지정 축을 중심으로 왕복 회전하는 이동 컴포넌트
 // angle(t) = Amplitude * sin(2π * Frequency * t + Phase)
@@ -21,6 +22,8 @@ public:
 private:
 	// 회전 축 (로컬 기준, 정규화됨). 기본값 Y축 = 좌우 흔들림
 	FVector Axis = FVector(0.0f, 1.0f, 0.0f);
+
+	FQuat InitialRelativeRotation;
 
 	float Amplitude    = 30.0f;	// 최대 회전 각도 (도)
 	float Frequency    = 0.5f;	// 초당 왕복 횟수 (Hz)
