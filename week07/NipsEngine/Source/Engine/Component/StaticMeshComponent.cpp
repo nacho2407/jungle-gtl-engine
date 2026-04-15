@@ -22,9 +22,23 @@ void UStaticMeshComponent::PostDuplicate(UObject* Original)
 
     const UStaticMeshComponent* Orig = Cast<UStaticMeshComponent>(Original);
     StaticMeshAsset = Orig->StaticMeshAsset;
-    OverrideMaterial = Orig->OverrideMaterial;
     bBoundsDirty = true;
     bRenderStateDirty = true;
+
+	OverrideMaterial = TArray<UMaterialInterface*>(Orig->OverrideMaterial.size());
+	for (int32 i = 0; i < static_cast<int32>(Orig->OverrideMaterial.size()); ++i)
+	{
+		if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->OverrideMaterial[i]))
+		{
+			UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
+			MatInst->OverridedParams = OrigMatInst->OverridedParams;
+			OverrideMaterial[i] = MatInst;
+		}
+		else
+		{
+			OverrideMaterial[i] = Orig->OverrideMaterial[i]; // 얕은 복사 — ResourceManager 가 소유
+		}
+	}
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)

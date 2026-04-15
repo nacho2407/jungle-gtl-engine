@@ -38,7 +38,17 @@ void UDecalComponent::PostDuplicate(UObject* Original)
     UPrimitiveComponent::PostDuplicate(Original);
 
     const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
-    Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
+
+	if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Material))
+	{
+		UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
+		MatInst->OverridedParams = OrigMatInst->OverridedParams;
+		Material = MatInst;
+	}
+	else
+	{
+		Material = Orig->Material; // 얕은 복사 — ResourceManager 가 소유
+	}
 }
 
 void UDecalComponent::BeginPlay()
