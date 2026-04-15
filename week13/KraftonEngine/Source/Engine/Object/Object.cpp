@@ -33,7 +33,7 @@ UObject* UObject::Duplicate(UObject* NewOuter) const
 	// UUID/Name은 생성자에서 새로 발급되며, Serialize에서 덮어쓰지 않는 것이 규칙이다.
 	// NewOuter가 nullptr이면 원본의 Outer를 그대로 승계.
 	UObject* EffectiveOuter = NewOuter ? NewOuter : Outer;
-	UObject* Dup = FObjectFactory::Get().Create(GetTypeInfo()->name, EffectiveOuter);
+	UObject* Dup = FObjectFactory::Get().Create(GetClass()->GetName(), EffectiveOuter);
 	if (!Dup)
 	{
 		return nullptr;
@@ -55,4 +55,4 @@ void UObject::Serialize(FArchive& /*Ar*/)
 	// UUID/InternalIndex/Name은 직렬화 금지 (복제 시 새로 발급).
 }
 
-const FTypeInfo UObject::s_TypeInfo = { "UObject", nullptr, sizeof(UObject) };
+UClass UObject::StaticClassInstance("UObject", nullptr, sizeof(UObject), CF_None);
