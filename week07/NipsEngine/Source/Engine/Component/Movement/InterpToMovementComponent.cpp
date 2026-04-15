@@ -24,6 +24,9 @@ namespace {
 
 // --- Overrides ---------------------------------------------------------
 void UInterpToMovementComponent::BeginPlay() {
+	for (auto& ControlPoint : ControlPoints) {
+		ControlPoint += UpdatedComponent->GetWorldLocation();
+	}
     if (bAutoActivate)
     {
         Initiate();
@@ -164,7 +167,7 @@ void UInterpToMovementComponent::UpdateLerp(float DeltaTime) {
     if (ControlPoints.size() <= 1 || NextPointID >= ControlPoints.size())
         return;
     float Alpha = (Elapsed / (Duration * NextDistRatio));
-	UpdatedComponent->SetWorldLocation(FVector::Lerp(ControlPoints[CurrentPointID], ControlPoints[NextPointID], Alpha));
+    UpdatedComponent->SetWorldLocation(FVector::Lerp(ControlPoints[CurrentPointID], ControlPoints[NextPointID], Alpha));
 
     // Check if target point has been reached
     if (Alpha >= 1.f)
