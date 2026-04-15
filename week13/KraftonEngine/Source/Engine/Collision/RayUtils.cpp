@@ -88,10 +88,11 @@ bool FRayUtils::RaycastTriangles(
 	const FMatrix& InverseWorldMatrix,
 	const void* PositionData,
 	uint32 PositionStride,
-	const TArray<uint32>& Indices,
+	const uint32* IndexData,
+	uint32 IndexCount,
 	FHitResult& OutHitResult)
 {
-	if (!PositionData || Indices.empty()) return false;
+	if (!PositionData || !IndexData || IndexCount == 0) return false;
 
 	FVector localOrigin = InverseWorldMatrix.TransformPositionWithW(WorldRay.Origin);
 	FVector localDir = InverseWorldMatrix.TransformVector(WorldRay.Direction);
@@ -103,11 +104,11 @@ bool FRayUtils::RaycastTriangles(
 
 	const uint8* basePtr = static_cast<const uint8*>(PositionData);
 
-	for (size_t i = 0; i + 2 < Indices.size(); i += 3)
+	for (uint32 i = 0; i + 2 < IndexCount; i += 3)
 	{
-		const FVector& v0 = *reinterpret_cast<const FVector*>(basePtr + Indices[i] * PositionStride);
-		const FVector& v1 = *reinterpret_cast<const FVector*>(basePtr + Indices[i + 1] * PositionStride);
-		const FVector& v2 = *reinterpret_cast<const FVector*>(basePtr + Indices[i + 2] * PositionStride);
+		const FVector& v0 = *reinterpret_cast<const FVector*>(basePtr + IndexData[i] * PositionStride);
+		const FVector& v1 = *reinterpret_cast<const FVector*>(basePtr + IndexData[i + 1] * PositionStride);
+		const FVector& v2 = *reinterpret_cast<const FVector*>(basePtr + IndexData[i + 2] * PositionStride);
 
 		float t = 0.0f;
 		if (IntersectTriangle(localOrigin, localDir, v0, v1, v2, t))
@@ -131,6 +132,21 @@ bool FRayUtils::RaycastTriangles(
 	}
 
 	return bHit;
+}
+
+bool FRayUtils::RaycastTriangles(
+	const FRay& WorldRay,
+	const FMatrix& WorldMatrix,
+	const FMatrix& InverseWorldMatrix,
+	const void* PositionData,
+	uint32 PositionStride,
+	const TArray<uint32>& Indices,
+	FHitResult& OutHitResult)
+{
+	return RaycastTriangles(WorldRay, WorldMatrix, InverseWorldMatrix,
+		PositionData, PositionStride,
+		Indices.data(), (uint32)Indices.size(),
+		OutHitResult);
 }
 
 //component 단위의 공통 raycast 진입점입니다.
