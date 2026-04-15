@@ -15,7 +15,6 @@ public:
 	FShader& operator=(FShader&& Other) noexcept;
 
 	void Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-		const D3D11_INPUT_ELEMENT_DESC* InInputElements, uint32 InInputElementCount,
 		const D3D_SHADER_MACRO* InDefines = nullptr);
 	void Release();
 
@@ -30,7 +29,7 @@ private:
 	size_t CachedVertexShaderSize = 0;
 	size_t CachedPixelShaderSize = 0;
 
+	void CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* VSBlob);
 	void ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialParameterInfo*>& OutLayout);
-	////void ExtractTextureInfo(ID3DBlob* ShaderBlob, TMap<FString, ???>& OutLayout);
 	TMap<FString, FMaterialParameterInfo*> ShaderParameterLayout;
 };

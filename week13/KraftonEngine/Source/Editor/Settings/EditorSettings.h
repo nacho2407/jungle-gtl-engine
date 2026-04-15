@@ -38,19 +38,11 @@ public:
 	// UI 위젯 표시 여부
 	struct FUIVisibility
 	{
-#ifdef FPS_OPTIMIZATION
-		bool bConsole = false;
-		bool bControl = false;
-		bool bProperty = false;
-		bool bScene = true;
-		bool bStat = true;
-#else
 		bool bConsole = true;
 		bool bControl = true;
 		bool bProperty = true;
 		bool bScene = true;
-		bool bStat = false;;
-#endif
+		bool bStat = false;
 	} UI;
 
 	void SaveToFile(const FString& Path) const;

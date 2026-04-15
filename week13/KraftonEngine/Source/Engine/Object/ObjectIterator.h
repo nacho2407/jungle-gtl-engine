@@ -54,7 +54,7 @@ private:
 class FObjectIterator
 {
 public:
-	FObjectIterator(const FTypeInfo* InType = nullptr)
+	FObjectIterator(UClass* InType = nullptr)
 		: CurrentIndex(0), FilterType(InType)
 	{
 		AdvanceToNextValidObject();
@@ -85,7 +85,7 @@ private:
 			UObject* Obj = GUObjectArray[CurrentIndex];
 			if (Obj != nullptr)
 			{
-				if (FilterType == nullptr || Obj->GetTypeInfo()->IsA(FilterType))
+				if (FilterType == nullptr || Obj->GetClass()->IsA(FilterType))
 				{
 					return;
 				}
@@ -95,5 +95,5 @@ private:
 	}
 
 	int32 CurrentIndex;
-	const FTypeInfo* FilterType;
+	UClass* FilterType;
 };

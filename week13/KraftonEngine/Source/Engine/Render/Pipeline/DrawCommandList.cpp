@@ -28,9 +28,6 @@ void FStateCache::Reset()
 	PerShaderCB[1]  = nullptr;
 	DiffuseSRV   = nullptr;
 
-	bMaterialDirty = true;
-	LastSectionColor = {};
-
 	RTV         = nullptr;
 	DSV         = nullptr;
 }
@@ -260,20 +257,6 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 				Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
 			}
 			Cache.PerShaderCB[i] = Cmd.PerShaderCB[i];
-		}
-	}
-
-	// --- Material 인라인 데이터 → PerShaderCB[0] 업로드 ---
-	if (Cmd.bInlineMaterialData && Cmd.PerShaderCB[0])
-	{
-		if (Cache.bMaterialDirty
-			|| memcmp(&Cmd.SectionColor, &Cache.LastSectionColor, sizeof(FVector4)) != 0)
-		{
-			FMaterialConstants MatConstants = {};
-			MatConstants.SectionColor = Cmd.SectionColor;
-			//Cmd.PerShaderCB[0]->Update(Ctx, &MatConstants, sizeof(MatConstants));
-			Cache.LastSectionColor = Cmd.SectionColor;
-			Cache.bMaterialDirty = false;
 		}
 	}
 

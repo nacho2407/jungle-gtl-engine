@@ -1,62 +1,36 @@
-﻿#pragma once
+#pragma once
 
 #include "Profiling/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
-#include "Core/ClassTypes.h"
+#include "Object/UClass.h"
 
 class FArchive;
 
-#define DECLARE_CLASS(ClassName, ParentClass)                          \
-    static const FTypeInfo s_TypeInfo;								   \
-	static FClassRegistrar s_Registrar;								   \
-    const FTypeInfo* GetTypeInfo() const override {                    \
-        return &s_TypeInfo;                                            \
-    }                                                                  
+// ---------------------------------------------------------------------------
+// RTTI Macros
+// ---------------------------------------------------------------------------
 
-#define DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, FlagsValue)    \
-    const FTypeInfo ClassName::s_TypeInfo = {                          \
-        #ClassName,                                                    \
-        &ParentClass::s_TypeInfo,                                      \
-        sizeof(ClassName),                                             \
-        FlagsValue                                                     \
-    };																   \
-	FClassRegistrar ClassName::s_Registrar(&ClassName::s_TypeInfo);	   
+#define DECLARE_CLASS(ClassName, ParentClass)                               \
+    using Super = ParentClass;                                             \
+    static UClass StaticClassInstance;                                      \
+    static FClassRegistrar s_Registrar;                                    \
+    static UClass* StaticClass() { return &StaticClassInstance; }           \
+    UClass* GetClass() const override { return StaticClass(); }
 
-#define DEFINE_CLASS(ClassName, ParentClass)                           \
+#define DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, FlagsValue)         \
+    UClass ClassName::StaticClassInstance(                                  \
+        #ClassName,                                                        \
+        &ParentClass::StaticClassInstance,                                  \
+        sizeof(ClassName),                                                 \
+        FlagsValue                                                         \
+    );                                                                     \
+    FClassRegistrar ClassName::s_Registrar(&ClassName::StaticClassInstance);
+
+#define DEFINE_CLASS(ClassName, ParentClass)                                \
     DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_None)
 
-enum EClassFlags : uint32_t
-{
-	CF_None = 0,
-	CF_Actor = 1 << 0,
-	CF_Component = 1 << 1,
-	CF_Camera = 1 << 2,
-	// 에디터 Add Component 목록과 런타임 생성 경로에서 모두 제외할 베이스 타입.
-	CF_Abstract = 1 << 3,
-};
-
-struct FTypeInfo
-{
-	const char* name;
-	const FTypeInfo* Parent;
-	size_t size;
-	uint32_t ClassFlags = CF_None;
-
-	bool IsA(const FTypeInfo* Other) const {
-		for (const FTypeInfo* T = this; T; T = T->Parent) {
-			if (T == Other) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool HasAnyClassFlags(uint32 Flags) const
-	{
-		return (ClassFlags & Flags) != 0;
-	}
-};
+// ---------------------------------------------------------------------------
 
 class UObject
 {
@@ -88,7 +62,7 @@ public:
 	}
 
 	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
-	virtual void Serialize(FArchive& Ar);                 // 있으면 활용, 없으면 도입
+	virtual void Serialize(FArchive& Ar);
 	virtual void PostDuplicate() {}
 
 	static void* operator new(size_t Size)
@@ -114,14 +88,14 @@ public:
 	FName GetFName() const { return ObjectName; }
 	void SetFName(const FName& InName) { ObjectName = InName; }
 
-	// RTTI stuffs
-	virtual const FTypeInfo* GetTypeInfo() const { return &s_TypeInfo; }
+	// RTTI
+	virtual UClass* GetClass() const { return StaticClass(); }
 
 	template<typename T>
-	bool IsA() const { return GetTypeInfo()->IsA(&T::s_TypeInfo); }
+	bool IsA() const { return GetClass()->IsA(T::StaticClass()); }
 
-
-	static const FTypeInfo s_TypeInfo;
+	static UClass StaticClassInstance;
+	static UClass* StaticClass() { return &StaticClassInstance; }
 
 protected:
 	FName ObjectName;
@@ -146,7 +120,7 @@ public:
 		T* Obj = new T();
 		Obj->SetOuter(InOuter);
 
-		const char* ClassName = T::s_TypeInfo.name;
+		const char* ClassName = T::StaticClass()->GetName();
 		uint32& Counter = NameCounters[ClassName];
 		FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
 		Obj->SetFName(FName(Name));

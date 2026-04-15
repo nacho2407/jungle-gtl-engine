@@ -47,7 +47,6 @@ namespace ESamplerSlot
 namespace ECBPoolKey
 {
 	constexpr uint32 Gizmo = 0;
-	constexpr uint32 Material = 1;
 	constexpr uint32 Fog = 2;
 	constexpr uint32 Outline = 3;
 	constexpr uint32 SceneDepth = 4;
@@ -75,12 +74,7 @@ struct FFrameConstants
 	float bIsWireframe;
 	FVector WireframeColor;
 	float Time;
-	float _pad[3];
-};
-
-struct FMaterialConstants
-{
-	FVector4 SectionColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	FVector CameraWorldPos;
 };
 
 // SubUV UV region — atlas frame offset + size (b2 slot, shared with Gizmo)
@@ -185,8 +179,12 @@ struct FMeshSectionDraw
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 
+	// 머티리얼 기반 렌더 상태
+	EBlendState Blend = EBlendState::Opaque;
+	EDepthStencilState DepthStencil = EDepthStencilState::Default;
+	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
+
 	//PerShader
 	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
-	uint8* CPUData[2];   // CPU 메모리의 실제 값
 };
 
