@@ -1,10 +1,12 @@
 ﻿#pragma once
 #include "Runtime/Viewport.h"
 #include "Slate/ISlateViewport.h"
+#include "Editor/EditorUtils.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 
 class FViewportClient;
 struct FViewportMouseEvent;
-/*
+    /*
 * 실제 viewport 입력/출력 창구
 * FViewportClient 로 이벤트 전달
 * viewport local rect 를 알고 있음
@@ -14,8 +16,9 @@ struct FViewportMouseEvent;
 class FSceneViewport : public FViewport, public ISlateViewport
 {
 public:
-	void SetClient(FViewportClient* InClient) { Client = InClient; }
-	FViewportClient* GetClient() const { return Client; }
+    void SetClient(const FEditorViewportClient& InClient) { Client = InClient; }
+    FEditorViewportClient& GetClient() { return Client; }
+    const FEditorViewportClient& GetClient() const { return Client; }
 
 	/*
 	* ISlateViewport Interface
@@ -44,7 +47,13 @@ public:
 		return Rect;
 	}
 
+	FEditorViewportState& GetState() { return State; }
+    const FEditorViewportState& GetState() const { return State; }
+    void SetState(const FEditorViewportState& InState) { State = InState; }
+
 private:
-	class FViewportClient* Client = nullptr;
+	// Viewport 구조 재편 도중 다형성을 우선 빼고 구현
+    FEditorViewportClient Client;
+    FEditorViewportState State;
 };
 

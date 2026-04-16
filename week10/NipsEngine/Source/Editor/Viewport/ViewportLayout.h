@@ -5,6 +5,7 @@
 #include "EditorUtils.h"
 #include "FSceneViewport.h"
 #include "EditorViewportClient.h"
+#include "Engine/Slate/SViewport.h"
 
 class UEditorEngine;
 class UWorld;
@@ -64,14 +65,14 @@ public:
 	void SetLastFocusedViewportIndex(int32 Index);
 
 	// Viewport Get Set
-	FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportClients[Index]; }
-	const FEditorViewportClient& GetViewportClient(int32 Index) const { return ViewportClients[Index]; }
+    FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
+    const FEditorViewportClient& GetViewportClient(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
 
-	FSceneViewport& GetSceneViewport(int32 Index) { return SceneViewports[Index]; }
-	const FSceneViewport& GetSceneViewport(int32 Index) const { return SceneViewports[Index]; }
+	FSceneViewport& GetSceneViewport(int32 Index) { return ViewportWidgets[Index].GetSceneViewport(); }
+	const FSceneViewport& GetSceneViewport(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport(); }
 
-	FEditorViewportState& GetViewportState(int32 Index) { return ViewportStates[Index]; }
-	const FEditorViewportState& GetViewportState(int32 Index) const { return ViewportStates[Index]; }
+	FEditorViewportState& GetViewportState(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetState(); }
+    const FEditorViewportState& GetViewportState(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetState(); }
 
 	// Window 크기 기준으로 4개 뷰포트 영역을 계산 및 초기화 합니다.
 	void InitViewportRect(uint32 Width, uint32 Height);
@@ -94,16 +95,14 @@ private:
 	// stat 콘솔 명령의 적용 대상으로 사용됩니다.
 	int32 LastFocusedViewportIndex = 0;
 
-	TStaticArray<FEditorViewportClient, MaxViewports> ViewportClients;
-	TStaticArray<FSceneViewport, MaxViewports>        SceneViewports;
-	TStaticArray<FEditorViewportState, MaxViewports>  ViewportStates;
-
 	// Slate 위젯 트리 — UEditorEngine 이 소유합니다.
 	SSplitterV*    RootSplitterV = nullptr;
 	SSplitterH*    TopSplitterH  = nullptr;
 	SSplitterH*    BotSplitterH  = nullptr;
 	SSplitterCross* CrossWidget  = nullptr;
-	SViewport* ViewportWidgets[MaxViewports] = {};
+
+	// Viewport 구조 재편 중 다형성 임시 제거
+	SViewport ViewportWidgets[MaxViewports] = {};
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
 	FWindowsWindow* Window = nullptr;
