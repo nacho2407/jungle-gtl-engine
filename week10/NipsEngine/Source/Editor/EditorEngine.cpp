@@ -234,7 +234,7 @@ void UEditorEngine::StopPlaySession()
 
 void UEditorEngine::ResetViewport()
 {
-    for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
         ViewportClient.CreateCamera();
@@ -258,7 +258,7 @@ void UEditorEngine::CloseScene()
     WorldList.clear();
     ActiveWorldHandle = FName::None;
 
-    for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
         ViewportClient.DestroyCamera();
@@ -322,7 +322,7 @@ void UEditorEngine::ClearScene()
     WorldList.clear();
     ActiveWorldHandle = FName::None;
 
-    for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
         ViewportClient.DestroyCamera();
