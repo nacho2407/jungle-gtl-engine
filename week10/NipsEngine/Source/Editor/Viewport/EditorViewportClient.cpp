@@ -132,6 +132,10 @@ void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 
 	OutView.bOrthographic = Camera.IsOrthographic();
 
+    OutView.CameraOrthoHeight = Camera.GetOrthoHeight();
+
+	OutView.CameraFrustum = Camera.GetFrustum();
+
 	if (State)
 	{
 		OutView.ViewRect = State->Rect;

@@ -54,10 +54,6 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 {
     FEditorViewportClient* VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
 
-    FViewportCamera* Camera = VC->GetCamera();
-    if (!Camera)
-        return;
-
     // 1. 이 뷰포트의 SceneView 빌드
     //    - ViewRect : 화면 내 서브 영역 (BuildSceneView가 State->Rect에서 채움)
     //    - ViewMode : 뷰포트별 독립 모드 (기본값 EViewMode::Lit)
@@ -93,25 +89,25 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     const FShowFlags&      ShowFlags = Settings.ShowFlags;
     const EViewMode        ViewMode = SceneView.ViewMode;
 
-    Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
+    Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix);
     Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
-    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !Camera->IsOrthographic());
+    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
 
-    const FFrustum& ViewFrustum = Camera->GetFrustum();
+    const FFrustum& ViewFrustum = SceneView.CameraFrustum;
     Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
     ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
     ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
-    Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, Camera->IsOrthographic());
+    Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
 
     // 이 뷰포트가 편집 모드일 때만 기즈모·선택 오버레이를 그립니다.
     if (VC->GetPlayState() == EViewportPlayState::Editing)
     {
         if (UGizmoComponent* Gizmo = Editor->GetGizmo())
         {
-            if (Camera->IsOrthographic())
-                Gizmo->ApplyScreenSpaceScalingOrtho(Camera->GetOrthoHeight());
+            if (SceneView.bOrthographic)
+                Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
             else
                 Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
         }
