@@ -190,13 +190,9 @@ void FRenderer::UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet)
         return;
     }
 
-	// Render Pass 쪽으로 Clear 쪽은 넘기는게 나을듯
-
-	/*
     Device.SetSubViewport(0, 0,
                           static_cast<int32>(CurrentRenderTargets.Width),
                           static_cast<int32>(CurrentRenderTargets.Height));
-	*/
 }
 
 void FRenderer::InvalidateSceneFinalTargets()

@@ -85,6 +85,11 @@ FRenderTargetSet FSceneViewport::GetViewportRenderTargets() const
 
 void FSceneViewport::InitializeResource(ID3D11Device* Device, uint32 Width, uint32 Height)
 {
+    if (Device == nullptr || Width == 0 || Height == 0)
+    {
+        return;
+    }
+
     /**
      * Texture, RTV, SRV 생성
      */
@@ -141,6 +146,36 @@ void FSceneViewport::InitializeResource(ID3D11Device* Device, uint32 Width, uint
     ViewportDepthStencilTexture = DSR.Texture;
     ViewportDepthStencilView = DSR.DSV;
     ViewportDepthStencilSRV = DSR.SRV;
+}
+
+bool FSceneViewport::EnsureResource(ID3D11Device* Device, uint32 Width, uint32 Height)
+{
+    if (Device == nullptr || Width == 0 || Height == 0)
+    {
+        ReleaseResource();
+        return false;
+    }
+
+    const bool bSameSize =
+        (ViewportRenderTargetWidth == Width) &&
+        (ViewportRenderTargetHeight == Height);
+
+    const bool bResourcesValid =
+        (ViewportSceneColorRTV != nullptr) &&
+        (ViewportSelectionMaskRTV != nullptr) &&
+        (ViewportDepthStencilView != nullptr);
+
+    if (bSameSize && bResourcesValid)
+    {
+        return true;
+    }
+
+    ReleaseResource();
+    InitializeResource(Device, Width, Height);
+
+    return (ViewportSceneColorRTV != nullptr) &&
+           (ViewportSelectionMaskRTV != nullptr) &&
+           (ViewportDepthStencilView != nullptr);
 }
 
 void FSceneViewport::ReleaseResource()
