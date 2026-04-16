@@ -16,7 +16,6 @@ enum class EViewportPlayState : uint8
 
 struct FEditorViewportState
 {
-	FViewportRect Rect;
 	EViewMode ViewMode = EViewMode::Lit;
 	bool bHovered = false;
 

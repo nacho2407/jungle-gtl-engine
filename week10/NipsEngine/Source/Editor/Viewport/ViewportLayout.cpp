@@ -133,7 +133,8 @@ void FEditorViewportLayout::UpdateHoverStates()
 		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 		{
 			FEditorViewportState& ViewportState = GetViewportState(i);
-			if (!bFoundHover && ViewportState.Rect.Contains(MouseX, MouseY))
+            FViewportRect ViewportRect = GetSceneViewport(i).GetRect();
+            if (!bFoundHover && ViewportRect.Contains(MouseX, MouseY))
 			{
 				ViewportState.bHovered = true;
 				bFoundHover = true;
@@ -212,18 +213,17 @@ void FEditorViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	const int32 HalfW = W / 2;
 	const int32 HalfH = H / 2;
     
-	ViewportWidgets[0].GetSceneViewport().GetState().Rect = { 0, 0, HalfW, HalfH };               // 좌상단
-    ViewportWidgets[1].GetSceneViewport().GetState().Rect = { HalfW, 0, W - HalfW, HalfH };  // 우상단
-    ViewportWidgets[2].GetSceneViewport().GetState().Rect = { 0, HalfH, HalfW, H - HalfH };       // 좌하단
-    ViewportWidgets[3].GetSceneViewport().GetState().Rect = { HalfW, HalfH, W - HalfW, H - HalfH }; // 우하단
-
+	FViewportRect Rects[4] = {
+        { 0, 0, HalfW, HalfH },
+        { HalfW, 0, W - HalfW, HalfH },
+        { 0, HalfH, HalfW, H - HalfH },
+        { HalfW, HalfH, W - HalfW, H - HalfH }
+    };
+	
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		ViewportWidgets[i].GetSceneViewport().SetRect(ViewportWidgets[i].GetSceneViewport().GetState().Rect);
-
-		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(
-            static_cast<float>(ViewportWidgets[i].GetSceneViewport().GetState().Rect.Width),
-            static_cast<float>(ViewportWidgets[i].GetSceneViewport().GetState().Rect.Height));
+        ViewportWidgets[i].GetSceneViewport().SetRect(Rects[i]);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(Rects[i].Width, Rects[i].Height);
 	}
 }
 
@@ -341,14 +341,12 @@ void FEditorViewportLayout::SyncViewportRects()
 					static_cast<int32>(Full.Y),
 					static_cast<int32>(Full.Width),
 					static_cast<int32>(Full.Height));
-                ViewportWidgets[i].GetSceneViewport().GetState().Rect = VR;
 				ViewportWidgets[i].GetSceneViewport().SetRect(VR);
 				ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(Full.Width, Full.Height);
 			}
 			else
 			{
 				const FViewportRect ZeroVR(0, 0, 0, 0);
-                ViewportWidgets[i].GetSceneViewport().GetState().Rect = ZeroVR;
 				ViewportWidgets[i].GetSceneViewport().SetRect(ZeroVR);
 			}
 		}
@@ -370,7 +368,6 @@ void FEditorViewportLayout::SyncViewportRects()
 
 		// 스플리터 드래그로 바뀐 크기를 ViewportState, SceneViewport,
 		// ViewportClient 카메라 종횡비에 모두 반영합니다.
-        ViewportWidgets[i].GetSceneViewport().GetState().Rect = VR;
 		ViewportWidgets[i].GetSceneViewport().SetRect(VR);
 		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(R.Width, R.Height);
 	}

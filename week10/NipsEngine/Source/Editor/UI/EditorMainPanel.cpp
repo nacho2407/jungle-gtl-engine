@@ -302,12 +302,12 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
             for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
             {
-                const FEditorViewportState& VState = Layout.GetViewportState(i);
-                if (VState.Rect.Width <= 0 || VState.Rect.Height <= 0)
+                FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
+                if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
                     continue;
 
-                const float LocalX = static_cast<float>(VState.Rect.X - HostRect.X);
-                const float LocalY = static_cast<float>(VState.Rect.Y - HostRect.Y);
+                const float LocalX = static_cast<float>(ViewportRect.X - HostRect.X);
+                const float LocalY = static_cast<float>(ViewportRect.Y - HostRect.Y);
                 if (LocalX < 0.0f || LocalY < 0.0f)
                     continue;
 
@@ -324,7 +324,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
                     ImGuiWindowFlags_NoNav |
                     ImGuiWindowFlags_NoFocusOnAppearing;
 
-                if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(VState.Rect.Width), MenuBarH), false, OverlayFlags))
+                if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(ViewportRect.Width), MenuBarH), false, OverlayFlags))
                 {
                     if (ImGui::BeginMenuBar())
                     {
