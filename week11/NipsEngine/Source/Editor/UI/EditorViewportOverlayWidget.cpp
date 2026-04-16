@@ -178,14 +178,16 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
+        FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
 
 		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable) continue;
-		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0) continue; // 비활성 뷰포트 스킵
+        if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+            continue; // 비활성 뷰포트 스킵
 
 		// 툴바 바로 아래 좌측에 고정
 		ImGui::SetNextWindowPos(
-			ImVec2(static_cast<float>(VS.Rect.X) + 8.f,
-			       static_cast<float>(VS.Rect.Y) + 32.f),
+            ImVec2(static_cast<float>(ViewportRect.X) + 8.f,
+                   static_cast<float>(ViewportRect.Y) + 32.f),
 			ImGuiCond_Always);
 		ImGui::SetNextWindowBgAlpha(0.3f);
 
@@ -377,7 +379,8 @@ void FEditorViewportOverlayWidget::RenderBoxSelectionOverlay()
 	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
-		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0)
+        FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
+        if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
 		{
 			continue;
 		}
@@ -396,8 +399,8 @@ void FEditorViewportOverlayWidget::RenderBoxSelectionOverlay()
 		const float MaxX = static_cast<float>(std::max(Start.x, End.x));
 		const float MaxY = static_cast<float>(std::max(Start.y, End.y));
 
-		const ImVec2 P0(static_cast<float>(VS.Rect.X) + MinX, static_cast<float>(VS.Rect.Y) + MinY);
-		const ImVec2 P1(static_cast<float>(VS.Rect.X) + MaxX, static_cast<float>(VS.Rect.Y) + MaxY);
+		const ImVec2 P0(static_cast<float>(ViewportRect.X) + MinX, static_cast<float>(ViewportRect.Y) + MinY);
+        const ImVec2 P1(static_cast<float>(ViewportRect.X) + MaxX, static_cast<float>(ViewportRect.Y) + MaxY);
 		DrawList->AddRectFilled(P0, P1, FillColor);
 		DrawList->AddRect(P0, P1, RectColor, 0.0f, 0, 1.5f);
 	}
