@@ -265,28 +265,34 @@ void FEditorMainPanel::RenderViewportHostWindow()
         GuiState.bViewportHostVisible = true;
         GuiState.ViewportHostRect = HostRect;
         EditorEngine->GetViewportLayout().SetHostRect(HostRect);
-		
-		if (const ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetViewportLayout().GetSceneViewport(0).GetOutSRV())
+
+		for (int i = 0; i < 4; i++)
         {
-            ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-            ImDrawList* DrawList = ImGui::GetWindowDrawList();
-            DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
-            ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
-            DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-        }
-        /*
-        if (const ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetCurrentSceneSRV())
-        {
-            ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-            ImDrawList* DrawList = ImGui::GetWindowDrawList();
-            DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
-            ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
-            DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-        }
-		*/
-        else
-        {
-            ImGui::Dummy(ContentSize);
+            auto& VP = EditorEngine->GetViewportLayout().GetSceneViewport(i);
+
+            const ID3D11ShaderResourceView* SceneColorSRV = VP.GetOutSRV();
+
+            ImVec2 Size = ImVec2(
+                (float)VP.GetRect().Width,
+                (float)VP.GetRect().Height);
+
+            if (SceneColorSRV)
+            {
+                ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+                ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+                DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
+                ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), Size);
+                DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+            }
+            else
+            {
+                ImGui::Dummy(Size);
+            }
+
+            // 2x2 배치
+            if (i % 2 == 0)
+                ImGui::SameLine();
         }
 
         // 뷰포트별 독립 메뉴바 오버레이
