@@ -24,6 +24,7 @@ USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;
 	CachedWorldTransform = FTransform::Identity;
+	RelativeRotationQuat = FQuat::Identity;
 	bTransformDirty = true;
 	UpdateWorldMatrix();
 }
@@ -133,19 +134,24 @@ void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void USceneComponent::PostEditProperty(const char* PropertyName)
 {
 	UActorComponent::PostEditProperty(PropertyName);
+	// 에디터가 RelativeRotation(Euler)을 직접 수정했을 때 쿼터니언 권위 소스를 동기화합니다.
+	RelativeRotationQuat = FQuat::MakeFromEuler(RelativeRotation);
+	RelativeRotationQuat.Normalize();
 	MarkTransformDirty();
 }
 
 FRotator USceneComponent::GetRelativeRotator() const
 {
-	FRotator Rot = FRotator::MakeFromEuler(RelativeRotation);
+	// 쿼터니언 권위 소스에서 직접 변환 — Euler 왕복 없음
+	FRotator Rot = RelativeRotationQuat.Rotator();
 	Rot.Normalize();
 	return Rot;
 }
 
 FQuat USceneComponent::GetRelativeQuat() const
 {
-	return GetRelativeRotator().Quaternion();
+	// 권위 있는 쿼터니언을 직접 반환 — 짐벌 락 없음
+	return RelativeRotationQuat;
 }
 
 void USceneComponent::SetRelativeRotationRotator(const FRotator& NewRotation)
@@ -159,24 +165,17 @@ void USceneComponent::SetRelativeRotationRotator(const FRotator& NewRotation)
 		Normalized.Roll = 0.0f;
 	}
 
-	RelativeRotation = Normalized.Euler();
+	RelativeRotationQuat = FQuat(Normalized);
+	RelativeRotationQuat.Normalize();
+	RelativeRotation = RelativeRotationQuat.Euler();
 	MarkTransformDirty();
 }
 
 void USceneComponent::SetRelativeRotationQuat(const FQuat& NewRotationQuat)
 {
-	FQuat NormalizedQuat = NewRotationQuat;
-	NormalizedQuat.Normalize();
-
-	FRotator Rot = NormalizedQuat.Rotator();
-	Rot.Normalize();
-
-	if (MathUtil::Abs(Rot.Roll) < 1e-6f)
-	{
-		Rot.Roll = 0.0f;
-	}
-
-	RelativeRotation = Rot.Euler();
+	// 쿼터니언을 권위 소스에 직접 저장 — Euler 왕복 변환 없음
+	RelativeRotationQuat = NewRotationQuat.GetNormalized();
+	RelativeRotation = RelativeRotationQuat.Euler();
 	MarkTransformDirty();
 }
 
@@ -188,11 +187,10 @@ void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
 
 void USceneComponent::SetRelativeRotation(const FVector& NewRotation)
 {
-	// 기존 인터페이스 유지:
-	// 외부에서 Euler 벡터를 넣으면 내부에서 rotator normalize 후 다시 저장
-	FRotator Rot = FRotator::MakeFromEuler(NewRotation);
-	Rot.Normalize();
-	RelativeRotation = Rot.Euler();
+	// Euler 입력을 쿼터니언 권위 소스에 저장하고 표시용 캐시도 동기화
+	RelativeRotationQuat = FQuat::MakeFromEuler(NewRotation);
+	RelativeRotationQuat.Normalize();
+	RelativeRotation = RelativeRotationQuat.Euler();
 	MarkTransformDirty();
 }
 
@@ -218,7 +216,8 @@ void USceneComponent::MarkTransformDirty()
 
 FTransform USceneComponent::GetRelativeTransform() const
 {
-	return FTransform(GetRelativeRotator(), RelativeLocation, RelativeScale3D);
+	// 쿼터니언 권위 소스를 직접 사용 — Euler/Rotator 왕복 없음
+	return FTransform(RelativeRotationQuat, RelativeLocation, RelativeScale3D);
 }
 
 FMatrix USceneComponent::GetRelativeMatrix() const
