@@ -1250,7 +1250,10 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\ULightComponentBase.h">
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h">
+      <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h">
       <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
     </ClInclude>
   </ItemGroup>
