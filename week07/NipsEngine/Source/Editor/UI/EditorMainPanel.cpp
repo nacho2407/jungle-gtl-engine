@@ -185,8 +185,8 @@ void FEditorMainPanel::Update()
     bool bViewportOperationActive = false;
     if (EditorEngine)
     {
-        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
-        for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
         {
             if (Layout.GetViewportClient(i).IsActiveOperation())
             {
@@ -211,7 +211,7 @@ void FEditorMainPanel::Update()
     //	Focus는 MainPanel에서 입력 받음
     if (EditorEngine && InputSystem::Get().GetKeyUp('F') && !IO.WantTextInput)
     {
-        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
         Layout.GetViewportClient(FocusedIdx).FocusSelection();
     }
@@ -297,10 +297,10 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
         // 뷰포트별 독립 메뉴바 오버레이
         {
-            FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+            FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
             const float MenuBarH = ImGui::GetFrameHeight();
 
-            for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+            for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
             {
                 const FEditorViewportState& VState = Layout.GetViewportState(i);
                 if (VState.Rect.Width <= 0 || VState.Rect.Height <= 0)
@@ -350,7 +350,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
 // 개별 뷰포트 메뉴바 렌더링 — Index 번 뷰포트에 대한 Layout / Type / View / Stats 메뉴
 void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
 {
-    FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
     FEditorViewportClient& Client = Layout.GetViewportClient(Index);
     FEditorViewportState& State = Layout.GetViewportState(Index);
 
@@ -372,7 +372,7 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
         if (bSingle)
         {
             ImGui::Separator();
-            for (int32 j = 0; j < FViewportLayout::MaxViewports; ++j)
+            for (int32 j = 0; j < FEditorViewportLayout::MaxViewports; ++j)
             {
                 const bool bSel = (Layout.GetSingleViewportIndex() == j);
                 if (ImGui::MenuItem(GetViewportSlotName(j), nullptr, bSel))

@@ -12,8 +12,8 @@
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
     Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
-    ViewportCullingStats.resize(FViewportLayout::MaxViewports);
-	ViewportDecalStats.resize(FViewportLayout::MaxViewports);
+    ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
+	ViewportDecalStats.resize(FEditorViewportLayout::MaxViewports);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
@@ -37,7 +37,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     Renderer.BeginFrame();
 
     // 4개 뷰포트를 순서대로 렌더링
-    for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         RenderViewport(Renderer, i);
     }

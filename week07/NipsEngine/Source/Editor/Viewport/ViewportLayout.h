@@ -18,13 +18,24 @@ class FViewportCamera;
 class FSelectionManager;
 
 /*
-* Viewport Layout 을 관리하는 최상위 객체
-* 스플리터 위젯 트리를 생성하고 FSlateApplication::RootWindow 에 연결합니다.
-* SSplitterV → 2×SSplitterH → 4×SViewport
-* SceneViewports[i] 를 각 SViewport 의 ISlateViewport 로 연결합니다.
-*/
+ * Viewport Layout 을 관리하는 최상위 객체
+ * 스플리터 위젯 트리를 생성하고 FSlateApplication::RootWindow 에 연결합니다.
+ * SSplitterV → 2×SSplitterH → 4×SViewport
+ * SceneViewports[i] 를 각 SViewport 의 ISlateViewport 로 연결합니다.
+ */
+
+/**
+ * 기존에 FViewportLayout 만 있었기 때문에 다형성을 위해 FEditorViewportLayout 과 분리
+ */
 
 class FViewportLayout
+{
+public:
+
+private:
+};
+
+class FEditorViewportLayout : FViewportLayout
 {
 public:
 	static constexpr int32 MaxViewports = 4;

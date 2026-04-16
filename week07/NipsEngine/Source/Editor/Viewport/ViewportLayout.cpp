@@ -12,7 +12,7 @@
 #include "EditorEngine.h"
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
-static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
+static constexpr EEditorViewportType kViewportTypes[FEditorViewportLayout::MaxViewports] =
 {
 	EVT_Perspective,   // 0 : 좌상단 (원근)
 	EVT_OrthoTop,      // 1 : 우상단 (탑 뷰)
@@ -20,7 +20,7 @@ static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewport
 	EVT_OrthoRight,    // 3 : 우하단 (라이트 뷰)
 };
 
-void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine)
+void FEditorViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine)
 {
 	Window = InWindow;
 	Editor = EditorEngine;
@@ -53,12 +53,12 @@ void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionMa
 	}
 }
 
-void FViewportLayout::Shutdown()
+void FEditorViewportLayout::Shutdown()
 {
 	DestroyViewportLayout();
 }
 
-void FViewportLayout::UpdateHoverStates()
+void FEditorViewportLayout::UpdateHoverStates()
 {
 	// 1. PumpMessages 에서 처리된 WM_MOUSEMOVE 드래그 결과를 즉시 뷰포트 Rect 에 반영
 	//    이렇게 해야 아래 bHovered 계산이 현재 프레임 Rect 를 사용할 수 있습니다.
@@ -113,7 +113,7 @@ void FViewportLayout::UpdateHoverStates()
 	// 독점 조작하는 뷰포트가 있다면 상태값 유지 + 포커스 인덱스 갱신
 	if (ActiveOpViewport >= 0)
 	{
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 			GetViewportState(i).bHovered = (i == ActiveOpViewport);
 
 		SetLastFocusedViewportIndex(ActiveOpViewport);
@@ -122,7 +122,7 @@ void FViewportLayout::UpdateHoverStates()
 	{
 		// Hover 된 뷰포트 찾아서 상태값 변경하기
 		bool bFoundHover = false;
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 		{
 			FEditorViewportState& ViewportState = GetViewportState(i);
 			if (!bFoundHover && ViewportState.Rect.Contains(MouseX, MouseY))
@@ -144,17 +144,17 @@ void FViewportLayout::UpdateHoverStates()
 	}
 }
 
-void FViewportLayout::Tick(float DeltaTime)
+void FEditorViewportLayout::Tick(float DeltaTime)
 {
 	UpdateHoverStates();
 	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		GetViewportClient(i).Tick(DeltaTime);
 	}
 }
 
-void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
+void FEditorViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 {
 	// 윈도우 리사이즈(최대화/복원 포함) 시 기존 HostRect는 이전 프레임 값일 수 있으므로 무효화합니다.
 	// 이후 RenderViewportHostWindow에서 최신 HostRect가 다시 설정됩니다.
@@ -175,7 +175,7 @@ void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 	}
 }
 
-void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
+void FEditorViewportLayout::SetHostRect(const FViewportRect& InHostRect)
 {
 	HostRect = InHostRect;
 
@@ -195,7 +195,7 @@ void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
 }
 
 // 영역 계산 헬퍼
-void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
+void FEditorViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 {
 	const int32 W = static_cast<int32>(Width);
 	const int32 H = static_cast<int32>(Height);
@@ -220,7 +220,7 @@ void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 }
 
 //  Viewport Layout 생성 (2 x 2)
-void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
+void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 {
 	DestroyViewportLayout();  // 기존 위젯이 있으면 먼저 해제
 
@@ -290,7 +290,7 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	SyncViewportRects();
 }
 
-void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
+void FEditorViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 {
 	bSingleViewport     = bSingle;
 	SingleViewportIndex = (Index < 0) ? 0 : (Index >= MaxViewports ? MaxViewports - 1 : Index);
@@ -302,7 +302,7 @@ void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 	SyncViewportRects();
 }
 
-void FViewportLayout::SetLastFocusedViewportIndex(int32 Index)
+void FEditorViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 {
 	if (Index < 0) Index = 0;
 	if (Index >= MaxViewports) Index = MaxViewports - 1;
@@ -311,7 +311,7 @@ void FViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 	FEditorViewportClient& MainViewport = GetViewportClient(LastFocusedViewportIndex);
 }
 
-void FViewportLayout::SyncViewportRects()
+void FEditorViewportLayout::SyncViewportRects()
 {
 	// 1개 모드: SingleViewportIndex 뷰포트에 전체 영역 할당, 나머지는 크기 0
 	if (bSingleViewport && RootSplitterV)
@@ -361,7 +361,7 @@ void FViewportLayout::SyncViewportRects()
 	}
 }
 
-void FViewportLayout::DestroyViewportLayout()
+void FEditorViewportLayout::DestroyViewportLayout()
 {
 	// SlateApplication 이 보유한 Widget 먼저 해제
 	FSlateApplication::Get().ClearWidgetRefs();
