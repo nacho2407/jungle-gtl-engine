@@ -265,7 +265,16 @@ void FEditorMainPanel::RenderViewportHostWindow()
         GuiState.bViewportHostVisible = true;
         GuiState.ViewportHostRect = HostRect;
         EditorEngine->GetViewportLayout().SetHostRect(HostRect);
-
+		
+		if (const ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetViewportLayout().GetSceneViewport(0).GetOutSRV())
+        {
+            ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+            ImDrawList* DrawList = ImGui::GetWindowDrawList();
+            DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
+            ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
+            DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+        }
+        /*
         if (const ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetCurrentSceneSRV())
         {
             ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
@@ -274,6 +283,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
             ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
             DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
         }
+		*/
         else
         {
             ImGui::Dummy(ContentSize);

@@ -55,12 +55,13 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     }
 
     // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
-    Renderer.BeginFrame();
-    Renderer.UseViewportRenderTargets();
+    // Renderer.BeginFrame();
+    // Renderer.UseViewportRenderTargets();
 
     // 4개 뷰포트를 순서대로 렌더링
     for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
     {
+        Renderer.BeginViewportFrame(Editor->GetViewportLayout().GetSceneViewport(i).GetViewportRenderTargets());
         RenderViewport(Renderer, i);
     }
 
@@ -94,7 +95,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     const int32          LocalX = Rect.X - HostRect.X;
     const int32          LocalY = Rect.Y - HostRect.Y;
 
-    Renderer.GetFD3DDevice().SetSubViewport(LocalX, LocalY, Rect.Width, Rect.Height);
+    // Renderer.GetFD3DDevice().SetSubViewport(LocalX, LocalY, Rect.Width, Rect.Height);
 
     // 3. 이 뷰포트용 렌더 데이터 수집
     Bus.Clear();
