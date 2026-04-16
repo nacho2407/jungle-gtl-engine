@@ -138,7 +138,7 @@ void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 
 	if (State)
 	{
-		OutView.ViewRect = State->Rect;
+		OutView.ViewRect = Viewport->GetRect();
 		OutView.ViewMode = State->ViewMode;
 	}
 }
@@ -217,8 +217,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	if (!bHasCamera)
 		return;
 
-	const float VX = State ? static_cast<float>(State->Rect.X) : 0.f;
-	const float VY = State ? static_cast<float>(State->Rect.Y) : 0.f;
+	const float VX = State ? static_cast<float>(Viewport->GetRect().X) : 0.f;
+    const float VY = State ? static_cast<float>(Viewport->GetRect().Y) : 0.f;
 
 	TickCursorCapture();
 	InputRouter.SetViewportDim(VX, VY, WindowWidth, WindowHeight);
@@ -381,8 +381,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 
 	if (Window) MousePoint = Window->ScreenToClientPoint(MousePoint);
-	const float VX     = State ? static_cast<float>(State->Rect.X) : 0.f;
-	const float VY     = State ? static_cast<float>(State->Rect.Y) : 0.f;
+    const float VX = State ? static_cast<float>(Viewport->GetRect().X) : 0.f;
+    const float VY = State ? static_cast<float>(Viewport->GetRect().Y) : 0.f;
 	const float LocalX = static_cast<float>(MousePoint.x) - VX;
 	const float LocalY = static_cast<float>(MousePoint.y) - VY;
 
@@ -421,11 +421,11 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 void FEditorViewportClient::LockCursorToViewport()
 {
 	// State->Rect is in client space; LockMouse needs screen space.
-	POINT Origin = { State->Rect.X, State->Rect.Y };
+    POINT Origin = { Viewport->GetRect().X, Viewport->GetRect().Y };
 	if (Window)
 		::ClientToScreen(Window->GetHWND(), &Origin);
 	InputSystem::Get().LockMouse(true, (float)Origin.x, (float)Origin.y,
-	                             (float)State->Rect.Width, (float)State->Rect.Height);
+                                 (float)Viewport->GetRect().Width, (float)Viewport->GetRect().Height);
 }
 
 bool FEditorViewportClient::TryProjectWorldToViewport(const FVector& WorldPos, float& OutViewportX, float& OutViewportY, float& OutDepth) const
