@@ -43,6 +43,12 @@
     <Filter Include="Source\Engine\Component\Movement">
       <UniqueIdentifier>{a5b9b888-60c7-ef17-a883-5cc31c907635}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\PostProcess">
+      <UniqueIdentifier>{b706c0ce-1360-1afe-9c3f-97a5e8d65ac3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\PostProcess\Light">
+      <UniqueIdentifier>{bdfe0d77-4f26-986d-d3bd-3762e085ddda}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{8b69df27-06f7-dea9-00be-7dcc5bcae5a6}</UniqueIdentifier>
     </Filter>
@@ -138,12 +144,6 @@
     </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{60f3c5d4-2dd4-3746-7c69-104344277d07}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Component\Movement\PostProcess">
-      <UniqueIdentifier>{b30cd8bc-9ce0-4127-87a8-3c3551a0fd41}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Component\Movement\PostProcess\Light">
-      <UniqueIdentifier>{f4549eb7-0fb9-4d85-b0b6-15b046011043}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -340,6 +340,24 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -809,6 +827,24 @@
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -1249,12 +1285,6 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h">
-      <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h">
-      <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
