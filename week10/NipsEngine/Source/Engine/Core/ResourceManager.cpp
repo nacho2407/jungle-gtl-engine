@@ -671,7 +671,7 @@ void FResourceManager::ReleaseGPUResources()
 }
 
 bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-	const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount)
+                                  const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount, const D3D_SHADER_MACRO* Defines)
 {
 	UShader* Shader = UObjectManager::Get().CreateObject<UShader>();
 	Shader->FilePath = FilePath;
@@ -680,7 +680,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	TComPtr<ID3DBlob> PSBlob;
 	TComPtr<ID3DBlob> ErrorBlob;
 
-	HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+	HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		VSEntryPoint.c_str(), "vs_5_0", 0, 0, &VSBlob, &ErrorBlob);
 	if (FAILED(hr))
 	{
@@ -697,7 +697,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get());
 	ErrorBlob.Reset();
 
-	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		PSEntryPoint.c_str(), "ps_5_0", 0, 0, &PSBlob, &ErrorBlob);
 	if (FAILED(hr))
 	{
@@ -744,6 +744,44 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 
 	return true;
 }
+
+//ID3DBlob* CompileShaderWithDefines(const WCHAR* filename,
+//                                   const D3D_SHADER_MACRO* defines,
+//                                   const char* entryPoint,
+//                                   const char* shaderModel)
+//{
+//    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+//
+//#if defined(DEBUG) || defined(_DEBUG)
+//    flags |= D3DCOMPILE_DEBUG;
+//#endif
+//
+//    ID3DBlob* byteCode = nullptr;
+//    ID3DBlob* errors = nullptr;
+//
+//    HRESULT hr = D3DCompileFromFile(
+//        filename,
+//        defines,
+//        D3D_COMPILE_STANDARD_FILE_INCLUDE,
+//        entryPoint,
+//        shaderModel,
+//        flags,
+//        0,
+//        &byteCode,
+//        &errors);
+//
+//    if (FAILED(hr))
+//    {
+//        if (errors)
+//        {
+//            MessageBoxA(nullptr, (char*)errors->GetBufferPointer(), "Shader Compile Error", MB_OK);
+//            errors->Release();
+//        }
+//        return nullptr;
+//    }
+//
+//    return byteCode;
+//}
 
 UShader* FResourceManager::GetShader(const FString& FilePath) const
 {
