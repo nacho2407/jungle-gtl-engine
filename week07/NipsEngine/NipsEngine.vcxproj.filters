@@ -139,6 +139,12 @@
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{60f3c5d4-2dd4-3746-7c69-104344277d07}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Movement\PostProcess">
+      <UniqueIdentifier>{b30cd8bc-9ce0-4127-87a8-3c3551a0fd41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Movement\PostProcess\Light">
+      <UniqueIdentifier>{f4549eb7-0fb9-4d85-b0b6-15b046011043}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common.hlsl">
@@ -327,6 +333,9 @@
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PursuitMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
@@ -642,9 +651,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Component\Movement\PursuitMovementComponent.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -795,6 +801,9 @@
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PursuitMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
@@ -1241,8 +1250,8 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Movement\PursuitMovementComponent.h">
-      <Filter>Source\Engine\Component\Movement</Filter>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\ULightComponentBase.h">
+      <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
