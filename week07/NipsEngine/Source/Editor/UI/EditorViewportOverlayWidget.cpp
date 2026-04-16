@@ -121,13 +121,13 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     {
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
-        FEditorViewportClient& FocusedClient = Layout.GetViewportClient(FocusedIdx);
-        float CameraMoveSpeed = FocusedClient.GetMoveSpeed();
+        FEditorViewportClient* FocusedClient = Layout.GetViewportClient(FocusedIdx);
+        float CameraMoveSpeed = FocusedClient->GetMoveSpeed();
 
         ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
         if (ImGui::SliderFloat("Dolly Speed", &CameraMoveSpeed, 10.0f, 2000.0f, "%.0f"))
         {
-            FocusedClient.SetMoveSpeed(CameraMoveSpeed);
+            FocusedClient->SetMoveSpeed(CameraMoveSpeed);
         }
     }
 
@@ -382,14 +382,14 @@ void FEditorViewportOverlayWidget::RenderBoxSelectionOverlay()
 			continue;
 		}
 
-		const FEditorViewportClient& Client = Layout.GetViewportClient(i);
-		if (!Client.IsBoxSelecting())
+		const FEditorViewportClient* Client = Layout.GetViewportClient(i);
+		if (!Client->IsBoxSelecting())
 		{
 			continue;
 		}
 
-		const POINT Start = Client.GetBoxSelectStart();
-		const POINT End = Client.GetBoxSelectEnd();
+		const POINT Start = Client->GetBoxSelectStart();
+		const POINT End = Client->GetBoxSelectEnd();
 
 		const float MinX = static_cast<float>(std::min(Start.x, End.x));
 		const float MinY = static_cast<float>(std::min(Start.y, End.y));

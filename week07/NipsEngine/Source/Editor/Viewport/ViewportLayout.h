@@ -48,14 +48,14 @@ public:
 	void OnWindowResized(uint32 Width, uint32 Height);
 	void SetHostRect(const FViewportRect& InHostRect);
 	
-	const FViewportClient& GetFocusedViewportClient() const { return GetViewportClient(LastFocusedViewportIndex); }
+	const FViewportClient* GetFocusedViewportClient() const { return GetViewportClient(LastFocusedViewportIndex); }
 
 	FViewportCamera* GetIndexedViewportClientCamera(int32 Index) {
-		return GetViewportClient(Index).GetCamera();
+		return GetViewportClient(Index)->GetCamera();
 	}
 
 	const FViewportCamera* GetIndexedViewportClientCamera(int32 Index) const {
-		return GetViewportClient(Index).GetCamera();
+		return GetViewportClient(Index)->GetCamera();
 	}
 
 	// Splitter Get
@@ -76,8 +76,8 @@ public:
 	void SetLastFocusedViewportIndex(int32 Index);
 
 	// Viewport Get Set
-    FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
-    const FEditorViewportClient& GetViewportClient(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
+    FEditorViewportClient* GetViewportClient(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
+    const FEditorViewportClient* GetViewportClient(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
 
 	FSceneViewport& GetSceneViewport(int32 Index) { return ViewportWidgets[Index].GetSceneViewport(); }
 	const FSceneViewport& GetSceneViewport(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport(); }
@@ -114,6 +114,7 @@ private:
 
 	// Viewport 구조 재편 중 다형성 임시 제거
 	SViewport ViewportWidgets[MaxViewports] = {};
+    FEditorViewportClient ViewportClients[MaxViewports] = {};
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
 	FWindowsWindow* Window = nullptr;

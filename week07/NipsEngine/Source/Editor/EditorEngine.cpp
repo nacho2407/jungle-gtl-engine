@@ -56,12 +56,13 @@ void UEditorEngine::Shutdown()
 
     FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 
-    ViewportLayout.Shutdown();           // 위젯 트리 해제 (소유권: UEditorEngine)
-    FSlateApplication::Get().Shutdown(); // RootWindow 해제
-
     CloseScene();
     SelectionManager.Shutdown();
     MainPanel.Release();
+    
+    // CloseScene 이후에 ViewportLayout을 내리면 Client 포인터 단절로 인한 역참조를 피할 수 있습니다.
+    ViewportLayout.Shutdown();           // 위젯 트리 해제 (소유권: UEditorEngine)
+    FSlateApplication::Get().Shutdown(); // RootWindow 해제
 
     // 엔진 공통 해제 (Renderer, D3D 등)
     UEngine::Shutdown();
@@ -87,10 +88,10 @@ void UEditorEngine::WorldTick(float DeltaTime)
 {
     // 포커스된 뷰포트의 카메라를 해당 월드의 ActiveCamera로 설정
     const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
-    FEditorViewportClient& FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
-    if (UWorld* FocusedWorld = FocusedClient.GetFocusedWorld())
+    FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+    if (UWorld* FocusedWorld = FocusedClient->GetFocusedWorld())
     {
-        if (FViewportCamera* Cam = FocusedClient.GetCamera())
+        if (FViewportCamera* Cam = FocusedClient->GetCamera())
         {
             FocusedWorld->SetActiveCamera(Cam);
         }
@@ -126,12 +127,12 @@ void UEditorEngine::StartPlaySession()
 
 	// 포커스된 뷰포트 클라이언트를 찾고 카메라 상태를 저장한 뒤, 실행 상태를 변경합니다.
     const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
-    FEditorViewportClient& FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+    FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
     UWorld* FocusedWorld = GetFocusedWorld();
 
     if (!FocusedWorld) return;
 
-    FocusedClient.SaveCameraSnapshot();
+    FocusedClient->SaveCameraSnapshot();
 	// 주의! Editor State는 실제 에디터의 상태가 아닌, 현재 에디터가 포커스한 뷰포트의 상태를 의미합니다.
     SetEditorState(EViewportPlayState::Playing); 
 
@@ -146,14 +147,14 @@ void UEditorEngine::StartPlaySession()
 
     // 월드를 전환한 뒤 뷰포트에 연결하고, PIE World를 실행합니다.
     SetActiveWorld(PIEHandle);
-    FocusedClient.StartPIE(PIEWorld);
-    FocusedClient.SetEndPIECallback([this]() { StopPlaySession(); });
+    FocusedClient->StartPIE(PIEWorld);
+    FocusedClient->SetEndPIECallback([this]() { StopPlaySession(); });
 
-    FocusedClient.LockCursorToViewport();
+    FocusedClient->LockCursorToViewport();
     InputSystem::Get().SetCursorVisibility(false);
     SelectionManager.ClearSelection();
 
-    PIEWorld->SetActiveCamera(FocusedClient.GetCamera());
+    PIEWorld->SetActiveCamera(FocusedClient->GetCamera());
     PIEWorld->BeginPlay();
 }
 
@@ -194,7 +195,7 @@ void UEditorEngine::StopPlaySession()
         return;
 
     const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
-    FEditorViewportClient& FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+    FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
 
     // 기존 PIE 월드를 해제합니다.
     auto HandleIt = ViewportPIEHandles.find(FocusedIdx);
@@ -220,9 +221,9 @@ void UEditorEngine::StopPlaySession()
     }
 
     // 원본 에디터 월드로 뷰포트 및 상태를 복구합니다.
-    FocusedClient.EndPIE(EditorWorld);
+    FocusedClient->EndPIE(EditorWorld);
     SetEditorState(EViewportPlayState::Editing);
-    FocusedClient.RestoreCameraSnapshot();
+    FocusedClient->RestoreCameraSnapshot();
 
     if (ViewportPIEHandles.empty())
     {
@@ -236,14 +237,21 @@ void UEditorEngine::ResetViewport()
 {
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
-        FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
-        ViewportClient.CreateCamera();
-        ViewportClient.SetWorld(GetWorld());
-        ViewportClient.ApplyCameraMode();
+        FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
+        if (!ViewportClient)
+        {
+            continue;
+        }
+        ViewportClient->CreateCamera();
+        ViewportClient->SetWorld(GetWorld());
+        ViewportClient->ApplyCameraMode();
     }
 
     // 디폴트로 0번 뷰포트의 카메라를 월드 활성 카메라로 재등록
-    GetWorld()->SetActiveCamera(ViewportLayout.GetIndexedViewportClientCamera(0));
+    if (UWorld* ActiveWorld = GetWorld())
+    {
+        ActiveWorld->SetActiveCamera(ViewportLayout.GetIndexedViewportClientCamera(0));
+    }
 }
 
 void UEditorEngine::CloseScene()
@@ -260,9 +268,13 @@ void UEditorEngine::CloseScene()
 
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
-        FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
-        ViewportClient.DestroyCamera();
-        ViewportClient.SetWorld(nullptr);
+        FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
+        if (!ViewportClient)
+        {
+            continue;
+        }
+        ViewportClient->DestroyCamera();
+        ViewportClient->SetWorld(nullptr);
     }
 }
 
@@ -278,10 +290,16 @@ void UEditorEngine::NewScene()
 
 void UEditorEngine::ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld)
 {
-    UWorld* World = (TargetWorld != nullptr) ? TargetWorld : GetFocusedWorld();
+    // Init 초반에는 ViewportLayout이 아직 연결되지 않았을 수 있으므로
+    // FocusedWorld보다 ActiveWorld(GetWorld) 경로를 우선 사용한다.
+    UWorld* World = (TargetWorld != nullptr) ? TargetWorld : GetWorld();
     if (World == nullptr)
     {
-        return;
+        World = GetFocusedWorld();
+        if (World == nullptr)
+        {
+            return;
+        }
     }
 
     const FEditorSettings& Settings = GetSettings();
@@ -324,9 +342,13 @@ void UEditorEngine::ClearScene()
 
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
-        FEditorViewportClient& ViewportClient = ViewportLayout.GetViewportClient(i);
-        ViewportClient.DestroyCamera();
-        ViewportClient.SetWorld(nullptr);
+        FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
+        if (!ViewportClient)
+        {
+            continue;
+        }
+        ViewportClient->DestroyCamera();
+        ViewportClient->SetWorld(nullptr);
     }
 }
 

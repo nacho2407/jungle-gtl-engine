@@ -188,7 +188,7 @@ void FEditorMainPanel::Update()
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
         {
-            if (Layout.GetViewportClient(i).IsActiveOperation())
+            if (Layout.GetViewportClient(i)->IsActiveOperation())
             {
                 bViewportOperationActive = true;
                 break;
@@ -213,7 +213,7 @@ void FEditorMainPanel::Update()
     {
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
-        Layout.GetViewportClient(FocusedIdx).FocusSelection();
+        Layout.GetViewportClient(FocusedIdx)->FocusSelection();
     }
 
     // IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
@@ -351,12 +351,12 @@ void FEditorMainPanel::RenderViewportHostWindow()
 void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
 {
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    FEditorViewportClient& Client = Layout.GetViewportClient(Index);
+    FEditorViewportClient* Client = Layout.GetViewportClient(Index);
     FEditorViewportState& State = Layout.GetViewportState(Index);
 
     ImGui::TextDisabled("%s | %s | %s",
                         GetViewportSlotName(Index),
-                        GetViewportTypeName(Client.GetViewportType()),
+                        GetViewportTypeName(Client->GetViewportType()),
                         GetViewModeName(State.ViewMode));
     ImGui::SameLine();
 
@@ -402,11 +402,11 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             };
             for (EEditorViewportType Type : kOrthoTypes)
             {
-                const bool bSel = (Client.GetViewportType() == Type);
+                const bool bSel = (Client->GetViewportType() == Type);
                 if (ImGui::MenuItem(GetViewportTypeName(Type), nullptr, bSel))
                 {
-                    Client.SetViewportType(Type);
-                    Client.ApplyCameraMode();
+                    Client->SetViewportType(Type);
+                    Client->ApplyCameraMode();
                 }
             }
         }
