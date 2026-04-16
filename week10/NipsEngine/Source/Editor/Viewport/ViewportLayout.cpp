@@ -228,6 +228,7 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		// ViewportWidgets[i] = new SViewport();
+        ViewportWidgets[i].GetSceneViewport().InitializeResource(Editor->GetRenderer().GetFD3DDevice().GetDevice(), Width, Height);
         ViewportWidgets[i].SetViewportInterface(&ViewportWidgets[i].GetSceneViewport());
 	}
 
@@ -386,6 +387,7 @@ void FViewportLayout::DestroyViewportLayout()
 	{
 		// delete ViewportWidgets[i];
 		// ViewportWidgets[i] = nullptr;
+        ViewportWidgets[i].GetSceneViewport().ReleaseResource();
 	}
 	delete TopSplitterH; TopSplitterH = nullptr;
 	delete BotSplitterH; BotSplitterH = nullptr;

@@ -136,6 +136,16 @@ void FRenderer::BeginFrame()
 #endif
 }
 
+void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
+{
+    Device.BeginFrame(InRenderTargetSet);
+    UseViewportRenderTargets(InRenderTargetSet);
+
+#if STATS
+    FGPUProfiler::Get().BeginFrame();
+#endif
+}
+
 void FRenderer::UseBackBufferRenderTargets()
 {
 	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
@@ -166,6 +176,27 @@ void FRenderer::UseViewportRenderTargets()
 	Device.SetSubViewport(0, 0,
 		static_cast<int32>(CurrentRenderTargets.Width),
 		static_cast<int32>(CurrentRenderTargets.Height));
+}
+
+void FRenderer::UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet)
+{
+    CurrentRenderTargets = InRenderTargetSet;
+    if (!CurrentRenderTargets.IsValid())
+    {
+        InvalidateSceneFinalTargets();
+		// Back Buffer 아마 쓰이면 안될텐데 여기 중단점 찍히면 확인
+		// 기존 단일 Viewport 구조에서 쓰이던 내용
+        UseBackBufferRenderTargets();
+        return;
+    }
+
+	// Render Pass 쪽으로 Clear 쪽은 넘기는게 나을듯
+
+	/*
+    Device.SetSubViewport(0, 0,
+                          static_cast<int32>(CurrentRenderTargets.Width),
+                          static_cast<int32>(CurrentRenderTargets.Height));
+	*/
 }
 
 void FRenderer::InvalidateSceneFinalTargets()

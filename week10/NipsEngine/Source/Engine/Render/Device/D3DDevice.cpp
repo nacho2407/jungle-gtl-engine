@@ -62,6 +62,33 @@ void FD3DDevice::EndFrame()
 	SwapChain->Present(0, PresentFlags);
 }
 
+void FD3DDevice::BeginFrame(FRenderTargetSet& InRenderTargetSet)
+{
+    DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
+    const float ClearMask[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);
+    DeviceContext->ClearDepthStencilView(InRenderTargetSet.DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    if (ViewportSceneColorRTV && ViewportSelectionMaskRTV && ViewportDepthStencilView)
+    {
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneColorRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneNormalRTV, ClearNormal);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneLightRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFogRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneWorldPosRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFXAARTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);
+        DeviceContext->ClearDepthStencilView(InRenderTargetSet.DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    }
+
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    DeviceContext->RSSetViewports(1, &ViewportInfo);
+
+    ID3D11RenderTargetView* FrameRTV = FrameBufferRTV.Get();
+    DeviceContext->OMSetRenderTargets(1, &FrameRTV, InRenderTargetSet.DepthStencilView);
+}
+
 void FD3DDevice::OnResizeViewport(int Width, int Height)
 {
 	if (!SwapChain) return;

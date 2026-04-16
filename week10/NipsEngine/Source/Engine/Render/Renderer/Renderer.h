@@ -45,10 +45,14 @@ public:
 
 	void PrepareBatchers(const FRenderBus& InRenderBus);
 	void BeginFrame();
+    void BeginViewportFrame(FRenderTargetSet InRenderTargetSet);
 	void Render(const FRenderBus& InRenderBus);
 	void EndFrame();
 	void UseBackBufferRenderTargets();
+	
+	// (deprecated) 단일 Viewport 구조에서 썼던 함수
 	void UseViewportRenderTargets();
+    void UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet);
 	void InvalidateSceneFinalTargets();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
