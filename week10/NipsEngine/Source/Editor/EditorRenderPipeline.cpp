@@ -55,12 +55,13 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     }
 
     // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
-    // Renderer.BeginFrame();
+    Renderer.BeginFrame();
     // Renderer.UseViewportRenderTargets();
 
     // 4개 뷰포트를 순서대로 렌더링
     for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
     {
+		// Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
         Renderer.BeginViewportFrame(Editor->GetViewportLayout().GetSceneViewport(i).GetViewportRenderTargets());
         RenderViewport(Renderer, i);
     }

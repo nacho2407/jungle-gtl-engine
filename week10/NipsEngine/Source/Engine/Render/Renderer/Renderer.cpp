@@ -138,7 +138,7 @@ void FRenderer::BeginFrame()
 
 void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
 {
-    Device.BeginFrame(InRenderTargetSet);
+    Device.BeginViewportFrame(InRenderTargetSet);
     UseViewportRenderTargets(InRenderTargetSet);
 
 #if STATS
