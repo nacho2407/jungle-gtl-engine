@@ -396,7 +396,8 @@
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LineBatchComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\ULightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
