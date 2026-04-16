@@ -36,21 +36,20 @@ void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionMa
 	// 4개 뷰포트 클라이언트 초기화
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		ViewportClients[i].SetSettings(&FEditorSettings::Get());
-		ViewportClients[i].Initialize(Window, EditorEngine);
-		ViewportClients[i].SetWorld(World);
-		ViewportClients[i].SetGizmo(SelectionManager->GetGizmo());
-		ViewportClients[i].SetSelectionManager(SelectionManager);
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetSettings(&FEditorSettings::Get());
+		ViewportWidgets[i].GetSceneViewport().GetClient().Initialize(Window, EditorEngine);
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetWorld(World);
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetGizmo(SelectionManager->GetGizmo());
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetSelectionManager(SelectionManager);
 		
 		// 상호 참조 연결
-		SceneViewports[i].SetClient(&ViewportClients[i]);
-		ViewportClients[i].SetViewport(&SceneViewports[i]);
-		ViewportClients[i].SetState(&ViewportStates[i]);
+        ViewportWidgets[i].GetSceneViewport().GetClient().SetViewport(&ViewportWidgets[i].GetSceneViewport());
+        ViewportWidgets[i].GetSceneViewport().GetClient().SetState(&ViewportWidgets[i].GetSceneViewport().GetState());
 
 		// 뷰포트 타입 설정 후 카메라 생성
-		ViewportClients[i].SetViewportType(kViewportTypes[i]);
-		ViewportClients[i].CreateCamera();
-		ViewportClients[i].ApplyCameraMode();
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetViewportType(kViewportTypes[i]);
+		ViewportWidgets[i].GetSceneViewport().GetClient().CreateCamera();
+		ViewportWidgets[i].GetSceneViewport().GetClient().ApplyCameraMode();
 	}
 }
 
@@ -71,7 +70,7 @@ void FViewportLayout::UpdateHoverStates()
 	// 1 - 1. 특정 뷰포트에서 기즈모 홀딩중이라면 스킵합니다.
 	for (int i = 0; i < MaxViewports; ++i)
 	{
-		if (ViewportClients[i].GetGizmo()->IsHolding())
+		if (ViewportWidgets[i].GetSceneViewport().GetClient().GetGizmo()->IsHolding())
 			return;
 	}
 
@@ -204,19 +203,19 @@ void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	// 50:50 초기 분할 (이후 BuildViewportLayout → SyncViewportRects 에서 최종 반영)
 	const int32 HalfW = W / 2;
 	const int32 HalfH = H / 2;
-
-	ViewportStates[0].Rect = { 0,     0,     HalfW,      HalfH };  // 좌상단
-	ViewportStates[1].Rect = { HalfW, 0,     W - HalfW,  HalfH };  // 우상단
-	ViewportStates[2].Rect = { 0,     HalfH, HalfW,      H - HalfH };  // 좌하단
-	ViewportStates[3].Rect = { HalfW, HalfH, W - HalfW,  H - HalfH };  // 우하단
+    
+	ViewportWidgets[0].GetSceneViewport().GetState().Rect = { 0, 0, HalfW, HalfH };               // 좌상단
+    ViewportWidgets[1].GetSceneViewport().GetState().Rect = { HalfW, 0, W - HalfW, HalfH };  // 우상단
+    ViewportWidgets[2].GetSceneViewport().GetState().Rect = { 0, HalfH, HalfW, H - HalfH };       // 좌하단
+    ViewportWidgets[3].GetSceneViewport().GetState().Rect = { HalfW, HalfH, W - HalfW, H - HalfH }; // 우하단
 
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		SceneViewports[i].SetRect(ViewportStates[i].Rect);
+		ViewportWidgets[i].GetSceneViewport().SetRect(ViewportWidgets[i].GetSceneViewport().GetState().Rect);
 
-		ViewportClients[i].SetViewportSize(
-			static_cast<float>(ViewportStates[i].Rect.Width),
-			static_cast<float>(ViewportStates[i].Rect.Height));
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetViewportSize(
+            static_cast<float>(ViewportWidgets[i].GetSceneViewport().GetState().Rect.Width),
+            static_cast<float>(ViewportWidgets[i].GetSceneViewport().GetState().Rect.Height));
 	}
 }
 
@@ -228,8 +227,8 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	// 4개 SViewport 생성 + ISlateViewport(FSceneViewport) 연결
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		ViewportWidgets[i] = new SViewport();
-		ViewportWidgets[i]->SetViewportInterface(&SceneViewports[i]);
+		// ViewportWidgets[i] = new SViewport();
+        ViewportWidgets[i].SetViewportInterface(&ViewportWidgets[i].GetSceneViewport());
 	}
 
 	// 스플리터 트리 구성
@@ -237,12 +236,12 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	//     SideLT (위)   = TopSplitterH → [0] 좌상단(Perspective), [1] 우상단(Top)
 	//     SideRB (아래) = BotSplitterH → [2] 좌하단(Front),       [3] 우하단(Right)
 	TopSplitterH = new SSplitterH();
-	TopSplitterH->SetSideLT(ViewportWidgets[0]);
-	TopSplitterH->SetSideRB(ViewportWidgets[1]);
+	TopSplitterH->SetSideLT(&ViewportWidgets[0]);
+	TopSplitterH->SetSideRB(&ViewportWidgets[1]);
 
 	BotSplitterH = new SSplitterH();
-	BotSplitterH->SetSideLT(ViewportWidgets[2]);
-	BotSplitterH->SetSideRB(ViewportWidgets[3]);
+	BotSplitterH->SetSideLT(&ViewportWidgets[2]);
+	BotSplitterH->SetSideRB(&ViewportWidgets[3]);
 
 	RootSplitterV = new SSplitterV();
 	RootSplitterV->SetSideLT(TopSplitterH);
@@ -326,15 +325,15 @@ void FViewportLayout::SyncViewportRects()
 					static_cast<int32>(Full.Y),
 					static_cast<int32>(Full.Width),
 					static_cast<int32>(Full.Height));
-				ViewportStates[i].Rect = VR;
-				SceneViewports[i].SetRect(VR);
-				ViewportClients[i].SetViewportSize(Full.Width, Full.Height);
+                ViewportWidgets[i].GetSceneViewport().GetState().Rect = VR;
+				ViewportWidgets[i].GetSceneViewport().SetRect(VR);
+				ViewportWidgets[i].GetSceneViewport().GetClient().SetViewportSize(Full.Width, Full.Height);
 			}
 			else
 			{
 				const FViewportRect ZeroVR(0, 0, 0, 0);
-				ViewportStates[i].Rect = ZeroVR;
-				SceneViewports[i].SetRect(ZeroVR);
+                ViewportWidgets[i].GetSceneViewport().GetState().Rect = ZeroVR;
+				ViewportWidgets[i].GetSceneViewport().SetRect(ZeroVR);
 			}
 		}
 		return;
@@ -343,9 +342,9 @@ void FViewportLayout::SyncViewportRects()
 	// 4분할 모드: 스플리터 트리에서 각 SViewport 의 FRect 를 읽어 반영
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		if (!ViewportWidgets[i]) continue;
+		// if (!ViewportWidgets[i]) continue;
 
-		const FRect& R = ViewportWidgets[i]->GetRect();
+		const FRect& R = ViewportWidgets[i].GetRect();
 		const FViewportRect VR(
 			static_cast<int32>(R.X),
 			static_cast<int32>(R.Y),
@@ -355,9 +354,9 @@ void FViewportLayout::SyncViewportRects()
 
 		// 스플리터 드래그로 바뀐 크기를 ViewportState, SceneViewport,
 		// ViewportClient 카메라 종횡비에 모두 반영합니다.
-		ViewportStates[i].Rect = VR;
-		SceneViewports[i].SetRect(VR);
-		ViewportClients[i].SetViewportSize(R.Width, R.Height);
+        ViewportWidgets[i].GetSceneViewport().GetState().Rect = VR;
+		ViewportWidgets[i].GetSceneViewport().SetRect(VR);
+		ViewportWidgets[i].GetSceneViewport().GetClient().SetViewportSize(R.Width, R.Height);
 	}
 }
 
@@ -385,8 +384,8 @@ void FViewportLayout::DestroyViewportLayout()
 
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		delete ViewportWidgets[i];
-		ViewportWidgets[i] = nullptr;
+		// delete ViewportWidgets[i];
+		// ViewportWidgets[i] = nullptr;
 	}
 	delete TopSplitterH; TopSplitterH = nullptr;
 	delete BotSplitterH; BotSplitterH = nullptr;

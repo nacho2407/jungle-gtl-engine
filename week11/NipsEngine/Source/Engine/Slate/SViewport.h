@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "SWindow.h"
+#include "Editor/Viewport/FSceneViewport.h"
 
 struct FViewportMouseEvent;
 class ISlateViewport;
@@ -23,10 +24,14 @@ public:
 	void SetViewportInterface(ISlateViewport* InInterface) { ViewportInterface = InInterface; }
 	ISlateViewport* GetViewportInterface() const { return ViewportInterface; }
 
+	FSceneViewport& GetSceneViewport() { return SceneViewport; }
+    const FSceneViewport& GetSceneViewport() const { return SceneViewport; }
+
 private:
 	FViewportMouseEvent MakeMouseEvent(int32 X, int32 Y) const;
 
 private:
 	ISlateViewport* ViewportInterface = nullptr;
+	FSceneViewport SceneViewport;
 };
 
