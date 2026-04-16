@@ -1051,6 +1051,6 @@
     <ClInclude Include="Source\Engine\GameFramework\SpotlightActor.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="KraftonEngine.rc" />
+    <ResourceCompile Include="jungle-gtl-week06.rc" />
   </ItemGroup>
 </Project>
