@@ -48,8 +48,8 @@ public:
 	FSelectionManager& GetSelectionManager() { return SelectionManager; }
 	const FSelectionManager& GetSelectionManager() const { return SelectionManager; }
 
-	FViewportLayout& GetViewportLayout() { return ViewportLayout; }
-	const FViewportLayout& GetViewportLayout() const { return ViewportLayout; }
+	FEditorViewportLayout& GetViewportLayout() { return ViewportLayout; }
+    const FEditorViewportLayout& GetViewportLayout() const { return ViewportLayout; }
 	FEditorRenderPipeline* GetEditorRenderPipeline() const;
 
 	FEditorMainPanel& GetMainPanel() { return MainPanel; }
@@ -87,6 +87,6 @@ public:
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel  MainPanel;
-	FViewportLayout   ViewportLayout;
+	FEditorViewportLayout   ViewportLayout;
 	TMap<int32, FName> ViewportPIEHandles;  // 뷰포트 인덱스 → PIE 월드 컨텍스트 핸들
 };

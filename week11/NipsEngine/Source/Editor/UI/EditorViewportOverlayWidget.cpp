@@ -119,7 +119,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 
     if (EditorEngine)
     {
-        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
         FEditorViewportClient& FocusedClient = Layout.GetViewportClient(FocusedIdx);
         float CameraMoveSpeed = FocusedClient.GetMoveSpeed();
@@ -172,10 +172,10 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		ImGuiWindowFlags_NoMove            |
 		ImGuiWindowFlags_NoInputs;
 
-	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
 	const FEditorRenderPipeline* RenderPipeline = EditorEngine->GetEditorRenderPipeline();
 
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
 
@@ -304,7 +304,7 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 
 	 if (!EditorEngine) return;
 	
-	FViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
 
 	// 1개 모드일 때는 바를 그리지 않음
 	if (!ViewportLayout.IsSingleViewportMode())
@@ -368,13 +368,13 @@ void FEditorViewportOverlayWidget::RenderBoxSelectionOverlay()
 		return;
 	}
 
-	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
 	ImDrawList* DrawList = ImGui::GetForegroundDrawList();
 	const bool bAdditive = InputSystem::Get().GetKey(VK_SHIFT);
 	const ImU32 RectColor = bAdditive ? IM_COL32(128, 240, 128, 220) : IM_COL32(128, 192, 255, 220);
 	const ImU32 FillColor = bAdditive ? IM_COL32(64, 180, 64, 40) : IM_COL32(64, 128, 220, 40);
 
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
 		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0)
