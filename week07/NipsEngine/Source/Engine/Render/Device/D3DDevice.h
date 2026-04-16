@@ -121,6 +121,10 @@ public:
 	void BeginFrame();
 	void EndFrame();
 
+	// 단일 Viewport 개선 중 임시 함수
+	// 입력 RenderTarget 에 대한 BeginFrame 설정 수행
+	void BeginFrame(FRenderTargetSet& InRenderTargetSet);
+
 	void OnResizeViewport(int width, int height);
 	void EnsureViewportRenderTargets(int width, int height);
 
