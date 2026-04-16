@@ -28,38 +28,44 @@ void URotatingMovementComponent::TickComponent(float DeltaTime)
         return;
     }
 
-    FRotator DeltaRotation = FRotator::MakeFromEuler(RotationRate * DeltaTime);
+    FQuat DeltaQuat = FQuat::MakeFromEuler(RotationRate * DeltaTime);
+    DeltaQuat.Normalize();
 
     // Pivot Offset이 존재하지 않는다면 로컬/월드 공간을 기준으로 한 회전을 수행한다.
     if (PivotTranslation.IsNearlyZero())
     {
+        FQuat CurrentQuat = UpdatedComponent->GetRelativeQuat();
+        FQuat ResultQuat;
+
         if (bRotationInLocalSpace)
         {
-            // 로컬 공간 기준 회전: RelativeRotation에 직접 delta를 더한다
-            FVector CurrentRot = UpdatedComponent->GetRelativeRotation();
-            CurrentRot += DeltaRotation.Euler();
-            UpdatedComponent->SetRelativeRotation(CurrentRot);
+            // 로컬 공간 기준 회전: 로컬 프레임에서 Delta를 합성 (CurrentQuat * Delta)
+            // 표준 수학에서 A*B는 B가 먼저 적용 — DeltaQuat이 로컬 좌표계에서 적용됨
+            ResultQuat = (CurrentQuat * DeltaQuat).GetNormalized();
         }
         else
         {
-            // 월드 공간 기준 회전: 월드 회전에 delta를 적용한 뒤 로컬로 환산한다
-            FQuat CurrentWorldQuat = UpdatedComponent->GetRelativeQuat();
-            FQuat DeltaQuat = DeltaRotation.Quaternion();
-            UpdatedComponent->SetRelativeRotationQuat((DeltaQuat * CurrentWorldQuat).GetNormalized());
+            // 월드 공간 기준 회전: 월드 프레임에서 Delta를 합성 (Delta * CurrentQuat)
+            // DeltaQuat이 바깥(월드 좌표계)에서 적용됨 — 짐벌 락 없음
+            ResultQuat = (DeltaQuat * CurrentQuat).GetNormalized();
         }
+
+        UpdatedComponent->SetRelativeRotationQuat(ResultQuat);
     }
     else
     {
         FTransform CurrentTransform = UpdatedComponent->GetRelativeTransform();
         FVector CurrentLocation = CurrentTransform.GetTranslation();
 
-        FQuat RotationQuat = DeltaRotation.Quaternion();
         FVector PivotOffset = CurrentTransform.GetRotation().RotateVector(PivotTranslation);
-
-        FVector NewLocation = (CurrentLocation + PivotOffset) - RotationQuat.RotateVector(PivotOffset);
+        FVector NewLocation = (CurrentLocation + PivotOffset) - DeltaQuat.RotateVector(PivotOffset);
         UpdatedComponent->SetRelativeLocation(NewLocation);
 
-        FVector NewRot = UpdatedComponent->GetRelativeRotation() + DeltaRotation.Euler();
-        UpdatedComponent->SetRelativeRotation(NewRot);
+        // 피벗 회전도 쿼터니언으로 합성 — bRotationInLocalSpace 존중
+        FQuat CurrentQuat = UpdatedComponent->GetRelativeQuat();
+        FQuat ResultQuat = bRotationInLocalSpace
+            ? (CurrentQuat * DeltaQuat).GetNormalized()
+            : (DeltaQuat * CurrentQuat).GetNormalized();
+        UpdatedComponent->SetRelativeRotationQuat(ResultQuat);
     }
 }
