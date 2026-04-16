@@ -17,9 +17,9 @@ struct FViewportMouseEvent;
 class FSceneViewport : public FViewport, public ISlateViewport
 {
 public:
-    void SetClient(const FEditorViewportClient& InClient) { Client = InClient; }
-    FEditorViewportClient& GetClient() { return Client; }
-    const FEditorViewportClient& GetClient() const { return Client; }
+    void SetClient(FEditorViewportClient* InClient) { Client = InClient; }
+    FEditorViewportClient* GetClient() { return Client; }
+    const FEditorViewportClient* GetClient() const { return Client; }
 
 	/*
 	* ISlateViewport Interface
@@ -63,8 +63,8 @@ public:
 	ID3D11ShaderResourceView* GetOutSRV() const { return ViewportSceneColorSRV.Get(); }
 
 private:
-	// Viewport 구조 재편 도중 다형성을 우선 빼고 구현
-    FEditorViewportClient Client;
+	// FViewport 내에서 FViewportClient 로 추상화하는 것이 맞지만, 현재로썬 다형성을 제대로 활용하지 않는 상태라 임시로 다음과 같이 구성
+    FEditorViewportClient* Client = nullptr;
     FEditorViewportState State;
 
 	TComPtr<ID3D11Texture2D> ViewportSceneColorTexture;

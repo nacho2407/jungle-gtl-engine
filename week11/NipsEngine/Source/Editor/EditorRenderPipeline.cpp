@@ -52,9 +52,9 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIndex)
 {
-    FEditorViewportClient& VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
+    FEditorViewportClient* VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
 
-    FViewportCamera* Camera = VC.GetCamera();
+    FViewportCamera* Camera = VC->GetCamera();
     if (!Camera)
         return;
 
@@ -62,7 +62,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     //    - ViewRect : 화면 내 서브 영역 (BuildSceneView가 State->Rect에서 채움)
     //    - ViewMode : 뷰포트별 독립 모드 (기본값 EViewMode::Lit)
     FSceneView SceneView;
-    VC.BuildSceneView(SceneView);
+    VC->BuildSceneView(SceneView);
 
     // 2. 렌더링 대상을 서브 영역으로 제한
     const FViewportRect& Rect = SceneView.ViewRect;
@@ -88,7 +88,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.Clear();
 
     // 각 뷰포트는 자신이 참조하는 월드를 렌더링합니다.
-    UWorld*                World = VC.GetFocusedWorld();
+    UWorld*                World = VC->GetFocusedWorld();
     const FEditorSettings& Settings = Editor->GetSettings();
     const FShowFlags&      ShowFlags = Settings.ShowFlags;
     const EViewMode        ViewMode = SceneView.ViewMode;
@@ -106,7 +106,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, Camera->IsOrthographic());
 
     // 이 뷰포트가 편집 모드일 때만 기즈모·선택 오버레이를 그립니다.
-    if (VC.GetPlayState() == EViewportPlayState::Editing)
+    if (VC->GetPlayState() == EViewportPlayState::Editing)
     {
         if (UGizmoComponent* Gizmo = Editor->GetGizmo())
         {
@@ -116,7 +116,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
                 Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
         }
 
-        Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC.GetViewportState()->bHovered);
+        Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
         Collector.CollectSelection(Editor->GetSelectionManager().GetSelectedActors(), ShowFlags, ViewMode, Bus);
     }
 
