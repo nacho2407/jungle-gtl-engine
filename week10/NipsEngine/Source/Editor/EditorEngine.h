@@ -60,18 +60,26 @@ public:
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
 	UWorld* GetFocusedWorld() const
 	{
-		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetFocusedWorld();
+        const FEditorViewportClient* FocusedClient =
+            ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+        return FocusedClient ? FocusedClient->GetFocusedWorld() : nullptr;
 	}
 
 	// 주의! Editor State가 따로 존재하는 것이 아닙니다. 에디터가 현재 포커스한 뷰포트의 상태를 Get/Set합니다.
 	EViewportPlayState GetEditorState() const
 	{
-		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetPlayState();
+        const FEditorViewportClient* FocusedClient =
+            ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+        return FocusedClient ? FocusedClient->GetPlayState() : EViewportPlayState::Editing;
 	}
 
 	void SetEditorState(EViewportPlayState InState)
 	{
-		ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).SetPlayState(InState);
+        if (FEditorViewportClient* FocusedClient =
+                ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()))
+        {
+            FocusedClient->SetPlayState(InState);
+        }
 	}
 
 	// PIE 모드 컨트롤 함수
