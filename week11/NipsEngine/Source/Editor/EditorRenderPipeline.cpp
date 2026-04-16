@@ -3,12 +3,11 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/ViewportCamera.h"
 #include "Render/Renderer/Renderer.h"
-#include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
-#include "Engine/Runtime/WindowsWindow.h"
 #include "Runtime/SceneView.h"
+#include "Engine/Component/GizmoComponent.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
@@ -34,35 +33,12 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
     if (!Editor->GetFocusedWorld())
         return;
 
-    // 화면 Resize 목적으로 render 전에 화면 resizing
-    const FViewportRect& HostRect = Editor->GetViewportLayout().GetHostRect();
-    int32                TargetWidth = HostRect.Width;
-    int32                TargetHeight = HostRect.Height;
-
-    if ((TargetWidth <= 0 || TargetHeight <= 0) && Editor->GetWindow())
-    {
-        TargetWidth = static_cast<int32>(Editor->GetWindow()->GetWidth());
-        TargetHeight = static_cast<int32>(Editor->GetWindow()->GetHeight());
-    }
-
-    if (TargetWidth > 0 && TargetHeight > 0)
-    {
-        Renderer.GetFD3DDevice().EnsureViewportRenderTargets(TargetWidth, TargetHeight);
-    }
-    else
-    {
-        Renderer.InvalidateSceneFinalTargets();
-    }
-
     // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
     Renderer.BeginFrame();
-    // Renderer.UseViewportRenderTargets();
 
     // 4개 뷰포트를 순서대로 렌더링
     for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
     {
-		// Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
-        Renderer.BeginViewportFrame(Editor->GetViewportLayout().GetSceneViewport(i).GetViewportRenderTargets());
         RenderViewport(Renderer, i);
     }
 
@@ -92,11 +68,21 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     const FViewportRect& Rect = SceneView.ViewRect;
     if (Rect.Width <= 0 || Rect.Height <= 0)
         return;
-    const FViewportRect& HostRect = Editor->GetViewportLayout().GetHostRect();
-    const int32          LocalX = Rect.X - HostRect.X;
-    const int32          LocalY = Rect.Y - HostRect.Y;
 
-    // Renderer.GetFD3DDevice().SetSubViewport(LocalX, LocalY, Rect.Width, Rect.Height);
+    FSceneViewport& SceneViewport = Editor->GetViewportLayout().GetSceneViewport(ViewportIndex);
+    
+	// Width, Height 변경 여부에 따라 Resource 버퍼 재생성
+	// 만약 최소화 등의 상황으로 (H, W) == (0, 0) 일 경우 Render 안함
+	if (!SceneViewport.EnsureResource(
+            Renderer.GetFD3DDevice().GetDevice(),
+            static_cast<uint32>(Rect.Width),
+            static_cast<uint32>(Rect.Height)))
+    {
+        return;
+    }
+
+    // Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
+    Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
 
     // 3. 이 뷰포트용 렌더 데이터 수집
     Bus.Clear();
@@ -110,8 +96,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
-    Bus.SetViewportOrigin(FVector2(static_cast<float>(LocalX), static_cast<float>(LocalY)));
-    Bus.SetFXAAEnabled(Settings.bEnableFXAA);
+    Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+    Bus.SetFXAAEnabled(Settings.bEnableFXAA && !Camera->IsOrthographic());
 
     const FFrustum& ViewFrustum = Camera->GetFrustum();
     Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
@@ -119,9 +105,6 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
     Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, Camera->IsOrthographic());
 
-    // 뷰포트별 카메라 기준으로 기즈모 스케일 결정
-    // TickInteraction 에서 한 번만 처리하면 마지막 뷰포트가 다른 뷰포트의 스케일을 덮어쓰므로
-    // CollectGizmo 직전에 각 뷰포트 카메라로 적용합니다.
     // 이 뷰포트가 편집 모드일 때만 기즈모·선택 오버레이를 그립니다.
     if (VC.GetPlayState() == EViewportPlayState::Editing)
     {
@@ -132,6 +115,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
             else
                 Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
         }
+
         Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC.GetViewportState()->bHovered);
         Collector.CollectSelection(Editor->GetSelectionManager().GetSelectedActors(), ShowFlags, ViewMode, Bus);
     }

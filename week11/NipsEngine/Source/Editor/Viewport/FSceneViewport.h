@@ -56,6 +56,7 @@ public:
 
 	// 단일 Viewport 개선 작업 도중 Device 를 임시로 받게함
 	void InitializeResource(ID3D11Device* Device, uint32 Width, uint32 Height);
+    bool EnsureResource(ID3D11Device* Device, uint32 Width, uint32 Height);
     void ReleaseResource();
 
 	// 최종 출력 (임시용)
