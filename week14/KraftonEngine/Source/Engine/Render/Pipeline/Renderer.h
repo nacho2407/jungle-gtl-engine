@@ -65,7 +65,7 @@ private:
 	void InitializePassRenderStates();
 
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
-	void UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene);
+	void UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene);
 	//void UpdateLightBuffer(ID3D11DeviceContext* Context, const )
 
 	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼

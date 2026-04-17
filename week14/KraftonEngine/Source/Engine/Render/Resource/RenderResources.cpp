@@ -6,6 +6,7 @@ void FRenderResources::Create(ID3D11Device* InDevice)
 	FrameBuffer.Create(InDevice, sizeof(FFrameConstants));
 	PerObjectConstantBuffer.Create(InDevice, sizeof(FPerObjectConstants));
 	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData));
+	ForwardLights.Create(InDevice, 32);
 
 	// s0: LinearClamp (PostProcess, UI, 기본)
 	{
@@ -54,6 +55,7 @@ void FRenderResources::Release()
 	FrameBuffer.Release();
 	PerObjectConstantBuffer.Release();
 	LightingConstantBuffer.Release();
+	ForwardLights.Release();
 	if (LinearClampSampler) { LinearClampSampler->Release(); LinearClampSampler = nullptr; }
 	if (LinearWrapSampler) { LinearWrapSampler->Release();  LinearWrapSampler = nullptr; }
 	if (PointClampSampler) { PointClampSampler->Release();  PointClampSampler = nullptr; }

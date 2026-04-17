@@ -1,6 +1,5 @@
 ﻿#include "Renderer.h"
 
-#include <iostream>
 #include <algorithm>
 #include <functional>
 #include "Resource/ResourceManager.h"
@@ -16,6 +15,7 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Materials/MaterialManager.h"
 #include "Engine/Render/Pipeline/ForwardLightData.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -57,7 +57,7 @@ void FRenderer::Create(HWND hWindow)
 
 	if (Device.GetDevice() == nullptr)
 	{
-		std::cout << "Failed to create D3D Device." << std::endl;
+		UE_LOG("Failed to create D3D Device.");
 	}
 
 	FShaderManager::Get().Initialize(Device.GetDevice());
@@ -335,7 +335,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, Frame);
-		UpdateLightBuffer(Context, Scene);
+		UpdateLightBuffer(Device.GetDevice(), Context, Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -773,7 +773,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene)
+void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene)
 {
 	//AmbientLight & DirectionalLight Data Upload
 	FLightingCBData GlobalLightingData = {};
@@ -791,8 +791,62 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Sc
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
 	}
 
-	GlobalLightingData.NumActivePointLights = 0; //똥값. 이후 교체필요
-	GlobalLightingData.NumActiveSpotLights = 0; //똥값. 이후 교체필요
+	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
+	if (!PointLightParams.empty())
+	{
+		GlobalLightingData.NumActivePointLights = static_cast<uint32>(PointLightParams.size());
+	}
+	else
+	{
+		GlobalLightingData.NumActivePointLights = 0;
+	}
+
+
+	const TArray<FSpotLightParams>& SpotLightParams = Scene.GetSpotLights();
+	if (!SpotLightParams.empty())
+	{
+		GlobalLightingData.NumActiveSpotLights = static_cast<uint32>(SpotLightParams.size());
+	}
+	else
+	{
+		GlobalLightingData.NumActiveSpotLights = 0;
+	}
+
+	TArray<FLightInfo> Infos;
+	for (const FPointLightParams& PointLigth : PointLightParams)
+	{
+		Infos.emplace_back(PointLigth.ToLightInfo());
+
+	}
+	for (const FSpotLightParams& SpotLight : SpotLightParams)
+	{
+		Infos.emplace_back(SpotLight.ToLightInfo());
+	}
+
+	static uint32 LightDebugLogCounter = 0;
+	++LightDebugLogCounter;
+	if (LightDebugLogCounter % 60 == 0)
+	{
+		if (!Infos.empty())
+		{
+			const FLightInfo& FirstLight = Infos[0];
+			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight{Type=%u, Pos=(%.3f, %.3f, %.3f), Intensity=%.3f, Radius=%.3f, Falloff=%.3f}",
+				GlobalLightingData.NumActivePointLights,
+				GlobalLightingData.NumActiveSpotLights,
+				FirstLight.LightType,
+				FirstLight.Position.X, FirstLight.Position.Y, FirstLight.Position.Z,
+				FirstLight.Intensity,
+				FirstLight.AttenuationRadius,
+				FirstLight.FalloffExponent);
+		}
+		else
+		{
+			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight=None",
+				GlobalLightingData.NumActivePointLights,
+				GlobalLightingData.NumActiveSpotLights);
+		}
+	}
+
 	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
 	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
 
@@ -800,4 +854,8 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Sc
 	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 	Context->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
+
+
+	Resources.ForwardLights.Update(InDevice, Context, Infos);
+	Context->PSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
 }

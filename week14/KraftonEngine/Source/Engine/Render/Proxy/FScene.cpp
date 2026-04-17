@@ -323,3 +323,87 @@ void FScene::RemoveGlobalDirectionalLight(const UDirectionalLightComponent* Owne
 	}
 }
 
+void FScene::AddPointLight(const UPointLightComponent* Owner, const FPointLightParams& Params)
+{
+	for (FPointLightEntry& Entry : PointLights)
+	{
+		if (Entry.PointLightOwner == Owner)
+		{
+			Entry.Params = Params;
+			return;
+		}
+	}
+
+	PointLights.push_back({ Owner, Params });
+}
+
+void FScene::RemovePointLight(const UPointLightComponent* Owner)
+{
+	for (size_t Index = 0; Index < PointLights.size(); ++Index)
+	{
+		if (PointLights[Index].PointLightOwner == Owner)
+		{
+			PointLights.erase(PointLights.begin() + Index);
+			return;
+		}
+	}
+}
+
+const TArray<FPointLightParams>& FScene::GetPointLights() const
+{
+	static TArray<FPointLightParams> EmptyArray;
+	if (PointLights.empty())
+	{
+		return EmptyArray;
+	}
+	static TArray<FPointLightParams> CachedParams;
+	CachedParams.clear();
+	for (const FPointLightEntry& Entry : PointLights)
+	{
+		CachedParams.push_back(Entry.Params);
+	}
+	return CachedParams;
+}
+
+void FScene::AddSpotLight(const USpotLightComponent* Owner, const FSpotLightParams& Params)
+{
+	for (FSpotLightEntry& Entry : SpotLights)
+	{
+		if (Entry.SpotLightOwner == Owner)
+		{
+			Entry.Params = Params;
+			return;
+		}
+	}
+
+	SpotLights.push_back({ Owner, Params });
+}
+
+void FScene::RemoveSpotLight(const USpotLightComponent* Owner)
+{
+	for (size_t Index = 0; Index < SpotLights.size(); ++Index)
+	{
+		if (SpotLights[Index].SpotLightOwner == Owner)
+		{
+			SpotLights.erase(SpotLights.begin() + Index);
+			return;
+		}
+	}
+}
+
+const TArray<FSpotLightParams>& FScene::GetSpotLights() const
+{
+	static TArray<FSpotLightParams> EmptyArray;
+	if (SpotLights.empty())
+	{
+		return EmptyArray;
+	}
+	static TArray<FSpotLightParams> CachedParams;
+	CachedParams.clear();
+	for (const FSpotLightEntry& Entry : SpotLights)
+	{
+		CachedParams.push_back(Entry.Params);
+	}
+	return CachedParams;
+}
+
