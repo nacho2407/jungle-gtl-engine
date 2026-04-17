@@ -400,7 +400,8 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
-	BuildPassEvents(PrePassEvents, Context, Frame, Cache);
+	TArray<FPassEvent> PostPassEvents;
+	BuildPassEvents(PrePassEvents, PostPassEvents, Context, Frame, Cache);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
@@ -421,6 +422,11 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		GPU_SCOPE_STAT(PassName);
 
 		DrawCommandList.SubmitRange(Start, End, Device, Context, Cache);
+
+		for (auto& PostPassEvent : PostPassEvents)
+		{
+			PostPassEvent.TryExecute(CurPass);
+		}
 	}
 
 	CleanupPassState(Context, Cache);
@@ -435,6 +441,7 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 	ID3D11ShaderResourceView* nullSRV = nullptr;
 	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
 	Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
 	Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
 
 	Cache.Cleanup(Context);
@@ -445,6 +452,7 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 // BuildPassEvents — 패스 루프 Pre/Post 이벤트 등록
 // ============================================================
 void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
+	TArray<FPassEvent>& PostPassEvents,
 	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
 {
 	// CopyDepth: PreDepth 완료 직후(Opaque 진입 전) Depth 복사 → SceneDepth SRV 바인딩
@@ -455,10 +463,41 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 			{
 				Context->OMSetRenderTargets(0, nullptr, nullptr);
 				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
-				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+
+				// MRT: Opaque 패스에서 Normal RT를 SV_TARGET1로 사용
+				if (Frame.NormalRTV)
+				{
+					ID3D11RenderTargetView* RTVs[2] = { Cache.RTV, Frame.NormalRTV };
+					Context->OMSetRenderTargets(2, RTVs, Cache.DSV);
+				}
+				else
+				{
+					Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+				}
 
 				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
 				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
+
+				Cache.bForceAll = true;
+			}
+			});
+	}
+
+	// Opaque 완료 후: MRT 해제 → 1 RTV 복귀 + Normal SRV 바인딩
+	if (Frame.NormalRTV)
+	{
+		PostPassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
+			[Context, &Frame, &Cache]()
+			{
+				// MRT 해제 → RTV 1개로 복귀 (Normal RT를 SRV로 읽기 위해 RTV에서 분리)
+				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+
+				// Normal SRV 바인딩
+				if (Frame.NormalSRV)
+				{
+					ID3D11ShaderResourceView* normalSRV = Frame.NormalSRV;
+					Context->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &normalSRV);
+				}
 
 				Cache.bForceAll = true;
 			}
@@ -683,6 +722,24 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.PerShaderCB[0] = SceneDepthCB;
 				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, DepthShader, nullptr, nullptr, 2);
+			}
+		}
+
+		// WorldNormal (UserBits=3 → SceneDepth 뒤)
+		if (CollectViewMode == EViewMode::WorldNormal)
+		{
+			FShader* NormalShader = FShaderManager::Get().GetShader(EShaderType::SceneNormal);
+			if (NormalShader)
+			{
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = NormalShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.VertexCount = 3;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, NormalShader, nullptr, nullptr, 3);
 			}
 		}
 
