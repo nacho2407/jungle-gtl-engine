@@ -802,12 +802,25 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Sc
 		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
 	}
+	else
+	{
+		// 폴백: 씬에 AmbientLight 없으면 최소 ambient 보장 (검정 방지)
+		GlobalLightingData.Ambient.Intensity = 0.15f;
+		GlobalLightingData.Ambient.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 	if (Scene.HasGlobalDirectionalLight())
 	{
 		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
 		GlobalLightingData.Directional.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
+	}
+	else
+	{
+		// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
+		GlobalLightingData.Directional.Intensity = 1.0f;
+		GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
+		GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
 	}
 
 	GlobalLightingData.NumActivePointLights = 0; //똥값. 이후 교체필요
