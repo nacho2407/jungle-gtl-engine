@@ -117,6 +117,22 @@ void AActor::PostDuplicate(UObject* Original)
     bPrimitiveCacheDirty = true;
 }
 
+void AActor::Serialize(FArchive& Ar)
+{
+	Ar.BeginObject(std::to_string(GetUUID()));
+	UObject::Serialize(Ar);
+	Ar << "Visible" << bVisible;
+	Ar << "Editor Only" << bTickInEditor;
+	Ar.EndObject();
+
+	for (UActorComponent* Comp : OwnedComponents)
+	{
+		Ar.BeginObject(std::to_string(Comp->GetUUID()));
+		Comp->Serialize(Ar);
+		Ar.EndObject();
+	}
+}
+
 UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
 {
     if (!Class)

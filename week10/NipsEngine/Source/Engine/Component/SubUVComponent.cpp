@@ -29,6 +29,16 @@ void USubUVComponent::PostDuplicate(UObject* Original)
     bIsExecute = Orig->bIsExecute;
 }
 
+void USubUVComponent::Serialize(FArchive& Ar)
+{
+	UBillboardComponent::Serialize(Ar);
+	Ar << "Particle" << CachedParticle->Texture->GetFilePathRef();
+	Ar << "Width" << Width;
+	Ar << "Height" << Height;
+	Ar << "PlayRate" << PlayRate;
+	Ar << "bLoop" << bLoop;
+}
+
 void USubUVComponent::SetParticle(const FName& InParticleName)
 {
 	ParticleName = InParticleName;

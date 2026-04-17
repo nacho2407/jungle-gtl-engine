@@ -13,6 +13,8 @@ public:
 
 	void PostDuplicate(UObject* Original) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	void BeginPlay() override;
 
 	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override { if (SlotIndex == 0) Materials[0] = InMaterial; }

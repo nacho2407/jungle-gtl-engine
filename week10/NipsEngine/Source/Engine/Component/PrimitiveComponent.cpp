@@ -20,6 +20,13 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	NotifySpatialIndexDirty();
 }
 
+void UPrimitiveComponent::Serialize(FArchive& Ar)
+{
+	USceneComponent::Serialize(Ar);
+	Ar << "Visible" << bIsVisible;
+	Ar << "Enable Cull" << bEnableCull;
+}
+
 void UPrimitiveComponent::SetVisibility(bool bVisible)
 {
 	if (bIsVisible == bVisible)

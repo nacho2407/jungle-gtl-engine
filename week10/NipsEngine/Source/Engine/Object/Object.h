@@ -4,6 +4,7 @@
 #include "Object/FName.h"
 #include "Core/Singleton.h"
 #include "Core/PropertyTypes.h"
+#include "Serialization/Archive.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
@@ -99,6 +100,8 @@ public:
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {}
 	virtual void PostEditProperty(const char* PropertyName) {}
 	void CopyPropertiesFrom(UObject* Src);
+
+	virtual void Serialize(FArchive& Ar);
 
 	static const FTypeInfo s_TypeInfo;
 

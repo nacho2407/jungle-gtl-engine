@@ -41,6 +41,20 @@ void UStaticMeshComponent::PostDuplicate(UObject* Original)
 	}
 }
 
+void UStaticMeshComponent::Serialize(FArchive& Ar)
+{
+	UMeshComponent::Serialize(Ar);
+	Ar << "ObjStaticMeshAsset" << StaticMeshAssetPath;
+
+	if (Ar.IsLoading())
+	{
+		if (!StaticMeshAssetPath.empty())
+		{
+			SetStaticMesh(FResourceManager::Get().LoadStaticMesh(StaticMeshAssetPath));
+		}
+	}
+}
+
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 {
     if (StaticMeshAsset == InStaticMesh)

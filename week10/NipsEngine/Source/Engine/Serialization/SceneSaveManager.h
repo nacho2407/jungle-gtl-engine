@@ -45,6 +45,11 @@ public:
 	static void LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext,
 	                              FEditorCameraState* OutCameraState = nullptr);
 
+	static void Save(const FString& FilePath, FWorldContext& WorldContext,
+					 const FEditorCameraState* CameraState = nullptr);
+	static void Load(const FString& FilePath, FWorldContext& OutWorldContext,
+					 FEditorCameraState* OutCameraState = nullptr);
+
 	static TArray<FString> GetSceneFileList();
 
 private:
