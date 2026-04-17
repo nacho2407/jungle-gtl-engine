@@ -84,6 +84,7 @@ private:
 	void StartQueuedPlaySessionRequest();
 	void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
 	void EndPlayMap();
+	void LoadStartLevel();
 
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
@@ -96,4 +97,5 @@ private:
 	std::optional<FPlayInEditorSessionInfo> PlayInEditorSessionInfo;
 	// 종료 요청 지연 플래그. Tick 선두에서 확인 후 EndPlayMap 호출.
 	bool bRequestEndPlayMapQueued = false;
+
 };

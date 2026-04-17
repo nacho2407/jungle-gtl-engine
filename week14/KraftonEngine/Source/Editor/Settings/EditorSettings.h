@@ -33,7 +33,7 @@ public:
 	float PerspCamFarClip = 1000.0f;
 
 	// File paths
-	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
+	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드
 
 	// UI 위젯 표시 여부
 	struct FUIVisibility
