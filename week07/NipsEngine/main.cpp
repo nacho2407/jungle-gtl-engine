@@ -9,7 +9,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #ifdef _MSC_VER
 #ifdef _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	//_CrtSetBreakAlloc(9309);
+	//_CrtSetBreakAlloc(1642);
 #endif
 #endif
 	return Launch(hInstance, nShowCmd);
