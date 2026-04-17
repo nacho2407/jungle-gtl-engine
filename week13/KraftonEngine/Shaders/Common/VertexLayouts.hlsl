@@ -73,6 +73,16 @@ struct PS_Input_Full
     float2 texcoord : TEXTCOORD;
 };
 
+// SV_POSITION + Normal + Color + TexCoord + Tangent(StaticMesh)
+struct PS_Input_PNCTT
+{
+    float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR;
+    float2 texcoord : TEXTCOORD;
+    float4 tangent : TANGENT;
+};
+
 // SV_POSITION + UV (PostProcess: HeightFog, Outline, SceneDepth)
 struct PS_Input_UV
 {
