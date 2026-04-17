@@ -507,6 +507,7 @@
     <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h" />
+    <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />

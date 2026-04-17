@@ -4,6 +4,7 @@
 #include "Render/Types/RenderStateTypes.h"
 #include "Math/Vector.h"
 #include "Core/CoreTypes.h"
+#include "Render/Types/MaterialTextureSlot.h"
 
 class FShader;
 class FMeshBuffer;
@@ -41,7 +42,9 @@ struct FDrawCommand
 	// ===== Bindings =====
 	FConstantBuffer*         PerObjectCB    = nullptr;   // b1: Model + Color
 	FConstantBuffer*         PerShaderCB[2] = {};        // [0]=b2 (PerShader0), [1]=b3 (PerShader1)
-	ID3D11ShaderResourceView* DiffuseSRV    = nullptr;   // t0: 디퓨즈 텍스처
+
+	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {}; //t0 ~ t7 텍스처 SRV
+ 
 
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)

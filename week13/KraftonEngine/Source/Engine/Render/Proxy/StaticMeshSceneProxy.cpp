@@ -1,10 +1,11 @@
-#include "Render/Proxy/StaticMeshSceneProxy.h"
+﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Render/Types/MaterialTextureSlot.h"
 
 #include <algorithm>
 
@@ -12,8 +13,9 @@ namespace
 {
 	bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
 	{
-		const uintptr_t ASRV = reinterpret_cast<uintptr_t>(A.DiffuseSRV);
-		const uintptr_t BSRV = reinterpret_cast<uintptr_t>(B.DiffuseSRV);
+		//Todo 언젠가 Diffuse말고 범용적인 딴걸로
+		const uintptr_t ASRV = reinterpret_cast<uintptr_t>(A.SRVs[(int)EMaterialTextureSlot::Diffuse]);
+		const uintptr_t BSRV = reinterpret_cast<uintptr_t>(B.SRVs[(int)EMaterialTextureSlot::Diffuse]);
 		if (ASRV != BSRV)
 		{
 			return ASRV < BSRV;
@@ -102,7 +104,7 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 		CurrentLOD = 0;
 		MeshBuffer = nullptr;
 		SectionDraws.clear();
-	
+
 		return;
 	}
 
@@ -136,10 +138,14 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 
 				if (Mat)
 				{
-					UTexture2D* DiffuseTex = nullptr;
-					if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+
+					for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
 					{
-						Draw.DiffuseSRV = DiffuseTex->GetSRV();
+						UTexture2D* Texture = nullptr;
+						if (Mat->GetTextureParameter(MaterialTextureSlot::ToString(s) + "Texture", Texture))
+						{
+							Draw.SRVs[s] = Texture->GetSRV();
+						}
 					}
 
 					// 머티리얼 기반 렌더 상태 전파
