@@ -11,6 +11,7 @@
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
+#include <filesystem>
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -27,11 +28,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	MainPanel.Create(Window, Renderer, this);
 
-	// World
-	if (WorldList.empty())
-	{
-		CreateWorldContext(EWorldType::Editor, FName("Default"));
-	}
+	// 기본 월드 생성 — 모든 서브시스템 초기화의 기반
+	CreateWorldContext(EWorldType::Editor, FName("Default"));
 	SetActiveWorld(WorldList[0].ContextHandle);
 	GetWorld()->InitWorld();
 
@@ -42,6 +40,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 뷰포트 레이아웃 초기화 + 저장된 설정 복원
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
 	ViewportLayout.LoadFromSettings();
+
+	// EditorStartLevel이 설정돼 있으면 기본 월드를 교체 (EditorSceneWidget::LoadScene과 동일 플로우)
+	LoadStartLevel();
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
@@ -318,6 +319,62 @@ void UEditorEngine::NewScene()
 	SelectionManager.SetWorld(GetWorld());
 
 	ResetViewport();
+}
+
+void UEditorEngine::LoadStartLevel()
+{
+	const FString& StartLevel = FEditorSettings::Get().EditorStartLevel;
+	if (StartLevel.empty())
+	{
+		return;
+	}
+
+	std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
+		/ (FPaths::ToWide(StartLevel) + FSceneSaveManager::SceneExtension);
+	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
+
+	// EditorSceneWidget::LoadScene과 동일한 플로우
+	ClearScene();
+
+	FWorldContext LoadCtx;
+	FPerspectiveCameraData CamData;
+	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
+	if (!LoadCtx.World)
+	{
+		// 로드 실패 시 빈 씬으로 복구
+		NewScene();
+		return;
+	}
+
+	WorldList.push_back(LoadCtx);
+	SetActiveWorld(LoadCtx.ContextHandle);
+	SelectionManager.SetWorld(LoadCtx.World);
+	LoadCtx.World->WarmupPickingData();
+
+	ResetViewport();
+
+	// ResetViewport()가 카메라를 기본값으로 초기화하므로 그 이후에 복원
+	if (CamData.bValid)
+	{
+		for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
+		{
+			if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective
+				|| VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
+			{
+				if (UCameraComponent* Cam = VC->GetCamera())
+				{
+					Cam->SetWorldLocation(CamData.Location);
+					Cam->SetRelativeRotation(CamData.Rotation);
+					FCameraState CS = Cam->GetCameraState();
+					CS.FOV = CamData.FOV;
+					CS.NearZ = CamData.NearClip;
+					CS.FarZ = CamData.FarClip;
+					Cam->SetCameraState(CS);
+				}
+				break;
+			}
+		}
+	}
 }
 
 void UEditorEngine::ClearScene()

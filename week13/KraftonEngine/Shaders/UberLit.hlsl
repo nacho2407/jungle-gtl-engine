@@ -21,7 +21,7 @@
 #endif
 
 #ifndef DEBUG_LIGHTS
-#define DEBUG_LIGHTS 1
+#define DEBUG_LIGHTS 0
 #endif
 
 // ── 라이팅 구조체 & 리소스 바인딩 ──
