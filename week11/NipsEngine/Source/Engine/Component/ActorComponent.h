@@ -34,6 +34,8 @@ public:
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	void PostEditProperty(const char* PropertyName) override {}
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	// CopyPropertiesFrom 은 UObject 에 정의됩니다.
 	// 컴포넌트-컴포넌트 간 소유 관계(Owner, Parent 등)는 Duplicate() 호출 측에서 별도 처리해야 합니다.
 

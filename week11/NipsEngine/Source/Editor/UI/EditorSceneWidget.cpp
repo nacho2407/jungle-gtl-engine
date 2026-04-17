@@ -89,7 +89,8 @@ void FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 			CamState.bValid = true;
 		}
 
-		FSceneSaveManager::SaveSceneAsJSON(FinalSceneName, *Ctx, &CamState);
+		//FSceneSaveManager::SaveSceneAsJSON(FinalSceneName, *Ctx, &CamState);
+		FSceneSaveManager::Save(FinalSceneName, *Ctx, &CamState);
 
 		const std::filesystem::path SavedPath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
 			/ (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension);
@@ -123,7 +124,8 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 	EditorEngine->ClearScene();
 	FWorldContext LoadCtx;
 	FEditorCameraState LoadedCam;
-	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
+	//FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
+	FSceneSaveManager::Load(FilePath, LoadCtx, &LoadedCam);
 	if (LoadCtx.World)
 	{
 		EditorEngine->GetWorldList().push_back(LoadCtx);

@@ -32,16 +32,27 @@ void UDecalComponent::PostDuplicate(UObject* Original)
     UPrimitiveComponent::PostDuplicate(Original);
 
     const UDecalComponent* Orig = Cast<UDecalComponent>(Original);
+	SetMaterial(Orig->GetMaterial()); // 얕은 복사 — ResourceManager 가 소유
+}
 
-	if (UMaterialInstance* OrigMatInst = Cast<UMaterialInstance>(Orig->Materials[0]))
+void UDecalComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+	Ar << "Material" << Materials[0]->GetNameRef();
+	Ar << "Size" << DecalSize;
+	Ar << "Color" << DecalColor;
+	Ar << "Fade Start Delay" << FadeStartDelay;
+	Ar << "Fade Duration" << FadeDuration;
+	Ar << "Fade In Start Delay" << FadeInStartDelay;
+	Ar << "Fade In Duration" << FadeInDuration;
+	Ar << "Destroy Owner After Fade" << bDestroyOwnerAfterFade;
+
+	if (Ar.IsLoading())
 	{
-		UMaterialInstance* MatInst = UMaterialInstance::Create(OrigMatInst->Parent);
-		MatInst->OverridedParams = OrigMatInst->OverridedParams;
-		SetMaterial(MatInst);
-	}
-	else
-	{
-		SetMaterial(Orig->GetMaterial()); // 얕은 복사 — ResourceManager 가 소유
+		if (!Materials[0]->GetName().empty())
+		{
+			SetMaterial(FResourceManager::Get().GetMaterialInterface(Materials[0]->GetName()));
+		}
 	}
 }
 

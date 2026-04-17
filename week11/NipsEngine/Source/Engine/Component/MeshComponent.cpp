@@ -1,5 +1,6 @@
 ﻿#include "MeshComponent.h"
 #include "Render/Resource/Material.h"
+#include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 
@@ -25,6 +26,42 @@ DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 //
 //    return NewComp;
 //}
+
+void UMeshComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+
+	TArray<FString> MaterialPaths;
+
+	if (Ar.IsLoading())
+	{
+		Ar << "Materials" << MaterialPaths;
+
+		Materials.resize(MaterialPaths.size());
+		for (size_t i = 0; i < MaterialPaths.size(); ++i)
+		{
+			if (!MaterialPaths[i].empty())
+			{
+				SetMaterial(i, FResourceManager::Get().GetMaterialInterface(MaterialPaths[i]));
+			}
+			else
+			{
+				Materials[i] = nullptr;
+			}
+		}
+	}
+	else if (Ar.IsSaving())
+	{
+		for (auto& Mat : Materials)
+		{
+			MaterialPaths.push_back(Mat ? Mat->GetName() : "");
+		}
+		Ar << "Materials" << MaterialPaths;
+	}
+
+	Ar << "Scroll U" << ScrollUV.first;
+	Ar << "Scroll V" << ScrollUV.second;
+}
 
 void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
 {
