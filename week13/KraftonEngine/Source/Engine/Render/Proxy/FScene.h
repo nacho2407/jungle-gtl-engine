@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Types/FogParams.h"
+#include "Render/Types/GlobalLightParams.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 
 class UPrimitiveComponent;
@@ -74,6 +75,17 @@ public:
 	bool HasFog() const { return !Fogs.empty(); }
 	const FFogParams& GetFogParams() const { return Fogs[0].Params; }
 
+	// Below things are for Lights
+	void AddGlobalAmbientLight(const class UAmbientLightComponent* Owner, const FGlobalAmbientLightParams& Params);
+	void RemoveGlobalAmbientLight(const class UAmbientLightComponent* Owner);
+	bool HasGlobalAmbientLight() const { return GlobalAmbientLight.AmbientOwner != nullptr; }
+	const FGlobalAmbientLightParams& GetGlobalAmbientLightParams() const { return GlobalAmbientLight.Params; }
+
+	void AddGlobalDirectionalLight(const class UDirectionalLightComponent* Owner, const FGlobalDirectionalLightParams& Params);
+	void RemoveGlobalDirectionalLight(const class UDirectionalLightComponent* Owner);
+	bool HasGlobalDirectionalLight() const { return GlobalDirectionalLight.DirectionalOwner != nullptr; }
+	const FGlobalDirectionalLightParams& GetGlobalDirectionalLightParams() const { return GlobalDirectionalLight.Params; }
+
 private:
 	// 전체 프록시 목록 (ProxyId = 인덱스)
 	TArray<FPrimitiveSceneProxy*> Proxies;
@@ -104,4 +116,16 @@ private:
 		FFogParams Params;
 	};
 	TArray<FFogEntry> Fogs;
+	struct FGlobalAmbientLightEntry
+	{
+		const class UAmbientLightComponent* AmbientOwner = nullptr;
+		FGlobalAmbientLightParams Params;
+	};
+	struct FGlobalDirectionalLightEntry
+	{
+		const class UDirectionalLightComponent* DirectionalOwner = nullptr;
+		FGlobalDirectionalLightParams Params;
+	};
+	FGlobalAmbientLightEntry GlobalAmbientLight;
+	FGlobalDirectionalLightEntry GlobalDirectionalLight;
 };

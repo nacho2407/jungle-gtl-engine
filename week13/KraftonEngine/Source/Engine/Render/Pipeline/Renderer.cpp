@@ -326,7 +326,7 @@ void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* S
 // Render — 정렬 + GPU 제출
 // BeginCollect + Collector + BuildDynamicCommands 이후에 호출.
 // ============================================================
-void FRenderer::Render(const FFrameContext& Frame)
+void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 {
 	FDrawCallStats::Reset();
 
@@ -701,7 +701,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true};
+	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
@@ -769,4 +769,25 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+}
+
+void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene)
+{
+	//AmbientLight & DirectionalLight Data Upload
+	FGlobalLightingConstants GlobalLightingData = {};
+	if (Scene.HasGlobalAmbientLight())
+	{
+		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
+		GlobalLightingData.AmbIntensity = DirLightParams.Intensity;
+		GlobalLightingData.AmbColor = DirLightParams.LightColor;
+	}
+	if (Scene.HasGlobalDirectionalLight())
+	{
+		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
+		GlobalLightingData.DirIntensity = DirLightParams.Intensity;
+		GlobalLightingData.DirColor = DirLightParams.LightColor;
+		GlobalLightingData.Direction = DirLightParams.Direction; // 라이트 방향은 역방향으로 저장
+	}
+
+	FConstantBufferPool::Get().GetCBuffer(ECBPoolKey::GlobalLight)->Update(Context, &GlobalLightingData, sizeof(FGlobalLightingConstants));
 }
