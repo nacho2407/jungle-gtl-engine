@@ -1,31 +1,9 @@
-#include "SpotLightComponent.h"
+﻿#include "SpotLightComponent.h"
 #include "Engine/Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Math/MathUtils.h"
 #include <cmath>
-
-namespace
-{
-	void AddWireCircle(FScene& Scene, const FVector& Center, const FVector& AxisA, const FVector& AxisB, float Radius, int32 Segments, const FColor& Color)
-	{
-		if (Radius <= 0.0f || Segments < 3)
-		{
-			return;
-		}
-
-		const float Step = 2.0f * FMath::Pi / static_cast<float>(Segments);
-		FVector Prev = Center + AxisA * Radius;
-
-		for (int32 Index = 1; Index <= Segments; ++Index)
-		{
-			const float Angle = Step * static_cast<float>(Index);
-			const FVector Next = Center + (AxisA * cosf(Angle) + AxisB * sinf(Angle)) * Radius;
-			Scene.AddDebugLine(Prev, Next, Color);
-			Prev = Next;
-		}
-	}
-}
 
 IMPLEMENT_CLASS(USpotLightComponent, UPointLightComponent)
 
@@ -41,36 +19,18 @@ void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 
 	Scene.AddDebugLine(Apex, Apex + Forward * ConeLength, FColor::White());
 
-	const auto AddCone = [&](float AngleDeg, const FColor& Color)
+	float AngleRadInner = InnerConeAngle * FMath::DegToRad;
+	FVector FirstDirection = (Forward + Right * tanf(AngleRadInner)).Normalized() * ConeLength;
+	float AngleRadOuter = OuterConeAngle * FMath::DegToRad;
+	FVector SecondDirection = (Forward + Right * tanf(AngleRadOuter)).Normalized() * ConeLength;
+	for (float i = 0.f; i < 2 * FMath::Pi; i += 0.3)
 	{
-		if (ConeLength <= 0.0f)
-		{
-			return;
-		}
-
-		const float AngleRad = AngleDeg * FMath::DegToRad;
-		const float RingRadius = tanf(AngleRad) * ConeLength;
-		const FVector RingCenter = Apex + Forward * ConeLength;
-		constexpr int32 Segments = 24;
-
-		AddWireCircle(Scene, RingCenter, Right, Up, RingRadius, Segments, Color);
-
-		const FVector RimOffsets[4] =
-		{
-			Right * RingRadius,
-			Right * -RingRadius,
-			Up * RingRadius,
-			Up * -RingRadius
-		};
-
-		for (const FVector& Offset : RimOffsets)
-		{
-			Scene.AddDebugLine(Apex, RingCenter + Offset, Color);
-		}
-	};
-
-	AddCone(ClampedInnerAngle, FColor::Green());
-	AddCone(ClampedOuterAngle, FColor::Yellow());
+		FQuat Rotation = FQuat::FromAxisAngle(Forward, i);
+		FVector ResInner = Rotation.RotateVector(FirstDirection);
+		FVector ResOuter = Rotation.RotateVector(SecondDirection);
+		Scene.AddDebugLine(Apex, Apex + ResInner, FColor::Green());
+		Scene.AddDebugLine(Apex, Apex + ResOuter, FColor::Yellow());
+	}
 }
 
 void USpotLightComponent::PushToScene()
