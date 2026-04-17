@@ -1,4 +1,4 @@
-#include "DecalActor.h"
+﻿#include "DecalActor.h"
 #include "Component/DecalComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Materials/MaterialManager.h"
@@ -16,7 +16,7 @@ void ADecalActor::InitDefaultComponents()
 {
 	DecalComponent = AddComponent<UDecalComponent>();
 	auto Material = FMaterialManager::Get().GetOrCreateMaterial(DefaultDecalMaterialPath);
-	DecalComponent->SetMaterial(Material);
+	DecalComponent->SetMaterial(0, Material);
 	SetRootComponent(DecalComponent);
 	
 	// UUID 텍스트 표시
