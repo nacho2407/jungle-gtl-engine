@@ -21,7 +21,6 @@ void FD3DDevice::Release()
 	}
 
 	ReleaseDepthStencilBuffer();
-	ReleaseViewportRenderTargets();
 	ReleaseFrameBuffer();
 
 	ReportLiveObjects();
@@ -39,7 +38,6 @@ void FD3DDevice::BeginFrame()
 	ID3D11RenderTargetView* FrameRTV = FrameBufferRTV.Get();
 	DeviceContext->OMSetRenderTargets(1, &FrameRTV, DepthStencilView.Get());
 }
-
 
 void FD3DDevice::EndFrame()
 {
@@ -84,27 +82,6 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 	CreateDepthStencilBuffer();
 }
 
-void FD3DDevice::EnsureViewportRenderTargets(int Width, int Height)
-{
-	if (Width <= 0 || Height <= 0)
-	{
-		ReleaseViewportRenderTargets();
-		return;
-	}
-
-	const uint32 SafeWidth = static_cast<uint32>(Width);
-	const uint32 SafeHeight = static_cast<uint32>(Height);
-	if (ViewportRenderTargetWidth == SafeWidth && ViewportRenderTargetHeight == SafeHeight &&
-		ViewportSceneColorRTV && ViewportSelectionMaskRTV && ViewportDepthStencilView)
-	{
-		return;
-	}
-
-	ReleaseViewportRenderTargets();
-	CreateViewportRenderTargets(SafeWidth, SafeHeight);
-}
-
-
 void FD3DDevice::SetSubViewport(int32 X, int32 Y, int32 Width, int32 Height)
 {
 	D3D11_VIEWPORT vp = {};
@@ -137,36 +114,6 @@ FRenderTargetSet FD3DDevice::GetBackBufferRenderTargets() const
 	Targets.DepthStencilView = DepthStencilView.Get();
 	Targets.Width = ViewportInfo.Width;
 	Targets.Height = ViewportInfo.Height;
-	return Targets;
-}
-
-FRenderTargetSet FD3DDevice::GetViewportRenderTargets() const
-{
-	FRenderTargetSet Targets;
-	Targets.SceneColorRTV = ViewportSceneColorRTV.Get();
-	Targets.SceneColorSRV = ViewportSceneColorSRV.Get();
-
-    Targets.SceneNormalRTV = ViewportSceneNormalRTV.Get();
-    Targets.SceneNormalSRV = ViewportSceneNormalSRV.Get();
-
-    Targets.SceneLightRTV = ViewportSceneLightRTV.Get();
-    Targets.SceneLightSRV = ViewportSceneLightSRV.Get();
-
-	Targets.SceneFogRTV = ViewportSceneFogRTV.Get();
-    Targets.SceneFogSRV = ViewportSceneFogSRV.Get();
-
-	Targets.SceneWorldPosRTV = ViewportSceneWorldPosRTV.Get();
-    Targets.SceneWorldPosSRV = ViewportSceneWorldPosSRV.Get();
-
-	Targets.SceneFXAARTV = ViewportSceneFXAARTV.Get();
-    Targets.SceneFXAASRV = ViewportSceneFXAASRV.Get();
-
-    Targets.SceneDepthSRV = ViewportDepthStencilSRV.Get();
-	Targets.SelectionMaskRTV = ViewportSelectionMaskRTV.Get();
-	Targets.SelectionMaskSRV = ViewportSelectionMaskSRV.Get();
-	Targets.DepthStencilView = ViewportDepthStencilView.Get();
-	Targets.Width = static_cast<float>(ViewportRenderTargetWidth);
-	Targets.Height = static_cast<float>(ViewportRenderTargetHeight);
 	return Targets;
 }
 
@@ -292,104 +239,6 @@ void FD3DDevice::ReleaseFrameBuffer()
 	SelectionMaskBuffer.Reset();
 	FrameBufferRTV.Reset();
 	FrameBuffer.Reset();
-}
-
-void FD3DDevice::CreateViewportRenderTargets(uint32 Width, uint32 Height)
-{
-    /**
-     * Texture, RTV, SRV 생성
-     */
-    FRenderTarget RT;
-	ViewportRenderTargetWidth = Width;
-	ViewportRenderTargetHeight = Height;
-
-	RT = FRenderTargetFactory::CreateSceneColor(GetDevice(), Width, Height);
-
-	ViewportSceneColorTexture = RT.Texture;
-        ViewportSceneColorRTV = RT.RTV;
-        ViewportSceneColorSRV = RT.SRV;
-
-	RT = FRenderTargetFactory::CreateSceneNormal(GetDevice(), Width, Height);
-
-	ViewportSceneNormalTexture = RT.Texture;
-        ViewportSceneNormalRTV = RT.RTV;
-        ViewportSceneNormalSRV = RT.SRV;
-
-
-	RT = FRenderTargetFactory::CreateSelectionMask(GetDevice(), Width, Height);
-        ViewportSelectionMaskTexture = RT.Texture;
-        ViewportSelectionMaskRTV = RT.RTV;
-        ViewportSelectionMaskSRV = RT.SRV;
-
-	RT = FRenderTargetFactory::CreateSceneLight(GetDevice(), Width, Height);
-    ViewportSceneLightTexture = RT.Texture;
-    ViewportSceneLightRTV = RT.RTV;
-    ViewportSceneLightSRV = RT.SRV;
-
-	RT = FRenderTargetFactory::CreateSceneFog(GetDevice(), Width, Height);
-    ViewportSceneFogTexture = RT.Texture;
-    ViewportSceneFogRTV = RT.RTV;
-    ViewportSceneFogSRV = RT.SRV;
-
-	RT = FRenderTargetFactory::CreateSceneWorldPos(GetDevice(), Width, Height);
-    ViewportSceneWorldPosTexture = RT.Texture;
-    ViewportSceneWorldPosRTV = RT.RTV;
-    ViewportSceneWorldPosSRV = RT.SRV;
-
-	RT = FRenderTargetFactory::CreateSceneFXAA(GetDevice(), Width, Height);
-    ViewportSceneFXAATexture = RT.Texture;
-    ViewportSceneFXAARTV = RT.RTV;
-    ViewportSceneFXAASRV = RT.SRV;
-
-	/**
-	 * DepthStencil Texture, DSV, SRV 생성
-	 */
-
-	FDepthStencilResource DSR;
-    
-	DSR = FDepthStencilFactory::CreateDepthStencilView(GetDevice(), Width, Height);
-
-	ViewportDepthStencilTexture = DSR.Texture;
-    ViewportDepthStencilView = DSR.DSV;
-    ViewportDepthStencilSRV = DSR.SRV;
-}
-
-void FD3DDevice::ReleaseViewportRenderTargets()
-{
-	ViewportSelectionMaskSRV.Reset();
-	ViewportSelectionMaskRTV.Reset();
-	ViewportSelectionMaskTexture.Reset();
-
-	ViewportSceneColorSRV.Reset();
-	ViewportSceneColorRTV.Reset();
-	ViewportSceneColorTexture.Reset();
-    
-	ViewportSceneNormalRTV.Reset();
-    ViewportSceneNormalSRV.Reset();
-    ViewportSceneNormalTexture.Reset();
-
-    ViewportSceneLightRTV.Reset();
-    ViewportSceneLightSRV.Reset();
-    ViewportSceneLightTexture.Reset();
-
-    ViewportDepthStencilView.Reset();
-    ViewportDepthStencilTexture.Reset();
-    ViewportDepthStencilSRV.Reset();
-
-	ViewportSceneFogTexture.Reset();
-    ViewportSceneFogRTV.Reset();
-    ViewportSceneFogSRV.Reset();
-
-	ViewportSceneWorldPosRTV.Reset();
-	ViewportSceneWorldPosSRV.Reset();
-    ViewportSceneWorldPosTexture.Reset();
-
-	ViewportSceneFXAARTV.Reset();
-	ViewportSceneFXAASRV.Reset();
-    ViewportSceneFXAATexture.Reset();
-
-	ViewportRenderTargetWidth = 0;
-	ViewportRenderTargetHeight = 0;
 }
 
 void FD3DDevice::CreateDepthStencilBuffer()
