@@ -76,6 +76,7 @@ private:
 
 	// 패스 루프 Pre/Post 이벤트 등록
 	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
+		TArray<struct FPassEvent>& PostPassEvents,
 		ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache);
 
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리

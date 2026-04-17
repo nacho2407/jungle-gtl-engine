@@ -51,6 +51,10 @@ struct FFrameContext
 	ID3D11ShaderResourceView* DepthCopySRV         = nullptr;
 	ID3D11ShaderResourceView* StencilCopySRV       = nullptr;
 
+	// GBuffer Normal RT — Opaque MRT[1] 출력, PostProcess에서 SRV로 읽기
+	ID3D11RenderTargetView*   NormalRTV             = nullptr;
+	ID3D11ShaderResourceView* NormalSRV             = nullptr;
+
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
 	// Render Settings
@@ -114,5 +118,7 @@ struct FFrameContext
 		DepthCopyTexture        = nullptr;
 		DepthCopySRV            = nullptr;
 		StencilCopySRV          = nullptr;
+		NormalRTV               = nullptr;
+		NormalSRV               = nullptr;
 	}
 };
