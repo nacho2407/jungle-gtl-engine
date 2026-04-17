@@ -2,13 +2,16 @@
   "BlendState" : "",
   "DepthStencilState" : "",
   "Parameters" : {
-    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+    "HasNormalMap" : 1.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
   },
   "PathFileName" : "Asset/Materials/BasicShapeMaterial.json",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/BasicShape/BasicShape.png"
+    "DiffuseTexture" : "Data/BasicShape/BasicShape.png",
+    "NormalTexture" : "Data/BasicShape/TestNormal.png"
   }
 }

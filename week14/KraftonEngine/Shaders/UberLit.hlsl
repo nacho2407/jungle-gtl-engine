@@ -5,7 +5,6 @@
 //   LIGHTING_MODEL_GOURAUD  1  — 정점 단계 라이팅 (Gouraud Shading)
 //   LIGHTING_MODEL_LAMBERT  1  — 픽셀 단계 Diffuse only (Lambert)
 //   LIGHTING_MODEL_PHONG    1  — 픽셀 단계 Diffuse + Specular (Blinn-Phong)
-//   HAS_NORMAL_MAP          1  — Normal Map 사용 여부 (팀원 C 통합용)
 //   DEBUG_LIGHTS            1  — CB/SB 없이 하드코딩 라이트로 테스트
 //
 // 아무 라이팅 모델 매크로도 없으면 기본값 = Blinn-Phong
@@ -47,36 +46,38 @@ struct FLightInfo
 // 텍스처
 // =============================================================================
 Texture2D g_txDiffuse : register(t0);
+Texture2D g_txNormal : register(t1);
 
-#if defined(HAS_NORMAL_MAP) && HAS_NORMAL_MAP
-Texture2D g_txNormal  : register(t1);
-#endif
 
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
 {
     float4 SectionColor;
+    float HasNormalMap;
+    float3 _pad;
 };
 
 // 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
-static const float4 g_DefaultEmissive  = float4(0, 0, 0, 0);
-static const float  g_DefaultShininess = 32.0f;
+static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
+static const float g_DefaultShininess = 32.0f;
 
 // =============================================================================
 // VS ↔ PS 인터페이스
 // =============================================================================
 struct UberVS_Output
 {
-    float4 position  : SV_POSITION;
-    float3 normal    : NORMAL;
-    float4 color     : COLOR0;
-    float2 texcoord  : TEXCOORD0;
-    float3 worldPos  : TEXCOORD1;
+    float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR0;
+    float2 texcoord : TEXCOORD0;
+    float3 worldPos : TEXCOORD1;
+    float4 tangent : TANGENT;
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 litDiffuse  : TEXCOORD2;
     float3 litSpecular : TEXCOORD3;
 #endif
 };
+
 
 // =============================================================================
 // 라이팅 유틸 함수
@@ -110,8 +111,8 @@ float3 CalcDirectionalSpecular(float3 lightColor, float3 lightDir, float intensi
 // ── 통합 FLightInfo 기반 계산 (Point/Spot 공용) ──
 float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
 {
-    float3 L    = light.Position - worldPos;
-    float  dist = length(L);
+    float3 L = light.Position - worldPos;
+    float dist = length(L);
     L = normalize(L);
 
     float atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
@@ -130,9 +131,9 @@ float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
 
 float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, float shininess)
 {
-    float3 L    = normalize(light.Position - worldPos);
-    float  dist = length(light.Position - worldPos);
-    float  atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
+    float3 L = normalize(light.Position - worldPos);
+    float dist = length(light.Position - worldPos);
+    float atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
 
     float spotFactor = 1.0f;
     if (light.LightType == LIGHT_TYPE_SPOT)
@@ -198,7 +199,7 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
                                      DirectionalLight.Intensity, N);
 
     // Point/Spot (StructuredBuffer t8, Tile Culling 적용 시 t9/t10 경유)
-    #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
+#if defined(USE_TILE_CULLING) && USE_TILE_CULLING
     // ── Tile-based: 이 픽셀이 속한 타일의 라이트만 순회 ──
     uint2 tileCoord = uint2(worldPos.xy); // PS에서는 SV_Position 기반으로 교체 필요
     uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
@@ -208,11 +209,11 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
         uint lightIdx = g_TileLightIndices[gridData.x + t];
         result += CalcLightDiffuse(g_AllLights[lightIdx], worldPos, N);
     }
-    #else
+#else
     // ── 전수 순회 (Culling 미적용) ──
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
         result += CalcLightDiffuse(g_AllLights[i], worldPos, N);
-    #endif
+#endif
 #endif
 
     return result;
@@ -230,7 +231,7 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
     result += CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                       DirectionalLight.Intensity, N, V, shininess);
 
-    #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
+#if defined(USE_TILE_CULLING) && USE_TILE_CULLING
     uint2 tileCoord = uint2(worldPos.xy);
     uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
     uint2 gridData  = g_TileLightGrid[tileIdx];
@@ -239,10 +240,10 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
         uint lightIdx = g_TileLightIndices[gridData.x + t];
         result += CalcLightSpecular(g_AllLights[lightIdx], worldPos, N, V, shininess);
     }
-    #else
+#else
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
         result += CalcLightSpecular(g_AllLights[i], worldPos, N, V, shininess);
-    #endif
+#endif
 #endif
 
     return result;
@@ -251,16 +252,21 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
 // =============================================================================
 // Vertex Shader
 // =============================================================================
-UberVS_Output VS(VS_Input_PNCT input)
+UberVS_Output VS(VS_Input_PNCTT input)
 {
     UberVS_Output output;
 
     float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
-    output.worldPos  = worldPos4.xyz;
-    output.position  = mul(mul(worldPos4, View), Projection);
-    output.normal    = normalize(mul(input.normal, (float3x3)Model));
-    output.color     = input.color * SectionColor;
-    output.texcoord  = input.texcoord;
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(input.normal, (float3x3) Model));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+        
+    float3 T = normalize(mul(input.tangent.xyz, (float3x3) Model));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
 
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 N = output.normal;
@@ -277,8 +283,8 @@ UberVS_Output VS(VS_Input_PNCT input)
 // =============================================================================
 struct UberPS_Output
 {
-    float4 Color  : SV_TARGET0;  // 최종 색상 (기존 프레임 버퍼)
-    float4 Normal : SV_TARGET1;  // World Normal (GBuffer Normal RT)
+    float4 Color : SV_TARGET0; // 최종 색상 (기존 프레임 버퍼)
+    float4 Normal : SV_TARGET1; // World Normal (GBuffer Normal RT)
 };
 
 // =============================================================================
@@ -295,16 +301,22 @@ UberPS_Output PS(UberVS_Output input)
     float4 baseColor = texColor * input.color;
 
     float3 N = normalize(input.normal);
+    
+#if !defined(LIGHTING_MODEL_GOURAUD)
+    if (HasNormalMap >= 0.5)
+    {
+        float3 T = normalize(input.tangent.xyz);
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
 
-#if defined(HAS_NORMAL_MAP) && HAS_NORMAL_MAP
-    // TODO: TBN 행렬 연동 (팀원 C)
-    // float3 sampledN = g_txNormal.Sample(LinearWrapSampler, input.texcoord).rgb * 2.0 - 1.0;
-    // N = normalize(mul(sampledN, TBN));
-#endif
+        float3 tangentNormal = g_txNormal.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
+        N = normalize(mul(tangentNormal, TBN));
+    }
+  #endif   
 
     float3 V = normalize(CameraWorldPos - input.worldPos);
 
-    float3 diffuse  = float3(0, 0, 0);
+    float3 diffuse = float3(0, 0, 0);
     float3 specular = float3(0, 0, 0);
 
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
@@ -316,7 +328,7 @@ UberPS_Output PS(UberVS_Output input)
     diffuse = AccumulateDiffuse(input.worldPos, N);
 
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
-    diffuse  = AccumulateDiffuse(input.worldPos, N);
+    diffuse = AccumulateDiffuse(input.worldPos, N);
     specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess);
 #endif
 
@@ -325,8 +337,8 @@ UberPS_Output PS(UberVS_Output input)
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
     finalColor = ApplyWireframe(finalColor);
 
-    output.Color  = float4(finalColor, baseColor.a);
-    output.Normal = float4(N, 1.0f);  // alpha=1: 유효한 노말 마킹
+    output.Color = float4(finalColor, baseColor.a);
+    output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
 
     return output;
 }
