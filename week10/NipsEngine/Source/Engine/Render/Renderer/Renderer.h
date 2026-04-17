@@ -120,13 +120,12 @@ public:
 
 	void PrepareBatchers(const FRenderBus& InRenderBus);
 	void BeginFrame();
+	// Viewport 로부터 RTV, SRV 등 정보를 받아서 세팅
     void BeginViewportFrame(FRenderTargetSet InRenderTargetSet);
 	void Render(const FRenderBus& InRenderBus);
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	
-	// (deprecated) 단일 Viewport 구조에서 썼던 함수
-	void UseViewportRenderTargets();
     void UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet);
 	void InvalidateSceneFinalTargets();
 
