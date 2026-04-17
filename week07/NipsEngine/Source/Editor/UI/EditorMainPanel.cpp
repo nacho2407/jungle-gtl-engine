@@ -185,10 +185,10 @@ void FEditorMainPanel::Update()
     bool bViewportOperationActive = false;
     if (EditorEngine)
     {
-        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
-        for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
         {
-            if (Layout.GetViewportClient(i).IsActiveOperation())
+            if (Layout.GetViewportClient(i)->IsActiveOperation())
             {
                 bViewportOperationActive = true;
                 break;
@@ -211,9 +211,9 @@ void FEditorMainPanel::Update()
     //	Focus는 MainPanel에서 입력 받음
     if (EditorEngine && InputSystem::Get().GetKeyUp('F') && !IO.WantTextInput)
     {
-        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
-        Layout.GetViewportClient(FocusedIdx).FocusSelection();
+        Layout.GetViewportClient(FocusedIdx)->FocusSelection();
     }
 
     // IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
@@ -266,32 +266,48 @@ void FEditorMainPanel::RenderViewportHostWindow()
         GuiState.ViewportHostRect = HostRect;
         EditorEngine->GetViewportLayout().SetHostRect(HostRect);
 
-        if (const ID3D11ShaderResourceView* SceneColorSRV = EditorEngine->GetRenderer().GetCurrentSceneSRV())
+		for (int i = 0; i < 4; i++)
         {
-            ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-            ImDrawList* DrawList = ImGui::GetWindowDrawList();
-            DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
-            ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), ContentSize);
-            DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-        }
-        else
-        {
-            ImGui::Dummy(ContentSize);
+            auto& VP = EditorEngine->GetViewportLayout().GetSceneViewport(i);
+
+            const ID3D11ShaderResourceView* SceneColorSRV = VP.GetOutSRV();
+
+            ImVec2 Size = ImVec2(
+                (float)VP.GetRect().Width,
+                (float)VP.GetRect().Height);
+
+            if (SceneColorSRV)
+            {
+                ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+                ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+                DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
+                ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), Size);
+                DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+            }
+            else
+            {
+                ImGui::Dummy(Size);
+            }
+
+            // 2x2 배치
+            if (i % 2 == 0)
+                ImGui::SameLine();
         }
 
         // 뷰포트별 독립 메뉴바 오버레이
         {
-            FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+            FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
             const float MenuBarH = ImGui::GetFrameHeight();
 
-            for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+            for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
             {
-                const FEditorViewportState& VState = Layout.GetViewportState(i);
-                if (VState.Rect.Width <= 0 || VState.Rect.Height <= 0)
+                FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
+                if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
                     continue;
 
-                const float LocalX = static_cast<float>(VState.Rect.X - HostRect.X);
-                const float LocalY = static_cast<float>(VState.Rect.Y - HostRect.Y);
+                const float LocalX = static_cast<float>(ViewportRect.X - HostRect.X);
+                const float LocalY = static_cast<float>(ViewportRect.Y - HostRect.Y);
                 if (LocalX < 0.0f || LocalY < 0.0f)
                     continue;
 
@@ -308,7 +324,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
                     ImGuiWindowFlags_NoNav |
                     ImGuiWindowFlags_NoFocusOnAppearing;
 
-                if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(VState.Rect.Width), MenuBarH), false, OverlayFlags))
+                if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(ViewportRect.Width), MenuBarH), false, OverlayFlags))
                 {
                     if (ImGui::BeginMenuBar())
                     {
@@ -334,13 +350,13 @@ void FEditorMainPanel::RenderViewportHostWindow()
 // 개별 뷰포트 메뉴바 렌더링 — Index 번 뷰포트에 대한 Layout / Type / View / Stats 메뉴
 void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
 {
-    FViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    FEditorViewportClient& Client = Layout.GetViewportClient(Index);
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    FEditorViewportClient* Client = Layout.GetViewportClient(Index);
     FEditorViewportState& State = Layout.GetViewportState(Index);
 
     ImGui::TextDisabled("%s | %s | %s",
                         GetViewportSlotName(Index),
-                        GetViewportTypeName(Client.GetViewportType()),
+                        GetViewportTypeName(Client->GetViewportType()),
                         GetViewModeName(State.ViewMode));
     ImGui::SameLine();
 
@@ -356,7 +372,7 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
         if (bSingle)
         {
             ImGui::Separator();
-            for (int32 j = 0; j < FViewportLayout::MaxViewports; ++j)
+            for (int32 j = 0; j < FEditorViewportLayout::MaxViewports; ++j)
             {
                 const bool bSel = (Layout.GetSingleViewportIndex() == j);
                 if (ImGui::MenuItem(GetViewportSlotName(j), nullptr, bSel))
@@ -386,11 +402,11 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             };
             for (EEditorViewportType Type : kOrthoTypes)
             {
-                const bool bSel = (Client.GetViewportType() == Type);
+                const bool bSel = (Client->GetViewportType() == Type);
                 if (ImGui::MenuItem(GetViewportTypeName(Type), nullptr, bSel))
                 {
-                    Client.SetViewportType(Type);
-                    Client.ApplyCameraMode();
+                    Client->SetViewportType(Type);
+                    Client->ApplyCameraMode();
                 }
             }
         }
