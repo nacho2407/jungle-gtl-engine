@@ -46,7 +46,7 @@ void FDecalSceneProxy::UpdateMaterial()
 		return;
 	}
 
-	DecalMaterial = DecalComp->GetMaterial();
+	DecalMaterial = DecalComp->GetMaterial(0);
 	DiffuseSRV = nullptr;
 
 	if (DecalMaterial)

@@ -25,7 +25,7 @@ void AFireballActor::InitDefaultComponents()
 	for (int i=0; i<3; i++)
 	{
 		DecalComponents[i] = AddComponent<UDecalComponent>();
-		DecalComponents[i]->SetMaterial(AdditiveDecalMaterial);
+		DecalComponents[i]->SetMaterial(0, AdditiveDecalMaterial);
 		DecalComponents[i]->SetRelativeScale({10.0f, 10.0f, 10.0f});
 		DecalComponents[i]->AttachToComponent(StaticMeshComponent);
 	}
