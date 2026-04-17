@@ -40,7 +40,7 @@ void AFakeLightActor::InitDefaultComponents()
 	// NOTE: 빌보드 효과를 최대한 활용하기 위해 '전등'의 pivot은 아래, 즉, 바닥 밝은 영역과 일치해야 함
 	DecalComponent = AddComponent<UDecalComponent>();
 	auto Material = FMaterialManager::Get().GetOrCreateMaterial(DecalMaterialPath);
-	DecalComponent->SetMaterial(Material);
+	DecalComponent->SetMaterial(0, Material);
 	DecalComponent->SetRelativeLocation(FVector( 0.0f, 0.0f, 0.0f ));
 	DecalComponent->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f ));
 	DecalComponent->SetRelativeScale(FVector( 3.0f, 3.0f, 3.0f ));

@@ -418,7 +418,15 @@ void FMaterialManager::Release()
 	}
 	TemplateCache.clear();
 
-	// 2. MaterialCache — UMaterial은 UObjectManager가 수명을 관리하므로 캐시 맵만 비움
+	// 2. MaterialCache 메모리 해제
+	for (auto& Pair : MaterialCache)
+	{
+		if (Pair.second != nullptr)
+		{
+			delete Pair.second;
+			Pair.second = nullptr;
+		}
+	}
 	MaterialCache.clear();
 
 	// 3. Device 참조 해제

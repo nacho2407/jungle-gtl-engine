@@ -13,6 +13,7 @@ class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
 class FOctree;
+class UMaterial;
 
 class UPrimitiveComponent : public USceneComponent
 {
@@ -41,6 +42,12 @@ public:
 	void UpdateWorldMatrix() const override;
 
 	virtual bool SupportsOutline() const { return true; }
+
+	//For Material 
+	virtual int32 GetNumMaterials() const { return 0; }
+	virtual UMaterial* GetMaterial(int32 ElementIndex) const { return nullptr; }
+	virtual void SetMaterial(int32 ElementIndex, class UMaterial* InMaterial) {};
+
 
 	// --- 렌더 상태 관리 ---
 	void CreateRenderState() override;
