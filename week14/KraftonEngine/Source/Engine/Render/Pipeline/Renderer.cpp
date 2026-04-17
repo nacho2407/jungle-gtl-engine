@@ -209,9 +209,12 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.PerShaderCB[0] = Section.MaterialCB[0];
 			Cmd.PerShaderCB[1] = Section.MaterialCB[1];
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
-			Cmd.DiffuseSRV = Section.DiffuseSRV;
+			
+			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+				Cmd.SRVs[s] = Section.SRVs[s];
+
 			Cmd.Pass = Pass;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.DiffuseSRV);
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.SRVs[(int)EMaterialTextureSlot::Diffuse]); //Todo 언젠가 Diffuse말고 범용적인 딴걸로
 
 		}
 	}
@@ -229,7 +232,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
 		SetProxyExtraCB(Cmd);
-		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
+		Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.DiffuseSRV;
 		Cmd.Pass = Pass;
 		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
@@ -284,7 +287,7 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 			Cmd.IndexCount = IndexCount;
 			Cmd.PerObjectCB = ReceiverPerObjCB;
 			Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
-			Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
+			Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = DecalProxy.DiffuseSRV;
 			Cmd.Pass = DecalPass;
 			Cmd.SortKey = FDrawCommand::BuildSortKey(DecalPass, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
 		};
@@ -688,7 +691,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.RawVBStride = FontGeometry.GetWorldVBStride();
 				Cmd.RawIB = FontGeometry.GetWorldIBBuffer();
 				Cmd.IndexCount = FontGeometry.GetWorldIndexCount();
-				Cmd.DiffuseSRV = FontRes->SRV;
+				Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::AlphaBlend, FontShader, nullptr, FontRes->SRV);
 			}
 
@@ -703,7 +706,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				Cmd.RawVBStride = FontGeometry.GetScreenVBStride();
 				Cmd.RawIB = FontGeometry.GetScreenIBBuffer();
 				Cmd.IndexCount = FontGeometry.GetScreenIndexCount();
-				Cmd.DiffuseSRV = FontRes->SRV;
+				Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
 				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::OverlayFont, OverlayShader, nullptr, FontRes->SRV);
 			}
 		}
