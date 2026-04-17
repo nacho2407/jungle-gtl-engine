@@ -110,6 +110,14 @@ void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
 	OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f });
 }
 
+void UCameraComponent::Serialize(FArchive& Ar)
+{
+	USceneComponent::Serialize(Ar);
+	Ar << "FOV" << CameraState.FOV;
+	Ar << "NearClip" << CameraState.NearZ;
+	Ar << "FarClip" << CameraState.FarZ;
+}
+
 void UCameraComponent::SetViewRotationDegrees(float PitchDegrees, float YawDegrees)
 {
 	PitchDegrees = MathUtil::Clamp(PitchDegrees, -89.0f, 89.0f);

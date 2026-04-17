@@ -20,6 +20,23 @@ void USceneComponent::PostDuplicate(UObject* Original)
     ChildComponents.clear();
 }
 
+void USceneComponent::Serialize(FArchive& Ar)
+{
+	UActorComponent::Serialize(Ar);
+
+	if (Ar.IsSaving())
+	{
+		if (GetParent() != nullptr)
+		{
+			uint32 ParentUUID = GetParent()->GetUUID();
+			Ar << "ParentUUID" << ParentUUID;
+		}
+	}
+
+	Ar << "Location" << RelativeLocation;
+	Ar << "Rotation" << RelativeRotation;
+	Ar << "Scale" << RelativeScale3D;
+}
 USceneComponent::USceneComponent()
 {
 	CachedWorldMatrix = FMatrix::Identity;

@@ -19,6 +19,16 @@ void UBillboardComponent::PostDuplicate(UObject* Original)
     TimeAccumulator = Orig->TimeAccumulator;
 }
 
+void UBillboardComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+	Ar << "Particle" << TextureName;
+	Ar << "Width" << Width;
+	Ar << "Height" << Height;
+	Ar << "PlayRate" << PlayRate;
+	Ar << "bLoop" << bLoop;
+}
+
 bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
 {
     OutCamera = nullptr;

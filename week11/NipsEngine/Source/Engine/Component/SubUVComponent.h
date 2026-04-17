@@ -23,6 +23,8 @@ public:
 	
 	virtual void PostDuplicate(UObject* Original) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	// --- Particle Resource ---
 	// FName 키로 ResourceManager에서 FParticleResource*를 찾아 캐싱
 	void SetParticle(const FName& InParticleName);

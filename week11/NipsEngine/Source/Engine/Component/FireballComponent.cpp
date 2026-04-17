@@ -16,6 +16,15 @@ void UFireballComponent::PostDuplicate(UObject* Original)
 	Color = Orig->Color;
 }
 
+void UFireballComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+	Ar << "Radius" << Radius;
+	Ar << "Radius Falloff" << RadiusFallOff;
+	Ar << "Intensity" << Intensity;
+	Ar << "Color" << Color;
+}
+
 void UFireballComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UPrimitiveComponent::GetEditableProperties(OutProps);

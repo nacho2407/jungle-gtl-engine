@@ -229,7 +229,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 	FString Target = Args[1];
 	std::transform(Target.begin(), Target.end(), Target.begin(), ::tolower);
 
-	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
 	const int32 FocusedIdx  = Layout.GetLastFocusedViewportIndex();
 
 	if (Target == "fps")
@@ -267,7 +267,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 	}
 	else if (Target == "none")
 	{
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 		{
 			Layout.GetViewportState(i).bShowStatFPS       = false;
 			Layout.GetViewportState(i).bShowStatMemory    = false;

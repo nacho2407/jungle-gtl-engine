@@ -16,6 +16,8 @@ public:
 
 	virtual void PostDuplicate(UObject* Original) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	// Parent Relation Manager
 	void AttachToComponent(USceneComponent* InParent);
 	void SetParent(USceneComponent* NewParent);
