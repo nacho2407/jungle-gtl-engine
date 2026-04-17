@@ -54,52 +54,24 @@ public:
 
 	FRenderTargetSet GetViewportRenderTargets() const;
 
-	// 단일 Viewport 개선 작업 도중 Device 를 임시로 받게함
-	void InitializeResource(ID3D11Device* Device, uint32 Width, uint32 Height);
-    bool EnsureResource(ID3D11Device* Device, uint32 Width, uint32 Height);
-    void ReleaseResource();
-
 	// 최종 출력 (임시용)
-	ID3D11ShaderResourceView* GetOutSRV() const { return ViewportSceneColorSRV.Get(); }
+	ID3D11ShaderResourceView* GetOutSRV() const 
+	{ 
+		if (!RenderTargetSet)
+            return nullptr;
+		return RenderTargetSet->SceneColorSRV;
+	}
+
+	void SetRenderTargetSet(FRenderTargetSet* InRenderTargetSet) { RenderTargetSet = InRenderTargetSet; }
+    FRenderTargetSet* GetRenderTargetSet() const { return RenderTargetSet; }
 
 private:
 	// FViewport 내에서 FViewportClient 로 추상화하는 것이 맞지만, 현재로썬 다형성을 제대로 활용하지 않는 상태라 임시로 다음과 같이 구성
     FEditorViewportClient* Client = nullptr;
     FEditorViewportState State;
 
-	TComPtr<ID3D11Texture2D> ViewportSceneColorTexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSceneColorRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneColorSRV;
-
-    TComPtr<ID3D11Texture2D> ViewportSceneNormalTexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSceneNormalRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneNormalSRV;
-
-    TComPtr<ID3D11Texture2D> ViewportSceneLightTexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSceneLightRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneLightSRV;
-
-    TComPtr<ID3D11Texture2D> ViewportSceneFogTexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSceneFogRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneFogSRV;
-
-    TComPtr<ID3D11Texture2D> ViewportSceneWorldPosTexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSceneWorldPosRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneWorldPosSRV;
-
-    TComPtr<ID3D11Texture2D> ViewportSceneFXAATexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSceneFXAARTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSceneFXAASRV;
-
-    TComPtr<ID3D11Texture2D> ViewportSelectionMaskTexture;
-    TComPtr<ID3D11RenderTargetView> ViewportSelectionMaskRTV;
-    TComPtr<ID3D11ShaderResourceView> ViewportSelectionMaskSRV;
-
-    TComPtr<ID3D11Texture2D> DepthStencilBuffer;
-    TComPtr<ID3D11DepthStencilView> DepthStencilView;
-    TComPtr<ID3D11Texture2D> ViewportDepthStencilTexture;
-    TComPtr<ID3D11DepthStencilView> ViewportDepthStencilView;
-    TComPtr<ID3D11ShaderResourceView> ViewportDepthStencilSRV;
+	// Renderer 의 자원을 참조
+	FRenderTargetSet* RenderTargetSet = nullptr;
 
 	uint32 ViewportRenderTargetWidth = 0;
     uint32 ViewportRenderTargetHeight = 0;

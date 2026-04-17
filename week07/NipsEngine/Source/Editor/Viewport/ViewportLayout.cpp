@@ -235,16 +235,18 @@ void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	// 4개 SViewport 생성 + ISlateViewport(FSceneViewport) 연결
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
+        FSceneViewport& VP = ViewportWidgets[i].GetSceneViewport();
         // Build 시 DestroyViewportLayout()에서 끊어진 Client-Viewport-State 연결을 복구한다.
-        ViewportWidgets[i].GetSceneViewport().SetClient(&ViewportClients[i]);
+        VP.SetClient(&ViewportClients[i]);
         if (FEditorViewportClient* VC = ViewportWidgets[i].GetSceneViewport().GetClient())
         {
             VC->SetViewport(&ViewportWidgets[i].GetSceneViewport());
             VC->SetState(&ViewportWidgets[i].GetSceneViewport().GetState());
         }
 
-        ViewportWidgets[i].GetSceneViewport().InitializeResource(Editor->GetRenderer().GetFD3DDevice().GetDevice(), Width, Height);
-        ViewportWidgets[i].SetViewportInterface(&ViewportWidgets[i].GetSceneViewport());
+		FViewportRenderResource RenderResource = Editor->GetRenderer().AcquireViewportResource(&VP, VP.GetRect().Width, VP.GetRect().Height, i);
+        VP.SetRenderTargetSet(&RenderResource.GetView());
+        ViewportWidgets[i].SetViewportInterface(&VP);
 	}
 
 	// 스플리터 트리 구성
@@ -404,8 +406,11 @@ void FEditorViewportLayout::DestroyViewportLayout()
             VC->SetViewport(nullptr);
             VC->SetState(nullptr);
         }
-        ViewportWidgets[i].GetSceneViewport().SetClient(nullptr);
-        ViewportWidgets[i].GetSceneViewport().ReleaseResource();
+
+		FSceneViewport& VP = ViewportWidgets[i].GetSceneViewport();
+        Editor->GetRenderer().ReleaseViewportResource(&VP, i);
+        VP.SetClient(nullptr);
+
 	}
 	delete TopSplitterH; TopSplitterH = nullptr;
 	delete BotSplitterH; BotSplitterH = nullptr;

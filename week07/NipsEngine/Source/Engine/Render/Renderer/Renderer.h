@@ -19,6 +19,81 @@
 
 #include "Render/Renderer/RenderFlow/RenderPipeline.h"
 
+class FSceneViewport;
+
+/**
+ * Renderer 가 Viewport 별로 소유하는 데이터를 나타내는 구조체
+ */
+struct FViewportRenderResource
+{
+    TComPtr<ID3D11Texture2D> ColorTex;
+    TComPtr<ID3D11RenderTargetView> ColorRTV;
+    TComPtr<ID3D11ShaderResourceView> ColorSRV;
+
+    TComPtr<ID3D11Texture2D> NormalTex;
+    TComPtr<ID3D11RenderTargetView> NormalRTV;
+    TComPtr<ID3D11ShaderResourceView> NormalSRV;
+
+    TComPtr<ID3D11Texture2D> LightTex;
+    TComPtr<ID3D11RenderTargetView> LightRTV;
+    TComPtr<ID3D11ShaderResourceView> LightSRV;
+
+    TComPtr<ID3D11Texture2D> FogTex;
+    TComPtr<ID3D11RenderTargetView> FogRTV;
+    TComPtr<ID3D11ShaderResourceView> FogSRV;
+
+    TComPtr<ID3D11Texture2D> WorldPosTex;
+    TComPtr<ID3D11RenderTargetView> WorldPosRTV;
+    TComPtr<ID3D11ShaderResourceView> WorldPosSRV;
+
+    TComPtr<ID3D11Texture2D> FXAATex;
+    TComPtr<ID3D11RenderTargetView> FXAARTV;
+    TComPtr<ID3D11ShaderResourceView> FXAASRV;
+
+    TComPtr<ID3D11Texture2D> SelectionMaskTex;
+    TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
+    TComPtr<ID3D11ShaderResourceView> SelectionMaskSRV;
+
+    TComPtr<ID3D11Texture2D> DepthTex;
+    TComPtr<ID3D11DepthStencilView> DepthStencilView;
+    TComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
+
+    uint32 Width = 0;
+    uint32 Height = 0;
+
+    FRenderTargetSet RenderTargetSet;
+
+	FRenderTargetSet& GetView()
+    {
+        RenderTargetSet.SceneColorRTV = ColorRTV.Get();
+        RenderTargetSet.SceneColorSRV = ColorSRV.Get();
+
+        RenderTargetSet.SceneNormalRTV = NormalRTV.Get();
+        RenderTargetSet.SceneNormalSRV = NormalSRV.Get();
+
+        RenderTargetSet.SceneLightRTV = LightRTV.Get();
+        RenderTargetSet.SceneLightSRV = LightSRV.Get();
+
+        RenderTargetSet.SceneFogRTV = FogRTV.Get();
+        RenderTargetSet.SceneFogSRV = FogSRV.Get();
+
+        RenderTargetSet.SceneWorldPosRTV = WorldPosRTV.Get();
+        RenderTargetSet.SceneWorldPosSRV = WorldPosSRV.Get();
+
+        RenderTargetSet.SceneFXAARTV = FXAARTV.Get();
+        RenderTargetSet.SceneFXAASRV = FXAASRV.Get();
+
+        RenderTargetSet.SceneDepthSRV = DepthStencilSRV.Get();
+        RenderTargetSet.SelectionMaskRTV = SelectionMaskRTV.Get();
+        RenderTargetSet.SelectionMaskSRV = SelectionMaskSRV.Get();
+        RenderTargetSet.DepthStencilView = DepthStencilView.Get();
+        RenderTargetSet.Width = static_cast<float>(Width);
+        RenderTargetSet.Height = static_cast<float>(Height);
+        return RenderTargetSet;
+	}
+
+};
+
 // 패스별 Batcher 바인딩 — Clear → Collect → Flush 패턴
 struct FPassBatcherBinding
 {
@@ -60,6 +135,12 @@ public:
 
 	const ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV.Get(); }
     const ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV.Get(); }
+
+	// 현재는 Resource 를 Handle 이 아니라, 고정된 4개의 Viewport 에 대한 Index 를 통해 관리
+	// 추가로 VP 를 받아서 원래 해당하는 Resource 를 찾아야하는데 현재는 Index 로 찾는 중
+	FViewportRenderResource& AcquireViewportResource(FSceneViewport* VP, uint32 W, uint32 H, int32 Index);
+    void InitializeViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index);
+    void ReleaseViewportResource(FSceneViewport* VP, int32 Index);
 
 private:
 	void InitializePassRenderStates();
@@ -126,5 +207,8 @@ private:
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
     TComPtr<ID3D11ShaderResourceView> SceneFinalSRV = nullptr;
 	constexpr static uint32 MaxRTVCount = 3;
+
+	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
+	FViewportRenderResource ViewportResources[4];
 };
 

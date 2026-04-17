@@ -69,13 +69,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     
 	// Width, Height 변경 여부에 따라 Resource 버퍼 재생성
 	// 만약 최소화 등의 상황으로 (H, W) == (0, 0) 일 경우 Render 안함
-	if (!SceneViewport.EnsureResource(
-            Renderer.GetFD3DDevice().GetDevice(),
-            static_cast<uint32>(Rect.Width),
-            static_cast<uint32>(Rect.Height)))
-    {
-        return;
-    }
+	FViewportRenderResource& ViewportResource = Editor->GetRenderer().AcquireViewportResource(&SceneViewport, Rect.Width, Rect.Height, ViewportIndex);
+    SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
     // Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
     Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
