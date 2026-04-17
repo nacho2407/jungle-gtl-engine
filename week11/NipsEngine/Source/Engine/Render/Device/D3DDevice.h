@@ -9,6 +9,9 @@
 
 struct ID3D11Debug;
 
+/**
+ * 데이터 전달용 구조체 (소유 데이터 아님)
+ */
 struct FRenderTargetSet
 {
 	ID3D11RenderTargetView* SceneColorRTV = nullptr;

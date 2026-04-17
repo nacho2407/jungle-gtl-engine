@@ -8,7 +8,9 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
-#include "Core/ResourceManager.h"
+#include "Editor/Viewport/FSceneViewport.h"
+#include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
+#include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -223,6 +225,134 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
+}
+
+FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
+{
+    assert(Index < 4 && "Index Out of Bound");
+
+    FViewportRenderResource& Res = ViewportResources[Index];
+
+    if (Device.GetDevice() == nullptr || Width == 0 || Height == 0)
+    {
+        ReleaseViewportResource(VP, Index);
+        return Res;
+    }
+
+    const bool bSameSize =
+        (Res.Width == Width) &&
+        (Res.Height == Height);
+
+    const bool bResourcesValid =
+        (Res.ColorRTV != nullptr) &&
+        (Res.SelectionMaskRTV != nullptr) &&
+        (Res.DepthStencilView != nullptr);
+
+    if (bSameSize && bResourcesValid)
+    {
+        return Res;
+    }
+
+    // 재생성
+    ReleaseViewportResource(VP, Index);
+    InitializeViewportResource(VP, Width, Height, Index);
+
+    return Res;
+}
+
+void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
+{
+    FViewportRenderResource& Res = ViewportResources[Index];
+
+    FRenderTarget RT;
+
+    Res.Width = Width;
+    Res.Height = Height;
+
+    RT = FRenderTargetFactory::CreateSceneColor(Device.GetDevice(), Width, Height);
+    Res.ColorTex = RT.Texture;
+    Res.ColorRTV = RT.RTV;
+    Res.ColorSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateSceneNormal(Device.GetDevice(), Width, Height);
+    Res.NormalTex = RT.Texture;
+    Res.NormalRTV = RT.RTV;
+    Res.NormalSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateSelectionMask(Device.GetDevice(), Width, Height);
+    Res.SelectionMaskTex = RT.Texture;
+    Res.SelectionMaskRTV = RT.RTV;
+    Res.SelectionMaskSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateSceneLight(Device.GetDevice(), Width, Height);
+    Res.LightTex = RT.Texture;
+    Res.LightRTV = RT.RTV;
+    Res.LightSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateSceneFog(Device.GetDevice(), Width, Height);
+    Res.FogTex = RT.Texture;
+    Res.FogRTV = RT.RTV;
+    Res.FogSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateSceneWorldPos(Device.GetDevice(), Width, Height);
+    Res.WorldPosTex = RT.Texture;
+    Res.WorldPosRTV = RT.RTV;
+    Res.WorldPosSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateSceneFXAA(Device.GetDevice(), Width, Height);
+    Res.FXAATex = RT.Texture;
+    Res.FXAARTV = RT.RTV;
+    Res.FXAASRV = RT.SRV;
+
+    // Depth
+    FDepthStencilResource DSR =
+        FDepthStencilFactory::CreateDepthStencilView(Device.GetDevice(), Width, Height);
+
+    Res.DepthTex = DSR.Texture;
+    Res.DepthStencilView = DSR.DSV;
+    Res.DepthStencilSRV = DSR.SRV;
+}
+
+void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
+{
+    assert(Index < 4 && "Index Out of Bound");
+
+    FViewportRenderResource& Res = ViewportResources[Index];
+
+    Res.SelectionMaskSRV.Reset();
+    Res.SelectionMaskRTV.Reset();
+    Res.SelectionMaskTex.Reset();
+
+    Res.ColorSRV.Reset();
+    Res.ColorRTV.Reset();
+    Res.ColorTex.Reset();
+
+    Res.NormalRTV.Reset();
+    Res.NormalSRV.Reset();
+    Res.NormalTex.Reset();
+
+    Res.LightRTV.Reset();
+    Res.LightSRV.Reset();
+    Res.LightTex.Reset();
+
+    Res.DepthStencilView.Reset();
+    Res.DepthTex.Reset();
+    Res.DepthStencilSRV.Reset();
+
+    Res.FogTex.Reset();
+    Res.FogRTV.Reset();
+    Res.FogSRV.Reset();
+
+    Res.WorldPosRTV.Reset();
+    Res.WorldPosSRV.Reset();
+    Res.WorldPosTex.Reset();
+
+    Res.FXAARTV.Reset();
+    Res.FXAASRV.Reset();
+    Res.FXAATex.Reset();
+
+    Res.Width = 0;
+    Res.Height = 0;
 }
 
 // ============================================================
