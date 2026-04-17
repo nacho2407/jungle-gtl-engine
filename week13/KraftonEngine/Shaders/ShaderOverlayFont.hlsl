@@ -1,5 +1,5 @@
-#include "Common/VertexLayouts.hlsl"
-#include "Common/SystemSamplers.hlsl"
+#include "Common/VertexLayouts.hlsli"
+#include "Common/SystemSamplers.hlsli"
 
 Texture2D FontAtlas : register(t0);
 

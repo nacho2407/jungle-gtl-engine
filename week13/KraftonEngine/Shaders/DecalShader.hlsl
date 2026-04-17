@@ -1,6 +1,6 @@
-#include "Common/Functions.hlsl"
-#include "Common/VertexLayouts.hlsl"
-#include "Common/SystemSamplers.hlsl"
+#include "Common/Functions.hlsli"
+#include "Common/VertexLayouts.hlsli"
+#include "Common/SystemSamplers.hlsli"
 
 Texture2D g_txColor : register(t0);
 
