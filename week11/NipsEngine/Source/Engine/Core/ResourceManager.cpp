@@ -219,8 +219,6 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 
 	//	TODO : Material, Texture Load
 
-	InitializeDefaultResources(CachedDevice.Get());
-
 	PreloadStaticMeshes();
 
 	if (LoadGPUResources(CachedDevice.Get()))
@@ -543,13 +541,14 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
 	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
 
-	UTexture* DefaultTexture = UObjectManager::Get().CreateObject<UTexture>();
-
-	Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
-	if (DefaultWhiteTexture)
-	{
-		Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultTexture->GetAddressOfSRV());
-		Textures["DefaultWhite"] = DefaultTexture;
+	if (!Textures.count("DefaultWhite"))  {
+		Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
+		if (DefaultWhiteTexture)
+		{
+			UTexture* DefaultTexture = UObjectManager::Get().CreateObject<UTexture>();
+			Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultTexture->GetAddressOfSRV());
+			Textures["DefaultWhite"] = DefaultTexture;
+		}
 	}
 
 	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/ShaderStaticMesh.hlsl");
