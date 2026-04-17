@@ -278,6 +278,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		if (bForce || Cmd.SRVs[i] != Cache.SRVs[i])
 		{
 			ID3D11ShaderResourceView* SRV = Cmd.SRVs[i];
+			if(i == 1) Ctx->VSSetShaderResources(i, 1, &SRV); //구로 전용 개억지 코드 추후 제거 *****************************중요****************************
 			Ctx->PSSetShaderResources(i, 1, &SRV);
 			Cache.SRVs[i] = Cmd.SRVs[i];
 		}
