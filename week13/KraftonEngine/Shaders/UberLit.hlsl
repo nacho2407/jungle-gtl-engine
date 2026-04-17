@@ -73,7 +73,8 @@ struct UberVS_Output
     float2 texcoord  : TEXCOORD0;
     float3 worldPos  : TEXCOORD1;
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
-    float3 litColor  : TEXCOORD2;
+    float3 litDiffuse  : TEXCOORD2;
+    float3 litSpecular : TEXCOORD3;
 #endif
 };
 
@@ -264,9 +265,8 @@ UberVS_Output VS(VS_Input_PNCT input)
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 N = output.normal;
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    float3 diffuse  = AccumulateDiffuse(output.worldPos, N);
-    float3 specular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess);
-    output.litColor = diffuse + specular;
+    output.litDiffuse  = AccumulateDiffuse(output.worldPos, N);
+    output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess);
 #endif
 
     return output;
@@ -293,21 +293,25 @@ float4 PS(UberVS_Output input) : SV_TARGET
 
     float3 V = normalize(CameraWorldPos - input.worldPos);
 
-    float3 lighting = float3(0, 0, 0);
+    float3 diffuse  = float3(0, 0, 0);
+    float3 specular = float3(0, 0, 0);
 
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
-    lighting = input.litColor;
+    // Gouraud: VS에서 정점 단위로 계산 → PS에서 보간된 값 사용
+    diffuse  = input.litDiffuse;
+    specular = input.litSpecular;
 
 #elif defined(LIGHTING_MODEL_LAMBERT) && LIGHTING_MODEL_LAMBERT
-    lighting = AccumulateDiffuse(input.worldPos, N);
+    diffuse = AccumulateDiffuse(input.worldPos, N);
 
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
-    float3 diffuse  = AccumulateDiffuse(input.worldPos, N);
-    float3 specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess);
-    lighting = diffuse + specular;
+    diffuse  = AccumulateDiffuse(input.worldPos, N);
+    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess);
 #endif
 
-    float3 finalColor = baseColor.rgb * lighting + g_DefaultEmissive.rgb;
+    // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
+    // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
+    float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
     finalColor = ApplyWireframe(finalColor);
 
     return float4(finalColor, baseColor.a);
