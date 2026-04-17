@@ -86,6 +86,14 @@ public:
 	bool HasGlobalDirectionalLight() const { return GlobalDirectionalLight.DirectionalOwner != nullptr; }
 	const FGlobalDirectionalLightParams& GetGlobalDirectionalLightParams() const { return GlobalDirectionalLight.Params; }
 
+	void AddPointLight(const class UPointLightComponent* Owner, const FPointLightParams& Params);
+	void RemovePointLight(const class UPointLightComponent* Owner);
+	const TArray<FPointLightParams>& GetPointLights() const;
+
+	void AddSpotLight(const class USpotLightComponent* Owner, const FSpotLightParams& Params);
+	void RemoveSpotLight(const class USpotLightComponent* Owner);
+	const TArray<FSpotLightParams>& GetSpotLights() const;
+
 private:
 	// 전체 프록시 목록 (ProxyId = 인덱스)
 	TArray<FPrimitiveSceneProxy*> Proxies;
@@ -126,6 +134,18 @@ private:
 		const class UDirectionalLightComponent* DirectionalOwner = nullptr;
 		FGlobalDirectionalLightParams Params;
 	};
+	struct FPointLightEntry
+	{
+		const class UPointLightComponent* PointLightOwner = nullptr;
+		FPointLightParams Params;
+	};
+	struct FSpotLightEntry
+	{
+		const class USpotLightComponent* SpotLightOwner = nullptr;
+		FSpotLightParams Params;
+	};
 	FGlobalAmbientLightEntry GlobalAmbientLight;
 	FGlobalDirectionalLightEntry GlobalDirectionalLight;
+	TArray<FPointLightEntry> PointLights;
+	TArray<FSpotLightEntry> SpotLights;
 };
