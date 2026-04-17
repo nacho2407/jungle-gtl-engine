@@ -44,6 +44,11 @@ public:
 	ID3D11Texture2D* GetDepthCopyTexture() const { return DepthCopyTexture; }
 	ID3D11ShaderResourceView* GetDepthCopySRV() const { return DepthCopySRV; }
 	ID3D11ShaderResourceView* GetStencilCopySRV() const { return StencilCopySRV; }
+
+	// GBuffer Normal RT
+	ID3D11RenderTargetView* GetNormalRTV() const { return NormalRTV; }
+	ID3D11ShaderResourceView* GetNormalSRV() const { return NormalSRV; }
+
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
 
 private:
@@ -72,6 +77,11 @@ private:
 	// SceneColor 복사본 — FXAA 등 PostProcess에서 최종 화면을 읽기 위한 CopyResource 대상
 	ID3D11Texture2D* SceneColorCopyTexture = nullptr;
 	ID3D11ShaderResourceView* SceneColorCopySRV = nullptr;
+
+	// GBuffer Normal RT — Opaque 패스에서 MRT[1]로 world normal 기록
+	ID3D11Texture2D* NormalTexture = nullptr;
+	ID3D11RenderTargetView* NormalRTV = nullptr;
+	ID3D11ShaderResourceView* NormalSRV = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 
