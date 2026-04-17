@@ -42,12 +42,18 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
 	if (bIsInitialized) return;
 
+	const D3D_SHADER_MACRO UberLitDefines[] =
+	{
+		{ "DEBUG_LIGHTS", "0" },
+		{ nullptr, nullptr }
+	};
+
 	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl", "VS", "PS");
-	// [UberLit] StaticMesh → UberLit 교체 (DEBUG_LIGHTS=1, 기본 Blinn-Phong)
+	// [UberLit] C++에서 업로드한 LightingBuffer를 사용하도록 DEBUG_LIGHTS 비활성화
 	// 팀원 A ViewMode 시스템 완성 시 EShaderType::UberLit_xxx 로 분리 예정
-	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS");
+	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", UberLitDefines);
 	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::SceneDepth].Create(InDevice, L"Shaders/SceneDepth.hlsl", "VS", "PS");

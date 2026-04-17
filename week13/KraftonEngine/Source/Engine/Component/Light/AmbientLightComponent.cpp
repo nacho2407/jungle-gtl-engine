@@ -2,6 +2,9 @@
 #include "Render/Types/GlobalLightParams.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+
+IMPLEMENT_CLASS(UAmbientLightComponent, ULightComponentBase)
+
 void UAmbientLightComponent::PushToScene()
 {
 	if (!Owner) return;

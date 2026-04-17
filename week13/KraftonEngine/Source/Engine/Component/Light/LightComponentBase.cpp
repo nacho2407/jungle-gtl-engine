@@ -1,5 +1,9 @@
 ﻿#include "LightComponentBase.h"
 #include "Serialization/Archive.h"
+#include "Object/ObjectFactory.h"
+
+IMPLEMENT_ABSTRACT_CLASS(ULightComponentBase, USceneComponent)
+
 void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);

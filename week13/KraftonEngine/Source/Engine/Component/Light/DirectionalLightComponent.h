@@ -8,6 +8,7 @@ public:
 
 	virtual void PushToScene() override;
 	virtual void DestroyFromScene() override;
+	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	virtual void Serialize(FArchive& Ar) override;
 
 
