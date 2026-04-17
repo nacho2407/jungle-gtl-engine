@@ -188,6 +188,13 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.Shader = Cmd.Shader;
 	}
 
+	// PreDepth: PS 언바인딩 — depth만 기록, 셰이딩 스킵
+	if (Cmd.bDepthOnly)
+	{
+		Ctx->PSSetShader(nullptr, nullptr, 0);
+		Cache.Shader = nullptr;  // 다음 커맨드에서 PS 재바인딩 보장
+	}
+
 	// --- Geometry (VB + IB) ---
 	if (Cmd.MeshBuffer)
 	{

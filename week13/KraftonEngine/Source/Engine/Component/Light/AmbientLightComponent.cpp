@@ -5,6 +5,11 @@
 
 IMPLEMENT_CLASS(UAmbientLightComponent, ULightComponentBase)
 
+UAmbientLightComponent::UAmbientLightComponent()
+{
+	Intensity = 0.15f;
+}
+
 void UAmbientLightComponent::PushToScene()
 {
 	if (!Owner) return;

@@ -4,22 +4,29 @@
 #include "GameFramework/World.h"
 #include "Engine/Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponentBase)
+IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
+
+
+void UDirectionalLightComponent::ContributeSelectedVisuals(FScene& Scene) const
+{
+	FVector WorldPos = GetWorldLocation();
+	Scene.AddDebugLine(WorldPos, WorldPos + GetForwardVector() * 5.f, FColor::Red());
+}
 
 void UDirectionalLightComponent::PushToScene()
 {
 	if (!Owner) return;
 	UWorld* World = Owner->GetWorld();
 	if (!World) return;
+
 	FGlobalDirectionalLightParams Params;
-	Params.Direction = Direction;
+	Params.Direction = GetForwardVector();
 	Params.Intensity = Intensity;
 	Params.LightColor = LightColor;
+	Params.bVisible = bVisible;
 
 	World->GetScene().AddGlobalDirectionalLight(this, Params);
 }
-
-
 
 void UDirectionalLightComponent::DestroyFromScene()
 {
@@ -28,16 +35,4 @@ void UDirectionalLightComponent::DestroyFromScene()
 	if (!World) return;
 
 	World->GetScene().RemoveGlobalDirectionalLight(this);
-}
-
-void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
-{
-	ULightComponentBase::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Direction",EPropertyType::Vec3,&Direction });
-}
-
-void UDirectionalLightComponent::Serialize(FArchive& Ar)
-{
-	USceneComponent::Serialize(Ar);
-	Ar << Direction;
 }

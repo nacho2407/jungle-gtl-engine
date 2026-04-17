@@ -13,6 +13,7 @@ public:
 
 private:
 	ID3D11DepthStencilState* Default = nullptr;
+	ID3D11DepthStencilState* DepthGreaterEqual = nullptr;
 	ID3D11DepthStencilState* DepthReadOnly = nullptr;
 	ID3D11DepthStencilState* StencilWrite = nullptr;
 	ID3D11DepthStencilState* StencilMaskEqual = nullptr;

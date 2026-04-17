@@ -4,13 +4,22 @@
 
 void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 {
-	// Default (Reversed-Z: near=1, far=0 → GREATER passes closer fragments)
+	// Default (Reversed-Z: near=1, far=0 → GREATER_EQUAL passes closer or equal fragments)
+	// GREATER_EQUAL은 PreDepth 후 Opaque에서 Early-Z가 동작하는 데 필수
 	D3D11_DEPTH_STENCIL_DESC Desc = {};
 	Desc.DepthEnable = TRUE;
 	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	Desc.DepthFunc = D3D11_COMPARISON_GREATER;
+	Desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
 	Desc.StencilEnable = FALSE;
 	InDevice->CreateDepthStencilState(&Desc, &Default);
+
+	// Depth Greater Equal (Reversed-Z: PreDepth 후 Opaque에서 Early-Z)
+	Desc = {};
+	Desc.DepthEnable = TRUE;
+	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	Desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
+	Desc.StencilEnable = FALSE;
+	InDevice->CreateDepthStencilState(&Desc, &DepthGreaterEqual);
 
 	// Depth Read Only (Reversed-Z)
 	Desc = {};
@@ -73,6 +82,7 @@ void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 void FDepthStencilStateManager::Release()
 {
 	SAFE_RELEASE(Default);
+	SAFE_RELEASE(DepthGreaterEqual);
 	SAFE_RELEASE(DepthReadOnly);
 	SAFE_RELEASE(StencilWrite);
 	SAFE_RELEASE(StencilMaskEqual);
@@ -88,6 +98,7 @@ void FDepthStencilStateManager::Set(ID3D11DeviceContext* InContext, EDepthStenci
 	switch (InState)
 	{
 	case EDepthStencilState::Default:              InContext->OMSetDepthStencilState(Default, 0);          break;
+	case EDepthStencilState::DepthGreaterEqual:   InContext->OMSetDepthStencilState(DepthGreaterEqual, 0); break;
 	case EDepthStencilState::DepthReadOnly:        InContext->OMSetDepthStencilState(DepthReadOnly, 0);    break;
 	case EDepthStencilState::StencilWrite:         InContext->OMSetDepthStencilState(StencilWrite, 1);     break;
 	case EDepthStencilState::StencilWriteOnlyEqual:InContext->OMSetDepthStencilState(StencilMaskEqual, 1); break;

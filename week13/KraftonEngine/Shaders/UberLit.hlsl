@@ -21,7 +21,7 @@
 #endif
 
 #ifndef DEBUG_LIGHTS
-#define DEBUG_LIGHTS 1
+#define DEBUG_LIGHTS 0
 #endif
 
 // ── 라이팅 구조체 & 리소스 바인딩 ──
@@ -273,10 +273,21 @@ UberVS_Output VS(VS_Input_PNCT input)
 }
 
 // =============================================================================
+// MRT 출력 구조체
+// =============================================================================
+struct UberPS_Output
+{
+    float4 Color  : SV_TARGET0;  // 최종 색상 (기존 프레임 버퍼)
+    float4 Normal : SV_TARGET1;  // World Normal (GBuffer Normal RT)
+};
+
+// =============================================================================
 // Pixel Shader
 // =============================================================================
-float4 PS(UberVS_Output input) : SV_TARGET
+UberPS_Output PS(UberVS_Output input)
 {
+    UberPS_Output output;
+
     float4 texColor = g_txDiffuse.Sample(LinearWrapSampler, input.texcoord);
     if (texColor.a < 0.001f)
         texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -314,5 +325,8 @@ float4 PS(UberVS_Output input) : SV_TARGET
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
     finalColor = ApplyWireframe(finalColor);
 
-    return float4(finalColor, baseColor.a);
+    output.Color  = float4(finalColor, baseColor.a);
+    output.Normal = float4(N, 1.0f);  // alpha=1: 유효한 노말 마킹
+
+    return output;
 }

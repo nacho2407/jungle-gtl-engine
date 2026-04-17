@@ -10,6 +10,7 @@ enum class EViewMode : int32
 	Lit_Lambert,
 	Wireframe,
 	SceneDepth,
+	WorldNormal,
 	Count
 };
 

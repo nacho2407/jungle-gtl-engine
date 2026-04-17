@@ -26,6 +26,7 @@ struct FDrawCommand
 	ERasterizerState         Rasterizer   = ERasterizerState::SolidBackCull;
 	D3D11_PRIMITIVE_TOPOLOGY Topology     = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	uint8                    StencilRef   = 0;
+	bool                     bDepthOnly   = false;  // PreDepth: PS 언바인딩 (depth만 기록)
 
 	// ===== Geometry =====
 	FMeshBuffer* MeshBuffer  = nullptr;   // VB + IB (nullptr → RawVB 또는 SV_VertexID 기반 드로우)

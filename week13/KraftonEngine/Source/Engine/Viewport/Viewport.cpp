@@ -66,6 +66,11 @@ void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
 	D3D11_VIEWPORT VPRect = GetViewportRect();
 
 	Ctx->ClearRenderTargetView(RTV, Color);
+	if (NormalRTV)
+	{
+		const float NormalClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		Ctx->ClearRenderTargetView(NormalRTV, NormalClear);
+	}
 	Ctx->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 	Ctx->OMSetRenderTargets(1, &RTV, DSV);
 	Ctx->RSSetViewports(1, &VPRect);
@@ -166,6 +171,26 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(SceneColorCopyTexture, &SceneColorCopySRVDesc, &SceneColorCopySRV);
 	if (FAILED(hr)) return false;
 
+	// ── GBuffer Normal RT (R16G16B16A16_FLOAT — 음수 지원) ──
+	D3D11_TEXTURE2D_DESC NormalDesc = {};
+	NormalDesc.Width = Width;
+	NormalDesc.Height = Height;
+	NormalDesc.MipLevels = 1;
+	NormalDesc.ArraySize = 1;
+	NormalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	NormalDesc.SampleDesc.Count = 1;
+	NormalDesc.Usage = D3D11_USAGE_DEFAULT;
+	NormalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&NormalDesc, nullptr, &NormalTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(NormalTexture, nullptr, &NormalRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(NormalTexture, nullptr, &NormalSRV);
+	if (FAILED(hr)) return false;
+
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;
 	ViewportRect.TopLeftY = 0.0f;
@@ -179,6 +204,9 @@ bool FViewport::CreateResources()
 
 void FViewport::ReleaseResources()
 {
+	if (NormalSRV) { NormalSRV->Release(); NormalSRV = nullptr; }
+	if (NormalRTV) { NormalRTV->Release(); NormalRTV = nullptr; }
+	if (NormalTexture) { NormalTexture->Release(); NormalTexture = nullptr; }
 	if (StencilCopySRV) { StencilCopySRV->Release(); StencilCopySRV = nullptr; }
 	if (DepthCopySRV) { DepthCopySRV->Release(); DepthCopySRV = nullptr; }
 	if (DepthCopyTexture) { DepthCopyTexture->Release(); DepthCopyTexture = nullptr; }

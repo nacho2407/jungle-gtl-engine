@@ -251,6 +251,11 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		}
 		else
 		{
+			// PreDepth: 불투명 패스 프록시에 대해 depth-only 커맨드 추가
+			if (Proxy->Pass == ERenderPass::Opaque)
+			{
+				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
+			}
 			// Proxy → FDrawCommand 직접 변환
 			Renderer.BuildCommandForProxy(*Proxy, Proxy->Pass);
 		}

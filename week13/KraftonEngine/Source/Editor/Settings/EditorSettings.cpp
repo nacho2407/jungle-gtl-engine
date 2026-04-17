@@ -35,7 +35,7 @@ namespace Key
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
 
 	// Paths
-	constexpr const char* DefaultSavePath = "DefaultSavePath";
+	constexpr const char* EditorStartLevel = "EditorStartLevel";
 
 	// Layout
 	constexpr const char* Layout = "Layout";
@@ -83,7 +83,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 
 	// Paths
 	JSON PathsObj = Object();
-	PathsObj[Key::DefaultSavePath] = DefaultSavePath;
+	PathsObj[Key::EditorStartLevel] = EditorStartLevel;
 	Root[Key::Paths] = PathsObj;
 
 	// Layout
@@ -206,8 +206,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	{
 		JSON PathsObj = Root[Key::Paths];
 
-		if (PathsObj.hasKey(Key::DefaultSavePath))
-			DefaultSavePath = PathsObj[Key::DefaultSavePath].ToString();
+		if (PathsObj.hasKey(Key::EditorStartLevel))
+			EditorStartLevel = PathsObj[Key::EditorStartLevel].ToString();
 	}
 
 	// Layout
