@@ -66,8 +66,8 @@ private:
 
 	// CopyResource 대상 — DSV 전환 없이 안전하게 Depth/Stencil 읽기
 	ID3D11Texture2D* DepthCopyTexture = nullptr;
-	ID3D11ShaderResourceView* DepthCopySRV = nullptr;		// t10: SceneDepth
-	ID3D11ShaderResourceView* StencilCopySRV = nullptr;	// t13: (미래) Stencil
+	ID3D11ShaderResourceView* DepthCopySRV = nullptr;		// t16: SceneDepth
+	ID3D11ShaderResourceView* StencilCopySRV = nullptr;	// t19: Stencil
 
 	// SceneColor 복사본 — FXAA 등 PostProcess에서 최종 화면을 읽기 위한 CopyResource 대상
 	ID3D11Texture2D* SceneColorCopyTexture = nullptr;

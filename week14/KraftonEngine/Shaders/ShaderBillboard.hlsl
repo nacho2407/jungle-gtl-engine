@@ -1,6 +1,6 @@
-#include "Common/Functions.hlsl"
-#include "Common/VertexLayouts.hlsl"
-#include "Common/SystemSamplers.hlsl"
+#include "Common/Functions.hlsli"
+#include "Common/VertexLayouts.hlsli"
+#include "Common/SystemSamplers.hlsli"
 
 // 컬러 PNG/TGA 텍스처를 단일 quad에 그리는 빌보드 전용 셰이더.
 // SubUV 와 다르게 R 채널이 아닌 알파 채널만으로 컷오프 판정한다.
