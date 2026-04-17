@@ -262,17 +262,33 @@ UberVS_Output VS(VS_Input_PNCTT input)
     output.normal = normalize(mul(input.normal, (float3x3) Model));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
-        
+    
     float3 T = normalize(mul(input.tangent.xyz, (float3x3) Model));
     T = normalize(T - output.normal * dot(output.normal, T));
+    
+#if !defined(LIGHTING_MODEL_GOURAUD)
+        
     output.tangent = float4(T, input.tangent.w);
 
 
-#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
-    float3 N = output.normal;
+#elif defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N = normalize(mul(input.normal, (float3x3) Model));
+    
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = g_txNormal.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+
+        //float3 tangentNormal = float3(0.f, 0.f, 1.f);//g_txNormal.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse  = AccumulateDiffuse(output.worldPos, N);
+    output.litDiffuse = AccumulateDiffuse(output.worldPos, N);
     output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess);
+    
 #endif
 
     return output;
@@ -312,7 +328,7 @@ UberPS_Output PS(UberVS_Output input)
         float3 tangentNormal = g_txNormal.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
         N = normalize(mul(tangentNormal, TBN));
     }
-  #endif   
+#endif   
 
     float3 V = normalize(CameraWorldPos - input.worldPos);
 
