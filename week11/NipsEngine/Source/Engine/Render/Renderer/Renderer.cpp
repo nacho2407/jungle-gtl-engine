@@ -165,24 +165,10 @@ void FRenderer::UseBackBufferRenderTargets()
 	}
 }
 
-void FRenderer::UseViewportRenderTargets()
-{
-	CurrentRenderTargets = Device.GetViewportRenderTargets();
-	if (!CurrentRenderTargets.IsValid())
-	{
-		InvalidateSceneFinalTargets();
-		UseBackBufferRenderTargets();
-		return;
-	}
-
-	Device.SetSubViewport(0, 0,
-		static_cast<int32>(CurrentRenderTargets.Width),
-		static_cast<int32>(CurrentRenderTargets.Height));
-}
-
 void FRenderer::UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet)
 {
     CurrentRenderTargets = InRenderTargetSet;
+
     if (!CurrentRenderTargets.IsValid())
     {
         InvalidateSceneFinalTargets();
