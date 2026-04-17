@@ -1,4 +1,4 @@
-#include "ObjViewer/ObjViewerRenderPipeline.h"
+﻿#include "ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "ObjViewer/ObjViewerEngine.h"
 #include "Render/Pipeline/Renderer.h"
@@ -69,5 +69,5 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
 	Collector.CollectWorld(World, Frame, Renderer);
 	Renderer.BuildDynamicCommands(Frame, &Scene);
-	Renderer.Render(Frame);
+	Renderer.Render(Frame, Scene);
 }

@@ -1,4 +1,4 @@
-#include "DefaultRenderPipeline.h"
+﻿#include "DefaultRenderPipeline.h"
 
 #include "Renderer.h"
 #include "Engine/Runtime/Engine.h"
@@ -44,6 +44,6 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	}
 
 	Renderer.BeginFrame();
-	Renderer.Render(Frame);
+	Renderer.Render(Frame, *Scene);
 	Renderer.EndFrame();
 }

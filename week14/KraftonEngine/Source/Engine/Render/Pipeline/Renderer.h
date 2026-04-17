@@ -52,7 +52,7 @@ public:
 
 	// --- Render phase: 정렬 + GPU 제출 ---
 	void BeginFrame();
-	void Render(const FFrameContext& Frame);
+	void Render(const FFrameContext& Frame, FScene& Scene);
 	void EndFrame();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
@@ -65,6 +65,8 @@ private:
 	void InitializePassRenderStates();
 
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
+	void UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene);
+	//void UpdateLightBuffer(ID3D11DeviceContext* Context, const )
 
 	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼
 	void PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene);

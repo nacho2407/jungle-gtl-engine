@@ -22,23 +22,24 @@ namespace ECBSlot
 	constexpr uint32 PerObject = 1; // b1: Model/Color (고정)
 	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1
+	constexpr uint32 Lighting = 4;
 }
 
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
-	constexpr uint32 SceneDepth  = 10; // t10: CopyResource된 Depth (R24_UNORM)
-	constexpr uint32 SceneColor  = 11; // t11: CopyResource된 SceneColor (R8G8B8A8_UNORM)
+	constexpr uint32 SceneDepth = 10; // t10: CopyResource된 Depth (R24_UNORM)
+	constexpr uint32 SceneColor = 11; // t11: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	// constexpr uint32 SceneAlbedo  = 12; // t12: (미래)
-	constexpr uint32 Stencil      = 13; // t13: CopyResource된 Stencil (X24_G8_UINT)
+	constexpr uint32 Stencil = 13; // t13: CopyResource된 Stencil (X24_G8_UINT)
 }
 
 // HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩
 namespace ESamplerSlot
 {
 	constexpr uint32 LinearClamp = 0; // s0: PostProcess, UI, 기본
-	constexpr uint32 LinearWrap  = 1; // s1: 메시 텍스처, 데칼
-	constexpr uint32 PointClamp  = 2; // s2: 폰트, 깊이/스텐실 정밀 읽기
+	constexpr uint32 LinearWrap = 1; // s1: 메시 텍스처, 데칼
+	constexpr uint32 PointClamp = 2; // s2: 폰트, 깊이/스텐실 정밀 읽기
 	// s3-s4: 셰이더별 커스텀 용도
 }
 
@@ -134,6 +135,17 @@ struct FFXAAConstants
 	float _pad[2];
 };
 
+
+struct FGlobalLightingConstants
+{
+	float AmbIntensity;
+	float _Padding[3];
+	FVector4 AmbColor;
+
+	float DirIntensity;
+	FVector Direction;
+	FVector4 DirColor;
+};
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
 // ============================================================
