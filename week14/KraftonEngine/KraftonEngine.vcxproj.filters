@@ -40,6 +40,9 @@
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{22bbd7c0-73bc-1bc4-992f-be08238b1609}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Light">
+      <UniqueIdentifier>{68733902-62c6-6992-604b-99f4fd185b46}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{aaeb2f3f-eff4-9d0e-a471-82c1372b9aed}</UniqueIdentifier>
     </Filter>
@@ -177,22 +180,22 @@
     <FxCompile Include="Shaders\UberLit.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
+    <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\Functions.hlsl">
+    <FxCompile Include="Shaders\Common\Functions.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\SystemResources.hlsl">
+    <FxCompile Include="Shaders\Common\SystemResources.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\SystemSamplers.hlsl">
+    <FxCompile Include="Shaders\Common\SystemSamplers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
+    <FxCompile Include="Shaders\Common\VertexLayouts.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\NormalView.hlsl">
@@ -316,6 +319,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Light\LightComponent.cpp">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp">
+      <Filter>Source\Engine\Component\Light</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -576,9 +591,12 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\DirectionalLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PointLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\SpotLightActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -706,6 +724,24 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h">
       <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h">
+      <Filter>Source\Engine\Component\Light</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ClassTypes.h">
       <Filter>Source\Engine\Core</Filter>
@@ -962,6 +998,9 @@
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h">
+      <Filter>Source\Engine\Render\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
@@ -1067,13 +1106,10 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
-    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
-    <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h" />
+    <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\DirectionalLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PointLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\SpotLightActor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

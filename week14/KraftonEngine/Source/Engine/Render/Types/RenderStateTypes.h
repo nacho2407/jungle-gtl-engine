@@ -9,6 +9,7 @@
 enum class EDepthStencilState
 {
 	Default,
+	DepthGreaterEqual,	// Reversed-Z: GREATER_EQUAL + depth write (PreDepth 후 Opaque에서 Early-Z용)
 	DepthReadOnly,
 	StencilWrite,
 	StencilWriteOnlyEqual,
@@ -61,6 +62,7 @@ namespace RenderStateStrings
 	inline constexpr FEnumEntry DepthStencilStateMap[] =
 	{
 		{ "Default",              (int)EDepthStencilState::Default },
+		{ "DepthGreaterEqual",    (int)EDepthStencilState::DepthGreaterEqual },
 		{ "DepthReadOnly",        (int)EDepthStencilState::DepthReadOnly },
 		{ "StencilWrite",         (int)EDepthStencilState::StencilWrite },
 		{ "StencilWriteOnlyEqual",(int)EDepthStencilState::StencilWriteOnlyEqual },

@@ -10,6 +10,10 @@
 #include "GameFramework/FireballActor.h"
 #include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/AmbientLightActor.h"
+#include "GameFramework/DirectionalLightActor.h"
+#include "GameFramework/PointLightActor.h"
+#include "GameFramework/SpotLightActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -87,6 +91,35 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
+			case 6:
+			{
+				AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 7:
+			{
+				ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 8:
+			{
+				APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+			case 9:
+			{
+				ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+			}
+
 			}
 		}
 		NumberOfSpawnedActors = 1;

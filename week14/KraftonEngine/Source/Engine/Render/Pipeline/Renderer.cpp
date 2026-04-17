@@ -1,6 +1,5 @@
 ﻿#include "Renderer.h"
 
-#include <iostream>
 #include <algorithm>
 #include <functional>
 #include "Resource/ResourceManager.h"
@@ -16,6 +15,7 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Materials/MaterialManager.h"
 #include "Engine/Render/Pipeline/ForwardLightData.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -57,7 +57,7 @@ void FRenderer::Create(HWND hWindow)
 
 	if (Device.GetDevice() == nullptr)
 	{
-		std::cout << "Failed to create D3D Device." << std::endl;
+		UE_LOG("Failed to create D3D Device.");
 	}
 
 	FShaderManager::Get().Initialize(Device.GetDevice());
@@ -185,6 +185,8 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			}
 		};
 
+	const bool bPreDepth = (Pass == ERenderPass::PreDepth);
+
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
 	if (!Proxy.SectionDraws.empty())
 	{
@@ -195,24 +197,36 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = EffectiveShader;
+			Cmd.bDepthOnly = bPreDepth;
 
-			// 머티리얼 기반 렌더 상태 우선 적용
-			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
-			Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
-			Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
+			if (bPreDepth)
+			{
+				// PreDepth: 패스 테이블 상태 강제 (머티리얼 오버라이드 무시)
+				Cmd.Blend = PassState.Blend;
+				Cmd.DepthStencil = PassState.DepthStencil;
+				Cmd.Rasterizer = PassState.Rasterizer;
+			}
+			else
+			{
+				// 머티리얼 기반 렌더 상태 우선 적용
+				Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
+				Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
+				Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
+			}
 
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = Proxy.MeshBuffer;
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
 			Cmd.PerObjectCB = PerObjCB;
-			Cmd.PerShaderCB[0] = Section.MaterialCB[0];
-			Cmd.PerShaderCB[1] = Section.MaterialCB[1];
-			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
-			
-			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-				Cmd.SRVs[s] = Section.SRVs[s];
-
+			if (!bPreDepth)
+			{
+				Cmd.PerShaderCB[0] = Section.MaterialCB[0];
+				Cmd.PerShaderCB[1] = Section.MaterialCB[1];
+				SetProxyExtraCB(Cmd);
+				for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+					Cmd.SRVs[s] = Section.SRVs[s];
+			}
 			Cmd.Pass = Pass;
 			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.SRVs[(int)EMaterialTextureSlot::Diffuse]); //Todo 언젠가 Diffuse말고 범용적인 딴걸로
 
@@ -222,17 +236,30 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Shader = EffectiveShader;
+		Cmd.bDepthOnly = bPreDepth;
 
-		// 프록시 기반 렌더 상태 적용
-		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
-		Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
-		Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+		if (bPreDepth)
+		{
+			Cmd.Blend = PassState.Blend;
+			Cmd.DepthStencil = PassState.DepthStencil;
+			Cmd.Rasterizer = PassState.Rasterizer;
+		}
+		else
+		{
+			// 프록시 기반 렌더 상태 적용
+			Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
+			Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
+			Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+		}
 
 		Cmd.Topology = PassState.Topology;
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
-		SetProxyExtraCB(Cmd);
-		Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.DiffuseSRV;
+		if (!bPreDepth)
+		{
+			SetProxyExtraCB(Cmd);
+			Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.DiffuseSRV;
+		}
 		Cmd.Pass = Pass;
 		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
@@ -357,7 +384,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, Frame);
-		UpdateLightBuffer(Context, Scene);
+		UpdateLightBuffer(Device.GetDevice(), Context, Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -374,7 +401,8 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
-	BuildPassEvents(PrePassEvents, Context, Frame, Cache);
+	TArray<FPassEvent> PostPassEvents;
+	BuildPassEvents(PrePassEvents, PostPassEvents, Context, Frame, Cache);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
@@ -395,6 +423,11 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		GPU_SCOPE_STAT(PassName);
 
 		DrawCommandList.SubmitRange(Start, End, Device, Context, Cache);
+
+		for (auto& PostPassEvent : PostPassEvents)
+		{
+			PostPassEvent.TryExecute(CurPass);
+		}
 	}
 
 	CleanupPassState(Context, Cache);
@@ -409,6 +442,7 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 	ID3D11ShaderResourceView* nullSRV = nullptr;
 	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
 	Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
 	Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
 
 	Cache.Cleanup(Context);
@@ -419,10 +453,60 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 // BuildPassEvents — 패스 루프 Pre/Post 이벤트 등록
 // ============================================================
 void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
+	TArray<FPassEvent>& PostPassEvents,
 	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
 {
-	// CopyResource: PostProcess 이상 패스 진입 전 Depth+Stencil 복사 → 시스템 텍스처 바인딩
+	// CopyDepth: PreDepth 완료 직후(Opaque 진입 전) Depth 복사 → SceneDepth SRV 바인딩
 	if (Frame.DepthTexture && Frame.DepthCopyTexture)
+	{
+		PrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::GreaterEqual, true, false,
+			[Context, &Frame, &Cache]()
+			{
+				Context->OMSetRenderTargets(0, nullptr, nullptr);
+				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
+
+				// MRT: Opaque 패스에서 Normal RT를 SV_TARGET1로 사용
+				if (Frame.NormalRTV)
+				{
+					ID3D11RenderTargetView* RTVs[2] = { Cache.RTV, Frame.NormalRTV };
+					Context->OMSetRenderTargets(2, RTVs, Cache.DSV);
+				}
+				else
+				{
+					Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+				}
+
+				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
+				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
+
+				Cache.bForceAll = true;
+			}
+			});
+	}
+
+	// Opaque 완료 후: MRT 해제 → 1 RTV 복귀 + Normal SRV 바인딩
+	if (Frame.NormalRTV)
+	{
+		PostPassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
+			[Context, &Frame, &Cache]()
+			{
+				// MRT 해제 → RTV 1개로 복귀 (Normal RT를 SRV로 읽기 위해 RTV에서 분리)
+				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+
+				// Normal SRV 바인딩
+				if (Frame.NormalSRV)
+				{
+					ID3D11ShaderResourceView* normalSRV = Frame.NormalSRV;
+					Context->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &normalSRV);
+				}
+
+				Cache.bForceAll = true;
+			}
+			});
+	}
+
+	// CopyStencil: SelectionMask 완료 후(PostProcess 진입 전) Stencil 복사 → Outline에서 사용
+	if (Frame.DepthTexture && Frame.DepthCopyTexture && Frame.StencilCopySRV)
 	{
 		PrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
 			[Context, &Frame, &Cache]()
@@ -431,14 +515,8 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
 				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
 
-				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
-				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
-
-				if (Frame.StencilCopySRV)
-				{
-					ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
-					Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
-				}
+				ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
+				Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
 
 				Cache.bForceAll = true;
 			}
@@ -648,6 +726,24 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			}
 		}
 
+		// WorldNormal (UserBits=3 → SceneDepth 뒤)
+		if (CollectViewMode == EViewMode::WorldNormal)
+		{
+			FShader* NormalShader = FShaderManager::Get().GetShader(EShaderType::SceneNormal);
+			if (NormalShader)
+			{
+				FDrawCommand& Cmd = DrawCommandList.AddCommand();
+				Cmd.Shader = NormalShader;
+				Cmd.DepthStencil = PPState.DepthStencil;
+				Cmd.Blend = PPState.Blend;
+				Cmd.Rasterizer = PPState.Rasterizer;
+				Cmd.Topology = PPState.Topology;
+				Cmd.VertexCount = 3;
+				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::PostProcess, NormalShader, nullptr, nullptr, 3);
+			}
+		}
+
 		if (Frame.ShowFlags.bFXAA)
 		{
 			FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
@@ -721,8 +817,9 @@ void FRenderer::InitializePassRenderStates()
 	using E = ERenderPass;
 	auto& S = PassRenderStates;
 
-	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	//                              DepthStencil                         Blend                Rasterizer                   Topology                                WireframeAware
+	S[(uint32)E::PreDepth] = { EDepthStencilState::Default,           EBlendState::NoColor,    ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Opaque] = { EDepthStencilState::DepthGreaterEqual, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
@@ -795,7 +892,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene)
+void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene)
 {
 	//AmbientLight & DirectionalLight Data Upload
 	FLightingCBData GlobalLightingData = {};
@@ -818,16 +915,70 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Sc
 		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
 	}
+	//else
+	//{
+	//	// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
+	//	GlobalLightingData.Directional.Intensity = 1.0f;
+	//	GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
+	//	GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
+	//}
+
+	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
+	if (!PointLightParams.empty())
+	{
+		GlobalLightingData.NumActivePointLights = static_cast<uint32>(PointLightParams.size());
+	}
 	else
 	{
-		// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
-		GlobalLightingData.Directional.Intensity = 1.0f;
-		GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
-		GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
+		GlobalLightingData.NumActivePointLights = 0;
 	}
 
-	GlobalLightingData.NumActivePointLights = 0; //똥값. 이후 교체필요
-	GlobalLightingData.NumActiveSpotLights = 0; //똥값. 이후 교체필요
+
+	const TArray<FSpotLightParams>& SpotLightParams = Scene.GetSpotLights();
+	if (!SpotLightParams.empty())
+	{
+		GlobalLightingData.NumActiveSpotLights = static_cast<uint32>(SpotLightParams.size());
+	}
+	else
+	{
+		GlobalLightingData.NumActiveSpotLights = 0;
+	}
+
+	TArray<FLightInfo> Infos;
+	for (const FPointLightParams& PointLigth : PointLightParams)
+	{
+		Infos.emplace_back(PointLigth.ToLightInfo());
+
+	}
+	for (const FSpotLightParams& SpotLight : SpotLightParams)
+	{
+		Infos.emplace_back(SpotLight.ToLightInfo());
+	}
+
+	static uint32 LightDebugLogCounter = 0;
+	++LightDebugLogCounter;
+	if (LightDebugLogCounter % 60 == 0)
+	{
+		if (!Infos.empty())
+		{
+			const FLightInfo& FirstLight = Infos[0];
+			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight{Type=%u, Pos=(%.3f, %.3f, %.3f), Intensity=%.3f, Radius=%.3f, Falloff=%.3f}",
+				GlobalLightingData.NumActivePointLights,
+				GlobalLightingData.NumActiveSpotLights,
+				FirstLight.LightType,
+				FirstLight.Position.X, FirstLight.Position.Y, FirstLight.Position.Z,
+				FirstLight.Intensity,
+				FirstLight.AttenuationRadius,
+				FirstLight.FalloffExponent);
+		}
+		else
+		{
+			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight=None",
+				GlobalLightingData.NumActivePointLights,
+				GlobalLightingData.NumActiveSpotLights);
+		}
+	}
+
 	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
 	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
 
@@ -835,4 +986,8 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Sc
 	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 	Context->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
+
+
+	Resources.ForwardLights.Update(InDevice, Context, Infos);
+	Context->PSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
 }

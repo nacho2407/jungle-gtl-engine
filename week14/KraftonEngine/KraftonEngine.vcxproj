@@ -270,10 +270,6 @@
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\LightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp" />
@@ -284,14 +280,24 @@
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\FakeLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\FireballActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PointLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\SpotLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
@@ -405,12 +411,6 @@
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
-    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h" />
@@ -421,6 +421,12 @@
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
     <ClInclude Include="Source\Engine\Core\ClassTypes.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
@@ -432,11 +438,15 @@
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\Core\TickFunction.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\DirectionalLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\FakeLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\FireballActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PointLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\SpotLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
@@ -653,7 +663,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
+    <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -665,25 +675,25 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\Functions.hlsl">
+    <FxCompile Include="Shaders\Common\Functions.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\SystemResources.hlsl">
+    <FxCompile Include="Shaders\Common\SystemResources.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\SystemSamplers.hlsl">
+    <FxCompile Include="Shaders\Common\SystemSamplers.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
+    <FxCompile Include="Shaders\Common\VertexLayouts.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
