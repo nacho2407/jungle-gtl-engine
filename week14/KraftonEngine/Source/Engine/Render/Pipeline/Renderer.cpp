@@ -857,13 +857,13 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
 	}
-	else
-	{
-		// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
-		GlobalLightingData.Directional.Intensity = 1.0f;
-		GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
-		GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
-	}
+	//else
+	//{
+	//	// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
+	//	GlobalLightingData.Directional.Intensity = 1.0f;
+	//	GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
+	//	GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
+	//}
 
 	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
 	if (!PointLightParams.empty())
