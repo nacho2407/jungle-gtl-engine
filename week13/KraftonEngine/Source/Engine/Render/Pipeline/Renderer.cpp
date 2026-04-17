@@ -155,6 +155,25 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
 
+	// ViewMode에 따른 UberLit 셰이더 변형 선택
+	FShader* EffectiveShader = Proxy.Shader;
+	if (Proxy.Shader == FShaderManager::Get().GetShader(EShaderType::StaticMesh))
+	{
+		switch (CollectViewMode)
+		{
+		case EViewMode::Lit_Gouraud:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Gouraud);
+			break;
+		case EViewMode::Lit_Lambert:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Lambert);
+			break;
+		case EViewMode::Lit_Phong:
+		default:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Phong);
+			break;
+		}
+	}
+
 	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
 		{
@@ -175,7 +194,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader = Proxy.Shader;
+			Cmd.Shader = EffectiveShader;
 
 			// 머티리얼 기반 렌더 상태 우선 적용
 			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
@@ -192,14 +211,14 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.Pass = Pass;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.DiffuseSRV);
 
 		}
 	}
 	else
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader = Proxy.Shader;
+		Cmd.Shader = EffectiveShader;
 
 		// 프록시 기반 렌더 상태 적용
 		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
@@ -212,7 +231,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		SetProxyExtraCB(Cmd);
 		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
 		Cmd.Pass = Pass;
-		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
+		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
 }
 
@@ -783,12 +802,25 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
 	}
+	else
+	{
+		// 폴백: 씬에 AmbientLight 없으면 최소 ambient 보장 (검정 방지)
+		GlobalLightingData.Ambient.Intensity = 0.15f;
+		GlobalLightingData.Ambient.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 	if (Scene.HasGlobalDirectionalLight())
 	{
 		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
 		GlobalLightingData.Directional.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
+	}
+	else
+	{
+		// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
+		GlobalLightingData.Directional.Intensity = 1.0f;
+		GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
+		GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
 	}
 
 	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
