@@ -6,7 +6,7 @@
 // C++ ForwardLightData.h 와 바이트 단위로 1:1 대응
 //
 // 슬롯 배치:
-//   b3        LightingBuffer (Ambient + Directional + 메타)
+//   b4        LightingBuffer (Ambient + Directional + 메타)
 //   t8        StructuredBuffer<FLightInfo>  (Point/Spot 통합)
 //   t9        StructuredBuffer<uint>        (TileLightIndices)
 //   t10       StructuredBuffer<uint2>       (TileLightGrid)
@@ -62,8 +62,8 @@ struct FLightInfo
 // 리소스 바인딩
 // =============================================================================
 
-// ── Lighting CB (b3) — Ambient + Directional + 메타데이터 ──
-cbuffer LightingBuffer : register(b3)
+// ── Lighting CB (b4) — Ambient + Directional + 메타데이터 ──
+cbuffer LightingBuffer : register(b4)
 {
 	FAmbientLightInfo     AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
