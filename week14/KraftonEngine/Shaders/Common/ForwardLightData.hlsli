@@ -26,36 +26,36 @@
 
 struct FAmbientLightInfo
 {
-	float4 Color;       // 16B
-	float  Intensity;   //  4B
-	float3 _padA;       // 12B → 32B
+    float4 Color; // 16B
+    float Intensity; //  4B
+    float3 _padA; // 12B → 32B
 };
 
 struct FDirectionalLightInfo
 {
-	float4 Color;       // 16B
-	float3 Direction;   // 12B
-	float  Intensity;   //  4B → 32B
+    float4 Color; // 16B
+    float3 Direction; // 12B
+    float Intensity; //  4B → 32B
 };
 
 // Point/Spot 통합 POD — LightType으로 분기
 struct FLightInfo
 {
-	float4 Color;                 // 16B
+    float4 Color; // 16B
 
-	float3 Position;              // 12B
-	float  Intensity;             //  4B
+    float3 Position; // 12B
+    float Intensity; //  4B
 
-	float  AttenuationRadius;     //  4B
-	float  FalloffExponent;       //  4B
-	uint   LightType;             //  4B
-	float  _pad0;                 //  4B
+    float AttenuationRadius; //  4B
+    float FalloffExponent; //  4B
+    uint LightType; //  4B
+    float _pad0; //  4B
 
-	float3 Direction;             // 12B  (Spot 전용)
-	float  InnerConeCos;          //  4B  (Spot 전용)
+    float3 Direction; // 12B  (Spot 전용)
+    float InnerConeCos; //  4B  (Spot 전용)
 
-	float  OuterConeCos;          //  4B  (Spot 전용)
-	float3 _pad1;                 // 12B → 합계 80B
+    float OuterConeCos; //  4B  (Spot 전용)
+    float3 _pad1; // 12B → 합계 80B
 };
 
 // =============================================================================
@@ -63,20 +63,20 @@ struct FLightInfo
 // =============================================================================
 
 // ── Lighting CB (b3) — Ambient + Directional + 메타데이터 ──
-cbuffer LightingBuffer : register(b3)
+cbuffer LightingBuffer : register(b4)
 {
-	FAmbientLightInfo     AmbientLight;
-	FDirectionalLightInfo DirectionalLight;
+    FAmbientLightInfo AmbientLight;
+    FDirectionalLightInfo DirectionalLight;
 
-	uint  NumActivePointLights;
-	uint  NumActiveSpotLights;
-	uint  NumTilesX;
-	uint  NumTilesY;
+    uint NumActivePointLights;
+    uint NumActiveSpotLights;
+    uint NumTilesX;
+    uint NumTilesY;
 };
 
 // ── Structured Buffers (t8~t10) ──
-StructuredBuffer<FLightInfo> g_AllLights        : register(t8);
-StructuredBuffer<uint>       g_TileLightIndices : register(t9);
-StructuredBuffer<uint2>      g_TileLightGrid    : register(t10);
+StructuredBuffer<FLightInfo> g_AllLights : register(t8);
+StructuredBuffer<uint> g_TileLightIndices : register(t9);
+StructuredBuffer<uint2> g_TileLightGrid : register(t10);
 
 #endif // FORWARD_LIGHT_DATA_HLSLI

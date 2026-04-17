@@ -15,6 +15,7 @@
 #include "Profiling/Timer.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Materials/MaterialManager.h"
+#include "Engine/Render/Pipeline/ForwardLightData.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -334,6 +335,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, Frame);
+		UpdateLightBuffer(Context, Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -774,20 +776,28 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene)
 {
 	//AmbientLight & DirectionalLight Data Upload
-	FGlobalLightingConstants GlobalLightingData = {};
+	FLightingCBData GlobalLightingData = {};
 	if (Scene.HasGlobalAmbientLight())
 	{
-		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
-		GlobalLightingData.AmbIntensity = DirLightParams.Intensity;
-		GlobalLightingData.AmbColor = DirLightParams.LightColor;
+		FGlobalAmbientLightParams DirLightParams = Scene.GetGlobalAmbientLightParams();
+		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
+		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
 	}
 	if (Scene.HasGlobalDirectionalLight())
 	{
 		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
-		GlobalLightingData.DirIntensity = DirLightParams.Intensity;
-		GlobalLightingData.DirColor = DirLightParams.LightColor;
-		GlobalLightingData.Direction = DirLightParams.Direction; // 라이트 방향은 역방향으로 저장
+		GlobalLightingData.Directional.Intensity = DirLightParams.Intensity;
+		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
+		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
 	}
 
-	FConstantBufferPool::Get().GetCBuffer(ECBPoolKey::GlobalLight)->Update(Context, &GlobalLightingData, sizeof(FGlobalLightingConstants));
+	GlobalLightingData.NumActivePointLights = 0; //똥값. 이후 교체필요
+	GlobalLightingData.NumActiveSpotLights = 0; //똥값. 이후 교체필요
+	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
+	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
+
+	Resources.LightingConstantBuffer.Update(Context, &GlobalLightingData, sizeof(FLightingCBData));
+	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
+	Context->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 }

@@ -3,6 +3,9 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Engine/Serialization/Archive.h"
+
+IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponentBase)
+
 void UDirectionalLightComponent::PushToScene()
 {
 	if (!Owner) return;
@@ -16,6 +19,8 @@ void UDirectionalLightComponent::PushToScene()
 	World->GetScene().AddGlobalDirectionalLight(this, Params);
 }
 
+
+
 void UDirectionalLightComponent::DestroyFromScene()
 {
 	if (!Owner) return;
@@ -23,6 +28,12 @@ void UDirectionalLightComponent::DestroyFromScene()
 	if (!World) return;
 
 	World->GetScene().RemoveGlobalDirectionalLight(this);
+}
+
+void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	ULightComponentBase::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Direction",EPropertyType::Vec3,&Direction });
 }
 
 void UDirectionalLightComponent::Serialize(FArchive& Ar)

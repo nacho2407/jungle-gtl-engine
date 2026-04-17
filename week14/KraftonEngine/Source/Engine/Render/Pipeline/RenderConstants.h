@@ -28,18 +28,18 @@ namespace ECBSlot
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
 namespace ELightTexSlot
 {
-	constexpr uint32 AllLights        = 8;  // t8:  StructuredBuffer<FLightInfo>
+	constexpr uint32 AllLights = 8;  // t8:  StructuredBuffer<FLightInfo>
 	constexpr uint32 TileLightIndices = 9;  // t9:  StructuredBuffer<uint>
-	constexpr uint32 TileLightGrid   = 10;  // t10: StructuredBuffer<uint2>
+	constexpr uint32 TileLightGrid = 10;  // t10: StructuredBuffer<uint2>
 }
 
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
-	constexpr uint32 SceneDepth  = 16; // t16: CopyResource된 Depth (R24_UNORM)
-	constexpr uint32 SceneColor  = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
+	constexpr uint32 SceneDepth = 16; // t16: CopyResource된 Depth (R24_UNORM)
+	constexpr uint32 SceneColor = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	// constexpr uint32 SceneAlbedo  = 18; // t18: (미래)
-	constexpr uint32 Stencil     = 19; // t19: CopyResource된 Stencil (X24_G8_UINT)
+	constexpr uint32 Stencil = 19; // t19: CopyResource된 Stencil (X24_G8_UINT)
 }
 
 // HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩
@@ -143,17 +143,6 @@ struct FFXAAConstants
 	float _pad[2];
 };
 
-
-struct FGlobalLightingConstants
-{
-	float AmbIntensity;
-	float _Padding[3];
-	FVector4 AmbColor;
-
-	float DirIntensity;
-	FVector Direction;
-	FVector4 DirColor;
-};
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
 // ============================================================
