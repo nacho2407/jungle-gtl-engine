@@ -712,6 +712,76 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		OutMesh.Sections.push_back(NewSection);
 	}
 
+	//일반적인 Tangent계산
+	TArray<FVector> TangentSums(OutMesh.Vertices.size(), FVector(0.0f, 0.0f, 0.0f));
+	TArray<FVector> BitangentSums(OutMesh.Vertices.size(), FVector(0.0f, 0.0f, 0.0f));
+
+	for (size_t i = 0; i + 2 < OutMesh.Indices.size(); i += 3)
+	{
+		uint32 I0 = OutMesh.Indices[i + 0];
+		uint32 I1 = OutMesh.Indices[i + 1];
+		uint32 I2 = OutMesh.Indices[i + 2];
+
+		const FNormalVertex& V0 = OutMesh.Vertices[I0];
+		const FNormalVertex& V1 = OutMesh.Vertices[I1];
+		const FNormalVertex& V2 = OutMesh.Vertices[I2];
+
+		FVector Edge1 = V1.pos - V0.pos;
+		FVector Edge2 = V2.pos - V0.pos;
+
+		FVector2 DeltaUV1 = V1.tex - V0.tex;
+		FVector2 DeltaUV2 = V2.tex - V0.tex;
+
+		float Det = DeltaUV1.X * DeltaUV2.Y - DeltaUV1.Y * DeltaUV2.X;
+		if (std::abs(Det) < 1e-8f)
+		{
+			continue;
+		}
+
+		float InvDet = 1.0f / Det;
+
+		FVector Tangent = (Edge1 * DeltaUV2.Y - Edge2 * DeltaUV1.Y) * InvDet;
+		FVector Bitangent = (Edge2 * DeltaUV1.X - Edge1 * DeltaUV2.X) * InvDet;
+
+		TangentSums[I0] += Tangent;
+		TangentSums[I1] += Tangent;
+		TangentSums[I2] += Tangent;
+
+		BitangentSums[I0] += Bitangent;
+		BitangentSums[I1] += Bitangent;
+		BitangentSums[I2] += Bitangent;
+	}
+
+	for (size_t i = 0; i < OutMesh.Vertices.size(); ++i)
+	{
+		FNormalVertex& V = OutMesh.Vertices[i];
+
+		FVector N = V.normal.Normalized();
+		FVector T = TangentSums[i];
+
+		// Gram-Schmidt: tangent를 normal에 직교하게 보정
+		T = T - N * N.Dot(T);
+
+		if (T.Length() < 1e-8f)
+		{
+			// UV가 없거나 degenerate인 경우 fallback tangent 생성
+			FVector Axis = std::abs(N.Z) < 0.999f
+				? FVector(0.0f, 0.0f, 1.0f)
+				: FVector(0.0f, 1.0f, 0.0f);
+
+			T = Axis.Cross(N).Normalized();
+		}
+		else
+		{
+			T.Normalize();
+		}
+
+		FVector B = BitangentSums[i];
+		float Handedness = N.Cross(T).Dot(B) < 0.0f ? -1.0f : 1.0f;
+
+		V.tangent = FVector4(T, Handedness);
+	}
+
     return true;
 }
 

@@ -23,6 +23,15 @@ struct VS_Input_PNCT
     float2 texcoord : TEXTCOORD;
 };
 
+struct VS_Input_PNCTT
+{
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR;
+    float2 texcoord : TEXTCOORD;
+    float4 tangent : TANGENT;
+};
+
 // FTextureVertex (Position + TexCoord)
 // 사용: Font, SubUV, OverlayFont
 struct VS_Input_PT

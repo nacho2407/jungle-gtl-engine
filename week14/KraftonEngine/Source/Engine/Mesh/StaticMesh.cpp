@@ -66,16 +66,17 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 	MemoryStats::AddStaticMeshCPUMemory(CPUSize);
 
 	// CPU → GPU 정점 버퍼 변환
-	TMeshData<FVertexPNCT> RenderMeshData;
+	TMeshData<FVertexPNCTT> RenderMeshData;
 	RenderMeshData.Vertices.reserve(StaticMeshAsset->Vertices.size());
 
 	for (const FNormalVertex& RawVert : StaticMeshAsset->Vertices)
 	{
-		FVertexPNCT RenderVert;
+		FVertexPNCTT RenderVert;
 		RenderVert.Position = RawVert.pos;
 		RenderVert.Normal = RawVert.normal;
 		RenderVert.Color = RawVert.color;
 		RenderVert.UV = RawVert.tex;
+		RenderVert.Tangent = RawVert.tangent;
 		RenderMeshData.Vertices.push_back(RenderVert);
 	}
 	RenderMeshData.Indices = StaticMeshAsset->Indices;
