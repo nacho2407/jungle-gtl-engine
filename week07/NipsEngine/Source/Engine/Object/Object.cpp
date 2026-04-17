@@ -78,6 +78,7 @@ void UObject::CopyPropertiesFrom(UObject* Src)
         case EPropertyType::Float:
         case EPropertyType::Vec3:
         case EPropertyType::Vec4:
+		case EPropertyType::Color:
         {
             const size_t Size = GetPropertySize(SrcProp.Type);
             if (Size > 0)
@@ -116,4 +117,9 @@ void UObject::CopyPropertiesFrom(UObject* Src)
     /** 위 함수는 성능상 프로퍼티 개수 N에 대해 O(N²)이므로 개선의 여지가 있습니다. 
 	 *  추후 N이 많아질 경우 FPropertyDescriptor에 해시 및 인덱스를 추가하여 O(N·logN)으로 개선할 수 있지만,
 	 *  캐시 비용이 증가할 수 있으므로 보수적으로 접근하는 편이 좋을 것 같습니다. **/
+}
+
+void UObject::Serialize(FArchive& Ar)
+{
+	Ar << "Type" << GetTypeInfo()->name;
 }

@@ -22,6 +22,7 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
 	void PostEditProperty(const char* PropertyName) override {}
 
+
     // Actor lifecycle
     template<typename T>
     T* SpawnActor()

@@ -89,7 +89,8 @@ void FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 			CamState.bValid = true;
 		}
 
-		FSceneSaveManager::SaveSceneAsJSON(FinalSceneName, *Ctx, &CamState);
+		//FSceneSaveManager::SaveSceneAsJSON(FinalSceneName, *Ctx, &CamState);
+		FSceneSaveManager::Save(FinalSceneName, *Ctx, &CamState);
 
 		const std::filesystem::path SavedPath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
 			/ (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension);
@@ -123,7 +124,8 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 	EditorEngine->ClearScene();
 	FWorldContext LoadCtx;
 	FEditorCameraState LoadedCam;
-	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
+	//FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
+	FSceneSaveManager::Load(FilePath, LoadCtx, &LoadedCam);
 	if (LoadCtx.World)
 	{
 		EditorEngine->GetWorldList().push_back(LoadCtx);
@@ -145,7 +147,7 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 			// ApplyCameraMode 가 설정한 TargetLocation(기본값)이 남아 있으면
 			// 다음 Tick 에서 EditorWorldController 가 카메라를 되돌려 버리므로
 			// 새 위치로 동기화한다.
-			EditorEngine->GetViewportLayout().GetViewportClient(0).SyncCameraTarget();
+			EditorEngine->GetViewportLayout().GetViewportClient(0)->SyncCameraTarget();
 		}
 	}
 
