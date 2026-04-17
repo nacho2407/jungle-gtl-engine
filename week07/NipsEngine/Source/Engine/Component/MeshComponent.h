@@ -8,6 +8,8 @@ class UMeshComponent : public UPrimitiveComponent
 public:
 	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override;
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
 

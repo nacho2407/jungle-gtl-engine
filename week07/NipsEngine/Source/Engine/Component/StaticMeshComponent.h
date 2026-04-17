@@ -11,6 +11,8 @@ public:
 	
 	virtual void PostDuplicate(UObject* Original) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
 	UStaticMesh* GetStaticMesh() const;
 	bool HasValidMesh() const;

@@ -17,6 +17,8 @@ public:
 
 	virtual void PostDuplicate(UObject* Original) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
     virtual void InitDefaultComponents() {}
 
 	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.

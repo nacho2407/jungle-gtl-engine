@@ -9,6 +9,8 @@ public:
     UHeightFogComponent();
     ~UHeightFogComponent() override = default;
 
+	virtual void Serialize(FArchive& Ar) override;
+
     EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_FOG; }
 
     void SetFogDensity(float InFogDensity) { FogDensity = InFogDensity; }
@@ -17,8 +19,8 @@ public:
     void SetHeightFalloff(float InHeightFalloff) { HeightFalloff = InHeightFalloff; }
     float GetHeightFalloff() const { return HeightFalloff; }
 
-    void SetFogInscatteringColor(const FVector4& InColor) { FogInscatteringColor = InColor; }
-    FVector4 GetFogInscatteringColor() const { return FogInscatteringColor; }
+    void SetFogInscatteringColor(const FVector4& InColor) { FogInscatteringColor = FColor(InColor.X, InColor.Y, InColor.Z, InColor.W); }
+    FVector4 GetFogInscatteringColor() const { return FogInscatteringColor.ToVector4(); }
 
     void SetFogHeight(float InFogHeight) { FogHeight = InFogHeight; }
     float GetFogHeight() const { return FogHeight; }
@@ -37,7 +39,7 @@ public:
     void PostEditProperty(const char* PropertyName) override;
 
 private:
-    FVector4 FogInscatteringColor;
+    FColor FogInscatteringColor;
     float FogDensity = 0;
     float HeightFalloff = 0;
     float FogHeight = 0;
