@@ -45,9 +45,18 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl", "VS", "PS");
-	// [UberLit] StaticMesh → UberLit 교체 (DEBUG_LIGHTS=1, 기본 Blinn-Phong)
-	// 팀원 A ViewMode 시스템 완성 시 EShaderType::UberLit_xxx 로 분리 예정
+	// [UberLit] StaticMesh → UberLit 기본(Phong), 3개 라이팅 모델 변형 컴파일
 	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS");
+
+	// UberLit 변형 — D3D_SHADER_MACRO로 라이팅 모델 선택
+	{
+		D3D_SHADER_MACRO GouraudMacros[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {nullptr, nullptr} };
+		D3D_SHADER_MACRO LambertMacros[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {nullptr, nullptr} };
+		D3D_SHADER_MACRO PhongMacros[]   = { {"LIGHTING_MODEL_PHONG",   "1"}, {nullptr, nullptr} };
+		Shaders[(uint32)EShaderType::UberLit_Gouraud].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", GouraudMacros);
+		Shaders[(uint32)EShaderType::UberLit_Lambert].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", LambertMacros);
+		Shaders[(uint32)EShaderType::UberLit_Phong].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", PhongMacros);
+	}
 	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::SceneDepth].Create(InDevice, L"Shaders/SceneDepth.hlsl", "VS", "PS");

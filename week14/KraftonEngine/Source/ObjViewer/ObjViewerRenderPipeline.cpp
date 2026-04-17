@@ -62,7 +62,7 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	ShowFlags.bGizmo = false;
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
-	Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
+	Frame.SetRenderSettings(EViewMode::Lit_Phong, ShowFlags);
 	Frame.SetViewportInfo(VP);
 
 	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
