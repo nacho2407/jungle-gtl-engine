@@ -33,6 +33,7 @@ enum class EMeshShape
 
 enum class ERenderPass : uint32
 {
+	PreDepth,		// Depth-only 프리패스 (color write 없음, Early-Z용)
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
 	Decal,			// 데칼 (DepthReadOnly)
 	AdditiveDecal,	// FakeLight 등
@@ -50,6 +51,7 @@ enum class ERenderPass : uint32
 inline const char* GetRenderPassName(ERenderPass Pass)
 {
 	static const char* Names[] = {
+		"RenderPass::PreDepth",
 		"RenderPass::Opaque",
 		"RenderPass::Decal",
 		"RenderPass::AdditiveDecal",
@@ -70,6 +72,7 @@ namespace RenderStateStrings
 {
 	inline constexpr FEnumEntry RenderPassMap[] =
 	{
+		{ "PreDepth",      (int)ERenderPass::PreDepth },
 		{ "Opaque",        (int)ERenderPass::Opaque },
 		{ "Decal",         (int)ERenderPass::Decal },
 		{ "AdditiveDecal", (int)ERenderPass::AdditiveDecal },

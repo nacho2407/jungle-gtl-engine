@@ -185,6 +185,8 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			}
 		};
 
+	const bool bPreDepth = (Pass == ERenderPass::PreDepth);
+
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
 	if (!Proxy.SectionDraws.empty())
 	{
@@ -195,21 +197,35 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = EffectiveShader;
+			Cmd.bDepthOnly = bPreDepth;
 
-			// 머티리얼 기반 렌더 상태 우선 적용
-			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
-			Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
-			Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
+			if (bPreDepth)
+			{
+				// PreDepth: 패스 테이블 상태 강제 (머티리얼 오버라이드 무시)
+				Cmd.Blend = PassState.Blend;
+				Cmd.DepthStencil = PassState.DepthStencil;
+				Cmd.Rasterizer = PassState.Rasterizer;
+			}
+			else
+			{
+				// 머티리얼 기반 렌더 상태 우선 적용
+				Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
+				Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
+				Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
+			}
 
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = Proxy.MeshBuffer;
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
 			Cmd.PerObjectCB = PerObjCB;
-			Cmd.PerShaderCB[0] = Section.MaterialCB[0];
-			Cmd.PerShaderCB[1] = Section.MaterialCB[1];
-			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
-			Cmd.DiffuseSRV = Section.DiffuseSRV;
+			if (!bPreDepth)
+			{
+				Cmd.PerShaderCB[0] = Section.MaterialCB[0];
+				Cmd.PerShaderCB[1] = Section.MaterialCB[1];
+				SetProxyExtraCB(Cmd);
+				Cmd.DiffuseSRV = Section.DiffuseSRV;
+			}
 			Cmd.Pass = Pass;
 			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.DiffuseSRV);
 
@@ -219,17 +235,30 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Shader = EffectiveShader;
+		Cmd.bDepthOnly = bPreDepth;
 
-		// 프록시 기반 렌더 상태 적용
-		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
-		Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
-		Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+		if (bPreDepth)
+		{
+			Cmd.Blend = PassState.Blend;
+			Cmd.DepthStencil = PassState.DepthStencil;
+			Cmd.Rasterizer = PassState.Rasterizer;
+		}
+		else
+		{
+			// 프록시 기반 렌더 상태 적용
+			Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
+			Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
+			Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+		}
 
 		Cmd.Topology = PassState.Topology;
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
-		SetProxyExtraCB(Cmd);
-		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
+		if (!bPreDepth)
+		{
+			SetProxyExtraCB(Cmd);
+			Cmd.DiffuseSRV = Proxy.DiffuseSRV;
+		}
 		Cmd.Pass = Pass;
 		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
@@ -418,10 +447,10 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
 {
-	// CopyResource: PostProcess 이상 패스 진입 전 Depth+Stencil 복사 → 시스템 텍스처 바인딩
+	// CopyDepth: PreDepth 완료 직후(Opaque 진입 전) Depth 복사 → SceneDepth SRV 바인딩
 	if (Frame.DepthTexture && Frame.DepthCopyTexture)
 	{
-		PrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
+		PrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::GreaterEqual, true, false,
 			[Context, &Frame, &Cache]()
 			{
 				Context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -431,11 +460,23 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
 				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
 
-				if (Frame.StencilCopySRV)
-				{
-					ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
-					Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
-				}
+				Cache.bForceAll = true;
+			}
+			});
+	}
+
+	// CopyStencil: SelectionMask 완료 후(PostProcess 진입 전) Stencil 복사 → Outline에서 사용
+	if (Frame.DepthTexture && Frame.DepthCopyTexture && Frame.StencilCopySRV)
+	{
+		PrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
+			[Context, &Frame, &Cache]()
+			{
+				Context->OMSetRenderTargets(0, nullptr, nullptr);
+				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
+				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+
+				ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
+				Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
 
 				Cache.bForceAll = true;
 			}
@@ -718,8 +759,9 @@ void FRenderer::InitializePassRenderStates()
 	using E = ERenderPass;
 	auto& S = PassRenderStates;
 
-	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	//                              DepthStencil                         Blend                Rasterizer                   Topology                                WireframeAware
+	S[(uint32)E::PreDepth] = { EDepthStencilState::Default,           EBlendState::NoColor,    ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::Opaque] = { EDepthStencilState::DepthGreaterEqual, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
