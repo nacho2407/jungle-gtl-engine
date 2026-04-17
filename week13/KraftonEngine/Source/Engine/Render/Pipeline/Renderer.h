@@ -98,6 +98,6 @@ private:
 	FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];
 
 	// BeginCollect에서 저장, BuildCommandForProxy에서 사용
-	EViewMode CollectViewMode = EViewMode::Lit;
+	EViewMode CollectViewMode = EViewMode::Lit_Phong;
 	bool bHasSelectionMaskCommands = false;
 };

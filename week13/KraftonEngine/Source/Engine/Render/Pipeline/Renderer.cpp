@@ -154,6 +154,25 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
 
+	// ViewMode에 따른 UberLit 셰이더 변형 선택
+	FShader* EffectiveShader = Proxy.Shader;
+	if (Proxy.Shader == FShaderManager::Get().GetShader(EShaderType::StaticMesh))
+	{
+		switch (CollectViewMode)
+		{
+		case EViewMode::Lit_Gouraud:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Gouraud);
+			break;
+		case EViewMode::Lit_Lambert:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Lambert);
+			break;
+		case EViewMode::Lit_Phong:
+		default:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Phong);
+			break;
+		}
+	}
+
 	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
 		{
@@ -174,7 +193,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader = Proxy.Shader;
+			Cmd.Shader = EffectiveShader;
 
 			// 머티리얼 기반 렌더 상태 우선 적용
 			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
@@ -191,14 +210,14 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.Pass = Pass;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.DiffuseSRV);
 
 		}
 	}
 	else
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader = Proxy.Shader;
+		Cmd.Shader = EffectiveShader;
 
 		// 프록시 기반 렌더 상태 적용
 		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
@@ -211,7 +230,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		SetProxyExtraCB(Cmd);
 		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
 		Cmd.Pass = Pass;
-		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
+		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
 }
 
