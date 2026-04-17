@@ -174,7 +174,13 @@
     <FxCompile Include="Shaders\StaticMeshShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\Functions.hlsl">
@@ -570,6 +576,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -881,6 +890,9 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\ForwardLightData.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -1055,6 +1067,13 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
+    <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

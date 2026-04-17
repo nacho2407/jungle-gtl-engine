@@ -1,4 +1,4 @@
-#include "ObjViewer/ObjViewerRenderPipeline.h"
+﻿#include "ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "ObjViewer/ObjViewerEngine.h"
 #include "Render/Pipeline/Renderer.h"
@@ -62,12 +62,12 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	ShowFlags.bGizmo = false;
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
-	Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
+	Frame.SetRenderSettings(EViewMode::Lit_Phong, ShowFlags);
 	Frame.SetViewportInfo(VP);
 
 	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
 	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
 	Collector.CollectWorld(World, Frame, Renderer);
 	Renderer.BuildDynamicCommands(Frame, &Scene);
-	Renderer.Render(Frame);
+	Renderer.Render(Frame, Scene);
 }

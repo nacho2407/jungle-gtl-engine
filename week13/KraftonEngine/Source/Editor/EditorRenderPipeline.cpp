@@ -126,7 +126,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// 3. GPU 정렬 + 제출 (PostProcess 패스에서 Fog/Outline도 자동 처리)
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-		Renderer.Render(Frame);
+		Renderer.Render(Frame, Scene);
 	}
 
 	// 4. GPU Occlusion — Hi-Z 생성 + Occlusion Test 디스패치

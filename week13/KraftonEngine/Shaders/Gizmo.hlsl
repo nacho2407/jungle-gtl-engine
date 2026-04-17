@@ -1,5 +1,5 @@
-#include "Common/Functions.hlsl"
-#include "Common/VertexLayouts.hlsl"
+#include "Common/Functions.hlsli"
+#include "Common/VertexLayouts.hlsli"
 
 // b2 (PerShader0): 기즈모 전용
 cbuffer GizmoBuffer : register(b2)

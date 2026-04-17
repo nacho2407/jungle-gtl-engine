@@ -270,6 +270,10 @@
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp" />
@@ -401,6 +405,12 @@
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h" />
@@ -472,6 +482,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\ForwardLightData.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
@@ -495,6 +506,7 @@
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
+    <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />
@@ -634,7 +646,19 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>

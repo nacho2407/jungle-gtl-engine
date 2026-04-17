@@ -15,30 +15,39 @@ class FShader;
 	렌더링에 필요한 데이터 타입을 정의합니다.
 */
 
-// HLSL CB 바인딩 슬롯 — b0/b1 고정, b2/b3 셰이더별 여분
+// HLSL CB 바인딩 슬롯 — b0/b1 고정, b2/b3 셰이더별 여분, b4 라이팅
 namespace ECBSlot
 {
-	constexpr uint32 Frame = 0; // b0: View/Projection/Wireframe (고정)
-	constexpr uint32 PerObject = 1; // b1: Model/Color (고정)
+	constexpr uint32 Frame = 0;      // b0: View/Projection/Wireframe (고정)
+	constexpr uint32 PerObject = 1;  // b1: Model/Color (고정)
 	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
-	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1
+	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1 (PerShader2 예약)
+	constexpr uint32 Lighting = 4;   // b4: LightingBuffer (Ambient + Directional + 메타)
+}
+
+// HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
+namespace ELightTexSlot
+{
+	constexpr uint32 AllLights = 8;  // t8:  StructuredBuffer<FLightInfo>
+	constexpr uint32 TileLightIndices = 9;  // t9:  StructuredBuffer<uint>
+	constexpr uint32 TileLightGrid = 10;  // t10: StructuredBuffer<uint2>
 }
 
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
-	constexpr uint32 SceneDepth  = 10; // t10: CopyResource된 Depth (R24_UNORM)
-	constexpr uint32 SceneColor  = 11; // t11: CopyResource된 SceneColor (R8G8B8A8_UNORM)
-	// constexpr uint32 SceneAlbedo  = 12; // t12: (미래)
-	constexpr uint32 Stencil      = 13; // t13: CopyResource된 Stencil (X24_G8_UINT)
+	constexpr uint32 SceneDepth = 16; // t16: CopyResource된 Depth (R24_UNORM)
+	constexpr uint32 SceneColor = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
+	// constexpr uint32 SceneAlbedo  = 18; // t18: (미래)
+	constexpr uint32 Stencil = 19; // t19: CopyResource된 Stencil (X24_G8_UINT)
 }
 
 // HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩
 namespace ESamplerSlot
 {
 	constexpr uint32 LinearClamp = 0; // s0: PostProcess, UI, 기본
-	constexpr uint32 LinearWrap  = 1; // s1: 메시 텍스처, 데칼
-	constexpr uint32 PointClamp  = 2; // s2: 폰트, 깊이/스텐실 정밀 읽기
+	constexpr uint32 LinearWrap = 1; // s1: 메시 텍스처, 데칼
+	constexpr uint32 PointClamp = 2; // s2: 폰트, 깊이/스텐실 정밀 읽기
 	// s3-s4: 셰이더별 커스텀 용도
 }
 

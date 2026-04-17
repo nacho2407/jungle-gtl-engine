@@ -286,3 +286,40 @@ void FScene::RemoveFog(const UHeightFogComponent* Owner)
 			[Owner](const FFogEntry& E) { return E.Owner == Owner; }),
 		Fogs.end());
 }
+//-------------Belows are for Light----------------//
+void FScene::AddGlobalAmbientLight(const UAmbientLightComponent* Owner, const FGlobalAmbientLightParams& Params)
+{
+	if (GlobalAmbientLight.AmbientOwner == Owner)
+	{
+		GlobalAmbientLight.Params = Params;
+		return;
+	}
+	GlobalAmbientLight = { Owner, Params };
+}
+
+void FScene::RemoveGlobalAmbientLight(const UAmbientLightComponent* Owner)
+{
+	if (GlobalAmbientLight.AmbientOwner == Owner)
+	{
+		GlobalAmbientLight = {};
+	}
+}
+
+void FScene::AddGlobalDirectionalLight(const UDirectionalLightComponent* Owner, const FGlobalDirectionalLightParams& Params)
+{
+	if (GlobalDirectionalLight.DirectionalOwner == Owner)
+	{
+		GlobalDirectionalLight.Params = Params;
+		return;
+	}
+	GlobalDirectionalLight = { Owner, Params };
+}
+
+void FScene::RemoveGlobalDirectionalLight(const UDirectionalLightComponent* Owner)
+{
+	if (GlobalDirectionalLight.DirectionalOwner == Owner)
+	{
+		GlobalDirectionalLight = {};
+	}
+}
+
