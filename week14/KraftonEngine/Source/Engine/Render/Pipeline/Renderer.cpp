@@ -15,6 +15,7 @@
 #include "Profiling/Timer.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Materials/MaterialManager.h"
+#include "Engine/Render/Pipeline/ForwardLightData.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -154,6 +155,25 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
 
+	// ViewMode에 따른 UberLit 셰이더 변형 선택
+	FShader* EffectiveShader = Proxy.Shader;
+	if (Proxy.Shader == FShaderManager::Get().GetShader(EShaderType::StaticMesh))
+	{
+		switch (CollectViewMode)
+		{
+		case EViewMode::Lit_Gouraud:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Gouraud);
+			break;
+		case EViewMode::Lit_Lambert:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Lambert);
+			break;
+		case EViewMode::Lit_Phong:
+		default:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Phong);
+			break;
+		}
+	}
+
 	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
 		{
@@ -174,7 +194,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader = Proxy.Shader;
+			Cmd.Shader = EffectiveShader;
 
 			// 머티리얼 기반 렌더 상태 우선 적용
 			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
@@ -191,14 +211,14 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.Pass = Pass;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.DiffuseSRV);
 
 		}
 	}
 	else
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader = Proxy.Shader;
+		Cmd.Shader = EffectiveShader;
 
 		// 프록시 기반 렌더 상태 적용
 		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
@@ -211,7 +231,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		SetProxyExtraCB(Cmd);
 		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
 		Cmd.Pass = Pass;
-		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
+		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
 }
 
@@ -326,7 +346,7 @@ void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* S
 // Render — 정렬 + GPU 제출
 // BeginCollect + Collector + BuildDynamicCommands 이후에 호출.
 // ============================================================
-void FRenderer::Render(const FFrameContext& Frame)
+void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 {
 	FDrawCallStats::Reset();
 
@@ -334,6 +354,7 @@ void FRenderer::Render(const FFrameContext& Frame)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, Frame);
+		UpdateLightBuffer(Context, Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -701,7 +722,7 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true};
+	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
 	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
@@ -769,4 +790,46 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+}
+
+void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FScene& Scene)
+{
+	//AmbientLight & DirectionalLight Data Upload
+	FLightingCBData GlobalLightingData = {};
+	if (Scene.HasGlobalAmbientLight())
+	{
+		FGlobalAmbientLightParams DirLightParams = Scene.GetGlobalAmbientLightParams();
+		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
+		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
+	}
+	else
+	{
+		// 폴백: 씬에 AmbientLight 없으면 최소 ambient 보장 (검정 방지)
+		GlobalLightingData.Ambient.Intensity = 0.15f;
+		GlobalLightingData.Ambient.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+	if (Scene.HasGlobalDirectionalLight())
+	{
+		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
+		GlobalLightingData.Directional.Intensity = DirLightParams.Intensity;
+		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
+		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
+	}
+	else
+	{
+		// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
+		GlobalLightingData.Directional.Intensity = 1.0f;
+		GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
+		GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
+	}
+
+	GlobalLightingData.NumActivePointLights = 0; //똥값. 이후 교체필요
+	GlobalLightingData.NumActiveSpotLights = 0; //똥값. 이후 교체필요
+	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
+	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
+
+	Resources.LightingConstantBuffer.Update(Context, &GlobalLightingData, sizeof(FLightingCBData));
+	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
+	Context->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 }
