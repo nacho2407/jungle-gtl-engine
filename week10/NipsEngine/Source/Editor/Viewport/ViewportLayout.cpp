@@ -12,7 +12,7 @@
 #include "EditorEngine.h"
 
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
-static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewports] =
+static constexpr EEditorViewportType kViewportTypes[FEditorViewportLayout::MaxViewports] =
 {
 	EVT_Perspective,   // 0 : 좌상단 (원근)
 	EVT_OrthoTop,      // 1 : 우상단 (탑 뷰)
@@ -20,10 +20,18 @@ static constexpr EEditorViewportType kViewportTypes[FViewportLayout::MaxViewport
 	EVT_OrthoRight,    // 3 : 우하단 (라이트 뷰)
 };
 
-void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine)
+void FEditorViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionManager* SelectionManager, UEditorEngine* EditorEngine)
 {
 	Window = InWindow;
 	Editor = EditorEngine;
+
+    // Client 포인터 소유/생성 주체는 Layout입니다.
+    // 각 SceneViewport는 Layout이 소유한 Client 인스턴스를 참조만 합니다.
+    for (int32 i = 0; i < MaxViewports; ++i)
+    {
+        ViewportWidgets[i].GetSceneViewport().SetClient(&ViewportClients[i]);
+    }
+
 	// Settings 에서 레이아웃 상태 복원
 	const FEditorSettings& S = FEditorSettings::Get();
 	bSingleViewport    = (S.ActiveViewportCount == 1);
@@ -36,30 +44,29 @@ void FViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelectionMa
 	// 4개 뷰포트 클라이언트 초기화
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		ViewportClients[i].SetSettings(&FEditorSettings::Get());
-		ViewportClients[i].Initialize(Window, EditorEngine);
-		ViewportClients[i].SetWorld(World);
-		ViewportClients[i].SetGizmo(SelectionManager->GetGizmo());
-		ViewportClients[i].SetSelectionManager(SelectionManager);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetSettings(&FEditorSettings::Get());
+		ViewportWidgets[i].GetSceneViewport().GetClient()->Initialize(Window, EditorEngine);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetWorld(World);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetGizmo(SelectionManager->GetGizmo());
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetSelectionManager(SelectionManager);
 		
 		// 상호 참조 연결
-		SceneViewports[i].SetClient(&ViewportClients[i]);
-		ViewportClients[i].SetViewport(&SceneViewports[i]);
-		ViewportClients[i].SetState(&ViewportStates[i]);
+        ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewport(&ViewportWidgets[i].GetSceneViewport());
+        ViewportWidgets[i].GetSceneViewport().GetClient()->SetState(&ViewportWidgets[i].GetSceneViewport().GetState());
 
 		// 뷰포트 타입 설정 후 카메라 생성
-		ViewportClients[i].SetViewportType(kViewportTypes[i]);
-		ViewportClients[i].CreateCamera();
-		ViewportClients[i].ApplyCameraMode();
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportType(kViewportTypes[i]);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->CreateCamera();
+		ViewportWidgets[i].GetSceneViewport().GetClient()->ApplyCameraMode();
 	}
 }
 
-void FViewportLayout::Shutdown()
+void FEditorViewportLayout::Shutdown()
 {
 	DestroyViewportLayout();
 }
 
-void FViewportLayout::UpdateHoverStates()
+void FEditorViewportLayout::UpdateHoverStates()
 {
 	// 1. PumpMessages 에서 처리된 WM_MOUSEMOVE 드래그 결과를 즉시 뷰포트 Rect 에 반영
 	//    이렇게 해야 아래 bHovered 계산이 현재 프레임 Rect 를 사용할 수 있습니다.
@@ -71,7 +78,7 @@ void FViewportLayout::UpdateHoverStates()
 	// 1 - 1. 특정 뷰포트에서 기즈모 홀딩중이라면 스킵합니다.
 	for (int i = 0; i < MaxViewports; ++i)
 	{
-		if (ViewportClients[i].GetGizmo()->IsHolding())
+		if (ViewportWidgets[i].GetSceneViewport().GetClient()->GetGizmo()->IsHolding())
 			return;
 	}
 
@@ -104,7 +111,7 @@ void FViewportLayout::UpdateHoverStates()
 	int32 ActiveOpViewport = -1;
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		if (GetViewportClient(i).IsActiveOperation())
+		if (GetViewportClient(i)->IsActiveOperation())
 		{
 			ActiveOpViewport = i;
 			break;
@@ -114,7 +121,7 @@ void FViewportLayout::UpdateHoverStates()
 	// 독점 조작하는 뷰포트가 있다면 상태값 유지 + 포커스 인덱스 갱신
 	if (ActiveOpViewport >= 0)
 	{
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 			GetViewportState(i).bHovered = (i == ActiveOpViewport);
 
 		SetLastFocusedViewportIndex(ActiveOpViewport);
@@ -123,10 +130,11 @@ void FViewportLayout::UpdateHoverStates()
 	{
 		// Hover 된 뷰포트 찾아서 상태값 변경하기
 		bool bFoundHover = false;
-		for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 		{
 			FEditorViewportState& ViewportState = GetViewportState(i);
-			if (!bFoundHover && ViewportState.Rect.Contains(MouseX, MouseY))
+            FViewportRect ViewportRect = GetSceneViewport(i).GetRect();
+            if (!bFoundHover && ViewportRect.Contains(MouseX, MouseY))
 			{
 				ViewportState.bHovered = true;
 				bFoundHover = true;
@@ -145,17 +153,17 @@ void FViewportLayout::UpdateHoverStates()
 	}
 }
 
-void FViewportLayout::Tick(float DeltaTime)
+void FEditorViewportLayout::Tick(float DeltaTime)
 {
 	UpdateHoverStates();
 	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
-		GetViewportClient(i).Tick(DeltaTime);
+		GetViewportClient(i)->Tick(DeltaTime);
 	}
 }
 
-void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
+void FEditorViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 {
 	// 윈도우 리사이즈(최대화/복원 포함) 시 기존 HostRect는 이전 프레임 값일 수 있으므로 무효화합니다.
 	// 이후 RenderViewportHostWindow에서 최신 HostRect가 다시 설정됩니다.
@@ -176,7 +184,7 @@ void FViewportLayout::OnWindowResized(uint32 Width, uint32 Height)
 	}
 }
 
-void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
+void FEditorViewportLayout::SetHostRect(const FViewportRect& InHostRect)
 {
 	HostRect = InHostRect;
 
@@ -196,7 +204,7 @@ void FViewportLayout::SetHostRect(const FViewportRect& InHostRect)
 }
 
 // 영역 계산 헬퍼
-void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
+void FEditorViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 {
 	const int32 W = static_cast<int32>(Width);
 	const int32 H = static_cast<int32>(Height);
@@ -204,32 +212,41 @@ void FViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	// 50:50 초기 분할 (이후 BuildViewportLayout → SyncViewportRects 에서 최종 반영)
 	const int32 HalfW = W / 2;
 	const int32 HalfH = H / 2;
-
-	ViewportStates[0].Rect = { 0,     0,     HalfW,      HalfH };  // 좌상단
-	ViewportStates[1].Rect = { HalfW, 0,     W - HalfW,  HalfH };  // 우상단
-	ViewportStates[2].Rect = { 0,     HalfH, HalfW,      H - HalfH };  // 좌하단
-	ViewportStates[3].Rect = { HalfW, HalfH, W - HalfW,  H - HalfH };  // 우하단
-
+    
+	FViewportRect Rects[4] = {
+        { 0, 0, HalfW, HalfH },
+        { HalfW, 0, W - HalfW, HalfH },
+        { 0, HalfH, HalfW, H - HalfH },
+        { HalfW, HalfH, W - HalfW, H - HalfH }
+    };
+	
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		SceneViewports[i].SetRect(ViewportStates[i].Rect);
-
-		ViewportClients[i].SetViewportSize(
-			static_cast<float>(ViewportStates[i].Rect.Width),
-			static_cast<float>(ViewportStates[i].Rect.Height));
+        ViewportWidgets[i].GetSceneViewport().SetRect(Rects[i]);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(Rects[i].Width, Rects[i].Height);
 	}
 }
 
 //  Viewport Layout 생성 (2 x 2)
-void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
+void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 {
 	DestroyViewportLayout();  // 기존 위젯이 있으면 먼저 해제
 
 	// 4개 SViewport 생성 + ISlateViewport(FSceneViewport) 연결
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		ViewportWidgets[i] = new SViewport();
-		ViewportWidgets[i]->SetViewportInterface(&SceneViewports[i]);
+        FSceneViewport& VP = ViewportWidgets[i].GetSceneViewport();
+        // Build 시 DestroyViewportLayout()에서 끊어진 Client-Viewport-State 연결을 복구한다.
+        VP.SetClient(&ViewportClients[i]);
+        if (FEditorViewportClient* VC = ViewportWidgets[i].GetSceneViewport().GetClient())
+        {
+            VC->SetViewport(&ViewportWidgets[i].GetSceneViewport());
+            VC->SetState(&ViewportWidgets[i].GetSceneViewport().GetState());
+        }
+
+		FViewportRenderResource RenderResource = Editor->GetRenderer().AcquireViewportResource(&VP, VP.GetRect().Width, VP.GetRect().Height, i);
+        VP.SetRenderTargetSet(&RenderResource.GetView());
+        ViewportWidgets[i].SetViewportInterface(&VP);
 	}
 
 	// 스플리터 트리 구성
@@ -237,12 +254,12 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	//     SideLT (위)   = TopSplitterH → [0] 좌상단(Perspective), [1] 우상단(Top)
 	//     SideRB (아래) = BotSplitterH → [2] 좌하단(Front),       [3] 우하단(Right)
 	TopSplitterH = new SSplitterH();
-	TopSplitterH->SetSideLT(ViewportWidgets[0]);
-	TopSplitterH->SetSideRB(ViewportWidgets[1]);
+	TopSplitterH->SetSideLT(&ViewportWidgets[0]);
+	TopSplitterH->SetSideRB(&ViewportWidgets[1]);
 
 	BotSplitterH = new SSplitterH();
-	BotSplitterH->SetSideLT(ViewportWidgets[2]);
-	BotSplitterH->SetSideRB(ViewportWidgets[3]);
+	BotSplitterH->SetSideLT(&ViewportWidgets[2]);
+	BotSplitterH->SetSideRB(&ViewportWidgets[3]);
 
 	RootSplitterV = new SSplitterV();
 	RootSplitterV->SetSideLT(TopSplitterH);
@@ -290,7 +307,7 @@ void FViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	SyncViewportRects();
 }
 
-void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
+void FEditorViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 {
 	bSingleViewport     = bSingle;
 	SingleViewportIndex = (Index < 0) ? 0 : (Index >= MaxViewports ? MaxViewports - 1 : Index);
@@ -302,16 +319,16 @@ void FViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 	SyncViewportRects();
 }
 
-void FViewportLayout::SetLastFocusedViewportIndex(int32 Index)
+void FEditorViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 {
 	if (Index < 0) Index = 0;
 	if (Index >= MaxViewports) Index = MaxViewports - 1;
 	LastFocusedViewportIndex = Index;
 
-	FEditorViewportClient& MainViewport = GetViewportClient(LastFocusedViewportIndex);
+	FEditorViewportClient* MainViewport = GetViewportClient(LastFocusedViewportIndex);
 }
 
-void FViewportLayout::SyncViewportRects()
+void FEditorViewportLayout::SyncViewportRects()
 {
 	// 1개 모드: SingleViewportIndex 뷰포트에 전체 영역 할당, 나머지는 크기 0
 	if (bSingleViewport && RootSplitterV)
@@ -326,15 +343,13 @@ void FViewportLayout::SyncViewportRects()
 					static_cast<int32>(Full.Y),
 					static_cast<int32>(Full.Width),
 					static_cast<int32>(Full.Height));
-				ViewportStates[i].Rect = VR;
-				SceneViewports[i].SetRect(VR);
-				ViewportClients[i].SetViewportSize(Full.Width, Full.Height);
+				ViewportWidgets[i].GetSceneViewport().SetRect(VR);
+				ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(Full.Width, Full.Height);
 			}
 			else
 			{
 				const FViewportRect ZeroVR(0, 0, 0, 0);
-				ViewportStates[i].Rect = ZeroVR;
-				SceneViewports[i].SetRect(ZeroVR);
+				ViewportWidgets[i].GetSceneViewport().SetRect(ZeroVR);
 			}
 		}
 		return;
@@ -343,9 +358,9 @@ void FViewportLayout::SyncViewportRects()
 	// 4분할 모드: 스플리터 트리에서 각 SViewport 의 FRect 를 읽어 반영
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		if (!ViewportWidgets[i]) continue;
+		// if (!ViewportWidgets[i]) continue;
 
-		const FRect& R = ViewportWidgets[i]->GetRect();
+		const FRect& R = ViewportWidgets[i].GetRect();
 		const FViewportRect VR(
 			static_cast<int32>(R.X),
 			static_cast<int32>(R.Y),
@@ -355,13 +370,12 @@ void FViewportLayout::SyncViewportRects()
 
 		// 스플리터 드래그로 바뀐 크기를 ViewportState, SceneViewport,
 		// ViewportClient 카메라 종횡비에 모두 반영합니다.
-		ViewportStates[i].Rect = VR;
-		SceneViewports[i].SetRect(VR);
-		ViewportClients[i].SetViewportSize(R.Width, R.Height);
+		ViewportWidgets[i].GetSceneViewport().SetRect(VR);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(R.Width, R.Height);
 	}
 }
 
-void FViewportLayout::DestroyViewportLayout()
+void FEditorViewportLayout::DestroyViewportLayout()
 {
 	// SlateApplication 이 보유한 Widget 먼저 해제
 	FSlateApplication::Get().ClearWidgetRefs();
@@ -385,8 +399,18 @@ void FViewportLayout::DestroyViewportLayout()
 
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
-		delete ViewportWidgets[i];
-		ViewportWidgets[i] = nullptr;
+		// delete ViewportWidgets[i];
+		// ViewportWidgets[i] = nullptr;
+        if (FEditorViewportClient* VC = ViewportWidgets[i].GetSceneViewport().GetClient())
+        {
+            VC->SetViewport(nullptr);
+            VC->SetState(nullptr);
+        }
+
+		FSceneViewport& VP = ViewportWidgets[i].GetSceneViewport();
+        Editor->GetRenderer().ReleaseViewportResource(&VP, i);
+        VP.SetClient(nullptr);
+
 	}
 	delete TopSplitterH; TopSplitterH = nullptr;
 	delete BotSplitterH; BotSplitterH = nullptr;

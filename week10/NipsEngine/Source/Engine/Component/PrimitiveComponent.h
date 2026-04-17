@@ -17,6 +17,8 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char * PropertyName) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	/* Visibility */
 	void SetVisibility(bool bVisible);
 	bool IsVisible() const { return bIsVisible; }

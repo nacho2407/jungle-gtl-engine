@@ -74,7 +74,9 @@ public:
 	DECLARE_CLASS(UMaterialInterface, UObject)
 
 	virtual const FString& GetName() const = 0;
+	virtual FString& GetNameRef() = 0;
 	virtual const FString& GetFilePath() const = 0;
+	virtual FString& GetFilePathRef() = 0;
 	
 	virtual void Bind(ID3D11DeviceContext* Context) const = 0;
 	virtual bool GetParam(const FString& Name, FMaterialParamValue& OutValue) const = 0;
@@ -114,7 +116,9 @@ public:
 	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	const FString& GetName() const override { return Name; }
+	FString& GetNameRef() override { return Name; }
 	const FString& GetFilePath() const override { return FilePath; }
+	FString& GetFilePathRef() override { return FilePath; }
 
 	void SetShader(UShader* InShader)
 	{
@@ -163,7 +167,9 @@ public:
 	TMap<FString, FMaterialParamValue> OverridedParams;
 
 	const FString& GetName() const override { return Name; }
+	FString& GetNameRef() override { return Name; }
 	const FString& GetFilePath() const override { return FilePath; }
+	FString& GetFilePathRef() override { return FilePath; }
 
 	static UMaterialInstance* Create(UMaterial* Material)
 	{

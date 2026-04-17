@@ -48,8 +48,8 @@ public:
 	FSelectionManager& GetSelectionManager() { return SelectionManager; }
 	const FSelectionManager& GetSelectionManager() const { return SelectionManager; }
 
-	FViewportLayout& GetViewportLayout() { return ViewportLayout; }
-	const FViewportLayout& GetViewportLayout() const { return ViewportLayout; }
+	FEditorViewportLayout& GetViewportLayout() { return ViewportLayout; }
+    const FEditorViewportLayout& GetViewportLayout() const { return ViewportLayout; }
 	FEditorRenderPipeline* GetEditorRenderPipeline() const;
 
 	FEditorMainPanel& GetMainPanel() { return MainPanel; }
@@ -60,18 +60,26 @@ public:
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
 	UWorld* GetFocusedWorld() const
 	{
-		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetFocusedWorld();
+        const FEditorViewportClient* FocusedClient =
+            ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+        return FocusedClient ? FocusedClient->GetFocusedWorld() : nullptr;
 	}
 
 	// 주의! Editor State가 따로 존재하는 것이 아닙니다. 에디터가 현재 포커스한 뷰포트의 상태를 Get/Set합니다.
 	EViewportPlayState GetEditorState() const
 	{
-		return ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).GetPlayState();
+        const FEditorViewportClient* FocusedClient =
+            ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+        return FocusedClient ? FocusedClient->GetPlayState() : EViewportPlayState::Editing;
 	}
 
 	void SetEditorState(EViewportPlayState InState)
 	{
-		ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()).SetPlayState(InState);
+        if (FEditorViewportClient* FocusedClient =
+                ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()))
+        {
+            FocusedClient->SetPlayState(InState);
+        }
 	}
 
 	// PIE 모드 컨트롤 함수
@@ -87,6 +95,6 @@ public:
 private:
 	FSelectionManager SelectionManager;
 	FEditorMainPanel  MainPanel;
-	FViewportLayout   ViewportLayout;
+	FEditorViewportLayout   ViewportLayout;
 	TMap<int32, FName> ViewportPIEHandles;  // 뷰포트 인덱스 → PIE 월드 컨텍스트 핸들
 };

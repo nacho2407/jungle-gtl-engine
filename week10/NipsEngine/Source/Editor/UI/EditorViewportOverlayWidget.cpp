@@ -119,15 +119,15 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 
     if (EditorEngine)
     {
-        FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
-        FEditorViewportClient& FocusedClient = Layout.GetViewportClient(FocusedIdx);
-        float CameraMoveSpeed = FocusedClient.GetMoveSpeed();
+        FEditorViewportClient* FocusedClient = Layout.GetViewportClient(FocusedIdx);
+        float CameraMoveSpeed = FocusedClient->GetMoveSpeed();
 
         ImGui::SetNextItemWidth(ItemWidth); // 너비 설정
         if (ImGui::SliderFloat("Dolly Speed", &CameraMoveSpeed, 10.0f, 2000.0f, "%.0f"))
         {
-            FocusedClient.SetMoveSpeed(CameraMoveSpeed);
+            FocusedClient->SetMoveSpeed(CameraMoveSpeed);
         }
     }
 
@@ -172,20 +172,22 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		ImGuiWindowFlags_NoMove            |
 		ImGuiWindowFlags_NoInputs;
 
-	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
 	const FEditorRenderPipeline* RenderPipeline = EditorEngine->GetEditorRenderPipeline();
 
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
+        FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
 
 		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable) continue;
-		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0) continue; // 비활성 뷰포트 스킵
+        if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+            continue; // 비활성 뷰포트 스킵
 
 		// 툴바 바로 아래 좌측에 고정
 		ImGui::SetNextWindowPos(
-			ImVec2(static_cast<float>(VS.Rect.X) + 8.f,
-			       static_cast<float>(VS.Rect.Y) + 32.f),
+            ImVec2(static_cast<float>(ViewportRect.X) + 8.f,
+                   static_cast<float>(ViewportRect.Y) + 32.f),
 			ImGuiCond_Always);
 		ImGui::SetNextWindowBgAlpha(0.3f);
 
@@ -304,7 +306,7 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 
 	 if (!EditorEngine) return;
 	
-	FViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
 
 	// 1개 모드일 때는 바를 그리지 않음
 	if (!ViewportLayout.IsSingleViewportMode())
@@ -368,36 +370,37 @@ void FEditorViewportOverlayWidget::RenderBoxSelectionOverlay()
 		return;
 	}
 
-	FViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
 	ImDrawList* DrawList = ImGui::GetForegroundDrawList();
 	const bool bAdditive = InputSystem::Get().GetKey(VK_SHIFT);
 	const ImU32 RectColor = bAdditive ? IM_COL32(128, 240, 128, 220) : IM_COL32(128, 192, 255, 220);
 	const ImU32 FillColor = bAdditive ? IM_COL32(64, 180, 64, 40) : IM_COL32(64, 128, 220, 40);
 
-	for (int32 i = 0; i < FViewportLayout::MaxViewports; ++i)
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
 	{
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
-		if (VS.Rect.Width <= 0 || VS.Rect.Height <= 0)
+        FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
+        if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
 		{
 			continue;
 		}
 
-		const FEditorViewportClient& Client = Layout.GetViewportClient(i);
-		if (!Client.IsBoxSelecting())
+		const FEditorViewportClient* Client = Layout.GetViewportClient(i);
+		if (!Client->IsBoxSelecting())
 		{
 			continue;
 		}
 
-		const POINT Start = Client.GetBoxSelectStart();
-		const POINT End = Client.GetBoxSelectEnd();
+		const POINT Start = Client->GetBoxSelectStart();
+		const POINT End = Client->GetBoxSelectEnd();
 
 		const float MinX = static_cast<float>(std::min(Start.x, End.x));
 		const float MinY = static_cast<float>(std::min(Start.y, End.y));
 		const float MaxX = static_cast<float>(std::max(Start.x, End.x));
 		const float MaxY = static_cast<float>(std::max(Start.y, End.y));
 
-		const ImVec2 P0(static_cast<float>(VS.Rect.X) + MinX, static_cast<float>(VS.Rect.Y) + MinY);
-		const ImVec2 P1(static_cast<float>(VS.Rect.X) + MaxX, static_cast<float>(VS.Rect.Y) + MaxY);
+		const ImVec2 P0(static_cast<float>(ViewportRect.X) + MinX, static_cast<float>(ViewportRect.Y) + MinY);
+        const ImVec2 P1(static_cast<float>(ViewportRect.X) + MaxX, static_cast<float>(ViewportRect.Y) + MaxY);
 		DrawList->AddRectFilled(P0, P1, FillColor);
 		DrawList->AddRect(P0, P1, RectColor, 0.0f, 0, 1.5f);
 	}

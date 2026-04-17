@@ -5,6 +5,7 @@
 #include "EditorUtils.h"
 #include "FSceneViewport.h"
 #include "EditorViewportClient.h"
+#include "Engine/Slate/SViewport.h"
 
 class UEditorEngine;
 class UWorld;
@@ -17,13 +18,24 @@ class FViewportCamera;
 class FSelectionManager;
 
 /*
-* Viewport Layout 을 관리하는 최상위 객체
-* 스플리터 위젯 트리를 생성하고 FSlateApplication::RootWindow 에 연결합니다.
-* SSplitterV → 2×SSplitterH → 4×SViewport
-* SceneViewports[i] 를 각 SViewport 의 ISlateViewport 로 연결합니다.
-*/
+ * Viewport Layout 을 관리하는 최상위 객체
+ * 스플리터 위젯 트리를 생성하고 FSlateApplication::RootWindow 에 연결합니다.
+ * SSplitterV → 2×SSplitterH → 4×SViewport
+ * SceneViewports[i] 를 각 SViewport 의 ISlateViewport 로 연결합니다.
+ */
+
+/**
+ * 기존에 FViewportLayout 만 있었기 때문에 다형성을 위해 FEditorViewportLayout 과 분리
+ */
 
 class FViewportLayout
+{
+public:
+
+private:
+};
+
+class FEditorViewportLayout : FViewportLayout
 {
 public:
 	static constexpr int32 MaxViewports = 4;
@@ -36,14 +48,14 @@ public:
 	void OnWindowResized(uint32 Width, uint32 Height);
 	void SetHostRect(const FViewportRect& InHostRect);
 	
-	const FViewportClient& GetFocusedViewportClient() const { return GetViewportClient(LastFocusedViewportIndex); }
+	const FViewportClient* GetFocusedViewportClient() const { return GetViewportClient(LastFocusedViewportIndex); }
 
 	FViewportCamera* GetIndexedViewportClientCamera(int32 Index) {
-		return GetViewportClient(Index).GetCamera();
+		return GetViewportClient(Index)->GetCamera();
 	}
 
 	const FViewportCamera* GetIndexedViewportClientCamera(int32 Index) const {
-		return GetViewportClient(Index).GetCamera();
+		return GetViewportClient(Index)->GetCamera();
 	}
 
 	// Splitter Get
@@ -64,14 +76,14 @@ public:
 	void SetLastFocusedViewportIndex(int32 Index);
 
 	// Viewport Get Set
-	FEditorViewportClient& GetViewportClient(int32 Index) { return ViewportClients[Index]; }
-	const FEditorViewportClient& GetViewportClient(int32 Index) const { return ViewportClients[Index]; }
+    FEditorViewportClient* GetViewportClient(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
+    const FEditorViewportClient* GetViewportClient(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
 
-	FSceneViewport& GetSceneViewport(int32 Index) { return SceneViewports[Index]; }
-	const FSceneViewport& GetSceneViewport(int32 Index) const { return SceneViewports[Index]; }
+	FSceneViewport& GetSceneViewport(int32 Index) { return ViewportWidgets[Index].GetSceneViewport(); }
+	const FSceneViewport& GetSceneViewport(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport(); }
 
-	FEditorViewportState& GetViewportState(int32 Index) { return ViewportStates[Index]; }
-	const FEditorViewportState& GetViewportState(int32 Index) const { return ViewportStates[Index]; }
+	FEditorViewportState& GetViewportState(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetState(); }
+    const FEditorViewportState& GetViewportState(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetState(); }
 
 	// Window 크기 기준으로 4개 뷰포트 영역을 계산 및 초기화 합니다.
 	void InitViewportRect(uint32 Width, uint32 Height);
@@ -94,16 +106,15 @@ private:
 	// stat 콘솔 명령의 적용 대상으로 사용됩니다.
 	int32 LastFocusedViewportIndex = 0;
 
-	TStaticArray<FEditorViewportClient, MaxViewports> ViewportClients;
-	TStaticArray<FSceneViewport, MaxViewports>        SceneViewports;
-	TStaticArray<FEditorViewportState, MaxViewports>  ViewportStates;
-
 	// Slate 위젯 트리 — UEditorEngine 이 소유합니다.
 	SSplitterV*    RootSplitterV = nullptr;
 	SSplitterH*    TopSplitterH  = nullptr;
 	SSplitterH*    BotSplitterH  = nullptr;
 	SSplitterCross* CrossWidget  = nullptr;
-	SViewport* ViewportWidgets[MaxViewports] = {};
+
+	// Viewport 구조 재편 중 다형성 임시 제거
+	SViewport ViewportWidgets[MaxViewports] = {};
+    FEditorViewportClient ViewportClients[MaxViewports] = {};
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)
 	FWindowsWindow* Window = nullptr;

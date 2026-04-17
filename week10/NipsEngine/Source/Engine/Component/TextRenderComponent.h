@@ -40,6 +40,8 @@ public:
 
     virtual void PostDuplicate(UObject* Original) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
