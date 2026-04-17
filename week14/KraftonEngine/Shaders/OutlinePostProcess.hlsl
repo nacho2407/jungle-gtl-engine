@@ -1,8 +1,8 @@
 // OutlinePostProcess.hlsl
 // Fullscreen Quad VS (SV_VertexID) + Stencil Edge Detection PS
 
-#include "Common/Functions.hlsl"
-#include "Common/SystemResources.hlsl"
+#include "Common/Functions.hlsli"
+#include "Common/SystemResources.hlsli"
 
 // b2 (PerShader0): Outline 설정
 cbuffer OutlinePostProcessCB : register(b2)
