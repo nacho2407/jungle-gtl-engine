@@ -15,14 +15,14 @@ class FShader;
 	렌더링에 필요한 데이터 타입을 정의합니다.
 */
 
-// HLSL CB 바인딩 슬롯 — b0/b1 고정, b2/b3 셰이더별 여분
+// HLSL CB 바인딩 슬롯 — b0/b1 고정, b2/b3 셰이더별 여분, b4 라이팅
 namespace ECBSlot
 {
-	constexpr uint32 Frame = 0; // b0: View/Projection/Wireframe (고정)
-	constexpr uint32 PerObject = 1; // b1: Model/Color (고정)
+	constexpr uint32 Frame = 0;      // b0: View/Projection/Wireframe (고정)
+	constexpr uint32 PerObject = 1;  // b1: Model/Color (고정)
 	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
-	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1
-	constexpr uint32 Lighting = 4;
+	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1 (PerShader2 예약)
+	constexpr uint32 Lighting = 4;   // b4: LightingBuffer (Ambient + Directional + 메타)
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)

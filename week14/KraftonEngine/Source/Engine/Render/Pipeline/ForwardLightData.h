@@ -7,7 +7,7 @@
 	HLSL Common/ForwardLightData.hlsli 와 1:1 대응
 
 	슬롯 배치:
-	  b3        LightingBuffer (Ambient + Directional, 프레임 고정)
+	  b4        LightingBuffer (Ambient + Directional, 프레임 고정)
 	  t8        StructuredBuffer<FLightInfo>  (Point/Spot 통합 POD)
 	  t9        StructuredBuffer<uint>        (TileLightIndices)
 	  t10       StructuredBuffer<uint2>       (TileLightGrid)
