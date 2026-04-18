@@ -120,7 +120,7 @@ struct FLightConstants
     float Intensity;         //  4B
     FVector Direction;       // 12B  — Directional/Spot 방향 (정규화)
     float AttenuationRadius; //  4B  — Point/Spot 감쇠 반경
-    FVector4 LightColor;          // 16B  — linear RGBA
+    FVector4 LightColor;     // 16B  — linear RGBA
     float InnerConeAngle;    //  4B  — Spot 내부 코사인 반각
     float OuterConeAngle;    //  4B  — Spot 외부 코사인 반각
     uint32 LightType;        //  4B  — ELightType 캐스트

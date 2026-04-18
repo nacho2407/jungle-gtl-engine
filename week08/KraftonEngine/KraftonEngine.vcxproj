@@ -738,12 +738,6 @@
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="GEMINI.md">
-      <SubType>
-      </SubType>
-    </None>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />

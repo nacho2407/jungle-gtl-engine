@@ -7,9 +7,6 @@
 
 class ULightComponent;
 
-/**
- * Light는 SceneComponent이므로 FPrimitiveSceneProxy와는 구분됩니다.
- */
 class FLightSceneProxy
 {
 public:
