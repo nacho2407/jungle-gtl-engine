@@ -92,12 +92,14 @@ class FViewModeRenderPipeline
             Pass.ShaderVariant.PSEntry = "PS_BaseDraw_Lambert";
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_LAMBERT");
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
+            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
             break;
         case EShadingModel::BlinnPhong:
             Pass.ShaderVariant.PSEntry = "PS_BaseDraw_BlinnPhong";
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_BLINNPHONG");
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_MATERIAL_PARAM");
+            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
             break;
         case EShadingModel::Unlit:
         default:

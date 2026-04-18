@@ -56,7 +56,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
     float Specular = pow(saturate(dot(normalize(Normal), HalfVector)), Shininess) * SpecularStrength;
 
     float3 LightColor = GetMainLightColor();
-    float3 DiffuseColor = BaseColor.rgb * (0.15f + Diffuse * LightColor);
+    float3 DiffuseColor = BaseColor.rgb * (0.2f + Diffuse * LightColor);
     float3 SpecularColor = LightColor * Specular;
 
     return float4(DiffuseColor + SpecularColor, BaseColor.a);
