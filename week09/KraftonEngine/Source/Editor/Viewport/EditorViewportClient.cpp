@@ -1,6 +1,6 @@
 ﻿#include "Editor/Viewport/EditorViewportClient.h"
 
-#include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/UI/EditorConsolePanel.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Engine/Input/InputSystem.h"

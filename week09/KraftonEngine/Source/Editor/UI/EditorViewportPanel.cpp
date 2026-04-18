@@ -1,11 +1,11 @@
-﻿#include "Editor/UI/EditorViewportWidget.h"
+﻿#include "Editor/UI/EditorViewportPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "ImGui/imgui.h"
 
-void FEditorViewportWidget::SetIndex(int32 InIndex)
+void FEditorViewportPanel::SetIndex(int32 InIndex)
 {
 	Index = InIndex;
 	if (Index == 0)
@@ -18,7 +18,7 @@ void FEditorViewportWidget::SetIndex(int32 InIndex)
 	}
 }
 
-void FEditorViewportWidget::Render(float DeltaTime)
+void FEditorViewportPanel::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 

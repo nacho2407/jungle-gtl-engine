@@ -198,6 +198,9 @@
     <FxCompile Include="Shaders\SurfaceData.hlsli">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -230,34 +233,34 @@
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorConsolePanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorDetailsPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorMaterialPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorScenePanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorToolbarPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\FEditorMaterialWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorViewportPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
@@ -626,34 +629,34 @@
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorConsolePanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorControlPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorDetailsPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorMaterialPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorScenePanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorStatWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorStatPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorToolbarPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\FEditorMaterialWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorViewportPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
@@ -1127,8 +1130,5 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="GEMINI.md" />
   </ItemGroup>
 </Project>

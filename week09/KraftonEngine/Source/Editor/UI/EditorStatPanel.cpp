@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorStatWidget.h"
+﻿#include "Editor/UI/EditorStatPanel.h"
 
 #include "Editor/Settings/EditorSettings.h"
 #include "Profiling/Stats.h"
@@ -8,12 +8,12 @@
 #include <algorithm>
 #include <sstream>
 
-void FEditorStatWidget::RequestOpen()
+void FEditorStatPanel::RequestOpen()
 {
 	bRequestOpen = true;
 }
 
-void FEditorStatWidget::Render(float DeltaTime)
+void FEditorStatPanel::Render(float DeltaTime)
 {
 #if STATS
 	(void)DeltaTime;
@@ -117,7 +117,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 #endif
 }
 
-void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source,
+void FEditorStatPanel::RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source,
 	int& OutSortColumn, bool& OutSortDescending, float TableHeight)
 {
 #if STATS
