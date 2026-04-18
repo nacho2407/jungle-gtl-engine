@@ -104,15 +104,15 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 {
 	FDrawCallStats::Reset();
 
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-		UpdateFrameBuffer(Context, Frame);
-		UpdateLightBuffer(Device.GetDevice(), Context, Scene);
+		UpdateFrameBuffer(Frame);
+		UpdateLightBuffer(Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
-	Resources.BindSystemSamplers(Context);
+	Resources.BindSystemSamplers(Ctx);
 
 	FDrawCommandList& CommandList = Builder.GetCommandList();
 
@@ -128,7 +128,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
 	TArray<FPassEvent> PostPassEvents;
-	BuildPassEvents(PrePassEvents, PostPassEvents, Context, Frame, Cache);
+	BuildPassEvents(PrePassEvents, PostPassEvents, Frame, Cache);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
@@ -148,7 +148,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
-		CommandList.SubmitRange(Start, End, Device, Context, Cache);
+		CommandList.SubmitRange(Start, End, Device, Ctx, Cache);
 
 		for (auto& PostPassEvent : PostPassEvents)
 		{
@@ -156,22 +156,24 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		}
 	}
 
-	CleanupPassState(Context, Cache);
+	CleanupPassState(Cache);
 }
 
 // ============================================================
 // CleanupPassState — 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 // ============================================================
-void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache)
+void FRenderer::CleanupPassState(FStateCache& Cache)
 {
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+
 	// 시스템 텍스처 언바인딩
 	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
-	Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
-	Context->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
-	Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
+	Ctx->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
+	Ctx->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
+	Ctx->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
+	Ctx->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
 
-	Cache.Cleanup(Context);
+	Cache.Cleanup(Ctx);
 	Builder.GetCommandList().Reset();
 }
 
@@ -180,8 +182,9 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 // ============================================================
 void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 	TArray<FPassEvent>& PostPassEvents,
-	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
+	const FFrameContext& Frame, FStateCache& Cache)
 {
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	// PreDepth 진입: RTV 해제 → DSV만 바인딩 (depth만 기록, 색 출력 없음)
 	PrePassEvents.push_back({ ERenderPass::PreDepth, EPassCompare::Equal, true, false,
 		[Context, &Cache]()
@@ -314,8 +317,9 @@ void FRenderer::EndFrame()
 	Device.Present();
 }
 
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame)
+void FRenderer::UpdateFrameBuffer(const FFrameContext& Frame)
 {
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	FFrameConstants frameConstantData = {};
 	frameConstantData.View = Frame.View;
 	frameConstantData.Projection = Frame.Proj;
@@ -335,8 +339,10 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene)
+void FRenderer::UpdateLightBuffer(const FScene& Scene)
 {
+	ID3D11Device* InDevice = Device.GetDevice();
+	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	//AmbientLight & DirectionalLight Data Upload
 	FLightingCBData GlobalLightingData = {};
 	if (Scene.HasGlobalAmbientLight())

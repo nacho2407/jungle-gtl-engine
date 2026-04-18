@@ -43,16 +43,16 @@ public:
 private:
 	void InitializePassRenderStates();
 
-	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
-	void UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene);
+	void UpdateFrameBuffer(const FFrameContext& Frame);
+	void UpdateLightBuffer(const FScene& Scene);
 
 	// 패스 루프 Pre/Post 이벤트 등록
 	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
 		TArray<struct FPassEvent>& PostPassEvents,
-		ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache);
+		const FFrameContext& Frame, FStateCache& Cache);
 
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
-	void CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache);
+	void CleanupPassState(FStateCache& Cache);
 
 private:
 	FD3DDevice Device;
