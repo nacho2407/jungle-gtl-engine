@@ -119,7 +119,7 @@ FMeshDataView UStaticMeshComponent::GetMeshDataView() const
 	FMeshDataView View;
 	View.VertexData  = Asset->Vertices.data();
 	View.VertexCount = (uint32)Asset->Vertices.size();
-	View.Stride      = sizeof(FNormalVertex);
+	View.Stride      = sizeof(FVertexPNCT_T);
 	View.IndexData   = Asset->Indices.data();
 	View.IndexCount  = (uint32)Asset->Indices.size();
 	return View;
@@ -184,8 +184,8 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 	//bool bHit = FRayUtils::RaycastTriangles(
 	//	Ray, GetWorldMatrix(),
 	//	GetWorldInverseMatrix(),
-	//	&Asset->Vertices[0].pos,
-	//	sizeof(FNormalVertex),
+	//	&Asset->Vertices[0].Position,
+	//	sizeof(FVertexPNCT_T),
 	//	Asset->Indices,
 	//	OutHitResult);
 
@@ -246,7 +246,7 @@ void UStaticMeshComponent::PostDuplicate()
 				}
 				else
 				{
-					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MatPath);
+					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(MatPath);
 					OverrideMaterials[i] = LoadedMat;
 				}
 			}
@@ -309,7 +309,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(NewMatPath);
 				if (LoadedMat)
 				{
 					SetMaterial(Index, LoadedMat);

@@ -5,7 +5,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
 #include "Math/MathUtils.h"
@@ -541,12 +541,22 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		ImGui::SetCursorScreenPos(ContentPos);
 		PlayToolbar.Render(ContentSize.x);
 
-		FRect ContentRect = {
-			ContentPos.x,
-			ContentPos.y + ToolbarHeight,
-			ContentSize.x,
-			ContentSize.y - ToolbarHeight
-		};
+        float ViewportWidth = ContentSize.x;
+        float ViewportHeight = ContentSize.y - ToolbarHeight;
+
+        if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+        {
+            ImGui::End();
+            ImGui::PopStyleVar();
+            return;
+        }
+
+        FRect ContentRect = {
+            ContentPos.x,
+            ContentPos.y + ToolbarHeight,
+            ViewportWidth,
+            ViewportHeight
+        };
 
 		// SSplitter 레이아웃 계산
 		if (RootSplitter)
@@ -759,7 +769,6 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			ImGui::EndPopup();
 		}
 
-		// 토글 버튼 (같은 행)
 		ImGui::SameLine();
 
 		constexpr float ToggleIconSize = 16.0f;
@@ -783,13 +792,12 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			}
 		}
 
-		// ViewportType + Settings 팝업
 		if (SlotIndex < static_cast<int32>(LevelViewportClients.size()))
 		{
 			FLevelEditorViewportClient* VC = LevelViewportClients[SlotIndex];
 			FViewportRenderOptions& Opts = VC->GetRenderOptions();
 
-			// ── Viewport Type 드롭다운 (Perspective / Ortho 방향) ──
+			// Viewport Type
 			ImGui::SameLine();
 
 			static const char* ViewportTypeNames[] = {
@@ -820,7 +828,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::EndPopup();
 			}
 
-			// ── Gizmo Mode 팝업 ──
+			// Gizmo Mode
 			UGizmoComponent* Gizmo = Editor->GetGizmo();
 			if (Gizmo)
 			{
@@ -850,7 +858,54 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				}
 			}
 
-			// ── Settings 팝업 ──
+			// ViewMode 팝업 분리
+			ImGui::SameLine();
+
+			static const char* ViewModeNames[] = {
+				"Lit_Gouraud",
+				"Lit_Lambert",
+				"Lit_Phong",
+				"Unlit",
+				"Wireframe",
+				"SceneDepth"
+			};
+
+			const char* CurrentViewModeName = "ViewMode";
+			switch (Opts.ViewMode)
+			{
+			case EViewMode::Lit_Gouraud: CurrentViewModeName = "Lit_Gouraud"; break;
+			case EViewMode::Lit_Lambert: CurrentViewModeName = "Lit_Lambert"; break;
+			case EViewMode::Lit_Phong:   CurrentViewModeName = "Lit_Phong";   break;
+			case EViewMode::Unlit:       CurrentViewModeName = "Unlit";       break;
+			case EViewMode::Wireframe:   CurrentViewModeName = "Wireframe";   break;
+			case EViewMode::SceneDepth:  CurrentViewModeName = "SceneDepth";  break;
+			default: break;
+			}
+
+			char ViewModePopupID[64];
+			snprintf(ViewModePopupID, sizeof(ViewModePopupID), "ViewModePopup_%d", SlotIndex);
+
+			if (ImGui::Button(CurrentViewModeName))
+			{
+				ImGui::OpenPopup(ViewModePopupID);
+			}
+
+			if (ImGui::BeginPopup(ViewModePopupID))
+			{
+				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
+
+				if (ImGui::RadioButton("Lit_Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud))) {}
+				if (ImGui::RadioButton("Lit_Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert))) {}
+				if (ImGui::RadioButton("Lit_Phong",   &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong))) {}
+				if (ImGui::RadioButton("Unlit",       &CurrentMode, static_cast<int32>(EViewMode::Unlit))) {}
+				if (ImGui::RadioButton("Wireframe",   &CurrentMode, static_cast<int32>(EViewMode::Wireframe))) {}
+				if (ImGui::RadioButton("SceneDepth",  &CurrentMode, static_cast<int32>(EViewMode::SceneDepth))) {}
+
+				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
+				ImGui::EndPopup();
+			}
+
+			// Settings 팝업
 			ImGui::SameLine();
 
 			char SettingsPopupID[64];
@@ -863,20 +918,6 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 			if (ImGui::BeginPopup(SettingsPopupID))
 			{
-				// View Mode
-				ImGui::Text("View Mode");
-				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-				ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
-				ImGui::SameLine();
-				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-				ImGui::SameLine();
-				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-				ImGui::SameLine();
-				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
-				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
-
-				ImGui::Separator();
-
 				// Show Flags
 				ImGui::Text("Show");
 				ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
@@ -912,8 +953,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
 
 				ImGui::Text("FXAA");
-			    ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-			    ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
+				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
 				ImGui::EndPopup();
 			}
