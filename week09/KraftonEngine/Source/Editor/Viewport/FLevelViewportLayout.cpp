@@ -570,7 +570,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			{
 				FLevelEditorViewportClient* VC = LevelViewportClients[i];
 				VC->UpdateLayoutRect();
-				VC->RenderViewportImage(VC == ActiveViewportClient);
+				VC->RenderViewportImage();
 			}
 		}
 
