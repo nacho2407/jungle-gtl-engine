@@ -438,12 +438,19 @@ void FEditorViewportClient::UpdateLayoutRect()
 	// FViewport 리사이즈 요청 (슬롯 크기와 RT 크기 동기화)
 	if (Viewport)
 	{
-		uint32 SlotW = static_cast<uint32>(R.Width);
-		uint32 SlotH = static_cast<uint32>(R.Height);
-		if (SlotW > 0 && SlotH > 0 && (SlotW != Viewport->GetWidth() || SlotH != Viewport->GetHeight()))
-		{
-			Viewport->RequestResize(SlotW, SlotH);
-		}
+        if (R.Width <= 0.0f || R.Height <= 0.0f)
+        {
+            return;
+        }
+
+        uint32 SlotW = static_cast<uint32>(R.Width);
+        uint32 SlotH = static_cast<uint32>(R.Height);
+
+        if (SlotW > 0 && SlotH > 0 &&
+            (SlotW != Viewport->GetWidth() || SlotH != Viewport->GetHeight()))
+        {
+            Viewport->RequestResize(SlotW, SlotH);
+        }
 	}
 }
 

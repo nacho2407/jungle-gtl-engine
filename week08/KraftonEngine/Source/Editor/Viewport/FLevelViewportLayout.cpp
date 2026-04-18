@@ -541,12 +541,22 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		ImGui::SetCursorScreenPos(ContentPos);
 		PlayToolbar.Render(ContentSize.x);
 
-		FRect ContentRect = {
-			ContentPos.x,
-			ContentPos.y + ToolbarHeight,
-			ContentSize.x,
-			ContentSize.y - ToolbarHeight
-		};
+        float ViewportWidth = ContentSize.x;
+        float ViewportHeight = ContentSize.y - ToolbarHeight;
+
+        if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+        {
+            ImGui::End();
+            ImGui::PopStyleVar();
+            return;
+        }
+
+        FRect ContentRect = {
+            ContentPos.x,
+            ContentPos.y + ToolbarHeight,
+            ViewportWidth,
+            ViewportHeight
+        };
 
 		// SSplitter 레이아웃 계산
 		if (RootSplitter)
