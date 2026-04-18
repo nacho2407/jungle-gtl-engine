@@ -21,6 +21,7 @@ public:
 	// ─── 렌더 상태 관리 ───
     void CreateRenderState() override;
     void DestroyRenderState() override;
+    void OnTransformDirty() override;
 
 	// ─── 프록시 재생성 (전체 재생성 / 위치·방향만 재생성) ───
     void MarkRenderStateDirty();

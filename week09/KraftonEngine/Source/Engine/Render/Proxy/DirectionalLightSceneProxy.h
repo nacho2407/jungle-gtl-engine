@@ -11,5 +11,5 @@ public:
     ~FDirectionalLightSceneProxy() override = default;
 
     void UpdateLightConstants() override;
-    void UpdateTransform() override;
+    void VisualizeLights(FScene& Scene) const override;
 };

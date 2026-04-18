@@ -18,10 +18,7 @@ class FEditorToolbarPanel
     void Initialize(UEditorEngine *InEditor, ID3D11Device *InDevice);
     void Release();
 
-    float GetDesiredHeight() const
-    {
-        return ToolbarHeight;
-    }
+    float GetDesiredHeight() const { return ToolbarHeight; }
 
     void RenderPaneToolbar(FLevelViewportLayout *Layout, int32 SlotIndex, FLevelEditorViewportClient *ViewportClient);
 
@@ -35,7 +32,7 @@ class FEditorToolbarPanel
     ID3D11ShaderResourceView *PlayIcon = nullptr;
     ID3D11ShaderResourceView *StopIcon = nullptr;
 
-    float ToolbarHeight = 34.0f;
+    float ToolbarHeight = 44.0f;
     float IconSize = 18.0f;
     float ButtonSpacing = 6.0f;
     float PopupPadding = 12.0f;

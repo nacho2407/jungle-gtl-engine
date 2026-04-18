@@ -21,7 +21,5 @@ void USpotLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 
 FLightSceneProxy* USpotLightComponent::CreateLightSceneProxy()
 {
-	FLightSceneProxy* Proxy = new FLightSceneProxy(this);
-    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Spot);
-    return Proxy;
+    return new FSpotLightSceneProxy(this);
 }

@@ -1,7 +1,41 @@
 ﻿#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Render/Proxy/FScene.h"
 #include "Serialization/Archive.h"
-#include "Render/Proxy/LightSceneProxy.h"
+#include "Render/Proxy/DirectionalLightSceneProxy.h"
+
+namespace
+{
+	void AddDirectionalLightArrow(FScene& Scene, const FVector& Start, const FVector& Direction)
+	{
+		constexpr float ProjectileArrowScale = 0.25f;
+		const FVector ScaledVelocity = Direction * ProjectileArrowScale;
+		const float VelocityLength = ScaledVelocity.Length();
+		if (VelocityLength <= FMath::Epsilon)
+		{
+			return;
+		}
+
+		const FVector End = Start + ScaledVelocity;
+		const FColor ArrowColor(135, 206, 235);
+
+		Scene.AddDebugLine(Start, End, ArrowColor);
+
+		const float HeadLength = Clamp(VelocityLength * 0.2f, 0.2f, 1.5f);
+		FVector ReferenceUp(0.0f, 0.0f, 1.0f);
+		if (std::abs(Direction.Dot(ReferenceUp)) > 0.98f)
+		{
+			ReferenceUp = FVector(0.0f, 1.0f, 0.0f);
+		}
+
+		const FVector Side = Direction.Cross(ReferenceUp).Normalized();
+		const FVector Back = Direction * HeadLength;
+		const FVector SideOffset = Side * (HeadLength * 0.45f);
+
+		Scene.AddDebugLine(End, End - Back + SideOffset, ArrowColor);
+		Scene.AddDebugLine(End, End - Back - SideOffset, ArrowColor);
+	}
+} // namespace
 
 IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
 
@@ -14,15 +48,13 @@ UDirectionalLightComponent::UDirectionalLightComponent()
 void UDirectionalLightComponent::Serialize(FArchive& Ar)
 {
     ULightComponent::Serialize(Ar);
-    Ar << bUseTemperature;
-    Ar << Temperature;
+    Ar << Direction;
 }
 
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ULightComponent::GetEditableProperties(OutProps);
-    OutProps.push_back({ "bUseTemperature", EPropertyType::Bool, &bUseTemperature });
-    OutProps.push_back({ "Temperature", EPropertyType::Float, &Temperature, 1700.0f, 12000.0f, 10.0f });
+    OutProps.push_back({ "Direction", EPropertyType::Vec3, &Direction, 0.0f, 0.0f, 1.0f });
 }
 
 void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
@@ -32,7 +64,5 @@ void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
 
 FLightSceneProxy* UDirectionalLightComponent::CreateLightSceneProxy()
 {
-    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
-    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
-    return Proxy;
+    return new FDirectionalLightSceneProxy(this);
 }
