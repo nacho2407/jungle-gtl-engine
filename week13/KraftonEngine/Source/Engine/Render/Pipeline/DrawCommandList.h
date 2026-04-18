@@ -1,9 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "DrawCommand.h"
-#include "Render/Device/D3DDevice.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
+
+class FD3DDevice;
+struct FSystemResources;
 
 /*
 	FStateCache — Submit 루프에서 중복 GPU 상태 전환을 방지합니다.
@@ -14,18 +16,11 @@ struct FStateCache
 	// 첫 커맨드에서 모든 GPU 상태를 무조건 세팅 (센티넬 불필요)
 	bool bForceAll = true;
 
-	FShader*                  Shader       = nullptr;
-	EDepthStencilState        DepthStencil = {};
-	EBlendState               Blend        = {};
-	ERasterizerState          Rasterizer   = {};
-	D3D11_PRIMITIVE_TOPOLOGY  Topology     = {};
-	uint8                     StencilRef   = 0;
-	FMeshBuffer*              MeshBuffer   = nullptr;
-	ID3D11Buffer*             RawVB        = nullptr;   // 동적 지오메트리 VB 추적
-	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
-	FConstantBuffer*          PerObjectCB    = nullptr;
-	FConstantBuffer*          PerShaderCB[2] = {};
-	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {};
+	FShader*                 Shader      = nullptr;
+	FDrawCommandRenderState  RenderState = {};
+	FDrawCommandBuffer       Buffer;
+	FConstantBuffer*         PerObjectCB = nullptr;
+	FDrawCommandBindings     Bindings;
 
 
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
@@ -55,15 +50,11 @@ public:
 	void GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const;
 
 	// StateCache 기반 GPU 제출 (전체)
-	void Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx);
-
-	// 범위 제출 — [StartIdx, EndIdx) 구간의 커맨드만 제출
-	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-		ID3D11DeviceContext* Ctx);
+	void Submit(FD3DDevice& Device, FSystemResources& Resources);
 
 	// 외부 FStateCache 공유 — 패스 간 상태 유지
-	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-		ID3D11DeviceContext* Ctx, FStateCache& Cache);
+	void SubmitRange(uint32 StartIdx, uint32 EndIdx,
+		FD3DDevice& Device, FSystemResources& Resources, FStateCache& Cache);
 
 	// 프레임 끝 초기화
 	void Reset();
@@ -81,7 +72,8 @@ public:
 	const TArray<FDrawCommand>& GetCommands() const { return Commands; }
 
 private:
-	void SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device,
+	void SubmitCommand(const FDrawCommand& Cmd,
+		FD3DDevice& Device, FSystemResources& Resources,
 		ID3D11DeviceContext* Ctx, FStateCache& Cache);
 
 	TArray<FDrawCommand> Commands;

@@ -55,12 +55,8 @@ struct FFrameContext
 	ID3D11RenderTargetView*   NormalRTV             = nullptr;
 	ID3D11ShaderResourceView* NormalSRV             = nullptr;
 
-	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
-
-	// Render Settings
+	// Render Settings (Single Source of Truth)
 	FViewportRenderOptions RenderOptions;
-	EViewMode ViewMode = EViewMode::Lit_Phong;
-	FShowFlags ShowFlags;
 
 	FVector    WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
@@ -77,8 +73,8 @@ struct FFrameContext
 	bool IsFixedOrtho() const
 	{
 		return bIsOrtho
-			&& ViewportType != ELevelViewportType::Perspective
-			&& ViewportType != ELevelViewportType::FreeOrthographic;
+			&& RenderOptions.ViewportType != ELevelViewportType::Perspective
+			&& RenderOptions.ViewportType != ELevelViewportType::FreeOrthographic;
 	}
 
 	// Batch setters - populate multiple fields at once
@@ -94,16 +90,6 @@ struct FFrameContext
 	void SetRenderOptions(const FViewportRenderOptions& InOptions)
 	{
 		RenderOptions = InOptions;
-	}
-	FViewportRenderOptions GetRenderOptions() const { return RenderOptions; }
-
-	void SetRenderSettings(EViewMode InViewMode, const FShowFlags& InShowFlags)
-	{
-		RenderOptions.ViewMode  = InViewMode;
-		RenderOptions.ShowFlags = InShowFlags;
-
-		ViewMode = InViewMode;
-		ShowFlags = InShowFlags;
 	}
 
 	// Reset D3D pointers

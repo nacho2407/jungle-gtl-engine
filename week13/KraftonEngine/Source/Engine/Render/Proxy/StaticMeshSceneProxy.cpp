@@ -4,8 +4,6 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
-#include "Texture/Texture2D.h"
-#include "Render/Types/MaterialTextureSlot.h"
 
 #include <algorithm>
 
@@ -13,13 +11,10 @@ namespace
 {
 	bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
 	{
-		//Todo 언젠가 Diffuse말고 범용적인 딴걸로
-		const uintptr_t ASRV = reinterpret_cast<uintptr_t>(A.SRVs[(int)EMaterialTextureSlot::Diffuse]);
-		const uintptr_t BSRV = reinterpret_cast<uintptr_t>(B.SRVs[(int)EMaterialTextureSlot::Diffuse]);
-		if (ASRV != BSRV)
-		{
-			return ASRV < BSRV;
-		}
+		const uintptr_t AMat = reinterpret_cast<uintptr_t>(A.Material);
+		const uintptr_t BMat = reinterpret_cast<uintptr_t>(B.Material);
+		if (AMat != BMat)
+			return AMat < BMat;
 
 		return A.FirstIndex < B.FirstIndex;
 	}
@@ -129,34 +124,10 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 			int32 i = Section.MaterialIndex;
 			if (i >= 0 && i < static_cast<int32>(Slots.size()))
 			{
-				UMaterial* Mat = nullptr;
-
 				if (i < static_cast<int32>(Overrides.size()) && Overrides[i])
-					Mat = Overrides[i];
+					Draw.Material = Overrides[i];
 				else if (Slots[i].MaterialInterface)
-					Mat = Slots[i].MaterialInterface;
-
-				if (Mat)
-				{
-
-					for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-					{
-						UTexture2D* Texture = nullptr;
-						if (Mat->GetTextureParameter(MaterialTextureSlot::ToString(s) + "Texture", Texture) && Texture && Texture->GetSRV())
-						{
-							Draw.SRVs[s] = Texture->GetSRV();
-						}
-					}
-
-					// 머티리얼 기반 렌더 상태 전파
-					Draw.Blend = Mat->GetBlendState();
-					Draw.DepthStencil = Mat->GetDepthStencilState();
-					Draw.Rasterizer = Mat->GetRasterizerState();
-
-					Draw.MaterialCB[0] = Mat->GetGPUBufferBySlot(2);  // b2
-					Draw.MaterialCB[1] = Mat->GetGPUBufferBySlot(3);  // b3
-
-				}
+					Draw.Material = Slots[i].MaterialInterface;
 			}
 
 			LODData[lod].SectionDraws.push_back(Draw);

@@ -4,6 +4,7 @@
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Pipeline/Renderer.h"
+#include "Render/Types/MaterialTextureSlot.h"
 
 IMPLEMENT_CLASS(UMaterial, UObject)
 
@@ -146,6 +147,18 @@ bool UMaterial::SetVector4Parameter(const FString& ParamName, const FVector4& Va
 bool UMaterial::SetTextureParameter(const FString& ParamName, UTexture2D* Texture)
 {
 	TextureParameters[ParamName] = Texture;
+
+	// CachedSRVs 갱신 — 슬롯 이름과 매칭되면 즉시 반영
+	for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+	{
+		FString SlotName = MaterialTextureSlot::ToString(s) + "Texture";
+		if (ParamName == SlotName)
+		{
+			CachedSRVs[s] = (Texture && Texture->GetSRV()) ? Texture->GetSRV() : nullptr;
+			break;
+		}
+	}
+
 	return true;
 }
 
@@ -234,6 +247,18 @@ const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)cons
 	return EmptyString;
 }
 
+void UMaterial::RebuildCachedSRVs()
+{
+	for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+	{
+		CachedSRVs[s] = nullptr;
+		UTexture2D* Tex = nullptr;
+		FString SlotName = MaterialTextureSlot::ToString(s) + "Texture";
+		if (GetTextureParameter(SlotName, Tex) && Tex && Tex->GetSRV())
+			CachedSRVs[s] = Tex->GetSRV();
+	}
+}
+
 void UMaterial::Serialize(FArchive& Ar)
 {
 	Ar << PathFileName;
@@ -313,5 +338,7 @@ void UMaterial::Serialize(FArchive& Ar)
 				}
 			}
 		}
+
+		RebuildCachedSRVs();
 	}
 }
