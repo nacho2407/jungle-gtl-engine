@@ -1,0 +1,144 @@
+{
+  "Actors" : [{
+      "ClassName" : "ADirectionalLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDirectionalLightComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visibile" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 1.000000,
+          "Location" : [-5.943399, 1.399193, 0.000000],
+          "Material" : {
+            "Path" : "Asset/Materials/DirectionalLight.json"
+          },
+          "Rotation" : [26.399994, -108.199997, 7.800003],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "Width" : 1.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "182",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/Eyes.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/EyeWhites.json"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Skirt.json"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Shoes.json"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Gloves.json"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Neck.json"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Face.json"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Hair.json"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Expression.json"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Skin.json"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Clothes.json"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Pants.json"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/BackAccessory.json"
+          },
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AAmbientLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UAmbientLightComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visibile" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 1.000000,
+          "Location" : [-4.285035, 0.000000, 0.000000],
+          "Material" : {
+            "Path" : "Asset/Materials/AmbientLight.json"
+          },
+          "Rotation" : [7.899994, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "Width" : 1.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "Lumine",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [0.109263, 1.808683, 1.245035],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 17.114960, -90.899292]
+  },
+  "Primitives" : {
+    "182" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/Lumine/LumineModel.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

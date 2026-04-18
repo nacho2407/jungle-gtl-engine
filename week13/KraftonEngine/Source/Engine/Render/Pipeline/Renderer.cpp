@@ -167,6 +167,9 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		case EViewMode::Lit_Lambert:
 			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Lambert);
 			break;
+		case EViewMode::Lit_Toon:
+			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Toon);
+			break;
 		case EViewMode::Lit_Phong:
 		default:
 			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Phong);

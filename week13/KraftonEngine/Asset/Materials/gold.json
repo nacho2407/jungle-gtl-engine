@@ -1,0 +1,8 @@
+{
+  "Parameters" : {
+    "SectionColor" : [0.600000, 0.500000, 0.100000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/gold.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl"
+}

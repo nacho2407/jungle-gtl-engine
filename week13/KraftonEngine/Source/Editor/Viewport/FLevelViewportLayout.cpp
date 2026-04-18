@@ -872,6 +872,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::SameLine();
 				ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
 				ImGui::SameLine();
+				ImGui::RadioButton("Toon", &CurrentMode, static_cast<int32>(EViewMode::Lit_Toon));
+				ImGui::SameLine();
 				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
 				ImGui::SameLine();
 				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
@@ -918,8 +920,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
 
 				ImGui::Text("FXAA");
-			    ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-			    ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
+				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
 				ImGui::EndPopup();
 			}
