@@ -56,8 +56,8 @@ REGISTER_FACTORY(ADecalActor)
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
 
-DEFINE_CLASS(ASpotLightActor, AActor)
-REGISTER_FACTORY(ASpotLightActor)
+DEFINE_CLASS(ADecalSpotLightActor, AActor)
+REGISTER_FACTORY(ADecalSpotLightActor)
 
 DEFINE_CLASS(ALightActor, AActor)
 DEFINE_CLASS(AAmbientLightActor, ALightActor)
@@ -66,6 +66,8 @@ DEFINE_CLASS(ADirectionalLightActor, ALightActor)
 REGISTER_FACTORY(ADirectionalLightActor)
 DEFINE_CLASS(APointLightActor, ALightActor)
 REGISTER_FACTORY(APointLightActor)
+DEFINE_CLASS(ASpotlightActor, APointLightActor)
+REGISTER_FACTORY(ASpotlightActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -271,7 +273,7 @@ void AFireballActor::InitDefaultComponents()
 	Fireball->AttachToComponent(Sphere);
 }
 
-void ASpotLightActor::InitDefaultComponents() {
+void ADecalSpotLightActor::InitDefaultComponents() {
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
 	Billboard->SetEditorOnly(true);
@@ -292,7 +294,7 @@ void ASpotLightActor::InitDefaultComponents() {
 	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
 }
 
-void ASpotLightActor::Tick(float DeltaTime)
+void ADecalSpotLightActor::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
@@ -358,5 +360,20 @@ void APointLightActor::InitDefaultComponents()
 }
 
 void APointLightActor::Tick()
+{
+}
+
+void ASpotlightActor::InitDefaultComponents() {
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    SetRootComponent(Billboard);
+    Billboard->SetVisibility(true);
+    Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+
+	USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
+	Spot->AttachToComponent(Billboard);
+	SetLight(Spot);
+}
+
+void ASpotlightActor::Tick() 
 {
 }

@@ -191,8 +191,9 @@ LightResult EvaluateSpotlightGouraud(float3 LightColor,
     float epsilon = InnerAngle - OuterAngle;
     float spotAttenuation = saturate((theta - OuterAngle) / epsilon);
 
-    output = EvaluatePointGouraud(LightColor, Intensity, Normal, LightPos, WorldPos, Radius, Falloff, SurfaceToCamera, Shininess);
-    output.Diffuse *= spotAttenuation;
+    output = EvaluatePointGouraud(LightColor, Intensity, LightPos, WorldPos, Normal, Radius, Falloff, SurfaceToCamera, Shininess);
+    output.Diffuse   *= spotAttenuation;
+    output.Specular  *= spotAttenuation;
 
     return output;
 }

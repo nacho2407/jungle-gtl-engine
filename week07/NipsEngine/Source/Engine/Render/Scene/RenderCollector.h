@@ -9,7 +9,7 @@ enum class EWorldType : uint32;
 
 class UWorld;
 class AActor;
-class ASpotLightActor;
+class ADecalSpotLightActor;
 class UPrimitiveComponent;
 class UGizmoComponent;
 class UDecalComponent;
@@ -66,6 +66,6 @@ private:
 	void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 	void CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus);
 	void CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
-	void CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectSpotLightCommand(const ADecalSpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 	void CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus);
 };

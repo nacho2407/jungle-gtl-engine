@@ -232,9 +232,9 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			continue;
 		}
 
-		if (Actor->IsA<ASpotLightActor>())
+		if (Actor->IsA<ADecalSpotLightActor>())
 		{
-			CollectSpotLightCommand(static_cast<const ASpotLightActor*>(Actor), ShowFlags, RenderBus);
+			CollectSpotLightCommand(static_cast<const ADecalSpotLightActor*>(Actor), ShowFlags, RenderBus);
 		}
 
 		for (UActorComponent* Comp : Actor->GetComponents())
@@ -374,9 +374,9 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
 	}
 
-	if (Actor->IsA<ASpotLightActor>())
+	if (Actor->IsA<ADecalSpotLightActor>())
 	{
-		ASpotLightActor* SpotlightActor = Cast<ASpotLightActor>(Actor);
+		ADecalSpotLightActor* SpotlightActor = Cast<ADecalSpotLightActor>(Actor);
 
 	}
 }
@@ -834,7 +834,7 @@ void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent
 	CollectOBBCommand(Box, FColor::Green(), RenderBus);
 }
 
-void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+void FRenderCollector::CollectSpotLightCommand(const ADecalSpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
 	if (!ShowFlags.bBoundingVolume) return;
 
