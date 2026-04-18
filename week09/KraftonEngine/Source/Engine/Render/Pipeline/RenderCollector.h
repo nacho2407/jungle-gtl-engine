@@ -18,6 +18,8 @@ public:
     void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
     void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene);
     void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
+    void CollectWorldBVHDebug(const class FWorldPrimitivePickingBVH& BVH, FScene& Scene);
+    void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene);
 
     // 마지막 CollectWorld에서 수집된 visible 프록시 (Occlusion Test용)
     const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return LastVisibleProxies; }
