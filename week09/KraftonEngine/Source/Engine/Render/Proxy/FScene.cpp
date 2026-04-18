@@ -1,4 +1,4 @@
-#include "Render/Proxy/FScene.h"
+﻿#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/LightComponent.h"
 #include "Profiling/Stats.h"
@@ -346,9 +346,9 @@ void FScene::RemoveFog(const UHeightFogComponent* Owner)
 		Fogs.end());
 }
 
-// ============================================================
-// AddLight — Component의 CreateLightSceneProxy()로 구체 프록시 생성 후 등록
-// ============================================================
+// ──────────────────────── LightSceneProxy ────────────────────────
+
+// 개별 컴포넌트에서 CreateLightSceneProxy()를 호출해 구체적인 프록시를 등록합니다.
 FLightSceneProxy* FScene::AddLight(ULightComponent* Component)
 {
 	if (!Component) return nullptr;
@@ -360,9 +360,7 @@ FLightSceneProxy* FScene::AddLight(ULightComponent* Component)
 	return Proxy;
 }
 
-// ============================================================
-// RegisterLightProxy — Light 프록시를 슬롯에 배치하고 DirtyList에 추가
-// ============================================================
+// Light 프록시를 슬롯에 배치하고 DirtyList에 추가합니다.
 void FScene::RegisterLightProxy(FLightSceneProxy* Proxy)
 {
 	if (!Proxy) return;
@@ -385,9 +383,7 @@ void FScene::RegisterLightProxy(FLightSceneProxy* Proxy)
 	EnqueueDirtyLightProxy(DirtyLightProxies, Proxy);
 }
 
-// ============================================================
-// RemoveLight — Light 프록시 해제 및 슬롯 반환
-// ============================================================
+// Light 프록시를 해제하고 슬롯을 반환합니다.
 void FScene::RemoveLight(FLightSceneProxy* Proxy)
 {
 	if (!Proxy || Proxy->ProxyId == UINT32_MAX) return;

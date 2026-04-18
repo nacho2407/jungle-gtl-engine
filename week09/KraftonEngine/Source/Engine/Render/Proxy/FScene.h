@@ -28,7 +28,7 @@ public:
 
 	// ─── LightSceneProxy ───
     FLightSceneProxy* AddLight(ULightComponent* Component);
-    void RegisterLightProxy(FLightSceneProxy* Proxy);
+    void RegisterLightProxy(const FLightSceneProxy* Proxy);
     void RemoveLight(FLightSceneProxy* Proxy);
 
     // --- 프레임 갱신 ---

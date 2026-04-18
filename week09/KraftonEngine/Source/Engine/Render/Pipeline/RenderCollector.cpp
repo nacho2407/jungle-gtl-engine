@@ -25,7 +25,9 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 
 	FScene& Scene = World->GetScene();
 	Scene.UpdateDirtyProxies();
+	Scene.UpdateDirtyLightProxies();
 
+	// Visible Primitive Proxises 수집 — 프러스텀 + Occlusion Culling
 	LastVisibleProxies.clear();
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
@@ -46,7 +48,23 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
 	}
 
+	// Visible Light Proxies 수집
+    LastVisibleLightProxies.clear();
+    {
+        // SCOPE_STAT_CAT("LightCulling", "3_Collect");
+        for (FLightSceneProxy* LightProxy : Scene.GetLightProxies())
+        {
+            // 현재는 Light Proxies 전부 추가 ─── Culling 수정 필요할 경우 추가
+			LastVisibleLightProxies.push_back(LightProxy);
+        }
+    }
+
+	// Visible Primitive Proxises → FDrawCommand 직접 변환
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
+	CollectVisibleLightProxies()
+
+	// Light Proxies 수집 ㅡ 현재 전체 수집	
+	CollectLightConstants(Scene);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -164,7 +182,6 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
-
 		// LOD 갱신 — WorldTick에서 이동, 단일 순회에 병합
 		if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
 		{
@@ -276,4 +293,19 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	{
 		OcclusionMut->EndGatherAABB();
 	}
+}
+
+// ============================================================
+// CollectLights — FScene의 Light 프록시에서 FLightConstants 배열을 수집
+// ============================================================
+void FRenderCollector::CollectVisibleLightProxies(const TArray<FLightSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+{
+    SCOPE_STAT_CAT("CollectVisibleLightProxies", "3_Collect");
+    for (FLightSceneProxy* Proxy : Proxies)
+    {
+        if (Proxy && Proxy->bVisible && Proxy->bAffectsWorld)
+        {
+            Renderer.BuildCommandForProxy(*Proxy, ERenderPass::Opaque); // TODO: LightPass 추가
+        }
+    }
 }
