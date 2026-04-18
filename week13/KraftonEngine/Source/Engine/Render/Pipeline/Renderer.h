@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -35,16 +35,13 @@ public:
 	void EndFrame();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
-	FRenderResources& GetResources() { return Resources; }
+	FSystemResources& GetSystemResources() { return Resources; }
 
 	// Collect 페이즈에서 커맨드 빌드를 담당하는 Builder
 	FDrawCommandBuilder& GetBuilder() { return Builder; }
 
 private:
 	void InitializePassRenderStates();
-
-	void UpdateFrameBuffer(const FFrameContext& Frame);
-	void UpdateLightBuffer(const FScene& Scene);
 
 	// 패스 루프 Pre/Post 이벤트 등록
 	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
@@ -56,7 +53,7 @@ private:
 
 private:
 	FD3DDevice Device;
-	FRenderResources Resources;
+	FSystemResources Resources;
 
 	FDrawCommandBuilder Builder;
 

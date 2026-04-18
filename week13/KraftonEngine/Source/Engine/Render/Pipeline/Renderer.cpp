@@ -8,10 +8,7 @@
 #include "Render/Proxy/FScene.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
-#include "Engine/Runtime/Engine.h"
-#include "Profiling/Timer.h"
 #include "Materials/MaterialManager.h"
-#include "Engine/Render/Pipeline/ForwardLightData.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -107,8 +104,8 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-		UpdateFrameBuffer(Frame);
-		UpdateLightBuffer(Scene);
+		Resources.UpdateFrameBuffer(Ctx, Frame);
+		Resources.UpdateLightBuffer(Device.GetDevice(), Ctx, Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -166,12 +163,7 @@ void FRenderer::CleanupPassState(FStateCache& Cache)
 {
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 
-	// 시스템 텍스처 언바인딩
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Ctx->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
+	Resources.UnbindSystemTextures(Ctx);
 
 	Cache.Cleanup(Ctx);
 	Builder.GetCommandList().Reset();
@@ -317,96 +309,3 @@ void FRenderer::EndFrame()
 	Device.Present();
 }
 
-void FRenderer::UpdateFrameBuffer(const FFrameContext& Frame)
-{
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	FFrameConstants frameConstantData = {};
-	frameConstantData.View = Frame.View;
-	frameConstantData.Projection = Frame.Proj;
-	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
-	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
-	frameConstantData.WireframeColor = Frame.WireframeColor;
-	frameConstantData.CameraWorldPos = Frame.CameraPosition;
-
-	if (GEngine && GEngine->GetTimer())
-	{
-		frameConstantData.Time = static_cast<float>(GEngine->GetTimer()->GetTotalTime());
-	}
-
-	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
-	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
-	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
-}
-
-void FRenderer::UpdateLightBuffer(const FScene& Scene)
-{
-	ID3D11Device* InDevice = Device.GetDevice();
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	//AmbientLight & DirectionalLight Data Upload
-	FLightingCBData GlobalLightingData = {};
-	if (Scene.HasGlobalAmbientLight())
-	{
-		FGlobalAmbientLightParams DirLightParams = Scene.GetGlobalAmbientLightParams();
-		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
-		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
-	}
-	else
-	{
-		// 폴백: 씬에 AmbientLight 없으면 최소 ambient 보장 (검정 방지)
-		GlobalLightingData.Ambient.Intensity = 0.15f;
-		GlobalLightingData.Ambient.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-	}
-	if (Scene.HasGlobalDirectionalLight())
-	{
-		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
-		GlobalLightingData.Directional.Intensity = DirLightParams.Intensity;
-		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
-		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
-	}
-
-	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
-	if (!PointLightParams.empty())
-	{
-		GlobalLightingData.NumActivePointLights = static_cast<uint32>(PointLightParams.size());
-	}
-	else
-	{
-		GlobalLightingData.NumActivePointLights = 0;
-	}
-
-
-	const TArray<FSpotLightParams>& SpotLightParams = Scene.GetSpotLights();
-	if (!SpotLightParams.empty())
-	{
-		GlobalLightingData.NumActiveSpotLights = static_cast<uint32>(SpotLightParams.size());
-	}
-	else
-	{
-		GlobalLightingData.NumActiveSpotLights = 0;
-	}
-
-	TArray<FLightInfo> Infos;
-	for (const FPointLightParams& PointLigth : PointLightParams)
-	{
-		Infos.emplace_back(PointLigth.ToLightInfo());
-
-	}
-	for (const FSpotLightParams& SpotLight : SpotLightParams)
-	{
-		Infos.emplace_back(SpotLight.ToLightInfo());
-	}
-
-	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
-	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
-
-	Resources.LightingConstantBuffer.Update(Context, &GlobalLightingData, sizeof(FLightingCBData));
-	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
-	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
-	Context->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
-
-
-	Resources.ForwardLights.Update(InDevice, Context, Infos);
-	Context->VSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
-	Context->PSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
-}
