@@ -641,6 +641,32 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			FVector Edge2 = P2 - P0;
 			FVector FaceNormal = Edge1.Cross(Edge2).Normalized();
 
+			// --- Tangent / Bitangent 계산 ---
+			FVector T(1, 0, 0), B(0, 1, 0);
+			if (ObjInfo.UVIndices[FaceStartIndex] != -1)
+			{
+				FVector2 uv0 = ObjInfo.UVs[ObjInfo.UVIndices[FaceStartIndex]];
+				FVector2 uv1 = ObjInfo.UVs[ObjInfo.UVIndices[FaceStartIndex + 1]];
+				FVector2 uv2 = ObjInfo.UVs[ObjInfo.UVIndices[FaceStartIndex + 2]];
+
+				FVector2 deltaUV1 = uv1 - uv0;
+				FVector2 deltaUV2 = uv2 - uv0;
+
+				float f = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV2.X * deltaUV1.Y);
+				if (!std::isinf(f) && !std::isnan(f))
+				{
+					T.X = f * (deltaUV2.Y * Edge1.X - deltaUV1.Y * Edge2.X);
+					T.Y = f * (deltaUV2.Y * Edge1.Y - deltaUV1.Y * Edge2.Y);
+					T.Z = f * (deltaUV2.Y * Edge1.Z - deltaUV1.Y * Edge2.Z);
+
+					B.X = f * (-deltaUV2.X * Edge1.X + deltaUV1.X * Edge2.X);
+					B.Y = f * (-deltaUV2.X * Edge1.Y + deltaUV1.X * Edge2.Y);
+					B.Z = f * (-deltaUV2.X * Edge1.Z + deltaUV1.X * Edge2.Z);
+				}
+			}
+			T.Normalize();
+			B.Normalize();
+
 			for (int j = 0; j < 3; ++j)
 			{
 				size_t CurrentIndex = FaceStartIndex + j;
@@ -664,14 +690,16 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 					NewVertex.Position = RemapPosition(ObjInfo.Positions[Key.p], Options.ForwardAxis) * Options.Scale;
 
 					// Normal 리맵
+					FVector FinalNormal;
 					if (Key.n == -1)
 					{
-						NewVertex.Normal = RemapPosition(FaceNormal, Options.ForwardAxis).Normalized();
+						FinalNormal = RemapPosition(FaceNormal, Options.ForwardAxis).Normalized();
 					}
 					else
 					{
-						NewVertex.Normal = RemapPosition(ObjInfo.Normals[Key.n], Options.ForwardAxis).Normalized();
+						FinalNormal = RemapPosition(ObjInfo.Normals[Key.n], Options.ForwardAxis).Normalized();
 					}
+					NewVertex.Normal = FinalNormal;
 
 					// UV 예외 처리
 					if (Key.t == -1)
@@ -686,7 +714,12 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 					}
 
 					NewVertex.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-					NewVertex.Tangent = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+					// Tangent 리맵 및 Handedness(w) 계산
+					FVector WorldT = RemapPosition(T, Options.ForwardAxis).Normalized();
+					FVector WorldB = RemapPosition(B, Options.ForwardAxis).Normalized();
+					float w = (FinalNormal.Cross(WorldT).Dot(WorldB) < 0.0f) ? -1.0f : 1.0f;
+					NewVertex.Tangent = FVector4(WorldT.X, WorldT.Y, WorldT.Z, w);
 
 					uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
 					OutMesh.Vertices.push_back(NewVertex);

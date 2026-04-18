@@ -10,14 +10,30 @@ Texture2D g_NormalMap : register(t1);
 
 float3 ResolveBaseDrawNormal(FBaseDrawVSOutput Input)
 {
-    float3 NormalWS = normalize(Input.worldNormal);
+    float3 N = normalize(Input.worldNormal);
 
 #if defined(USE_NORMAL_MAP)
-    float3 SampledNormal = g_NormalMap.Sample(LinearWrapSampler, Input.texcoord).xyz * 2.0f - 1.0f;
-    NormalWS = normalize(lerp(NormalWS, SampledNormal, 0.5f));
+    float3 T = normalize(Input.worldTangent.xyz);
+    
+    // 그람-슈미트 정규직교화
+    T = normalize(T - dot(T, N) * N);
+    
+    // Bitangent 생성 (Handedness w 적용)
+    float3 B = cross(N, T) * Input.worldTangent.w;
+    
+    float3x3 TBN = float3x3(T, B, N);
+
+    float3 normalSample = g_NormalMap.Sample(LinearWrapSampler, Input.texcoord).rgb;
+    
+    // 노멀 맵 데이터가 있는 경우에만 TBN 변환 적용
+    if (length(normalSample) > 0.0001f)
+    {
+        float3 tangentNormal = normalSample * 2.0f - 1.0f;
+        return normalize(mul(tangentNormal, TBN));
+    }
 #endif
 
-    return NormalWS;
+    return N;
 }
 
 float4 ResolveBaseDrawColor(FBaseDrawVSOutput Input)
@@ -26,11 +42,16 @@ float4 ResolveBaseDrawColor(FBaseDrawVSOutput Input)
     return BaseSample * Input.color * GetSectionColorOrWhite();
 }
 
-FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT Input)
+FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
 {
     FBaseDrawVSOutput Output;
     Output.position = ApplyMVP(Input.position);
-    Output.worldNormal = normalize(mul(Input.normal, (float3x3)Model));
+    
+    // VS에서 정규화: 보간 왜곡을 방지하기 위해 1차 정규화 수행
+    Output.worldNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3)NormalMatrix));
+    Output.worldTangent.w = Input.tangent.w;
+
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
 
