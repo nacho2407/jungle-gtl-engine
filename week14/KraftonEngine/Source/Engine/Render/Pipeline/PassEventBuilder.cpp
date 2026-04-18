@@ -1,19 +1,22 @@
 ﻿#include "PassEventBuilder.h"
 
+#include "Render/Device/D3DDevice.h"
 #include "Render/Pipeline/RenderConstants.h"
 
 // ============================================================
 // Build — 모든 패스 이벤트 등록 진입점
 // ============================================================
-void FPassEventBuilder::Build(ID3D11DeviceContext* Context,
+void FPassEventBuilder::Build(FD3DDevice& Device,
 	const FFrameContext& Frame, FStateCache& Cache,
 	TArray<FPassEvent>& OutPreEvents,
 	TArray<FPassEvent>& OutPostEvents)
 {
-	RegisterPreDepthEvents(Context, Frame, Cache, OutPreEvents, OutPostEvents);
-	RegisterDepthCopyAndMRTEvents(Context, Frame, Cache, OutPreEvents, OutPostEvents);
-	RegisterStencilCopyEvents(Context, Frame, Cache, OutPreEvents);
-	RegisterSceneColorCopyEvents(Context, Frame, Cache, OutPreEvents);
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+
+	RegisterPreDepthEvents(Ctx, Frame, Cache, OutPreEvents, OutPostEvents);
+	RegisterDepthCopyAndMRTEvents(Ctx, Frame, Cache, OutPreEvents, OutPostEvents);
+	RegisterStencilCopyEvents(Ctx, Frame, Cache, OutPreEvents);
+	RegisterSceneColorCopyEvents(Ctx, Frame, Cache, OutPreEvents);
 }
 
 // ============================================================
