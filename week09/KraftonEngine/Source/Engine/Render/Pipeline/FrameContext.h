@@ -55,7 +55,7 @@ struct FFrameContext
 
 	// Render Settings
 	FViewportRenderOptions RenderOptions;
-	EViewMode ViewMode = EViewMode::Lit;
+	EViewMode ViewMode = EViewMode::Lit_Phong;
 	FShowFlags ShowFlags;
 
 	FVector    WireframeColor = FVector(0.0f, 0.0f, 0.7f);
