@@ -17,6 +17,9 @@
 
 class FTextRenderSceneProxy;
 class FScene;
+class FViewModeRenderPipeline;
+class FViewModeRenderPipelineLibrary;
+class FViewModeSurfaceResources;
 
 // 패스별 기본 렌더 상태 — Single Source of Truth
 struct FPassRenderState
@@ -34,6 +37,14 @@ public:
 	void Create(HWND hWindow);
 	void Release();
 
+	void SetActiveViewModePipeline(const FViewModeRenderPipeline* InPipeline) { ActiveViewPipeline = InPipeline; }
+	const FViewModeRenderPipeline* GetActiveViewModePipeline() const { return ActiveViewPipeline; }
+	bool HasActiveViewModePipeline() const { return ActiveViewPipeline != nullptr; }
+
+	void SetActiveViewModeSurfaces(FViewModeSurfaceResources* InSurfaces) { ActiveViewSurfaces = InSurfaces; }
+	FViewModeSurfaceResources* GetActiveViewModeSurfaces() const { return ActiveViewSurfaces; }
+	const FViewModeRenderPipelineLibrary* GetViewModePipelineLibrary() const { return ViewModePipelineLibrary; }
+
 	// --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
 	// MaxProxyCount: Scene의 프록시 수. PerObjectCBPool을 미리 할당하여
 	// Collect 도중 resize로 인한 포인터 무효화를 방지.
@@ -42,6 +53,7 @@ public:
 	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
 	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
 	void BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy);
+	void BuildDecalCommand(const FPrimitiveSceneProxy& DecalProxy);
 
 	// Collector가 직접 호출 — Font proxy → FontGeometry 배칭
 	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
@@ -79,6 +91,9 @@ private:
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache);
 
+	void BuildLightingPassCommand(const FFrameContext& Frame, ID3D11DeviceContext* Ctx);
+	FShader* ResolvePipelineShader(ERenderPass Pass, FShader* FallbackShader) const;
+
 	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
 	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
@@ -100,4 +115,8 @@ private:
 	// BeginCollect에서 저장, BuildCommandForProxy에서 사용
 	EViewMode CollectViewMode = EViewMode::Lit;
 	bool bHasSelectionMaskCommands = false;
+
+	const FViewModeRenderPipeline* ActiveViewPipeline = nullptr;
+	FViewModeSurfaceResources* ActiveViewSurfaces = nullptr;
+	FViewModeRenderPipelineLibrary* ViewModePipelineLibrary = nullptr;
 };
