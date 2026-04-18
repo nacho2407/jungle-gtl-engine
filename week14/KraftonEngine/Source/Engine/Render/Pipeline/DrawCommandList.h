@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "DrawCommand.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Types/MaterialTextureSlot.h"
 
 /*
 	FStateCache — Submit 루프에서 중복 GPU 상태 전환을 방지합니다.
@@ -24,7 +25,8 @@ struct FStateCache
 	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
 	FConstantBuffer*          PerObjectCB    = nullptr;
 	FConstantBuffer*          PerShaderCB[2] = {};
-	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
+	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {};
+
 
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
 	ID3D11RenderTargetView*  RTV         = nullptr;

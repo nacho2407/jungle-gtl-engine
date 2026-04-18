@@ -5,7 +5,6 @@
 //   LIGHTING_MODEL_GOURAUD  1  — 정점 단계 라이팅 (Gouraud Shading)
 //   LIGHTING_MODEL_LAMBERT  1  — 픽셀 단계 Diffuse only (Lambert)
 //   LIGHTING_MODEL_PHONG    1  — 픽셀 단계 Diffuse + Specular (Blinn-Phong)
-//   HAS_NORMAL_MAP          1  — Normal Map 사용 여부 (팀원 C 통합용)
 //
 // 아무 라이팅 모델 매크로도 없으면 기본값 = Blinn-Phong
 // =============================================================================
@@ -24,56 +23,78 @@
 // 텍스처
 // =============================================================================
 Texture2D g_txDiffuse : register(t0);
+Texture2D g_txNormal : register(t1);
 
-#if defined(HAS_NORMAL_MAP) && HAS_NORMAL_MAP
-Texture2D g_txNormal  : register(t1);
-#endif
 
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
 {
     float4 SectionColor;
+    float HasNormalMap;
+    float3 _pad;
 };
 
 // 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
-static const float4 g_DefaultEmissive  = float4(0, 0, 0, 0);
-static const float  g_DefaultShininess = 32.0f;
+static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
+static const float g_DefaultShininess = 32.0f;
 
 // =============================================================================
 // VS ↔ PS 인터페이스
 // =============================================================================
 struct UberVS_Output
 {
-    float4 position  : SV_POSITION;
-    float3 normal    : NORMAL;
-    float4 color     : COLOR0;
-    float2 texcoord  : TEXCOORD0;
-    float3 worldPos  : TEXCOORD1;
+    float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR0;
+    float2 texcoord : TEXCOORD0;
+    float3 worldPos : TEXCOORD1;
+    float4 tangent : TANGENT;
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 litDiffuse  : TEXCOORD2;
     float3 litSpecular : TEXCOORD3;
 #endif
 };
 
+
 // =============================================================================
 // Vertex Shader
 // =============================================================================
-UberVS_Output VS(VS_Input_PNCT input)
+UberVS_Output VS(VS_Input_PNCTT input)
 {
     UberVS_Output output;
 
     float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
-    output.worldPos  = worldPos4.xyz;
-    output.position  = mul(mul(worldPos4, View), Projection);
-    output.normal    = normalize(mul(input.normal, (float3x3)Model));
-    output.color     = input.color * SectionColor;
-    output.texcoord  = input.texcoord;
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(input.normal, (float3x3) Model));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
 
-#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
-    float3 N = output.normal;
+    float3 T = normalize(mul(input.tangent.xyz, (float3x3) Model));
+    T = normalize(T - output.normal * dot(output.normal, T));
+
+#if !defined(LIGHTING_MODEL_GOURAUD)
+
+    output.tangent = float4(T, input.tangent.w);
+
+
+#elif defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N = normalize(mul(input.normal, (float3x3) Model));
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = g_txNormal.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse  = AccumulateDiffuse(output.worldPos, N);
+    output.litDiffuse = AccumulateDiffuse(output.worldPos, N);
     output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess);
+
 #endif
 
     return output;
@@ -84,8 +105,8 @@ UberVS_Output VS(VS_Input_PNCT input)
 // =============================================================================
 struct UberPS_Output
 {
-    float4 Color  : SV_TARGET0;  // 최종 색상 (기존 프레임 버퍼)
-    float4 Normal : SV_TARGET1;  // World Normal (GBuffer Normal RT)
+    float4 Color : SV_TARGET0; // 최종 색상 (기존 프레임 버퍼)
+    float4 Normal : SV_TARGET1; // World Normal (GBuffer Normal RT)
 };
 
 // =============================================================================
@@ -103,15 +124,21 @@ UberPS_Output PS(UberVS_Output input)
 
     float3 N = normalize(input.normal);
 
-#if defined(HAS_NORMAL_MAP) && HAS_NORMAL_MAP
-    // TODO: TBN 행렬 연동 (팀원 C)
-    // float3 sampledN = g_txNormal.Sample(LinearWrapSampler, input.texcoord).rgb * 2.0 - 1.0;
-    // N = normalize(mul(sampledN, TBN));
+#if !defined(LIGHTING_MODEL_GOURAUD)
+    if (HasNormalMap >= 0.5)
+    {
+        float3 T = normalize(input.tangent.xyz);
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = g_txNormal.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
+        N = normalize(mul(tangentNormal, TBN));
+    }
 #endif
 
     float3 V = normalize(CameraWorldPos - input.worldPos);
 
-    float3 diffuse  = float3(0, 0, 0);
+    float3 diffuse = float3(0, 0, 0);
     float3 specular = float3(0, 0, 0);
 
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
@@ -123,7 +150,7 @@ UberPS_Output PS(UberVS_Output input)
     diffuse = AccumulateDiffuse(input.worldPos, N);
 
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
-    diffuse  = AccumulateDiffuse(input.worldPos, N);
+    diffuse = AccumulateDiffuse(input.worldPos, N);
     specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess);
 #endif
 
@@ -132,8 +159,8 @@ UberPS_Output PS(UberVS_Output input)
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
     finalColor = ApplyWireframe(finalColor);
 
-    output.Color  = float4(finalColor, baseColor.a);
-    output.Normal = float4(N, 1.0f);  // alpha=1: 유효한 노말 마킹
+    output.Color = float4(finalColor, baseColor.a);
+    output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
 
     return output;
 }
