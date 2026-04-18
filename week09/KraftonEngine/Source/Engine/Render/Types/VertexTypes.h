@@ -25,7 +25,7 @@ struct FTextureVertex
     float    _pad[3];
 };
 
-// Position + Normal + Color + UV (StaticMesh GPU용 정점 형식)
+// Position + Normal + Color + UV (NormalMap이 없는 StaticMesh GPU용 정점 형식)
 struct FVertexPNCT
 {
 	FVector Position;
@@ -34,7 +34,7 @@ struct FVertexPNCT
 	FVector2 UV;
 };
 
-// Position + Normal + Color + UV + Tangent (라이팅/노멀맵용 신규 정점 형식)
+// Position + Normal + Color + UV + Tangent (NormalMap이 있는 StaticMesh GPU용 정점 형식)
 struct FVertexPNCT_T
 {
 	FVector Position;
