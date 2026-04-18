@@ -19,7 +19,5 @@ public:
     FLightSceneProxy* CreateLightSceneProxy() override;
 
 protected:
-    // Light Temperature
-    bool  bUseTemperature = false;
-    float Temperature = 6500.0f;
+    FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 기본값: 아래로 향하는 빛
 };
