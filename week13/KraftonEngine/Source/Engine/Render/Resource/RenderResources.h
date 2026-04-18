@@ -16,6 +16,7 @@
 	셰이더별 CB(Gizmo, Outline 등)는 FConstantBufferPool에서 관리됩니다.
 */
 
+class FD3DDevice;
 class FScene;
 struct FFrameContext;
 
@@ -84,22 +85,22 @@ struct FSystemResources
 	void Release();
 
 	// 렌더 상태 전환
-	void SetDepthStencilState(ID3D11DeviceContext* Ctx, EDepthStencilState InState);
-	void SetBlendState(ID3D11DeviceContext* Ctx, EBlendState InState);
-	void SetRasterizerState(ID3D11DeviceContext* Ctx, ERasterizerState InState);
+	void SetDepthStencilState(FD3DDevice& Device, EDepthStencilState InState);
+	void SetBlendState(FD3DDevice& Device, EBlendState InState);
+	void SetRasterizerState(FD3DDevice& Device, ERasterizerState InState);
 
 	// 리사이즈 시 렌더 상태 캐시 무효화
 	void ResetRenderStateCache();
 
 	// 프레임 공용 CB 업데이트 + 바인딩 (b0)
-	void UpdateFrameBuffer(ID3D11DeviceContext* Ctx, const FFrameContext& Frame);
+	void UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame);
 
 	// 라이팅 CB + StructuredBuffer 업데이트 + 바인딩 (b4, t8)
-	void UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Ctx, const FScene& Scene);
+	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene);
 
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
-	void BindSystemSamplers(ID3D11DeviceContext* Ctx);
+	void BindSystemSamplers(FD3DDevice& Device);
 
 	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
-	void UnbindSystemTextures(ID3D11DeviceContext* Ctx);
+	void UnbindSystemTextures(FD3DDevice& Device);
 };

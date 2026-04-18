@@ -101,15 +101,14 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 {
 	FDrawCallStats::Reset();
 
-	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-		Resources.UpdateFrameBuffer(Ctx, Frame);
-		Resources.UpdateLightBuffer(Device.GetDevice(), Ctx, Scene);
+		Resources.UpdateFrameBuffer(Device, Frame);
+		Resources.UpdateLightBuffer(Device, Scene);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
-	Resources.BindSystemSamplers(Ctx);
+	Resources.BindSystemSamplers(Device);
 
 	FDrawCommandList& CommandList = Builder.GetCommandList();
 
@@ -145,7 +144,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
-		CommandList.SubmitRange(Start, End, Resources, Ctx, Cache);
+		CommandList.SubmitRange(Start, End, Device, Resources, Cache);
 
 		for (auto& PostPassEvent : PostPassEvents)
 		{
@@ -161,11 +160,9 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 // ============================================================
 void FRenderer::CleanupPassState(FStateCache& Cache)
 {
-	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	Resources.UnbindSystemTextures(Device);
 
-	Resources.UnbindSystemTextures(Ctx);
-
-	Cache.Cleanup(Ctx);
+	Cache.Cleanup(Device.GetDeviceContext());
 	Builder.GetCommandList().Reset();
 }
 
