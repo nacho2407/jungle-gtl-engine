@@ -273,7 +273,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	}
 
 	// --- SRV (t0 ~ t7) 바인딩 ---
-	/*for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
+	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{
 		if (bForce || Cmd.SRVs[i] != Cache.SRVs[i])
 		{
@@ -282,13 +282,6 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			Ctx->PSSetShaderResources(i, 1, &SRV);
 			Cache.SRVs[i] = Cmd.SRVs[i];
 		}
-	}*/
-	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
-	{
-		ID3D11ShaderResourceView* SRV = Cmd.SRVs[i];
-		Ctx->VSSetShaderResources(i, 1, &SRV);
-		Ctx->PSSetShaderResources(i, 1, &SRV);
-		Cache.SRVs[i] = Cmd.SRVs[i];
 	}
 
 	Cache.bForceAll = false;
