@@ -246,7 +246,7 @@ void UStaticMeshComponent::PostDuplicate()
 				}
 				else
 				{
-					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MatPath);
+					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(MatPath);
 					OverrideMaterials[i] = LoadedMat;
 				}
 			}
@@ -309,7 +309,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(NewMatPath);
 				if (LoadedMat)
 				{
 					SetMaterial(Index, LoadedMat);
