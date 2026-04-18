@@ -17,7 +17,7 @@ cbuffer StaticMeshBuffer : register(b2)
     uint   bHasSpecularMap;
     
     float3 EmissiveColor;    // emissive glow color; non-zero means emissive
-    float padding2;
+    uint bHasNormalMap;
 };
 
 struct FAmbientLightInfo
@@ -71,6 +71,7 @@ struct VSInput
     float2 UV       : TEXCOORD;
     float4 Color    : COLOR;
     float3 Normal   : NORMAL;
+    float4 Tangent  : TANGENT;
 };
 
 struct PSInput
@@ -80,9 +81,12 @@ struct PSInput
     float3 WorldNormal  : TEXCOORD1;
     float2 UV           : TEXCOORD2;
 #if LIGHTING_MODEL_GOURAUD
-    float3 LitColor    : TEXCOORD3;
+    float3 LitColor     : TEXCOORD3;
+#elif LIGHTING_MODEL_LAMBERT
+    float4 WorldTangent : TEXCOORD3;
 #elif LIGHTING_MODEL_PHONG
-    float3 PixelNormal : TEXCOORD4;
+    float3 PixelNormal  : TEXCOORD4;
+    float4 WorldTangent : TEXCOORD5;
 #endif
 };
 
@@ -157,10 +161,13 @@ PSInput mainVS(VSInput input)
     return output;
 #elif LIGHTING_MODEL_LAMBERT
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
+    // Transform world tangent
+    output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
     return output;
 #elif LIGHTING_MODEL_PHONG
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     output.PixelNormal = output.WorldNormal;
+    output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
     return output;
 #else 
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));

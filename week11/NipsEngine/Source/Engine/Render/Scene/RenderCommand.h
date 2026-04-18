@@ -200,7 +200,8 @@ struct FStaticMeshConstants
 	uint32  bHasSpecularMap  = 0;        // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
 
 	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
-	float _Pad2 = 0.0f;
+	uint32  bHasNormalMap	= 0;
+	//float _Pad2 = 0.0f;
 
 	// Texture SRV (CPU-only, cbuffer 범위 밖)
 	//ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };

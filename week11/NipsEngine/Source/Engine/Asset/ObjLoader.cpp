@@ -667,7 +667,8 @@ void FObjLoader::ComputeTangents(FStaticMesh* InMesh)
 		T = (Len > 1e-6f) ? T / Len : FVector(1, 0, 0);
 
 		float Sign = GetSign(N, T, BitangentAcc[i]);
-		InMesh->Vertices[i].Tangent = T * Sign;
+		//InMesh->Vertices[i].Tangent = T * Sign;
+        InMesh->Vertices[i].Tangent = FVector4(T.X, T.Y, T.Z, Sign);
 	}
 }
 
