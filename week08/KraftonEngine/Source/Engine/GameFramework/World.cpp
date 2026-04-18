@@ -9,7 +9,6 @@
 
 IMPLEMENT_CLASS(UWorld, UObject)
 
-
 UWorld::~UWorld()
 {
 	if (PersistentLevel && !PersistentLevel->GetActors().empty())
@@ -171,7 +170,7 @@ FLODUpdateContext UWorld::PrepareLODContext()
 
 	const uint32 LODUpdateFrame = VisibleProxyBuildFrame++;
 	const uint32 LODUpdateSlice = LODUpdateFrame & (LOD_UPDATE_SLICE_COUNT - 1);
-	const bool bShouldStaggerLOD = Scene.GetProxyCount() >= LOD_STAGGER_MIN_VISIBLE;
+	const bool bShouldStaggerLOD = Scene.GetPrimitiveProxyCount() >= LOD_STAGGER_MIN_VISIBLE;
 
 	const bool bForceFullLODRefresh =
 		!bShouldStaggerLOD

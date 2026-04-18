@@ -9,12 +9,14 @@
 class UDirectionalLightComponent : public ULightComponent
 {
 public:
-    DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
-    UDirectionalLightComponent();
+	DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
+	UDirectionalLightComponent();
 
     void Serialize(FArchive& Ar) override;
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
+
+    FLightSceneProxy* CreateLightSceneProxy() override;
 
 protected:
     // Light Temperature

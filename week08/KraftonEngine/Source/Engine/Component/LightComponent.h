@@ -2,9 +2,10 @@
 #include "LightComponentBase.h"
 
 class FLightSceneProxy;
+class FScene;
 
 /**
- * ULightComponentBase: 빛이라는 개념이 가져야 할 가장 핵심적인 데이터만 정의합니다.
+ * ULightComponentBase: 빛이라는 개념이 가져야 할 핵심적인 데이터만 정의합니다.
  * ULightComponent: 렌더 프록시를 생성하고 화면에 그리기 위한 로직을 담당합니다.
  */
 class ULightComponent : public ULightComponentBase

@@ -104,7 +104,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Frame.LODContext = World->PrepareLODContext();
 
 	// 2. BeginCollect → Proxy → FDrawCommand 직접 변환
-	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
+	Renderer.BeginCollect(Frame, Scene.GetPrimitiveProxyCount());
 
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");
