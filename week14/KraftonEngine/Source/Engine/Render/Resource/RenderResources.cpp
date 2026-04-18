@@ -1,4 +1,5 @@
 #include "RenderResources.h"
+#include "Render/Device/D3DDevice.h"
 #include "Materials/MaterialManager.h"
 #include "Render/Pipeline/ForwardLightData.h"
 #include "Render/Pipeline/FrameContext.h"
@@ -32,8 +33,10 @@ void FSystemResources::Release()
 	ForwardLights.Release();
 }
 
-void FSystemResources::UpdateFrameBuffer(ID3D11DeviceContext* Ctx, const FFrameContext& Frame)
+void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame)
 {
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+
 	FFrameConstants frameConstantData = {};
 	frameConstantData.View = Frame.View;
 	frameConstantData.Projection = Frame.Proj;
@@ -53,8 +56,11 @@ void FSystemResources::UpdateFrameBuffer(ID3D11DeviceContext* Ctx, const FFrameC
 	Ctx->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FSystemResources::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Ctx, const FScene& Scene)
+void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene)
 {
+	ID3D11Device* Dev = Device.GetDevice();
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+
 	FLightingCBData GlobalLightingData = {};
 	if (Scene.HasGlobalAmbientLight())
 	{
@@ -114,29 +120,29 @@ void FSystemResources::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceCon
 	Ctx->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 	Ctx->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 
-	ForwardLights.Update(InDevice, Ctx, Infos);
+	ForwardLights.Update(Dev, Ctx, Infos);
 	Ctx->VSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 }
 
-void FSystemResources::BindSystemSamplers(ID3D11DeviceContext* Ctx)
+void FSystemResources::BindSystemSamplers(FD3DDevice& Device)
 {
-	SamplerStateManager.BindSystemSamplers(Ctx);
+	SamplerStateManager.BindSystemSamplers(Device.GetDeviceContext());
 }
 
-void FSystemResources::SetDepthStencilState(ID3D11DeviceContext* Ctx, EDepthStencilState InState)
+void FSystemResources::SetDepthStencilState(FD3DDevice& Device, EDepthStencilState InState)
 {
-	DepthStencilStateManager.Set(Ctx, InState);
+	DepthStencilStateManager.Set(Device.GetDeviceContext(), InState);
 }
 
-void FSystemResources::SetBlendState(ID3D11DeviceContext* Ctx, EBlendState InState)
+void FSystemResources::SetBlendState(FD3DDevice& Device, EBlendState InState)
 {
-	BlendStateManager.Set(Ctx, InState);
+	BlendStateManager.Set(Device.GetDeviceContext(), InState);
 }
 
-void FSystemResources::SetRasterizerState(ID3D11DeviceContext* Ctx, ERasterizerState InState)
+void FSystemResources::SetRasterizerState(FD3DDevice& Device, ERasterizerState InState)
 {
-	RasterizerStateManager.Set(Ctx, InState);
+	RasterizerStateManager.Set(Device.GetDeviceContext(), InState);
 }
 
 void FSystemResources::ResetRenderStateCache()
@@ -146,8 +152,9 @@ void FSystemResources::ResetRenderStateCache()
 	BlendStateManager.ResetCache();
 }
 
-void FSystemResources::UnbindSystemTextures(ID3D11DeviceContext* Ctx)
+void FSystemResources::UnbindSystemTextures(FD3DDevice& Device)
 {
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	ID3D11ShaderResourceView* nullSRV = nullptr;
 	Ctx->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
 	Ctx->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);

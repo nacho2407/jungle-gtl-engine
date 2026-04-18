@@ -4,6 +4,7 @@
 #include <cstring>
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Device/D3DDevice.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Profiling/Stats.h"
 
@@ -79,32 +80,34 @@ void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& 
 	OutEnd = PassOffsets[(uint32)Pass + 1];
 }
 
-void FDrawCommandList::Submit(FSystemResources& Resources, ID3D11DeviceContext* Ctx)
+void FDrawCommandList::Submit(FD3DDevice& Device, FSystemResources& Resources)
 {
 	if (Commands.empty()) return;
 
 	SCOPE_STAT_CAT("DrawCommandList::Submit", "4_ExecutePass");
 
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	FStateCache Cache;
 	Cache.Reset();
 
 	for (const FDrawCommand& Cmd : Commands)
 	{
-		SubmitCommand(Cmd, Resources, Ctx, Cache);
+		SubmitCommand(Cmd, Device, Resources, Ctx, Cache);
 	}
 
 	Cache.Cleanup(Ctx);
 }
 
-void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FSystemResources& Resources,
-	ID3D11DeviceContext* Ctx, FStateCache& Cache)
+void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx,
+	FD3DDevice& Device, FSystemResources& Resources, FStateCache& Cache)
 {
 	if (StartIdx >= EndIdx) return;
 	if (EndIdx > Commands.size()) EndIdx = static_cast<uint32>(Commands.size());
 
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	for (uint32 i = StartIdx; i < EndIdx; ++i)
 	{
-		SubmitCommand(Commands[i], Resources, Ctx, Cache);
+		SubmitCommand(Commands[i], Device, Resources, Ctx, Cache);
 	}
 }
 
@@ -123,7 +126,8 @@ uint32 FDrawCommandList::GetCommandCount(ERenderPass Pass) const
 // 단일 커맨드 GPU 제출 — StateCache 비교 후 변경분만 바인딩
 // ============================================================
 
-void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FSystemResources& Resources,
+void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
+	FD3DDevice& Device, FSystemResources& Resources,
 	ID3D11DeviceContext* Ctx, FStateCache& Cache)
 {
 	const bool bForce = Cache.bForceAll;
@@ -131,19 +135,19 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FSystemResources& 
 	// --- 렌더 상태 ---
 	if (bForce || Cmd.RenderState.DepthStencil != Cache.RenderState.DepthStencil)
 	{
-		Resources.SetDepthStencilState(Ctx, Cmd.RenderState.DepthStencil);
+		Resources.SetDepthStencilState(Device, Cmd.RenderState.DepthStencil);
 		Cache.RenderState.DepthStencil = Cmd.RenderState.DepthStencil;
 	}
 
 	if (bForce || Cmd.RenderState.Blend != Cache.RenderState.Blend)
 	{
-		Resources.SetBlendState(Ctx, Cmd.RenderState.Blend);
+		Resources.SetBlendState(Device, Cmd.RenderState.Blend);
 		Cache.RenderState.Blend = Cmd.RenderState.Blend;
 	}
 
 	if (bForce || Cmd.RenderState.Rasterizer != Cache.RenderState.Rasterizer)
 	{
-		Resources.SetRasterizerState(Ctx, Cmd.RenderState.Rasterizer);
+		Resources.SetRasterizerState(Device, Cmd.RenderState.Rasterizer);
 		Cache.RenderState.Rasterizer = Cmd.RenderState.Rasterizer;
 	}
 

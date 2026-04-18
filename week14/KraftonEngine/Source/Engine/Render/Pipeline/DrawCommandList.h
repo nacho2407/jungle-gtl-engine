@@ -4,6 +4,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
 
+class FD3DDevice;
 struct FSystemResources;
 
 /*
@@ -49,11 +50,11 @@ public:
 	void GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const;
 
 	// StateCache 기반 GPU 제출 (전체)
-	void Submit(FSystemResources& Resources, ID3D11DeviceContext* Ctx);
+	void Submit(FD3DDevice& Device, FSystemResources& Resources);
 
 	// 외부 FStateCache 공유 — 패스 간 상태 유지
-	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FSystemResources& Resources,
-		ID3D11DeviceContext* Ctx, FStateCache& Cache);
+	void SubmitRange(uint32 StartIdx, uint32 EndIdx,
+		FD3DDevice& Device, FSystemResources& Resources, FStateCache& Cache);
 
 	// 프레임 끝 초기화
 	void Reset();
@@ -71,7 +72,8 @@ public:
 	const TArray<FDrawCommand>& GetCommands() const { return Commands; }
 
 private:
-	void SubmitCommand(const FDrawCommand& Cmd, FSystemResources& Resources,
+	void SubmitCommand(const FDrawCommand& Cmd,
+		FD3DDevice& Device, FSystemResources& Resources,
 		ID3D11DeviceContext* Ctx, FStateCache& Cache);
 
 	TArray<FDrawCommand> Commands;
