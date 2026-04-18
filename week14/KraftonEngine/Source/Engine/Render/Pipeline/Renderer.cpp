@@ -156,6 +156,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		bHasSelectionMaskCommands = true;
 
 	// ViewMode에 따른 UberLit 셰이더 변형 선택
+	// Wireframe 등 비-Lit 모드에서는 원본 StaticMesh 셰이더 유지
 	FShader* EffectiveShader = Proxy.Shader;
 	if (Proxy.Shader == FShaderManager::Get().GetShader(EShaderType::StaticMesh))
 	{
@@ -168,9 +169,10 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Lambert);
 			break;
 		case EViewMode::Lit_Phong:
-		default:
 			EffectiveShader = FShaderManager::Get().GetShader(EShaderType::UberLit_Phong);
 			break;
+		default:
+			break; // Wireframe, SceneDepth, WorldNormal 등 — 원본 셰이더 유지
 		}
 	}
 
@@ -185,7 +187,21 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			}
 		};
 
-	const bool bPreDepth = (Pass == ERenderPass::PreDepth);
+	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
+
+	// 커맨드 공통 초기화 람다
+	auto InitCommand = [&](FDrawCommand& Cmd)
+		{
+			Cmd.Shader       = EffectiveShader;
+			Cmd.bDepthOnly   = bDepthOnly;
+			Cmd.Blend        = PassState.Blend;
+			Cmd.DepthStencil = PassState.DepthStencil;
+			Cmd.Rasterizer   = Rasterizer;
+			Cmd.Topology     = PassState.Topology;
+			Cmd.MeshBuffer   = Proxy.MeshBuffer;
+			Cmd.PerObjectCB  = PerObjCB;
+			Cmd.Pass         = Pass;
+		};
 
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
 	if (!Proxy.SectionDraws.empty())
@@ -196,70 +212,30 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader = EffectiveShader;
-			Cmd.bDepthOnly = bPreDepth;
-
-			if (bPreDepth)
-			{
-				// PreDepth: 패스 테이블 상태 강제 (머티리얼 오버라이드 무시)
-				Cmd.Blend = PassState.Blend;
-				Cmd.DepthStencil = PassState.DepthStencil;
-				Cmd.Rasterizer = PassState.Rasterizer;
-			}
-			else
-			{
-				// 머티리얼 기반 렌더 상태 우선 적용
-				Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
-				Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
-				Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
-			}
-
-			Cmd.Topology = PassState.Topology;
-			Cmd.MeshBuffer = Proxy.MeshBuffer;
+			InitCommand(Cmd);
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
-			Cmd.PerObjectCB = PerObjCB;
-			if (!bPreDepth)
+
+			if (!bDepthOnly)
 			{
 				Cmd.PerShaderCB[0] = Section.MaterialCB[0];
 				Cmd.PerShaderCB[1] = Section.MaterialCB[1];
 				SetProxyExtraCB(Cmd);
 				Cmd.DiffuseSRV = Section.DiffuseSRV;
 			}
-			Cmd.Pass = Pass;
 			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.DiffuseSRV);
-
 		}
 	}
 	else
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader = EffectiveShader;
-		Cmd.bDepthOnly = bPreDepth;
+		InitCommand(Cmd);
 
-		if (bPreDepth)
-		{
-			Cmd.Blend = PassState.Blend;
-			Cmd.DepthStencil = PassState.DepthStencil;
-			Cmd.Rasterizer = PassState.Rasterizer;
-		}
-		else
-		{
-			// 프록시 기반 렌더 상태 적용
-			Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
-			Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
-			Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
-		}
-
-		Cmd.Topology = PassState.Topology;
-		Cmd.MeshBuffer = Proxy.MeshBuffer;
-		Cmd.PerObjectCB = PerObjCB;
-		if (!bPreDepth)
+		if (!bDepthOnly)
 		{
 			SetProxyExtraCB(Cmd);
 			Cmd.DiffuseSRV = Proxy.DiffuseSRV;
 		}
-		Cmd.Pass = Pass;
 		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
 }
@@ -455,7 +431,25 @@ void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 	TArray<FPassEvent>& PostPassEvents,
 	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
 {
-	// CopyDepth: PreDepth 완료 직후(Opaque 진입 전) Depth 복사 → SceneDepth SRV 바인딩
+	// PreDepth 진입: RTV 해제 → DSV만 바인딩 (depth만 기록, 색 출력 없음)
+	PrePassEvents.push_back({ ERenderPass::PreDepth, EPassCompare::Equal, true, false,
+		[Context, &Cache]()
+		{
+			Context->OMSetRenderTargets(0, nullptr, Cache.DSV);
+			Cache.bForceAll = true;
+		}
+		});
+
+	// PreDepth 완료: RTV 복귀
+	PostPassEvents.push_back({ ERenderPass::PreDepth, EPassCompare::Equal, true, false,
+		[Context, &Frame, &Cache]()
+		{
+			Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+			Cache.bForceAll = true;
+		}
+		});
+
+	// CopyDepth: Opaque 진입 전 Depth 복사 → MRT 세팅 → SceneDepth SRV 바인딩
 	if (Frame.DepthTexture && Frame.DepthCopyTexture)
 	{
 		PrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::GreaterEqual, true, false,
@@ -817,7 +811,7 @@ void FRenderer::InitializePassRenderStates()
 	auto& S = PassRenderStates;
 
 	//                              DepthStencil                         Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::PreDepth] = { EDepthStencilState::Default,           EBlendState::NoColor,    ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::PreDepth] = { EDepthStencilState::Default,           EBlendState::NoColor,    ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Opaque] = { EDepthStencilState::DepthGreaterEqual, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };

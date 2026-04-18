@@ -62,7 +62,7 @@ struct FLightInfo
 // 리소스 바인딩
 // =============================================================================
 
-// ── Lighting CB (b3) — Ambient + Directional + 메타데이터 ──
+// ── Lighting CB (b4) — Ambient + Directional + 메타데이터 ──
 cbuffer LightingBuffer : register(b4)
 {
     FAmbientLightInfo AmbientLight;

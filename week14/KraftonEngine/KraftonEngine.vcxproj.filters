@@ -162,6 +162,9 @@
     <FxCompile Include="Shaders\SceneDepth.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\SceneNormal.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderBillboard.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -184,6 +187,9 @@
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ForwardLighting.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\Functions.hlsli">
@@ -329,6 +335,12 @@
     <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp">
+      <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -338,7 +350,13 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\DirectionalLightActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\FakeLightActor.cpp">
@@ -351,6 +369,12 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\PointLightActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\SpotLightActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp">
@@ -588,12 +612,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\DirectionalLightActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\PointLightActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\SpotLightActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -773,7 +791,13 @@
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\DirectionalLightActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\FakeLightActor.h">
@@ -786,6 +810,12 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\PointLightActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\SpotLightActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h">
@@ -1103,10 +1133,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\DirectionalLightActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\PointLightActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\SpotLightActor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
