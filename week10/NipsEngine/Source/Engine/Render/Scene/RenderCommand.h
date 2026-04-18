@@ -62,6 +62,41 @@ struct FFrameConstants
 	FVector WireframeColor;
 };
 
+struct FAmbientLightInfo
+{
+	FVector Color;
+	float Intensity;
+};
+struct FDirectionalLightInfo
+{
+	FVector Direction;
+	float Padding0;
+	FVector Color;
+	float Intensity;
+};
+struct FLightInfo
+{
+	FVector Color;
+	float Intensity;
+
+	uint32 Type;
+	float Radius;
+	float InnerAngle;
+	float OuterAngle;
+
+	FVector Direction;
+	float Padding0;
+
+	FVector Position;
+	float Padding1;
+};
+
+struct FLightConstants
+{
+	FAmbientLightInfo AmbientLight;
+	FDirectionalLightInfo DirectionalLight;
+};
+
 struct FGizmoConstants
 {
 	FVector4 ColorTint;
