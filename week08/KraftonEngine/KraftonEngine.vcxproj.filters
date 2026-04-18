@@ -233,6 +233,9 @@
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\FEditorMaterialWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
@@ -272,10 +275,19 @@
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\DirectionalLightComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\LightComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\LightComponentBase.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
@@ -285,6 +297,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PointLightComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
@@ -297,6 +312,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp">
@@ -342,6 +360,9 @@
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp">
       <Filter>Source\Engine\Materials</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp">
@@ -567,12 +588,7 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp">
-      <Filter>Source\Engine\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\FEditorMaterialWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\LightSceneProxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -620,6 +636,9 @@
     <ClInclude Include="Source\Editor\UI\EditorWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\FEditorMaterialWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
@@ -665,10 +684,19 @@
     <ClInclude Include="Source\Engine\Component\DecalComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\DirectionalLightComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LightComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LightComponentBase.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
@@ -678,6 +706,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PointLightComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
@@ -690,6 +721,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SpotLightComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h">
@@ -762,6 +796,9 @@
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\Material.h">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\MaterialCore.h">
       <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h">
@@ -1058,12 +1095,7 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Materials\MaterialCore.h">
-      <Filter>Source\Engine\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\FEditorMaterialWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\LightSceneProxy.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
