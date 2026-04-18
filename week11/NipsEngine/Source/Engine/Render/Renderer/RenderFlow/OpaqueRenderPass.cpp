@@ -29,74 +29,84 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
     return true;
 }
 
-bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
-{
-    const FRenderBus* RenderBus = Context->RenderBus;
+bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)  
+{  
+   const FRenderBus* RenderBus = Context->RenderBus;  
+   const TArray<FLightInfo>& Lights = RenderBus->LightInfos;
+   Context->RenderResources->LightStructuredBuffer.Update(Context->DeviceContext, Lights.data(), (uint32)Lights.size());
+   ID3D11ShaderResourceView* SRVs[] = { Context->RenderResources->LightStructuredBuffer.GetSRV(),
+										Context->RenderResources->LightCulledIndexBuffer.GetSRV(),
+										Context->RenderResources->LightTileBuffer.GetSRV() };
+   Context->DeviceContext->VSSetShaderResources(4, 3, SRVs);
+   Context->DeviceContext->PSSetShaderResources(4, 3, SRVs);
 
-    const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);
+   const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);  
 
-    if (Commands.empty())
-        return true;
+   if (Commands.empty())  
+       return true;  
 
-    for (const FRenderCommand& Cmd : Commands)
-    {
-        Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
-        ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
-        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+   for (const FRenderCommand& Cmd : Commands)  
+   {  
+       Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));  
+       ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();  
+       Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
+       Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);  
 
-        if (Cmd.Type == ERenderCommandType::PostProcessOutline)
-        {
-            continue;
-        }
+       if (Cmd.Type == ERenderCommandType::PostProcessOutline)  
+       {  
+           continue;  
+       }  
 
-        if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-        {
-            return false;
-        }
+       if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
+       {  
+           return false;  
+       }  
 
-        uint32 offset = 0;
-        ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-        if (vertexBuffer == nullptr)
-        {
-            return false;
-        }
+       uint32 offset = 0;  
+       ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();  
+       if (vertexBuffer == nullptr)  
+       {  
+           return false;  
+       }  
 
-        uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-        uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-        if (vertexCount == 0 || stride == 0)
-        {
-            return false;
-        }
+       uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
+       uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
+       if (vertexCount == 0 || stride == 0)  
+       {  
+           return false;  
+       }  
 
-        if (Cmd.Material)
-        {
-            Cmd.Material->Bind(Context->DeviceContext);
-        }
+       if (Cmd.Material)  
+       {  
+           Cmd.Material->Bind(Context->DeviceContext);  
+       }  
 
-		CheckOverrideViewMode(Context);
+       CheckOverrideViewMode(Context);  
 
-        Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+       Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
 
-        ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-        if (indexBuffer != nullptr)
-        {
-            uint32 indexStart = Cmd.SectionIndexStart;
-            uint32 indexCount = Cmd.SectionIndexCount;
-            Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-            Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);
-        }
-        else
-        {
-            Context->DeviceContext->Draw(vertexCount, 0);
-        }
-    }
+       ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
+       if (indexBuffer != nullptr)  
+       {  
+           uint32 indexStart = Cmd.SectionIndexStart;  
+           uint32 indexCount = Cmd.SectionIndexCount;  
+           Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);  
+           Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);  
+       }  
+       else  
+       {  
+           Context->DeviceContext->Draw(vertexCount, 0);  
+       }  
+   }  
 
-    return true;
+   return true;  
 }
 
 bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 {
+	ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
+	Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
+	Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
     return true;
 }
 

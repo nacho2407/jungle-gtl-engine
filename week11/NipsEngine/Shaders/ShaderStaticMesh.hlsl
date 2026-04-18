@@ -26,12 +26,30 @@ Texture2D BumpMap     : register(t3);
 
 SamplerState SampleState : register(s0);
 
+struct FLightInfo
+{
+    float3 Color;
+    float Intensity;
+
+    uint  Type;
+    float Radius;
+    float InnerAngle;
+    float OuterAngle;
+
+    float3 Direction;
+    float  Padding0;
+
+    float3 Position;
+    float  Padding1;
+};
+StructuredBuffer<FLightInfo> Lights : register(t4);
+
 struct VSInput
 {
     float3 Position : POSITION;
-    float4 Color    : COLOR;
-    float3 Normal   : NORMAL;
-    float2 UV       : TEXCOORD;
+    float2 UV : TEXCOORD;
+    float4 Color : COLOR;
+    float3 Normal : NORMAL;
 };
 
 struct PSInput

@@ -43,6 +43,12 @@
     <Filter Include="Source\Engine\Component\Movement">
       <UniqueIdentifier>{a5b9b888-60c7-ef17-a883-5cc31c907635}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\PostProcess">
+      <UniqueIdentifier>{b706c0ce-1360-1afe-9c3f-97a5e8d65ac3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\PostProcess\Light">
+      <UniqueIdentifier>{bdfe0d77-4f26-986d-d3bd-3762e085ddda}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{8b69df27-06f7-dea9-00be-7dcc5bcae5a6}</UniqueIdentifier>
     </Filter>
@@ -139,12 +145,6 @@
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{60f3c5d4-2dd4-3746-7c69-104344277d07}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Component\Movement\PostProcess">
-      <UniqueIdentifier>{b30cd8bc-9ce0-4127-87a8-3c3551a0fd41}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Component\Movement\PostProcess\Light">
-      <UniqueIdentifier>{f4549eb7-0fb9-4d85-b0b6-15b046011043}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common.hlsl">
@@ -190,6 +190,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Multipass\FXAAPass.hlsl">
@@ -341,6 +344,24 @@
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -464,6 +485,9 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthPrePass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
@@ -477,6 +501,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.cpp">
@@ -569,6 +596,12 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Serialization\JsonWriter.cpp">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
@@ -651,9 +684,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Serialization\JsonReader.h" />
-    <ClCompile Include="Source\Engine\Serialization\JsonWriter.cpp" />
-    <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -811,6 +841,24 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h">
+      <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
@@ -1028,6 +1076,9 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthPrePass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
@@ -1041,6 +1092,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.h">
@@ -1157,6 +1211,18 @@
     <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h">
       <Filter>Source\Engine\Runtime\Stats</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\Archive.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\JsonReader.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\JsonWriter.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
@@ -1253,14 +1319,5 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h">
-      <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h">
-      <Filter>Source\Engine\Component\Movement\PostProcess\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\Archive.h" />
-    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
-    <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
   </ItemGroup>
 </Project>
