@@ -4,7 +4,6 @@
 #include "Render/Culling/ConvexVolume.h"
 
 class UStaticMeshComponent;
-
 // class DecalProxy;
 
 class UDecalComponent : public UPrimitiveComponent
@@ -31,8 +30,8 @@ public:
 	FVector4 GetColor() const;
 
 	// --- Material ---
-	void SetMaterial(class UMaterial* InMaterial);
-	class UMaterial* GetMaterial() const { return Material; }
+	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial) override;
+	UMaterial* GetMaterial(int32 ElementIndex) const override { return Material; }
 
 	const FConvexVolume GetDecalVolume() { return ConvexVolume; }
 	void UpdateDecalVolumeFromTransform();
