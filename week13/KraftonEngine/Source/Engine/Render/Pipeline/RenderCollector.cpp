@@ -10,7 +10,7 @@
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Pipeline/LODContext.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Pipeline/DrawCommandBuilder.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
@@ -19,7 +19,7 @@
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
+void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FDrawCommandBuilder& Builder)
 {
 	if (!World) return;
 
@@ -47,7 +47,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
 	}
 
-	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
+	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Builder);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -134,7 +134,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FDrawCommandBuilder& Builder)
 {
 	if (!Frame.ShowFlags.bPrimitives) return;
 
@@ -208,7 +208,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
 			if (!TextProxy->CachedText.empty())
 			{
-				Renderer.AddWorldText(TextProxy, Frame);
+				Builder.AddWorldText(TextProxy, Frame);
 			}
 		}
 		// Decal 프록시는 Decal-Receiver에 렌더링 의존하므로 특별 취급
@@ -246,7 +246,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 					ReceiverProxy->UpdatePerViewport(Frame);
 				}
 
-				Renderer.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
+				Builder.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
 			}
 		}
 		else
@@ -254,10 +254,10 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 			// PreDepth: 불투명 패스 프록시에 대해 depth-only 커맨드 추가
 			if (Proxy->Pass == ERenderPass::Opaque)
 			{
-				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
+				Builder.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
 			}
 			// Proxy → FDrawCommand 직접 변환
-			Renderer.BuildCommandForProxy(*Proxy, Proxy->Pass);
+			Builder.BuildCommandForProxy(*Proxy, Proxy->Pass);
 		}
 
 		// 선택된 오브젝트 — 아웃라인 + AABB + 컴포넌트 디버그 시각화
@@ -265,7 +265,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		{
 			if (Proxy->bSupportsOutline)
 			{
-				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
+				Builder.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
 			}
 
 			if (bShowBoundingVolume && Proxy->bShowAABB)

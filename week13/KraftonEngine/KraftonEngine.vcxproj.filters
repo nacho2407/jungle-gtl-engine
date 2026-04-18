@@ -150,6 +150,9 @@
     <FxCompile Include="Shaders\HiZGenerate.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\NormalView.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\OcclusionTest.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -203,9 +206,6 @@
     </FxCompile>
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsli">
       <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\NormalView.hlsl">
-      <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -483,6 +483,9 @@
       <Filter>Source\Engine\Render\Helper</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp">
@@ -953,6 +956,9 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -1029,6 +1035,9 @@
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h">
+      <Filter>Source\Engine\Render\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h">
