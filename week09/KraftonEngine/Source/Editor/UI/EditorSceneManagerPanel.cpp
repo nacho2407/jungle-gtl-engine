@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorScenePanel.h"
+#include "Editor/UI/EditorSceneManagerPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -46,8 +46,8 @@ void FEditorScenePanel::RenderActorOutliner()
         return;
     }
 
-    const TArray<AActor *> &Actors = World->GetActors();
     FSelectionManager &Selection = EditorEngine->GetSelectionManager();
+    const TArray<AActor *> &Actors = World->GetActors();
 
     ValidActorIndices.clear();
     ValidActorIndices.reserve(Actors.size());
@@ -59,18 +59,21 @@ void FEditorScenePanel::RenderActorOutliner()
         }
     }
 
-    TArray<AActor *> ActorsToDelete;
-    ActorsToDelete.reserve(ValidActorIndices.size());
+    int32 SelectedCount = 0;
     for (int32 Row = 0; Row < static_cast<int32>(ValidActorIndices.size()); ++Row)
     {
-        AActor *Actor = Actors[ValidActorIndices[Row]];
+        const int32 ActorIndex = ValidActorIndices[Row];
+        if (ActorIndex < 0 || ActorIndex >= static_cast<int32>(Actors.size()))
+        {
+            continue;
+        }
+
+        AActor *Actor = Actors[ActorIndex];
         if (Actor && Selection.IsSelected(Actor))
         {
-            ActorsToDelete.push_back(Actor);
+            ++SelectedCount;
         }
     }
-
-    const int32 SelectedCount = static_cast<int32>(ActorsToDelete.size());
 
     if (ImGui::Button("Clear Selection"))
     {
@@ -88,15 +91,27 @@ void FEditorScenePanel::RenderActorOutliner()
         ImGui::BeginDisabled();
     }
 
-    // Delete 버튼만 붉은 계열 적용
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.18f, 0.18f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.72f, 0.22f, 0.22f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.42f, 0.12f, 0.12f, 1.0f));
 
+    bool bDeletedThisFrame = false;
+
     if (ImGui::Button(DeleteLabel))
     {
-        // 선택 목록이 파괴 대상 액터 포인터를 들고 있으면 프록시 선택 해제/기즈모 동기화 중에
-        // dangling 포인터를 참조할 수 있으므로 먼저 Selection을 비웁니다.
+        TArray<AActor *> ActorsToDelete;
+        ActorsToDelete.reserve(SelectedCount);
+
+        const TArray<AActor *> &CurrentActors = World->GetActors();
+        for (int32 i = 0; i < static_cast<int32>(CurrentActors.size()); ++i)
+        {
+            AActor *Actor = CurrentActors[i];
+            if (Actor && Selection.IsSelected(Actor))
+            {
+                ActorsToDelete.push_back(Actor);
+            }
+        }
+
         Selection.ClearSelection();
 
         World->BeginDeferredPickingBVHUpdate();
@@ -108,6 +123,8 @@ void FEditorScenePanel::RenderActorOutliner()
             }
         }
         World->EndDeferredPickingBVHUpdate();
+
+        bDeletedThisFrame = true;
     }
 
     ImGui::PopStyleColor(3);
@@ -115,6 +132,11 @@ void FEditorScenePanel::RenderActorOutliner()
     if (bDeleteDisabled)
     {
         ImGui::EndDisabled();
+    }
+
+    if (bDeletedThisFrame)
+    {
+        return;
     }
 
     ImGui::Separator();
@@ -137,8 +159,6 @@ void FEditorScenePanel::RenderActorOutliner()
     };
 
     auto DrawCenteredCheckboxInColumn = [](const char *Id, bool *bValue) -> bool {
-        // Checkbox는 label이 없더라도 실제 width가 frame height보다 약간 더 크게 잡히는 경우가 있어서
-        // CalcItemWidth류 대신 프레임 높이 + 내부 여백을 조금 반영해서 중앙 맞춤
         const float CheckboxSize = ImGui::GetFrameHeight();
         const float ColumnWidth = ImGui::GetColumnWidth();
 
@@ -179,7 +199,13 @@ void FEditorScenePanel::RenderActorOutliner()
 
         for (int32 Row = 0; Row < static_cast<int32>(ValidActorIndices.size()); ++Row)
         {
-            AActor *Actor = Actors[ValidActorIndices[Row]];
+            const int32 ActorIndex = ValidActorIndices[Row];
+            if (ActorIndex < 0 || ActorIndex >= static_cast<int32>(Actors.size()))
+            {
+                continue;
+            }
+
+            AActor *Actor = Actors[ActorIndex];
             if (!Actor)
             {
                 continue;

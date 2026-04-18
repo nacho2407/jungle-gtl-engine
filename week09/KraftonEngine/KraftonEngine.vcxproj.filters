@@ -251,7 +251,7 @@
     <ClCompile Include="Source\Editor\UI\EditorPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorScenePanel.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp">
@@ -647,7 +647,7 @@
     <ClInclude Include="Source\Editor\UI\EditorPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorScenePanel.h">
+    <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorStatPanel.h">
