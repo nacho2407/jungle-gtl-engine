@@ -6,10 +6,10 @@ DEFINE_CLASS(UMaterial, UMaterialInterface)
 DEFINE_CLASS(UMaterialInstance, UMaterialInterface)
 
 
-void UMaterial::Bind(ID3D11DeviceContext* Context) const
+void UMaterial::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
 {
 	if (!Shader) return;
-	Shader->Bind(Context);
+	Shader->Bind(Context, PermutationKey);
 
 	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthStencilType);
 	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(BlendType);
@@ -109,11 +109,11 @@ void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FM
 	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, static_cast<uint32>(CBufferData.size()));
 }
 
-void UMaterialInstance::Bind(ID3D11DeviceContext* Context) const
+void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
 {
 	if (!Parent) return;
 
-	Parent->Bind(Context);
+	Parent->Bind(Context, PermutationKey);
 
 	TMap<FString, FMaterialParamValue> CombinedParams;
 	Parent->GatherAllParams(CombinedParams);

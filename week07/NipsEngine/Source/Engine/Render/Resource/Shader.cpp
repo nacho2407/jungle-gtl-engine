@@ -2,7 +2,7 @@
 
 DEFINE_CLASS(UShader, UObject)
 
-void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device)
+void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target)
 {
 	if (!ShaderBlob || !Device) return;
 
@@ -75,10 +75,10 @@ void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device)
 
 	if (CBufferSize > 0)
 	{
-		if (ShaderData.ConstantBuffer)
+		if (Target.ConstantBuffer)
 		{
-			ShaderData.ConstantBuffer->Release();
-			ShaderData.ConstantBuffer = nullptr;
+			Target.ConstantBuffer->Release();
+			Target.ConstantBuffer = nullptr;
 		}
 
 		D3D11_BUFFER_DESC CBufferDesc = {};
@@ -86,7 +86,7 @@ void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device)
 		CBufferDesc.Usage = D3D11_USAGE_DEFAULT; // Dynamic 에서 Default로 변경 (UpdateSubresource 사용을 위함)
 		CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		CBufferDesc.CPUAccessFlags = 0;
-		Device->CreateBuffer(&CBufferDesc, nullptr, &ShaderData.ConstantBuffer);
+		Device->CreateBuffer(&CBufferDesc, nullptr, &Target.ConstantBuffer);
 	}
 
 	Reflector->Release();

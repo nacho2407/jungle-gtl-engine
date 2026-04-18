@@ -10,6 +10,14 @@
 #include "Core/CoreTypes.h"
 #include "Object/Object.h"
 
+enum class EShaderLightPermutationKey : uint32
+{
+	Unlit = 0,
+	Gouraud,
+	Lambert,
+	BlinnPhong,
+};
+
 struct FShaderVariableInfo
 {
 	uint32 BufferSlot = 0;
@@ -57,23 +65,45 @@ public:
 	DECLARE_CLASS(UShader, UObject)
 	~UShader() override
 	{
-		ShaderData.Release();
+		for (auto& Pair : Permutations)
+		{
+			Pair.second.Release();
+		}
+		Permutations.clear();
+	}
+
+	void AddPermutation(uint32 Key, const FShader& Data)
+	{
+		if (Permutations.contains(Key))
+		{
+			Permutations[Key].Release();
+		}
+		Permutations[Key] = Data;
 	}
 	
-	void Bind(ID3D11DeviceContext* Context)
+	void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0)
 	{
-		Context->IASetInputLayout(ShaderData.InputLayout);
-		Context->VSSetShader(ShaderData.VS, nullptr, 0);
-		Context->PSSetShader(ShaderData.PS, nullptr, 0);
+		FShader* Target = &Permutations[PermutationKey];
+
+		if (Target)
+		{
+			Context->IASetInputLayout(Target->InputLayout);
+			Context->VSSetShader(Target->VS, nullptr, 0);
+			Context->PSSetShader(Target->PS, nullptr, 0);
+		}
 	}
 
-	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size)
+	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size, uint32 PermutationKey = 0)
 	{
-		if (!ShaderData.ConstantBuffer || Size == 0) return;
+		FShader* Target = &Permutations[PermutationKey];
+		if (!Target || !Target->ConstantBuffer)
+		{
+			return;
+		}
 
-		Context->UpdateSubresource(ShaderData.ConstantBuffer, 0, nullptr, Data, 0, 0);
-		Context->VSSetConstantBuffers(Slot, 1, &ShaderData.ConstantBuffer);
-		Context->PSSetConstantBuffers(Slot, 1, &ShaderData.ConstantBuffer);
+		Context->UpdateSubresource(Target->ConstantBuffer, 0, nullptr, Data, 0, 0);
+		Context->VSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
+		Context->PSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
 	}
 
 	int32 GetTextureBindSlot(const FString& Name) const
@@ -97,14 +127,15 @@ public:
 		return false;
 	}
 
-	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device);
+	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target);
 
 	uint32 GetCBufferSize() const { return CBufferSize; }
 
-	FShader ShaderData;
 	FString FilePath;
 
 private:
+	TMap<uint32, FShader> Permutations;
+
 	TMap<FString, uint32> TextureBindSlots;
 	TMap<FString, FShaderVariableInfo> ShaderVariables;
 
