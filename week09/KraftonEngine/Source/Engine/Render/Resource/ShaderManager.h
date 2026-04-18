@@ -7,6 +7,7 @@
 enum class EShaderType : uint32
 {
 	Default = 0,
+    Z_Prepass,
 	Primitive,
 	Gizmo,
 	Editor,

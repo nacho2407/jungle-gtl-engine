@@ -42,6 +42,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
 	if (bIsInitialized) return;
 
+	Shaders[(uint32)EShaderType::Z_Prepass].Create(InDevice, L"Shaders/PreDetph.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl", "VS", "PS");
