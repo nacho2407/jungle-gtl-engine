@@ -11,7 +11,7 @@ cbuffer SceneDepthCB : register(b2)
     uint Mode;
 }
 
-// SceneDepth (t10) is declared in Common/ConstantBuffers.hlsl
+// SceneDepthTexture (t16) is declared in Common/SystemResources.hlsli
 
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
@@ -22,7 +22,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
     
-    float d = SceneDepth.Load(int3(coord, 0));
+    float d = SceneDepthTexture.Load(int3(coord, 0));
     
     float v = 0.0f;
     

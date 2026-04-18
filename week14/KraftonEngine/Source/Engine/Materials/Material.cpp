@@ -306,7 +306,11 @@ void UMaterial::Serialize(FArchive& Ar)
 			if (!TexturePath.empty())
 			{
 				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				TextureParameters[SlotName] = UTexture2D::LoadFromFile(TexturePath, Device);
+				UTexture2D* Loaded = UTexture2D::LoadFromFile(TexturePath, Device);
+				if (Loaded)
+				{
+					TextureParameters[SlotName] = Loaded;
+				}
 			}
 		}
 	}

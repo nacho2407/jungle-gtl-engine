@@ -11,7 +11,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
 
-    float4 normalData = GBufferNormal.Load(int3(coord, 0));
+    float4 normalData = GBufferNormalTexture.Load(int3(coord, 0));
 
     // alpha == 0이면 기록된 노말 없음 (배경)
     if (normalData.a < 0.5f)

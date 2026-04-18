@@ -259,15 +259,12 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- PerShader CBs (b2, b3) ---
 	for (uint32 i = 0; i < 2; ++i)
 	{
-		if (Cmd.PerShaderCB[i] && (bForce || Cmd.PerShaderCB[i] != Cache.PerShaderCB[i]))
+		if (bForce || Cmd.PerShaderCB[i] != Cache.PerShaderCB[i])
 		{
-			ID3D11Buffer* RawCB = Cmd.PerShaderCB[i]->GetBuffer();
-			if (RawCB)
-			{
-				uint32 Slot = ECBSlot::PerShader0 + i;
-				Ctx->VSSetConstantBuffers(Slot, 1, &RawCB);
-				Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
-			}
+			uint32 Slot = ECBSlot::PerShader0 + i;
+			ID3D11Buffer* RawCB = Cmd.PerShaderCB[i] ? Cmd.PerShaderCB[i]->GetBuffer() : nullptr;
+			Ctx->VSSetConstantBuffers(Slot, 1, &RawCB);
+			Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
 			Cache.PerShaderCB[i] = Cmd.PerShaderCB[i];
 		}
 	}
