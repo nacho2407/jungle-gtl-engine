@@ -101,13 +101,41 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 7: // Spotlight
+			case 7: // Decal Spotlight
 			{
 				ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
+            case 8: // Ambient
+            {
+                AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+                Actor->InitDefaultComponents();
+                Actor->SetActorLocation(CurSpawnPoint);
+                break;
+            }
+            case 9: // Directional
+            {
+                ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+                Actor->InitDefaultComponents();
+                Actor->SetActorLocation(CurSpawnPoint);
+                break;
+            }
+            case 10: // Point
+            {
+                APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+                Actor->InitDefaultComponents();
+                Actor->SetActorLocation(CurSpawnPoint);
+                break;
+            }
+            //case 11: // Spotlight
+            //{
+            //    ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
+            //    Actor->InitDefaultComponents();
+            //    Actor->SetActorLocation(CurSpawnPoint);
+            //    break;
+            //}
 			}
 		}
 		NumberOfSpawnedActors = 1;

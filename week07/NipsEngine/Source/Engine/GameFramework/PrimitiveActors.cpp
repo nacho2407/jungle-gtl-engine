@@ -5,6 +5,12 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+
+#include "Component/PostProcess/Light/AmbientLightComponent.h"
+#include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Component/PostProcess/Light/SpotlightComponent.h"
+
 #include "Component/Movement/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
@@ -52,6 +58,14 @@ REGISTER_FACTORY(AFireballActor)
 
 DEFINE_CLASS(ASpotLightActor, AActor)
 REGISTER_FACTORY(ASpotLightActor)
+
+DEFINE_CLASS(ALightActor, AActor)
+DEFINE_CLASS(AAmbientLightActor, ALightActor)
+REGISTER_FACTORY(AAmbientLightActor)
+DEFINE_CLASS(ADirectionalLightActor, ALightActor)
+REGISTER_FACTORY(ADirectionalLightActor)
+DEFINE_CLASS(APointLightActor, ALightActor)
+REGISTER_FACTORY(APointLightActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -286,4 +300,63 @@ void ASpotLightActor::Tick(float DeltaTime)
 	{
 		DecalComp->SetSize(FVector(Range, Range, Range));
 	}
+}
+
+ULightComponent* ALightActor::GetLight() const
+{
+    if (!LightComp)
+        return nullptr;
+    return LightComp;
+}
+
+void ALightActor::SetLight(ULightComponent* InLight)
+{
+    if (InLight)
+        LightComp = InLight;
+}
+
+void AAmbientLightActor::InitDefaultComponents()
+{
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    SetRootComponent(Billboard);
+    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+
+    UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
+    Ambient->AttachToComponent(Billboard);
+    SetLight(Ambient);
+}
+
+void AAmbientLightActor::Tick()
+{
+}
+
+void ADirectionalLightActor::InitDefaultComponents()
+{
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    SetRootComponent(Billboard);
+    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+
+    UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
+    Directional->AttachToComponent(Billboard);
+    SetLight(Directional);
+}
+
+void ADirectionalLightActor::Tick()
+{
+}
+
+void APointLightActor::InitDefaultComponents()
+{
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    SetRootComponent(Billboard);
+    Billboard->SetVisibility(true);
+    Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+
+    UPointLightComponent* Point = AddComponent<UPointLightComponent>();
+    Point->AttachToComponent(Billboard);
+    SetLight(Point);
+}
+
+void APointLightActor::Tick()
+{
 }
