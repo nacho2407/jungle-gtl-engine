@@ -5,7 +5,8 @@ class ULightComponentBase : public USceneComponent {
 public:
 	DECLARE_CLASS(ULightComponentBase, USceneComponent)
 	ULightComponentBase() = default;
-	virtual void PostDuplicate(UObject* Original) override;
+    virtual void PostDuplicate(UObject* Original) override;
+    virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// Accesors
 	//FColor	GetLightColor() const { return LightColor; }
@@ -22,7 +23,7 @@ protected:
 	~ULightComponentBase() = default;
 
 public:
-	FColor	LightColor;
+    FColor	LightColor					= FColor(1.f, 1.f, 1.f, 1.f);
 	float	Intensity					= 1.0f;
 	float	IndirectLightingIntensity	= 0.f;
 	bool	bAffectsWorld				= true;
