@@ -24,5 +24,13 @@ public:
 private:
 	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FDrawCommandBuilder& Builder);
 
+	// CollectVisibleProxies 서브 메서드
+	void CollectFontProxy(const FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, FDrawCommandBuilder& Builder);
+	void CollectDecalProxy(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame,
+		const TSet<FPrimitiveSceneProxy*>& VisibleSet, FDrawCommandBuilder& Builder);
+	void CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDrawCommandBuilder& Builder);
+	void CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
+		FScene& Scene, FDrawCommandBuilder& Builder);
+
 	TArray<FPrimitiveSceneProxy*> LastVisibleProxies;
 };
