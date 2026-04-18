@@ -38,7 +38,7 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
 {
-	return static_cast<UStaticMeshComponent*>(Owner);
+	return static_cast<UStaticMeshComponent*>(GetOwner());
 }
 
 // ============================================================
@@ -54,7 +54,7 @@ void FStaticMeshSceneProxy::UpdateMaterial()
 // ============================================================
 void FStaticMeshSceneProxy::UpdateMesh()
 {
-	MeshBuffer = Owner->GetMeshBuffer();
+	MeshBuffer = GetOwner()->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
 	Pass = ERenderPass::Opaque;
 

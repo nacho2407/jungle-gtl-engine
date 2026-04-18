@@ -26,7 +26,7 @@ void FCylindricalBillboardSceneProxy::UpdateMesh()
 
 void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
-	UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(Owner);
+	UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(GetOwner());
 	bVisible = Comp->IsVisible();
 	if (!bVisible) return;
 

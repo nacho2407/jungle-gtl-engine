@@ -10,7 +10,7 @@
 FSubUVSceneProxy::FSubUVSceneProxy(USubUVComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
-	bShowAABB = false;
+	ProxyFlags &= ~EPrimitiveProxyFlags::ShowAABB;
 }
 
 FSubUVSceneProxy::~FSubUVSceneProxy()
@@ -85,5 +85,5 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 USubUVComponent* FSubUVSceneProxy::GetSubUVComponent() const
 {
-	return static_cast<USubUVComponent*>(Owner);
+	return static_cast<USubUVComponent*>(GetOwner());
 }

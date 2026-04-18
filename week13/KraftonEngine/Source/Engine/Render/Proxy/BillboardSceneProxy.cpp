@@ -13,13 +13,13 @@
 FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
-	bPerViewportUpdate = true;
-	bShowAABB = false;
+	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate;
+	ProxyFlags &= ~EPrimitiveProxyFlags::ShowAABB;
 }
 
 UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const
 {
-	return static_cast<UBillboardComponent*>(Owner);
+	return static_cast<UBillboardComponent*>(GetOwner());
 }
 
 // ============================================================
@@ -56,7 +56,7 @@ void FBillboardSceneProxy::UpdateMesh()
 	}
 	else
 	{
-		MeshBuffer = Owner->GetMeshBuffer();
+		MeshBuffer = GetOwner()->GetMeshBuffer();
 		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 		Pass = ERenderPass::Opaque;
 		DiffuseSRV = nullptr;
