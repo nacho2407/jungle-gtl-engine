@@ -27,8 +27,8 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
 
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    const auto& Lights = RenderBus->GetLight();
-    Context->RenderResources->LightStructuredBuffer.Update(Context->DeviceContext, Lights.data(), (uint32)Lights.size());
+    //const auto& Lights = RenderBus->GetLight();
+    //Context->RenderResources->LightStructuredBuffer.Update(Context->DeviceContext, Lights.data(), (uint32)Lights.size());
 
     FLightPassConstants LightPassConstant = {};
 
@@ -45,7 +45,7 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
 		break;
     }
 
-    LightPassConstant.LightCount = (uint32)Lights.size();
+    LightPassConstant.LightCount = 0;
     LightPassConstant.CameraWorldPos = RenderBus->GetCameraPosition();
     LightPassConstant.ViewMode = static_cast<uint32>(RenderBus->GetViewMode());
     Context->RenderResources->LightPassConstantBuffer.Update(Context->DeviceContext, &LightPassConstant, sizeof(LightPassConstant));
@@ -57,10 +57,9 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
         Context->RenderTargets->SceneNormalSRV,
         Context->RenderTargets->SceneDepthSRV,
         Context->RenderTargets->SceneWorldPosSRV,
-        Context->RenderResources->LightStructuredBuffer.GetSRV(),
     };
 
-    Context->DeviceContext->PSSetShaderResources(0, 5, srvs);
+    Context->DeviceContext->PSSetShaderResources(0, 4, srvs);
 
     UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
     LightPassShader->Bind(Context->DeviceContext);
