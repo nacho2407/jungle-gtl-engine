@@ -16,7 +16,7 @@ UStaticMesh::~UStaticMesh()
 	if (StaticMeshAsset)
 	{
 		const uint32 CPUSize =
-			static_cast<uint32>(StaticMeshAsset->Vertices.size() * sizeof(FNormalVertex)) +
+			static_cast<uint32>(StaticMeshAsset->Vertices.size() * sizeof(FVertexPNCT_T)) +
 			static_cast<uint32>(StaticMeshAsset->Indices.size() * sizeof(uint32));
 
 		MemoryStats::SubStaticMeshCPUMemory(CPUSize);
@@ -61,21 +61,22 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 
 	// CPU 메모리 추적
 	const uint32 CPUSize =
-		static_cast<uint32>(StaticMeshAsset->Vertices.size() * sizeof(FNormalVertex)) +
+		static_cast<uint32>(StaticMeshAsset->Vertices.size() * sizeof(FVertexPNCT_T)) +
 		static_cast<uint32>(StaticMeshAsset->Indices.size() * sizeof(uint32));
 	MemoryStats::AddStaticMeshCPUMemory(CPUSize);
 
 	// CPU → GPU 정점 버퍼 변환
-	TMeshData<FVertexPNCT> RenderMeshData;
+	TMeshData<FVertexPNCT_T> RenderMeshData;
 	RenderMeshData.Vertices.reserve(StaticMeshAsset->Vertices.size());
 
-	for (const FNormalVertex& RawVert : StaticMeshAsset->Vertices)
+	for (const FVertexPNCT_T& RawVert : StaticMeshAsset->Vertices)
 	{
-		FVertexPNCT RenderVert;
-		RenderVert.Position = RawVert.pos;
-		RenderVert.Normal = RawVert.normal;
-		RenderVert.Color = RawVert.color;
-		RenderVert.UV = RawVert.tex;
+		FVertexPNCT_T RenderVert;
+		RenderVert.Position = RawVert.Position;
+		RenderVert.Normal = RawVert.Normal;
+		RenderVert.Color = RawVert.Color;
+		RenderVert.UV = RawVert.UV;
+		RenderVert.Tangent = RawVert.Tangent;
 		RenderMeshData.Vertices.push_back(RenderVert);
 	}
 	RenderMeshData.Indices = StaticMeshAsset->Indices;
@@ -95,15 +96,15 @@ void UStaticMesh::InitResources(ID3D11Device* InDevice)
 
 			AdditionalLODs[lod].Sections = std::move(Simplified.Sections);
 
-			TMeshData<FVertexPNCT> LODRenderData;
+			TMeshData<FVertexPNCT_T> LODRenderData;
 			LODRenderData.Vertices.reserve(Simplified.Vertices.size());
-			for (const FNormalVertex& RawVert : Simplified.Vertices)
+			for (const FVertexPNCT_T& RawVert : Simplified.Vertices)
 			{
-				FVertexPNCT RenderVert;
-				RenderVert.Position = RawVert.pos;
-				RenderVert.Normal = RawVert.normal;
-				RenderVert.Color = RawVert.color;
-				RenderVert.UV = RawVert.tex;
+				FVertexPNCT_T RenderVert;
+				RenderVert.Position = RawVert.Position;
+				RenderVert.Normal = RawVert.Normal;
+				RenderVert.Color = RawVert.Color;
+				RenderVert.UV = RawVert.UV;
 				LODRenderData.Vertices.push_back(RenderVert);
 			}
 			LODRenderData.Indices = std::move(Simplified.Indices);

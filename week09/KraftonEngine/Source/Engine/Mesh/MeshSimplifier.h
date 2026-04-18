@@ -4,7 +4,7 @@
 
 struct FSimplifiedMesh
 {
-	TArray<FNormalVertex> Vertices;
+	TArray<FVertexPNCT_T> Vertices;
 	TArray<uint32> Indices;
 	TArray<FStaticMeshSection> Sections;
 };
@@ -15,7 +15,7 @@ class FMeshSimplifier
 public:
 	// TargetRatio: 0.5 = 삼각형 50%, 0.25 = 25%
 	static FSimplifiedMesh Simplify(
-		const TArray<FNormalVertex>& InVertices,
+		const TArray<FVertexPNCT_T>& InVertices,
 		const TArray<uint32>& InIndices,
 		const TArray<FStaticMeshSection>& InSections,
 		float TargetRatio);
