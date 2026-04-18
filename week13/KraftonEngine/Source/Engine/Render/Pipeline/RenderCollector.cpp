@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -96,35 +96,8 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 	const FBoundingBox& Bounds = Node->GetCellBounds();
 	if (!Bounds.IsValid()) return;
 
-	const FColor& Color = OctreeDepthColors[Depth % 6];
-	const FVector& Min = Bounds.Min;
-	const FVector& Max = Bounds.Max;
+	Scene.AddDebugAABB(Bounds.Min, Bounds.Max, OctreeDepthColors[Depth % 6]);
 
-	// 8개 꼭짓점
-	FVector V[8] = {
-		FVector(Min.X, Min.Y, Min.Z),	// 0
-		FVector(Max.X, Min.Y, Min.Z),	// 1
-		FVector(Max.X, Max.Y, Min.Z),	// 2
-		FVector(Min.X, Max.Y, Min.Z),	// 3
-		FVector(Min.X, Min.Y, Max.Z),	// 4
-		FVector(Max.X, Min.Y, Max.Z),	// 5
-		FVector(Max.X, Max.Y, Max.Z),	// 6
-		FVector(Min.X, Max.Y, Max.Z),	// 7
-	};
-
-	// 12에지
-	static constexpr int32 Edges[][2] = {
-		{0,1},{1,2},{2,3},{3,0},
-		{4,5},{5,6},{6,7},{7,4},
-		{0,4},{1,5},{2,6},{3,7}
-	};
-
-	for (const auto& E : Edges)
-	{
-		Scene.AddDebugLine(V[E[0]], V[E[1]], Color);
-	}
-
-	// 자식 노드 재귀
 	for (const FOctree* Child : Node->GetChildren())
 	{
 		CollectOctreeDebug(Child, Scene, Depth + 1);
@@ -132,7 +105,88 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 }
 
 // ============================================================
-// Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
+// UpdateProxyLOD — LOD 갱신 공통 헬퍼 (메인 루프 + Decal Receiver 중복 제거)
+// ============================================================
+static void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx)
+{
+	if (!LODCtx.bValid || !LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
+		return;
+
+	const FVector& Pos = Proxy->CachedWorldPos;
+	const float dx = LODCtx.CameraPos.X - Pos.X;
+	const float dy = LODCtx.CameraPos.Y - Pos.Y;
+	const float dz = LODCtx.CameraPos.Z - Pos.Z;
+	Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, dx * dx + dy * dy + dz * dz));
+	Proxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
+}
+
+// ============================================================
+// CollectFontProxy — Font 배칭 경로
+// ============================================================
+void FRenderCollector::CollectFontProxy(const FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, FDrawCommandBuilder& Builder)
+{
+	const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
+	if (!TextProxy->CachedText.empty())
+	{
+		Builder.AddWorldText(TextProxy, Frame);
+	}
+}
+
+// ============================================================
+// CollectDecalProxy — Decal → Receiver 순회 + 커맨드 생성
+// ============================================================
+void FRenderCollector::CollectDecalProxy(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame,
+	const TSet<FPrimitiveSceneProxy*>& VisibleSet, FDrawCommandBuilder& Builder)
+{
+	UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
+	FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
+
+	for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
+	{
+		if (!Receiver) continue;
+
+		FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
+		if (!ReceiverProxy || VisibleSet.find(ReceiverProxy) == VisibleSet.end())
+			continue;
+
+		UpdateProxyLOD(ReceiverProxy, Frame.LODContext);
+
+		if (ReceiverProxy->bPerViewportUpdate)
+			ReceiverProxy->UpdatePerViewport(Frame);
+
+		Builder.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
+	}
+}
+
+// ============================================================
+// CollectMeshProxy — 일반 메시 (PreDepth + 메인 패스)
+// ============================================================
+void FRenderCollector::CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDrawCommandBuilder& Builder)
+{
+	if (Proxy->Pass == ERenderPass::Opaque)
+		Builder.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
+
+	Builder.BuildCommandForProxy(*Proxy, Proxy->Pass);
+}
+
+// ============================================================
+// CollectSelectionVisuals — 아웃라인 + AABB + 컴포넌트 디버그
+// ============================================================
+void FRenderCollector::CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
+	FScene& Scene, FDrawCommandBuilder& Builder)
+{
+	if (Proxy->bSupportsOutline)
+		Builder.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
+
+	if (bShowBoundingVolume && Proxy->bShowAABB)
+		Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor::White());
+
+	//TODO: Owner 의존성 제거
+	Proxy->CollectSelectedVisuals(Scene);
+}
+
+// ============================================================
+// Visible 프록시 수집 — 오케스트레이터
 // ============================================================
 void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FDrawCommandBuilder& Builder)
 {
@@ -146,140 +200,47 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
 		if (Proxy)
-		{
 			VisibleProxySet.insert(Proxy);
-		}
 	}
 
 	const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
 	FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
-	const FLODUpdateContext& LODCtx = Frame.LODContext;
 
-	// GatherAABB 병합: Collect 순회에서 동시에 AABB 수집 (별도 GatherLoop 제거)
 	if (OcclusionMut && OcclusionMut->IsInitialized())
-	{
 		OcclusionMut->BeginGatherAABB(static_cast<uint32>(Proxies.size()));
-	}
 
 	LOD_STATS_RESET();
 
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
-
-		// LOD 갱신 — WorldTick에서 이동, 단일 순회에 병합
-		if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
-		{
-			const FVector& ProxyPos = Proxy->CachedWorldPos;
-			const float dx = LODCtx.CameraPos.X - ProxyPos.X;
-			const float dy = LODCtx.CameraPos.Y - ProxyPos.Y;
-			const float dz = LODCtx.CameraPos.Z - ProxyPos.Z;
-			const float DistSq = dx * dx + dy * dy + dz * dz;
-			Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
-			Proxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
-		}
+		UpdateProxyLOD(Proxy, Frame.LODContext);
 		LOD_STATS_RECORD(Proxy->CurrentLOD);
 
-		// per-viewport 프록시: 매 프레임 카메라 데이터로 갱신
 		if (Proxy->bPerViewportUpdate)
-		{
 			Proxy->UpdatePerViewport(Frame);
-		}
 
 		if (!Proxy->bVisible)
-		{
 			continue;
-		}
 
-		// AABB 수집 — 오클루전 체크 전에 수집해야 다음 프레임에 재평가 가능
 		if (OcclusionMut)
-		{
 			OcclusionMut->GatherAABB(Proxy);
-		}
 
-		// GPU Occlusion Culling — 이전 프레임에서 가려진 프록시 스킵
 		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
-		{
 			continue;
-		}
 
-		// Font 프록시는 동적 VB 배칭 경로 (개별 FDrawCommand가 아닌 FontGeometry)
+		// 프록시 타입별 분기
 		if (Proxy->bFontBatched)
-		{
-			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
-			if (!TextProxy->CachedText.empty())
-			{
-				Builder.AddWorldText(TextProxy, Frame);
-			}
-		}
-		// Decal 프록시는 Decal-Receiver에 렌더링 의존하므로 특별 취급
+			CollectFontProxy(Proxy, Frame, Builder);
 		else if (Cast<UDecalComponent>(Proxy->Owner))
-		{
-			FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
-			UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
-
-			for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
-			{
-				if (!Receiver)
-				{
-					continue;
-				}
-
-				FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
-				if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
-				{
-					continue;
-				}
-
-				if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(ReceiverProxy->ProxyId, ReceiverProxy->LastLODUpdateFrame))
-				{
-					const FVector& ProxyPos = ReceiverProxy->CachedWorldPos;
-					const float dx = LODCtx.CameraPos.X - ProxyPos.X;
-					const float dy = LODCtx.CameraPos.Y - ProxyPos.Y;
-					const float dz = LODCtx.CameraPos.Z - ProxyPos.Z;
-					const float DistSq = dx * dx + dy * dy + dz * dz;
-					ReceiverProxy->UpdateLOD(SelectLOD(ReceiverProxy->CurrentLOD, DistSq));
-					ReceiverProxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
-				}
-
-				if (ReceiverProxy->bPerViewportUpdate)
-				{
-					ReceiverProxy->UpdatePerViewport(Frame);
-				}
-
-				Builder.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
-			}
-		}
+			CollectDecalProxy(Proxy, Frame, VisibleProxySet, Builder);
 		else
-		{
-			// PreDepth: 불투명 패스 프록시에 대해 depth-only 커맨드 추가
-			if (Proxy->Pass == ERenderPass::Opaque)
-			{
-				Builder.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
-			}
-			// Proxy → FDrawCommand 직접 변환
-			Builder.BuildCommandForProxy(*Proxy, Proxy->Pass);
-		}
+			CollectMeshProxy(Proxy, Builder);
 
-		// 선택된 오브젝트 — 아웃라인 + AABB + 컴포넌트 디버그 시각화
+		// 선택된 오브젝트 시각화
 		if (Proxy->bSelected)
-		{
-			if (Proxy->bSupportsOutline)
-			{
-				Builder.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
-			}
-
-			if (bShowBoundingVolume && Proxy->bShowAABB)
-			{
-				Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor::White());
-			}
-
-			//TODO: Owner 의존성 제거
-			Proxy->CollectSelectedVisuals(Scene);
-		}
+			CollectSelectionVisuals(Proxy, bShowBoundingVolume, Scene, Builder);
 	}
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
-	{
 		OcclusionMut->EndGatherAABB();
-	}
 }
