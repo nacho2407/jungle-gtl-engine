@@ -8,31 +8,19 @@
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Pipeline/RenderConstants.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Pipeline/PassRenderStateTable.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
-
-// FPassRenderState → FDrawCommandRenderState 변환 (Wireframe 오버라이드 포함)
-static FDrawCommandRenderState ToRenderState(const FPassRenderState& S, EViewMode ViewMode)
-{
-	FDrawCommandRenderState RS;
-	RS.DepthStencil = S.DepthStencil;
-	RS.Blend        = S.Blend;
-	RS.Rasterizer   = (S.bWireframeAware && ViewMode == EViewMode::Wireframe)
-		? ERasterizerState::WireFrame : S.Rasterizer;
-	RS.Topology     = S.Topology;
-	return RS;
-}
 
 // ============================================================
 // Create / Release
 // ============================================================
 
-void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, const FPassRenderState* InPassRenderStates)
+void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, const FPassRenderStateTable* InPassRenderStateTable)
 {
 	CachedDevice  = InDevice;
 	CachedContext = InContext;
-	PassRenderStates = InPassRenderStates;
+	PassRenderStateTable = InPassRenderStateTable;
 
 	EditorLines.Create(InDevice);
 	GridLines.Create(InDevice);
@@ -84,10 +72,9 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) return;
 
 	ID3D11DeviceContext* Ctx = CachedContext;
-	const FPassRenderState& PassState = PassRenderStates[(uint32)Pass];
 
 	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
-	const FDrawCommandRenderState BaseRenderState = ToRenderState(PassState, CollectViewMode);
+	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
 	// PerObjectCB 업데이트
 	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(Proxy);
@@ -245,8 +232,7 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 
 	ID3D11DeviceContext* Ctx = CachedContext;
 	const ERenderPass DecalPass = DecalProxy.Pass;
-	const FPassRenderState& PassState = PassRenderStates[(uint32)DecalPass];
-	const FDrawCommandRenderState BaseRenderState = ToRenderState(PassState, CollectViewMode);
+	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(DecalPass, CollectViewMode);
 
 	FConstantBuffer* ReceiverPerObjCB = GetPerObjectCBForProxy(ReceiverProxy);
 	if (ReceiverPerObjCB && ReceiverProxy.NeedsPerObjectCBUpload())
@@ -391,7 +377,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 	// --- Editor Lines + Grid Lines → EditorLines 패스 ---
 	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
 
-	const FDrawCommandRenderState EditorLinesRS = ToRenderState(PassRenderStates[(uint32)ERenderPass::EditorLines], ViewMode);
+	const FDrawCommandRenderState EditorLinesRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::EditorLines, ViewMode);
 
 	if (EditorLines.GetLineCount() > 0 && EditorLines.UploadBuffers(Ctx))
 	{
@@ -417,7 +403,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 
 	// --- PostProcess: HeightFog → Outline (SortKey UserBits로 순서 보장) ---
 	{
-		const FDrawCommandRenderState PPRS = ToRenderState(PassRenderStates[(uint32)ERenderPass::PostProcess], ViewMode);
+		const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
 		// HeightFog (UserBits=0 → Outline보다 먼저)
 		if (Frame.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
@@ -512,7 +498,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				Cmd.InitFullscreenTriangle(FXAAShader, ERenderPass::FXAA,
-					ToRenderState(PassRenderStates[(uint32)ERenderPass::FXAA], ViewMode));
+					PassRenderStateTable->ToDrawCommandState(ERenderPass::FXAA, ViewMode));
 				Cmd.Bindings.PerShaderCB[0] = FXAACB;
 				Cmd.BuildSortKey(0);
 			}
@@ -529,7 +515,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				Cmd.Pass        = ERenderPass::AlphaBlend;
 				Cmd.Shader      = FShaderManager::Get().GetShader(EShaderType::Font);
-				Cmd.RenderState = ToRenderState(PassRenderStates[(uint32)ERenderPass::AlphaBlend], ViewMode);
+				Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::AlphaBlend, ViewMode);
 				Cmd.Buffer      = { FontGeometry.GetWorldVBBuffer(), FontGeometry.GetWorldVBStride(), FontGeometry.GetWorldIBBuffer() };
 				Cmd.Buffer.IndexCount = FontGeometry.GetWorldIndexCount();
 				Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
@@ -541,7 +527,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
 				Cmd.Pass        = ERenderPass::OverlayFont;
 				Cmd.Shader      = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
-				Cmd.RenderState = ToRenderState(PassRenderStates[(uint32)ERenderPass::OverlayFont], ViewMode);
+				Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::OverlayFont, ViewMode);
 				Cmd.Buffer      = { FontGeometry.GetScreenVBBuffer(), FontGeometry.GetScreenVBStride(), FontGeometry.GetScreenIBBuffer() };
 				Cmd.Buffer.IndexCount = FontGeometry.GetScreenIndexCount();
 				Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
