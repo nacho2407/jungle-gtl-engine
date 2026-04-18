@@ -104,10 +104,10 @@ public:
 	void InitDefaultComponents();
 };
 
-class ASpotLightActor : public AActor {
+class ADecalSpotLightActor : public AActor {
 public:
-	DECLARE_CLASS(ASpotLightActor, AActor)
-	ASpotLightActor() = default;
+	DECLARE_CLASS(ADecalSpotLightActor, AActor)
+	ADecalSpotLightActor() = default;
 
 	void InitDefaultComponents();
 
@@ -164,4 +164,12 @@ public:
     DECLARE_CLASS(APointLightActor, ALightActor)
     virtual void InitDefaultComponents() override;
     virtual void Tick() override;
+};
+
+class ASpotlightActor : public APointLightActor 
+{
+public:
+	DECLARE_CLASS(ASpotlightActor : APointLightActor)
+	void InitDefaultComponents() override;
+	void Tick() override;
 };
