@@ -1,10 +1,12 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/CameraComponent.h"
 #include "Core/EngineTypes.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
+
+class FLevelEditorViewportClient;
 
 // PIE 세션 실행 위치. 현재는 InProcess만 사용.
 enum class EPIESessionDestination : uint8
@@ -25,6 +27,7 @@ struct FRequestPlaySessionParams
 {
 	EPIESessionDestination SessionDestination = EPIESessionDestination::InProcess;
 	EPIEPlayMode PlayMode = EPIEPlayMode::PlayInViewport;
+	FLevelEditorViewportClient* DestinationViewportClient = nullptr;
 };
 
 struct FPIEViewportCameraSnapshot
@@ -45,4 +48,6 @@ struct FPlayInEditorSessionInfo
 	// PIE 시작 직전 활성 월드 핸들 — EndPlayMap에서 원복에 사용.
 	FName PreviousActiveWorldHandle;
 	FPIEViewportCameraSnapshot SavedViewportCamera;
+	FLevelEditorViewportClient* DestinationViewportClient = nullptr;
+	bool bIsPaused = false;
 };

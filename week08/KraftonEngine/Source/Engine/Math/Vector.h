@@ -40,6 +40,8 @@ struct FVector {
 		Z = InZ;
 	}
 	
+    static FVector ZeroVector;
+
 	float Length() const;
 	void  Normalize();
 	FVector Normalized() const;

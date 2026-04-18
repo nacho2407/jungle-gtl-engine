@@ -17,6 +17,13 @@ class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
 
+enum class EEditorViewportPlayState : uint8
+{
+	Stopped,
+	Playing,
+	Paused,
+};
+
 class FEditorViewportClient : public FViewportClient
 {
 public:
@@ -50,6 +57,11 @@ public:
 	void SetActive(bool bInActive) { bIsActive = bInActive; }
 	bool IsActive() const { return bIsActive; }
 
+	void SetPlayState(EEditorViewportPlayState InPlayState) { PlayState = InPlayState; }
+	EEditorViewportPlayState GetPlayState() const { return PlayState; }
+	void SetPaneToolbarHeight(float InHeight) { PaneToolbarHeight = InHeight; }
+	float GetPaneToolbarHeight() const { return PaneToolbarHeight; }
+
 	// FViewport 소유
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
 	FViewport* GetViewport() const { return Viewport; }
@@ -61,8 +73,9 @@ public:
 	// SWindow Rect → ViewportScreenRect 갱신 + FViewport 리사이즈 요청
 	void UpdateLayoutRect();
 
-	// ImDrawList에 자신의 SRV를 SWindow Rect 위치에 렌더 (활성 테두리 포함)
-	void RenderViewportImage(bool bIsActiveViewport);
+	// ImDrawList에 자신의 SRV를 SWindow Rect 위치에 렌더
+	void RenderViewportImage();
+	void RenderViewportBorder();
 
 private:
 	void TickEditorShortcuts();
@@ -85,6 +98,10 @@ private:
 	float WindowHeight = 1080.f;
 
 	bool bIsActive = false;
-	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
+	EEditorViewportPlayState PlayState = EEditorViewportPlayState::Stopped;
+	float PaneToolbarHeight = 0.0f;
+	// 뷰포트 실제 렌더 영역(툴바 제외)
 	FRect ViewportScreenRect;
+	// 뷰포트 프레임 영역(툴바 포함 전체 패널)
+	FRect ViewportFrameRect;
 };
