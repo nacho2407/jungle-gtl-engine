@@ -36,10 +36,10 @@ namespace MaterialTextureSlot
 			return FString("Metallic");
 
 		case (int)EMaterialTextureSlot::Emissive:
-			return FString("Diffuse");
+			return FString("Emissive");
 
 		case (int)EMaterialTextureSlot::AO:
-			return FString("Diffuse");
+			return FString("AO");
 
 		case (int)EMaterialTextureSlot::Custom0:
 			return FString("Custom0");
