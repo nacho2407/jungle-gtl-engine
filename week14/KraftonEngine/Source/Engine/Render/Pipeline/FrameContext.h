@@ -55,8 +55,6 @@ struct FFrameContext
 	ID3D11RenderTargetView*   NormalRTV             = nullptr;
 	ID3D11ShaderResourceView* NormalSRV             = nullptr;
 
-	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
-
 	// Render Settings (Single Source of Truth)
 	FViewportRenderOptions RenderOptions;
 
@@ -75,8 +73,8 @@ struct FFrameContext
 	bool IsFixedOrtho() const
 	{
 		return bIsOrtho
-			&& ViewportType != ELevelViewportType::Perspective
-			&& ViewportType != ELevelViewportType::FreeOrthographic;
+			&& RenderOptions.ViewportType != ELevelViewportType::Perspective
+			&& RenderOptions.ViewportType != ELevelViewportType::FreeOrthographic;
 	}
 
 	// Batch setters - populate multiple fields at once

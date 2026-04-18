@@ -75,11 +75,6 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// 이전 프레임 Occlusion 결과 읽기 (staging → OccludedSet)
 	GPUOcclusion.ReadbackResults(Ctx);
 
-	// 뷰포트별 렌더 옵션 사용
-	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
-	const FShowFlags& ShowFlags = Opts.ShowFlags;
-	EViewMode ViewMode = Opts.ViewMode;
-
 	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
 	if (VP->ApplyPendingResize())
 	{
@@ -95,9 +90,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Scene.ClearFrameData();
 
 	Frame.SetCameraInfo(Camera);
-	Frame.SetRenderOptions(Opts);
+	Frame.SetRenderOptions(VC->GetRenderOptions());
 	Frame.SetViewportInfo(VP);
-	Frame.ViewportType = Opts.ViewportType;
 	Frame.OcclusionCulling = &GPUOcclusion;
 	Frame.LODContext = World->PrepareLODContext();
 
@@ -110,10 +104,10 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 		Collector.CollectWorld(World, Frame, Builder);
 
-		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
+		Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
 		Collector.CollectDebugDraw(Frame, Scene);
 
-		if (ShowFlags.bOctree)
+		if (Frame.RenderOptions.ShowFlags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
 
 		if (VC == Editor->GetActiveViewport())
