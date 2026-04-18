@@ -1128,4 +1128,7 @@
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="GEMINI.md" />
+  </ItemGroup>
 </Project>
