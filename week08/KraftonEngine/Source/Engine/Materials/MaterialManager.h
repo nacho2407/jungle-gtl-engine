@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
@@ -38,6 +38,7 @@ public:
 
     // UMaterial 생성
 	UMaterial* GetOrCreateMaterial(const FString& MatFilePath);
+	UMaterial* GetOrCreateStaticMeshMaterial(const FString& MatFilePath);
 
 	void ScanMaterialAssets();
 	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
