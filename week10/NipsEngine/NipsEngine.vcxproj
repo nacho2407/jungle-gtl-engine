@@ -238,6 +238,12 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
@@ -399,8 +405,12 @@
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LineBatchComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h" />
     <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
@@ -652,6 +662,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

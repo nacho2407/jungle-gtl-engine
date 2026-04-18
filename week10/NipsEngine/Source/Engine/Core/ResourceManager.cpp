@@ -670,10 +670,24 @@ void FResourceManager::ReleaseGPUResources()
 }
 
 bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-                                  const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount, const D3D_SHADER_MACRO* Defines)
+                                  const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount,
+								  const D3D_SHADER_MACRO* Defines, uint32 PermutationKey)
 {
-	UShader* Shader = UObjectManager::Get().CreateObject<UShader>();
-	Shader->FilePath = FilePath;
+	UShader* Shader = nullptr;
+	auto It = Shaders.find(FilePath);
+
+	if (It != Shaders.end())
+	{
+		Shader = It->second;
+	}
+	else
+	{
+		Shader = UObjectManager::Get().CreateObject<UShader>();
+		Shader->FilePath = FilePath;
+		Shaders[FilePath] = Shader;
+	}
+
+	FShader Permutation;
 
 	TComPtr<ID3DBlob> VSBlob;
 	TComPtr<ID3DBlob> PSBlob;
@@ -693,7 +707,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		}
 		return false;
 	}
-	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get());
+	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation);
 	ErrorBlob.Reset();
 
 	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -710,10 +724,10 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		}
 		return false;
 	}
-	Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get());
+	Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
 
 	hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
-		&Shader->ShaderData.VS);
+		&Permutation.VS);
 	if (FAILED(hr))
 	{
 		UE_LOG("Failed to create vertex shader: %s", FilePath.c_str());
@@ -721,7 +735,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	}
 
 	hr = CachedDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr,
-		&Shader->ShaderData.PS);
+		&Permutation.PS);
 	if (FAILED(hr))
 	{
 		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
@@ -731,7 +745,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	if (InputElements != nullptr && InputElementCount > 0)
 	{
 		hr = CachedDevice->CreateInputLayout(InputElements, InputElementCount, VSBlob->GetBufferPointer(),
-			VSBlob->GetBufferSize(), &Shader->ShaderData.InputLayout);
+			VSBlob->GetBufferSize(), &Permutation.InputLayout);
 		if (FAILED(hr))
 		{
 			UE_LOG("Failed to create input layout: %s", FilePath.c_str());
@@ -739,48 +753,10 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		}
 	}
 
-	Shaders[FilePath] = Shader;
+	Shader->AddPermutation(PermutationKey, Permutation);
 
 	return true;
 }
-
-//ID3DBlob* CompileShaderWithDefines(const WCHAR* filename,
-//                                   const D3D_SHADER_MACRO* defines,
-//                                   const char* entryPoint,
-//                                   const char* shaderModel)
-//{
-//    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-//
-//#if defined(DEBUG) || defined(_DEBUG)
-//    flags |= D3DCOMPILE_DEBUG;
-//#endif
-//
-//    ID3DBlob* byteCode = nullptr;
-//    ID3DBlob* errors = nullptr;
-//
-//    HRESULT hr = D3DCompileFromFile(
-//        filename,
-//        defines,
-//        D3D_COMPILE_STANDARD_FILE_INCLUDE,
-//        entryPoint,
-//        shaderModel,
-//        flags,
-//        0,
-//        &byteCode,
-//        &errors);
-//
-//    if (FAILED(hr))
-//    {
-//        if (errors)
-//        {
-//            MessageBoxA(nullptr, (char*)errors->GetBufferPointer(), "Shader Compile Error", MB_OK);
-//            errors->Release();
-//        }
-//        return nullptr;
-//    }
-//
-//    return byteCode;
-//}
 
 UShader* FResourceManager::GetShader(const FString& FilePath) const
 {
