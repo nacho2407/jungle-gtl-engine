@@ -85,10 +85,10 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            return false;  
        }  
 
-       if (Cmd.Material)  
-       {  
-           Cmd.Material->Bind(Context->DeviceContext);  
-       }  
+       if (Cmd.Material)
+       {
+           Cmd.Material->Bind(Context->DeviceContext, (uint32)Context->ActiveLightingModel);
+       }
 
        CheckOverrideViewMode(Context);  
 

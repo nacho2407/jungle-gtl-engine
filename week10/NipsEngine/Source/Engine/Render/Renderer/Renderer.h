@@ -6,6 +6,7 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/VertexTypes.h"
+#include "Render/Resource/Shader.h"
 
 #include "Render/Scene/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
@@ -132,6 +133,9 @@ public:
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
 
+	void SetLightingModel(EShaderLightPermutationKey Model) { ActiveLightingModel = Model; }
+	EShaderLightPermutationKey GetLightingModel() const { return ActiveLightingModel; }
+
 	const ID3D11RenderTargetView*   GetCurrentSceneRTV() const { return SceneFinalRTV.Get(); }
     const ID3D11ShaderResourceView* GetCurrentSceneSRV() const { return SceneFinalSRV.Get(); }
 
@@ -201,6 +205,8 @@ private:
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
+
+	EShaderLightPermutationKey ActiveLightingModel = EShaderLightPermutationKey::BlinnPhong;
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
