@@ -36,6 +36,7 @@ enum class ELightType
     Directional,
     Point,
     Spot,
+    Ambient,
 };
 
 enum class ERenderPass : uint32
