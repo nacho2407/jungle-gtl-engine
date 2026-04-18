@@ -1,4 +1,4 @@
-﻿#include "DrawCommandList.h"
+#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>
@@ -14,21 +14,11 @@ void FStateCache::Reset()
 {
 	bForceAll = true;
 
-	Shader       = nullptr;
-	DepthStencil = {};
-	Blend        = {};
-	Rasterizer   = {};
-	Topology     = {};
-	StencilRef   = 0;
-	MeshBuffer   = nullptr;
-	RawVB        = nullptr;
-	RawIB        = nullptr;
-	PerObjectCB     = nullptr;
-	PerShaderCB[0]  = nullptr;
-	PerShaderCB[1]  = nullptr;
-
-	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
-		SRVs[i] = nullptr;
+	Shader      = nullptr;
+	RenderState = {};
+	Buffer      = {};
+	PerObjectCB = nullptr;
+	Bindings    = {};
 
 	RTV = nullptr;
 	DSV = nullptr;
@@ -39,11 +29,11 @@ void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 	// t0 ~ t7 SRV 언바인딩
 	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{
-		if (SRVs[i])
+		if (Bindings.SRVs[i])
 		{
 			ID3D11ShaderResourceView* nullSRV = nullptr;
 			Ctx->PSSetShaderResources(i, 1, &nullSRV);
-			SRVs[i] = nullptr;
+			Bindings.SRVs[i] = nullptr;
 		}
 	}
 }
@@ -106,23 +96,6 @@ void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
 }
 
 void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-	ID3D11DeviceContext* Ctx)
-{
-	if (StartIdx >= EndIdx) return;
-	if (EndIdx > Commands.size()) EndIdx = static_cast<uint32>(Commands.size());
-
-	FStateCache Cache;
-	Cache.Reset();
-
-	for (uint32 i = StartIdx; i < EndIdx; ++i)
-	{
-		SubmitCommand(Commands[i], Device, Ctx, Cache);
-	}
-
-	Cache.Cleanup(Ctx);
-}
-
-void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
 	ID3D11DeviceContext* Ctx, FStateCache& Cache)
 {
 	if (StartIdx >= EndIdx) return;
@@ -154,32 +127,30 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 {
 	const bool bForce = Cache.bForceAll;
 
-	// --- PSO 상태 ---
-	if (bForce || Cmd.DepthStencil != Cache.DepthStencil)
+	// --- 렌더 상태 ---
+	if (bForce || Cmd.RenderState.DepthStencil != Cache.RenderState.DepthStencil)
 	{
-		Device.SetDepthStencilState(Cmd.DepthStencil);
-		Cache.DepthStencil = Cmd.DepthStencil;
+		Device.SetDepthStencilState(Cmd.RenderState.DepthStencil);
+		Cache.RenderState.DepthStencil = Cmd.RenderState.DepthStencil;
 	}
 
-	if (bForce || Cmd.Blend != Cache.Blend)
+	if (bForce || Cmd.RenderState.Blend != Cache.RenderState.Blend)
 	{
-		Device.SetBlendState(Cmd.Blend);
-		Cache.Blend = Cmd.Blend;
+		Device.SetBlendState(Cmd.RenderState.Blend);
+		Cache.RenderState.Blend = Cmd.RenderState.Blend;
 	}
 
-	if (bForce || Cmd.Rasterizer != Cache.Rasterizer)
+	if (bForce || Cmd.RenderState.Rasterizer != Cache.RenderState.Rasterizer)
 	{
-		Device.SetRasterizerState(Cmd.Rasterizer);
-		Cache.Rasterizer = Cmd.Rasterizer;
+		Device.SetRasterizerState(Cmd.RenderState.Rasterizer);
+		Cache.RenderState.Rasterizer = Cmd.RenderState.Rasterizer;
 	}
 
-	if (bForce || Cmd.Topology != Cache.Topology)
+	if (bForce || Cmd.RenderState.Topology != Cache.RenderState.Topology)
 	{
-		Ctx->IASetPrimitiveTopology(Cmd.Topology);
-		Cache.Topology = Cmd.Topology;
+		Ctx->IASetPrimitiveTopology(Cmd.RenderState.Topology);
+		Cache.RenderState.Topology = Cmd.RenderState.Topology;
 	}
-
-
 
 	// --- Shader ---
 	if (Cmd.Shader && (bForce || Cmd.Shader != Cache.Shader))
@@ -189,60 +160,33 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	}
 
 	// PreDepth: PS 언바인딩 — depth만 기록, 셰이딩 스킵
-	if (Cmd.bDepthOnly)
+	if (Cmd.Pass == ERenderPass::PreDepth)
 	{
 		Ctx->PSSetShader(nullptr, nullptr, 0);
 		Cache.Shader = nullptr;  // 다음 커맨드에서 PS 재바인딩 보장
 	}
 
 	// --- Geometry (VB + IB) ---
-	if (Cmd.MeshBuffer)
+	if (Cmd.Buffer.HasBuffers())
 	{
-		// Static MeshBuffer 경로
-		if (bForce || Cmd.MeshBuffer != Cache.MeshBuffer)
+		if (bForce || Cmd.Buffer.VB != Cache.Buffer.VB || Cmd.Buffer.VBStride != Cache.Buffer.VBStride)
 		{
 			uint32 Offset = 0;
-			uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-			ID3D11Buffer* VB = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-
-			if (VB && Stride > 0)
-			{
-				Ctx->IASetVertexBuffers(0, 1, &VB, &Stride, &Offset);
-
-				ID3D11Buffer* IB = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-				if (IB)
-					Ctx->IASetIndexBuffer(IB, DXGI_FORMAT_R32_UINT, 0);
-			}
-
-			Cache.MeshBuffer = Cmd.MeshBuffer;
-			Cache.RawVB = nullptr;
-			Cache.RawIB = nullptr;
+			Ctx->IASetVertexBuffers(0, 1, &Cmd.Buffer.VB, &Cmd.Buffer.VBStride, &Offset);
 		}
-	}
-	else if (Cmd.RawVB)
-	{
-		// Dynamic Buffer 경로 (LineGeometry, FontGeometry 등)
-		if (bForce || Cmd.RawVB != Cache.RawVB)
+		if (bForce || Cmd.Buffer.IB != Cache.Buffer.IB)
 		{
-			uint32 Offset = 0;
-			Ctx->IASetVertexBuffers(0, 1, &Cmd.RawVB, &Cmd.RawVBStride, &Offset);
-			Cache.RawVB = Cmd.RawVB;
-			Cache.MeshBuffer = nullptr;
+			if (Cmd.Buffer.IB)
+				Ctx->IASetIndexBuffer(Cmd.Buffer.IB, DXGI_FORMAT_R32_UINT, 0);
 		}
-		if (bForce || Cmd.RawIB != Cache.RawIB)
-		{
-			Ctx->IASetIndexBuffer(Cmd.RawIB, DXGI_FORMAT_R32_UINT, 0);
-			Cache.RawIB = Cmd.RawIB;
-		}
+		Cache.Buffer = Cmd.Buffer;
 	}
-	else if (Cache.MeshBuffer || Cache.RawVB)
+	else if (Cache.Buffer.HasBuffers())
 	{
 		// SV_VertexID 기반 드로우 — InputLayout + VB 해제
 		Ctx->IASetInputLayout(nullptr);
 		Ctx->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-		Cache.MeshBuffer = nullptr;
-		Cache.RawVB = nullptr;
-		Cache.RawIB = nullptr;
+		Cache.Buffer = {};
 	}
 
 	// --- PerObject CB (b1) ---
@@ -259,47 +203,38 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- PerShader CBs (b2, b3) ---
 	for (uint32 i = 0; i < 2; ++i)
 	{
-		if (bForce || Cmd.PerShaderCB[i] != Cache.PerShaderCB[i])
+		if (bForce || Cmd.Bindings.PerShaderCB[i] != Cache.Bindings.PerShaderCB[i])
 		{
 			uint32 Slot = ECBSlot::PerShader0 + i;
-			ID3D11Buffer* RawCB = Cmd.PerShaderCB[i] ? Cmd.PerShaderCB[i]->GetBuffer() : nullptr;
+			ID3D11Buffer* RawCB = Cmd.Bindings.PerShaderCB[i] ? Cmd.Bindings.PerShaderCB[i]->GetBuffer() : nullptr;
 			Ctx->VSSetConstantBuffers(Slot, 1, &RawCB);
 			Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
-			Cache.PerShaderCB[i] = Cmd.PerShaderCB[i];
+			Cache.Bindings.PerShaderCB[i] = Cmd.Bindings.PerShaderCB[i];
 		}
 	}
 
 	// --- SRV (t0 ~ t7) 바인딩 ---
 	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{
-		if (bForce || Cmd.SRVs[i] != Cache.SRVs[i])
+		if (bForce || Cmd.Bindings.SRVs[i] != Cache.Bindings.SRVs[i])
 		{
-			ID3D11ShaderResourceView* SRV = Cmd.SRVs[i];
+			ID3D11ShaderResourceView* SRV = Cmd.Bindings.SRVs[i];
 			Ctx->VSSetShaderResources(i, 1, &SRV);
 			Ctx->PSSetShaderResources(i, 1, &SRV);
-			Cache.SRVs[i] = Cmd.SRVs[i];
+			Cache.Bindings.SRVs[i] = Cmd.Bindings.SRVs[i];
 		}
 	}
 
 	Cache.bForceAll = false;
 
 	// --- Draw ---
-	if (Cmd.IndexCount > 0)
+	if (Cmd.Buffer.IndexCount > 0)
 	{
-		Ctx->DrawIndexed(Cmd.IndexCount, Cmd.FirstIndex, Cmd.BaseVertex);
+		Ctx->DrawIndexed(Cmd.Buffer.IndexCount, Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex);
 	}
-	else if (Cmd.VertexCount > 0)
+	else if (Cmd.Buffer.VertexCount > 0)
 	{
-		Ctx->Draw(Cmd.VertexCount, 0);
-	}
-	else if (Cmd.MeshBuffer)
-	{
-		// IndexCount/VertexCount 모두 0이면 MeshBuffer 전체 드로우
-		uint32 IdxCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
-		if (IdxCount > 0)
-			Ctx->DrawIndexed(IdxCount, 0, 0);
-		else
-			Ctx->Draw(Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount(), 0);
+		Ctx->Draw(Cmd.Buffer.VertexCount, 0);
 	}
 
 	FDrawCallStats::Increment();
