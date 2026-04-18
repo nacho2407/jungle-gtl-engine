@@ -12,6 +12,11 @@
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/FireballComponent.h"
+#include "Component/PostProcess/Light/LightComponentBase.h"
+#include "Component/PostProcess/Light/AmbientLightComponent.h"
+#include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Component/PostProcess/Light/SpotlightComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
@@ -696,7 +701,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		LightData.Color.X = Color.R;
 		LightData.Color.Y = Color.G;
 		LightData.Color.Z = Color.B;
-		RenderBus.AddLight(LightData);
+		//RenderBus.AddLight(LightData);
 		break;
 	}
 	default:
@@ -834,4 +839,37 @@ void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightA
 	Cmd.Constants.SpotLight.Range = SpotlightActor->GetRange();
 	Cmd.Constants.SpotLight.Color = FColor::Yellow();
 	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
+void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus)
+{
+	if (!Light) return;
+
+	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
+	{
+		// Collect Ambient Light Data
+		FAmbientLightInfo AmbientLightData = {};
+		
+		RenderBus.AmbientLightInfo = AmbientLightData;
+	}
+	else if (const UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Light))
+	{
+		FDirectionalLightInfo DirLightData = {};
+
+		RenderBus.DirectionalLightInfo = DirLightData;
+	}
+
+	RenderBus.LightInfos.clear();
+	if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light))
+	{
+		FLightInfo LightData = {};
+		LightData.Type = 0;
+
+		if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
+		{
+			LightData.Type = 1;
+		}
+
+		RenderBus.LightInfos.push_back(LightData);
+	}
 }

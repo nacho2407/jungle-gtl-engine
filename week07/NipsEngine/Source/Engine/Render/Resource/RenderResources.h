@@ -12,12 +12,16 @@ struct FRenderResources
 {
 	FConstantBuffer FrameBuffer;					// b0
     FConstantBuffer PerObjectConstantBuffer;        // b1
+	FConstantBuffer LightBuffer;					// b3 (Ambient, Directional Light)
+	FStructuredBuffer LightStructuredBuffer;		// t10 (FLightInfo)
+	FStructuredBuffer LightCulledIndexBuffer;		// t11 (LightCulledIndex) (uint)
+	FStructuredBuffer LightTileBuffer;				// t12 (LightTile) (uint2) 
 
     FConstantBuffer LightPassConstantBuffer;		// b7
     FConstantBuffer FogPassConstantBuffer;		// b9
     FConstantBuffer FXAAConstantBuffer;                     // b10
 
-	FStructuredBuffer LightStructuredBuffer;	// t3
+	//FStructuredBuffer LightStructuredBuffer;	// t3
 };
 
 enum class ESamplerType

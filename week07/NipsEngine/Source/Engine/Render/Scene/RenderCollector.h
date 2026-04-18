@@ -14,6 +14,7 @@ class UPrimitiveComponent;
 class UGizmoComponent;
 class UDecalComponent;
 class UFireballComponent;
+class ULightComponentBase;
 struct FFrustum;
 
 class FRenderCollector {
@@ -66,4 +67,5 @@ private:
 	void CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus);
 	void CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 	void CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus);
 };
