@@ -82,6 +82,9 @@
     <Filter Include="Source\Engine\Render\Helper">
       <UniqueIdentifier>{3554ce5a-fc6e-fa4d-7be9-bdc90d177118}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Pass">
+      <UniqueIdentifier>{716476f6-b6d9-0bcf-f79d-dad25d884c1c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Pipeline">
       <UniqueIdentifier>{5ac9b005-2a76-d0b0-3f77-2b89ae10bb53}</UniqueIdentifier>
     </Filter>
@@ -126,6 +129,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\BaseDraw.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\CommonTypes.hlsli">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\DecalCommon.hlsli">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\DecalPass.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\DecalShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -145,6 +160,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\HiZGenerate.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\LightingCommon.hlsli">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\LightingPass.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\OcclusionTest.hlsl">
@@ -174,6 +195,12 @@
     <FxCompile Include="Shaders\StaticMeshShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\SurfaceData.hlsli">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -188,12 +215,6 @@
     </FxCompile>
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
       <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\LightCullingCommon.hlsl">
-      <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TileBasedLightCullingCS.hlsl">
-      <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -212,31 +233,34 @@
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorConsolePanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorDetailsPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorMaterialPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorStatWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorToolbarPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorViewportPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
@@ -266,6 +290,9 @@
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -278,10 +305,19 @@
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\DirectionalLightComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\LightComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\LightComponentBase.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
@@ -291,6 +327,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\PointLightComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
@@ -303,6 +342,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp">
@@ -348,6 +390,9 @@
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp">
       <Filter>Source\Engine\Materials</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp">
@@ -407,6 +452,9 @@
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer.cpp">
+      <Filter>Source\Engine\Render</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
@@ -440,10 +488,19 @@
     <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp">
       <Filter>Source\Engine\Render\Helper</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Render\Pass\DrawCommandList.cpp">
+      <Filter>Source\Engine\Render\Pass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp">
+    <ClCompile Include="Source\Engine\Render\Pass\PassEvent.cpp">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pass\PassRenderState.cpp">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pass\UberLitPass.cpp">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
@@ -452,8 +509,8 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
@@ -464,13 +521,25 @@
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\DirectionalLightSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\FScene.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\LightSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\PointLightSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\SpotLightSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp">
@@ -573,15 +642,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp">
-      <Filter>Source\Engine\Materials</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\FEditorMaterialWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp">
-      <Filter>Source\Engine\Render\Culling</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -602,31 +662,34 @@
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorConsolePanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorControlPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorDetailsPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorMaterialPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorStatWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorStatPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorToolbarPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorWidget.h">
+    <ClInclude Include="Source\Editor\UI\EditorViewportPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
@@ -662,6 +725,9 @@
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -674,10 +740,19 @@
     <ClInclude Include="Source\Engine\Component\DecalComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\DirectionalLightComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LightComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LightComponentBase.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
@@ -687,6 +762,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\PointLightComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
@@ -699,6 +777,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SpotLightComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h">
@@ -771,6 +852,9 @@
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\Material.h">
+      <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Materials\MaterialCore.h">
       <Filter>Source\Engine\Materials</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h">
@@ -851,6 +935,9 @@
     <ClInclude Include="Source\Engine\Profiling\Timer.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer.h">
+      <Filter>Source\Engine\Render</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
@@ -884,13 +971,25 @@
     <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h">
       <Filter>Source\Engine\Render\Helper</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pass\DrawCommand.h">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pass\DrawCommandList.h">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pass\PassEvent.h">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pass\PassRenderState.h">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pass\PassTypes.h">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pass\UberLitPass.h">
+      <Filter>Source\Engine\Render\Pass</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h">
@@ -902,14 +1001,23 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\PipelineShaderResolver.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h">
+    <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeSurfaceResources.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
@@ -918,6 +1026,9 @@
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\DirectionalLightSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h">
@@ -929,7 +1040,16 @@
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\LightSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\PointLightSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\SpotLightSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h">
@@ -959,6 +1079,9 @@
     <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderVariantCache.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
@@ -966,6 +1089,9 @@
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h">
+      <Filter>Source\Engine\Render\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Types\ShadingTypes.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h">
@@ -1066,15 +1192,6 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Materials\MaterialCore.h">
-      <Filter>Source\Engine\Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\FEditorMaterialWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h">
-      <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

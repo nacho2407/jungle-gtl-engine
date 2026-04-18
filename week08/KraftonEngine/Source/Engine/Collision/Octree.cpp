@@ -1,7 +1,7 @@
 ﻿#include "Octree.h"
 #include <Collision/RayUtils.h>
 #include <algorithm>
-#include <UI/EditorConsoleWidget.h>
+#include "Editor/UI/EditorConsolePanel.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 namespace {

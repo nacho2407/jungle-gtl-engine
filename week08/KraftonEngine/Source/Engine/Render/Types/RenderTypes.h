@@ -31,10 +31,19 @@ enum class EMeshShape
 	ScaleGizmo,
 };
 
+enum class ELightType
+{
+    Directional,
+    Point,
+    Spot,
+    Ambient,
+};
+
 enum class ERenderPass : uint32
 {
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
 	Decal,			// 데칼 (DepthReadOnly)
+	Lighting,		// ViewMode resolve / lighting composition
 	AdditiveDecal,	// FakeLight 등
 	AlphaBlend,		// 반투명 지오메트리 (Font, SubUV, Billboard, Translucent)
 	SelectionMask,	// 선택 스텐실 마스크
@@ -52,6 +61,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 	static const char* Names[] = {
 		"RenderPass::Opaque",
 		"RenderPass::Decal",
+		"RenderPass::Lighting",
 		"RenderPass::AdditiveDecal",
 		"RenderPass::AlphaBlend",
 		"RenderPass::SelectionMask",
@@ -72,6 +82,7 @@ namespace RenderStateStrings
 	{
 		{ "Opaque",        (int)ERenderPass::Opaque },
 		{ "Decal",         (int)ERenderPass::Decal },
+		{ "Lighting",      (int)ERenderPass::Lighting },
 		{ "AdditiveDecal", (int)ERenderPass::AdditiveDecal },
 		{ "AlphaBlend",    (int)ERenderPass::AlphaBlend },
 		{ "SelectionMask", (int)ERenderPass::SelectionMask },

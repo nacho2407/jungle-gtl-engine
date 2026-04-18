@@ -4,10 +4,13 @@
 
 enum class EViewMode : int32
 {
-	Lit = 0,
-	Unlit,
-	Wireframe,
-	SceneDepth,
+	Lit_Gouraud = 0,
+	Unlit = 1,
+	Wireframe = 2,
+	SceneDepth = 3,
+	Lit_Lambert = 4,
+	Lit_Phong = 5,
+	Lit = Lit_Phong,
 	Count
 };
 
@@ -41,7 +44,7 @@ enum class ELevelViewportType : uint8
 // 뷰포트별 렌더 옵션 — 각 뷰포트 클라이언트가 독립적으로 소유
 struct FViewportRenderOptions
 {
-	EViewMode ViewMode = EViewMode::Lit;
+	EViewMode ViewMode = EViewMode::Lit_Phong;
 	FShowFlags ShowFlags;
 
 	float GridSpacing = 1.0f;

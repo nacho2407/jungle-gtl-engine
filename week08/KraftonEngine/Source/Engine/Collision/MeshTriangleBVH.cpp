@@ -60,9 +60,9 @@ void FMeshTriangleBVH::BuildNow(const FStaticMesh& Mesh)
 	//인덱스 버퍼를 삼각형 단위로 훑으면서 각 삼각형의 bounds와 시작 인덱스를 leaf로 만듭니다.
 	for (size_t Index = 0; Index + 2 < Mesh.Indices.size(); Index += 3)
 	{
-		const FVector& V0 = Mesh.Vertices[Mesh.Indices[Index]].pos;
-		const FVector& V1 = Mesh.Vertices[Mesh.Indices[Index + 1]].pos;
-		const FVector& V2 = Mesh.Vertices[Mesh.Indices[Index + 2]].pos;
+		const FVector& V0 = Mesh.Vertices[Mesh.Indices[Index]].Position;
+		const FVector& V1 = Mesh.Vertices[Mesh.Indices[Index + 1]].Position;
+		const FVector& V2 = Mesh.Vertices[Mesh.Indices[Index + 2]].Position;
 
 		FTriangleLeaf Leaf;
 		Leaf.TriangleStartIndex = static_cast<int32>(Index);
@@ -264,9 +264,9 @@ int32 FMeshTriangleBVH::BuildRecursive(const FStaticMesh& Mesh, int32 Start, int
 			if (i < LeafCount)
 			{
 				const int32 TriStartIndex = TriangleLeaves[Start + i].TriangleStartIndex;
-				const FVector& V0 = Mesh.Vertices[Mesh.Indices[TriStartIndex]].pos;
-				const FVector& V1 = Mesh.Vertices[Mesh.Indices[TriStartIndex + 1]].pos;
-				const FVector& V2 = Mesh.Vertices[Mesh.Indices[TriStartIndex + 2]].pos;
+				const FVector& V0 = Mesh.Vertices[Mesh.Indices[TriStartIndex]].Position;
+				const FVector& V1 = Mesh.Vertices[Mesh.Indices[TriStartIndex + 1]].Position;
+				const FVector& V2 = Mesh.Vertices[Mesh.Indices[TriStartIndex + 2]].Position;
 				const FVector Edge1 = V1 - V0;
 				const FVector Edge2 = V2 - V0;
 

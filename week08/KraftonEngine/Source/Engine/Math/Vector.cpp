@@ -2,6 +2,8 @@
 
 #pragma region __FVECTOR__
 
+FVector FVector::ZeroVector = FVector(0.f, 0.f, 0.f);
+
 float FVector::Length() const {
 	return std::sqrtf(X * X + Y * Y + Z * Z);
 }
