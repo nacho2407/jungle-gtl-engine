@@ -4,6 +4,7 @@
 #include "Render/Device/D3DDevice.h"
 #include "Core/EngineTypes.h"
 #include "Core/ResourceTypes.h"
+#include "Render/Types/MaterialTextureSlot.h"
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
@@ -184,7 +185,8 @@ struct FConstantBufferBinding
 // 섹션별 드로우 정보 — 머티리얼(텍스처)이 다른 구간을 분리 드로우
 struct FMeshSectionDraw
 {
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {};
+
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 
@@ -194,6 +196,6 @@ struct FMeshSectionDraw
 	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
 
 	//PerShader
-	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
+	FConstantBuffer* MaterialCB[2] = {};//	[0]=b2, [1]=b3,
 };
 

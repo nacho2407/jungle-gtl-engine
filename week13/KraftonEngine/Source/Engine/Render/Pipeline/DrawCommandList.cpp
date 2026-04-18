@@ -26,20 +26,25 @@ void FStateCache::Reset()
 	PerObjectCB     = nullptr;
 	PerShaderCB[0]  = nullptr;
 	PerShaderCB[1]  = nullptr;
-	DiffuseSRV   = nullptr;
 
-	RTV         = nullptr;
-	DSV         = nullptr;
+	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
+		SRVs[i] = nullptr;
+
+	RTV = nullptr;
+	DSV = nullptr;
 }
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
-	// t0 SRV 언바인딩
-	if (DiffuseSRV)
+	// t0 ~ t7 SRV 언바인딩
+	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
-		Ctx->PSSetShaderResources(0, 1, &nullSRV);
-		DiffuseSRV = nullptr;
+		if (SRVs[i])
+		{
+			ID3D11ShaderResourceView* nullSRV = nullptr;
+			Ctx->PSSetShaderResources(i, 1, &nullSRV);
+			SRVs[i] = nullptr;
+		}
 	}
 }
 
@@ -80,7 +85,7 @@ void FDrawCommandList::Sort()
 void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const
 {
 	OutStart = PassOffsets[(uint32)Pass];
-	OutEnd   = PassOffsets[(uint32)Pass + 1];
+	OutEnd = PassOffsets[(uint32)Pass + 1];
 }
 
 void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
@@ -267,13 +272,15 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		}
 	}
 
-	// --- Diffuse SRV (t0) ---
-	if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
+	// --- SRV (t0 ~ t7) 바인딩 ---
+	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{
-		if (Cmd.DiffuseSRV) {
-			ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
-			Ctx->PSSetShaderResources(0, 1, &SRV);
-			Cache.DiffuseSRV = Cmd.DiffuseSRV;
+		if (bForce || Cmd.SRVs[i] != Cache.SRVs[i])
+		{
+			ID3D11ShaderResourceView* SRV = Cmd.SRVs[i];
+			Ctx->VSSetShaderResources(i, 1, &SRV);
+			Ctx->PSSetShaderResources(i, 1, &SRV);
+			Cache.SRVs[i] = Cmd.SRVs[i];
 		}
 	}
 

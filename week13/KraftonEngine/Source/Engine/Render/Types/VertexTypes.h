@@ -32,6 +32,16 @@ struct FVertexPNCT
 	FVector2 UV;
 };
 
+// Position + Normal + Tangent + Color + UV(StaticMesh GPU용 정점 형식)
+struct FVertexPNCTT
+{
+	FVector Position;
+	FVector Normal;
+	FVector4 Color;
+	FVector2 UV;
+	FVector4 Tangent;
+};
+
 template<typename VertexType>
 struct TMeshData
 {
