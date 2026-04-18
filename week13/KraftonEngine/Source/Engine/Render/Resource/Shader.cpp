@@ -213,11 +213,12 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 		Elements.push_back(Elem);
 	}
 
-	Reflector->Release();
-
 	// Fullscreen quad 등 vertex input이 없는 셰이더는 InputLayout 불필요
 	if (Elements.empty())
+	{
+		Reflector->Release();
 		return;
+	}
 
 	hr = InDevice->CreateInputLayout(Elements.data(), (UINT)Elements.size(),
 		VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
@@ -225,6 +226,8 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
 	{
 		std::cerr << "Failed to create Input Layout from reflection (HRESULT: " << hr << ")" << std::endl;
 	}
+
+	Reflector->Release();
 }
 
 //셰이더 컴파일 후 호출. 셰이더 코드의 cbuffer, 텍스처 샘플러 선언을 분석해서 outlayout에 채워넣음. 이 정보는 머티리얼 템플릿이 생성될 때 참조되어야 하므로 셰이더 내부에서 제공하는 형태로 존재해야 함.
