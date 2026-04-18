@@ -21,9 +21,11 @@ struct FShowFlags
 	bool bWorldAxis = true;
 	bool bGizmo = true;
 	bool bBillboardText = true;
-	bool bBoundingVolume = false;
 	bool bDebugDraw = true;
-	bool bOctree = false;
+	bool bSceneBVH = false;
+	bool bSceneOctree = false;
+	bool bBoundingVolume = false;
+	bool bWorldBound = false;
 	bool bFog = true;
 	bool bFXAA = false;
 };
