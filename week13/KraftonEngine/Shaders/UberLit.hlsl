@@ -281,7 +281,6 @@ UberVS_Output VS(VS_Input_PNCTT input)
 
         float3 tangentNormal = g_txNormal.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
 
-        //float3 tangentNormal = float3(0.f, 0.f, 1.f);//g_txNormal.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
         N = normalize(mul(tangentNormal, TBN));
     }
 
