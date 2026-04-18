@@ -169,7 +169,7 @@ public:
 class ASpotlightActor : public APointLightActor 
 {
 public:
-	DECLARE_CLASS(ASpotlightActor : APointLightActor)
+	DECLARE_CLASS(ASpotlightActor, APointLightActor)
 	void InitDefaultComponents() override;
 	void Tick() override;
 };

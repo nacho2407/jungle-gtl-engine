@@ -9,6 +9,32 @@
 #include <algorithm>
 #include <cfloat>
 
+namespace
+{
+	static void GetTangent(FVector& OutTangent, FVector& OutBitangent,
+					const FVector& P0, const FVector& P1, const FVector& P2,
+					const FVector2& UV0, const FVector2& UV1, const FVector2& UV2)
+	{
+		FVector Edge1 = P1 - P0;
+		FVector Edge2 = P2 - P0;
+		FVector2 dUV1 = UV1 - UV0;
+		FVector2 dUV2 = UV2 - UV0;
+		float det = dUV1.X * dUV2.Y - dUV1.Y * dUV2.X;
+
+		float r = (fabs(det) > 1e-8f) ? (1.0f / det) : 0.0f;
+
+		OutTangent = (Edge1 * dUV2.Y - Edge2 * dUV1.Y) * r;
+		OutBitangent = (Edge2 * dUV1.X - Edge1 * dUV2.X) * r;
+	}
+
+	static float GetSign(const FVector& N, const FVector& T, const FVector& VertexB)
+	{
+		FVector B = FVector::CrossProduct(N, T);
+		return (FVector::DotProduct(B, VertexB) < 0.0f) ? -1.0f : 1.0f;
+	}
+
+} // namespace TangentSpace
+
 //	v, vt, vn, mtllib, usemtl, f
 FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
 {
@@ -624,7 +650,7 @@ void FObjLoader::ComputeTangents(FStaticMesh* InMesh)
 		const FNormalVertex& V2 = InMesh->Vertices[I2];
 
 		FVector T, B;
-		TangentSpace::GetTangent(T, B, V0.Position, V1.Position, V2.Position,
+		GetTangent(T, B, V0.Position, V1.Position, V2.Position,
 		                                V0.UVs,      V1.UVs,      V2.UVs);
 		TangentAcc[I0] += T; TangentAcc[I1] += T; TangentAcc[I2] += T;
 		BitangentAcc[I0] += B; BitangentAcc[I1] += B; BitangentAcc[I2] += B;
@@ -640,7 +666,7 @@ void FObjLoader::ComputeTangents(FStaticMesh* InMesh)
 		float Len = T.Size();
 		T = (Len > 1e-6f) ? T / Len : FVector(1, 0, 0);
 
-		float Sign = TangentSpace::GetSign(N, T, BitangentAcc[i]);
+		float Sign = GetSign(N, T, BitangentAcc[i]);
 		InMesh->Vertices[i].Tangent = T * Sign;
 	}
 }
