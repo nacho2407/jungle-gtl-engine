@@ -13,6 +13,7 @@
 #include "Render/Renderer.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/FScene.h"
+#include "Render/Proxy/LightSceneProxy.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 
@@ -48,23 +49,11 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
 	}
 
-	// Visible Light Proxies 수집
-    LastVisibleLightProxies.clear();
-    {
-        // SCOPE_STAT_CAT("LightCulling", "3_Collect");
-        for (FLightSceneProxy* LightProxy : Scene.GetLightProxies())
-        {
-            // 현재는 Light Proxies 전부 추가 ─── Culling 수정 필요할 경우 추가
-			LastVisibleLightProxies.push_back(LightProxy);
-        }
-    }
-
-	// Visible Primitive Proxises → FDrawCommand 직접 변환
+	// Visible Primitive Proxies → FDrawCommand 직접 변환
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
-	CollectVisibleLightProxies()
 
-	// Light Proxies 수집 ㅡ 현재 전체 수집	
-	CollectLightConstants(Scene);
+	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
+	CollectLights(Scene);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -303,16 +292,17 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 }
 
 // ============================================================
-// CollectLights — FScene의 Light 프록시에서 FLightConstants 배열을 수집
+// CollectLights — Light 프록시 → FLightConstants 배열 수집
+// Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
+// 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void FRenderCollector::CollectVisibleLightProxies(const TArray<FLightSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FRenderCollector::CollectLights(FScene& Scene)
 {
-    SCOPE_STAT_CAT("CollectVisibleLightProxies", "3_Collect");
-    for (FLightSceneProxy* Proxy : Proxies)
+    CollectedLights.clear();
+    for (const FLightSceneProxy* Proxy : Scene.GetLightProxies())
     {
-        if (Proxy && Proxy->bVisible && Proxy->bAffectsWorld)
-        {
-            Renderer.BuildCommandForProxy(*Proxy, ERenderPass::Opaque); // TODO: LightPass 추가
-        }
+        if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
+            continue;
+        CollectedLights.push_back(Proxy->LightConstants);
     }
 }
