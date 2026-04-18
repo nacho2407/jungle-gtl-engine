@@ -14,6 +14,9 @@
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
 #include "Render/Pipeline/RenderConstants.h"
+#include "Render/Pipeline/ViewModeRenderPipeline.h"
+#include "Render/Pipeline/ViewModeSurfaceResources.h"
+#include "Render/Types/ShadingTypes.h"
 #include "Materials/MaterialManager.h"
 
 // ============================================================
@@ -69,12 +72,25 @@ void FRenderer::Create(HWND hWindow)
 
 	InitializePassRenderStates();
 
+	ViewModePipelineLibrary = new FViewModeRenderPipelineLibrary();
+	ViewModePipelineLibrary->Initialize(Device.GetDevice());
+
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
 }
 
 void FRenderer::Release()
 {
+	if (ViewModePipelineLibrary)
+	{
+		ViewModePipelineLibrary->Release();
+		delete ViewModePipelineLibrary;
+		ViewModePipelineLibrary = nullptr;
+	}
+
+	ActiveViewPipeline = nullptr;
+	ActiveViewSurfaces = nullptr;
+
 	FGPUProfiler::Get().Shutdown();
 
 	EditorLines.Release();
@@ -128,6 +144,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	const FPassRenderState& PassState = PassRenderStates[(uint32)Pass];
+	FShader* ResolvedShader = ResolvePipelineShader(Pass, Proxy.Shader);
 
 	// Wireframe 모드 처리
 	ERasterizerState Rasterizer = PassState.Rasterizer;
@@ -174,7 +191,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader = Proxy.Shader;
+			Cmd.Shader = ResolvedShader;
 
 			// 머티리얼 기반 렌더 상태 우선 적용
 			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
@@ -191,14 +208,14 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			SetProxyExtraCB(Cmd);  // Decal 등: PerShaderCB[1]에 추가 CB 배치
 			Cmd.DiffuseSRV = Section.DiffuseSRV;
 			Cmd.Pass = Pass;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Cmd.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
 
 		}
 	}
 	else
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Shader = Proxy.Shader;
+		Cmd.Shader = ResolvedShader;
 
 		// 프록시 기반 렌더 상태 적용
 		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
@@ -211,8 +228,44 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		SetProxyExtraCB(Cmd);
 		Cmd.DiffuseSRV = Proxy.DiffuseSRV;
 		Cmd.Pass = Pass;
-		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Proxy.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
+		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Cmd.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
+}
+
+void FRenderer::BuildDecalCommand(const FPrimitiveSceneProxy& DecalProxy)
+{
+	if (!ActiveViewPipeline || !DecalProxy.DiffuseSRV)
+	{
+		return;
+	}
+
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	if (DecalProxy.ExtraCB.Buffer)
+	{
+		if (!DecalProxy.ExtraCB.Buffer->GetBuffer())
+		{
+			DecalProxy.ExtraCB.Buffer->Create(Device.GetDevice(), DecalProxy.ExtraCB.Size);
+		}
+		DecalProxy.ExtraCB.Buffer->Update(Ctx, DecalProxy.ExtraCB.Data, DecalProxy.ExtraCB.Size);
+	}
+
+	FShader* DecalShader = ResolvePipelineShader(ERenderPass::Decal, DecalProxy.Shader);
+	if (!DecalShader)
+	{
+		return;
+	}
+
+	FDrawCommand& Cmd = DrawCommandList.AddCommand();
+	Cmd.Shader = DecalShader;
+	Cmd.DepthStencil = EDepthStencilState::NoDepth;
+	Cmd.Blend = EBlendState::AlphaBlend;
+	Cmd.Rasterizer = ERasterizerState::SolidNoCull;
+	Cmd.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	Cmd.VertexCount = 3;
+	Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
+	Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
+	Cmd.Pass = ERenderPass::Decal;
+	Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, Cmd.Shader, nullptr, DecalProxy.DiffuseSRV, static_cast<uint16>(DecalProxy.ProxyId & 0x0FFF));
 }
 
 void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy)
@@ -266,7 +319,7 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 			Cmd.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
 			Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
 			Cmd.Pass = DecalPass;
-			Cmd.SortKey = FDrawCommand::BuildSortKey(DecalPass, DecalProxy.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
+			Cmd.SortKey = FDrawCommand::BuildSortKey(DecalPass, Cmd.Shader, ReceiverProxy.MeshBuffer, DecalProxy.DiffuseSRV);
 		};
 
 	if (!ReceiverProxy.SectionDraws.empty())
@@ -320,6 +373,11 @@ void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* S
 {
 	PrepareDynamicGeometry(Frame, Scene);
 	BuildDynamicDrawCommands(Frame, Device.GetDeviceContext(), Scene);
+
+	if (ActiveViewPipeline && ActiveViewSurfaces)
+	{
+		BuildLightingPassCommand(Frame, Device.GetDeviceContext());
+	}
 }
 
 // ============================================================
@@ -381,6 +439,9 @@ void FRenderer::Render(const FFrameContext& Frame)
 // ============================================================
 void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache)
 {
+	ID3D11ShaderResourceView* NullSRVs[6] = {};
+	Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
 	// 시스템 텍스처 언바인딩
 	ID3D11ShaderResourceView* nullSRV = nullptr;
 	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
@@ -397,6 +458,85 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
 	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
 {
+	if (ActiveViewPipeline && ActiveViewSurfaces)
+	{
+		const EShadingModel ShadingModel = ActiveViewPipeline->GetShadingModel();
+
+		PrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
+			[this, Context, &Frame, &Cache, ShadingModel]()
+			{
+				ID3D11ShaderResourceView* NullSRVs[6] = {};
+				Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+				ActiveViewSurfaces->ClearBaseTargets(Context, ShadingModel);
+				ActiveViewSurfaces->BindBaseDrawTargets(Context, ShadingModel, Frame.ViewportDSV);
+
+				Cache.DiffuseSRV = nullptr;
+				Cache.bForceAll = true;
+			}
+		});
+
+		PrePassEvents.push_back({ ERenderPass::Decal, EPassCompare::Equal, true, false,
+			[this, Context, &Frame, &Cache, ShadingModel]()
+			{
+				ID3D11ShaderResourceView* NullSRVs[6] = {};
+				Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+				if (Frame.DepthTexture && Frame.DepthCopyTexture)
+				{
+					Context->OMSetRenderTargets(0, nullptr, nullptr);
+					Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
+				}
+
+				ID3D11ShaderResourceView* BaseSRVs[3] = {
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::BaseColor),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface1),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface2),
+				};
+				Context->PSSetShaderResources(1, ARRAYSIZE(BaseSRVs), BaseSRVs);
+
+				if (Frame.DepthCopySRV)
+				{
+					ID3D11ShaderResourceView* DepthSRV = Frame.DepthCopySRV;
+					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
+				}
+
+				ActiveViewSurfaces->ClearModifiedTargets(Context, ShadingModel);
+				ActiveViewSurfaces->BindDecalTargets(Context, ShadingModel, Frame.ViewportDSV);
+
+				Cache.DiffuseSRV = nullptr;
+				Cache.bForceAll = true;
+			}
+		});
+
+		PrePassEvents.push_back({ ERenderPass::Lighting, EPassCompare::Equal, true, false,
+			[this, Context, &Frame, &Cache]()
+			{
+				ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
+				Context->OMSetRenderTargets(1, &RTV, Frame.ViewportDSV);
+
+				ID3D11ShaderResourceView* SurfaceSRVs[6] = {
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::BaseColor),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface1),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface2),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::ModifiedBaseColor),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::ModifiedSurface1),
+					ActiveViewSurfaces->GetSRV(ESurfaceSlot::ModifiedSurface2),
+				};
+				Context->PSSetShaderResources(0, ARRAYSIZE(SurfaceSRVs), SurfaceSRVs);
+
+				if (Frame.DepthCopySRV)
+				{
+					ID3D11ShaderResourceView* DepthSRV = Frame.DepthCopySRV;
+					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
+				}
+
+				Cache.DiffuseSRV = nullptr;
+				Cache.bForceAll = true;
+			}
+		});
+	}
+
 	// CopyResource: PostProcess 이상 패스 진입 전 Depth+Stencil 복사 → 시스템 텍스처 바인딩
 	if (Frame.DepthTexture && Frame.DepthCopyTexture)
 	{
@@ -699,8 +839,9 @@ void FRenderer::InitializePassRenderStates()
 
 	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
 	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
+	S[(uint32)E::Lighting] = { EDepthStencilState::NoDepth,       EBlendState::Opaque,     ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true};
 	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
@@ -709,6 +850,69 @@ void FRenderer::InitializePassRenderStates()
 	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
+}
+
+void FRenderer::BuildLightingPassCommand(const FFrameContext& Frame, ID3D11DeviceContext* Ctx)
+{
+	(void)Frame;
+	(void)Ctx;
+
+	if (!ActiveViewPipeline)
+	{
+		return;
+	}
+
+	FShader* LightingShader = ResolvePipelineShader(ERenderPass::Lighting, nullptr);
+	if (!LightingShader)
+	{
+		return;
+	}
+
+	const FPassRenderState& LightingState = PassRenderStates[(uint32)ERenderPass::Lighting];
+
+	FDrawCommand& Cmd = DrawCommandList.AddCommand();
+	Cmd.Shader = LightingShader;
+	Cmd.DepthStencil = LightingState.DepthStencil;
+	Cmd.Blend = LightingState.Blend;
+	Cmd.Rasterizer = LightingState.Rasterizer;
+	Cmd.Topology = LightingState.Topology;
+	Cmd.VertexCount = 3;
+	Cmd.Pass = ERenderPass::Lighting;
+	Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Lighting, Cmd.Shader, nullptr, nullptr, 0);
+}
+
+FShader* FRenderer::ResolvePipelineShader(ERenderPass Pass, FShader* FallbackShader) const
+{
+	if (!ActiveViewPipeline)
+	{
+		return FallbackShader;
+	}
+
+	EPipelineStage Stage = EPipelineStage::BaseDraw;
+	switch (Pass)
+	{
+	case ERenderPass::Opaque:
+		Stage = EPipelineStage::BaseDraw;
+		break;
+	case ERenderPass::Decal:
+		Stage = EPipelineStage::Decal;
+		break;
+	case ERenderPass::Lighting:
+		Stage = EPipelineStage::Lighting;
+		break;
+	default:
+		return FallbackShader;
+	}
+
+	if (const FRenderPipelinePassDesc* PassDesc = ActiveViewPipeline->FindPass(Stage))
+	{
+		if (PassDesc->CompiledShader)
+		{
+			return PassDesc->CompiledShader;
+		}
+	}
+
+	return FallbackShader;
 }
 
 // ============================================================
