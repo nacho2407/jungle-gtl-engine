@@ -182,20 +182,13 @@ struct FConstantBufferBinding
 	}
 };
 
-// 섹션별 드로우 정보 — 머티리얼(텍스처)이 다른 구간을 분리 드로우
+class UMaterial;
+
+// 섹션별 드로우 정보 — 머티리얼 포인터 + 인덱스 범위만 보관
 struct FMeshSectionDraw
 {
-	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {};
-
+	UMaterial* Material = nullptr;
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
-
-	// 머티리얼 기반 렌더 상태
-	EBlendState Blend = EBlendState::Opaque;
-	EDepthStencilState DepthStencil = EDepthStencilState::Default;
-	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
-
-	//PerShader
-	FConstantBuffer* MaterialCB[2] = {};//	[0]=b2, [1]=b3,
 };
 

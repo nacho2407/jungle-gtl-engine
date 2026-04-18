@@ -1,15 +1,26 @@
-﻿#pragma once
+#pragma once
 #include "Render/Resource/Buffer.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/ForwardLightData.h"
 
+#include "Render/Resource/RasterizerStateManager.h"
+#include "Render/Resource/DepthStencilStateManager.h"
+#include "Render/Resource/BlendStateManager.h"
+#include "Render/Resource/SamplerStateManager.h"
+
 /*
-	공용 Constant Buffer + System Sampler를 관리하는 구조체입니다.
-	모든 커맨드가 공통으로 사용하는 Frame/PerObject CB만 소유합니다.
-	타입별 CB(Gizmo, Editor, Outline 등)는 FConstantBufferPool에서 관리됩니다.
+	시스템 레벨 GPU 리소스를 관리하는 구조체입니다.
+	프레임 공용 CB (Frame, Lighting), 라이트 StructuredBuffer,
+	렌더 상태 오브젝트(DSS/Blend/Rasterizer/Sampler),
+	시스템 텍스처 언바인딩(t16-t19)을 소유합니다.
+	셰이더별 CB(Gizmo, Outline 등)는 FConstantBufferPool에서 관리됩니다.
 */
 
-struct LightingResource
+class FD3DDevice;
+class FScene;
+struct FFrameContext;
+
+struct FLightingResource
 {
 	ID3D11Buffer* LightBuffer = nullptr;
 	ID3D11ShaderResourceView* LightBufferSRV = nullptr;
@@ -55,22 +66,41 @@ struct LightingResource
 	}
 };
 
-struct FRenderResources
+struct FSystemResources
 {
+	// --- Frame CB (b0) ---
 	FConstantBuffer FrameBuffer;				// b0 — ECBSlot::Frame
-	FConstantBuffer PerObjectConstantBuffer;	// b1 — ECBSlot::PerObject
-	//Lighting
-	FConstantBuffer LightingConstantBuffer;
-	LightingResource ForwardLights;			// t8 
 
-	// System Samplers — 프레임 시작 시 s0-s2에 영구 바인딩
-	ID3D11SamplerState* LinearClampSampler = nullptr;	// s0
-	ID3D11SamplerState* LinearWrapSampler = nullptr;	// s1
-	ID3D11SamplerState* PointClampSampler = nullptr;	// s2
+	// --- Lighting ---
+	FConstantBuffer LightingConstantBuffer;		// b4 — ECBSlot::Lighting
+	FLightingResource ForwardLights;			// t8 — ELightTexSlot::AllLights
+
+	// --- Render State Managers ---
+	FRasterizerStateManager RasterizerStateManager;
+	FDepthStencilStateManager DepthStencilStateManager;
+	FBlendStateManager BlendStateManager;
+	FSamplerStateManager SamplerStateManager;		// s0-s2
 
 	void Create(ID3D11Device* InDevice);
 	void Release();
 
+	// 렌더 상태 전환
+	void SetDepthStencilState(FD3DDevice& Device, EDepthStencilState InState);
+	void SetBlendState(FD3DDevice& Device, EBlendState InState);
+	void SetRasterizerState(FD3DDevice& Device, ERasterizerState InState);
+
+	// 리사이즈 시 렌더 상태 캐시 무효화
+	void ResetRenderStateCache();
+
+	// 프레임 공용 CB 업데이트 + 바인딩 (b0)
+	void UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame);
+
+	// 라이팅 CB + StructuredBuffer 업데이트 + 바인딩 (b4, t8)
+	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene);
+
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
-	void BindSystemSamplers(ID3D11DeviceContext* Ctx);
+	void BindSystemSamplers(FD3DDevice& Device);
+
+	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
+	void UnbindSystemTextures(FD3DDevice& Device);
 };

@@ -13,8 +13,6 @@
 FCylindricalBillboardSceneProxy::FCylindricalBillboardSceneProxy(UCylindricalBillboardComponent* InComponent)
 	: FBillboardSceneProxy(InComponent)
 {
-	// 컬링 문제일 가능성을 배제하기 위해 NoCull 설정
-	Rasterizer = ERasterizerState::SolidNoCull;
 }
 
 void FCylindricalBillboardSceneProxy::UpdateMesh()

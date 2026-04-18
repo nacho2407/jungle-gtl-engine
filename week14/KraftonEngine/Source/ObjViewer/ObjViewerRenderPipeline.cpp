@@ -57,17 +57,19 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 
 	Frame.SetCameraInfo(Camera);
 
-	FShowFlags ShowFlags;
-	ShowFlags.bGrid = false;
-	ShowFlags.bGizmo = false;
-	ShowFlags.bBillboardText = false;
-	ShowFlags.bBoundingVolume = false;
-	Frame.SetRenderSettings(EViewMode::Lit_Phong, ShowFlags);
+	FViewportRenderOptions Opts;
+	Opts.ViewMode = EViewMode::Lit_Phong;
+	Opts.ShowFlags.bGrid = false;
+	Opts.ShowFlags.bGizmo = false;
+	Opts.ShowFlags.bBillboardText = false;
+	Opts.ShowFlags.bBoundingVolume = false;
+	Frame.SetRenderOptions(Opts);
 	Frame.SetViewportInfo(VP);
 
 	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
-	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
-	Collector.CollectWorld(World, Frame, Renderer);
-	Renderer.BuildDynamicCommands(Frame, &Scene);
+	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
+	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+	Collector.CollectWorld(World, Frame, Builder);
+	Builder.BuildDynamicCommands(Frame, &Scene);
 	Renderer.Render(Frame, Scene);
 }
