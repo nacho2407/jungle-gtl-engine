@@ -41,6 +41,8 @@ private:
 	FAABB BuildLocalBounds(FStaticMesh* InStaticMesh) const;
 	void ComputeNormals(FObjRawData& RawData);
 
+	void ComputeTangents(FStaticMesh* InMesh);
+
 private:
 	TArray<FString> BuiltMaterialSlotName;
 };
