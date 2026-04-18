@@ -1,11 +1,23 @@
-﻿#include "Render/Proxy/FScene.h"
+#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/LightComponent.h"
 #include "Profiling/Stats.h"
 #include <algorithm>
 
 namespace
 {
 	void EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
+	{
+		if (!Proxy || Proxy->bQueuedForDirtyUpdate)
+		{
+			return;
+		}
+
+		Proxy->bQueuedForDirtyUpdate = true;
+		DirtyList.push_back(Proxy);
+	}
+
+	void EnqueueDirtyLightProxy(TArray<FLightSceneProxy*>& DirtyList, FLightSceneProxy* Proxy)
 	{
 		if (!Proxy || Proxy->bQueuedForDirtyUpdate)
 		{
@@ -51,12 +63,20 @@ FScene::~FScene()
 	SelectedProxies.clear();
 	NeverCullProxies.clear();
 	FreeSlots.clear();
+
+	for (FLightSceneProxy* Proxy : LightProxies)
+	{
+		delete Proxy;
+	}
+	LightProxies.clear();
+	DirtyLightProxies.clear();
+	FreeLightSlots.clear();
 }
 
 // ============================================================
-// RegisterProxy — 프록시를 슬롯에 배치하고 DirtyList에 추가
+// RegisterPrimitiveProxy — 프록시를 슬롯에 배치하고 DirtyList에 추가
 // ============================================================
-void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
+void FScene::RegisterPrimitiveProxy(FPrimitiveSceneProxy* Proxy)
 {
 	if (!Proxy) return;
 
@@ -93,7 +113,7 @@ FPrimitiveSceneProxy* FScene::AddPrimitive(UPrimitiveComponent* Component)
 	FPrimitiveSceneProxy* Proxy = Component->CreateSceneProxy();
 	if (!Proxy) return nullptr;
 
-	RegisterProxy(Proxy);
+	RegisterPrimitiveProxy(Proxy);
 	return Proxy;
 }
 
@@ -186,6 +206,38 @@ void FScene::UpdateDirtyProxies()
 }
 
 // ============================================================
+// UpdateDirtyLightProxies — 변경된 Light 프록시만 갱신 (프레임당 1회)
+// ============================================================
+void FScene::UpdateDirtyLightProxies()
+{
+	TArray<FLightSceneProxy*> Pending = std::move(DirtyLightProxies);
+	DirtyLightProxies.clear();
+
+	for (FLightSceneProxy* Proxy : Pending)
+	{
+		if (!Proxy) continue;
+
+		Proxy->bQueuedForDirtyUpdate = false;
+		if (!Proxy->Owner) continue;
+
+		const EDirtyFlag FlagsToProcess = Proxy->DirtyFlags;
+		Proxy->DirtyFlags = EDirtyFlag::None;
+
+		if (HasFlag(FlagsToProcess, EDirtyFlag::Transform))
+		{
+			Proxy->UpdateTransform();
+		}
+
+		// Transform 외 모든 변경(색상, 강도, 반경 등)은 UpdateLightConstants로 처리
+		if (HasFlag(FlagsToProcess, EDirtyFlag::Material) ||
+			HasFlag(FlagsToProcess, EDirtyFlag::Visibility))
+		{
+			Proxy->UpdateLightConstants();
+		}
+	}
+}
+
+// ============================================================
 // MarkProxyDirty — 외부에서 프록시의 특정 필드를 dirty로 마킹
 // ============================================================
 void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
@@ -193,6 +245,13 @@ void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
 	if (!Proxy) return;
 	Proxy->MarkDirty(Flag);
 	EnqueueDirtyProxy(DirtyProxies, Proxy);
+}
+
+void FScene::MarkLightProxyDirty(FLightSceneProxy* Proxy, EDirtyFlag Flag)
+{
+	if (!Proxy) return;
+	Proxy->MarkDirty(Flag);
+	EnqueueDirtyLightProxy(DirtyLightProxies, Proxy);
 }
 
 void FScene::MarkAllPerObjectCBDirty()
@@ -285,4 +344,69 @@ void FScene::RemoveFog(const UHeightFogComponent* Owner)
 		std::remove_if(Fogs.begin(), Fogs.end(),
 			[Owner](const FFogEntry& E) { return E.Owner == Owner; }),
 		Fogs.end());
+}
+
+// ============================================================
+// AddLight — Component의 CreateLightSceneProxy()로 구체 프록시 생성 후 등록
+// ============================================================
+FLightSceneProxy* FScene::AddLight(ULightComponent* Component)
+{
+	if (!Component) return nullptr;
+
+	FLightSceneProxy* Proxy = Component->CreateLightSceneProxy();
+	if (!Proxy) return nullptr;
+
+	RegisterLightProxy(Proxy);
+	return Proxy;
+}
+
+// ============================================================
+// RegisterLightProxy — Light 프록시를 슬롯에 배치하고 DirtyList에 추가
+// ============================================================
+void FScene::RegisterLightProxy(FLightSceneProxy* Proxy)
+{
+	if (!Proxy) return;
+
+	Proxy->DirtyFlags = EDirtyFlag::All;
+
+	if (!FreeLightSlots.empty())
+	{
+		uint32 Slot = FreeLightSlots.back();
+		FreeLightSlots.pop_back();
+		Proxy->ProxyId = Slot;
+		LightProxies[Slot] = Proxy;
+	}
+	else
+	{
+		Proxy->ProxyId = static_cast<uint32>(LightProxies.size());
+		LightProxies.push_back(Proxy);
+	}
+
+	EnqueueDirtyLightProxy(DirtyLightProxies, Proxy);
+}
+
+// ============================================================
+// RemoveLight — Light 프록시 해제 및 슬롯 반환
+// ============================================================
+void FScene::RemoveLight(FLightSceneProxy* Proxy)
+{
+	if (!Proxy || Proxy->ProxyId == UINT32_MAX) return;
+
+	uint32 Slot = Proxy->ProxyId;
+
+	if (Proxy->bQueuedForDirtyUpdate)
+	{
+		auto It = std::find(DirtyLightProxies.begin(), DirtyLightProxies.end(), Proxy);
+		if (It != DirtyLightProxies.end())
+		{
+			*It = DirtyLightProxies.back();
+			DirtyLightProxies.pop_back();
+		}
+		Proxy->bQueuedForDirtyUpdate = false;
+	}
+
+	LightProxies[Slot] = nullptr;
+	FreeLightSlots.push_back(Slot);
+
+	delete Proxy;
 }

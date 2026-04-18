@@ -1,21 +1,28 @@
 ﻿#include "SpotLightSceneProxy.h"
-#include "Component/LightComponentBase.h"
+#include "Component/SpotLightComponent.h"
+
+FSpotLightSceneProxy::FSpotLightSceneProxy(USpotLightComponent* InComponent)
+    : FPointLightSceneProxy(InComponent)
+{
+}
 
 void FSpotLightSceneProxy::UpdateLightConstants()
 {
     if (!Owner)
         return;
-	
-	FLightSceneProxy::UpdateLightConstants();
 
-	LightConstants.InnerConeAngle;
-	LightConstants.OuterConeAngle;
+    FPointLightSceneProxy::UpdateLightConstants();
+
+    USpotLightComponent* SpotLight = static_cast<USpotLightComponent*>(Owner);
+    LightConstants.InnerConeAngle = SpotLight->GetInnerConeAngle();
+    LightConstants.OuterConeAngle = SpotLight->GetOuterConeAngle();
+    LightConstants.LightType = static_cast<uint32>(ELightType::Spot);
 }
 
 void FSpotLightSceneProxy::UpdateTransform()
 {
-	if (!Owner)
-		return;
+    if (!Owner)
+        return;
     LightConstants.Position = Owner->GetWorldLocation();
-    LightConstants.Direction = FVector(0, 0, -1);
+    LightConstants.Direction = Owner->GetForwardVector();
 }

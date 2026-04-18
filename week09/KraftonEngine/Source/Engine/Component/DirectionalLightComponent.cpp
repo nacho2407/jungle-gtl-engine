@@ -1,6 +1,7 @@
 ﻿#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
+#include "Render/Proxy/LightSceneProxy.h"
 
 IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
 
@@ -27,4 +28,11 @@ void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescripto
 void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
 {
     ULightComponent::PostEditProperty(PropertyName);
+}
+
+FLightSceneProxy* UDirectionalLightComponent::CreateLightSceneProxy()
+{
+    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
+    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
+    return Proxy;
 }

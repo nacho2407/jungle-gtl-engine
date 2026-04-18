@@ -11,11 +11,10 @@ public:
     void Serialize(FArchive& Ar) override;
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
+    FLightSceneProxy* CreateLightSceneProxy() override;
+
 	float GetInnerConeAngle() const { return InnerConeAngle; }
     float GetOuterConeAngle() const { return OuterConeAngle; }
-
-	float GetHalfConeAngle() const;    // OuterConeAngle의 절반을 라디안으로 반환
-    float GetCosHalfConeAngle() const; // OuterConeAngle의 절반의 코사인 값을 반환
 
 private:
 	// ─── UE5 Default Value ───
