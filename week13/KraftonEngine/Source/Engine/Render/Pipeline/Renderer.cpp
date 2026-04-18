@@ -81,16 +81,7 @@ void FRenderer::Release()
 //	스왑체인 백버퍼 복귀 — ImGui 합성 직전에 호출
 void FRenderer::BeginFrame()
 {
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	ID3D11RenderTargetView* RTV = Device.GetFrameBufferRTV();
-	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
-
-	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
-	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
-
-	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
-	Context->RSSetViewports(1, &Viewport);
-	Context->OMSetRenderTargets(1, &RTV, DSV);
+	Device.BeginFrame();
 }
 
 // ============================================================
