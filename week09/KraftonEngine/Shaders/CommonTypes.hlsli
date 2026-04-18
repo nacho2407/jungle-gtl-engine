@@ -25,11 +25,12 @@ float4 SampleBaseTexture(Texture2D TextureRef, float2 UV)
 
 struct FBaseDrawVSOutput
 {
-    float4 position    : SV_POSITION;
-    float3 worldNormal : TEXCOORD0;
-    float4 color       : COLOR0;
-    float2 texcoord    : TEXCOORD1;
-    float4 gouraud     : TEXCOORD2;
+    float4 position     : SV_POSITION;
+    float3 worldNormal  : TEXCOORD0;
+    float4 worldTangent : TEXCOORD3;
+    float4 color        : COLOR0;
+    float2 texcoord     : TEXCOORD1;
+    float4 gouraud      : TEXCOORD2;
 };
 
 struct FBaseDrawOutput2

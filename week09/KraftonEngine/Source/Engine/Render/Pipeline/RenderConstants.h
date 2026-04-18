@@ -57,12 +57,17 @@ namespace ECBPoolKey
 struct FPerObjectConstants
 {
 	FMatrix Model;
+	FMatrix NormalMatrix;
 	FVector4 Color;
 
 	// 기본 PerObject: WorldMatrix + White
 	static FPerObjectConstants FromWorldMatrix(const FMatrix& WorldMatrix)
 	{
-		return { WorldMatrix, FVector4(1.0f, 1.0f, 1.0f, 1.0f) };
+		FPerObjectConstants Constants;
+		Constants.Model = WorldMatrix;
+		Constants.NormalMatrix = WorldMatrix.GetInverse().GetTransposed();
+		Constants.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		return Constants;
 	}
 };
 

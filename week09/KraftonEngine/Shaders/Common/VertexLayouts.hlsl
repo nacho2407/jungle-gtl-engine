@@ -10,7 +10,6 @@ struct VS_Input_PC
 {
     float3 position : POSITION;
     float4 color    : COLOR;
-    float _pad      : PADDING;
 };
 
 // FVertexPNCT (Position + Normal + Color + TexCoord)
@@ -19,11 +18,10 @@ struct VS_Input_PNCT
     float3 position : POSITION;
     float3 normal   : NORMAL;
     float4 color    : COLOR;
-    float2 texcoord : TEXCOORD0;
+    float2 texcoord : TEXTCOORD;
 };
 
 // FVertexPNCT_T (Position + Normal + Color + TexCoord + Tangent)
-// 라이팅 및 노멀 매핑용 입력
 struct VS_Input_PNCT_T
 {
     float3 position : POSITION;
@@ -37,15 +35,13 @@ struct VS_Input_PNCT_T
 struct VS_Input_PT
 {
     float3 position : POSITION;
-    float2 texcoord : TEXCOORD0;
-    float3 _pad     : PADDING;
+    float2 texcoord : TEXCOORD;
 };
 
 // Position only
 struct VS_Input_P
 {
     float3 position : POSITION;
-    float _pad      : PADDING;
 };
 
 // ============================================================
@@ -63,7 +59,7 @@ struct PS_Input_Color
 struct PS_Input_Tex
 {
     float4 position : SV_POSITION;
-    float2 texcoord : TEXCOORD0;
+    float2 texcoord : TEXCOORD;
 };
 
 // SV_POSITION + Normal + Color + TexCoord (StaticMesh)
@@ -72,7 +68,7 @@ struct PS_Input_Full
     float4 position : SV_POSITION;
     float3 normal   : NORMAL;
     float4 color    : COLOR;
-    float2 texcoord : TEXCOORD0;
+    float2 texcoord : TEXCOORD;
 };
 
 // SV_POSITION + WorldPos + Normal + UV + Tangent + Color (Uber Shader)
