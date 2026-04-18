@@ -436,19 +436,24 @@ void FEditorViewportClient::UpdateLayoutRect()
     if (!LayoutWindow)
         return;
 
-    const FRect &R = LayoutWindow->GetRect();
-    ViewportScreenRect = R;
+    const FRect &PaneRect = LayoutWindow->GetRect();
+    ViewportFrameRect = PaneRect;
 
-    // FViewport 리사이즈 요청 (슬롯 크기와 RT 크기 동기화)
+    const float ToolbarHeight = (PaneToolbarHeight > 0.0f) ? PaneToolbarHeight : 0.0f;
+    ViewportScreenRect = PaneRect;
+    ViewportScreenRect.Y += ToolbarHeight;
+    ViewportScreenRect.Height -= ToolbarHeight;
+
+    // FViewport 리사이즈 요청 (렌더 타깃은 툴바를 제외한 실제 렌더 영역 크기와 동기화)
     if (Viewport)
     {
-        if (R.Width <= 0.0f || R.Height <= 0.0f)
+        if (ViewportScreenRect.Width <= 0.0f || ViewportScreenRect.Height <= 0.0f)
         {
             return;
         }
 
-        uint32 SlotW = static_cast<uint32>(R.Width);
-        uint32 SlotH = static_cast<uint32>(R.Height);
+        uint32 SlotW = static_cast<uint32>(ViewportScreenRect.Width);
+        uint32 SlotH = static_cast<uint32>(ViewportScreenRect.Height);
 
         if (SlotW > 0 && SlotH > 0 && (SlotW != Viewport->GetWidth() || SlotH != Viewport->GetHeight()))
         {
@@ -462,15 +467,19 @@ void FEditorViewportClient::RenderViewportImage()
     if (!Viewport || !Viewport->GetSRV())
         return;
 
-    const FRect &R = ViewportScreenRect;
+    const FRect& R = ViewportScreenRect;
     if (R.Width <= 0 || R.Height <= 0)
         return;
 
-    ImDrawList *DrawList = ImGui::GetWindowDrawList();
-    ImVec2 Min(R.X, R.Y);
-    ImVec2 Max(R.X + R.Width, R.Y + R.Height);
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    DrawList->AddImage((ImTextureID)Viewport->GetSRV(), ImVec2(R.X, R.Y), ImVec2(R.X + R.Width, R.Y + R.Height));
+}
 
-    DrawList->AddImage((ImTextureID)Viewport->GetSRV(), Min, Max);
+void FEditorViewportClient::RenderViewportBorder()
+{
+    const FRect& R = ViewportScreenRect;
+    if (R.Width <= 0 || R.Height <= 0)
+        return;
 
     ImU32 BorderColor = 0;
     float BorderThickness = 0.0f;
@@ -478,30 +487,34 @@ void FEditorViewportClient::RenderViewportImage()
     switch (PlayState)
     {
     case EEditorViewportPlayState::Paused:
-        BorderColor = IM_COL32(255, 230, 80, 255); // Pause: 노랑
+        BorderColor = IM_COL32(255, 230, 80, 255);
         BorderThickness = 4.0f;
         break;
-
     case EEditorViewportPlayState::Playing:
-        BorderColor = IM_COL32(80, 220, 120, 255); // PIE: 초록
+        BorderColor = IM_COL32(80, 220, 120, 255); // green
         BorderThickness = 4.0f;
         break;
-
     case EEditorViewportPlayState::Stopped:
     default:
         if (bIsActive)
         {
-            BorderColor = IM_COL32(255, 200, 0, 255); // Active: 주황
-            BorderThickness = 3.0f;
+            BorderColor = IM_COL32(255, 100, 0, 255);
+            BorderThickness = 4.0f;
         }
         break;
     }
 
-    if (BorderThickness > 0.0f)
-    {
-        const float HalfThickness = BorderThickness * 0.5f;
+    if (BorderThickness <= 0.0f)
+        return;
 
-        DrawList->AddRect(ImVec2(Min.x + HalfThickness, Min.y + HalfThickness),
-                          ImVec2(Max.x - HalfThickness, Max.y - HalfThickness), BorderColor, 0.0f, 0, BorderThickness);
-    }
+    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    const float HalfThickness = BorderThickness * 0.5f;
+
+    DrawList->AddRect(
+        ImVec2(R.X + HalfThickness, R.Y + HalfThickness),
+        ImVec2(R.X + R.Width - HalfThickness, R.Y + R.Height - HalfThickness),
+        BorderColor,
+        0.0f,
+        0,
+        BorderThickness);
 }

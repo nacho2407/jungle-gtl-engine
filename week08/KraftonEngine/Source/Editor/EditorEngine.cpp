@@ -41,7 +41,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// 뷰포트 레이아웃 초기화 + 저장된 설정 복원
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
-	ResetAllViewportPlayStates();
 	ViewportLayout.LoadFromSettings();
 
 	// Editor render pipeline
@@ -90,7 +89,42 @@ void UEditorEngine::Tick(float DeltaTime)
 	}
 
 	MainPanel.Update();
-	UEngine::Tick(DeltaTime);
+	InputSystem::Get().Tick();
+
+	const bool bPIEPaused = IsPausedInEditor();
+	const bool bHasPIEWorld = IsPlayingInEditor();
+	for (FWorldContext& Ctx : WorldList)
+	{
+		UWorld* World = Ctx.World;
+		if (!World)
+		{
+			continue;
+		}
+
+		if (bHasPIEWorld && Ctx.WorldType == EWorldType::Editor)
+		{
+			continue;
+		}
+
+		ELevelTick TickType = ELevelTick::LEVELTICK_TimeOnly;
+		switch (Ctx.WorldType)
+		{
+		case EWorldType::Editor:
+			TickType = ELevelTick::LEVELTICK_ViewportsOnly;
+			break;
+		case EWorldType::PIE:
+		case EWorldType::Game:
+			TickType = bPIEPaused ? ELevelTick::LEVELTICK_PauseTick : ELevelTick::LEVELTICK_All;
+			break;
+		default:
+			TickType = ELevelTick::LEVELTICK_TimeOnly;
+			break;
+		}
+
+		World->Tick(DeltaTime, TickType);
+	}
+
+	Render(DeltaTime);
 	SelectionManager.Tick();
 }
 
@@ -131,6 +165,56 @@ void UEditorEngine::RequestEndPlayMap()
 		return;
 	}
 	bRequestEndPlayMapQueued = true;
+}
+
+bool UEditorEngine::IsPausedInEditor() const
+{
+	return PlayInEditorSessionInfo.has_value() && PlayInEditorSessionInfo->bIsPaused;
+}
+
+void UEditorEngine::PausePlayInEditor()
+{
+	if (!PlayInEditorSessionInfo.has_value() || PlayInEditorSessionInfo->bIsPaused)
+	{
+		return;
+	}
+
+	PlayInEditorSessionInfo->bIsPaused = true;
+	if (FLevelEditorViewportClient* PIEViewportClient = PlayInEditorSessionInfo->DestinationViewportClient)
+	{
+		PIEViewportClient->SetPlayState(EEditorViewportPlayState::Paused);
+	}
+}
+
+void UEditorEngine::ResumePlayInEditor()
+{
+	if (!PlayInEditorSessionInfo.has_value() || !PlayInEditorSessionInfo->bIsPaused)
+	{
+		return;
+	}
+
+	PlayInEditorSessionInfo->bIsPaused = false;
+	if (FLevelEditorViewportClient* PIEViewportClient = PlayInEditorSessionInfo->DestinationViewportClient)
+	{
+		PIEViewportClient->SetPlayState(EEditorViewportPlayState::Playing);
+	}
+}
+
+void UEditorEngine::TogglePausePlayInEditor()
+{
+	if (!PlayInEditorSessionInfo.has_value())
+	{
+		return;
+	}
+
+	if (PlayInEditorSessionInfo->bIsPaused)
+	{
+		ResumePlayInEditor();
+	}
+	else
+	{
+		PausePlayInEditor();
+	}
 }
 
 void UEditorEngine::StartQueuedPlaySessionRequest()
@@ -180,14 +264,9 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	WorldList.push_back(Ctx);
 
 	// 3) 세션 정보 기록 (이전 활성 핸들 포함 — EndPlayMap에서 복원).
-	FLevelEditorViewportClient* PIEViewportClient = Params.DestinationViewportClient;
+	FLevelEditorViewportClient* PIEViewportClient = Params.DestinationViewportClient ? Params.DestinationViewportClient : ViewportLayout.GetActiveViewport();
 	if (!PIEViewportClient)
 	{
-		PIEViewportClient = ViewportLayout.GetActiveViewport();
-	}
-	if (!PIEViewportClient)
-	{
-		DestroyWorldContext(FName("PIE"));
 		return;
 	}
 
@@ -205,8 +284,13 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	}
 	PlayInEditorSessionInfo = Info;
 
-	ResetAllViewportPlayStates();
-	SetViewportPlayState(PIEViewportClient, EEditorViewportPlayState::Playing);
+	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
+	{
+		if (VC)
+		{
+			VC->SetPlayState(VC == PIEViewportClient ? EEditorViewportPlayState::Playing : EEditorViewportPlayState::Stopped);
+		}
+	}
 
 	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
 	SetActiveWorld(FName("PIE"));
@@ -268,24 +352,24 @@ void UEditorEngine::EndPlayMap()
 		// ActiveCamera는 PIE 시작 시 PIE 월드로 옮겨졌고 PIE 월드와 함께 파괴됐다.
 		// Editor 월드의 ActiveCamera는 여전히 그 dangling 포인터를 가리킬 수 있으므로
 		// 활성 뷰포트의 카메라로 다시 바인딩해 줘야 frustum culling이 정상 동작한다.
-		FLevelEditorViewportClient* RestoreViewportClient = PlayInEditorSessionInfo->DestinationViewportClient;
-		if (!RestoreViewportClient)
+		FLevelEditorViewportClient* PIEViewportClient = PlayInEditorSessionInfo->DestinationViewportClient;
+		if (PIEViewportClient && PIEViewportClient->GetCamera())
 		{
-			RestoreViewportClient = ViewportLayout.GetActiveViewport();
-		}
-
-		if (RestoreViewportClient)
-		{
-			if (UCameraComponent* VCCamera = RestoreViewportClient->GetCamera())
+			UCameraComponent* VCCamera = PIEViewportClient->GetCamera();
+			if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
 			{
-				if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
-				{
-					const FPIEViewportCameraSnapshot& SavedCamera = PlayInEditorSessionInfo->SavedViewportCamera;
-					VCCamera->SetWorldLocation(SavedCamera.Location);
-					VCCamera->SetRelativeRotation(SavedCamera.Rotation);
-					VCCamera->SetCameraState(SavedCamera.CameraState);
-				}
+				const FPIEViewportCameraSnapshot& SavedCamera = PlayInEditorSessionInfo->SavedViewportCamera;
+				VCCamera->SetWorldLocation(SavedCamera.Location);
+				VCCamera->SetRelativeRotation(SavedCamera.Rotation);
+				VCCamera->SetCameraState(SavedCamera.CameraState);
+			}
 
+			EditorWorld->SetActiveCamera(VCCamera);
+		}
+		else if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+		{
+			if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
+			{
 				EditorWorld->SetActiveCamera(VCCamera);
 			}
 		}
@@ -309,30 +393,15 @@ void UEditorEngine::EndPlayMap()
 		Pipeline->OnSceneCleared();
 	}
 
-	ResetAllViewportPlayStates();
-	PlayInEditorSessionInfo.reset();
-}
-
-
-void UEditorEngine::SetViewportPlayState(FLevelEditorViewportClient* InViewportClient, EEditorViewportPlayState InPlayState)
-{
-	if (!InViewportClient)
-	{
-		return;
-	}
-
-	InViewportClient->SetPlayState(InPlayState);
-}
-
-void UEditorEngine::ResetAllViewportPlayStates()
-{
-	for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
+	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
 		if (VC)
 		{
 			VC->SetPlayState(EEditorViewportPlayState::Stopped);
 		}
 	}
+
+	PlayInEditorSessionInfo.reset();
 }
 
 // ─── 기존 메서드 ──────────────────────────────────────────
@@ -379,5 +448,4 @@ void UEditorEngine::ClearScene()
 	ActiveWorldHandle = FName::None;
 
 	ViewportLayout.DestroyAllCameras();
-	ResetAllViewportPlayStates();
 }

@@ -27,7 +27,6 @@ struct FRequestPlaySessionParams
 {
 	EPIESessionDestination SessionDestination = EPIESessionDestination::InProcess;
 	EPIEPlayMode PlayMode = EPIEPlayMode::PlayInViewport;
-	// PIE를 시작할 대상 뷰포트. null이면 현재 활성 뷰포트를 사용한다.
 	FLevelEditorViewportClient* DestinationViewportClient = nullptr;
 };
 
@@ -48,7 +47,7 @@ struct FPlayInEditorSessionInfo
 	double PIEStartTime = 0.0;
 	// PIE 시작 직전 활성 월드 핸들 — EndPlayMap에서 원복에 사용.
 	FName PreviousActiveWorldHandle;
-	// 현재 PIE가 실행 중인 대상 뷰포트.
-	FLevelEditorViewportClient* DestinationViewportClient = nullptr;
 	FPIEViewportCameraSnapshot SavedViewportCamera;
+	FLevelEditorViewportClient* DestinationViewportClient = nullptr;
+	bool bIsPaused = false;
 };

@@ -569,6 +569,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			if (i < static_cast<int32>(LevelViewportClients.size()))
 			{
 				FLevelEditorViewportClient* VC = LevelViewportClients[i];
+				VC->SetPaneToolbarHeight(Toolbar.GetDesiredHeight());
 				VC->UpdateLayoutRect();
 				VC->RenderViewportImage();
 			}
@@ -580,6 +581,16 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			if (i < static_cast<int32>(LevelViewportClients.size()))
 			{
 				Toolbar.RenderPaneToolbar(this, i, LevelViewportClients[i]);
+			}
+		}
+
+
+		// 각 뷰포트 테두리는 툴바까지 포함해서 가장 마지막에 렌더
+		for (int32 i = 0; i < ActiveSlotCount; ++i)
+		{
+			if (i < static_cast<int32>(LevelViewportClients.size()))
+			{
+				LevelViewportClients[i]->RenderViewportBorder();
 			}
 		}
 
