@@ -241,7 +241,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 		{
 			if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
 			{
-				CollectLight(Light);
+				CollectLight(Light, RenderBus);
 			}
 		}
 
