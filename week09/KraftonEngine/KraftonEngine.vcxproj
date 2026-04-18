@@ -316,6 +316,7 @@
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp" />
@@ -465,6 +466,7 @@
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h" />
@@ -536,6 +538,9 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\Common\LightCullingCommon.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\DecalShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -661,6 +666,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\TileBasedLightCullingCS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Viewport/ViewportClient.h"
@@ -21,7 +21,7 @@ public:
 
 	// Viewport 소유
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
-	FViewport* GetViewport() const { return Viewport; }
+	FViewport* GetViewport() const override { return Viewport; }
 
 private:
 	FViewport* Viewport = nullptr;
