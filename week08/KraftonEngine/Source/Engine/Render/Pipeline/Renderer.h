@@ -41,6 +41,7 @@ public:
 
 	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
 	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
+    void BuildCommandForLightProxy(const FLightSceneProxy& LightProxy, ERenderPass Pass);
 	void BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy);
 
 	// Collector가 직접 호출 — Font proxy → FontGeometry 배칭
