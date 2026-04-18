@@ -6,7 +6,7 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 
 namespace MatKeys
 {
@@ -48,6 +48,26 @@ void FMaterialManager::ScanMaterialAssets()
 		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
 		AvailableMaterialFiles.push_back(std::move(Item));
 	}
+}
+
+UMaterial* FMaterialManager::GetOrCreateStaticMeshMaterial(const FString& MatFilePath)
+{
+	// 정적 메시 머티리얼은 반드시 StaticMeshShader 템플릿을 사용
+	auto It = MaterialCache.find(MatFilePath);
+	if (It != MaterialCache.end())
+	{
+		return It->second;
+	}
+
+	json::JSON JsonData = ReadJsonFile(MatFilePath);
+	if (JsonData.IsNull())
+	{
+		return GetOrCreateMaterial(MatFilePath);
+	}
+
+	JsonData[MatKeys::ShaderPath] = DefaultShaderPath.c_str();
+	SaveToJSON(JsonData, MatFilePath);
+	return GetOrCreateMaterial(MatFilePath);
 }
 
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
