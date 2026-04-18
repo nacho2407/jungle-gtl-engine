@@ -7,7 +7,8 @@
 #include "Render/Types/RenderTypes.h"
 
 #include "Render/Pipeline/FrameContext.h"
-#include "Render/Pipeline/DrawCommandList.h"
+#include "Render/Pass/DrawCommandList.h"
+#include "Render/Pass/PassRenderState.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
@@ -17,22 +18,25 @@
 
 class FTextRenderSceneProxy;
 class FScene;
+class FViewModeRenderPipeline;
+class FViewModeRenderPipelineLibrary;
+class FViewModeSurfaceResources;
 
-// 패스별 기본 렌더 상태 — Single Source of Truth
-struct FPassRenderState
-{
-	EDepthStencilState       DepthStencil = EDepthStencilState::Default;
-	EBlendState              Blend = EBlendState::Opaque;
-	ERasterizerState         Rasterizer = ERasterizerState::SolidBackCull;
-	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
-};
 
 class FRenderer
 {
 public:
 	void Create(HWND hWindow);
 	void Release();
+
+	void SetActiveViewModePipeline(const FViewModeRenderPipeline* InPipeline) { ActiveViewPipeline = InPipeline; }
+	const FViewModeRenderPipeline* GetActiveViewModePipeline() const { return ActiveViewPipeline; }
+	bool HasActiveViewModePipeline() const { return ActiveViewPipeline != nullptr; }
+
+	FViewModeSurfaceResources* AcquireViewModeSurfaceResources(uint32 Width, uint32 Height);
+	void ReleaseViewModeSurfaceResources();
+	FViewModeSurfaceResources* GetActiveViewModeSurfaces() const { return ActiveViewSurfaces; }
+	const FViewModeRenderPipelineLibrary* GetViewModePipelineLibrary() const { return ViewModePipelineLibrary; }
 
 	// --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
 	// MaxProxyCount: Scene의 프록시 수. PerObjectCBPool을 미리 할당하여
@@ -42,6 +46,7 @@ public:
 	// Collector가 직접 호출 — Proxy → FDrawCommand 변환
 	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
 	void BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy);
+	void BuildDecalCommand(const FPrimitiveSceneProxy& DecalProxy);
 
 	// Collector가 직접 호출 — Font proxy → FontGeometry 배칭
 	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
@@ -62,7 +67,6 @@ public:
 
 
 private:
-	void InitializePassRenderStates();
 
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 
@@ -72,12 +76,10 @@ private:
 	// 동적 지오메트리 + PostProcess → FDrawCommand (VB 업로드 + 커맨드 생성)
 	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx, const FScene* Scene);
 
-	// 패스 루프 Pre/Post 이벤트 등록
-	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
-		ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache);
 
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache);
+
 
 	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
@@ -98,6 +100,11 @@ private:
 	FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];
 
 	// BeginCollect에서 저장, BuildCommandForProxy에서 사용
-	EViewMode CollectViewMode = EViewMode::Lit;
+	EViewMode CollectViewMode = EViewMode::Lit_Phong;
 	bool bHasSelectionMaskCommands = false;
+
+	const FViewModeRenderPipeline* ActiveViewPipeline = nullptr;
+	FViewModeSurfaceResources* OwnedViewModeSurfaces = nullptr;
+	FViewModeSurfaceResources* ActiveViewSurfaces = nullptr;
+	FViewModeRenderPipelineLibrary* ViewModePipelineLibrary = nullptr;
 };

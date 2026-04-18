@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -10,7 +10,7 @@
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Pipeline/LODContext.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
@@ -215,38 +215,45 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		else if (Cast<UDecalComponent>(Proxy->Owner))
 		{
 			FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
-			UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
-
-			for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
+			if (Renderer.HasActiveViewModePipeline())
 			{
-				if (!Receiver)
-				{
-					continue;
-				}
+				Renderer.BuildDecalCommand(*DecalProxy);
+			}
+			else
+			{
+				UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
 
-				FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
-				if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
+				for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
 				{
-					continue;
-				}
+					if (!Receiver)
+					{
+						continue;
+					}
 
-				if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(ReceiverProxy->ProxyId, ReceiverProxy->LastLODUpdateFrame))
-				{
-					const FVector& ProxyPos = ReceiverProxy->CachedWorldPos;
-					const float dx = LODCtx.CameraPos.X - ProxyPos.X;
-					const float dy = LODCtx.CameraPos.Y - ProxyPos.Y;
-					const float dz = LODCtx.CameraPos.Z - ProxyPos.Z;
-					const float DistSq = dx * dx + dy * dy + dz * dz;
-					ReceiverProxy->UpdateLOD(SelectLOD(ReceiverProxy->CurrentLOD, DistSq));
-					ReceiverProxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
-				}
+					FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
+					if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
+					{
+						continue;
+					}
 
-				if (ReceiverProxy->bPerViewportUpdate)
-				{
-					ReceiverProxy->UpdatePerViewport(Frame);
-				}
+					if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(ReceiverProxy->ProxyId, ReceiverProxy->LastLODUpdateFrame))
+					{
+						const FVector& ProxyPos = ReceiverProxy->CachedWorldPos;
+						const float dx = LODCtx.CameraPos.X - ProxyPos.X;
+						const float dy = LODCtx.CameraPos.Y - ProxyPos.Y;
+						const float dz = LODCtx.CameraPos.Z - ProxyPos.Z;
+						const float DistSq = dx * dx + dy * dy + dz * dz;
+						ReceiverProxy->UpdateLOD(SelectLOD(ReceiverProxy->CurrentLOD, DistSq));
+						ReceiverProxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
+					}
 
-				Renderer.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
+					if (ReceiverProxy->bPerViewportUpdate)
+					{
+						ReceiverProxy->UpdatePerViewport(Frame);
+					}
+
+					Renderer.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
+				}
 			}
 		}
 		else
