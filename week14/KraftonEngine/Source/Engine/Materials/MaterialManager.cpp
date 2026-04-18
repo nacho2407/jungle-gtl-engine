@@ -110,6 +110,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
+	Material->RebuildCachedSRVs();
 
 	// JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
 	JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();

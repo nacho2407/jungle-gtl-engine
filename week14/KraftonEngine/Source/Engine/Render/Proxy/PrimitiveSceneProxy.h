@@ -9,6 +9,7 @@ class UPrimitiveComponent;
 class FShader;
 class FMeshBuffer;
 class FScene;
+class UMaterial;
 struct FFrameContext;
 
 // ============================================================
@@ -66,10 +67,8 @@ public:
 	// --- 렌더 패스 ---
 	ERenderPass Pass = ERenderPass::Opaque;
 
-	// 머티리얼 기반 렌더 상태 (개별 섹션에 정보가 없을 때 사용)
-	EBlendState Blend = EBlendState::Opaque;
-	EDepthStencilState DepthStencil = EDepthStencilState::Default;
-	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
+	// 머티리얼 포인터 (SectionDraws 없는 프록시용 — Billboard, Decal 등)
+	UMaterial* Material = nullptr;
 
 	// --- 캐싱된 렌더 데이터 (등록 시 초기화, dirty 시만 갱신) ---
 	FShader*     Shader     = nullptr;
