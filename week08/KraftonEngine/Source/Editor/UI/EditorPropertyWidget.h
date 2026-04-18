@@ -11,6 +11,8 @@ class FEditorPropertyWidget : public FEditorWidget
 public:
 	virtual void Render(float DeltaTime) override;
 
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
+
 private:
 	void RenderComponentTree(AActor* Actor);
 	void RenderSceneComponentNode(class USceneComponent* Comp);
