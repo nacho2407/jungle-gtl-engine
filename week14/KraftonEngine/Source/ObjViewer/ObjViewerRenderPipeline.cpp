@@ -66,8 +66,9 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	Frame.SetViewportInfo(VP);
 
 	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
-	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
-	Collector.CollectWorld(World, Frame, Renderer);
-	Renderer.BuildDynamicCommands(Frame, &Scene);
+	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
+	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+	Collector.CollectWorld(World, Frame, Builder);
+	Builder.BuildDynamicCommands(Frame, &Scene);
 	Renderer.Render(Frame, Scene);
 }

@@ -104,12 +104,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	Frame.LODContext = World->PrepareLODContext();
 
 	// 2. BeginCollect → Proxy → FDrawCommand 직접 변환
-	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
+	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
+	Builder.BeginCollect(Frame, Scene.GetProxyCount());
 
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");
 
-		Collector.CollectWorld(World, Frame, Renderer);
+		Collector.CollectWorld(World, Frame, Builder);
 
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
 		Collector.CollectDebugDraw(Frame, Scene);
@@ -120,7 +121,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		if (VC == Editor->GetActiveViewport())
 			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
 
-		Renderer.BuildDynamicCommands(Frame, &Scene);
+		Builder.BuildDynamicCommands(Frame, &Scene);
 	}
 
 	// 3. GPU 정렬 + 제출 (PostProcess 패스에서 Fog/Outline도 자동 처리)
