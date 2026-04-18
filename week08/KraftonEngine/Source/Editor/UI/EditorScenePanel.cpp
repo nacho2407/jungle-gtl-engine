@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorSceneWidget.h"
+﻿#include "Editor/UI/EditorScenePanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -9,16 +9,16 @@
 
 #include <cstdio>
 
-void FEditorSceneWidget::Initialize(UEditorEngine *InEditorEngine)
+void FEditorScenePanel::Initialize(UEditorEngine *InEditorEngine)
 {
-    FEditorWidget::Initialize(InEditorEngine);
+    FEditorPanel::Initialize(InEditorEngine);
 }
 
-void FEditorSceneWidget::RefreshSceneFileList()
+void FEditorScenePanel::RefreshSceneFileList()
 {
 }
 
-void FEditorSceneWidget::Render(float DeltaTime)
+void FEditorScenePanel::Render(float DeltaTime)
 {
     (void)DeltaTime;
 
@@ -35,9 +35,9 @@ void FEditorSceneWidget::Render(float DeltaTime)
     ImGui::End();
 }
 
-void FEditorSceneWidget::RenderActorOutliner()
+void FEditorScenePanel::RenderActorOutliner()
 {
-    SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "5_UI");
+    SCOPE_STAT_CAT("ScenePanel::ActorOutliner", "5_UI");
 
     UWorld *World = EditorEngine->GetWorld();
     if (!World)
@@ -95,14 +95,19 @@ void FEditorSceneWidget::RenderActorOutliner()
 
     if (ImGui::Button(DeleteLabel))
     {
+        // 선택 목록이 파괴 대상 액터 포인터를 들고 있으면 프록시 선택 해제/기즈모 동기화 중에
+        // dangling 포인터를 참조할 수 있으므로 먼저 Selection을 비웁니다.
+        Selection.ClearSelection();
+
+        World->BeginDeferredPickingBVHUpdate();
         for (AActor *Actor : ActorsToDelete)
         {
-            if (Actor && Actor->GetWorld())
+            if (Actor && Actor->GetWorld() == World)
             {
-                Actor->GetWorld()->DestroyActor(Actor);
+                World->DestroyActor(Actor);
             }
         }
-        Selection.ClearSelection();
+        World->EndDeferredPickingBVHUpdate();
     }
 
     ImGui::PopStyleColor(3);

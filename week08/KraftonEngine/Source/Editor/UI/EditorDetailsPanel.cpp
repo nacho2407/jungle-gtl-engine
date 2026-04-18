@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+﻿#include "Editor/UI/EditorDetailsPanel.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -42,7 +42,23 @@ static FString GetStemFromPath(const FString& Path)
 	return RemoveExtension(FileName);
 }
 
-FString FEditorPropertyWidget::OpenObjFileDialog()
+static FString BuildComponentDisplayLabel(UActorComponent* Comp)
+{
+    if (!Comp)
+    {
+        return "None";
+    }
+
+    const FString TypeName = Comp->GetClass()->GetName();
+    FString Name = Comp->GetFName().ToString();
+    if (Name.empty())
+    {
+        Name = TypeName;
+    }
+    return TypeName + "(" + Name + ")";
+}
+
+FString FEditorDetailsPanel::OpenObjFileDialog()
 {
 	wchar_t FilePath[MAX_PATH] = {};
 
@@ -72,7 +88,7 @@ FString FEditorPropertyWidget::OpenObjFileDialog()
 	return FString();
 }
 
-void FEditorPropertyWidget::Render(float DeltaTime)
+void FEditorDetailsPanel::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 
@@ -146,7 +162,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::End();
 }
 
-void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
+void FEditorDetailsPanel::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	if (bActorSelected)
 	{
@@ -162,7 +178,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 	}
 }
 
-void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
+void FEditorDetailsPanel::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetClass()->GetName());
 	ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
@@ -241,7 +257,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 }
 
-void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
+void FEditorDetailsPanel::RenderComponentTree(AActor* Actor)
 {
 	ImGui::Text("Component List");
 
@@ -313,33 +329,28 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 		if (!Comp) continue;
 		if (Comp->IsA<USceneComponent>()) continue;
 
-		FString Name = Comp->GetFName().ToString();
-		const FString TypeName = Comp->GetClass()->GetName();
-		const FString DefaultNamePrefix = TypeName + "_";
-		const bool bUseTypeAsLabel = Name.empty()
-			|| Name == TypeName
-			|| Name.rfind(DefaultNamePrefix, 0) == 0;
-		const char* Label = bUseTypeAsLabel ? TypeName.c_str() : Name.c_str();
+		FString Label = BuildComponentDisplayLabel(Comp);
 
+		ImGui::Indent(12.0f);
 		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		if (!bActorSelected && SelectedComponent == Comp)
 			Flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx(Comp, Flags, "%s", Label);
+		ImGui::TreeNodeEx(Comp, Flags, "%s", Label.c_str());
 		if (ImGui::IsItemClicked())
 		{
 			SelectedComponent = Comp;
 			bActorSelected = false;
 		}
+		ImGui::Unindent(12.0f);
 	}
 }
 
-void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
+void FEditorDetailsPanel::RenderSceneComponentNode(USceneComponent* Comp)
 {
 	if (!Comp) return;
 
-	FString Name = Comp->GetFName().ToString();
-	if (Name.empty()) Name = Comp->GetClass()->GetName();
+	FString Label = BuildComponentDisplayLabel(Comp);
 
 	const auto& Children = Comp->GetChildren();
 	bool bHasChildren = !Children.empty();
@@ -352,10 +363,9 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 
 	bool bIsRoot = (Comp->GetParent() == nullptr);
 	bool bOpen = ImGui::TreeNodeEx(
-		Comp, Flags, "%s%s (%s)",
+		Comp, Flags, "%s%s",
 		bIsRoot ? "[Root] " : "",
-		Name.c_str(),
-		Comp->GetClass()->GetName()
+		Label.c_str()
 	);
 
 	if (ImGui::IsItemClicked())
@@ -374,16 +384,25 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	}
 }
 
-void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
+void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 {
-	ImGui::Text("Component: %s", SelectedComponent->GetClass()->GetName());
-	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
-
+	(void)Actor;
+	const FString ComponentLabel = BuildComponentDisplayLabel(SelectedComponent);
+	ImGui::Text("Component: %s", ComponentLabel.c_str());
 	ImGui::Separator();
 
-	// PropertyDescriptor 기반 자동 위젯 렌더링
 	TArray<FPropertyDescriptor> Props;
 	SelectedComponent->GetEditableProperties(Props);
+
+	auto IsTransformProp = [](const FString& Name) {
+		return Name == "Location" || Name == "Rotation" || Name == "Scale";
+	};
+	auto IsStaticMeshProp = [](const FString& Name, EPropertyType Type) {
+		return Type == EPropertyType::StaticMeshRef || Name == "Static Mesh" || Name == "StaticMesh";
+	};
+	auto IsMaterialProp = [](const FString& Name, EPropertyType Type) {
+		return Type == EPropertyType::MaterialSlot || Name.rfind("Element ", 0) == 0;
+	};
 
 	bool bIsRoot = false;
 	if (SelectedComponent->IsA<USceneComponent>())
@@ -392,46 +411,67 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 		bIsRoot = (SceneComp->GetParent() == nullptr);
 	}
 
-	// Transform 프로퍼티 이름 목록
-	auto IsTransformProp = [](const FString& Name) {
-		return Name == "Location"
-			|| Name == "Rotation"
-			|| Name == "Scale";
-		};
-
-	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
-	// Transform 변경은 배열 재할당을 일으키지 않으므로 break 불필요
-	if (!bIsRoot)
+	if (!bIsRoot && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
 			if (IsTransformProp(Props[i].Name))
-				RenderPropertyWidget(Props, i);
+			{
+				RenderDetailsPanel(Props, i);
+			}
 		}
-		ImGui::Separator();
 	}
 
-	// Pass 2: 나머지 프로퍼티
-	// StaticMeshRef 변경은 OverrideMaterialPaths 재할당을 유발하므로 Props 포인터가
-	// 무효화된다. 이 경우에만 즉시 중단하고 다음 프레임에 재렌더링한다.
-	for (int32 i = 0; i < (int32)Props.size(); ++i)
+	const bool bIsStaticMeshComponent = SelectedComponent->IsA<UStaticMeshComponent>();
+	if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		if (IsTransformProp(Props[i].Name))
-			continue;
-
-		bool bChanged = RenderPropertyWidget(Props, i);
-		if (bChanged && Props[i].Type == EPropertyType::StaticMeshRef)
-			break;
+		for (int32 i = 0; i < (int32)Props.size(); ++i)
+		{
+			if (IsStaticMeshProp(Props[i].Name, Props[i].Type))
+			{
+				bool bChanged = RenderDetailsPanel(Props, i);
+				if (bChanged && Props[i].Type == EPropertyType::StaticMeshRef)
+				{
+					if (SelectedComponent->IsA<USceneComponent>())
+					{
+						static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
+					}
+					return;
+				}
+			}
+		}
 	}
 
-	// 프로퍼티 직접 편집 후 월드 행렬 갱신
+	if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		for (int32 i = 0; i < (int32)Props.size(); ++i)
+		{
+			if (IsMaterialProp(Props[i].Name, Props[i].Type))
+			{
+				RenderDetailsPanel(Props, i);
+			}
+		}
+	}
+
+	if (ImGui::CollapsingHeader("Details", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		for (int32 i = 0; i < (int32)Props.size(); ++i)
+		{
+			if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type))
+			{
+				continue;
+			}
+			RenderDetailsPanel(Props, i);
+		}
+	}
+
 	if (SelectedComponent->IsA<USceneComponent>())
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
 	}
 }
 
-bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Props, int32& Index)
+bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props, int32& Index)
 {
 	ImGui::PushID(Index);
 	FPropertyDescriptor& Prop = Props[Index];

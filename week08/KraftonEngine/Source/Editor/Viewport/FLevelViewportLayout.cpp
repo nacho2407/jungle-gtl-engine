@@ -97,7 +97,7 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 	LoadLayoutIcons(InRenderer.GetFD3DDevice().GetDevice());
 
 	// Play/Stop 툴바 초기화
-	PlayToolbar.Initialize(InEditor, InRenderer.GetFD3DDevice().GetDevice());
+	Toolbar.Initialize(InEditor, InRenderer.GetFD3DDevice().GetDevice());
 
 	// LevelViewportClient 생성 (단일 뷰포트)
 	auto* LevelVC = new FLevelEditorViewportClient();
@@ -154,7 +154,7 @@ void FLevelViewportLayout::Release()
 	LevelViewportClients.clear();
 
 	ReleaseLayoutIcons();
-	PlayToolbar.Release();
+	Toolbar.Release();
 }
 
 // ─── 활성 뷰포트 ────────────────────────────────────────────
@@ -536,13 +536,8 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 	if (ContentSize.x > 0 && ContentSize.y > 0)
 	{
-		// 상단에 Play/Stop 툴바 영역 확보 후 나머지를 뷰포트에 할당
-		const float ToolbarHeight = PlayToolbar.GetDesiredHeight();
-		ImGui::SetCursorScreenPos(ContentPos);
-		PlayToolbar.Render(ContentSize.x);
-
-		float ViewportWidth = ContentSize.x;
-		float ViewportHeight = ContentSize.y - ToolbarHeight;
+		const float ViewportWidth = ContentSize.x;
+		const float ViewportHeight = ContentSize.y;
 
 		if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
 		{
@@ -553,7 +548,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 		FRect ContentRect = {
 			ContentPos.x,
-			ContentPos.y + ToolbarHeight,
+			ContentPos.y,
 			ViewportWidth,
 			ViewportHeight
 		};
@@ -582,7 +577,10 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		// 각 뷰포트 패인 상단에 툴바 오버레이 렌더
 		for (int32 i = 0; i < ActiveSlotCount; ++i)
 		{
-			RenderPaneToolbar(i);
+			if (i < static_cast<int32>(LevelViewportClients.size()))
+			{
+				Toolbar.RenderPaneToolbar(this, i, LevelViewportClients[i]);
+			}
 		}
 
 		// 분할 바 렌더
@@ -709,228 +707,15 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 	ImGui::PopStyleVar();
 }
 
-// ─── 각 뷰포트 패인 툴바 오버레이 ──────────────────────────
 
-void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
+const FRect& FLevelViewportLayout::GetViewportPaneRect(int32 SlotIndex) const
 {
-	if (SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex]) return;
-
-	const FRect& PaneRect = ViewportWindows[SlotIndex]->GetRect();
-	if (PaneRect.Width <= 0 || PaneRect.Height <= 0) return;
-
-	char OverlayID[64];
-	snprintf(OverlayID, sizeof(OverlayID), "##PaneToolbar_%d", SlotIndex);
-
-	ImGui::SetNextWindowPos(ImVec2(PaneRect.X, PaneRect.Y));
-	ImGui::SetNextWindowBgAlpha(0.4f);
-	ImGui::SetNextWindowSize(ImVec2(0, 0));
-
-	ImGuiWindowFlags OverlayFlags =
-		ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoFocusOnAppearing |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoMove;
-
-	ImGui::Begin(OverlayID, nullptr, OverlayFlags);
+	static FRect EmptyRect;
+	if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
 	{
-		ImGui::PushID(SlotIndex);
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 6.0f));
-
-		char PopupID[64];
-		snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
-		if (ImGui::Button("Layout"))
-		{
-			ImGui::OpenPopup(PopupID);
-		}
-		if (ImGui::BeginPopup(PopupID))
-		{
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
-			constexpr int32 LayoutCount = static_cast<int32>(EViewportLayout::MAX);
-			constexpr int32 Columns = 4;
-			constexpr float IconSize = 32.0f;
-			for (int32 i = 0; i < LayoutCount; ++i)
-			{
-				ImGui::PushID(i);
-				bool bSelected = (static_cast<EViewportLayout>(i) == CurrentLayout);
-				if (bSelected)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-				}
-				bool bClicked = false;
-				if (LayoutIcons[i])
-				{
-					bClicked = ImGui::ImageButton("##icon", (ImTextureID)LayoutIcons[i], ImVec2(IconSize, IconSize));
-				}
-				else
-				{
-					char Label[4];
-					snprintf(Label, sizeof(Label), "%d", i);
-					bClicked = ImGui::Button(Label, ImVec2(IconSize + 8, IconSize + 8));
-				}
-				if (bSelected)
-				{
-					ImGui::PopStyleColor();
-				}
-				if (bClicked)
-				{
-					SetLayout(static_cast<EViewportLayout>(i));
-					ImGui::CloseCurrentPopup();
-				}
-				if ((i + 1) % Columns != 0 && i + 1 < LayoutCount)
-				{
-					ImGui::SameLine();
-				}
-				ImGui::PopID();
-			}
-			ImGui::PopStyleVar(2);
-			ImGui::EndPopup();
-		}
-
-		if (SlotIndex < static_cast<int32>(LevelViewportClients.size()))
-		{
-			FLevelEditorViewportClient* VC = LevelViewportClients[SlotIndex];
-			FViewportRenderOptions& Opts = VC->GetRenderOptions();
-
-			ImGui::SameLine();
-			static const char* ViewportTypeNames[] = {
-				"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back", "Free Orthographic"
-			};
-			constexpr int32 ViewportTypeCount = sizeof(ViewportTypeNames) / sizeof(ViewportTypeNames[0]);
-			char VTPopupID[64];
-			snprintf(VTPopupID, sizeof(VTPopupID), "ViewportTypePopup_%d", SlotIndex);
-			if (ImGui::Button("ViewOrientation"))
-			{
-				ImGui::OpenPopup(VTPopupID);
-			}
-			if (ImGui::BeginPopup(VTPopupID))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
-				const int32 CurrentTypeIdx = static_cast<int32>(Opts.ViewportType);
-				for (int32 t = 0; t < ViewportTypeCount; ++t)
-				{
-					if (ImGui::Selectable(ViewportTypeNames[t], t == CurrentTypeIdx))
-					{
-						VC->SetViewportType(static_cast<ELevelViewportType>(t));
-					}
-				}
-				ImGui::PopStyleVar(2);
-				ImGui::EndPopup();
-			}
-
-			UGizmoComponent* Gizmo = Editor->GetGizmo();
-			if (Gizmo)
-			{
-				ImGui::SameLine();
-				char GizmoPopupID[64];
-				snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
-				if (ImGui::Button("Transform"))
-				{
-					ImGui::OpenPopup(GizmoPopupID);
-				}
-				if (ImGui::BeginPopup(GizmoPopupID))
-				{
-					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
-					int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-					if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate))) Gizmo->SetTranslateMode();
-					if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate))) Gizmo->SetRotateMode();
-					if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale))) Gizmo->SetScaleMode();
-					ImGui::PopStyleVar(2);
-					ImGui::EndPopup();
-				}
-			}
-
-			ImGui::SameLine();
-			char ViewModePopupID[64];
-			snprintf(ViewModePopupID, sizeof(ViewModePopupID), "ViewModePopup_%d", SlotIndex);
-			if (ImGui::Button("ViewMode"))
-			{
-				ImGui::OpenPopup(ViewModePopupID);
-			}
-			if (ImGui::BeginPopup(ViewModePopupID))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
-				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-				ImGui::RadioButton("Lit_Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
-				ImGui::RadioButton("Lit_Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
-				ImGui::RadioButton("Lit_Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
-				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
-				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
-				ImGui::PopStyleVar(2);
-				ImGui::EndPopup();
-			}
-
-			ImGui::SameLine();
-			char SettingsPopupID[64];
-			snprintf(SettingsPopupID, sizeof(SettingsPopupID), "SettingsPopup_%d", SlotIndex);
-			if (ImGui::Button("Show"))
-			{
-				ImGui::OpenPopup(SettingsPopupID);
-			}
-			if (ImGui::BeginPopup(SettingsPopupID))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
-				ImGui::TextUnformatted("Show Flags");
-
-				if (ImGui::CollapsingHeader("Common", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
-					ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
-					ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
-				}
-
-				if (ImGui::CollapsingHeader("Editor Helpers", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::Checkbox("Billboard Text", &Opts.ShowFlags.bBillboardText);
-					ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
-					ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
-					ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
-				}
-
-				if (ImGui::CollapsingHeader("Debug Drawing", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
-					ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
-					ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
-				}
-
-				ImGui::Separator();
-				ImGui::TextUnformatted("Grid");
-				ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
-				ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
-
-				ImGui::Separator();
-				ImGui::TextUnformatted("Camera");
-				ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
-				ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-
-				ImGui::Separator();
-				ImGui::TextUnformatted("SceneDepth");
-				ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
-				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
-
-				ImGui::Separator();
-				ImGui::TextUnformatted("FXAA");
-				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
-
-				ImGui::PopStyleVar(2);
-				ImGui::EndPopup();
-			}
-		}
-
-		ImGui::PopStyleVar();
-		ImGui::PopID();
+		return EmptyRect;
 	}
-	ImGui::End();
+	return ViewportWindows[SlotIndex]->GetRect();
 }
 
 // ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────

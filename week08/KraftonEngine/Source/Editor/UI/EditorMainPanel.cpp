@@ -145,11 +145,11 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
-	ConsoleWidget.Initialize(InEditorEngine);
-	ControlWidget.Initialize(InEditorEngine);
-	PropertyWidget.Initialize(InEditorEngine);
-	SceneWidget.Initialize(InEditorEngine);
-	StatWidget.Initialize(InEditorEngine);
+	ConsolePanel.Initialize(InEditorEngine);
+	ControlPanel.Initialize(InEditorEngine);
+	DetailsPanel.Initialize(InEditorEngine);
+	ScenePanel.Initialize(InEditorEngine);
+	StatPanel.Initialize(InEditorEngine);
 }
 
 void FEditorMainPanel::Release()
@@ -202,26 +202,26 @@ void FEditorMainPanel::Render(float DeltaTime)
 			if (ImGui::MenuItem("Open Stat Profiler"))
 			{
 				FEditorSettings::Get().UI.bStat = true;
-				StatWidget.RequestOpen();
+				StatPanel.RequestOpen();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("stat fps"))
 			{
 				EditorEngine->GetOverlayStatSystem().ShowFPS(true);
 				FEditorSettings::Get().UI.bStat = true;
-				StatWidget.RequestOpen();
+				StatPanel.RequestOpen();
 			}
 			if (ImGui::MenuItem("stat memory"))
 			{
 				EditorEngine->GetOverlayStatSystem().ShowMemory(true);
 				FEditorSettings::Get().UI.bStat = true;
-				StatWidget.RequestOpen();
+				StatPanel.RequestOpen();
 			}
 			if (ImGui::MenuItem("stat none"))
 			{
 				EditorEngine->GetOverlayStatSystem().HideAll();
 				FEditorSettings::Get().UI.bStat = true;
-				StatWidget.RequestOpen();
+				StatPanel.RequestOpen();
 			}
 			ImGui::EndMenu();
 		}
@@ -264,32 +264,32 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	if (!bHideEditorWindows && Settings.UI.bConsole)
 	{
-		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
-		ConsoleWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("ConsolePanel.Render", "5_UI");
+		ConsolePanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bControl)
 	{
-		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
-		ControlWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("ControlPanel.Render", "5_UI");
+		ControlPanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bProperty)
 	{
-		SCOPE_STAT_CAT("DetailsWidget.Render", "5_UI");
-		PropertyWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("DetailsPanel.Render", "5_UI");
+		DetailsPanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bScene)
 	{
-		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
-		SceneWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("ScenePanel.Render", "5_UI");
+		ScenePanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bStat)
 	{
-		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
-		StatWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("StatPanel.Render", "5_UI");
+		StatPanel.Render(DeltaTime);
 	}
 
 	ImGui::Render();
@@ -330,16 +330,16 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 	if (bHasSavedUIVisibility)
 	{
 		bHideEditorWindows = true;
-		bShowWidgetList = false;
+		bShowPanelList = false;
 		return;
 	}
 
 	FEditorSettings& Settings = FEditorSettings::Get();
 	SavedUIVisibility = Settings.UI;
-	bSavedShowWidgetList = bShowWidgetList;
+	bSavedShowPanelList = bShowPanelList;
 	bHasSavedUIVisibility = true;
 	bHideEditorWindows = true;
-	bShowWidgetList = false;
+	bShowPanelList = false;
 
 	Settings.UI.bConsole = false;
 	Settings.UI.bControl = false;
@@ -358,7 +358,7 @@ void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
 
 	FEditorSettings& Settings = FEditorSettings::Get();
 	Settings.UI = SavedUIVisibility;
-	bShowWidgetList = bSavedShowWidgetList;
+	bShowPanelList = bSavedShowPanelList;
 	bHideEditorWindows = false;
 	bHasSavedUIVisibility = false;
 }

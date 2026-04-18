@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-#include "Editor/UI/EditorConsoleWidget.h"
-#include "Editor/UI/EditorControlWidget.h"
+#include "Editor/UI/EditorConsolePanel.h"
+#include "Editor/UI/EditorControlPanel.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "Editor/UI/EditorPropertyWidget.h"
-#include "Editor/UI/EditorSceneWidget.h"
-#include "Editor/UI/EditorStatWidget.h"
+#include "Editor/UI/EditorDetailsPanel.h"
+#include "Editor/UI/EditorScenePanel.h"
+#include "Editor/UI/EditorStatPanel.h"
 
 class FRenderer;
 class UEditorEngine;
@@ -24,14 +24,14 @@ public:
 private:
 	FWindowsWindow* Window = nullptr;
 	UEditorEngine* EditorEngine = nullptr;
-	FEditorConsoleWidget ConsoleWidget;
-	FEditorControlWidget ControlWidget;
-	FEditorPropertyWidget PropertyWidget;
-	FEditorSceneWidget SceneWidget;
-	FEditorStatWidget StatWidget;
-	bool bShowWidgetList = false;
+	FEditorConsolePanel ConsolePanel;
+	FEditorControlPanel ControlPanel;
+	FEditorDetailsPanel DetailsPanel;
+	FEditorScenePanel ScenePanel;
+	FEditorStatPanel StatPanel;
+	bool bShowPanelList = false;
 	bool bHideEditorWindows = false;
 	bool bHasSavedUIVisibility = false;
-	bool bSavedShowWidgetList = false;
+	bool bSavedShowPanelList = false;
 	FEditorSettings::FUIVisibility SavedUIVisibility{};
 };

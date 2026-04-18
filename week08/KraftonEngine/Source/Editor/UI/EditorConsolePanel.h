@@ -8,9 +8,9 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/EditorPanel.h"
 
-class FEditorConsoleWidget : public FEditorWidget
+class FEditorConsolePanel : public FEditorPanel
 {
 public:
 	static void AddLog(const char* fmt, ...);
@@ -47,4 +47,4 @@ private:
 };
 
 #define UE_LOG(Format, ...) \
-    FEditorConsoleWidget::AddLog(Format, ##__VA_ARGS__)
+    FEditorConsolePanel::AddLog(Format, ##__VA_ARGS__)

@@ -1,7 +1,8 @@
-#include "Editor/UI/EditorControlWidget.h"
+﻿#include "Editor/UI/EditorControlPanel.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Core/Common.h"
 #include "Engine/Profiling/MemoryStats.h"
 #include "Engine/Profiling/Timer.h"
@@ -22,13 +23,13 @@
     ImGui::Spacing();                                                                                                  \
     ImGui::Spacing();
 
-void FEditorControlWidget::Initialize(UEditorEngine *InEditorEngine)
+void FEditorControlPanel::Initialize(UEditorEngine *InEditorEngine)
 {
-    FEditorWidget::Initialize(InEditorEngine);
+    FEditorPanel::Initialize(InEditorEngine);
     SelectedSpawnActorType = static_cast<int32>(ESpawnActorType::Cube);
 }
 
-void FEditorControlWidget::Render(float DeltaTime)
+void FEditorControlPanel::Render(float DeltaTime)
 {
     (void)DeltaTime;
     if (!EditorEngine)
@@ -156,19 +157,6 @@ void FEditorControlWidget::Render(float DeltaTime)
             ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted("FOV");
 
-            float OrthoWidth = Camera->GetOrthoWidth();
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::PushItemWidth(ControlWidth);
-            if (ImGui::DragFloat("##OrthoWidth", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
-            {
-                Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
-            }
-            ImGui::PopItemWidth();
-            ImGui::TableSetColumnIndex(1);
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Ortho Width");
-
             FVector CamPos = Camera->GetWorldLocation();
             float CameraLocation[3] = {CamPos.X, CamPos.Y, CamPos.Z};
             ImGui::TableNextRow();
@@ -196,6 +184,29 @@ void FEditorControlWidget::Render(float DeltaTime)
             ImGui::TableSetColumnIndex(1);
             ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted("Rotation");
+
+            if (FLevelEditorViewportClient* ActiveVC = EditorEngine->GetActiveViewport())
+            {
+                FViewportRenderOptions& Opts = ActiveVC->GetRenderOptions();
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::PushItemWidth(ControlWidth);
+                ImGui::SliderFloat("##MoveSensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+                ImGui::PopItemWidth();
+                ImGui::TableSetColumnIndex(1);
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Move Sensitivity");
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::PushItemWidth(ControlWidth);
+                ImGui::SliderFloat("##RotateSensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+                ImGui::PopItemWidth();
+                ImGui::TableSetColumnIndex(1);
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Rotate Sensitivity");
+            }
 
             ImGui::EndTable();
         }
