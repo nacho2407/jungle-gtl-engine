@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "DrawCommand.h"
-#include "Render/Device/D3DDevice.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
+
+struct FSystemResources;
 
 /*
 	FStateCache — Submit 루프에서 중복 GPU 상태 전환을 방지합니다.
@@ -48,10 +49,10 @@ public:
 	void GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const;
 
 	// StateCache 기반 GPU 제출 (전체)
-	void Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx);
+	void Submit(FSystemResources& Resources, ID3D11DeviceContext* Ctx);
 
 	// 외부 FStateCache 공유 — 패스 간 상태 유지
-	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
+	void SubmitRange(uint32 StartIdx, uint32 EndIdx, FSystemResources& Resources,
 		ID3D11DeviceContext* Ctx, FStateCache& Cache);
 
 	// 프레임 끝 초기화
@@ -70,7 +71,7 @@ public:
 	const TArray<FDrawCommand>& GetCommands() const { return Commands; }
 
 private:
-	void SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device,
+	void SubmitCommand(const FDrawCommand& Cmd, FSystemResources& Resources,
 		ID3D11DeviceContext* Ctx, FStateCache& Cache);
 
 	TArray<FDrawCommand> Commands;

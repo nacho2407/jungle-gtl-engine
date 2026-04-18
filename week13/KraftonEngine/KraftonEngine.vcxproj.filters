@@ -464,16 +464,7 @@
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp">
-      <Filter>Source\Engine\Render\Device</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
-      <Filter>Source\Engine\Render\Device</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Device\DepthStencilStateManager.cpp">
-      <Filter>Source\Engine\Render\Device</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp">
@@ -527,16 +518,28 @@
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\RasterizerStateManager.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\RenderResources.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\SamplerStateManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp">
@@ -932,16 +935,7 @@
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h">
-      <Filter>Source\Engine\Render\Device</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h">
-      <Filter>Source\Engine\Render\Device</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Device\DepthStencilStateManager.h">
-      <Filter>Source\Engine\Render\Device</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h">
@@ -1013,16 +1007,28 @@
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\RasterizerStateManager.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\SamplerStateManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h">

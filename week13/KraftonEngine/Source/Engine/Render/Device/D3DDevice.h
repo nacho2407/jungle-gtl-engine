@@ -1,11 +1,6 @@
 #pragma once
 #include "Render/Types/RenderTypes.h"
-#include "Render/Types/RenderStateTypes.h"
 #include "Core/CoreTypes.h"
-
-#include "RasterizerStateManager.h"
-#include "DepthStencilStateManager.h"
-#include "BlendStateManager.h"
 
 class FD3DDevice
 {
@@ -24,10 +19,6 @@ public:
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
 	const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
 	const float* GetClearColor() const { return ClearColor; }
-
-	void SetDepthStencilState(EDepthStencilState InState);
-	void SetBlendState(EBlendState InState);
-	void SetRasterizerState(ERasterizerState InState);
 
 private:
 	void CreateDeviceAndSwapChain(HWND InHWindow);
@@ -49,10 +40,6 @@ private:
 
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
-
-	FRasterizerStateManager RasterizerStateManager;
-	FDepthStencilStateManager DepthStencilStateManager;
-	FBlendStateManager BlendStateManager;
 
 	D3D11_VIEWPORT ViewportInfo = {};
 

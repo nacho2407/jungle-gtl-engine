@@ -3,10 +3,16 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/ForwardLightData.h"
 
+#include "Render/Resource/RasterizerStateManager.h"
+#include "Render/Resource/DepthStencilStateManager.h"
+#include "Render/Resource/BlendStateManager.h"
+#include "Render/Resource/SamplerStateManager.h"
+
 /*
 	시스템 레벨 GPU 리소스를 관리하는 구조체입니다.
 	프레임 공용 CB (Frame, Lighting), 라이트 StructuredBuffer,
-	시스템 샘플러(s0-s2), 시스템 텍스처 언바인딩(t16-t19)을 소유합니다.
+	렌더 상태 오브젝트(DSS/Blend/Rasterizer/Sampler),
+	시스템 텍스처 언바인딩(t16-t19)을 소유합니다.
 	셰이더별 CB(Gizmo, Outline 등)는 FConstantBufferPool에서 관리됩니다.
 */
 
@@ -68,13 +74,22 @@ struct FSystemResources
 	FConstantBuffer LightingConstantBuffer;		// b4 — ECBSlot::Lighting
 	FLightingResource ForwardLights;			// t8 — ELightTexSlot::AllLights
 
-	// --- System Samplers (s0-s2) ---
-	ID3D11SamplerState* LinearClampSampler = nullptr;	// s0
-	ID3D11SamplerState* LinearWrapSampler = nullptr;	// s1
-	ID3D11SamplerState* PointClampSampler = nullptr;	// s2
+	// --- Render State Managers ---
+	FRasterizerStateManager RasterizerStateManager;
+	FDepthStencilStateManager DepthStencilStateManager;
+	FBlendStateManager BlendStateManager;
+	FSamplerStateManager SamplerStateManager;		// s0-s2
 
 	void Create(ID3D11Device* InDevice);
 	void Release();
+
+	// 렌더 상태 전환
+	void SetDepthStencilState(ID3D11DeviceContext* Ctx, EDepthStencilState InState);
+	void SetBlendState(ID3D11DeviceContext* Ctx, EBlendState InState);
+	void SetRasterizerState(ID3D11DeviceContext* Ctx, ERasterizerState InState);
+
+	// 리사이즈 시 렌더 상태 캐시 무효화
+	void ResetRenderStateCache();
 
 	// 프레임 공용 CB 업데이트 + 바인딩 (b0)
 	void UpdateFrameBuffer(ID3D11DeviceContext* Ctx, const FFrameContext& Frame);
@@ -88,6 +103,3 @@ struct FSystemResources
 	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
 	void UnbindSystemTextures(ID3D11DeviceContext* Ctx);
 };
-
-// 하위 호환 타입 별칭 — 기존 코드에서 FRenderResources를 참조하는 곳 대응
-using FRenderResources = FSystemResources;
