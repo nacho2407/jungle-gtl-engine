@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include <filesystem>
 #include <Windows.h>
 
 // 엔진 전역 경로를 관리합니다.
@@ -30,6 +31,14 @@ public:
 	// 변환 유틸리티 (한글 경로 지원)
 	static std::wstring ToWide(const std::string& Utf8Str);
 	static std::string ToUtf8(const std::wstring& WideStr);
+
+	// 문자열 경로를 std::filesystem::path로 변환
+	static std::filesystem::path ToPath(const std::string& Utf8Path);
+	static std::filesystem::path ToPath(const std::wstring& WidePath);
+
+	// std::filesystem::path 및 wide string을 UTF-8 문자열 경로로 변환
+	static std::string FromPath(const std::filesystem::path& Path);
+	static std::string FromWide(const std::wstring& WideStr);
 
 	static std::string ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath);
 };
