@@ -1,128 +1,205 @@
-﻿#include "Editor/UI/EditorControlWidget.h"
-#include "Editor/EditorEngine.h"
-#include "Engine/Profiling/Timer.h"
-#include "Engine/Profiling/MemoryStats.h"
-#include "ImGui/imgui.h"
+#include "Editor/UI/EditorControlWidget.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Editor/EditorEngine.h"
+#include "Engine/Core/Common.h"
+#include "Engine/Profiling/MemoryStats.h"
+#include "Engine/Profiling/Timer.h"
 #include "GameFramework/DecalActor.h"
 #include "GameFramework/FakeLightActor.h"
 #include "GameFramework/FireballActor.h"
 #include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
+#include "ImGui/imgui.h"
 
-#define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+#include <algorithm>
 
-void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
+#define SEPARATOR()                                                                                                    \
+    ;                                                                                                                  \
+    ImGui::Spacing();                                                                                                  \
+    ImGui::Spacing();                                                                                                  \
+    ImGui::Separator();                                                                                                \
+    ImGui::Spacing();                                                                                                  \
+    ImGui::Spacing();
+
+void FEditorControlWidget::Initialize(UEditorEngine *InEditorEngine)
 {
-	FEditorWidget::Initialize(InEditorEngine);
-	SelectedPrimitiveType = 0;
+    FEditorWidget::Initialize(InEditorEngine);
+    SelectedSpawnActorType = static_cast<int32>(ESpawnActorType::Cube);
 }
 
 void FEditorControlWidget::Render(float DeltaTime)
 {
-	(void)DeltaTime;
-	if (!EditorEngine)
-	{
-		return;
-	}
+    (void)DeltaTime;
+    if (!EditorEngine)
+    {
+        return;
+    }
 
-	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(420.0f, 420.0f), ImGuiCond_Once);
 
-	ImGui::Begin("Jungle Control Panel");
+    ImGui::Begin("Control Panel");
 
-	// Spawn
-	ImGui::Combo("Primitive", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
+    ImGui::SeparatorText("Place Actor");
 
-	if (ImGui::Button("Spawn"))
-	{
-		UWorld* World = EditorEngine->GetWorld();
-		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
-		{
-			switch (SelectedPrimitiveType)
-			{
-			case 0: // Cube
-			{
-				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
-				World->InsertActorToOctree(Actor);
-				break;
-			}
-			case 1: // Sphere
-			{
-				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-				Actor->SetActorLocation(CurSpawnPoint);
-				Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
-				World->InsertActorToOctree(Actor);
-				break;
-			}
-			case 2: // Decal
-			{
-				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				World->InsertActorToOctree(Actor);
-				break;
-			}
-			case 3: // Height Fog
-			{
-				AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 4: // FakeLight
-			{
-				AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 5: // Fireball
-			{
-				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			}
-		}
-		NumberOfSpawnedActors = 1;
-	}
-	ImGui::InputInt("Number of Spawn", &NumberOfSpawnedActors, 1, 10);
+    const float FieldWidth = 220.0f;
+    const float LabelOffset = 12.0f;
+    const float SpawnButtonWidth = 110.0f;
 
-	SEPARATOR();
+    // Type
+    ImGui::PushItemWidth(FieldWidth);
+    ImGui::Combo("##Type", &SelectedSpawnActorType, SpawnActorTypeNames, IM_ARRAYSIZE(SpawnActorTypeNames));
+    ImGui::PopItemWidth();
+    ImGui::SameLine(0.0f, LabelOffset);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Type");
 
-	// Camera
-	UCameraComponent* Camera = EditorEngine->GetCamera();
+    // Count
+    ImGui::PushItemWidth(FieldWidth);
+    ImGui::DragInt("##Count", &NumberOfSpawnedActors, 1.0f, 1, 100);
+    ImGui::PopItemWidth();
+    NumberOfSpawnedActors = (std::max)(1, NumberOfSpawnedActors);
+    ImGui::SameLine(0.0f, LabelOffset);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Count");
 
-	float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
-	if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
-	{
-		Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
-	}
+    // Spawn
+    if (ImGui::Button("Spawn", ImVec2(SpawnButtonWidth, 0.0f)))
+    {
+        UWorld *World = EditorEngine->GetWorld();
+        if (World)
+        {
+            const ESpawnActorType SpawnActorType = static_cast<ESpawnActorType>(SelectedSpawnActorType);
 
-	float OrthoWidth = Camera->GetOrthoWidth();
-	if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
-	{
-		Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
-	}
+            for (int32 i = 0; i < NumberOfSpawnedActors; i++)
+            {
+                switch (SpawnActorType)
+                {
+                case ESpawnActorType::Cube: {
+                    AStaticMeshActor *Actor = World->SpawnActor<AStaticMeshActor>();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+                    World->InsertActorToOctree(Actor);
+                    break;
+                }
+                case ESpawnActorType::Sphere: {
+                    AStaticMeshActor *Actor = World->SpawnActor<AStaticMeshActor>();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
+                    World->InsertActorToOctree(Actor);
+                    break;
+                }
+                case ESpawnActorType::StaticMesh: {
+                    AStaticMeshActor *Actor = World->SpawnActor<AStaticMeshActor>();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+                    World->InsertActorToOctree(Actor);
+                    break;
+                }
+                case ESpawnActorType::Decal: {
+                    ADecalActor *Actor = World->SpawnActor<ADecalActor>();
+                    Actor->InitDefaultComponents();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    World->InsertActorToOctree(Actor);
+                    break;
+                }
+                case ESpawnActorType::HeightFog: {
+                    AHeightFogActor *Actor = World->SpawnActor<AHeightFogActor>();
+                    Actor->InitDefaultComponents();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    break;
+                }
+                case ESpawnActorType::FakeLight: {
+                    AFakeLightActor *Actor = World->SpawnActor<AFakeLightActor>();
+                    Actor->InitDefaultComponents();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    break;
+                }
+                case ESpawnActorType::Fireball: {
+                    AFireballActor *Actor = World->SpawnActor<AFireballActor>();
+                    Actor->InitDefaultComponents();
+                    Actor->SetActorLocation(FVector::ZeroVector);
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+        }
+    }
 
-	FVector CamPos = Camera->GetWorldLocation();
-	float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
-	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f))
-	{
-		Camera->SetWorldLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
-	}
+    SEPARATOR();
 
-	FRotator CamRot = Camera->GetRelativeRotation();
-	float CameraRotation[3] = { CamRot.Roll, CamRot.Pitch, CamRot.Yaw };
-	if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
-	{
-		Camera->SetRelativeRotation(FRotator(CameraRotation[1], CameraRotation[2], CamRot.Roll));
-	}
+    ImGui::SeparatorText("Camera");
+    UCameraComponent *Camera = EditorEngine->GetCamera();
+    if (Camera)
+    {
+        // 카메라 입력칸도 Place Actor와 같은 길이로 맞춥니다.
+        const float ControlWidth = 220.0f;
 
-	ImGui::End();
+        if (ImGui::BeginTable("CameraTable", 2, ImGuiTableFlags_SizingFixedFit))
+        {
+            ImGui::TableSetupColumn("CameraControls", ImGuiTableColumnFlags_WidthFixed, 220.0f);
+            ImGui::TableSetupColumn("CameraLabels", ImGuiTableColumnFlags_WidthStretch);
+
+            float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushItemWidth(ControlWidth);
+            if (ImGui::DragFloat("##FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
+            {
+                Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
+            }
+            ImGui::PopItemWidth();
+            ImGui::TableSetColumnIndex(1);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("FOV");
+
+            float OrthoWidth = Camera->GetOrthoWidth();
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushItemWidth(ControlWidth);
+            if (ImGui::DragFloat("##OrthoWidth", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
+            {
+                Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
+            }
+            ImGui::PopItemWidth();
+            ImGui::TableSetColumnIndex(1);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Ortho Width");
+
+            FVector CamPos = Camera->GetWorldLocation();
+            float CameraLocation[3] = {CamPos.X, CamPos.Y, CamPos.Z};
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushItemWidth(ControlWidth);
+            if (ImGui::DragFloat3("##Location", CameraLocation, 0.1f))
+            {
+                Camera->SetWorldLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
+            }
+            ImGui::PopItemWidth();
+            ImGui::TableSetColumnIndex(1);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Location");
+
+            FRotator CamRot = Camera->GetRelativeRotation();
+            float CameraRotation[3] = {CamRot.Roll, CamRot.Pitch, CamRot.Yaw};
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushItemWidth(ControlWidth);
+            if (ImGui::DragFloat3("##Rotation", CameraRotation, 0.1f))
+            {
+                Camera->SetRelativeRotation(FRotator(CameraRotation[1], CameraRotation[2], CamRot.Roll));
+            }
+            ImGui::PopItemWidth();
+            ImGui::TableSetColumnIndex(1);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Rotation");
+
+            ImGui::EndTable();
+        }
+    }
+
+    ImGui::End();
 }

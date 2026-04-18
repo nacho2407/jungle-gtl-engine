@@ -1,233 +1,238 @@
-﻿#include "Editor/UI/EditorSceneWidget.h"
+#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Engine/Core/Common.h"
-#include "GameFramework/WorldContext.h"
-#include "Component/CameraComponent.h"
+#include "Editor/Selection/SelectionManager.h"
+#include "GameFramework/World.h"
 
 #include "ImGui/imgui.h"
-#include "Component/GizmoComponent.h"
-#include "Serialization/SceneSaveManager.h"
 #include "Profiling/Stats.h"
 
-#include <filesystem>
+#include <cstdio>
 
-#define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
-
-void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
+void FEditorSceneWidget::Initialize(UEditorEngine *InEditorEngine)
 {
-	FEditorWidget::Initialize(InEditorEngine);
-	RefreshSceneFileList();
+    FEditorWidget::Initialize(InEditorEngine);
 }
 
 void FEditorSceneWidget::RefreshSceneFileList()
 {
-	SceneFiles = FSceneSaveManager::GetSceneFileList();
-	if (SelectedSceneIndex >= static_cast<int32>(SceneFiles.size()))
-	{
-		SelectedSceneIndex = SceneFiles.empty() ? -1 : 0;
-	}
 }
 
 void FEditorSceneWidget::Render(float DeltaTime)
 {
-	using namespace common::constants::ImGui;
+    (void)DeltaTime;
 
-	if (!EditorEngine)
-	{
-		return;
-	}
+    if (!EditorEngine)
+    {
+        return;
+    }
 
-	ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(460.0f, 420.0f), ImGuiCond_Once);
+    ImGui::Begin("Scene Manager");
 
-	ImGui::Begin("Jungle Scene Manager");
+    RenderActorOutliner();
 
-	// New Scene
-	if (ImGui::Button("New Scene"))
-	{
-		EditorEngine->NewScene();
-		NewSceneNotificationTimer = NotificationTimer;
-	}
-	if (NewSceneNotificationTimer > 0.0f)
-	{
-		NewSceneNotificationTimer -= DeltaTime;
-		ImGui::SameLine();
-		ImGui::Text("New scene created");
-	}
-
-	SEPARATOR();
-
-	// Save Scene
-	ImGui::InputText("Scene Name", SceneName, IM_ARRAYSIZE(SceneName));
-
-	if (ImGui::Button("Save Scene"))
-	{
-		// PIE 중이면 먼저 종료해 에디터 월드를 활성화한 뒤 저장.
-		EditorEngine->StopPlayInEditorImmediate();
-		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
-		if (Ctx)
-		{
-			UCameraComponent* PerspectiveCam = nullptr;
-			for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
-			{
-				if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
-				{
-					PerspectiveCam = VC->GetCamera();
-					break;
-				}
-			}
-			FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx, PerspectiveCam);
-		}
-		SceneSaveNotificationTimer = NotificationTimer;
-		RefreshSceneFileList();
-	}
-	if (SceneSaveNotificationTimer > 0.0f)
-	{
-		SceneSaveNotificationTimer -= DeltaTime;
-		ImGui::SameLine();
-		ImGui::Text("Scene saved");
-	}
-
-	SEPARATOR();
-
-	// Load Scene (combo box)
-	if (ImGui::Button("Refresh"))
-	{
-		RefreshSceneFileList();
-	}
-	ImGui::SameLine();
-	ImGui::Text("Scene Files (%d)", static_cast<int32>(SceneFiles.size()));
-
-	if (!SceneFiles.empty())
-	{
-		auto SceneNameGetter = [](void* Data, int32 Idx) -> const char*
-			{
-				auto* Files = static_cast<TArray<FString>*>(Data);
-				if (Idx < 0 || Idx >= static_cast<int32>(Files->size())) return nullptr;
-				return (*Files)[Idx].c_str();
-			};
-
-		ImGui::Combo("Scene File", &SelectedSceneIndex, SceneNameGetter, &SceneFiles, static_cast<int32>(SceneFiles.size()));
-
-		if (ImGui::Button("Load Scene") && SelectedSceneIndex >= 0)
-		{
-			std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
-				/ (FPaths::ToWide(SceneFiles[SelectedSceneIndex]) + FSceneSaveManager::SceneExtension);
-			FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
-
-			EditorEngine->ClearScene();
-			FWorldContext LoadCtx;
-			FPerspectiveCameraData CamData;
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
-			if (LoadCtx.World)
-			{
-				EditorEngine->GetWorldList().push_back(LoadCtx);
-				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
-				EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
-				LoadCtx.World->WarmupPickingData(); // 씬 로드 후 메시 BVH와 월드 primitive BVH를 모두 빌드
-			}
-			EditorEngine->ResetViewport();
-
-			// ResetViewport()가 카메라를 기본값으로 초기화하므로 그 이후에 복원
-			if (CamData.bValid)
-			{
-				for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
-				{
-					if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
-					{
-						if (UCameraComponent* Cam = VC->GetCamera())
-						{
-							Cam->SetWorldLocation(CamData.Location);
-							Cam->SetRelativeRotation(CamData.Rotation);
-							FCameraState CS = Cam->GetCameraState();
-							CS.FOV = CamData.FOV;
-							CS.NearZ = CamData.NearClip;
-							CS.FarZ = CamData.FarClip;
-							Cam->SetCameraState(CS);
-						}
-						break;
-					}
-				}
-			}
-
-			SceneLoadNotificationTimer = NotificationTimer;
-		}
-		if (SceneLoadNotificationTimer > 0.0f)
-		{
-			SceneLoadNotificationTimer -= DeltaTime;
-			ImGui::SameLine();
-			ImGui::Text("Scene loaded");
-		}
-	}
-	else
-	{
-		ImGui::Text("No scene files found in %s", FPaths::ToUtf8(FSceneSaveManager::GetSceneDirectory()).c_str());
-	}
-
-	SEPARATOR();
-
-	// Actor Outliner
-	RenderActorOutliner();
-
-	ImGui::End();
+    ImGui::End();
 }
 
 void FEditorSceneWidget::RenderActorOutliner()
 {
-	SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "5_UI");
+    SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "5_UI");
 
-	UWorld* World = EditorEngine->GetWorld();
-	if (!World) return;
+    UWorld *World = EditorEngine->GetWorld();
+    if (!World)
+    {
+        ImGui::TextDisabled("No active world.");
+        return;
+    }
 
-	const TArray<AActor*>& Actors = World->GetActors();
+    const TArray<AActor *> &Actors = World->GetActors();
+    FSelectionManager &Selection = EditorEngine->GetSelectionManager();
 
-	// null이 아닌 유효 Actor 인덱스만 수집 (Clipper는 연속 인덱스 필요)
-	ValidActorIndices.clear();
-	ValidActorIndices.reserve(Actors.size());
-	for (int32 i = 0; i < static_cast<int32>(Actors.size()); ++i)
-	{
-		if (Actors[i]) ValidActorIndices.push_back(i);
-	}
+    ValidActorIndices.clear();
+    ValidActorIndices.reserve(Actors.size());
+    for (int32 i = 0; i < static_cast<int32>(Actors.size()); ++i)
+    {
+        if (Actors[i] != nullptr)
+        {
+            ValidActorIndices.push_back(i);
+        }
+    }
 
-	ImGui::Text("Actors (%d)", static_cast<int32>(ValidActorIndices.size()));
-	ImGui::Separator();
+    TArray<AActor *> ActorsToDelete;
+    ActorsToDelete.reserve(ValidActorIndices.size());
+    for (int32 Row = 0; Row < static_cast<int32>(ValidActorIndices.size()); ++Row)
+    {
+        AActor *Actor = Actors[ValidActorIndices[Row]];
+        if (Actor && Selection.IsSelected(Actor))
+        {
+            ActorsToDelete.push_back(Actor);
+        }
+    }
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+    const int32 SelectedCount = static_cast<int32>(ActorsToDelete.size());
 
-	ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
+    if (ImGui::Button("Clear Selection"))
+    {
+        Selection.ClearSelection();
+    }
 
-	ImGuiListClipper Clipper;
-	Clipper.Begin(static_cast<int>(ValidActorIndices.size()));
-	while (Clipper.Step())
-	{
-		for (int Row = Clipper.DisplayStart; Row < Clipper.DisplayEnd; ++Row)
-		{
-			AActor* Actor = Actors[ValidActorIndices[Row]];
+    ImGui::SameLine();
 
-			const FString& StoredName = Actor->GetFName().ToString();
-			const char* DisplayName = StoredName.empty()
-				? Actor->GetClass()->GetName()
-				: StoredName.c_str();
+    char DeleteLabel[64];
+    std::snprintf(DeleteLabel, sizeof(DeleteLabel), "Delete Selected (%d)", SelectedCount);
 
-			bool bIsSelected = Selection.IsSelected(Actor);
-			if (ImGui::Selectable(DisplayName, bIsSelected))
-			{
-				if (ImGui::GetIO().KeyShift)
-				{
-					Selection.SelectRange(Actor, Actors);
-				}
-				else if (ImGui::GetIO().KeyCtrl)
-				{
-					Selection.ToggleSelect(Actor);
-				}
-				else
-				{
-					Selection.Select(Actor);
-				}
-			}
-		}
-	}
+    const bool bDeleteDisabled = (SelectedCount == 0);
+    if (bDeleteDisabled)
+    {
+        ImGui::BeginDisabled();
+    }
 
-	ImGui::EndChild();
+    // Delete 버튼만 붉은 계열 적용
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.18f, 0.18f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.72f, 0.22f, 0.22f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.42f, 0.12f, 0.12f, 1.0f));
+
+    if (ImGui::Button(DeleteLabel))
+    {
+        for (AActor *Actor : ActorsToDelete)
+        {
+            if (Actor && Actor->GetWorld())
+            {
+                Actor->GetWorld()->DestroyActor(Actor);
+            }
+        }
+        Selection.ClearSelection();
+    }
+
+    ImGui::PopStyleColor(3);
+
+    if (bDeleteDisabled)
+    {
+        ImGui::EndDisabled();
+    }
+
+    ImGui::Separator();
+
+    const ImGuiTableFlags TableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter |
+                                       ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
+                                       ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY |
+                                       ImGuiTableFlags_NoPadInnerX;
+
+    auto DrawCenteredTextInColumn = [](const char *Text) {
+        const float ColumnWidth = ImGui::GetColumnWidth();
+        const float TextWidth = ImGui::CalcTextSize(Text).x;
+        const float OffsetX = (ColumnWidth - TextWidth) * 0.5f;
+
+        if (OffsetX > 0.0f)
+        {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + OffsetX);
+        }
+        ImGui::TextUnformatted(Text);
+    };
+
+    auto DrawCenteredCheckboxInColumn = [](const char *Id, bool *bValue) -> bool {
+        // Checkbox는 label이 없더라도 실제 width가 frame height보다 약간 더 크게 잡히는 경우가 있어서
+        // CalcItemWidth류 대신 프레임 높이 + 내부 여백을 조금 반영해서 중앙 맞춤
+        const float CheckboxSize = ImGui::GetFrameHeight();
+        const float ColumnWidth = ImGui::GetColumnWidth();
+
+        const ImGuiStyle &Style = ImGui::GetStyle();
+        const float VisualWidth = CheckboxSize + Style.FramePadding.x * 0.5f;
+        const float OffsetX = (ColumnWidth - VisualWidth) * 0.5f;
+
+        if (OffsetX > 0.0f)
+        {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + OffsetX);
+        }
+
+        return ImGui::Checkbox(Id, bValue);
+    };
+
+    auto DrawPaddedSelectableInColumn = [](const char *Label, bool bSelected, float LeftPadding) -> bool {
+        const float StartX = ImGui::GetCursorPosX();
+        ImGui::SetCursorPosX(StartX + LeftPadding);
+        return ImGui::Selectable(Label, bSelected, ImGuiSelectableFlags_SpanAllColumns);
+    };
+
+    if (ImGui::BeginTable("SceneManagerTable", 3, TableFlags, ImVec2(0.0f, 0.0f)))
+    {
+        ImGui::TableSetupColumn("Select", ImGuiTableColumnFlags_WidthFixed, 68.0f);
+        ImGui::TableSetupColumn("Actor", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Visible", ImGuiTableColumnFlags_WidthFixed, 74.0f);
+
+        ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+
+        ImGui::TableSetColumnIndex(0);
+        DrawCenteredTextInColumn("Select");
+
+        ImGui::TableSetColumnIndex(1);
+        DrawCenteredTextInColumn("Actor");
+
+        ImGui::TableSetColumnIndex(2);
+        DrawCenteredTextInColumn("Visible");
+
+        for (int32 Row = 0; Row < static_cast<int32>(ValidActorIndices.size()); ++Row)
+        {
+            AActor *Actor = Actors[ValidActorIndices[Row]];
+            if (!Actor)
+            {
+                continue;
+            }
+
+            const bool bSelected = Selection.IsSelected(Actor);
+            ImGui::PushID(Actor);
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            bool bChecked = bSelected;
+            if (DrawCenteredCheckboxInColumn("##selected", &bChecked))
+            {
+                if (ImGui::GetIO().KeyShift)
+                {
+                    Selection.ToggleSelect(Actor);
+                }
+                else
+                {
+                    if (bChecked)
+                    {
+                        Selection.Select(Actor);
+                    }
+                    else
+                    {
+                        Selection.ClearSelection();
+                    }
+                }
+            }
+
+            ImGui::TableSetColumnIndex(1);
+            FString ActorName = Actor->GetFName().ToString();
+            if (ActorName.empty())
+            {
+                ActorName = Actor->GetClass()->GetName();
+            }
+            if (DrawPaddedSelectableInColumn(ActorName.c_str(), bSelected, 8.0f))
+            {
+                if (ImGui::GetIO().KeyShift)
+                {
+                    Selection.ToggleSelect(Actor);
+                }
+                else
+                {
+                    Selection.Select(Actor);
+                }
+            }
+
+            ImGui::TableSetColumnIndex(2);
+            bool bVisible = Actor->IsVisible();
+            if (DrawCenteredCheckboxInColumn("##visible", &bVisible))
+            {
+                Actor->SetVisible(bVisible);
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::EndTable();
+    }
 }

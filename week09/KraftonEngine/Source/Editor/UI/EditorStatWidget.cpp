@@ -8,12 +8,25 @@
 #include <algorithm>
 #include <sstream>
 
+void FEditorStatWidget::RequestOpen()
+{
+	bRequestOpen = true;
+}
+
 void FEditorStatWidget::Render(float DeltaTime)
 {
 #if STATS
 	(void)DeltaTime;
 
-	ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+	if (bRequestOpen)
+	{
+		ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+		bRequestOpen = false;
+	}
+	else
+	{
+		ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+	}
 	ImGui::SetNextWindowSize(ImVec2(700.0f, 500.0f), ImGuiCond_Once);
 	ImGui::Begin("Stat Profiler");
 
