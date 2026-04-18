@@ -9,7 +9,7 @@ cbuffer PerShader1 : register(b2)
     float4 SectionColor;
 };
 
-PS_Input_Full VS(VS_Input_PNCT input)
+PS_Input_Full VS(VS_Input_PNCT_T input)
 {
     PS_Input_Full output;
     output.position = ApplyMVP(input.position);
