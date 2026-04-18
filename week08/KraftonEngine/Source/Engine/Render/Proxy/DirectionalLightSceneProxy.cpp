@@ -25,7 +25,6 @@ namespace
 FDirectionalLightSceneProxy::FDirectionalLightSceneProxy(UDirectionalLightComponent* InComponent)
     : FLightSceneProxy(InComponent)
 {
-    LightConstants.LightType = static_cast<uint32>(ELightType::Point);
 }
 
 void FDirectionalLightSceneProxy::UpdateLightConstants()
@@ -41,7 +40,7 @@ void FDirectionalLightSceneProxy::VisualizeLights(FScene& Scene) const
 {
     if (!Owner) return;
     const FVector Origin = Owner->GetWorldLocation();
-    const FVector Dir = LightConstants.Direction;
+    const FVector Dir = Owner->GetForwardVector();
     constexpr float ArrowLen = 2.0f;
     const FColor Color(135, 206, 235);
 
