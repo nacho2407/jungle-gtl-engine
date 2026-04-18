@@ -1,4 +1,5 @@
 #include "Common.hlsl"
+#include "UberLit.hlsl"
 
 cbuffer StaticMeshBuffer : register(b2)
 {
@@ -47,23 +48,28 @@ StructuredBuffer<FLightInfo> Lights : register(t4);
 struct VSInput
 {
     float3 Position : POSITION;
-    float2 UV : TEXCOORD;
-    float4 Color : COLOR;
-    float3 Normal : NORMAL;
+    float2 UV       : TEXCOORD;
+    float4 Color    : COLOR;
+    float3 Normal   : NORMAL;
 };
 
 struct PSInput
 {
-    float4 ClipPos     : SV_POSITION;
-    float3 WorldPos    : TEXCOORD0;
-    float3 WorldNormal : TEXCOORD1;
-    float2 UV          : TEXCOORD2;
+    float4 ClipPos      : SV_POSITION;
+    float3 WorldPos     : TEXCOORD0;
+    float3 WorldNormal  : TEXCOORD1;
+    float2 UV           : TEXCOORD2;
+#if LIGHTING_MODEL_GOURAUD
+    float3 LitColor    : TEXCOORD3;
+#elif LIGHTING_MODEL_PHONG
+    float3 PixelNormal : TEXCOORD4;
+#endif
 };
 
 struct PSOutput
 {
-    float4 Color : SV_TARGET0;
-    float4 Normal : SV_TARGET1;
+    float4 Color    : SV_TARGET0;
+    float4 Normal   : SV_TARGET1;
     float4 WorldPos : SV_TARGET2;
 };
 
