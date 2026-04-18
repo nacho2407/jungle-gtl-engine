@@ -27,5 +27,7 @@ void UAmbientLightComponent::PostEditProperty(const char* PropertyName)
 
 FLightSceneProxy* UAmbientLightComponent::CreateLightSceneProxy()
 {
-    return new FAmbientLightSceneProxy(this);
+    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
+    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Ambient);
+    return Proxy;
 }

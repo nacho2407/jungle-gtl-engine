@@ -1,26 +1,18 @@
-﻿#include "DirectionalLightSceneProxy.h"
-#include "Component/DirectionalLightComponent.h"
+﻿#include "AmbientLightSceneProxy.h"
+#include "Component/AmbientLightComponent.h"
 
-FDirectionalLightSceneProxy::FDirectionalLightSceneProxy(UDirectionalLightComponent* InComponent)
+FAmbientLightSceneProxy::FAmbientLightSceneProxy(UAmbientLightComponent* InComponent)
     : FLightSceneProxy(InComponent)
 {
 }
 
-void FDirectionalLightSceneProxy::UpdateLightConstants()
+void FAmbientLightSceneProxy::UpdateLightConstants()
 {
     if (!Owner)
         return;
 
     FLightSceneProxy::UpdateLightConstants();
 
-    UDirectionalLightComponent* DirectionalLight = static_cast<UDirectionalLightComponent*>(Owner);
-    LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
-}
-
-void FDirectionalLightSceneProxy::UpdateTransform()
-{
-    if (!Owner)
-        return;
-    LightConstants.Position = Owner->GetWorldLocation();
-    LightConstants.Direction = Owner->GetForwardVector();
+    UAmbientLightComponent* AmbientLight = static_cast<UAmbientLightComponent*>(Owner);
+    LightConstants.LightType = static_cast<uint32>(ELightType::Ambient);
 }

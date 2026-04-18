@@ -16,7 +16,6 @@ namespace
 			return;
 		}
 
-		const FVector Direction = ScaledVelocity / VelocityLength;
 		const FVector End = Start + ScaledVelocity;
 		const FColor ArrowColor(135, 206, 235);
 
@@ -49,16 +48,13 @@ UDirectionalLightComponent::UDirectionalLightComponent()
 void UDirectionalLightComponent::Serialize(FArchive& Ar)
 {
     ULightComponent::Serialize(Ar);
-    Ar << bUseTemperature;
-    Ar << Temperature;
+    Ar << Direction;
 }
 
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ULightComponent::GetEditableProperties(OutProps);
     OutProps.push_back({ "Direction", EPropertyType::Vec3, &Direction, 0.0f, 0.0f, 1.0f });
-    OutProps.push_back({ "bUseTemperature", EPropertyType::Bool, &bUseTemperature });
-    OutProps.push_back({ "Temperature", EPropertyType::Float, &Temperature, 1700.0f, 12000.0f, 10.0f });
 }
 
 void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
@@ -66,9 +62,9 @@ void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
     ULightComponent::PostEditProperty(PropertyName);
 }
 
-FDirectionalLightSceneProxy* UDirectionalLightComponent::CreateLightSceneProxy()
+FLightSceneProxy* UDirectionalLightComponent::CreateLightSceneProxy()
 {
-    FDirectionalLightSceneProxy* Proxy = new FDirectionalLightSceneProxy(this);
+    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
     Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
     return Proxy;
 }
