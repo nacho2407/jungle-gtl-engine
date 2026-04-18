@@ -64,6 +64,27 @@ std::string FPaths::ToUtf8(const std::wstring& WideStr)
 	return Result;
 }
 
+
+std::filesystem::path FPaths::ToPath(const std::string& Utf8Path)
+{
+	return std::filesystem::path(ToWide(Utf8Path));
+}
+
+std::filesystem::path FPaths::ToPath(const std::wstring& WidePath)
+{
+	return std::filesystem::path(WidePath);
+}
+
+std::string FPaths::FromPath(const std::filesystem::path& Path)
+{
+	return ToUtf8(Path.generic_wstring());
+}
+
+std::string FPaths::FromWide(const std::wstring& WideStr)
+{
+	return ToUtf8(WideStr);
+}
+
 std::string FPaths::ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath)
 {
 	// 1. 기준 파일(OBJ 또는 MTL)의 폴더 경로 추출

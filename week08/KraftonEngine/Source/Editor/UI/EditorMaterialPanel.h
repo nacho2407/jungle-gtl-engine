@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "EditorWidget.h"
+#include "EditorPanel.h"
 #include <functional>
 
 class USceneComponent;
@@ -9,7 +9,7 @@ class UStaticMeshComponent;
 class UDecalComponent;
 class UMaterialInstanceDynamic;
 
-class FEditorMaterialWidget :  public FEditorWidget
+class FEditorMaterialPanel :  public FEditorPanel
 {
 public:
 	void Render(float DeltaTime) override;

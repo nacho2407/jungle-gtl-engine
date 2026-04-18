@@ -1,12 +1,12 @@
 ﻿#pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/EditorPanel.h"
 #include "Object/Object.h"
 
 class UActorComponent;
 class AActor;
 
-class FEditorPropertyWidget : public FEditorWidget
+class FEditorDetailsPanel : public FEditorPanel
 {
 public:
 	virtual void Render(float DeltaTime) override;
@@ -19,7 +19,7 @@ private:
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties(AActor* Actor);
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
-	bool RenderPropertyWidget(TArray<struct FPropertyDescriptor>& Props, int32& Index);
+	bool RenderDetailsPanel(TArray<struct FPropertyDescriptor>& Props, int32& Index);
 
 	static FString OpenObjFileDialog();
 

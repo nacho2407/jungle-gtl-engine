@@ -2,10 +2,10 @@
 #include "Mesh/StaticMesh.h"
 #include "Mesh/ObjImporter.h"
 #include "Materials/Material.h"
-#include "Editor/UI/EditorConsoleWidget.h"
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include "Materials/MaterialManager.h"
+#include "Editor/UI/EditorConsolePanel.h"
 #include <filesystem>
 #include <algorithm>
 #include <sstream>

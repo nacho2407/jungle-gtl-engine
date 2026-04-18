@@ -118,6 +118,19 @@ struct FSceneDepthPConstants
 	uint32 Mode;
 };
 
+// HLSL b2 슬롯과 대응
+struct FLightConstants
+{
+    FVector Position;        // 12B  — Point/Spot 월드 위치
+    float Intensity;         //  4B
+    FVector Direction;       // 12B  — Directional/Spot 방향 (정규화)
+    float AttenuationRadius; //  4B  — Point/Spot 감쇠 반경
+    FVector4 LightColor;     // 16B  — linear RGBA
+    float InnerConeAngle;    //  4B  — Spot 내부 코사인 반각
+    float OuterConeAngle;    //  4B  — Spot 외부 코사인 반각
+    uint32 LightType;        //  4B  — ELightType 캐스트
+    float Padding;           //  4B  — 16B 경계 맞춤
+}; // 총 64B
 
 // Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응
 struct FFogConstants
@@ -189,7 +202,7 @@ struct FMeshSectionDraw
 	EDepthStencilState DepthStencil = EDepthStencilState::Default;
 	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
 
-	//PerShader
+	// Per Shader
 	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
 };
 
