@@ -143,7 +143,7 @@ public:
 
 	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const override;
 
-	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const;
+	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, uint32 PermutationKey = 0) const;
 
 	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
 	{

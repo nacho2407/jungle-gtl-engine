@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <d3d11.h>
 #include "Core/CoreMinimal.h"
+#include "Render/Resource/Shader.h"
 
 struct FPassRenderState;
 struct FRenderTargetSet;
@@ -25,4 +26,6 @@ struct FRenderPassContext
 
 	ID3D11RenderTargetView* FinalRTV = nullptr;
     ID3D11ShaderResourceView* FinalSRV = nullptr;
+
+    EShaderLightPermutationKey ActiveLightingModel = EShaderLightPermutationKey::BlinnPhong;
 };
