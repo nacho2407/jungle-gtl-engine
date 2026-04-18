@@ -174,11 +174,12 @@ bool FViewport::CreateResources()
 	ViewportRect.MinDepth = 0.0f;
 	ViewportRect.MaxDepth = 1.0f;
 
-	return true;
+	return ViewModeSurfaces.Initialize(Device, Width, Height);
 }
 
 void FViewport::ReleaseResources()
 {
+	ViewModeSurfaces.Release();
 	if (StencilCopySRV) { StencilCopySRV->Release(); StencilCopySRV = nullptr; }
 	if (DepthCopySRV) { DepthCopySRV->Release(); DepthCopySRV = nullptr; }
 	if (DepthCopyTexture) { DepthCopyTexture->Release(); DepthCopyTexture = nullptr; }
