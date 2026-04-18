@@ -5,7 +5,7 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Types/RenderTypes.h"
 
-class ULightComponentBase;
+class ULightComponent;
 
 /**
  * Light는 SceneComponent이므로 FPrimitiveSceneProxy와는 구분됩니다.
@@ -13,7 +13,7 @@ class ULightComponentBase;
 class FLightSceneProxy
 {
 public:
-    FLightSceneProxy(ULightComponentBase* InComponent);
+    FLightSceneProxy(ULightComponent* InComponent);
     virtual ~FLightSceneProxy() = default;
 
     // ─── 컴포넌트 → 프록시 데이터 동기화 (개별 서브클래스가 오버라이드) ───
@@ -27,9 +27,9 @@ public:
     bool IsAnyDirty() const { return DirtyFlags != EDirtyFlag::None; }
 
     // ─── 식별 ───
-    uint32 ProxyId = UINT32_MAX;     // FScene 내의 인덱스
-    ULightComponentBase* Owner = nullptr; // 소유 컴포넌트 (역참조용)
-    uint32 SelectedListIndex = UINT32_MAX; // 선택된 프록시 리스트 내 인덱스 (선택 관리용)
+    uint32 ProxyId = UINT32_MAX;
+    ULightComponent* Owner = nullptr; // 소유 컴포넌트 (역참조용)
+    uint32 SelectedListIndex = UINT32_MAX;
 
     // ─── 변경 추적 ───
     EDirtyFlag DirtyFlags = EDirtyFlag::All;
@@ -38,7 +38,7 @@ public:
     // ─── 캐싱된 렌더 데이터 (등록 시 초기화, dirty 시에만 갱신) ───
     FLightConstants LightConstants = {};
 
-    // ─── 가시성 선택 ───
+    // ─── 가시성 ───
     bool bVisible = true;
     bool bAffectsWorld = true;
 };

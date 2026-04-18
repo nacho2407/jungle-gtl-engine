@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -29,8 +29,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	LastVisibleProxies.clear();
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
-		const uint32 ExpectedCount = Scene.GetProxyCount()
-			+ static_cast<uint32>(Scene.GetNeverCullProxies().size());
+		const uint32 ExpectedCount = Scene.GetPrimitiveProxyCount() + static_cast<uint32>(Scene.GetNeverCullProxies().size());
 		if (LastVisibleProxies.capacity() < ExpectedCount)
 		{
 			LastVisibleProxies.reserve(ExpectedCount);

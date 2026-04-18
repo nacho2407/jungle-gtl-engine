@@ -1,4 +1,4 @@
-#include "DefaultRenderPipeline.h"
+﻿#include "DefaultRenderPipeline.h"
 
 #include "Renderer.h"
 #include "Engine/Runtime/Engine.h"
@@ -32,7 +32,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();
 
-		Renderer.BeginCollect(Frame, Scene->GetProxyCount());
+		Renderer.BeginCollect(Frame, Scene->GetPrimitiveProxyCount());
 		Collector.CollectWorld(World, Frame, Renderer);
 		Collector.CollectDebugDraw(Frame, *Scene);
 		Renderer.BuildDynamicCommands(Frame, Scene);

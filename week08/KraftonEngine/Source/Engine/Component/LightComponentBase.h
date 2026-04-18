@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/SceneComponent.h"
+#include "Object/ObjectFactory.h"
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
 
@@ -14,7 +15,7 @@ class ULightComponentBase : public USceneComponent
 public:
     DECLARE_CLASS(ULightComponentBase, USceneComponent)
 
-    ULightComponentBase() = default;
+    ULightComponentBase();
 
     void Serialize(FArchive& Ar) override;
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;

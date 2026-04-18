@@ -2,10 +2,12 @@
 
 #include "LightSceneProxy.h"
 
+class UPointLightComponent;
+
 class FPointLightSceneProxy : public FLightSceneProxy
 {
 public:
-    FPointLightSceneProxy(ULightComponentBase* InComponent);
+    FPointLightSceneProxy(UPointLightComponent* InComponent);
     ~FPointLightSceneProxy() override = default;
 
     void UpdateLightConstants() override;
