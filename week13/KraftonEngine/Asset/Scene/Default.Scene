@@ -1,8 +1,34 @@
 {
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "bTickEnable" : true
+          }
+        }],
+      "PrimitiveKey" : "8",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/BackAccessory.json"
+          },
+          "Location" : [-4.723170, -4.054041, 1.260331],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "9",
+      "PrimitiveKey" : "13",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -29,7 +55,7 @@
               "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
               "Intensity" : 0.150000,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bTickEnable" : true
@@ -42,7 +68,7 @@
           "Material" : {
             "Path" : "Asset/Materials/AmbientLight.json"
           },
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "Width" : 1.000000,
@@ -61,7 +87,7 @@
               "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
               "Intensity" : 0.800000,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bTickEnable" : true
@@ -95,7 +121,7 @@
               "Material" : {
                 "Path" : "Asset/Materials/HeightFog.json"
               },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "Width" : 1.000000,
@@ -110,35 +136,9 @@
           "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
           "Location" : [0.000000, 0.000000, 0.000000],
           "Max Opacity" : 1.000000,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Start Distance" : 0.000000,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [{
-          "ClassName" : "URotatingMovementComponent",
-          "Properties" : {
-            "Auto Register Updated" : true,
-            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
-            "bTickEnable" : true
-          }
-        }],
-      "PrimitiveKey" : "29",
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Materials/BackAccessory.json"
-          },
-          "Location" : [-4.723170, -4.054041, 1.260331],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true,
           "bTickEnable" : true
         }
       },
@@ -156,7 +156,7 @@
               "Intensity" : 1.000000,
               "LightFalloffExponent" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bTickEnable" : true
@@ -165,11 +165,11 @@
         "ClassName" : "UBillboardComponent",
         "Properties" : {
           "Height" : 1.000000,
-          "Location" : [-4.447697, -5.124163, 3.488119],
+          "Location" : [-4.447697, -6.171462, 3.097979],
           "Material" : {
             "Path" : "Asset/Materials/PointLight.json"
           },
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "Width" : 1.000000,
@@ -192,7 +192,7 @@
               "LightFalloffExponent" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "OuterConeAngle" : 40.000000,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bTickEnable" : true
@@ -213,6 +213,78 @@
         }
       },
       "bVisible" : true
+    }, {
+      "ClassName" : "ADecalActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 44",
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UDecalComponent",
+        "Properties" : {
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "FadeInDelay" : 0.000000,
+          "FadeInDuration" : 0.000000,
+          "FadeOutDelay" : 0.000000,
+          "FadeOutDuration" : 0.000000,
+          "Location" : [-5.452479, -4.507448, 0.844182],
+          "Material" : {
+            "Path" : "Asset/Materials/DefaultDecal.json"
+          },
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ASpotLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 1.000000,
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "InnerConeAngle" : 20.000000,
+              "Intensity" : 1.000000,
+              "LightFalloffExponent" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "OuterConeAngle" : 40.000000,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 1.000000,
+          "Location" : [-6.392947, -4.712645, 0.529925],
+          "Material" : {
+            "Path" : "Asset/Materials/SpotLight.json"
+          },
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "Width" : 1.000000,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -221,23 +293,23 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [5.832139, 3.667191, 8.254514],
+    "Location" : [-0.291558, -9.136174, 5.304785],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 25.665617, -158.400131]
+    "Rotation" : [0.000000, 31.515730, 145.049942]
   },
   "Primitives" : {
-    "29" : {
-      "Location" : [-4.723170, -4.054041, 1.260331],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "9" : {
+    "13" : {
       "Location" : [0.000000, 0.000000, -1.484895],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [100.000000, 100.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "8" : {
+      "Location" : [-4.723170, -4.054041, 1.260331],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     }
   },
