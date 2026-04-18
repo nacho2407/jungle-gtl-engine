@@ -6,6 +6,7 @@
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/RenderStateTypes.h"
 #include "Render/Resource/Buffer.h"
+#include "Render/Types/MaterialTextureSlot.h"
 #include <memory>
 
 class UTexture2D;
@@ -84,6 +85,9 @@ private:
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
 
+	// SRV 캐시 — SetTextureParameter 시 갱신, BuildCommandForProxy에서 map lookup 회피
+	ID3D11ShaderResourceView* CachedSRVs[(int)EMaterialTextureSlot::Max] = {};
+
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 
 public:
@@ -134,4 +138,20 @@ public:
 		}
 		return nullptr;
 	}
+
+	// dirty CB를 GPU에 업로드 — BuildCommandForProxy 전에 호출
+	void FlushDirtyBuffers(ID3D11DeviceContext* Ctx)
+	{
+		for (auto& Pair : ConstantBufferMap)
+		{
+			if (Pair.second->bDirty)
+				Pair.second->Upload(Ctx);
+		}
+	}
+
+	// 캐시된 SRV 배열 직접 접근 (map lookup 회피)
+	const ID3D11ShaderResourceView* const* GetCachedSRVs() const { return CachedSRVs; }
+
+	// SRV 캐시 재구축 — Material 생성/텍스처 로드 후 호출
+	void RebuildCachedSRVs();
 };

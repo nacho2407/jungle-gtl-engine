@@ -1,11 +1,6 @@
 #pragma once
 #include "Render/Types/RenderTypes.h"
-#include "Render/Types/RenderStateTypes.h"
 #include "Core/CoreTypes.h"
-
-#include "RasterizerStateManager.h"
-#include "DepthStencilStateManager.h"
-#include "BlendStateManager.h"
 
 class FD3DDevice
 {
@@ -15,19 +10,13 @@ public:
 	void Create(HWND InHWindow);
 	void Release();
 
+	// 스왑체인 백버퍼 복귀 — RTV/DSV 클리어 + 뷰포트 세팅
+	void BeginFrame();
 	void Present();
 	void OnResizeViewport(int width, int height);
 
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
-	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
-	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
-	const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
-	const float* GetClearColor() const { return ClearColor; }
-
-	void SetDepthStencilState(EDepthStencilState InState);
-	void SetBlendState(EBlendState InState);
-	void SetRasterizerState(ERasterizerState InState);
 
 private:
 	void CreateDeviceAndSwapChain(HWND InHWindow);
@@ -44,18 +33,14 @@ private:
 	ID3D11DeviceContext* DeviceContext = nullptr;
 	IDXGISwapChain* SwapChain = nullptr;
 
+	// --- SwapChain BackBuffer ---
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
-	FRasterizerStateManager RasterizerStateManager;
-	FDepthStencilStateManager DepthStencilStateManager;
-	FBlendStateManager BlendStateManager;
-
 	D3D11_VIEWPORT ViewportInfo = {};
-
 	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 
 	BOOL bTearingSupported = FALSE;

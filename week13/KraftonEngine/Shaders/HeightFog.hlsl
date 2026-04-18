@@ -17,7 +17,7 @@ cbuffer FogBuffer : register(b2)
     float2 _fogPad;
 };
 
-// SceneDepth (t10) is declared in Common/ConstantBuffers.hlsl
+// SceneDepthTexture (t16) is declared in Common/SystemResources.hlsli
 
 // ── VS: Fullscreen Triangle ──
 PS_Input_UV VS(uint vertexID : SV_VertexID)
@@ -31,7 +31,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     int2 coord = int2(input.position.xy);
 
     // Sample hardware depth (Reversed-Z: 1=near, 0=far)
-    float depth = SceneDepth.Load(int3(coord, 0));
+    float depth = SceneDepthTexture.Load(int3(coord, 0));
     if (depth <= 0.0)
     {
         // Sky/background: no geometry to reconstruct world position

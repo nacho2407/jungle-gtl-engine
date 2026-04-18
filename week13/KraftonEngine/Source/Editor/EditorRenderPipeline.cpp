@@ -12,6 +12,7 @@
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
 {
+	GPUOcclusion.Initialize(InRenderer.GetFD3DDevice().GetDevice());
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline()
@@ -68,72 +69,23 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	UWorld* World = Editor->GetWorld();
 	if (!World) return;
 
-	// GPU Occlusion 지연 초기화
-	if (!GPUOcclusion.IsInitialized())
-		GPUOcclusion.Initialize(Renderer.GetFD3DDevice().GetDevice());
-
-	// 이전 프레임 Occlusion 결과 읽기 (staging → OccludedSet)
+	// GPU Occlusion — 이전 프레임 결과 읽기
 	GPUOcclusion.ReadbackResults(Ctx);
 
-	// 뷰포트별 렌더 옵션 사용
-	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
-	const FShowFlags& ShowFlags = Opts.ShowFlags;
-	EViewMode ViewMode = Opts.ViewMode;
+	PrepareViewport(VP, Camera, Ctx);
+	BuildFrame(VC, Camera, VP, World);
+	CollectCommands(VC, World, Renderer);
 
-
-	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
-	if (VP->ApplyPendingResize())
-	{
-		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
-	}
-
-	// 렌더 시작 (RT 클리어 + DSV 바인딩)
-	VP->BeginRender(Ctx);
-
-	// 1. Frame 설정
-	Frame.ClearViewportResources();
+	// GPU 정렬 + 제출
 	FScene& Scene = World->GetScene();
-	Scene.ClearFrameData();
-
-	Frame.SetCameraInfo(Camera);
-	Frame.SetRenderSettings(ViewMode, ShowFlags);
-	Frame.SetRenderOptions(Opts);
-	Frame.SetViewportInfo(VP);
-	Frame.ViewportType = Opts.ViewportType;
-	Frame.OcclusionCulling = &GPUOcclusion;
-	Frame.LODContext = World->PrepareLODContext();
-
-	// 2. BeginCollect → Proxy → FDrawCommand 직접 변환
-	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
-
-	{
-		SCOPE_STAT_CAT("Collector", "3_Collect");
-
-		Collector.CollectWorld(World, Frame, Renderer);
-
-		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
-		Collector.CollectDebugDraw(Frame, Scene);
-
-		if (ShowFlags.bOctree)
-			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
-
-		if (VC == Editor->GetActiveViewport())
-			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
-
-		Renderer.BuildDynamicCommands(Frame, &Scene);
-	}
-
-	// 3. GPU 정렬 + 제출 (PostProcess 패스에서 Fog/Outline도 자동 처리)
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
 		Renderer.Render(Frame, Scene);
 	}
 
-	// 4. GPU Occlusion — Hi-Z 생성 + Occlusion Test 디스패치
-	if (GPUOcclusion.IsInitialized())
+	// GPU Occlusion — Render 후 DepthBuffer가 유효할 때 디스패치
 	{
 		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
-
 		GPUOcclusion.DispatchOcclusionTest(
 			Ctx,
 			VP->GetDepthCopySRV(),
@@ -141,4 +93,55 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}
+}
+
+// ============================================================
+// PrepareViewport — 지연 리사이즈 적용 + RT 클리어
+// ============================================================
+void FEditorRenderPipeline::PrepareViewport(FViewport* VP, UCameraComponent* Camera, ID3D11DeviceContext* Ctx)
+{
+	if (VP->ApplyPendingResize())
+	{
+		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+	}
+	VP->BeginRender(Ctx);
+}
+
+// ============================================================
+// BuildFrame — FFrameContext 일괄 설정
+// ============================================================
+void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraComponent* Camera, FViewport* VP, UWorld* World)
+{
+	Frame.ClearViewportResources();
+	Frame.SetCameraInfo(Camera);
+	Frame.SetRenderOptions(VC->GetRenderOptions());
+	Frame.SetViewportInfo(VP);
+	Frame.OcclusionCulling = &GPUOcclusion;
+	Frame.LODContext = World->PrepareLODContext();
+}
+
+// ============================================================
+// CollectCommands — Proxy → FDrawCommand 수집
+// ============================================================
+void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWorld* World, FRenderer& Renderer)
+{
+	SCOPE_STAT_CAT("Collector", "3_Collect");
+
+	FScene& Scene = World->GetScene();
+	Scene.ClearFrameData();
+
+	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
+	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+
+	Collector.CollectWorld(World, Frame, Builder);
+	Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
+	Collector.CollectDebugDraw(Frame, Scene);
+
+	if (Frame.RenderOptions.ShowFlags.bOctree)
+		Collector.CollectOctreeDebug(World->GetOctree(), Scene);
+
+	if (VC == Editor->GetActiveViewport())
+		Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
+
+	Builder.BuildDynamicCommands(Frame, &Scene);
 }

@@ -22,8 +22,8 @@
 // =============================================================================
 // 텍스처
 // =============================================================================
-Texture2D g_txDiffuse : register(t0);
-Texture2D g_txNormal : register(t1);
+Texture2D DiffuseTexture : register(t0);
+Texture2D NormalTexture : register(t1);
 
 
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
@@ -84,7 +84,7 @@ UberVS_Output VS(VS_Input_PNCTT input)
         float3 B = normalize(cross(N, T) * input.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = g_txNormal.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
 
         N = normalize(mul(tangentNormal, TBN));
     }
@@ -114,7 +114,7 @@ UberPS_Output PS(UberVS_Output input)
 {
     UberPS_Output output;
 
-    float4 texColor = g_txDiffuse.Sample(LinearWrapSampler, input.texcoord);
+    float4 texColor = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
     if (texColor.a < 0.001f)
         texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -131,7 +131,7 @@ UberPS_Output PS(UberVS_Output input)
         float3 B = normalize(cross(N, T) * input.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = g_txNormal.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
+        float3 tangentNormal = NormalTexture.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
         N = normalize(mul(tangentNormal, TBN));
     }
 #endif
