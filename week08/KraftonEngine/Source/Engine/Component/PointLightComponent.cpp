@@ -1,0 +1,34 @@
+﻿#include "PointLightComponent.h"
+#include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
+#include "Render/Proxy/PointLightSceneProxy.h"
+
+IMPLEMENT_CLASS(UPointLightComponent, ULightComponent)
+
+void UPointLightComponent::Serialize(FArchive& Ar)
+{
+    ULightComponent::Serialize(Ar);
+    Ar << AttenuationRadius;
+    Ar << LightFalloffExponent;
+    Ar << bUseInverseSquaredFalloff;
+}
+
+void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    ULightComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "AttenuationRadius", EPropertyType::Float, &AttenuationRadius, 0.0f, 10000.0f, 10.0f });
+    OutProps.push_back({ "LightFalloffExponent", EPropertyType::Float, &LightFalloffExponent, 0.0f, 20.0f, 0.1f });
+	OutProps.push_back({ "UseInverseSquaredFalloff", EPropertyType::Bool, &bUseInverseSquaredFalloff});
+}
+
+void UPointLightComponent::PostEditProperty(const char* PropertyName)
+{
+    ULightComponent::PostEditProperty(PropertyName);
+}
+
+FLightSceneProxy* UPointLightComponent::CreateLightSceneProxy()
+{
+    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
+    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Point);
+    return Proxy;
+}
