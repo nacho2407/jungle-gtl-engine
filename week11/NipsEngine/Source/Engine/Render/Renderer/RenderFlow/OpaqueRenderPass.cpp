@@ -40,6 +40,15 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
    Context->DeviceContext->VSSetShaderResources(4, 3, SRVs);
    Context->DeviceContext->PSSetShaderResources(4, 3, SRVs);
 
+   // Pass Global Light Info
+   FLightConstants LightConstants = {};
+   LightConstants.AmbientLight = RenderBus->AmbientLightInfo;
+   LightConstants.DirectionalLight = RenderBus->DirectionalLightInfo;
+   Context->RenderResources->LightBuffer.Update(Context->DeviceContext, &LightConstants, sizeof(FLightConstants));
+   ID3D11Buffer* cb3 = Context->RenderResources->LightBuffer.GetBuffer();
+   Context->DeviceContext->VSSetConstantBuffers(3, 1, &cb3);
+   Context->DeviceContext->PSSetConstantBuffers(3, 1, &cb3);
+
    const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);  
 
    if (Commands.empty())  
