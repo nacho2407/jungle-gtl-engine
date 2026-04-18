@@ -949,30 +949,6 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 		Infos.emplace_back(SpotLight.ToLightInfo());
 	}
 
-	static uint32 LightDebugLogCounter = 0;
-	++LightDebugLogCounter;
-	if (LightDebugLogCounter % 60 == 0)
-	{
-		if (!Infos.empty())
-		{
-			const FLightInfo& FirstLight = Infos[0];
-			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight{Type=%u, Pos=(%.3f, %.3f, %.3f), Intensity=%.3f, Radius=%.3f, Falloff=%.3f}",
-				GlobalLightingData.NumActivePointLights,
-				GlobalLightingData.NumActiveSpotLights,
-				FirstLight.LightType,
-				FirstLight.Position.X, FirstLight.Position.Y, FirstLight.Position.Z,
-				FirstLight.Intensity,
-				FirstLight.AttenuationRadius,
-				FirstLight.FalloffExponent);
-		}
-		else
-		{
-			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight=None",
-				GlobalLightingData.NumActivePointLights,
-				GlobalLightingData.NumActiveSpotLights);
-		}
-	}
-
 	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
 	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
 
@@ -983,5 +959,6 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 
 
 	Resources.ForwardLights.Update(InDevice, Context, Infos);
+	Context->VSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
 	Context->PSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
 }
