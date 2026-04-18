@@ -14,6 +14,7 @@ struct FVertex
 struct FOverlayVertex
 {
 	float X, Y;
+    float _pad[2];
 };
 
 // Position + TexCoord 범용 버텍스 (FFontGeometry 등 텍스처 기반 동적 지오메트리 공용)
@@ -21,6 +22,7 @@ struct FTextureVertex
 {
 	FVector  Position;
 	FVector2 TexCoord;
+    float    _pad[3];
 };
 
 // Position + Normal + Color + UV (StaticMesh GPU용 정점 형식)
@@ -30,6 +32,16 @@ struct FVertexPNCT
 	FVector Normal;
 	FVector4 Color;
 	FVector2 UV;
+};
+
+// Position + Normal + Color + UV + Tangent (라이팅/노멀맵용 신규 정점 형식)
+struct FVertexPNCT_T
+{
+	FVector Position;
+	FVector Normal;
+	FVector4 Color;
+	FVector2 UV;
+	FVector4 Tangent;
 };
 
 template<typename VertexType>
@@ -42,7 +54,6 @@ struct TMeshData
 using FMeshData = TMeshData<FVertex>;
 
 // 정점 타입에 무관하게 메시 데이터를 참조하는 뷰.
-// 모든 정점 구조체는 FVector Position을 첫 번째 멤버(offset 0)로 가져야 한다.
 struct FMeshDataView
 {
 	const void*   VertexData  = nullptr;
