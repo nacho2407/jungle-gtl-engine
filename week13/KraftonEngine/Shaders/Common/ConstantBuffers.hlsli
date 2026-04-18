@@ -19,6 +19,7 @@ cbuffer FrameBuffer : register(b0)
 cbuffer PerObjectBuffer : register(b1)
 {
     float4x4 Model;
+    float4x4 NormalMatrix;
     float4 PrimitiveColor;
 };
 

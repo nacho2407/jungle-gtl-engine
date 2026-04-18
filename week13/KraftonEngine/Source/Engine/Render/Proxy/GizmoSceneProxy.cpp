@@ -60,7 +60,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		* FMatrix::MakeRotationEuler(Gizmo->GetRelativeRotation().ToVector())
 		* FMatrix::MakeTranslationMatrix(Gizmo->GetWorldLocation());
 
-	PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(WorldMatrix);
 	MarkPerObjectCBDirty();
 
 	// ExtraCB — FGizmoConstants
