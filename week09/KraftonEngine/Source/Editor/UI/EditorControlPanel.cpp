@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorControlWidget.h"
+﻿#include "Editor/UI/EditorControlPanel.h"
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
@@ -68,13 +68,13 @@ namespace
 	}
 }
 
-void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
+void FEditorControlPanel::Initialize(UEditorEngine* InEditorEngine)
 {
-	FEditorWidget::Initialize(InEditorEngine);
+	FEditorPanel::Initialize(InEditorEngine);
 	SelectedPrimitiveType = 0;
 }
 
-void FEditorControlWidget::Render(float DeltaTime)
+void FEditorControlPanel::Render(float DeltaTime)
 {
 	(void)DeltaTime;
 	if (!EditorEngine)

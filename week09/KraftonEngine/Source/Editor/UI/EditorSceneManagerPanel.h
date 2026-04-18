@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/EditorPanel.h"
 #include "Core/CoreTypes.h"
 
-class FEditorSceneWidget : public FEditorWidget
+class FEditorScenePanel : public FEditorPanel
 {
 public:
 	virtual void Initialize(UEditorEngine* InEditorEngine) override;

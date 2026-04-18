@@ -7,7 +7,7 @@
 #include <d3d11.h>
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
-#include "UI/EditorConsoleWidget.h"
+#include "UI/EditorConsolePanel.h"
 #include "Profiling/MemoryStats.h"
 
 namespace ResourceKey
