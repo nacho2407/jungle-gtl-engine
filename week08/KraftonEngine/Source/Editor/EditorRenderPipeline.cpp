@@ -126,8 +126,21 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
 		Collector.CollectDebugDraw(Frame, Scene);
 
-		if (ShowFlags.bOctree)
+		if (ShowFlags.bSceneOctree)
+		{
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
+		}
+
+		if (ShowFlags.bSceneBVH)
+		{
+			World->BuildWorldPrimitivePickingBVHNow();
+			Collector.CollectWorldBVHDebug(World->GetWorldPrimitivePickingBVH(), Scene);
+		}
+
+		if (ShowFlags.bWorldBound)
+		{
+			Collector.CollectWorldBoundsDebug(Collector.GetLastVisibleProxies(), Scene);
+		}
 
 		if (VC == Editor->GetActiveViewport())
 			Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);

@@ -454,9 +454,10 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
         if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
             ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
-            ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
+            ImGui::Checkbox("Scene BVH", &Opts.ShowFlags.bSceneBVH);
+            ImGui::Checkbox("Scene Octree", &Opts.ShowFlags.bSceneOctree);
+            ImGui::Checkbox("World Bound", &Opts.ShowFlags.bWorldBound);
         }
 
         if (ImGui::CollapsingHeader("Post-Processing Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
