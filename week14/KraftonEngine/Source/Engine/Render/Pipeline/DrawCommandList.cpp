@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 #include "Render/Resource/Shader.h"
+#include "Render/Resource/RenderResources.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Profiling/Stats.h"
 
@@ -78,7 +79,7 @@ void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& 
 	OutEnd = PassOffsets[(uint32)Pass + 1];
 }
 
-void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
+void FDrawCommandList::Submit(FSystemResources& Resources, ID3D11DeviceContext* Ctx)
 {
 	if (Commands.empty()) return;
 
@@ -89,13 +90,13 @@ void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
 
 	for (const FDrawCommand& Cmd : Commands)
 	{
-		SubmitCommand(Cmd, Device, Ctx, Cache);
+		SubmitCommand(Cmd, Resources, Ctx, Cache);
 	}
 
 	Cache.Cleanup(Ctx);
 }
 
-void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
+void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FSystemResources& Resources,
 	ID3D11DeviceContext* Ctx, FStateCache& Cache)
 {
 	if (StartIdx >= EndIdx) return;
@@ -103,7 +104,7 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& D
 
 	for (uint32 i = StartIdx; i < EndIdx; ++i)
 	{
-		SubmitCommand(Commands[i], Device, Ctx, Cache);
+		SubmitCommand(Commands[i], Resources, Ctx, Cache);
 	}
 }
 
@@ -122,7 +123,7 @@ uint32 FDrawCommandList::GetCommandCount(ERenderPass Pass) const
 // 단일 커맨드 GPU 제출 — StateCache 비교 후 변경분만 바인딩
 // ============================================================
 
-void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device,
+void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FSystemResources& Resources,
 	ID3D11DeviceContext* Ctx, FStateCache& Cache)
 {
 	const bool bForce = Cache.bForceAll;
@@ -130,19 +131,19 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- 렌더 상태 ---
 	if (bForce || Cmd.RenderState.DepthStencil != Cache.RenderState.DepthStencil)
 	{
-		Device.SetDepthStencilState(Cmd.RenderState.DepthStencil);
+		Resources.SetDepthStencilState(Ctx, Cmd.RenderState.DepthStencil);
 		Cache.RenderState.DepthStencil = Cmd.RenderState.DepthStencil;
 	}
 
 	if (bForce || Cmd.RenderState.Blend != Cache.RenderState.Blend)
 	{
-		Device.SetBlendState(Cmd.RenderState.Blend);
+		Resources.SetBlendState(Ctx, Cmd.RenderState.Blend);
 		Cache.RenderState.Blend = Cmd.RenderState.Blend;
 	}
 
 	if (bForce || Cmd.RenderState.Rasterizer != Cache.RenderState.Rasterizer)
 	{
-		Device.SetRasterizerState(Cmd.RenderState.Rasterizer);
+		Resources.SetRasterizerState(Ctx, Cmd.RenderState.Rasterizer);
 		Cache.RenderState.Rasterizer = Cmd.RenderState.Rasterizer;
 	}
 

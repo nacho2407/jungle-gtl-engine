@@ -103,6 +103,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 	}
 
 	Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
+	Renderer.GetSystemResources().ResetRenderStateCache();
 }
 
 void UEngine::WorldTick(float DeltaTime)

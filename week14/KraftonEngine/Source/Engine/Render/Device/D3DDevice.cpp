@@ -7,10 +7,7 @@ void FD3DDevice::Create(HWND InHWindow)
 {
 	CreateDeviceAndSwapChain(InHWindow);
 	CreateFrameBuffer();
-	RasterizerStateManager.Create(Device);
 	CreateDepthStencilBuffer();
-	DepthStencilStateManager.Create(Device);
-	BlendStateManager.Create(Device);
 }
 
 void FD3DDevice::Release()
@@ -18,10 +15,7 @@ void FD3DDevice::Release()
 	DeviceContext->ClearState();
 	DeviceContext->Flush();
 
-	BlendStateManager.Release();
-	DepthStencilStateManager.Release();
 	ReleaseDepthStencilBuffer();
-	RasterizerStateManager.Release();
 	ReleaseFrameBuffer();
 
 	ReleaseDeviceAndSwapChain();
@@ -40,7 +34,6 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 	ReleaseFrameBuffer();
-	DepthStencilStateManager.Release();
 	ReleaseDepthStencilBuffer();
 
 	SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SwapChainFlags);
@@ -50,12 +43,6 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 
 	CreateFrameBuffer();
 	CreateDepthStencilBuffer();
-	DepthStencilStateManager.Create(Device);
-
-	// 상태 캐시 초기화 — 새로 생성된 state 객체가 BeginFrame에서 재적용되도록
-	RasterizerStateManager.ResetCache();
-	DepthStencilStateManager.ResetCache();
-	BlendStateManager.ResetCache();
 }
 
 ID3D11Device* FD3DDevice::GetDevice() const
@@ -66,21 +53,6 @@ ID3D11Device* FD3DDevice::GetDevice() const
 ID3D11DeviceContext* FD3DDevice::GetDeviceContext() const
 {
 	return DeviceContext;
-}
-
-void FD3DDevice::SetDepthStencilState(EDepthStencilState InState)
-{
-	DepthStencilStateManager.Set(DeviceContext, InState);
-}
-
-void FD3DDevice::SetBlendState(EBlendState InState)
-{
-	BlendStateManager.Set(DeviceContext, InState);
-}
-
-void FD3DDevice::SetRasterizerState(ERasterizerState InState)
-{
-	RasterizerStateManager.Set(DeviceContext, InState);
 }
 
 void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)

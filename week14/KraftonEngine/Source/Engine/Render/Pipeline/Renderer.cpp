@@ -145,7 +145,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 		GPU_SCOPE_STAT(PassName);
 
-		CommandList.SubmitRange(Start, End, Device, Ctx, Cache);
+		CommandList.SubmitRange(Start, End, Resources, Ctx, Cache);
 
 		for (auto& PostPassEvent : PostPassEvents)
 		{
