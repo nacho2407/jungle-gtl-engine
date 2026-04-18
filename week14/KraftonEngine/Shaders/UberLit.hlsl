@@ -62,24 +62,22 @@ struct UberVS_Output
 UberVS_Output VS(VS_Input_PNCTT input)
 {
     UberVS_Output output;
+    
+    float3x3 M = (float3x3) Model;
 
     float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
     output.worldPos = worldPos4.xyz;
     output.position = mul(mul(worldPos4, View), Projection);
-    output.normal = normalize(mul(input.normal, (float3x3) Model));
+    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
     output.texcoord = input.texcoord;
 
-    float3 T = normalize(mul(input.tangent.xyz, (float3x3) Model));
+    float3 T = normalize(mul(input.tangent.xyz, M));
     T = normalize(T - output.normal * dot(output.normal, T));
-
-#if !defined(LIGHTING_MODEL_GOURAUD)
-
     output.tangent = float4(T, input.tangent.w);
 
-
-#elif defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
-    float3 N = normalize(mul(input.normal, (float3x3) Model));
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N =  output.normal;
 
     if (HasNormalMap > 0.5f)
     {
@@ -128,6 +126,8 @@ UberPS_Output PS(UberVS_Output input)
     if (HasNormalMap >= 0.5)
     {
         float3 T = normalize(input.tangent.xyz);
+        T = normalize(T - N * dot(N, T));
+
         float3 B = normalize(cross(N, T) * input.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 

@@ -18,7 +18,7 @@ PS_Input_Decal VS(VS_Input_PNCT input)
     float4 worldPos = mul(float4(input.position, 1.0f), Model);
     output.position = mul(mul(worldPos, View), Projection);
     output.worldPos = worldPos.xyz;
-    output.normal = normalize(mul(input.normal, (float3x3) Model));
+    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     return output;
 }
 

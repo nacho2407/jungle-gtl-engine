@@ -4,6 +4,7 @@
 
 ////////////////////////////////////////////
 //JSon에 Enum + Texture만 적으면 자동으로 바인딩 될겁니다. 아마도....
+//t0 ~ t7은 MaterialSlot입니다.
 enum class EMaterialTextureSlot : uint32
 {
 	Diffuse = 0,
