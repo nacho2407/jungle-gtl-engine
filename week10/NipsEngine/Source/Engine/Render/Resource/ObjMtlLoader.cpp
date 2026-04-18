@@ -132,11 +132,29 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 			Current->MaterialData.SpecularTexPath = ResolveTexPath(ISS);
 			Current->MaterialData.bHasSpecularTexture = true;
 		}
-		// 범프 맵은 그레이스케일로 높이값이 저장되어 있고 추후 노말로 변환한다고 한다.
-		else if (Token == "map_bump" || Token == "bump")
+		// map_bump / map_Bump / bump — skip any -option value pairs before the filename
+		else if (Token == "map_bump" || Token == "map_Bump" || Token == "bump")
 		{
-			Current->MaterialData.BumpTexPath = ResolveTexPath(ISS);
-			Current->MaterialData.bHasBumpTexture = true;
+			FString BumpToken;
+			while (ISS >> BumpToken)
+			{
+				if (!BumpToken.empty() && BumpToken[0] == '-')
+					ISS >> BumpToken; // discard option value
+				else
+					break;
+			}
+			if (!BumpToken.empty())
+			{
+				std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(BumpToken)).filename();
+				FString FoundPath;
+				FFileUtils::FindFileRecursively(
+					FPaths::ToUtf8(MtlDir.generic_wstring()),
+					FPaths::ToUtf8(FileName.generic_wstring()),
+					FoundPath);
+				std::filesystem::path TexPath = (MtlDir / std::filesystem::path(FPaths::ToWide(FoundPath))).lexically_normal();
+				Current->MaterialData.BumpTexPath = FPaths::ToUtf8(TexPath.generic_wstring());
+				Current->MaterialData.bHasBumpTexture = true;
+			}
 		}
 	}
 

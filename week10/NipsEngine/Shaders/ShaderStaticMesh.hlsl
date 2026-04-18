@@ -250,6 +250,16 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     return output;
 #elif LIGHTING_MODEL_PHONG
+    if (bHasBumpMap)
+    {
+        float3 rawSample = BumpMap.Sample(SampleState, input.UV).rgb;
+        output.Color    = float4(rawSample, 1.f);
+        output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+        output.WorldPos = float4(input.WorldPos, 1.f);
+        // return output;
+    }
+    
+    
     float3 N_Phong = (bHasBumpMap)
         ? PerturbNormal(input.PixelNormal, input.WorldTangent, input.UV)
         : normalize(input.PixelNormal);
