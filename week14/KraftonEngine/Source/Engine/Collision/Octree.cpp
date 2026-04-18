@@ -518,7 +518,7 @@ void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
 		if (Primitive)
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-				if (!Proxy->bNeverCull)
+				if (!Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 					OutProxies.push_back(Proxy);
 		}
 	}
@@ -557,7 +557,7 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 		if (ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-				if (!Proxy->bNeverCull)
+				if (!Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 					OutProxies.push_back(Proxy);
 		}
 	}

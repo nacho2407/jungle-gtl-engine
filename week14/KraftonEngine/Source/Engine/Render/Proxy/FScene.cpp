@@ -3,38 +3,35 @@
 #include "Profiling/Stats.h"
 #include <algorithm>
 
-namespace
+void FScene::EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
 {
-	void EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
+	if (!Proxy || Proxy->bQueuedForDirtyUpdate)
 	{
-		if (!Proxy || Proxy->bQueuedForDirtyUpdate)
-		{
-			return;
-		}
-
-		Proxy->bQueuedForDirtyUpdate = true;
-		DirtyList.push_back(Proxy);
+		return;
 	}
 
-	void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy)
+	Proxy->bQueuedForDirtyUpdate = true;
+	DirtyList.push_back(Proxy);
+}
+
+void FScene::RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy)
+{
+	if (!Proxy || Proxy->SelectedListIndex == UINT32_MAX)
 	{
-		if (!Proxy || Proxy->SelectedListIndex == UINT32_MAX)
-		{
-			return;
-		}
-
-		const uint32 Index = Proxy->SelectedListIndex;
-		const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
-		if (Index != LastIndex)
-		{
-			FPrimitiveSceneProxy* LastProxy = SelectedList.back();
-			SelectedList[Index] = LastProxy;
-			LastProxy->SelectedListIndex = Index;
-		}
-
-		SelectedList.pop_back();
-		Proxy->SelectedListIndex = UINT32_MAX;
+		return;
 	}
+
+	const uint32 Index = Proxy->SelectedListIndex;
+	const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
+	if (Index != LastIndex)
+	{
+		FPrimitiveSceneProxy* LastProxy = SelectedList.back();
+		SelectedList[Index] = LastProxy;
+		LastProxy->SelectedListIndex = Index;
+	}
+
+	SelectedList.pop_back();
+	Proxy->SelectedListIndex = UINT32_MAX;
 }
 
 // ============================================================
@@ -78,7 +75,7 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 
 	EnqueueDirtyProxy(DirtyProxies, Proxy);
 
-	if (Proxy->bNeverCull)
+	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 		NeverCullProxies.push_back(Proxy);
 }
 
@@ -123,7 +120,7 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 		RemoveSelectedProxyFast(SelectedProxies, Proxy);
 	}
 
-	if (Proxy->bNeverCull)
+	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 	{
 		auto it = std::find(NeverCullProxies.begin(), NeverCullProxies.end(), Proxy);
 		if (it != NeverCullProxies.end()) NeverCullProxies.erase(it);

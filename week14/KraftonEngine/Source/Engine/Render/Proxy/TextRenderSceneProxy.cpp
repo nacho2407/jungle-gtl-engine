@@ -14,15 +14,15 @@ FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
 void FTextRenderSceneProxy::UpdateMesh()
 {
 	// SelectionMask 아웃라인 패스에서 사용할 mesh/shader
-	MeshBuffer = Owner->GetMeshBuffer();
+	MeshBuffer = GetOwner()->GetMeshBuffer();
 	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 	Pass = ERenderPass::AlphaBlend;
-	bFontBatched = true;
+	ProxyFlags |= EPrimitiveProxyFlags::FontBatched;
 }
 
 UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 {
-	return static_cast<UTextRenderComponent*>(Owner);
+	return static_cast<UTextRenderComponent*>(GetOwner());
 }
 
 // ============================================================

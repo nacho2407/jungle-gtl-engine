@@ -1,4 +1,4 @@
-﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
@@ -11,7 +11,8 @@
 FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 	: Owner(InComponent)
 {
-	bSupportsOutline = Owner->SupportsOutline();
+	if (!Owner->SupportsOutline())
+		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
 void FPrimitiveSceneProxy::UpdateTransform()
