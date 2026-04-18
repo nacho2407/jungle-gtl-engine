@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Resource/ShaderVariantCache.h"
@@ -150,33 +150,24 @@ class FViewModeRenderPipeline
         FRenderPipelinePassDesc Pass;
         Pass.Stage = EPipelineStage::Lighting;
         Pass.RenderPass = ERenderPass::Lighting;
-        Pass.ShaderVariant.FilePath = "Shaders/LightingPass.hlsl";
+        Pass.ShaderVariant.FilePath = "Shaders/UberLit.hlsl";
         Pass.ShaderVariant.VSEntry = "VS_Fullscreen";
+        Pass.ShaderVariant.PSEntry = "PS_UberLit";
         Pass.bFullscreenPass = true;
 
         switch (ShadingModel)
         {
         case EShadingModel::Gouraud:
-            Pass.ShaderVariant.PSEntry = "PS_Lighting_Gouraud";
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_GOURAUD");
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_GOURAUD_L");
             break;
         case EShadingModel::Lambert:
-            Pass.ShaderVariant.PSEntry = "PS_Lighting_Lambert";
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_LAMBERT");
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL");
             break;
         case EShadingModel::BlinnPhong:
-            Pass.ShaderVariant.PSEntry = "PS_Lighting_BlinnPhong";
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_BLINNPHONG");
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL");
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_MATERIAL_PARAM");
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "USE_SPECULAR");
+            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_PHONG");
             break;
         case EShadingModel::Unlit:
         default:
-            Pass.ShaderVariant.PSEntry = "PS_Lighting_Unlit";
-            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_UNLIT");
             break;
         }
 
@@ -184,7 +175,7 @@ class FViewModeRenderPipeline
     }
 
   private:
-    EViewMode ViewMode = EViewMode::Lit;
+    EViewMode ViewMode = EViewMode::Lit_Phong;
     EShadingModel ShadingModel = EShadingModel::Gouraud;
     TArray<FRenderPipelinePassDesc> Passes;
 };
