@@ -196,7 +196,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         return;
     }
 
-    const float ToolbarHeightPx = 44.0f;
+    const float ToolbarHeightPx = ToolbarHeight;
     const float IconSizePx = 24.0f;
     const float ButtonSpacingPx = 8.0f;
     const float PlayStopSpacingPx = 18.0f;
@@ -231,12 +231,15 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
     ImGui::SetCursorScreenPos(ImVec2(CursorStart.x + ButtonPaddingX, IconButtonY));
 
     const bool bPlaying = Editor->IsPlayingInEditor();
+    const bool bPaused = Editor->IsPausedInEditor();
     ID3D11ShaderResourceView* CurrentPlayIcon = bPlaying ? GPauseIcon : GPlayStartIcon;
 
-    const uint32 PlayTint = bPlaying ? IM_COL32(255, 255, 255, 255) : IM_COL32(70, 210, 90, 255);
+    const uint32 PlayTint = !bPlaying
+        ? IM_COL32(70, 210, 90, 255)
+        : (bPaused ? IM_COL32(255, 230, 80, 255) : IM_COL32(255, 255, 255, 255));
     const uint32 StopTint = bPlaying ? IM_COL32(220, 70, 70, 255) : IM_COL32(255, 255, 255, 255);
 
-    if (DrawIconButton("PIE_Play", CurrentPlayIcon, "Play", PlayTint))
+    if (DrawIconButton("PIE_Play", CurrentPlayIcon, bPlaying ? (bPaused ? "Resume" : "Pause") : "Play", PlayTint))
     {
         Layout->SetActiveViewport(VC);
 
@@ -246,6 +249,10 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             Params.PlayMode = EPIEPlayMode::PlayInViewport;
             Params.DestinationViewportClient = VC;
             Editor->RequestPlaySession(Params);
+        }
+        else if (VC->GetPlayState() != EEditorViewportPlayState::Stopped)
+        {
+            Editor->TogglePausePlayInEditor();
         }
     }
 

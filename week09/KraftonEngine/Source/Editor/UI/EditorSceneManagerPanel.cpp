@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorSceneManagerPanel.h"
+﻿#include "Editor/UI/EditorSceneManagerPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -177,7 +177,7 @@ void FEditorScenePanel::RenderActorOutliner()
     auto DrawPaddedSelectableInColumn = [](const char *Label, bool bSelected, float LeftPadding) -> bool {
         const float StartX = ImGui::GetCursorPosX();
         ImGui::SetCursorPosX(StartX + LeftPadding);
-        return ImGui::Selectable(Label, bSelected, ImGuiSelectableFlags_SpanAllColumns);
+        return ImGui::Selectable(Label, bSelected);
     };
 
     if (ImGui::BeginTable("SceneManagerTable", 3, TableFlags, ImVec2(0.0f, 0.0f)))
