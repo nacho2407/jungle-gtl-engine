@@ -2,7 +2,7 @@
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
 
-Texture2D g_txColor : register(t0);
+Texture2D DiffuseTexture : register(t0);
 
 cbuffer PerShader1 : register(b2)
 {
@@ -23,7 +23,7 @@ PS_Input_Full VS(VS_Input_PNCT input)
 
 float4 PS(PS_Input_Full input) : SV_TARGET
 {
-    float4 texColor = g_txColor.Sample(LinearWrapSampler, input.texcoord);
+    float4 texColor = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
 
     // Unbound SRV는 (0,0,0,0)을 반환 — 텍스처 미바인딩 시 white로 대체
     if (texColor.a < 0.001f)

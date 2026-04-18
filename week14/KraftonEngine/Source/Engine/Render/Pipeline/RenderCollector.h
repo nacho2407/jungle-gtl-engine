@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Pipeline/FrameContext.h"
 #include "Engine/Collision/Octree.h"
 
@@ -7,12 +7,12 @@ class FOverlayStatSystem;
 class UEditorEngine;
 class FScene;
 class FOctree;
-class FRenderer;
+class FDrawCommandBuilder;
 
 class FRenderCollector
 {
 public:
-	void CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer);
+	void CollectWorld(UWorld* World, const FFrameContext& Frame, FDrawCommandBuilder& Builder);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
 	void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
 	void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene);
@@ -22,7 +22,15 @@ public:
 	const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return LastVisibleProxies; }
 
 private:
-	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
+	void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FDrawCommandBuilder& Builder);
+
+	// CollectVisibleProxies 서브 메서드
+	void CollectFontProxy(const FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, FDrawCommandBuilder& Builder);
+	void CollectDecalProxy(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame,
+		const TSet<FPrimitiveSceneProxy*>& VisibleSet, FDrawCommandBuilder& Builder);
+	void CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDrawCommandBuilder& Builder);
+	void CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
+		FScene& Scene, FDrawCommandBuilder& Builder);
 
 	TArray<FPrimitiveSceneProxy*> LastVisibleProxies;
 };

@@ -10,8 +10,8 @@ cbuffer FXAABuffer : register(b2)
     float2 _Pad;
 };
 
-// SceneColor (t11) is declared in Common/SystemResources.hlsl
-#define ColorTex SceneColor
+// SceneColorTexture (t17) is declared in Common/SystemResources.hlsli
+#define ColorTex SceneColorTexture
 #define Sampler LinearClampSampler
 
 #define SEARCH_STEPS        8       // 최대 탐색 스텝 수
