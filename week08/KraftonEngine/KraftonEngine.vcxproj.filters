@@ -222,6 +222,9 @@
     <FxCompile Include="Shaders\TileBasedLightCullingCS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PreDepth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">

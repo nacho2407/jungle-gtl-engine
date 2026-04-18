@@ -18,14 +18,63 @@ void BuildDefaultPassEvents(
 	{
 		const EShadingModel ShadingModel = ActiveViewPipeline->GetShadingModel();
 
+		OutPrePassEvents.push_back({ ERenderPass::Z_Prepass, EPassCompare::Equal, true, false,
+             [Context, &Frame, &Cache, ShadingModel, ActiveViewSurfaces]()
+             {
+                ID3D11ShaderResourceView* NullSRVs[6] = {};
+                Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+                //DepthStencilView만 바인딩
+                Context->OMSetRenderTargets(0, nullptr, Frame.ViewportDSV);
+
+                // Depth Clear
+                Context->ClearDepthStencilView(Frame.ViewportDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+                Cache.DiffuseSRV = nullptr;
+                Cache.bForceAll = true;
+              } 
+			});
+
 		OutPrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
 			[Context, &Frame, &Cache, ShadingModel, ActiveViewSurfaces]()
 			{
+				//1. Clustering 등록
+                Context->OMSetRenderTargets(0, nullptr, nullptr);
+
+                // Z-Prepass에서 생성된 원본 Depth SRV 바인딩
+
+				if (Frame.DepthTexture && Frame.DepthCopyTexture)
+                {
+
+                    Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
+                }
+                if (Frame.DepthCopySRV)
+                {
+                    ID3D11ShaderResourceView* CSDepthSRV = Frame.DepthCopySRV;
+                    Context->CSSetShaderResources(0, 1, &CSDepthSRV);
+                }
+
+				// TODO: Light Culling CS 및 타일 마스크 UAV 바인딩, 디스패치
+                // Context->CSSetShader(Cache.LightCullingCS, nullptr, 0);
+                // Context->CSSetUnorderedAccessViews(0, 1, &TileLightMaskUAV, nullptr);
+                // Context->Dispatch(GroupX, GroupY, 1);
+
+                // CS에서 사용한 SRV/UAV 해제 (이어질 PS 단계와 충돌 방지)
+                ID3D11ShaderResourceView* NullCS_SRVs[1] = { nullptr };
+                Context->CSSetShaderResources(0, 1, NullCS_SRVs);
+                // ID3D11UnorderedAccessView* NullUAVs[1] = { nullptr };
+                // Context->CSSetUnorderedAccessViews(0, 1, NullUAVs, nullptr);
+				
+				//2. Opaque Rendering
 				ID3D11ShaderResourceView* NullSRVs[6] = {};
 				Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
 
 				ActiveViewSurfaces->ClearBaseTargets(Context, ShadingModel);
 				ActiveViewSurfaces->BindBaseDrawTargets(Context, ShadingModel, Frame.ViewportDSV);
+
+				// TODO: 앞선 CS에서 만들어진 TileLightMask (SRV)를 Opaque의 픽셀 셰이더(PS)에 바인딩
+                // ID3D11ShaderResourceView* LightMaskSRV = ...
+                // Context->PSSetShaderResources(슬롯번호, 1, &LightMaskSRV);
 
 				Cache.DiffuseSRV = nullptr;
 				Cache.bForceAll = true;
