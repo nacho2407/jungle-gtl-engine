@@ -19,6 +19,7 @@
 
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
+#include <Collision/WorldPrimitivePickingBVH.h>
 
 void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
 {
@@ -82,14 +83,9 @@ void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scen
 // ============================================================
 // Octree 디버그 시각화 — 깊이별 색상으로 노드 AABB 표시
 // ============================================================
-static const FColor OctreeDepthColors[] = {
-	FColor(255,   0,   0),	// 0: Red
-	FColor(255, 165,   0),	// 1: Orange
-	FColor(255, 255,   0),	// 2: Yellow
-	FColor(0, 255,   0),	// 3: Green
-	FColor(0, 255, 255),	// 4: Cyan
-	FColor(0,   0, 255),	// 5: Blue
-};
+static const FColor OctreeDebugColor = FColor(0, 255, 255);
+static const FColor BVHDebugColor = FColor(0, 255, 0);
+static const FColor WorldBoundDebugColor = FColor(255, 0, 255);
 
 void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
 {
@@ -98,7 +94,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 	const FBoundingBox& Bounds = Node->GetCellBounds();
 	if (!Bounds.IsValid()) return;
 
-	const FColor& Color = OctreeDepthColors[Depth % 6];
+	const FColor& Color = OctreeDebugColor;
 	const FVector& Min = Bounds.Min;
 	const FVector& Max = Bounds.Max;
 
@@ -133,6 +129,32 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 	}
 }
 
+
+void FRenderCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene)
+{
+	const TArray<FWorldPrimitivePickingBVH::FNode>& Nodes = BVH.GetNodes();
+	for (const FWorldPrimitivePickingBVH::FNode& Node : Nodes)
+	{
+		if (!Node.Bounds.IsValid())
+		{
+			continue;
+		}
+		Scene.AddDebugAABB(Node.Bounds.Min, Node.Bounds.Max, BVHDebugColor);
+	}
+}
+
+void FRenderCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene)
+{
+	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	{
+		if (!Proxy || !Proxy->CachedBounds.IsValid())
+		{
+			continue;
+		}
+		Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, WorldBoundDebugColor);
+	}
+}
+
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
@@ -140,8 +162,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 {
 	if (!Frame.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = Frame.ShowFlags.bBoundingVolume;
-	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
+		SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
 	TSet<FPrimitiveSceneProxy*> VisibleProxySet;
 	VisibleProxySet.reserve(Proxies.size());
@@ -271,11 +292,6 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
 			}
 
-			if (bShowBoundingVolume && Proxy->bShowAABB)
-			{
-				Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor::White());
-			}
-
 			//TODO: Owner 의존성 제거
 			Proxy->CollectSelectedVisuals(Scene);
 		}
@@ -300,5 +316,6 @@ void FRenderCollector::CollectLights(FScene& Scene)
         if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
             continue;
         CollectedLights.push_back(Proxy->LightConstants);
+        Proxy->VisualizeLights(Scene);
     }
 }

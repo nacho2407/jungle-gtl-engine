@@ -216,15 +216,6 @@
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\LightCullingCommon.hlsl">
-      <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TileBasedLightCullingCS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\PreDepth.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -651,9 +642,16 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp">
-      <Filter>Source\Engine\Render\Culling</Filter>
+    <ClCompile Include="Source\Engine\GameFramework\DirectionalLightActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\PointLightActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\SpotLightActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1205,9 +1203,16 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h">
-      <Filter>Source\Engine\Render\Culling</Filter>
+    <ClInclude Include="Source\Engine\GameFramework\DirectionalLightActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\PointLightActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\SpotLightActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
