@@ -39,7 +39,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 
-	if (!Frame.ShowFlags.bGizmo || !Gizmo->IsVisible())
+	if (!Frame.RenderOptions.ShowFlags.bGizmo || !Gizmo->IsVisible())
 	{
 		bVisible = false;
 		return;

@@ -69,7 +69,7 @@ void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySyste
 
 void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
 {
-	if (!Frame.ShowFlags.bDebugDraw) return;
+	if (!Frame.RenderOptions.ShowFlags.bDebugDraw) return;
 
 	for (const FDebugDrawItem& Item : Scene.GetDebugDrawQueue().GetItems())
 	{
@@ -136,9 +136,9 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 // ============================================================
 void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FDrawCommandBuilder& Builder)
 {
-	if (!Frame.ShowFlags.bPrimitives) return;
+	if (!Frame.RenderOptions.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = Frame.ShowFlags.bBoundingVolume;
+	const bool bShowBoundingVolume = Frame.RenderOptions.ShowFlags.bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
 	TSet<FPrimitiveSceneProxy*> VisibleProxySet;

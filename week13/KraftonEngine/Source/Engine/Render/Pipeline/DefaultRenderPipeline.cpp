@@ -25,11 +25,11 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FScene* Scene = nullptr;
 	if (Camera)
 	{
-		FShowFlags ShowFlags;
-		EViewMode ViewMode = EViewMode::Lit_Phong;
-
 		Frame.SetCameraInfo(Camera);
-		Frame.SetRenderSettings(ViewMode, ShowFlags);
+
+		FViewportRenderOptions Opts;
+		Opts.ViewMode = EViewMode::Lit_Phong;
+		Frame.SetRenderOptions(Opts);
 
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();

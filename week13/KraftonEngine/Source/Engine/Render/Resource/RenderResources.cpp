@@ -41,7 +41,7 @@ void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext
 	frameConstantData.View = Frame.View;
 	frameConstantData.Projection = Frame.Proj;
 	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
-	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
+	frameConstantData.bIsWireframe = (Frame.RenderOptions.ViewMode == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = Frame.WireframeColor;
 	frameConstantData.CameraWorldPos = Frame.CameraPosition;
 
