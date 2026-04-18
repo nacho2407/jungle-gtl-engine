@@ -142,7 +142,7 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 					for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
 					{
 						UTexture2D* Texture = nullptr;
-						if (Mat->GetTextureParameter(MaterialTextureSlot::ToString(s) + "Texture", Texture))
+						if (Mat->GetTextureParameter(MaterialTextureSlot::ToString(s) + "Texture", Texture) && Texture && Texture->GetSRV())
 						{
 							Draw.SRVs[s] = Texture->GetSRV();
 						}
