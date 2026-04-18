@@ -214,6 +214,20 @@ LightResult EvaluateSpotlightBlinnPhong(float3 LightColor,
                                      float Shininess)
 {
     LightResult output = (LightResult) 0;
+    float3 LightToFrag = normalize(WorldPos - LightPos);
+    float theta = acos(dot(LightToFrag, normalize(Direction)));
     
+    if (theta > OuterAngle)
+    {
+        return output;
+    }
+    
+    float epsilon = InnerAngle - OuterAngle;
+    float spotAttenuation = saturate((theta - OuterAngle) / epsilon);
+
+    output = EvaluatePointBlinnPhong(LightColor, Intensity, LightPos, WorldPos, Normal, Radius, Falloff, SurfaceToCamera, Shininess);
+    output.Diffuse  *= spotAttenuation;
+    output.Specular *= spotAttenuation;
+
     return output;
 }
