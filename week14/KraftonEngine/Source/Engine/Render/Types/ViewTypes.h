@@ -8,6 +8,7 @@ enum class EViewMode : int32
 	Unlit,
 	Lit_Gouraud,
 	Lit_Lambert,
+	Lit_Toon,
 	Wireframe,
 	SceneDepth,
 	WorldNormal,

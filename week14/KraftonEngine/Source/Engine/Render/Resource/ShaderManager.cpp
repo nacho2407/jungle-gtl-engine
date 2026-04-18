@@ -51,7 +51,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl", "VS", "PS");
-	// [UberLit] StaticMesh 기본(Phong) + 3개 라이팅 모델 변형 컴파일
+	// [UberLit] StaticMesh 기본(Phong) + 4개 라이팅 모델 변형 컴파일
 	// UberLitDefines(DEBUG_LIGHTS=0)를 공통으로 포함하여 실제 CB/SB 바인딩 사용
 	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", UberLitDefines);
 
@@ -60,9 +60,11 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 		D3D_SHADER_MACRO GouraudMacros[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
 		D3D_SHADER_MACRO LambertMacros[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
 		D3D_SHADER_MACRO PhongMacros[]   = { {"LIGHTING_MODEL_PHONG",   "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
+		D3D_SHADER_MACRO ToonMacros[]    = { {"LIGHTING_MODEL_TOON",    "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
 		Shaders[(uint32)EShaderType::UberLit_Gouraud].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", GouraudMacros);
 		Shaders[(uint32)EShaderType::UberLit_Lambert].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", LambertMacros);
 		Shaders[(uint32)EShaderType::UberLit_Phong].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", PhongMacros);
+		Shaders[(uint32)EShaderType::UberLit_Toon].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", ToonMacros);
 	}
 	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl", "VS", "PS");

@@ -14,6 +14,7 @@ enum class EShaderType : uint32
 	UberLit_Gouraud,
 	UberLit_Lambert,
 	UberLit_Phong,
+	UberLit_Toon,
 	Decal,
 	OutlinePostProcess,
 	Font,
