@@ -551,7 +551,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
 			// Convert() 안에서 기존 직접 세팅 대신
 			FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
-			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
+			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(JsonPath);
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
