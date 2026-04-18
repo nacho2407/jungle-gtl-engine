@@ -1,0 +1,56 @@
+#include "CommonTypes.hlsli"
+#include "SurfaceData.hlsli"
+#include "LightingCommon.hlsli"
+
+Texture2D g_BaseColorTex : register(t0);
+Texture2D g_Surface1Tex : register(t1);
+Texture2D g_Surface2Tex : register(t2);
+Texture2D g_ModifiedBaseColorTex : register(t3);
+Texture2D g_ModifiedSurface1Tex : register(t4);
+Texture2D g_ModifiedSurface2Tex : register(t5);
+
+float4 ResolveBaseColor(float2 UV)
+{
+    float4 BaseColor = g_BaseColorTex.Sample(LinearClampSampler, UV);
+    float4 ModifiedBaseColor = g_ModifiedBaseColorTex.Sample(LinearClampSampler, UV);
+    return ResolveSurfaceValue(BaseColor, ModifiedBaseColor);
+}
+
+float4 ResolveSurface1(float2 UV)
+{
+    float4 Surface1 = g_Surface1Tex.Sample(LinearClampSampler, UV);
+    float4 ModifiedSurface1 = g_ModifiedSurface1Tex.Sample(LinearClampSampler, UV);
+    return ResolveSurfaceValue(Surface1, ModifiedSurface1);
+}
+
+float4 ResolveSurface2(float2 UV)
+{
+    float4 Surface2 = g_Surface2Tex.Sample(LinearClampSampler, UV);
+    float4 ModifiedSurface2 = g_ModifiedSurface2Tex.Sample(LinearClampSampler, UV);
+    return ResolveSurfaceValue(Surface2, ModifiedSurface2);
+}
+
+PS_Input_UV VS_Fullscreen(uint VertexID : SV_VertexID)
+{
+    return FullscreenTriangleVS(VertexID);
+}
+
+float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
+{
+    float2 UV = Input.uv;
+    float4 BaseColor = ResolveBaseColor(UV);
+
+#if defined(LIGHTING_MODEL_GOURAUD)
+    float4 GouraudL = ResolveSurface1(UV);
+    return ComputeGouraudLighting(BaseColor, GouraudL);
+#elif defined(LIGHTING_MODEL_LAMBERT)
+    float3 Normal = DecodeNormal(ResolveSurface1(UV));
+    return ComputeLambertLighting(BaseColor, Normal);
+#elif defined(LIGHTING_MODEL_PHONG)
+    float3 Normal = DecodeNormal(ResolveSurface1(UV));
+    float4 MaterialParam = ResolveSurface2(UV);
+    return ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, UV);
+#else
+    return BaseColor;
+#endif
+}

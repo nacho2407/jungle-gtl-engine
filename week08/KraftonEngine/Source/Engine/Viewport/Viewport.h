@@ -82,4 +82,5 @@ private:
 	uint32 PendingWidth = 0;
 	uint32 PendingHeight = 0;
 	bool bPendingResize = false;
+
 };

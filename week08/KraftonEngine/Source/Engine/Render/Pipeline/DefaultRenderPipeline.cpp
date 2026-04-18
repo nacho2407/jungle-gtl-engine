@@ -1,6 +1,6 @@
-#include "DefaultRenderPipeline.h"
+﻿#include "DefaultRenderPipeline.h"
 
-#include "Renderer.h"
+#include "Render/Renderer.h"
 #include "Engine/Runtime/Engine.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
@@ -24,10 +24,12 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	if (Camera)
 	{
 		FShowFlags ShowFlags;
-		EViewMode ViewMode = EViewMode::Lit;
+		EViewMode ViewMode = EViewMode::Lit_Phong;
 
 		Frame.SetCameraInfo(Camera);
 		Frame.SetRenderSettings(ViewMode, ShowFlags);
+		Renderer.SetActiveViewModePipeline(nullptr);
+		Renderer.ReleaseViewModeSurfaceResources();
 
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();
@@ -39,6 +41,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	}
 	else
 	{
+		Renderer.SetActiveViewModePipeline(nullptr);
+		Renderer.ReleaseViewModeSurfaceResources();
 		Renderer.BeginCollect(Frame);
 		Renderer.BuildDynamicCommands(Frame, nullptr);
 	}
