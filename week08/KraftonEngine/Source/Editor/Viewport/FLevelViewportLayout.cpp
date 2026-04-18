@@ -866,7 +866,11 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				// View Mode
 				ImGui::Text("View Mode");
 				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-				ImGui::RadioButton("Lit", &CurrentMode, static_cast<int32>(EViewMode::Lit));
+				ImGui::RadioButton("Lit_Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
+				ImGui::SameLine();
+				ImGui::RadioButton("Lit_Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
+				ImGui::SameLine();
+				ImGui::RadioButton("Lit_Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
 				ImGui::SameLine();
 				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
 				ImGui::SameLine();
