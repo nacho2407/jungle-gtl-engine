@@ -904,12 +904,6 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
 	}
-	else
-	{
-		// 폴백: 씬에 AmbientLight 없으면 최소 ambient 보장 (검정 방지)
-		GlobalLightingData.Ambient.Intensity = 0.15f;
-		GlobalLightingData.Ambient.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-	}
 	if (Scene.HasGlobalDirectionalLight())
 	{
 		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
@@ -917,13 +911,6 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
 	}
-	//else
-	//{
-	//	// 폴백: 씬에 DirectionalLight 없으면 기본 태양광 (검정 방지)
-	//	GlobalLightingData.Directional.Intensity = 1.0f;
-	//	GlobalLightingData.Directional.Color = FVector4(1.0f, 0.95f, 0.85f, 1.0f);
-	//	GlobalLightingData.Directional.Direction = FVector(1.0f, -1.0f, 0.5f).Normalized();
-	//}
 
 	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
 	if (!PointLightParams.empty())
@@ -955,30 +942,6 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 	for (const FSpotLightParams& SpotLight : SpotLightParams)
 	{
 		Infos.emplace_back(SpotLight.ToLightInfo());
-	}
-
-	static uint32 LightDebugLogCounter = 0;
-	++LightDebugLogCounter;
-	if (LightDebugLogCounter % 60 == 0)
-	{
-		if (!Infos.empty())
-		{
-			const FLightInfo& FirstLight = Infos[0];
-			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight{Type=%u, Pos=(%.3f, %.3f, %.3f), Intensity=%.3f, Radius=%.3f, Falloff=%.3f}",
-				GlobalLightingData.NumActivePointLights,
-				GlobalLightingData.NumActiveSpotLights,
-				FirstLight.LightType,
-				FirstLight.Position.X, FirstLight.Position.Y, FirstLight.Position.Z,
-				FirstLight.Intensity,
-				FirstLight.AttenuationRadius,
-				FirstLight.FalloffExponent);
-		}
-		else
-		{
-			UE_LOG("[LightDebug] Point=%u Spot=%u FirstLight=None",
-				GlobalLightingData.NumActivePointLights,
-				GlobalLightingData.NumActiveSpotLights);
-		}
 	}
 
 	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
