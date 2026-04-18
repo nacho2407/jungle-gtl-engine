@@ -16,10 +16,10 @@ public:
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
-    FLightSceneProxy* CreateLightSceneProxy() override;
+    FDirectionalLightSceneProxy* CreateLightSceneProxy() override;
 
 protected:
-    // Light Temperature
+    FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 기본값: 아래로 향하는 빛
     bool  bUseTemperature = false;
     float Temperature = 6500.0f;
 };

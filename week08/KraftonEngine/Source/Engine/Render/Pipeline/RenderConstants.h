@@ -118,19 +118,44 @@ struct FSceneDepthPConstants
 	uint32 Mode;
 };
 
-// HLSL b2 슬롯과 대응
-struct FLightConstants
+struct FAmbientLightInfo
 {
-    FVector Position;        // 12B  — Point/Spot 월드 위치
-    float Intensity;         //  4B
-    FVector Direction;       // 12B  — Directional/Spot 방향 (정규화)
-    float AttenuationRadius; //  4B  — Point/Spot 감쇠 반경
-    FVector4 LightColor;     // 16B  — linear RGBA
-    float InnerConeAngle;    //  4B  — Spot 내부 코사인 반각
-    float OuterConeAngle;    //  4B  — Spot 외부 코사인 반각
-    uint32 LightType;        //  4B  — ELightType 캐스트
-    float Padding;           //  4B  — 16B 경계 맞춤
-}; // 총 64B
+    FVector Color;
+    float Intensity;
+};
+
+struct FDirectionalLightInfo
+{
+    FVector Color;     // 12B
+    float Intensity;   // 4B
+
+    FVector Direction; // 12B
+	float Padding;     // 4B
+};
+
+struct FSpotLightInfo
+{
+	FVector Color;           // 12B
+	float Intensity;         // 4B
+
+    FVector Position;        // 12B
+	float AttenuationRadius; // 4B
+
+    FVector Direction;       // 12B
+    float InnerConeAngle;    // 4B
+
+    float OuterConeAngle;    // 4B
+    float Padding[3];        // 12B
+};
+
+struct FPointLightInfo
+{
+    FVector Color;			 // 12B
+    float Intensity;         // 4B
+
+	FVector Position;        // 12B
+    float AttenuationRadius; // 4B
+};
 
 // Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응
 struct FFogConstants
