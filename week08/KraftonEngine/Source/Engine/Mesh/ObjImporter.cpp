@@ -658,34 +658,35 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 				else
 				{
 					// 새로운 정점 생성
-					FNormalVertex NewVertex;
+					FVertexPNCT_T NewVertex;
 
 					// 축 리맵 + 스케일 적용
-					NewVertex.pos = RemapPosition(ObjInfo.Positions[Key.p], Options.ForwardAxis) * Options.Scale;
+					NewVertex.Position = RemapPosition(ObjInfo.Positions[Key.p], Options.ForwardAxis) * Options.Scale;
 
 					// Normal 리맵
 					if (Key.n == -1)
 					{
-						NewVertex.normal = RemapPosition(FaceNormal, Options.ForwardAxis).Normalized();
+						NewVertex.Normal = RemapPosition(FaceNormal, Options.ForwardAxis).Normalized();
 					}
 					else
 					{
-						NewVertex.normal = RemapPosition(ObjInfo.Normals[Key.n], Options.ForwardAxis).Normalized();
+						NewVertex.Normal = RemapPosition(ObjInfo.Normals[Key.n], Options.ForwardAxis).Normalized();
 					}
 
 					// UV 예외 처리
 					if (Key.t == -1)
 					{
-						NewVertex.tex = { 0.0f, 0.0f };
+						NewVertex.UV = { 0.0f, 0.0f };
 					}
 					else
 					{
-						NewVertex.tex = ObjInfo.UVs[Key.t];
+						NewVertex.UV = ObjInfo.UVs[Key.t];
 						// UV 변환 (left-bottom -> left-top)
-						NewVertex.tex.V = 1.0f - NewVertex.tex.V;
+						NewVertex.UV.V = 1.0f - NewVertex.UV.V;
 					}
 
-					NewVertex.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+					NewVertex.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+					NewVertex.Tangent = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 					uint32 NewIndex = static_cast<uint32>(OutMesh.Vertices.size());
 					OutMesh.Vertices.push_back(NewVertex);
