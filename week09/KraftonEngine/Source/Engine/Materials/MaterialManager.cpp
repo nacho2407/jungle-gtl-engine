@@ -50,6 +50,26 @@ void FMaterialManager::ScanMaterialAssets()
 	}
 }
 
+UMaterial* FMaterialManager::GetOrCreateStaticMeshMaterial(const FString& MatFilePath)
+{
+	// 정적 메시 머티리얼은 반드시 StaticMeshShader 템플릿을 사용
+	auto It = MaterialCache.find(MatFilePath);
+	if (It != MaterialCache.end())
+	{
+		return It->second;
+	}
+
+	json::JSON JsonData = ReadJsonFile(MatFilePath);
+	if (JsonData.IsNull())
+	{
+		return GetOrCreateMaterial(MatFilePath);
+	}
+
+	JsonData[MatKeys::ShaderPath] = DefaultShaderPath.c_str();
+	SaveToJSON(JsonData, MatFilePath);
+	return GetOrCreateMaterial(MatFilePath);
+}
+
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
 	// 1. 캐시 반환
