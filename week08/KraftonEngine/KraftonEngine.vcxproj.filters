@@ -198,6 +198,9 @@
     <FxCompile Include="Shaders\SurfaceData.hlsli">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -1181,8 +1184,5 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="GEMINI.md" />
   </ItemGroup>
 </Project>
