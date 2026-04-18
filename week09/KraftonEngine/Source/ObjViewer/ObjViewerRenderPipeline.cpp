@@ -6,6 +6,7 @@
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
+#include "Render/Pipeline/ViewModeRenderPipeline.h"
 
 FObjViewerRenderPipeline::FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer)
 	: Engine(InEngine)
@@ -64,6 +65,17 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	ShowFlags.bBoundingVolume = false;
 	Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
 	Frame.SetViewportInfo(VP);
+
+	if (const auto* PipelineLib = Renderer.GetViewModePipelineLibrary())
+	{
+		Renderer.SetActiveViewModePipeline(PipelineLib->Get(EViewMode::Lit));
+		Renderer.SetActiveViewModeSurfaces(VP->GetViewModeSurfaceResources());
+	}
+	else
+	{
+		Renderer.SetActiveViewModePipeline(nullptr);
+		Renderer.SetActiveViewModeSurfaces(nullptr);
+	}
 
 	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
 	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
