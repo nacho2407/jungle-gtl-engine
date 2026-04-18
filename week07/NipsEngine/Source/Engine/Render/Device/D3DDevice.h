@@ -16,20 +16,30 @@ struct FRenderTargetSet
 {
 	ID3D11RenderTargetView* SceneColorRTV = nullptr;
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
+
     ID3D11RenderTargetView*   SceneNormalRTV = nullptr;
     ID3D11ShaderResourceView*     SceneNormalSRV = nullptr;
+
     ID3D11RenderTargetView*     SceneLightRTV = nullptr;
     ID3D11ShaderResourceView*     SceneLightSRV = nullptr;
+
     ID3D11RenderTargetView*       SceneFogRTV = nullptr;
     ID3D11ShaderResourceView*     SceneFogSRV = nullptr;
+
+	// 월드 좌표를 RGBA로 인코딩하여 저장하는 Render Target
+    // Decal 렌더링, Gizmo 렌더링 등에서 활용
     ID3D11RenderTargetView*       SceneWorldPosRTV = nullptr;
     ID3D11ShaderResourceView*     SceneWorldPosSRV = nullptr;
+
     ID3D11RenderTargetView*       SceneFXAARTV = nullptr;
     ID3D11ShaderResourceView*     SceneFXAASRV = nullptr;
+
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
+
     ID3D11DepthStencilView*   DepthStencilView = nullptr;
     ID3D11ShaderResourceView* SceneDepthSRV = nullptr;
+
 	float Width = 0.0f;
 	float Height = 0.0f;
 

@@ -1,7 +1,7 @@
 #include "../Common.hlsl"
 
 // GBuffer
-Texture2D SceneColor : register(t0);
+Texture2D SceneColor : register(t0); // 이미 SceneLightColor로 완성된 색이 들어오고, 이 셰이더에서는 이 텍스처를 사용하지 않는데 이게 여기 있을 이유가..?
 Texture2D SceneNormal : register(t1);
 Texture2D SceneDepth : register(t2);
 Texture2D SceneLightColor : register(t3);

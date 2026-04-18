@@ -12,11 +12,11 @@
 #include "Component/DecalComponent.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/FireballComponent.h"
-#include "Component/PostProcess/Light/LightComponentBase.h"
-#include "Component/PostProcess/Light/AmbientLightComponent.h"
-#include "Component/PostProcess/Light/DirectionalLightComponent.h"
-#include "Component/PostProcess/Light/PointLightComponent.h"
-#include "Component/PostProcess/Light/SpotlightComponent.h"
+#include "Component/Light/LightComponentBase.h"
+#include "Component/Light/AmbientLightComponent.h"
+#include "Component/Light/DirectionalLightComponent.h"
+#include "Component/Light/PointLightComponent.h"
+#include "Component/Light/SpotlightComponent.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
@@ -241,7 +241,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 		{
 			if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
 			{
-				CollectLight(Light);
+				CollectLight(Light, RenderBus);
 			}
 		}
 
