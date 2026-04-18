@@ -21,6 +21,15 @@ void FD3DDevice::Release()
 	ReleaseDeviceAndSwapChain();
 }
 
+void FD3DDevice::BeginFrame()
+{
+	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
+	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+
+	DeviceContext->RSSetViewports(1, &ViewportInfo);
+	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView);
+}
+
 void FD3DDevice::Present()
 {
 	UINT PresentFlags = bTearingSupported ? DXGI_PRESENT_ALLOW_TEARING : 0;

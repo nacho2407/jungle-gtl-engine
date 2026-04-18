@@ -10,15 +10,13 @@ public:
 	void Create(HWND InHWindow);
 	void Release();
 
+	// 스왑체인 백버퍼 복귀 — RTV/DSV 클리어 + 뷰포트 세팅
+	void BeginFrame();
 	void Present();
 	void OnResizeViewport(int width, int height);
 
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
-	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
-	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
-	const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
-	const float* GetClearColor() const { return ClearColor; }
 
 private:
 	void CreateDeviceAndSwapChain(HWND InHWindow);
@@ -35,6 +33,7 @@ private:
 	ID3D11DeviceContext* DeviceContext = nullptr;
 	IDXGISwapChain* SwapChain = nullptr;
 
+	// --- SwapChain BackBuffer ---
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 
@@ -42,7 +41,6 @@ private:
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 
 	D3D11_VIEWPORT ViewportInfo = {};
-
 	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
 
 	BOOL bTearingSupported = FALSE;
