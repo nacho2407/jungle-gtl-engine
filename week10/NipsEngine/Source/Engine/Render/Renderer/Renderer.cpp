@@ -85,6 +85,11 @@ void FRenderer::Release()
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
+	Resources.LightBuffer.Release();
+	Resources.LightStructuredBuffer.Release();
+	Resources.LightCulledIndexBuffer.Release();
+	Resources.LightTileBuffer.Release();
+
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
     Resources.LightPassConstantBuffer.Release();
