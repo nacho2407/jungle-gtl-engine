@@ -199,6 +199,17 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         LightResult result = EvaluateLightByType(Lights[i], input.WorldNormal, input.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
+    
+    // Apply Ambience
+    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
+    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
+    
+    // Apply Directional
+    float3 DColor     = DirectionalLight.Color;
+    float3 DDirection = DirectionalLight.Direction;
+    float  DIntensity = DirectionalLight.Intensity;
+    LightResult DResult = EvaluateDirectionalLambert(DColor, DIntensity, DDirection, input.WorldNormal);
+    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
 
     output.Color = float4(FinalColor * accumulated_light, 1.f);
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
