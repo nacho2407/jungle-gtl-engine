@@ -2,14 +2,13 @@
 
 #include "LightSceneProxy.h"
 
-class UAmbientLightComponent;
+class UDirectionalLightComponent;
 
-class FAmbientLightSceneProxy : public FLightSceneProxy
+class FDirectionalLightSceneProxy : public FLightSceneProxy
 {
 public:
-    FAmbientLightSceneProxy(UAmbientLightComponent* InComponent);
-    ~FAmbientLightSceneProxy() override = default;
+    FDirectionalLightSceneProxy(UDirectionalLightComponent* InComponent);
+    ~FDirectionalLightSceneProxy() override = default;
 
     void UpdateLightConstants() override;
-    void UpdateTransform() override;
 };

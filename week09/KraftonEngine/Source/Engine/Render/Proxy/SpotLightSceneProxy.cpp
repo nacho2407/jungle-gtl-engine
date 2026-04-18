@@ -21,8 +21,5 @@ void FSpotLightSceneProxy::UpdateLightConstants()
 
 void FSpotLightSceneProxy::UpdateTransform()
 {
-    if (!Owner)
-        return;
-    LightConstants.Position = Owner->GetWorldLocation();
-    LightConstants.Direction = Owner->GetForwardVector();
+    FLightSceneProxy::UpdateTransform(); // Position + Direction (PointLight의 Position only를 건너뜀)
 }

@@ -2,16 +2,16 @@
 
 #include "GameFramework/AActor.h"
 
-class UAmbientLightComponent;
+class UDirectionalLightComponent;
 
-class AAmbientLightActor : public AActor
+class ADirectionalLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(AAmbientLightActor, AActor)
-	AAmbientLightActor();
+	DECLARE_CLASS(ADirectionalLightActor, AActor)
+	ADirectionalLightActor();
 
 	void InitDefaultComponents();
 
 private:
-    UAmbientLightComponent* AmbientLightComponent = nullptr;
+    UDirectionalLightComponent* DirectionalLightComponent = nullptr;
 };
