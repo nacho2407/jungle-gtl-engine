@@ -28,6 +28,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 		Frame.SetCameraInfo(Camera);
 		Frame.SetRenderSettings(ViewMode, ShowFlags);
+		Renderer.SetActiveViewModePipeline(nullptr);
+		Renderer.SetActiveViewModeSurfaces(nullptr);
 
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();
@@ -39,6 +41,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	}
 	else
 	{
+		Renderer.SetActiveViewModePipeline(nullptr);
+		Renderer.SetActiveViewModeSurfaces(nullptr);
 		Renderer.BeginCollect(Frame);
 		Renderer.BuildDynamicCommands(Frame, nullptr);
 	}
