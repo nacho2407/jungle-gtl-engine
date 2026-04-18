@@ -868,15 +868,17 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 	}
 
 	RenderBus.LightInfos.clear();
-	if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light))
-	{
-		FLightInfo LightData = {};
-		LightData.Type = 0;
 
-		if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
-		{
-			LightData.Type = 1;
-		}
+	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light)) 
+	{
+        FLightInfo LightData = {};
+        LightData.Type = 0;
+
+		RenderBus.LightInfos.push_back(LightData);
+	}
+    else if (const UPointLightComponent* PointeLight = Cast<UPointLightComponent>(Light)) {
+        FLightInfo LightData = {};
+        LightData.Type = 1;
 
 		RenderBus.LightInfos.push_back(LightData);
 	}
