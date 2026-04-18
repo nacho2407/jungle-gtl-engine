@@ -316,5 +316,6 @@ void FRenderCollector::CollectLights(FScene& Scene)
         if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
             continue;
         CollectedLights.push_back(Proxy->LightConstants);
+        Proxy->VisualizeLights(Scene);
     }
 }

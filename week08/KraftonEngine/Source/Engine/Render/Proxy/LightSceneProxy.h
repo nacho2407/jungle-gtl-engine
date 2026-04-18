@@ -6,6 +6,7 @@
 #include "Render/Types/RenderTypes.h"
 
 class ULightComponent;
+class FScene;
 
 class FLightSceneProxy
 {
@@ -16,6 +17,9 @@ public:
     // ─── 컴포넌트 → 프록시 데이터 동기화 (개별 서브클래스가 오버라이드) ───
     virtual void UpdateLightConstants(); // LightConstants 전체 갱신
     virtual void UpdateTransform();		 // Position/Direction만 갱신
+
+    // ─── 에디터 디버그 시각화 (와이어프레임 화살표/구/콘) ───
+    virtual void VisualizeLights(FScene& Scene) const {}
 
     // ─── Dirty 관리 ───
     void MarkDirty(EDirtyFlag Flag) { DirtyFlags |= Flag; }
