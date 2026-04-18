@@ -193,7 +193,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = ResolvedShader;
 
-			// 머티리얼 기반 렌더 상태 우선 적용
+			// 기본적으로는 현재 패스의 렌더 상태를 따르지만, 섹션별로 명시된 상태가 있으면 우선 적용합니다.
 			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
 			Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
 			Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;

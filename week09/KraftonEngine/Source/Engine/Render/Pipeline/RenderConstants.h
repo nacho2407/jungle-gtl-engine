@@ -197,7 +197,7 @@ struct FMeshSectionDraw
 	EDepthStencilState DepthStencil = EDepthStencilState::Default;
 	ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
 
-	//PerShader
+	// Per Shader
 	FConstantBuffer* MaterialCB[2];//	[0]=b2, [1]=b3,
 };
 
