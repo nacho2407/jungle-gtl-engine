@@ -133,6 +133,7 @@ PSInput mainVS(VSInput input)
     output.UV = input.UV + ScrollUV;
     
 #if LIGHTING_MODEL_GOURAUD
+    output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     float3 accumulated_light = float3(0, 0, 0);
     uint LightCount, stride;
     Lights.GetDimensions(LightCount, stride);
@@ -140,6 +141,17 @@ PSInput mainVS(VSInput input)
         LightResult result = EvaluateLightByType(Lights[i], output.WorldNormal, output.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
+    
+    // Apply Ambience
+    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
+    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
+    
+    // Apply Directional
+    float3 DColor     = DirectionalLight.Color;
+    float3 DDirection = DirectionalLight.Direction;
+    float  DIntensity = DirectionalLight.Intensity;
+    LightResult DResult = EvaluateDirectionalGouraud(DColor, DIntensity, DDirection, output.WorldNormal, CameraPosition - output.WorldPos, Shininess);
+    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
     
     output.LitColor = accumulated_light;
     return output;
