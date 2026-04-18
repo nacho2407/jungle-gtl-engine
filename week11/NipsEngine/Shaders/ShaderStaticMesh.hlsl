@@ -78,33 +78,24 @@ LightResult EvaluateLightByType(FLightInfo LightData, float3 normal, float3 worl
     switch (LightData.Type)
     {
         case 0:
-            return EvaluateAmbientLight(LightData.Color, LightData.Intensity);
+#if LIGHTING_MODEL_GOURAUD
+            return EvaluateSpotlightGouraud(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
+                                            LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
+#elif LIGHTING_MODEL_LAMBERT
+            return EvaluateSpotlightLambert(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
+                                            LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle);
+#elif LIGHTING_MODEL_PHONG
+            return EvaluateSpotlightBlinnPhong(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
+                                               LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
+#endif
+            return (LightResult) 0;
         case 1:
 #if LIGHTING_MODEL_GOURAUD
-            return EvaluateDirectionalGouraud(LightData.Color, LightData.Intensity, LightData.Direction, normal, camPos - worldPos, Shininess);
+            return EvaluatePointGouraud(LightData.Color, LightData.Intensity, LightData.Position, worldPos, normal, LightData.Radius, LightData.Falloff, camPos - worldPos, Shininess);
 #elif LIGHTING_MODEL_LAMBERT
-            return EvaluateDirectionalLambert(LightData.Color, LightData.Intensity, LightData.Direction, normal);
+            return EvaluatePointLambert(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos, LightData.Radius, LightData.Falloff);
 #elif LIGHTING_MODEL_PHONG
-            return EvaluateDirectionalBlinnPhong(LightData.Color, LightData.Intensity, LightData.Direction, normal, camPos - worldPos, Shininess);
-#endif
-            return (LightResult) 0;
-        case 2:
-#if LIGHTING_MODEL_GOURAUD
-            return EvaluatePointGouraud(LightData.Color, LightData.Intensity, LightData.WorldPos, worldPos, normal, LightData.Radius, LightData.RadiusFalloff, camPos - worldPos, Shininess);
-#elif LIGHTING_MODEL_LAMBERT
-            return EvaluatePointLambert(LightData.Color, LightData.Intensity, normal, LightData.WorldPos, worldPos, LightData.Radius, LightData.RadiusFalloff);
-#elif LIGHTING_MODEL_PHONG
-            return EvaluatePointBlinnPhong(LightData.Color, LightData.Intensity, LightData.WorldPos, worldPos, normal, LightData.Radius, LightData.RadiusFalloff, camPos - worldPos, Shininess);
-#endif
-            return (LightResult) 0;
-        case 3:
-#if LIGHTING_MODEL_GOURAUD
-        return EvaluateSpotlightGouraud(LightData.Color, LightData.Intensity, normal, LightData.WorldPos, worldPos,
-                                        LightData.Radius, LightData.RadiusFalloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
-#elif LIGHTING_MODEL_LAMBERT
-        return EvaluateSpotlightLambert(LightData.Color, LightData.Intensity, normal, LightData.WorldPos, worldPos,
-                                        LightData.Radius, LightData.RadiusFalloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle);
-#elif LIGHTING_MODEL_PHONG
+            return EvaluatePointBlinnPhong(LightData.Color, LightData.Intensity, LightData.Position, worldPos, normal, LightData.Radius, LightData.Falloff, camPos - worldPos, Shininess);
 #endif
             return (LightResult) 0;
         default:

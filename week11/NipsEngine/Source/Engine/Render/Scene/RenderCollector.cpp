@@ -872,13 +872,12 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		RenderBus.DirectionalLightInfo = DirLightData;
 	}
 
-	RenderBus.LightInfos.clear();
-
-	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light)) 
+	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
 	{
         FLightInfo LightData		= {};
 		LightData.Color				= Color;
 		LightData.Intensity			= SpotLight->Intensity;
+        LightData.Position			= SpotLight->GetWorldLocation();
 		LightData.Direction			= SpotLight->Direction;
         LightData.Radius			= SpotLight->AttenuationRadius;
         LightData.Falloff			= SpotLight->LightFalloffExponent;
@@ -892,6 +891,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         FLightInfo LightData = {};
 		LightData.Color				= Color;
 		LightData.Intensity			= PointLight->Intensity;
+		LightData.Position			= PointLight->GetWorldLocation();
 		LightData.Radius			= PointLight->AttenuationRadius;
 		LightData.Falloff			= PointLight->LightFalloffExponent;
         LightData.Type				= 1;

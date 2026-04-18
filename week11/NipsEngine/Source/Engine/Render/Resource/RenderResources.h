@@ -18,6 +18,7 @@ struct FRenderResources
 	FStructuredBuffer LightStructuredBuffer;		// t10 (FLightInfo)
 	FStructuredBuffer LightCulledIndexBuffer;		// t11 (LightCulledIndex) (uint)
 	FStructuredBuffer LightTileBuffer;				// t12 (LightTile) (uint2) 
+	FStructuredBuffer MPLightStructuredBuffer;		// t13 Light (Multipass)
 
     FConstantBuffer LightPassConstantBuffer;		// b7
     FConstantBuffer FogPassConstantBuffer;			// b9
