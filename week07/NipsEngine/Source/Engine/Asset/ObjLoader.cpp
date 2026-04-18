@@ -48,6 +48,8 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 		return nullptr;
 	}
 
+	ComputeTangents(StaticMesh);
+
 	UE_LOG("[ObjLoader] OBJ Loaded: %s (Vertices: %zu, Indices: %zu, Sections: %zu, Slots: %zu)",
 		Path.c_str(),
 		StaticMesh->Vertices.size(),
@@ -604,6 +606,42 @@ void FObjLoader::ComputeNormals(FObjRawData& RawData)
 		{
 			Idx.NormalIndex = Idx.PositionIndex;
 		}
+	}
+}
+
+void FObjLoader::ComputeTangents(FStaticMesh* InMesh)
+{
+	const uint64 VertexCount = InMesh->Vertices.size();
+	TArray<FVector> TangentAcc(VertexCount, FVector(0, 0, 0));
+	TArray<FVector> BitangentAcc(VertexCount, FVector(0, 0, 0));
+
+	const TArray<uint32>& Idx = InMesh->Indices;
+	for (uint64 i = 0; i + 2 < Idx.size(); i += 3)
+	{
+		const uint32 I0 = Idx[i], I1 = Idx[i + 1], I2 = Idx[i + 2];
+		const FNormalVertex& V0 = InMesh->Vertices[I0];
+		const FNormalVertex& V1 = InMesh->Vertices[I1];
+		const FNormalVertex& V2 = InMesh->Vertices[I2];
+
+		FVector T, B;
+		TangentSpace::GetTangent(T, B, V0.Position, V1.Position, V2.Position,
+		                                V0.UVs,      V1.UVs,      V2.UVs);
+		TangentAcc[I0] += T; TangentAcc[I1] += T; TangentAcc[I2] += T;
+		BitangentAcc[I0] += B; BitangentAcc[I1] += B; BitangentAcc[I2] += B;
+	}
+
+	for (uint64 i = 0; i < VertexCount; ++i)
+	{
+		const FVector& N = InMesh->Vertices[i].Normal;
+		FVector T = TangentAcc[i];
+
+		// Gram-Schmidt orthogonalize
+		T = (T - N * FVector::DotProduct(N, T));
+		float Len = T.Size();
+		T = (Len > 1e-6f) ? T / Len : FVector(1, 0, 0);
+
+		float Sign = TangentSpace::GetSign(N, T, BitangentAcc[i]);
+		InMesh->Vertices[i].Tangent = T * Sign;
 	}
 }
 
