@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorStatWidget.h"
+﻿#include "Editor/UI/EditorStatPanel.h"
 
 #include "Editor/Settings/EditorSettings.h"
 #include "Profiling/Stats.h"
@@ -8,12 +8,25 @@
 #include <algorithm>
 #include <sstream>
 
-void FEditorStatWidget::Render(float DeltaTime)
+void FEditorStatPanel::RequestOpen()
+{
+	bRequestOpen = true;
+}
+
+void FEditorStatPanel::Render(float DeltaTime)
 {
 #if STATS
 	(void)DeltaTime;
 
-	ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+	if (bRequestOpen)
+	{
+		ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+		bRequestOpen = false;
+	}
+	else
+	{
+		ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+	}
 	ImGui::SetNextWindowSize(ImVec2(700.0f, 500.0f), ImGuiCond_Once);
 	ImGui::Begin("Stat Profiler");
 
@@ -104,7 +117,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 #endif
 }
 
-void FEditorStatWidget::RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source,
+void FEditorStatPanel::RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source,
 	int& OutSortColumn, bool& OutSortDescending, float TableHeight)
 {
 #if STATS

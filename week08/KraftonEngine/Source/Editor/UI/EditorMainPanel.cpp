@@ -2,7 +2,9 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Serialization/SceneSaveManager.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -10,7 +12,120 @@
 
 #include "Render/Renderer.h"
 #include "Engine/Input/InputSystem.h"
+#include "Component/CameraComponent.h"
+#include "Platform/Paths.h"
 
+#include <commdlg.h>
+#include <filesystem>
+
+namespace
+{
+	std::string OpenSceneFileDialog(bool bSave)
+	{
+		wchar_t FileName[MAX_PATH] = L"";
+		const std::filesystem::path SceneDir = FPaths::SceneDir();
+
+		OPENFILENAMEW Ofn = {};
+		Ofn.lStructSize = sizeof(OPENFILENAMEW);
+		Ofn.lpstrFilter = L"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
+		Ofn.lpstrFile = FileName;
+		Ofn.nMaxFile = MAX_PATH;
+		Ofn.lpstrDefExt = L"scene";
+		Ofn.lpstrInitialDir = SceneDir.c_str();
+		Ofn.Flags = bSave
+			? (OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT)
+			: (OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST);
+
+		const BOOL bResult = bSave ? GetSaveFileNameW(&Ofn) : GetOpenFileNameW(&Ofn);
+		return bResult ? FPaths::FromWide(FileName) : std::string();
+	}
+
+	void SaveSceneFromEditor(UEditorEngine* EditorEngine)
+	{
+		if (!EditorEngine)
+		{
+			return;
+		}
+
+		const std::string FilePath = OpenSceneFileDialog(true);
+		if (FilePath.empty())
+		{
+			return;
+		}
+
+		EditorEngine->StopPlayInEditorImmediate();
+		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
+		if (!Ctx)
+		{
+			return;
+		}
+
+		UCameraComponent* PerspectiveCam = nullptr;
+		for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+		{
+			if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective ||
+				VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
+			{
+				PerspectiveCam = VC->GetCamera();
+				break;
+			}
+		}
+
+		std::filesystem::path ScenePath = FPaths::ToPath(FilePath);
+		FSceneSaveManager::SaveSceneAsJSON(FPaths::FromPath(ScenePath.stem()), *Ctx, PerspectiveCam);
+	}
+
+	void LoadSceneFromEditor(UEditorEngine* EditorEngine)
+	{
+		if (!EditorEngine)
+		{
+			return;
+		}
+
+		const std::string FilePath = OpenSceneFileDialog(false);
+		if (FilePath.empty())
+		{
+			return;
+		}
+
+		EditorEngine->StopPlayInEditorImmediate();
+		EditorEngine->ClearScene();
+
+		FWorldContext LoadCtx;
+		FPerspectiveCameraData CamData;
+		FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
+		if (LoadCtx.World)
+		{
+			EditorEngine->GetWorldList().push_back(LoadCtx);
+			EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
+			EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
+			LoadCtx.World->WarmupPickingData();
+		}
+		EditorEngine->ResetViewport();
+
+		if (CamData.bValid)
+		{
+			for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+			{
+				if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective ||
+					VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
+				{
+					if (UCameraComponent* Cam = VC->GetCamera())
+					{
+						Cam->SetWorldLocation(CamData.Location);
+						Cam->SetRelativeRotation(CamData.Rotation);
+						FCameraState CS = Cam->GetCameraState();
+						CS.FOV = CamData.FOV;
+						CS.NearZ = CamData.NearClip;
+						CS.FarZ = CamData.FarClip;
+						Cam->SetCameraState(CS);
+					}
+					break;
+				}
+			}
+		}
+	}
+}
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
@@ -23,17 +138,18 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	Window = InWindow;
 	EditorEngine = InEditorEngine;
 
-	// 한글 지원 폰트 로드 (시스템 맑은 고딕)
-	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+	IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 17.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+	IO.FontGlobalScale = 1.00f;
+	ImGui::GetStyle().ScaleAllSizes(1.00f);
 
 	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
-	ConsoleWidget.Initialize(InEditorEngine);
-	ControlWidget.Initialize(InEditorEngine);
-	PropertyWidget.Initialize(InEditorEngine);
-	SceneWidget.Initialize(InEditorEngine);
-	StatWidget.Initialize(InEditorEngine);
+	ConsolePanel.Initialize(InEditorEngine);
+	ControlPanel.Initialize(InEditorEngine);
+	DetailsPanel.Initialize(InEditorEngine);
+	ScenePanel.Initialize(InEditorEngine);
+	StatPanel.Initialize(InEditorEngine);
 }
 
 void FEditorMainPanel::Release()
@@ -51,43 +167,93 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
-	// --- 우상단 Windows 토글 버튼 ---
-	if (!bHideEditorWindows)
+	if (ImGui::BeginMainMenuBar())
 	{
-		FEditorSettings& S = FEditorSettings::Get();
-		const ImGuiViewport* VP = ImGui::GetMainViewport();
-		const float ButtonW = 80.0f;
-		const float Margin = 8.0f;
-		ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - ButtonW - Margin, VP->Pos.y + Margin));
-		ImGui::SetNextWindowSize(ImVec2(0, 0));
-		ImGui::Begin("##WidgetToggle", nullptr,
-			ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_NoDocking);
-		if (ImGui::Button("Windows", ImVec2(ButtonW, 0)))
+		if (ImGui::BeginMenu("File"))
 		{
-			bShowWidgetList = !bShowWidgetList;
+			if (ImGui::MenuItem("New Scene"))
+			{
+				EditorEngine->NewScene();
+			}
+			if (ImGui::MenuItem("Load Scene..."))
+			{
+				LoadSceneFromEditor(EditorEngine);
+			}
+			if (ImGui::MenuItem("Save Scene..."))
+			{
+				SaveSceneFromEditor(EditorEngine);
+			}
+			ImGui::EndMenu();
 		}
-		ImGui::End();
 
-		if (bShowWidgetList)
+		if (ImGui::BeginMenu("Windows"))
 		{
-			ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - 150.0f - Margin, VP->Pos.y + Margin + 30.0f));
-			ImGui::SetNextWindowSize(ImVec2(150.0f, 0));
-			ImGui::Begin("##WidgetList", &bShowWidgetList,
-				ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-				ImGuiWindowFlags_NoDocking);
-			ImGui::Checkbox("Console", &S.UI.bConsole);
-			ImGui::Checkbox("Control", &S.UI.bControl);
-			ImGui::Checkbox("Property", &S.UI.bProperty);
-			ImGui::Checkbox("Scene", &S.UI.bScene);
-			ImGui::Checkbox("Stat", &S.UI.bStat);
-			ImGui::End();
+			FEditorSettings& S = FEditorSettings::Get();
+			ImGui::MenuItem("Console", nullptr, &S.UI.bConsole);
+			ImGui::MenuItem("Control Panel", nullptr, &S.UI.bControl);
+			ImGui::MenuItem("Details", nullptr, &S.UI.bProperty);
+			ImGui::MenuItem("Scene Manager", nullptr, &S.UI.bScene);
+			ImGui::MenuItem("Stat Profiler", nullptr, &S.UI.bStat);
+			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Stat"))
+		{
+			if (ImGui::MenuItem("Open Stat Profiler"))
+			{
+				FEditorSettings::Get().UI.bStat = true;
+				StatPanel.RequestOpen();
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("stat fps"))
+			{
+				EditorEngine->GetOverlayStatSystem().ShowFPS(true);
+				FEditorSettings::Get().UI.bStat = true;
+				StatPanel.RequestOpen();
+			}
+			if (ImGui::MenuItem("stat memory"))
+			{
+				EditorEngine->GetOverlayStatSystem().ShowMemory(true);
+				FEditorSettings::Get().UI.bStat = true;
+				StatPanel.RequestOpen();
+			}
+			if (ImGui::MenuItem("stat none"))
+			{
+				EditorEngine->GetOverlayStatSystem().HideAll();
+				FEditorSettings::Get().UI.bStat = true;
+				StatPanel.RequestOpen();
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::MenuItem("About"))
+		{
+			ImGui::OpenPopup("About Editor");
+		}
+
+		ImGui::EndMainMenuBar();
 	}
 
-	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
+	ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(MainViewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	if (ImGui::BeginPopupModal("About Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+	{
+		ImGui::Dummy(ImVec2(320.0f, 0.0f));
+		ImGui::Text("Jungle Editor v0.9.0");
+		ImGui::Separator();
+		ImGui::Text("Contributors");
+		ImGui::BulletText("Alex Kim");
+		ImGui::BulletText("Mina Park");
+		ImGui::BulletText("Chris Lee");
+		ImGui::Spacing();
+		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 120.0f) * 0.5f);
+		if (ImGui::Button("Close", ImVec2(120.0f, 0.0f)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
 	if (EditorEngine)
 	{
 		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "5_UI");
@@ -98,32 +264,32 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	if (!bHideEditorWindows && Settings.UI.bConsole)
 	{
-		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
-		ConsoleWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("ConsolePanel.Render", "5_UI");
+		ConsolePanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bControl)
 	{
-		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
-		ControlWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("ControlPanel.Render", "5_UI");
+		ControlPanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bProperty)
 	{
-		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
-		PropertyWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("DetailsPanel.Render", "5_UI");
+		DetailsPanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bScene)
 	{
-		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
-		SceneWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("ScenePanel.Render", "5_UI");
+		ScenePanel.Render(DeltaTime);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bStat)
 	{
-		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
-		StatWidget.Render(DeltaTime);
+		SCOPE_STAT_CAT("StatPanel.Render", "5_UI");
+		StatPanel.Render(DeltaTime);
 	}
 
 	ImGui::Render();
@@ -135,7 +301,6 @@ void FEditorMainPanel::Update()
 {
 	ImGuiIO& IO = ImGui::GetIO();
 
-	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
 	bool bWantMouse = IO.WantCaptureMouse;
 	bool bWantKeyboard = IO.WantCaptureKeyboard;
 	if (EditorEngine && EditorEngine->IsMouseOverViewport())
@@ -146,7 +311,6 @@ void FEditorMainPanel::Update()
 	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
 
-	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
 	if (Window)
 	{
 		HWND hWnd = Window->GetHWND();
@@ -166,16 +330,16 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 	if (bHasSavedUIVisibility)
 	{
 		bHideEditorWindows = true;
-		bShowWidgetList = false;
+		bShowPanelList = false;
 		return;
 	}
 
 	FEditorSettings& Settings = FEditorSettings::Get();
 	SavedUIVisibility = Settings.UI;
-	bSavedShowWidgetList = bShowWidgetList;
+	bSavedShowPanelList = bShowPanelList;
 	bHasSavedUIVisibility = true;
 	bHideEditorWindows = true;
-	bShowWidgetList = false;
+	bShowPanelList = false;
 
 	Settings.UI.bConsole = false;
 	Settings.UI.bControl = false;
@@ -194,7 +358,7 @@ void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
 
 	FEditorSettings& Settings = FEditorSettings::Get();
 	Settings.UI = SavedUIVisibility;
-	bShowWidgetList = bSavedShowWidgetList;
+	bShowPanelList = bSavedShowPanelList;
 	bHideEditorWindows = false;
 	bHasSavedUIVisibility = false;
 }
