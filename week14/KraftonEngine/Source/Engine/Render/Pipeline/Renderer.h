@@ -8,20 +8,11 @@
 
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/DrawCommandBuilder.h"
+#include "Render/Pipeline/PassRenderStateTable.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 
 class FScene;
-
-// 패스별 기본 렌더 상태 — Single Source of Truth
-struct FPassRenderState
-{
-	EDepthStencilState       DepthStencil = EDepthStencilState::Default;
-	EBlendState              Blend = EBlendState::Opaque;
-	ERasterizerState         Rasterizer = ERasterizerState::SolidBackCull;
-	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	bool                     bWireframeAware = false;  // Wireframe 모드 시 래스터라이저 전환
-};
 
 class FRenderer
 {
@@ -35,14 +26,14 @@ public:
 	void EndFrame();
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
-	FSystemResources& GetSystemResources() { return Resources; }
 
 	// Collect 페이즈에서 커맨드 빌드를 담당하는 Builder
 	FDrawCommandBuilder& GetBuilder() { return Builder; }
 
-private:
-	void InitializePassRenderStates();
+	// 뷰포트 리사이즈 후 렌더 상태 캐시 초기화
+	void ResetRenderStateCache() { Resources.ResetRenderStateCache(); }
 
+private:
 	// 패스 루프 Pre/Post 이벤트 등록
 	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
 		TArray<struct FPassEvent>& PostPassEvents,
@@ -56,6 +47,5 @@ private:
 	FSystemResources Resources;
 
 	FDrawCommandBuilder Builder;
-
-	FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];
+	FPassRenderStateTable PassRenderStateTable;
 };

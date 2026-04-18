@@ -6,7 +6,7 @@
 #include "Render/Helper/FontGeometry.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
-struct FPassRenderState;
+class FPassRenderStateTable;
 class FTextRenderSceneProxy;
 class FScene;
 
@@ -17,7 +17,7 @@ class FScene;
 class FDrawCommandBuilder
 {
 public:
-	void Create(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, const FPassRenderState* InPassRenderStates);
+	void Create(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, const FPassRenderStateTable* InPassRenderStateTable);
 	void Release();
 
 	// Collect 시작 — 커맨드 리스트 + 동적 지오메트리 초기화
@@ -48,7 +48,7 @@ private:
 	FDrawCommandList DrawCommandList;
 
 	// Collect 페이즈 상태
-	const FPassRenderState* PassRenderStates = nullptr;
+	const FPassRenderStateTable* PassRenderStateTable = nullptr;
 	EViewMode CollectViewMode = EViewMode::Lit_Phong;
 	bool bHasSelectionMaskCommands = false;
 
