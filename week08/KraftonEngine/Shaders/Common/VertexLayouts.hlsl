@@ -19,7 +19,7 @@ struct VS_Input_PNCT
     float3 position : POSITION;
     float3 normal   : NORMAL;
     float4 color    : COLOR;
-    float2 texcoord : TEXTCOORD;
+    float2 texcoord : TEXCOORD0;
 };
 
 // FVertexPNCT_T (Position + Normal + Color + TexCoord + Tangent)
@@ -37,7 +37,7 @@ struct VS_Input_PNCT_T
 struct VS_Input_PT
 {
     float3 position : POSITION;
-    float2 texcoord : TEXCOORD;
+    float2 texcoord : TEXCOORD0;
     float3 _pad     : PADDING;
 };
 
@@ -63,8 +63,7 @@ struct PS_Input_Color
 struct PS_Input_Tex
 {
     float4 position : SV_POSITION;
-    float2 texcoord : TEXCOORD;
-    float2 _pad     : PADDING;
+    float2 texcoord : TEXCOORD0;
 };
 
 // SV_POSITION + Normal + Color + TexCoord (StaticMesh)
@@ -73,8 +72,7 @@ struct PS_Input_Full
     float4 position : SV_POSITION;
     float3 normal   : NORMAL;
     float4 color    : COLOR;
-    float2 texcoord : TEXCOORD;
-    float3 _pad     : PADDING;
+    float2 texcoord : TEXCOORD0;
 };
 
 // SV_POSITION + WorldPos + Normal + UV + Tangent + Color (Uber Shader)
@@ -95,7 +93,6 @@ struct PS_Input_Decal
     float3 worldPos : TEXCOORD0;
     float3 normal   : TEXCOORD1;
     float4 color    : COLOR;
-    float2 _pad     : PADDING;
 };
 
 // SV_POSITION + UV (PostProcess)
@@ -103,7 +100,6 @@ struct PS_Input_UV
 {
     float4 position : SV_POSITION;
     float2 uv       : TEXCOORD0;
-    float2 _pad     : PADDING;
 };
 
 // SV_POSITION only
@@ -118,7 +114,6 @@ struct PS_Input_ColorWorld
     float4 position : SV_POSITION;
     float4 color    : COLOR;
     float3 worldPos : TEXCOORD0;
-    float _pad      : PADDING;
 };
 
 // ============================================================
