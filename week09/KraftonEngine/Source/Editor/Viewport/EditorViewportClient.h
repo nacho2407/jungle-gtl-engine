@@ -17,6 +17,13 @@ class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
 
+enum class EEditorViewportPlayState : uint8
+{
+	Stopped,
+	Playing,
+	Paused,
+};
+
 class FEditorViewportClient : public FViewportClient
 {
 public:
@@ -50,6 +57,13 @@ public:
 	void SetActive(bool bInActive) { bIsActive = bInActive; }
 	bool IsActive() const { return bIsActive; }
 
+	// 플레이 상태 — viewport client가 직접 보관
+	void SetPlayState(EEditorViewportPlayState InPlayState) { PlayState = InPlayState; }
+	EEditorViewportPlayState GetPlayState() const { return PlayState; }
+	bool IsPlaying() const { return PlayState == EEditorViewportPlayState::Playing; }
+	bool IsPaused() const { return PlayState == EEditorViewportPlayState::Paused; }
+	bool IsStopped() const { return PlayState == EEditorViewportPlayState::Stopped; }
+
 	// FViewport 소유
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
 	FViewport* GetViewport() const { return Viewport; }
@@ -61,8 +75,8 @@ public:
 	// SWindow Rect → ViewportScreenRect 갱신 + FViewport 리사이즈 요청
 	void UpdateLayoutRect();
 
-	// ImDrawList에 자신의 SRV를 SWindow Rect 위치에 렌더 (활성 테두리 포함)
-	void RenderViewportImage(bool bIsActiveViewport);
+	// ImDrawList에 자신의 SRV를 SWindow Rect 위치에 렌더 (자기 상태 기반 테두리 포함)
+	void RenderViewportImage();
 
 private:
 	void TickEditorShortcuts();
@@ -85,6 +99,7 @@ private:
 	float WindowHeight = 1080.f;
 
 	bool bIsActive = false;
+	EEditorViewportPlayState PlayState = EEditorViewportPlayState::Stopped;
 	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
 	FRect ViewportScreenRect;
 };

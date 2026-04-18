@@ -32,7 +32,7 @@ void UGizmoComponent::CreateRenderState()
 
 	// Inner 프록시 (별도 등록)
 	InnerProxy = new FGizmoSceneProxy(this, true);
-	Scene->RegisterProxy(InnerProxy);
+	Scene->RegisterPrimitiveProxy(InnerProxy);
 }
 
 void UGizmoComponent::DestroyRenderState()

@@ -44,7 +44,7 @@ namespace Key
 	constexpr const char* ViewportType = "ViewportType";
 	constexpr const char* SplitterRatios = "SplitterRatios";
 
-	// UI Widgets
+	// UI Panels
 	constexpr const char* UIWidgets = "UIWidgets";
 	constexpr const char* ShowConsole = "ShowConsole";
 	constexpr const char* ShowControlPanel = "ShowControlPanel";
@@ -123,7 +123,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	LayoutObj[Key::SplitterRatios] = RatiosArr;
 	Root[Key::Layout] = LayoutObj;
 
-	// UI Widgets
+	// UI Panels
 	JSON WidgetsObj = Object();
 	WidgetsObj[Key::ShowConsole] = UI.bConsole;
 	WidgetsObj[Key::ShowControlPanel] = UI.bControl;
@@ -270,7 +270,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		}
 	}
 
-	// UI Widgets
+	// UI Panels
 	if (Root.hasKey(Key::UIWidgets))
 	{
 		JSON W = Root[Key::UIWidgets];

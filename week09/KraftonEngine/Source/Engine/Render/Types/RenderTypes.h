@@ -31,6 +31,14 @@ enum class EMeshShape
 	ScaleGizmo,
 };
 
+enum class ELightType
+{
+    Directional,
+    Point,
+    Spot,
+    Ambient,
+};
+
 enum class ERenderPass : uint32
 {
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)

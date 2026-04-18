@@ -41,6 +41,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// 뷰포트 레이아웃 초기화 + 저장된 설정 복원
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
+	ResetAllViewportPlayStates();
 	ViewportLayout.LoadFromSettings();
 
 	// Editor render pipeline
@@ -179,21 +180,33 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	WorldList.push_back(Ctx);
 
 	// 3) 세션 정보 기록 (이전 활성 핸들 포함 — EndPlayMap에서 복원).
+	FLevelEditorViewportClient* PIEViewportClient = Params.DestinationViewportClient;
+	if (!PIEViewportClient)
+	{
+		PIEViewportClient = ViewportLayout.GetActiveViewport();
+	}
+	if (!PIEViewportClient)
+	{
+		DestroyWorldContext(FName("PIE"));
+		return;
+	}
+
 	FPlayInEditorSessionInfo Info;
 	Info.OriginalRequestParams = Params;
 	Info.PIEStartTime = 0.0;
 	Info.PreviousActiveWorldHandle = GetActiveWorldHandle();
-	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	Info.DestinationViewportClient = PIEViewportClient;
+	if (UCameraComponent* VCCamera = PIEViewportClient->GetCamera())
 	{
-		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
-		{
-			Info.SavedViewportCamera.Location = VCCamera->GetWorldLocation();
-			Info.SavedViewportCamera.Rotation = VCCamera->GetRelativeRotation();
-			Info.SavedViewportCamera.CameraState = VCCamera->GetCameraState();
-			Info.SavedViewportCamera.bValid = true;
-		}
+		Info.SavedViewportCamera.Location = VCCamera->GetWorldLocation();
+		Info.SavedViewportCamera.Rotation = VCCamera->GetRelativeRotation();
+		Info.SavedViewportCamera.CameraState = VCCamera->GetCameraState();
+		Info.SavedViewportCamera.bValid = true;
 	}
 	PlayInEditorSessionInfo = Info;
+
+	ResetAllViewportPlayStates();
+	SetViewportPlayState(PIEViewportClient, EEditorViewportPlayState::Playing);
 
 	// 4) ActiveWorldHandle을 PIE로 전환 — 이후 GetWorld()는 PIE 월드를 반환.
 	SetActiveWorld(FName("PIE"));
@@ -207,12 +220,9 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 
 	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
 	//    LOD 갱신 등에서 ActiveCamera를 참조하므로 설정 필요.
-	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	if (UCameraComponent* VCCamera = PIEViewportClient->GetCamera())
 	{
-		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
-		{
-			PIEWorld->SetActiveCamera(VCCamera);
-		}
+		PIEWorld->SetActiveCamera(VCCamera);
 	}
 
 	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
@@ -258,9 +268,15 @@ void UEditorEngine::EndPlayMap()
 		// ActiveCamera는 PIE 시작 시 PIE 월드로 옮겨졌고 PIE 월드와 함께 파괴됐다.
 		// Editor 월드의 ActiveCamera는 여전히 그 dangling 포인터를 가리킬 수 있으므로
 		// 활성 뷰포트의 카메라로 다시 바인딩해 줘야 frustum culling이 정상 동작한다.
-		if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+		FLevelEditorViewportClient* RestoreViewportClient = PlayInEditorSessionInfo->DestinationViewportClient;
+		if (!RestoreViewportClient)
 		{
-			if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
+			RestoreViewportClient = ViewportLayout.GetActiveViewport();
+		}
+
+		if (RestoreViewportClient)
+		{
+			if (UCameraComponent* VCCamera = RestoreViewportClient->GetCamera())
 			{
 				if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
 				{
@@ -293,7 +309,30 @@ void UEditorEngine::EndPlayMap()
 		Pipeline->OnSceneCleared();
 	}
 
+	ResetAllViewportPlayStates();
 	PlayInEditorSessionInfo.reset();
+}
+
+
+void UEditorEngine::SetViewportPlayState(FLevelEditorViewportClient* InViewportClient, EEditorViewportPlayState InPlayState)
+{
+	if (!InViewportClient)
+	{
+		return;
+	}
+
+	InViewportClient->SetPlayState(InPlayState);
+}
+
+void UEditorEngine::ResetAllViewportPlayStates()
+{
+	for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
+	{
+		if (VC)
+		{
+			VC->SetPlayState(EEditorViewportPlayState::Stopped);
+		}
+	}
 }
 
 // ─── 기존 메서드 ──────────────────────────────────────────
@@ -340,4 +379,5 @@ void UEditorEngine::ClearScene()
 	ActiveWorldHandle = FName::None;
 
 	ViewportLayout.DestroyAllCameras();
+	ResetAllViewportPlayStates();
 }

@@ -1,12 +1,13 @@
-#pragma once
+﻿#pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/EditorPanel.h"
 #include "Profiling/Stats.h"
 
-class FEditorStatWidget : public FEditorWidget
+class FEditorStatPanel : public FEditorPanel
 {
 public:
 	void Render(float DeltaTime) override;
+	void RequestOpen();
 
 private:
 	void RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source, int& OutSortColumn, bool& OutSortDescending, float TableHeight = 200.0f);
@@ -19,4 +20,5 @@ private:
 	uint32 FrozenDrawCalls = 0;
 	TArray<FStatEntry> FrozenCPUEntries;
 	TArray<FStatEntry> FrozenGPUEntries;
+	bool bRequestOpen = false;
 };

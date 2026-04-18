@@ -13,6 +13,7 @@
 #include "Render/Renderer.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/FScene.h"
+#include "Render/Proxy/LightSceneProxy.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 
@@ -25,12 +26,13 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 
 	FScene& Scene = World->GetScene();
 	Scene.UpdateDirtyProxies();
+	Scene.UpdateDirtyLightProxies();
 
+	// Visible Primitive Proxises 수집 — 프러스텀 + Occlusion Culling
 	LastVisibleProxies.clear();
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
-		const uint32 ExpectedCount = Scene.GetProxyCount()
-			+ static_cast<uint32>(Scene.GetNeverCullProxies().size());
+		const uint32 ExpectedCount = Scene.GetPrimitiveProxyCount() + static_cast<uint32>(Scene.GetNeverCullProxies().size());
 		if (LastVisibleProxies.capacity() < ExpectedCount)
 		{
 			LastVisibleProxies.reserve(ExpectedCount);
@@ -47,7 +49,11 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
 	}
 
+	// Visible Primitive Proxies → FDrawCommand 직접 변환
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
+
+	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
+	CollectLights(Scene);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -57,14 +63,10 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 
 void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
 {
-	TArray<FOverlayStatLine> Lines;
-	OverlaySystem.BuildLines(Editor, Lines);
-	const float TextScale = OverlaySystem.GetLayout().TextScale;
-
-	for (FOverlayStatLine& Line : Lines)
-	{
-		Scene.AddOverlayText(std::move(Line.Text), Line.ScreenPosition, TextScale);
-	}
+	(void)OverlaySystem;
+	(void)Editor;
+	(void)Scene;
+	// Stat 오버레이는 ImGui 기반으로 뷰포트 내부에 직접 렌더링합니다.
 }
 
 void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
@@ -165,7 +167,6 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
-
 		// LOD 갱신 — WorldTick에서 이동, 단일 순회에 병합
 		if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
 		{
@@ -284,4 +285,20 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	{
 		OcclusionMut->EndGatherAABB();
 	}
+}
+
+// ============================================================
+// CollectLights — Light 프록시 → FLightConstants 배열 수집
+// Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
+// 순회·필터링은 RenderCollector가 직접 담당한다.
+// ============================================================
+void FRenderCollector::CollectLights(FScene& Scene)
+{
+    CollectedLights.clear();
+    for (const FLightSceneProxy* Proxy : Scene.GetLightProxies())
+    {
+        if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
+            continue;
+        CollectedLights.push_back(Proxy->LightConstants);
+    }
 }
