@@ -28,7 +28,5 @@ void UPointLightComponent::PostEditProperty(const char* PropertyName)
 
 FLightSceneProxy* UPointLightComponent::CreateLightSceneProxy()
 {
-    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
-    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Point);
-    return Proxy;
+    return new FPointLightSceneProxy(this);
 }

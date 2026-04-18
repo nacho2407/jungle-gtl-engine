@@ -10,7 +10,7 @@ void FLightSceneProxy::UpdateLightConstants()
 {
     if (!Owner)
         return;
-    LightConstants.Position  = Owner->GetWorldLocation();
+    LightConstants.Position = Owner->GetWorldLocation();
     LightConstants.Intensity = Owner->GetIntensity();
     LightConstants.LightColor = Owner->GetLightColor();
 }
