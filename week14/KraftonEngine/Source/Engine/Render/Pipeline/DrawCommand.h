@@ -67,6 +67,15 @@ struct FDrawCommand
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)
 
+	// Fullscreen triangle 초기화 (PostProcess 등 SV_VertexID 기반 드로우)
+	void InitFullscreenTriangle(FShader* InShader, ERenderPass InPass, const FDrawCommandRenderState& InRenderState)
+	{
+		Shader      = InShader;
+		Pass        = InPass;
+		RenderState = InRenderState;
+		Buffer.VertexCount = 3;
+	}
+
 	// Cmd의 Pass/Shader/Buffer.VB/Bindings.SRVs[Diffuse]로부터 SortKey 자동 생성
 	void BuildSortKey(uint16 UserBits = 0)
 	{
