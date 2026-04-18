@@ -16,6 +16,8 @@
 #include "Materials/MaterialManager.h"
 #include "Engine/Render/Pipeline/ForwardLightData.h"
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Materials/Material.h"
+#include "Texture/Texture2D.h"
 
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -188,6 +190,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		};
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
+	const bool bApplyMaterialState = !bDepthOnly && (Pass == Proxy.Pass);
 
 	// 커맨드 공통 초기화 람다
 	auto InitCommand = [&](FDrawCommand& Cmd)
@@ -216,15 +219,40 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.FirstIndex = Section.FirstIndex;
 			Cmd.IndexCount = Section.IndexCount;
 
-			if (!bDepthOnly)
+			if (!bDepthOnly && Section.Material)
 			{
-				Cmd.PerShaderCB[0] = Section.MaterialCB[0];
-				Cmd.PerShaderCB[1] = Section.MaterialCB[1];
+				UMaterial* Mat = Section.Material;
+				Cmd.Material = Mat;
+
+				// dirty CB 업로드
+				Mat->FlushDirtyBuffers(Ctx);
+
+				Cmd.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+				Cmd.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
 				SetProxyExtraCB(Cmd);
+
+				// CachedSRVs에서 직접 복사 (map lookup 회피)
+				const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
 				for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-					Cmd.SRVs[s] = Section.SRVs[s];
+					Cmd.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
+
+				// Material 렌더 상태 오버라이드 (메인 패스에서만)
+				if (bApplyMaterialState)
+				{
+					Cmd.Blend = Mat->GetBlendState();
+					Cmd.DepthStencil = Mat->GetDepthStencilState();
+					Cmd.Rasterizer = (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
+						? ERasterizerState::WireFrame
+						: Mat->GetRasterizerState();
+				}
 			}
-			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Section.SRVs[(int)EMaterialTextureSlot::Diffuse]);
+			else if (!bDepthOnly)
+			{
+				SetProxyExtraCB(Cmd);
+			}
+
+			ID3D11ShaderResourceView* DiffuseSRV = Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse];
+			Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, DiffuseSRV);
 		}
 	}
 	else
@@ -237,6 +265,17 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			SetProxyExtraCB(Cmd);
 			Cmd.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.DiffuseSRV;
 		}
+
+		// Material 렌더 상태 오버라이드 (메인 패스에서만)
+		if (bApplyMaterialState && Proxy.Material)
+		{
+			Cmd.Blend = Proxy.Material->GetBlendState();
+			Cmd.DepthStencil = Proxy.Material->GetDepthStencilState();
+			Cmd.Rasterizer = (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
+				? ERasterizerState::WireFrame
+				: Proxy.Material->GetRasterizerState();
+		}
+
 		Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, EffectiveShader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
 	}
 }
@@ -279,10 +318,19 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = DecalProxy.Shader;
 
-			// 머티리얼 기반 렌더 상태 우선 적용
-			Cmd.Blend = (DecalProxy.Blend != EBlendState::Opaque || DecalPass == ERenderPass::Opaque) ? DecalProxy.Blend : PassState.Blend;
-			Cmd.DepthStencil = (DecalProxy.DepthStencil != EDepthStencilState::Default || DecalPass == ERenderPass::Opaque) ? DecalProxy.DepthStencil : PassState.DepthStencil;
-			Cmd.Rasterizer = (DecalProxy.Rasterizer != ERasterizerState::SolidBackCull || DecalPass == ERenderPass::Opaque) ? DecalProxy.Rasterizer : Rasterizer;
+			// 머티리얼 기반 렌더 상태 적용
+			if (DecalProxy.Material)
+			{
+				Cmd.Blend = DecalProxy.Material->GetBlendState();
+				Cmd.DepthStencil = DecalProxy.Material->GetDepthStencilState();
+				Cmd.Rasterizer = DecalProxy.Material->GetRasterizerState();
+			}
+			else
+			{
+				Cmd.Blend = PassState.Blend;
+				Cmd.DepthStencil = PassState.DepthStencil;
+				Cmd.Rasterizer = Rasterizer;
+			}
 
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;

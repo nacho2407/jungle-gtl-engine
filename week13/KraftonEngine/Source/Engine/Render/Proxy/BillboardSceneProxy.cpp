@@ -42,11 +42,7 @@ void FBillboardSceneProxy::UpdateMesh()
 		}
 
 		Pass = Mat->GetRenderPass();
-		
-		// 머티리얼 기반 렌더 상태 전파
-		Blend = Mat->GetBlendState();
-		DepthStencil = Mat->GetDepthStencilState();
-		Rasterizer = Mat->GetRasterizerState();
+		Material = Mat;
 
 		UTexture2D* DiffuseTex = nullptr;
 		if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
@@ -64,11 +60,7 @@ void FBillboardSceneProxy::UpdateMesh()
 		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 		Pass = ERenderPass::Opaque;
 		DiffuseSRV = nullptr;
-
-		// 기본 상태
-		Blend = EBlendState::Opaque;
-		DepthStencil = EDepthStencilState::Default;
-		Rasterizer = ERasterizerState::SolidBackCull;
+		Material = nullptr;
 	}
 }
 
