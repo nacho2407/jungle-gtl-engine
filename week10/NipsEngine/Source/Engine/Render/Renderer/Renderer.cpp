@@ -21,6 +21,22 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
+	// Light macro
+    D3D_SHADER_MACRO defines_gouraud[] = {
+        { "LIGHTING_MODEL_GOURAUD", "1" },
+        { nullptr, nullptr }
+    };
+
+    D3D_SHADER_MACRO defines_lambert[] = {
+        { "LIGHTING_MODEL_LAMBERT", "1" },
+        { nullptr, nullptr }
+    };
+
+    D3D_SHADER_MACRO defines_phong[] = {
+        { "LIGHTING_MODEL_PHONG", "1" },
+        { nullptr, nullptr }
+    };
+
 	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
 	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
@@ -28,7 +44,7 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_phong, 0);
     FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
@@ -46,14 +62,14 @@ void FRenderer::CreateResources()
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FLightConstants));
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
-	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 1024);
+	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
 	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024);
 	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 1024);
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
-	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
+	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -89,6 +105,7 @@ void FRenderer::Release()
 	Resources.LightStructuredBuffer.Release();
 	Resources.LightCulledIndexBuffer.Release();
 	Resources.LightTileBuffer.Release();
+    Resources.MPLightStructuredBuffer.Release();
 
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
