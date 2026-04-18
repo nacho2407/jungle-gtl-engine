@@ -24,7 +24,7 @@ struct VS_Input_PNCT
 
 // FVertexPNCT_T (Position + Normal + Color + TexCoord + Tangent)
 // 라이팅 및 노멀 매핑용 입력
-struct VS_Input_Lighting
+struct VS_Input_PNCT_T
 {
     float3 position : POSITION;
     float3 normal   : NORMAL;
@@ -73,12 +73,12 @@ struct PS_Input_Full
     float4 position : SV_POSITION;
     float3 normal   : NORMAL;
     float4 color    : COLOR;
-    float2 texcoord : TEXTCOORD;
+    float2 texcoord : TEXCOORD;
     float3 _pad     : PADDING;
 };
 
 // SV_POSITION + WorldPos + Normal + UV + Tangent + Color (Uber Shader)
-struct PS_Input_Lighting
+struct PS_Input_PNCT_T
 {
     float4 position  : SV_POSITION;
     float3 worldPos  : TEXCOORD0;
