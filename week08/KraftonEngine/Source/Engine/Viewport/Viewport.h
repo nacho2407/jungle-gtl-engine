@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Render/Types/RenderTypes.h"
-#include "Render/Pipeline/ViewModeSurfaceResources.h"
 
 class FViewportClient;
 
@@ -40,8 +39,6 @@ public:
 	ID3D11Texture2D* GetSceneColorCopyTexture() const { return SceneColorCopyTexture; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
 	ID3D11Texture2D* GetDepthTexture() const { return DepthTexture; }
-	FViewModeSurfaceResources* GetViewModeSurfaceResources() { return &ViewModeSurfaces; }
-	const FViewModeSurfaceResources* GetViewModeSurfaceResources() const { return &ViewModeSurfaces; }
 
 	// CopyResource 대상 — 패스 간 안전하게 Depth/Stencil 읽기용
 	ID3D11Texture2D* GetDepthCopyTexture() const { return DepthCopyTexture; }
@@ -86,5 +83,4 @@ private:
 	uint32 PendingHeight = 0;
 	bool bPendingResize = false;
 
-	FViewModeSurfaceResources ViewModeSurfaces;
 };

@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -10,7 +10,7 @@
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Pipeline/LODContext.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"

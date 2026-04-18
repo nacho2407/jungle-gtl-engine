@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+﻿#include "Render/Renderer.h"
 
 #include <iostream>
 #include <algorithm>
@@ -16,41 +16,12 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/ViewModeRenderPipeline.h"
 #include "Render/Pipeline/ViewModeSurfaceResources.h"
+#include "Render/Pipeline/PipelineShaderResolver.h"
+#include "Render/Pass/PassEvent.h"
+#include "Render/Pass/PassRenderState.h"
+#include "Render/Pass/UberLitPass.h"
 #include "Render/Types/ShadingTypes.h"
 #include "Materials/MaterialManager.h"
-
-// ============================================================
-// FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
-// 특정 패스 조건이 만족되면 콜백을 실행합니다.
-// ============================================================
-enum class EPassCompare : uint8 { Equal, Less, Greater, LessEqual, GreaterEqual };
-
-struct FPassEvent
-{
-	ERenderPass    Pass;
-	EPassCompare   Compare;
-	bool           bOnce;
-	bool           bExecuted = false;
-	std::function<void()> Fn;
-
-	bool TryExecute(ERenderPass CurPass)
-	{
-		if (bOnce && bExecuted) return false;
-
-		bool bMatch = false;
-		switch (Compare)
-		{
-		case EPassCompare::Equal:        bMatch = (CurPass == Pass); break;
-		case EPassCompare::Less:         bMatch = ((uint32)CurPass < (uint32)Pass); break;
-		case EPassCompare::Greater:      bMatch = ((uint32)CurPass > (uint32)Pass); break;
-		case EPassCompare::LessEqual:    bMatch = ((uint32)CurPass <= (uint32)Pass); break;
-		case EPassCompare::GreaterEqual: bMatch = ((uint32)CurPass >= (uint32)Pass); break;
-		}
-
-		if (bMatch) { Fn(); if (bOnce) bExecuted = true; }
-		return bMatch;
-	}
-};
 
 
 void FRenderer::Create(HWND hWindow)
@@ -70,10 +41,11 @@ void FRenderer::Create(HWND hWindow)
 	GridLines.Create(Device.GetDevice());
 	FontGeometry.Create(Device.GetDevice());
 
-	InitializePassRenderStates();
+	InitializeDefaultPassRenderStates(PassRenderStates);
 
 	ViewModePipelineLibrary = new FViewModeRenderPipelineLibrary();
 	ViewModePipelineLibrary->Initialize(Device.GetDevice());
+	OwnedViewModeSurfaces = new FViewModeSurfaceResources();
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
@@ -90,6 +62,12 @@ void FRenderer::Release()
 
 	ActiveViewPipeline = nullptr;
 	ActiveViewSurfaces = nullptr;
+	ReleaseViewModeSurfaceResources();
+	if (OwnedViewModeSurfaces)
+	{
+		delete OwnedViewModeSurfaces;
+		OwnedViewModeSurfaces = nullptr;
+	}
 
 	FGPUProfiler::Get().Shutdown();
 
@@ -108,6 +86,28 @@ void FRenderer::Release()
 	FShaderManager::Get().Release();
 	FMaterialManager::Get().Release();
 	Device.Release();
+}
+
+
+FViewModeSurfaceResources* FRenderer::AcquireViewModeSurfaceResources(uint32 Width, uint32 Height)
+{
+	if (!OwnedViewModeSurfaces || !Device.GetDevice() || Width == 0 || Height == 0)
+	{
+		return nullptr;
+	}
+
+	OwnedViewModeSurfaces->Resize(Device.GetDevice(), Width, Height);
+	ActiveViewSurfaces = OwnedViewModeSurfaces;
+	return ActiveViewSurfaces;
+}
+
+void FRenderer::ReleaseViewModeSurfaceResources()
+{
+	if (OwnedViewModeSurfaces)
+	{
+		OwnedViewModeSurfaces->Release();
+	}
+	ActiveViewSurfaces = nullptr;
 }
 
 // ============================================================
@@ -144,7 +144,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	const FPassRenderState& PassState = PassRenderStates[(uint32)Pass];
-	FShader* ResolvedShader = ResolvePipelineShader(Pass, Proxy.Shader);
+	FShader* ResolvedShader = ResolvePipelineShader(ActiveViewPipeline, Pass, Proxy.Shader);
 
 	// Wireframe 모드 처리
 	ERasterizerState Rasterizer = PassState.Rasterizer;
@@ -249,7 +249,7 @@ void FRenderer::BuildDecalCommand(const FPrimitiveSceneProxy& DecalProxy)
 		DecalProxy.ExtraCB.Buffer->Update(Ctx, DecalProxy.ExtraCB.Data, DecalProxy.ExtraCB.Size);
 	}
 
-	FShader* DecalShader = ResolvePipelineShader(ERenderPass::Decal, DecalProxy.Shader);
+	FShader* DecalShader = ResolvePipelineShader(ActiveViewPipeline, ERenderPass::Decal, DecalProxy.Shader);
 	if (!DecalShader)
 	{
 		return;
@@ -376,7 +376,7 @@ void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* S
 
 	if (ActiveViewPipeline && ActiveViewSurfaces)
 	{
-		BuildLightingPassCommand(Frame, Device.GetDeviceContext());
+		BuildUberLitPassCommand(DrawCommandList, PassRenderStates, ActiveViewPipeline);
 	}
 }
 
@@ -408,7 +408,7 @@ void FRenderer::Render(const FFrameContext& Frame)
 
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
-	BuildPassEvents(PrePassEvents, Context, Frame, Cache);
+	BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
@@ -455,133 +455,7 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 // ============================================================
 // BuildPassEvents — 패스 루프 Pre/Post 이벤트 등록
 // ============================================================
-void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
-	ID3D11DeviceContext* Context, const FFrameContext& Frame, FStateCache& Cache)
-{
-	if (ActiveViewPipeline && ActiveViewSurfaces)
-	{
-		const EShadingModel ShadingModel = ActiveViewPipeline->GetShadingModel();
 
-		PrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
-			[this, Context, &Frame, &Cache, ShadingModel]()
-			{
-				ID3D11ShaderResourceView* NullSRVs[6] = {};
-				Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
-
-				ActiveViewSurfaces->ClearBaseTargets(Context, ShadingModel);
-				ActiveViewSurfaces->BindBaseDrawTargets(Context, ShadingModel, Frame.ViewportDSV);
-
-				Cache.DiffuseSRV = nullptr;
-				Cache.bForceAll = true;
-			}
-		});
-
-		PrePassEvents.push_back({ ERenderPass::Decal, EPassCompare::Equal, true, false,
-			[this, Context, &Frame, &Cache, ShadingModel]()
-			{
-				ID3D11ShaderResourceView* NullSRVs[6] = {};
-				Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
-
-				if (Frame.DepthTexture && Frame.DepthCopyTexture)
-				{
-					Context->OMSetRenderTargets(0, nullptr, nullptr);
-					Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
-				}
-
-				ID3D11ShaderResourceView* BaseSRVs[3] = {
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::BaseColor),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface1),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface2),
-				};
-				Context->PSSetShaderResources(1, ARRAYSIZE(BaseSRVs), BaseSRVs);
-
-				if (Frame.DepthCopySRV)
-				{
-					ID3D11ShaderResourceView* DepthSRV = Frame.DepthCopySRV;
-					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
-				}
-
-				ActiveViewSurfaces->ClearModifiedTargets(Context, ShadingModel);
-				ActiveViewSurfaces->BindDecalTargets(Context, ShadingModel, Frame.ViewportDSV);
-
-				Cache.DiffuseSRV = nullptr;
-				Cache.bForceAll = true;
-			}
-		});
-
-		PrePassEvents.push_back({ ERenderPass::Lighting, EPassCompare::Equal, true, false,
-			[this, Context, &Frame, &Cache]()
-			{
-				ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
-				Context->OMSetRenderTargets(1, &RTV, Frame.ViewportDSV);
-
-				ID3D11ShaderResourceView* SurfaceSRVs[6] = {
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::BaseColor),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface1),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface2),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::ModifiedBaseColor),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::ModifiedSurface1),
-					ActiveViewSurfaces->GetSRV(ESurfaceSlot::ModifiedSurface2),
-				};
-				Context->PSSetShaderResources(0, ARRAYSIZE(SurfaceSRVs), SurfaceSRVs);
-
-				if (Frame.DepthCopySRV)
-				{
-					ID3D11ShaderResourceView* DepthSRV = Frame.DepthCopySRV;
-					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
-				}
-
-				Cache.DiffuseSRV = nullptr;
-				Cache.bForceAll = true;
-			}
-		});
-	}
-
-	// CopyResource: PostProcess 이상 패스 진입 전 Depth+Stencil 복사 → 시스템 텍스처 바인딩
-	if (Frame.DepthTexture && Frame.DepthCopyTexture)
-	{
-		PrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
-			[Context, &Frame, &Cache]()
-			{
-				Context->OMSetRenderTargets(0, nullptr, nullptr);
-				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
-				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-
-				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
-				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
-
-				if (Frame.StencilCopySRV)
-				{
-					ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
-					Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
-				}
-
-				Cache.bForceAll = true;
-			}
-			});
-	}
-
-	// CopySceneColor: FXAA 패스 진입 전 현재 화면 복사 → SceneColorCopySRV로 읽기
-	if (Frame.SceneColorCopyTexture && Frame.ViewportRenderTexture)
-	{
-		PrePassEvents.push_back({ ERenderPass::FXAA, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache]()
-			{
-				Context->CopyResource(Frame.SceneColorCopyTexture, Frame.ViewportRenderTexture);
-				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-
-				ID3D11ShaderResourceView* sceneColorSRV = Frame.SceneColorCopySRV;
-				Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &sceneColorSRV);
-
-				Cache.bForceAll = true;
-			}
-			});
-	}
-}
-
-// ============================================================
-// PrepareDynamicGeometry — FScene의 경량 데이터 → 라인/폰트 지오메트리
-// ============================================================
 void FRenderer::PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene)
 {
 	if (!Scene) return;
@@ -832,88 +706,7 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 // ============================================================
 // 패스별 기본 렌더 상태 테이블 초기화
 // ============================================================
-void FRenderer::InitializePassRenderStates()
-{
-	using E = ERenderPass;
-	auto& S = PassRenderStates;
 
-	//                              DepthStencil                    Blend                Rasterizer                   Topology                                WireframeAware
-	S[(uint32)E::Opaque] = { EDepthStencilState::Default,      EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::Lighting] = { EDepthStencilState::NoDepth,       EBlendState::Opaque,     ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::AlphaBlend] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
-	S[(uint32)E::AdditiveDecal] = { EDepthStencilState::DepthReadOnly, EBlendState::Additive, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true};
-	S[(uint32)E::SelectionMask] = { EDepthStencilState::StencilWrite, EBlendState::NoColor,    ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::EditorLines] = { EDepthStencilState::Default,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST,     false };
-	S[(uint32)E::PostProcess] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::FXAA] = { EDepthStencilState::NoDepth,      EBlendState::Opaque,     ERasterizerState::SolidNoCull,   D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque,     ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside,  EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-	S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth,      EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
-}
-
-void FRenderer::BuildLightingPassCommand(const FFrameContext& Frame, ID3D11DeviceContext* Ctx)
-{
-	(void)Frame;
-	(void)Ctx;
-
-	if (!ActiveViewPipeline)
-	{
-		return;
-	}
-
-	FShader* LightingShader = ResolvePipelineShader(ERenderPass::Lighting, nullptr);
-	if (!LightingShader)
-	{
-		return;
-	}
-
-	const FPassRenderState& LightingState = PassRenderStates[(uint32)ERenderPass::Lighting];
-
-	FDrawCommand& Cmd = DrawCommandList.AddCommand();
-	Cmd.Shader = LightingShader;
-	Cmd.DepthStencil = LightingState.DepthStencil;
-	Cmd.Blend = LightingState.Blend;
-	Cmd.Rasterizer = LightingState.Rasterizer;
-	Cmd.Topology = LightingState.Topology;
-	Cmd.VertexCount = 3;
-	Cmd.Pass = ERenderPass::Lighting;
-	Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Lighting, Cmd.Shader, nullptr, nullptr, 0);
-}
-
-FShader* FRenderer::ResolvePipelineShader(ERenderPass Pass, FShader* FallbackShader) const
-{
-	if (!ActiveViewPipeline)
-	{
-		return FallbackShader;
-	}
-
-	EPipelineStage Stage = EPipelineStage::BaseDraw;
-	switch (Pass)
-	{
-	case ERenderPass::Opaque:
-		Stage = EPipelineStage::BaseDraw;
-		break;
-	case ERenderPass::Decal:
-		Stage = EPipelineStage::Decal;
-		break;
-	case ERenderPass::Lighting:
-		Stage = EPipelineStage::Lighting;
-		break;
-	default:
-		return FallbackShader;
-	}
-
-	if (const FRenderPipelinePassDesc* PassDesc = ActiveViewPipeline->FindPass(Stage))
-	{
-		if (PassDesc->CompiledShader)
-		{
-			return PassDesc->CompiledShader;
-		}
-	}
-
-	return FallbackShader;
-}
 
 // ============================================================
 // PerObjectCB 풀 관리

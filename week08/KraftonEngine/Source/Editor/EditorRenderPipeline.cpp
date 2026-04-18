@@ -1,7 +1,7 @@
 ﻿#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Render/Proxy/FScene.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
@@ -107,12 +107,12 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	if (const auto* PipelineLib = Renderer.GetViewModePipelineLibrary())
 	{
 		Renderer.SetActiveViewModePipeline(PipelineLib->Get(ViewMode));
-		Renderer.SetActiveViewModeSurfaces(VP->GetViewModeSurfaceResources());
+		Renderer.AcquireViewModeSurfaceResources(VP->GetWidth(), VP->GetHeight());
 	}
 	else
 	{
 		Renderer.SetActiveViewModePipeline(nullptr);
-		Renderer.SetActiveViewModeSurfaces(nullptr);
+		Renderer.ReleaseViewModeSurfaceResources();
 	}
 
 	// 2. BeginCollect → Proxy → FDrawCommand 직접 변환
