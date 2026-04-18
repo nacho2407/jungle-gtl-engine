@@ -189,6 +189,12 @@
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\LightCullingCommon.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\TileBasedLightCullingCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -572,6 +578,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\FEditorMaterialWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1063,6 +1072,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\FEditorMaterialWidget.h">
       <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

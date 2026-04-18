@@ -172,7 +172,6 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		{
 			if (Section.IndexCount == 0) continue;
 			if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer()) continue;
-
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = Proxy.Shader;
 
@@ -180,7 +179,8 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
 			Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
 			Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
-
+			if (CollectViewMode == EViewMode::Wireframe && Pass == ERenderPass::Opaque)
+				Cmd.Rasterizer = ERasterizerState::WireFrame;
 			Cmd.Topology = PassState.Topology;
 			Cmd.MeshBuffer = Proxy.MeshBuffer;
 			Cmd.FirstIndex = Section.FirstIndex;
@@ -197,6 +197,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	}
 	else
 	{
+
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Shader = Proxy.Shader;
 
@@ -204,7 +205,8 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 		Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
 		Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
 		Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
-
+		if (CollectViewMode == EViewMode::Wireframe && Pass == ERenderPass::Opaque)
+			Cmd.Rasterizer = ERasterizerState::WireFrame;
 		Cmd.Topology = PassState.Topology;
 		Cmd.MeshBuffer = Proxy.MeshBuffer;
 		Cmd.PerObjectCB = PerObjCB;
@@ -249,6 +251,7 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 	auto AddDraw = [&](uint32 FirstIndex, uint32 IndexCount)
 		{
 			if (IndexCount == 0) return;
+			if (DecalPass == ERenderPass::Decal && CollectViewMode == EViewMode::Wireframe) return; // 데칼 패스는 와이어프레임 모드에서 스킵
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Shader = DecalProxy.Shader;
