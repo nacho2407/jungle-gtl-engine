@@ -63,14 +63,10 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 
 void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
 {
-	TArray<FOverlayStatLine> Lines;
-	OverlaySystem.BuildLines(Editor, Lines);
-	const float TextScale = OverlaySystem.GetLayout().TextScale;
-
-	for (FOverlayStatLine& Line : Lines)
-	{
-		Scene.AddOverlayText(std::move(Line.Text), Line.ScreenPosition, TextScale);
-	}
+	(void)OverlaySystem;
+	(void)Editor;
+	(void)Scene;
+	// Stat 오버레이는 ImGui 기반으로 뷰포트 내부에 직접 렌더링합니다.
 }
 
 void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)

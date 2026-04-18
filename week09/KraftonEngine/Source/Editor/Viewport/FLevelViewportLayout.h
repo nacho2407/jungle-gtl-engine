@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Editor/UI/EditorPlayToolbarWidget.h"
+#include "Editor/UI/EditorToolbarPanel.h"
 #include <d3d11.h>
+#include "UI/SWindow.h"
 
 class SSplitter;
 class SWindow;
@@ -78,11 +79,13 @@ public:
 
 	static int32 GetSlotCount(EViewportLayout Layout);
 
+	const FRect& GetViewportPaneRect(int32 SlotIndex) const;
+	ID3D11ShaderResourceView* GetLayoutIcon(EViewportLayout Layout) const { return LayoutIcons[static_cast<int32>(Layout)]; }
+
 private:
 	SSplitter* BuildSplitterTree(EViewportLayout Layout);
 	void EnsureViewportSlots(int32 RequiredCount);
 	void ShrinkViewportSlots(int32 RequiredCount);
-	void RenderPaneToolbar(int32 SlotIndex);
 
 	// 아이콘 텍스처
 	void LoadLayoutIcons(ID3D11Device* Device);
@@ -110,7 +113,7 @@ private:
 	ID3D11ShaderResourceView* LayoutIcons[static_cast<int>(EViewportLayout::MAX)] = {};
 
 	// 뷰포트 상단 Play/Stop 툴바
-	FEditorPlayToolbarWidget PlayToolbar;
+	FEditorToolbarPanel Toolbar;
 	bool bHasSavedWorldAxisVisibility = false;
 	bool SavedWorldAxisVisibility[MaxViewportSlots] = {};
 	bool SavedGridVisibility[MaxViewportSlots] = {};

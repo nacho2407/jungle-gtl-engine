@@ -97,7 +97,7 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 	LoadLayoutIcons(InRenderer.GetFD3DDevice().GetDevice());
 
 	// Play/Stop 툴바 초기화
-	PlayToolbar.Initialize(InEditor, InRenderer.GetFD3DDevice().GetDevice());
+	Toolbar.Initialize(InEditor, InRenderer.GetFD3DDevice().GetDevice());
 
 	// LevelViewportClient 생성 (단일 뷰포트)
 	auto* LevelVC = new FLevelEditorViewportClient();
@@ -154,7 +154,7 @@ void FLevelViewportLayout::Release()
 	LevelViewportClients.clear();
 
 	ReleaseLayoutIcons();
-	PlayToolbar.Release();
+	Toolbar.Release();
 }
 
 // ─── 활성 뷰포트 ────────────────────────────────────────────
@@ -536,27 +536,22 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 	if (ContentSize.x > 0 && ContentSize.y > 0)
 	{
-		// 상단에 Play/Stop 툴바 영역 확보 후 나머지를 뷰포트에 할당
-		const float ToolbarHeight = PlayToolbar.GetDesiredHeight();
-		ImGui::SetCursorScreenPos(ContentPos);
-		PlayToolbar.Render(ContentSize.x);
+		const float ViewportWidth = ContentSize.x;
+		const float ViewportHeight = ContentSize.y;
 
-        float ViewportWidth = ContentSize.x;
-        float ViewportHeight = ContentSize.y - ToolbarHeight;
+		if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+		{
+			ImGui::End();
+			ImGui::PopStyleVar();
+			return;
+		}
 
-        if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
-        {
-            ImGui::End();
-            ImGui::PopStyleVar();
-            return;
-        }
-
-        FRect ContentRect = {
-            ContentPos.x,
-            ContentPos.y + ToolbarHeight,
-            ViewportWidth,
-            ViewportHeight
-        };
+		FRect ContentRect = {
+			ContentPos.x,
+			ContentPos.y,
+			ViewportWidth,
+			ViewportHeight
+		};
 
 		// SSplitter 레이아웃 계산
 		if (RootSplitter)
@@ -575,17 +570,20 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			{
 				FLevelEditorViewportClient* VC = LevelViewportClients[i];
 				VC->UpdateLayoutRect();
-				VC->RenderViewportImage(VC == ActiveViewportClient);
+				VC->RenderViewportImage();
 			}
 		}
 
 		// 각 뷰포트 패인 상단에 툴바 오버레이 렌더
 		for (int32 i = 0; i < ActiveSlotCount; ++i)
 		{
-			RenderPaneToolbar(i);
+			if (i < static_cast<int32>(LevelViewportClients.size()))
+			{
+				Toolbar.RenderPaneToolbar(this, i, LevelViewportClients[i]);
+			}
 		}
 
-		// 분할 바 렌더 (재귀 수집)
+		// 분할 바 렌더
 		if (RootSplitter)
 		{
 			TArray<SSplitter*> AllSplitters;
@@ -610,7 +608,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			ImVec2 MousePos = ImGui::GetIO().MousePos;
 			FPoint MP = { MousePos.x, MousePos.y };
 
-			// 마우스가 어떤 슬롯 위에 있는지
 			for (int32 i = 0; i < ActiveSlotCount; ++i)
 			{
 				if (ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
@@ -620,7 +617,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				}
 			}
 
-			// 분할 바 드래그
 			if (RootSplitter)
 			{
 				if (ImGui::IsMouseClicked(0))
@@ -651,7 +647,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				}
 				else
 				{
-					// 호버 커서 변경
 					SSplitter* Hovered = SSplitter::FindSplitterAtBar(RootSplitter, MP);
 					if (Hovered)
 					{
@@ -663,7 +658,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				}
 			}
 
-			// 활성 뷰포트 전환 (분할 바 드래그 중이 아닐 때)
 			if (!DraggingSplitter && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)))
 			{
 				for (int32 i = 0; i < ActiveSlotCount; ++i)
@@ -678,291 +672,50 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				}
 			}
 		}
+
+		// Stat 오버레이는 ImGui 텍스트로 직접 출력합니다.
+		const FOverlayStatSystem& OverlaySystem = Editor->GetOverlayStatSystem();
+		TArray<FOverlayStatLine> OverlayLines;
+		OverlaySystem.BuildLines(*Editor, OverlayLines);
+		if (!OverlayLines.empty())
+		{
+			const float OverlayPadding = 12.0f;
+			ImVec2 OverlayMin(ContentRect.X + OverlayPadding, ContentRect.Y + OverlayPadding);
+			float OverlayWidth = 0.0f;
+			for (const FOverlayStatLine& Line : OverlayLines)
+			{
+				ImVec2 TextSize = ImGui::CalcTextSize(Line.Text.c_str());
+				OverlayWidth = (OverlayWidth > TextSize.x) ? OverlayWidth : TextSize.x;
+			}
+			const float OverlayHeight = OverlayPadding * 2.0f + static_cast<float>(OverlayLines.size()) * ImGui::GetTextLineHeightWithSpacing();
+			ImDrawList* OverlayDrawList = ImGui::GetWindowDrawList();
+			OverlayDrawList->AddRectFilled(
+				OverlayMin,
+				ImVec2(OverlayMin.x + OverlayWidth + OverlayPadding * 2.0f, OverlayMin.y + OverlayHeight),
+				IM_COL32(0, 0, 0, 120),
+				6.0f);
+			ImVec2 TextPos(OverlayMin.x + OverlayPadding, OverlayMin.y + OverlayPadding - 1.0f);
+			for (const FOverlayStatLine& Line : OverlayLines)
+			{
+				OverlayDrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), Line.Text.c_str());
+				TextPos.y += ImGui::GetTextLineHeightWithSpacing();
+			}
+		}
 	}
 
 	ImGui::End();
 	ImGui::PopStyleVar();
 }
 
-// ─── 각 뷰포트 패인 툴바 오버레이 ──────────────────────────
 
-void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
+const FRect& FLevelViewportLayout::GetViewportPaneRect(int32 SlotIndex) const
 {
-	if (SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex]) return;
-
-	const FRect& PaneRect = ViewportWindows[SlotIndex]->GetRect();
-	if (PaneRect.Width <= 0 || PaneRect.Height <= 0) return;
-
-	// 패인 상단에 오버레이 윈도우
-	char OverlayID[64];
-	snprintf(OverlayID, sizeof(OverlayID), "##PaneToolbar_%d", SlotIndex);
-
-	ImGui::SetNextWindowPos(ImVec2(PaneRect.X, PaneRect.Y));
-	ImGui::SetNextWindowBgAlpha(0.4f);
-	ImGui::SetNextWindowSize(ImVec2(0, 0)); // auto-size
-
-	ImGuiWindowFlags OverlayFlags =
-		ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoSavedSettings |
-		ImGuiWindowFlags_NoFocusOnAppearing |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoMove;
-
-	ImGui::Begin(OverlayID, nullptr, OverlayFlags);
+	static FRect EmptyRect;
+	if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
 	{
-		ImGui::PushID(SlotIndex);
-
-		// Layout 드롭다운
-		char PopupID[64];
-		snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
-
-		if (ImGui::Button("Layout"))
-		{
-			ImGui::OpenPopup(PopupID);
-		}
-
-		if (ImGui::BeginPopup(PopupID))
-		{
-			constexpr int32 LayoutCount = static_cast<int32>(EViewportLayout::MAX);
-			constexpr int32 Columns = 4;
-			constexpr float IconSize = 32.0f;
-
-			for (int32 i = 0; i < LayoutCount; ++i)
-			{
-				ImGui::PushID(i);
-
-				bool bSelected = (static_cast<EViewportLayout>(i) == CurrentLayout);
-				if (bSelected)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-				}
-
-				bool bClicked = false;
-				if (LayoutIcons[i])
-				{
-					bClicked = ImGui::ImageButton("##icon", (ImTextureID)LayoutIcons[i], ImVec2(IconSize, IconSize));
-				}
-				else
-				{
-					char Label[4];
-					snprintf(Label, sizeof(Label), "%d", i);
-					bClicked = ImGui::Button(Label, ImVec2(IconSize + 8, IconSize + 8));
-				}
-
-				if (bSelected)
-				{
-					ImGui::PopStyleColor();
-				}
-
-				if (bClicked)
-				{
-					SetLayout(static_cast<EViewportLayout>(i));
-					ImGui::CloseCurrentPopup();
-				}
-
-				if ((i + 1) % Columns != 0 && i + 1 < LayoutCount)
-					ImGui::SameLine();
-
-				ImGui::PopID();
-			}
-			ImGui::EndPopup();
-		}
-
-		ImGui::SameLine();
-
-		constexpr float ToggleIconSize = 16.0f;
-		int32 ToggleIdx = (CurrentLayout == EViewportLayout::OnePane)
-			? static_cast<int32>(EViewportLayout::FourPanes2x2)
-			: static_cast<int32>(EViewportLayout::OnePane);
-
-		if (LayoutIcons[ToggleIdx])
-		{
-			if (ImGui::ImageButton("##toggle", (ImTextureID)LayoutIcons[ToggleIdx], ImVec2(ToggleIconSize, ToggleIconSize)))
-			{
-				ToggleViewportSplit();
-			}
-		}
-		else
-		{
-			const char* ToggleLabel = (CurrentLayout == EViewportLayout::OnePane) ? "Split" : "Merge";
-			if (ImGui::Button(ToggleLabel))
-			{
-				ToggleViewportSplit();
-			}
-		}
-
-		if (SlotIndex < static_cast<int32>(LevelViewportClients.size()))
-		{
-			FLevelEditorViewportClient* VC = LevelViewportClients[SlotIndex];
-			FViewportRenderOptions& Opts = VC->GetRenderOptions();
-
-			// Viewport Type
-			ImGui::SameLine();
-
-			static const char* ViewportTypeNames[] = {
-				"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back", "Free Orthographic"
-			};
-			constexpr int32 ViewportTypeCount = sizeof(ViewportTypeNames) / sizeof(ViewportTypeNames[0]);
-			int32 CurrentTypeIdx = static_cast<int32>(Opts.ViewportType);
-			const char* CurrentTypeName = ViewportTypeNames[CurrentTypeIdx];
-
-			char VTPopupID[64];
-			snprintf(VTPopupID, sizeof(VTPopupID), "ViewportTypePopup_%d", SlotIndex);
-
-			if (ImGui::Button(CurrentTypeName))
-			{
-				ImGui::OpenPopup(VTPopupID);
-			}
-
-			if (ImGui::BeginPopup(VTPopupID))
-			{
-				for (int32 t = 0; t < ViewportTypeCount; ++t)
-				{
-					bool bSelected = (t == CurrentTypeIdx);
-					if (ImGui::Selectable(ViewportTypeNames[t], bSelected))
-					{
-						VC->SetViewportType(static_cast<ELevelViewportType>(t));
-					}
-				}
-				ImGui::EndPopup();
-			}
-
-			// Gizmo Mode
-			UGizmoComponent* Gizmo = Editor->GetGizmo();
-			if (Gizmo)
-			{
-				ImGui::SameLine();
-
-				static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
-				const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
-
-				char GizmoPopupID[64];
-				snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
-
-				if (ImGui::Button(CurrentModeName))
-				{
-					ImGui::OpenPopup(GizmoPopupID);
-				}
-
-				if (ImGui::BeginPopup(GizmoPopupID))
-				{
-					int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-					if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
-						Gizmo->SetTranslateMode();
-					if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
-						Gizmo->SetRotateMode();
-					if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
-						Gizmo->SetScaleMode();
-					ImGui::EndPopup();
-				}
-			}
-
-			// ViewMode 팝업 분리
-			ImGui::SameLine();
-
-			static const char* ViewModeNames[] = {
-				"Lit_Gouraud",
-				"Lit_Lambert",
-				"Lit_Phong",
-				"Unlit",
-				"Wireframe",
-				"SceneDepth"
-			};
-
-			const char* CurrentViewModeName = "ViewMode";
-			switch (Opts.ViewMode)
-			{
-			case EViewMode::Lit_Gouraud: CurrentViewModeName = "Lit_Gouraud"; break;
-			case EViewMode::Lit_Lambert: CurrentViewModeName = "Lit_Lambert"; break;
-			case EViewMode::Lit_Phong:   CurrentViewModeName = "Lit_Phong";   break;
-			case EViewMode::Unlit:       CurrentViewModeName = "Unlit";       break;
-			case EViewMode::Wireframe:   CurrentViewModeName = "Wireframe";   break;
-			case EViewMode::SceneDepth:  CurrentViewModeName = "SceneDepth";  break;
-			default: break;
-			}
-
-			char ViewModePopupID[64];
-			snprintf(ViewModePopupID, sizeof(ViewModePopupID), "ViewModePopup_%d", SlotIndex);
-
-			if (ImGui::Button(CurrentViewModeName))
-			{
-				ImGui::OpenPopup(ViewModePopupID);
-			}
-
-			if (ImGui::BeginPopup(ViewModePopupID))
-			{
-				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-
-				if (ImGui::RadioButton("Lit_Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud))) {}
-				if (ImGui::RadioButton("Lit_Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert))) {}
-				if (ImGui::RadioButton("Lit_Phong",   &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong))) {}
-				if (ImGui::RadioButton("Unlit",       &CurrentMode, static_cast<int32>(EViewMode::Unlit))) {}
-				if (ImGui::RadioButton("Wireframe",   &CurrentMode, static_cast<int32>(EViewMode::Wireframe))) {}
-				if (ImGui::RadioButton("SceneDepth",  &CurrentMode, static_cast<int32>(EViewMode::SceneDepth))) {}
-
-				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
-				ImGui::EndPopup();
-			}
-
-			// Settings 팝업
-			ImGui::SameLine();
-
-			char SettingsPopupID[64];
-			snprintf(SettingsPopupID, sizeof(SettingsPopupID), "SettingsPopup_%d", SlotIndex);
-
-			if (ImGui::Button("Settings"))
-			{
-				ImGui::OpenPopup(SettingsPopupID);
-			}
-
-			if (ImGui::BeginPopup(SettingsPopupID))
-			{
-				// Show Flags
-				ImGui::Text("Show");
-				ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
-				ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
-				ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
-				ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
-				ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
-				ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
-				ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
-				ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
-				ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
-				ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
-
-				ImGui::Separator();
-
-				// Grid Settings
-				ImGui::Text("Grid");
-				ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
-				ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
-
-				ImGui::Separator();
-
-				// Camera Sensitivity
-				ImGui::Text("Camera");
-				ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
-				ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-
-				ImGui::Separator();
-
-				// SceneDepth Settings
-				ImGui::Text("SceneDepth");
-				ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
-				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
-
-				ImGui::Text("FXAA");
-				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
-
-				ImGui::EndPopup();
-			}
-		} // SlotIndex guard
-
-		ImGui::PopID();
+		return EmptyRect;
 	}
-	ImGui::End();
+	return ViewportWindows[SlotIndex]->GetRect();
 }
 
 // ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────

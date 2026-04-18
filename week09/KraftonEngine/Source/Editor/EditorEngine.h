@@ -3,6 +3,7 @@
 #include "Engine/Runtime/Engine.h"
 
 #include "Editor/Viewport/FLevelViewportLayout.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -74,6 +75,12 @@ public:
 
 	void RequestEndPlayMap();
 	bool IsPlayingInEditor() const { return PlayInEditorSessionInfo.has_value(); }
+	bool IsPausedInEditor() const
+	{
+		return PlayInEditorSessionInfo.has_value()
+			&& PlayInEditorSessionInfo->DestinationViewportClient
+			&& PlayInEditorSessionInfo->DestinationViewportClient->GetPlayState() == EEditorViewportPlayState::Paused;
+	}
 
 	// 즉시 동기 종료 — Save / NewScene / Load 등 에디터 월드를 만지는 작업 직전에 호출.
 	// PIE 중이 아니면 no-op.
@@ -84,6 +91,8 @@ private:
 	void StartQueuedPlaySessionRequest();
 	void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
 	void EndPlayMap();
+	void SetViewportPlayState(FLevelEditorViewportClient* InViewportClient, EEditorViewportPlayState InPlayState);
+	void ResetAllViewportPlayStates();
 
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
