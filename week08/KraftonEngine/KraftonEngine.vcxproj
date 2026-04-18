@@ -252,7 +252,7 @@
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMaterialPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorScenePanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorToolbarPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorViewportPanel.cpp" />
@@ -386,7 +386,7 @@
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorMaterialPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorPanel.h" />
-    <ClInclude Include="Source\Editor\UI\EditorScenePanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorStatPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorToolbarPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorViewportPanel.h" />
