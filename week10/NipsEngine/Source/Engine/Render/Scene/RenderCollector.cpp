@@ -852,18 +852,23 @@ void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightA
 void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus)
 {
 	if (!Light) return;
+	const auto& LightColor = Light->LightColor;
+	FVector Color = FVector(LightColor.R, LightColor.G, LightColor.B);
 
 	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
 	{
 		// Collect Ambient Light Data
-		FAmbientLightInfo AmbientLightData = {};
-		
-		RenderBus.AmbientLightInfo = AmbientLightData;
+		FAmbientLightInfo AmbientLightData	= {};
+		AmbientLightData.Color				= Color;
+		AmbientLightData.Intensity			= AmbientLight->Intensity;
+		RenderBus.AmbientLightInfo			= AmbientLightData;
 	}
 	else if (const UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Light))
 	{
-		FDirectionalLightInfo DirLightData = {};
-
+		FDirectionalLightInfo DirLightData	= {};
+		DirLightData.Color					= Color;
+		DirLightData.Intensity				= DirLight->Intensity;
+		DirLightData.Direction				= DirLight->LightDirection;
 		RenderBus.DirectionalLightInfo = DirLightData;
 	}
 
@@ -871,14 +876,25 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light)) 
 	{
-        FLightInfo LightData = {};
-        LightData.Type = 0;
+        FLightInfo LightData		= {};
+		LightData.Color				= Color;
+		LightData.Intensity			= SpotLight->Intensity;
+		LightData.Direction			= SpotLight->Direction;
+        LightData.Radius			= SpotLight->AttenuationRadius;
+        LightData.Falloff			= SpotLight->LightFalloffExponent;
+		LightData.InnerAngle		= SpotLight->InnerConeAngle;
+		LightData.OuterAngle		= SpotLight->OuterConeAngle;
+        LightData.Type				= 0;
 
 		RenderBus.LightInfos.push_back(LightData);
 	}
-    else if (const UPointLightComponent* PointeLight = Cast<UPointLightComponent>(Light)) {
+    else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
         FLightInfo LightData = {};
-        LightData.Type = 1;
+		LightData.Color				= Color;
+		LightData.Intensity			= PointLight->Intensity;
+		LightData.Radius			= PointLight->AttenuationRadius;
+		LightData.Falloff			= PointLight->LightFalloffExponent;
+        LightData.Type				= 1;
 
 		RenderBus.LightInfos.push_back(LightData);
 	}

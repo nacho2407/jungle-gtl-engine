@@ -85,7 +85,7 @@ struct FLightInfo
 	float OuterAngle;
 
 	FVector Direction;
-	float Padding0;
+	float Falloff;
 
 	FVector Position;
 	float Padding1;

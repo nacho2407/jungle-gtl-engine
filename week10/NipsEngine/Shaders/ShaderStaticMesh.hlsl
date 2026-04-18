@@ -38,7 +38,7 @@ struct FLightInfo
     float OuterAngle;
 
     float3 Direction;
-    float  Padding0;
+    float  Falloff;
 
     float3 Position;
     float  Padding1;
