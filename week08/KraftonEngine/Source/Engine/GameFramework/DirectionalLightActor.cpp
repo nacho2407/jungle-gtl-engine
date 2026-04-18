@@ -1,17 +1,17 @@
-﻿#include "AmbientLightActor.h"
-#include "Component/AmbientLightComponent.h"
+﻿#include "DirectionalLightActor.h"
+#include "Component/DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
 
-IMPLEMENT_CLASS(AAmbientLightActor, AActor)
+IMPLEMENT_CLASS(ADirectionalLightActor, AActor)
 
-AAmbientLightActor::AAmbientLightActor()
+ADirectionalLightActor::ADirectionalLightActor()
 {
 	bNeedsTick = false;
 	bTickInEditor = false;
 }
 
-void AAmbientLightActor::InitDefaultComponents()
+void ADirectionalLightActor::InitDefaultComponents()
 {
-    AmbientLightComponent = AddComponent<UAmbientLightComponent>();
-    SetRootComponent(AmbientLightComponent);
+    DirectionalLightComponent = AddComponent<UDirectionalLightComponent>();
+    SetRootComponent(DirectionalLightComponent);
 }

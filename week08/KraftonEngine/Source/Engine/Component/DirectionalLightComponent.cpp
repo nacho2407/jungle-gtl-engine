@@ -64,7 +64,5 @@ void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
 
 FLightSceneProxy* UDirectionalLightComponent::CreateLightSceneProxy()
 {
-    FLightSceneProxy* Proxy = new FLightSceneProxy(this);
-    Proxy->LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
-    return Proxy;
+    return new FDirectionalLightSceneProxy(this);
 }
