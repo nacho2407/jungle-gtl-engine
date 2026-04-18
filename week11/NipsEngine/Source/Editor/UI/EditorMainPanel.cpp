@@ -11,6 +11,7 @@
 #include "ImGui/imgui_impl_win32.h"
 
 #include "Render/Renderer/Renderer.h"
+#include "Render/Resource/Shader.h"
 #include "Engine/Input/InputSystem.h"
 namespace
 {
@@ -44,6 +45,17 @@ const char* GetViewportTypeName(EEditorViewportType Type)
         return "Right";
     default:
         return "Viewport";
+    }
+}
+
+const char* GetLightingModelName(EShaderLightPermutationKey Key)
+{
+    switch (Key)
+    {
+    case EShaderLightPermutationKey::Gouraud:   return "Gouraud";
+    case EShaderLightPermutationKey::Lambert:   return "Lambert";
+    case EShaderLightPermutationKey::BlinnPhong: return "BlinnPhong";
+    default:                                     return "Unlit";
     }
 }
 
@@ -430,6 +442,25 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             const bool bSel = (State.ViewMode == Modes[j]);
             if (ImGui::MenuItem(Labels[j], nullptr, bSel))
                 State.ViewMode = Modes[j];
+        }
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Lighting"))
+    {
+        static constexpr EShaderLightPermutationKey kModels[] = {
+            EShaderLightPermutationKey::Gouraud,
+            EShaderLightPermutationKey::Lambert,
+            EShaderLightPermutationKey::BlinnPhong,
+        };
+
+        FRenderer& Renderer = EditorEngine->GetRenderer();
+        const EShaderLightPermutationKey Current = Renderer.GetLightingModel();
+
+        for (EShaderLightPermutationKey Model : kModels)
+        {
+            if (ImGui::MenuItem(GetLightingModelName(Model), nullptr, Current == Model))
+                Renderer.SetLightingModel(Model);
         }
         ImGui::EndMenu();
     }

@@ -22,10 +22,10 @@ void UMaterial::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
 	Context->RSSetState(RasterizerState);
 	Context->PSSetSamplers(0, 1, &Sampler);
 
-	ApplyParams(Context, MaterialParams);
+	ApplyParams(Context, MaterialParams, PermutationKey);
 }
 
-void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const
+void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, uint32 PermutationKey) const
 {
 	TArray<uint8> CBufferData(Shader->GetCBufferSize());
 
@@ -106,7 +106,7 @@ void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FM
 		}
 	}
 
-	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, static_cast<uint32>(CBufferData.size()));
+	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, static_cast<uint32>(CBufferData.size()), PermutationKey);
 }
 
 void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
@@ -122,5 +122,5 @@ void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey
 		CombinedParams[Name] = Value;
 	}
 
-	Parent->ApplyParams(Context, CombinedParams);
+	Parent->ApplyParams(Context, CombinedParams, PermutationKey);
 }

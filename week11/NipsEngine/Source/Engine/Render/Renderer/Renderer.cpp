@@ -1,5 +1,6 @@
 ﻿#include "Renderer.h"
 
+#include <array>
 #include <iostream>
 #include <algorithm>
 #include "Core/Paths.h"
@@ -21,21 +22,12 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	// Light macro
-    D3D_SHADER_MACRO defines_gouraud[] = {
-        { "LIGHTING_MODEL_GOURAUD", "1" },
-        { nullptr, nullptr }
+	auto LightMacros = [](const char* name) -> std::array<D3D_SHADER_MACRO, 2> {
+        return {{ {name, "1"}, {nullptr, nullptr} }};
     };
-
-    D3D_SHADER_MACRO defines_lambert[] = {
-        { "LIGHTING_MODEL_LAMBERT", "1" },
-        { nullptr, nullptr }
-    };
-
-    D3D_SHADER_MACRO defines_phong[] = {
-        { "LIGHTING_MODEL_PHONG", "1" },
-        { nullptr, nullptr }
-    };
+    auto defines_gouraud    = LightMacros("LIGHTING_MODEL_GOURAUD");
+    auto defines_lambert    = LightMacros("LIGHTING_MODEL_LAMBERT");
+    auto defines_blinnphong = LightMacros("LIGHTING_MODEL_PHONG");
 
 	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
 	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
@@ -44,7 +36,9 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_phong, 0);
+    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_gouraud.data(),    (uint32)EShaderLightPermutationKey::Gouraud);
+    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_lambert.data(),    (uint32)EShaderLightPermutationKey::Lambert);
+    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_blinnphong.data(), (uint32)EShaderLightPermutationKey::BlinnPhong);
     FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
@@ -239,6 +233,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
     RenderPassContext->SubUVBatcher = &SubUVBatcher;
     RenderPassContext->GridLineBatcher = &GridLineBatcher;
     RenderPassContext->EditorLineBatcher = &EditorLineBatcher;
+    RenderPassContext->ActiveLightingModel = ActiveLightingModel;
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
