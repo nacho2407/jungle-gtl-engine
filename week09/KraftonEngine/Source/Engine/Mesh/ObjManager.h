@@ -39,6 +39,5 @@ public:
 	static void ReleaseAllGPU();
 
 private:
-	static bool LoadStaticMeshAsset(const std::string& PathFileName, ID3D11Device* InDevice,
-		FStaticMesh*& OutMesh, TArray<FStaticMaterial>& OutMaterials);
+	static bool TryImportStaticMesh(const FString& ObjPath, const FImportOptions* Options, UStaticMesh* StaticMesh, const FString& BinPath);
 };

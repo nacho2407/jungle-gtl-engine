@@ -1,0 +1,11 @@
+{
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/MatID_1.001.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/Bitten_Apple_tgyociqpa_Mid_2K_BaseColor.jpg"
+  }
+}

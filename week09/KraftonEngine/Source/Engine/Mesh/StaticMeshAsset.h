@@ -8,17 +8,9 @@
 #include "Engine/Object/FName.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
+#include "Render/Types/VertexTypes.h"
 #include <memory>
 #include <algorithm>
-// Cooked Data 내부용 정점
-struct FNormalVertex
-{
-	FVector pos;
-	FVector normal;
-	FVector4 color;
-	FVector2 tex;
-};
-
 
 struct FStaticMeshSection
 {
@@ -58,7 +50,7 @@ struct FStaticMaterial
 		{
 			if (!JsonPath.empty())
 			{
-				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
+				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(JsonPath);
 			}
 			else
 			{
@@ -75,7 +67,7 @@ struct FStaticMaterial
 struct FStaticMesh
 {
 	FString PathFileName;
-	TArray<FNormalVertex> Vertices;
+	TArray<FVertexPNCT_T> Vertices;
 	TArray<uint32> Indices;
 
 	TArray<FStaticMeshSection> Sections;
@@ -92,16 +84,16 @@ struct FStaticMesh
 		bBoundsValid = false;
 		if (Vertices.empty()) return;
 
-		FVector LocalMin = Vertices[0].pos;
-		FVector LocalMax = Vertices[0].pos;
-		for (const FNormalVertex& V : Vertices)
+		FVector LocalMin = Vertices[0].Position;
+		FVector LocalMax = Vertices[0].Position;
+		for (const FVertexPNCT_T& V : Vertices)
 		{
-			LocalMin.X = (std::min)(LocalMin.X, V.pos.X);
-			LocalMin.Y = (std::min)(LocalMin.Y, V.pos.Y);
-			LocalMin.Z = (std::min)(LocalMin.Z, V.pos.Z);
-			LocalMax.X = (std::max)(LocalMax.X, V.pos.X);
-			LocalMax.Y = (std::max)(LocalMax.Y, V.pos.Y);
-			LocalMax.Z = (std::max)(LocalMax.Z, V.pos.Z);
+			LocalMin.X = (std::min)(LocalMin.X, V.Position.X);
+			LocalMin.Y = (std::min)(LocalMin.Y, V.Position.Y);
+			LocalMin.Z = (std::min)(LocalMin.Z, V.Position.Z);
+			LocalMax.X = (std::max)(LocalMax.X, V.Position.X);
+			LocalMax.Y = (std::max)(LocalMax.Y, V.Position.Y);
+			LocalMax.Z = (std::max)(LocalMax.Z, V.Position.Z);
 		}
 
 		BoundsCenter = (LocalMin + LocalMax) * 0.5f;

@@ -80,9 +80,9 @@ namespace
 	// 같은 위치의 중복 정점(UV seam, hard edge)을 병합
 	// 반환: WeldMap[원본 인덱스] = 웰딩된 인덱스, WeldedVerts
 	void WeldVertices(
-		const TArray<FNormalVertex>& InVerts,
+		const TArray<FVertexPNCT_T>& InVerts,
 		const TArray<uint32>& InIndices,
-		TArray<FNormalVertex>& OutVerts,
+		TArray<FVertexPNCT_T>& OutVerts,
 		TArray<uint32>& OutIndices,
 		TArray<uint32>& OutUnweldMap)  // 웰딩된 인덱스 → 원본 첫 인덱스 (속성 복원용)
 	{
@@ -93,8 +93,8 @@ namespace
 		for (uint32 i = 0; i < N; ++i) Order[i] = i;
 
 		std::sort(Order.begin(), Order.end(), [&](uint32 A, uint32 B) {
-			const FVector& PA = InVerts[A].pos;
-			const FVector& PB = InVerts[B].pos;
+			const FVector& PA = InVerts[A].Position;
+			const FVector& PB = InVerts[B].Position;
 			if (PA.X != PB.X) return PA.X < PB.X;
 			if (PA.Y != PB.Y) return PA.Y < PB.Y;
 			return PA.Z < PB.Z;
@@ -113,10 +113,10 @@ namespace
 			uint32 NewIdx = static_cast<uint32>(OutVerts.size());
 
 			// 같은 위치의 정점들 — 속성은 첫 번째 것 사용
-			FNormalVertex Merged = InVerts[Rep];
+			FVertexPNCT_T Merged = InVerts[Rep];
 
 			// 그룹 내 모든 노멀 평균
-			FVector NormalSum = InVerts[Rep].normal;
+			FVector NormalSum = InVerts[Rep].Normal;
 			uint32 GroupCount = 1;
 
 			WeldMap[Rep] = NewIdx;
@@ -125,12 +125,12 @@ namespace
 			while (i < N)
 			{
 				uint32 Cur = Order[i];
-				const FVector& PC = InVerts[Cur].pos;
-				const FVector& PR = InVerts[Rep].pos;
+				const FVector& PC = InVerts[Cur].Position;
+				const FVector& PR = InVerts[Rep].Position;
 				if (std::abs(PC.X-PR.X) > Eps || std::abs(PC.Y-PR.Y) > Eps || std::abs(PC.Z-PR.Z) > Eps)
 					break;
 				WeldMap[Cur] = NewIdx;
-				NormalSum = NormalSum + InVerts[Cur].normal;
+				NormalSum = NormalSum + InVerts[Cur].Normal;
 				++GroupCount;
 				++i;
 			}
@@ -139,7 +139,7 @@ namespace
 			if (GroupCount > 1)
 			{
 				float Len = NormalSum.Length();
-				if (Len > 1e-8f) Merged.normal = NormalSum / Len;
+				if (Len > 1e-8f) Merged.Normal = NormalSum / Len;
 			}
 
 			OutVerts.push_back(Merged);
@@ -154,7 +154,7 @@ namespace
 }
 
 FSimplifiedMesh FMeshSimplifier::Simplify(
-	const TArray<FNormalVertex>& InVertices,
+	const TArray<FVertexPNCT_T>& InVertices,
 	const TArray<uint32>& InIndices,
 	const TArray<FStaticMeshSection>& InSections,
 	float TargetRatio)
@@ -168,7 +168,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 	}
 
 	// ── 1단계: 위치 기반 정점 웰딩 (UV seam 크랙 방지) ──
-	TArray<FNormalVertex> WV;
+	TArray<FVertexPNCT_T> WV;
 	TArray<uint32> WI;
 	TArray<uint32> UnweldMap;
 	WeldVertices(InVertices, InIndices, WV, WI, UnweldMap);
@@ -201,7 +201,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 
 	{
 		// ── 2단계: QEM Simplification ──
-		TArray<FNormalVertex> V = WV;
+		TArray<FVertexPNCT_T> V = WV;
 		TArray<uint32> I = CleanI;
 
 		std::vector<std::vector<uint32>> VF(NV);
@@ -240,7 +240,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 		std::vector<FQuadric> Q(NV);
 		for (uint32 f=0; f<NT; ++f)
 		{
-			const FVector& P0=V[I[f*3]].pos, &P1=V[I[f*3+1]].pos, &P2=V[I[f*3+2]].pos;
+			const FVector& P0=V[I[f*3]].Position, &P1=V[I[f*3+1]].Position, &P2=V[I[f*3+2]].Position;
 			FVector N = (P1-P0).Cross(P2-P0);
 			float Len = N.Length();
 			if (Len < 1e-8f) continue;
@@ -260,7 +260,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 			C.V0=v0; C.V1=v1;
 			C.Version = VVer[v0] + VVer[v1];
 			FQuadric Qs = Q[v0] + Q[v1];
-			const FVector& P0=V[v0].pos, &P1=V[v1].pos;
+			const FVector& P0=V[v0].Position, &P1=V[v1].Position;
 
 			double ox,oy,oz;
 			bool bSolved = Qs.Solve(ox,oy,oz);
@@ -319,7 +319,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 					uint32 i0=I[fi*3], i1=I[fi*3+1], i2=I[fi*3+2];
 					if (i0==Other||i1==Other||i2==Other) continue;
 
-					FVector OP0=V[i0].pos, OP1=V[i1].pos, OP2=V[i2].pos;
+					FVector OP0=V[i0].Position, OP1=V[i1].Position, OP2=V[i2].Position;
 					FVector OldN = (OP1-OP0).Cross(OP2-OP0);
 
 					FVector NP0=(i0==Src)?NewPos:OP0, NP1=(i1==Src)?NewPos:OP1, NP2=(i2==Src)?NewPos:OP2;
@@ -332,22 +332,22 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 
 			// ── Collapse Rem → Keep ──
 			{
-				float D0=FVector::Distance(NewPos,V[Keep].pos);
-				float D1=FVector::Distance(NewPos,V[Rem].pos);
+				float D0=FVector::Distance(NewPos,V[Keep].Position);
+				float D1=FVector::Distance(NewPos,V[Rem].Position);
 				float T = (D0+D1 > 1e-8f) ? D0/(D0+D1) : 0.5f;
 
-				V[Keep].pos = NewPos;
-				V[Keep].normal = V[Keep].normal*(1-T) + V[Rem].normal*T;
-				float NLen = V[Keep].normal.Length();
-				if (NLen > 1e-8f) V[Keep].normal = V[Keep].normal / NLen;
+				V[Keep].Position = NewPos;
+				V[Keep].Normal = V[Keep].Normal*(1-T) + V[Rem].Normal*T;
+				float NLen = V[Keep].Normal.Length();
+				if (NLen > 1e-8f) V[Keep].Normal = V[Keep].Normal / NLen;
 
-				V[Keep].color.X = V[Keep].color.X*(1-T)+V[Rem].color.X*T;
-				V[Keep].color.Y = V[Keep].color.Y*(1-T)+V[Rem].color.Y*T;
-				V[Keep].color.Z = V[Keep].color.Z*(1-T)+V[Rem].color.Z*T;
-				V[Keep].color.W = V[Keep].color.W*(1-T)+V[Rem].color.W*T;
+				V[Keep].Color.X = V[Keep].Color.X*(1-T)+V[Rem].Color.X*T;
+				V[Keep].Color.Y = V[Keep].Color.Y*(1-T)+V[Rem].Color.Y*T;
+				V[Keep].Color.Z = V[Keep].Color.Z*(1-T)+V[Rem].Color.Z*T;
+				V[Keep].Color.W = V[Keep].Color.W*(1-T)+V[Rem].Color.W*T;
 
-				V[Keep].tex.X = V[Keep].tex.X*(1-T)+V[Rem].tex.X*T;
-				V[Keep].tex.Y = V[Keep].tex.Y*(1-T)+V[Rem].tex.Y*T;
+				V[Keep].UV.U = V[Keep].UV.U*(1-T)+V[Rem].UV.U*T;
+				V[Keep].UV.V = V[Keep].UV.V*(1-T)+V[Rem].UV.V*T;
 			}
 
 			Q[Keep] = Q[Keep] + Q[Rem];
@@ -397,7 +397,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
 
 		// 결과 수집
 		TArray<uint32> Remap(NV, UINT32_MAX);
-		TArray<FNormalVertex> NewV;
+		TArray<FVertexPNCT_T> NewV;
 
 		for (uint32 i=0; i<NV; ++i)
 		{

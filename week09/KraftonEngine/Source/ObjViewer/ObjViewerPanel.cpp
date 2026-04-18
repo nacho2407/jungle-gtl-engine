@@ -4,7 +4,7 @@
 #include "ObjViewer/ObjViewerViewportClient.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Mesh/ObjManager.h"
 #include "Viewport/Viewport.h"
 
