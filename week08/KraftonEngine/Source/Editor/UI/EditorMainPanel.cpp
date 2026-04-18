@@ -8,7 +8,7 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Engine/Input/InputSystem.h"
 
 

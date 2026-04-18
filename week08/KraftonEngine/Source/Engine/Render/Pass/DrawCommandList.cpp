@@ -34,13 +34,9 @@ void FStateCache::Reset()
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
-	// t0 SRV 언바인딩
-	if (DiffuseSRV)
-	{
-		ID3D11ShaderResourceView* nullSRV = nullptr;
-		Ctx->PSSetShaderResources(0, 1, &nullSRV);
-		DiffuseSRV = nullptr;
-	}
+	ID3D11ShaderResourceView* NullSRVs[6] = {};
+	Ctx->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+	DiffuseSRV = nullptr;
 }
 
 // ============================================================

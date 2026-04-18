@@ -1,11 +1,12 @@
-#include "ObjViewer/ObjViewerRenderPipeline.h"
+﻿#include "ObjViewer/ObjViewerRenderPipeline.h"
 
 #include "ObjViewer/ObjViewerEngine.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Renderer.h"
 #include "Render/Proxy/FScene.h"
 #include "Viewport/Viewport.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
+#include "Render/Pipeline/ViewModeRenderPipeline.h"
 
 FObjViewerRenderPipeline::FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer)
 	: Engine(InEngine)
@@ -62,8 +63,19 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 	ShowFlags.bGizmo = false;
 	ShowFlags.bBillboardText = false;
 	ShowFlags.bBoundingVolume = false;
-	Frame.SetRenderSettings(EViewMode::Lit, ShowFlags);
+	Frame.SetRenderSettings(EViewMode::Lit_Phong, ShowFlags);
 	Frame.SetViewportInfo(VP);
+
+	if (const auto* PipelineLib = Renderer.GetViewModePipelineLibrary())
+	{
+		Renderer.SetActiveViewModePipeline(PipelineLib->Get(EViewMode::Lit_Phong));
+		Renderer.AcquireViewModeSurfaceResources(VP->GetWidth(), VP->GetHeight());
+	}
+	else
+	{
+		Renderer.SetActiveViewModePipeline(nullptr);
+		Renderer.ReleaseViewModeSurfaceResources();
+	}
 
 	// BeginCollect → 월드 수집 → 동적 커맨드 → Render
 	Renderer.BeginCollect(Frame, Scene.GetProxyCount());
