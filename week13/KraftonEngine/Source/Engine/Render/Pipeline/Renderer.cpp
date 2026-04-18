@@ -19,6 +19,18 @@
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
 
+// FPassRenderState → FDrawCommandRenderState 변환 (Wireframe 오버라이드 포함)
+static FDrawCommandRenderState ToRenderState(const FPassRenderState& S, EViewMode ViewMode)
+{
+	FDrawCommandRenderState RS;
+	RS.DepthStencil = S.DepthStencil;
+	RS.Blend        = S.Blend;
+	RS.Rasterizer   = (S.bWireframeAware && ViewMode == EViewMode::Wireframe)
+		? ERasterizerState::WireFrame : S.Rasterizer;
+	RS.Topology     = S.Topology;
+	return RS;
+}
+
 // ============================================================
 // FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
 // 특정 패스 조건이 만족되면 콜백을 실행합니다.
@@ -132,10 +144,8 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	const FPassRenderState& PassState = PassRenderStates[(uint32)Pass];
 
-	// Wireframe 모드 처리
-	ERasterizerState Rasterizer = PassState.Rasterizer;
-	if (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
-		Rasterizer = ERasterizerState::WireFrame;
+	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
+	const FDrawCommandRenderState BaseRenderState = ToRenderState(PassState, CollectViewMode);
 
 	// PerObjectCB 업데이트
 	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(Proxy);
@@ -201,14 +211,11 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 	// 커맨드 공통 초기화 람다
 	auto InitCommand = [&](FDrawCommand& Cmd)
 		{
-			Cmd.Shader       = EffectiveShader;
-			Cmd.RenderState.Blend        = PassState.Blend;
-			Cmd.RenderState.DepthStencil = PassState.DepthStencil;
-			Cmd.RenderState.Rasterizer   = Rasterizer;
-			Cmd.RenderState.Topology     = PassState.Topology;
-			Cmd.Buffer       = ProxyBuffer;
-			Cmd.PerObjectCB  = PerObjCB;
-			Cmd.Pass         = Pass;
+			Cmd.Pass        = Pass;
+			Cmd.Shader      = EffectiveShader;
+			Cmd.RenderState = BaseRenderState;
+			Cmd.Buffer      = ProxyBuffer;
+			Cmd.PerObjectCB = PerObjCB;
 		};
 
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
@@ -240,14 +247,13 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 				for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
 					Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
 
-				// Material 렌더 상태 오버라이드 (메인 패스에서만)
+				// Material 렌더 상태 오버라이드 (메인 패스에서만, Wireframe 우선)
 				if (bApplyMaterialState)
 				{
-					Cmd.RenderState.Blend = Mat->GetBlendState();
+					Cmd.RenderState.Blend        = Mat->GetBlendState();
 					Cmd.RenderState.DepthStencil = Mat->GetDepthStencilState();
-					Cmd.RenderState.Rasterizer = (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
-						? ERasterizerState::WireFrame
-						: Mat->GetRasterizerState();
+					if (BaseRenderState.Rasterizer != ERasterizerState::WireFrame)
+						Cmd.RenderState.Rasterizer = Mat->GetRasterizerState();
 				}
 			}
 			else if (!bDepthOnly)
@@ -275,14 +281,13 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
 			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.DiffuseSRV;
 		}
 
-		// Material 렌더 상태 오버라이드 (메인 패스에서만)
+		// Material 렌더 상태 오버라이드 (메인 패스에서만, Wireframe 우선)
 		if (bApplyMaterialState && Proxy.Material)
 		{
-			Cmd.RenderState.Blend = Proxy.Material->GetBlendState();
+			Cmd.RenderState.Blend        = Proxy.Material->GetBlendState();
 			Cmd.RenderState.DepthStencil = Proxy.Material->GetDepthStencilState();
-			Cmd.RenderState.Rasterizer = (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
-				? ERasterizerState::WireFrame
-				: Proxy.Material->GetRasterizerState();
+			if (BaseRenderState.Rasterizer != ERasterizerState::WireFrame)
+				Cmd.RenderState.Rasterizer = Proxy.Material->GetRasterizerState();
 		}
 
 		Cmd.BuildSortKey();
@@ -297,12 +302,7 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	const ERenderPass DecalPass = DecalProxy.Pass;
 	const FPassRenderState& PassState = PassRenderStates[(uint32)DecalPass];
-
-	ERasterizerState Rasterizer = PassState.Rasterizer;
-	if (PassState.bWireframeAware && CollectViewMode == EViewMode::Wireframe)
-	{
-		Rasterizer = ERasterizerState::WireFrame;
-	}
+	const FDrawCommandRenderState BaseRenderState = ToRenderState(PassState, CollectViewMode);
 
 	FConstantBuffer* ReceiverPerObjCB = GetPerObjectCBForProxy(ReceiverProxy);
 	if (ReceiverPerObjCB && ReceiverProxy.NeedsPerObjectCBUpload())
@@ -330,30 +330,24 @@ void FRenderer::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& Receive
 			if (IndexCount == 0) return;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Shader = DecalProxy.Shader;
+			Cmd.Pass        = DecalPass;
+			Cmd.Shader      = DecalProxy.Shader;
+			Cmd.RenderState = BaseRenderState;
 
-			// 머티리얼 기반 렌더 상태 적용
+			// 머티리얼 기반 렌더 상태 오버라이드
 			if (DecalProxy.Material)
 			{
-				Cmd.RenderState.Blend = DecalProxy.Material->GetBlendState();
+				Cmd.RenderState.Blend        = DecalProxy.Material->GetBlendState();
 				Cmd.RenderState.DepthStencil = DecalProxy.Material->GetDepthStencilState();
-				Cmd.RenderState.Rasterizer = DecalProxy.Material->GetRasterizerState();
-			}
-			else
-			{
-				Cmd.RenderState.Blend = PassState.Blend;
-				Cmd.RenderState.DepthStencil = PassState.DepthStencil;
-				Cmd.RenderState.Rasterizer = Rasterizer;
+				Cmd.RenderState.Rasterizer   = DecalProxy.Material->GetRasterizerState();
 			}
 
-			Cmd.RenderState.Topology = PassState.Topology;
-			Cmd.Buffer = ReceiverBuffer;
+			Cmd.Buffer            = ReceiverBuffer;
 			Cmd.Buffer.FirstIndex = FirstIndex;
 			Cmd.Buffer.IndexCount = IndexCount;
-			Cmd.PerObjectCB = ReceiverPerObjCB;
+			Cmd.PerObjectCB       = ReceiverPerObjCB;
 			Cmd.Bindings.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
 			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = DecalProxy.DiffuseSRV;
-			Cmd.Pass = DecalPass;
 			Cmd.BuildSortKey();
 		};
 
@@ -652,28 +646,18 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 {
 	EViewMode ViewMode = Frame.ViewMode;
 
-	auto ApplyPassState = [&](FDrawCommand& Cmd, ERenderPass Pass)
-		{
-			const FPassRenderState& S = PassRenderStates[(uint32)Pass];
-			Cmd.RenderState.DepthStencil = S.DepthStencil;
-			Cmd.RenderState.Blend = S.Blend;
-			Cmd.RenderState.Rasterizer = S.Rasterizer;
-			Cmd.RenderState.Topology = S.Topology;
-			Cmd.Pass = Pass;
-
-			if (S.bWireframeAware && ViewMode == EViewMode::Wireframe)
-				Cmd.RenderState.Rasterizer = ERasterizerState::WireFrame;
-		};
-
 	// --- Editor Lines + Grid Lines → EditorLines 패스 ---
 	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
+
+	const FDrawCommandRenderState EditorLinesRS = ToRenderState(PassRenderStates[(uint32)ERenderPass::EditorLines], ViewMode);
 
 	if (EditorLines.GetLineCount() > 0 && EditorLines.UploadBuffers(Ctx))
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		ApplyPassState(Cmd, ERenderPass::EditorLines);
-		Cmd.Shader = EditorShader;
-		Cmd.Buffer = { EditorLines.GetVBBuffer(), EditorLines.GetVBStride(), EditorLines.GetIBBuffer() };
+		Cmd.Pass        = ERenderPass::EditorLines;
+		Cmd.Shader      = EditorShader;
+		Cmd.RenderState = EditorLinesRS;
+		Cmd.Buffer      = { EditorLines.GetVBBuffer(), EditorLines.GetVBStride(), EditorLines.GetIBBuffer() };
 		Cmd.Buffer.IndexCount = EditorLines.GetIndexCount();
 		Cmd.BuildSortKey();
 	}
@@ -681,16 +665,17 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 	if (GridLines.GetLineCount() > 0 && GridLines.UploadBuffers(Ctx))
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		ApplyPassState(Cmd, ERenderPass::EditorLines);
-		Cmd.Shader = EditorShader;
-		Cmd.Buffer = { GridLines.GetVBBuffer(), GridLines.GetVBStride(), GridLines.GetIBBuffer() };
+		Cmd.Pass        = ERenderPass::EditorLines;
+		Cmd.Shader      = EditorShader;
+		Cmd.RenderState = EditorLinesRS;
+		Cmd.Buffer      = { GridLines.GetVBBuffer(), GridLines.GetVBStride(), GridLines.GetIBBuffer() };
 		Cmd.Buffer.IndexCount = GridLines.GetIndexCount();
 		Cmd.BuildSortKey();
 	}
 
 	// --- PostProcess: HeightFog → Outline (SortKey UserBits로 순서 보장) ---
 	{
-		const FPassRenderState& PPState = PassRenderStates[(uint32)ERenderPass::PostProcess];
+		const FDrawCommandRenderState PPRS = ToRenderState(PassRenderStates[(uint32)ERenderPass::PostProcess], ViewMode);
 
 		// HeightFog (UserBits=0 → Outline보다 먼저)
 		if (Frame.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
@@ -698,7 +683,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
 			if (FogShader)
 			{
-				// Fog CB (b6) 업데이트
 				FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Fog, sizeof(FFogConstants));
 				const FFogParams& FogParams = CollectScene->GetFogParams();
 				FFogConstants fogData = {};
@@ -712,14 +696,8 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				FogCB->Update(Ctx, &fogData, sizeof(FFogConstants));
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				Cmd.Shader = FogShader;
-				Cmd.RenderState.DepthStencil = PPState.DepthStencil;
-				Cmd.RenderState.Blend = PPState.Blend;
-				Cmd.RenderState.Rasterizer = PPState.Rasterizer;
-				Cmd.RenderState.Topology = PPState.Topology;
-				Cmd.Buffer.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
+				Cmd.InitFullscreenTriangle(FogShader, ERenderPass::PostProcess, PPRS);
 				Cmd.Bindings.PerShaderCB[0] = FogCB;
-				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.BuildSortKey(0);
 			}
 		}
@@ -730,7 +708,6 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			FShader* PPShader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
 			if (PPShader)
 			{
-				// Outline CB (b3) 업데이트
 				FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Outline, sizeof(FOutlinePostProcessConstants));
 				FOutlinePostProcessConstants ppConstants;
 				ppConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
@@ -738,14 +715,8 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				OutlineCB->Update(Ctx, &ppConstants, sizeof(ppConstants));
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				Cmd.Shader = PPShader;
-				Cmd.RenderState.DepthStencil = PPState.DepthStencil;
-				Cmd.RenderState.Blend = PPState.Blend;
-				Cmd.RenderState.Rasterizer = PPState.Rasterizer;
-				Cmd.RenderState.Topology = PPState.Topology;
-				Cmd.Buffer.VertexCount = 3;  // Fullscreen triangle (SV_VertexID)
+				Cmd.InitFullscreenTriangle(PPShader, ERenderPass::PostProcess, PPRS);
 				Cmd.Bindings.PerShaderCB[0] = OutlineCB;
-				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.BuildSortKey(1);
 			}
 		}
@@ -766,14 +737,8 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				SceneDepthCB->Update(Ctx, &depthData, sizeof(FSceneDepthPConstants));
 
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				Cmd.Shader = DepthShader;
-				Cmd.RenderState.DepthStencil = PPState.DepthStencil;
-				Cmd.RenderState.Blend = PPState.Blend;
-				Cmd.RenderState.Rasterizer = PPState.Rasterizer;
-				Cmd.RenderState.Topology = PPState.Topology;
-				Cmd.Buffer.VertexCount = 3;
+				Cmd.InitFullscreenTriangle(DepthShader, ERenderPass::PostProcess, PPRS);
 				Cmd.Bindings.PerShaderCB[0] = SceneDepthCB;
-				Cmd.Pass = ERenderPass::PostProcess;
 				Cmd.BuildSortKey(2);
 			}
 		}
@@ -785,17 +750,12 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 			if (NormalShader)
 			{
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				Cmd.Shader = NormalShader;
-				Cmd.RenderState.DepthStencil = PPState.DepthStencil;
-				Cmd.RenderState.Blend = PPState.Blend;
-				Cmd.RenderState.Rasterizer = PPState.Rasterizer;
-				Cmd.RenderState.Topology = PPState.Topology;
-				Cmd.Buffer.VertexCount = 3;
-				Cmd.Pass = ERenderPass::PostProcess;
+				Cmd.InitFullscreenTriangle(NormalShader, ERenderPass::PostProcess, PPRS);
 				Cmd.BuildSortKey(3);
 			}
 		}
 
+		// FXAA
 		if (Frame.ShowFlags.bFXAA)
 		{
 			FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
@@ -808,16 +768,10 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 				FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
 				FXAACB->Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
 
-				const FPassRenderState& FXAAState = PassRenderStates[(uint32)ERenderPass::FXAA];
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				Cmd.Shader = FXAAShader;
-				Cmd.RenderState.DepthStencil = FXAAState.DepthStencil;
-				Cmd.RenderState.Blend = FXAAState.Blend;
-				Cmd.RenderState.Rasterizer = FXAAState.Rasterizer;
-				Cmd.RenderState.Topology = FXAAState.Topology;
-				Cmd.Buffer.VertexCount = 3;
+				Cmd.InitFullscreenTriangle(FXAAShader, ERenderPass::FXAA,
+					ToRenderState(PassRenderStates[(uint32)ERenderPass::FXAA], ViewMode));
 				Cmd.Bindings.PerShaderCB[0] = FXAACB;
-				Cmd.Pass = ERenderPass::FXAA;
 				Cmd.BuildSortKey(0);
 			}
 		}
@@ -830,12 +784,11 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 		{
 			if (FontGeometry.GetWorldQuadCount() > 0 && FontGeometry.UploadWorldBuffers(Ctx))
 			{
-				FShader* FontShader = FShaderManager::Get().GetShader(EShaderType::Font);
-
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				ApplyPassState(Cmd, ERenderPass::AlphaBlend);
-				Cmd.Shader = FontShader;
-				Cmd.Buffer = { FontGeometry.GetWorldVBBuffer(), FontGeometry.GetWorldVBStride(), FontGeometry.GetWorldIBBuffer() };
+				Cmd.Pass        = ERenderPass::AlphaBlend;
+				Cmd.Shader      = FShaderManager::Get().GetShader(EShaderType::Font);
+				Cmd.RenderState = ToRenderState(PassRenderStates[(uint32)ERenderPass::AlphaBlend], ViewMode);
+				Cmd.Buffer      = { FontGeometry.GetWorldVBBuffer(), FontGeometry.GetWorldVBStride(), FontGeometry.GetWorldIBBuffer() };
 				Cmd.Buffer.IndexCount = FontGeometry.GetWorldIndexCount();
 				Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
 				Cmd.BuildSortKey();
@@ -843,12 +796,11 @@ void FRenderer::BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11Devic
 
 			if (FontGeometry.GetScreenQuadCount() > 0 && FontGeometry.UploadScreenBuffers(Ctx))
 			{
-				FShader* OverlayShader = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
-
 				FDrawCommand& Cmd = DrawCommandList.AddCommand();
-				ApplyPassState(Cmd, ERenderPass::OverlayFont);
-				Cmd.Shader = OverlayShader;
-				Cmd.Buffer = { FontGeometry.GetScreenVBBuffer(), FontGeometry.GetScreenVBStride(), FontGeometry.GetScreenIBBuffer() };
+				Cmd.Pass        = ERenderPass::OverlayFont;
+				Cmd.Shader      = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
+				Cmd.RenderState = ToRenderState(PassRenderStates[(uint32)ERenderPass::OverlayFont], ViewMode);
+				Cmd.Buffer      = { FontGeometry.GetScreenVBBuffer(), FontGeometry.GetScreenVBStride(), FontGeometry.GetScreenIBBuffer() };
 				Cmd.Buffer.IndexCount = FontGeometry.GetScreenIndexCount();
 				Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
 				Cmd.BuildSortKey();
