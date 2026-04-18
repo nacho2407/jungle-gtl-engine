@@ -103,7 +103,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 			}
 			case 7: // Decal Spotlight
 			{
-				ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
+				ADecalSpotLightActor* Actor = World->SpawnActor<ADecalSpotLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
@@ -129,13 +129,13 @@ void FEditorControlWidget::Render(float DeltaTime)
                 Actor->SetActorLocation(CurSpawnPoint);
                 break;
             }
-            //case 11: // Spotlight
-            //{
-            //    ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
-            //    Actor->InitDefaultComponents();
-            //    Actor->SetActorLocation(CurSpawnPoint);
-            //    break;
-            //}
+            case 11: // Spotlight
+            {
+                ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
+                Actor->InitDefaultComponents();
+                Actor->SetActorLocation(CurSpawnPoint);
+                break;
+            }
 			}
 		}
 		NumberOfSpawnedActors = 1;
