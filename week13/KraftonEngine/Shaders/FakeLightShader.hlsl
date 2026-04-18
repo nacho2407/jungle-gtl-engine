@@ -2,7 +2,7 @@
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
 
-Texture2D g_txColor : register(t0);
+Texture2D DiffuseTexture : register(t0);
 
 // b2 (PerShader0)
 cbuffer DecalBuffer : register(b2)
@@ -35,7 +35,7 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     uv.x = decalLocalPos.y + 0.5f;
     uv.y = 0.5f - decalLocalPos.z;
 
-    float4 texColor = g_txColor.Sample(LinearWrapSampler, uv);
+    float4 texColor = DiffuseTexture.Sample(LinearWrapSampler, uv);
     if (texColor.a < 0.001f)
     {
         discard;

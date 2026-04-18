@@ -75,8 +75,8 @@ cbuffer LightingBuffer : register(b4)
 };
 
 // ── Structured Buffers (t8~t10) ──
-StructuredBuffer<FLightInfo> g_AllLights : register(t8);
-StructuredBuffer<uint> g_TileLightIndices : register(t9);
-StructuredBuffer<uint2> g_TileLightGrid : register(t10);
+StructuredBuffer<FLightInfo> AllLights : register(t8);
+StructuredBuffer<uint> TileLightIndices : register(t9);
+StructuredBuffer<uint2> TileLightGrid : register(t10);
 
 #endif // FORWARD_LIGHT_DATA_HLSLI

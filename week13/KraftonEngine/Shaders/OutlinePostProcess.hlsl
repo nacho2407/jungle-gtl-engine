@@ -12,7 +12,7 @@ cbuffer OutlinePostProcessCB : register(b2)
     float3 _Pad;
 };
 
-// StencilTex (t13) is declared in Common/SystemResources.hlsl
+// StencilTexture (t19) is declared in Common/SystemResources.hlsli
 
 // ── VS: Fullscreen Triangle (vertex buffer 없이 SV_VertexID로 생성) ──
 PS_Input_UV VS(uint vertexID : SV_VertexID)
@@ -27,17 +27,17 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     int offset = max((int) OutlineThickness, 1);
 
     // 중심 스텐실 값
-    uint center = StencilTex.Load(int3(coord, 0)).g;
+    uint center = StencilTexture.Load(int3(coord, 0)).g;
 
     // 선택된 오브젝트 영역 밖이면 스킵
     if (center == 0)
         discard;
 
     // 상하좌우 이웃 샘플링
-    uint up = StencilTex.Load(int3(coord + int2(0, -offset), 0)).g;
-    uint down = StencilTex.Load(int3(coord + int2(0, offset), 0)).g;
-    uint left = StencilTex.Load(int3(coord + int2(-offset, 0), 0)).g;
-    uint right = StencilTex.Load(int3(coord + int2(offset, 0), 0)).g;
+    uint up = StencilTexture.Load(int3(coord + int2(0, -offset), 0)).g;
+    uint down = StencilTexture.Load(int3(coord + int2(0, offset), 0)).g;
+    uint left = StencilTexture.Load(int3(coord + int2(-offset, 0), 0)).g;
+    uint right = StencilTexture.Load(int3(coord + int2(offset, 0), 0)).g;
 
     // 이웃 중 하나라도 0이면 → 경계(edge)
     if (up != 0 && down != 0 && left != 0 && right != 0)

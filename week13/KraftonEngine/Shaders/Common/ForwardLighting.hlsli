@@ -96,16 +96,16 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
     #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
     uint2 tileCoord = uint2(worldPos.xy);
     uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
-    uint2 gridData  = g_TileLightGrid[tileIdx];
+    uint2 gridData  = TileLightGrid[tileIdx];
     for (uint t = 0; t < gridData.y; ++t)
     {
-        uint lightIdx = g_TileLightIndices[gridData.x + t];
-        result += CalcLightDiffuse(g_AllLights[lightIdx], worldPos, N);
+        uint lightIdx = TileLightIndices[gridData.x + t];
+        result += CalcLightDiffuse(AllLights[lightIdx], worldPos, N);
     }
     #else
     // 전수 순회 (Culling 미적용)
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
-        result += CalcLightDiffuse(g_AllLights[i], worldPos, N);
+        result += CalcLightDiffuse(AllLights[i], worldPos, N);
     #endif
 
     return result;
@@ -121,15 +121,15 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
     #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
     uint2 tileCoord = uint2(worldPos.xy);
     uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
-    uint2 gridData  = g_TileLightGrid[tileIdx];
+    uint2 gridData  = TileLightGrid[tileIdx];
     for (uint t = 0; t < gridData.y; ++t)
     {
-        uint lightIdx = g_TileLightIndices[gridData.x + t];
-        result += CalcLightSpecular(g_AllLights[lightIdx], worldPos, N, V, shininess);
+        uint lightIdx = TileLightIndices[gridData.x + t];
+        result += CalcLightSpecular(AllLights[lightIdx], worldPos, N, V, shininess);
     }
     #else
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
-        result += CalcLightSpecular(g_AllLights[i], worldPos, N, V, shininess);
+        result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
     #endif
 
     return result;
