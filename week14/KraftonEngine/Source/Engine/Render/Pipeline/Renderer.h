@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -9,6 +9,7 @@
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/DrawCommandBuilder.h"
 #include "Render/Pipeline/PassRenderStateTable.h"
+#include "Render/Pipeline/PassEventBuilder.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 
@@ -34,18 +35,14 @@ public:
 	void ResetRenderStateCache() { Resources.ResetRenderStateCache(); }
 
 private:
-	// 패스 루프 Pre/Post 이벤트 등록
-	void BuildPassEvents(TArray<struct FPassEvent>& PrePassEvents,
-		TArray<struct FPassEvent>& PostPassEvents,
-		const FFrameContext& Frame, FStateCache& Cache);
-
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(FStateCache& Cache);
 
 private:
 	FD3DDevice Device;
-	FSystemResources Resources;
 
+	FSystemResources Resources;
 	FDrawCommandBuilder Builder;
 	FPassRenderStateTable PassRenderStateTable;
+	FPassEventBuilder PassEventBuilder;
 };

@@ -1,6 +1,5 @@
 ﻿#include "Renderer.h"
 
-#include <functional>
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/ConstantBufferPool.h"
@@ -9,39 +8,6 @@
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Materials/MaterialManager.h"
-
-// ============================================================
-// FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
-// 특정 패스 조건이 만족되면 콜백을 실행합니다.
-// ============================================================
-enum class EPassCompare : uint8 { Equal, Less, Greater, LessEqual, GreaterEqual };
-
-struct FPassEvent
-{
-	ERenderPass    Pass;
-	EPassCompare   Compare;
-	bool           bOnce;
-	bool           bExecuted = false;
-	std::function<void()> Fn;
-
-	bool TryExecute(ERenderPass CurPass)
-	{
-		if (bOnce && bExecuted) return false;
-
-		bool bMatch = false;
-		switch (Compare)
-		{
-		case EPassCompare::Equal:        bMatch = (CurPass == Pass); break;
-		case EPassCompare::Less:         bMatch = ((uint32)CurPass < (uint32)Pass); break;
-		case EPassCompare::Greater:      bMatch = ((uint32)CurPass > (uint32)Pass); break;
-		case EPassCompare::LessEqual:    bMatch = ((uint32)CurPass <= (uint32)Pass); break;
-		case EPassCompare::GreaterEqual: bMatch = ((uint32)CurPass >= (uint32)Pass); break;
-		}
-
-		if (bMatch) { Fn(); if (bOnce) bExecuted = true; }
-		return bMatch;
-	}
-};
 
 
 void FRenderer::Create(HWND hWindow)
@@ -115,7 +81,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
 	TArray<FPassEvent> PostPassEvents;
-	BuildPassEvents(PrePassEvents, PostPassEvents, Frame, Cache);
+	PassEventBuilder.Build(Device.GetDeviceContext(), Frame, Cache, PrePassEvents, PostPassEvents);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
@@ -155,117 +121,6 @@ void FRenderer::CleanupPassState(FStateCache& Cache)
 
 	Cache.Cleanup(Device.GetDeviceContext());
 	Builder.GetCommandList().Reset();
-}
-
-// ============================================================
-// BuildPassEvents — 패스 루프 Pre/Post 이벤트 등록
-// ============================================================
-void FRenderer::BuildPassEvents(TArray<FPassEvent>& PrePassEvents,
-	TArray<FPassEvent>& PostPassEvents,
-	const FFrameContext& Frame, FStateCache& Cache)
-{
-	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	// PreDepth 진입: RTV 해제 → DSV만 바인딩 (depth만 기록, 색 출력 없음)
-	PrePassEvents.push_back({ ERenderPass::PreDepth, EPassCompare::Equal, true, false,
-		[Context, &Cache]()
-		{
-			Context->OMSetRenderTargets(0, nullptr, Cache.DSV);
-			Cache.bForceAll = true;
-		}
-		});
-
-	// PreDepth 완료: RTV 복귀
-	PostPassEvents.push_back({ ERenderPass::PreDepth, EPassCompare::Equal, true, false,
-		[Context, &Frame, &Cache]()
-		{
-			Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-			Cache.bForceAll = true;
-		}
-		});
-
-	// CopyDepth: Opaque 진입 전 Depth 복사 → MRT 세팅 → SceneDepth SRV 바인딩
-	if (Frame.DepthTexture && Frame.DepthCopyTexture)
-	{
-		PrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::GreaterEqual, true, false,
-			[Context, &Frame, &Cache]()
-			{
-				Context->OMSetRenderTargets(0, nullptr, nullptr);
-				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
-
-				// MRT: Opaque 패스에서 Normal RT를 SV_TARGET1로 사용
-				if (Frame.NormalRTV)
-				{
-					ID3D11RenderTargetView* RTVs[2] = { Cache.RTV, Frame.NormalRTV };
-					Context->OMSetRenderTargets(2, RTVs, Cache.DSV);
-				}
-				else
-				{
-					Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-				}
-
-				ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
-				Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
-
-				Cache.bForceAll = true;
-			}
-			});
-	}
-
-	// Opaque 완료 후: MRT 해제 → 1 RTV 복귀 + Normal SRV 바인딩
-	if (Frame.NormalRTV)
-	{
-		PostPassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache]()
-			{
-				// MRT 해제 → RTV 1개로 복귀 (Normal RT를 SRV로 읽기 위해 RTV에서 분리)
-				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-
-				// Normal SRV 바인딩
-				if (Frame.NormalSRV)
-				{
-					ID3D11ShaderResourceView* normalSRV = Frame.NormalSRV;
-					Context->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &normalSRV);
-				}
-
-				Cache.bForceAll = true;
-			}
-			});
-	}
-
-	// CopyStencil: SelectionMask 완료 후(PostProcess 진입 전) Stencil 복사 → Outline에서 사용
-	if (Frame.DepthTexture && Frame.DepthCopyTexture && Frame.StencilCopySRV)
-	{
-		PrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
-			[Context, &Frame, &Cache]()
-			{
-				Context->OMSetRenderTargets(0, nullptr, nullptr);
-				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
-				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-
-				ID3D11ShaderResourceView* stencilSRV = Frame.StencilCopySRV;
-				Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
-
-				Cache.bForceAll = true;
-			}
-			});
-	}
-
-	// CopySceneColor: FXAA 패스 진입 전 현재 화면 복사 → SceneColorCopySRV로 읽기
-	if (Frame.SceneColorCopyTexture && Frame.ViewportRenderTexture)
-	{
-		PrePassEvents.push_back({ ERenderPass::FXAA, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache]()
-			{
-				Context->CopyResource(Frame.SceneColorCopyTexture, Frame.ViewportRenderTexture);
-				Context->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-
-				ID3D11ShaderResourceView* sceneColorSRV = Frame.SceneColorCopySRV;
-				Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &sceneColorSRV);
-
-				Cache.bForceAll = true;
-			}
-			});
-	}
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
