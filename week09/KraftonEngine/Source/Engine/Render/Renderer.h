@@ -65,9 +65,7 @@ public:
 
 	const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
 
-
 private:
-
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 
 	// 동적 지오메트리 (DebugLine, Grid, OverlayText) → 라인/폰트 헬퍼
@@ -76,10 +74,8 @@ private:
 	// 동적 지오메트리 + PostProcess → FDrawCommand (VB 업로드 + 커맨드 생성)
 	void BuildDynamicDrawCommands(const FFrameContext& Frame, ID3D11DeviceContext* Ctx, const FScene* Scene);
 
-
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache);
-
 
 	// PerObjectCB 풀 관리
 	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);

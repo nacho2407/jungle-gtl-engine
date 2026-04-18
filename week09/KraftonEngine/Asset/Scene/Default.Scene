@@ -1,0 +1,16 @@
+{
+  "Actors" : [],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "Default",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [11.797400, -12.515008, 13.794911],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 20.738981, 126.017914]
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
