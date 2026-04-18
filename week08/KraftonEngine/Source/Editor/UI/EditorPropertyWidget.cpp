@@ -78,7 +78,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 
-	ImGui::Begin("Jungle Property Window");
+	ImGui::Begin("Details");
 
 	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 	AActor* PrimaryActor = Selection.GetPrimarySelection();
@@ -87,7 +87,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		SelectedComponent = nullptr;
 		LastSelectedActor = nullptr;
 		bActorSelected = true;
-		ImGui::Text("No object selected.");
+		ImGui::TextDisabled("No actor selected.");
 		ImGui::End();
 		return;
 	}
@@ -103,69 +103,26 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
 	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
-	// ========== 고정 영역: Actor Info (clickable) ==========
+	// ========== 고정 영역: Actor Info ==========
+	ImGui::Text("Class: %s", PrimaryActor->GetClass()->GetName());
+
+	FString PrimaryName = PrimaryActor->GetFName().ToString();
+	if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetClass()->GetName();
+
+	if (bActorSelected) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
 	if (SelectionCount > 1)
 	{
-		ImGui::Text("Class: %s", PrimaryActor->GetClass()->GetName());
-
-		FString PrimaryName = PrimaryActor->GetFName().ToString();
-		if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetClass()->GetName();
-
-		bool bHighlight = bActorSelected;
-		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
 		ImGui::Text("Name: %s (+%d)", PrimaryName.c_str(), SelectionCount - 1);
-		if (bHighlight) ImGui::PopStyleColor();
-		if (ImGui::IsItemClicked())
-		{
-			bActorSelected = true;
-			SelectedComponent = nullptr;
-		}
-		ImGui::SameLine();
-		char RemoveLabel[64];
-		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
-		if (ImGui::Button(RemoveLabel))
-		{
-			for (AActor* Actor : SelectedActors)
-			{
-				if (Actor && Actor->GetWorld())
-				{
-					Actor->GetWorld()->DestroyActor(Actor);
-				}
-			}
-			Selection.ClearSelection();
-			SelectedComponent = nullptr;
-			LastSelectedActor = nullptr;
-			ImGui::End();
-			return;
-		}
 	}
 	else
 	{
-		ImGui::Text("Class: %s", PrimaryActor->GetClass()->GetName());
-
-		// Actor 이름: 클릭 가능, 선택 시 하이라이트
-		bool bHighlight = bActorSelected;
-		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
-		ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
-		if (bHighlight) ImGui::PopStyleColor();
-		if (ImGui::IsItemClicked())
-		{
-			bActorSelected = true;
-			SelectedComponent = nullptr;
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Remove"))
-		{
-			if (PrimaryActor->GetWorld())
-			{
-				PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
-			}
-			Selection.ClearSelection();
-			SelectedComponent = nullptr;
-			LastSelectedActor = nullptr;
-			ImGui::End();
-			return;
-		}
+		ImGui::Text("Name: %s", PrimaryName.c_str());
+	}
+	if (bActorSelected) ImGui::PopStyleColor();
+	if (ImGui::IsItemClicked())
+	{
+		bActorSelected = true;
+		SelectedComponent = nullptr;
 	}
 
 	// ========== 고정 영역: Component Tree ==========
@@ -286,7 +243,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
-	ImGui::Text("Components");
+	ImGui::Text("Component List");
 
 	// Get All Component Classes
 	TArray<UClass*>& AllClasses = UClass::GetAllClasses();
@@ -309,22 +266,8 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	}
 	const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->GetName();
 
-	if (ImGui::BeginCombo("Component Class", Preview))
-	{
-		for (int i = 0; i < (int)ComponentClasses.size(); ++i)
-		{
-			bool bSelected = (SelectedIndex == i);
-			if (ImGui::Selectable(ComponentClasses[i]->GetName(), bSelected))
-				SelectedIndex = i;
-			if (bSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-
 	USceneComponent* Root = Actor->GetRootComponent();
 
-	// Add Component
 	if (!ComponentClasses.empty() && ImGui::Button("Add"))
 	{
 		UActorComponent* Comp = Actor->AddComponentByClass(ComponentClasses[SelectedIndex]);
@@ -340,6 +283,21 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 			else
 				Cast<USceneComponent>(Comp)->AttachToComponent(Root);
 		}
+	}
+
+	ImGui::SameLine();
+	// ImGui::SetNextItemWidth(-1.0f);
+	if (ImGui::BeginCombo("Type", Preview))
+	{
+		for (int i = 0; i < (int)ComponentClasses.size(); ++i)
+		{
+			bool bSelected = (SelectedIndex == i);
+			if (ImGui::Selectable(ComponentClasses[i]->GetName(), bSelected))
+				SelectedIndex = i;
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
 	}
 
 	ImGui::Separator();
@@ -420,19 +378,6 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetClass()->GetName());
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
-	ImGui::SameLine();
-	if (SelectedComponent != Actor->GetRootComponent())
-	{
-		if (ImGui::Button("Remove"))
-		{
-			if (SelectedComponent != nullptr)
-			{
-				Actor->RemoveComponent(SelectedComponent);
-				SelectedComponent = nullptr;
-				return;
-			}
-		}
-	}
 
 	ImGui::Separator();
 
@@ -586,7 +531,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 
 		float ButtonWidth = ImGui::CalcTextSize("Import OBJ").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		float Spacing = ImGui::GetStyle().ItemSpacing.x;
-		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+		// ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
 
 		if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
 		{

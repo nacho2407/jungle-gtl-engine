@@ -7,6 +7,7 @@ class FEditorStatWidget : public FEditorWidget
 {
 public:
 	void Render(float DeltaTime) override;
+	void RequestOpen();
 
 private:
 	void RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source, int& OutSortColumn, bool& OutSortDescending, float TableHeight = 200.0f);
@@ -19,4 +20,5 @@ private:
 	uint32 FrozenDrawCalls = 0;
 	TArray<FStatEntry> FrozenCPUEntries;
 	TArray<FStatEntry> FrozenGPUEntries;
+	bool bRequestOpen = false;
 };
