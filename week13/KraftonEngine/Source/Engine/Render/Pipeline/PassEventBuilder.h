@@ -5,6 +5,8 @@
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/DrawCommandList.h"
 
+class FD3DDevice;
+
 /*
 	FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
 	특정 패스 조건이 만족되면 콜백을 실행합니다.
@@ -46,7 +48,7 @@ struct FPassEvent
 class FPassEventBuilder
 {
 public:
-	void Build(ID3D11DeviceContext* Context,
+	void Build(FD3DDevice& Device,
 		const FFrameContext& Frame, FStateCache& Cache,
 		TArray<FPassEvent>& OutPreEvents,
 		TArray<FPassEvent>& OutPostEvents);

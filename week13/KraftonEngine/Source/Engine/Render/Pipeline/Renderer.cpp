@@ -81,7 +81,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
 	TArray<FPassEvent> PostPassEvents;
-	PassEventBuilder.Build(Device.GetDeviceContext(), Frame, Cache, PrePassEvents, PostPassEvents);
+	PassEventBuilder.Build(Device, Frame, Cache, PrePassEvents, PostPassEvents);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
