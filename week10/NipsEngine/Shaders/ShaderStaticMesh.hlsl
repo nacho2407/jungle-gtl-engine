@@ -17,7 +17,7 @@ cbuffer StaticMeshBuffer : register(b2)
     uint   bHasSpecularMap;
     
     float3 EmissiveColor;    // emissive glow color; non-zero means emissive
-    uint bHasNormalMap;
+    uint bHasBumpMap;
 };
 
 struct FAmbientLightInfo
@@ -176,6 +176,16 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
+float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
+{
+    float3 N = normalize(worldNormal);
+    float3 T = normalize(worldTangent.xyz - dot(worldTangent.xyz, N) * N);
+    float3 B = cross(N, T) * worldTangent.w;
+    float3x3 TBN = float3x3(T, B, N);
+    float3 tn = BumpMap.Sample(SampleState, uv).rgb * 2.0f - 1.0f;
+    return normalize(mul(tn, TBN));
+}
+
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
@@ -212,52 +222,60 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.WorldPos = float4(input.WorldPos, 1.f);
     return output;
 #elif LIGHTING_MODEL_LAMBERT
+    float3 N_Lambert = (bHasBumpMap)
+        ? PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV)
+        : normalize(input.WorldNormal);
+
     float3 accumulated_light = float3(0, 0, 0);
     for (uint i = 0; i < LightCount; i++)
     {
-        LightResult result = EvaluateLightByType(Lights[i], input.WorldNormal, input.WorldPos, CameraPosition, Shininess);
+        LightResult result = EvaluateLightByType(Lights[i], N_Lambert, input.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
-    
+
     // Apply Ambience
     LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
     accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
-    
+
     // Apply Directional
     float3 DColor     = DirectionalLight.Color;
     float3 DDirection = DirectionalLight.Direction;
     float  DIntensity = DirectionalLight.Intensity;
-    LightResult DResult = EvaluateDirectionalLambert(DColor, DIntensity, DDirection, input.WorldNormal);
+    LightResult DResult = EvaluateDirectionalLambert(DColor, DIntensity, DDirection, N_Lambert);
     accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
 
     output.Color = float4(FinalColor * accumulated_light, 1.f);
-    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.Normal = float4(N_Lambert * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-    
+
     return output;
 #elif LIGHTING_MODEL_PHONG
+    float3 N_Phong = (bHasBumpMap)
+        ? PerturbNormal(input.PixelNormal, input.WorldTangent, input.UV)
+        : normalize(input.PixelNormal);
+
     float3 accumulated_light = float3(0, 0, 0);
     for (uint i = 0; i < LightCount; i++)
     {
-        LightResult result = EvaluateLightByType(Lights[i], input.PixelNormal, input.WorldPos, CameraPosition, Shininess);
+        LightResult result = EvaluateLightByType(Lights[i], N_Phong, input.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
-    
+
     // Apply Ambience
     LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
     accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
-    
+
     // Apply Directional
     float3 DColor     = DirectionalLight.Color;
     float3 DDirection = DirectionalLight.Direction;
     float  DIntensity = DirectionalLight.Intensity;
-    LightResult DResult = EvaluateDirectionalBlinnPhong(DColor, DIntensity, DDirection, input.PixelNormal, CameraPosition - input.WorldPos, Shininess);
+    LightResult DResult = EvaluateDirectionalBlinnPhong(DColor, DIntensity, DDirection, N_Phong, CameraPosition - input.WorldPos, Shininess);
     accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
 
     output.Color = float4(FinalColor * accumulated_light, 1.f);
-    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.Normal = float4(N_Phong * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-    
+
     return output;
 #else
     float3 accumulated_light = float3(0, 0, 0);
