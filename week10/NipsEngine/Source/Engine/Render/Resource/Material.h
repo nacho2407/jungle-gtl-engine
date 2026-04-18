@@ -78,7 +78,7 @@ public:
 	virtual const FString& GetFilePath() const = 0;
 	virtual FString& GetFilePathRef() = 0;
 	
-	virtual void Bind(ID3D11DeviceContext* Context) const = 0;
+	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const = 0;
 	virtual bool GetParam(const FString& Name, FMaterialParamValue& OutValue) const = 0;
 
 	virtual void SetParam(const FString& Name, const FMaterialParamValue& Value) = 0;
@@ -141,7 +141,7 @@ public:
 		return false;
 	}
 
-	virtual void Bind(ID3D11DeviceContext* Context) const override;
+	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const override;
 
 	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const;
 
@@ -193,7 +193,7 @@ public:
 		return Parent ? Parent->GetParam(Name, OutValue) : false;
 	}
 
-	void Bind(ID3D11DeviceContext* Context) const override;
+	void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const override;
 
 	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
 	{
