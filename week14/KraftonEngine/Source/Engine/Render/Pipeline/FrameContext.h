@@ -57,10 +57,8 @@ struct FFrameContext
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
-	// Render Settings
+	// Render Settings (Single Source of Truth)
 	FViewportRenderOptions RenderOptions;
-	EViewMode ViewMode = EViewMode::Lit_Phong;
-	FShowFlags ShowFlags;
 
 	FVector    WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
@@ -94,16 +92,6 @@ struct FFrameContext
 	void SetRenderOptions(const FViewportRenderOptions& InOptions)
 	{
 		RenderOptions = InOptions;
-	}
-	FViewportRenderOptions GetRenderOptions() const { return RenderOptions; }
-
-	void SetRenderSettings(EViewMode InViewMode, const FShowFlags& InShowFlags)
-	{
-		RenderOptions.ViewMode  = InViewMode;
-		RenderOptions.ShowFlags = InShowFlags;
-
-		ViewMode = InViewMode;
-		ShowFlags = InShowFlags;
 	}
 
 	// Reset D3D pointers

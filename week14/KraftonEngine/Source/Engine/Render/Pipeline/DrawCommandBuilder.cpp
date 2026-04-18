@@ -46,7 +46,7 @@ void FDrawCommandBuilder::Release()
 void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount)
 {
 	DrawCommandList.Reset();
-	CollectViewMode = Frame.ViewMode;
+	CollectViewMode = Frame.RenderOptions.ViewMode;
 	bHasSelectionMaskCommands = false;
 
 	// PerObjectCBPool 미리 할당 — Collect 도중 resize로 FDrawCommand.PerObjectCB
@@ -343,7 +343,7 @@ void FDrawCommandBuilder::PrepareDynamicGeometry(const FFrameContext& Frame, con
 		CameraFwd.Normalize();
 
 		GridLines.AddWorldHelpers(
-			Frame.ShowFlags,
+			Frame.RenderOptions.ShowFlags,
 			Scene->GetGridSpacing(),
 			Scene->GetGridHalfLineCount(),
 			CameraPos, CameraFwd, Frame.IsFixedOrtho());
@@ -372,7 +372,7 @@ void FDrawCommandBuilder::PrepareDynamicGeometry(const FFrameContext& Frame, con
 void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, const FScene* CollectScene)
 {
 	ID3D11DeviceContext* Ctx = CachedContext;
-	EViewMode ViewMode = Frame.ViewMode;
+	EViewMode ViewMode = Frame.RenderOptions.ViewMode;
 
 	// --- Editor Lines + Grid Lines → EditorLines 패스 ---
 	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
@@ -406,7 +406,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 		const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
 		// HeightFog (UserBits=0 → Outline보다 먼저)
-		if (Frame.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
+		if (Frame.RenderOptions.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
 		{
 			FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
 			if (FogShader)
@@ -456,7 +456,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 			if (DepthShader)
 			{
 				FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
-				FViewportRenderOptions Opts = Frame.GetRenderOptions();
+				FViewportRenderOptions Opts = Frame.RenderOptions;
 				FSceneDepthPConstants depthData = {};
 				depthData.Exponent = Opts.Exponent;
 				depthData.NearClip = Frame.NearClip;
@@ -484,13 +484,13 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 		}
 
 		// FXAA
-		if (Frame.ShowFlags.bFXAA)
+		if (Frame.RenderOptions.ShowFlags.bFXAA)
 		{
 			FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
 			if (FXAAShader)
 			{
 				FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::FXAA, sizeof(FFXAAConstants));
-				FViewportRenderOptions Opts = Frame.GetRenderOptions();
+				FViewportRenderOptions Opts = Frame.RenderOptions;
 				FFXAAConstants FXAAData = {};
 				FXAAData.EdgeThreshold = Opts.EdgeThreshold;
 				FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
