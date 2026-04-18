@@ -265,6 +265,7 @@
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
     <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp" />
@@ -337,6 +338,7 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
@@ -410,6 +412,7 @@
     <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
     <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h" />
@@ -506,6 +509,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeSurfaceResources.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />

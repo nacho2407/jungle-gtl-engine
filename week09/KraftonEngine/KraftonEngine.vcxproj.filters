@@ -290,6 +290,9 @@
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -506,6 +509,9 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
@@ -717,6 +723,9 @@
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h">
@@ -1006,6 +1015,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeSurfaceResources.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
