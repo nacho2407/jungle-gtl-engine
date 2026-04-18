@@ -20,6 +20,12 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void ULightComponent::PostEditProperty(const char* PropertyName)
 {
     ULightComponentBase::PostEditProperty(PropertyName);
+    MarkRenderStateDirty(); // 속성 변경 시 프록시 전체 재구성
+}
+
+void ULightComponent::OnTransformDirty()
+{
+    MarkRenderTransformDirty();
 }
 
 void ULightComponent::CreateRenderState()
