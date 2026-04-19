@@ -1,10 +1,26 @@
 ﻿#include "Buffer.h"
 #include "Engine/Profiling/MemoryStats.h"
+#include <Windows.h>
+#include <cstdio>
 
 void FMeshBuffer::Release()
 {
 	VertexBuffer.Release();
 	IndexBuffer.Release();
+}
+
+namespace
+{
+void BufferDebugLog(const char* Format, ...)
+{
+	char Buffer[512] = {};
+	va_list Args;
+	va_start(Args, Format);
+	vsnprintf(Buffer, sizeof(Buffer), Format, Args);
+	va_end(Args);
+	OutputDebugStringA(Buffer);
+	OutputDebugStringA("\n");
+}
 }
 
 FVertexBuffer::FVertexBuffer(FVertexBuffer&& Other) noexcept
@@ -53,6 +69,13 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 In
 	HRESULT hr = InDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferSRD, &Buffer);
 	if (FAILED(hr))
 	{
+		BufferDebugLog("[VertexBuffer] CreateBuffer failed hr=0x%08X vertexCount=%u byteWidth=%u stride=%u device=%p data=%p",
+			static_cast<unsigned>(hr),
+			InVertexCount,
+			InByteWidth,
+			InStride,
+			InDevice,
+			InData);
 		VertexCount = 0;
 		Stride = InStride;
 		return;
@@ -187,6 +210,12 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InI
 	HRESULT hr = InDevice->CreateBuffer(&indexBufferDesc, &indexBufferSRD, &Buffer);
 	if (FAILED(hr))
 	{
+		BufferDebugLog("[IndexBuffer] CreateBuffer failed hr=0x%08X indexCount=%u byteWidth=%u device=%p data=%p",
+			static_cast<unsigned>(hr),
+			InIndexCount,
+			InByteWidth,
+			InDevice,
+			InData);
 		IndexCount = 0;
 		return;
 	}

@@ -8,8 +8,23 @@
 #include "Render/Scene/PrimitiveSceneProxy.h"
 #include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
 
+namespace
+{
+bool UsesDecalPass(const FRenderPassContext& Context)
+{
+    return !Context.ViewModePassRegistry ||
+        !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) ||
+        Context.ViewModePassRegistry->UsesDecal(Context.ActiveViewMode);
+}
+}
+
 void FDecalPass::PrepareInputs(FRenderPassContext& Context)
 {
+    if (!UsesDecalPass(Context))
+    {
+        return;
+    }
+
     if (Context.ActiveViewSurfaceSet)
     {
         Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -42,6 +57,11 @@ void FDecalPass::PrepareInputs(FRenderPassContext& Context)
 
 void FDecalPass::PrepareTargets(FRenderPassContext& Context)
 {
+    if (!UsesDecalPass(Context))
+    {
+        return;
+    }
+
     if (!Context.ActiveViewSurfaceSet || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
     {
         ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
@@ -108,7 +128,7 @@ void FDecalPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitive
 
 void FDecalPass::SubmitDrawCommands(FRenderPassContext& Context)
 {
-    if (!Context.DrawCommandList)
+    if (!Context.DrawCommandList || !UsesDecalPass(Context))
     {
         return;
     }

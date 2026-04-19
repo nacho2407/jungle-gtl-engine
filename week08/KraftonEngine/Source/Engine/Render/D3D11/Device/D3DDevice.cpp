@@ -1,4 +1,4 @@
-#include "D3DDevice.h"
+﻿#include "D3DDevice.h"
 
 //	Safe Release Macro
 #define SAFE_RELEASE(Obj) if (Obj) { Obj->Release(); Obj = nullptr; }
@@ -129,6 +129,11 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 		CreateDeviceFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
 		&swapChainDesc, &SwapChain, &Device, nullptr, &DeviceContext);
 
+	if (DeviceContext)
+	{
+		DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&UserDefinedAnnotation);
+	}
+
 	// CPU가 GPU보다 1프레임 이상 앞서지 못하게 제한
 	// (기본값 3 → Present 큐 깊이로 인한 FPS 톱니파 현상 방지)
 	{
@@ -149,6 +154,7 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 
 void FD3DDevice::ReleaseDeviceAndSwapChain()
 {
+	SAFE_RELEASE(UserDefinedAnnotation);
 	//	Flush first
 	if (DeviceContext)
 	{

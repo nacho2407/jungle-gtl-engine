@@ -59,6 +59,7 @@ void FRenderPipelineRegistry::Initialize()
     FRenderPipelineDesc ScenePostProcess;
     ScenePostProcess.Type = ERenderPipelineType::ScenePostProcess;
     ScenePostProcess.Children = {
+        PassNode(ERenderPassNodeType::ViewModePostProcessPass),
         PassNode(ERenderPassNodeType::HeightFogPass),
         PassNode(ERenderPassNodeType::FXAAPass)
     };

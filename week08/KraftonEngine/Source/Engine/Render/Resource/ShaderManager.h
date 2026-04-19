@@ -18,7 +18,9 @@ enum class EShaderType : uint32
     SubUV,
     Billboard,
     HeightFog,
+    DepthOnly,
     SceneDepth,
+    NormalView,
     FXAA,
     MAX,
 };

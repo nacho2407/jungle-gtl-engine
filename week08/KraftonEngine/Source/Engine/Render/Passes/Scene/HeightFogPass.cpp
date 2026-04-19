@@ -51,6 +51,13 @@ void FHeightFogPass::BuildDrawCommands(FRenderPassContext& Context)
         return;
     }
 
+    if (Context.ViewModePassRegistry &&
+        Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
+        Context.ViewModePassRegistry->SuppressesSceneExtras(Context.ActiveViewMode))
+    {
+        return;
+    }
+
     if (!Context.Scene || !Context.Scene->HasFog())
     {
         return;
@@ -74,7 +81,8 @@ void FHeightFogPass::SubmitDrawCommands(FRenderPassContext& Context)
         for (uint32 i = s; i < e; ++i)
         {
             const auto& c = Context.DrawCommandList->GetCommands()[i];
-            if ((c.SortKey & 0xFFFu) == 0)
+            const uint16 UserBits = static_cast<uint16>(c.SortKey & 0xFFFu);
+            if (UserBits == 0)
                 Context.DrawCommandList->SubmitRange(i, i + 1, *Context.Device, Context.Context, *Context.StateCache);
         }
     }

@@ -180,6 +180,16 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     if (Cmd.Shader && (bForce || Cmd.Shader != Cache.Shader))
     {
         Cmd.Shader->Bind(Ctx);
+        
+        // Depth pre-pass는 RTV 없이 DSV만 바인딩해서 그리므로
+        // PS가 남아 있으면 D3D11 debug layer가
+        // DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET 경고를 낸다.
+        // 이 패스는 depth only이므로 PS를 명시적으로 끈다.
+        if (Cmd.Pass == ERenderPass::DepthPre)
+        {
+            Ctx->PSSetShader(nullptr, nullptr, 0);
+        }
+
         Cache.Shader = Cmd.Shader;
     }
 

@@ -10,6 +10,7 @@
 #include "Render/Passes/Editor/GizmoPass.h"
 #include "Render/Passes/Scene/HeightFogPass.h"
 #include "Render/Passes/Scene/LightingPass.h"
+#include "Render/Passes/Scene/ViewModePostProcessPass.h"
 #include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Passes/Editor/SelectionMaskPass.h"
@@ -28,6 +29,7 @@ void FRenderPassRegistry::Initialize()
     Passes.emplace((int32)ERenderPassNodeType::LightingPass, new FLightingPass());
     Passes.emplace((int32)ERenderPassNodeType::AdditiveDecalPass, new FAdditiveDecalPass());
     Passes.emplace((int32)ERenderPassNodeType::AlphaBlendPass, new FAlphaBlendPass());
+    Passes.emplace((int32)ERenderPassNodeType::ViewModePostProcessPass, new FViewModePostProcessPass());
     Passes.emplace((int32)ERenderPassNodeType::HeightFogPass, new FHeightFogPass());
     Passes.emplace((int32)ERenderPassNodeType::FXAAPass, new FFXAAPass());
     Passes.emplace((int32)ERenderPassNodeType::SelectionMaskPass, new FSelectionMaskPass());

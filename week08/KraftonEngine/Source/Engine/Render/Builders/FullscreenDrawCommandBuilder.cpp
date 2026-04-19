@@ -31,9 +31,21 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& 
     }
     else if (Pass == ERenderPass::PostProcess)
     {
-        Shader = (UserBits == 1)
-            ? FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess)
-            : FShaderManager::Get().GetShader(EShaderType::HeightFog);
+        switch (UserBits)
+        {
+        case 1:
+            Shader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
+            break;
+        case 2:
+            Shader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
+            break;
+        case 3:
+            Shader = FShaderManager::Get().GetShader(EShaderType::NormalView);
+            break;
+        default:
+            Shader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
+            break;
+        }
     }
 
     if (!Shader)
