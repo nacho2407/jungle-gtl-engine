@@ -6,6 +6,7 @@
 #include "Render/Types/ShadingTypes.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Culling/TileBasedLightCulling.h"
 
 void BuildDefaultPassEvents(
 	TArray<FPassEvent>& OutPrePassEvents,
@@ -39,7 +40,7 @@ void BuildDefaultPassEvents(
 			});
 
 		OutPrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache, ShadingModel, ActiveViewSurfaces]()
+                                     [Context, &Frame, &Cache, ShadingModel, &Resources, &LightCulling, ActiveViewSurfaces]()
 			{
 				//1. Clustering 등록
                 Context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -54,19 +55,29 @@ void BuildDefaultPassEvents(
                 if (Frame.DepthCopySRV)
                 {
                     ID3D11ShaderResourceView* CSDepthSRV = Frame.DepthCopySRV;
-                    Context->CSSetShaderResources(0, 1, &CSDepthSRV);
+                    Context->CSSetShaderResources(1, 1, &CSDepthSRV);
                 }
 
 				// TODO: Light Culling CS 및 타일 마스크 UAV 바인딩, 디스패치
                 // Context->CSSetShader(Cache.LightCullingCS, nullptr, 0);
                 // Context->CSSetUnorderedAccessViews(0, 1, &TileLightMaskUAV, nullptr);
                 // Context->Dispatch(GroupX, GroupY, 1);
+                // b4: GlobalLights (Ambient + Directional)
+                Resources.GlobalLightBuffer.Update(Context, &Frame.CollectedLights.GlobalLights, sizeof(FGlobalLightConstants));
+                ID3D11Buffer* LightCB = Resources.GlobalLightBuffer.GetBuffer();
+                if (LightCB)
+                    Context->PSSetConstantBuffers(ECBSlot::Light, 1, &LightCB);
 
-                // CS에서 사용한 SRV/UAV 해제 (이어질 PS 단계와 충돌 방지)
-                ID3D11ShaderResourceView* NullCS_SRVs[1] = { nullptr };
-                Context->CSSetShaderResources(0, 1, NullCS_SRVs);
-                // ID3D11UnorderedAccessView* NullUAVs[1] = { nullptr };
-                // Context->CSSetUnorderedAccessViews(0, 1, NullUAVs, nullptr);
+                // t6: LocalLights StructuredBuffer (Point + Spot)
+                ID3D11Device* Device = nullptr;
+                Context->GetDevice(&Device);
+                Resources.UpdateLocalLights(Device, Context, Frame.CollectedLights.LocalLights);
+                if (Device)
+                    Device->Release();
+                if (Resources.LocalLightSRV)
+                    Context->PSSetShaderResources(6, 1, &Resources.LocalLightSRV);
+
+				LightCulling.Dispatch(Frame.ViewportWidth, Frame.ViewportHeight, true);	
 				
 				//2. Opaque Rendering
 				ID3D11ShaderResourceView* NullSRVs[6] = {};
@@ -118,10 +129,11 @@ void BuildDefaultPassEvents(
 		});
 
 		OutPrePassEvents.push_back({ ERenderPass::Lighting, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache, &Resources, ActiveViewSurfaces]()
+			[Context, &Frame, &Cache, ActiveViewSurfaces]()
 			{
 				ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
 				Context->OMSetRenderTargets(1, &RTV, Frame.ViewportDSV);
+
 
 				// t0~t5: GBuffer 6장 (원본 + 데칼 Modified)
 				ID3D11ShaderResourceView* SurfaceSRVs[6] = {
@@ -141,22 +153,6 @@ void BuildDefaultPassEvents(
 					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
 				}
 
-				// b4: GlobalLights (Ambient + Directional)
-				Resources.GlobalLightBuffer.Update(Context,
-					&Frame.CollectedLights.GlobalLights,
-					sizeof(FGlobalLightConstants));
-				ID3D11Buffer* LightCB = Resources.GlobalLightBuffer.GetBuffer();
-				if (LightCB)
-					Context->PSSetConstantBuffers(ECBSlot::Light, 1, &LightCB);
-
-				// t6: LocalLights StructuredBuffer (Point + Spot)
-				ID3D11Device* Device = nullptr;
-				Context->GetDevice(&Device);
-				Resources.UpdateLocalLights(Device, Context, Frame.CollectedLights.LocalLights);
-				if (Device) Device->Release();
-				if (Resources.LocalLightSRV)
-					Context->PSSetShaderResources(6, 1, &Resources.LocalLightSRV);
-
 				Cache.DiffuseSRV = nullptr;
 				Cache.bForceAll = true;
 			}
@@ -166,7 +162,7 @@ void BuildDefaultPassEvents(
 	if (Frame.DepthTexture && Frame.DepthCopyTexture)
 	{
 		OutPrePassEvents.push_back({ ERenderPass::PostProcess, EPassCompare::GreaterEqual, true, false,
-			[Context, &Frame, &Cache]()
+        [Context, &Frame, &LightCulling, &Cache]()
 			{
 				Context->OMSetRenderTargets(0, nullptr, nullptr);
 				Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);

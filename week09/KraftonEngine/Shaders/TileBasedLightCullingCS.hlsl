@@ -1,5 +1,5 @@
 #include "Common/LightCullingCommon.hlsl"
-#include "Common/ConstantBuffers.hlsl"
+
 
 // ============================================================
 // Compute Shader Entry Point
@@ -20,8 +20,8 @@ void CS_LightCulling(
     if (groupIndex == 0)
     {
         tileDepthMask = 0;
-        groupMinZ     = 0x7f7fffff; // float max
-        groupMaxZ     = 0x00000000; // float 0
+        groupMinZ     = 0x00000000; // float 0
+        groupMaxZ     = 0x7f7fffff; // float max
         hitCount      = 0;
     }
     GroupMemoryBarrierWithGroupSync();
@@ -126,9 +126,9 @@ void CS_LightCulling(
     // Point Light
     for (uint idx = groupIndex; idx < (uint)NumLights; idx += totalThreads)
     {
-        float3 lightVSPos = mul(float4(g_LightBuffer[idx].position, 1.0), View).xyz;
+        float3 lightVSPos = mul(float4(g_LightBuffer[idx].Position, 1.0), View).xyz;
         CullLight(
-            idx, lightVSPos, g_LightBuffer[idx].range,
+            idx, lightVSPos, g_LightBuffer[idx].AttenuationRadius,
             frustum, minZ, maxZ,
             flatTileIndex,
             PerTilePointLightIndexMaskOut,
