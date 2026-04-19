@@ -44,6 +44,15 @@ USubUVComponent::USubUVComponent()
 	SetVisibility(false);
 }
 
+USubUVComponent::~USubUVComponent()
+{
+	if (SubUVMaterial)
+	{
+		UObjectManager::Get().DestroyObject(SubUVMaterial);
+		SubUVMaterial = nullptr;
+	}
+}
+
 void USubUVComponent::SetParticle(const FName& InParticleName)
 {
 	ParticleName = InParticleName;

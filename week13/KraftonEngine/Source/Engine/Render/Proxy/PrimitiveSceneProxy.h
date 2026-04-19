@@ -43,7 +43,7 @@ class FPrimitiveSceneProxy
 {
 public:
 	FPrimitiveSceneProxy(UPrimitiveComponent* InComponent);
-	virtual ~FPrimitiveSceneProxy() = default;
+	virtual ~FPrimitiveSceneProxy();
 
 	// ================================================================
 	// 읽기 전용 인터페이스 (DrawCommandBuilder, RenderCollector용)

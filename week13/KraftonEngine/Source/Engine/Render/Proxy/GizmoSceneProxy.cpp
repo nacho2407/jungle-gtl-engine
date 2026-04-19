@@ -4,6 +4,7 @@
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "Materials/Material.h"
+#include "Object/ObjectFactory.h"
 
 // ============================================================
 // FGizmoSceneProxy
@@ -23,6 +24,15 @@ FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
 		bInner ? EDepthStencilState::GizmoInside : EDepthStencilState::GizmoOutside,
 		ERasterizerState::SolidBackCull,
 		FShaderManager::Get().GetShader(EShaderType::Gizmo));
+}
+
+FGizmoSceneProxy::~FGizmoSceneProxy()
+{
+	if (GizmoMaterial)
+	{
+		UObjectManager::Get().DestroyObject(GizmoMaterial);
+		GizmoMaterial = nullptr;
+	}
 }
 
 UGizmoComponent* FGizmoSceneProxy::GetGizmoComponent() const

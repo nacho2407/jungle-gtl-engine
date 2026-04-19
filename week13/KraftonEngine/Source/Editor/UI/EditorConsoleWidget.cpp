@@ -1,6 +1,9 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Object/Object.h"
+
+#include <algorithm>
 
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	char buf[1024];
@@ -20,6 +23,82 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 		{
 			(void)Args;
 			Clear();
+		});
+
+	RegisterCommand("obj", [this](const TArray<FString>& Args)
+		{
+			if (Args.size() < 2)
+			{
+				AddLog("Usage: obj list [ClassName]\n");
+				return;
+			}
+
+			if (Args[1] == "list")
+			{
+				const FString ClassFilter = (Args.size() >= 3) ? Args[2] : "";
+
+				// 클래스별 카운트 + 인스턴스 크기 집계
+				struct FClassEntry
+				{
+					const char* Name;
+					size_t      ClassSize;
+					uint32      Count;
+				};
+				TMap<const char*, FClassEntry> ClassMap;
+
+				for (UObject* Obj : GUObjectArray)
+				{
+					if (!Obj) continue;
+					UClass* Cls = Obj->GetClass();
+					if (!Cls) continue;
+
+					const char* ClassName = Cls->GetName();
+					if (!ClassFilter.empty())
+					{
+						// 대소문자 무시 부분 매칭
+						FString Name(ClassName);
+						FString Filter(ClassFilter);
+						std::transform(Name.begin(), Name.end(), Name.begin(), ::tolower);
+						std::transform(Filter.begin(), Filter.end(), Filter.begin(), ::tolower);
+						if (Name.find(Filter) == FString::npos)
+							continue;
+					}
+
+					auto It = ClassMap.find(ClassName);
+					if (It == ClassMap.end())
+						ClassMap[ClassName] = { ClassName, Cls->GetSize(), 1 };
+					else
+						It->second.Count++;
+				}
+
+				// 카운트 내림차순 정렬
+				TArray<FClassEntry> Sorted;
+				for (auto& Pair : ClassMap)
+					Sorted.push_back(Pair.second);
+				std::sort(Sorted.begin(), Sorted.end(),
+					[](const FClassEntry& A, const FClassEntry& B) { return A.Count > B.Count; });
+
+				uint32 TotalCount = 0;
+				size_t TotalBytes = 0;
+
+				AddLog("%-35s %8s %10s\n", "Class", "Count", "Size(KB)");
+				AddLog("-------------------------------------------------------------\n");
+				for (auto& E : Sorted)
+				{
+					size_t Bytes = E.ClassSize * E.Count;
+					TotalCount += E.Count;
+					TotalBytes += Bytes;
+					AddLog("%-35s %8u %10.1f\n", E.Name, E.Count, Bytes / 1024.0);
+				}
+				AddLog("-------------------------------------------------------------\n");
+				AddLog("%-35s %8u %10.1f\n", "TOTAL", TotalCount, TotalBytes / 1024.0);
+				AddLog("GUObjectArray capacity: %zu\n", GUObjectArray.capacity());
+			}
+			else
+			{
+				AddLog("[ERROR] Unknown obj subcommand: '%s'\n", Args[1].c_str());
+				AddLog("Usage: obj list [ClassName]\n");
+			}
 		});
 
 	RegisterCommand("stat", [this](const TArray<FString>& Args)

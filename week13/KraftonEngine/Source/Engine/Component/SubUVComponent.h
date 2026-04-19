@@ -12,7 +12,7 @@ public:
 	DECLARE_CLASS(USubUVComponent, UBillboardComponent)
 
 	USubUVComponent();
-	~USubUVComponent() override = default;
+	~USubUVComponent() override;
 
 	// --- Particle Resource ---
 	// FName 키로 ResourceManager에서 FParticleResource*를 찾아 캐싱
