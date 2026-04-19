@@ -50,8 +50,8 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     float3 N = normalize(input.normal);
     float3 V = normalize(CameraWorldPos - input.worldPos);
 
-    float3 diffuse  = AccumulateDiffuse(input.worldPos, N);
-    float3 specular = AccumulateSpecular(input.worldPos, N, V, g_DecalShininess);
+    float3 diffuse  = AccumulateDiffuse(input.worldPos, N, input.position);
+    float3 specular = AccumulateSpecular(input.worldPos, N, V, g_DecalShininess, input.position);
 
     float3 finalColor = baseColor.rgb * diffuse + specular;
     return float4(ApplyWireframe(finalColor), baseColor.a);
