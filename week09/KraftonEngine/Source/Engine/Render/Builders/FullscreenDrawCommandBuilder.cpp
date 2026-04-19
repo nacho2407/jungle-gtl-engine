@@ -9,28 +9,36 @@
 void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {
     FShader* Shader = nullptr;
-    if (Pass == ERenderPass::Lighting && Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+
+    if (Pass == ERenderPass::Lighting)
     {
-        if (const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EPipelineStage::Lighting))
-            Shader = Desc->CompiledShader;
-    }
-    if (!Shader)
-    {
-        switch (Pass)
+        if (!Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
         {
-        case ERenderPass::Lighting:
-            Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
-            break;
-        case ERenderPass::FXAA:
-            Shader = FShaderManager::Get().GetShader(EShaderType::FXAA);
-            break;
-        default:
-            Shader = nullptr;
-            break;
+            return;
         }
+
+        const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EPipelineStage::Lighting);
+        if (!Desc || !Desc->CompiledShader)
+        {
+            return;
+        }
+
+        Shader = Desc->CompiledShader;
     }
+    else if (Pass == ERenderPass::FXAA)
+    {
+        Shader = FShaderManager::Get().GetShader(EShaderType::FXAA);
+    }
+    else if (Pass == ERenderPass::PostProcess)
+    {
+        Shader = (UserBits == 1)
+            ? FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess)
+            : FShaderManager::Get().GetShader(EShaderType::HeightFog);
+    }
+
     if (!Shader)
         return;
+
     const FPassRenderState& S = Context.GetPassState(Pass);
     FDrawCommand& Cmd = OutList.AddCommand();
     Cmd.Shader = Shader;

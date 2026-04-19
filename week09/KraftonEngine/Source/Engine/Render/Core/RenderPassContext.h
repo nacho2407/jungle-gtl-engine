@@ -14,6 +14,7 @@ struct FFrameSharedResources;
 class FViewModePassRegistry;
 class FViewModeSurfaceSet;
 class FGPUOcclusionCulling;
+class FRenderer;
 struct FLODUpdateContext;
 class FPrimitiveSceneProxy;
 class FDecalSceneProxy;
@@ -26,6 +27,7 @@ struct FRenderPassContext
     const FFrameContext* Frame = nullptr;
     FScene* Scene = nullptr;
 
+    FRenderer* Renderer = nullptr;
     FD3DDevice* Device = nullptr;
     ID3D11DeviceContext* Context = nullptr;
 

@@ -1,5 +1,6 @@
 ﻿#include "Render/Renderer/RenderPipelineRunner.h"
 
+#include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Renderer/RenderPassRegistry.h"
 #include "Render/Renderer/RenderPipelineRegistry.h"
@@ -27,15 +28,29 @@ void FRenderPipelineRunner::ExecutePipelineRecursive(
         return;
     }
 
+    const bool bSkipLightingPass =
+        Context.ViewModePassRegistry &&
+        Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
+        Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode) == EShadingModel::Unlit;
+
     for (const FRenderNodeRef& Child : Desc->Children)
     {
         if (Child.Kind == ERenderNodeKind::Pipeline)
         {
             ExecutePipelineRecursive((ERenderPipelineType)Child.TypeValue, Context, Frame, PipelineRegistry, PassRegistry);
         }
-        else if (FRenderPass* Pass = PassRegistry.FindPass((ERenderPassNodeType)Child.TypeValue))
+        else
         {
-            Pass->Execute(Context);
+            const ERenderPassNodeType PassType = (ERenderPassNodeType)Child.TypeValue;
+            if (bSkipLightingPass && PassType == ERenderPassNodeType::LightingPass)
+            {
+                continue;
+            }
+
+            if (FRenderPass* Pass = PassRegistry.FindPass(PassType))
+            {
+                Pass->Execute(Context);
+            }
         }
     }
 }

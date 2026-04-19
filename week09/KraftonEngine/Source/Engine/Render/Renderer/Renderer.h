@@ -64,6 +64,7 @@ public:
 
     const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
     bool HasSelectionMaskCommands() const { return bHasSelectionMaskCommands; }
+    FConstantBuffer* AcquirePerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy) { return GetPerObjectCBForProxy(Proxy); }
 
 private:
     friend struct FRenderPassContext;

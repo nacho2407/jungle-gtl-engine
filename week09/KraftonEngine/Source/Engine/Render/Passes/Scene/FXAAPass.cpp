@@ -1,18 +1,34 @@
 ﻿#include "Render/Passes/Scene/FXAAPass.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders//FullscreenDrawCommandBuilder.h"
 #include "Render/Scene/PrimitiveSceneProxy.h"
 
 void FFXAAPass::PrepareInputs(FRenderPassContext& Context)
 {
-    (void)Context;
+    if (!Context.Frame || !Context.Frame->SceneColorCopySRV)
+    {
+        return;
+    }
+
+    if (Context.Frame->ViewportRenderTexture && Context.Frame->SceneColorCopyTexture &&
+        Context.Frame->ViewportRenderTexture != Context.Frame->SceneColorCopyTexture)
+    {
+        Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
+        Context.Context->CopyResource(Context.Frame->SceneColorCopyTexture, Context.Frame->ViewportRenderTexture);
+    }
+
+    ID3D11ShaderResourceView* SceneColorSRV = Context.Frame->SceneColorCopySRV;
+    Context.Context->PSSetShaderResources(0, 1, &SceneColorSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
 }
 
 void FFXAAPass::PrepareTargets(FRenderPassContext& Context)
 {
-    // FXAA target setup moved into pass-local code.
+    ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
+    Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
 }
 
 void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context)
