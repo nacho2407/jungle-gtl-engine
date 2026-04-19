@@ -2,7 +2,6 @@
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resource/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
@@ -69,18 +68,6 @@ void FDecalSceneProxy::UpdateMesh()
 	RebuildReceiverProxies();
 
 	MeshBuffer = nullptr;
-	SectionDraws.clear();
-
-	if (DecalMaterial && DecalMaterial->GetShader())
-	{
-		Shader = DecalMaterial->GetShader();
-		Pass = DecalMaterial->GetRenderPass();
-	}
-	else
-	{
-		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
-		Pass = ERenderPass::Decal;
-	}
 	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 

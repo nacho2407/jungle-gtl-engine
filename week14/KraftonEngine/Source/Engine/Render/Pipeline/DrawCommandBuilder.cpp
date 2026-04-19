@@ -228,11 +228,10 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy)
 {
 	if (!ReceiverProxy.GetMeshBuffer() || !ReceiverProxy.GetMeshBuffer()->IsValid()) return;
-	if (!DecalProxy.GetShader()) return;
 
 	// Decal Material은 SectionDraws[0]에 저장됨
 	UMaterial* DecalMat = DecalProxy.GetSectionDraws().empty() ? nullptr : DecalProxy.GetSectionDraws()[0].Material;
-	if (!DecalMat) return;
+	if (!DecalMat || !DecalMat->GetShader()) return;
 
 	ID3D11DeviceContext* Ctx = CachedContext;
 	const ERenderPass DecalPass = DecalProxy.GetRenderPass();
@@ -266,7 +265,7 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Pass        = DecalPass;
-			Cmd.Shader      = DecalProxy.GetShader();
+			Cmd.Shader      = DecalMat->GetShader();
 			Cmd.RenderState = BaseRenderState;
 
 			// 머티리얼 기반 렌더 상태 오버라이드

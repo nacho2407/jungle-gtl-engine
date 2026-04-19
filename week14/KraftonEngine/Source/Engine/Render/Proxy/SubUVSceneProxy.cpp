@@ -1,7 +1,6 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
 #include "Render/Pipeline/FrameContext.h"
-#include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Materials/Material.h"
 
@@ -26,10 +25,7 @@ void FSubUVSceneProxy::UpdateMesh()
 	// TexturedQuad (FVertexPNCT with UVs) for rendering
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
 
-	// Shader/Pass를 Material에서 파생 (Billboard과 동일 패턴)
 	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
-	Shader = (SubUVMat && SubUVMat->GetShader()) ? SubUVMat->GetShader() : FShaderManager::Get().GetShader(EShaderType::SubUV);
-	Pass = SubUVMat ? SubUVMat->GetRenderPass() : ERenderPass::AlphaBlend;
 
 	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
 	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
