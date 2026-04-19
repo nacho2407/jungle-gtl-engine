@@ -41,7 +41,6 @@ enum class ELightType
 
 enum class ERenderPass : uint32
 {
-	DepthPrePass,	// 깊이 프리패스
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
 	Decal,			// 데칼 (DepthReadOnly)
 	Lighting,		// ViewMode resolve / lighting composition
@@ -60,7 +59,6 @@ enum class ERenderPass : uint32
 inline const char* GetRenderPassName(ERenderPass Pass)
 {
 	static const char* Names[] = {
-		"RenderPass::DepthPrePass",
 		"RenderPass::Opaque",
 		"RenderPass::Decal",
 		"RenderPass::Lighting",
@@ -82,7 +80,6 @@ namespace RenderStateStrings
 {
 	inline constexpr FEnumEntry RenderPassMap[] =
 	{
-		{ "DepthPrePass",  (int)ERenderPass::DepthPrePass },
 		{ "Opaque",        (int)ERenderPass::Opaque },
 		{ "Decal",         (int)ERenderPass::Decal },
 		{ "Lighting",      (int)ERenderPass::Lighting },

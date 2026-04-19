@@ -89,7 +89,7 @@ public:
 
 	// 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)
 	bool bPerViewportUpdate = false;
-	bool bFontBatched = false;		// true면 FFontBatch 배칭 경로 사용 (TextRenderProxy)
+	bool bFontBatched = false;		// true면 FFontGeometry 배칭 경로 사용 (TextRenderProxy)
 
 	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
 	uint32 LastLODUpdateFrame = UINT32_MAX;

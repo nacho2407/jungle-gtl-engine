@@ -3,14 +3,14 @@
 #include "Core/CoreTypes.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/ViewTypes.h"
-#include "Render/Scene/FScene.h"
 
 struct FFrameContext;
+#include "Render/Scene/FScene.h"
 class FD3DDevice;
 struct ID3D11DeviceContext;
 struct ID3D11RenderTargetView;
 struct ID3D11DepthStencilView;
-struct FRenderResources;
+struct FFrameSharedResources;
 class FViewModePassRegistry;
 class FViewModeSurfaceSet;
 class FGPUOcclusionCulling;
@@ -29,7 +29,7 @@ struct FRenderPassContext
     FD3DDevice* Device = nullptr;
     ID3D11DeviceContext* Context = nullptr;
 
-    FRenderResources* Resources = nullptr;
+    FFrameSharedResources* Resources = nullptr;
     FStateCache* StateCache = nullptr;
     FDrawCommandList* DrawCommandList = nullptr;
     const FPassRenderState* PassRenderStates = nullptr;

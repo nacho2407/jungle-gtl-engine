@@ -1,94 +1,94 @@
 ﻿#include "Render/Scene/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
-#include "Render/Resource/Managers/ShaderManager.h"
+#include "Render/Resource/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
 
 namespace
 {
-	struct FDecalConstants
-	{
-		FMatrix WorldToDecal;
-		FVector4 Color;
-	};
-}
+struct FDecalConstants
+{
+    FMatrix WorldToDecal;
+    FVector4 Color;
+};
+} // namespace
 
 FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
-	: FPrimitiveSceneProxy(InComponent)
+    : FPrimitiveSceneProxy(InComponent)
 {
-	DecalCB = new FConstantBuffer();
-	// 최초 1회 초기화
-	UpdateMesh();
+    DecalCB = new FConstantBuffer();
+    // 최초 1회 초기화
+    UpdateMesh();
 }
 
 FDecalSceneProxy::~FDecalSceneProxy()
 {
-	if (DecalCB)
-	{
-		DecalCB->Release();
-		delete DecalCB;
-		DecalCB = nullptr;
-	}
+    if (DecalCB)
+    {
+        DecalCB->Release();
+        delete DecalCB;
+        DecalCB = nullptr;
+    }
 }
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 {
-	return static_cast<UDecalComponent*>(Owner);
+    return static_cast<UDecalComponent*>(Owner);
 }
 
 void FDecalSceneProxy::UpdateMaterial()
 {
-	UDecalComponent* DecalComp = GetDecalComponent();
-	if (!DecalComp)
-	{
-		return;
-	}
+    UDecalComponent* DecalComp = GetDecalComponent();
+    if (!DecalComp)
+    {
+        return;
+    }
 
-	DecalMaterial = DecalComp->GetMaterial(0);
-	DiffuseSRV = nullptr;
+    DecalMaterial = DecalComp->GetMaterial(0);
+    DiffuseSRV = nullptr;
 
-	if (DecalMaterial)
-	{
-		UTexture2D* DiffuseTex = nullptr;
-		if (DecalMaterial->GetTextureParameter("DiffuseTexture", DiffuseTex))
-		{
-			DiffuseSRV = DiffuseTex->GetSRV();
-		}
-	}
+    if (DecalMaterial)
+    {
+        UTexture2D* DiffuseTex = nullptr;
+        if (DecalMaterial->GetTextureParameter("DiffuseTexture", DiffuseTex))
+        {
+            DiffuseSRV = DiffuseTex->GetSRV();
+        }
+    }
 
-	auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
-	CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
-	CB.Color = DecalComp->GetColor();
+    auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
+    CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
+    CB.Color = DecalComp->GetColor();
 }
 
 void FDecalSceneProxy::UpdateMesh()
 {
-	UpdateMaterial();
+    UpdateMaterial();
 
-	MeshBuffer = nullptr;
-	SectionDraws.clear();
+    MeshBuffer = nullptr;
+    SectionDraws.clear();
 
-	if (DecalMaterial && DecalMaterial->GetShader())
-	{
-		Shader = DecalMaterial->GetShader();
-		Pass = DecalMaterial->GetRenderPass();
+    if (DecalMaterial && DecalMaterial->GetShader())
+    {
+        Shader = DecalMaterial->GetShader();
+        Pass = DecalMaterial->GetRenderPass();
 
-		// 머티리얼 기반 렌더 상태 전파
-		Blend = DecalMaterial->GetBlendState();
-		DepthStencil = DecalMaterial->GetDepthStencilState();
-		Rasterizer = DecalMaterial->GetRasterizerState();
-	}
-	else
-	{
-		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
-		Pass = ERenderPass::Decal;
+        // 머티리얼 기반 렌더 상태 전파
+        Blend = DecalMaterial->GetBlendState();
+        DepthStencil = DecalMaterial->GetDepthStencilState();
+        Rasterizer = DecalMaterial->GetRasterizerState();
+    }
+    else
+    {
+        Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
+        Pass = ERenderPass::Decal;
 
-		// 기본 상태
-		Blend = EBlendState::AlphaBlend;
-		DepthStencil = EDepthStencilState::DepthReadOnly;
-		Rasterizer = ERasterizerState::SolidNoCull;
-	}
-	bSupportsOutline = false;
+        // 기본 상태
+        Blend = EBlendState::AlphaBlend;
+        DepthStencil = EDepthStencilState::DepthReadOnly;
+        Rasterizer = ERasterizerState::SolidNoCull;
+    }
+    bSupportsOutline = false;
 }

@@ -6,7 +6,7 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
-#include "Render/Resource/Pools/ConstantBufferPool.h"
+#include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Scene/TextRenderSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Profiling/Stats.h"
@@ -15,10 +15,10 @@
 #include "Profiling/Timer.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Core/PassTypes.h"
-#include "Render/RHI/Frame/RenderResources.h"
+#include "Render/D3D11/Frame/FrameSharedResources.h"
+#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
 #include "Render/Renderer/PipelineShaderResolver.h"
 #include "Render/Core/PassRenderState.h"
-#include "Render/Passes/UberLitPass.h"
 #include "Render/Types/ShadingTypes.h"
 #include "Materials/MaterialManager.h"
 
@@ -38,7 +38,7 @@ void FRenderer::Create(HWND hWindow)
 
     EditorLines.Create(Device.GetDevice());
     GridLines.Create(Device.GetDevice());
-    FontBatch.Create(Device.GetDevice());
+    FontGeometry.Create(Device.GetDevice());
 
     InitializeDefaultPassRenderStates(PassRenderStates);
     PassRegistry.Initialize();
@@ -76,7 +76,7 @@ void FRenderer::Release()
 
     EditorLines.Release();
     GridLines.Release();
-    FontBatch.Release();
+    FontGeometry.Release();
 
     for (FConstantBuffer& CB : PerObjectCBPool)
     {
@@ -144,11 +144,11 @@ void FRenderer::BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount)
     // 동적 지오메트리 초기화
     EditorLines.Clear();
     GridLines.Clear();
-    FontBatch.ClearWorld();
-    FontBatch.ClearScreen();
+    FontGeometry.ClearAll();
+    FontGeometry.ClearScreen();
 
     if (const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default")))
-        FontBatch.EnsureCharInfoMap(FontRes);
+        FontGeometry.EnsureCharInfoMap(FontRes);
 }
 
 //	스왑체인 백버퍼 복귀 — ImGui 합성 직전에 호출

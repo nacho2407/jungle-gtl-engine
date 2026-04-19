@@ -5,18 +5,17 @@
 */
 
 #include "Render/Types/RenderTypes.h"
-#include "Render/Pipelines/RenderPipeline.h"
 #include "Render/Core/RenderPassContext.h"
 
 #include "Render/Core/FrameContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Core/PassRenderState.h"
 #include "Render/Scene/PrimitiveSceneProxy.h"
-#include "Render/RHI/Device/D3DDevice.h"
-#include "Render/RHI/Frame/RenderResources.h"
-#include "Render/Resource/Managers/ShaderManager.h"
-#include "Render/Resource/Batch/LineBatch.h"
-#include "Render/Resource/Batch/FontBatch.h"
+#include "Render/D3D11/Device/D3DDevice.h"
+#include "Render/D3D11/Frame/FrameSharedResources.h"
+#include "Render/Resource/ShaderManager.h"
+#include "Render/D3D11/Batch/LineBatch.h"
+#include "Render/D3D11/Batch/FontBatch.h"
 #include "Render/Renderer/RenderPassRegistry.h"
 #include "Render/Renderer/RenderPipelineRegistry.h"
 #include "Render/Renderer/RenderPipelineRunner.h"
@@ -61,7 +60,7 @@ public:
     void ExecutePipeline(ERenderPipelineType Type, FRenderPassContext& PassContext);
 
     FD3DDevice& GetFD3DDevice() { return Device; }
-    FRenderResources& GetResources() { return Resources; }
+    FFrameSharedResources& GetResources() { return Resources; }
 
     const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
     bool HasSelectionMaskCommands() const { return bHasSelectionMaskCommands; }
@@ -70,8 +69,6 @@ private:
     friend struct FRenderPassContext;
     void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
     void PreparePipelineExecution(const FFrameContext& Frame);
-    void SubmitRenderPass(ERenderPass Pass);
-    void SubmitRenderPassByUserBits(ERenderPass Pass, uint16 UserBits);
     void FinalizePipelineExecution();
 
 
@@ -84,10 +81,10 @@ private:
 
 private:
     FD3DDevice Device;
-    FRenderResources Resources;
+    FFrameSharedResources Resources;
     FLineBatch EditorLines;
     FLineBatch GridLines;
-    FFontBatch FontBatch;
+    FFontBatch FontGeometry;
 
     // Pipeline/Pass ownership lives outside the renderer.
     FRenderPassRegistry PassRegistry;

@@ -1,24 +1,24 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Resource/Cache/ShaderVariantCache.h"
+#include "Render/Resource/ShaderVariantCache.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/ShadingTypes.h"
 
 namespace ViewModePassConfigUtils
 {
-inline void AddDefine(TArray<FShaderMacroDefine> &Defines, const char *Name, const char *Value = "1")
+inline void AddDefine(TArray<FShaderMacroDefine>& Defines, const char* Name, const char* Value = "1")
 {
-    Defines.push_back({Name, Value});
+    Defines.push_back({ Name, Value });
 }
-}
+} // namespace ViewModePassConfigUtils
 
 struct FRenderPipelinePassDesc
 {
     EPipelineStage Stage = EPipelineStage::BaseDraw;
     ERenderPass RenderPass = ERenderPass::Opaque;
     FShaderVariantDesc ShaderVariant;
-    FShader *CompiledShader = nullptr;
+    FShader* CompiledShader = nullptr;
     bool bFullscreenPass = false;
 };
 
@@ -29,14 +29,14 @@ struct FViewModePassConfig
     TArray<FRenderPipelinePassDesc> Passes;
 };
 
-inline const FRenderPipelinePassDesc *FindViewModePassDesc(const FViewModePassConfig *Config, EPipelineStage Stage)
+inline const FRenderPipelinePassDesc* FindViewModePassDesc(const FViewModePassConfig* Config, EPipelineStage Stage)
 {
     if (!Config)
     {
         return nullptr;
     }
 
-    for (const FRenderPipelinePassDesc &Pass : Config->Passes)
+    for (const FRenderPipelinePassDesc& Pass : Config->Passes)
     {
         if (Pass.Stage == Stage)
         {
@@ -46,7 +46,7 @@ inline const FRenderPipelinePassDesc *FindViewModePassDesc(const FViewModePassCo
     return nullptr;
 }
 
-inline EShadingModel GetViewModeShadingModel(const FViewModePassConfig *Config)
+inline EShadingModel GetViewModeShadingModel(const FViewModePassConfig* Config)
 {
     return Config ? Config->ShadingModel : EShadingModel::Unlit;
 }
@@ -154,7 +154,7 @@ inline FRenderPipelinePassDesc BuildViewModeLightingPassDesc(EShadingModel Shadi
     return Pass;
 }
 
-inline void BuildViewModePasses(FViewModePassConfig &Config)
+inline void BuildViewModePasses(FViewModePassConfig& Config)
 {
     Config.Passes.clear();
     Config.Passes.push_back(BuildViewModeBaseDrawPassDesc(Config.ShadingModel));
@@ -162,13 +162,13 @@ inline void BuildViewModePasses(FViewModePassConfig &Config)
     Config.Passes.push_back(BuildViewModeLightingPassDesc(Config.ShadingModel));
 }
 
-inline void InitializeViewModePassConfig(FViewModePassConfig &Config, EViewMode InViewMode, FShaderVariantCache &VariantCache)
+inline void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewMode, FShaderVariantCache& VariantCache)
 {
     Config.ViewMode = InViewMode;
     Config.ShadingModel = GetShadingModelFromViewMode(InViewMode);
     BuildViewModePasses(Config);
 
-    for (FRenderPipelinePassDesc &Pass : Config.Passes)
+    for (FRenderPipelinePassDesc& Pass : Config.Passes)
     {
         Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
     }
@@ -176,8 +176,8 @@ inline void InitializeViewModePassConfig(FViewModePassConfig &Config, EViewMode 
 
 class FViewModePassRegistry
 {
-  public:
-    void Initialize(ID3D11Device *Device)
+public:
+    void Initialize(ID3D11Device* Device)
     {
         VariantCache.Initialize(Device);
         Configs.clear();
@@ -208,13 +208,13 @@ class FViewModePassRegistry
         return Configs.find(static_cast<int32>(ViewMode)) != Configs.end();
     }
 
-    const FViewModePassConfig *GetConfig(EViewMode ViewMode) const
+    const FViewModePassConfig* GetConfig(EViewMode ViewMode) const
     {
         auto It = Configs.find(static_cast<int32>(ViewMode));
         return (It != Configs.end()) ? &It->second : nullptr;
     }
 
-    const FRenderPipelinePassDesc *FindPassDesc(EViewMode ViewMode, EPipelineStage Stage) const
+    const FRenderPipelinePassDesc* FindPassDesc(EViewMode ViewMode, EPipelineStage Stage) const
     {
         return FindViewModePassDesc(GetConfig(ViewMode), Stage);
     }
@@ -224,7 +224,7 @@ class FViewModePassRegistry
         return GetViewModeShadingModel(GetConfig(ViewMode));
     }
 
-  private:
+private:
     FShaderVariantCache VariantCache;
     TMap<int32, FViewModePassConfig> Configs;
 };

@@ -1,7 +1,7 @@
 ﻿#include "Render/Passes/Scene/AlphaBlendPass.h"
-#include "Render/Commands/DrawCommandList.h"
 #include "Render/Core/RenderPassContext.h"
-#include "Render/Builders/Mesh/MeshDrawCommandBuilder.h"
+#include "Render/Commands/DrawCommandList.h"
+#include "Render/Builders//MeshDrawCommandBuilder.h"
 #include "Render/Scene/PrimitiveSceneProxy.h"
 
 void FAlphaBlendPass::PrepareInputs(FRenderPassContext& Context)
@@ -17,14 +17,20 @@ void FAlphaBlendPass::PrepareTargets(FRenderPassContext& Context)
 void FAlphaBlendPass::BuildDrawCommands(FRenderPassContext& Context)
 {
     (void)Context;
- }
+}
 
 void FAlphaBlendPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-        FMeshDrawCommandBuilder::Build(Proxy, ERenderPass::AlphaBlend, Context, *Context.DrawCommandList);
+    FMeshDrawCommandBuilder::Build(Proxy, ERenderPass::AlphaBlend, Context, *Context.DrawCommandList);
 }
 
 void FAlphaBlendPass::SubmitDrawCommands(FRenderPassContext& Context)
 {
-        if (Context.DrawCommandList) { uint32 s,e; Context.DrawCommandList->GetPassRange(ERenderPass::AlphaBlend,s,e); if(s<e) Context.DrawCommandList->SubmitRange(s,e,*Context.Device,Context.Context,*Context.StateCache); }
+    if (Context.DrawCommandList)
+    {
+        uint32 s, e;
+        Context.DrawCommandList->GetPassRange(ERenderPass::AlphaBlend, s, e);
+        if (s < e)
+            Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
+    }
 }

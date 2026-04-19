@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 struct FFrameContext;
 struct FRenderPassContext;
@@ -13,17 +13,6 @@ public:
     virtual void PrepareTargets(FRenderPassContext& Context) = 0;
     virtual void BuildDrawCommands(FRenderPassContext& Context) = 0;
     virtual void BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy) = 0;
-
-    virtual void BuildDrawCommands(FRenderPassContext& Context, const FFrameContext&)
-    {
-        BuildDrawCommands(Context);
-    }
-
-    virtual void BuildDrawCommands(FRenderPassContext& Context, const FFrameContext&, const FPrimitiveSceneProxy& Proxy)
-    {
-        BuildDrawCommands(Context, Proxy);
-    }
-
     virtual void SubmitDrawCommands(FRenderPassContext& Context) = 0;
 
     virtual void Execute(FRenderPassContext& Context)
@@ -31,10 +20,5 @@ public:
         PrepareInputs(Context);
         PrepareTargets(Context);
         SubmitDrawCommands(Context);
-    }
-
-    virtual void Execute(FRenderPassContext& Context, const FFrameContext&)
-    {
-        Execute(Context);
     }
 };
