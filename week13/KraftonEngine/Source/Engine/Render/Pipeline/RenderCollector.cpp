@@ -1,7 +1,5 @@
 ﻿#include "RenderCollector.h"
 
-#include "Component/DecalComponent.h"
-#include "Component/StaticMeshComponent.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "GameFramework/World.h"
@@ -109,15 +107,15 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 // ============================================================
 static void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx)
 {
-	if (!LODCtx.bValid || !LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
+	if (!LODCtx.bValid || !LODCtx.ShouldRefreshLOD(Proxy->GetProxyId(), Proxy->GetLastLODUpdateFrame()))
 		return;
 
-	const FVector& Pos = Proxy->CachedWorldPos;
+	const FVector& Pos = Proxy->GetCachedWorldPos();
 	const float dx = LODCtx.CameraPos.X - Pos.X;
 	const float dy = LODCtx.CameraPos.Y - Pos.Y;
 	const float dz = LODCtx.CameraPos.Z - Pos.Z;
-	Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, dx * dx + dy * dy + dz * dz));
-	Proxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
+	Proxy->UpdateLOD(SelectLOD(Proxy->GetCurrentLOD(), dx * dx + dy * dy + dz * dz));
+	Proxy->SetLastLODUpdateFrame(LODCtx.LODUpdateFrame);
 }
 
 // ============================================================
@@ -138,20 +136,16 @@ void FRenderCollector::CollectFontProxy(const FPrimitiveSceneProxy* Proxy, const
 void FRenderCollector::CollectDecalProxy(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame,
 	const TSet<FPrimitiveSceneProxy*>& VisibleSet, FDrawCommandBuilder& Builder)
 {
-	UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
 	FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
 
-	for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
+	for (FPrimitiveSceneProxy* ReceiverProxy : DecalProxy->GetReceiverProxies())
 	{
-		if (!Receiver) continue;
-
-		FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
 		if (!ReceiverProxy || VisibleSet.find(ReceiverProxy) == VisibleSet.end())
 			continue;
 
 		UpdateProxyLOD(ReceiverProxy, Frame.LODContext);
 
-		if (ReceiverProxy->bPerViewportUpdate)
+		if (ReceiverProxy->HasProxyFlag(EPrimitiveProxyFlags::PerViewportUpdate))
 			ReceiverProxy->UpdatePerViewport(Frame);
 
 		Builder.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
@@ -163,10 +157,10 @@ void FRenderCollector::CollectDecalProxy(FPrimitiveSceneProxy* Proxy, const FFra
 // ============================================================
 void FRenderCollector::CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDrawCommandBuilder& Builder)
 {
-	if (Proxy->Pass == ERenderPass::Opaque)
+	if (Proxy->GetRenderPass() == ERenderPass::Opaque)
 		Builder.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
 
-	Builder.BuildCommandForProxy(*Proxy, Proxy->Pass);
+	Builder.BuildCommandForProxy(*Proxy, Proxy->GetRenderPass());
 }
 
 // ============================================================
@@ -175,14 +169,13 @@ void FRenderCollector::CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDraw
 void FRenderCollector::CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
 	FScene& Scene, FDrawCommandBuilder& Builder)
 {
-	if (Proxy->bSupportsOutline)
+	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::SupportsOutline))
 		Builder.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
 
-	if (bShowBoundingVolume && Proxy->bShowAABB)
-		Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor::White());
+	if (bShowBoundingVolume && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
+		Scene.AddDebugAABB(Proxy->GetCachedBounds().Min, Proxy->GetCachedBounds().Max, FColor::White());
 
-	//TODO: Owner 의존성 제거
-	Proxy->CollectSelectedVisuals(Scene);
+	// 디버그 시각화는 FScene::CollectSelectedDebugVisuals()에서 일괄 수집
 }
 
 // ============================================================
@@ -214,30 +207,30 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 	for (FPrimitiveSceneProxy* Proxy : Proxies)
 	{
 		UpdateProxyLOD(Proxy, Frame.LODContext);
-		LOD_STATS_RECORD(Proxy->CurrentLOD);
+		LOD_STATS_RECORD(Proxy->GetCurrentLOD());
 
-		if (Proxy->bPerViewportUpdate)
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::PerViewportUpdate))
 			Proxy->UpdatePerViewport(Frame);
 
-		if (!Proxy->bVisible)
+		if (!Proxy->IsVisible())
 			continue;
 
 		if (OcclusionMut)
 			OcclusionMut->GatherAABB(Proxy);
 
-		if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
+		if (Occlusion && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull) && Occlusion->IsOccluded(Proxy))
 			continue;
 
-		// 프록시 타입별 분기
-		if (Proxy->bFontBatched)
+		// 프록시 타입별 분기 (Owner 타입캐스팅 대신 flags 사용)
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::FontBatched))
 			CollectFontProxy(Proxy, Frame, Builder);
-		else if (Cast<UDecalComponent>(Proxy->Owner))
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
 			CollectDecalProxy(Proxy, Frame, VisibleProxySet, Builder);
 		else
 			CollectMeshProxy(Proxy, Builder);
 
 		// 선택된 오브젝트 시각화
-		if (Proxy->bSelected)
+		if (Proxy->IsSelected())
 			CollectSelectionVisuals(Proxy, bShowBoundingVolume, Scene, Builder);
 	}
 

@@ -26,6 +26,7 @@ struct FShowFlags
 	bool bOctree = false;
 	bool bFog = true;
 	bool bFXAA = false;
+	bool bViewLightCulling = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)
@@ -62,4 +63,7 @@ struct FViewportRenderOptions
 	// FXAA 전용 설정
 	float EdgeThreshold = 0.125f;
 	float EdgeThresholdMin = 0.0625f;
+
+	// Light Culling 뷰모드 전용 설정
+	float HeatMapMax = 20.0f;
 };

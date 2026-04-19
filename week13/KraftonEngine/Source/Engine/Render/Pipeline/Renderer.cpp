@@ -61,7 +61,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		Resources.UpdateFrameBuffer(Device, Frame);
-		Resources.UpdateLightBuffer(Device, Scene);
+		Resources.UpdateLightBuffer(Device, Scene, Frame);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)

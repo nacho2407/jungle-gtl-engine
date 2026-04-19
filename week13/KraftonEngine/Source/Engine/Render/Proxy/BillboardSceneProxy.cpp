@@ -13,13 +13,27 @@
 FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
-	bPerViewportUpdate = true;
-	bShowAABB = false;
+	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate;
+	ProxyFlags &= ~EPrimitiveProxyFlags::ShowAABB;
+
+	if (InComponent->IsEditorOnly())
+		ProxyFlags |= EPrimitiveProxyFlags::EditorOnly;
 }
 
 UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const
 {
-	return static_cast<UBillboardComponent*>(Owner);
+	return static_cast<UBillboardComponent*>(GetOwner());
+}
+
+// ============================================================
+// UpdateTransform — Scale/Location 캐싱
+// ============================================================
+void FBillboardSceneProxy::UpdateTransform()
+{
+	FPrimitiveSceneProxy::UpdateTransform();
+	UBillboardComponent* Comp = GetBillboardComponent();
+	CachedScale = Comp->GetWorldScale();
+	CachedLocation = Comp->GetWorldLocation();
 }
 
 // ============================================================
@@ -56,7 +70,7 @@ void FBillboardSceneProxy::UpdateMesh()
 	}
 	else
 	{
-		MeshBuffer = Owner->GetMeshBuffer();
+		MeshBuffer = GetOwner()->GetMeshBuffer();
 		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 		Pass = ERenderPass::Opaque;
 		DiffuseSRV = nullptr;
@@ -69,27 +83,14 @@ void FBillboardSceneProxy::UpdateMesh()
 // ============================================================
 void FBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
-	UBillboardComponent* Comp = GetBillboardComponent();
-	bVisible = Comp->IsVisible();
 	if (!bVisible) return;
-
-	// Update DiffuseSRV (material or texture may have changed)
-	UMaterial* Mat = Comp->GetMaterial();
-	if (Mat)
-	{
-		UTexture2D* DiffuseTex = nullptr;
-		if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
-		{
-			DiffuseSRV = DiffuseTex->GetSRV();
-		}
-	}
 
 	// Frame 카메라 벡터로 per-view 빌보드 행렬 계산
 	FVector BillboardForward = Frame.CameraForward * -1.0f;
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(BillboardForward, Frame.CameraRight, Frame.CameraUp);
-	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale())
-		* RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
+	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(CachedScale)
+		* RotMatrix * FMatrix::MakeTranslationMatrix(CachedLocation);
 
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
 	MarkPerObjectCBDirty();

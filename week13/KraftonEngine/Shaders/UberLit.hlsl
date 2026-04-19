@@ -90,8 +90,8 @@ UberVS_Output VS(VS_Input_PNCTT input)
     }
 
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse = AccumulateDiffuse(output.worldPos, N);
-    output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess);
+    output.litDiffuse = AccumulateDiffuse(output.worldPos, N, output.position);
+    output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess, output.position);
 
 #endif
 
@@ -147,13 +147,31 @@ UberPS_Output PS(UberVS_Output input)
     specular = input.litSpecular;
 
 #elif defined(LIGHTING_MODEL_LAMBERT) && LIGHTING_MODEL_LAMBERT
-    diffuse = AccumulateDiffuse(input.worldPos, N);
+    diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
 
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
-    diffuse = AccumulateDiffuse(input.worldPos, N);
-    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess);
+    diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
+    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
 #endif
-
+    
+    if (ViewLightCulling)
+    {
+        #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
+        uint2 tileCoord = uint2(input.position.xy) / 16;
+        uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+        uint2 gridData = TileLightGrid[tileIdx];
+        uint LightCount = gridData.y;
+        #else
+        uint LightCount = NumActivePointLights + NumActiveSpotLights;
+        #endif
+        
+        float MaxCount = HeatMapMax;
+        float ratio = saturate((float) LightCount / MaxCount);
+        output.Color = float4(GetHeatmapColor(ratio), 1.0f);
+    
+        return output;
+    }
+    
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
     // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;

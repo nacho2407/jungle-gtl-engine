@@ -37,6 +37,15 @@ float3 CalcDirectionalSpecular(float3 lightColor, float3 lightDir, float intensi
     return lightColor * intensity * pow(NdotH, max(shininess, 1.0f));
 }
 
+float3 GetHeatmapColor(float value)
+{
+    float3 color;
+    color.r = saturate(min(4.0 * value - 1.5, -4.0 * value + 4.5));
+    color.g = saturate(min(4.0 * value - 0.5, -4.0 * value + 3.5));
+    color.b = saturate(min(4.0 * value + 0.5, -4.0 * value + 2.5));
+    return color;
+}
+
 // =============================================================================
 // FLightInfo 기반 계산 (Point/Spot 공용)
 // =============================================================================
@@ -83,7 +92,7 @@ float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, 
 // 통합 라이팅 누적
 // =============================================================================
 
-float3 AccumulateDiffuse(float3 worldPos, float3 N)
+float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
 
@@ -94,7 +103,7 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
 
     // Point/Spot (StructuredBuffer t8, Tile Culling 적용 시 t9/t10 경유)
     #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
-    uint2 tileCoord = uint2(worldPos.xy);
+    uint2 tileCoord = uint2(screenPos.xy) / 16;
     uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
     uint2 gridData  = TileLightGrid[tileIdx];
     for (uint t = 0; t < gridData.y; ++t)
@@ -111,27 +120,30 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
     return result;
 }
 
-float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
+float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
 
     result += CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                       DirectionalLight.Intensity, N, V, shininess);
-
+    
     #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
-    uint2 tileCoord = uint2(worldPos.xy);
-    uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
-    uint2 gridData  = TileLightGrid[tileIdx];
+    uint2 tileCoord = uint2(screenPos.xy) / 16;
+    uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+    uint2 gridData = TileLightGrid[tileIdx];
+    uint tileLightCount = gridData.y;
+    
     for (uint t = 0; t < gridData.y; ++t)
     {
         uint lightIdx = TileLightIndices[gridData.x + t];
         result += CalcLightSpecular(AllLights[lightIdx], worldPos, N, V, shininess);
     }
     #else
+    uint tileLightCount = NumActivePointLights + NumActiveSpotLights;
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
         result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
     #endif
-
+    
     return result;
 }
 

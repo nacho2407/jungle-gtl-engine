@@ -11,14 +11,16 @@ FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
 	: FPrimitiveSceneProxy(InComponent)
 	, bIsInner(bInner)
 {
-	bPerViewportUpdate = true;
-	bNeverCull = true;
+	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate
+	            | EPrimitiveProxyFlags::NeverCull;
+	ProxyFlags &= ~(EPrimitiveProxyFlags::SupportsOutline
+	              | EPrimitiveProxyFlags::ShowAABB);
 	Pass = bInner ? ERenderPass::GizmoInner : ERenderPass::GizmoOuter;
 }
 
 UGizmoComponent* FGizmoSceneProxy::GetGizmoComponent() const
 {
-	return static_cast<UGizmoComponent*>(Owner);
+	return static_cast<UGizmoComponent*>(GetOwner());
 }
 
 // ============================================================
