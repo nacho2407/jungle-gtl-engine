@@ -41,6 +41,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float4 BaseColor = ResolveBaseColor(UV);
 
 #if defined(LIGHTING_MODEL_GOURAUD)
+    // Gouraud는 Surface1에 인코딩되지 않은 라이팅 값이 들어있으므로 직접 사용
     float4 GouraudL = ResolveSurface1(UV);
     return ComputeGouraudLighting(BaseColor, GouraudL);
 #elif defined(LIGHTING_MODEL_LAMBERT)
@@ -48,7 +49,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     return ComputeLambertLighting(BaseColor, Normal);
 #elif defined(LIGHTING_MODEL_PHONG)
     float3 Normal = DecodeNormal(ResolveSurface1(UV));
-    float4 MaterialParam = ResolveSurface2(UV);
+    float4 MaterialParam = DecodeMaterialParam(ResolveSurface2(UV));
     return ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, UV);
 #else
     return BaseColor;
