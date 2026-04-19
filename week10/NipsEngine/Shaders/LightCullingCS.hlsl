@@ -65,8 +65,8 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
     float3 planeB = normalize(float3(0,  P11,   -ndcB));
     float3 planeT = normalize(float3(0, -P11,    ndcT));
 
-    float tileNear = LinearizeDepth(MinDepth == 0xFFFFFFFFu ? 0.0f : minDepth);
-    float tileFar  = LinearizeDepth(MaxDepth == 0u         ? 1.0f : maxDepth);
+    float tileNear = LinearizeDepth(minDepth);
+    float tileFar  = LinearizeDepth(maxDepth);
 
     uint totalLightCount, stride;
     Lights.GetDimensions(totalLightCount, stride);
