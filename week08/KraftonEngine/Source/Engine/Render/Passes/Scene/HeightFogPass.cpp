@@ -1,5 +1,6 @@
 ﻿#include "Render/Passes/Scene/HeightFogPass.h"
 #include "Render/Core/RenderPassContext.h"
+#include "Render/Core/FrameContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders//FullscreenDrawCommandBuilder.h"
 #include "Render/Scene/PrimitiveSceneProxy.h"
@@ -16,6 +17,16 @@ void FHeightFogPass::PrepareTargets(FRenderPassContext& Context)
 
 void FHeightFogPass::BuildDrawCommands(FRenderPassContext& Context)
 {
+    if (!Context.Frame || !Context.Frame->ShowFlags.bFog)
+    {
+        return;
+    }
+
+    if (!Context.Scene || !Context.Scene->HasFog())
+    {
+        return;
+    }
+
     FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, 0);
 }
 

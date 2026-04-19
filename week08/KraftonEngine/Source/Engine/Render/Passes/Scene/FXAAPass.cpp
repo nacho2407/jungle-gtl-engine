@@ -1,5 +1,6 @@
 ﻿#include "Render/Passes/Scene/FXAAPass.h"
 #include "Render/Core/RenderPassContext.h"
+#include "Render/Core/FrameContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders//FullscreenDrawCommandBuilder.h"
 #include "Render/Scene/PrimitiveSceneProxy.h"
@@ -16,6 +17,16 @@ void FFXAAPass::PrepareTargets(FRenderPassContext& Context)
 
 void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context)
 {
+    if (!Context.Frame || !Context.Frame->ShowFlags.bFXAA)
+    {
+        return;
+    }
+
+    if (!Context.Frame->SceneColorCopySRV || !Context.Frame->SceneColorCopyTexture)
+    {
+        return;
+    }
+
     FFullscreenDrawCommandBuilder::Build(ERenderPass::FXAA, Context, *Context.DrawCommandList);
 }
 

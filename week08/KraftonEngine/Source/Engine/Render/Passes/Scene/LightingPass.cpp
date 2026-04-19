@@ -41,6 +41,16 @@ void FLightingPass::PrepareTargets(FRenderPassContext& Context)
 
 void FLightingPass::BuildDrawCommands(FRenderPassContext& Context)
 {
+    if (!Context.ActiveViewSurfaceSet)
+    {
+        return;
+    }
+
+    if (!Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    {
+        return;
+    }
+
     FFullscreenDrawCommandBuilder::Build(ERenderPass::Lighting, Context, *Context.DrawCommandList);
 }
 
