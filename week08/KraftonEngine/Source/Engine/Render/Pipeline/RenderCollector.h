@@ -10,6 +10,9 @@ class FScene;
 class FOctree;
 class FRenderer;
 
+class FPrimitiveSceneProxy;
+class FLightSceneProxy;
+
 struct FCollectedLights
 {
     FGlobalLightConstants GlobalLights;

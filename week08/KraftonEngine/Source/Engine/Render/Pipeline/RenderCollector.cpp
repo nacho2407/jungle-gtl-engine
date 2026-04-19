@@ -54,7 +54,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 
 	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
-	CollectLights(Scene);
+	CollectLights(Scene.GetLightProxies(), CollectedLights);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -308,7 +308,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 // Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
 // 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void CollectLights(const TArray<FLightSceneProxy*>& LightProxies, FCollectedLights& OutLights)
+void FRenderCollector::CollectLights(const TArray<FLightSceneProxy*>& LightProxies, FCollectedLights& OutLights)
 {
     OutLights.GlobalLights = FGlobalLightConstants();
 	OutLights.LocalLights.clear();
