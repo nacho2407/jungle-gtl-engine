@@ -37,8 +37,10 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
 
 	FVector2 ViewportSize = RenderBus->GetViewportSize();
 
-	// TODO:: Add hlsl file
 	FComputeShader* CullingCS = FResourceManager::Get().GetComputeShader("Shaders/LightCullingCS.hlsl");
+	if (!CullingCS) {
+		return false;
+	}
 	CullingCS->Bind(Context->DeviceContext);
 
 	ID3D11ShaderResourceView* SRVs[] = {
