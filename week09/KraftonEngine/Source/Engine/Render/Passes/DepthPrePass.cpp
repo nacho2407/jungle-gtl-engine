@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/DepthPrePass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FDepthPrePass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FDepthPrePass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteDepthPrePass(Frame);
+    (void)Context; (void)Frame; // Reserved for a dedicated depth-prepass path.
 }

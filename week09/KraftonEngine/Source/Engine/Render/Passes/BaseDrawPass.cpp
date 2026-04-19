@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/BaseDrawPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FBaseDrawPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FBaseDrawPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteBaseDrawPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::Opaque);
 }

@@ -5,7 +5,7 @@
 */
 
 #include "Render/Types/RenderTypes.h"
-#include "Render/Core/RenderPipeline.h"
+#include "Render/Core/RenderPassContext.h"
 
 #include "Render/Core/FrameContext.h"
 #include "Render/Core/DrawCommandList.h"
@@ -69,19 +69,6 @@ public:
 	void ExecutePipeline(ERenderPipelineType Type, const FFrameContext& Frame);
 
 	// Pass execution helpers — individual pass classes call these.
-	void ExecuteDepthPrePass(const FFrameContext& Frame);
-	void ExecuteBaseDrawPass(const FFrameContext& Frame);
-	void ExecuteDecalPass(const FFrameContext& Frame);
-	void ExecuteLightingPass(const FFrameContext& Frame);
-	void ExecuteAdditiveDecalPass(const FFrameContext& Frame);
-	void ExecuteAlphaBlendPass(const FFrameContext& Frame);
-	void ExecuteHeightFogPass(const FFrameContext& Frame);
-	void ExecuteFXAAPass(const FFrameContext& Frame);
-	void ExecuteSelectionMaskPass(const FFrameContext& Frame);
-	void ExecuteOutlinePass(const FFrameContext& Frame);
-	void ExecuteDebugLinesPass(const FFrameContext& Frame);
-	void ExecuteGizmoRenderPass(const FFrameContext& Frame);
-	void ExecuteOverlayFontRenderPass(const FFrameContext& Frame);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 	FRenderResources& GetResources() { return Resources; }
@@ -89,6 +76,7 @@ public:
 	const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
 
 private:
+	friend class FRenderPassContext;
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
 	void PreparePipelineExecution(const FFrameContext& Frame);
 	void SubmitRenderPass(ERenderPass Pass);

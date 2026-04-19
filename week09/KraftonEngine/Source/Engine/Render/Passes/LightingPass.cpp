@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/LightingPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FLightingPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FLightingPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteLightingPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::Lighting);
 }

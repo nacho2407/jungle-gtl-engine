@@ -14,7 +14,6 @@
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/Stats.h"
 #include "Render/Core/PassTypes.h"
-#include "Render/Core/RenderPipeline.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 

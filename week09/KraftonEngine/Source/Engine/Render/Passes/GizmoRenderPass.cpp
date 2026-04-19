@@ -1,8 +1,10 @@
 ﻿#include "Render/Passes/GizmoRenderPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FGizmoRenderPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FGizmoRenderPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteGizmoRenderPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::GizmoOuter);
+    Context.SubmitRenderPass(ERenderPass::GizmoInner);
 }

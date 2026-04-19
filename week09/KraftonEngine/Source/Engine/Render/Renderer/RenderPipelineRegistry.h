@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Core/RenderPipeline.h"
 #include "Render/Renderer/RenderPassRegistry.h"
 
 enum class ERenderNodeKind

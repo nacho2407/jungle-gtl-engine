@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/DebugLinesPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FDebugLinesPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FDebugLinesPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteDebugLinesPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::EditorLines);
 }

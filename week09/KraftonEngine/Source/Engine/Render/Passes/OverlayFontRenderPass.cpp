@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/OverlayFontRenderPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FOverlayFontRenderPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FOverlayFontRenderPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteOverlayFontRenderPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::OverlayFont);
 }

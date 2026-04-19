@@ -476,6 +476,9 @@
     <ClCompile Include="Source\Engine\Render\Core\PassRenderState.cpp">
       <Filter>Source\Engine\Render\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Core\RenderPassContext.cpp">
+      <Filter>Source\Engine\Render\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Core\RenderPipeline.cpp">
       <Filter>Source\Engine\Render\Core</Filter>
     </ClCompile>
@@ -1026,6 +1029,9 @@
       <Filter>Source\Engine\Render\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Core\RenderPass.h">
+      <Filter>Source\Engine\Render\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Core\RenderPassContext.h">
       <Filter>Source\Engine\Render\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Core\RenderPipeline.h">

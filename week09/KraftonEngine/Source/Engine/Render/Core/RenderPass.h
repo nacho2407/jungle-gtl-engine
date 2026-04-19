@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 struct FFrameContext;
-class FRenderer;
+class FRenderPassContext;
 
 class FRenderPass
 {
 public:
     virtual ~FRenderPass() = default;
-	virtual void Execute(FRenderer& Renderer, const FFrameContext& Frame) = 0;
+    virtual void Execute(FRenderPassContext& Context, const FFrameContext& Frame) = 0;
 };

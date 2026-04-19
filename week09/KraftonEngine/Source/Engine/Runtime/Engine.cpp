@@ -11,7 +11,6 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
-#include "Render/Core/RenderPipeline.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -114,7 +113,7 @@ void UEngine::Render(float DeltaTime)
 		Renderer.BuildDynamicCommands(RenderFrame, nullptr);
 	}
 
-	ExecuteRenderPipeline(Renderer, ERenderPipelineType::DefaultScene, RenderFrame);
+	Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, RenderFrame);
 }
 
 void UEngine::OnWindowResized(uint32 Width, uint32 Height)
