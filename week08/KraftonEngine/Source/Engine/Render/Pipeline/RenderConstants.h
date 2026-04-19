@@ -28,6 +28,7 @@ namespace ECBSlot
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
+	constexpr uint32 LocalLights = 6;  // t6: LocalLights StructuredBuffer (StructuredBuffer는 SRV 슬롯 사용)
 	constexpr uint32 SceneDepth  = 10; // t10: CopyResource된 Depth (R24_UNORM)
 	constexpr uint32 SceneColor  = 11; // t11: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	// constexpr uint32 SceneAlbedo  = 12; // t12: (미래)
