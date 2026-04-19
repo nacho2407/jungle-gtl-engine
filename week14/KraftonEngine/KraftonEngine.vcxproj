@@ -326,15 +326,15 @@
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\DepthStencilStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\PassEventBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp" />
@@ -346,10 +346,14 @@
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\RasterizerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\RenderResources.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\SamplerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderManager.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
@@ -483,19 +487,19 @@
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
-    <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
-    <ClInclude Include="Source\Engine\Render\Device\DepthStencilStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\ForwardLightData.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\PassEventBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h" />
@@ -509,10 +513,14 @@
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\RasterizerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\SamplerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
@@ -555,12 +563,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\NormalView.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\DecalShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -598,6 +600,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\HiZGenerate.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\NormalView.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>

@@ -110,6 +110,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	// 5. 파라미터 및 텍스처 적용
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
+	Material->RebuildCachedSRVs();
 
 	// JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
 	JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
@@ -173,16 +174,16 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 		{
 			if (Value.length() == 3)
 			{
-				Material->SetVector3Parameter(ParamName, FVector(Value[0].ToFloat(), Value[1].ToFloat(), Value[2].ToFloat()));
+				Material->SetVector3Parameter(ParamName, FVector((float)Value[0].ToFloat(), (float)Value[1].ToFloat(), (float)Value[2].ToFloat()));
 			}
 			else if (Value.length() == 4)
 			{
-				Material->SetVector4Parameter(ParamName, FVector4(Value[0].ToFloat(), Value[1].ToFloat(), Value[2].ToFloat(), Value[3].ToFloat()));
+				Material->SetVector4Parameter(ParamName, FVector4((float)Value[0].ToFloat(), (float)Value[1].ToFloat(), (float)Value[2].ToFloat(), (float)Value[3].ToFloat()));
 			}
 		}
 		else if (Value.JSONType() == json::JSON::Class::Floating || Value.JSONType() == json::JSON::Class::Integral)
 		{
-			Material->SetScalarParameter(ParamName, Value.ToFloat());
+			Material->SetScalarParameter(ParamName, (float)Value.ToFloat());
 		}
 	}
 }

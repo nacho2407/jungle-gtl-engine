@@ -74,21 +74,13 @@ void FDecalSceneProxy::UpdateMesh()
 	{
 		Shader = DecalMaterial->GetShader();
 		Pass = DecalMaterial->GetRenderPass();
-
-		// 머티리얼 기반 렌더 상태 전파
-		Blend = DecalMaterial->GetBlendState();
-		DepthStencil = DecalMaterial->GetDepthStencilState();
-		Rasterizer = DecalMaterial->GetRasterizerState();
+		Material = DecalMaterial;
 	}
 	else
 	{
 		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
 		Pass = ERenderPass::Decal;
-
-		// 기본 상태
-		Blend = EBlendState::AlphaBlend;
-		DepthStencil = EDepthStencilState::DepthReadOnly;
-		Rasterizer = ERasterizerState::SolidNoCull;
+		Material = nullptr;
 	}
 	bSupportsOutline = false;
 }

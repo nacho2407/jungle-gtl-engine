@@ -39,7 +39,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		return;
 	}
 
-	if (!Frame.ShowFlags.bBillboardText)
+	if (!Frame.RenderOptions.ShowFlags.bBillboardText)
 	{
 		bVisible = false;
 		return;

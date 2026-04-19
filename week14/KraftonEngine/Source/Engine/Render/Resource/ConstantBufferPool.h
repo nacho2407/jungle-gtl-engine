@@ -29,7 +29,7 @@ public:
 
 */
 // 슬롯별 FConstantBuffer를 생성/관리하는 풀
-// 공용 CB(Frame, PerObject)는 FRenderResources가 소유하고,
+// 공용 CB(Frame, Lighting)는 FSystemResources가 소유하고,
 // 타입별 CB(Gizmo, Editor, Outline 등)는 이 풀에서 관리
 class FConstantBufferPool : public TSingleton<FConstantBufferPool>
 {
