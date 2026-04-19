@@ -444,9 +444,10 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cach
 
 	// 시스템 텍스처 언바인딩
 	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
-	Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
-	Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::SceneDepth,  1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::SceneColor,  1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::Stencil,     1, &nullSRV);
+	Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &nullSRV);
 
 	Cache.Cleanup(Context);
 	DrawCommandList.Reset();

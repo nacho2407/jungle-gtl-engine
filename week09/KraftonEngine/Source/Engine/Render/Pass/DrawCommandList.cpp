@@ -26,7 +26,9 @@ void FStateCache::Reset()
 	PerObjectCB     = nullptr;
 	PerShaderCB[0]  = nullptr;
 	PerShaderCB[1]  = nullptr;
+    LightCB      = nullptr;
 	DiffuseSRV   = nullptr;
+	LocalLightSRV = nullptr;
 
 	RTV         = nullptr;
 	DSV         = nullptr;
@@ -34,9 +36,15 @@ void FStateCache::Reset()
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
+    // t0: DiffuseSRV 언바인딩
 	ID3D11ShaderResourceView* NullSRVs[6] = {};
 	Ctx->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
 	DiffuseSRV = nullptr;
+
+	// t6: LocalLights StructuredBuffer 언바인딩
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullSRV);
+	LocalLightSRV = nullptr;
 }
 
 // ============================================================
@@ -170,8 +178,6 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 		Cache.Topology = Cmd.Topology;
 	}
 
-
-
 	// --- Shader ---
 	if (Cmd.Shader && (bForce || Cmd.Shader != Cache.Shader))
 	{
@@ -255,6 +261,17 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			Cache.PerShaderCB[i] = Cmd.PerShaderCB[i];
 		}
 	}
+	
+	// --- Light CB (b4) — PS 전용 (라이팅 계산은 픽셀 셰이더에서만 수행)
+	if (Cmd.LightCB && (bForce || Cmd.LightCB != Cache.LightCB))
+	{
+		ID3D11Buffer* RawCB = Cmd.LightCB->GetBuffer();
+		if (RawCB)
+		{
+			Ctx->PSSetConstantBuffers(ECBSlot::Light, 1, &RawCB);
+		}
+		Cache.LightCB = Cmd.LightCB;
+	}
 
 	// --- Diffuse SRV (t0) ---
 	if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
@@ -263,6 +280,16 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 			ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
 			Ctx->PSSetShaderResources(0, 1, &SRV);
 			Cache.DiffuseSRV = Cmd.DiffuseSRV;
+		}
+	}
+
+	// --- Local Light SRV (t6) ---
+	if (bForce || Cmd.LocalLightSRV != Cache.LocalLightSRV)
+	{
+		if (Cmd.LocalLightSRV) {
+			ID3D11ShaderResourceView* SRV = Cmd.LocalLightSRV;
+			Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &SRV);
+			Cache.LocalLightSRV = Cmd.LocalLightSRV;
 		}
 	}
 
