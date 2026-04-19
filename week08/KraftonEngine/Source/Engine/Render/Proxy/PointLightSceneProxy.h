@@ -12,4 +12,5 @@ public:
 
     void UpdateLightConstants() override;
     void UpdateTransform() override;
+    void VisualizeLightsInEditor(FScene& Scene) const override;
 };

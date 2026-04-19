@@ -20,8 +20,9 @@ public:
 	void EnsureBuilt(const TArray<AActor*>& Actors);
 	//트리를 순회해 가장 가까운 primitive hit 결과를 찾습니다.
 	bool Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	bool IsDirty() const { return bDirty; }
 
-private:
+public:
 	struct FLeaf
 	{
 		FBoundingBox Bounds;
@@ -67,7 +68,10 @@ private:
 	};
 
 	int32 BuildRecursive(int32 Start, int32 End);
+	const TArray<FLeaf>& GetLeaves() const { return Leaves; }
+	const TArray<FNode>& GetNodes() const { return Nodes; }
 
+private:
 	bool bDirty = true;
 	TArray<FLeaf> Leaves;
 	TArray<FNode> Nodes;

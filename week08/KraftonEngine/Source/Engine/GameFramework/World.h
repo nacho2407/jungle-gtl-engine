@@ -32,6 +32,7 @@ public:
 	void AddActor(AActor* Actor);
 	void MarkWorldPrimitivePickingBVHDirty();
 	void BuildWorldPrimitivePickingBVHNow() const;
+	const FWorldPrimitivePickingBVH& GetWorldPrimitivePickingBVH() const { return WorldPrimitivePickingBVH; }
 	void BeginDeferredPickingBVHUpdate();
 	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;

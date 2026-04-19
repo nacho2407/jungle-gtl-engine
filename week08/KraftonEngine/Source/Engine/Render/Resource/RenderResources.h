@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Resource/Buffer.h"
 #include "Render/Pipeline/RenderConstants.h"
 
@@ -12,6 +12,12 @@ struct FRenderResources
 {
 	FConstantBuffer FrameBuffer;				// b0 — ECBSlot::Frame
 	FConstantBuffer PerObjectConstantBuffer;	// b1 — ECBSlot::PerObject
+	FConstantBuffer GlobalLightBuffer;				// b4 — ECBSlot::Light (FGlobalLightConstants)
+
+	// t6: LocalLights StructuredBuffer — 매 프레임 CollectedLights에서 업로드
+	ID3D11Buffer*             LocalLightBuffer   = nullptr;
+	ID3D11ShaderResourceView* LocalLightSRV      = nullptr;
+	uint32                    LocalLightCapacity = 0;
 
 	// System Samplers — 프레임 시작 시 s0-s2에 영구 바인딩
 	ID3D11SamplerState* LinearClampSampler = nullptr;	// s0
@@ -23,4 +29,8 @@ struct FRenderResources
 
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
 	void BindSystemSamplers(ID3D11DeviceContext* Ctx);
+
+	// LocalLights StructuredBuffer 업로드 — 용량 초과 시 자동 재생성
+	void UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context,
+	                       const TArray<FLocalLightInfo>& Lights);
 };

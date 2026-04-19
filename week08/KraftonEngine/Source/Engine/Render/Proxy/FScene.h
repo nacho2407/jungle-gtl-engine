@@ -26,7 +26,7 @@ public:
     void RegisterPrimitiveProxy(FPrimitiveSceneProxy* Proxy);
     void RemovePrimitive(FPrimitiveSceneProxy* Proxy);
 
-	// ─── LightSceneProxy ───
+    // ─── LightSceneProxy ───
     FLightSceneProxy* AddLight(ULightComponent* Component);
     void RegisterLightProxy(FLightSceneProxy* Proxy);
     void RemoveLight(FLightSceneProxy* Proxy);
@@ -48,6 +48,7 @@ public:
     const TArray<FLightSceneProxy*>& GetLightProxies() const { return LightProxies; }
     uint32 GetPrimitiveProxyCount() const { return static_cast<uint32>(Proxies.size()); }
     uint32 GetLightProxyCount() const { return static_cast<uint32>(LightProxies.size()); }
+    uint32 GetProxyCount() const { return GetPrimitiveProxyCount() + GetLightProxyCount(); }
 
     // ===== Per-frame ephemeral data (cleared each viewport render) =====
     void ClearFrameData();
