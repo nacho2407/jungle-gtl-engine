@@ -54,6 +54,8 @@ struct FFrameContext
 	ID3D11Texture2D*          DepthCopyTexture     = nullptr;  // 복사본 (CopyResource 대상)
 	ID3D11ShaderResourceView* DepthCopySRV         = nullptr;
 	ID3D11ShaderResourceView* StencilCopySRV       = nullptr;
+	ID3D11ShaderResourceView* LocalLightsSRV       = nullptr;
+	ID3D11Buffer*             GlobalLightBuffer    = nullptr;
 
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
@@ -118,5 +120,7 @@ struct FFrameContext
 		DepthCopyTexture        = nullptr;
 		DepthCopySRV            = nullptr;
 		StencilCopySRV          = nullptr;
+		LocalLightsSRV          = nullptr;
+		GlobalLightBuffer       = nullptr;
 	}
 };
