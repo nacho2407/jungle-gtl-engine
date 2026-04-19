@@ -1,6 +1,8 @@
 #ifndef LIGHTING_COMMON_HLSLI
 #define LIGHTING_COMMON_HLSLI
 
+#include "CommonTypes.hlsli"
+
 float3 GetMainLightDirection()
 {
     return normalize(float3(0.4f, -0.8f, 0.2f));

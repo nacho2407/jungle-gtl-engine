@@ -89,6 +89,7 @@ class FViewModeRenderPipeline
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_GOURAUD_L");
             break;
         case EShadingModel::Lambert:
+        case EShadingModel::WorldNormal:
             Pass.ShaderVariant.PSEntry = "PS_BaseDraw_Lambert";
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_LAMBERT");
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
@@ -127,6 +128,7 @@ class FViewModeRenderPipeline
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_BASECOLOR");
             break;
         case EShadingModel::Lambert:
+        case EShadingModel::WorldNormal:
             Pass.ShaderVariant.PSEntry = "PS_Decal_Lambert";
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_BASECOLOR");
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_NORMAL");
@@ -168,6 +170,9 @@ class FViewModeRenderPipeline
         case EShadingModel::BlinnPhong:
             ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_PHONG");
             break;
+        case EShadingModel::WorldNormal:
+            ViewModePipeline::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_WORLDNORMAL");
+            break;
         case EShadingModel::Unlit:
         default:
             break;
@@ -190,11 +195,13 @@ class FViewModeRenderPipelineLibrary
         VariantCache.Initialize(Device);
         Pipelines.clear();
 
-        const EViewMode Modes[] = {
+        const EViewMode Modes[] = 
+		{
             EViewMode::Lit_Gouraud,
             EViewMode::Lit_Lambert,
             EViewMode::Lit_Phong,
             EViewMode::Unlit,
+            EViewMode::WorldNormal,
         };
 
         for (EViewMode Mode : Modes)
