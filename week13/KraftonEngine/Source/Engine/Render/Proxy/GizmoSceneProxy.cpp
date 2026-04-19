@@ -39,7 +39,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 
-	if (!Frame.ShowFlags.bGizmo || !Gizmo->IsVisible())
+	if (!Frame.RenderOptions.ShowFlags.bGizmo || !Gizmo->IsVisible())
 	{
 		bVisible = false;
 		return;
@@ -60,7 +60,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		* FMatrix::MakeRotationEuler(Gizmo->GetRelativeRotation().ToVector())
 		* FMatrix::MakeTranslationMatrix(Gizmo->GetWorldLocation());
 
-	PerObjectConstants = FPerObjectConstants{ WorldMatrix };
+	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(WorldMatrix);
 	MarkPerObjectCBDirty();
 
 	// ExtraCB — FGizmoConstants
@@ -74,5 +74,5 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		? static_cast<uint32>(Gizmo->GetSelectedAxis())
 		: 0xFFFFFFFFu;
 	G.HoveredAxisOpacity = 0.7f;
-	G.AxisMask = UGizmoComponent::ComputeAxisMask(Frame.ViewportType, Gizmo->GetMode());
+	G.AxisMask = UGizmoComponent::ComputeAxisMask(Frame.RenderOptions.ViewportType, Gizmo->GetMode());
 }

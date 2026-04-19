@@ -19,8 +19,13 @@ public:
 	void OnSceneCleared() override;
 
 private:
-	// 단일 뷰포트 렌더 단위 — ViewportClient의 렌더 옵션을 사용
+	// 단일 뷰포트 렌더 오케스트레이션
 	void RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer);
+
+	// RenderViewport 내부 단계
+	void PrepareViewport(FViewport* VP, UCameraComponent* Camera, ID3D11DeviceContext* Ctx);
+	void BuildFrame(FLevelEditorViewportClient* VC, UCameraComponent* Camera, FViewport* VP, UWorld* World);
+	void CollectCommands(FLevelEditorViewportClient* VC, UWorld* World, FRenderer& Renderer);
 
 private:
 	UEditorEngine* Editor = nullptr;
