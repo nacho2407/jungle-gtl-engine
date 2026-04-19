@@ -90,6 +90,10 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            Cmd.Material->Bind(Context->DeviceContext, (uint32)Context->ActiveLightingModel);
        }
 
+       // Depth prepass already wrote correct depth values, so use LESS_EQUAL + no writes
+       auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
+       Context->DeviceContext->OMSetDepthStencilState(DSState, 0);
+
        CheckOverrideViewMode(Context);  
 
        Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
