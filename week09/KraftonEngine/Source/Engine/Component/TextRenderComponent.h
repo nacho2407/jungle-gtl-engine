@@ -29,7 +29,7 @@ enum class ETextVAlign : int32
 
 // 텍스트를 월드 공간에 빌보드로 렌더링하는 컴포넌트.
 // PrimitiveComponent를 상속받아 RenderCollector에 자동으로 감지됩니다.
-// MeshBuffer를 사용하지 않으며, FFontBatch가 드로우콜을 처리합니다.
+// MeshBuffer를 사용하지 않으며, FFontGeometry가 드로우콜을 처리합니다.
 class UTextRenderComponent : public UBillboardComponent
 {
 public:

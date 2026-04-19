@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Render/Types/RenderTypes.h"
-#include "Render/RHI/Resource/Buffer.h"
-#include "Render/RHI/Device/D3DDevice.h"
+#include "Render/D3D11/Resource/Buffer.h"
+#include "Render/D3D11/Device/D3DDevice.h"
 #include "Core/EngineTypes.h"
 #include "Core/ResourceTypes.h"
 

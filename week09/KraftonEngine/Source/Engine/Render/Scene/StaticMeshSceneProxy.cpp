@@ -1,6 +1,6 @@
 ﻿#include "Render/Scene/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resource/Managers/ShaderManager.h"
+#include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
@@ -10,38 +10,38 @@
 
 namespace
 {
-	bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
-	{
-		const uintptr_t ASRV = reinterpret_cast<uintptr_t>(A.DiffuseSRV);
-		const uintptr_t BSRV = reinterpret_cast<uintptr_t>(B.DiffuseSRV);
-		if (ASRV != BSRV)
-		{
-			return ASRV < BSRV;
-		}
+bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
+{
+    const uintptr_t ASRV = reinterpret_cast<uintptr_t>(A.DiffuseSRV);
+    const uintptr_t BSRV = reinterpret_cast<uintptr_t>(B.DiffuseSRV);
+    if (ASRV != BSRV)
+    {
+        return ASRV < BSRV;
+    }
 
-		return A.FirstIndex < B.FirstIndex;
-	}
-
-	void SortSectionDrawsByMaterial(TArray<FMeshSectionDraw>& Draws)
-	{
-		if (Draws.size() > 1)
-		{
-			std::sort(Draws.begin(), Draws.end(), SectionMaterialLess);
-		}
-	}
+    return A.FirstIndex < B.FirstIndex;
 }
+
+void SortSectionDrawsByMaterial(TArray<FMeshSectionDraw>& Draws)
+{
+    if (Draws.size() > 1)
+    {
+        std::sort(Draws.begin(), Draws.end(), SectionMaterialLess);
+    }
+}
+} // namespace
 
 // ============================================================
 // FStaticMeshSceneProxy
 // ============================================================
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
-	: FPrimitiveSceneProxy(InComponent)
+    : FPrimitiveSceneProxy(InComponent)
 {
 }
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
 {
-	return static_cast<UStaticMeshComponent*>(Owner);
+    return static_cast<UStaticMeshComponent*>(Owner);
 }
 
 // ============================================================
@@ -49,7 +49,7 @@ UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
 // ============================================================
 void FStaticMeshSceneProxy::UpdateMaterial()
 {
-	RebuildSectionDraws();
+    RebuildSectionDraws();
 }
 
 // ============================================================
@@ -57,11 +57,11 @@ void FStaticMeshSceneProxy::UpdateMaterial()
 // ============================================================
 void FStaticMeshSceneProxy::UpdateMesh()
 {
-	MeshBuffer = Owner->GetMeshBuffer();
-	Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
-	Pass = ERenderPass::Opaque;
+    MeshBuffer = Owner->GetMeshBuffer();
+    Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
+    Pass = ERenderPass::Opaque;
 
-	RebuildSectionDraws();
+    RebuildSectionDraws();
 }
 
 // ============================================================
@@ -69,18 +69,19 @@ void FStaticMeshSceneProxy::UpdateMesh()
 // ============================================================
 void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
 {
-	if (LODLevel >= LODCount) LODLevel = LODCount - 1;
-	if (LODLevel == CurrentLOD) return;
+    if (LODLevel >= LODCount)
+        LODLevel = LODCount - 1;
+    if (LODLevel == CurrentLOD)
+        return;
 
-	// 현재 활성 데이터를 LODData 슬롯에 swap (할당/해제 없는 O(1) 교환)
-	std::swap(MeshBuffer, LODData[CurrentLOD].MeshBuffer);
-	std::swap(SectionDraws, LODData[CurrentLOD].SectionDraws);
+    // 현재 활성 데이터를 LODData 슬롯에 swap (할당/해제 없는 O(1) 교환)
+    std::swap(MeshBuffer, LODData[CurrentLOD].MeshBuffer);
+    std::swap(SectionDraws, LODData[CurrentLOD].SectionDraws);
 
-	// 새 LOD 데이터를 활성 슬롯에서 swap
-	CurrentLOD = LODLevel;
-	std::swap(MeshBuffer, LODData[LODLevel].MeshBuffer);
-	std::swap(SectionDraws, LODData[LODLevel].SectionDraws);
-
+    // 새 LOD 데이터를 활성 슬롯에서 swap
+    CurrentLOD = LODLevel;
+    std::swap(MeshBuffer, LODData[LODLevel].MeshBuffer);
+    std::swap(SectionDraws, LODData[LODLevel].SectionDraws);
 }
 
 // ============================================================
@@ -88,80 +89,78 @@ void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
 // ============================================================
 void FStaticMeshSceneProxy::RebuildSectionDraws()
 {
-	UStaticMeshComponent* SMC = GetStaticMeshComponent();
-	UStaticMesh* Mesh = SMC->GetStaticMesh();
-	if (!Mesh || !Mesh->GetStaticMeshAsset())
-	{
-		for (uint32 lod = 0; lod < MAX_LOD; ++lod)
-		{
-			LODData[lod].MeshBuffer = nullptr;
-			LODData[lod].SectionDraws.clear();
-		}
+    UStaticMeshComponent* SMC = GetStaticMeshComponent();
+    UStaticMesh* Mesh = SMC->GetStaticMesh();
+    if (!Mesh || !Mesh->GetStaticMeshAsset())
+    {
+        for (uint32 lod = 0; lod < MAX_LOD; ++lod)
+        {
+            LODData[lod].MeshBuffer = nullptr;
+            LODData[lod].SectionDraws.clear();
+        }
 
-		LODCount = 1;
-		CurrentLOD = 0;
-		MeshBuffer = nullptr;
-		SectionDraws.clear();
-	
-		return;
-	}
+        LODCount = 1;
+        CurrentLOD = 0;
+        MeshBuffer = nullptr;
+        SectionDraws.clear();
 
-	const auto& Slots = Mesh->GetStaticMaterials();
-	const auto& Overrides = SMC->GetOverrideMaterials();
-	LODCount = Mesh->GetLODCount();
+        return;
+    }
 
-	// 각 LOD별 SectionDraws + MeshBuffer 구축
-	for (uint32 lod = 0; lod < LODCount; ++lod)
-	{
-		const auto& Sections = Mesh->GetLODSections(lod);
-		LODData[lod].MeshBuffer = Mesh->GetLODMeshBuffer(lod);
-		LODData[lod].SectionDraws.clear();
-		LODData[lod].SectionDraws.reserve(Sections.size());
+    const auto& Slots = Mesh->GetStaticMaterials();
+    const auto& Overrides = SMC->GetOverrideMaterials();
+    LODCount = Mesh->GetLODCount();
 
-		for (const FStaticMeshSection& Section : Sections)
-		{
-			FMeshSectionDraw Draw;
-			Draw.FirstIndex = Section.FirstIndex;
-			Draw.IndexCount = Section.NumTriangles * 3;
+    // 각 LOD별 SectionDraws + MeshBuffer 구축
+    for (uint32 lod = 0; lod < LODCount; ++lod)
+    {
+        const auto& Sections = Mesh->GetLODSections(lod);
+        LODData[lod].MeshBuffer = Mesh->GetLODMeshBuffer(lod);
+        LODData[lod].SectionDraws.clear();
+        LODData[lod].SectionDraws.reserve(Sections.size());
 
-			int32 i = Section.MaterialIndex;
-			if (i >= 0 && i < static_cast<int32>(Slots.size()))
-			{
-				UMaterial* Mat = nullptr;
+        for (const FStaticMeshSection& Section : Sections)
+        {
+            FMeshSectionDraw Draw;
+            Draw.FirstIndex = Section.FirstIndex;
+            Draw.IndexCount = Section.NumTriangles * 3;
 
-				if (i < static_cast<int32>(Overrides.size()) && Overrides[i])
-					Mat = Overrides[i];
-				else if (Slots[i].MaterialInterface)
-					Mat = Slots[i].MaterialInterface;
+            int32 i = Section.MaterialIndex;
+            if (i >= 0 && i < static_cast<int32>(Slots.size()))
+            {
+                UMaterial* Mat = nullptr;
 
-				if (Mat)
-				{
-					UTexture2D* DiffuseTex = nullptr;
-					if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
-					{
-						Draw.DiffuseSRV = DiffuseTex->GetSRV();
-					}
+                if (i < static_cast<int32>(Overrides.size()) && Overrides[i])
+                    Mat = Overrides[i];
+                else if (Slots[i].MaterialInterface)
+                    Mat = Slots[i].MaterialInterface;
 
-					// 머티리얼 기반 렌더 상태 전파
-					Draw.Blend = Mat->GetBlendState();
-					Draw.DepthStencil = Mat->GetDepthStencilState();
-					Draw.Rasterizer = Mat->GetRasterizerState();
+                if (Mat)
+                {
+                    UTexture2D* DiffuseTex = nullptr;
+                    if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+                    {
+                        Draw.DiffuseSRV = DiffuseTex->GetSRV();
+                    }
 
-					Draw.MaterialCB[0] = Mat->GetGPUBufferBySlot(2);  // b2
-					Draw.MaterialCB[1] = Mat->GetGPUBufferBySlot(3);  // b3
+                    // 머티리얼 기반 렌더 상태 전파
+                    Draw.Blend = Mat->GetBlendState();
+                    Draw.DepthStencil = Mat->GetDepthStencilState();
+                    Draw.Rasterizer = Mat->GetRasterizerState();
 
-				}
-			}
+                    Draw.MaterialCB[0] = Mat->GetGPUBufferBySlot(2); // b2
+                    Draw.MaterialCB[1] = Mat->GetGPUBufferBySlot(3); // b3
+                }
+            }
 
-			LODData[lod].SectionDraws.push_back(Draw);
-		}
+            LODData[lod].SectionDraws.push_back(Draw);
+        }
 
-		SortSectionDrawsByMaterial(LODData[lod].SectionDraws);
-	}
+        SortSectionDrawsByMaterial(LODData[lod].SectionDraws);
+    }
 
-	// LOD0을 활성 슬롯으로 설정
-	CurrentLOD = 0;
-	std::swap(MeshBuffer, LODData[0].MeshBuffer);
-	std::swap(SectionDraws, LODData[0].SectionDraws);
-
+    // LOD0을 활성 슬롯으로 설정
+    CurrentLOD = 0;
+    std::swap(MeshBuffer, LODData[0].MeshBuffer);
+    std::swap(SectionDraws, LODData[0].SectionDraws);
 }

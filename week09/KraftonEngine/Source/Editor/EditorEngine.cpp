@@ -557,7 +557,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
 		if (ShowFlags.bWorldBound)
 		{
-			RenderCollector.CollectWorldBoundsDebug(RenderCollector.GetLastVisibleProxies(), Scene);
+			RenderCollector.CollectWorldBoundsDebug(RenderCollector.GetCollectedPrimitives().VisibleProxies, Scene);
 		}
 
 		if (VC == GetActiveViewport())
@@ -567,7 +567,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-		PassContext.VisibleProxies = &RenderCollector.GetLastVisibleProxies();
+		PassContext.VisibleProxies = &RenderCollector.GetCollectedPrimitives().VisibleProxies;
 		Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PassContext);
 	}
 
@@ -578,7 +578,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 		GPUOcclusion.DispatchOcclusionTest(
 			Ctx,
 			VP->GetDepthCopySRV(),
-			RenderCollector.GetLastVisibleProxies(),
+			RenderCollector.GetCollectedPrimitives().VisibleProxies,
 			RenderFrame.View, RenderFrame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}

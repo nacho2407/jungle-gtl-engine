@@ -1,7 +1,7 @@
 ﻿#include "Render/Passes/Editor/GizmoPass.h"
-#include "Render/Commands/DrawCommandList.h"
 #include "Render/Core/RenderPassContext.h"
-#include "Render/Builders/Mesh/MeshDrawCommandBuilder.h"
+#include "Render/Commands/DrawCommandList.h"
+#include "Render/Builders//MeshDrawCommandBuilder.h"
 #include "Render/Scene/PrimitiveSceneProxy.h"
 
 void FGizmoPass::PrepareInputs(FRenderPassContext& Context)
@@ -17,19 +17,30 @@ void FGizmoPass::PrepareTargets(FRenderPassContext& Context)
 void FGizmoPass::BuildDrawCommands(FRenderPassContext& Context)
 {
     (void)Context;
- }
+}
 
 void FGizmoPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-        FMeshDrawCommandBuilder::Build(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
+    FMeshDrawCommandBuilder::Build(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
 }
 
 void FGizmoPass::SubmitDrawCommands(FRenderPassContext& Context)
 {
-    if (!Context.DrawCommandList) return;
-    uint32 s = 0, e = 0;
-    Context.DrawCommandList->GetPassRange(ERenderPass::GizmoOuter, s, e);
-    if (s < e) Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
-    Context.DrawCommandList->GetPassRange(ERenderPass::GizmoInner, s, e);
-    if (s < e) Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
+    if (!Context.DrawCommandList)
+    {
+        return;
+    }
+
+    uint32 Start = 0, End = 0;
+    Context.DrawCommandList->GetPassRange(ERenderPass::GizmoOuter, Start, End);
+    if (Start < End)
+    {
+        Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
+    }
+
+    Context.DrawCommandList->GetPassRange(ERenderPass::GizmoInner, Start, End);
+    if (Start < End)
+    {
+        Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
+    }
 }

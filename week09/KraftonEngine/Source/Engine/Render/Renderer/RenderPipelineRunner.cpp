@@ -35,7 +35,7 @@ void FRenderPipelineRunner::ExecutePipelineRecursive(
         }
         else if (FRenderPass* Pass = PassRegistry.FindPass((ERenderPassNodeType)Child.TypeValue))
         {
-            Pass->Execute(Context, Frame);
+            Pass->Execute(Context);
         }
     }
 }
