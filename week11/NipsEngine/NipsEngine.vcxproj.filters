@@ -165,6 +165,12 @@
     <FxCompile Include="Shaders\HiZDownsample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\LightCullingCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\OcclusionCull.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -184,9 +190,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderLine.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
@@ -552,6 +555,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\ComputeShader.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp">
@@ -1143,6 +1149,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\ComputeShader.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Material.h">
