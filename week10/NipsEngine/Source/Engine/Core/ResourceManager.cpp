@@ -170,7 +170,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		{
 			// TODO: 현재는 임의로 static mesh shader로 로드하도록 설정
 			MaterialFilePaths.push_back(RelativePath);
-			LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+			LoadMaterial(RelativePath, "Shaders/UberLit.hlsl", CachedDevice.Get());
 		}
 		else if (Extension == L".mat")
 		{
@@ -286,7 +286,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			else if (Extension == L".mtl")
 			{
 				MaterialFilePaths.push_back(RelativePath);
-				LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+				LoadMaterial(RelativePath, "Shaders/UberLit.hlsl", CachedDevice.Get());
 			}
 			else if (Extension == L".mat")
 			{
@@ -551,7 +551,7 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 		}
 	}
 
-	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/ShaderStaticMesh.hlsl");
+	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/UberLit.hlsl");
 	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
 	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
 	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
@@ -1441,7 +1441,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return FoundMesh;
 	}
 
- 	LoadMaterial(Path, "Shaders/ShaderStaticMesh.hlsl");
+ 	LoadMaterial(Path, "Shaders/UberLit.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
 
