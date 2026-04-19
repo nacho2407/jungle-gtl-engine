@@ -105,10 +105,14 @@ void BuildDefaultPassEvents(
 				Resources.UpdateLocalLights(Device, Context, Frame.CollectedLights.LocalLights);
 				if (Device) Device->Release();
 				if (Resources.LocalLightSRV)
-					Context->PSSetShaderResources(6, 1, &Resources.LocalLightSRV);
+					Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &Resources.LocalLightSRV);
 
-				Cache.DiffuseSRV = nullptr;
-				Cache.bForceAll = true;
+				// Cache를 GPU 실제 상태와 동기화
+				// SubmitCommand의 bForce 경로가 b4/t6을 잘못 덮어쓰지 않도록 보장
+				Cache.LightCB        = &Resources.GlobalLightBuffer;
+				Cache.LocalLightSRV  = Resources.LocalLightSRV;
+				Cache.DiffuseSRV     = nullptr;
+				Cache.bForceAll      = true;
 			}
 		});
 	}
