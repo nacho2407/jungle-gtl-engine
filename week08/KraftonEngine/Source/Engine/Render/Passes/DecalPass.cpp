@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/DecalPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FDecalPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FDecalPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteDecalPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::Decal);
 }

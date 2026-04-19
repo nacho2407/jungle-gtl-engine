@@ -838,84 +838,6 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 }
 
 
-void FRenderer::ExecuteDepthPrePass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	// Reserved for a dedicated depth-prepass path.
-}
-
-void FRenderer::ExecuteBaseDrawPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::Opaque);
-}
-
-void FRenderer::ExecuteDecalPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::Decal);
-}
-
-void FRenderer::ExecuteLightingPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::Lighting);
-}
-
-void FRenderer::ExecuteAdditiveDecalPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::AdditiveDecal);
-}
-
-void FRenderer::ExecuteAlphaBlendPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::AlphaBlend);
-}
-
-void FRenderer::ExecuteHeightFogPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPassByUserBits(ERenderPass::PostProcess, 0);
-}
-
-void FRenderer::ExecuteFXAAPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::FXAA);
-}
-
-void FRenderer::ExecuteSelectionMaskPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::SelectionMask);
-}
-
-void FRenderer::ExecuteOutlinePass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPassByUserBits(ERenderPass::PostProcess, 1);
-}
-
-void FRenderer::ExecuteDebugLinesPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::EditorLines);
-}
-
-void FRenderer::ExecuteGizmoRenderPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::GizmoOuter);
-	SubmitRenderPass(ERenderPass::GizmoInner);
-}
-
-void FRenderer::ExecuteOverlayFontRenderPass(const FFrameContext& Frame)
-{
-	(void)Frame;
-	SubmitRenderPass(ERenderPass::OverlayFont);
-}
 
 void FRenderer::RunRootPipeline(ERenderPipelineType RootType, const FFrameContext& Frame)
 {
@@ -926,7 +848,8 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, const FFrameContex
 	}
 
 	PreparePipelineExecution(Frame);
-	PipelineRunner.ExecutePipeline(RootType, *this, Frame, PipelineRegistry, PassRegistry);
+	FRenderPassContext PassContext(*this);
+	PipelineRunner.ExecutePipeline(RootType, PassContext, Frame, PipelineRegistry, PassRegistry);
 	FinalizePipelineExecution();
 
 	if (bRootToBackBuffer)
@@ -937,5 +860,6 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, const FFrameContex
 
 void FRenderer::ExecutePipeline(ERenderPipelineType Type, const FFrameContext& Frame)
 {
-	PipelineRunner.ExecutePipeline(Type, *this, Frame, PipelineRegistry, PassRegistry);
+	FRenderPassContext PassContext(*this);
+	PipelineRunner.ExecutePipeline(Type, PassContext, Frame, PipelineRegistry, PassRegistry);
 }

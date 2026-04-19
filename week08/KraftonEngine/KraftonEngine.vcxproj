@@ -326,6 +326,7 @@
     <ClCompile Include="Source\Engine\Render\Core\FrameContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Core\PassEvent.cpp" />
     <ClCompile Include="Source\Engine\Render\Core\PassRenderState.cpp" />
+    <ClCompile Include="Source\Engine\Render\Core\RenderPassContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\AdditiveDecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\AlphaBlendPass.cpp" />
@@ -512,6 +513,7 @@
     <ClInclude Include="Source\Engine\Render\Core\PassTypes.h" />
     <ClInclude Include="Source\Engine\Render\Core\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Core\RenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Core\RenderPassContext.h" />
     <ClInclude Include="Source\Engine\Render\Core\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Passes\AdditiveDecalPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\AlphaBlendPass.h" />

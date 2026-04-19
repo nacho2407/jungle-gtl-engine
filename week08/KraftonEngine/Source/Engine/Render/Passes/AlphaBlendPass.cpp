@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/AlphaBlendPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FAlphaBlendPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FAlphaBlendPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteAlphaBlendPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::AlphaBlend);
 }

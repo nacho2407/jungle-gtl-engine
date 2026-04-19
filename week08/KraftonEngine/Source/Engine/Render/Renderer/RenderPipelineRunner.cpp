@@ -1,22 +1,22 @@
-#include "Render/Renderer/RenderPipelineRunner.h"
+﻿#include "Render/Renderer/RenderPipelineRunner.h"
 
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Renderer/RenderPassRegistry.h"
 #include "Render/Renderer/RenderPipelineRegistry.h"
-#include "Render/Renderer/Renderer.h"
 
 void FRenderPipelineRunner::ExecutePipeline(
     ERenderPipelineType Root,
-    FRenderer& Renderer,
+    FRenderPassContext& Context,
     const FFrameContext& Frame,
     const FRenderPipelineRegistry& PipelineRegistry,
     const FRenderPassRegistry& PassRegistry) const
 {
-    ExecutePipelineRecursive(Root, Renderer, Frame, PipelineRegistry, PassRegistry);
+    ExecutePipelineRecursive(Root, Context, Frame, PipelineRegistry, PassRegistry);
 }
 
 void FRenderPipelineRunner::ExecutePipelineRecursive(
     ERenderPipelineType Type,
-    FRenderer& Renderer,
+    FRenderPassContext& Context,
     const FFrameContext& Frame,
     const FRenderPipelineRegistry& PipelineRegistry,
     const FRenderPassRegistry& PassRegistry) const
@@ -31,14 +31,11 @@ void FRenderPipelineRunner::ExecutePipelineRecursive(
     {
         if (Child.Kind == ERenderNodeKind::Pipeline)
         {
-            ExecutePipelineRecursive((ERenderPipelineType)Child.TypeValue, Renderer, Frame, PipelineRegistry, PassRegistry);
+            ExecutePipelineRecursive((ERenderPipelineType)Child.TypeValue, Context, Frame, PipelineRegistry, PassRegistry);
         }
-        else
+        else if (FRenderPass* Pass = PassRegistry.FindPass((ERenderPassNodeType)Child.TypeValue))
         {
-            if (FRenderPass* Pass = PassRegistry.FindPass((ERenderPassNodeType)Child.TypeValue))
-            {
-                Pass->Execute(Renderer, Frame);
-            }
+            Pass->Execute(Context, Frame);
         }
     }
 }

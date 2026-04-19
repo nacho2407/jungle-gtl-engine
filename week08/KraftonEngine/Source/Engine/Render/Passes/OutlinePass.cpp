@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/OutlinePass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FOutlinePass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FOutlinePass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteOutlinePass(Frame);
+    Context.SubmitRenderPassByUserBits(ERenderPass::PostProcess, 1);
 }

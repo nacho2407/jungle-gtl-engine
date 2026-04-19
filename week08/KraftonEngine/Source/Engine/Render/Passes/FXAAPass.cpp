@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/FXAAPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FFXAAPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FFXAAPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteFXAAPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::FXAA);
 }

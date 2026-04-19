@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/SelectionMaskPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FSelectionMaskPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FSelectionMaskPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteSelectionMaskPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::SelectionMask);
 }

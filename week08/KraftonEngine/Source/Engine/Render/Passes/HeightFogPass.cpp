@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/HeightFogPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FHeightFogPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FHeightFogPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteHeightFogPass(Frame);
+    Context.SubmitRenderPassByUserBits(ERenderPass::PostProcess, 0);
 }

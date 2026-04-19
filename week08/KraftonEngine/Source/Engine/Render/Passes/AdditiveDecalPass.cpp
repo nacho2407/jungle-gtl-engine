@@ -1,8 +1,9 @@
 ﻿#include "Render/Passes/AdditiveDecalPass.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
 #include "Render/Core/FrameContext.h"
+#include "Render/Types/RenderTypes.h"
 
-void FAdditiveDecalPass::Execute(FRenderer& Renderer, const FFrameContext& Frame)
+void FAdditiveDecalPass::Execute(FRenderPassContext& Context, const FFrameContext& Frame)
 {
-	Renderer.ExecuteAdditiveDecalPass(Frame);
+    Context.SubmitRenderPass(ERenderPass::AdditiveDecal);
 }

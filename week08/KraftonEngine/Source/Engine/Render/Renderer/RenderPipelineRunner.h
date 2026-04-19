@@ -1,10 +1,8 @@
-#pragma once
+﻿#pragma once
 
-#include "Render/Core/RenderPipeline.h"
-
-class FRenderer;
 class FRenderPipelineRegistry;
 class FRenderPassRegistry;
+class FRenderPassContext;
 struct FFrameContext;
 
 class FRenderPipelineRunner
@@ -12,7 +10,7 @@ class FRenderPipelineRunner
 public:
     void ExecutePipeline(
         ERenderPipelineType Root,
-        FRenderer& Renderer,
+        FRenderPassContext& Context,
         const FFrameContext& Frame,
         const FRenderPipelineRegistry& PipelineRegistry,
         const FRenderPassRegistry& PassRegistry) const;
@@ -20,7 +18,7 @@ public:
 private:
     void ExecutePipelineRecursive(
         ERenderPipelineType Type,
-        FRenderer& Renderer,
+        FRenderPassContext& Context,
         const FFrameContext& Frame,
         const FRenderPipelineRegistry& PipelineRegistry,
         const FRenderPassRegistry& PassRegistry) const;
