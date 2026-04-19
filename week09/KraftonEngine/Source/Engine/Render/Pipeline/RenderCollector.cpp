@@ -308,14 +308,43 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 // Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
 // 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void FRenderCollector::CollectLights(FScene& Scene)
+void CollectLights(const TArray<FLightSceneProxy*>& LightProxies, FCollectedLights& OutLights)
 {
-    CollectedLights.clear();
-    for (const FLightSceneProxy* Proxy : Scene.GetLightProxies())
-    {
-        if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
-            continue;
-        CollectedLights.push_back(Proxy->LightConstants);
-        Proxy->VisualizeLights(Scene);
-    }
+    OutLights.GlobalLights = FGlobalLightConstants();
+	OutLights.LocalLights.clear();
+
+	for (FLightSceneProxy* Proxy : LightProxies)
+	{
+		if (!Proxy) continue;
+
+		FLightConstants& LC = Proxy->LightConstants;
+		if (LC.LightType == static_cast<uint32>(ELightType::Ambient))
+		{
+            OutLights.GlobalLights.Ambient.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+            OutLights.GlobalLights.Ambient.Intensity = LC.Intensity;
+        }
+        else if (LC.LightType == static_cast<uint32>(ELightType::Directional))
+        {
+            if (OutLights.GlobalLights.NumDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
+            {
+                uint32 Index = OutLights.GlobalLights.NumDirectionalLights;
+                OutLights.GlobalLights.Directional[Index].Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+                OutLights.GlobalLights.Directional[Index].Intensity = LC.Intensity;
+                OutLights.GlobalLights.Directional[Index].Direction = LC.Direction;
+                OutLights.GlobalLights.NumDirectionalLights++;
+            }
+        }
+        else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
+        {
+            FLocalLightInfo LocalLight = {};
+            LocalLight.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+            LocalLight.Intensity = LC.Intensity;
+            LocalLight.Position = LC.Position;
+            LocalLight.AttenuationRadius = LC.AttenuationRadius;
+            LocalLight.Direction = LC.Direction;
+            LocalLight.InnerConeAngle = LC.InnerConeAngle;
+            LocalLight.OuterConeAngle = LC.OuterConeAngle;
+            OutLights.LocalLights.push_back(LocalLight);
+		}
+	}
 }

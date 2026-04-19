@@ -10,6 +10,12 @@ class FScene;
 class FOctree;
 class FRenderer;
 
+struct FCollectedLights
+{
+    FGlobalLightConstants GlobalLights;
+    TArray<FLocalLightInfo> LocalLights;
+};
+
 class FRenderCollector
 {
 public:
@@ -25,12 +31,12 @@ public:
     const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return LastVisibleProxies; }
 
     // 마지막 CollectWorld에서 수집된 Light 상수 배열 — Renderer가 CB 업로드에 사용
-    const TArray<FLightConstants>& GetCollectedLights() const { return CollectedLights; }
+    const FCollectedLights& GetCollectedLights() const { return CollectedLights; }
 
 private:
     void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
-    void CollectLights(FScene& Scene);
+    void CollectLights(const TArray<FLightSceneProxy*>& LightProxies, FCollectedLights& OutLights);
 
     TArray<FPrimitiveSceneProxy*> LastVisibleProxies;
-    TArray<FLightConstants>       CollectedLights;
+    FCollectedLights CollectedLights;
 };
