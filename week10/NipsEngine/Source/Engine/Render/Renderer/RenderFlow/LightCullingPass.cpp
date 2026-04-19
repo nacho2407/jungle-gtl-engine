@@ -1,6 +1,10 @@
 ﻿#include "LightCullingPass.h"
 #include "Core/ResourceManager.h"
 
+namespace {
+	const int TileSize = 16;
+}
+
 bool FLightCullingPass::Initialize()
 {
 	return true;
@@ -35,6 +39,7 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
 
 	// TODO:: Add hlsl file
 	FComputeShader* CullingCS = FResourceManager::Get().GetComputeShader("Shaders/LightCullingCS.hlsl");
+	CullingCS->Bind(Context->DeviceContext);
 
 	ID3D11ShaderResourceView* SRVs[] = {
         RenderTargets->SceneDepthSRV,
@@ -49,12 +54,35 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
     };
     DeviceContext->CSSetUnorderedAccessViews(0, 2, UAVs, nullptr);
 
+	ID3D11Buffer* b0 = Resources->FrameBuffer.GetBuffer();
+	DeviceContext->CSSetConstantBuffers(0, 1, &b0);
 
+	uint32 groupsX = (ViewportSize.X + TileSize - 1) / TileSize;
+    uint32 groupsY = (ViewportSize.Y + TileSize - 1) / TileSize;
+
+	CullingCS->Dispatch(Context->DeviceContext, groupsX, groupsY, 1);
+    CullingCS->Unbind(Context->DeviceContext);
+
+    ID3D11UnorderedAccessView* nullUAVs[] = { nullptr, nullptr };
+    DeviceContext->CSSetUnorderedAccessViews(0, 2, nullUAVs, nullptr);
+    ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr };
+    DeviceContext->CSSetShaderResources(0, 1, &nullSRVs[0]);
+    DeviceContext->CSSetShaderResources(10, 1, &nullSRVs[1]);
 
 	return true;
 }
 
 bool FLightCullingPass::End(const FRenderPassContext* Context)
 {
-	return true;
+    FRenderResources* Resources = Context->RenderResources;
+    ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+
+    ID3D11ShaderResourceView* LightSRVs[] = {
+        Resources->LightStructuredBuffer.GetSRV(),
+        Resources->LightCulledIndexBuffer.GetSRV(),
+        Resources->LightTileBuffer.GetSRV()
+    };
+    DeviceContext->PSSetShaderResources(10, 3, LightSRVs);
+
+    return true;
 }
