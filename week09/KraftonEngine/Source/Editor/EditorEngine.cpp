@@ -535,11 +535,12 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 	}
 
 	Renderer.BeginCollect(RenderFrame, Scene.GetProxyCount());
+	FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, &Scene);
 
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");
 
-		RenderCollector.CollectWorld(World, RenderFrame, Renderer);
+		RenderCollector.CollectWorld(World, RenderFrame, Scene, Renderer);
 		RenderCollector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
 		RenderCollector.CollectDebugDraw(RenderFrame, Scene);
 
@@ -562,12 +563,12 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 		if (VC == GetActiveViewport())
 			RenderCollector.CollectOverlayText(GetOverlayStatSystem(), *this, Scene);
 
-		Renderer.BuildDynamicCommands(RenderFrame, &Scene);
 	}
 
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-		ExecuteRenderPipeline(Renderer, ERenderPipelineType::EditorScene, RenderFrame);
+		PassContext.VisibleProxies = &RenderCollector.GetLastVisibleProxies();
+		Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PassContext);
 	}
 
 	if (GPUOcclusion.IsInitialized())

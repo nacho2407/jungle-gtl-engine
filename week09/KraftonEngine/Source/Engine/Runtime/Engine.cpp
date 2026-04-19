@@ -101,19 +101,20 @@ void UEngine::Render(float DeltaTime)
 		Scene->ClearFrameData();
 
 		Renderer.BeginCollect(RenderFrame, Scene->GetPrimitiveProxyCount());
-		RenderCollector.CollectWorld(World, RenderFrame, Renderer);
+		RenderCollector.CollectWorld(World, RenderFrame, *Scene, Renderer);
 		RenderCollector.CollectDebugDraw(RenderFrame, *Scene);
-		Renderer.BuildDynamicCommands(RenderFrame, Scene);
 	}
 	else
 	{
 		Renderer.ClearActiveViewMode();
 		Renderer.ReleaseViewModeSurfaceSet();
 		Renderer.BeginCollect(RenderFrame);
-		Renderer.BuildDynamicCommands(RenderFrame, nullptr);
 	}
 
-	Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, RenderFrame);
+	{
+		FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
+		Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PassContext);
+	}
 }
 
 void UEngine::OnWindowResized(uint32 Width, uint32 Height)

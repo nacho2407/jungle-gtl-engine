@@ -3,7 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Engine/Object/Object.h"
-#include "Render/Resource/Buffer.h"
+#include "Render/RHI/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
 #include "Materials/Material.h"

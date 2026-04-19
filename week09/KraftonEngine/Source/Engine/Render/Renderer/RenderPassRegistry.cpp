@@ -1,18 +1,18 @@
 #include "Render/Renderer/RenderPassRegistry.h"
 
-#include "Render/Passes/AdditiveDecalPass.h"
-#include "Render/Passes/AlphaBlendPass.h"
-#include "Render/Passes/BaseDrawPass.h"
-#include "Render/Passes/DebugLinesPass.h"
-#include "Render/Passes/DecalPass.h"
-#include "Render/Passes/DepthPrePass.h"
-#include "Render/Passes/FXAAPass.h"
-#include "Render/Passes/GizmoRenderPass.h"
-#include "Render/Passes/HeightFogPass.h"
-#include "Render/Passes/LightingPass.h"
-#include "Render/Passes/OutlinePass.h"
-#include "Render/Passes/OverlayFontRenderPass.h"
-#include "Render/Passes/SelectionMaskPass.h"
+#include "Render/Passes/Scene/AdditiveDecalPass.h"
+#include "Render/Passes/Scene/AlphaBlendPass.h"
+#include "Render/Passes/Scene/BaseDrawPass.h"
+#include "Render/Passes/Editor/DebugLinePass.h"
+#include "Render/Passes/Scene/DecalPass.h"
+#include "Render/Passes/Scene/DepthPrePass.h"
+#include "Render/Passes/Scene/FXAAPass.h"
+#include "Render/Passes/Editor/GizmoPass.h"
+#include "Render/Passes/Scene/HeightFogPass.h"
+#include "Render/Passes/Scene/LightingPass.h"
+#include "Render/Passes/Editor/OutlinePass.h"
+#include "Render/Passes/Editor/OverlayTextPass.h"
+#include "Render/Passes/Editor/SelectionMaskPass.h"
 
 FRenderPassRegistry::~FRenderPassRegistry()
 {
@@ -32,9 +32,9 @@ void FRenderPassRegistry::Initialize()
     Passes.emplace((int32)ERenderPassNodeType::FXAAPass, new FFXAAPass());
     Passes.emplace((int32)ERenderPassNodeType::SelectionMaskPass, new FSelectionMaskPass());
     Passes.emplace((int32)ERenderPassNodeType::OutlinePass, new FOutlinePass());
-    Passes.emplace((int32)ERenderPassNodeType::DebugLinesPass, new FDebugLinesPass());
-    Passes.emplace((int32)ERenderPassNodeType::GizmoRenderPass, new FGizmoRenderPass());
-    Passes.emplace((int32)ERenderPassNodeType::OverlayFontRenderPass, new FOverlayFontRenderPass());
+    Passes.emplace((int32)ERenderPassNodeType::DebugLinePass, new FDebugLinePass());
+    Passes.emplace((int32)ERenderPassNodeType::GizmoPass, new FGizmoPass());
+    Passes.emplace((int32)ERenderPassNodeType::OverlayTextPass, new FOverlayTextPass());
 }
 
 void FRenderPassRegistry::Release()

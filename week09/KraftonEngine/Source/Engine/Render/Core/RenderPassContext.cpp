@@ -1,12 +1,18 @@
-﻿#include "Render/Core/RenderPassContext.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Core/RenderPassContext.h"
+#include "Render/Core/FrameContext.h"
+#include "Render/Core/PassRenderState.h"
 
-void FRenderPassContext::SubmitRenderPass(ERenderPass Pass)
+const FPassRenderState& FRenderPassContext::GetPassState(ERenderPass Pass) const
 {
-    Renderer.SubmitRenderPass(Pass);
+    return PassRenderStates[(uint32)Pass];
 }
 
-void FRenderPassContext::SubmitRenderPassByUserBits(ERenderPass Pass, uint16 UserBits)
+ID3D11RenderTargetView* FRenderPassContext::GetViewportRTV() const
 {
-    Renderer.SubmitRenderPassByUserBits(Pass, UserBits);
+    return Frame ? Frame->ViewportRTV : nullptr;
+}
+
+ID3D11DepthStencilView* FRenderPassContext::GetViewportDSV() const
+{
+    return Frame ? Frame->ViewportDSV : nullptr;
 }

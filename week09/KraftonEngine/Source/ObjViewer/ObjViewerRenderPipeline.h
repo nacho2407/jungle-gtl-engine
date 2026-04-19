@@ -1,25 +1,25 @@
-﻿//#pragma once
+﻿// #pragma once
 //
-//#include "Render/Renderer/RenderCollector.h"
-//#include "Render/Core/FrameContext.h"
+// #include "Render/Collectors/RenderCollector.h"
+// #include "Render/Core/FrameContext.h"
 //
-//class UObjViewerEngine;
-//class FViewport;
-//class UCameraComponent;
+// class UObjViewerEngine;
+// class FViewport;
+// class UCameraComponent;
 //
-//class FObjViewerRenderPipeline
+// class FObjViewerRenderPipeline
 //{
-//public:
+// public:
 //	FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer);
 //	~FObjViewerRenderPipeline() override;
 //
 //	void Execute(float DeltaTime, FRenderer& Renderer);
 //
-//private:
+// private:
 //	void RenderPreviewViewport(FRenderer& Renderer);
 //
-//private:
+// private:
 //	UObjViewerEngine* Engine = nullptr;
 //	FRenderCollector Collector;
 //	FFrameContext Frame;
-//};
+// };

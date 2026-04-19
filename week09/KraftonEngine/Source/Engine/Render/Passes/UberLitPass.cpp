@@ -1,4 +1,5 @@
-#include "Render/Passes/UberLitPass.h"
+﻿#include "Render/Passes/UberLitPass.h"
+#include "Render/Commands/DrawCommandList.h"
 
 #include "Render/Renderer/PipelineShaderResolver.h"
 #include "Render/Core/PassTypes.h"

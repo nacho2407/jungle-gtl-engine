@@ -1,7 +1,7 @@
 ﻿#include "Render/Scene/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
-#include "Render/Resource/ShaderManager.h"
-#include "Render/Resource/ConstantBufferPool.h"
+#include "Render/Resource/Managers/ShaderManager.h"
+#include "Render/Resource/Pools/ConstantBufferPool.h"
 #include "Render/Core/FrameContext.h"
 
 // ============================================================

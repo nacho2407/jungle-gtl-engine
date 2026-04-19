@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Resource/ShaderVariantCache.h"
+#include "Render/Resource/Cache/ShaderVariantCache.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/ShadingTypes.h"
 
