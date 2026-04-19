@@ -355,6 +355,7 @@
     <ClCompile Include="Source\Engine\Render\Passes\Scene\FXAAPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModePostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderPassRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRunner.cpp" />
@@ -549,10 +550,12 @@
     <ClInclude Include="Source\Engine\Render\Passes\Scene\FXAAPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModePostProcessPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Shared\FullscreenPassBase.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Shared\MeshPassBase.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\PipelineShaderResolver.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderMarkers.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPassRegistry.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.h" />
@@ -651,6 +654,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\DepthOnly.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Editor.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -694,6 +703,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\LightingPass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\NormalView.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>

@@ -177,6 +177,9 @@
     <FxCompile Include="Shaders\DecalShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\DepthOnly.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Editor.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -199,6 +202,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\LightingPass.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\NormalView.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\OcclusionTest.hlsl">
@@ -591,6 +597,9 @@
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModePostProcessPass.cpp">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderPassRegistry.cpp">
@@ -1169,6 +1178,9 @@
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModePostProcessPass.h">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Shared\FullscreenPassBase.h">
       <Filter>Source\Engine\Render\Passes\Shared</Filter>
     </ClInclude>
@@ -1179,6 +1191,9 @@
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\PipelineShaderResolver.h">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderMarkers.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPassRegistry.h">

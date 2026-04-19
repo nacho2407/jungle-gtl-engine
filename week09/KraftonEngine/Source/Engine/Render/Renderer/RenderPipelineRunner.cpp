@@ -4,6 +4,32 @@
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Renderer/RenderPassRegistry.h"
 #include "Render/Renderer/RenderPipelineRegistry.h"
+#include "Render/Renderer/RenderMarkers.h"
+
+namespace
+{
+const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
+{
+    switch (PassType)
+    {
+    case ERenderPassNodeType::DepthPrePass: return L"DepthPrePass";
+    case ERenderPassNodeType::BaseDrawPass: return L"OpaquePass";
+    case ERenderPassNodeType::DecalPass: return L"DecalPass";
+    case ERenderPassNodeType::LightingPass: return L"LightingPass";
+    case ERenderPassNodeType::AdditiveDecalPass: return L"AdditiveDecalPass";
+    case ERenderPassNodeType::AlphaBlendPass: return L"AlphaBlendPass";
+    case ERenderPassNodeType::ViewModePostProcessPass: return L"ViewModePostProcessPass";
+    case ERenderPassNodeType::SelectionMaskPass: return L"SelectionMaskPass";
+    case ERenderPassNodeType::OutlinePass: return L"OutlinePass";
+    case ERenderPassNodeType::DebugLinePass: return L"DebugLinePass";
+    case ERenderPassNodeType::GizmoPass: return L"GizmoPass";
+    case ERenderPassNodeType::OverlayTextPass: return L"OverlayTextPass";
+    case ERenderPassNodeType::HeightFogPass: return L"HeightFogPass";
+    case ERenderPassNodeType::FXAAPass: return L"FXAAPass";
+    default: return L"RenderPass";
+    }
+}
+}
 
 void FRenderPipelineRunner::ExecutePipeline(
     ERenderPipelineType Root,
@@ -31,7 +57,7 @@ void FRenderPipelineRunner::ExecutePipelineRecursive(
     const bool bSkipLightingPass =
         Context.ViewModePassRegistry &&
         Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
-        Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode) == EShadingModel::Unlit;
+        !Context.ViewModePassRegistry->UsesLightingPass(Context.ActiveViewMode);
 
     for (const FRenderNodeRef& Child : Desc->Children)
     {
@@ -49,6 +75,9 @@ void FRenderPipelineRunner::ExecutePipelineRecursive(
 
             if (FRenderPass* Pass = PassRegistry.FindPass(PassType))
             {
+#if WITH_RENDER_MARKERS
+                FScopedGpuEvent Event(*Context.Renderer, GetRenderPassMarkerName(PassType));
+#endif
                 Pass->Execute(Context);
             }
         }

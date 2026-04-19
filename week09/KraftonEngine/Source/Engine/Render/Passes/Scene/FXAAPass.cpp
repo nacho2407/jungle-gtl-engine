@@ -38,6 +38,13 @@ void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context)
         return;
     }
 
+    if (Context.ViewModePassRegistry &&
+        Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
+        Context.ViewModePassRegistry->SuppressesSceneExtras(Context.ActiveViewMode))
+    {
+        return;
+    }
+
     if (!Context.Frame->SceneColorCopySRV || !Context.Frame->SceneColorCopyTexture)
     {
         return;

@@ -23,8 +23,11 @@ inline EShadingModel GetShadingModelFromViewMode(EViewMode ViewMode)
 {
 	switch (ViewMode)
 	{
+	case EViewMode::Wireframe:    return EShadingModel::Unlit;
+	case EViewMode::SceneDepth:   return EShadingModel::Unlit;
 	case EViewMode::Lit_Lambert: return EShadingModel::Lambert;
 	case EViewMode::Lit_Phong:   return EShadingModel::BlinnPhong;
+	case EViewMode::Normal:      return EShadingModel::Lambert;
 	case EViewMode::Unlit:       return EShadingModel::Unlit;
 	default:
 		return EShadingModel::Gouraud;

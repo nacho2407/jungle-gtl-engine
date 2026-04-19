@@ -13,6 +13,7 @@
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
+
 FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
 {
 	return new FGizmoSceneProxy(this, false); // Outer
@@ -85,6 +86,7 @@ void UGizmoComponent::SetHolding(bool bHold)
 	}
 
 	bIsHolding = bHold;
+	MarkAllGizmoDirty();
 }
 
 bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float AxisScale, float& OutRayT)
@@ -419,6 +421,7 @@ void UGizmoComponent::SetTarget(AActor* NewTarget)
 	SetWorldLocation(TargetActor->GetActorLocation());
 	UpdateGizmoTransform();
 	SetVisibility(true);
+	MarkAllGizmoDirty();
 }
 
 void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
@@ -539,6 +542,7 @@ void UGizmoComponent::DragEnd()
 	bIsFirstFrameOfDrag = true;
 	SetHolding(false);
 	SetPressedOnHandle(false);
+	MarkAllGizmoDirty();
 }
 
 void UGizmoComponent::SetNextMode()
@@ -551,6 +555,7 @@ void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
 {
 	CurMode = NewMode;
 	UpdateGizmoTransform();
+	MarkAllGizmoDirty();
 }
 
 void UGizmoComponent::UpdateGizmoTransform()
@@ -595,6 +600,9 @@ void UGizmoComponent::UpdateGizmoTransform()
 		MeshData = DesiredMeshData;
 		MarkRenderStateDirty();
 	}
+
+	MarkGizmoDirty(EDirtyFlag::Transform);
+	MarkGizmoDirty(EDirtyFlag::Mesh);
 }
 
 float UGizmoComponent::ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth) const
@@ -622,6 +630,37 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 {
 	bIsWorldSpace = bWorldSpace;
 	UpdateGizmoTransform();
+	MarkAllGizmoDirty();
+}
+
+void UGizmoComponent::MarkGizmoDirty(EDirtyFlag Flag)
+{
+	FScene* Scene = RegisteredScene;
+	if (!Scene && Owner && Owner->GetWorld())
+	{
+		Scene = &Owner->GetWorld()->GetScene();
+	}
+
+	if (!Scene)
+	{
+		return;
+	}
+
+	if (SceneProxy)
+	{
+		Scene->MarkProxyDirty(SceneProxy, Flag);
+	}
+	if (InnerProxy)
+	{
+		Scene->MarkProxyDirty(InnerProxy, Flag);
+	}
+}
+
+void UGizmoComponent::MarkAllGizmoDirty()
+{
+	MarkGizmoDirty(EDirtyFlag::Transform);
+	MarkGizmoDirty(EDirtyFlag::Visibility);
+	MarkGizmoDirty(EDirtyFlag::Mesh);
 }
 
 uint32 UGizmoComponent::ComputeAxisMask(ELevelViewportType ViewportType, EGizmoMode Mode)
@@ -663,6 +702,7 @@ void UGizmoComponent::Deactivate()
 	AllSelectedActors = nullptr;
 	SetVisibility(false);
 	SelectedAxis = -1;
+	MarkAllGizmoDirty();
 }
 
 FMeshBuffer* UGizmoComponent::GetMeshBuffer() const

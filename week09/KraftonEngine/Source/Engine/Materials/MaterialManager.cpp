@@ -133,7 +133,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 
     // 5. 파라미터 및 텍스처 적용
     ApplyParameters(Material, JsonData);
-    ApplyTextures(Material, JsonData);
+    ApplyTextures(Material, JsonData, MatFilePath);
 
     // JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
     JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
@@ -151,7 +151,13 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 {
-    std::ifstream File(FPaths::ToWide(FilePath).c_str());
+    std::filesystem::path JsonPath = FPaths::ToPath(FPaths::ToWide(FilePath));
+    if (!JsonPath.is_absolute())
+    {
+        JsonPath = FPaths::ToPath(FPaths::RootDir()) / JsonPath;
+    }
+
+    std::ifstream File(JsonPath);
     if (!File.is_open())
         return json::JSON(); // Null JSON 반환
 
@@ -212,17 +218,43 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
     }
 }
 
-void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData)
+void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData, const FString& MatFilePath)
 {
     if (!JsonData.hasKey(MatKeys::Textures))
         return;
+
+    const std::filesystem::path MaterialPath = [&]()
+    {
+        std::filesystem::path P = FPaths::ToPath(FPaths::ToWide(MatFilePath));
+        if (!P.is_absolute())
+        {
+            P = FPaths::ToPath(FPaths::RootDir()) / P;
+        }
+        return P.lexically_normal();
+    }();
 
     for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
     {
         FString SlotName = Pair.first.c_str();
         FString TexturePath = Pair.second.ToString().c_str();
 
-        UTexture2D* Texture = UTexture2D::LoadFromFile(TexturePath, Device);
+        std::filesystem::path ResolvedTexturePath = FPaths::ToPath(FPaths::ToWide(TexturePath));
+        if (!ResolvedTexturePath.is_absolute())
+        {
+            const std::filesystem::path RelativeToMaterial = (MaterialPath.parent_path() / ResolvedTexturePath).lexically_normal();
+            const std::filesystem::path RelativeToRoot = (FPaths::ToPath(FPaths::RootDir()) / ResolvedTexturePath).lexically_normal();
+
+            if (std::filesystem::exists(RelativeToMaterial))
+            {
+                ResolvedTexturePath = RelativeToMaterial;
+            }
+            else
+            {
+                ResolvedTexturePath = RelativeToRoot;
+            }
+        }
+
+        UTexture2D* Texture = UTexture2D::LoadFromFile(FPaths::FromPath(ResolvedTexturePath), Device);
         if (Texture)
         {
             Material->SetTextureParameter(SlotName, Texture);

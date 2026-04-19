@@ -650,6 +650,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
 		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 		{
+			FMaterialManager::Get().ScanMaterialAssets();
+
 			// "None" 선택지 기본 제공
 			bool bSelectedNone = (Slot->Path == "None" || Slot->Path.empty());
 			if (ImGui::Selectable("None", bSelectedNone))

@@ -53,7 +53,7 @@ private:
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> CreateConstantBuffers(FMaterialTemplate* Template);
 
 	void ApplyParameters(UMaterial* Material, json::JSON& JsonData);
-	void ApplyTextures(UMaterial* Material, json::JSON& JsonData);
+	void ApplyTextures(UMaterial* Material, json::JSON& JsonData, const FString& MatFilePath);
 
 	ERenderPass StringToRenderPass(const FString& Str) const;
 	EBlendState StringToBlendState(const FString& Str, ERenderPass Pass) const;

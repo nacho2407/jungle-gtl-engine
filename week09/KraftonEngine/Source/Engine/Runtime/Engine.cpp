@@ -103,6 +103,7 @@ void UEngine::Render(float DeltaTime)
 		Renderer.BeginCollect(RenderFrame, Scene->GetPrimitiveProxyCount());
 		RenderCollector.CollectWorld(World, RenderFrame, *Scene, Renderer);
 		RenderCollector.CollectDebugDraw(RenderFrame, *Scene);
+		RenderCollector.BuildFramePassCommands(RenderFrame, *Scene, Renderer);
 	}
 	else
 	{

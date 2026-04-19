@@ -26,6 +26,12 @@ struct FViewModePassConfig
 {
     EViewMode ViewMode = EViewMode::Lit_Phong;
     EShadingModel ShadingModel = EShadingModel::Gouraud;
+    bool bEnableBaseDraw = true;
+    bool bEnableDecal = true;
+    bool bEnableLighting = false;
+    bool bForceWireframeRasterizer = false;
+    bool bSuppressSceneExtras = false;
+    uint16 PostProcessUserBits = 0;
     TArray<FRenderPipelinePassDesc> Passes;
 };
 
@@ -49,6 +55,36 @@ inline const FRenderPipelinePassDesc* FindViewModePassDesc(const FViewModePassCo
 inline EShadingModel GetViewModeShadingModel(const FViewModePassConfig* Config)
 {
     return Config ? Config->ShadingModel : EShadingModel::Unlit;
+}
+
+inline bool UsesViewModeBaseDraw(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableBaseDraw : false;
+}
+
+inline bool UsesViewModeDecal(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableDecal : false;
+}
+
+inline bool UsesViewModeLighting(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableLighting : false;
+}
+
+inline bool ForcesViewModeWireframeRasterizer(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bForceWireframeRasterizer : false;
+}
+
+inline bool SuppressesViewModeSceneExtras(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bSuppressSceneExtras : false;
+}
+
+inline uint16 GetViewModePostProcessUserBits(const FViewModePassConfig* Config)
+{
+    return Config ? Config->PostProcessUserBits : 0;
 }
 
 inline FRenderPipelinePassDesc BuildViewModeBaseDrawPassDesc(EShadingModel ShadingModel)
@@ -157,10 +193,17 @@ inline FRenderPipelinePassDesc BuildViewModeLightingPassDesc(EShadingModel Shadi
 inline void BuildViewModePasses(FViewModePassConfig& Config)
 {
     Config.Passes.clear();
-    Config.Passes.push_back(BuildViewModeBaseDrawPassDesc(Config.ShadingModel));
-    Config.Passes.push_back(BuildViewModeDecalPassDesc(Config.ShadingModel));
+    if (Config.bEnableBaseDraw)
+    {
+        Config.Passes.push_back(BuildViewModeBaseDrawPassDesc(Config.ShadingModel));
+    }
 
-    if (Config.ShadingModel != EShadingModel::Unlit)
+    if (Config.bEnableDecal)
+    {
+        Config.Passes.push_back(BuildViewModeDecalPassDesc(Config.ShadingModel));
+    }
+
+    if (Config.bEnableLighting)
     {
         Config.Passes.push_back(BuildViewModeLightingPassDesc(Config.ShadingModel));
     }
@@ -170,6 +213,34 @@ inline void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode 
 {
     Config.ViewMode = InViewMode;
     Config.ShadingModel = GetShadingModelFromViewMode(InViewMode);
+
+    switch (InViewMode)
+    {
+    case EViewMode::Wireframe:
+        Config.bEnableLighting = false;
+        Config.bForceWireframeRasterizer = true;
+        Config.bSuppressSceneExtras = true;
+        break;
+    case EViewMode::SceneDepth:
+        Config.bEnableBaseDraw = false;
+        Config.bEnableDecal = false;
+        Config.bEnableLighting = false;
+        Config.bSuppressSceneExtras = true;
+        Config.PostProcessUserBits = 2;
+        break;
+    case EViewMode::Normal:
+        Config.bEnableLighting = false;
+        Config.bSuppressSceneExtras = true;
+        Config.PostProcessUserBits = 3;
+        break;
+    case EViewMode::Unlit:
+        Config.bEnableLighting = false;
+        break;
+    default:
+        Config.bEnableLighting = IsLitShadingModel(Config.ShadingModel);
+        break;
+    }
+
     BuildViewModePasses(Config);
 
     for (FRenderPipelinePassDesc& Pass : Config.Passes)
@@ -191,6 +262,9 @@ public:
             EViewMode::Lit_Lambert,
             EViewMode::Lit_Phong,
             EViewMode::Unlit,
+            EViewMode::Wireframe,
+            EViewMode::SceneDepth,
+            EViewMode::Normal,
         };
 
         for (EViewMode Mode : Modes)
@@ -226,6 +300,36 @@ public:
     EShadingModel GetShadingModel(EViewMode ViewMode) const
     {
         return GetViewModeShadingModel(GetConfig(ViewMode));
+    }
+
+    bool UsesBaseDraw(EViewMode ViewMode) const
+    {
+        return UsesViewModeBaseDraw(GetConfig(ViewMode));
+    }
+
+    bool UsesDecal(EViewMode ViewMode) const
+    {
+        return UsesViewModeDecal(GetConfig(ViewMode));
+    }
+
+    bool UsesLightingPass(EViewMode ViewMode) const
+    {
+        return UsesViewModeLighting(GetConfig(ViewMode));
+    }
+
+    bool ShouldForceWireframeRasterizer(EViewMode ViewMode) const
+    {
+        return ForcesViewModeWireframeRasterizer(GetConfig(ViewMode));
+    }
+
+    bool SuppressesSceneExtras(EViewMode ViewMode) const
+    {
+        return SuppressesViewModeSceneExtras(GetConfig(ViewMode));
+    }
+
+    uint16 GetPostProcessUserBits(EViewMode ViewMode) const
+    {
+        return GetViewModePostProcessUserBits(GetConfig(ViewMode));
     }
 
 private:

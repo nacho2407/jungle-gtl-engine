@@ -526,7 +526,11 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 		ViewModePassRegistry && ViewModePassRegistry->HasConfig(ViewMode))
 	{
 		Renderer.SetActiveViewMode(ViewMode);
-		Renderer.AcquireViewModeSurfaceSet(VP->GetWidth(), VP->GetHeight());
+		if (Renderer.AcquireViewModeSurfaceSet(VP->GetWidth(), VP->GetHeight()) == nullptr)
+		{
+			Renderer.ClearActiveViewMode();
+			Renderer.ReleaseViewModeSurfaceSet();
+		}
 	}
 	else
 	{
@@ -562,6 +566,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
 		if (VC == GetActiveViewport())
 			RenderCollector.CollectOverlayText(GetOverlayStatSystem(), *this, Scene);
+		RenderCollector.BuildFramePassCommands(RenderFrame, Scene, Renderer);
 
 	}
 

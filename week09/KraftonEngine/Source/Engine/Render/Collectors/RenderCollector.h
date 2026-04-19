@@ -31,6 +31,7 @@ class FRenderCollector
 {
 public:
     void CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
+    void BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
     void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
     void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
     void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene);

@@ -13,6 +13,7 @@
 
 #include <cstdio>
 #include <d3d11.h>
+#include <filesystem>
 
 namespace
 {
@@ -41,6 +42,26 @@ namespace
         const ImVec2 ItemMin = ImGui::GetItemRectMin();
         ImGui::SetNextWindowPos(ImVec2(ItemMin.x, ItemMin.y + YOffset), ImGuiCond_Appearing);
     }
+
+    std::wstring ResolveEditorIconPath(const std::wstring& FileName)
+    {
+        const std::filesystem::path RootCandidate = std::filesystem::path(FPaths::RootDir()) / L"Asset/Editor/Icons" / FileName;
+        if (std::filesystem::exists(RootCandidate))
+        {
+            return RootCandidate.wstring();
+        }
+
+        WCHAR Buffer[MAX_PATH] = {};
+        GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
+        const std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
+        const std::filesystem::path ExeCandidate = ExeDir / L"Asset/Editor/Icons" / FileName;
+        if (std::filesystem::exists(ExeCandidate))
+        {
+            return ExeCandidate.wstring();
+        }
+
+        return (std::filesystem::current_path() / L"Asset/Editor/Icons" / FileName).wstring();
+    }
 }
 
 void FEditorToolbarPanel::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
@@ -51,13 +72,11 @@ void FEditorToolbarPanel::Initialize(UEditorEngine* InEditor, ID3D11Device* InDe
         return;
     }
 
-    const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
-
     if (!GPlayStartIcon)
     {
         DirectX::CreateWICTextureFromFile(
             InDevice,
-            (IconDir + L"icon_playInSelectedViewport_16x.png").c_str(),
+            ResolveEditorIconPath(L"icon_playInSelectedViewport_16x.png").c_str(),
             nullptr,
             &GPlayStartIcon);
     }
@@ -66,7 +85,7 @@ void FEditorToolbarPanel::Initialize(UEditorEngine* InEditor, ID3D11Device* InDe
     {
         DirectX::CreateWICTextureFromFile(
             InDevice,
-            (IconDir + L"icon_pause_40x.png").c_str(),
+            ResolveEditorIconPath(L"icon_pause_40x.png").c_str(),
             nullptr,
             &GPauseIcon);
     }
@@ -75,7 +94,7 @@ void FEditorToolbarPanel::Initialize(UEditorEngine* InEditor, ID3D11Device* InDe
     {
         DirectX::CreateWICTextureFromFile(
             InDevice,
-            (IconDir + L"generic_stop_16x.png").c_str(),
+            ResolveEditorIconPath(L"generic_stop_16x.png").c_str(),
             nullptr,
             &GStopIcon);
     }
@@ -416,6 +435,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
         ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
         ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
+        ImGui::RadioButton("Normal", &CurrentMode, static_cast<int32>(EViewMode::Normal));
 
         Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Render/Types/RenderTypes.h"
+#include <d3d11_1.h>
 #include "Render/Types/RenderStateTypes.h"
 #include "Core/CoreTypes.h"
 
@@ -20,6 +21,7 @@ public:
 
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
+	ID3DUserDefinedAnnotation* GetUserDefinedAnnotation() const { return UserDefinedAnnotation; }
 	ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
 	const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
@@ -42,6 +44,7 @@ private:
 private:
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* DeviceContext = nullptr;
+	ID3DUserDefinedAnnotation* UserDefinedAnnotation = nullptr;
 	IDXGISwapChain* SwapChain = nullptr;
 
 	ID3D11Texture2D* FrameBuffer = nullptr;

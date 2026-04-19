@@ -13,6 +13,7 @@
 #include "Render/Renderer/Renderer.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Builders/MeshDrawCommandBuilder.h"
+#include "Render/Builders/TextDrawCommandBuilder.h"
 #include "Render/Scene/DecalSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Scene/LightSceneProxy.h"
@@ -89,23 +90,31 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
     }
 
     Renderer.SetCollectedScene(&Scene);
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
+
     // Visible Primitive Proxies → pass-specific draw command build
     CollectVisibleProxies(CollectedPrimitives.VisibleProxies, Frame, Scene, Renderer);
 
     // Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
     CollectLights(Scene, CollectedLights);
+}
 
-    // Frame-wide passes build their own draw commands during collect.
+void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+{
+    Renderer.SetCollectedScene(&Scene);
+    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
+
     if (Renderer.HasActiveViewModePassConfig())
     {
         const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
-        if (ViewModeRegistry && ViewModeRegistry->GetShadingModel(Frame.ViewMode) != EShadingModel::Unlit)
+        if (ViewModeRegistry && ViewModeRegistry->UsesLightingPass(Frame.ViewMode))
         {
             if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::LightingPass))
                 Pass->BuildDrawCommands(PassContext);
         }
     }
+
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ViewModePostProcessPass))
+        Pass->BuildDrawCommands(PassContext);
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::HeightFogPass))
         Pass->BuildDrawCommands(PassContext);
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::OutlinePass))
@@ -125,10 +134,17 @@ void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, F
 
 void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
 {
-    (void)OverlaySystem;
-    (void)Editor;
-    (void)Scene;
-    // Stat 오버레이는 ImGui 기반으로 뷰포트 내부에 직접 렌더링합니다.
+    TArray<FOverlayStatLine> Lines;
+    OverlaySystem.BuildLines(Editor, Lines);
+
+    const float Scale = OverlaySystem.GetLayout().TextScale;
+    for (const FOverlayStatLine& Line : Lines)
+    {
+        if (!Line.Text.empty())
+        {
+            Scene.AddOverlayText(Line.Text, Line.ScreenPosition, Scale);
+        }
+    }
 }
 
 void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
@@ -236,6 +252,11 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
     FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
     // Pass-specific command building now happens during pipeline execution.
+    const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
+    const bool bHasViewModeConfig = Renderer.HasActiveViewModePassConfig() && ViewModeRegistry && ViewModeRegistry->HasConfig(Frame.ViewMode);
+    const bool bUsesBaseDraw = bHasViewModeConfig && ViewModeRegistry->UsesBaseDraw(Frame.ViewMode);
+    const bool bUsesDecal = bHasViewModeConfig && ViewModeRegistry->UsesDecal(Frame.ViewMode);
+    const bool bSuppressSceneExtras = bHasViewModeConfig && ViewModeRegistry->SuppressesSceneExtras(Frame.ViewMode);
 
     TSet<FPrimitiveSceneProxy*> VisibleProxySet;
     VisibleProxySet.reserve(CandidateProxies.size());
@@ -276,6 +297,12 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
             Proxy->UpdatePerViewport(Frame);
         }
 
+        //if (Proxy->Pass == ERenderPass::GizmoOuter || Proxy->Pass == ERenderPass::GizmoInner)
+        //{
+        //    CollectorDebugLog("[CollectVisibleProxies] Gizmo candidate pass=%d visible=%d mesh=%p shader=%p owner=%p",
+        //        static_cast<int>(Proxy->Pass), Proxy->bVisible ? 1 : 0, Proxy->MeshBuffer, Proxy->Shader, Proxy->Owner);
+        //}
+
         if (!Proxy->bVisible)
             continue;
 
@@ -297,18 +324,21 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
             const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
             if (!TextProxy->CachedText.empty())
             {
-                (void)TextProxy;
+                FTextDrawCommandBuilder::BuildWorld(*TextProxy, PassContext, *PassContext.DrawCommandList);
             }
         }
         else if (Cast<UDecalComponent>(Proxy->Owner))
         {
             FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
 
-            if (Renderer.HasActiveViewModePassConfig())
+            if (bHasViewModeConfig)
             {
-                if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DecalPass))
+                if (bUsesDecal)
                 {
-                    Pass->BuildDrawCommands(PassContext, *DecalProxy);
+                    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DecalPass))
+                    {
+                        Pass->BuildDrawCommands(PassContext, *DecalProxy);
+                    }
                 }
             }
             else
@@ -332,10 +362,24 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
         }
         else
         {
-            if (Renderer.HasActiveViewModePassConfig() && Proxy->Pass == ERenderPass::Opaque &&
+            if (bHasViewModeConfig && Proxy->Pass == ERenderPass::Opaque &&
                 Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DepthPrePass))
             {
                 FMeshDrawCommandBuilder::Build(*Proxy, ERenderPass::DepthPre, PassContext, *PassContext.DrawCommandList);
+            }
+
+            if (bHasViewModeConfig)
+            {
+                if (Proxy->Pass == ERenderPass::Opaque && !bUsesBaseDraw)
+                {
+                    continue;
+                }
+
+                if (bSuppressSceneExtras &&
+                    (Proxy->Pass == ERenderPass::AdditiveDecal || Proxy->Pass == ERenderPass::AlphaBlend))
+                {
+                    continue;
+                }
             }
 
             if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(MapPassToNodeType(Proxy->Pass)))
@@ -346,7 +390,10 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
         if (Proxy->bSelected)
         {
-            // 기존 선택 처리 로직 유지
+            if (FRenderPass* SelectionMaskPass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::SelectionMaskPass))
+            {
+                SelectionMaskPass->BuildDrawCommands(PassContext, *Proxy);
+            }
         }
     }
 }

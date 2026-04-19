@@ -61,6 +61,9 @@ public:
 
     FD3DDevice& GetFD3DDevice() { return Device; }
     FFrameSharedResources& GetResources() { return Resources; }
+    FLineBatch& GetEditorLineBatch() { return EditorLines; }
+    FLineBatch& GetGridLineBatch() { return GridLines; }
+    FFontBatch& GetFontBatch() { return FontGeometry; }
 
     const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
     bool HasSelectionMaskCommands() const { return bHasSelectionMaskCommands; }
