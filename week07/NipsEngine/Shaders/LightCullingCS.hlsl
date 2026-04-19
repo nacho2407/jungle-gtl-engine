@@ -1,11 +1,13 @@
+#define CS_SHADER
 #include "Common.hlsl"
 #include "Lighting.hlsl"
+
+RWStructuredBuffer<uint>  CulledIndexBuffer : register(u0);
+RWStructuredBuffer<uint2> TileBuffer        : register(u1);
 
 #define MAX_LIGHTS_PER_TILE 64
 
 Texture2D<float> DepthTexture : register(t0);
-RWStructuredBuffer<uint> CulledIndexBuffer : register(u0);
-RWStructuredBuffer<uint2> TileBuffer : register(u1);
 
 groupshared uint MinDepth;
 groupshared uint MaxDepth;
