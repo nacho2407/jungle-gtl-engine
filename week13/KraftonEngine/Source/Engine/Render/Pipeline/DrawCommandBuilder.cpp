@@ -192,8 +192,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 			else if (!bDepthOnly)
 			{
 				SetProxyExtraCB(Cmd);
-				if (Section.DiffuseSRV)
-					Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = Section.DiffuseSRV;
 			}
 
 			Cmd.BuildSortKey();

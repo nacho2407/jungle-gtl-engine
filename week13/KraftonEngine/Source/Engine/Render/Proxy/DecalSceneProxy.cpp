@@ -55,7 +55,7 @@ void FDecalSceneProxy::UpdateMaterial()
 	SectionDraws.clear();
 	if (DecalMaterial)
 	{
-		SectionDraws.push_back({ DecalMaterial, nullptr, 0, 0 });
+		SectionDraws.push_back({ DecalMaterial, 0, 0 });
 	}
 
 	auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);

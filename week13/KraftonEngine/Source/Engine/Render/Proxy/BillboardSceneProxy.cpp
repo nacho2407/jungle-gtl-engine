@@ -60,7 +60,7 @@ void FBillboardSceneProxy::UpdateMesh()
 		// SectionDraws 단일 항목 — Material의 CachedSRVs로 텍스처 바인딩
 		const uint32 IndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
 		SectionDraws.clear();
-		SectionDraws.push_back({ Mat, nullptr, 0, IndexCount });
+		SectionDraws.push_back({ Mat, 0, IndexCount });
 	}
 	else
 	{

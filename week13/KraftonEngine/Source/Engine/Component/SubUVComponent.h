@@ -4,6 +4,8 @@
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
+class UMaterial;
+
 class USubUVComponent : public UBillboardComponent
 {
 public:
@@ -17,6 +19,7 @@ public:
 	void SetParticle(const FName& InParticleName);
 	const FParticleResource* GetParticle() const { return CachedParticle; }
 	const FName& GetParticleName() const { return ParticleName; }
+	UMaterial* GetSubUVMaterial() const { return SubUVMaterial; }
 
 	// --- SubUV Frame ---
 	void SetFrameIndex(uint32 InIndex) { FrameIndex = InIndex; }
@@ -44,8 +47,11 @@ public:
 protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 private:
+	void RebuildSubUVMaterial();
+
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
+	UMaterial* SubUVMaterial = nullptr;           // Particle SRV를 래핑하는 경량 머티리얼
 
 	uint32 FrameIndex = 0;
 	float  PlayRate = 30.0f; // 초당 프레임 수
