@@ -60,6 +60,10 @@ struct FFrameConstants
 	float Padding0;
 	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
+
+	FVector2 ViewportSize;
+    float NearPlane;
+    float FarPlane;
 };
 
 struct FAmbientLightInfo
