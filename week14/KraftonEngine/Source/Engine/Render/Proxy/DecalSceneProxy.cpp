@@ -50,15 +50,12 @@ void FDecalSceneProxy::UpdateMaterial()
 	}
 
 	DecalMaterial = DecalComp->GetMaterial();
-	DiffuseSRV = nullptr;
 
+	// SectionDraws 단일 항목으로 Material 관리 (IndexCount=0: Decal은 자체 draw 안 함)
+	SectionDraws.clear();
 	if (DecalMaterial)
 	{
-		UTexture2D* DiffuseTex = nullptr;
-		if (DecalMaterial->GetTextureParameter("DiffuseTexture", DiffuseTex))
-		{
-			DiffuseSRV = DiffuseTex->GetSRV();
-		}
+		SectionDraws.push_back({ DecalMaterial, nullptr, 0, 0 });
 	}
 
 	auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
@@ -78,13 +75,11 @@ void FDecalSceneProxy::UpdateMesh()
 	{
 		Shader = DecalMaterial->GetShader();
 		Pass = DecalMaterial->GetRenderPass();
-		Material = DecalMaterial;
 	}
 	else
 	{
 		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
 		Pass = ERenderPass::Decal;
-		Material = nullptr;
 	}
 	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }

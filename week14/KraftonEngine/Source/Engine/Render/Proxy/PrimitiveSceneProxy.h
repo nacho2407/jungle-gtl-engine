@@ -62,8 +62,6 @@ public:
 	ERenderPass        GetRenderPass()  const { return Pass; }
 	FShader*           GetShader()      const { return Shader; }
 	FMeshBuffer*       GetMeshBuffer()  const { return MeshBuffer; }
-	UMaterial*         GetMaterial()    const { return Material; }
-	ID3D11ShaderResourceView* GetDiffuseSRV() const { return DiffuseSRV; }
 
 	const FPerObjectConstants&      GetPerObjectConstants() const { return PerObjectConstants; }
 	const FBoundingBox&             GetCachedBounds()       const { return CachedBounds; }
@@ -108,8 +106,6 @@ protected:
 	FShader*     Shader     = nullptr;
 	FMeshBuffer* MeshBuffer = nullptr;
 	ERenderPass  Pass       = ERenderPass::Opaque;
-	UMaterial*   Material   = nullptr;
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox        CachedBounds;

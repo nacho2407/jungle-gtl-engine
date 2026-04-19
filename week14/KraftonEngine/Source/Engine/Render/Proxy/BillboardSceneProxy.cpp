@@ -48,7 +48,7 @@ void FBillboardSceneProxy::UpdateMesh()
 	{
 		// TexturedQuad (FVertexPNCT with UVs)
 		MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
-		
+
 		Shader = Mat->GetShader();
 		if (!Shader)
 		{
@@ -56,25 +56,18 @@ void FBillboardSceneProxy::UpdateMesh()
 		}
 
 		Pass = Mat->GetRenderPass();
-		Material = Mat;
 
-		UTexture2D* DiffuseTex = nullptr;
-		if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
-		{
-			DiffuseSRV = DiffuseTex->GetSRV();
-		}
-		else
-		{
-			DiffuseSRV = nullptr;
-		}
+		// SectionDraws 단일 항목 — Material의 CachedSRVs로 텍스처 바인딩
+		const uint32 IndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+		SectionDraws.clear();
+		SectionDraws.push_back({ Mat, nullptr, 0, IndexCount });
 	}
 	else
 	{
 		MeshBuffer = GetOwner()->GetMeshBuffer();
 		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
 		Pass = ERenderPass::Opaque;
-		DiffuseSRV = nullptr;
-		Material = nullptr;
+		SectionDraws.clear();
 	}
 }
 
