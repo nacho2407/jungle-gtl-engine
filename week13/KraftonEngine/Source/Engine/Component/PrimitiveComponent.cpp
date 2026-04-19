@@ -207,6 +207,11 @@ void UPrimitiveComponent::CreateRenderState()
 
 	// Owner → World → FScene 경로로 접근
 	if (!Owner || !Owner->GetWorld()) return;
+
+	// EditorOnly 컴포넌트는 에디터 월드에서만 프록시 생성
+	if (IsEditorOnly() && Owner->GetWorld()->GetWorldType() != EWorldType::Editor)
+		return;
+
 	FScene& Scene = Owner->GetWorld()->GetScene();
 	SceneProxy = Scene.AddPrimitive(this);
 }
