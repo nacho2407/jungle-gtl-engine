@@ -406,9 +406,9 @@ void FRenderer::Render(const FFrameContext& Frame)
 	Cache.RTV = Frame.ViewportRTV;
 	Cache.DSV = Frame.ViewportDSV;
 
-	// ────── 버퍼에 데이터 올려주려면 여기로 들어가줘야 합니다. 여러분을 살릴 동앗줄입니다. ──────
+	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
-	BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces, Resources);
+	BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
