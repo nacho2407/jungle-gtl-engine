@@ -58,8 +58,8 @@ void FRenderer::CreateResources()
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
 	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
-	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024);
-	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 1024);
+	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024, true);
+	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 1024, true);
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));

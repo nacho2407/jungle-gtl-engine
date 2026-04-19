@@ -634,6 +634,15 @@ void FResourceManager::ReleaseGPUResources()
 	}
 	Shaders.clear();
 
+	for (auto& [Key, Shader] : ComputeShaders)
+    {
+        if (Shader)
+        {
+            delete Shader;
+        }
+    }
+    ComputeShaders.clear();
+
 	for (auto& [Key, Font] : FontResources)
 	{
 		if (Font.Texture)
@@ -762,6 +771,57 @@ UShader* FResourceManager::GetShader(const FString& FilePath) const
 {
 	auto It = Shaders.find(FilePath);
 	return (It != Shaders.end()) ? It->second : nullptr;
+}
+
+bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint)
+{
+    FComputeShader* Shader = nullptr;
+    auto It = ComputeShaders.find(FilePath);
+    if (It != ComputeShaders.end())
+    {
+        Shader = It->second;
+        return Shader;
+    }
+    else
+    {
+        Shader = new FComputeShader();
+        ComputeShaders[FilePath] = Shader;
+    }
+
+    TComPtr<ID3DBlob> CSBlob;
+    TComPtr<ID3DBlob> ErrorBlob;
+
+    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                                    EntryPoint.c_str(), "cs_5_0", 0, 0, &CSBlob, &ErrorBlob);
+    if (FAILED(hr))
+    {
+        if (ErrorBlob)
+        {
+            UE_LOG("Compute Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+        }
+        else
+        {
+            UE_LOG("Failed to compile compute shader: %s", FilePath.c_str());
+        }
+        return false;
+    }
+    ErrorBlob.Reset();
+
+    hr = CachedDevice->CreateComputeShader(CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(), nullptr,
+                                           &Shader->CS);
+    if (FAILED(hr))
+    {
+        UE_LOG("Failed to create compute shader: %s", FilePath.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+FComputeShader* FResourceManager::GetComputeShader(const FString& FilePath) const
+{
+    auto It = ComputeShaders.find(FilePath);
+    return (It != ComputeShaders.end()) ? It->second : nullptr;
 }
 
 TArray<FString> FResourceManager::GetMaterialNames() const
