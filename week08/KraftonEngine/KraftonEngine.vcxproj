@@ -99,42 +99,42 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
@@ -360,8 +360,8 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRunner.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\Debug\DebugDrawQueue.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\Debug\DrawDebugHelpers.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\DebugDraw\DebugDrawQueue.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Visibility\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Visibility\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Visibility\OcclusionCulling.cpp" />
@@ -561,8 +561,8 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRunner.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\Debug\DebugDrawQueue.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\Debug\DrawDebugHelpers.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\DebugDraw\DebugDrawQueue.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\DebugDraw\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Visibility\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Visibility\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Visibility\OcclusionCulling.h" />
