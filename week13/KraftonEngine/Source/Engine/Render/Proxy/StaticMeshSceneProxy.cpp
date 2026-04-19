@@ -55,6 +55,8 @@ void FStaticMeshSceneProxy::UpdateMaterial()
 void FStaticMeshSceneProxy::UpdateMesh()
 {
 	MeshBuffer = GetOwner()->GetMeshBuffer();
+	// Shader는 SectionDraws의 Material→GetShader()에서 per-section으로 가져옴 (DrawCommandBuilder)
+	// Material 없는 섹션의 폴백으로만 사용
 	Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
 	Pass = ERenderPass::Opaque;
 

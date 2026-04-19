@@ -3,6 +3,7 @@
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Materials/Material.h"
 
 // ============================================================
 // FSubUVSceneProxy
@@ -24,8 +25,11 @@ void FSubUVSceneProxy::UpdateMesh()
 
 	// TexturedQuad (FVertexPNCT with UVs) for rendering
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
-	Shader = FShaderManager::Get().GetShader(EShaderType::SubUV);
-	Pass = ERenderPass::AlphaBlend;
+
+	// Shader/Pass를 Material에서 파생 (Billboard과 동일 패턴)
+	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
+	Shader = (SubUVMat && SubUVMat->GetShader()) ? SubUVMat->GetShader() : FShaderManager::Get().GetShader(EShaderType::SubUV);
+	Pass = SubUVMat ? SubUVMat->GetRenderPass() : ERenderPass::AlphaBlend;
 
 	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
 	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
@@ -36,7 +40,6 @@ void FSubUVSceneProxy::UpdateMesh()
 
 	// SectionDraws 단일 항목 — SubUVMaterial로 Particle SRV 바인딩
 	SectionDraws.clear();
-	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
 	if (SubUVMat)
 	{
 		const uint32 IdxCount = MeshBuffer->GetIndexBuffer().GetIndexCount();

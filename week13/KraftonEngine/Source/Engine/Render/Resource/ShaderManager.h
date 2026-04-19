@@ -40,11 +40,17 @@ public:
 
 	FShader* CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath);
 
+	// 경로 → 기 등록 셰이더 매핑 (MaterialManager가 Template 생성 시 사용)
+	FShader* FindRegisteredShader(const FString& Path) const;
+
 private:
 	FShaderManager() = default;
 
+	void RegisterShaderPath(const FString& Path, EShaderType Type);
+
 	FShader Shaders[(uint32)EShaderType::MAX];
 	TMap<FString, std::unique_ptr< FShader>> CustomShaderCache; // 커스텀 셰이더 캐시 (경로 → 셰이더)
+	TMap<FString, FShader*> RegisteredShaderPaths;              // 파일 경로 → 등록 셰이더
 
 	bool bIsInitialized = false;
 };

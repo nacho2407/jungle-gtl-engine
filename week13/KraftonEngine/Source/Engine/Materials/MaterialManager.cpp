@@ -383,8 +383,13 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
 		return It->second;
 	}
 
-	// 2. 템플릿이 기존에 없다면 새로 제작 — 셰이더 파일 읽고 컴파일
-	FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(ShaderPath).c_str());
+	// 2. 템플릿이 기존에 없다면 새로 제작
+	//    기 등록된 셰이더(ShaderManager)가 있으면 우선 사용 → 포인터 동일 보장
+	FShader* Shader = FShaderManager::Get().FindRegisteredShader(ShaderPath);
+	if (!Shader)
+	{
+		Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(ShaderPath).c_str());
+	}
 	if (!Shader)
 	{
 		return nullptr;

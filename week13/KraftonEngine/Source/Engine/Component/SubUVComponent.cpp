@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/ShaderManager.h"
 #include "Resource/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -55,7 +56,9 @@ void USubUVComponent::RebuildSubUVMaterial()
 	if (!SubUVMaterial)
 	{
 		SubUVMaterial = UMaterial::CreateTransient(
-			ERenderPass::AlphaBlend, EBlendState::AlphaBlend);
+			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
+			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
+			FShaderManager::Get().GetShader(EShaderType::SubUV));
 	}
 
 	if (CachedParticle && CachedParticle->IsLoaded())
