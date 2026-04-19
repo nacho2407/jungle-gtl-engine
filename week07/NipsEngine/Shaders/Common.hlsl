@@ -9,6 +9,9 @@ cbuffer FrameBuffer : register(b0)
     float Padding1;
     float bIsWireframe;
     float3 WireframeRGB;
+    float2 ViewportSize;
+    float NearZ;
+    float FarZ;
 }
 
 cbuffer PerObjectBuffer : register(b1)
@@ -16,17 +19,6 @@ cbuffer PerObjectBuffer : register(b1)
     row_major float4x4 Model;
     row_major float4x4 WorldInvTrans;
     float4 PrimitiveColor; 
-};
-
-cbuffer OverlayBuffer : register(b3)
-{
-    float2 OverlayCenterScreen;
-    float2 ViewportSize;
-
-    float OverlayRadius;
-    float3 Padding2;
-
-    float4 OverlayColor;
 };
 
 #define MAX_FOG_LAYER_COUNT 32
