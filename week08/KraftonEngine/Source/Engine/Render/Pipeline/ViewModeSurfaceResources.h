@@ -70,7 +70,7 @@ class FViewModeSurfaceResources
         const float ClearColor[4] = {0, 0, 0, 0};
         Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::BaseColor), ClearColor);
 
-        if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+        if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
         {
             Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::Surface1), ClearColor);
         }
@@ -86,7 +86,7 @@ class FViewModeSurfaceResources
         const float ClearColor[4] = {0, 0, 0, 0};
         Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::ModifiedBaseColor), ClearColor);
 
-        if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+        if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
         {
             Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::ModifiedSurface1), ClearColor);
         }
@@ -106,7 +106,7 @@ class FViewModeSurfaceResources
         };
         uint32 TargetCount = 1;
 
-        if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+        if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
         {
             Targets[1] = GetRTV(ESurfaceSlot::Surface1);
             TargetCount = 2;
@@ -130,7 +130,7 @@ class FViewModeSurfaceResources
         };
         uint32 TargetCount = 1;
 
-        if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+        if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
         {
             Targets[1] = GetRTV(ESurfaceSlot::ModifiedSurface1);
             TargetCount = 2;
