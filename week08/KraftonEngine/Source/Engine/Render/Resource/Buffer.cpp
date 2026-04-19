@@ -120,7 +120,7 @@ void FConstantBuffer::Release()
 		Buffer->Release();
 		Buffer = nullptr;
 	}
-}
+}	
 
 void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth)
 {

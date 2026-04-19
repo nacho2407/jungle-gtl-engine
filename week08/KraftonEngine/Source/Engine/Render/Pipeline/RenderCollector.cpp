@@ -21,7 +21,7 @@
 #include <Collision/SpatialPartition.h>
 #include <Collision/WorldPrimitivePickingBVH.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
+void FRenderCollector::CollectWorld(UWorld* World, FFrameContext& Frame, FRenderer& Renderer)
 {
 	if (!World) return;
 
@@ -54,7 +54,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 
 	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
-	CollectLights(Scene);
+	CollectLights(Scene, Frame.CollectedLights);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -309,14 +309,50 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 // Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
 // 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void FRenderCollector::CollectLights(FScene& Scene)
+void FRenderCollector::CollectLights(FScene &Scene, FCollectedLights& OutLights)
 {
-    CollectedLights.clear();
-    for (const FLightSceneProxy* Proxy : Scene.GetLightProxies())
-    {
-        if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
-            continue;
-        CollectedLights.push_back(Proxy->LightConstants);
-        Proxy->VisualizeLights(Scene);
-    }
+    const TArray<FLightSceneProxy*>& LightProxies = Scene.GetLightProxies();
+    OutLights.GlobalLights = FGlobalLightConstants();
+	OutLights.LocalLights.clear();
+
+	for (FLightSceneProxy* Proxy : LightProxies)
+	{
+		if (!Proxy) continue;
+
+		FLightConstants& LC = Proxy->LightConstants;
+		if (LC.LightType == static_cast<uint32>(ELightType::Ambient))
+		{
+            OutLights.GlobalLights.Ambient.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+            OutLights.GlobalLights.Ambient.Intensity = LC.Intensity;
+        }
+        else if (LC.LightType == static_cast<uint32>(ELightType::Directional))
+        {
+            if (OutLights.GlobalLights.NumDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
+            {
+                uint32 Index = OutLights.GlobalLights.NumDirectionalLights;
+                OutLights.GlobalLights.Directional[Index].Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+                OutLights.GlobalLights.Directional[Index].Intensity = LC.Intensity;
+                OutLights.GlobalLights.Directional[Index].Direction = LC.Direction;
+                OutLights.GlobalLights.NumDirectionalLights++;
+            }
+        }
+        else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
+        {
+            // 제한 없이 배열에 추가 — GPU 상수 배열로 전달, 셰이더에서 최대 개수만큼 처리
+            FLocalLightInfo LocalLight = {};
+            LocalLight.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+            LocalLight.Intensity = LC.Intensity;
+            LocalLight.Position = LC.Position;
+            LocalLight.AttenuationRadius = LC.AttenuationRadius;
+            LocalLight.Direction = LC.Direction;
+            LocalLight.InnerConeAngle = LC.InnerConeAngle;
+            LocalLight.OuterConeAngle = LC.OuterConeAngle;
+            OutLights.LocalLights.push_back(LocalLight);
+		}
+
+		Proxy->VisualizeLightsInEditor(Scene);
+	}
+
+	// Local Lights의 개수를 저장
+	OutLights.GlobalLights.NumLocalLights = static_cast<int32>(OutLights.LocalLights.size());
 }

@@ -9,6 +9,7 @@ class FViewModeRenderPipeline;
 class FViewModeSurfaceResources;
 class FTileBasedLightCulling;
 struct FFrameContext;
+struct FRenderResources;
 
 enum class EPassCompare : uint8 { Equal, Less, Greater, LessEqual, GreaterEqual };
 
@@ -46,4 +47,6 @@ void BuildDefaultPassEvents(
 	FStateCache& Cache,
 	const FViewModeRenderPipeline* ActiveViewPipeline,
 	FViewModeSurfaceResources* ActiveViewSurfaces,
-	FTileBasedLightCulling& LightCulling);
+	FTileBasedLightCulling& LightCulling,
+	FRenderResources& Resources);
+

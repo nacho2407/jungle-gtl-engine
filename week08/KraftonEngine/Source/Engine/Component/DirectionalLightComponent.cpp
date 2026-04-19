@@ -54,7 +54,6 @@ void UDirectionalLightComponent::Serialize(FArchive& Ar)
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ULightComponent::GetEditableProperties(OutProps);
-    OutProps.push_back({ "Direction", EPropertyType::Vec3, &Direction, 0.0f, 0.0f, 1.0f });
 }
 
 void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
