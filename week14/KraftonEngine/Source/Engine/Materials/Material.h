@@ -7,6 +7,7 @@
 #include "Render/Types/RenderStateTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
+#include "Render/Pipeline/RenderConstants.h"
 #include <memory>
 
 class UTexture2D;
@@ -87,6 +88,9 @@ private:
 
 	FShader* TransientShader = nullptr; // CreateTransient에서 직접 지정된 셰이더 (Template 없는 경우)
 
+	// Per-shader CB 오버라이드 — transient Material에서 프록시가 관리하는 외부 CB
+	FConstantBufferBinding PerShaderOverride;
+
 	// SRV 캐시 — SetTextureParameter 시 갱신, BuildCommandForProxy에서 map lookup 회피
 	ID3D11ShaderResourceView* CachedSRVs[(int)EMaterialTextureSlot::Max] = {};
 
@@ -125,6 +129,19 @@ public:
 	EDepthStencilState GetDepthStencilState() const { return DepthStencilState; }
 	ERasterizerState GetRasterizerState() const { return RasterizerState; }
 
+	// Per-shader CB 오버라이드 — transient Material에서 Gizmo/SubUV/Decal 등이 사용
+	template<typename T>
+	T& BindPerShaderCB(FConstantBuffer* Buffer, uint32 Slot)
+	{
+		return PerShaderOverride.Bind<T>(Buffer, Slot);
+	}
+
+	template<typename T>
+	T& GetPerShaderAs() { return PerShaderOverride.As<T>(); }
+
+	template<typename T>
+	const T& GetPerShaderAs() const { return PerShaderOverride.As<T>(); }
+
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
 	const FString& GetAssetPathFileName() const { return PathFileName;}
@@ -133,6 +150,10 @@ public:
 
 	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const
 	{
+		// Per-shader override (transient Material의 외부 CB)
+		if (PerShaderOverride.Buffer && PerShaderOverride.Slot == InSlot)
+			return PerShaderOverride.Buffer;
+
 		for (const auto& Pair : ConstantBufferMap)
 		{
 			if (Pair.second->SlotIndex == InSlot)
@@ -142,12 +163,19 @@ public:
 	}
 
 	// dirty CB를 GPU에 업로드 — BuildCommandForProxy 전에 호출
-	void FlushDirtyBuffers(ID3D11DeviceContext* Ctx)
+	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx)
 	{
 		for (auto& Pair : ConstantBufferMap)
 		{
 			if (Pair.second->bDirty)
 				Pair.second->Upload(Ctx);
+		}
+		// Per-shader override CB (Gizmo/SubUV/Decal 등)
+		if (PerShaderOverride.Buffer)
+		{
+			if (!PerShaderOverride.Buffer->GetBuffer())
+				PerShaderOverride.Buffer->Create(Device, PerShaderOverride.Size);
+			PerShaderOverride.Buffer->Update(Ctx, PerShaderOverride.Data, PerShaderOverride.Size);
 		}
 	}
 

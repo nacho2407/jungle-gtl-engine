@@ -112,29 +112,9 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		Proxy.ClearPerObjectCBDirty();
 	}
 
-	// PerShaderCB 업데이트 (Gizmo, SubUV, Decal 등) — lazy creation if buffer not yet allocated
-	const FConstantBufferBinding& ProxyExtraCB = Proxy.GetExtraCB();
-	if (ProxyExtraCB.Buffer)
-	{
-		if (!ProxyExtraCB.Buffer->GetBuffer())
-			ProxyExtraCB.Buffer->Create(CachedDevice, ProxyExtraCB.Size);
-		ProxyExtraCB.Buffer->Update(Ctx, ProxyExtraCB.Data, ProxyExtraCB.Size);
-	}
-
 	// SelectionMask 커맨드 존재 추적
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
-
-	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
-	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
-		{
-			if (ProxyExtraCB.Buffer)
-			{
-				const uint32 Idx = ProxyExtraCB.Slot - ECBSlot::PerShader0;
-				check(Idx < 2);
-				Cmd.Bindings.PerShaderCB[Idx] = ProxyExtraCB.Buffer;
-			}
-		};
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
 	const bool bApplyMaterialState = !bDepthOnly && (Pass == Proxy.GetRenderPass());
@@ -172,12 +152,11 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 			{
 				UMaterial* Mat = Section.Material;
 
-				// dirty CB 업로드
-				Mat->FlushDirtyBuffers(Ctx);
+				// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
+				Mat->FlushDirtyBuffers(CachedDevice, Ctx);
 
 				Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 				Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
-				SetProxyExtraCB(Cmd);
 
 				// CachedSRVs에서 직접 복사 (map lookup 회피)
 				const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
@@ -186,10 +165,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 
 				if (bApplyMaterialState)
 					ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
-			}
-			else if (!bDepthOnly)
-			{
-				SetProxyExtraCB(Cmd);
 			}
 
 			Cmd.BuildSortKey();
@@ -212,11 +187,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 			Cmd.Buffer.IndexCount = Proxy.GetMeshBuffer()->GetIndexBuffer().GetIndexCount();
 		else
 			Cmd.Buffer.VertexCount = Proxy.GetMeshBuffer()->GetVertexBuffer().GetVertexCount();
-
-		if (!bDepthOnly)
-		{
-			SetProxyExtraCB(Cmd);
-		}
 
 		Cmd.BuildSortKey();
 	}
@@ -244,15 +214,8 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 		ReceiverProxy.ClearPerObjectCBDirty();
 	}
 
-	const FConstantBufferBinding& DecalExtraCB = DecalProxy.GetExtraCB();
-	if (DecalExtraCB.Buffer)
-	{
-		if (!DecalExtraCB.Buffer->GetBuffer())
-		{
-			DecalExtraCB.Buffer->Create(CachedDevice, DecalExtraCB.Size);
-		}
-		DecalExtraCB.Buffer->Update(Ctx, DecalExtraCB.Data, DecalExtraCB.Size);
-	}
+	// Decal Material의 CB 업로드 (PerShaderOverride 포함)
+	DecalMat->FlushDirtyBuffers(CachedDevice, Ctx);
 
 	FDrawCommandBuffer ReceiverBuffer;
 	ReceiverBuffer.VB       = ReceiverProxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
@@ -275,7 +238,7 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 			Cmd.Buffer.FirstIndex = FirstIndex;
 			Cmd.Buffer.IndexCount = IndexCount;
 			Cmd.PerObjectCB       = ReceiverPerObjCB;
-			Cmd.Bindings.PerShaderCB[0] = DecalExtraCB.Buffer;
+			Cmd.Bindings.PerShaderCB[0] = DecalMat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 
 			// Material의 CachedSRVs에서 텍스처 바인딩
 			const ID3D11ShaderResourceView* const* MatSRVs = DecalMat->GetCachedSRVs();

@@ -67,7 +67,6 @@ public:
 	const FBoundingBox&             GetCachedBounds()       const { return CachedBounds; }
 	const FVector&                  GetCachedWorldPos()     const { return CachedWorldPos; }
 	const TArray<FMeshSectionDraw>& GetSectionDraws()       const { return SectionDraws; }
-	const FConstantBufferBinding&   GetExtraCB()            const { return ExtraCB; }
 
 	// --- PerObject CB 상태 ---
 	void MarkPerObjectCBDirty()   const { bPerObjectCBDirty = true; }
@@ -113,7 +112,6 @@ protected:
 	FVector             CachedWorldPos;
 
 	TArray<FMeshSectionDraw>  SectionDraws;
-	FConstantBufferBinding    ExtraCB;
 
 	// 가시성 (서브클래스 UpdateVisibility/UpdatePerViewport에서 변경)
 	bool bVisible = true;
