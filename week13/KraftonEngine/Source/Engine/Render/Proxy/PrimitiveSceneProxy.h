@@ -90,9 +90,6 @@ public:
 	virtual void UpdateLOD(uint32 /*LODLevel*/) {}
 	virtual void UpdatePerViewport(const FFrameContext& /*Frame*/) {}
 
-	// 선택된 프록시의 소유 액터 컴포넌트에서 디버그 시각화 수집
-	void CollectSelectedVisuals(FScene& Scene) const;
-
 protected:
 	// ================================================================
 	// 서브클래스용 — Update*()에서 쓰기 가능한 캐시 데이터

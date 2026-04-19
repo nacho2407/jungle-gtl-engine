@@ -129,6 +129,7 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 
 	FScene& Scene = World->GetScene();
 	Scene.ClearFrameData();
+	Scene.CollectSelectedDebugVisuals();
 
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 	Builder.BeginCollect(Frame, Scene.GetProxyCount());

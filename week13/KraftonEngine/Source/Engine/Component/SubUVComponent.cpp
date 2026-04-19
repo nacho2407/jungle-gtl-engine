@@ -112,6 +112,7 @@ void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	const uint32 TotalFrames = CachedParticle->Columns * CachedParticle->Rows;
 	if (TotalFrames == 0) return;
 
+	const uint32 PrevFrameIndex = FrameIndex;
 	TimeAccumulator += DeltaTime;
 	const float FrameDuration = 1.0f / PlayRate;
 	while (TimeAccumulator >= FrameDuration)
@@ -136,6 +137,12 @@ void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				break;
 			}
 		}
+	}
+
+	// FrameIndex 변경 시 프록시에 경량 dirty 마킹 (Octree/BVH 갱신 없이)
+	if (FrameIndex != PrevFrameIndex)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
 	}
 }
 

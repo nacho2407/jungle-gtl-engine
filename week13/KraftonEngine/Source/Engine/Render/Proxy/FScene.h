@@ -34,6 +34,9 @@ public:
 	void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
 	bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
 
+	// --- 선택 디버그 시각화 ---
+	void CollectSelectedDebugVisuals();
+
 	// --- 조회 ---
 	const TArray<FPrimitiveSceneProxy*>& GetAllProxies() const { return Proxies; }
 	const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return NeverCullProxies; }
@@ -88,11 +91,11 @@ public:
 
 	void AddPointLight(const class UPointLightComponent* Owner, const FPointLightParams& Params);
 	void RemovePointLight(const class UPointLightComponent* Owner);
-	const TArray<FPointLightParams>& GetPointLights() const;
+	const TArray<FPointLightParams>& GetPointLights() const { return CachedPointLightParams; }
 
 	void AddSpotLight(const class USpotLightComponent* Owner, const FSpotLightParams& Params);
 	void RemoveSpotLight(const class USpotLightComponent* Owner);
-	const TArray<FSpotLightParams>& GetSpotLights() const;
+	const TArray<FSpotLightParams>& GetSpotLights() const { return CachedSpotLightParams; }
 
 private:
 	// --- 내부 헬퍼 (friend 경유로 Proxy private 멤버 접근) ---
@@ -152,4 +155,11 @@ private:
 	FGlobalDirectionalLightEntry GlobalDirectionalLight;
 	TArray<FPointLightEntry> PointLights;
 	TArray<FSpotLightEntry> SpotLights;
+
+	// 라이트 파라미터 캐시 (Add/Remove 시 재구축)
+	TArray<FPointLightParams> CachedPointLightParams;
+	TArray<FSpotLightParams>  CachedSpotLightParams;
+
+	void RebuildPointLightCache();
+	void RebuildSpotLightCache();
 };
