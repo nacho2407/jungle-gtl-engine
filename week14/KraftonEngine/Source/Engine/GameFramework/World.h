@@ -6,6 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
+#include "GameFramework/WorldContext.h"
 #include "Render/Proxy/FScene.h"
 #include "Render/Pipeline/LODContext.h"
 #include <Collision/Octree.h>
@@ -20,10 +21,18 @@ public:
 	UWorld() = default;
 	~UWorld() override;
 
-	// PIE 월드 복제용 — 자체 Actor 리스트를 순회하며 각 Actor를 새 World로 Duplicate.
+	// --- 월드 타입 ---
+	EWorldType GetWorldType() const { return WorldType; }
+	void SetWorldType(EWorldType InType) { WorldType = InType; }
+
+	// 월드 복제 — 자체 Actor 리스트를 순회하며 각 Actor를 새 World로 Duplicate.
 	// UObject::Duplicate는 Serialize 왕복만 수행하므로 UWorld처럼 컨테이너 기반 상태가 있는
 	// 타입은 별도 오버라이드가 필요하다.
 	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
+
+	// 지정된 WorldType으로 복제 — Actor 복제 전에 WorldType이 설정되므로
+	// EditorOnly 컴포넌트의 CreateRenderState()에서 올바르게 판별 가능.
+	UWorld* DuplicateAs(EWorldType InWorldType) const;
 
 	// Actor lifecycle
 	template<typename T>
@@ -69,6 +78,7 @@ private:
 
 	UCameraComponent* ActiveCamera = nullptr;
 	UCameraComponent* LastLODUpdateCamera = nullptr;
+	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
 	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;

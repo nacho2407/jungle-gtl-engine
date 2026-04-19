@@ -1,6 +1,7 @@
 ﻿#include "Render/Proxy/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Render/Resource/ShaderManager.h"
 
 #include "Materials/Material.h"
@@ -18,6 +19,8 @@ namespace
 FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
 {
+	ProxyFlags |= EPrimitiveProxyFlags::Decal;
+	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 	DecalCB = new FConstantBuffer();
 	// 최초 1회 초기화
 	UpdateMesh();
@@ -35,7 +38,7 @@ FDecalSceneProxy::~FDecalSceneProxy()
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 {
-	return static_cast<UDecalComponent*>(Owner);
+	return static_cast<UDecalComponent*>(GetOwner());
 }
 
 void FDecalSceneProxy::UpdateMaterial()
@@ -66,6 +69,7 @@ void FDecalSceneProxy::UpdateMaterial()
 void FDecalSceneProxy::UpdateMesh()
 {
 	UpdateMaterial();
+	RebuildReceiverProxies();
 
 	MeshBuffer = nullptr;
 	SectionDraws.clear();
@@ -82,5 +86,23 @@ void FDecalSceneProxy::UpdateMesh()
 		Pass = ERenderPass::Decal;
 		Material = nullptr;
 	}
-	bSupportsOutline = false;
+	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
+}
+
+void FDecalSceneProxy::RebuildReceiverProxies()
+{
+	CachedReceiverProxies.clear();
+
+	UDecalComponent* DecalComp = GetDecalComponent();
+	if (!DecalComp) return;
+
+	for (UStaticMeshComponent* Receiver : DecalComp->GetReceivers())
+	{
+		if (Receiver)
+		{
+			FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
+			if (ReceiverProxy)
+				CachedReceiverProxies.push_back(ReceiverProxy);
+		}
+	}
 }

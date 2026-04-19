@@ -165,7 +165,9 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	{
 		return;
 	}
-	UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate(nullptr));
+	// DuplicateAs(PIE)로 복제하면 Actor 복제 전에 WorldType이 설정되어
+	// EditorOnly 컴포넌트의 프록시가 아예 생성되지 않음.
+	UWorld* PIEWorld = EditorWorld->DuplicateAs(EWorldType::PIE);
 	if (!PIEWorld)
 	{
 		return;

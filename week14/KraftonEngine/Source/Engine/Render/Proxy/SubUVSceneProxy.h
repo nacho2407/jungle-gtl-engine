@@ -2,6 +2,7 @@
 
 #include "Render/Proxy/BillboardSceneProxy.h"
 #include "Render/Resource/Buffer.h"
+#include "Core/ResourceTypes.h"
 
 class USubUVComponent;
 
@@ -17,6 +18,7 @@ public:
 	~FSubUVSceneProxy() override;
 
 	void UpdateMesh() override;
+	void UpdateMaterial() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
 
 private:
@@ -24,4 +26,8 @@ private:
 
 	// 프록시별 UV region CB (공유 풀이 아닌 자체 소유)
 	FConstantBuffer UVRegionCB;
+
+	// Owner 접근 없이 UpdatePerViewport에서 사용하기 위한 캐시
+	const FParticleResource* CachedParticle = nullptr;
+	uint32 CachedFrameIndex = 0;
 };

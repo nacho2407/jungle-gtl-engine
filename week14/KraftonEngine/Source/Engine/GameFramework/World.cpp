@@ -42,6 +42,24 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
 	return NewWorld;
 }
 
+UWorld* UWorld::DuplicateAs(EWorldType InWorldType) const
+{
+	UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
+	if (!NewWorld) return nullptr;
+
+	NewWorld->SetWorldType(InWorldType);
+	NewWorld->InitWorld();
+
+	for (AActor* Src : GetActors())
+	{
+		if (!Src) continue;
+		Src->Duplicate(NewWorld);
+	}
+
+	NewWorld->PostDuplicate();
+	return NewWorld;
+}
+
 void UWorld::DestroyActor(AActor* Actor)
 {
 	// remove and clean up

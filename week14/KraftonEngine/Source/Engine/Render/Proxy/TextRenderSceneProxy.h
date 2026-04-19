@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/Proxy/BillboardSceneProxy.h"
+#include "Core/ResourceTypes.h"
 
 class UTextRenderComponent;
 
@@ -14,6 +15,7 @@ class FTextRenderSceneProxy : public FBillboardSceneProxy
 public:
 	FTextRenderSceneProxy(UTextRenderComponent* InComponent);
 
+	void UpdateTransform() override;
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
 
@@ -21,7 +23,12 @@ public:
 	FString CachedText;
 	float   CachedFontScale = 1.0f;
 	FMatrix CachedBillboardMatrix;
+	const FFontResource* CachedFont = nullptr;
 
 private:
 	UTextRenderComponent* GetTextRenderComponent() const;
+
+	// 아웃라인 행렬 계산용 캐싱 데이터 (UpdateMesh에서 갱신)
+	float CachedCharWidth  = 0.5f;
+	float CachedCharHeight = 0.5f;
 };
