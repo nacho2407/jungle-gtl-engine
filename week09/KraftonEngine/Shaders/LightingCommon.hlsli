@@ -53,7 +53,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
     float Diffuse = ComputeLambertTerm(Normal);
     float Shininess = max(MaterialParam.x, 1.0f);
     float SpecularStrength = max(MaterialParam.y, 0.0f);
-    float Specular = pow(saturate(dot(normalize(Normal), HalfVector)), Shininess) * SpecularStrength * saturate(Diffuse * 4.0f);
+    float Specular = pow(saturate(dot(normalize(Normal), HalfVector)), Shininess) * SpecularStrength;
 
     float3 LightColor = GetMainLightColor();
     float3 DiffuseColor = BaseColor.rgb * (0.2f + Diffuse * LightColor);
@@ -61,5 +61,4 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
 
     return float4(DiffuseColor + SpecularColor, BaseColor.a);
 }
-
 #endif

@@ -19,8 +19,9 @@
 
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
+#include <Collision/WorldPrimitivePickingBVH.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
+void FRenderCollector::CollectWorld(UWorld* World, FFrameContext& Frame, FRenderer& Renderer)
 {
 	if (!World) return;
 
@@ -53,7 +54,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 
 	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
-	CollectLights(Scene);
+	CollectLights(Scene, Frame.CollectedLights);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -82,14 +83,9 @@ void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scen
 // ============================================================
 // Octree 디버그 시각화 — 깊이별 색상으로 노드 AABB 표시
 // ============================================================
-static const FColor OctreeDepthColors[] = {
-	FColor(255,   0,   0),	// 0: Red
-	FColor(255, 165,   0),	// 1: Orange
-	FColor(255, 255,   0),	// 2: Yellow
-	FColor(0, 255,   0),	// 3: Green
-	FColor(0, 255, 255),	// 4: Cyan
-	FColor(0,   0, 255),	// 5: Blue
-};
+static const FColor OctreeDebugColor = FColor(0, 255, 255);
+static const FColor BVHDebugColor = FColor(0, 255, 0);
+static const FColor WorldBoundDebugColor = FColor(255, 0, 255);
 
 void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
 {
@@ -98,7 +94,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 	const FBoundingBox& Bounds = Node->GetCellBounds();
 	if (!Bounds.IsValid()) return;
 
-	const FColor& Color = OctreeDepthColors[Depth % 6];
+	const FColor& Color = OctreeDebugColor;
 	const FVector& Min = Bounds.Min;
 	const FVector& Max = Bounds.Max;
 
@@ -133,6 +129,32 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 	}
 }
 
+
+void FRenderCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene)
+{
+	const TArray<FWorldPrimitivePickingBVH::FNode>& Nodes = BVH.GetNodes();
+	for (const FWorldPrimitivePickingBVH::FNode& Node : Nodes)
+	{
+		if (!Node.Bounds.IsValid())
+		{
+			continue;
+		}
+		Scene.AddDebugAABB(Node.Bounds.Min, Node.Bounds.Max, BVHDebugColor);
+	}
+}
+
+void FRenderCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene)
+{
+	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	{
+		if (!Proxy || !Proxy->CachedBounds.IsValid())
+		{
+			continue;
+		}
+		Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, WorldBoundDebugColor);
+	}
+}
+
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
@@ -140,8 +162,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 {
 	if (!Frame.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = Frame.ShowFlags.bBoundingVolume;
-	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
+		SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
 	TSet<FPrimitiveSceneProxy*> VisibleProxySet;
 	VisibleProxySet.reserve(Proxies.size());
@@ -271,11 +292,6 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 				Renderer.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
 			}
 
-			if (bShowBoundingVolume && Proxy->bShowAABB)
-			{
-				Scene.AddDebugAABB(Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor::White());
-			}
-
 			//TODO: Owner 의존성 제거
 			Proxy->CollectSelectedVisuals(Scene);
 		}
@@ -292,13 +308,50 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 // Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
 // 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void FRenderCollector::CollectLights(FScene& Scene)
+void FRenderCollector::CollectLights(FScene &Scene, FCollectedLights& OutLights)
 {
-    CollectedLights.clear();
-    for (const FLightSceneProxy* Proxy : Scene.GetLightProxies())
-    {
-        if (!Proxy || !Proxy->bVisible || !Proxy->bAffectsWorld)
-            continue;
-        CollectedLights.push_back(Proxy->LightConstants);
-    }
+    const TArray<FLightSceneProxy*>& LightProxies = Scene.GetLightProxies();
+    OutLights.GlobalLights = FGlobalLightConstants();
+	OutLights.LocalLights.clear();
+
+	for (FLightSceneProxy* Proxy : LightProxies)
+	{
+		if (!Proxy) continue;
+
+		FLightConstants& LC = Proxy->LightConstants;
+		if (LC.LightType == static_cast<uint32>(ELightType::Ambient))
+		{
+            OutLights.GlobalLights.Ambient.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+            OutLights.GlobalLights.Ambient.Intensity = LC.Intensity;
+        }
+        else if (LC.LightType == static_cast<uint32>(ELightType::Directional))
+        {
+            if (OutLights.GlobalLights.NumDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
+            {
+                uint32 Index = OutLights.GlobalLights.NumDirectionalLights;
+                OutLights.GlobalLights.Directional[Index].Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+                OutLights.GlobalLights.Directional[Index].Intensity = LC.Intensity;
+                OutLights.GlobalLights.Directional[Index].Direction = LC.Direction;
+                OutLights.GlobalLights.NumDirectionalLights++;
+            }
+        }
+        else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
+        {
+            // 제한 없이 배열에 추가 — GPU 상수 배열로 전달, 셰이더에서 최대 개수만큼 처리
+            FLocalLightInfo LocalLight = {};
+            LocalLight.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+            LocalLight.Intensity = LC.Intensity;
+            LocalLight.Position = LC.Position;
+            LocalLight.AttenuationRadius = LC.AttenuationRadius;
+            LocalLight.Direction = LC.Direction;
+            LocalLight.InnerConeAngle = LC.InnerConeAngle;
+            LocalLight.OuterConeAngle = LC.OuterConeAngle;
+            OutLights.LocalLights.push_back(LocalLight);
+		}
+
+		Proxy->VisualizeLightsInEditor(Scene);
+	}
+
+	// Local Lights의 개수를 저장
+	OutLights.GlobalLights.NumLocalLights = static_cast<int32>(OutLights.LocalLights.size());
 }

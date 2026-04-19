@@ -1,8 +1,13 @@
 {
-  "PathFileName" : "Asset/Materials/AdditiveBillboardTest.json",
-  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
-  "RenderPass" : "AlphaBlend",
   "BlendState" : "Additive",
+  "DepthStencilState" : "",
+  "Parameters" : {
+    "SectionColor" : [0.000000, 0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Asset/Materials/AdditiveBillboardTest.json",
+  "RasterizerState" : "",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/PointLight_64x.png"
   }

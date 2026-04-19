@@ -11,9 +11,8 @@ void FAmbientLightSceneProxy::UpdateLightConstants()
     if (!Owner)
         return;
 
-    LightConstants = {};
-    LightConstants.Intensity  = Owner->GetIntensity();
-    LightConstants.LightColor = Owner->GetLightColor();
-    LightConstants.LightType  = static_cast<uint32>(ELightType::Ambient);
-    // Position, Direction, AttenuationRadius, ConeAngle — 환경광에서 미사용 (0 유지)
+    FLightSceneProxy::UpdateLightConstants();
+
+    UAmbientLightComponent* AmbientLight = static_cast<UAmbientLightComponent*>(Owner);
+    LightConstants.LightType = static_cast<uint32>(ELightType::Ambient);
 }
