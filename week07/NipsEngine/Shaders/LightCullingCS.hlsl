@@ -1,7 +1,6 @@
 #include "Common.hlsl"
 #include "Lighting.hlsl"
 
-#define TILE_SIZE 16
 #define MAX_LIGHTS_PER_TILE 64
 
 Texture2D<float> DepthTexture : register(t0);
@@ -49,16 +48,23 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
     float minDepth = asfloat(MinDepth);
     float maxDepth = asfloat(MaxDepth);
     
-    float2 tileMin = (float2(groupID.xy) * TILE_SIZE) / ViewportSize * 2.0f - 1.0f;
-    float2 tileMax = (float2(groupID.xy + 1) * TILE_SIZE) / ViewportSize * 2.0f - 1.0f;
-    tileMin.y *= -1.0f;
-    tileMax.y *= -1.0f;
-    
-    float tileMinViewZ = LinearizeDepth(minDepth);
-    float tileMaxViewZ = LinearizeDepth(maxDepth);
-    
-    float tileNear = min(tileMinViewZ, tileMaxViewZ);
-    float tileFar = max(tileMinViewZ, tileMaxViewZ);
+    // NDC tile bounds (X: left-right, Y: bottom-top after flip)
+    float ndcL = (float(groupID.x)     * TILE_SIZE) / ViewportSize.x * 2.0f - 1.0f;
+    float ndcR = (float(groupID.x + 1) * TILE_SIZE) / ViewportSize.x * 2.0f - 1.0f;
+    float ndcB = 1.0f - (float(groupID.y + 1) * TILE_SIZE) / ViewportSize.y * 2.0f;
+    float ndcT = 1.0f - (float(groupID.y)     * TILE_SIZE) / ViewportSize.y * 2.0f;
+
+    // View-space inward-facing frustum plane normals for XY culling
+    // For left-hand perspective: NDC_X = vx*P00/vz, NDC_Y = vy*P11/vz
+    float P00 = Projection[0][0];
+    float P11 = Projection[1][1];
+    float3 planeL = normalize(float3( P00, 0,   -ndcL));
+    float3 planeR = normalize(float3(-P00, 0,    ndcR));
+    float3 planeB = normalize(float3(0,  P11,   -ndcB));
+    float3 planeT = normalize(float3(0, -P11,    ndcT));
+
+    float tileNear = LinearizeDepth(MinDepth == 0xFFFFFFFFu ? 0.0f : minDepth);
+    float tileFar  = LinearizeDepth(MaxDepth == 0u         ? 1.0f : maxDepth);
 
     uint totalLightCount, stride;
     Lights.GetDimensions(totalLightCount, stride);
@@ -71,12 +77,18 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
         
         float3 lightPosView = mul(View, float4(light.Position, 1.0f)).xyz;
         float radius = light.Radius;
-        
-        float lightZ = lightPosView.z;
+
         bool isInside = true;
 
-        if (lightZ + radius < tileNear || lightZ - radius > tileFar)
+        // Z range test
+        if (lightPosView.z + radius < tileNear || lightPosView.z - radius > tileFar)
             isInside = false;
+
+        // XY frustum test: sphere must be on the positive (inside) side of all 4 planes
+        if (dot(planeL, lightPosView) < -radius) isInside = false;
+        if (dot(planeR, lightPosView) < -radius) isInside = false;
+        if (dot(planeB, lightPosView) < -radius) isInside = false;
+        if (dot(planeT, lightPosView) < -radius) isInside = false;
         
         if (isInside)
         {
@@ -94,11 +106,12 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
         uint flatTileIndex = groupID.y * numTilesX + groupID.x;
         uint storageOffset = flatTileIndex * MAX_LIGHTS_PER_TILE;
 
-        for (uint j = 0; j < TileLightCount; j++)
+        uint clampedCount = min(TileLightCount, MAX_LIGHTS_PER_TILE);
+        for (uint j = 0; j < clampedCount; j++)
         {
             CulledIndexBuffer[storageOffset + j] = TileLightIndices[j];
         }
         
-        TileBuffer[flatTileIndex] = uint2(storageOffset, TileLightCount);
+        TileBuffer[flatTileIndex] = uint2(storageOffset, min(TileLightCount, MAX_LIGHTS_PER_TILE));
     }
 }

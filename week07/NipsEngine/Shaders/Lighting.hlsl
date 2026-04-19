@@ -14,7 +14,9 @@ struct FLightInfo
     float3 Position;
     float Padding1;
 };
-StructuredBuffer<FLightInfo> Lights : register(t4);
+StructuredBuffer<FLightInfo> Lights            : register(t4);
+StructuredBuffer<uint>       CulledIndexBuffer : register(t5);
+StructuredBuffer<uint2>      TileBuffer        : register(t6); // .x = offset, .y = count
 
 struct FAmbientLightInfo
 {

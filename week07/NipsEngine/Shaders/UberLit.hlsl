@@ -174,9 +174,10 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     {
         FinalColor = WireframeRGB;
     }
-    
-    uint LightCount, stride;
-    Lights.GetDimensions(LightCount, stride);
+
+    uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
+    uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+    uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
     
 #if LIGHTING_MODEL_GOURAUD
     output.Color = float4(input.LitColor * FinalColor, 1.0);
@@ -189,9 +190,9 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         : normalize(input.WorldNormal);
 
     float3 accumulated_light = float3(0, 0, 0);
-    for (uint i = 0; i < LightCount; i++)
+    for (uint j = 0; j < tileData.y; j++)
     {
-        LightResult result = EvaluateLightByType(Lights[i], N_Lambert, input.WorldPos, CameraPosition, Shininess);
+        LightResult result = EvaluateLightByType(Lights[CulledIndexBuffer[tileData.x + j]], N_Lambert, input.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
 
@@ -227,9 +228,9 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         : normalize(input.PixelNormal);
 
     float3 accumulated_light = float3(0, 0, 0);
-    for (uint i = 0; i < LightCount; i++)
+    for (uint j = 0; j < tileData.y; j++)
     {
-        LightResult result = EvaluateLightByType(Lights[i], N_Phong, input.WorldPos, CameraPosition, Shininess);
+        LightResult result = EvaluateLightByType(Lights[CulledIndexBuffer[tileData.x + j]], N_Phong, input.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
 
@@ -251,9 +252,9 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     return output;
 #else
     float3 accumulated_light = float3(0, 0, 0);
-    for (uint i = 0; i < LightCount; i++)
+    for (uint j = 0; j < tileData.y; j++)
     {
-        LightResult result = EvaluateLightByType(Lights[i], input.WorldNormal, input.WorldPos, CameraPosition, Shininess);
+        LightResult result = EvaluateLightByType(Lights[CulledIndexBuffer[tileData.x + j]], input.WorldNormal, input.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
 
