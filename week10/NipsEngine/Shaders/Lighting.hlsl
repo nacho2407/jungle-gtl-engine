@@ -15,8 +15,10 @@ struct FLightInfo
     float Padding1;
 };
 StructuredBuffer<FLightInfo> Lights            : register(t4);
+#ifndef CS_SHADER
 StructuredBuffer<uint>       CulledIndexBuffer : register(t5);
 StructuredBuffer<uint2>      TileBuffer        : register(t6); // .x = offset, .y = count
+#endif
 
 struct FAmbientLightInfo
 {
