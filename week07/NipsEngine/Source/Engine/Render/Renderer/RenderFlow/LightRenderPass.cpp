@@ -27,19 +27,16 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
 
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    //const auto& Lights = RenderBus->GetLight();
-    //Context->RenderResources->LightStructuredBuffer.Update(Context->DeviceContext, Lights.data(), (uint32)Lights.size());
-
-    FLightPassConstants LightPassConstant = {};
+    //FLightPassConstants LightPassConstant = {};
 
     switch (RenderBus->GetViewMode())
     {
     case (EViewMode::Unlit):
 	case (EViewMode::Wireframe):
-        LightPassConstant.WorldLit = 1;
+        //LightPassConstant.WorldLit = 1;
         break;
     case (EViewMode::Lit):
-		LightPassConstant.WorldLit = 0;
+		//LightPassConstant.WorldLit = 0;
 		break;
     default:
 		break;

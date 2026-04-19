@@ -697,18 +697,18 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
     }
     case EPrimitiveType::EPT_Fireball:
     {
-		UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
+		//UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
 
-		FLightData LightData = {};
-		LightData.Intensity = FireballComp->GetIntensity();
-		LightData.Radius	= FireballComp->GetRadius();
-		LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
-		LightData.WorldPos  = FireballComp->GetWorldLocation();
+		//FLightData LightData = {};
+		//LightData.Intensity = FireballComp->GetIntensity();
+		//LightData.Radius	= FireballComp->GetRadius();
+		//LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
+		//LightData.WorldPos  = FireballComp->GetWorldLocation();
 
-		FColor Color = FireballComp->GetLinearColor();
-		LightData.Color.X = Color.R;
-		LightData.Color.Y = Color.G;
-		LightData.Color.Z = Color.B;
+		//FColor Color = FireballComp->GetLinearColor();
+		//LightData.Color.X = Color.R;
+		//LightData.Color.Y = Color.G;
+		//LightData.Color.Z = Color.B;
 		//RenderBus.AddLight(LightData);
 		break;
 	}
@@ -865,19 +865,5 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		FDirectionalLightInfo DirLightData = {};
 
 		RenderBus.DirectionalLightInfo = DirLightData;
-	}
-
-	RenderBus.LightInfos.clear();
-	if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light))
-	{
-		FLightInfo LightData = {};
-		LightData.Type = 0;
-
-		if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
-		{
-			LightData.Type = 1;
-		}
-
-		RenderBus.LightInfos.push_back(LightData);
 	}
 }

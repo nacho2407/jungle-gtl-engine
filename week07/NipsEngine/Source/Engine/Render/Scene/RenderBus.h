@@ -47,7 +47,6 @@ public:
 	// Light
 	FAmbientLightInfo AmbientLightInfo;
 	FDirectionalLightInfo DirectionalLightInfo;
-	TArray<FLightInfo> LightInfos;
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];

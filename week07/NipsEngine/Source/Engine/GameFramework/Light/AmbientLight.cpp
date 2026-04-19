@@ -4,10 +4,10 @@
 #include "Component/Light/AmbientLightComponent.h"
 #include "Object/Object.h"
 
-DEFINE_CLASS(AmbientLight, ALight)
-REGISTER_FACTORY(AmbientLight)
+DEFINE_CLASS(AAmbientLightActor, ALight)
+REGISTER_FACTORY(AAmbientLightActor)
 
-void AmbientLight::InitDefaultComponents()
+void AAmbientLightActor::InitDefaultComponents()
 {
     auto* AmbientLightComponent = AddComponent<UAmbientLightComponent>();
     SetRootComponent(AmbientLightComponent);

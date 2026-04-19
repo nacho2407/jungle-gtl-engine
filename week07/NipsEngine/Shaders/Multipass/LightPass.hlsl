@@ -13,18 +13,6 @@ struct VSOutput
     float4 ClipPos : SV_POSITION;
 };
 
-struct FLightData
-{
-    float3 WorldPos;
-    float  Radius;
-    float3 Color;
-    float  Intensity;
-    float  RadiusFalloff;
-    float  Padding[3];
-};
-
-StructuredBuffer<FLightData> Lights : register(t4);
-
 cbuffer LightPassConstants : register(b7)
 {
     float3 CameraWorldPos;

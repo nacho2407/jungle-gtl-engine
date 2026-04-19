@@ -74,22 +74,6 @@ struct FDirectionalLightInfo
 	FVector Color;
 	float Intensity;
 };
-struct FLightInfo
-{
-	FVector Color;
-	float Intensity;
-
-	uint32 Type;
-	float Radius;
-	float InnerAngle;
-	float OuterAngle;
-
-	FVector Direction;
-	float Padding0;
-
-	FVector Position;
-	float Padding1;
-};
 
 struct FLightConstants
 {
@@ -243,25 +227,15 @@ struct FFXAAConstants
     float  Padding;
 };
 
-struct FLightData
-{
-    FVector WorldPos;
-    float	Radius;
-    FVector Color;
-    float	Intensity;
-	float	RadiusFalloff;
-	float	Padding[3];
-};
-
-struct FLightPassConstants 
-{
-	FVector CameraWorldPos;
-	uint32	LightCount;
-
-	uint32 ViewMode;   // 4 bytes (필요시 더 압축해서 보냅니다.)
-	uint32 WorldLit;  // 4 bytes
-	float  Padding[2]; // 8 bytes
-};
+//struct FLightPassConstants 
+//{
+//	FVector CameraWorldPos;
+//	uint32	LightCount;
+//
+//	uint32 ViewMode;   // 4 bytes (필요시 더 압축해서 보냅니다.)
+//	uint32 WorldLit;  // 4 bytes
+//	float  Padding[2]; // 8 bytes
+//};
 
 struct FRenderCommand
 {

@@ -2,11 +2,11 @@
 
 #include "Light.h"
 
-class AmbientLight : public ALight
+class AAmbientLightActor : public ALight
 {
 public:
-	DECLARE_CLASS(AmbientLight, ALight)
-	AmbientLight() = default;
+    DECLARE_CLASS(AAmbientLightActor, ALight)
+    AAmbientLightActor() = default;
 
     virtual void InitDefaultComponents() override;
-}
+};
