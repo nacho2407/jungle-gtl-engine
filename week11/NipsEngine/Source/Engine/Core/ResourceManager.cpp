@@ -638,6 +638,7 @@ void FResourceManager::ReleaseGPUResources()
     {
         if (Shader)
         {
+            Shader->Release();
             delete Shader;
         }
     }
