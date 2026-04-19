@@ -32,23 +32,6 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)  
 {  
    const FRenderBus* RenderBus = Context->RenderBus;  
-   const TArray<FLightInfo>& Lights = RenderBus->LightInfos;
-   Context->RenderResources->LightStructuredBuffer.Update(Context->DeviceContext, Lights.data(), (uint32)Lights.size());
-   ID3D11ShaderResourceView* SRVs[] = { Context->RenderResources->LightStructuredBuffer.GetSRV(),
-										Context->RenderResources->LightCulledIndexBuffer.GetSRV(),
-										Context->RenderResources->LightTileBuffer.GetSRV() };
-   Context->DeviceContext->VSSetShaderResources(4, 3, SRVs);
-   Context->DeviceContext->PSSetShaderResources(4, 3, SRVs);
-
-   // Pass Global Light Info
-   FLightConstants LightConstants = {};
-   LightConstants.AmbientLight = RenderBus->AmbientLightInfo;
-   LightConstants.DirectionalLight = RenderBus->DirectionalLightInfo;
-   Context->RenderResources->LightBuffer.Update(Context->DeviceContext, &LightConstants, sizeof(FLightConstants));
-   ID3D11Buffer* cb3 = Context->RenderResources->LightBuffer.GetBuffer();
-   Context->DeviceContext->VSSetConstantBuffers(3, 1, &cb3);
-   Context->DeviceContext->PSSetConstantBuffers(3, 1, &cb3);
-
    const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);  
 
    if (Commands.empty())  

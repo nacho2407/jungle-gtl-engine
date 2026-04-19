@@ -163,6 +163,8 @@ private:
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
+	void UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
+
 private:
 	FD3DDevice Device;
 	FRenderTargetSet CurrentRenderTargets;
