@@ -175,8 +175,7 @@ void FRenderCollector::CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool
 	if (bShowBoundingVolume && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
 		Scene.AddDebugAABB(Proxy->GetCachedBounds().Min, Proxy->GetCachedBounds().Max, FColor::White());
 
-	//TODO: Owner 의존성 제거
-	Proxy->CollectSelectedVisuals(Scene);
+	// 디버그 시각화는 FScene::CollectSelectedDebugVisuals()에서 일괄 수집
 }
 
 // ============================================================
