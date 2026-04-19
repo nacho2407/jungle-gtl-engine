@@ -10,7 +10,7 @@
 FSubUVSceneProxy::FSubUVSceneProxy(USubUVComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
-	bShowAABB = false;
+	ProxyFlags &= ~EPrimitiveProxyFlags::ShowAABB;
 }
 
 FSubUVSceneProxy::~FSubUVSceneProxy()
@@ -30,50 +30,59 @@ void FSubUVSceneProxy::UpdateMesh()
 	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
 	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
 
+	// Particle/FrameIndex 캐싱
+	CachedParticle = Comp->GetParticle();
+	CachedFrameIndex = Comp->GetFrameIndex();
+
 	// Set DiffuseSRV from particle resource
-	const FParticleResource* Particle = Comp->GetParticle();
-	if (Particle && Particle->IsLoaded())
+	if (CachedParticle && CachedParticle->IsLoaded())
 	{
-		DiffuseSRV = Particle->SRV;
+		DiffuseSRV = CachedParticle->SRV;
+	}
+}
+
+void FSubUVSceneProxy::UpdateMaterial()
+{
+	// TickComponent에서 FrameIndex 변경 시 Material dirty로 호출됨
+	USubUVComponent* Comp = GetSubUVComponent();
+	CachedFrameIndex = Comp->GetFrameIndex();
+	CachedParticle = Comp->GetParticle();
+
+	if (CachedParticle && CachedParticle->IsLoaded())
+	{
+		DiffuseSRV = CachedParticle->SRV;
 	}
 }
 
 void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
-	USubUVComponent* Comp = GetSubUVComponent();
-	bVisible = Comp->IsVisible();
 	if (!bVisible) return;
 
-	const FParticleResource* Particle = Comp->GetParticle();
-	if (!Particle || !Particle->IsLoaded())
+	if (!CachedParticle || !CachedParticle->IsLoaded())
 	{
 		bVisible = false;
 		return;
 	}
 
-	// Update DiffuseSRV (may change during play)
-	DiffuseSRV = Particle->SRV;
-
 	// Billboard matrix
 	FVector BillboardForward = Frame.CameraForward * -1.0f;
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(BillboardForward, Frame.CameraRight, Frame.CameraUp);
-	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale())
-		* RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
+	FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(CachedScale)
+		* RotMatrix * FMatrix::MakeTranslationMatrix(CachedLocation);
 
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
 	MarkPerObjectCBDirty();
 
-	// Update UV region from frame index
-	const uint32 Cols = Particle->Columns;
-	const uint32 Rows = Particle->Rows;
+	// Update UV region from cached frame index
+	const uint32 Cols = CachedParticle->Columns;
+	const uint32 Rows = CachedParticle->Rows;
 	if (Cols > 0 && Rows > 0)
 	{
 		const float FrameW = 1.0f / static_cast<float>(Cols);
 		const float FrameH = 1.0f / static_cast<float>(Rows);
-		const uint32 FrameIdx = Comp->GetFrameIndex();
-		const uint32 Col = FrameIdx % Cols;
-		const uint32 Row = FrameIdx / Cols;
+		const uint32 Col = CachedFrameIndex % Cols;
+		const uint32 Row = CachedFrameIndex / Cols;
 
 		FSubUVRegionConstants& Region = ExtraCB.As<FSubUVRegionConstants>();
 		Region.U = Col * FrameW;
@@ -85,5 +94,5 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 USubUVComponent* FSubUVSceneProxy::GetSubUVComponent() const
 {
-	return static_cast<USubUVComponent*>(Owner);
+	return static_cast<USubUVComponent*>(GetOwner());
 }

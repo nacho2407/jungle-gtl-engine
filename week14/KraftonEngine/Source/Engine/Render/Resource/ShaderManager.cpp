@@ -57,9 +57,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 
 	// UberLit 변형 — 라이팅 모델 매크로 + DEBUG_LIGHTS=0
 	{
-		D3D_SHADER_MACRO GouraudMacros[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
-		D3D_SHADER_MACRO LambertMacros[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
-		D3D_SHADER_MACRO PhongMacros[]   = { {"LIGHTING_MODEL_PHONG",   "1"}, {"DEBUG_LIGHTS", "0"}, {nullptr, nullptr} };
+		D3D_SHADER_MACRO GouraudMacros[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {"DEBUG_LIGHTS", "0"}, { "USE_TILE_CULLING", "0" }, {nullptr, nullptr} };
+		D3D_SHADER_MACRO LambertMacros[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {"DEBUG_LIGHTS", "0"}, { "USE_TILE_CULLING", "1" }, {nullptr, nullptr} };
+		D3D_SHADER_MACRO PhongMacros[]   = { {"LIGHTING_MODEL_PHONG",   "1"}, {"DEBUG_LIGHTS", "0"}, { "USE_TILE_CULLING", "1" }, {nullptr, nullptr} };
 		Shaders[(uint32)EShaderType::UberLit_Gouraud].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", GouraudMacros);
 		Shaders[(uint32)EShaderType::UberLit_Lambert].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", LambertMacros);
 		Shaders[(uint32)EShaderType::UberLit_Phong].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", PhongMacros);

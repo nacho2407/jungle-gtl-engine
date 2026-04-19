@@ -72,6 +72,10 @@ cbuffer LightingBuffer : register(b4)
     uint NumActiveSpotLights;
     uint NumTilesX;
     uint NumTilesY;
+    
+    uint ViewLightCulling;
+    float HeatMapMax;
+    uint Pad[2];
 };
 
 // ── Structured Buffers (t8~t10) ──

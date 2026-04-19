@@ -1,4 +1,4 @@
-#include "RenderResources.h"
+﻿#include "RenderResources.h"
 #include "Render/Device/D3DDevice.h"
 #include "Materials/MaterialManager.h"
 #include "Render/Pipeline/ForwardLightData.h"
@@ -6,6 +6,69 @@
 #include "Render/Proxy/FScene.h"
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
+
+void FTileCullingResource::Create(ID3D11Device* Dev, uint32 InTileCountX, uint32 InTileCountY)
+{
+	Release();
+	TileCountX = InTileCountX;
+	TileCountY = InTileCountY;
+	const uint32 NumTiles = TileCountX * TileCountY;
+
+	auto MakeStructured = [&](
+		uint32 ElemCount, uint32 Stride,
+		ID3D11Buffer** OutBuf,
+		ID3D11UnorderedAccessView** OutUAV,
+		ID3D11ShaderResourceView** OutSRV)
+	{
+		D3D11_BUFFER_DESC bd = {};
+		bd.ByteWidth          = ElemCount * Stride;
+		bd.Usage              = D3D11_USAGE_DEFAULT;
+		bd.BindFlags          = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		bd.MiscFlags          = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		bd.StructureByteStride = Stride;
+		Dev->CreateBuffer(&bd, nullptr, OutBuf);
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavd = {};
+		uavd.Format                  = DXGI_FORMAT_UNKNOWN;
+		uavd.ViewDimension           = D3D11_UAV_DIMENSION_BUFFER;
+		uavd.Buffer.NumElements      = ElemCount;
+		Dev->CreateUnorderedAccessView(*OutBuf, &uavd, OutUAV);
+
+		if (OutSRV)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvd = {};
+			srvd.Format              = DXGI_FORMAT_UNKNOWN;
+			srvd.ViewDimension       = D3D11_SRV_DIMENSION_BUFFER;
+			srvd.Buffer.NumElements  = ElemCount;
+			Dev->CreateShaderResourceView(*OutBuf, &srvd, OutSRV);
+		}
+	};
+
+	// t9 / u0: TileLightIndices — uint per slot per tile
+	MakeStructured(ETileCulling::MaxLightsPerTile * NumTiles, sizeof(uint32),
+		&IndicesBuffer, &IndicesUAV, &IndicesSRV);
+
+	// t10 / u1: TileLightGrid — uint2 (offset, count) per tile
+	MakeStructured(NumTiles, sizeof(uint32) * 2,
+		&GridBuffer, &GridUAV, &GridSRV);
+
+	// u2: GlobalLightCounter — single atomic uint
+	MakeStructured(1, sizeof(uint32),
+		&CounterBuffer, &CounterUAV, nullptr);
+}
+
+void FTileCullingResource::Release()
+{
+	if (IndicesSRV)  { IndicesSRV->Release();  IndicesSRV  = nullptr; }
+	if (GridSRV)     { GridSRV->Release();     GridSRV     = nullptr; }
+	if (IndicesUAV)  { IndicesUAV->Release();  IndicesUAV  = nullptr; }
+	if (GridUAV)     { GridUAV->Release();     GridUAV     = nullptr; }
+	if (CounterUAV)  { CounterUAV->Release();  CounterUAV  = nullptr; }
+	if (IndicesBuffer)  { IndicesBuffer->Release();  IndicesBuffer  = nullptr; }
+	if (GridBuffer)     { GridBuffer->Release();     GridBuffer     = nullptr; }
+	if (CounterBuffer)  { CounterBuffer->Release();  CounterBuffer  = nullptr; }
+	TileCountX = TileCountY = 0;
+}
 
 void FSystemResources::Create(ID3D11Device* InDevice)
 {
@@ -31,6 +94,7 @@ void FSystemResources::Release()
 	FrameBuffer.Release();
 	LightingConstantBuffer.Release();
 	ForwardLights.Release();
+	TileCullingResource.Release();
 }
 
 void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame)
@@ -56,7 +120,7 @@ void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext
 	Ctx->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene)
+void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame)
 {
 	ID3D11Device* Dev = Device.GetDevice();
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
@@ -112,8 +176,14 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 		Infos.emplace_back(SpotLight.ToLightInfo());
 	}
 
-	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
-	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
+	LastNumLights = static_cast<uint32>(Infos.size());
+
+	GlobalLightingData.ViewLightCulling = Frame.RenderOptions.ShowFlags.bViewLightCulling;
+	GlobalLightingData.HeatMapMax = Frame.RenderOptions.HeatMapMax;
+
+	// 이전 프레임 타일 컬링 결과에서 타일 수 읽기 (1-frame latent)
+	GlobalLightingData.NumTilesX = TileCullingResource.TileCountX;
+	GlobalLightingData.NumTilesY = TileCullingResource.TileCountY;
 
 	LightingConstantBuffer.Update(Ctx, &GlobalLightingData, sizeof(FLightingCBData));
 	ID3D11Buffer* b4 = LightingConstantBuffer.GetBuffer();
@@ -123,6 +193,16 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 	ForwardLights.Update(Dev, Ctx, Infos);
 	Ctx->VSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
+
+	// 이전 프레임 타일 컬링 결과 바인딩 (t9, t10)
+	BindTileCullingBuffers(Device);
+}
+
+void FSystemResources::BindTileCullingBuffers(FD3DDevice& Device)
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	Ctx->PSSetShaderResources(ELightTexSlot::TileLightIndices, 1, &TileCullingResource.IndicesSRV);
+	Ctx->PSSetShaderResources(ELightTexSlot::TileLightGrid,    1, &TileCullingResource.GridSRV);
 }
 
 void FSystemResources::BindSystemSamplers(FD3DDevice& Device)

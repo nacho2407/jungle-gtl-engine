@@ -1,7 +1,5 @@
-﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Render/Proxy/FScene.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Resource/ShaderManager.h"
 
@@ -11,7 +9,8 @@
 FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 	: Owner(InComponent)
 {
-	bSupportsOutline = Owner->SupportsOutline();
+	if (!Owner->SupportsOutline())
+		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
 void FPrimitiveSceneProxy::UpdateTransform()
@@ -46,15 +45,3 @@ void FPrimitiveSceneProxy::UpdateMesh()
 	Pass = ERenderPass::Opaque;
 }
 
-void FPrimitiveSceneProxy::CollectSelectedVisuals(FScene& Scene) const
-{
-	if (!Owner) return;
-	AActor* Actor = Owner->GetOwner();
-	if (!Actor) return;
-
-	for (UActorComponent* Comp : Actor->GetComponents())
-	{
-		if (Comp)
-			Comp->ContributeSelectedVisuals(Scene);
-	}
-}

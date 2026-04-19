@@ -8,6 +8,7 @@ IMPLEMENT_CLASS(APointLightActor, AActor)
 void APointLightActor::InitDefaultComponents()
 {
 	BillboardComponent = AddComponent<UBillboardComponent>();
+	BillboardComponent->SetEditorOnly(true);
 	SetRootComponent(BillboardComponent);
 
 	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/PointLight.json");

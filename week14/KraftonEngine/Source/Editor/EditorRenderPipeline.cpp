@@ -12,7 +12,9 @@
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
 {
-	GPUOcclusion.Initialize(InRenderer.GetFD3DDevice().GetDevice());
+	ID3D11Device* Dev = InRenderer.GetFD3DDevice().GetDevice();
+	GPUOcclusion.Initialize(Dev);
+	TileCulling.Initialize(Dev);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline()
@@ -93,6 +95,20 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}
+
+	// TileBaseCulling — Render 후 Depth가 유효할 때 디스패치 (결과는 다음 프레임 PS에서 사용)
+	{
+		SCOPE_STAT_CAT("TileBaseCulling", "4_ExecutePass");
+		TileCulling.Dispatch(
+			Ctx,
+			Frame,
+			Renderer.GetFrameBuffer(),
+			Renderer.GetTileCullingResource(),
+			Renderer.GetLightBufferSRV(),
+			Renderer.GetNumLights(),
+			static_cast<uint32>(VP->GetWidth()),
+			static_cast<uint32>(VP->GetHeight()));
+	}
 }
 
 // ============================================================
@@ -129,6 +145,7 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 
 	FScene& Scene = World->GetScene();
 	Scene.ClearFrameData();
+	Scene.CollectSelectedDebugVisuals();
 
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 	Builder.BeginCollect(Frame, Scene.GetProxyCount());

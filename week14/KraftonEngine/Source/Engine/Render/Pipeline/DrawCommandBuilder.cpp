@@ -1,4 +1,4 @@
-﻿#include "DrawCommandBuilder.h"
+#include "DrawCommandBuilder.h"
 
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
@@ -97,7 +97,7 @@ void FDrawCommandBuilder::ApplyMaterialRenderState(FDrawCommandRenderState& OutS
 // ============================================================
 void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass)
 {
-	if (!Proxy.MeshBuffer || !Proxy.MeshBuffer->IsValid()) return;
+	if (!Proxy.GetMeshBuffer() || !Proxy.GetMeshBuffer()->IsValid()) return;
 
 	ID3D11DeviceContext* Ctx = CachedContext;
 
@@ -108,43 +108,44 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	FConstantBuffer* PerObjCB = GetPerObjectCBForProxy(Proxy);
 	if (PerObjCB && Proxy.NeedsPerObjectCBUpload())
 	{
-		PerObjCB->Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+		PerObjCB->Update(Ctx, &Proxy.GetPerObjectConstants(), sizeof(FPerObjectConstants));
 		Proxy.ClearPerObjectCBDirty();
 	}
 
 	// PerShaderCB 업데이트 (Gizmo, SubUV, Decal 등) — lazy creation if buffer not yet allocated
-	if (Proxy.ExtraCB.Buffer)
+	const FConstantBufferBinding& ProxyExtraCB = Proxy.GetExtraCB();
+	if (ProxyExtraCB.Buffer)
 	{
-		if (!Proxy.ExtraCB.Buffer->GetBuffer())
-			Proxy.ExtraCB.Buffer->Create(CachedDevice, Proxy.ExtraCB.Size);
-		Proxy.ExtraCB.Buffer->Update(Ctx, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
+		if (!ProxyExtraCB.Buffer->GetBuffer())
+			ProxyExtraCB.Buffer->Create(CachedDevice, ProxyExtraCB.Size);
+		ProxyExtraCB.Buffer->Update(Ctx, ProxyExtraCB.Data, ProxyExtraCB.Size);
 	}
 
 	// SelectionMask 커맨드 존재 추적
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
 
-	FShader* EffectiveShader = SelectEffectiveShader(Proxy.Shader, CollectViewMode);
+	FShader* EffectiveShader = SelectEffectiveShader(Proxy.GetShader(), CollectViewMode);
 
 	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
 		{
-			if (Proxy.ExtraCB.Buffer)
+			if (ProxyExtraCB.Buffer)
 			{
-				const uint32 Idx = Proxy.ExtraCB.Slot - ECBSlot::PerShader0;
+				const uint32 Idx = ProxyExtraCB.Slot - ECBSlot::PerShader0;
 				check(Idx < 2);
-				Cmd.Bindings.PerShaderCB[Idx] = Proxy.ExtraCB.Buffer;
+				Cmd.Bindings.PerShaderCB[Idx] = ProxyExtraCB.Buffer;
 			}
 		};
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
-	const bool bApplyMaterialState = !bDepthOnly && (Pass == Proxy.Pass);
+	const bool bApplyMaterialState = !bDepthOnly && (Pass == Proxy.GetRenderPass());
 
 	// MeshBuffer → FDrawCommandBuffer 변환
 	FDrawCommandBuffer ProxyBuffer;
-	ProxyBuffer.VB       = Proxy.MeshBuffer->GetVertexBuffer().GetBuffer();
-	ProxyBuffer.VBStride = Proxy.MeshBuffer->GetVertexBuffer().GetStride();
-	ProxyBuffer.IB       = Proxy.MeshBuffer->GetIndexBuffer().GetBuffer();
+	ProxyBuffer.VB       = Proxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
+	ProxyBuffer.VBStride = Proxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
+	ProxyBuffer.IB       = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
 	// 커맨드 공통 초기화 람다
 	auto InitCommand = [&](FDrawCommand& Cmd)
@@ -157,9 +158,9 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		};
 
 	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
-	if (!Proxy.SectionDraws.empty())
+	if (!Proxy.GetSectionDraws().empty())
 	{
-		for (const FMeshSectionDraw& Section : Proxy.SectionDraws)
+		for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
 		{
 			if (Section.IndexCount == 0) continue;
 			if (!ProxyBuffer.IB) continue;
@@ -203,18 +204,18 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 
 		// MeshBuffer 전체 드로우 — IndexCount/VertexCount 명시
 		if (ProxyBuffer.IB)
-			Cmd.Buffer.IndexCount = Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount();
+			Cmd.Buffer.IndexCount = Proxy.GetMeshBuffer()->GetIndexBuffer().GetIndexCount();
 		else
-			Cmd.Buffer.VertexCount = Proxy.MeshBuffer->GetVertexBuffer().GetVertexCount();
+			Cmd.Buffer.VertexCount = Proxy.GetMeshBuffer()->GetVertexBuffer().GetVertexCount();
 
 		if (!bDepthOnly)
 		{
 			SetProxyExtraCB(Cmd);
-			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.DiffuseSRV;
+			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.GetDiffuseSRV();
 		}
 
-		if (bApplyMaterialState && Proxy.Material)
-			ApplyMaterialRenderState(Cmd.RenderState, Proxy.Material, BaseRenderState);
+		if (bApplyMaterialState && Proxy.GetMaterial())
+			ApplyMaterialRenderState(Cmd.RenderState, Proxy.GetMaterial(), BaseRenderState);
 
 		Cmd.BuildSortKey();
 	}
@@ -225,33 +226,34 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 // ============================================================
 void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy)
 {
-	if (!ReceiverProxy.MeshBuffer || !ReceiverProxy.MeshBuffer->IsValid()) return;
-	if (!DecalProxy.Shader || !DecalProxy.DiffuseSRV) return;
+	if (!ReceiverProxy.GetMeshBuffer() || !ReceiverProxy.GetMeshBuffer()->IsValid()) return;
+	if (!DecalProxy.GetShader() || !DecalProxy.GetDiffuseSRV()) return;
 
 	ID3D11DeviceContext* Ctx = CachedContext;
-	const ERenderPass DecalPass = DecalProxy.Pass;
+	const ERenderPass DecalPass = DecalProxy.GetRenderPass();
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(DecalPass, CollectViewMode);
 
 	FConstantBuffer* ReceiverPerObjCB = GetPerObjectCBForProxy(ReceiverProxy);
 	if (ReceiverPerObjCB && ReceiverProxy.NeedsPerObjectCBUpload())
 	{
-		ReceiverPerObjCB->Update(Ctx, &ReceiverProxy.PerObjectConstants, sizeof(FPerObjectConstants));
+		ReceiverPerObjCB->Update(Ctx, &ReceiverProxy.GetPerObjectConstants(), sizeof(FPerObjectConstants));
 		ReceiverProxy.ClearPerObjectCBDirty();
 	}
 
-	if (DecalProxy.ExtraCB.Buffer)
+	const FConstantBufferBinding& DecalExtraCB = DecalProxy.GetExtraCB();
+	if (DecalExtraCB.Buffer)
 	{
-		if (!DecalProxy.ExtraCB.Buffer->GetBuffer())
+		if (!DecalExtraCB.Buffer->GetBuffer())
 		{
-			DecalProxy.ExtraCB.Buffer->Create(CachedDevice, DecalProxy.ExtraCB.Size);
+			DecalExtraCB.Buffer->Create(CachedDevice, DecalExtraCB.Size);
 		}
-		DecalProxy.ExtraCB.Buffer->Update(Ctx, DecalProxy.ExtraCB.Data, DecalProxy.ExtraCB.Size);
+		DecalExtraCB.Buffer->Update(Ctx, DecalExtraCB.Data, DecalExtraCB.Size);
 	}
 
 	FDrawCommandBuffer ReceiverBuffer;
-	ReceiverBuffer.VB       = ReceiverProxy.MeshBuffer->GetVertexBuffer().GetBuffer();
-	ReceiverBuffer.VBStride = ReceiverProxy.MeshBuffer->GetVertexBuffer().GetStride();
-	ReceiverBuffer.IB       = ReceiverProxy.MeshBuffer->GetIndexBuffer().GetBuffer();
+	ReceiverBuffer.VB       = ReceiverProxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
+	ReceiverBuffer.VBStride = ReceiverProxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
+	ReceiverBuffer.IB       = ReceiverProxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
 	auto AddDraw = [&](uint32 FirstIndex, uint32 IndexCount)
 		{
@@ -259,32 +261,32 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.Pass        = DecalPass;
-			Cmd.Shader      = DecalProxy.Shader;
+			Cmd.Shader      = DecalProxy.GetShader();
 			Cmd.RenderState = BaseRenderState;
 
 			// 머티리얼 기반 렌더 상태 오버라이드
-			if (DecalProxy.Material)
-				ApplyMaterialRenderState(Cmd.RenderState, DecalProxy.Material, BaseRenderState);
+			if (DecalProxy.GetMaterial())
+				ApplyMaterialRenderState(Cmd.RenderState, DecalProxy.GetMaterial(), BaseRenderState);
 
 			Cmd.Buffer            = ReceiverBuffer;
 			Cmd.Buffer.FirstIndex = FirstIndex;
 			Cmd.Buffer.IndexCount = IndexCount;
 			Cmd.PerObjectCB       = ReceiverPerObjCB;
-			Cmd.Bindings.PerShaderCB[0] = DecalProxy.ExtraCB.Buffer;
-			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = DecalProxy.DiffuseSRV;
+			Cmd.Bindings.PerShaderCB[0] = DecalExtraCB.Buffer;
+			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = DecalProxy.GetDiffuseSRV();
 			Cmd.BuildSortKey();
 		};
 
-	if (!ReceiverProxy.SectionDraws.empty())
+	if (!ReceiverProxy.GetSectionDraws().empty())
 	{
-		for (const FMeshSectionDraw& Section : ReceiverProxy.SectionDraws)
+		for (const FMeshSectionDraw& Section : ReceiverProxy.GetSectionDraws())
 		{
 			AddDraw(Section.FirstIndex, Section.IndexCount);
 		}
 	}
 	else if (ReceiverBuffer.IB)
 	{
-		AddDraw(0, ReceiverProxy.MeshBuffer->GetIndexBuffer().GetIndexCount());
+		AddDraw(0, ReceiverProxy.GetMeshBuffer()->GetIndexBuffer().GetIndexCount());
 	}
 }
 
@@ -565,11 +567,11 @@ void FDrawCommandBuilder::EnsurePerObjectCBPoolCapacity(uint32 RequiredCount)
 
 FConstantBuffer* FDrawCommandBuilder::GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy)
 {
-	if (Proxy.ProxyId == UINT32_MAX)
+	if (Proxy.GetProxyId() == UINT32_MAX)
 	{
 		return nullptr;
 	}
 
-	EnsurePerObjectCBPoolCapacity(Proxy.ProxyId + 1);
-	return &PerObjectCBPool[Proxy.ProxyId];
+	EnsurePerObjectCBPoolCapacity(Proxy.GetProxyId() + 1);
+	return &PerObjectCBPool[Proxy.GetProxyId()];
 }

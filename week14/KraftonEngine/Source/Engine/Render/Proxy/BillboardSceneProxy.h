@@ -14,9 +14,13 @@ class FBillboardSceneProxy : public FPrimitiveSceneProxy
 public:
 	FBillboardSceneProxy(UBillboardComponent* InComponent);
 
+	void UpdateTransform() override;
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
 
 protected:
 	UBillboardComponent* GetBillboardComponent() const;
+
+	FVector CachedScale;
+	FVector CachedLocation;
 };

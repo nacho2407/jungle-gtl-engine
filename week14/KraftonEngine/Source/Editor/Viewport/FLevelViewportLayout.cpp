@@ -895,6 +895,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
 				ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
 				ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
+				ImGui::Checkbox("ViewLightCulling", &Opts.ShowFlags.bViewLightCulling);
 
 				ImGui::Separator();
 
@@ -917,9 +918,14 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
 				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
 
+				// FXAA Settings
 				ImGui::Text("FXAA");
 			    ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
 			    ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+
+				// Tile Base Lgiht Culling Setting
+				ImGui::Text("TileBaseLgihtCulling");
+				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, ".0f");
 
 				ImGui::EndPopup();
 			}

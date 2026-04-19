@@ -3,6 +3,7 @@
 #include "Render/Pipeline/RenderCollector.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
+#include "TileBaseCulling.h"
 
 class UEditorEngine;
 class FViewport;
@@ -32,4 +33,5 @@ private:
 	FRenderCollector Collector;
 	FFrameContext Frame;
 	FGPUOcclusionCulling GPUOcclusion;
+	FTileBaseCulling TileCulling;
 };

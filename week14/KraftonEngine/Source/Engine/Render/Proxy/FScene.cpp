@@ -1,40 +1,39 @@
 ﻿#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/ActorComponent.h"
+#include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include <algorithm>
 
-namespace
+void FScene::EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
 {
-	void EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
+	if (!Proxy || Proxy->bQueuedForDirtyUpdate)
 	{
-		if (!Proxy || Proxy->bQueuedForDirtyUpdate)
-		{
-			return;
-		}
-
-		Proxy->bQueuedForDirtyUpdate = true;
-		DirtyList.push_back(Proxy);
+		return;
 	}
 
-	void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy)
+	Proxy->bQueuedForDirtyUpdate = true;
+	DirtyList.push_back(Proxy);
+}
+
+void FScene::RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy)
+{
+	if (!Proxy || Proxy->SelectedListIndex == UINT32_MAX)
 	{
-		if (!Proxy || Proxy->SelectedListIndex == UINT32_MAX)
-		{
-			return;
-		}
-
-		const uint32 Index = Proxy->SelectedListIndex;
-		const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
-		if (Index != LastIndex)
-		{
-			FPrimitiveSceneProxy* LastProxy = SelectedList.back();
-			SelectedList[Index] = LastProxy;
-			LastProxy->SelectedListIndex = Index;
-		}
-
-		SelectedList.pop_back();
-		Proxy->SelectedListIndex = UINT32_MAX;
+		return;
 	}
+
+	const uint32 Index = Proxy->SelectedListIndex;
+	const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
+	if (Index != LastIndex)
+	{
+		FPrimitiveSceneProxy* LastProxy = SelectedList.back();
+		SelectedList[Index] = LastProxy;
+		LastProxy->SelectedListIndex = Index;
+	}
+
+	SelectedList.pop_back();
+	Proxy->SelectedListIndex = UINT32_MAX;
 }
 
 // ============================================================
@@ -78,7 +77,7 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 
 	EnqueueDirtyProxy(DirtyProxies, Proxy);
 
-	if (Proxy->bNeverCull)
+	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 		NeverCullProxies.push_back(Proxy);
 }
 
@@ -123,7 +122,7 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 		RemoveSelectedProxyFast(SelectedProxies, Proxy);
 	}
 
-	if (Proxy->bNeverCull)
+	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 	{
 		auto it = std::find(NeverCullProxies.begin(), NeverCullProxies.end(), Proxy);
 		if (it != NeverCullProxies.end()) NeverCullProxies.erase(it);
@@ -234,6 +233,26 @@ bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 }
 
 // ============================================================
+// CollectSelectedDebugVisuals — 매 프레임 선택된 프록시의 디버그 시각화 수집
+// ============================================================
+void FScene::CollectSelectedDebugVisuals()
+{
+	for (FPrimitiveSceneProxy* Proxy : SelectedProxies)
+	{
+		if (!Proxy || !Proxy->Owner) continue;
+
+		AActor* Actor = Proxy->Owner->GetOwner();
+		if (!Actor) continue;
+
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			if (Comp)
+				Comp->ContributeSelectedVisuals(*this);
+		}
+	}
+}
+
+// ============================================================
 // Per-frame ephemeral data — 매 뷰포트 렌더 시작 시 Clear
 // ============================================================
 void FScene::ClearFrameData()
@@ -330,11 +349,13 @@ void FScene::AddPointLight(const UPointLightComponent* Owner, const FPointLightP
 		if (Entry.PointLightOwner == Owner)
 		{
 			Entry.Params = Params;
+			RebuildPointLightCache();
 			return;
 		}
 	}
 
 	PointLights.push_back({ Owner, Params });
+	RebuildPointLightCache();
 }
 
 void FScene::RemovePointLight(const UPointLightComponent* Owner)
@@ -344,25 +365,20 @@ void FScene::RemovePointLight(const UPointLightComponent* Owner)
 		if (PointLights[Index].PointLightOwner == Owner)
 		{
 			PointLights.erase(PointLights.begin() + Index);
+			RebuildPointLightCache();
 			return;
 		}
 	}
 }
 
-const TArray<FPointLightParams>& FScene::GetPointLights() const
+void FScene::RebuildPointLightCache()
 {
-	static TArray<FPointLightParams> EmptyArray;
-	if (PointLights.empty())
-	{
-		return EmptyArray;
-	}
-	static TArray<FPointLightParams> CachedParams;
-	CachedParams.clear();
+	CachedPointLightParams.clear();
+	CachedPointLightParams.reserve(PointLights.size());
 	for (const FPointLightEntry& Entry : PointLights)
 	{
-		CachedParams.push_back(Entry.Params);
+		CachedPointLightParams.push_back(Entry.Params);
 	}
-	return CachedParams;
 }
 
 void FScene::AddSpotLight(const USpotLightComponent* Owner, const FSpotLightParams& Params)
@@ -372,11 +388,13 @@ void FScene::AddSpotLight(const USpotLightComponent* Owner, const FSpotLightPara
 		if (Entry.SpotLightOwner == Owner)
 		{
 			Entry.Params = Params;
+			RebuildSpotLightCache();
 			return;
 		}
 	}
 
 	SpotLights.push_back({ Owner, Params });
+	RebuildSpotLightCache();
 }
 
 void FScene::RemoveSpotLight(const USpotLightComponent* Owner)
@@ -386,24 +404,19 @@ void FScene::RemoveSpotLight(const USpotLightComponent* Owner)
 		if (SpotLights[Index].SpotLightOwner == Owner)
 		{
 			SpotLights.erase(SpotLights.begin() + Index);
+			RebuildSpotLightCache();
 			return;
 		}
 	}
 }
 
-const TArray<FSpotLightParams>& FScene::GetSpotLights() const
+void FScene::RebuildSpotLightCache()
 {
-	static TArray<FSpotLightParams> EmptyArray;
-	if (SpotLights.empty())
-	{
-		return EmptyArray;
-	}
-	static TArray<FSpotLightParams> CachedParams;
-	CachedParams.clear();
+	CachedSpotLightParams.clear();
+	CachedSpotLightParams.reserve(SpotLights.size());
 	for (const FSpotLightEntry& Entry : SpotLights)
 	{
-		CachedParams.push_back(Entry.Params);
+		CachedSpotLightParams.push_back(Entry.Params);
 	}
-	return CachedParams;
 }
 
