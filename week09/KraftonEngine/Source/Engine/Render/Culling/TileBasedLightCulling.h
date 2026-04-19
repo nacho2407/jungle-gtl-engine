@@ -49,6 +49,7 @@ public:
     void Initialize(FD3DDevice* InDevice);
     void Release();
     bool IsInitialized() const { return Device != nullptr && LightCullingCS != nullptr; }
+    void ResizeTiles(uint32 InWidth, uint32 InHeight);
 
     // ---- 화면 리사이즈 ----
     void OnResize(uint32 InWidth, uint32 InHeight);
@@ -69,7 +70,6 @@ public:
     uint32 GetNumBucketsPerTile() const { return NumBucketsPerTile; }
 
 private:
-    void ResizeTiles(uint32 InWidth, uint32 InHeight);
     void CreatePointLightBufferGPU();
     void CreateTileMaskBuffers();
     void CreateDebugHitMap(uint32 InWidth, uint32 InHeight);

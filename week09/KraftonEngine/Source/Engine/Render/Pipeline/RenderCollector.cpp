@@ -281,6 +281,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		else
 		{
 			// Proxy → FDrawCommand 직접 변환
+            Renderer.BuildCommandForProxy(*Proxy, ERenderPass::Z_Prepass);
 			Renderer.BuildCommandForProxy(*Proxy, Proxy->Pass);
 		}
 

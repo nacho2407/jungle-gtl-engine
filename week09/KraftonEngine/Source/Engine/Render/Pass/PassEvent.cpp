@@ -12,7 +12,8 @@ void BuildDefaultPassEvents(
 	const FFrameContext& Frame,
 	FStateCache& Cache,
 	const FViewModeRenderPipeline* ActiveViewPipeline,
-	FViewModeSurfaceResources* ActiveViewSurfaces)
+	FViewModeSurfaceResources* ActiveViewSurfaces,
+    FTileBasedLightCulling& LightCulling)
 {
 	if (ActiveViewPipeline && ActiveViewSurfaces)
 	{
@@ -28,7 +29,7 @@ void BuildDefaultPassEvents(
                 Context->OMSetRenderTargets(0, nullptr, Frame.ViewportDSV);
 
                 // Depth Clear
-                Context->ClearDepthStencilView(Frame.ViewportDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+                Context->ClearDepthStencilView(Frame.ViewportDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
                 Cache.DiffuseSRV = nullptr;
                 Cache.bForceAll = true;
