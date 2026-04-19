@@ -46,7 +46,7 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
         Resources->LightStructuredBuffer.GetSRV()
     };
     DeviceContext->CSSetShaderResources(0, 1, &SRVs[0]);
-    DeviceContext->CSSetShaderResources(10, 1, &SRVs[1]);
+    DeviceContext->CSSetShaderResources(4, 1, &SRVs[1]);
 
 	ID3D11UnorderedAccessView* UAVs[] = {
         Resources->LightCulledIndexBuffer.GetUAV(),
@@ -67,7 +67,7 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
     DeviceContext->CSSetUnorderedAccessViews(0, 2, nullUAVs, nullptr);
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr };
     DeviceContext->CSSetShaderResources(0, 1, &nullSRVs[0]);
-    DeviceContext->CSSetShaderResources(10, 1, &nullSRVs[1]);
+    DeviceContext->CSSetShaderResources(4, 1, &nullSRVs[1]);
 
 	return true;
 }
@@ -82,7 +82,7 @@ bool FLightCullingPass::End(const FRenderPassContext* Context)
         Resources->LightCulledIndexBuffer.GetSRV(),
         Resources->LightTileBuffer.GetSRV()
     };
-    DeviceContext->PSSetShaderResources(10, 3, LightSRVs);
+    DeviceContext->PSSetShaderResources(4, 3, LightSRVs);
 
     return true;
 }
