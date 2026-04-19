@@ -8,7 +8,7 @@
 #include "Profiling/Stats.h"
 #include "Render/Renderer/Visibility//ConvexVolume.h"
 #include "Render/Renderer/Visibility//GPUOcclusionCulling.h"
-#include "Render/Renderer/Debug/DebugDrawQueue.h"
+#include "Render/Renderer/DebugDraw/DebugDrawQueue.h"
 #include "Render/Renderer/LODContext.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Core/PassTypes.h"
@@ -297,11 +297,11 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
             Proxy->UpdatePerViewport(Frame);
         }
 
-        //if (Proxy->Pass == ERenderPass::GizmoOuter || Proxy->Pass == ERenderPass::GizmoInner)
+        // if (Proxy->Pass == ERenderPass::GizmoOuter || Proxy->Pass == ERenderPass::GizmoInner)
         //{
-        //    CollectorDebugLog("[CollectVisibleProxies] Gizmo candidate pass=%d visible=%d mesh=%p shader=%p owner=%p",
-        //        static_cast<int>(Proxy->Pass), Proxy->bVisible ? 1 : 0, Proxy->MeshBuffer, Proxy->Shader, Proxy->Owner);
-        //}
+        //     CollectorDebugLog("[CollectVisibleProxies] Gizmo candidate pass=%d visible=%d mesh=%p shader=%p owner=%p",
+        //         static_cast<int>(Proxy->Pass), Proxy->bVisible ? 1 : 0, Proxy->MeshBuffer, Proxy->Shader, Proxy->Owner);
+        // }
 
         if (!Proxy->bVisible)
             continue;
