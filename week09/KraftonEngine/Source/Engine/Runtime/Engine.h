@@ -3,8 +3,9 @@
 #include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
-#include "Render/Renderer.h"
-#include "Render/Pipeline/IRenderPipeline.h"
+#include "Render/Renderer/Renderer.h"
+#include "Render/Renderer/RenderCollector.h"
+#include "Render/Core/FrameContext.h"
 
 #include <memory>
 
@@ -58,9 +59,8 @@ public:
 	UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
 
 protected:
-	void Render(float DeltaTime);
-	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
-	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
+	virtual void Render(float DeltaTime);
+	virtual void OnRenderSceneCleared() {}
 	void WorldTick(float DeltaTime);
 
 protected:
@@ -75,8 +75,9 @@ protected:
 
 	FRenderer Renderer;
 
-private:
-	std::unique_ptr<IRenderPipeline> RenderPipeline;
+protected:
+	FRenderCollector RenderCollector;
+	FFrameContext RenderFrame;
 };
 
 extern UEngine* GEngine;

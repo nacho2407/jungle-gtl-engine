@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
-#include "Render/Culling/ConvexVolume.h"
+#include "Render/Renderer/Culling/ConvexVolume.h"
 
 class UStaticMeshComponent;
 // class DecalProxy;
