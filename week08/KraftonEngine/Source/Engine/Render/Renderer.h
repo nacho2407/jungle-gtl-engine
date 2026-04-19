@@ -15,6 +15,7 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Helper/LineGeometry.h"
 #include "Render/Helper/FontGeometry.h"
+#include "Render/Culling/TileBasedLightCulling.h"
 
 class FTextRenderSceneProxy;
 class FScene;
@@ -103,4 +104,6 @@ private:
 	FViewModeSurfaceResources* OwnedViewModeSurfaces = nullptr;
 	FViewModeSurfaceResources* ActiveViewSurfaces = nullptr;
 	FViewModeRenderPipelineLibrary* ViewModePipelineLibrary = nullptr;
+
+	FTileBasedLightCulling TileCulling;
 };

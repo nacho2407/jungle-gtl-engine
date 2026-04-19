@@ -15,7 +15,7 @@ struct VS_OUTPUT
 VS_OUTPUT VS_Main(VS_INPUT input)
 {
     VS_OUTPUT output;
-    matrix WVP = mul(World, mul(View, Projection));
+    matrix WVP = mul(Model, mul(View, Projection));
     output.Pos = mul(float4(input.Pos, 1.0f), WVP);
     return output;
 }
