@@ -117,7 +117,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		bHasSelectionMaskCommands = true;
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
-	const bool bApplyMaterialState = !bDepthOnly && (Pass == Proxy.GetRenderPass());
 
 	// MeshBuffer → FDrawCommandBuffer 변환
 	FDrawCommandBuffer ProxyBuffer;
@@ -125,55 +124,17 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	ProxyBuffer.VBStride = Proxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
 	ProxyBuffer.IB       = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
-	// SectionDraws가 있으면 섹션당 1개 커맨드 (per-section 셰이더), 없으면 1개 커맨드
-	if (!Proxy.GetSectionDraws().empty())
+	// 섹션당 1개 커맨드 (per-section 셰이더)
+	for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
 	{
-		for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
-		{
-			if (Section.IndexCount == 0) continue;
-			if (!ProxyBuffer.IB) continue;
+		if (Section.IndexCount == 0) continue;
+		if (!ProxyBuffer.IB) continue;
 
-			// Section Material이 셰이더를 가지면 사용, 없으면 Proxy 폴백
-			FShader* SectionShader = (Section.Material && Section.Material->GetShader())
-				? Section.Material->GetShader()
-				: Proxy.GetShader();
-			FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
-
-			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Pass        = Pass;
-			Cmd.Shader      = EffectiveShader;
-			Cmd.RenderState = BaseRenderState;
-			Cmd.Buffer      = ProxyBuffer;
-			Cmd.PerObjectCB = PerObjCB;
-			Cmd.Buffer.FirstIndex = Section.FirstIndex;
-			Cmd.Buffer.IndexCount = Section.IndexCount;
-
-			if (!bDepthOnly && Section.Material)
-			{
-				UMaterial* Mat = Section.Material;
-
-				// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
-				Mat->FlushDirtyBuffers(CachedDevice, Ctx);
-
-				Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
-				Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
-
-				// CachedSRVs에서 직접 복사 (map lookup 회피)
-				const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
-				for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
-					Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
-
-				if (bApplyMaterialState)
-					ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
-			}
-
-			Cmd.BuildSortKey();
-		}
-	}
-	else
-	{
-		// Non-SectionDraws (Gizmo, TextRender 등): Proxy.GetShader() 유지
-		FShader* EffectiveShader = SelectEffectiveShader(Proxy.GetShader(), CollectViewMode);
+		// Section Material이 셰이더를 가지면 사용, 없으면 Proxy 폴백
+		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
+			? Section.Material->GetShader()
+			: Proxy.GetShader();
+		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass        = Pass;
@@ -181,12 +142,28 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		Cmd.RenderState = BaseRenderState;
 		Cmd.Buffer      = ProxyBuffer;
 		Cmd.PerObjectCB = PerObjCB;
+		Cmd.Buffer.FirstIndex = Section.FirstIndex;
+		Cmd.Buffer.IndexCount = Section.IndexCount;
 
-		// MeshBuffer 전체 드로우 — IndexCount/VertexCount 명시
-		if (ProxyBuffer.IB)
-			Cmd.Buffer.IndexCount = Proxy.GetMeshBuffer()->GetIndexBuffer().GetIndexCount();
-		else
-			Cmd.Buffer.VertexCount = Proxy.GetMeshBuffer()->GetVertexBuffer().GetVertexCount();
+		if (!bDepthOnly && Section.Material)
+		{
+			UMaterial* Mat = Section.Material;
+
+			// dirty CB 업로드 (ConstantBufferMap + PerShaderOverride)
+			Mat->FlushDirtyBuffers(CachedDevice, Ctx);
+
+			Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+			Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
+
+			// CachedSRVs에서 직접 복사 (map lookup 회피)
+			const ID3D11ShaderResourceView* const* MatSRVs = Mat->GetCachedSRVs();
+			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+				Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
+
+			// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
+			if (Pass == Mat->GetRenderPass())
+				ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+		}
 
 		Cmd.BuildSortKey();
 	}
