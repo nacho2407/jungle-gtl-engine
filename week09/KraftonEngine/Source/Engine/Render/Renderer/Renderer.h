@@ -17,19 +17,9 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/Geometry/LineGeometry.h"
 #include "Render/Resource/Geometry/FontGeometry.h"
-#include "Render/Passes/DepthPrePass.h"
-#include "Render/Passes/BaseDrawPass.h"
-#include "Render/Passes/DecalPass.h"
-#include "Render/Passes/LightingPass.h"
-#include "Render/Passes/AdditiveDecalPass.h"
-#include "Render/Passes/AlphaBlendPass.h"
-#include "Render/Passes/HeightFogPass.h"
-#include "Render/Passes/FXAAPass.h"
-#include "Render/Passes/SelectionMaskPass.h"
-#include "Render/Passes/OutlinePass.h"
-#include "Render/Passes/DebugLinesPass.h"
-#include "Render/Passes/GizmoRenderPass.h"
-#include "Render/Passes/OverlayFontRenderPass.h"
+#include "Render/Renderer/RenderPassRegistry.h"
+#include "Render/Renderer/RenderPipelineRegistry.h"
+#include "Render/Renderer/RenderPipelineRunner.h"
 
 class FTextRenderSceneProxy;
 class FScene;
@@ -75,6 +65,7 @@ public:
 	void BeginFrame();
 	void EndFrame();
 
+	void RunRootPipeline(ERenderPipelineType RootType, const FFrameContext& Frame);
 	void ExecutePipeline(ERenderPipelineType Type, const FFrameContext& Frame);
 
 	// Pass execution helpers — individual pass classes call these.
@@ -125,20 +116,10 @@ private:
 	FLineGeometry  GridLines;
 	FFontGeometry  FontGeometry;
 
-	// Pipeline-owned render passes
-	FDepthPrePass DepthPrePass;
-	FBaseDrawPass BaseDrawPass;
-	FDecalPass DecalPass;
-	FLightingPass LightingPass;
-	FAdditiveDecalPass AdditiveDecalPass;
-	FAlphaBlendPass AlphaBlendPass;
-	FHeightFogPass HeightFogPass;
-	FFXAAPass FXAAPass;
-	FSelectionMaskPass SelectionMaskPass;
-	FOutlinePass OutlinePass;
-	FDebugLinesPass DebugLinesPass;
-	FGizmoRenderPass GizmoRenderPass;
-	FOverlayFontRenderPass OverlayFontRenderPass;
+	// Pipeline/Pass ownership lives outside the renderer.
+	FRenderPassRegistry PassRegistry;
+	FRenderPipelineRegistry PipelineRegistry;
+	FRenderPipelineRunner PipelineRunner;
 
 	// FDrawCommand 기반 렌더링
 	FDrawCommandList DrawCommandList;

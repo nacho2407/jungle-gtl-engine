@@ -342,6 +342,9 @@
     <ClCompile Include="Source\Engine\Render\Passes\SelectionMaskPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\UberLitPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderPassRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRunner.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Culling\GPUOcclusionCulling.cpp" />
@@ -527,6 +530,9 @@
     <ClInclude Include="Source\Engine\Render\Renderer\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\PipelineShaderResolver.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderPassRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRunner.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\Culling\GPUOcclusionCulling.h" />

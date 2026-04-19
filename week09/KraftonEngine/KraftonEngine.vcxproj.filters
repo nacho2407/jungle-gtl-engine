@@ -524,6 +524,15 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderPassRegistry.cpp">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.cpp">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderPipelineRunner.cpp">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClCompile>
@@ -1071,6 +1080,15 @@
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderCollector.h">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderPassRegistry.h">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRegistry.h">
+      <Filter>Source\Engine\Render\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderPipelineRunner.h">
       <Filter>Source\Engine\Render\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h">

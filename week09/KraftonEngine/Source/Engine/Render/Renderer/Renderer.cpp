@@ -42,6 +42,8 @@ void FRenderer::Create(HWND hWindow)
 	FontGeometry.Create(Device.GetDevice());
 
 	InitializeDefaultPassRenderStates(PassRenderStates);
+	PassRegistry.Initialize();
+	PipelineRegistry.Initialize();
 
 	ViewModePassRegistry = new FViewModePassRegistry();
 	ViewModePassRegistry->Initialize(Device.GetDevice());
@@ -70,6 +72,8 @@ void FRenderer::Release()
 	}
 
 	FGPUProfiler::Get().Shutdown();
+	PassRegistry.Release();
+	PipelineRegistry.Release();
 
 	EditorLines.Release();
 	GridLines.Release();
@@ -913,77 +917,25 @@ void FRenderer::ExecuteOverlayFontRenderPass(const FFrameContext& Frame)
 	SubmitRenderPass(ERenderPass::OverlayFont);
 }
 
+void FRenderer::RunRootPipeline(ERenderPipelineType RootType, const FFrameContext& Frame)
+{
+	const bool bRootToBackBuffer = (Frame.ViewportRTV == nullptr);
+	if (bRootToBackBuffer)
+	{
+		BeginFrame();
+	}
+
+	PreparePipelineExecution(Frame);
+	PipelineRunner.ExecutePipeline(RootType, *this, Frame, PipelineRegistry, PassRegistry);
+	FinalizePipelineExecution();
+
+	if (bRootToBackBuffer)
+	{
+		EndFrame();
+	}
+}
+
 void FRenderer::ExecutePipeline(ERenderPipelineType Type, const FFrameContext& Frame)
 {
-	switch (Type)
-	{
-	case ERenderPipelineType::DefaultScene:
-	{
-		const bool bRootToBackBuffer = (Frame.ViewportRTV == nullptr);
-		if (bRootToBackBuffer)
-		{
-			BeginFrame();
-		}
-		PreparePipelineExecution(Frame);
-		ExecutePipeline(ERenderPipelineType::Scene, Frame);
-		FinalizePipelineExecution();
-		if (bRootToBackBuffer)
-		{
-			EndFrame();
-		}
-		break;
-	}
-
-	case ERenderPipelineType::EditorScene:
-	{
-		const bool bRootToBackBuffer = (Frame.ViewportRTV == nullptr);
-		if (bRootToBackBuffer)
-		{
-			BeginFrame();
-		}
-		PreparePipelineExecution(Frame);
-		ExecutePipeline(ERenderPipelineType::Scene, Frame);
-		ExecutePipeline(ERenderPipelineType::EditorOverlay, Frame);
-		FinalizePipelineExecution();
-		if (bRootToBackBuffer)
-		{
-			EndFrame();
-		}
-		break;
-	}
-
-	case ERenderPipelineType::Scene:
-		DepthPrePass.Execute(*this, Frame);
-		ExecutePipeline(ERenderPipelineType::SceneViewMode, Frame);
-		AdditiveDecalPass.Execute(*this, Frame);
-		AlphaBlendPass.Execute(*this, Frame);
-		ExecutePipeline(ERenderPipelineType::ScenePostProcess, Frame);
-		break;
-
-	case ERenderPipelineType::SceneViewMode:
-		BaseDrawPass.Execute(*this, Frame);
-		DecalPass.Execute(*this, Frame);
-		LightingPass.Execute(*this, Frame);
-		break;
-
-	case ERenderPipelineType::ScenePostProcess:
-		HeightFogPass.Execute(*this, Frame);
-		FXAAPass.Execute(*this, Frame);
-		break;
-
-	case ERenderPipelineType::EditorOverlay:
-		ExecutePipeline(ERenderPipelineType::Outline, Frame);
-		DebugLinesPass.Execute(*this, Frame);
-		GizmoRenderPass.Execute(*this, Frame);
-		OverlayFontRenderPass.Execute(*this, Frame);
-		break;
-
-	case ERenderPipelineType::Outline:
-		SelectionMaskPass.Execute(*this, Frame);
-		OutlinePass.Execute(*this, Frame);
-		break;
-
-	default:
-		break;
-	}
+	PipelineRunner.ExecutePipeline(Type, *this, Frame, PipelineRegistry, PassRegistry);
 }
