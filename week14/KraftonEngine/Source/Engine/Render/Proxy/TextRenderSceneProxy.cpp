@@ -3,6 +3,7 @@
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Materials/Material.h"
+#include "Object/ObjectFactory.h"
 
 // ============================================================
 // FTextRenderSceneProxy
@@ -10,6 +11,15 @@
 FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
+}
+
+FTextRenderSceneProxy::~FTextRenderSceneProxy()
+{
+	if (TextMaterial)
+	{
+		UObjectManager::Get().DestroyObject(TextMaterial);
+		TextMaterial = nullptr;
+	}
 }
 
 void FTextRenderSceneProxy::UpdateTransform()

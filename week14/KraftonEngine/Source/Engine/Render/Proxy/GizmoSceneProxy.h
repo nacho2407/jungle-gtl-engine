@@ -14,6 +14,7 @@ class FGizmoSceneProxy : public FPrimitiveSceneProxy
 {
 public:
 	FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner = false);
+	~FGizmoSceneProxy() override;
 
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;

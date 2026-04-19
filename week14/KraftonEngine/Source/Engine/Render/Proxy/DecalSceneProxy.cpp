@@ -6,6 +6,7 @@
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Object/ObjectFactory.h"
 
 namespace
 {
@@ -33,6 +34,11 @@ FDecalSceneProxy::~FDecalSceneProxy()
 		DecalCB->Release();
 		delete DecalCB;
 		DecalCB = nullptr;
+	}
+	if (DecalProxyMaterial)
+	{
+		UObjectManager::Get().DestroyObject(DecalProxyMaterial);
+		DecalProxyMaterial = nullptr;
 	}
 }
 

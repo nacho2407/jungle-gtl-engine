@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Materials/Material.h"
+#include "Object/ObjectFactory.h"
 
 // ============================================================
 // FPrimitiveSceneProxy — 기본 구현
@@ -12,6 +13,15 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 {
 	if (!Owner->SupportsOutline())
 		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
+}
+
+FPrimitiveSceneProxy::~FPrimitiveSceneProxy()
+{
+	if (DefaultMaterial)
+	{
+		UObjectManager::Get().DestroyObject(DefaultMaterial);
+		DefaultMaterial = nullptr;
+	}
 }
 
 ERenderPass FPrimitiveSceneProxy::GetRenderPass() const

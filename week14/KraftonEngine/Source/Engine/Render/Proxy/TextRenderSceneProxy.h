@@ -15,6 +15,7 @@ class FTextRenderSceneProxy : public FBillboardSceneProxy
 {
 public:
 	FTextRenderSceneProxy(UTextRenderComponent* InComponent);
+	~FTextRenderSceneProxy() override;
 
 	void UpdateTransform() override;
 	void UpdateMesh() override;
