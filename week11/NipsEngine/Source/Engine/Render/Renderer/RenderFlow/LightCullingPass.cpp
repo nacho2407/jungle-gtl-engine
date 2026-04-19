@@ -23,7 +23,7 @@ bool FLightCullingPass::Begin(const FRenderPassContext* Context)
     OutRTV = RenderTargets->SceneColorRTV;
 
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
-    Context->DeviceContext->PSSetShaderResources(10, 3, nullSRVs);
+    Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
 
     return true;
 }

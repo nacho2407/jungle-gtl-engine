@@ -762,11 +762,13 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus
     FLightConstants lightConstantData;
     lightConstantData.AmbientLight = InRenderBus.AmbientLightInfo;
     lightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
+    lightConstantData.LightCount = (uint32)InRenderBus.LightInfos.size();
 
     Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FLightConstants));
     ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
     Context->VSSetConstantBuffers(3, 1, &b3);
     Context->PSSetConstantBuffers(3, 1, &b3);
+    Context->CSSetConstantBuffers(3, 1, &b3);
 
 	Resources.LightStructuredBuffer.Update(Context, InRenderBus.LightInfos.data(), (uint32)InRenderBus.LightInfos.size());
     ID3D11ShaderResourceView* SRVs[] = { Resources.LightStructuredBuffer.GetSRV(), };

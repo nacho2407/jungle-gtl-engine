@@ -38,6 +38,8 @@ cbuffer FLightConstants : register(b3)
 {
     FAmbientLightInfo AmbientLight;
     FDirectionalLightInfo DirectionalLight;
+    uint LightCount;
+    float3 Padding;
 };
 
 struct LightResult
