@@ -180,7 +180,7 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 	}
 
 	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
-	LineMaterial->DepthStencilType = EDepthStencilType::Default;
+	LineMaterial->DepthStencilType = EDepthStencilType::DepthReadOnly;
 	LineMaterial->BlendType = EBlendType::AlphaBlend;
 	LineMaterial->RasterizerType = ERasterizerType::SolidBackCull;
 	LineMaterial->SamplerType = ESamplerType::EST_Linear;

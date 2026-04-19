@@ -296,7 +296,7 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
 		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
         Material->SetVector2("OutlineViewportOrigin", RenderBus.GetViewportOrigin());
-		Material->DepthStencilType = EDepthStencilType::Default;
+		Material->DepthStencilType = EDepthStencilType::DepthReadOnly;
 		Material->RasterizerType = ERasterizerType::SolidBackCull;
 		Material->BlendType = EBlendType::AlphaBlend;
 
