@@ -384,7 +384,7 @@ void FRenderer::BuildDynamicCommands(const FFrameContext& Frame, const FScene* S
 // Render — 정렬 + GPU 제출
 // BeginCollect + Collector + BuildDynamicCommands 이후에 호출.
 // ============================================================
-void FRenderer::Render(const FFrameContext& Frame)
+void FRenderer::Render(FFrameContext& Frame)
 {
 	FDrawCallStats::Reset();
 
@@ -408,7 +408,7 @@ void FRenderer::Render(const FFrameContext& Frame)
 
 	// ── Pre/Post 패스 이벤트 등록 ──
 	TArray<FPassEvent> PrePassEvents;
-	BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces, Resources);
+	BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces);
 
 	// ── 패스 루프 ──
 	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
@@ -748,7 +748,8 @@ void FRenderer::EndFrame()
 	Device.Present();
 }
 
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame)
+// Per Frame 상수 버퍼를 업데이트하고, Global/Local Light Data를 업로드합니다.
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, FFrameContext& Frame)
 {
 	FFrameConstants frameConstantData = {};
 	frameConstantData.View = Frame.View;
@@ -767,4 +768,14 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+
+	// b4: GlobalLights CB 업로드 후 Frame에 포인터 저장
+	Resources.GlobalLightBuffer.Update(Context,
+		&Frame.CollectedLights.GlobalLights,
+		sizeof(FGlobalLightConstants));
+	Frame.GlobalLightBuffer = Resources.GlobalLightBuffer.GetBuffer();
+
+	// t6: LocalLights SRV 업로드 후 Frame에 포인터 저장
+	Resources.UpdateLocalLights(Device.GetDevice(), Context, Frame.CollectedLights.LocalLights);
+	Frame.LocalLightsSRV = Resources.LocalLightSRV;
 }
