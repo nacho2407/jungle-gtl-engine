@@ -122,7 +122,6 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		SCOPE_STAT_CAT("Collector", "3_Collect");
 
 		Collector.CollectWorld(World, Frame, Renderer);
-
 		Collector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
 		Collector.CollectDebugDraw(Frame, Scene);
 
