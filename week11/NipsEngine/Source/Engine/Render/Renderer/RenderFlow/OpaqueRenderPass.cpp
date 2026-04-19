@@ -100,9 +100,9 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 {
-	ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
-	Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
-	Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
+	//ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
+	//Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
+	//Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
     return true;
 }
 
