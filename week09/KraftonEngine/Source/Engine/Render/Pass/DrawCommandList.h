@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "DrawCommand.h"
 #include "Render/Device/D3DDevice.h"
@@ -24,7 +24,9 @@ struct FStateCache
 	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
 	FConstantBuffer*          PerObjectCB    = nullptr;
 	FConstantBuffer*          PerShaderCB[2] = {};
-	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
+	FConstantBuffer*          LightCB        = nullptr;   // b4: GlobalLights (PassEvent가 설정, 커맨드가 override 가능)
+	ID3D11ShaderResourceView* DiffuseSRV    = nullptr;   // t0
+	ID3D11ShaderResourceView* LocalLightSRV = nullptr;   // t6: LocalLights StructuredBuffer
 
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
 	ID3D11RenderTargetView*  RTV         = nullptr;
