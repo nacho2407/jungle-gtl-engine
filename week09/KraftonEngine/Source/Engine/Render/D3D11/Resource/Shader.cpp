@@ -2,6 +2,8 @@
 #include "Profiling/MemoryStats.h"
 #include "Materials/Material.h"
 #include <iostream>
+#include <string>
+#include <comdef.h>
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -205,18 +207,20 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
     Reflector->GetDesc(&ShaderDesc);
 
     TArray<D3D11_INPUT_ELEMENT_DESC> Elements;
+    TArray<std::string> SemanticNames;
+    SemanticNames.reserve(ShaderDesc.InputParameters);
 
     for (UINT i = 0; i < ShaderDesc.InputParameters; ++i)
     {
         D3D11_SIGNATURE_PARAMETER_DESC ParamDesc;
         Reflector->GetInputParameterDesc(i, &ParamDesc);
 
-        // SV_VertexID, SV_InstanceID 등 시스템 시맨틱은 스킵
         if (ParamDesc.SystemValueType != D3D_NAME_UNDEFINED)
             continue;
 
         D3D11_INPUT_ELEMENT_DESC Elem = {};
-        Elem.SemanticName = ParamDesc.SemanticName;
+        SemanticNames.emplace_back(ParamDesc.SemanticName ? ParamDesc.SemanticName : "");
+        Elem.SemanticName = SemanticNames.back().c_str();
         Elem.SemanticIndex = ParamDesc.SemanticIndex;
         Elem.Format = MaskToFormat(ParamDesc.ComponentType, ParamDesc.Mask);
         Elem.InputSlot = 0;
@@ -227,18 +231,18 @@ void FShader::CreateInputLayoutFromReflection(ID3D11Device* InDevice, ID3DBlob* 
         Elements.push_back(Elem);
     }
 
-    Reflector->Release();
-
-    // Fullscreen quad 등 vertex input이 없는 셰이더는 InputLayout 불필요
-    if (Elements.empty())
-        return;
-
-    hr = InDevice->CreateInputLayout(Elements.data(), (UINT)Elements.size(),
-                                     VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
-    if (FAILED(hr))
+    if (!Elements.empty())
     {
-        std::cerr << "Failed to create Input Layout from reflection (HRESULT: " << hr << ")" << std::endl;
+        hr = InDevice->CreateInputLayout(Elements.data(), static_cast<UINT>(Elements.size()),
+                                         VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
+        if (FAILED(hr))
+        {
+            _com_error Err(hr);
+            OutputDebugStringW((L"CreateInputLayout failed: " + std::wstring(Err.ErrorMessage()) + L"").c_str());
+        }
     }
+
+    Reflector->Release();
 }
 
 // 셰이더 컴파일 후 호출. 셰이더 코드의 cbuffer, 텍스처 샘플러 선언을 분석해서 outlayout에 채워넣음. 이 정보는 머티리얼 템플릿이 생성될 때 참조되어야 하므로 셰이더 내부에서 제공하는 형태로 존재해야 함.
