@@ -1,4 +1,4 @@
-#include "DepthStencilStateManager.h"
+﻿#include "DepthStencilStateManager.h"
 
 #define SAFE_RELEASE(Obj) if (Obj) { Obj->Release(); Obj = nullptr; }
 
@@ -8,7 +8,7 @@ void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 	D3D11_DEPTH_STENCIL_DESC Desc = {};
 	Desc.DepthEnable = TRUE;
 	Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	Desc.DepthFunc = D3D11_COMPARISON_GREATER;
+    Desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
 	Desc.StencilEnable = FALSE;
 	InDevice->CreateDepthStencilState(&Desc, &Default);
 

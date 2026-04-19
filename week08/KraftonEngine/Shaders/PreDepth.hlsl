@@ -1,5 +1,5 @@
 #include "Common/ConstantBuffers.hlsl"
-
+#include "Common/Functions.hlsl"
 struct VS_INPUT
 {
     float3 Pos : POSITION;
@@ -15,8 +15,7 @@ struct VS_OUTPUT
 VS_OUTPUT VS_Main(VS_INPUT input)
 {
     VS_OUTPUT output;
-    matrix WVP = mul(Model, mul(View, Projection));
-    output.Pos = mul(float4(input.Pos, 1.0f), WVP);
+    output.Pos = ApplyMVP(input.Pos);
     return output;
 }
 

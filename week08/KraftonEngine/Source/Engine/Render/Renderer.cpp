@@ -148,7 +148,10 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
         return;
 
     if (Pass == ERenderPass::Z_Prepass && Proxy.Blend != EBlendState::Opaque)
-       return;
+        return;
+
+	if (Pass == ERenderPass::Z_Prepass && CollectViewMode == EViewMode::Wireframe)
+		return;
 
     ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
     const FPassRenderState& PassState = PassRenderStates[(uint32)Pass];
@@ -200,8 +203,7 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
             if (!Proxy.MeshBuffer->GetIndexBuffer().GetBuffer())
                 continue;
             FDrawCommand& Cmd = DrawCommandList.AddCommand();
-            Cmd.Shader = Pass != ERenderPass::Z_Prepass? ResolvedShader : 
-							FShaderManager::Get().GetShader(EShaderType::Z_Prepass) ;
+            Cmd.Shader = Pass != ERenderPass::Z_Prepass ? ResolvedShader : FShaderManager::Get().GetShader(EShaderType::Z_Prepass);
 
             // 기본적으로는 현재 패스의 렌더 상태를 따르지만, 섹션별로 명시된 상태가 있으면 우선 적용합니다.
             if (Pass == ERenderPass::Z_Prepass)
@@ -213,13 +215,13 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
             }
             else
             {
-                Cmd.Blend = (Section.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Section.Blend : PassState.Blend;
-                Cmd.DepthStencil = (Section.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Section.DepthStencil : PassState.DepthStencil;
-                Cmd.Rasterizer = (Section.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Section.Rasterizer : Rasterizer;
-                if (CollectViewMode == EViewMode::Wireframe && Pass == ERenderPass::Opaque)
-                    Cmd.Rasterizer = ERasterizerState::WireFrame;
-                Cmd.DiffuseSRV = Section.DiffuseSRV;
+                Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
+                Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
+                Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
+                Cmd.DiffuseSRV = Proxy.DiffuseSRV;
             }
+            if (CollectViewMode == EViewMode::Wireframe && Pass == ERenderPass::Opaque)
+                Cmd.Rasterizer = ERasterizerState::WireFrame;
             Cmd.Topology = PassState.Topology;
             Cmd.MeshBuffer = Proxy.MeshBuffer;
             Cmd.FirstIndex = Section.FirstIndex;
@@ -228,9 +230,10 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
             Cmd.PerShaderCB[0] = Section.MaterialCB[0];
             Cmd.PerShaderCB[1] = Section.MaterialCB[1];
             SetProxyExtraCB(Cmd); // Decal 등: PerShaderCB[1]에 추가 CB 배치
-
             Cmd.Pass = Pass;
-            Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Cmd.Shader, Proxy.MeshBuffer, Section.DiffuseSRV);
+            Cmd.SortKey = FDrawCommand::BuildSortKey(
+                Pass, Cmd.Shader, Proxy.MeshBuffer,
+                Pass != ERenderPass::Z_Prepass ? Section.DiffuseSRV : nullptr);
         }
     }
     else
@@ -251,20 +254,21 @@ void FRenderer::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderP
             Cmd.Blend = (Proxy.Blend != EBlendState::Opaque || Pass == ERenderPass::Opaque) ? Proxy.Blend : PassState.Blend;
             Cmd.DepthStencil = (Proxy.DepthStencil != EDepthStencilState::Default || Pass == ERenderPass::Opaque) ? Proxy.DepthStencil : PassState.DepthStencil;
             Cmd.Rasterizer = (Proxy.Rasterizer != ERasterizerState::SolidBackCull || Pass == ERenderPass::Opaque) ? Proxy.Rasterizer : Rasterizer;
-            if (CollectViewMode == EViewMode::Wireframe && Pass == ERenderPass::Opaque)
-                Cmd.Rasterizer = ERasterizerState::WireFrame;
             Cmd.DiffuseSRV = Proxy.DiffuseSRV;
+
         }
+        if (CollectViewMode == EViewMode::Wireframe && Pass == ERenderPass::Opaque)
+            Cmd.Rasterizer = ERasterizerState::WireFrame;
         Cmd.Topology = PassState.Topology;
         Cmd.MeshBuffer = Proxy.MeshBuffer;
         Cmd.PerObjectCB = PerObjCB;
         SetProxyExtraCB(Cmd);
-
         Cmd.Pass = Pass;
-        Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Cmd.Shader, Proxy.MeshBuffer, Proxy.DiffuseSRV);
+        Cmd.SortKey = FDrawCommand::BuildSortKey(
+            Pass, Cmd.Shader, Proxy.MeshBuffer,
+            Pass != ERenderPass::Z_Prepass ? Proxy.DiffuseSRV : nullptr);
     }
 }
-
 void FRenderer::BuildDecalCommand(const FPrimitiveSceneProxy& DecalProxy)
 {
     if (!ActiveViewPipeline || !DecalProxy.DiffuseSRV)
