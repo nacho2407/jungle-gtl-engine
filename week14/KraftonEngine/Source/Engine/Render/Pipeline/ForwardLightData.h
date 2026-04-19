@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/Vector.h"
 #include "Core/EngineTypes.h"
 
@@ -79,6 +79,10 @@ struct FLightingCBData
 	uint32  NumActiveSpotLights;               //  4B  | offset 68
 	uint32  NumTilesX;                         //  4B  | offset 72  (Tile Culling용)
 	uint32  NumTilesY;                         //  4B  | offset 76  → 합계 80B (16B 정렬)
+
+	uint32 ViewLightCulling;
+	float HeatMapMax;
+	uint32 Pad[2];
 };
 static_assert(sizeof(FLightingCBData) % 16 == 0, "FLightingCBData must be 16-byte aligned");
 

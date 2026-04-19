@@ -34,6 +34,12 @@ public:
 	// 뷰포트 리사이즈 후 렌더 상태 캐시 초기화
 	void ResetRenderStateCache() { Resources.ResetRenderStateCache(); }
 
+	// TileBaseCulling Dispatch에 필요한 리소스 접근자
+	ID3D11Buffer*             GetFrameBuffer()         { return Resources.FrameBuffer.GetBuffer(); }
+	ID3D11ShaderResourceView* GetLightBufferSRV()      { return Resources.ForwardLights.LightBufferSRV; }
+	FTileCullingResource&     GetTileCullingResource() { return Resources.TileCullingResource; }
+	uint32                    GetNumLights()    const  { return Resources.LastNumLights; }
+
 private:
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(FStateCache& Cache);

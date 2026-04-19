@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Resource/Buffer.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/ForwardLightData.h"
@@ -66,6 +66,30 @@ struct FLightingResource
 	}
 };
 
+
+struct FTileCullingResource
+{
+	// Buffers
+	ID3D11Buffer* IndicesBuffer  = nullptr;
+	ID3D11Buffer* GridBuffer     = nullptr;
+	ID3D11Buffer* CounterBuffer  = nullptr;
+
+	// UAVs — CS writes (u0, u1, u2)
+	ID3D11UnorderedAccessView* IndicesUAV = nullptr;
+	ID3D11UnorderedAccessView* GridUAV    = nullptr;
+	ID3D11UnorderedAccessView* CounterUAV = nullptr;
+
+	// SRVs — PS reads (t9, t10)
+	ID3D11ShaderResourceView*  IndicesSRV = nullptr;
+	ID3D11ShaderResourceView*  GridSRV    = nullptr;
+
+	uint32 TileCountX = 0;
+	uint32 TileCountY = 0;
+
+	void Create(ID3D11Device* Dev, uint32 InTileCountX, uint32 InTileCountY);
+	void Release();
+};
+
 struct FSystemResources
 {
 	// --- Frame CB (b0) ---
@@ -74,6 +98,8 @@ struct FSystemResources
 	// --- Lighting ---
 	FConstantBuffer LightingConstantBuffer;		// b4 — ECBSlot::Lighting
 	FLightingResource ForwardLights;			// t8 — ELightTexSlot::AllLights
+	FTileCullingResource TileCullingResource;	// t9/t10 — 타일 컬링 결과 버퍼
+	uint32 LastNumLights = 0;					// Dispatch용 총 라이트 수 캐시
 
 	// --- Render State Managers ---
 	FRasterizerStateManager RasterizerStateManager;
@@ -96,10 +122,13 @@ struct FSystemResources
 	void UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame);
 
 	// 라이팅 CB + StructuredBuffer 업데이트 + 바인딩 (b4, t8)
-	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene);
+	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame);
 
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
 	void BindSystemSamplers(FD3DDevice& Device);
+
+	// 타일 컬링 결과 SRV 바인딩 (t9, t10) — Renderer::Render 시작 시 호출
+	void BindTileCullingBuffers(FD3DDevice& Device);
 
 	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
 	void UnbindSystemTextures(FD3DDevice& Device);

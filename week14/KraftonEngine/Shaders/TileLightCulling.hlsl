@@ -33,7 +33,6 @@ groupshared uint hitCount; // 각 타일별 Light 교차 수
 groupshared Frustum frustum;
 groupshared uint localIndices[256];
 
-#define TILE_SIZE   32
 #define NUM_SLICES  32 
 
 float4 ComputePlane(float3 a, float3 b)
@@ -106,17 +105,17 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
     }
     GroupMemoryBarrierWithGroupSync();
 
-    float depthSample = 1.0f;
+    float depthSample = 0.0f;
     // 현재 화면에서 벗어나는 픽셀인지 검사
     if (all(pixel < screenSize))
     {
         // 해당하는 픽셀의 Depth값 가져오기
         depthSample = gDepthTexture[pixel];
         
-        if(depthSample < 1.0f)
+        if(depthSample > 0.0f)
         {
             // 비선형 깊이를 선형으로 변환 후 0과 1사이로 정규화
-            float linearZ = (NearZ * FarZ) / (FarZ - depthSample * (FarZ - NearZ));
+            float linearZ = (NearZ * FarZ) / (depthSample * (FarZ - NearZ) + NearZ);
             float depthNormalized = saturate((linearZ - NearZ) / (FarZ - NearZ));
             
             // 타일 안의 min, max depth 갱신하기
@@ -139,11 +138,14 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
     uint numTilesX = (ScreenSize.x + TILE_SIZE - 1) / TILE_SIZE;
     uint flatTileIndex = tileCoord.y * numTilesX + tileCoord.x;
     
+    float tileMinZ = asfloat(groupMinZ);
+    float tileMaxZ = asfloat(groupMaxZ);
+    
     // 스레드마다 나눠서 광원이 타일 안에 있는지 검사
     uint threadIndex = threadID.y * TILE_SIZE + threadID.x;
     for (uint i = threadIndex; i < NumLights; i += TILE_SIZE * TILE_SIZE)
     {
-        FLightInfo light = g_AllLights[i];
+        FLightInfo light = AllLights[i];
         Sphere s;
         s.position = mul(float4(light.Position, 1), View).xyz;
         s.radius = light.AttenuationRadius;
@@ -152,15 +154,12 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         float lightMinZ = s.position.z - s.radius; 
         float lightMaxZ = s.position.z + s.radius;
         
-        float tileMinZ = asfloat(groupMinZ);
-        float tileMaxZ = asfloat(groupMaxZ);
-        
         // 절두체 안에 들어오지 않았으면 컬링
         if (!SphereInsideFrustum(s, frustum))
             continue;
         
         // (1차 검사) 광원이 오브젝트가 존재하는 범위 안에 없으면 컬링
-        if (lightMaxZ < tileMinZ || lightMinZ > tileMaxZ)
+        if (tileMinZ > tileMaxZ || lightMaxZ < tileMinZ || lightMinZ > tileMaxZ)
             continue;
         
         // (2차 검사) 실제로 광원의 범위와 물체가 겹치는지 검사 후 컬링
