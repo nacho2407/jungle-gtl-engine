@@ -125,8 +125,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	if (Pass == ERenderPass::SelectionMask)
 		bHasSelectionMaskCommands = true;
 
-	FShader* EffectiveShader = SelectEffectiveShader(Proxy.GetShader(), CollectViewMode);
-
 	// Proxy.ExtraCB → PerShaderCB 인덱스 변환 헬퍼
 	auto SetProxyExtraCB = [&](FDrawCommand& Cmd)
 		{
@@ -147,17 +145,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	ProxyBuffer.VBStride = Proxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
 	ProxyBuffer.IB       = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
-	// 커맨드 공통 초기화 람다
-	auto InitCommand = [&](FDrawCommand& Cmd)
-		{
-			Cmd.Pass        = Pass;
-			Cmd.Shader      = EffectiveShader;
-			Cmd.RenderState = BaseRenderState;
-			Cmd.Buffer      = ProxyBuffer;
-			Cmd.PerObjectCB = PerObjCB;
-		};
-
-	// SectionDraws가 있으면 섹션당 1개 커맨드, 없으면 1개 커맨드
+	// SectionDraws가 있으면 섹션당 1개 커맨드 (per-section 셰이더), 없으면 1개 커맨드
 	if (!Proxy.GetSectionDraws().empty())
 	{
 		for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
@@ -165,8 +153,18 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 			if (Section.IndexCount == 0) continue;
 			if (!ProxyBuffer.IB) continue;
 
+			// Section Material이 셰이더를 가지면 사용, 없으면 Proxy 폴백
+			FShader* SectionShader = (Section.Material && Section.Material->GetShader())
+				? Section.Material->GetShader()
+				: Proxy.GetShader();
+			FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
+
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			InitCommand(Cmd);
+			Cmd.Pass        = Pass;
+			Cmd.Shader      = EffectiveShader;
+			Cmd.RenderState = BaseRenderState;
+			Cmd.Buffer      = ProxyBuffer;
+			Cmd.PerObjectCB = PerObjCB;
 			Cmd.Buffer.FirstIndex = Section.FirstIndex;
 			Cmd.Buffer.IndexCount = Section.IndexCount;
 
@@ -199,8 +197,15 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	}
 	else
 	{
+		// Non-SectionDraws (Gizmo, TextRender 등): Proxy.GetShader() 유지
+		FShader* EffectiveShader = SelectEffectiveShader(Proxy.GetShader(), CollectViewMode);
+
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		InitCommand(Cmd);
+		Cmd.Pass        = Pass;
+		Cmd.Shader      = EffectiveShader;
+		Cmd.RenderState = BaseRenderState;
+		Cmd.Buffer      = ProxyBuffer;
+		Cmd.PerObjectCB = PerObjCB;
 
 		// MeshBuffer 전체 드로우 — IndexCount/VertexCount 명시
 		if (ProxyBuffer.IB)

@@ -85,6 +85,8 @@ private:
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
 
+	FShader* TransientShader = nullptr; // CreateTransient에서 직접 지정된 셰이더 (Template 없는 경우)
+
 	// SRV 캐시 — SetTextureParameter 시 갱신, BuildCommandForProxy에서 map lookup 회피
 	ID3D11ShaderResourceView* CachedSRVs[(int)EMaterialTextureSlot::Max] = {};
 
@@ -117,7 +119,7 @@ public:
 
 	void Bind(ID3D11DeviceContext* Context);
 
-	FShader* GetShader() const { return Template ? Template->GetShader() : nullptr; }
+	FShader* GetShader() const { return Template ? Template->GetShader() : TransientShader; }
 	ERenderPass GetRenderPass() const { return RenderPass; }
 	EBlendState GetBlendState() const { return BlendState; }
 	EDepthStencilState GetDepthStencilState() const { return DepthStencilState; }
@@ -159,7 +161,9 @@ public:
 	void SetCachedSRV(EMaterialTextureSlot Slot, ID3D11ShaderResourceView* SRV) { CachedSRVs[(int)Slot] = SRV; }
 
 	// Template/CB 없는 경량 머티리얼 생성 — SRV만 래핑할 때 사용
+	// InShader를 지정하면 GetShader()가 해당 셰이더를 반환 (DrawCommandBuilder per-section 셰이더 지원)
 	static UMaterial* CreateTransient(ERenderPass InPass, EBlendState InBlend,
 		EDepthStencilState InDepth = EDepthStencilState::Default,
-		ERasterizerState InRaster = ERasterizerState::SolidBackCull);
+		ERasterizerState InRaster = ERasterizerState::SolidBackCull,
+		FShader* InShader = nullptr);
 };

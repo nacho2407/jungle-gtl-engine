@@ -75,6 +75,13 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	Shaders[(uint32)EShaderType::Billboard].Create(InDevice, L"Shaders/ShaderBillboard.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::HeightFog].Create(InDevice, L"Shaders/HeightFog.hlsl", "VS", "PS");
 
+	// 경로 레지스트리 등록 — MaterialManager가 Template 생성 시 기 컴파일된 셰이더를 우선 사용
+	RegisterShaderPath("Shaders/UberLit.hlsl",            EShaderType::StaticMesh);
+	RegisterShaderPath("Shaders/StaticMeshShader.hlsl",   EShaderType::StaticMesh); // 레거시 호환
+	RegisterShaderPath("Shaders/ShaderBillboard.hlsl",    EShaderType::Billboard);
+	RegisterShaderPath("Shaders/ShaderSubUV.hlsl",        EShaderType::SubUV);
+	RegisterShaderPath("Shaders/DecalShader.hlsl",        EShaderType::Decal);
+
 	bIsInitialized = true;
 }
 
@@ -130,6 +137,21 @@ FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_
 	auto* RawPtr = NewShader.get();
 	CustomShaderCache[Key] = std::move(NewShader);
 	return RawPtr;
+}
+
+void FShaderManager::RegisterShaderPath(const FString& Path, EShaderType Type)
+{
+	RegisteredShaderPaths[Path] = &Shaders[(uint32)Type];
+}
+
+FShader* FShaderManager::FindRegisteredShader(const FString& Path) const
+{
+	auto It = RegisteredShaderPaths.find(Path);
+	if (It != RegisteredShaderPaths.end())
+	{
+		return It->second;
+	}
+	return nullptr;
 }
 
 
