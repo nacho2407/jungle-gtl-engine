@@ -27,7 +27,7 @@ FPointLightSceneProxy::FPointLightSceneProxy(UPointLightComponent* InComponent)
 {
 	LightConstants.LightType = static_cast<uint32>(ELightType::Point);
 
-	// 180도 스포트라이트처럼 처리하여 셰이더에서 별도의 분기 없이 동일한 조명 계산을 사용할 수 있도록 합니다.
+	// 반각 180° = 전방향 구(sphere). cos(π) = -1이므로 SpotFactor가 항상 1이 됩니다.
 	LightConstants.OuterConeAngle = 180.0f;
 	LightConstants.InnerConeAngle = 180.0f;
 }
