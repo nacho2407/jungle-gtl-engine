@@ -34,12 +34,13 @@ void FSubUVSceneProxy::UpdateMesh()
 	CachedParticle = Comp->GetParticle();
 	CachedFrameIndex = Comp->GetFrameIndex();
 
-	// SectionDraws 단일 항목 — Material 없이 DiffuseSRV만 바인딩
+	// SectionDraws 단일 항목 — SubUVMaterial로 Particle SRV 바인딩
 	SectionDraws.clear();
-	if (CachedParticle && CachedParticle->IsLoaded())
+	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
+	if (SubUVMat)
 	{
 		const uint32 IdxCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
-		SectionDraws.push_back({ nullptr, CachedParticle->SRV, 0, IdxCount });
+		SectionDraws.push_back({ SubUVMat, 0, IdxCount });
 	}
 }
 
@@ -50,12 +51,13 @@ void FSubUVSceneProxy::UpdateMaterial()
 	CachedFrameIndex = Comp->GetFrameIndex();
 	CachedParticle = Comp->GetParticle();
 
-	// SectionDraws의 DiffuseSRV 갱신
+	// SectionDraws 갱신 — SubUVMaterial의 CachedSRV는 Component가 관리
 	SectionDraws.clear();
-	if (CachedParticle && CachedParticle->IsLoaded())
+	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
+	if (SubUVMat)
 	{
 		const uint32 IdxCount = MeshBuffer ? MeshBuffer->GetIndexBuffer().GetIndexCount() : 0;
-		SectionDraws.push_back({ nullptr, CachedParticle->SRV, 0, IdxCount });
+		SectionDraws.push_back({ SubUVMat, 0, IdxCount });
 	}
 }
 

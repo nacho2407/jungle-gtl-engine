@@ -9,6 +9,7 @@
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
+#include "Materials/Material.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
@@ -46,6 +47,21 @@ void USubUVComponent::SetParticle(const FName& InParticleName)
 {
 	ParticleName = InParticleName;
 	CachedParticle = FResourceManager::Get().FindParticle(InParticleName);
+	RebuildSubUVMaterial();
+}
+
+void USubUVComponent::RebuildSubUVMaterial()
+{
+	if (!SubUVMaterial)
+	{
+		SubUVMaterial = UMaterial::CreateTransient(
+			ERenderPass::AlphaBlend, EBlendState::AlphaBlend);
+	}
+
+	if (CachedParticle && CachedParticle->IsLoaded())
+		SubUVMaterial->SetCachedSRV(EMaterialTextureSlot::Diffuse, CachedParticle->SRV);
+	else
+		SubUVMaterial->SetCachedSRV(EMaterialTextureSlot::Diffuse, nullptr);
 }
 
 void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

@@ -154,4 +154,12 @@ public:
 
 	// SRV 캐시 재구축 — Material 생성/텍스처 로드 후 호출
 	void RebuildCachedSRVs();
+
+	// CachedSRV 슬롯 직접 설정 — UTexture2D 없이 raw SRV를 바인딩할 때 사용
+	void SetCachedSRV(EMaterialTextureSlot Slot, ID3D11ShaderResourceView* SRV) { CachedSRVs[(int)Slot] = SRV; }
+
+	// Template/CB 없는 경량 머티리얼 생성 — SRV만 래핑할 때 사용
+	static UMaterial* CreateTransient(ERenderPass InPass, EBlendState InBlend,
+		EDepthStencilState InDepth = EDepthStencilState::Default,
+		ERasterizerState InRaster = ERasterizerState::SolidBackCull);
 };
