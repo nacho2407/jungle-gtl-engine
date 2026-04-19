@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
@@ -13,6 +13,27 @@ class UMaterial;
 struct FFrameContext;
 
 // ============================================================
+// EPrimitiveProxyFlags — Owner 역참조 없이 프록시 타입/특성 식별
+// ============================================================
+enum class EPrimitiveProxyFlags : uint16
+{
+	None            = 0,
+	PerViewportUpdate = 1 << 0,		// 매 프레임 카메라 기반 갱신 (Billboard, Gizmo)
+	FontBatched     = 1 << 1,		// FFontGeometry 배칭 경로 (TextRender)
+	Decal           = 1 << 2,		// Decal 프록시 (Receiver 순회 필요)
+	NeverCull       = 1 << 3,		// Frustum culling 제외 (Gizmo 등)
+	SupportsOutline = 1 << 4,		// 선택 시 아웃라인 지원
+	ShowAABB        = 1 << 5,		// 선택 시 AABB 표시
+	EditorOnly      = 1 << 6,		// 에디터 전용 — PIE/Game 월드에서 비가시
+};
+
+inline EPrimitiveProxyFlags  operator|(EPrimitiveProxyFlags A, EPrimitiveProxyFlags B)  { return static_cast<EPrimitiveProxyFlags>(static_cast<uint16>(A) | static_cast<uint16>(B)); }
+inline EPrimitiveProxyFlags  operator&(EPrimitiveProxyFlags A, EPrimitiveProxyFlags B)  { return static_cast<EPrimitiveProxyFlags>(static_cast<uint16>(A) & static_cast<uint16>(B)); }
+inline EPrimitiveProxyFlags& operator|=(EPrimitiveProxyFlags& A, EPrimitiveProxyFlags B) { A = A | B; return A; }
+inline EPrimitiveProxyFlags& operator&=(EPrimitiveProxyFlags& A, EPrimitiveProxyFlags B) { A = A & B; return A; }
+inline EPrimitiveProxyFlags  operator~(EPrimitiveProxyFlags A) { return static_cast<EPrimitiveProxyFlags>(~static_cast<uint16>(A)); }
+
+// ============================================================
 // FPrimitiveSceneProxy — UPrimitiveComponent의 렌더 데이터 미러 (기본 클래스)
 // ============================================================
 // 컴포넌트 등록 시 CreateSceneProxy()로 1회 생성.
@@ -24,76 +45,102 @@ public:
 	FPrimitiveSceneProxy(UPrimitiveComponent* InComponent);
 	virtual ~FPrimitiveSceneProxy() = default;
 
-	// --- 가상 갱신 인터페이스 (서브클래스가 오버라이드) ---
+	// ================================================================
+	// 읽기 전용 인터페이스 (DrawCommandBuilder, RenderCollector용)
+	// ================================================================
+
+	// --- 식별 ---
+	uint32                GetProxyId()    const { return ProxyId; }
+	EPrimitiveProxyFlags  GetProxyFlags() const { return ProxyFlags; }
+	bool HasProxyFlag(EPrimitiveProxyFlags F) const { return (ProxyFlags & F) != EPrimitiveProxyFlags::None; }
+
+	// --- 가시성 / 선택 ---
+	bool IsVisible()  const { return bVisible; }
+	bool IsSelected() const { return bSelected; }
+
+	// --- 렌더 데이터 (DrawCommandBuilder가 읽음) ---
+	ERenderPass        GetRenderPass()  const { return Pass; }
+	FShader*           GetShader()      const { return Shader; }
+	FMeshBuffer*       GetMeshBuffer()  const { return MeshBuffer; }
+	UMaterial*         GetMaterial()    const { return Material; }
+	ID3D11ShaderResourceView* GetDiffuseSRV() const { return DiffuseSRV; }
+
+	const FPerObjectConstants&      GetPerObjectConstants() const { return PerObjectConstants; }
+	const FBoundingBox&             GetCachedBounds()       const { return CachedBounds; }
+	const FVector&                  GetCachedWorldPos()     const { return CachedWorldPos; }
+	const TArray<FMeshSectionDraw>& GetSectionDraws()       const { return SectionDraws; }
+	const FConstantBufferBinding&   GetExtraCB()            const { return ExtraCB; }
+
+	// --- PerObject CB 상태 ---
+	void MarkPerObjectCBDirty()   const { bPerObjectCBDirty = true; }
+	void ClearPerObjectCBDirty()  const { bPerObjectCBDirty = false; }
+	bool NeedsPerObjectCBUpload() const { return bPerObjectCBDirty; }
+
+	// --- LOD (RenderCollector에서 접근) ---
+	uint32 GetCurrentLOD()         const { return CurrentLOD; }
+	uint32 GetLastLODUpdateFrame() const { return LastLODUpdateFrame; }
+	void   SetLastLODUpdateFrame(uint32 Frame) { LastLODUpdateFrame = Frame; }
+
+	// ================================================================
+	// 가상 갱신 인터페이스 (서브클래스가 오버라이드)
+	// ================================================================
 	virtual void UpdateTransform();
 	virtual void UpdateMaterial();
 	virtual void UpdateVisibility();
 	virtual void UpdateMesh();
-
-	// --- Dirty 관리 ---
-	void MarkDirty(EDirtyFlag Flag) { DirtyFlags |= Flag; }
-	void ClearDirty(EDirtyFlag Flag) { DirtyFlags &= ~Flag; }
-	bool IsDirty(EDirtyFlag Flag) const { return HasFlag(DirtyFlags, Flag); }
-	bool IsAnyDirty() const { return DirtyFlags != EDirtyFlag::None; }
-
-	// --- 식별 ---
-	uint32 ProxyId = UINT32_MAX;			// FScene 내 인덱스
-	UPrimitiveComponent* Owner = nullptr;	// 소유 컴포넌트 (역참조용)
-	uint32 SelectedListIndex = UINT32_MAX;
-
-	// --- 변경 추적 ---
-	EDirtyFlag DirtyFlags = EDirtyFlag::All;
-	bool bQueuedForDirtyUpdate = false;
-
-	// --- LOD ---
-	FVector CachedWorldPos;		// Transform 갱신 시 캐싱 — LOD 거리 계산용
-	uint32 CurrentLOD = 0;
 	virtual void UpdateLOD(uint32 /*LODLevel*/) {}
+	virtual void UpdatePerViewport(const FFrameContext& /*Frame*/) {}
 
-	// --- Per-viewport 갱신 (bPerViewportUpdate=true 프록시만) ---
-	// 매 프레임, 각 뷰포트의 카메라 데이터로 프록시 상태를 갱신
-	virtual void UpdatePerViewport(const FFrameContext& Frame) {}
+protected:
+	// ================================================================
+	// 서브클래스용 — Update*()에서 쓰기 가능한 캐시 데이터
+	// ================================================================
 
-	// 선택된 프록시의 소유 액터 컴포넌트에서 디버그 시각화 수집
-	void CollectSelectedVisuals(FScene& Scene) const;
+	// Owner 접근 — protected이므로 서브클래스의 Update*() 안에서만 사용.
+	// UpdatePerViewport()에서는 가급적 캐싱된 값을 사용할 것.
+	UPrimitiveComponent* GetOwner() const { return Owner; }
 
-	// --- 가시성·선택 ---
-	bool bVisible  = true;
-	bool bSelected = false;
-	bool bSupportsOutline = true;
-	bool bNeverCull = false;		// true면 frustum culling 대상에서 제외 (Gizmo 등 에디터 프록시)
-	bool bShowAABB = true;			// 선택 시 AABB 디버그 라인 표시 여부 (Billboard/SubUV 등은 false)
+	// 프록시 특성 플래그 (서브클래스 생성자에서 설정)
+	EPrimitiveProxyFlags ProxyFlags = EPrimitiveProxyFlags::SupportsOutline
+	                                | EPrimitiveProxyFlags::ShowAABB;
 
-	// --- 렌더 패스 ---
-	ERenderPass Pass = ERenderPass::Opaque;
-
-	// 머티리얼 포인터 (SectionDraws 없는 프록시용 — Billboard, Decal 등)
-	UMaterial* Material = nullptr;
-
-	// --- 캐싱된 렌더 데이터 (등록 시 초기화, dirty 시만 갱신) ---
+	// 렌더 데이터 캐시 (Update*에서 갱신)
 	FShader*     Shader     = nullptr;
 	FMeshBuffer* MeshBuffer = nullptr;
-	FPerObjectConstants PerObjectConstants = {};
-	FBoundingBox CachedBounds;
-	mutable bool bPerObjectCBDirty = true;
-
-	// 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
-	TArray<FMeshSectionDraw> SectionDraws;
-
-	// 특수 CB (Gizmo, SubUV 등)
-	FConstantBufferBinding ExtraCB;
-
-	// 텍스처 바인딩 (SubUV, Billboard 등 프록시 직접 렌더링용)
+	ERenderPass  Pass       = ERenderPass::Opaque;
+	UMaterial*   Material   = nullptr;
 	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 
-	// 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)
-	bool bPerViewportUpdate = false;
-	bool bFontBatched = false;		// true면 FFontGeometry 배칭 경로 사용 (TextRenderProxy)
+	FPerObjectConstants PerObjectConstants = {};
+	FBoundingBox        CachedBounds;
+	FVector             CachedWorldPos;
 
-	// 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
+	TArray<FMeshSectionDraw>  SectionDraws;
+	FConstantBufferBinding    ExtraCB;
+
+	// 가시성 (서브클래스 UpdateVisibility/UpdatePerViewport에서 변경)
+	bool bVisible = true;
+
+	// LOD (서브클래스 UpdateLOD에서 변경)
+	uint32 CurrentLOD = 0;
+
+private:
+	// ================================================================
+	// 내부 관리 상태 — FScene만 friend로 접근
+	// ================================================================
+	friend class FScene;
+
+	UPrimitiveComponent* Owner = nullptr;
+
+	uint32      ProxyId           = UINT32_MAX;
+	uint32      SelectedListIndex = UINT32_MAX;
+	EDirtyFlag  DirtyFlags        = EDirtyFlag::All;
+	bool        bQueuedForDirtyUpdate = false;
+	bool        bSelected         = false;
+
+	void MarkDirty(EDirtyFlag Flag)  { DirtyFlags |= Flag; }
+	void ClearDirty(EDirtyFlag Flag) { DirtyFlags &= ~Flag; }
+
 	uint32 LastLODUpdateFrame = UINT32_MAX;
-
-	void MarkPerObjectCBDirty() const { bPerObjectCBDirty = true; }
-	void ClearPerObjectCBDirty() const { bPerObjectCBDirty = false; }
-	bool NeedsPerObjectCBUpload() const { return bPerObjectCBDirty; }
+	mutable bool bPerObjectCBDirty = true;
 };

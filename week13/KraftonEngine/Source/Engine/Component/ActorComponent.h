@@ -28,6 +28,11 @@ public:
 	virtual void Activate();
 	virtual void Deactivate();
 
+	// --- Editor Only ---
+	// 에디터 전용 컴포넌트: PIE/Game 월드에서 렌더링 비활성화
+	void SetEditorOnly(bool bInEditorOnly);
+	bool IsEditorOnly() const { return bEditorOnly; }
+
 	void SetActive(bool bNewActive);
 	inline void SetAutoActivate(bool bNewAutoActivate) { bAutoActivate = bNewAutoActivate; }
 	inline void SetComponentTickEnabled(bool bEnabled) {
@@ -59,6 +64,7 @@ protected:
 	bool bTickEnable = true;
 
 private:
+	bool bEditorOnly = false;
 	bool bIsActive = true;
 	bool bAutoActivate = true;
 };

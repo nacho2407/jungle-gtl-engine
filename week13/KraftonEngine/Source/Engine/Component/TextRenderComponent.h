@@ -93,6 +93,9 @@ public:
 	FMatrix CalculateOutlineMatrix(const FMatrix& BillboardWorldMatrix) const;
 	int32 GetUTF8Length(const FString& str) const;
 
+	float GetCharWidth()  const { return CharWidth; }
+	float GetCharHeight() const { return CharHeight; }
+
 private:
 	FString Text;
 	FName FontName = FName("Default");
