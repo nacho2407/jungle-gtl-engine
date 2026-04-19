@@ -73,7 +73,7 @@ bool FRenderPipeline::Initialize()
 	 * ColorSRV 가 최종 결과물 버퍼라고 생각하면 된다.
 	 */
 	RenderPasses.push_back(DepthPrePass);
-	//RenderPasses.push_back(LightCullingPass);
+	RenderPasses.push_back(LightCullingPass);
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
