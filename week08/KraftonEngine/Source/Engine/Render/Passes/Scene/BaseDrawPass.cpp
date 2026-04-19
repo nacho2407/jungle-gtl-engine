@@ -5,11 +5,18 @@
 #include "Render/Scene/PrimitiveSceneProxy.h"
 #include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
 #include "Render/Core/PassTypes.h"
+#include "Render/Core/RenderConstants.h"
 
 void FBaseDrawPass::PrepareInputs(FRenderPassContext& Context)
 {
     ID3D11ShaderResourceView* NullSRVs[6] = {};
     Context.Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+    ID3D11ShaderResourceView* NullSystemSRV = nullptr;
+    Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &NullSystemSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSystemSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &NullSystemSRV);
+
     if (Context.StateCache)
     {
         Context.StateCache->DiffuseSRV = nullptr;

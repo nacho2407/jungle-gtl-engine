@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Resource/ShaderVariantCache.h"
@@ -159,7 +159,11 @@ inline void BuildViewModePasses(FViewModePassConfig& Config)
     Config.Passes.clear();
     Config.Passes.push_back(BuildViewModeBaseDrawPassDesc(Config.ShadingModel));
     Config.Passes.push_back(BuildViewModeDecalPassDesc(Config.ShadingModel));
-    Config.Passes.push_back(BuildViewModeLightingPassDesc(Config.ShadingModel));
+
+    if (Config.ShadingModel != EShadingModel::Unlit)
+    {
+        Config.Passes.push_back(BuildViewModeLightingPassDesc(Config.ShadingModel));
+    }
 }
 
 inline void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewMode, FShaderVariantCache& VariantCache)

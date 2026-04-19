@@ -11,7 +11,8 @@ void FSelectionMaskPass::PrepareInputs(FRenderPassContext& Context)
 
 void FSelectionMaskPass::PrepareTargets(FRenderPassContext& Context)
 {
-    // simple pass target setup moved into pass-local code.
+    ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
+    Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
 }
 
 void FSelectionMaskPass::BuildDrawCommands(FRenderPassContext& Context)

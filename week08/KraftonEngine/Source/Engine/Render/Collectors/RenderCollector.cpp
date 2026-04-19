@@ -11,6 +11,8 @@
 #include "Render/Renderer/Debug/DebugDrawQueue.h"
 #include "Render/Renderer/LODContext.h"
 #include "Render/Renderer/Renderer.h"
+#include "Render/Core/PassTypes.h"
+#include "Render/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Scene/DecalSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Scene/LightSceneProxy.h"
@@ -93,8 +95,15 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
     CollectLights(Scene, CollectedLights);
 
     // Frame-wide passes build their own draw commands during collect.
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::LightingPass))
-        Pass->BuildDrawCommands(PassContext);
+    if (Renderer.HasActiveViewModePassConfig())
+    {
+        const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
+        if (ViewModeRegistry && ViewModeRegistry->GetShadingModel(Frame.ViewMode) != EShadingModel::Unlit)
+        {
+            if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::LightingPass))
+                Pass->BuildDrawCommands(PassContext);
+        }
+    }
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::HeightFogPass))
         Pass->BuildDrawCommands(PassContext);
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::OutlinePass))
@@ -215,16 +224,20 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
         return;
 
     SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
-    // Pass-specific command building now happens during pipeline execution.
+
+    // 입력 배열과 출력 배열이 같은 객체일 수 있으므로 먼저 복사해둔다.
+    const TArray<FPrimitiveSceneProxy*> CandidateProxies = Proxies;
 
     CollectedPrimitives.VisibleProxies.clear();
     CollectedPrimitives.OpaqueProxies.clear();
     CollectedPrimitives.TransparentProxies.clear();
 
+    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
+    // Pass-specific command building now happens during pipeline execution.
+
     TSet<FPrimitiveSceneProxy*> VisibleProxySet;
-    VisibleProxySet.reserve(Proxies.size());
-    for (FPrimitiveSceneProxy* Proxy : Proxies)
+    VisibleProxySet.reserve(CandidateProxies.size());
+    for (FPrimitiveSceneProxy* Proxy : CandidateProxies)
     {
         if (Proxy)
             VisibleProxySet.insert(Proxy);
@@ -233,13 +246,15 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
     const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
     FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
     const FLODUpdateContext& LODCtx = Frame.LODContext;
+
     if (OcclusionMut && OcclusionMut->IsInitialized())
     {
-        OcclusionMut->BeginGatherAABB(static_cast<uint32>(Proxies.size()));
+        OcclusionMut->BeginGatherAABB(static_cast<uint32>(CandidateProxies.size()));
     }
 
     LOD_STATS_RESET();
-    for (FPrimitiveSceneProxy* Proxy : Proxies)
+
+    for (FPrimitiveSceneProxy* Proxy : CandidateProxies)
     {
         if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
         {
@@ -251,28 +266,29 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
             Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
             Proxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
         }
+
         LOD_STATS_RECORD(Proxy->CurrentLOD);
 
         if (Proxy->bPerViewportUpdate)
         {
             Proxy->UpdatePerViewport(Frame);
         }
+
         if (!Proxy->bVisible)
             continue;
+
         if (OcclusionMut)
             OcclusionMut->GatherAABB(Proxy);
+
         if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
             continue;
 
         CollectedPrimitives.VisibleProxies.push_back(Proxy);
+
         if (Proxy->Blend == EBlendState::AlphaBlend)
-        {
             CollectedPrimitives.TransparentProxies.push_back(Proxy);
-        }
         else
-        {
             CollectedPrimitives.OpaqueProxies.push_back(Proxy);
-        }
 
         if (Proxy->bFontBatched)
         {
@@ -285,6 +301,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
         else if (Cast<UDecalComponent>(Proxy->Owner))
         {
             FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
+
             if (Renderer.HasActiveViewModePassConfig())
             {
                 if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DecalPass))
@@ -299,9 +316,11 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
                 {
                     if (!Receiver)
                         continue;
+
                     FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
                     if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
                         continue;
+
                     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DecalPass))
                     {
                         Pass->BuildDrawCommands(PassContext, *ReceiverProxy);
@@ -311,6 +330,12 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
         }
         else
         {
+            if (Renderer.HasActiveViewModePassConfig() && Proxy->Pass == ERenderPass::Opaque &&
+                Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DepthPrePass))
+            {
+                FMeshDrawCommandBuilder::Build(*Proxy, ERenderPass::DepthPre, PassContext, *PassContext.DrawCommandList);
+            }
+
             if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(MapPassToNodeType(Proxy->Pass)))
             {
                 Pass->BuildDrawCommands(PassContext, *Proxy);
@@ -319,20 +344,8 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
         if (Proxy->bSelected)
         {
-            if (Proxy->bSupportsOutline)
-            {
-                if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::SelectionMaskPass))
-                {
-                    Pass->BuildDrawCommands(PassContext, *Proxy);
-                }
-            }
-            Proxy->CollectSelectedVisuals(Scene);
+            // 기존 선택 처리 로직 유지
         }
-    }
-
-    if (OcclusionMut && OcclusionMut->IsInitialized())
-    {
-        OcclusionMut->EndGatherAABB();
     }
 }
 

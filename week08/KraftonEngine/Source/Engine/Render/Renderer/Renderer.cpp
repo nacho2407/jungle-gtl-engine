@@ -287,6 +287,7 @@ FRenderPassContext FRenderer::CreatePassContext(const FFrameContext& Frame, FSce
     FRenderPassContext PassContext = {};
     PassContext.Frame = &Frame;
     PassContext.Scene = Scene ? Scene : const_cast<FScene*>(ActiveSceneForFrame);
+    PassContext.Renderer = this;
     PassContext.Device = &Device;
     PassContext.Context = Device.GetDeviceContext();
     PassContext.Resources = &Resources;
@@ -317,6 +318,7 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPassContext
     }
 
     PreparePipelineExecution(Frame);
+    PassContext.Renderer = this;
     PassContext.StateCache = &PipelineStateCache;
     PassContext.Context = Device.GetDeviceContext();
     PassContext.Device = &Device;
@@ -338,6 +340,7 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPassContext
 void FRenderer::ExecutePipeline(ERenderPipelineType Type, FRenderPassContext& PassContext)
 {
     const FFrameContext& Frame = *PassContext.Frame;
+    PassContext.Renderer = this;
     PassContext.StateCache = &PipelineStateCache;
     PassContext.Context = Device.GetDeviceContext();
     PassContext.Device = &Device;
