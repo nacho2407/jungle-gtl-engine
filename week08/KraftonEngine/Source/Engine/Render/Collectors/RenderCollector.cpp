@@ -28,6 +28,8 @@ static ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
 {
     switch (Pass)
     {
+    case ERenderPass::DepthPre:
+        return ERenderPassNodeType::DepthPrePass;
     case ERenderPass::Opaque:
         return ERenderPassNodeType::BaseDrawPass;
     case ERenderPass::Decal:

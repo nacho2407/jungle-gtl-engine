@@ -8,16 +8,6 @@
 #include "Render/Scene/PrimitiveSceneProxy.h"
 #include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
 
-namespace
-{
-void CopySurfaceIfPossible(ID3D11DeviceContext* Context, ID3D11ShaderResourceView* SourceSRV, ID3D11RenderTargetView* DestRTV)
-{
-    (void)Context;
-    (void)SourceSRV;
-    (void)DestRTV;
-}
-}
-
 void FDecalPass::PrepareInputs(FRenderPassContext& Context)
 {
     if (Context.ActiveViewSurfaceSet)
@@ -68,7 +58,6 @@ void FDecalPass::PrepareTargets(FRenderPassContext& Context)
         return;
     }
 
-    // BaseDraw 결과를 modified surface의 시작값으로 복사한다.
     Context.ActiveViewSurfaceSet->ClearModifiedTargets(Context.Context, ShadingModel);
 
     if (Context.ActiveViewSurfaceSet->GetRTV(ESurfaceSlot::ModifiedBaseColor) && Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor))
