@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "80",
+      "PrimitiveKey" : "10",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -11,8 +11,36 @@
             "Path" : "Asset/Materials/BasicShapeMaterial.json"
           },
           "Location" : [0.000000, 0.000000, -2.033567],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [100.000000, 100.000000, 1.000000],
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "PrimitiveKey" : "15",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "None"
+          },
+          "Location" : [-5.006720, -4.249107, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "bEditorOnly" : false,
           "bTickEnable" : true
@@ -30,7 +58,7 @@
               "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
               "Intensity" : 0.150000,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bEditorOnly" : false,
@@ -44,7 +72,7 @@
           "Material" : {
             "Path" : "Asset/Materials/AmbientLight.json"
           },
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "Width" : 1.000000,
@@ -64,7 +92,7 @@
               "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
               "Intensity" : 0.800000,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bEditorOnly" : false,
@@ -88,34 +116,6 @@
       },
       "bVisible" : true
     }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [{
-          "ClassName" : "URotatingMovementComponent",
-          "Properties" : {
-            "Auto Register Updated" : true,
-            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }],
-      "PrimitiveKey" : "88",
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Materials/BackAccessory.json"
-          },
-          "Location" : [-5.006720, -4.249107, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
       "ClassName" : "ASpotLightActor",
       "NonSceneComponents" : [],
       "RootComponent" : {
@@ -130,7 +130,7 @@
               "LightFalloffExponent" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "OuterConeAngle" : 40.000000,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bEditorOnly" : false,
@@ -166,7 +166,7 @@
               "Intensity" : 1.000000,
               "LightFalloffExponent" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bEditorOnly" : false,
@@ -180,7 +180,7 @@
           "Material" : {
             "Path" : "Asset/Materials/PointLight.json"
           },
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "Width" : 1.000000,
@@ -200,7 +200,7 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 96",
               "Visible" : true,
@@ -219,7 +219,7 @@
           "Material" : {
             "Path" : "Asset/Materials/DefaultDecal.json"
           },
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "bEditorOnly" : false,
@@ -242,7 +242,7 @@
               "LightFalloffExponent" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "OuterConeAngle" : 40.000000,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "bEditorOnly" : false,
@@ -256,7 +256,7 @@
           "Material" : {
             "Path" : "Asset/Materials/SpotLight.json"
           },
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "Width" : 1.000000,
@@ -273,21 +273,21 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-2.063291, 5.101532, 4.132960],
+    "Location" : [-10.236027, -0.220447, 2.554483],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 30.016720, -77.549942]
+    "Rotation" : [0.000000, 12.317150, -46.499931]
   },
   "Primitives" : {
-    "80" : {
+    "10" : {
       "Location" : [0.000000, 0.000000, -2.033567],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [100.000000, 100.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "88" : {
+    "15" : {
       "Location" : [-5.006720, -4.249107, 0.000000],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "ObjStaticMeshAsset" : "Data/BasicShape/Sphere_Lowpoly.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
