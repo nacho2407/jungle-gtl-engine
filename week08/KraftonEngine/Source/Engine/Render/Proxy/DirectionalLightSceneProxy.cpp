@@ -36,7 +36,7 @@ void FDirectionalLightSceneProxy::UpdateLightConstants()
     LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
 }
 
-void FDirectionalLightSceneProxy::VisualizeLights(FScene& Scene) const
+void FDirectionalLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
 {
     if (!Owner) return;
     const FVector Origin = Owner->GetWorldLocation();

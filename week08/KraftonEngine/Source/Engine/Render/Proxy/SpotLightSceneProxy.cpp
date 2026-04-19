@@ -76,7 +76,7 @@ void FSpotLightSceneProxy::UpdateTransform()
     FLightSceneProxy::UpdateTransform(); // Position + Direction (PointLight의 Position only를 건너뜀)
 }
 
-void FSpotLightSceneProxy::VisualizeLights(FScene& Scene) const
+void FSpotLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
 {
     if (!Owner)
         return;

@@ -38,7 +38,7 @@ public:
 
 private:
     void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
-    void CollectLights(const TArray<FLightSceneProxy*>& LightProxies, FCollectedLights& OutLights);
+    void CollectLights(FScene& Scene, FCollectedLights& OutLights);
 
     TArray<FPrimitiveSceneProxy*> LastVisibleProxies;
     FCollectedLights CollectedLights;

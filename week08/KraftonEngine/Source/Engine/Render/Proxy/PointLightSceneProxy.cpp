@@ -47,7 +47,7 @@ void FPointLightSceneProxy::UpdateTransform()
     LightConstants.Position = Owner->GetWorldLocation();
 }
 
-void FPointLightSceneProxy::VisualizeLights(FScene& Scene) const
+void FPointLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
 {
     if (!Owner) return;
     UPointLightComponent* Comp = static_cast<UPointLightComponent*>(Owner);
