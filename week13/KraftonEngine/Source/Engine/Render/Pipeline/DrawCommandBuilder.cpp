@@ -192,6 +192,8 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 			else if (!bDepthOnly)
 			{
 				SetProxyExtraCB(Cmd);
+				if (Section.DiffuseSRV)
+					Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = Section.DiffuseSRV;
 			}
 
 			Cmd.BuildSortKey();
@@ -211,11 +213,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		if (!bDepthOnly)
 		{
 			SetProxyExtraCB(Cmd);
-			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = Proxy.GetDiffuseSRV();
 		}
-
-		if (bApplyMaterialState && Proxy.GetMaterial())
-			ApplyMaterialRenderState(Cmd.RenderState, Proxy.GetMaterial(), BaseRenderState);
 
 		Cmd.BuildSortKey();
 	}
@@ -227,7 +225,11 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy)
 {
 	if (!ReceiverProxy.GetMeshBuffer() || !ReceiverProxy.GetMeshBuffer()->IsValid()) return;
-	if (!DecalProxy.GetShader() || !DecalProxy.GetDiffuseSRV()) return;
+	if (!DecalProxy.GetShader()) return;
+
+	// Decal Material은 SectionDraws[0]에 저장됨
+	UMaterial* DecalMat = DecalProxy.GetSectionDraws().empty() ? nullptr : DecalProxy.GetSectionDraws()[0].Material;
+	if (!DecalMat) return;
 
 	ID3D11DeviceContext* Ctx = CachedContext;
 	const ERenderPass DecalPass = DecalProxy.GetRenderPass();
@@ -265,15 +267,19 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 			Cmd.RenderState = BaseRenderState;
 
 			// 머티리얼 기반 렌더 상태 오버라이드
-			if (DecalProxy.GetMaterial())
-				ApplyMaterialRenderState(Cmd.RenderState, DecalProxy.GetMaterial(), BaseRenderState);
+			ApplyMaterialRenderState(Cmd.RenderState, DecalMat, BaseRenderState);
 
 			Cmd.Buffer            = ReceiverBuffer;
 			Cmd.Buffer.FirstIndex = FirstIndex;
 			Cmd.Buffer.IndexCount = IndexCount;
 			Cmd.PerObjectCB       = ReceiverPerObjCB;
 			Cmd.Bindings.PerShaderCB[0] = DecalExtraCB.Buffer;
-			Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = DecalProxy.GetDiffuseSRV();
+
+			// Material의 CachedSRVs에서 텍스처 바인딩
+			const ID3D11ShaderResourceView* const* MatSRVs = DecalMat->GetCachedSRVs();
+			for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+				Cmd.Bindings.SRVs[s] = const_cast<ID3D11ShaderResourceView*>(MatSRVs[s]);
+
 			Cmd.BuildSortKey();
 		};
 

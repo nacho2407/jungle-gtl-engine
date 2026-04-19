@@ -190,9 +190,12 @@ struct FConstantBufferBinding
 class UMaterial;
 
 // 섹션별 드로우 정보 — 머티리얼 포인터 + 인덱스 범위만 보관
+// Material이 있으면 Material의 CachedSRVs/RenderState 사용.
+// Material이 없고 DiffuseSRV만 있으면 Diffuse 슬롯에 직접 바인딩.
 struct FMeshSectionDraw
 {
 	UMaterial* Material = nullptr;
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 };
