@@ -64,20 +64,21 @@ void FRenderResources::Release()
 	if (PointClampSampler)  { PointClampSampler->Release();  PointClampSampler  = nullptr; }
 }
 
-void FRenderResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context,
-                                          const TArray<FLocalLightInfo>& Lights)
+// Local Lights (SpotLight, PointLight) 정보가 담긴 StructuredBuffer을 t6 슬롯에 업로드합니다.
+void FRenderResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightInfo>& Lights)
 {
 	const uint32 Count = static_cast<uint32>(Lights.size());
 
+	// 현재 버퍼 용량이 부족하면 해제 후 재생성
 	if (Count > LocalLightCapacity)
 	{
 		if (LocalLightSRV)    { LocalLightSRV->Release();    LocalLightSRV    = nullptr; }
 		if (LocalLightBuffer) { LocalLightBuffer->Release(); LocalLightBuffer = nullptr; }
 
-		const uint32 NewCap = Count < 8u ? 8u : Count;
+		const uint32 NewCapacity = Count < 8u ? 8u : Count;
 
 		D3D11_BUFFER_DESC Desc = {};
-		Desc.ByteWidth           = sizeof(FLocalLightInfo) * NewCap;
+		Desc.ByteWidth           = sizeof(FLocalLightInfo) * NewCapacity;
 		Desc.Usage               = D3D11_USAGE_DYNAMIC;
 		Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
 		Desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
@@ -89,12 +90,13 @@ void FRenderResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceConte
 		SRVDesc.Format              = DXGI_FORMAT_UNKNOWN;
 		SRVDesc.ViewDimension       = D3D11_SRV_DIMENSION_BUFFER;
 		SRVDesc.Buffer.FirstElement = 0;
-		SRVDesc.Buffer.NumElements  = NewCap;
+		SRVDesc.Buffer.NumElements  = NewCapacity;
 		Device->CreateShaderResourceView(LocalLightBuffer, &SRVDesc, &LocalLightSRV);
 
-		LocalLightCapacity = NewCap;
+		LocalLightCapacity = NewCapacity;
 	}
 
+	// 버퍼에 라이트 데이터 업로드
 	if (LocalLightBuffer && Count > 0)
 	{
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};

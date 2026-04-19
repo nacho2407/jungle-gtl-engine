@@ -5,7 +5,6 @@
 #include "Render/Pipeline/ViewModeSurfaceResources.h"
 #include "Render/Types/ShadingTypes.h"
 #include "Render/Pipeline/RenderConstants.h"
-#include "Render/Resource/RenderResources.h"
 
 void BuildDefaultPassEvents(
 	TArray<FPassEvent>& OutPrePassEvents,
@@ -13,8 +12,7 @@ void BuildDefaultPassEvents(
 	const FFrameContext& Frame,
 	FStateCache& Cache,
 	const FViewModeRenderPipeline* ActiveViewPipeline,
-	FViewModeSurfaceResources* ActiveViewSurfaces,
-	FRenderResources& Resources)
+	FViewModeSurfaceResources* ActiveViewSurfaces)
 {
 	if (ActiveViewPipeline && ActiveViewSurfaces)
 	{
@@ -68,7 +66,7 @@ void BuildDefaultPassEvents(
 		});
 
 		OutPrePassEvents.push_back({ ERenderPass::Lighting, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache, &Resources, ActiveViewSurfaces]()
+			[Context, &Frame, &Cache, ActiveViewSurfaces]()
 			{
 				ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
 				Context->OMSetRenderTargets(1, &RTV, Frame.ViewportDSV);
@@ -91,28 +89,19 @@ void BuildDefaultPassEvents(
 					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
 				}
 
-				// b4: GlobalLights (Ambient + Directional)
-				Resources.GlobalLightBuffer.Update(Context,
-					&Frame.CollectedLights.GlobalLights,
-					sizeof(FGlobalLightConstants));
-				ID3D11Buffer* LightCB = Resources.GlobalLightBuffer.GetBuffer();
-				if (LightCB)
-					Context->PSSetConstantBuffers(ECBSlot::Light, 1, &LightCB);
+				// b4: GlobalLights — UpdateFrameBuffer에서 이미 업로드됨, 바인딩만 수행
+				if (Frame.GlobalLightBuffer)
+					Context->PSSetConstantBuffers(ECBSlot::Light, 1, &Frame.GlobalLightBuffer);
 
-				// t6: LocalLights StructuredBuffer (Point + Spot)
-				ID3D11Device* Device = nullptr;
-				Context->GetDevice(&Device);
-				Resources.UpdateLocalLights(Device, Context, Frame.CollectedLights.LocalLights);
-				if (Device) Device->Release();
-				if (Resources.LocalLightSRV)
-					Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &Resources.LocalLightSRV);
+				// t6: LocalLights SRV — UpdateFrameBuffer에서 이미 업로드됨, 바인딩만 수행
+				if (Frame.LocalLightsSRV)
+					Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &Frame.LocalLightsSRV);
 
 				// Cache를 GPU 실제 상태와 동기화
-				// SubmitCommand의 bForce 경로가 b4/t6을 잘못 덮어쓰지 않도록 보장
-				Cache.LightCB        = &Resources.GlobalLightBuffer;
-				Cache.LocalLightSRV  = Resources.LocalLightSRV;
-				Cache.DiffuseSRV     = nullptr;
-				Cache.bForceAll      = true;
+				Cache.LightCB       = nullptr;
+				Cache.LocalLightSRV = Frame.LocalLightsSRV;
+				Cache.DiffuseSRV    = nullptr;
+				Cache.bForceAll     = true;
 			}
 		});
 	}
