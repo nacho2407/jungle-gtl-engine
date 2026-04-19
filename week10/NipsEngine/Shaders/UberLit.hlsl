@@ -20,50 +20,12 @@ cbuffer StaticMeshBuffer : register(b2)
     uint bHasBumpMap;
 };
 
-struct FAmbientLightInfo
-{
-    float3 Color;
-    float Intensity;
-};
-
-struct FDirectionalLightInfo
-{
-    float3 Direction;
-    float Padding0;
-    float3 Color;
-    float Intensity;
-};
-
-cbuffer FLightConstants : register(b3)
-{
-    FAmbientLightInfo AmbientLight;
-    FDirectionalLightInfo DirectionalLight;
-};
-
 Texture2D DiffuseMap  : register(t0);
 Texture2D AmbientMap  : register(t1);
 Texture2D SpecularMap : register(t2);
 Texture2D BumpMap     : register(t3);
 
 SamplerState SampleState : register(s0);
-
-struct FLightInfo
-{
-    float3 Color;
-    float Intensity;
-
-    uint  Type;
-    float Radius;
-    float InnerAngle;
-    float OuterAngle;
-
-    float3 Direction;
-    float  Falloff;
-
-    float3 Position;
-    float  Padding1;
-};
-StructuredBuffer<FLightInfo> Lights : register(t4);
 
 struct VSInput
 {
