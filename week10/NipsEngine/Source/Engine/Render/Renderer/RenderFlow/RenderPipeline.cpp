@@ -1,5 +1,6 @@
 ﻿#include "RenderPipeline.h"
 #include "DepthPrePass.h"
+#include "LightCullingPass.h"
 #include "OpaqueRenderPass.h"
 #include "DecalRenderPass.h"
 #include "LightRenderPass.h"
@@ -18,6 +19,9 @@ bool FRenderPipeline::Initialize()
 {
     DepthPrePass = std::make_shared<FDepthPrePass>();
     DepthPrePass->Initialize();
+
+	LightCullingPass = std::make_shared<FLightCullingPass>();
+	LightCullingPass->Initialize();
 
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
@@ -69,6 +73,7 @@ bool FRenderPipeline::Initialize()
 	 * ColorSRV 가 최종 결과물 버퍼라고 생각하면 된다.
 	 */
 	RenderPasses.push_back(DepthPrePass);
+	//RenderPasses.push_back(LightCullingPass);
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
@@ -109,6 +114,11 @@ void FRenderPipeline::Release()
 	if (DepthPrePass) {
 		DepthPrePass->Release();
 		DepthPrePass.reset();
+	}
+
+	if (LightCullingPass) {
+		LightCullingPass->Release();
+		LightCullingPass.reset();
 	}
 
 	if (OpaqueRenderPass)
