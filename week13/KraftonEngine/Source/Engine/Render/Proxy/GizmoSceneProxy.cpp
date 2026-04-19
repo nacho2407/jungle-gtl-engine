@@ -41,7 +41,7 @@ void FGizmoSceneProxy::UpdateMesh()
 }
 
 // ============================================================
-// UpdatePerViewport — 매 프레임 뷰포트별 스케일 + ExtraCB 갱신
+// UpdatePerViewport — 매 프레임 뷰포트별 스케일 + GizmoCB 갱신
 // ============================================================
 void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
@@ -70,8 +70,8 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(WorldMatrix);
 	MarkPerObjectCBDirty();
 
-	// ExtraCB — FGizmoConstants
-	auto& G = ExtraCB.Bind<FGizmoConstants>(
+	// GizmoMaterial에 Gizmo CB 바인딩
+	auto& G = GizmoMaterial->BindPerShaderCB<FGizmoConstants>(
 		FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Gizmo, sizeof(FGizmoConstants)),
 		ECBSlot::PerShader0);
 	G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);

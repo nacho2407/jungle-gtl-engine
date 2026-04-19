@@ -27,8 +27,9 @@ void FSubUVSceneProxy::UpdateMesh()
 
 	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
 
-	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
-	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
+	// UV region CB를 Material에 바인딩 (b2 슬롯)
+	if (SubUVMat)
+		SubUVMat->BindPerShaderCB<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
 
 	// Particle/FrameIndex 캐싱
 	CachedParticle = Comp->GetParticle();
@@ -90,7 +91,9 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		const uint32 Col = CachedFrameIndex % Cols;
 		const uint32 Row = CachedFrameIndex / Cols;
 
-		FSubUVRegionConstants& Region = ExtraCB.As<FSubUVRegionConstants>();
+		UMaterial* SubUVMat = SectionDraws.empty() ? nullptr : SectionDraws[0].Material;
+		if (!SubUVMat) return;
+		FSubUVRegionConstants& Region = SubUVMat->GetPerShaderAs<FSubUVRegionConstants>();
 		Region.U = Col * FrameW;
 		Region.V = Row * FrameH;
 		Region.Width = FrameW;

@@ -26,6 +26,7 @@ private:
 	void RebuildReceiverProxies();
 
 	FConstantBuffer* DecalCB;
-	class UMaterial* DecalMaterial = nullptr;
+	class UMaterial* DecalMaterial = nullptr;     // 컴포넌트의 원본 Material (공유 가능)
+	class UMaterial* DecalProxyMaterial = nullptr; // 프록시 전용 transient 래퍼 (CB 오버라이드 소유)
 	TArray<FPrimitiveSceneProxy*> CachedReceiverProxies;
 };
