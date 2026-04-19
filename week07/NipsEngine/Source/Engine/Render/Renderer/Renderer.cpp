@@ -48,6 +48,8 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
 
 	// UberLit.hlsl 컴파일 필요
+
+	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main");
 }
 
 void FRenderer::CreateResources()
