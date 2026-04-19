@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Types/ViewTypes.h"
 
@@ -8,6 +8,7 @@ enum class EShadingModel : uint8
 	Lambert,
 	BlinnPhong,
 	Unlit,
+	WorldNormal,
 	Count
 };
 
@@ -26,6 +27,7 @@ inline EShadingModel GetShadingModelFromViewMode(EViewMode ViewMode)
 	case EViewMode::Lit_Lambert: return EShadingModel::Lambert;
 	case EViewMode::Lit_Phong:   return EShadingModel::BlinnPhong;
 	case EViewMode::Unlit:       return EShadingModel::Unlit;
+	case EViewMode::WorldNormal: return EShadingModel::WorldNormal;
 	default:
 		return EShadingModel::Gouraud;
 	}
@@ -44,6 +46,7 @@ inline const char* GetShadingModelName(EShadingModel Model)
 	case EShadingModel::Lambert:    return "Lambert";
 	case EShadingModel::BlinnPhong: return "BlinnPhong";
 	case EShadingModel::Unlit:      return "Unlit";
+	case EShadingModel::WorldNormal: return "WorldNormal";
 	default:                        return "Unknown";
 	}
 }
