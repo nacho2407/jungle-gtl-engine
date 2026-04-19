@@ -370,7 +370,7 @@ void FRenderer::BeginFrame()
 	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
 
 	Context->ClearRenderTargetView(RTV, Device.GetClearColor());
-	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+	Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	const D3D11_VIEWPORT& Viewport = Device.GetViewport();
 	Context->RSSetViewports(1, &Viewport);
@@ -918,21 +918,39 @@ void FRenderer::ExecutePipeline(ERenderPipelineType Type, const FFrameContext& F
 	switch (Type)
 	{
 	case ERenderPipelineType::DefaultScene:
-		BeginFrame();
+	{
+		const bool bRootToBackBuffer = (Frame.ViewportRTV == nullptr);
+		if (bRootToBackBuffer)
+		{
+			BeginFrame();
+		}
 		PreparePipelineExecution(Frame);
 		ExecutePipeline(ERenderPipelineType::Scene, Frame);
 		FinalizePipelineExecution();
-		EndFrame();
+		if (bRootToBackBuffer)
+		{
+			EndFrame();
+		}
 		break;
+	}
 
 	case ERenderPipelineType::EditorScene:
-		BeginFrame();
+	{
+		const bool bRootToBackBuffer = (Frame.ViewportRTV == nullptr);
+		if (bRootToBackBuffer)
+		{
+			BeginFrame();
+		}
 		PreparePipelineExecution(Frame);
 		ExecutePipeline(ERenderPipelineType::Scene, Frame);
 		ExecutePipeline(ERenderPipelineType::EditorOverlay, Frame);
 		FinalizePipelineExecution();
-		EndFrame();
+		if (bRootToBackBuffer)
+		{
+			EndFrame();
+		}
 		break;
+	}
 
 	case ERenderPipelineType::Scene:
 		DepthPrePass.Execute(*this, Frame);
