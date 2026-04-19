@@ -221,6 +221,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
+    UpdateLightBuffer(Context, InRenderBus);
 
 	/** Opaque 만 테스트 */
     
@@ -749,4 +750,23 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(0, 1, &b0);
 	Context->PSSetConstantBuffers(0, 1, &b0);
+}
+
+void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
+{
+    FLightConstants lightConstantData;
+    lightConstantData.AmbientLight = InRenderBus.AmbientLightInfo;
+    lightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
+
+    Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FLightConstants));
+    ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
+    Context->VSSetConstantBuffers(3, 1, &b3);
+    Context->PSSetConstantBuffers(3, 1, &b3);
+
+	Resources.LightStructuredBuffer.Update(Context, InRenderBus.LightInfos.data(), (uint32)InRenderBus.LightInfos.size());
+    ID3D11ShaderResourceView* SRVs[] = { Resources.LightStructuredBuffer.GetSRV(),
+                                         Resources.LightCulledIndexBuffer.GetSRV(),
+                                         Resources.LightTileBuffer.GetSRV() };
+    Context->VSSetShaderResources(4, 3, SRVs);
+    Context->PSSetShaderResources(4, 3, SRVs);
 }
