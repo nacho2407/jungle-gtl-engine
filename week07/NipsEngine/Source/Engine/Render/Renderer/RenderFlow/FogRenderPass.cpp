@@ -26,8 +26,11 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
         return true;
     }
 
-    if (!Context->RenderTargets->SceneLightRTV || !Context->RenderTargets->SceneLightSRV ||
-        !Context->RenderTargets->SceneFogRTV || !Context->RenderTargets->SceneFogSRV)
+    if (!Context->RenderTargets->SceneFogRTV ||
+        !Context->RenderTargets->SceneFogSRV ||
+        !PrevPassSRV ||
+        !Context->RenderTargets->SceneDepthSRV ||
+        !Context->RenderTargets->SceneWorldPosSRV)
     {
         return false;
     }
@@ -66,13 +69,11 @@ bool FFogRenderPass::DrawCommand(const FRenderPassContext* Context)
     }
 
     ID3D11ShaderResourceView* srvs[] = {
-        Context->RenderTargets->SceneColorSRV,
-        Context->RenderTargets->SceneNormalSRV,
         Context->RenderTargets->SceneDepthSRV,
         PrevPassSRV,
         Context->RenderTargets->SceneWorldPosSRV
     };
-    Context->DeviceContext->PSSetShaderResources(0, 5, srvs);
+    Context->DeviceContext->PSSetShaderResources(0, 3, srvs);
 
     FFogPassConstants FogPassConstants = {};
     FogPassConstants.FogCount = std::min<uint32>(static_cast<uint32>(Commands.size()), MaxFogLayerCount);

@@ -14,15 +14,15 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 {
     const FRenderTargetSet* RenderTargets = Context->RenderTargets;
     ID3D11RenderTargetView* RTVs[3] = { 
-		RenderTargets->SceneColorRTV, 
+		RenderTargets->SceneColorPingRTV, 
 		RenderTargets->SceneNormalRTV,
 		RenderTargets->SceneWorldPosRTV
 	};
     ID3D11DepthStencilView* DSV = RenderTargets->DepthStencilView;
 
 	Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
-    OutSRV = RenderTargets->SceneColorSRV;
-    OutRTV = RenderTargets->SceneColorRTV;
+    OutSRV = RenderTargets->SceneColorPingSRV;
+    OutRTV = RenderTargets->SceneColorPingRTV;
 
 	Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

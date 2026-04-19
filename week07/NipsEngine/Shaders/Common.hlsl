@@ -1,6 +1,5 @@
 /* Constant Buffers */
 
-
 cbuffer FrameBuffer : register(b0)
 {
     row_major float4x4 View;

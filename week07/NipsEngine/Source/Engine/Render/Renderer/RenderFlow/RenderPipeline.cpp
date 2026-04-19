@@ -1,7 +1,6 @@
 ﻿#include "RenderPipeline.h"
 #include "OpaqueRenderPass.h"
 #include "DecalRenderPass.h"
-#include "LightRenderPass.h"
 #include "FogRenderPass.h"
 #include "FXAARenderPass.h"
 #include "FontRenderPass.h"
@@ -20,9 +19,6 @@ bool FRenderPipeline::Initialize()
 
     DecalRenderPass = std::make_shared<FDecalRenderPass>();
     DecalRenderPass->Initialize();
-
-	LightRenderPass = std::make_shared<FLightRenderPass>();
-    LightRenderPass->Initialize();
 
 	FogRenderPass = std::make_shared<FFogRenderPass>();
     FogRenderPass->Initialize();
@@ -54,7 +50,6 @@ bool FRenderPipeline::Initialize()
     PostProcessOutlineRenderPass = std::make_shared<FPostProcessOutlineRenderPass>();
     PostProcessOutlineRenderPass->Initialize();
 
-	LightRenderPass->SetSkipWireframe(true);
     FogRenderPass->SetSkipWireframe(true);
     FXAARenderPass->SetSkipWireframe(true);
 
@@ -66,7 +61,6 @@ bool FRenderPipeline::Initialize()
 	 */
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
-    RenderPasses.push_back(LightRenderPass);
 
     RenderPasses.push_back(FogRenderPass);
     RenderPasses.push_back(FXAARenderPass);   
@@ -112,12 +106,6 @@ void FRenderPipeline::Release()
         DecalRenderPass->Release();
         DecalRenderPass.reset();
     }
-
-	if (LightRenderPass)
-	{
-        LightRenderPass->Release();
-        LightRenderPass.reset();
-	}
 
 	if (FogRenderPass)
 	{

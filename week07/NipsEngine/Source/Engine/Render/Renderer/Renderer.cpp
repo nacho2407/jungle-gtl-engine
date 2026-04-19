@@ -29,7 +29,6 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
@@ -45,13 +44,8 @@ void FRenderer::CreateResources()
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FLightConstants));
 
-	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
-	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024);
-	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 1024);
-
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
-	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -84,13 +78,9 @@ void FRenderer::Release()
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.LightBuffer.Release();
-	Resources.LightStructuredBuffer.Release();
-	Resources.LightCulledIndexBuffer.Release();
-	Resources.LightTileBuffer.Release();
 
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
-    Resources.LightPassConstantBuffer.Release();
 
 	FGPUProfiler::Get().Shutdown();
 
@@ -207,8 +197,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
-
-	/** Opaque 만 테스트 */
     
 	RenderPassContext->Device = Device.GetDevice();
     RenderPassContext->DeviceContext = Device.GetDeviceContext();
@@ -268,9 +256,14 @@ void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uin
     Res.Height = Height;
 
     RT = FRenderTargetFactory::CreateSceneColor(Device.GetDevice(), Width, Height);
-    Res.ColorTex = RT.Texture;
-    Res.ColorRTV = RT.RTV;
-    Res.ColorSRV = RT.SRV;
+    Res.ColorPingTex = RT.Texture;
+    Res.ColorPingRTV = RT.RTV;
+    Res.ColorPingSRV = RT.SRV;
+
+	RT = FRenderTargetFactory::CreateSceneColor(Device.GetDevice(), Width, Height);
+    Res.ColorPongTex = RT.Texture;
+    Res.ColorPongRTV = RT.RTV;
+	Res.ColorPongSRV = RT.SRV;
 
     RT = FRenderTargetFactory::CreateSceneNormal(Device.GetDevice(), Width, Height);
     Res.NormalTex = RT.Texture;
@@ -282,25 +275,10 @@ void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uin
     Res.SelectionMaskRTV = RT.RTV;
     Res.SelectionMaskSRV = RT.SRV;
 
-    RT = FRenderTargetFactory::CreateSceneLight(Device.GetDevice(), Width, Height);
-    Res.LightTex = RT.Texture;
-    Res.LightRTV = RT.RTV;
-    Res.LightSRV = RT.SRV;
-
-    RT = FRenderTargetFactory::CreateSceneFog(Device.GetDevice(), Width, Height);
-    Res.FogTex = RT.Texture;
-    Res.FogRTV = RT.RTV;
-    Res.FogSRV = RT.SRV;
-
     RT = FRenderTargetFactory::CreateSceneWorldPos(Device.GetDevice(), Width, Height);
     Res.WorldPosTex = RT.Texture;
     Res.WorldPosRTV = RT.RTV;
     Res.WorldPosSRV = RT.SRV;
-
-    RT = FRenderTargetFactory::CreateSceneFXAA(Device.GetDevice(), Width, Height);
-    Res.FXAATex = RT.Texture;
-    Res.FXAARTV = RT.RTV;
-    Res.FXAASRV = RT.SRV;
 
     // Depth
     FDepthStencilResource DSR =
@@ -321,33 +299,25 @@ void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
     Res.SelectionMaskRTV.Reset();
     Res.SelectionMaskTex.Reset();
 
-    Res.ColorSRV.Reset();
-    Res.ColorRTV.Reset();
-    Res.ColorTex.Reset();
+    Res.ColorPingSRV.Reset();
+    Res.ColorPingRTV.Reset();
+    Res.ColorPingTex.Reset();
+
+    Res.ColorPongSRV.Reset();
+    Res.ColorPongRTV.Reset();
+    Res.ColorPongTex.Reset();
 
     Res.NormalRTV.Reset();
     Res.NormalSRV.Reset();
     Res.NormalTex.Reset();
 
-    Res.LightRTV.Reset();
-    Res.LightSRV.Reset();
-    Res.LightTex.Reset();
-
     Res.DepthStencilView.Reset();
     Res.DepthTex.Reset();
     Res.DepthStencilSRV.Reset();
 
-    Res.FogTex.Reset();
-    Res.FogRTV.Reset();
-    Res.FogSRV.Reset();
-
     Res.WorldPosRTV.Reset();
     Res.WorldPosSRV.Reset();
     Res.WorldPosTex.Reset();
-
-    Res.FXAARTV.Reset();
-    Res.FXAASRV.Reset();
-    Res.FXAATex.Reset();
 
     Res.Width = 0;
     Res.Height = 0;
@@ -363,7 +333,6 @@ void FRenderer::InitializePassRenderStates()
 
 	UShader* PrimitiveShader = FResourceManager::Get().GetShader("Shaders/Primitive.hlsl");
 	UShader* DecalShader = FResourceManager::Get().GetShader("Shaders/ShaderDecal.hlsl");
-	UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
 	UShader* FogPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/FogPass.hlsl");
 	UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
 	UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
@@ -372,8 +341,7 @@ void FRenderer::InitializePassRenderStates()
 	UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
 
 	S[(uint32)E::Opaque] = { PrimitiveShader, false };
-	S[(uint32)E::Light] = { LightPassShader, false};	
-	S[(uint32)E::Translucent] = { PrimitiveShader, false };
+	S[(uint32)E::Translucent] = { PrimitiveShader, false }; // ???
 	S[(uint32)E::Fog] = { FogPassShader, false};
     S[(uint32)E::FXAA] = { FXAAShader, false};
 	S[(uint32)E::SelectionMask] = { SelectionMaskShader, false };
@@ -561,11 +529,6 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
             RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
             break;
-        case ERenderPass::Light:
-			RTVs[0] = CurrentRenderTargets.SceneLightRTV;
-            SceneFinalRTV = CurrentRenderTargets.SceneLightRTV;
-            SceneFinalSRV = CurrentRenderTargets.SceneLightSRV;
-            break;
         case ERenderPass::Fog:
             RTVs[0] = CurrentRenderTargets.SceneFogRTV;
             SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
@@ -588,9 +551,6 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	/** Pass 별 DSV 설정 */
 	switch (Pass)
 	{
-        case ERenderPass::Light:
-            DSV = nullptr;
-			break;
         case ERenderPass::Fog:
             DSV = nullptr;
             break;

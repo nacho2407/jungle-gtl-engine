@@ -41,7 +41,6 @@ enum class ERenderPass : uint32
 {
 	Opaque,
 	Decal,
-	Light,
     Fog,
     FXAA,
 	Font, // TextRenderComponent → FontBatcher 경유

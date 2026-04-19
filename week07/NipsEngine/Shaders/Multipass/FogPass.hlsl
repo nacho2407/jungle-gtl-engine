@@ -1,13 +1,9 @@
 #include "../Common.hlsl"
 
 // GBuffer
-Texture2D SceneColor : register(t0); // 이미 SceneLightColor로 완성된 색이 들어오고, 이 셰이더에서는 이 텍스처를 사용하지 않는데 이게 여기 있을 이유가..?
-Texture2D SceneNormal : register(t1);
-Texture2D SceneDepth : register(t2);
-Texture2D SceneLightColor : register(t3);
-Texture2D SceneWorldPos : register(t4);
-
-SamplerState SampleState : register(s0);
+Texture2D SceneDepth : register(t0);
+Texture2D PrevSceneColor : register(t1);
+Texture2D SceneWorldPos : register(t2);
 
 struct VSOutput
 {
@@ -49,7 +45,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
 {
     int2 ip = int2(input.ClipPos.xy);
     float rawDepth = SceneDepth.Load(int3(ip, 0)).r;
-    float4 lightColor = SceneLightColor.Load(int3(ip, 0));
+    float4 lightColor = PrevSceneColor.Load(int3(ip, 0));
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).xyz;
     float dist = length(worldPos - CameraPosition.xyz);
 

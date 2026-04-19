@@ -185,12 +185,6 @@ struct FStaticMeshConstants
 
 	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
 	float _Pad2 = 0.0f;
-
-	// Texture SRV (CPU-only, cbuffer 범위 밖)
-	//ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
-	//ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
-	//ID3D11ShaderResourceView* SpecularSRV = { nullptr };
-	//ID3D11ShaderResourceView* BumpSRV     = { nullptr };
 };
 
 struct FDecalConstants
@@ -227,16 +221,6 @@ struct FFXAAConstants
     float  Padding;
 };
 
-//struct FLightPassConstants 
-//{
-//	FVector CameraWorldPos;
-//	uint32	LightCount;
-//
-//	uint32 ViewMode;   // 4 bytes (필요시 더 압축해서 보냅니다.)
-//	uint32 WorldLit;  // 4 bytes
-//	float  Padding[2]; // 8 bytes
-//};
-
 struct FRenderCommand
 {
 	FPerObjectConstants PerObjectConstants = {};
@@ -258,7 +242,6 @@ struct FRenderCommand
 		FBillboardConstants Billboard;  // ← 추가
         FFogConstants Fog;
         FFXAAConstants FXAA;
-		FLightPassConstants Light;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;

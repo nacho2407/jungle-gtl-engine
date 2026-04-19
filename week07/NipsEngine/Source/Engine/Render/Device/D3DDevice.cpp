@@ -48,19 +48,39 @@ void FD3DDevice::EndFrame()
 void FD3DDevice::BeginViewportFrame(FRenderTargetSet& InRenderTargetSet)
 {
     const float ClearMask[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);
-    DeviceContext->ClearDepthStencilView(InRenderTargetSet.DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    if (InRenderTargetSet.SceneColorRTV && InRenderTargetSet.SelectionMaskRTV && InRenderTargetSet.DepthStencilView)
+    if (InRenderTargetSet.SceneColorPingRTV)
     {
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneColorRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneColorPingRTV, ClearColor);
+    }
+
+    if (InRenderTargetSet.SceneColorPongRTV)
+    {
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneColorPongRTV, ClearColor);
+    }
+
+    if (InRenderTargetSet.SceneNormalRTV)
+    {
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneNormalRTV, ClearNormal);
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneLightRTV, ClearColor);
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFogRTV, ClearColor);
+    }
+
+    if (InRenderTargetSet.SceneWorldPosRTV)
+    {
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneWorldPosRTV, ClearColor);
-        DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFXAARTV, ClearColor);
+    }
+
+    if (InRenderTargetSet.SelectionMaskRTV)
+    {
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);
-        DeviceContext->ClearDepthStencilView(InRenderTargetSet.DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    }
+
+    if (InRenderTargetSet.DepthStencilView)
+    {
+        DeviceContext->ClearDepthStencilView(
+            InRenderTargetSet.DepthStencilView,
+            D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+            1.0f,
+            0);
     }
 }
 

@@ -14,25 +14,20 @@ struct ID3D11Debug;
  */
 struct FRenderTargetSet
 {
-	ID3D11RenderTargetView* SceneColorRTV = nullptr;
-    ID3D11ShaderResourceView* SceneColorSRV = nullptr;
+    // ping-pong 방식으로 렌더링 결과를 저장하는 Render Target
+	ID3D11RenderTargetView* SceneColorPingRTV = nullptr;
+    ID3D11ShaderResourceView* SceneColorPingSRV = nullptr;
+
+    ID3D11RenderTargetView* SceneColorPongRTV = nullptr;
+    ID3D11ShaderResourceView* SceneColorPongSRV = nullptr;
 
     ID3D11RenderTargetView*   SceneNormalRTV = nullptr;
     ID3D11ShaderResourceView*     SceneNormalSRV = nullptr;
-
-    ID3D11RenderTargetView*     SceneLightRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneLightSRV = nullptr;
-
-    ID3D11RenderTargetView*       SceneFogRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneFogSRV = nullptr;
 
 	// 월드 좌표를 RGBA로 인코딩하여 저장하는 Render Target
     // Decal 렌더링, Gizmo 렌더링 등에서 활용
     ID3D11RenderTargetView*       SceneWorldPosRTV = nullptr;
     ID3D11ShaderResourceView*     SceneWorldPosSRV = nullptr;
-
-    ID3D11RenderTargetView*       SceneFXAARTV = nullptr;
-    ID3D11ShaderResourceView*     SceneFXAASRV = nullptr;
 
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
@@ -43,10 +38,35 @@ struct FRenderTargetSet
 	float Width = 0.0f;
 	float Height = 0.0f;
 
-	bool IsValid() const
-	{
-		return SceneColorRTV != nullptr && DepthStencilView != nullptr && Width > 0.0f && Height > 0.0f;
-	}
+	// 기존에 있던 IsValid도 안쓰는 함수기는 했지만, 우선 Geometry Targets, Ping-Pong Targets, Selection Targets 각각에 대해서 유효성 검사 함수로 분리
+	bool HasGeometryTargets() const
+    {
+        return SceneColorPingRTV != nullptr &&
+               SceneNormalRTV != nullptr &&
+               SceneWorldPosRTV != nullptr &&
+               DepthStencilView != nullptr &&
+               SceneDepthSRV != nullptr &&
+               Width > 0.0f &&
+               Height > 0.0f;
+    }
+
+    bool HasPingPongColorTargets() const
+    {
+        return SceneColorPingRTV != nullptr &&
+               SceneColorPingSRV != nullptr &&
+               SceneColorPongRTV != nullptr &&
+               SceneColorPongSRV != nullptr &&
+               Width > 0.0f &&
+               Height > 0.0f;
+    }
+
+    bool HasSelectionTargets() const
+    {
+        return SelectionMaskRTV != nullptr &&
+               SelectionMaskSRV != nullptr &&
+               Width > 0.0f &&
+               Height > 0.0f;
+    }
 };
 
 class FD3DDevice

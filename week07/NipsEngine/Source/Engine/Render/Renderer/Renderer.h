@@ -26,29 +26,21 @@ class FSceneViewport;
  */
 struct FViewportRenderResource
 {
-    TComPtr<ID3D11Texture2D> ColorTex;
-    TComPtr<ID3D11RenderTargetView> ColorRTV;
-    TComPtr<ID3D11ShaderResourceView> ColorSRV;
+    TComPtr<ID3D11Texture2D> ColorPingTex;
+    TComPtr<ID3D11RenderTargetView> ColorPingRTV;
+    TComPtr<ID3D11ShaderResourceView> ColorPingSRV;
+	
+    TComPtr<ID3D11Texture2D> ColorPongTex;
+    TComPtr<ID3D11RenderTargetView> ColorPongRTV;
+    TComPtr<ID3D11ShaderResourceView> ColorPongSRV;
 
     TComPtr<ID3D11Texture2D> NormalTex;
     TComPtr<ID3D11RenderTargetView> NormalRTV;
     TComPtr<ID3D11ShaderResourceView> NormalSRV;
 
-    TComPtr<ID3D11Texture2D> LightTex;
-    TComPtr<ID3D11RenderTargetView> LightRTV;
-    TComPtr<ID3D11ShaderResourceView> LightSRV;
-
-    TComPtr<ID3D11Texture2D> FogTex;
-    TComPtr<ID3D11RenderTargetView> FogRTV;
-    TComPtr<ID3D11ShaderResourceView> FogSRV;
-
     TComPtr<ID3D11Texture2D> WorldPosTex;
     TComPtr<ID3D11RenderTargetView> WorldPosRTV;
     TComPtr<ID3D11ShaderResourceView> WorldPosSRV;
-
-    TComPtr<ID3D11Texture2D> FXAATex;
-    TComPtr<ID3D11RenderTargetView> FXAARTV;
-    TComPtr<ID3D11ShaderResourceView> FXAASRV;
 
     TComPtr<ID3D11Texture2D> SelectionMaskTex;
     TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
@@ -65,23 +57,17 @@ struct FViewportRenderResource
 
 	FRenderTargetSet& GetView()
     {
-        RenderTargetSet.SceneColorRTV = ColorRTV.Get();
-        RenderTargetSet.SceneColorSRV = ColorSRV.Get();
+        RenderTargetSet.SceneColorPingRTV = ColorPingRTV.Get();
+        RenderTargetSet.SceneColorPingSRV = ColorPingSRV.Get();
+
+		RenderTargetSet.SceneColorPongRTV = ColorPongRTV.Get();
+        RenderTargetSet.SceneColorPongSRV = ColorPongSRV.Get();
 
         RenderTargetSet.SceneNormalRTV = NormalRTV.Get();
         RenderTargetSet.SceneNormalSRV = NormalSRV.Get();
 
-        RenderTargetSet.SceneLightRTV = LightRTV.Get();
-        RenderTargetSet.SceneLightSRV = LightSRV.Get();
-
-        RenderTargetSet.SceneFogRTV = FogRTV.Get();
-        RenderTargetSet.SceneFogSRV = FogSRV.Get();
-
         RenderTargetSet.SceneWorldPosRTV = WorldPosRTV.Get();
         RenderTargetSet.SceneWorldPosSRV = WorldPosSRV.Get();
-
-        RenderTargetSet.SceneFXAARTV = FXAARTV.Get();
-        RenderTargetSet.SceneFXAASRV = FXAASRV.Get();
 
         RenderTargetSet.SceneDepthSRV = DepthStencilSRV.Get();
         RenderTargetSet.SelectionMaskRTV = SelectionMaskRTV.Get();
