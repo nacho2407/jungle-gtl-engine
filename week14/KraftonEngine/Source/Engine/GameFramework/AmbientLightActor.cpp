@@ -8,6 +8,7 @@ IMPLEMENT_CLASS(AAmbientLightActor, AActor)
 void AAmbientLightActor::InitDefaultComponents()
 {
 	BillboardComponent = AddComponent<UBillboardComponent>();
+	BillboardComponent->SetEditorOnly(true);
 	SetRootComponent(BillboardComponent);
 
 	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/AmbientLight.json");

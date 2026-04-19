@@ -7,6 +7,7 @@ IMPLEMENT_CLASS(ADirectionalLightActor, AActor)
 void ADirectionalLightActor::InitDefaultComponents()
 {
 	BillboardComponent = AddComponent<UBillboardComponent>();
+	BillboardComponent->SetEditorOnly(true);
 	SetRootComponent(BillboardComponent);
 
 	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/DirectionalLight.json");

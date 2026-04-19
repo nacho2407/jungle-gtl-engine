@@ -15,6 +15,9 @@ FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 {
 	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate;
 	ProxyFlags &= ~EPrimitiveProxyFlags::ShowAABB;
+
+	if (InComponent->IsEditorOnly())
+		ProxyFlags |= EPrimitiveProxyFlags::EditorOnly;
 }
 
 UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const
