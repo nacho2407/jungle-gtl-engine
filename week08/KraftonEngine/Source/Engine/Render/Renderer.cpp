@@ -808,4 +808,5 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
     ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
     Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
     Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+    Context->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);	//light culling용 param
 }

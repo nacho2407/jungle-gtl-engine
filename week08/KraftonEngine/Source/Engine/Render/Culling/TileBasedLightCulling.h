@@ -2,17 +2,8 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
+#include "Render/Pipeline/RenderConstants.h"
 #include <d3d11.h>
-
-// ============================================================
-// GPU에 전달할 PointLight 데이터 (셰이더 레이아웃과 일치)
-// ============================================================
-struct FPointLightGPU
-{
-    FVector  Position;
-    float    Range;
-    FVector4 Color;
-};
 
 // ============================================================
 // LightCulling 상수 버퍼 (b2 레지스터, 셰이더와 레이아웃 일치)
@@ -55,10 +46,10 @@ public:
     void OnResize(uint32 InWidth, uint32 InHeight);
 
     // ---- 조명 데이터 갱신 ----
-    void SetPointLightData(const TArray<FPointLightGPU>& InLights);
+    void SetPointLightData(const TArray<FLocalLightInfo>& InLights);
 
     // ---- Dispatch ----
-    void Dispatch(const FViewportClient* Viewport, bool bEnable25DCulling = true);
+    void Dispatch(float ViewportWidth, float ViewportHeight, bool bEnable25DCulling = true );
 
     // ---- 결과 SRV (Pixel Shader에서 타일별 마스크 읽기) ----
     ID3D11ShaderResourceView* GetPerTileMaskSRV()    const { return PerTilePointLightIndexMaskSRV; }
@@ -84,7 +75,7 @@ private:
     // ---- PointLight Buffer (SRV, t0) ----
     ID3D11Buffer*              PointLightBuffer    = nullptr;
     ID3D11ShaderResourceView*  PointLightDataSRV   = nullptr;
-    TArray<FPointLightGPU>     Lights;
+    TArray<FLocalLightInfo> Lights;
 
     // ---- PerTile Mask Buffer (UAV u1 / SRV for PS) ----
     ID3D11Buffer*              PerTilePointLightIndexMaskBuffer  = nullptr;

@@ -102,19 +102,19 @@ void FTileBasedLightCulling::OnResize(uint32 InWidth, uint32 InHeight)
     ResizeTiles(InWidth, InHeight);
 }
 
-void FTileBasedLightCulling::SetPointLightData(const TArray<FPointLightGPU>& InLights)
+void FTileBasedLightCulling::SetPointLightData(const TArray<FLocalLightInfo>& InLights)
 {
     Lights = InLights;
     CreatePointLightBufferGPU();
 }
 
-void FTileBasedLightCulling::Dispatch(const FViewportClient* Viewport, bool bEnable25DCulling)
+void FTileBasedLightCulling::Dispatch(float ViewportWidth,float ViewportHeight, bool bEnable25DCulling)
 {
     if (!IsInitialized())
         return;
 
-    const uint32 Width  = (uint32)Viewport->GetViewport()->GetWidth();
-    const uint32 Height = (uint32)Viewport->GetViewport()->GetHeight();
+    const uint32 Width = (uint32)ViewportWidth;
+    const uint32 Height = (uint32)ViewportHeight;
 
     OnResize(Width, Height);
     UpdateLightCullingParamsCB(Width, Height, bEnable25DCulling);
@@ -125,8 +125,9 @@ void FTileBasedLightCulling::Dispatch(const FViewportClient* Viewport, bool bEna
     Context->CSSetShader(LightCullingCS, nullptr, 0);
 
     // ---- SRV (t0: PointLight 데이터, t1: SceneDepth는 외부에서 바인딩) ----
-    ID3D11ShaderResourceView* SRVs[] = { PointLightDataSRV };
-    Context->CSSetShaderResources(0, 1, SRVs);
+	// 현재 외부에서 주입중
+    //ID3D11ShaderResourceView* SRVs[] = { PointLightDataSRV };
+    //Context->CSSetShaderResources(0, 1, SRVs);
 
     // ---- UAV (u0: 미사용, u1: PerTile, u2: Culled, u3: HitMap) ----
     ID3D11UnorderedAccessView* UAVs[] = {
@@ -180,9 +181,9 @@ void FTileBasedLightCulling::CreatePointLightBufferGPU()
     // StructuredBuffer 생성
     D3D11_BUFFER_DESC Desc = {};
     Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
-    Desc.ByteWidth           = sizeof(FPointLightGPU) * Lights.size();
+    Desc.ByteWidth           = sizeof(FLocalLightInfo) * Lights.size();
     Desc.Usage               = D3D11_USAGE_DEFAULT;
-    Desc.StructureByteStride = sizeof(FPointLightGPU);
+    Desc.StructureByteStride = sizeof(FLocalLightInfo);
     Desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
     D3D11_SUBRESOURCE_DATA InitData = {};

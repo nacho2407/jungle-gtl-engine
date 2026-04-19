@@ -1,3 +1,5 @@
+#include "Common/ConstantBuffers.hlsl"
+
 #ifndef LIGHT_CULLING_COMMON_HLSL
 #define LIGHT_CULLING_COMMON_HLSL
 
@@ -12,12 +14,8 @@
 // ============================================================
 // Structs
 // ============================================================
-struct FLightData
-{
-    float3 position;
-    float  range;
-    float4 color;
-};
+
+//FLocalLightInfo는 ConstnatBuffer에 정의
 
 struct FSphere
 {
@@ -62,7 +60,7 @@ groupshared uint hitCount;      // 타일 내 조명 교차 수 (히트맵용)
 // Resources
 // ============================================================
 // SRV (읽기 전용)
-StructuredBuffer<FLightData>  g_LightBuffer : register(t0);
+StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
 Texture2D<float>              SceneDepth    : register(t1);
 
 // UAV (읽기 / 쓰기)
