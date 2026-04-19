@@ -142,7 +142,7 @@ struct FGlobalLightConstants
     FDirectionalLightInfo Directional[MAX_DIRECTIONAL_LIGHTS]; // 32 * 4 = 128B
 
 	int32 NumDirectionalLights; // 4B
-    int32 NUMLocalLights;       // 4B
+    int32 NumLocalLights;       // 4B
 	FVector2 Padding;            // 8B
 };
 
