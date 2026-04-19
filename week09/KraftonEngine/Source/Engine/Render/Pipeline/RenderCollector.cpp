@@ -54,7 +54,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 
 	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
-	CollectLights(Scene.GetLightProxies(), CollectedLights);
+	CollectLights(Scene, CollectedLights);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -308,8 +308,9 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 // Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
 // 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void FRenderCollector::CollectLights(const TArray<FLightSceneProxy*>& LightProxies, FCollectedLights& OutLights)
+void FRenderCollector::CollectLights(FScene &Scene, FCollectedLights& OutLights)
 {
+    const TArray<FLightSceneProxy*>& LightProxies = Scene.GetLightProxies();
     OutLights.GlobalLights = FGlobalLightConstants();
 	OutLights.LocalLights.clear();
 
@@ -336,6 +337,7 @@ void FRenderCollector::CollectLights(const TArray<FLightSceneProxy*>& LightProxi
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
+            // 제한 없이 배열에 추가 — GPU 상수 배열로 전달, 셰이더에서 최대 개수만큼 처리
             FLocalLightInfo LocalLight = {};
             LocalLight.Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
             LocalLight.Intensity = LC.Intensity;
@@ -346,5 +348,10 @@ void FRenderCollector::CollectLights(const TArray<FLightSceneProxy*>& LightProxi
             LocalLight.OuterConeAngle = LC.OuterConeAngle;
             OutLights.LocalLights.push_back(LocalLight);
 		}
+
+		Proxy->VisualizeLightsInEditor(Scene);
 	}
+
+	// Local Lights의 개수를 저장
+	OutLights.GlobalLights.NumLocalLights = static_cast<int32>(OutLights.LocalLights.size());
 }
