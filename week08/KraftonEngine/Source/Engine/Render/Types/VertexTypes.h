@@ -17,7 +17,7 @@ struct FOverlayVertex
     float _pad[2];
 };
 
-// Position + TexCoord 범용 버텍스 (FFontGeometry 등 텍스처 기반 동적 지오메트리 공용)
+// Position + TexCoord 범용 버텍스 (FFontBatch 등 텍스처 기반 동적 지오메트리 공용)
 struct FTextureVertex
 {
 	FVector  Position;

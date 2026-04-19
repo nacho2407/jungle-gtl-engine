@@ -1,6 +1,6 @@
 ﻿#include "Render/Scene/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/Managers/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"

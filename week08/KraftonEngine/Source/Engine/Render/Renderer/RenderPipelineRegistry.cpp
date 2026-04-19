@@ -68,9 +68,9 @@ void FRenderPipelineRegistry::Initialize()
     EditorOverlay.Type = ERenderPipelineType::EditorOverlay;
     EditorOverlay.Children = {
         PipelineNode(ERenderPipelineType::Outline),
-        PassNode(ERenderPassNodeType::DebugLinesPass),
-        PassNode(ERenderPassNodeType::GizmoRenderPass),
-        PassNode(ERenderPassNodeType::OverlayFontRenderPass)
+        PassNode(ERenderPassNodeType::DebugLinePass),
+        PassNode(ERenderPassNodeType::GizmoPass),
+        PassNode(ERenderPassNodeType::OverlayTextPass)
     };
     Pipelines.emplace((int32)EditorOverlay.Type, EditorOverlay);
 

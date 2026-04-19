@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Render/Scene/BillboardSceneProxy.h"
-#include "Render/Resource/Buffer.h"
+#include "Render/RHI/Resource/Buffer.h"
 
 class USubUVComponent;
 

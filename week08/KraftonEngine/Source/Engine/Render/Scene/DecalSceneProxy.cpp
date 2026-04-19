@@ -1,7 +1,7 @@
 ﻿#include "Render/Scene/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/Managers/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"

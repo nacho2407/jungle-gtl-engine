@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Core/RenderPass.h"
+#include "Render/Passes/RenderPass.h"
 
 class FDepthPrePass;
 class FBaseDrawPass;
@@ -13,9 +13,9 @@ class FHeightFogPass;
 class FFXAAPass;
 class FSelectionMaskPass;
 class FOutlinePass;
-class FDebugLinesPass;
-class FGizmoRenderPass;
-class FOverlayFontRenderPass;
+class FDebugLinePass;
+class FGizmoPass;
+class FOverlayTextPass;
 
 enum class ERenderPassNodeType
 {
@@ -29,9 +29,9 @@ enum class ERenderPassNodeType
     FXAAPass,
     SelectionMaskPass,
     OutlinePass,
-    DebugLinesPass,
-    GizmoRenderPass,
-    OverlayFontRenderPass,
+    DebugLinePass,
+    GizmoPass,
+    OverlayTextPass,
 };
 
 class FRenderPassRegistry

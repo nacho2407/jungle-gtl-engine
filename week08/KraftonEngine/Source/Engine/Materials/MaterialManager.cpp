@@ -4,7 +4,7 @@
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Resource/Buffer.h"
+#include "Render/RHI/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Render/Renderer/Renderer.h"
 

@@ -3,7 +3,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Resource/Managers/ShaderManager.h"
 
 // ============================================================
 // FPrimitiveSceneProxy — 기본 구현

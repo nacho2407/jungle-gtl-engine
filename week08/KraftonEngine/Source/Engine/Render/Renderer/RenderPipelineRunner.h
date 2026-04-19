@@ -1,8 +1,10 @@
 ﻿#pragma once
 
+#include "Render/Pipelines/RenderPipeline.h"
+
 class FRenderPipelineRegistry;
 class FRenderPassRegistry;
-class FRenderPassContext;
+struct FRenderPassContext;
 struct FFrameContext;
 
 class FRenderPipelineRunner
