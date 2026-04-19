@@ -1,6 +1,6 @@
-#include "CommonTypes.hlsli"
+#include "CommonTypes.hlsli"   // Functions.hlsl → ConstantBuffers.hlsl (b0/b1/b4, FLocalLightInfo)
 #include "SurfaceData.hlsli"
-#include "LightingCommon.hlsli"
+#include "LightingCommon.hlsli" // t6 StructuredBuffer<FLocalLightInfo>, 조명 함수들
 
 Texture2D g_BaseColorTex : register(t0);
 Texture2D g_Surface1Tex : register(t1);

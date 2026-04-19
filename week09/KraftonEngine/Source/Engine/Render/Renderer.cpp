@@ -449,7 +449,7 @@ void FRenderer::Render(const FFrameContext& Frame)
 
     // ── Pre/Post 패스 이벤트 등록 ──
     TArray<FPassEvent> PrePassEvents;
-    BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces, TileCulling);
+    BuildDefaultPassEvents(PrePassEvents, Context, Frame, Cache, ActiveViewPipeline, ActiveViewSurfaces, TileCulling, Resources);
 
     // ── 패스 루프 ──
     for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)

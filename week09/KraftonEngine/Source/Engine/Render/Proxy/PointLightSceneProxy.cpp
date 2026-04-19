@@ -26,6 +26,10 @@ FPointLightSceneProxy::FPointLightSceneProxy(UPointLightComponent* InComponent)
     : FLightSceneProxy(InComponent)
 {
 	LightConstants.LightType = static_cast<uint32>(ELightType::Point);
+
+	// 반각 180° = 전방향 구(sphere). cos(π) = -1이므로 SpotFactor가 항상 1이 됩니다.
+	LightConstants.OuterConeAngle = 180.0f;
+	LightConstants.InnerConeAngle = 180.0f;
 }
 
 void FPointLightSceneProxy::UpdateLightConstants()
@@ -47,7 +51,7 @@ void FPointLightSceneProxy::UpdateTransform()
     LightConstants.Position = Owner->GetWorldLocation();
 }
 
-void FPointLightSceneProxy::VisualizeLights(FScene& Scene) const
+void FPointLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
 {
     if (!Owner) return;
     UPointLightComponent* Comp = static_cast<UPointLightComponent*>(Owner);
