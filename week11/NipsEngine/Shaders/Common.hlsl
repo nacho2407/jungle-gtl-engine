@@ -77,3 +77,8 @@ float3x3 Inverse3x3(float3x3 m)
     result[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * invDet;
     return result;
 }
+
+float LinearizeDepth(float d)
+{
+    return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
+}
