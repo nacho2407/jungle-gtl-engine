@@ -48,14 +48,15 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.position = ApplyMVP(Input.position);
     
     // VS에서 정규화: 보간 왜곡을 방지하기 위해 1차 정규화 수행
-    Output.worldNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    float3 VSNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    Output.worldNormal = VSNormal;
     Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3)NormalMatrix));
     Output.worldTangent.w = Input.tangent.w;
 
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
 
-    float GouraudFactor = ComputeGouraudLightingFactor(Output.worldNormal);
+    float GouraudFactor = ComputeGouraudLightingFactor(VSNormal);
     Output.gouraud = float4(GouraudFactor.xxx, 1.0f);
 
     return Output;
