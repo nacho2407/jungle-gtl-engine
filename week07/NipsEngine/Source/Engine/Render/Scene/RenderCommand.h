@@ -99,6 +99,8 @@ struct FLightConstants
 {
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
+	uint32 LightCount;
+	float Padding[3];
 };
 
 struct FGizmoConstants

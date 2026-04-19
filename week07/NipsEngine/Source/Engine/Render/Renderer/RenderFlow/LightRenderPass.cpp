@@ -45,7 +45,7 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
 		break;
     }
 
-    LightPassConstant.LightCount = 0;
+    LightPassConstant.LightCount = static_cast<uint32>(RenderBus->LightInfos.size());
     LightPassConstant.CameraWorldPos = RenderBus->GetCameraPosition();
     LightPassConstant.ViewMode = static_cast<uint32>(RenderBus->GetViewMode());
     Context->RenderResources->LightPassConstantBuffer.Update(Context->DeviceContext, &LightPassConstant, sizeof(LightPassConstant));

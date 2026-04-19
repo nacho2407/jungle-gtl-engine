@@ -68,10 +68,7 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
     float tileNear = LinearizeDepth(minDepth);
     float tileFar  = LinearizeDepth(maxDepth);
 
-    uint totalLightCount, stride;
-    Lights.GetDimensions(totalLightCount, stride);
-    
-    for (uint i = threadIndex; i < totalLightCount; i += TILE_SIZE * TILE_SIZE)
+    for (uint i = threadIndex; i < LightCount; i += TILE_SIZE * TILE_SIZE)
     {
         FLightInfo light = Lights[i];
         if (light.Radius <= 0.0f)
