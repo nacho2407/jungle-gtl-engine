@@ -47,15 +47,17 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     FBaseDrawVSOutput Output;
     Output.position = ApplyMVP(Input.position);
     
-    // VS에서 정규화: 보간 왜곡을 방지하기 위해 1차 정규화 수행
-    Output.worldNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    // 월드 노멀 및 탄젠트 변환 (정규화 포함)
+    float3 VSNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    Output.worldNormal = VSNormal;
     Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3)NormalMatrix));
     Output.worldTangent.w = Input.tangent.w;
 
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
 
-    float GouraudFactor = ComputeGouraudLightingFactor(Output.worldNormal);
+    // Gouraud Shading용 정점 라이팅 계산
+    float GouraudFactor = ComputeGouraudLightingFactor(VSNormal);
     Output.gouraud = float4(GouraudFactor.xxx, 1.0f);
 
     return Output;
@@ -70,7 +72,8 @@ FBaseDrawOutput2 PS_BaseDraw_Gouraud(FBaseDrawVSOutput Input)
 {
     FBaseDrawOutput2 Output;
     Output.BaseColor = EncodeBaseColor(ResolveBaseDrawColor(Input));
-    Output.Surface1 = EncodeSurface1(Input.gouraud);
+    // 정점에서 계산된 라이팅 값을 그대로 G-Buffer(Surface1)에 기록
+    Output.Surface1 = Input.gouraud;
     return Output;
 }
 
@@ -87,6 +90,8 @@ FBaseDrawOutput3 PS_BaseDraw_BlinnPhong(FBaseDrawVSOutput Input)
     FBaseDrawOutput3 Output;
     Output.BaseColor = EncodeBaseColor(ResolveBaseDrawColor(Input));
     Output.Surface1 = EncodeNormal(ResolveBaseDrawNormal(Input));
-    Output.Surface2 = EncodeMaterialParam(float4(32.0f, 1.0f, 0.0f, 1.0f));
+    
+    // SpecularStrength를 0.3으로 낮춰서 하이라이트가 하얗게 타버리는 현상을 방지
+    Output.Surface2 = EncodeMaterialParam(float4(32.0f, 0.3f, 0.0f, 1.0f));
     return Output;
 }
