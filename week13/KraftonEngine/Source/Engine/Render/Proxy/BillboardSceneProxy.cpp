@@ -1,6 +1,5 @@
 #include "Render/Proxy/BillboardSceneProxy.h"
 #include "Component/BillboardComponent.h"
-#include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "GameFramework/AActor.h"
@@ -49,14 +48,6 @@ void FBillboardSceneProxy::UpdateMesh()
 		// TexturedQuad (FVertexPNCT with UVs)
 		MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
 
-		Shader = Mat->GetShader();
-		if (!Shader)
-		{
-			Shader = FShaderManager::Get().GetShader(EShaderType::Billboard);
-		}
-
-		Pass = Mat->GetRenderPass();
-
 		// SectionDraws 단일 항목 — Material의 CachedSRVs로 텍스처 바인딩
 		const uint32 IndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
 		SectionDraws.clear();
@@ -65,8 +56,6 @@ void FBillboardSceneProxy::UpdateMesh()
 	else
 	{
 		MeshBuffer = GetOwner()->GetMeshBuffer();
-		Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-		Pass = ERenderPass::Opaque;
 		SectionDraws.clear();
 	}
 }

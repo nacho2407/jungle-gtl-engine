@@ -59,8 +59,8 @@ public:
 	bool IsSelected() const { return bSelected; }
 
 	// --- 렌더 데이터 (DrawCommandBuilder가 읽음) ---
-	ERenderPass        GetRenderPass()  const { return Pass; }
-	FShader*           GetShader()      const { return Shader; }
+	ERenderPass        GetRenderPass()  const;
+	FShader*           GetShader()      const;
 	FMeshBuffer*       GetMeshBuffer()  const { return MeshBuffer; }
 
 	const FPerObjectConstants&      GetPerObjectConstants() const { return PerObjectConstants; }
@@ -103,9 +103,10 @@ protected:
 	                                | EPrimitiveProxyFlags::ShowAABB;
 
 	// 렌더 데이터 캐시 (Update*에서 갱신)
-	FShader*     Shader     = nullptr;
 	FMeshBuffer* MeshBuffer = nullptr;
-	ERenderPass  Pass       = ERenderPass::Opaque;
+
+	// 기본 Material — Material 없는 프록시의 폴백
+	UMaterial* DefaultMaterial = nullptr;
 
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox        CachedBounds;

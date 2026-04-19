@@ -4,6 +4,7 @@
 #include "Core/ResourceTypes.h"
 
 class UTextRenderComponent;
+class UMaterial;
 
 // ============================================================
 // FTextRenderSceneProxy — UTextRenderComponent 전용 프록시
@@ -27,6 +28,7 @@ public:
 
 private:
 	UTextRenderComponent* GetTextRenderComponent() const;
+	UMaterial* TextMaterial = nullptr;
 
 	// 아웃라인 행렬 계산용 캐싱 데이터 (UpdateMesh에서 갱신)
 	float CachedCharWidth  = 0.5f;

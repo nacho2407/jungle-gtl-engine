@@ -3,6 +3,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 class UGizmoComponent;
+class UMaterial;
 
 // ============================================================
 // FGizmoSceneProxy — UGizmoComponent 전용 프록시
@@ -19,5 +20,8 @@ public:
 
 private:
 	UGizmoComponent* GetGizmoComponent() const;
+	void RebuildGizmoSectionDraws();
+
+	UMaterial* GizmoMaterial = nullptr;
 	bool bIsInner = false;
 };
