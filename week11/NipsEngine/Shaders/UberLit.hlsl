@@ -1,233 +1,303 @@
-struct LightResult
+#include "Common.hlsl"
+#include "Lighting.hlsl"
+
+cbuffer StaticMeshBuffer : register(b2)
 {
-    float3 Diffuse;
-    float3 Specular;
-    float3 Ambient;
+    float3 AmbientColor;    // Ka
+    float padding0;
+    
+    float3 DiffuseColor;    // Kd
+    float padding1;
+    
+    float3 SpecularColor;   // Ks
+    float Shininess; // Ns    
+    
+    float2 ScrollUV;
+    uint   bHasDiffuseMap;
+    uint   bHasSpecularMap;
+    
+    float3 EmissiveColor;    // emissive glow color; non-zero means emissive
+    uint bHasBumpMap;
 };
 
-// Returns N dot L, normalized
-float LambertNdotL(float3 normal, float3 worldPos, float3 lightPos)
+struct FAmbientLightInfo
 {
-    float3 N = normalize(normal);
-    float3 L = normalize(lightPos - worldPos);
-    float NdotL = saturate(dot(N, L));
+    float3 Color;
+    float Intensity;
+};
 
-    return NdotL;
-}
-
-LightResult EvaluateAmbientLight(float3 color, float intensity)
+struct FDirectionalLightInfo
 {
-    LightResult output = (LightResult) 0;
-    output.Ambient = color * intensity;
-    return output;
-}
+    float3 Direction;
+    float Padding0;
+    float3 Color;
+    float Intensity;
+};
 
-LightResult EvaluateDirectionalLambert(float3 LightColor, float Intensity, float3 LightDir, float3 Normal)
+cbuffer FLightConstants : register(b3)
 {
-    LightResult output = (LightResult) 0;
-    float3 N = normalize(Normal);
-    float3 D = normalize(LightDir);
-    float NdotD = saturate(dot(N, -D));
-    output.Diffuse = LightColor * Intensity * NdotD;
-    return output;
-}
+    FAmbientLightInfo AmbientLight;
+    FDirectionalLightInfo DirectionalLight;
+};
 
-LightResult EvaluateDirectionalGouraud(
-    float3 LightColor,
-    float Intensity,
-    float3 LightDir,
-    float3 Normal,
-    float3 SurfaceToCamera,
-    float Shininess)
+Texture2D DiffuseMap  : register(t0);
+Texture2D AmbientMap  : register(t1);
+Texture2D SpecularMap : register(t2);
+Texture2D BumpMap     : register(t3);
+
+SamplerState SampleState : register(s0);
+
+struct FLightInfo
 {
-    LightResult output = (LightResult) 0;
+    float3 Color;
+    float Intensity;
 
-    float3 N = normalize(Normal);
-    float3 L = normalize(-LightDir);
-    float3 V = normalize(SurfaceToCamera);
+    uint  Type;
+    float Radius;
+    float InnerAngle;
+    float OuterAngle;
 
-    float NdotL = saturate(dot(N, L));
+    float3 Direction;
+    float  Falloff;
 
-    // Diffuse
-    output.Diffuse = LightColor * Intensity * NdotL;
+    float3 Position;
+    float  Padding1;
+};
+StructuredBuffer<FLightInfo> Lights : register(t4);
 
-    // Specular (Blinn-Phong)
-    float3 H = normalize(L + V);
-    float NdotH = saturate(dot(N, H));
-
-    float Spec = NdotL * pow(NdotH, max(Shininess, 1.0));
-
-    output.Specular = LightColor * Intensity * Spec;
-
-    return output;
-}
-
-LightResult EvaluateDirectionalBlinnPhong(
-    float3 LightColor,
-    float Intensity,
-    float3 LightDir,
-    float3 Normal,
-    float3 SurfaceToCamera,
-    float Shininess)
+struct VSInput
 {
-    // The functions are identical, except that they are called in different context. 
-    return EvaluateDirectionalGouraud(LightColor, Intensity, LightDir, Normal, SurfaceToCamera, Shininess);
-}
+    float3 Position : POSITION;
+    float2 UV       : TEXCOORD;
+    float4 Color    : COLOR;
+    float3 Normal   : NORMAL;
+    float4 Tangent  : TANGENT;
+};
 
-LightResult EvaluatePointLambert(float3 LightColor, float Intensity, float3 Normal, float3 LightPos, float3 WorldPos, float Radius, float Falloff)
+struct PSInput
 {
-    LightResult output = (LightResult) 0;
-    float3 N = normalize(Normal);
-    float3 L = normalize(LightPos - WorldPos);
-    float NdotL = saturate(dot(N, L));
-    float attenuation = saturate(1.0 - distance(WorldPos, LightPos) / Radius);
-    attenuation = pow(attenuation, Falloff);
+    float4 ClipPos      : SV_POSITION;
+    float3 WorldPos     : TEXCOORD0;
+    float3 WorldNormal  : TEXCOORD1;
+    float2 UV           : TEXCOORD2;
+#if LIGHTING_MODEL_GOURAUD
+    float3 LitColor     : TEXCOORD3;
+#elif LIGHTING_MODEL_LAMBERT
+    float4 WorldTangent : TEXCOORD3;
+#elif LIGHTING_MODEL_PHONG
+    float3 PixelNormal  : TEXCOORD4;
+    float4 WorldTangent : TEXCOORD5;
+#endif
+};
 
-    output.Diffuse = LightColor * Intensity * attenuation * NdotL;
-    return output;
-}
-
-LightResult EvaluatePointGouraud(
-    float3 LightColor,
-    float Intensity,
-    float3 LightPos,
-    float3 WorldPos,
-    float3 Normal,
-    float Radius,
-    float Falloff,
-    float3 SurfaceToCamera,
-    float Shininess)
+struct PSOutput
 {
-    LightResult output = (LightResult) 0;
+    float4 Color    : SV_TARGET0;
+    float4 Normal   : SV_TARGET1;
+    float4 WorldPos : SV_TARGET2;
+};
 
-    float3 N = normalize(Normal);
-    float3 L = normalize(LightPos - WorldPos);
-    float3 V = normalize(SurfaceToCamera);
-
-    float NdotL = saturate(dot(N, L));
-    
-    float attenuation = saturate(1.0 - distance(WorldPos, LightPos) / Radius);
-    attenuation = pow(attenuation, Falloff);
-
-    // Diffuse
-    output.Diffuse = LightColor * Intensity * NdotL * attenuation;
-
-    // Specular (Blinn-Phong)
-    float3 H = normalize(L + V);
-    float NdotH = saturate(dot(N, H));
-
-    float Spec = NdotL * pow(NdotH, max(Shininess, 1.0));
-
-    output.Specular = LightColor * Intensity * Spec * attenuation;
-
-    return output;
-}
-
-LightResult EvaluatePointBlinnPhong(
-    float3 LightColor,
-    float Intensity,
-    float3 LightPos,
-    float3 WorldPos,
-    float3 Normal,
-    float Radius,
-    float Falloff,
-    float3 SurfaceToCamera,
-    float Shininess)
+LightResult EvaluateLightByType(FLightInfo LightData, float3 normal, float3 worldPos, float3 camPos, float Shininess)
 {
-    return EvaluatePointGouraud(LightColor, Intensity, LightPos, WorldPos, Normal, Radius, Falloff, SurfaceToCamera, Shininess);
-}
-
-LightResult EvaluateSpotlightLambert(float3 LightColor,
-                                     float Intensity,
-                                     float3 Normal,
-                                     float3 LightPos,
-                                     float3 WorldPos,
-                                     float Radius,
-                                     float Falloff,
-                                     float3 Direction,
-                                     float InnerAngle,
-                                     float OuterAngle)
-{
-    LightResult output = (LightResult) 0;
-    float3 LightToFrag = normalize(WorldPos - LightPos);
-    float theta = acos(dot(LightToFrag, normalize(Direction)));
-    
-    if (theta > OuterAngle)
+    switch (LightData.Type)
     {
-        return output;
+        case 0:
+#if LIGHTING_MODEL_GOURAUD
+            return EvaluateSpotlightGouraud(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
+                                            LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
+#elif LIGHTING_MODEL_LAMBERT
+            return EvaluateSpotlightLambert(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
+                                            LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle);
+#elif LIGHTING_MODEL_PHONG
+            return EvaluateSpotlightBlinnPhong(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
+                                               LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
+#endif
+            return (LightResult) 0;
+        case 1:
+#if LIGHTING_MODEL_GOURAUD
+            return EvaluatePointGouraud(LightData.Color, LightData.Intensity, LightData.Position, worldPos, normal, LightData.Radius, LightData.Falloff, camPos - worldPos, Shininess);
+#elif LIGHTING_MODEL_LAMBERT
+            return EvaluatePointLambert(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos, LightData.Radius, LightData.Falloff);
+#elif LIGHTING_MODEL_PHONG
+            return EvaluatePointBlinnPhong(LightData.Color, LightData.Intensity, LightData.Position, worldPos, normal, LightData.Radius, LightData.Falloff, camPos - worldPos, Shininess);
+#endif
+            return (LightResult) 0;
+        default:
+            return (LightResult) 0;
+    }
+}
+
+
+PSInput mainVS(VSInput input)
+{
+    PSInput output;
+
+    output.WorldPos = mul(float4(input.Position, 1.0f), Model).xyz;
+    output.ClipPos = ApplyMVP(input.Position);
+    output.UV = input.UV + ScrollUV;
+    
+#if LIGHTING_MODEL_GOURAUD
+    output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
+    float3 accumulated_light = float3(0, 0, 0);
+    uint LightCount, stride;
+    Lights.GetDimensions(LightCount, stride);
+    for (uint i = 0; i < LightCount; i++) {
+        LightResult result = EvaluateLightByType(Lights[i], output.WorldNormal, output.WorldPos, CameraPosition, Shininess);
+        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
     }
     
-    float epsilon = InnerAngle - OuterAngle;
-    float spotAttenuation = saturate((theta - OuterAngle) / epsilon);
-
-    output = EvaluatePointLambert(LightColor, Intensity, Normal, LightPos, WorldPos, Radius, Falloff);
-    output.Diffuse *= spotAttenuation;
-
+    // Apply Ambience
+    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
+    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
+    
+    // Apply Directional
+    float3 DColor     = DirectionalLight.Color;
+    float3 DDirection = DirectionalLight.Direction;
+    float  DIntensity = DirectionalLight.Intensity;
+    LightResult DResult = EvaluateDirectionalGouraud(DColor, DIntensity, DDirection, output.WorldNormal, CameraPosition - output.WorldPos, Shininess);
+    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
+    
+    output.LitColor = accumulated_light;
+    return output;
+#elif LIGHTING_MODEL_LAMBERT
+    output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
+    // Transform world tangent
+    output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
+    return output;
+#elif LIGHTING_MODEL_PHONG
+    output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
+    output.PixelNormal = output.WorldNormal;
+    output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
+    return output;
+#else 
+    output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
+#endif
+   
     return output;
 }
 
-LightResult EvaluateSpotlightGouraud(float3 LightColor,
-                                     float Intensity,
-                                     float3 Normal,
-                                     float3 LightPos,
-                                     float3 WorldPos,
-                                     float Radius,
-                                     float Falloff,
-                                     float3 Direction,
-                                     float InnerAngle,
-                                     float OuterAngle,
-                                     float3 SurfaceToCamera,
-                                     float Shininess)
+float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
 {
-    LightResult output = (LightResult) 0;
-    float3 LightToFrag = normalize(WorldPos - LightPos);
-    float theta = acos(dot(LightToFrag, normalize(Direction)));
-    
-    if (theta > OuterAngle)
-    {
-        return output;
-    }
-    
-    float epsilon = InnerAngle - OuterAngle;
-    float spotAttenuation = saturate((theta - OuterAngle) / epsilon);
-
-    output = EvaluatePointGouraud(LightColor, Intensity, LightPos, WorldPos, Normal, Radius, Falloff, SurfaceToCamera, Shininess);
-    output.Diffuse   *= spotAttenuation;
-    output.Specular  *= spotAttenuation;
-
-    return output;
+    float3 N = normalize(worldNormal);
+    float3 T = normalize(worldTangent.xyz - dot(worldTangent.xyz, N) * N);
+    float3 B = cross(N, T) * worldTangent.w;
+    float3x3 TBN = float3x3(T, B, N);
+    float3 tn = BumpMap.Sample(SampleState, uv).rgb * 2.0f - 1.0f;
+    return normalize(mul(tn, TBN));
 }
 
-
-// TODO: Fix
-LightResult EvaluateSpotlightBlinnPhong(float3 LightColor,
-                                     float Intensity,
-                                     float3 Normal,
-                                     float3 LightPos,
-                                     float3 WorldPos,
-                                     float Radius,
-                                     float Falloff,
-                                     float3 Direction,
-                                     float InnerAngle,
-                                     float OuterAngle,
-                                     float3 SurfaceToCamera,
-                                     float Shininess)
+PSOutput mainPS(PSInput input) : SV_TARGET
 {
-    LightResult output = (LightResult) 0;
-    float3 LightToFrag = normalize(WorldPos - LightPos);
-    float theta = acos(dot(LightToFrag, normalize(Direction)));
+    PSOutput output;
     
-    if (theta > OuterAngle)
+    float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
+    if ((bool) bHasDiffuseMap)
     {
-        return output;
+        DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
+        clip(DiffuseTex.a - 0.001f);
     }
     
-    float epsilon = InnerAngle - OuterAngle;
-    float spotAttenuation = saturate((theta - OuterAngle) / epsilon);
+    float3 FinalColor = DiffuseColor * DiffuseTex.rgb;
+    
+    if (any(EmissiveColor > 0.f))
+    {
+        // Emissive surface: write the glow color and mark normal.a = 2
+        output.Color = float4(EmissiveColor, 1.f) * DiffuseTex;
+        output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
+        output.WorldPos = float4(input.WorldPos, 1.f);
+        return output;
+    }
 
-    output = EvaluatePointBlinnPhong(LightColor, Intensity, LightPos, WorldPos, Normal, Radius, Falloff, SurfaceToCamera, Shininess);
-    output.Diffuse  *= spotAttenuation;
-    output.Specular *= spotAttenuation;
+    if (bIsWireframe > 0.5f)
+    {
+        FinalColor = WireframeRGB;
+    }
+    
+    uint LightCount, stride;
+    Lights.GetDimensions(LightCount, stride);
+    
+#if LIGHTING_MODEL_GOURAUD
+    output.Color = float4(input.LitColor * FinalColor, 1.0);
+    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
+    return output;
+#elif LIGHTING_MODEL_LAMBERT
+    float3 N_Lambert = (bHasBumpMap)
+        ? PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV)
+        : normalize(input.WorldNormal);
+
+    float3 accumulated_light = float3(0, 0, 0);
+    for (uint i = 0; i < LightCount; i++)
+    {
+        LightResult result = EvaluateLightByType(Lights[i], N_Lambert, input.WorldPos, CameraPosition, Shininess);
+        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
+    }
+
+    // Apply Ambience
+    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
+    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
+
+    // Apply Directional
+    float3 DColor     = DirectionalLight.Color;
+    float3 DDirection = DirectionalLight.Direction;
+    float  DIntensity = DirectionalLight.Intensity;
+    LightResult DResult = EvaluateDirectionalLambert(DColor, DIntensity, DDirection, N_Lambert);
+    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
+
+    output.Color = float4(FinalColor * accumulated_light, 1.f);
+    output.Normal = float4(N_Lambert * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
 
     return output;
+#elif LIGHTING_MODEL_PHONG
+    if (bHasBumpMap)
+    {
+        float3 rawSample = BumpMap.Sample(SampleState, input.UV).rgb;
+        output.Color    = float4(rawSample, 1.f);
+        output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+        output.WorldPos = float4(input.WorldPos, 1.f);
+        // return output;
+    }
+    
+    
+    float3 N_Phong = (bHasBumpMap)
+        ? PerturbNormal(input.PixelNormal, input.WorldTangent, input.UV)
+        : normalize(input.PixelNormal);
+
+    float3 accumulated_light = float3(0, 0, 0);
+    for (uint i = 0; i < LightCount; i++)
+    {
+        LightResult result = EvaluateLightByType(Lights[i], N_Phong, input.WorldPos, CameraPosition, Shininess);
+        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
+    }
+
+    // Apply Ambience
+    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
+    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
+
+    // Apply Directional
+    float3 DColor     = DirectionalLight.Color;
+    float3 DDirection = DirectionalLight.Direction;
+    float  DIntensity = DirectionalLight.Intensity;
+    LightResult DResult = EvaluateDirectionalBlinnPhong(DColor, DIntensity, DDirection, N_Phong, CameraPosition - input.WorldPos, Shininess);
+    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
+
+    output.Color = float4(FinalColor * accumulated_light, 1.f);
+    output.Normal = float4(N_Phong * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
+
+    return output;
+#else
+    float3 accumulated_light = float3(0, 0, 0);
+    for (uint i = 0; i < LightCount; i++)
+    {
+        LightResult result = EvaluateLightByType(Lights[i], input.WorldNormal, input.WorldPos, CameraPosition, Shininess);
+        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
+    }
+
+    output.Color = float4(FinalColor * accumulated_light, 1.f);
+    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
+    return output;
+#endif
 }
