@@ -4,13 +4,13 @@
 
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Render/Renderer/Culling/GPUOcclusionCulling.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIETypes.h"
 #include <optional>
 #if STATS
-#include "Editor/EditorRenderPipeline.h"
 #endif
 
 class UGizmoComponent;
@@ -62,6 +62,12 @@ public:
 
 	void RenderUI(float DeltaTime);
 
+protected:
+	void Render(float DeltaTime) override;
+	void OnRenderSceneCleared() override;
+	void RenderViewport(FLevelEditorViewportClient* VC);
+
+public:
 	FOverlayStatSystem& GetOverlayStatSystem() { return OverlayStatSystem; }
 	const FOverlayStatSystem& GetOverlayStatSystem() const { return OverlayStatSystem; }
 
@@ -100,4 +106,5 @@ private:
 	std::optional<FPlayInEditorSessionInfo> PlayInEditorSessionInfo;
 	// 종료 요청 지연 플래그. Tick 선두에서 확인 후 EndPlayMap 호출.
 	bool bRequestEndPlayMapQueued = false;
+	FGPUOcclusionCulling GPUOcclusion;
 };

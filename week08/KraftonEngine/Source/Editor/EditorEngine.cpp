@@ -4,13 +4,17 @@
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
-#include "Editor/EditorRenderPipeline.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
+#include "Viewport/Viewport.h"
+#include "Profiling/GPUProfiler.h"
+#include "Profiling/Stats.h"
+#include "Render/Core/PassTypes.h"
+#include "Render/Core/RenderPipeline.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -43,8 +47,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
 	ViewportLayout.LoadFromSettings();
 
-	// Editor render pipeline
-	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 }
 
 void UEditorEngine::Shutdown()
@@ -297,10 +299,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 
 	// GPU Occlusion readback은 ProxyId 기반이라 월드가 갈리면 stale.
 	// 이전 프레임 결과를 무효화해야 wrong-proxy hit 방지.
-	if (IRenderPipeline* Pipeline = GetRenderPipeline())
-	{
-		Pipeline->OnSceneCleared();
-	}
+	OnRenderSceneCleared();
 
 	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
 	//    LOD 갱신 등에서 ActiveCamera를 참조하므로 설정 필요.
@@ -388,10 +387,7 @@ void UEditorEngine::EndPlayMap()
 	DestroyWorldContext(FName("PIE"));
 
 	// PIE 월드의 프록시가 모두 파괴됐으므로 GPU Occlusion readback 무효화.
-	if (IRenderPipeline* Pipeline = GetRenderPipeline())
-	{
-		Pipeline->OnSceneCleared();
-	}
+	OnRenderSceneCleared();
 
 	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
@@ -435,8 +431,7 @@ void UEditorEngine::ClearScene()
 	SelectionManager.SetWorld(nullptr);
 
 	// 씬 프록시 파괴 전 GPU Occlusion 스테이징 데이터 무효화
-	if (IRenderPipeline* Pipeline = GetRenderPipeline())
-		Pipeline->OnSceneCleared();
+	OnRenderSceneCleared();
 
 	for (FWorldContext& Ctx : WorldList)
 	{
@@ -448,4 +443,143 @@ void UEditorEngine::ClearScene()
 	ActiveWorldHandle = FName::None;
 
 	ViewportLayout.DestroyAllCameras();
+}
+
+
+void UEditorEngine::OnRenderSceneCleared()
+{
+	GPUOcclusion.InvalidateResults();
+}
+
+void UEditorEngine::Render(float DeltaTime)
+{
+#if STATS
+	FStatManager::Get().TakeSnapshot();
+	FGPUProfiler::Get().TakeSnapshot();
+	FGPUProfiler::Get().BeginFrame();
+#endif
+
+	for (FLevelEditorViewportClient* ViewportClient : GetLevelViewportClients())
+	{
+		SCOPE_STAT_CAT("RenderViewport", "2_Render");
+		RenderViewport(ViewportClient);
+	}
+
+	Renderer.BeginFrame();
+	{
+		SCOPE_STAT_CAT("EditorUI", "5_UI");
+		RenderUI(DeltaTime);
+	}
+
+#if STATS
+	FGPUProfiler::Get().EndFrame();
+#endif
+
+	{
+		SCOPE_STAT_CAT("Present", "2_Render");
+		Renderer.EndFrame();
+	}
+}
+
+void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
+{
+	UCameraComponent* Camera = VC->GetCamera();
+	if (!Camera) return;
+
+	FViewport* VP = VC->GetViewport();
+	if (!VP) return;
+
+	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
+	if (!Ctx) return;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	if (!GPUOcclusion.IsInitialized())
+		GPUOcclusion.Initialize(Renderer.GetFD3DDevice().GetDevice());
+
+	GPUOcclusion.ReadbackResults(Ctx);
+
+	const FViewportRenderOptions& Opts = VC->GetRenderOptions();
+	const FShowFlags& ShowFlags = Opts.ShowFlags;
+	EViewMode ViewMode = Opts.ViewMode;
+
+	if (VP->ApplyPendingResize())
+	{
+		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+	}
+
+	VP->BeginRender(Ctx);
+
+	RenderFrame.ClearViewportResources();
+	FScene& Scene = World->GetScene();
+	Scene.ClearFrameData();
+
+	RenderFrame.SetCameraInfo(Camera);
+	RenderFrame.SetRenderSettings(ViewMode, ShowFlags);
+	RenderFrame.SetRenderOptions(Opts);
+	RenderFrame.SetViewportInfo(VP);
+	RenderFrame.ViewportType = Opts.ViewportType;
+	RenderFrame.OcclusionCulling = &GPUOcclusion;
+	RenderFrame.LODContext = World->PrepareLODContext();
+
+	if (const auto* ViewModePassRegistry = Renderer.GetViewModePassRegistry();
+		ViewModePassRegistry && ViewModePassRegistry->HasConfig(ViewMode))
+	{
+		Renderer.SetActiveViewMode(ViewMode);
+		Renderer.AcquireViewModeSurfaceSet(VP->GetWidth(), VP->GetHeight());
+	}
+	else
+	{
+		Renderer.ClearActiveViewMode();
+		Renderer.ReleaseViewModeSurfaceSet();
+	}
+
+	Renderer.BeginCollect(RenderFrame, Scene.GetProxyCount());
+
+	{
+		SCOPE_STAT_CAT("Collector", "3_Collect");
+
+		RenderCollector.CollectWorld(World, RenderFrame, Renderer);
+		RenderCollector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
+		RenderCollector.CollectDebugDraw(RenderFrame, Scene);
+
+		if (ShowFlags.bSceneOctree)
+		{
+			RenderCollector.CollectOctreeDebug(World->GetOctree(), Scene);
+		}
+
+		if (ShowFlags.bSceneBVH)
+		{
+			World->BuildWorldPrimitivePickingBVHNow();
+			RenderCollector.CollectWorldBVHDebug(World->GetWorldPrimitivePickingBVH(), Scene);
+		}
+
+		if (ShowFlags.bWorldBound)
+		{
+			RenderCollector.CollectWorldBoundsDebug(RenderCollector.GetLastVisibleProxies(), Scene);
+		}
+
+		if (VC == GetActiveViewport())
+			RenderCollector.CollectOverlayText(GetOverlayStatSystem(), *this, Scene);
+
+		Renderer.BuildDynamicCommands(RenderFrame, &Scene);
+	}
+
+	{
+		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
+		ExecuteRenderPipeline(Renderer, ERenderPipelineType::EditorScene, RenderFrame);
+	}
+
+	if (GPUOcclusion.IsInitialized())
+	{
+		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
+
+		GPUOcclusion.DispatchOcclusionTest(
+			Ctx,
+			VP->GetDepthCopySRV(),
+			RenderCollector.GetLastVisibleProxies(),
+			RenderFrame.View, RenderFrame.Proj,
+			VP->GetWidth(), VP->GetHeight());
+	}
 }

@@ -7,7 +7,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
-#include "Render/Proxy/SubUVSceneProxy.h"
+#include "Render/Scene/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)

@@ -1,8 +1,8 @@
 ﻿#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-#include "Render/Proxy/FScene.h"
-#include "Render/Proxy/LightSceneProxy.h"
+#include "Render/Scene/FScene.h"
+#include "Render/Scene/LightSceneProxy.h"
 #include "GameFramework/World.h"
 
 IMPLEMENT_CLASS(ULightComponent, ULightComponentBase)
