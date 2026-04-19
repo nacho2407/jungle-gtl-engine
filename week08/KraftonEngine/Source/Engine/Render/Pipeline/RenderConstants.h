@@ -22,6 +22,7 @@ namespace ECBSlot
 	constexpr uint32 PerObject = 1; // b1: Model/Color (고정)
 	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1
+	constexpr uint32 Light = 4; // b4: Lights
 }
 
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
@@ -133,8 +134,21 @@ struct FDirectionalLightInfo
 	float Padding;     // 4B
 };
 
+#define MAX_DIRECTIONAL_LIGHTS 4
+
+struct FGlobalLightConstants
+{
+	FAmbientLightInfo Ambient; // 16B
+    FDirectionalLightInfo Directional[MAX_DIRECTIONAL_LIGHTS]; // 32 * 4 = 128B
+
+	int32 NumDirectionalLights; // 4B
+    int32 NUMLocalLights;       // 4B
+	FVector2 Padding;            // 8B
+};
+
 // Point Light, Spot Light 통합 ─── 메모리 접근 및 파이프라인 구조 단순화
-// Shader에서 각도 기반 감쇠 함수를 일괄적으로 처리하되 PointLight의 경우 내적이 1.0이 되도록 함 
+// 셰이더에서 각도 기반 감쇠 함수를 일괄적으로 처리하되 PointLight의 경우 내적이 1.0이 되도록 합니다.
+// StructuredBuffer 형태로 셰이더에 올라갑니다.
 struct FLocalLightInfo
 {
 	FVector Color;           // 12B
@@ -148,20 +162,6 @@ struct FLocalLightInfo
 
     float OuterConeAngle;    // 4B
     float Padding[3];        // 12B
-};
-
-// 모든 LightSceneProxy에 대응되는 데이터를 저장하고 있는 공통 구조체, GPU CB에 업로드할 때 이 구조체에서 변환하여 사용
-struct FLightConstants
-{
-    FVector Position;        // 12B  — Point/Spot 월드 위치
-    float Intensity;         //  4B
-    FVector Direction;       // 12B  — Ambient/Spot 방향 (정규화)
-    float AttenuationRadius; //  4B  — Point/Spot 감쇠 반경
-    FVector4 LightColor;     // 16B  — linear RGBA
-    float InnerConeAngle;    //  4B  — Spot 내부 코사인 반각
-    float OuterConeAngle;    //  4B  — Spot 외부 코사인 반각
-    uint32 LightType;        //  4B  — ELightType 캐스트
-    float Padding;           //  4B  — 16B 경계 맞춤
 };
 
 // Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응
