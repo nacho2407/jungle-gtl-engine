@@ -101,8 +101,6 @@ PSInput mainVS(VSInput input)
 #if LIGHTING_MODEL_GOURAUD
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     float3 accumulated_light = float3(0, 0, 0);
-    uint LightCount, stride;
-    Lights.GetDimensions(LightCount, stride);
     for (uint i = 0; i < LightCount; i++) {
         LightResult result = EvaluateLightByType(Lights[i], output.WorldNormal, output.WorldPos, CameraPosition, Shininess);
         accumulated_light += result.Diffuse + result.Specular + result.Ambient;
