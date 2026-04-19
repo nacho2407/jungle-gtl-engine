@@ -61,5 +61,4 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
 
     return float4(DiffuseColor + SpecularColor, BaseColor.a);
 }
-
 #endif

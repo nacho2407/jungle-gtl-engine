@@ -58,6 +58,6 @@ float4 PS_Lighting_BlinnPhong(PS_Input_UV Input) : SV_TARGET0
 {
     float4 BaseColor = ResolveBaseColor(Input.uv);
     float3 Normal = DecodeNormal(ResolveSurface1(Input.uv));
-    float4 MaterialParam = ResolveSurface2(Input.uv);
+    float4 MaterialParam = DecodeMaterialParam(ResolveSurface2(Input.uv));
     return ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, Input.uv);
 }
