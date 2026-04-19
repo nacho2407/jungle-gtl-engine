@@ -41,7 +41,9 @@ struct FDrawCommand
 	// ===== Bindings =====
 	FConstantBuffer*         PerObjectCB    = nullptr;   // b1: Model + Color
 	FConstantBuffer*         PerShaderCB[2] = {};        // [0]=b2 (PerShader0), [1]=b3 (PerShader1)
+	FConstantBuffer*         LightCB        = nullptr;   // b4: Global Lights Constant Buffer
 	ID3D11ShaderResourceView* DiffuseSRV    = nullptr;   // t0: 디퓨즈 텍스처
+	ID3D11ShaderResourceView* LocalLightSRV = nullptr;   // t6: LocalLights StructuredBuffer
 
 	// ===== Sort =====
 	uint64 SortKey = 0;                              // 정렬 키 (Pass → Shader → MeshBuffer → SRV)

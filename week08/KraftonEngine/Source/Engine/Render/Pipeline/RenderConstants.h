@@ -52,6 +52,7 @@ namespace ECBPoolKey
 	constexpr uint32 Outline = 3;
 	constexpr uint32 SceneDepth = 4;
 	constexpr uint32 FXAA = 5;
+	constexpr uint32 Light = 6;
 }
 
 //PerObject
@@ -162,6 +163,13 @@ struct FLocalLightInfo
 
     float OuterConeAngle;    // 4B
     float Padding[3];        // 12B
+};
+
+// 프레임당 수집된 라이트 데이터 — FFrameContext에 값으로 보관
+struct FCollectedLights
+{
+	FGlobalLightConstants GlobalLights;
+	TArray<FLocalLightInfo> LocalLights;
 };
 
 // Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응

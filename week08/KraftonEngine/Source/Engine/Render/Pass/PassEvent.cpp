@@ -5,6 +5,7 @@
 #include "Render/Pipeline/ViewModeSurfaceResources.h"
 #include "Render/Types/ShadingTypes.h"
 #include "Render/Pipeline/RenderConstants.h"
+#include "Render/Resource/RenderResources.h"
 
 void BuildDefaultPassEvents(
 	TArray<FPassEvent>& OutPrePassEvents,
@@ -12,7 +13,8 @@ void BuildDefaultPassEvents(
 	const FFrameContext& Frame,
 	FStateCache& Cache,
 	const FViewModeRenderPipeline* ActiveViewPipeline,
-	FViewModeSurfaceResources* ActiveViewSurfaces)
+	FViewModeSurfaceResources* ActiveViewSurfaces,
+	FRenderResources& Resources)
 {
 	if (ActiveViewPipeline && ActiveViewSurfaces)
 	{
@@ -66,11 +68,12 @@ void BuildDefaultPassEvents(
 		});
 
 		OutPrePassEvents.push_back({ ERenderPass::Lighting, EPassCompare::Equal, true, false,
-			[Context, &Frame, &Cache, ActiveViewSurfaces]()
+			[Context, &Frame, &Cache, &Resources, ActiveViewSurfaces]()
 			{
 				ID3D11RenderTargetView* RTV = Frame.ViewportRTV;
 				Context->OMSetRenderTargets(1, &RTV, Frame.ViewportDSV);
 
+				// t0~t5: GBuffer 6장 (원본 + 데칼 Modified)
 				ID3D11ShaderResourceView* SurfaceSRVs[6] = {
 					ActiveViewSurfaces->GetSRV(ESurfaceSlot::BaseColor),
 					ActiveViewSurfaces->GetSRV(ESurfaceSlot::Surface1),
@@ -81,11 +84,28 @@ void BuildDefaultPassEvents(
 				};
 				Context->PSSetShaderResources(0, ARRAYSIZE(SurfaceSRVs), SurfaceSRVs);
 
+				// t10: SceneDepth (Blinn-Phong 월드 위치 재구성용)
 				if (Frame.DepthCopySRV)
 				{
 					ID3D11ShaderResourceView* DepthSRV = Frame.DepthCopySRV;
 					Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
 				}
+
+				// b4: GlobalLights (Ambient + Directional)
+				Resources.GlobalLightBuffer.Update(Context,
+					&Frame.CollectedLights.GlobalLights,
+					sizeof(FGlobalLightConstants));
+				ID3D11Buffer* LightCB = Resources.GlobalLightBuffer.GetBuffer();
+				if (LightCB)
+					Context->PSSetConstantBuffers(ECBSlot::Light, 1, &LightCB);
+
+				// t6: LocalLights StructuredBuffer (Point + Spot)
+				ID3D11Device* Device = nullptr;
+				Context->GetDevice(&Device);
+				Resources.UpdateLocalLights(Device, Context, Frame.CollectedLights.LocalLights);
+				if (Device) Device->Release();
+				if (Resources.LocalLightSRV)
+					Context->PSSetShaderResources(6, 1, &Resources.LocalLightSRV);
 
 				Cache.DiffuseSRV = nullptr;
 				Cache.bForceAll = true;

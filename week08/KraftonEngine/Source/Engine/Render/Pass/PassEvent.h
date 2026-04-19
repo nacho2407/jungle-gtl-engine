@@ -8,6 +8,7 @@
 class FViewModeRenderPipeline;
 class FViewModeSurfaceResources;
 struct FFrameContext;
+struct FRenderResources;
 
 enum class EPassCompare : uint8 { Equal, Less, Greater, LessEqual, GreaterEqual };
 
@@ -44,4 +45,5 @@ void BuildDefaultPassEvents(
 	const FFrameContext& Frame,
 	FStateCache& Cache,
 	const FViewModeRenderPipeline* ActiveViewPipeline,
-	FViewModeSurfaceResources* ActiveViewSurfaces);
+	FViewModeSurfaceResources* ActiveViewSurfaces,
+	FRenderResources& Resources);

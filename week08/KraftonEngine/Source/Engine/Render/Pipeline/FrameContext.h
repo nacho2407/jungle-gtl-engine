@@ -6,6 +6,7 @@
 #include "Render/Types/ViewTypes.h"
 #include "Render/Pipeline/LODContext.h"
 #include "Render/Culling/ConvexVolume.h"
+#include "Render/Pipeline/RenderConstants.h"
 
 #include <d3d11.h>
 
@@ -33,6 +34,9 @@ struct FFrameContext
 
 	bool  bIsOrtho   = false;
 	float OrthoWidth = 10.0f;
+
+	// Lights — CollectWorld에서 직접 채워짐
+	FCollectedLights CollectedLights;
 
 	// Viewport
 	float ViewportWidth  = 0.0f;

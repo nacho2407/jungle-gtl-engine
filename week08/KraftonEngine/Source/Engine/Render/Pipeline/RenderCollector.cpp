@@ -21,7 +21,7 @@
 #include <Collision/SpatialPartition.h>
 #include <Collision/WorldPrimitivePickingBVH.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FRenderer& Renderer)
+void FRenderCollector::CollectWorld(UWorld* World, FFrameContext& Frame, FRenderer& Renderer)
 {
 	if (!World) return;
 
@@ -54,7 +54,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Renderer);
 
 	// Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
-	CollectLights(Scene, CollectedLights);
+	CollectLights(Scene, Frame.CollectedLights);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
