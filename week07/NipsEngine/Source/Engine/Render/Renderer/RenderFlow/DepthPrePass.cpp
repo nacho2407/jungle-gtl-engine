@@ -23,6 +23,9 @@ bool FDepthPrePass::Begin(const FRenderPassContext* Context)
 	OutSRV = RenderTargets->SceneDepthSRV;
 	OutRTV = nullptr;
 
+	ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+	Context->DeviceContext->OMSetDepthStencilState(DepthState, 0);
+
 	Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	return true;
 }
