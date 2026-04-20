@@ -71,7 +71,7 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPipelineConte
         // Lighting fullscreen shaders read the base color buffer from t0.
         Cmd.DiffuseSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor);
     }
-    else if (Pass == ERenderPass::FXAA && Context.Frame)
+    else if (Pass == ERenderPass::FXAA && Context.SceneView)
     {
         // FXAA prepares SceneColor on t0 before submission; keep the command in sync
         // so SubmitCommand does not overwrite it with nullptr on a forced bind.

@@ -41,7 +41,7 @@ public:
 
     const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 
-    // LOD 컨텍스트를 FFrameContext에 전달 (Collect 단계에서 LOD 인라인 갱신용)
+    // LOD 컨텍스트를 FSceneView에 전달 (Collect 단계에서 LOD 인라인 갱신용)
     FLODUpdateContext PrepareLODContext();
 
     void InitWorld();                                // Set up the world before gameplay begins

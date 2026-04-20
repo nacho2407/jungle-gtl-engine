@@ -41,7 +41,7 @@ void FSubUVSceneProxy::UpdateMesh()
     }
 }
 
-void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
+void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     USubUVComponent* Comp = GetSubUVComponent();
     bVisible = Comp->IsVisible();
@@ -59,9 +59,9 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
     DiffuseSRV = Particle->SRV;
 
     // Billboard matrix
-    FVector BillboardForward = Frame.CameraForward * -1.0f;
+    FVector BillboardForward = SceneView.CameraForward * -1.0f;
     FMatrix RotMatrix;
-    RotMatrix.SetAxes(BillboardForward, Frame.CameraRight, Frame.CameraUp);
+    RotMatrix.SetAxes(BillboardForward, SceneView.CameraRight, SceneView.CameraUp);
     FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
     PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);

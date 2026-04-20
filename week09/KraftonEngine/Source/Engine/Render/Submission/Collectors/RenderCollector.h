@@ -15,12 +15,12 @@ class FPrimitiveSceneProxy;
 class FRenderCollector
 {
 public:
-    void CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
-    void BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
+    void CollectWorld(UWorld* World, const FSceneView& SceneView, FScene& Scene, FRenderer& Renderer);
+    void BuildFramePassCommands(const FSceneView& SceneView, FScene& Scene, FRenderer& Renderer);
 
     void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene) { DebugCollector.CollectGrid(GridSpacing, GridHalfLineCount, Scene); }
     void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene) { DebugCollector.CollectOverlayText(OverlaySystem, Editor, Scene); }
-    void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene) { DebugCollector.CollectDebugDraw(Frame, Scene); }
+    void CollectDebugDraw(const FSceneView& SceneView, FScene& Scene) { DebugCollector.CollectDebugDraw(SceneView, Scene); }
     void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0) { DebugCollector.CollectOctreeDebug(Node, Scene, Depth); }
     void CollectWorldBVHDebug(const class FWorldPrimitivePickingBVH& BVH, FScene& Scene) { DebugCollector.CollectWorldBVHDebug(BVH, Scene); }
     void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene) { DebugCollector.CollectWorldBoundsDebug(Proxies, Scene); }

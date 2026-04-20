@@ -79,7 +79,7 @@ void FBillboardSceneProxy::UpdateMesh()
 // ============================================================
 // UpdatePerViewport — 뷰포트 카메라 기반 빌보드 행렬 갱신
 // ============================================================
-void FBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
+void FBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     UBillboardComponent* Comp = GetBillboardComponent();
     bVisible = Comp->IsVisible();
@@ -97,10 +97,10 @@ void FBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
         }
     }
 
-    // Frame 카메라 벡터로 per-view 빌보드 행렬 계산
-    FVector BillboardForward = Frame.CameraForward * -1.0f;
+    // SceneView 카메라 벡터로 per-view 빌보드 행렬 계산
+    FVector BillboardForward = SceneView.CameraForward * -1.0f;
     FMatrix RotMatrix;
-    RotMatrix.SetAxes(BillboardForward, Frame.CameraRight, Frame.CameraUp);
+    RotMatrix.SetAxes(BillboardForward, SceneView.CameraRight, SceneView.CameraUp);
     FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
     PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);

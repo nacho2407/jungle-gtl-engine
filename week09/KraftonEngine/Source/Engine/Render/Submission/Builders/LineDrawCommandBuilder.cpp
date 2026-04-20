@@ -11,7 +11,7 @@
 
 void FLineDrawCommandBuilder::Build(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Context.Renderer || !Context.Scene || !Context.Frame)
+    if (!Context.Renderer || !Context.Scene || !Context.SceneView)
     {
         return;
     }
@@ -24,12 +24,12 @@ void FLineDrawCommandBuilder::Build(FRenderPipelineContext& Context, FDrawComman
     if (Context.Scene->HasGrid())
     {
         GridLines.AddWorldHelpers(
-            Context.Frame->ShowFlags,
+            Context.SceneView->ShowFlags,
             Context.Scene->GetGridSpacing(),
             Context.Scene->GetGridHalfLineCount(),
-            Context.Frame->CameraPosition,
-            Context.Frame->CameraForward,
-            Context.Frame->bIsOrtho);
+            Context.SceneView->CameraPosition,
+            Context.SceneView->CameraForward,
+            Context.SceneView->bIsOrtho);
     }
 
     if (Context.DebugLines)

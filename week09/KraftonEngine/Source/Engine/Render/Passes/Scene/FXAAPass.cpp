@@ -35,7 +35,7 @@ void FFXAAPass::PrepareTargets(FRenderPipelineContext& Context)
 void FFXAAPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Context.Frame || !Context.Frame->ShowFlags.bFXAA)
+    if (!Context.SceneView || !Context.SceneView->ShowFlags.bFXAA)
     {
         return;
     }
