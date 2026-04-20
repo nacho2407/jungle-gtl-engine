@@ -15,8 +15,13 @@ void ULightComponentBase::PostDuplicate(UObject* Original)
 void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     USceneComponent::GetEditableProperties(OutProps);
-
     OutProps.push_back({ "Color", EPropertyType::Color, &LightColor });
     OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity });
-    OutProps.push_back({ "Affects World", EPropertyType::Bool, &bAffectsWorld });
+}
+
+void ULightComponentBase::Serialize(FArchive& Ar)
+{
+	USceneComponent::Serialize(Ar);
+	Ar << "Color" << LightColor;
+	Ar << "Intensity" << Intensity;
 }

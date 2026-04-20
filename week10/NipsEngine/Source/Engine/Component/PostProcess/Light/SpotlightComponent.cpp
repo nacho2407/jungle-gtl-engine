@@ -15,3 +15,10 @@ void USpotlightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({ "Inner Cone Angle", EPropertyType::Float, &InnerConeAngle });
     OutProps.push_back({ "Outer Cone Angle", EPropertyType::Float, &OuterConeAngle });
 }
+
+void USpotlightComponent::Serialize(FArchive& Ar)
+{
+	UPointLightComponent::Serialize(Ar);
+	Ar << "InnerConeAngle" << InnerConeAngle;
+	Ar << "OuterConeAngle" << OuterConeAngle;
+}
