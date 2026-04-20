@@ -30,7 +30,7 @@ UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 // ============================================================
 // UpdatePerViewport — 빌보드 행렬 계산 + 텍스트 데이터 캐싱
 // ============================================================
-void FTextRenderSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
+void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     UTextRenderComponent* TextComp = GetTextRenderComponent();
 
@@ -41,7 +41,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
         return;
     }
 
-    if (!Frame.ShowFlags.bBillboardText)
+    if (!SceneView.ShowFlags.bBillboardText)
     {
         bVisible = false;
         return;
@@ -52,9 +52,9 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
         return;
 
     // 빌보드 행렬
-    FVector BillboardForward = Frame.CameraForward * -1.0f;
+    FVector BillboardForward = SceneView.CameraForward * -1.0f;
     FMatrix RotMatrix;
-    RotMatrix.SetAxes(BillboardForward, Frame.CameraRight * -1.0f, Frame.CameraUp);
+    RotMatrix.SetAxes(BillboardForward, SceneView.CameraRight * -1.0f, SceneView.CameraUp);
     CachedBillboardMatrix = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(TextComp->GetWorldLocation());
 
     // 텍스트 데이터 캐싱 (Collector가 FFontGeometry 배칭에 사용)

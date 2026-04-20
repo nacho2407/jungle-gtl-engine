@@ -13,7 +13,7 @@
 
 void FTextDrawCommandBuilder::BuildOverlay(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Context.Renderer || !Context.Frame || !Context.OverlayTexts)
+    if (!Context.Renderer || !Context.SceneView || !Context.OverlayTexts)
     {
         return;
     }
@@ -35,8 +35,8 @@ void FTextDrawCommandBuilder::BuildOverlay(FRenderPipelineContext& Context, FDra
                 Text.Text,
                 Text.Position.X,
                 Text.Position.Y,
-                Context.Frame->ViewportWidth,
-                Context.Frame->ViewportHeight,
+                Context.SceneView->ViewportWidth,
+                Context.SceneView->ViewportHeight,
                 Text.Scale);
         }
     }
@@ -71,7 +71,7 @@ void FTextDrawCommandBuilder::BuildOverlay(FRenderPipelineContext& Context, FDra
 
 void FTextDrawCommandBuilder::BuildWorld(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Context.Renderer || !Context.Frame || Proxy.CachedText.empty())
+    if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
     {
         return;
     }
@@ -96,8 +96,8 @@ void FTextDrawCommandBuilder::BuildWorld(const FTextRenderSceneProxy& Proxy, FRe
     FontBatch.AddWorldText(
         Proxy.CachedText,
         TextComp ? TextComp->GetWorldLocation() : Proxy.CachedWorldPos,
-        Context.Frame->CameraRight * -1.0f,
-        Context.Frame->CameraUp,
+        Context.SceneView->CameraRight * -1.0f,
+        Context.SceneView->CameraUp,
         WorldScale,
         Proxy.CachedFontScale);
 

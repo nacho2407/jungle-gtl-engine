@@ -28,7 +28,7 @@ void FCylindricalBillboardSceneProxy::UpdateMesh()
     FBillboardSceneProxy::UpdateMesh();
 }
 
-void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
+void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(Owner);
     bVisible = Comp->IsVisible();
@@ -47,7 +47,7 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FFrameContext& Fra
     }
 
     FVector BillboardPos = Comp->GetWorldLocation();
-    FVector BillboardForward = Frame.CameraForward * 1.0f;
+    FVector BillboardForward = SceneView.CameraForward * 1.0f;
 
     // 로컬 축 구하기
     FVector LocalAxis = Comp->GetBillboardAxis();

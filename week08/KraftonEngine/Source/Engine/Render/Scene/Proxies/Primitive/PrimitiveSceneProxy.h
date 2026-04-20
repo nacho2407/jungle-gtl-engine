@@ -10,7 +10,6 @@ class FShader;
 class FMeshBuffer;
 class FScene;
 struct FSceneView;
-using FFrameContext = FSceneView;
 
 // ============================================================
 // FPrimitiveSceneProxy — UPrimitiveComponent의 렌더 데이터 미러 (기본 클래스)
@@ -52,7 +51,7 @@ public:
 
     // --- Per-viewport 갱신 (bPerViewportUpdate=true 프록시만) ---
     // 매 프레임, 각 뷰포트의 카메라 데이터로 프록시 상태를 갱신
-    virtual void UpdatePerViewport(const FFrameContext& Frame) {}
+    virtual void UpdatePerViewport(const FSceneView& SceneView) {}
 
     // 선택된 프록시의 소유 액터 컴포넌트에서 디버그 시각화 수집
     void CollectSelectedVisuals(FScene& Scene) const;

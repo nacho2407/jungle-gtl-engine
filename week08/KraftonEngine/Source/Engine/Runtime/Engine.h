@@ -78,7 +78,7 @@ protected:
 
 protected:
     FRenderCollector RenderCollector;
-    FFrameContext RenderFrame;
+    FSceneView SceneView;
     FViewportRenderTargets RenderTargets;
 };
 

@@ -15,7 +15,7 @@ public:
 	FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner = false);
 
 	void UpdateMesh() override;
-	void UpdatePerViewport(const FFrameContext& Frame) override;
+	void UpdatePerViewport(const FSceneView& SceneView) override;
 
 private:
 	UGizmoComponent* GetGizmoComponent() const;
