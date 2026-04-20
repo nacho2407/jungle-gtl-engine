@@ -10,10 +10,8 @@ RWStructuredBuffer<uint> gLightIndexList : register(u1);
 RWStructuredBuffer<uint2> gLightGrid : register(u2);
 // 전역 카운터 (atomic 사용)
 RWStructuredBuffer<uint> gGlobalCounter : register(u3);
-// 구(Sphere) ↔ AABB 교차 테스트
 bool SphereIntersectsAABB(float3 center, float radius, FAABB aabb)
 {
-    // 가장 가까운 점 찾기
     float3 closest = clamp(center, aabb.minPt.xyz, aabb.maxPt.xyz);
     float3 diff = closest - center;
     return dot(diff, diff) <= (radius * radius);

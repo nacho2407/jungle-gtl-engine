@@ -27,6 +27,7 @@ struct FShowFlags
 	bool bOctree = false;
 	bool bFog = true;
 	bool bFXAA = false;
+	bool bClusterHeatMap = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

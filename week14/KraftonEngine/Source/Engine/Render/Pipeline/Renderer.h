@@ -66,7 +66,7 @@ private:
 	void InitializePassRenderStates();
 
 	void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
-	void UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene);
+	void UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene, const FFrameContext& Frame);
 	void UpdateLightCullingSRVs(ID3D11DeviceContext* Context);
 	void UnbindLightCullingSRVs(ID3D11DeviceContext* Context);
 	//void UpdateLightBuffer(ID3D11DeviceContext* Context, const )

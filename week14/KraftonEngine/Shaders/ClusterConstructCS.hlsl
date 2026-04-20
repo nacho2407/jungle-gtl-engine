@@ -6,7 +6,7 @@ RWStructuredBuffer<FAABB> gClusterAABBs : register(u0);
 float3 NDCToViewSpace(float2 ndc, float viewDepth)
 {
     float4 clipPos = float4(ndc.x, ndc.y, 1.0f, 1.0f);
-    float4 viewPos = mul(InvProj, clipPos);
+    float4 viewPos = mul(clipPos, InvProj);
     viewPos /= viewPos.w;
     return viewPos.xyz / viewPos.z * viewDepth;
 }
@@ -25,9 +25,9 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     //Get Clusters NDCs X,Y Size
     float2 tileSize = float2(2.0f / CullState.ClusterX, 2.0f / CullState.ClusterY);
 
-    //Get Each Clusters NDC's Min and Max Pos
-    float2 ndcMin = float2(-1.0f, -1.0f) + float2(tileX, tileY) * tileSize;
-    float2 ndcMax = ndcMin + tileSize;
+    // SV_Position.y starts at the top of the viewport, where NDC.y is +1.
+    float2 ndcMin = float2(-1.0f + tileX * tileSize.x, 1.0f - (tileY + 1) * tileSize.y);
+    float2 ndcMax = float2(ndcMin.x + tileSize.x, 1.0f - tileY * tileSize.y);
 
     float nearZ = SliceToViewDepth(sliceZ);
     float farZ = SliceToViewDepth(sliceZ + 1);

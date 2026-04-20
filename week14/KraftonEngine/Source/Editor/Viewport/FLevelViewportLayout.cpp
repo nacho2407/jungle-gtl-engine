@@ -897,6 +897,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
 				ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
 				ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
+				ImGui::Checkbox("Cluster HeatMap", &Opts.ShowFlags.bClusterHeatMap);
 
 				ImGui::Separator();
 

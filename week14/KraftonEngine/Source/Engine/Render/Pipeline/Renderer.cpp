@@ -393,7 +393,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		State.FarZ = Frame.FarClip; State.NearZ = Frame.NearClip;
 		State.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
 		State.ScreenWidth = static_cast<uint32>(Frame.ViewportWidth);
-		UpdateLightBuffer(Device.GetDevice(), Context, Scene);
+		UpdateLightBuffer(Device.GetDevice(), Context, Scene, Frame);
 		UnbindLightCullingSRVs(Context);
 		ClusteredLightCuller.DispatchViewSpaceAABB();
 		ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
@@ -907,7 +907,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	Context->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene)
+void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene, const FFrameContext& Frame)
 {
 	//AmbientLight & DirectionalLight Data Upload
 	FLightingCBData GlobalLightingData = {};
@@ -960,7 +960,9 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
 	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
 
-	GlobalLightingData.ClusterCullingState = ClusteredLightCuller.GetCullingState();
+	GlobalLightingData.ClusterCullingState  = ClusteredLightCuller.GetCullingState();
+	GlobalLightingData.ShowClusterHeatMap   = Frame.ShowFlags.bClusterHeatMap ? 1u : 0u;
+	GlobalLightingData.MaxHeatLightCount    = 8.0f;
 	Resources.LightingConstantBuffer.Update(Context, &GlobalLightingData, sizeof(FLightingCBData));
 	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);

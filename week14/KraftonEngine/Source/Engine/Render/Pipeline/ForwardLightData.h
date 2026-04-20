@@ -75,10 +75,10 @@ struct FClusterCullingState
 {
 	float NearZ;
 	float FarZ;
-	uint32 ClusterX = 16;
-	uint32 ClusterY = 9;
+	uint32 ClusterX = 32;
+	uint32 ClusterY = 18;
 
-	uint32 ClusterZ = 24;
+	uint32 ClusterZ = 32;
 	uint32 ScreenWidth = 0;
 	uint32 ScreenHeight = 0;
 	uint32 MaxLightsPerCluster = 128;
@@ -93,9 +93,14 @@ struct FLightingCBData
 	uint32  NumActiveSpotLights;               //  4B  | offset 68
 	uint32  NumTilesX;                         //  4B  | offset 72  (Tile Culling용)
 	uint32  NumTilesY;                         //  4B  | offset 76  → 합계 80B (16B 정렬)
-	FClusterCullingState ClusterCullingState;  //32B
+	FClusterCullingState ClusterCullingState;  // 32B  | offset 80
+
+	uint32  ShowClusterHeatMap;                //  4B  | offset 112
+	float   MaxHeatLightCount;                 //  4B  | offset 116
+	uint32  _padFlags[2];                      //  8B  | offset 120 → 합계 128B
 };
 static_assert(sizeof(FLightingCBData) % 16 == 0, "FLightingCBData must be 16-byte aligned");
+static_assert(sizeof(FLightingCBData) == 128, "FLightingCBData size mismatch with HLSL");
 
 // =============================================================================
 // Tile-based Light Culling 상수
