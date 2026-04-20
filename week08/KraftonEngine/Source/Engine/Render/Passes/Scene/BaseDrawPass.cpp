@@ -20,6 +20,7 @@ void FBaseDrawPass::PrepareInputs(FRenderPassContext& Context)
     if (Context.StateCache)
     {
         Context.StateCache->DiffuseSRV = nullptr;
+        Context.StateCache->NormalSRV = nullptr;
         Context.StateCache->bForceAll = true;
     }
 }
