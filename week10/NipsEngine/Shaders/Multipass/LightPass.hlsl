@@ -69,8 +69,6 @@ float4 mainPS(VSOutput input) : SV_TARGET
     float depth = SceneDepth.Load(int3(ip, 0)).r;
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).rgb;
     
-    return float4(albedo, 1.0f);
-    
     if (ViewMode == 3) // Depth View Mode
     {
         if (depth >= 1.0f)
@@ -98,13 +96,19 @@ float4 mainPS(VSOutput input) : SV_TARGET
         
         return float4(visual, visual, visual, 1.0f);
     }
+    if (ViewMode == 4)
+    {
+        return normal;
+    }
+    
+    return float4(albedo, 1.0f);
     
     // SceneNormalRTV is cleared every frame using ClearColor = { 0.25f, 0.25f, 0.25f, 1.0f },
     // which is the default background color. (D3DDevice.cpp line 40)
-    if (normal.a < 1e-4)
-    {
-        discard;
-    }
+        if (normal.a < 1e-4)
+        {
+            discard;
+        }
 
     // Emissive surfaces (normal.a == 2) skip lighting and glow with their own color
     if (normal.a > 1.5f)
