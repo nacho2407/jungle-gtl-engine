@@ -30,9 +30,9 @@ SamplerState SampleState : register(s0);
 struct VSInput
 {
     float3 Position : POSITION;
-    float2 UV       : TEXCOORD;
     float4 Color    : COLOR;
     float3 Normal   : NORMAL;
+    float2 UV       : TEXCOORD;
     float4 Tangent  : TANGENT;
 };
 
@@ -59,7 +59,6 @@ struct PSOutput
     float4 WorldPos : SV_TARGET2;
 };
 
-
 PSInput mainVS(VSInput input)
 {
     PSInput output;
@@ -69,18 +68,14 @@ PSInput mainVS(VSInput input)
     output.UV = input.UV + ScrollUV;
         
 #if LIGHTING_MODEL_GOURAUD
-    uint2 tileCoord = uint2(output.ClipPos.xy) / TILE_SIZE;
-    uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-    uint2 tileData = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-    
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     
     float3 accumulatedLight = float3(0, 0, 0);
     accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess);
     
-    for (uint i = 0; i < tileData.y; i++) {
-        LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+    for (uint i = 0; i < LightCount; i++) {
+        LightInfo light = Lights[i];
         accumulatedLight += light.Type == 0 ?
             CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess)
             : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess);
