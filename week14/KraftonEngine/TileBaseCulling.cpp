@@ -66,6 +66,9 @@ void FTileBaseCulling::Dispatch(
 {
 	if (!bInitialized) return;
 
+	ID3D11ShaderResourceView* PreNullSRVs[11] = {};
+	Ctx->PSSetShaderResources(0, 11, PreNullSRVs);
+
 	// ── Step 1: 뷰포트 크기 바뀌면 타일 버퍼 재생성 ──────────────────
 	const uint32 TileCountX = (ViewportWidth  + ETileCulling::TileSize - 1) / ETileCulling::TileSize;
 	const uint32 TileCountY = (ViewportHeight + ETileCulling::TileSize - 1) / ETileCulling::TileSize;
@@ -121,10 +124,10 @@ void FTileBaseCulling::Dispatch(
 
 	// ── Step 6: 언바인딩 ─────────────────────────────────────────────
 	ID3D11Buffer*              NullCBs[3]  = {};
-	ID3D11ShaderResourceView*  NullSRVs[9] = {};
+	ID3D11ShaderResourceView*  NullSRVs[11] = {};
 	ID3D11UnorderedAccessView* NullUAVs[3] = {};
 	Ctx->CSSetConstantBuffers(0, 3, NullCBs);
-	Ctx->CSSetShaderResources(0, 9, NullSRVs);
+	Ctx->CSSetShaderResources(0, 11, NullSRVs);
 	Ctx->CSSetUnorderedAccessViews(0, 3, NullUAVs, nullptr);
 	Ctx->CSSetShader(nullptr, nullptr, 0);
 }

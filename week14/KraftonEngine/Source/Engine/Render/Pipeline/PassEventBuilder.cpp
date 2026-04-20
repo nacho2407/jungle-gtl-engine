@@ -2,12 +2,14 @@
 
 #include "Render/Device/D3DDevice.h"
 #include "Render/Pipeline/RenderConstants.h"
+#include "Render/Pipeline/Renderer.h"
 
 // ============================================================
 // Build — 모든 패스 이벤트 등록 진입점
 // ============================================================
 void FPassEventBuilder::Build(FD3DDevice& Device,
 	const FFrameContext& Frame, FStateCache& Cache,
+	FRenderer* Renderer,
 	TArray<FPassEvent>& OutPreEvents,
 	TArray<FPassEvent>& OutPostEvents)
 {
@@ -15,6 +17,7 @@ void FPassEventBuilder::Build(FD3DDevice& Device,
 
 	RegisterPreDepthEvents(Ctx, Frame, Cache, OutPreEvents, OutPostEvents);
 	RegisterDepthCopyAndMRTEvents(Ctx, Frame, Cache, OutPreEvents, OutPostEvents);
+	RegisterTileCullingEvents(Ctx, Frame, Cache, Renderer, OutPreEvents);
 	RegisterStencilCopyEvents(Ctx, Frame, Cache, OutPreEvents);
 	RegisterSceneColorCopyEvents(Ctx, Frame, Cache, OutPreEvents);
 }
@@ -147,4 +150,41 @@ void FPassEventBuilder::RegisterSceneColorCopyEvents(ID3D11DeviceContext* Ctx,
 			Cache.bForceAll = true;
 		}
 		});
+}
+
+void FPassEventBuilder::RegisterTileCullingEvents(ID3D11DeviceContext* Ctx, 
+	const FFrameContext& Frame, FStateCache& Cache, FRenderer* Renderer,
+	TArray<FPassEvent>& Pre)
+{
+	Pre.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
+		[Ctx, Renderer, &Frame, &Cache]()
+		{
+			Ctx->OMSetRenderTargets(0, nullptr, nullptr);
+
+			Renderer->GetTileBaseCulling().Dispatch(
+				Ctx,
+				Frame,
+				Renderer->GetFrameBuffer(),
+				Renderer->GetTileCullingResource(),
+				Renderer->GetLightBufferSRV(),
+				Renderer->GetNumLights(),
+				static_cast<uint32>(Frame.ViewportWidth),
+				static_cast<uint32>(Frame.ViewportHeight)
+			);
+
+			if (Frame.NormalRTV)
+			{
+				ID3D11RenderTargetView* RTVs[2] = { Cache.RTV, Frame.NormalRTV };
+				Ctx->OMSetRenderTargets(2, RTVs, Cache.DSV);
+			}
+			else
+			{
+				Ctx->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
+			}
+
+			Renderer->BindTileCullingResources();
+
+			Cache.bForceAll = true;
+        }
+	});
 }
