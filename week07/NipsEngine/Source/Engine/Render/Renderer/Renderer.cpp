@@ -237,7 +237,6 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
     RenderPassContext->SubUVBatcher = &SubUVBatcher;
     RenderPassContext->GridLineBatcher = &GridLineBatcher;
     RenderPassContext->EditorLineBatcher = &EditorLineBatcher;
-    RenderPassContext->ActiveLightingModel = ActiveLightingModel;
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();

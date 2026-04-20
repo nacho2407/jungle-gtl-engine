@@ -67,9 +67,23 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
             return false;
         }
 
+		uint32 PermutationKey = (uint32)EShaderLightPermutationKey::Unlit;
+		switch (Context->RenderBus->GetViewMode())
+		{
+		case EViewMode::Lit_Gouraud:
+			PermutationKey = (uint32)EShaderLightPermutationKey::Gouraud;
+			break;
+		case EViewMode::Lit_Lambert:
+			PermutationKey = (uint32)EShaderLightPermutationKey::Lambert;
+			break;
+		case EViewMode::Lit_BlinnPhong:
+			PermutationKey = (uint32)EShaderLightPermutationKey::BlinnPhong;
+			break;
+		}
+
         if (Cmd.Material)
         {
-            Cmd.Material->Bind(Context->DeviceContext, (uint32)Context->ActiveLightingModel);
+            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
         }
 
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

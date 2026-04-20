@@ -27,7 +27,7 @@ public:
 	float SplitterHRatio = 0.5f;  // SplitterH (좌:우)
 
 	// View
-	EViewMode ViewMode = EViewMode::Lit;
+	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 	FShowFlags ShowFlags;
 	bool bEnableFXAA = true;
 

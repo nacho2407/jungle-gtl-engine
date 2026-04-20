@@ -62,7 +62,7 @@ void FObjViewerControlWidget::Render(float DeltaTime)
 			bool bWireframe = (Settings.ViewMode == EViewMode::Wireframe);
 			if (ImGui::Checkbox("Wireframe Mode", &bWireframe))
 			{
-				Settings.ViewMode = bWireframe ? EViewMode::Wireframe : EViewMode::Lit;
+				Settings.ViewMode = bWireframe ? EViewMode::Wireframe : EViewMode::Lit_BlinnPhong;
 			}
 		}
 		
