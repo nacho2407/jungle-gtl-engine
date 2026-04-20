@@ -43,7 +43,7 @@ class FPrimitiveSceneProxy
 {
 public:
 	FPrimitiveSceneProxy(UPrimitiveComponent* InComponent);
-	virtual ~FPrimitiveSceneProxy() = default;
+	virtual ~FPrimitiveSceneProxy();
 
 	// ================================================================
 	// 읽기 전용 인터페이스 (DrawCommandBuilder, RenderCollector용)
@@ -59,17 +59,14 @@ public:
 	bool IsSelected() const { return bSelected; }
 
 	// --- 렌더 데이터 (DrawCommandBuilder가 읽음) ---
-	ERenderPass        GetRenderPass()  const { return Pass; }
-	FShader*           GetShader()      const { return Shader; }
+	ERenderPass        GetRenderPass()  const;
+	FShader*           GetShader()      const;
 	FMeshBuffer*       GetMeshBuffer()  const { return MeshBuffer; }
-	UMaterial*         GetMaterial()    const { return Material; }
-	ID3D11ShaderResourceView* GetDiffuseSRV() const { return DiffuseSRV; }
 
 	const FPerObjectConstants&      GetPerObjectConstants() const { return PerObjectConstants; }
 	const FBoundingBox&             GetCachedBounds()       const { return CachedBounds; }
 	const FVector&                  GetCachedWorldPos()     const { return CachedWorldPos; }
 	const TArray<FMeshSectionDraw>& GetSectionDraws()       const { return SectionDraws; }
-	const FConstantBufferBinding&   GetExtraCB()            const { return ExtraCB; }
 
 	// --- PerObject CB 상태 ---
 	void MarkPerObjectCBDirty()   const { bPerObjectCBDirty = true; }
@@ -105,18 +102,16 @@ protected:
 	                                | EPrimitiveProxyFlags::ShowAABB;
 
 	// 렌더 데이터 캐시 (Update*에서 갱신)
-	FShader*     Shader     = nullptr;
 	FMeshBuffer* MeshBuffer = nullptr;
-	ERenderPass  Pass       = ERenderPass::Opaque;
-	UMaterial*   Material   = nullptr;
-	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+
+	// 기본 Material — Material 없는 프록시의 폴백
+	UMaterial* DefaultMaterial = nullptr;
 
 	FPerObjectConstants PerObjectConstants = {};
 	FBoundingBox        CachedBounds;
 	FVector             CachedWorldPos;
 
 	TArray<FMeshSectionDraw>  SectionDraws;
-	FConstantBufferBinding    ExtraCB;
 
 	// 가시성 (서브클래스 UpdateVisibility/UpdatePerViewport에서 변경)
 	bool bVisible = true;

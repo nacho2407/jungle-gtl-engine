@@ -35,7 +35,7 @@ public:
 	// 뷰포트 리사이즈 후 렌더 상태 캐시 초기화
 	void ResetRenderStateCache() { Resources.ResetRenderStateCache(); }
 
-	// TileBaseCulling Dispatch에 필요한 리소스 접근자
+	// TileBasedLightCulling Dispatch에 필요한 리소스 접근자
 	ID3D11Buffer*             GetFrameBuffer()         { return Resources.FrameBuffer.GetBuffer(); }
 	ID3D11ShaderResourceView* GetLightBufferSRV()      { return Resources.ForwardLights.LightBufferSRV; }
 	FTileCullingResource&     GetTileCullingResource() { return Resources.TileCullingResource; }

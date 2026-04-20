@@ -2,8 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Render/Types/FogParams.h"
-#include "Render/Types/GlobalLightParams.h"
+#include "Render/Proxy/SceneEnvironment.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 
 class UPrimitiveComponent;
@@ -71,31 +70,9 @@ public:
 	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
 	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
 
-	// --- Height Fog (FogParams.h) ---
-	// UE 패턴: 배열에 모두 저장하되, 렌더링은 [0]만 사용
-	void AddFog(const class UHeightFogComponent* Owner, const FFogParams& Params);
-	void RemoveFog(const class UHeightFogComponent* Owner);
-	bool HasFog() const { return !Fogs.empty(); }
-	const FFogParams& GetFogParams() const { return Fogs[0].Params; }
-
-	// Below things are for Lights
-	void AddGlobalAmbientLight(const class UAmbientLightComponent* Owner, const FGlobalAmbientLightParams& Params);
-	void RemoveGlobalAmbientLight(const class UAmbientLightComponent* Owner);
-	bool HasGlobalAmbientLight() const { return GlobalAmbientLight.AmbientOwner != nullptr; }
-	const FGlobalAmbientLightParams& GetGlobalAmbientLightParams() const { return GlobalAmbientLight.Params; }
-
-	void AddGlobalDirectionalLight(const class UDirectionalLightComponent* Owner, const FGlobalDirectionalLightParams& Params);
-	void RemoveGlobalDirectionalLight(const class UDirectionalLightComponent* Owner);
-	bool HasGlobalDirectionalLight() const { return GlobalDirectionalLight.DirectionalOwner != nullptr; }
-	const FGlobalDirectionalLightParams& GetGlobalDirectionalLightParams() const { return GlobalDirectionalLight.Params; }
-
-	void AddPointLight(const class UPointLightComponent* Owner, const FPointLightParams& Params);
-	void RemovePointLight(const class UPointLightComponent* Owner);
-	const TArray<FPointLightParams>& GetPointLights() const { return CachedPointLightParams; }
-
-	void AddSpotLight(const class USpotLightComponent* Owner, const FSpotLightParams& Params);
-	void RemoveSpotLight(const class USpotLightComponent* Owner);
-	const TArray<FSpotLightParams>& GetSpotLights() const { return CachedSpotLightParams; }
+	// --- 환경 데이터 (Fog, Light) ---
+	FSceneEnvironment& GetEnvironment() { return Environment; }
+	const FSceneEnvironment& GetEnvironment() const { return Environment; }
 
 private:
 	// --- 내부 헬퍼 (friend 경유로 Proxy private 멤버 접근) ---
@@ -125,41 +102,5 @@ private:
 	FGridParams Grid;
 	FDebugDrawQueue DebugDrawQueue;
 
-	struct FFogEntry
-	{
-		const class UHeightFogComponent* Owner = nullptr;
-		FFogParams Params;
-	};
-	TArray<FFogEntry> Fogs;
-	struct FGlobalAmbientLightEntry
-	{
-		const class UAmbientLightComponent* AmbientOwner = nullptr;
-		FGlobalAmbientLightParams Params;
-	};
-	struct FGlobalDirectionalLightEntry
-	{
-		const class UDirectionalLightComponent* DirectionalOwner = nullptr;
-		FGlobalDirectionalLightParams Params;
-	};
-	struct FPointLightEntry
-	{
-		const class UPointLightComponent* PointLightOwner = nullptr;
-		FPointLightParams Params;
-	};
-	struct FSpotLightEntry
-	{
-		const class USpotLightComponent* SpotLightOwner = nullptr;
-		FSpotLightParams Params;
-	};
-	FGlobalAmbientLightEntry GlobalAmbientLight;
-	FGlobalDirectionalLightEntry GlobalDirectionalLight;
-	TArray<FPointLightEntry> PointLights;
-	TArray<FSpotLightEntry> SpotLights;
-
-	// 라이트 파라미터 캐시 (Add/Remove 시 재구축)
-	TArray<FPointLightParams> CachedPointLightParams;
-	TArray<FSpotLightParams>  CachedSpotLightParams;
-
-	void RebuildPointLightCache();
-	void RebuildSpotLightCache();
+	FSceneEnvironment Environment;
 };

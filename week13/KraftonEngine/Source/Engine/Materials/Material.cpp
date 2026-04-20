@@ -342,3 +342,13 @@ void UMaterial::Serialize(FArchive& Ar)
 		RebuildCachedSRVs();
 	}
 }
+
+UMaterial* UMaterial::CreateTransient(ERenderPass InPass, EBlendState InBlend,
+	EDepthStencilState InDepth, ERasterizerState InRaster, FShader* InShader)
+{
+	UMaterial* Mat = UObjectManager::Get().CreateObject<UMaterial>();
+	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> EmptyBuffers;
+	Mat->Create(FString("__transient__"), nullptr, InPass, InBlend, InDepth, InRaster, std::move(EmptyBuffers));
+	Mat->TransientShader = InShader;
+	return Mat;
+}

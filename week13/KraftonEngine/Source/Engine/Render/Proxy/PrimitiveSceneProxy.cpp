@@ -2,6 +2,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Resource/ShaderManager.h"
+#include "Materials/Material.h"
+#include "Object/ObjectFactory.h"
 
 // ============================================================
 // FPrimitiveSceneProxy — 기본 구현
@@ -11,6 +13,29 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 {
 	if (!Owner->SupportsOutline())
 		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
+}
+
+FPrimitiveSceneProxy::~FPrimitiveSceneProxy()
+{
+	if (DefaultMaterial)
+	{
+		UObjectManager::Get().DestroyObject(DefaultMaterial);
+		DefaultMaterial = nullptr;
+	}
+}
+
+ERenderPass FPrimitiveSceneProxy::GetRenderPass() const
+{
+	if (!SectionDraws.empty() && SectionDraws[0].Material)
+		return SectionDraws[0].Material->GetRenderPass();
+	return ERenderPass::Opaque;
+}
+
+FShader* FPrimitiveSceneProxy::GetShader() const
+{
+	if (!SectionDraws.empty() && SectionDraws[0].Material)
+		return SectionDraws[0].Material->GetShader();
+	return nullptr;
 }
 
 void FPrimitiveSceneProxy::UpdateTransform()
@@ -41,7 +66,20 @@ void FPrimitiveSceneProxy::UpdateVisibility()
 void FPrimitiveSceneProxy::UpdateMesh()
 {
 	MeshBuffer = Owner->GetMeshBuffer();
-	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Pass = ERenderPass::Opaque;
+
+	if (!DefaultMaterial)
+	{
+		DefaultMaterial = UMaterial::CreateTransient(
+			ERenderPass::Opaque, EBlendState::Opaque,
+			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
+			FShaderManager::Get().GetShader(EShaderType::Primitive));
+	}
+
+	SectionDraws.clear();
+	if (MeshBuffer && DefaultMaterial)
+	{
+		uint32 IdxCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+		SectionDraws.push_back({ DefaultMaterial, 0, IdxCount });
+	}
 }
 

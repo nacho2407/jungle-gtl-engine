@@ -2,6 +2,8 @@
 #include "Component/TextRenderComponent.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Resource/ShaderManager.h"
+#include "Materials/Material.h"
+#include "Object/ObjectFactory.h"
 
 // ============================================================
 // FTextRenderSceneProxy
@@ -9,6 +11,15 @@
 FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
 	: FBillboardSceneProxy(static_cast<UBillboardComponent*>(InComponent))
 {
+}
+
+FTextRenderSceneProxy::~FTextRenderSceneProxy()
+{
+	if (TextMaterial)
+	{
+		UObjectManager::Get().DestroyObject(TextMaterial);
+		TextMaterial = nullptr;
+	}
 }
 
 void FTextRenderSceneProxy::UpdateTransform()
@@ -20,9 +31,22 @@ void FTextRenderSceneProxy::UpdateMesh()
 {
 	// SelectionMask 아웃라인 패스에서 사용할 mesh/shader
 	MeshBuffer = GetOwner()->GetMeshBuffer();
-	Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-	Pass = ERenderPass::AlphaBlend;
 	ProxyFlags |= EPrimitiveProxyFlags::FontBatched;
+
+	if (!TextMaterial)
+	{
+		TextMaterial = UMaterial::CreateTransient(
+			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
+			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
+			FShaderManager::Get().GetShader(EShaderType::Primitive));
+	}
+
+	SectionDraws.clear();
+	if (MeshBuffer && TextMaterial)
+	{
+		uint32 IdxCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+		SectionDraws.push_back({ TextMaterial, 0, IdxCount });
+	}
 
 	// 텍스트/폰트 데이터 캐싱 (UpdatePerViewport에서 Owner 접근 제거)
 	UTextRenderComponent* TextComp = GetTextRenderComponent();

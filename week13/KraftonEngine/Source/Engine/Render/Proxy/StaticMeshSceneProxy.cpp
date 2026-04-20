@@ -1,6 +1,5 @@
 ﻿#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resource/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
@@ -55,9 +54,6 @@ void FStaticMeshSceneProxy::UpdateMaterial()
 void FStaticMeshSceneProxy::UpdateMesh()
 {
 	MeshBuffer = GetOwner()->GetMeshBuffer();
-	Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
-	Pass = ERenderPass::Opaque;
-
 	RebuildSectionDraws();
 }
 

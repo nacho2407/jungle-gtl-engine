@@ -1,4 +1,4 @@
-﻿#include "TileBaseCulling.h"
+﻿#include "Engine/Render/Culling/TileBasedLightCulling.h"
 
 
 static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, const char* Entry)
@@ -27,7 +27,7 @@ static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, co
 	return SUCCEEDED(hr) ? cs : nullptr;
 }
 
-void FTileBaseCulling::Initialize(ID3D11Device* InDevice)
+void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
@@ -37,7 +37,7 @@ void FTileBaseCulling::Initialize(ID3D11Device* InDevice)
 		return;
 
 	D3D11_BUFFER_DESC cbDesc = {};
-	cbDesc.ByteWidth = sizeof(FTileCullingCBData);
+	cbDesc.ByteWidth = sizeof(FTileLightCullingCBData);
 	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
 	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -46,7 +46,7 @@ void FTileBaseCulling::Initialize(ID3D11Device* InDevice)
 	bInitialized = (TileCullingCB != nullptr);
 }
 
-void FTileBaseCulling::Release()
+void FTileBasedLightCulling::Release()
 {
 	if (TileLightCullingCS) { TileLightCullingCS->Release(); TileLightCullingCS = nullptr; }
 	if (TileCullingCB)      { TileCullingCB->Release();      TileCullingCB = nullptr; }
@@ -54,7 +54,7 @@ void FTileBaseCulling::Release()
 	bInitialized = false;
 }
 
-void FTileBaseCulling::Dispatch(
+void FTileBasedLightCulling::Dispatch(
 	ID3D11DeviceContext* Ctx,
 	const FFrameContext& Frame,
 	ID3D11Buffer*        FrameCB,
@@ -85,7 +85,7 @@ void FTileBaseCulling::Dispatch(
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};
 		Ctx->Map(TileCullingCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
 
-		FTileCullingCBData* CB = reinterpret_cast<FTileCullingCBData*>(Mapped.pData);
+		FTileLightCullingCBData* CB = reinterpret_cast<FTileLightCullingCBData*>(Mapped.pData);
 		CB->ScreenSizeX      = ViewportWidth;
 		CB->ScreenSizeY      = ViewportHeight;
 		CB->Enable25DCulling = 1;

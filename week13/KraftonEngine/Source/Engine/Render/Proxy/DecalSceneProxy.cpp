@@ -6,6 +6,7 @@
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Object/ObjectFactory.h"
 
 namespace
 {
@@ -34,6 +35,11 @@ FDecalSceneProxy::~FDecalSceneProxy()
 		delete DecalCB;
 		DecalCB = nullptr;
 	}
+	if (DecalProxyMaterial)
+	{
+		UObjectManager::Get().DestroyObject(DecalProxyMaterial);
+		DecalProxyMaterial = nullptr;
+	}
 }
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
@@ -44,26 +50,41 @@ UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 void FDecalSceneProxy::UpdateMaterial()
 {
 	UDecalComponent* DecalComp = GetDecalComponent();
-	if (!DecalComp)
-	{
-		return;
-	}
+	if (!DecalComp) return;
 
 	DecalMaterial = DecalComp->GetMaterial();
-	DiffuseSRV = nullptr;
 
-	if (DecalMaterial)
+	// 프록시 전용 transient Material 래퍼 생성 (공유 DecalMaterial에 직접 CB를 쓸 수 없음)
+	if (!DecalProxyMaterial)
 	{
-		UTexture2D* DiffuseTex = nullptr;
-		if (DecalMaterial->GetTextureParameter("DiffuseTexture", DiffuseTex))
-		{
-			DiffuseSRV = DiffuseTex->GetSRV();
-		}
+		FShader* Shader = (DecalMaterial && DecalMaterial->GetShader())
+			? DecalMaterial->GetShader()
+			: FShaderManager::Get().GetShader(EShaderType::Decal);
+		ERenderPass Pass = DecalMaterial ? DecalMaterial->GetRenderPass() : ERenderPass::Decal;
+		EBlendState Blend = DecalMaterial ? DecalMaterial->GetBlendState() : EBlendState::Opaque;
+		EDepthStencilState Depth = DecalMaterial ? DecalMaterial->GetDepthStencilState() : EDepthStencilState::Default;
+		ERasterizerState Raster = DecalMaterial ? DecalMaterial->GetRasterizerState() : ERasterizerState::SolidBackCull;
+
+		DecalProxyMaterial = UMaterial::CreateTransient(Pass, Blend, Depth, Raster, Shader);
 	}
 
-	auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
+	// SRV 동기화 (DecalMaterial의 텍스처를 래퍼에 복사)
+	if (DecalMaterial)
+	{
+		const ID3D11ShaderResourceView* const* SRVs = DecalMaterial->GetCachedSRVs();
+		for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
+			DecalProxyMaterial->SetCachedSRV(static_cast<EMaterialTextureSlot>(s),
+				const_cast<ID3D11ShaderResourceView*>(SRVs[s]));
+	}
+
+	// Per-shader CB (WorldToDecal, Color) 바인딩
+	auto& CB = DecalProxyMaterial->BindPerShaderCB<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
 	CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
 	CB.Color = DecalComp->GetColor();
+
+	// SectionDraws — 래퍼 Material 사용
+	SectionDraws.clear();
+	SectionDraws.push_back({ DecalProxyMaterial, 0, 0 });
 }
 
 void FDecalSceneProxy::UpdateMesh()
@@ -72,20 +93,6 @@ void FDecalSceneProxy::UpdateMesh()
 	RebuildReceiverProxies();
 
 	MeshBuffer = nullptr;
-	SectionDraws.clear();
-
-	if (DecalMaterial && DecalMaterial->GetShader())
-	{
-		Shader = DecalMaterial->GetShader();
-		Pass = DecalMaterial->GetRenderPass();
-		Material = DecalMaterial;
-	}
-	else
-	{
-		Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
-		Pass = ERenderPass::Decal;
-		Material = nullptr;
-	}
 	ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
