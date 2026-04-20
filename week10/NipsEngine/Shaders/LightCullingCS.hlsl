@@ -73,7 +73,7 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
 
     for (uint i = threadIndex; i < LightCount; i += TILE_SIZE * TILE_SIZE)
     {
-        FLightInfo light = Lights[i];
+        LightInfo light = Lights[i];
         if (light.Radius <= 0.0f)
             continue;
 
