@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 #include "Render/Resources/BindingSlots.h"
@@ -22,6 +22,7 @@ struct FFrameSharedResources
     ID3D11Buffer* LocalLightBuffer = nullptr;
     ID3D11ShaderResourceView* LocalLightSRV = nullptr;
     uint32 LocalLightCapacity = 0;
+    uint32 LocalLightCount = 0;
 
     void Create(ID3D11Device* InDevice);
     void Release();

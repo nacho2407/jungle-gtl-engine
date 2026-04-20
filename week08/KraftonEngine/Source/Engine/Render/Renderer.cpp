@@ -1,4 +1,4 @@
-#include "Render/Renderer.h"
+﻿#include "Render/Renderer.h"
 #include "Render/Submission/Collectors/SceneVisibilityCollector.h"
 
 #include <iostream>
@@ -25,6 +25,8 @@
 #include "Materials/MaterialManager.h"
 
 
+#include <memory>
+
 void FRenderer::Create(HWND hWindow)
 {
     Device.Create(hWindow);
@@ -50,12 +52,17 @@ void FRenderer::Create(HWND hWindow)
     ViewModePassRegistry->Initialize(Device.GetDevice());
     OwnedViewModeSurfaceSet = new FViewModeSurfaceSet();
 
+	LightCulling = std::make_unique<FTileBasedLightCulling>();
+    LightCulling->Initialize(&Device);
+
     // GPU Profiler 초기화
     FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
 }
 
 void FRenderer::Release()
 {
+    LightCulling->Release();
+
     if (ViewModePassRegistry)
     {
         ViewModePassRegistry->Release();
@@ -319,6 +326,7 @@ FRenderPipelineContext FRenderer::CreatePassContext(const FSceneView& SceneView,
         PassContext.OverlayTexts = &PassContext.Scene->GetDebugData().GetOverlayTexts();
     }
     PassContext.Occlusion = SceneView.OcclusionCulling;
+    PassContext.LightCulling = LightCulling.get();
     PassContext.LODContext = &SceneView.LODContext;
     return PassContext;
 }

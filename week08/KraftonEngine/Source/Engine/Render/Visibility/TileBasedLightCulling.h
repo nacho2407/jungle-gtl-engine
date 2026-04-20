@@ -3,7 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Render/Types/LightTypes.h"
-#include "Render/View/SceneView.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
 #include <d3d11.h>
 
 // ============================================================
@@ -33,7 +33,7 @@ class FTileBasedLightCulling
 {
 public:
     FTileBasedLightCulling()  = default;
-    ~FTileBasedLightCulling() { Release(); }
+    ~FTileBasedLightCulling();
 
     FTileBasedLightCulling(const FTileBasedLightCulling&)            = delete;
     FTileBasedLightCulling& operator=(const FTileBasedLightCulling&) = delete;
@@ -48,7 +48,7 @@ public:
     void OnResize(uint32 InWidth, uint32 InHeight);
 
     // ---- 조명 데이터 갱신 ----
-    void SetPointLightData(const TArray<FLocalLightInfo>& InLights);
+    void SetPointLightData(const uint32 InLightsCount);
 
     // ---- Dispatch ----
     void Dispatch(const FFrameContext& frameContext, bool bEnable25DCulling = true);
@@ -56,7 +56,7 @@ public:
     // ---- 결과 SRV (Pixel Shader에서 타일별 마스크 읽기) ----
     ID3D11ShaderResourceView* GetPerTileMaskSRV()    const { return PerTilePointLightIndexMaskSRV; }
     ID3D11ShaderResourceView* GetDebugHitMapSRV()    const { return DebugHitMapSRV; }
-    ID3D11ShaderResourceView* GetPointLightDataSRV() const { return PointLightDataSRV; }
+    //ID3D11ShaderResourceView* GetPointLightDataSRV() const { return PointLightDataSRV; }
 
     uint32 GetNumTilesX()        const { return NumTilesX; }
     uint32 GetNumTilesY()        const { return NumTilesY; }
@@ -75,10 +75,10 @@ private:
     ID3D11ComputeShader* LightCullingCS = nullptr;
 
     // ---- PointLight Buffer (SRV, t0) ----
-    ID3D11Buffer*              PointLightBuffer    = nullptr;
-    ID3D11ShaderResourceView*  PointLightDataSRV   = nullptr;
-    TArray<FLocalLightInfo> Lights;
-
+    //ID3D11Buffer*              PointLightBuffer    = nullptr;
+    //ID3D11ShaderResourceView*  PointLightDataSRV   = nullptr;
+    //TArray<FLocalLightInfo> Lights;
+    uint32 LightCount= 0;
     // ---- PerTile Mask Buffer (UAV u1 / SRV for PS) ----
     ID3D11Buffer*              PerTilePointLightIndexMaskBuffer  = nullptr;
     ID3D11UnorderedAccessView* PerTilePointLightIndexMaskOutUAV  = nullptr;
