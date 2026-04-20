@@ -8,7 +8,7 @@
 #include "Render/Passes/Common/RenderPassContext.h"
 
 #include "Render/Frame/FrameContext.h"
-#include "Render/Commands/DrawCommandList.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Hardware/Device/D3DDevice.h"

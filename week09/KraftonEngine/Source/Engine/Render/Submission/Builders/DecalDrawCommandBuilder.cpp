@@ -1,6 +1,6 @@
-﻿#include "Render/Builders/DecalDrawCommandBuilder.h"
-#include "Render/Commands/DrawCommandList.h"
-#include "Render/Commands/DrawCommand.h"
+﻿#include "Render/Submission/Builders/DecalDrawCommandBuilder.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 

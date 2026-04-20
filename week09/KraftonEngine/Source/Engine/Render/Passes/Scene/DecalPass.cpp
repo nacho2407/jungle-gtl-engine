@@ -3,8 +3,8 @@
 #include "Render/Frame/FrameContext.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
-#include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders/DecalDrawCommandBuilder.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Builders/DecalDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Frame/ViewModeSurfaceSet.h"
 #include "Render/Frame/ViewportRenderTargets.h"
@@ -14,10 +14,10 @@ namespace
 bool UsesDecalPass(const FRenderPassContext& Context)
 {
     return !Context.ViewModePassRegistry ||
-        !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) ||
-        Context.ViewModePassRegistry->UsesDecal(Context.ActiveViewMode);
+           !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) ||
+           Context.ViewModePassRegistry->UsesDecal(Context.ActiveViewMode);
 }
-}
+} // namespace
 
 void FDecalPass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -89,9 +89,12 @@ void FDecalPass::PrepareTargets(FRenderPassContext& Context)
         ID3D11Resource* Dst = nullptr;
         Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor)->GetResource(&Src);
         Context.ActiveViewSurfaceSet->GetRTV(ESurfaceSlot::ModifiedBaseColor)->GetResource(&Dst);
-        if (Src && Dst) Context.Context->CopyResource(Dst, Src);
-        if (Dst) Dst->Release();
-        if (Src) Src->Release();
+        if (Src && Dst)
+            Context.Context->CopyResource(Dst, Src);
+        if (Dst)
+            Dst->Release();
+        if (Src)
+            Src->Release();
     }
 
     if (ShadingModel == EShadingModel::Lambert || ShadingModel == EShadingModel::BlinnPhong)
@@ -100,9 +103,12 @@ void FDecalPass::PrepareTargets(FRenderPassContext& Context)
         ID3D11Resource* Dst = nullptr;
         Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface1)->GetResource(&Src);
         Context.ActiveViewSurfaceSet->GetRTV(ESurfaceSlot::ModifiedSurface1)->GetResource(&Dst);
-        if (Src && Dst) Context.Context->CopyResource(Dst, Src);
-        if (Dst) Dst->Release();
-        if (Src) Src->Release();
+        if (Src && Dst)
+            Context.Context->CopyResource(Dst, Src);
+        if (Dst)
+            Dst->Release();
+        if (Src)
+            Src->Release();
     }
 
     if (ShadingModel == EShadingModel::BlinnPhong)
@@ -111,9 +117,12 @@ void FDecalPass::PrepareTargets(FRenderPassContext& Context)
         ID3D11Resource* Dst = nullptr;
         Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface2)->GetResource(&Src);
         Context.ActiveViewSurfaceSet->GetRTV(ESurfaceSlot::ModifiedSurface2)->GetResource(&Dst);
-        if (Src && Dst) Context.Context->CopyResource(Dst, Src);
-        if (Dst) Dst->Release();
-        if (Src) Src->Release();
+        if (Src && Dst)
+            Context.Context->CopyResource(Dst, Src);
+        if (Dst)
+            Dst->Release();
+        if (Src)
+            Src->Release();
     }
 
     Context.ActiveViewSurfaceSet->BindDecalTargets(Context.Context, ShadingModel, Context.GetViewportDSV());

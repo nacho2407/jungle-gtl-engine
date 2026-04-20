@@ -1,9 +1,9 @@
 ﻿#include "Render/Passes/Scene/ViewModePostProcessPass.h"
 #include "Render/Frame/ViewportRenderTargets.h"
 
-#include "Render/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Commands/DrawCommand.h"
-#include "Render/Commands/DrawCommandList.h"
+#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Commands/DrawCommand.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Frame/FrameContext.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
@@ -24,7 +24,7 @@ uint16 GetViewModePostProcessBits(const FRenderPassContext& Context)
     return Context.ViewModePassRegistry->GetPostProcessUserBits(Context.ActiveViewMode);
 }
 
-}
+} // namespace
 
 void FViewModePostProcessPass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -49,7 +49,6 @@ void FViewModePostProcessPass::PrepareInputs(FRenderPassContext& Context)
             ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
             Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
         }
-
     }
 
     if (Context.StateCache)
