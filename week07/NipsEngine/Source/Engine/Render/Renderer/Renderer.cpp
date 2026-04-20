@@ -30,19 +30,18 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
     FResourceManager::Get().LoadShader("Shaders/Multipass/DepthViewPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	auto LoadStaticMeshPermutation = [&](EShadingModel ShadingModel)
+	auto LoadUberLitPermutation = [&](const char* ShaderPath, EShadingModel ShadingModel)
     {
         FShaderPermutationDesc Desc = {};
         Desc.ShadingModel = ShadingModel;
         Desc.bUseNormalMap = false;
-        Desc.bUseDecalLighting = false;
+        Desc.bUseDecalLighting = true;
 
         TArray<D3D_SHADER_MACRO> Defines;
 
@@ -66,11 +65,11 @@ void FRenderer::Create(HWND hWindow)
         }
 
         Defines.push_back({ "USE_NORMAL_MAP", "0" });
-        Defines.push_back({ "USE_DECAL_LIGHTING", "0" });
+        Defines.push_back({ "USE_DECAL_LIGHTING", "1"});
         Defines.push_back({ nullptr, nullptr });
 
         FResourceManager::Get().LoadShader(
-            "Shaders/ShaderStaticMesh.hlsl",
+            ShaderPath,
             "mainVS",
             "mainPS",
             NormalVertexInputLayout,
@@ -79,10 +78,15 @@ void FRenderer::Create(HWND hWindow)
             Desc.ToKey());
     };
 
-	LoadStaticMeshPermutation(EShadingModel::Unlit);
-    LoadStaticMeshPermutation(EShadingModel::Lambert);
-    LoadStaticMeshPermutation(EShadingModel::Phong);
-    LoadStaticMeshPermutation(EShadingModel::Gouraud);
+	LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Unlit);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Lambert);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Phong);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Gouraud);
+
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Unlit);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Lambert);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Phong);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Gouraud);
 }
 
 void FRenderer::CreateResources()

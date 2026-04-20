@@ -51,6 +51,9 @@ float3 CalculateDiffuseTerm(FUberMaterialInput materialInput, FUberLightingInput
     float3 N = GetSafeNormal(lightingInput.WorldNormal);
     float3 L = GetSafeNormal(-DirectionalLight.Direction);
     float NdotL = saturate(dot(N, L));
+    
+    if (NdotL <= 0.0f)
+        return float3(0.0f, 0.0f, 0.0f);
 
     return materialInput.Albedo * DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
 }
@@ -70,7 +73,7 @@ float3 CalculateSpecularTerm(FUberMaterialInput materialInput, FUberLightingInpu
     return materialInput.SpecularColor * DirectionalLight.Color.rgb * DirectionalLight.Intensity * specular;
 }
 
-float CalculateLocalLightAttenuation(float3 lightPosition, float radius, float falloffExponent, float3 worldPos)
+float CalculateAttenuation(float3 lightPosition, float radius, float falloffExponent, float3 worldPos)
 {
     float safeRadius = max(radius, 1e-4f);
     float distanceToLight = distance(lightPosition, worldPos);
@@ -78,7 +81,7 @@ float CalculateLocalLightAttenuation(float3 lightPosition, float radius, float f
     return pow(normalizedFalloff, max(falloffExponent, 1e-4f));
 }
 
-float CalculateSpotConeAttenuation(FSpotLightInfo light, float3 worldPos)
+float CalculateConeAttenuation(FSpotLightInfo light, float3 worldPos)
 {
     float3 lightToSurface = GetSafeNormal(worldPos - light.Position);
     float coneCos = dot(GetSafeNormal(light.Direction), lightToSurface);
@@ -90,7 +93,7 @@ float3 CalculatePointDiffuseTerm(FPointLightInfo light, FUberMaterialInput mater
 {
     float3 N = GetSafeNormal(lightingInput.WorldNormal);
     float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
-    float attenuation = CalculateLocalLightAttenuation(light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
+    float attenuation = CalculateAttenuation(light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
     float NdotL = saturate(dot(N, L));
 
     return materialInput.Albedo * light.Color.rgb * light.Intensity * attenuation * NdotL;
@@ -102,7 +105,7 @@ float3 CalculatePointSpecularTerm(FPointLightInfo light, FUberMaterialInput mate
     float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
     float3 V = GetSafeNormal(lightingInput.ViewDir);
     float3 H = GetSafeNormal(L + V);
-    float attenuation = CalculateLocalLightAttenuation(light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
+    float attenuation = CalculateAttenuation(light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
 
     float NdotH = saturate(dot(N, H));
     float specular = pow(NdotH, max(materialInput.Shininess, 1.0f));
@@ -114,9 +117,9 @@ float3 CalculateSpotDiffuseTerm(FSpotLightInfo light, FUberMaterialInput materia
 {
     float3 N = GetSafeNormal(lightingInput.WorldNormal);
     float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
-    float distanceAttenuation = CalculateLocalLightAttenuation(
+    float distanceAttenuation = CalculateAttenuation(
         light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
-    float coneAttenuation = CalculateSpotConeAttenuation(light, lightingInput.WorldPos);
+    float coneAttenuation = CalculateConeAttenuation(light, lightingInput.WorldPos);
     float NdotL = saturate(dot(N, L));
 
     return materialInput.Albedo * light.Color.rgb * light.Intensity * distanceAttenuation * coneAttenuation * NdotL;
@@ -128,9 +131,9 @@ float3 CalculateSpotSpecularTerm(FSpotLightInfo light, FUberMaterialInput materi
     float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
     float3 V = GetSafeNormal(lightingInput.ViewDir);
     float3 H = GetSafeNormal(L + V);
-    float distanceAttenuation = CalculateLocalLightAttenuation(
+    float distanceAttenuation = CalculateAttenuation(
         light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
-    float coneAttenuation = CalculateSpotConeAttenuation(light, lightingInput.WorldPos);
+    float coneAttenuation = CalculateConeAttenuation(light, lightingInput.WorldPos);
 
     float NdotH = saturate(dot(N, H));
     float specular = pow(NdotH, max(materialInput.Shininess, 1.0f));

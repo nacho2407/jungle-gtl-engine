@@ -24,6 +24,7 @@ struct PSInput
     float3 WorldPos : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
+    float3 VertexLighting : TEXCOORD3;
 };
 
 struct PSOutput
@@ -41,6 +42,24 @@ PSInput mainVS(VSInput input)
     output.ClipPos = ApplyMVP(input.Position);
     output.ClipPos.z -= 0.0001f;
     output.UV = input.UV;
+
+#ifdef LIGHTING_MODEL_GOURAUD
+    FUberMaterialInput MaterialInput;
+    MaterialInput.Albedo = float3(1.0f, 1.0f, 1.0f);
+    MaterialInput.Emissive = float3(0.0f, 0.0f, 0.0f);
+    MaterialInput.SpecularColor = float3(0.0f, 0.0f, 0.0f);
+    MaterialInput.Shininess = 1.0f;
+
+    FUberLightingInput LightingInput;
+    LightingInput.WorldPos = output.WorldPos;
+    LightingInput.WorldNormal = output.WorldNormal;
+    LightingInput.ViewDir = normalize(CameraPosition - output.WorldPos);
+
+    output.VertexLighting = EvaluateUberLighting(MaterialInput, LightingInput).Color;
+#else
+    output.VertexLighting = float3(1.0f, 1.0f, 1.0f);
+#endif
+
     return output;
 }
 
@@ -59,6 +78,11 @@ PSOutput mainPS(PSInput input) : SV_Target
         
     float3 Albedo = decalTex.rgb * DecalColorTint.rgb;
     
+    float3 LitColor = Albedo;
+
+#ifdef LIGHTING_MODEL_GOURAUD
+    LitColor = Albedo * input.VertexLighting;
+#else
     FUberMaterialInput MaterialInput;
     MaterialInput.Albedo = Albedo;
     MaterialInput.Emissive = float3(0.0f, 0.0f, 0.0f);
@@ -70,7 +94,8 @@ PSOutput mainPS(PSInput input) : SV_Target
     LightingInput.WorldNormal = input.WorldNormal;
     LightingInput.ViewDir = normalize(CameraPosition - input.WorldPos);
 
-    float3 LitColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
+    LitColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
+#endif
 
     output.Color = float4(LitColor, decalTex.a * DecalColorTint.a);
     
