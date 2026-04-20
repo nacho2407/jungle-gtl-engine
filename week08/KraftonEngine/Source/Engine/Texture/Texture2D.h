@@ -3,14 +3,23 @@
 #include "Object/Object.h"
 #include "Core/CoreTypes.h"
 
+#include <filesystem>
 #include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 struct ID3D11Device;
 struct ID3D11ShaderResourceView;
 
-// UTexture2D — 텍스처 에셋 (SRV를 소유하는 UObject)
-// 같은 경로의 텍스처는 캐시를 통해 하나의 UTexture2D를 공유합니다.
+struct FTextureCacheEntry
+{
+    class UTexture2D* Texture = nullptr;
+    FString FullPath;
+    std::filesystem::file_time_type LastWriteTime{};
+    bool bExists = false;
+};
+
 class UTexture2D : public UObject
 {
 public:
@@ -19,10 +28,7 @@ public:
 	UTexture2D() = default;
 	~UTexture2D() override;
 
-	// 경로로 텍스처를 로드 (캐시 히트 시 기존 객체 반환)
 	static UTexture2D* LoadFromFile(const FString& FilePath, ID3D11Device* Device);
-
-	// 캐시된 모든 텍스처의 GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
 	static void ReleaseAllGPU();
 
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
@@ -33,6 +39,9 @@ public:
 
 private:
 	bool LoadInternal(const FString& FilePath, ID3D11Device* Device);
+    static std::filesystem::path ResolveFullPath(const FString& FilePath);
+    static FTextureCacheEntry BuildCacheEntry(const std::filesystem::path& FilePath);
+    static bool HasCacheEntryChanged(const FTextureCacheEntry& Entry);
 
 	FString SourceFilePath;
 	ID3D11ShaderResourceView* SRV = nullptr;
@@ -40,6 +49,6 @@ private:
 	uint32 Height = 0;
 	uint64 TrackedTextureMemory = 0;
 
-	// path → UTexture2D* 캐시 (소유권은 UObjectManager)
-	static std::map<FString, UTexture2D*> TextureCache;
+	static std::map<FString, FTextureCacheEntry> TextureCache;
+    static std::vector<UTexture2D*> RetiredTextures;
 };
