@@ -17,10 +17,11 @@ public:
 	std::wstring GetFileName() {return ContentItem.Path.filename(); }
 protected:
 	FString EllipsisText(const FString& text, float maxWidth);
+	virtual const char* GetDragItemType() { return "ParkSangHyeok"; }
 
 	virtual void OnClicked(ContentBrowserContext& Context) { (void)Context; };
 	virtual void OnDoubleClicked(ContentBrowserContext& Context) { (void)Context; };
-	virtual void OnDrag(ContentBrowserContext& Context) { ImGui::SetDragDropPayload("ParkSangHyeok", &Context, sizeof(Context)); } //아무 기능 없는 코드입니다
+	virtual void OnDrag(ContentBrowserContext& Context) { (void)Context; }
 
 protected:
 	ID3D11ShaderResourceView* Icon = nullptr;
@@ -43,7 +44,7 @@ public:
 class ObjectElement final : public ContentBrowserElement
 {
 public:
-	void OnDrag(ContentBrowserContext& Context) override;
+	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 };
 
 //class MaterialElement final : public ContentBrowserElement

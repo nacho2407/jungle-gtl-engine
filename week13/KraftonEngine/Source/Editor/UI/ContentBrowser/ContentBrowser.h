@@ -5,6 +5,7 @@
 #include <memory>
 #include "ContentBrowserContext.h"
 #include "ContentBrowserElement.h"
+#include <wrl/client.h>
 
 class FEditorContentBrowserWidget final : public FEditorWidget
 {
@@ -15,6 +16,7 @@ class FEditorContentBrowserWidget final : public FEditorWidget
 	};
 
 public:
+	~FEditorContentBrowserWidget();
 	void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
 	void Render(float DeltaTime) override;
 	void Refresh();
@@ -32,8 +34,5 @@ private:
 
 	FDirNode RootNode;
 	TArray<std::unique_ptr<ContentBrowserElement>> CachedBrowserElements;
-
-	ID3D11ShaderResourceView* DefaultIcon = nullptr;
-	ID3D11ShaderResourceView* FolderIcon = nullptr;
-	ID3D11ShaderResourceView* SceneICon = nullptr;
+	TMap<FString, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> ICons;
 };

@@ -4,6 +4,15 @@
 #include "WICTextureLoader.h"
 
 
+FEditorContentBrowserWidget::~FEditorContentBrowserWidget()
+{
+	//for (auto pair : ICons)
+	//{
+	//	delete pair.second;
+	//	pair.second = nullptr;
+	//}
+}
+
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
 	FEditorWidget::Initialize(InEditor);
@@ -13,15 +22,19 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 
 	DirectX::CreateWICTextureFromFile(
 		InDevice, (IconDir + L"StartMerge_42x.png").c_str(),
-		nullptr, &DefaultIcon);
+		nullptr, ICons["Default"].GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		InDevice, (IconDir + L"Folder_Base_256x.png").c_str(),
-		nullptr, &FolderIcon);
+		nullptr, ICons["Directory"].GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		InDevice, (IconDir + L"icon_landscape_40x.png").c_str(),
-		nullptr, &SceneICon);
+		nullptr, ICons[".Scene"].GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		InDevice, (IconDir + L"icon_MatEd_Mesh_40x.png").c_str(),
+		nullptr, ICons[".obj"].GetAddressOf());
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -96,24 +109,24 @@ void FEditorContentBrowserWidget::RefreshContent()
 	for (const auto& Content : CurrentContents)
 	{
 		std::unique_ptr<ContentBrowserElement> element;
-		
+		FString Extension = FPaths::ToUtf8(Content.Path.extension());
+
 		if (Content.bIsDirectory)
 		{
 			element = std::make_unique<DirectoryElement>();
-			element.get()->SetIcon(FolderIcon);
+			element.get()->SetIcon(ICons["Directory"].Get());
 
 		}
-		else if (Content.Path.extension() == ".Scene")
+		else if (ICons.contains(Extension))
 		{
 			element = std::make_unique<SceneElement>();
-			element.get()->SetIcon(SceneICon);
+			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else
 		{
 			element = std::make_unique<ContentBrowserElement>();
-			element.get()->SetIcon(DefaultIcon);
+			element.get()->SetIcon(ICons["Default"].Get());
 		}
-		
 		
 		element.get()->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(element));
