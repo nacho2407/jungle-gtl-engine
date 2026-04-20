@@ -5,6 +5,7 @@
 class UTextRenderComponent;
 class UDecalComponent;
 class ULightComponent;
+class UBillboardComponent;
 
 class ACubeActor : public AActor
 {
@@ -132,14 +133,15 @@ public:
     DECLARE_CLASS(ALightActor, AActor)
     ALightActor() = default;
 
-    virtual void InitDefaultComponents() = 0;
-    virtual void Tick() = 0;
-
     ULightComponent* GetLight() const;
     void SetLight(ULightComponent* InLight);
 
+	UBillboardComponent* GetBillboard() const { return BillboardComp; }
+	void SetBillboard(UBillboardComponent* InBillboard) { BillboardComp = InBillboard; }
+
 protected:
     ULightComponent* LightComp = nullptr;
+	UBillboardComponent* BillboardComp = nullptr;
 };
 
 class AAmbientLightActor : public ALightActor
@@ -147,7 +149,7 @@ class AAmbientLightActor : public ALightActor
 public:
     DECLARE_CLASS(AAmbientLightActor, ALightActor)
     void InitDefaultComponents() override;
-    void Tick() override;
+    void Tick(float DeltaTime) override;
 };
 
 class ADirectionalLightActor : public ALightActor
@@ -155,7 +157,7 @@ class ADirectionalLightActor : public ALightActor
 public:
     DECLARE_CLASS(ADirectionalLightActor, ALightActor)
     void InitDefaultComponents() override;
-    void Tick() override;
+    void Tick(float DeltaTime) override;
 };
 
 class APointLightActor : public ALightActor
@@ -163,7 +165,7 @@ class APointLightActor : public ALightActor
 public:
     DECLARE_CLASS(APointLightActor, ALightActor)
     virtual void InitDefaultComponents() override;
-    virtual void Tick() override;
+    virtual void Tick(float DeltaTime) override;
 };
 
 class ASpotlightActor : public APointLightActor 
@@ -171,5 +173,5 @@ class ASpotlightActor : public APointLightActor
 public:
 	DECLARE_CLASS(ASpotlightActor, APointLightActor)
 	void InitDefaultComponents() override;
-	void Tick() override;
+	void Tick(float DeltaTime) override;
 };
