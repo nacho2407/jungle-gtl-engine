@@ -41,7 +41,8 @@ struct FDrawCommand
     // ===== Bindings =====
     FConstantBuffer* PerObjectCB = nullptr;         // b1: Model + Color
     FConstantBuffer* PerShaderCB[2] = {};           // [0]=b2 (PerShader0), [1]=b3 (PerShader1)
-    ID3D11ShaderResourceView* DiffuseSRV = nullptr; // t0: 디퓨즈 텍스처
+    ID3D11ShaderResourceView* DiffuseSRV = nullptr; // t0: Base / Diffuse 텍스처
+    ID3D11ShaderResourceView* NormalSRV = nullptr;  // t1: Normal map 텍스처
 
     // ===== Sort =====
     uint64 SortKey = 0; // 정렬 키 (Pass → Shader → MeshBuffer → SRV)

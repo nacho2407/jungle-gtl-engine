@@ -25,6 +25,7 @@ struct FStateCache
 	FConstantBuffer*          PerObjectCB    = nullptr;
 	FConstantBuffer*          PerShaderCB[2] = {};
 	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
+	ID3D11ShaderResourceView* NormalSRV    = nullptr;
 
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
 	ID3D11RenderTargetView*  RTV         = nullptr;
@@ -74,6 +75,9 @@ public:
 
 	// 특정 패스의 커맨드 수 (디버그/통계용)
 	uint32 GetCommandCount(ERenderPass Pass) const;
+
+	// 커맨드 직접 수정이 필요한 패스(예: 풀스크린 포스트 프로세스)용 접근
+	TArray<FDrawCommand>& GetCommands() { return Commands; }
 
 	// 읽기 전용 접근
 	const TArray<FDrawCommand>& GetCommands() const { return Commands; }

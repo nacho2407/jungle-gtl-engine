@@ -27,6 +27,7 @@ void FStateCache::Reset()
     PerShaderCB[0] = nullptr;
     PerShaderCB[1] = nullptr;
     DiffuseSRV = nullptr;
+    NormalSRV = nullptr;
 
     RTV = nullptr;
     DSV = nullptr;
@@ -34,9 +35,10 @@ void FStateCache::Reset()
 
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
-    ID3D11ShaderResourceView* NullSRVs[6] = {};
+    ID3D11ShaderResourceView* NullSRVs[8] = {};
     Ctx->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
     DiffuseSRV = nullptr;
+    NormalSRV = nullptr;
 }
 
 // ============================================================
@@ -267,12 +269,38 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         }
     }
 
-    // --- Diffuse SRV (t0) ---
-    if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
+    // --- Material SRVs (t0=BaseColor, t1=Normal) ---
+    // Fullscreen lighting pass prebinds its own inputs in PrepareInputs:
+    // t0 BaseColor, t1 Surface1, t2 Surface2, t3 ModifiedBaseColor,
+    // t4 ModifiedSurface1, t5 ModifiedSurface2, t10 SceneDepth.
+    // Rebinding t0/t1 here would clobber Surface1 and break Gouraud/Lambert/Blinn-Phong.
+    const bool bUsesPreBoundLightingInputs = (Cmd.Pass == ERenderPass::Lighting);
+    // Fullscreen decal pass binds t1 BaseColor, t2 Surface1, t3 Surface2, t10 SceneDepth
+    // ahead of time and only needs its own decal texture on t0 at draw submission.
+    const bool bUsesPreBoundDecalInputs = (Cmd.Pass == ERenderPass::Decal && Cmd.MeshBuffer == nullptr);
+    if (bUsesPreBoundDecalInputs)
     {
-        ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
-        Ctx->PSSetShaderResources(0, 1, &SRV);
+        if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
+        {
+            ID3D11ShaderResourceView* DecalSRV = Cmd.DiffuseSRV;
+            Ctx->PSSetShaderResources(0, 1, &DecalSRV);
+            Cache.DiffuseSRV = Cmd.DiffuseSRV;
+        }
+    }
+    else if (!bUsesPreBoundLightingInputs &&
+        (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV || Cmd.NormalSRV != Cache.NormalSRV))
+    {
+        ID3D11ShaderResourceView* SRVs[2] = { Cmd.DiffuseSRV, Cmd.NormalSRV };
+        Ctx->PSSetShaderResources(0, 2, SRVs);
         Cache.DiffuseSRV = Cmd.DiffuseSRV;
+        Cache.NormalSRV = Cmd.NormalSRV;
+    }
+    else if (bUsesPreBoundLightingInputs)
+    {
+        // Keep the cache aligned with the command so later passes can still
+        // reason about state changes without forcing an unnecessary rebind.
+        Cache.DiffuseSRV = Cmd.DiffuseSRV;
+        Cache.NormalSRV = Cmd.NormalSRV;
     }
 
     Cache.bForceAll = false;
