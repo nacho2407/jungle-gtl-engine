@@ -6,17 +6,10 @@
 */
 
 #include "Render/Common/RenderTypes.h"
+#include "Render/Common/ShaderTypes.h"
 
 #include "Core/CoreTypes.h"
 #include "Object/Object.h"
-
-enum class EShaderLightPermutationKey : uint32
-{
-	Unlit = 0,
-	Gouraud,
-	Lambert,
-	BlinnPhong,
-};
 
 struct FShaderVariableInfo
 {

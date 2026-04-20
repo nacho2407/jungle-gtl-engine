@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Render/Common/ShaderTypes.h"
 
 enum class EViewMode : int32
 {
@@ -23,4 +24,12 @@ struct FShowFlags
     bool bEnableLOD = true;
     bool bDecals = true;
     bool bFog = true;
+};
+
+struct FRenderSettings
+{
+    EViewMode ViewMode = EViewMode::Lit;
+    FShowFlags ShowFlags;
+    EShadingModel ShadingModel = EShadingModel::Phong;
+    bool bEnableDecalLighting = false;
 };

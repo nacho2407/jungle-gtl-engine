@@ -23,7 +23,7 @@ public:
 
 	// Getter,Setter
 	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj);
-	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
+	void SetRenderSettings(const FRenderSettings& NewRenderSettings);
 
 	const FMatrix& GetView() const { return View; }
 	const FMatrix& GetProj() const { return Proj; }
@@ -31,8 +31,11 @@ public:
 	const FVector& GetCameraForward() const { return CameraForward; }
 	const FVector& GetCameraUp() const { return CameraUp; }
 	const FVector& GetCameraRight() const { return CameraRight; }
-	EViewMode GetViewMode() const { return ViewMode; }
-	FShowFlags GetShowFlags() const { return ShowFlags; }
+	EViewMode GetViewMode() const { return RenderSettings.ViewMode; }
+    EShadingModel GetShadingModel() const { return RenderSettings.ShadingModel; }
+    bool IsDecalLightingEnabled() const { return RenderSettings.bEnableDecalLighting; }
+	FShowFlags GetShowFlags() const { return RenderSettings.ShowFlags; }
+    const FRenderSettings& GetRenderSettings() const { return RenderSettings; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 	bool GetFXAAEnabled() const { return bFXAAEnabled; }
@@ -60,9 +63,7 @@ private:
 	FVector2 ViewportSize;
 	FVector2 ViewportOrigin = FVector2(0.0f, 0.0f);
 
-	//Editor Settings
-	EViewMode ViewMode = EViewMode::Lit;
-	FShowFlags ShowFlags;
+    FRenderSettings RenderSettings;
 	FVector WireframeColor = FVector(1.0f, 1.0f, 1.0f);
 	bool bFXAAEnabled = true;
 };

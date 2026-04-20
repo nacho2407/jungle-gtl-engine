@@ -39,8 +39,7 @@ void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj)
 	CameraUp = CameraWorldMatrix.GetUpVector().GetSafeNormal();
 }
 
-void FRenderBus::SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags)
+void FRenderBus::SetRenderSettings(const FRenderSettings& NewRenderSettings)
 {
-	ViewMode = NewViewMode;
-	ShowFlags = NewShowFlags;
+	RenderSettings = NewRenderSettings;
 }

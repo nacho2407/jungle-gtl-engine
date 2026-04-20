@@ -24,7 +24,7 @@ struct FSceneView
 
 	FFrustum CameraFrustum;
 
-	EViewMode ViewMode = EViewMode::Lit;
+    FRenderSettings RenderSettings;
 
 	bool bOrthographic = false;
 };

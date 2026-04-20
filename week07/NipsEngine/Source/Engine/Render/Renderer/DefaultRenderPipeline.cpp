@@ -27,15 +27,14 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		FMatrix ViewMat = Camera->GetViewMatrix();
 		FMatrix ProjMat = Camera->GetProjectionMatrix();
 
-		FShowFlags ShowFlags;
-		EViewMode ViewMode = EViewMode::Lit;
+        FRenderSettings RenderSettings = {};
 
 		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
-		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Bus.SetRenderSettings(RenderSettings);
 		Bus.SetFXAAEnabled(true);
 
 		const FFrustum& ViewFrustum = Camera->GetFrustum();
-		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
+		Collector.CollectWorld(World, RenderSettings.ShowFlags, RenderSettings.ViewMode, Bus, &ViewFrustum);
 	}
 
 	Renderer.PrepareBatchers(Bus);

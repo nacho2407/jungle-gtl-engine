@@ -83,11 +83,13 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 각 뷰포트는 자신이 참조하는 월드를 렌더링합니다.
     UWorld*                World = VC->GetFocusedWorld();
     const FEditorSettings& Settings = Editor->GetSettings();
-    const FShowFlags&      ShowFlags = Settings.ShowFlags;
-    const EViewMode        ViewMode = SceneView.ViewMode;
+    FRenderSettings RenderSettings = SceneView.RenderSettings;
+    RenderSettings.ShowFlags = Settings.ShowFlags;
+    const FShowFlags&      ShowFlags = RenderSettings.ShowFlags;
+    const EViewMode        ViewMode = RenderSettings.ViewMode;
 
     Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix);
-    Bus.SetRenderSettings(ViewMode, ShowFlags);
+    Bus.SetRenderSettings(RenderSettings);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);

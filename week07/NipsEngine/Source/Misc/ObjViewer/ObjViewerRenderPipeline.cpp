@@ -29,14 +29,15 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	if (Camera)
 	{
 		const auto& Settings = Engine->GetSettings();
-		const FShowFlags& ShowFlags = Settings.ShowFlags;
-		EViewMode ViewMode = Settings.ViewMode;
+        FRenderSettings RenderSettings = {};
+        RenderSettings.ViewMode = Settings.ViewMode;
+        RenderSettings.ShowFlags = Settings.ShowFlags;
 
 		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
-		Bus.SetRenderSettings(ViewMode, ShowFlags);
+		Bus.SetRenderSettings(RenderSettings);
 		Bus.SetFXAAEnabled(true);
 
-		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+		Collector.CollectWorld(World, RenderSettings.ShowFlags, RenderSettings.ViewMode, Bus);
 		Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
 	}
 

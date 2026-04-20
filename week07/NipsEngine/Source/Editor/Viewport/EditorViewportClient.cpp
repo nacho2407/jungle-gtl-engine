@@ -139,7 +139,9 @@ void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 	if (State)
 	{
 		OutView.ViewRect = Viewport->GetRect();
-		OutView.ViewMode = State->ViewMode;
+        OutView.RenderSettings.ViewMode = State->ViewMode;
+        OutView.RenderSettings.ShadingModel = State->ShadingModel;
+        OutView.RenderSettings.bEnableDecalLighting = State->bEnableDecalLighting;
 	}
 }
 
