@@ -33,7 +33,6 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();
-		Scene->CollectSelectedDebugVisuals();
 
 		Builder.BeginCollect(Frame, Scene->GetProxyCount());
 		Collector.CollectWorld(World, Frame, Builder);
