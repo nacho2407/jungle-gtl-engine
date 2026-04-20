@@ -2,7 +2,7 @@
 #ifndef LIGHT_CULLING_COMMON_HLSL
 #define LIGHT_CULLING_COMMON_HLSL
 
-#include "Common/ConstantBuffers.hlsl"
+#include "../../Common/Resources/ConstantBuffers.hlsl"
 
 
 // ============================================================

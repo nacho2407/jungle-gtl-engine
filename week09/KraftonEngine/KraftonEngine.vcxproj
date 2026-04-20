@@ -241,6 +241,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
@@ -384,6 +385,7 @@
     <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Visibility\Occlusion\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Visibility\Occlusion\OcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\TileBasedLightCulling.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
@@ -411,6 +413,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
@@ -615,6 +618,7 @@
     <ClInclude Include="Source\Engine\Render\Visibility\LOD\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Visibility\Occlusion\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Visibility\Occlusion\OcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\TileBasedLightCulling.h" />
     <ClInclude Include="Source\Engine\Resource\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
@@ -653,6 +657,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\LightCullingCommon.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Common\Resources\ConstantBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -833,6 +840,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\ViewModes\FakeLightShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

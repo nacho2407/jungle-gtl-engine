@@ -1,4 +1,4 @@
-#include "Render/Types/LightTypes.h"
+﻿#include "Render/Types/LightTypes.h"
 #include "Render/Resources/ConstantBufferLayouts.h"
 #include "Render/Pipelines/Context/FrameSharedResources.h"
 
@@ -97,7 +97,7 @@ void FFrameSharedResources::Release()
 void FFrameSharedResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightInfo>& Lights)
 {
     const uint32 Count = static_cast<uint32>(Lights.size());
-
+    LocalLightCount = Count;
     // 현재 버퍼 용량이 부족하면 해제 후 재생성
     if (Count > LocalLightCapacity)
     {

@@ -1,12 +1,10 @@
 ﻿#include "TileBasedLightCulling.h"
 #include "Viewport/ViewportClient.h"
 #include "Viewport/Viewport.h"
-#include "Render/D3D11/Device/D3DDevice.h"
-#include "Render/Pipelines/Registry/RenderPipelineType.h"
+#include "Render/RHI/D3D11/Device/D3DDevice.h"
+//#include "Render/Pipelines/Registry/RenderPipelineType.h"
 
 #include <d3dcompiler.h>
-
-
 
 #define TILE_SIZE                       4
 #define MAX_LIGHTS_PER_TILE             1024
@@ -15,6 +13,11 @@
 // ============================================================
 // Initialize / Release
 // ============================================================
+
+FTileBasedLightCulling::~FTileBasedLightCulling()
+{
+    Release();
+}
 
 void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
 {
@@ -26,7 +29,7 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     ID3DBlob* ErrBlob = nullptr;
 
     HRESULT hr = D3DCompileFromFile(
-        L"Shaders/TileBasedLightCullingCS.hlsl",
+        L"Shaders/Passes/Scene/TileBasedLightCullingCS.hlsl",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "CS_LightCulling", "cs_5_0",
@@ -73,8 +76,8 @@ void FTileBasedLightCulling::Release()
     SafeRelease(LightCullingCS);
     SafeRelease(LightCullingParamsCB);
 
-    SafeRelease(PointLightDataSRV);
-    SafeRelease(PointLightBuffer);
+    //SafeRelease(PointLightDataSRV);
+    //SafeRelease(PointLightBuffer);
 
     SafeRelease(PerTilePointLightIndexMaskSRV);
     SafeRelease(PerTilePointLightIndexMaskOutUAV);
@@ -105,9 +108,10 @@ void FTileBasedLightCulling::OnResize(uint32 InWidth, uint32 InHeight)
     ResizeTiles(InWidth, InHeight);
 }
 
-void FTileBasedLightCulling::SetPointLightData(const TArray<FLocalLightInfo>& InLights)
+void FTileBasedLightCulling::SetPointLightData(const uint32 InLightsCount)
 {
-    Lights = InLights;
+    //Lights = InLights;
+    LightCount = InLightsCount;
     CreatePointLightBufferGPU();
 }
 
@@ -176,35 +180,35 @@ void FTileBasedLightCulling::ResizeTiles(uint32 InWidth, uint32 InHeight)
 void FTileBasedLightCulling::CreatePointLightBufferGPU()
 {
     // 기존 리소스 해제
-    if (PointLightDataSRV) { PointLightDataSRV->Release(); PointLightDataSRV = nullptr; }
-    if (PointLightBuffer)  { PointLightBuffer->Release();  PointLightBuffer  = nullptr; }
+    //if (PointLightDataSRV) { PointLightDataSRV->Release(); PointLightDataSRV = nullptr; }
+    //if (PointLightBuffer)  { PointLightBuffer->Release();  PointLightBuffer  = nullptr; }
 
-    if (Lights.empty())
-        return;
+    //if (Lights.empty())
+    //    return;
 
-    // StructuredBuffer 생성
-    D3D11_BUFFER_DESC Desc = {};
-    Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
-    Desc.ByteWidth           = sizeof(FLocalLightInfo) * Lights.size();
-    Desc.Usage               = D3D11_USAGE_DEFAULT;
-    Desc.StructureByteStride = sizeof(FLocalLightInfo);
-    Desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    //// StructuredBuffer 생성
+    //D3D11_BUFFER_DESC Desc = {};
+    //Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
+    //Desc.ByteWidth           = sizeof(FLocalLightInfo) * Lights.size();
+    //Desc.Usage               = D3D11_USAGE_DEFAULT;
+    //Desc.StructureByteStride = sizeof(FLocalLightInfo);
+    //Desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
-    D3D11_SUBRESOURCE_DATA InitData = {};
-    InitData.pSysMem = Lights.data();
+    //D3D11_SUBRESOURCE_DATA InitData = {};
+    //InitData.pSysMem = Lights.data();
 
-    HRESULT hr = Device->GetDevice()->CreateBuffer(&Desc, &InitData, &PointLightBuffer);
-    check(SUCCEEDED(hr));
+    //HRESULT hr = Device->GetDevice()->CreateBuffer(&Desc, &InitData, &PointLightBuffer);
+    //check(SUCCEEDED(hr));
 
     // SRV (셰이더 t0)
-    D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
-    SrvDesc.ViewDimension       = D3D11_SRV_DIMENSION_BUFFER;
-    SrvDesc.Format              = DXGI_FORMAT_UNKNOWN;
-    SrvDesc.Buffer.FirstElement = 0;
-    SrvDesc.Buffer.NumElements  = Lights.size();
+    //D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
+    //SrvDesc.ViewDimension       = D3D11_SRV_DIMENSION_BUFFER;
+    //SrvDesc.Format              = DXGI_FORMAT_UNKNOWN;
+    //SrvDesc.Buffer.FirstElement = 0;
+    //SrvDesc.Buffer.NumElements  = Lights.size();
 
-    hr = Device->GetDevice()->CreateShaderResourceView(PointLightBuffer, &SrvDesc, &PointLightDataSRV);
-    check(SUCCEEDED(hr));
+    //hr = Device->GetDevice()->CreateShaderResourceView(PointLightBuffer, &SrvDesc, &PointLightDataSRV);
+    //check(SUCCEEDED(hr));
 }
 
 void FTileBasedLightCulling::CreateTileMaskBuffers()
@@ -325,7 +329,7 @@ void FTileBasedLightCulling::UpdateLightCullingParamsCB(const FFrameContext& fra
     Params.Enable25DCulling = bEnable25DCulling ? 1u : 0u;
     Params.NearZ            = frameContext.NearClip;  // 카메라 상수에서 가져오도록 교체 권장
     Params.FarZ             = frameContext.FarClip;
-    Params.NumLights        = (float)Lights.size();
+    Params.NumLights        = (float)LightCount;
 
     D3D11_MAPPED_SUBRESOURCE Mapped = {};
     HRESULT hr = Device->GetDeviceContext()->Map(LightCullingParamsCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);

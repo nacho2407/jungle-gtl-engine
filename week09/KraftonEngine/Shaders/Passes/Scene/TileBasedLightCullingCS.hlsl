@@ -1,5 +1,4 @@
-#include "Common/LightCullingCommon.hlsl"
-
+#include "LightCullingCommon.hlsl"
 
 // ============================================================
 // Compute Shader Entry Point

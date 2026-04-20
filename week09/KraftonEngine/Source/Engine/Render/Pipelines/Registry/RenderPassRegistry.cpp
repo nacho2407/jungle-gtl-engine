@@ -1,4 +1,4 @@
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
 
 #include "Render/Passes/Scene/AdditiveDecalPass.h"
@@ -12,6 +12,7 @@
 #include "Render/Passes/Scene/HeightFogPass.h"
 #include "Render/Passes/Scene/LightingPass.h"
 #include "Render/Passes/Scene/ViewModeResolvePass.h"
+#include "Render/Passes/Scene/LightCullingPass.h"
 #include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Passes/Editor/SelectionMaskPass.h"
@@ -25,6 +26,7 @@ void FRenderPassRegistry::Initialize()
 {
     Release();
     Passes.emplace((int32)ERenderPassNodeType::DepthPrePass, new FDepthPrePass());
+    Passes.emplace((int32)ERenderPassNodeType::LightCullingPass, new FLightCullingPass()); 
     Passes.emplace((int32)ERenderPassNodeType::BaseDrawPass, new FBaseDrawPass());
     Passes.emplace((int32)ERenderPassNodeType::DecalPass, new FDecalPass());
     Passes.emplace((int32)ERenderPassNodeType::LightingPass, new FLightingPass());
