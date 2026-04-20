@@ -17,6 +17,8 @@ private:
 private:
 	ImVec2 Size;
 	ID3D11Texture2D* ActorImage;
+
+	//ToDo:Renderer에서 Direct로 ActorImage 생성
 };
 
 class EditorPrefabWidget : public ContentBrowserElement
@@ -25,7 +27,6 @@ public:
 	virtual ~EditorPrefabWidget() { delete DragSource; }
 
 	virtual void Render(ContentBrowserContext& Context) override { DragSource->Render(Context.ContentSize); }
-
 	
 private:
 	PrefabDragSource* DragSource;

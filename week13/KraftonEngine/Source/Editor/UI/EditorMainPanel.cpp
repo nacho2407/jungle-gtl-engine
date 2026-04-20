@@ -34,6 +34,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	PropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
+	ContentBrowserWidget.Initialize(InEditorEngine);
 }
 
 void FEditorMainPanel::Release()
@@ -126,6 +127,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 		StatWidget.Render(DeltaTime);
 	}
 
+	if (!bHideEditorWindows && Settings.UI.bContentBrowser)
+	{
+		SCOPE_STAT_CAT("ContentBrowserWidget.Render", "5_UI");
+		ContentBrowserWidget.Render(DeltaTime);
+	}
+
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
@@ -182,6 +189,7 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 	Settings.UI.bProperty = false;
 	Settings.UI.bScene = false;
 	Settings.UI.bStat = false;
+	Settings.UI.bContentBrowser = false;
 }
 
 void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
