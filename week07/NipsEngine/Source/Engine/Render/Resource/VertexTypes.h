@@ -32,6 +32,7 @@ struct FTextureVertex
 {
 	FVector  Position;
 	FVector2 TexCoord;
+	FVector4 Color;
 };
 
 struct FMeshData

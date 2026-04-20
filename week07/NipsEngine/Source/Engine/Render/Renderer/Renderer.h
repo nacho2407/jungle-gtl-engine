@@ -182,10 +182,11 @@ private:
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	D3D11_INPUT_ELEMENT_DESC FontBatcherInputLayout[2] =
+	D3D11_INPUT_ELEMENT_DESC FontBatcherInputLayout[3] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FTextureVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, Color)),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관

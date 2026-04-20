@@ -55,6 +55,7 @@ void FSubUVBatcher::AddSprite(UTexture* Texture,
                               const FVector& CamRight,
                               const FVector& CamUp,
 							  const FVector& WorldScale,
+                              const FVector4& Color,
                               uint32 FrameIndex,
                               uint32 Columns,
                               uint32 Rows,
@@ -85,10 +86,10 @@ void FSubUVBatcher::AddSprite(UTexture* Texture,
 	uint32 LocalBase = static_cast<uint32>(Vertices.size()) 
 		- static_cast<uint32>(Batches.back().BaseVertex);
 
-    Vertices.push_back({ v0, { Frame.U,               Frame.V                } });
-    Vertices.push_back({ v1, { Frame.U + Frame.Width,  Frame.V                } });
-    Vertices.push_back({ v2, { Frame.U,               Frame.V + Frame.Height } });
-    Vertices.push_back({ v3, { Frame.U + Frame.Width,  Frame.V + Frame.Height } });
+    Vertices.push_back({ v0, { Frame.U,               Frame.V                }, Color });
+    Vertices.push_back({ v1, { Frame.U + Frame.Width,  Frame.V                }, Color });
+    Vertices.push_back({ v2, { Frame.U,               Frame.V + Frame.Height }, Color });
+    Vertices.push_back({ v3, { Frame.U + Frame.Width,  Frame.V + Frame.Height }, Color });
 
     Indices.push_back(LocalBase + 0); Indices.push_back(LocalBase + 1); Indices.push_back(LocalBase + 2);
 	Indices.push_back(LocalBase + 1); Indices.push_back(LocalBase + 3); Indices.push_back(LocalBase + 2);

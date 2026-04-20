@@ -510,6 +510,7 @@ void FRenderer::InitializePassBatchers()
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
 					Cmd.PerObjectConstants.Model.GetScaleVector(),
+					Cmd.PerObjectConstants.Color,
 					SubUV.FrameIndex,
 					SubUV.Particle->Columns,
 					SubUV.Particle->Rows,
@@ -526,6 +527,7 @@ void FRenderer::InitializePassBatchers()
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
 					Cmd.PerObjectConstants.Model.GetScaleVector(),
+					Cmd.PerObjectConstants.Color,
 					0,   // FrameIndex 고정
 					1,   // Columns 고정
 					1,   // Rows 고정

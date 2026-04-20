@@ -533,7 +533,24 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			UMaterialInterface* Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
 
 			FRenderCommand Cmd = {};
-			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+            FVector4 BillboardColor = FColor::White().ToVector4();
+
+            if (AActor* Owner = Primitive->GetOwner())
+            {
+                for (UActorComponent* Comp : Owner->GetComponents())
+                {
+                    if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
+                    {
+                        BillboardColor = Light->LightColor.ToVector4();
+                        break;
+                    }
+                }
+            }
+
+            Cmd.PerObjectConstants = FPerObjectConstants{
+                MakeViewBillboardMatrix(Primitive, RenderBus),
+                BillboardColor
+            };
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
 
@@ -598,12 +615,25 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	{
 		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
 		UTexture* Texture = BillboardComp->GetTexture();
+		FVector4 BillboardColor = FColor::White().ToVector4();
+
+		if (AActor* Owner = Primitive->GetOwner())
+		{
+			for (UActorComponent* Comp : Owner->GetComponents())
+			{
+				if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
+				{
+					BillboardColor = Light->LightColor.ToVector4();
+					break;
+				}
+			}
+		}
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Billboard;
 		Cmd.PerObjectConstants = FPerObjectConstants{
 			MakeViewBillboardMatrix(Primitive, RenderBus),
-			FColor::White().ToVector4() };
+			BillboardColor };
 		Cmd.Constants.Billboard.Texture = Texture;
 		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
 		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();

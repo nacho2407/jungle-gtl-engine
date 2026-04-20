@@ -122,6 +122,7 @@ void FFontBatcher::AddText(const FString& Text,
 	// 빌보드 반벡터를 루프 밖에서 미리 계산
 	const FVector HalfRight = RightVector * (CharW * 0.5f);
 	const FVector HalfUp    = UpVector    * (CharH * 0.5f);
+	const FVector4 VertexColor = FColor::White().ToVector4();
 
 	Ptr = reinterpret_cast<const uint8*>(Text.c_str());
 	uint32 CharIdx = 0;
@@ -146,10 +147,10 @@ void FFontBatcher::AddText(const FString& Text,
 		pV[2] = { Center - HalfRight - HalfUp, { UVMin.X, UVMax.Y } };
 		pV[3] = { Center + HalfRight - HalfUp, { UVMax.X, UVMax.Y } };*/
 
-		pV[0] = { Center                 + HalfUp, { UVMin.X, UVMin.Y } };
-		pV[1] = { Center + HalfRight * 2 + HalfUp, { UVMax.X, UVMin.Y } };
-		pV[2] = { Center                 - HalfUp, { UVMin.X, UVMax.Y } };
-		pV[3] = { Center + HalfRight * 2 - HalfUp, { UVMax.X, UVMax.Y } };
+		pV[0] = { Center                 + HalfUp, { UVMin.X, UVMin.Y }, VertexColor };
+		pV[1] = { Center + HalfRight * 2 + HalfUp, { UVMax.X, UVMin.Y }, VertexColor };
+		pV[2] = { Center                 - HalfUp, { UVMin.X, UVMax.Y }, VertexColor };
+		pV[3] = { Center + HalfRight * 2 - HalfUp, { UVMax.X, UVMax.Y }, VertexColor };
 
 		const uint32 Vi = Base + CharIdx * 4;
 		pI[0] = Vi;     pI[1] = Vi + 1; pI[2] = Vi + 2;
@@ -175,6 +176,7 @@ void FFontBatcher::AddText2D(const FString& Text, const FVector2& ScreenPos, flo
 
 	float CurrentX = ScreenPos.X;
 	float CurrentY = ScreenPos.Y;
+	const FVector4 VertexColor = FColor::White().ToVector4();
 
 	for (char C : Text)
 	{
@@ -192,10 +194,10 @@ void FFontBatcher::AddText2D(const FString& Text, const FVector2& ScreenPos, flo
 
 		uint32 StartIndex = static_cast<uint32>(Vertices.size());
 
-		Vertices.push_back({PosTL, FVector2(UVMin.X, UVMin.Y)});
-		Vertices.push_back({PosTR, FVector2(UVMax.X, UVMin.Y)});
-		Vertices.push_back({PosBL, FVector2(UVMin.X, UVMax.Y)});
-		Vertices.push_back({PosBR, FVector2(UVMax.X, UVMax.Y)});
+		Vertices.push_back({PosTL, FVector2(UVMin.X, UVMin.Y), VertexColor});
+		Vertices.push_back({PosTR, FVector2(UVMax.X, UVMin.Y), VertexColor});
+		Vertices.push_back({PosBL, FVector2(UVMin.X, UVMax.Y), VertexColor});
+		Vertices.push_back({PosBR, FVector2(UVMax.X, UVMax.Y), VertexColor});
 
 		Indices.push_back(StartIndex + 0);
 		Indices.push_back(StartIndex + 1);
