@@ -247,19 +247,19 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.Normal = float4(N_Phong * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
     
-    float count = float(tileData.y);
-    float heat = saturate(count / 5.0f);
-    float3 debugColor = float3(heat, 1.0f - heat, 0.0f);
-    if (count == 0)
-        debugColor = float3(0.1f, 0.1f, 0.1f);
+    //float count = float(tileData.y);
+    //float heat = saturate(count / 5.0f);
+    //float3 debugColor = float3(heat, 1.0f - heat, 0.0f);
+    //if (count == 0)
+    //    debugColor = float3(0.1f, 0.1f, 0.1f);
     
-    uint2 pixelPos = uint2(input.ClipPos.xy);
-    if (pixelPos.x % TILE_SIZE == 0 || pixelPos.y % TILE_SIZE == 0)
-        debugColor = float3(1.0f, 1.0f, 1.0f);
+    //uint2 pixelPos = uint2(input.ClipPos.xy);
+    //if (pixelPos.x % TILE_SIZE == 0 || pixelPos.y % TILE_SIZE == 0)
+    //    debugColor = float3(1.0f, 1.0f, 1.0f);
     
-    output.Color = float4(debugColor, 1.f);
-    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
+    //output.Color = float4(debugColor, 1.f);
+    //output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    //output.WorldPos = float4(input.WorldPos, 1.f);
 
     return output;
 #else
