@@ -1,7 +1,6 @@
 ﻿#include "Render/Proxy/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "Materials/Material.h"
 #include "Object/ObjectFactory.h"
@@ -28,6 +27,7 @@ FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
 
 FGizmoSceneProxy::~FGizmoSceneProxy()
 {
+	GizmoCB.Release();
 	if (GizmoMaterial)
 	{
 		UObjectManager::Get().DestroyObject(GizmoMaterial);
@@ -82,7 +82,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 	// GizmoMaterial에 Gizmo CB 바인딩
 	auto& G = GizmoMaterial->BindPerShaderCB<FGizmoConstants>(
-		FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Gizmo, sizeof(FGizmoConstants)),
+		&GizmoCB,
 		ECBSlot::PerShader0);
 	G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	G.bIsInnerGizmo = bIsInner ? 1 : 0;

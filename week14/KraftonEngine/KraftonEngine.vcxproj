@@ -349,7 +349,6 @@
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\RasterizerStateManager.cpp" />
@@ -517,7 +516,6 @@
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h" />
     <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RasterizerStateManager.h" />

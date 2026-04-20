@@ -536,9 +536,6 @@
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
@@ -1032,9 +1029,6 @@
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h">
