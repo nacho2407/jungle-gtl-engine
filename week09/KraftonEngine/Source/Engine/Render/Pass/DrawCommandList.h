@@ -18,7 +18,6 @@ struct FStateCache
 	EBlendState               Blend        = {};
 	ERasterizerState          Rasterizer   = {};
 	D3D11_PRIMITIVE_TOPOLOGY  Topology     = {};
-	uint8                     StencilRef   = 0;
 	FMeshBuffer*              MeshBuffer   = nullptr;
 	ID3D11Buffer*             RawVB        = nullptr;   // 동적 지오메트리 VB 추적
 	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적

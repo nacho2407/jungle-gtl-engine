@@ -19,7 +19,6 @@ void FStateCache::Reset()
 	Blend        = {};
 	Rasterizer   = {};
 	Topology     = {};
-	StencilRef   = 0;
 	MeshBuffer   = nullptr;
 	RawVB        = nullptr;
 	RawIB        = nullptr;
@@ -276,21 +275,17 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 	// --- Diffuse SRV (t0) ---
 	if (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV)
 	{
-		if (Cmd.DiffuseSRV) {
-			ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
-			Ctx->PSSetShaderResources(0, 1, &SRV);
-			Cache.DiffuseSRV = Cmd.DiffuseSRV;
-		}
+		ID3D11ShaderResourceView* SRV = Cmd.DiffuseSRV;
+		Ctx->PSSetShaderResources(0, 1, &SRV);
+		Cache.DiffuseSRV = Cmd.DiffuseSRV;
 	}
 
 	// --- Local Light SRV (t6) ---
 	if (bForce || Cmd.LocalLightSRV != Cache.LocalLightSRV)
 	{
-		if (Cmd.LocalLightSRV) {
-			ID3D11ShaderResourceView* SRV = Cmd.LocalLightSRV;
-			Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &SRV);
-			Cache.LocalLightSRV = Cmd.LocalLightSRV;
-		}
+		ID3D11ShaderResourceView* SRV = Cmd.LocalLightSRV;
+		Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &SRV);
+		Cache.LocalLightSRV = Cmd.LocalLightSRV;
 	}
 
 	Cache.bForceAll = false;
