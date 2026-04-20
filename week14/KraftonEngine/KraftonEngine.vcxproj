@@ -241,7 +241,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrower.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
@@ -386,7 +387,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrower.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
     <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />

@@ -1,40 +1,10 @@
-﻿#include "ContentBrower.h"
+﻿#include "ContentBrowser.h"
 
+#include "ContentBrowserElement.h"
 #include "WICTextureLoader.h"
 
 
-void DefaultElement::Render(ContentBrowserContext& Context)
-{
-	FString Name = FPaths::ToUtf8(ContentItem.Name);
-	ImGui::PushID(Name.c_str());
-
-	bIsSelected = Context.SelectedElement == this;
-
-	if (ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize))
-	{
-		Context.SelectedElement = this;
-		bIsSelected = true;
-	}
-
-
-	ImVec2 Min = ImGui::GetItemRectMin();
-	ImVec2 Max = ImGui::GetItemRectMax();
-	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-	ImFont* font = ImGui::GetFont();
-	float fontSize = ImGui::GetFontSize();
-	Max.y -= fontSize;
-	Max.x -= fontSize * 0.5f;
-	Min.x += fontSize * 0.5f;
-	DrawList->AddImage(Icon, Min, Max);
-
-	ImVec2 TextPos(Min.x, Max.y);
-	FString Text = EllipsisText(FPaths::ToUtf8(ContentItem.Name), Context.ContentSize.x);
-	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Text.c_str());
-	ImGui::PopID();
-}
-
-void FEditorContextBrwoserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
+void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
 	FEditorWidget::Initialize(InEditor);
 	if (!InDevice) return;
@@ -56,7 +26,7 @@ void FEditorContextBrwoserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	Refresh();
 }
 
-void FEditorContextBrwoserWidget::Render(float DeltaTime)
+void FEditorContentBrowserWidget::Render(float DeltaTime)
 {
 	if (!ImGui::Begin("ContentBrowser"))
 	{
@@ -64,20 +34,20 @@ void FEditorContextBrwoserWidget::Render(float DeltaTime)
 		return;
 	}
 
-	if (ImGui::Button("Refresh"))
+	if (ImGui::Button("Refresh") || BrowserContext.bIsNeedRefresh)
 		Refresh();
 
 	ImGui::SameLine();
-	ImGui::Text(FPaths::ToUtf8(CurrentPath).c_str());
+	ImGui::Text(FPaths::ToUtf8(BrowserContext.CurrentPath).c_str());
 
 	ImGui::SameLine();
-	int size = BrowserContext.ContentSize.x;
+	int size = static_cast<int>(BrowserContext.ContentSize.x);
 	ImGui::SliderInt("##slider", &size, 20, 100);
-	BrowserContext.ContentSize = ImVec2(size, size);
+	BrowserContext.ContentSize = ImVec2(static_cast<float>(size), static_cast<float>(size));
 
 	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
-		ImGui::EndTable();
+		ImGui::End();
 		return;
 	}
 
@@ -102,34 +72,49 @@ void FEditorContextBrwoserWidget::Render(float DeltaTime)
 	ImGui::End();
 }
 
-void FEditorContextBrwoserWidget::Refresh()
+void FEditorContentBrowserWidget::Refresh()
 {
 	RootNode = BuildDirectoryTree(FPaths::RootDir());
 	RefreshContent();
+
+	BrowserContext.SelectedElement = nullptr;
+	BrowserContext.bIsNeedRefresh = false;
 }
 
-void FEditorContextBrwoserWidget::RefreshContent()
+void FEditorContentBrowserWidget::RefreshContent()
 {
 	CachedBrowserElements.clear();
-	TArray<FContentItem> CurrentContents = ReadDirectory(CurrentPath);
+	TArray<FContentItem> CurrentContents = ReadDirectory(BrowserContext.CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
-		auto element = std::make_unique<DefaultElement>();
-		element.get()->SetContent(Content);
-		element.get()->SetIcon(DefaultIcon);
+		std::unique_ptr<ContentBrowserElement> element;
+		
+		if (Content.bIsDirectory)
+		{
+			element = std::make_unique<DirectoryElement>();
+			element.get()->SetIcon(FolderIcon);
 
+		}
+		else
+		{
+			element = std::make_unique<DefaultElement>();
+			element.get()->SetIcon(DefaultIcon);
+		}
+		
+		
+		element.get()->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(element));
 	}
 }
 
-void FEditorContextBrwoserWidget::DrawDirNode(FDirNode InNode)
+void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
 {
 	ImGuiTreeNodeFlags Flag = InNode.Children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
 
 	bool bIsOpen = ImGui::TreeNodeEx(FPaths::ToUtf8(InNode.Self.Name).c_str(), Flag);
 	if (ImGui::IsItemClicked())
 	{
-		CurrentPath = InNode.Self.Path;
+		BrowserContext.CurrentPath = InNode.Self.Path;
 		RefreshContent();
 	}
 
@@ -138,7 +123,7 @@ void FEditorContextBrwoserWidget::DrawDirNode(FDirNode InNode)
 		return;
 	}
 
-	int32 ChildrenCount = InNode.Children.size();
+	int32 ChildrenCount = static_cast<int32>(InNode.Children.size());
 	for (int i = 0; i < ChildrenCount; i++)
 	{
 		DrawDirNode(InNode.Children[i]);
@@ -147,9 +132,9 @@ void FEditorContextBrwoserWidget::DrawDirNode(FDirNode InNode)
 	ImGui::TreePop();
 }
 
-void FEditorContextBrwoserWidget::DrawContents()
+void FEditorContentBrowserWidget::DrawContents()
 {
-	int elementCount = CachedBrowserElements.size();
+	int elementCount = static_cast<int>(CachedBrowserElements.size());
 	float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
 	for (int i = 0; i < elementCount; i++)
@@ -164,7 +149,7 @@ void FEditorContextBrwoserWidget::DrawContents()
 	}
 }
 
-TArray<FContentItem> FEditorContextBrwoserWidget::ReadDirectory(std::wstring Path)
+TArray<FContentItem> FEditorContentBrowserWidget::ReadDirectory(std::wstring Path)
 {
 	TArray<FContentItem> Items;
 
@@ -184,10 +169,19 @@ TArray<FContentItem> FEditorContextBrwoserWidget::ReadDirectory(std::wstring Pat
 		Items.push_back(Item);
 	}
 
+	std::sort(Items.begin(), Items.end(),
+		[](const FContentItem& A, const FContentItem& B)
+		{
+			if (A.bIsDirectory != B.bIsDirectory)
+				return A.bIsDirectory > B.bIsDirectory;
+
+			return A.Name < B.Name;
+		});
+
 	return Items;
 }
 
-FDirNode FEditorContextBrwoserWidget::BuildDirectoryTree(const std::filesystem::path& DirPath)
+FEditorContentBrowserWidget::FDirNode FEditorContentBrowserWidget::BuildDirectoryTree(const std::filesystem::path& DirPath)
 {
 	FDirNode Node;
 	Node.Self.Path = DirPath;
@@ -206,32 +200,4 @@ FDirNode FEditorContextBrwoserWidget::BuildDirectoryTree(const std::filesystem::
 		Node.Self.Name = FPaths::ToWide("<Unnamed>");
 
 	return Node;
-}
-
-FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
-{
-	ImFont* font = ImGui::GetFont();
-	float fontSize = ImGui::GetFontSize();
-
-	if (font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, text.c_str()).x <= maxWidth)
-		return text;
-
-	const char* ellipsis = "...";
-	float ellipsisWidth = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, ellipsis).x;
-
-	std::string result = text;
-
-	while (!result.empty())
-	{
-		result.pop_back();
-
-		float w = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, result.c_str()).x;
-		if (w + ellipsisWidth <= maxWidth)
-		{
-			result += ellipsis;
-			break;
-		}
-	}
-
-	return result;
 }
