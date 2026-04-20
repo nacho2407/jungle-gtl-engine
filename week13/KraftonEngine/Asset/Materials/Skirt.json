@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/Skirt.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/Lumine/Texture/Clothes.png"
   }

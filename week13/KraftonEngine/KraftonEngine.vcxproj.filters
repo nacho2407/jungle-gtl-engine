@@ -180,9 +180,6 @@
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\StaticMeshShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\TileLightCulling.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>

@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/drap.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/church/TextureAtlasDrap.png"
   }

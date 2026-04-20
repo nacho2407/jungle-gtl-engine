@@ -7,15 +7,19 @@
 //   LIGHTING_MODEL_PHONG    1  — 픽셀 단계 Diffuse + Specular (Blinn-Phong)
 //
 // 아무 라이팅 모델 매크로도 없으면 기본값 = Blinn-Phong
+//   LIGHTING_MODEL_UNLIT   1  — 라이팅 없음 (Albedo + Wireframe)
 // =============================================================================
 
 #include "Common/Functions.hlsli"
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
+
+#if !defined(LIGHTING_MODEL_UNLIT)
 #include "Common/ForwardLighting.hlsli"
+#endif
 
 // ── 기본값 설정 ──
-#if !defined(LIGHTING_MODEL_GOURAUD) && !defined(LIGHTING_MODEL_LAMBERT) && !defined(LIGHTING_MODEL_PHONG)
+#if !defined(LIGHTING_MODEL_GOURAUD) && !defined(LIGHTING_MODEL_LAMBERT) && !defined(LIGHTING_MODEL_PHONG) && !defined(LIGHTING_MODEL_UNLIT)
 #define LIGHTING_MODEL_PHONG 1
 #endif
 
@@ -138,6 +142,11 @@ UberPS_Output PS(UberVS_Output input)
 
     float3 V = normalize(CameraWorldPos - input.worldPos);
 
+#if defined(LIGHTING_MODEL_UNLIT) && LIGHTING_MODEL_UNLIT
+    // Unlit: 라이팅 없이 Albedo만 출력
+    float3 finalColor = ApplyWireframe(baseColor.rgb);
+
+#else
     float3 diffuse = float3(0, 0, 0);
     float3 specular = float3(0, 0, 0);
 
@@ -153,7 +162,7 @@ UberPS_Output PS(UberVS_Output input)
     diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
     specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
 #endif
-    
+
     if (ViewLightCulling)
     {
         #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
@@ -164,18 +173,19 @@ UberPS_Output PS(UberVS_Output input)
         #else
         uint LightCount = NumActivePointLights + NumActiveSpotLights;
         #endif
-        
+
         float MaxCount = HeatMapMax;
         float ratio = saturate((float) LightCount / MaxCount);
         output.Color = float4(GetHeatmapColor(ratio), 1.0f);
-    
+
         return output;
     }
-    
+
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
     // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
     finalColor = ApplyWireframe(finalColor);
+#endif
 
     output.Color = float4(finalColor, baseColor.a);
     output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹

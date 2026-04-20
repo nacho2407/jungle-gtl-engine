@@ -87,10 +87,10 @@ namespace EShaderPath
 // ============================================================
 namespace EUberLitDefines
 {
-	inline const D3D_SHADER_MACRO Default[]  = { {"DEBUG_LIGHTS","0"}, {nullptr,nullptr} };
-	inline const D3D_SHADER_MACRO Gouraud[]  = { {"LIGHTING_MODEL_GOURAUD","1"}, {"DEBUG_LIGHTS","0"}, {"USE_TILE_CULLING","0"}, {nullptr,nullptr} };
-	inline const D3D_SHADER_MACRO Lambert[]  = { {"LIGHTING_MODEL_LAMBERT","1"}, {"DEBUG_LIGHTS","0"}, {"USE_TILE_CULLING","1"}, {nullptr,nullptr} };
-	inline const D3D_SHADER_MACRO Phong[]    = { {"LIGHTING_MODEL_PHONG","1"},   {"DEBUG_LIGHTS","0"}, {"USE_TILE_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Unlit[]    = { {"LIGHTING_MODEL_UNLIT","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Gouraud[]  = { {"LIGHTING_MODEL_GOURAUD","1"}, {"USE_TILE_CULLING","0"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Lambert[]  = { {"LIGHTING_MODEL_LAMBERT","1"}, {"USE_TILE_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Phong[]    = { {"LIGHTING_MODEL_PHONG","1"},   {"USE_TILE_CULLING","1"}, {nullptr,nullptr} };
 }
 
 // ============================================================
@@ -113,18 +113,14 @@ public:
 	// 경로 전용 편의 오버로드 (Defines 없음)
 	FShader* GetOrCreate(const FString& Path) { return GetOrCreate(FShaderKey(Path)); }
 
-	// MaterialManager 통합 — 경로로 기 등록 셰이더 우선 조회, 없으면 컴파일
+	// MaterialManager 통합 — 경로로 셰이더 조회, 없으면 컴파일
 	FShader* FindOrCreate(const FString& Path);
-
-	// 경로 별칭 등록 — 레거시 경로를 기존 셰이더로 매핑
-	void RegisterAlias(const FString& AliasPath, const FShaderKey& TargetKey);
 
 private:
 	FShaderManager() = default;
 
 	ID3D11Device* CachedDevice = nullptr;
 	TMap<FShaderKey, std::unique_ptr<FShader>> ShaderCache;
-	TMap<FString, FShader*> AliasMap;	// 레거시 경로 → 기존 셰이더
 
 	bool bIsInitialized = false;
 };
