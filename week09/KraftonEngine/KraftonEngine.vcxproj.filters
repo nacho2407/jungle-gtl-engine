@@ -85,8 +85,8 @@
     <Filter Include="Source\Engine\Render\Core">
       <UniqueIdentifier>{10f600ed-a596-906f-6415-275e93d7f337}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Debug">
-      <UniqueIdentifier>{b8362f1c-8314-ae05-0faf-911895eac05c}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\DebugDraw">
+      <UniqueIdentifier>{fbaf9556-a185-1b47-fe85-a96d26d4db43}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Execution">
       <UniqueIdentifier>{0549ffa0-abc9-3edc-7c51-c498324d9e4a}</UniqueIdentifier>
@@ -554,11 +554,11 @@
     <ClCompile Include="Source\Engine\Render\Core\RenderPassContext.cpp">
       <Filter>Source\Engine\Render\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Debug\DebugDrawQueue.cpp">
-      <Filter>Source\Engine\Render\Debug</Filter>
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Debug\DrawDebugHelpers.cpp">
-      <Filter>Source\Engine\Render\Debug</Filter>
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execution\RenderPipelineRunner.cpp">
       <Filter>Source\Engine\Render\Execution</Filter>
@@ -1130,14 +1130,14 @@
     <ClInclude Include="Source\Engine\Render\Core\SortKey.h">
       <Filter>Source\Engine\Render\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Debug\DebugDrawQueue.h">
-      <Filter>Source\Engine\Render\Debug</Filter>
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Debug\DrawDebugHelpers.h">
-      <Filter>Source\Engine\Render\Debug</Filter>
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Debug\RenderMarkers.h">
-      <Filter>Source\Engine\Render\Debug</Filter>
+    <ClInclude Include="Source\Engine\Render\DebugDraw\RenderMarkers.h">
+      <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execution\LODContext.h">
       <Filter>Source\Engine\Render\Execution</Filter>
