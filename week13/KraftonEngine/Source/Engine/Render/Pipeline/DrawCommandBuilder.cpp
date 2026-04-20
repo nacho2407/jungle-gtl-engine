@@ -87,6 +87,7 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 	case EViewMode::Lit_Gouraud:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud));
 	case EViewMode::Lit_Lambert:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert));
 	case EViewMode::Lit_Phong:    return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
+	case EViewMode::LightCulling: return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
 	default:                      return ProxyShader;
 	}
 }
@@ -441,6 +442,18 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(NormalShader, ERenderPass::PostProcess, PPRS);
 			Cmd.BuildSortKey(3);
+		}
+	}
+
+	// LightCulling (UserBits=4 → WorldNormal 뒤)
+	if (CollectViewMode == EViewMode::LightCulling)
+	{
+		FShader* CullingShader = FShaderManager::Get().GetOrCreate(EShaderPath::LightCulling);
+		if (CullingShader)
+		{
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.InitFullscreenTriangle(CullingShader, ERenderPass::PostProcess, PPRS);
+			Cmd.BuildSortKey(4);
 		}
 	}
 

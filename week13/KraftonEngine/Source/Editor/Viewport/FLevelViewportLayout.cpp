@@ -853,7 +853,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			// ── View Mode 팝업 ──
 			ImGui::SameLine();
 
-			static const char* ViewModeNames[] = { "Phong", "Unlit", "Gouraud", "Lambert", "Wireframe", "SceneDepth", "WorldNormal" };
+			static const char* ViewModeNames[] = { "Phong", "Unlit", "Gouraud", "Lambert", "Wireframe", "SceneDepth", "WorldNormal", "LightCulling" };
 			const char* CurrentViewModeName = ViewModeNames[static_cast<int32>(Opts.ViewMode)];
 
 			char ViewModePopupID[64];
@@ -875,6 +875,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
 				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
 				ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
+				ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
 				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 				ImGui::EndPopup();
 			}

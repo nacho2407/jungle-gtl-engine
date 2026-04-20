@@ -228,4 +228,5 @@ void FSystemResources::UnbindSystemTextures(FD3DDevice& Device)
 	Ctx->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
 	Ctx->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
 	Ctx->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
+	Ctx->PSSetShaderResources(ESystemTexSlot::CullingHeatmap, 1, &nullSRV);
 }

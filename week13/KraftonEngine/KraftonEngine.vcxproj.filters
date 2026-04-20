@@ -645,7 +645,8 @@
     <ClCompile Include="TileBaseCulling.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrower.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1188,7 +1189,10 @@
     <ClInclude Include="TileBaseCulling.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrower.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

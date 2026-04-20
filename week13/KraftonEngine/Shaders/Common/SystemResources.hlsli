@@ -10,5 +10,6 @@ Texture2D<float>  SceneDepthTexture    : register(t16);  // CopyResource된 Dept
 Texture2D<float4> SceneColorTexture    : register(t17);  // CopyResource된 SceneColor (R8G8B8A8_UNORM)
 Texture2D<float4> GBufferNormalTexture : register(t18);  // GBuffer World Normal (R16G16B16A16_FLOAT)
 Texture2D<uint2>  StencilTexture       : register(t19);  // CopyResource된 Stencil (X24_G8_UINT)
+Texture2D<float4> CullingHeatmapTexture : register(t20); // Tile Culling Heatmap (R8G8B8A8_UNORM)
 
 #endif // SYSTEM_RESOURCES_HLSL

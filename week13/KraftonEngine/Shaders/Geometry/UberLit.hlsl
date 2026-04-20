@@ -109,6 +109,7 @@ struct UberPS_Output
 {
     float4 Color : SV_TARGET0; // 최종 색상 (기존 프레임 버퍼)
     float4 Normal : SV_TARGET1; // World Normal (GBuffer Normal RT)
+    float4 Culling : SV_TARGET2; // Tile Culling Heatmap
 };
 
 // =============================================================================
@@ -145,6 +146,7 @@ UberPS_Output PS(UberVS_Output input)
 #if defined(LIGHTING_MODEL_UNLIT) && LIGHTING_MODEL_UNLIT
     // Unlit: 라이팅 없이 Albedo만 출력
     float3 finalColor = ApplyWireframe(baseColor.rgb);
+    output.Culling = float4(0, 0, 0, 0);
 
 #else
     float3 diffuse = float3(0, 0, 0);
@@ -163,7 +165,7 @@ UberPS_Output PS(UberVS_Output input)
     specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
 #endif
 
-    if (ViewLightCulling)
+    // Culling Heatmap → SV_TARGET2
     {
         #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
         uint2 tileCoord = uint2(input.position.xy) / 16;
@@ -176,9 +178,7 @@ UberPS_Output PS(UberVS_Output input)
 
         float MaxCount = HeatMapMax;
         float ratio = saturate((float) LightCount / MaxCount);
-        output.Color = float4(GetHeatmapColor(ratio), 1.0f);
-
-        return output;
+        output.Culling = float4(GetHeatmapColor(ratio), 1.0f);
     }
 
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
@@ -189,6 +189,14 @@ UberPS_Output PS(UberVS_Output input)
 
     output.Color = float4(finalColor, baseColor.a);
     output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
+
+#if !defined(LIGHTING_MODEL_UNLIT)
+    // ViewLightCulling 토글 시 Color도 히트맵으로 대체
+    if (ViewLightCulling)
+    {
+        output.Color = output.Culling;
+    }
+#endif
 
     return output;
 }
