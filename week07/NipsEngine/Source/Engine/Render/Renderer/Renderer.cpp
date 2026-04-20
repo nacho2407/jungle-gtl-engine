@@ -426,10 +426,20 @@ void FRenderer::InitializePassBatchers()
 			{
 				EditorLineBatcher.AddOBB(FOBB{ Cmd.Constants.OBB.Center, Cmd.Constants.OBB.Extents, Cmd.Constants.OBB.Rotation }, Cmd.Constants.OBB.Color);
 			}
+			else if (Cmd.Type == ERenderCommandType::DebugDirectionalLight)
+			{
+				const auto& D = Cmd.Constants.DirectionalLight;
+				EditorLineBatcher.AddDirectionalLight(D.Position, D.Direction, D.Length, D.Color);
+			}
+			else if (Cmd.Type == ERenderCommandType::DebugPointLight)
+			{
+				const auto& P = Cmd.Constants.PointLight;
+				EditorLineBatcher.AddPointLight(P.Position, P.Radius, P.Color);
+			}
 			else if (Cmd.Type == ERenderCommandType::DebugSpotlight)
 			{
-				const auto& S = Cmd.Constants.SpotLight;
-				EditorLineBatcher.AddSpotLight(S.Position, S.Direction, S.Range, S.InnerAngle, S.OuterAngle, S.Color);
+				const auto& S = Cmd.Constants.SpotLightDebug;
+				EditorLineBatcher.AddSpotLight(S.Position, S.Direction, S.Range, S.InnerAngle, S.OuterAngle, S.InnerColor, S.OuterColor);
 			}
 		},
 		/*.Flush   =*/ [this](ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Ctx) {

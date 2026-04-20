@@ -63,8 +63,14 @@ public:
 	// OBB 와이어프레임 (12개 Edge)
 	void AddOBB(const FOBB& Box, const FColor& Color);
 
+	// Directional Light의 forward 방향 화살표
+	void AddDirectionalLight(const FVector& Position, const FVector& Direction, float Length, const FColor& Color);
+
+	// Point Light의 범위 구를 표현하는 3개 원
+	void AddPointLight(const FVector& Position, float Radius, const FColor& Color);
+
 	// SpotLight의 원뿔 와이어프레임
-	void AddSpotLight(const FVector& Position, const FVector& Direction, float Range, float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& Color);
+	void AddSpotLight(const FVector& Position, const FVector& Direction, float Range, float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& InnerColor, const FColor& OuterColor);
 
 	/**
 	 * @brief 카메라 기준의 grid patch와 축 보조선을 생성합니다.

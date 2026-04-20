@@ -157,6 +157,24 @@ namespace
 		OutBuffer.Reset();
 		return SUCCEEDED(Device->CreateBuffer(&Desc, nullptr, OutBuffer.ReleaseAndGetAddressOf()));
 	}
+
+	void AddWireCircle(FLineBatcher& Batcher, const FVector& Center, const FVector& AxisA, const FVector& AxisB, float Radius, const FColor& Color, int32 Segments = 32)
+	{
+		const FVector SafeA = AxisA.GetSafeNormal();
+		const FVector SafeB = AxisB.GetSafeNormal();
+		const FVector4 CircleColor = Color.ToVector4();
+
+		for (int32 i = 0; i < Segments; ++i)
+		{
+			const float Angle0 = (static_cast<float>(i) / Segments) * MathUtil::TwoPi;
+			const float Angle1 = (static_cast<float>(i + 1) / Segments) * MathUtil::TwoPi;
+
+			const FVector P0 = Center + ((SafeA * std::cos(Angle0)) + (SafeB * std::sin(Angle0))) * Radius;
+			const FVector P1 = Center + ((SafeA * std::cos(Angle1)) + (SafeB * std::sin(Angle1))) * Radius;
+
+			Batcher.AddLine(P0, P1, CircleColor);
+		}
+	}
 }
 
 void FLineBatcher::Create(ID3D11Device* InDevice)
@@ -278,13 +296,52 @@ void FLineBatcher::AddOBB(const FOBB& Box, const FColor& InColor)
 	}
 }
 
-void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Direction, float Range,
-	float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& InColor)
+void FLineBatcher::AddDirectionalLight(const FVector& Position, const FVector& Direction, float Length, const FColor& InColor)
 {
 	const FVector4 LineColor = InColor.ToVector4();
+	const FVector Forward = Direction.GetSafeNormal();
+	if (Forward.IsNearlyZero())
+	{
+		return;
+	}
+
+	const FVector End = Position + Forward * Length;
+	AddLine(Position, End, LineColor);
+
+	FVector Up, Right;
+	Forward.FindBestAxisVectors(Up, Right);
+
+	const float HeadLength = Length * 0.2f;
+	const float HeadWidth = Length * 0.08f;
+	const FVector HeadBase = End - Forward * HeadLength;
+
+	AddLine(End, HeadBase + Right * HeadWidth, LineColor);
+	AddLine(End, HeadBase - Right * HeadWidth, LineColor);
+}
+
+void FLineBatcher::AddPointLight(const FVector& Position, float Radius, const FColor& InColor)
+{
+	if (Radius <= 0.0f)
+	{
+		return;
+	}
+
+	AddWireCircle(*this, Position, FVector::RightVector, FVector::UpVector, Radius, InColor);
+	AddWireCircle(*this, Position, FVector::ForwardVector, FVector::UpVector, Radius, InColor);
+	AddWireCircle(*this, Position, FVector::ForwardVector, FVector::RightVector, Radius, InColor);
+}
+
+void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Direction, float Range,
+	float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& InnerColor, const FColor& OuterColor)
+{
+	const FVector4 OuterLineColor = OuterColor.ToVector4();
 	const uint32 BaseVertex = static_cast<uint32>(IndexedVertices.size());
 
 	FVector Forward = Direction.GetSafeNormal();
+	if (Forward.IsNearlyZero() || Range <= 0.0f)
+	{
+		return;
+	}
 	FVector Up, Right;
 	Forward.FindBestAxisVectors(Up, Right);
 
@@ -300,7 +357,7 @@ void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Directio
 		float SinA = std::sin(Angle);
 
 		FVector VertexPos = ConeBaseCenter + (Right * CosA * ConeRadius) + (Up * SinA * ConeRadius);
-		IndexedVertices.emplace_back(VertexPos, LineColor);
+		IndexedVertices.emplace_back(VertexPos, OuterLineColor);
 	}
 
 	for (int32 i = 0; i < Segments; ++i)
@@ -310,12 +367,46 @@ void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Directio
 	
 		{
 			uint32 TipIdx = static_cast<uint32>(IndexedVertices.size());
-			IndexedVertices.emplace_back(Position, LineColor);
+			IndexedVertices.emplace_back(Position, OuterLineColor);
 
 			Indices.push_back(TipIdx);
 			Indices.push_back(BaseVertex + i);
 		}
 	}
+
+	const float InnerRad = MathUtil::DegreesToRadians(InnerConeAngleDeg);
+    const float InnerConeRadius = Range * std::tan(InnerRad);
+
+    const FVector4 InnerLineColorV = InnerColor.ToVector4();
+    const uint32 InnerBaseVertex = static_cast<uint32>(IndexedVertices.size());
+
+    // Inner 원 둘레 정점 생성
+    for (int32 i = 0; i < Segments; ++i)
+    {
+        float Angle = (static_cast<float>(i) / Segments) * MathUtil::TwoPi;
+        float CosA = std::cos(Angle);
+        float SinA = std::sin(Angle);
+
+        FVector VertexPos = ConeBaseCenter + (Right * CosA * InnerConeRadius) + (Up * SinA * InnerConeRadius);
+        IndexedVertices.emplace_back(VertexPos, InnerLineColorV);
+    }
+
+    // Inner 원 둘레 연결
+    for (int32 i = 0; i < Segments; ++i)
+    {
+        Indices.push_back(InnerBaseVertex + i);
+        Indices.push_back(InnerBaseVertex + ((i + 1) % Segments));
+    }
+
+    // 꼭짓점에서 Inner 원으로 가는 선 추가
+    for (int32 i = 0; i < Segments; ++i)
+    {
+        uint32 TipIdx = static_cast<uint32>(IndexedVertices.size());
+        IndexedVertices.emplace_back(Position, InnerLineColorV);
+
+        Indices.push_back(TipIdx);
+        Indices.push_back(InnerBaseVertex + i);
+    }
 }
 
 void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount,

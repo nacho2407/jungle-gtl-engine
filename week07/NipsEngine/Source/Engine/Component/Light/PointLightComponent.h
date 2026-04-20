@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "LightComponent.h"
 
@@ -19,6 +19,6 @@ public:
 	void SetLightFalloffExponent(float InExponent) { LightFalloffExponent = InExponent; }
 
 private:
-	float AttenuationRadius = 1000.0f;
+	float AttenuationRadius = 3.0f;
 	float LightFalloffExponent = 2.0f;
 };

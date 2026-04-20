@@ -20,6 +20,8 @@
 #include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
+#include "Engine/GameFramework/Light/DirectionalLight.h"
+#include "Engine/GameFramework/Light/PointLight.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
 #include "Math/Utils.h"
 #include "Render/Resource/Material.h"
@@ -237,6 +239,14 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 		{
 			CollectSpotLightCommand(static_cast<const ASpotLightActor*>(Actor), ShowFlags, RenderBus);
 		}
+		else if (Actor->IsA<APointLightActor>())
+		{
+			CollectPointLightCommand(static_cast<const APointLightActor*>(Actor), ShowFlags, RenderBus);
+		}
+		else if (Actor->IsA<ADirectionalLightActor>())
+		{
+			CollectDirectionalLightCommand(static_cast<const ADirectionalLightActor*>(Actor), ShowFlags, RenderBus);
+		}
 
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
@@ -375,11 +385,6 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
 	}
 
-	if (Actor->IsA<ASpotLightActor>())
-	{
-		ASpotLightActor* SpotlightActor = Cast<ASpotLightActor>(Actor);
-
-	}
 }
 
 bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
@@ -835,18 +840,44 @@ void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent
 	CollectOBBCommand(Box, FColor::Green(), RenderBus);
 }
 
+void FRenderCollector::CollectDirectionalLightCommand(const ADirectionalLightActor* DirectionalLightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume || !DirectionalLightActor) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugDirectionalLight;
+	Cmd.Constants.DirectionalLight.Position = DirectionalLightActor->GetActorLocation();
+	Cmd.Constants.DirectionalLight.Direction = DirectionalLightActor->GetLightDirection().GetSafeNormal();
+	Cmd.Constants.DirectionalLight.Length = 2.5f;
+	Cmd.Constants.DirectionalLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
+void FRenderCollector::CollectPointLightCommand(const APointLightActor* PointLightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume || !PointLightActor) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugPointLight;
+	Cmd.Constants.PointLight.Position = PointLightActor->GetActorLocation();
+	Cmd.Constants.PointLight.Radius = PointLightActor->GetAttenuationRadius();
+	Cmd.Constants.PointLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
 void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
-	if (!ShowFlags.bBoundingVolume) return;
+	if (!ShowFlags.bBoundingVolume || !SpotlightActor) return;
 
 	FRenderCommand Cmd = {};
 	Cmd.Type = ERenderCommandType::DebugSpotlight;
-	Cmd.Constants.SpotLight.Position = SpotlightActor->GetActorLocation();
-	Cmd.Constants.SpotLight.Direction = SpotlightActor->GetActorForward();
-	Cmd.Constants.SpotLight.InnerAngle = 12.0f;
-	Cmd.Constants.SpotLight.OuterAngle = SpotlightActor->GetAngle();
-	Cmd.Constants.SpotLight.Range = SpotlightActor->GetRange();
-	Cmd.Constants.SpotLight.Color = FColor::Yellow();
+	Cmd.Constants.SpotLightDebug.Position = SpotlightActor->GetActorLocation();
+	Cmd.Constants.SpotLightDebug.Direction = SpotlightActor->GetLightDirection().GetSafeNormal();
+	Cmd.Constants.SpotLightDebug.InnerAngle = SpotlightActor->GetInnerConeAngle();
+	Cmd.Constants.SpotLightDebug.OuterAngle = SpotlightActor->GetOuterConeAngle();
+	Cmd.Constants.SpotLightDebug.Range = SpotlightActor->GetRange();
+	Cmd.Constants.SpotLightDebug.InnerColor = FColor::Yellow();
+	Cmd.Constants.SpotLightDebug.OuterColor = FColor::White();
 	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }
 

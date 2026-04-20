@@ -28,6 +28,8 @@ enum class ERenderCommandType
 	Billboard,
 	DebugBox,
 	DebugOBB,
+	DebugDirectionalLight,
+	DebugPointLight,
 	DebugSpotlight,
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
@@ -174,6 +176,41 @@ struct FSpotLightConstants
 	FColor Color;
 };
 
+struct FDirectionalLightDebugConstants
+{
+	FVector Position;
+	float Length;
+
+	FVector Direction;
+	float Padding0;
+
+	FColor Color;
+};
+
+struct FPointLightDebugConstants
+{
+	FVector Position;
+	float Radius;
+
+	FColor Color;
+};
+
+struct FSpotLightDebugConstants
+{
+	FVector Position;
+	float Range;
+
+	FVector Direction;
+	float Padding0;
+
+	float InnerAngle;
+	float OuterAngle;
+	float Padding1[2];
+
+	FColor InnerColor;
+	FColor OuterColor;
+};
+
 struct FGridConstants
 {
 	float GridSpacing;
@@ -274,6 +311,9 @@ struct FRenderCommand
 	{
 		FAABBConstants AABB;
 		FOBBConstants OBB;
+		FDirectionalLightDebugConstants DirectionalLight;
+		FPointLightDebugConstants PointLight;
+		FSpotLightDebugConstants SpotLightDebug;
 		FSpotLightConstants SpotLight;
 		FGridConstants Grid;
 		FFontConstants Font;
