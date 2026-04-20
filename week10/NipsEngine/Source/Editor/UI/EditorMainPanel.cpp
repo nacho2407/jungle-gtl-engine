@@ -63,8 +63,12 @@ const char* GetViewModeName(EViewMode Mode)
 {
     switch (Mode)
     {
-    case EViewMode::Lit:
-        return "Lit";
+    case EViewMode::Lit_Gouraud:
+        return "Lit (Gouraud)";
+    case EViewMode::Lit_Lambert:
+        return "Lit (Lambert)";
+    case EViewMode::Lit_BlinnPhong:
+        return "Lit (Blinn-Phong)";
     case EViewMode::Unlit:
         return "Unlit";
     case EViewMode::Wireframe:
@@ -432,38 +436,21 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
     if (ImGui::BeginMenu("View"))
     {
         static constexpr EViewMode Modes[] = {
-            EViewMode::Lit,
+            EViewMode::Lit_Gouraud,
+            EViewMode::Lit_Lambert,
+            EViewMode::Lit_BlinnPhong,
             EViewMode::Unlit,
             EViewMode::Wireframe,
             EViewMode::Depth,
 			EViewMode::Normal,
         };
-        static constexpr const char* Labels[] = { "Lit", "Unlit", "Wireframe", "Depth", "Normal" };
+        static constexpr const char* Labels[] = { "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit", "Wireframe", "Depth", "Normal" };
 
         for (int32 j = 0; j < static_cast<int32>(EViewMode::Count); ++j)
         {
             const bool bSel = (State.ViewMode == Modes[j]);
             if (ImGui::MenuItem(Labels[j], nullptr, bSel))
                 State.ViewMode = Modes[j];
-        }
-        ImGui::EndMenu();
-    }
-
-    if (ImGui::BeginMenu("Lighting"))
-    {
-        static constexpr EShaderLightPermutationKey kModels[] = {
-            EShaderLightPermutationKey::Gouraud,
-            EShaderLightPermutationKey::Lambert,
-            EShaderLightPermutationKey::BlinnPhong,
-        };
-
-        FRenderer& Renderer = EditorEngine->GetRenderer();
-        const EShaderLightPermutationKey Current = Renderer.GetLightingModel();
-
-        for (EShaderLightPermutationKey Model : kModels)
-        {
-            if (ImGui::MenuItem(GetLightingModelName(Model), nullptr, Current == Model))
-                Renderer.SetLightingModel(Model);
         }
         ImGui::EndMenu();
     }
