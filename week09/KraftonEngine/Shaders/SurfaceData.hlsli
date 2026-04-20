@@ -13,7 +13,12 @@ float4 EncodeSurface1(float4 Value)
 
 float4 EncodeMaterialParam(float4 Value)
 {
-    return Value;
+    return float4(Value.x / 256.0f, Value.y, Value.z, Value.w);
+}
+
+float4 DecodeMaterialParam(float4 EncodedValue)
+{
+    return float4(EncodedValue.x * 256.0f, EncodedValue.y, EncodedValue.z, EncodedValue.w);
 }
 
 float4 EncodeNormal(float3 Normal)

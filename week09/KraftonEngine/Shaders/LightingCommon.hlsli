@@ -1,6 +1,8 @@
 #ifndef LIGHTING_COMMON_HLSLI
 #define LIGHTING_COMMON_HLSLI
 
+#include "CommonTypes.hlsli"
+
 float3 GetMainLightDirection()
 {
     return normalize(float3(0.4f, -0.8f, 0.2f));
@@ -61,5 +63,4 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
 
     return float4(DiffuseColor + SpecularColor, BaseColor.a);
 }
-
 #endif
