@@ -5,12 +5,33 @@
 
 void DefaultElement::Render(ContentBrowserContext& Context)
 {
-	ImGui::SetNextWindowSize(Context.ContentSize);
-	ImGui::BeginChild("ElementArea", ImVec2(0, 0), true);
-	ImGui::Image((ImTextureID)Icon, Context.ContentSize);
-	ImGui::Text(FPaths::ToUtf8(ContentItem.Name).c_str());
-	ImGui::EndChild();
+	FString Name = FPaths::ToUtf8(ContentItem.Name);
+	ImGui::PushID(Name.c_str());
 
+	bIsSelected = Context.SelectedElement == this;
+
+	if (ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize))
+	{
+		Context.SelectedElement = this;
+		bIsSelected = true;
+	}
+
+
+	ImVec2 Min = ImGui::GetItemRectMin();
+	ImVec2 Max = ImGui::GetItemRectMax();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	ImFont* font = ImGui::GetFont();
+	float fontSize = ImGui::GetFontSize();
+	Max.y -= fontSize;
+	Max.x -= fontSize * 0.5f;
+	Min.x += fontSize * 0.5f;
+	DrawList->AddImage(Icon, Min, Max);
+
+	ImVec2 TextPos(Min.x, Max.y);
+	FString Text = EllipsisText(FPaths::ToUtf8(ContentItem.Name), Context.ContentSize.x);
+	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Text.c_str());
+	ImGui::PopID();
 }
 
 void FEditorContextBrwoserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
@@ -45,6 +66,14 @@ void FEditorContextBrwoserWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Refresh"))
 		Refresh();
+
+	ImGui::SameLine();
+	ImGui::Text(FPaths::ToUtf8(CurrentPath).c_str());
+
+	ImGui::SameLine();
+	int size = BrowserContext.ContentSize.x;
+	ImGui::SliderInt("##slider", &size, 20, 100);
+	BrowserContext.ContentSize = ImVec2(size, size);
 
 	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
@@ -177,4 +206,32 @@ FDirNode FEditorContextBrwoserWidget::BuildDirectoryTree(const std::filesystem::
 		Node.Self.Name = FPaths::ToWide("<Unnamed>");
 
 	return Node;
+}
+
+FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
+{
+	ImFont* font = ImGui::GetFont();
+	float fontSize = ImGui::GetFontSize();
+
+	if (font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, text.c_str()).x <= maxWidth)
+		return text;
+
+	const char* ellipsis = "...";
+	float ellipsisWidth = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, ellipsis).x;
+
+	std::string result = text;
+
+	while (!result.empty())
+	{
+		result.pop_back();
+
+		float w = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, result.c_str()).x;
+		if (w + ellipsisWidth <= maxWidth)
+		{
+			result += ellipsis;
+			break;
+		}
+	}
+
+	return result;
 }

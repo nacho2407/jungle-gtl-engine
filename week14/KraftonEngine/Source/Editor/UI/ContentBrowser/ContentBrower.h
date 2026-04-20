@@ -14,9 +14,11 @@ struct FContentItem
 	bool bIsDirectory = false;
 };
 
+class ContentBrowserElement;
 struct ContentBrowserContext final
 {
 	ImVec2 ContentSize;
+	ContentBrowserElement* SelectedElement;
 };
 
 class ContentBrowserElement
@@ -27,6 +29,10 @@ public:
 	void SetContent(FContentItem InContent) { ContentItem = InContent; }
 
 protected:
+	FString EllipsisText(const FString& text, float maxWidth);
+
+protected:
+	bool bIsSelected = false;
 	ID3D11ShaderResourceView* Icon;
 	FContentItem ContentItem;
 };
