@@ -62,7 +62,6 @@ struct FRenderResources
 	//Lighting
 	FConstantBuffer LightingConstantBuffer;
 	LightingResource ForwardLights;			// t8 
-
 	// System Samplers — 프레임 시작 시 s0-s2에 영구 바인딩
 	ID3D11SamplerState* LinearClampSampler = nullptr;	// s0
 	ID3D11SamplerState* LinearWrapSampler = nullptr;	// s1

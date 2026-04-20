@@ -69,7 +69,7 @@ void FRenderer::Create(HWND hWindow)
 	FontGeometry.Create(Device.GetDevice());
 
 	InitializePassRenderStates();
-
+	ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
 }
@@ -386,7 +386,18 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		UpdateFrameBuffer(Context, Frame);
+	}
+	{
+		SCOPE_STAT_CAT("UpdateLightBuffer", "4_ExecutePass");
+		FClusterCullingState& State = ClusteredLightCuller.GetCullingState();
+		State.FarZ = Frame.FarClip; State.NearZ = Frame.NearClip;
+		State.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
+		State.ScreenWidth = static_cast<uint32>(Frame.ViewportWidth);
 		UpdateLightBuffer(Device.GetDevice(), Context, Scene);
+		UnbindLightCullingSRVs(Context);
+		ClusteredLightCuller.DispatchViewSpaceAABB();
+		ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
+		UpdateLightCullingSRVs(Context);//UberLit에서 사용할 자원 넘기기
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -878,6 +889,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	FFrameConstants frameConstantData = {};
 	frameConstantData.View = Frame.View;
 	frameConstantData.Projection = Frame.Proj;
+	frameConstantData.InvProj = Frame.Proj.GetInverse();
 	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
 	frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = Frame.WireframeColor;
@@ -892,6 +904,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+	Context->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
 void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* Context, const FScene& Scene)
@@ -947,12 +960,29 @@ void FRenderer::UpdateLightBuffer(ID3D11Device* InDevice, ID3D11DeviceContext* C
 	GlobalLightingData.NumTilesX = 0; //똥값. 이후 교체필요
 	GlobalLightingData.NumTilesY = 0; //똥값. 이후 교체필요
 
+	GlobalLightingData.ClusterCullingState = ClusteredLightCuller.GetCullingState();
 	Resources.LightingConstantBuffer.Update(Context, &GlobalLightingData, sizeof(FLightingCBData));
 	ID3D11Buffer* b4 = Resources.LightingConstantBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 	Context->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
+	Context->CSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 
 
 	Resources.ForwardLights.Update(InDevice, Context, Infos);
 	Context->PSSetShaderResources(ELightTexSlot::AllLights, 1, &Resources.ForwardLights.LightBufferSRV);
 }
+
+void FRenderer::UpdateLightCullingSRVs(ID3D11DeviceContext* Context)
+{
+	ID3D11ShaderResourceView* LightIndexList = ClusteredLightCuller.GetLightIndexListSRV();
+	ID3D11ShaderResourceView* LightGridList = ClusteredLightCuller.GetLightGridSRV();
+	Context->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
+	Context->PSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
+}
+
+void FRenderer::UnbindLightCullingSRVs(ID3D11DeviceContext* Context)
+{
+	ID3D11ShaderResourceView* NullSRVs[2] = {};
+	Context->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+}
+

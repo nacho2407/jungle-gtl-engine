@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/Vector.h"
 #include "Core/EngineTypes.h"
 
@@ -19,7 +19,7 @@
 namespace ELightType
 {
 	constexpr uint32 Point = 0;
-	constexpr uint32 Spot  = 1;
+	constexpr uint32 Spot = 1;
 }
 
 // =============================================================================
@@ -65,11 +65,25 @@ struct FLightInfo
 	float    _pad1[3];               // 12B  | offset 68  → 합계 80B (16B 정렬)
 };
 static_assert(sizeof(FLightInfo) % 16 == 0, "FLightInfo must be 16-byte aligned for StructuredBuffer");
-static_assert(sizeof(FLightInfo) == 80,     "FLightInfo size mismatch with HLSL");
+static_assert(sizeof(FLightInfo) == 80, "FLightInfo size mismatch with HLSL");
 
 // =============================================================================
 // Lighting Constant Buffer (b3) — Ambient + Directional + 메타데이터
 // =============================================================================
+
+struct FClusterCullingState
+{
+	float NearZ;
+	float FarZ;
+	uint32 ClusterX = 16;
+	uint32 ClusterY = 9;
+
+	uint32 ClusterZ = 24;
+	uint32 ScreenWidth = 0;
+	uint32 ScreenHeight = 0;
+	uint32 MaxLightsPerCluster = 128;
+};
+
 struct FLightingCBData
 {
 	FAmbientLightGPU     Ambient;              // 32B  | offset  0
@@ -79,6 +93,7 @@ struct FLightingCBData
 	uint32  NumActiveSpotLights;               //  4B  | offset 68
 	uint32  NumTilesX;                         //  4B  | offset 72  (Tile Culling용)
 	uint32  NumTilesY;                         //  4B  | offset 76  → 합계 80B (16B 정렬)
+	FClusterCullingState ClusterCullingState;  //32B
 };
 static_assert(sizeof(FLightingCBData) % 16 == 0, "FLightingCBData must be 16-byte aligned");
 
@@ -87,7 +102,7 @@ static_assert(sizeof(FLightingCBData) % 16 == 0, "FLightingCBData must be 16-byt
 // =============================================================================
 namespace ETileCulling
 {
-	constexpr uint32 TileSize            = 16;   // 16x16 픽셀
-	constexpr uint32 MaxLightsPerTile    = 256;
-	constexpr uint32 MaxLights           = 1024; // g_AllLights 최대 크기
+	constexpr uint32 TileSize = 16;   // 16x16 픽셀
+	constexpr uint32 MaxLightsPerTile = 256;
+	constexpr uint32 MaxLights = 1024; // g_AllLights 최대 크기
 }
