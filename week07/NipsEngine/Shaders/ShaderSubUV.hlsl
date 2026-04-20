@@ -33,7 +33,7 @@ float4 PS(PSInput input) : SV_TARGET
 
     if (bIsWireframe < 0.5f)
     {
-        if (col.r < 0.1f)
+        if (col.a < 0.1f)
         {
             discard;
         }

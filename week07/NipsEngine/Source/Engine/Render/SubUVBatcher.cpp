@@ -13,7 +13,7 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
     CreateBuffers();
 
 	UMaterial* SubUVMaterial = FResourceManager::Get().GetMaterial("SubUVMat");
-	SubUVMaterial->DepthStencilType = EDepthStencilType::Default;
+	SubUVMaterial->DepthStencilType = EDepthStencilType::DepthReadOnly;
 	SubUVMaterial->BlendType = EBlendType::AlphaBlend;
 	SubUVMaterial->RasterizerType = ERasterizerType::SolidBackCull;
 	SubUVMaterial->SamplerType = ESamplerType::EST_Linear;
