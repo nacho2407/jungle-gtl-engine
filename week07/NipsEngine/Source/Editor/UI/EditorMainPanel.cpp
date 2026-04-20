@@ -70,7 +70,9 @@ const char* GetViewModeName(EViewMode Mode)
     case EViewMode::Wireframe:
         return "Wireframe";
 	case EViewMode::Depth: 
-		return "Depth"; 
+		return "Depth";
+	case EViewMode::Normal:
+		return "Normal";
 	default:
         return "Lit";
     }
@@ -434,8 +436,9 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             EViewMode::Unlit,
             EViewMode::Wireframe,
             EViewMode::Depth,
+			EViewMode::Normal,
         };
-        static constexpr const char* Labels[] = { "Lit", "Unlit", "Wireframe", "Depth" };
+        static constexpr const char* Labels[] = { "Lit", "Unlit", "Wireframe", "Depth", "Normal" };
 
         for (int32 j = 0; j < static_cast<int32>(EViewMode::Count); ++j)
         {
