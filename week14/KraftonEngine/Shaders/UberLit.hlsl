@@ -58,6 +58,31 @@ struct UberVS_Output
 #endif
 };
 
+// =============================================================================
+// Culling Utility
+// =============================================================================
+uint DepthToSlice(float viewDepth)
+{
+    float safeDepth = clamp(viewDepth, CullState.NearZ, CullState.FarZ);
+    float logDepth = log(safeDepth / CullState.NearZ) / log(CullState.FarZ / CullState.NearZ);
+    return min((uint) floor(logDepth * CullState.ClusterZ), CullState.ClusterZ - 1);
+}
+
+uint ComputeClusterIndex(float4 PixelPos, float3 WorldPos)
+{
+    float4 World4 = float4(WorldPos, 1.f);
+    float4 ViewPos = mul(World4, View);
+    uint TileX = min((uint) (PixelPos.x / CullState.ScreenWidth * CullState.ClusterX), CullState.ClusterX - 1);
+    uint TileY = min((uint) (PixelPos.y / CullState.ScreenHeight * CullState.ClusterY), CullState.ClusterY - 1);
+    uint SliceZ = DepthToSlice(abs(ViewPos.z));
+    
+    uint ClusterIdx = SliceZ * CullState.ClusterX * CullState.ClusterY
+    + TileY * CullState.ClusterX
+    + TileX;
+    
+    return ClusterIdx;
+}
+
 
 // =============================================================================
 // 라이팅 유틸 함수
@@ -176,7 +201,7 @@ float3 CalcToonPointSpotDiffuse(FLightInfo light, float3 worldPos, float3 N)
     return light.Color.rgb * light.Intensity * atten * spotFactor * band;
 }
 
-float3 AccumulateToonDiffuse(float3 worldPos, float3 N)
+float3 AccumulateToonDiffuse(float3 worldPos, float4 position, float3 N)
 {
     float3 result = CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity) * 0.15;
     result += CalcToonDirectionalDiffuse(N);
@@ -209,7 +234,7 @@ float CalcRimMask(float3 N, float3 V)
 // 통합 라이팅 누적
 // =============================================================================
 
-float3 AccumulateDiffuse(float3 worldPos, float3 N)
+float3 AccumulateDiffuse(float3 worldPos, float4 position, float3 N)
 {
     float3 result = float3(0, 0, 0);
     // Ambient + Directional (CB b3)
@@ -228,6 +253,16 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
         uint lightIdx = g_TileLightIndices[gridData.x + t];
         result += CalcLightDiffuse(g_AllLights[lightIdx], worldPos, N);
     }
+#elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
+    uint ClusterIdx = ComputeClusterIndex(position,worldPos);
+    uint2 LightGridEntry = g_ClusterLightGrid[ClusterIdx];
+    uint Offset = LightGridEntry.x;
+    uint LightCount = LightGridEntry.y;
+    for (uint t = 0; t < LightCount; ++t)
+    {
+        uint lightIdx = g_ClusterLightIndices[Offset + t];
+        result += CalcLightDiffuse(g_AllLights[lightIdx], worldPos, N);
+    }
 #else
     // ── 전수 순회 (Culling 미적용) ──
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
@@ -237,7 +272,7 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N)
     return result;
 }
 
-float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
+float3 AccumulateSpecular(float3 worldPos, float4 position, float3 N, float3 V, float shininess)
 {
     float3 result = float3(0, 0, 0);
 
@@ -249,6 +284,16 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess)
     for (uint t = 0; t < gridData.y; ++t)
     {
         uint lightIdx = g_TileLightIndices[gridData.x + t];
+        result += CalcLightSpecular(g_AllLights[lightIdx], worldPos, N, V, shininess);
+    }
+#elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
+    uint ClusterIdx = ComputeClusterIndex(position, worldPos);
+    uint2 LightGridEntry = g_ClusterLightGrid[ClusterIdx];
+    uint Offset = LightGridEntry.x;
+    uint LightCount = LightGridEntry.y;
+    for (uint t = 0; t < LightCount; ++t)
+    {
+        uint lightIdx = g_ClusterLightIndices[Offset + t];
         result += CalcLightSpecular(g_AllLights[lightIdx], worldPos, N, V, shininess);
     }
 #else
@@ -276,8 +321,8 @@ UberVS_Output VS(VS_Input_PNCT input)
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     float3 N = output.normal;
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse  = AccumulateDiffuse(output.worldPos, N);
-    output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess);
+    output.litDiffuse  = AccumulateDiffuse(output.worldPos,output.position, N);
+    output.litSpecular = AccumulateSpecular(output.worldPos,output.position, N, V, g_DefaultShininess);
 #endif
 
     return output;
@@ -324,14 +369,14 @@ UberPS_Output PS(UberVS_Output input)
     specular = input.litSpecular;
 
 #elif defined(LIGHTING_MODEL_LAMBERT) && LIGHTING_MODEL_LAMBERT
-    diffuse = AccumulateDiffuse(input.worldPos, N);
+    diffuse = AccumulateDiffuse(input.worldPos,input.position, N);
 
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
-    diffuse = AccumulateDiffuse(input.worldPos, N);
-    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess);
+    diffuse = AccumulateDiffuse(input.worldPos, input.position, N);
+    specular = AccumulateSpecular(input.worldPos, input.position, N, V, g_DefaultShininess);
     
 #elif defined(LIGHTING_MODEL_TOON) && LIGHTING_MODEL_TOON
-    diffuse = AccumulateToonDiffuse(input.worldPos, N);
+    diffuse = AccumulateToonDiffuse(input.worldPos,input.position, N);
 #endif
 
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다

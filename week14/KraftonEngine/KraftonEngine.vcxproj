@@ -321,6 +321,7 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\ClusteredLightCuller.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
@@ -478,6 +479,7 @@
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\ClusteredLightCuller.h" />
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
