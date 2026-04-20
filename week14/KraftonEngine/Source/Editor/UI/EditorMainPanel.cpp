@@ -84,6 +84,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 			ImGui::Checkbox("Property", &S.UI.bProperty);
 			ImGui::Checkbox("Scene", &S.UI.bScene);
 			ImGui::Checkbox("Stat", &S.UI.bStat);
+			ImGui::Checkbox("ContentBrowser", &S.UI.bContentBrowser);
 			ImGui::End();
 		}
 	}

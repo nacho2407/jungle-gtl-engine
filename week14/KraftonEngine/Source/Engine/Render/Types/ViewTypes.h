@@ -11,6 +11,7 @@ enum class EViewMode : int32
 	Wireframe,
 	SceneDepth,
 	WorldNormal,
+	LightCulling,
 	Count
 };
 

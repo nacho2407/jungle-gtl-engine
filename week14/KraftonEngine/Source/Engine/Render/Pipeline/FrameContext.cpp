@@ -34,4 +34,6 @@ void FFrameContext::SetViewportInfo(const FViewport* VP)
 	StencilCopySRV          = VP->GetStencilCopySRV();
 	NormalRTV               = VP->GetNormalRTV();
 	NormalSRV               = VP->GetNormalSRV();
+	CullingHeatmapRTV       = VP->GetCullingHeatmapRTV();
+	CullingHeatmapSRV       = VP->GetCullingHeatmapSRV();
 }

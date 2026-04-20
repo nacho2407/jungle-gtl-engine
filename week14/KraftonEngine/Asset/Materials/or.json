@@ -1,8 +1,13 @@
 {
+  "BlendState" : "",
+  "DepthStencilState" : "",
   "Parameters" : {
-    "SectionColor" : [0.799103, 0.323143, 0.042311, 1.000000]
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [0.799103, 0.323143, 0.042311, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
   },
   "PathFileName" : "Asset/Materials/or.json",
+  "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl"
 }

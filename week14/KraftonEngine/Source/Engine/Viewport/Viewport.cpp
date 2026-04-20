@@ -71,6 +71,11 @@ void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
 		const float NormalClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		Ctx->ClearRenderTargetView(NormalRTV, NormalClear);
 	}
+	if (CullingHeatmapRTV)
+	{
+		const float HeatmapClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		Ctx->ClearRenderTargetView(CullingHeatmapRTV, HeatmapClear);
+	}
 	Ctx->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 	Ctx->OMSetRenderTargets(1, &RTV, DSV);
 	Ctx->RSSetViewports(1, &VPRect);
@@ -191,6 +196,26 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(NormalTexture, nullptr, &NormalSRV);
 	if (FAILED(hr)) return false;
 
+	// ── Culling Heatmap RT (R8G8B8A8_UNORM — 히트맵 색상) ──
+	D3D11_TEXTURE2D_DESC HeatmapDesc = {};
+	HeatmapDesc.Width = Width;
+	HeatmapDesc.Height = Height;
+	HeatmapDesc.MipLevels = 1;
+	HeatmapDesc.ArraySize = 1;
+	HeatmapDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	HeatmapDesc.SampleDesc.Count = 1;
+	HeatmapDesc.Usage = D3D11_USAGE_DEFAULT;
+	HeatmapDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&HeatmapDesc, nullptr, &CullingHeatmapTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(CullingHeatmapTexture, nullptr, &CullingHeatmapRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(CullingHeatmapTexture, nullptr, &CullingHeatmapSRV);
+	if (FAILED(hr)) return false;
+
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;
 	ViewportRect.TopLeftY = 0.0f;
@@ -204,6 +229,9 @@ bool FViewport::CreateResources()
 
 void FViewport::ReleaseResources()
 {
+	if (CullingHeatmapSRV) { CullingHeatmapSRV->Release(); CullingHeatmapSRV = nullptr; }
+	if (CullingHeatmapRTV) { CullingHeatmapRTV->Release(); CullingHeatmapRTV = nullptr; }
+	if (CullingHeatmapTexture) { CullingHeatmapTexture->Release(); CullingHeatmapTexture = nullptr; }
 	if (NormalSRV) { NormalSRV->Release(); NormalSRV = nullptr; }
 	if (NormalRTV) { NormalRTV->Release(); NormalRTV = nullptr; }
 	if (NormalTexture) { NormalTexture->Release(); NormalTexture = nullptr; }

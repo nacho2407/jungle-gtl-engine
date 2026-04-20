@@ -55,6 +55,10 @@ struct FFrameContext
 	ID3D11RenderTargetView*   NormalRTV             = nullptr;
 	ID3D11ShaderResourceView* NormalSRV             = nullptr;
 
+	// Culling Heatmap RT — Opaque MRT[2] 출력
+	ID3D11RenderTargetView*   CullingHeatmapRTV     = nullptr;
+	ID3D11ShaderResourceView* CullingHeatmapSRV     = nullptr;
+
 	// Render Settings (Single Source of Truth)
 	FViewportRenderOptions RenderOptions;
 
@@ -106,5 +110,7 @@ struct FFrameContext
 		StencilCopySRV          = nullptr;
 		NormalRTV               = nullptr;
 		NormalSRV               = nullptr;
+		CullingHeatmapRTV       = nullptr;
+		CullingHeatmapSRV       = nullptr;
 	}
 };

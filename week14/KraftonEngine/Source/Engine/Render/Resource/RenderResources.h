@@ -50,7 +50,10 @@ struct FLightingResource
 		if (MaxLightCount < LightInfos.size())
 		{
 			Release();
-			Create(InDevice, MaxLightCount * 2);
+			uint32 NewCount = MaxLightCount;
+			while (NewCount < LightInfos.size())
+				NewCount *= 2;
+			Create(InDevice, NewCount);
 		}
 
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};
