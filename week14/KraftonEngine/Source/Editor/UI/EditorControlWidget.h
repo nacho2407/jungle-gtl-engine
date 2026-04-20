@@ -15,4 +15,11 @@ private:
 	int32 SelectedPrimitiveType = 0;
 	int32 NumberOfSpawnedActors = 1;
 	FVector CurSpawnPoint = { 0.f, 0.f, 0.f };
+
+	// Grid Spawn
+	float GridCenterOffset[3] = { 0.f, 0.f, 0.f };
+	int32 GridCountX = 1;
+	int32 GridCountY = 1;
+	float GridSpacingX = 5.f;
+	float GridSpacingY = 5.f;
 };

@@ -15,9 +15,11 @@ private:
 	void RenderComponentTree(AActor* Actor);
 	void RenderSceneComponentNode(class USceneComponent* Comp);
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
-	void RenderComponentProperties(AActor* Actor);
+	void RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors);
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	bool RenderPropertyWidget(TArray<struct FPropertyDescriptor>& Props, int32& Index);
+
+	void PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors);
 
 	static FString OpenObjFileDialog();
 
