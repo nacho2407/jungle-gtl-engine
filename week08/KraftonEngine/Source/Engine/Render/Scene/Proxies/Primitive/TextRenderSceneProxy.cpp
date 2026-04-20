@@ -1,7 +1,7 @@
 ﻿#include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
-#include "Render/Core/FrameContext.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Frame/FrameContext.h"
+#include "Render/Systems/ShaderManager.h"
 
 // ============================================================
 // FTextRenderSceneProxy

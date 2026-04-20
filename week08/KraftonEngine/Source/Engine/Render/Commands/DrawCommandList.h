@@ -24,8 +24,8 @@ struct FStateCache
 	ID3D11Buffer*             RawIB        = nullptr;   // 동적 지오메트리 IB 추적
 	FConstantBuffer*          PerObjectCB    = nullptr;
 	FConstantBuffer*          PerShaderCB[2] = {};
-	ID3D11ShaderResourceView* DiffuseSRV   = nullptr;
-	ID3D11ShaderResourceView* NormalSRV    = nullptr;
+	ID3D11ShaderResourceView* DiffuseSRV    = nullptr;   // t0: BaseColor / Diffuse
+	ID3D11ShaderResourceView* NormalSRV     = nullptr;   // t1: Normal map
 
 	// Render target 추적 (CopyResource 후 DSV 복원 등)
 	ID3D11RenderTargetView*  RTV         = nullptr;

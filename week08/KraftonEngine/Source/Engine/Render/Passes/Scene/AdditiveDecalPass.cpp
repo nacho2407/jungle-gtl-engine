@@ -1,5 +1,5 @@
 ﻿#include "Render/Passes/Scene/AdditiveDecalPass.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"

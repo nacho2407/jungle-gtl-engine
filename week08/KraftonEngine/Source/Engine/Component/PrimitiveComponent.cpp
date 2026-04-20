@@ -3,7 +3,7 @@
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Systems/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
 #include "Render/Scene/Core/Scene.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"

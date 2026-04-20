@@ -1,5 +1,7 @@
 ﻿#include "AmbientLightActor.h"
 #include "Component/AmbientLightComponent.h"
+#include "Component/BillboardComponent.h"
+#include "Materials/MaterialManager.h"
 #include "Object/ObjectFactory.h"
 
 IMPLEMENT_CLASS(AAmbientLightActor, AActor)
@@ -14,4 +16,9 @@ void AAmbientLightActor::InitDefaultComponents()
 {
     AmbientLightComponent = AddComponent<UAmbientLightComponent>();
     SetRootComponent(AmbientLightComponent);
+
+	BillboardComponent = AddComponent<UBillboardComponent>();
+	BillboardComponent->AttachToComponent(AmbientLightComponent);
+	auto AmbientLightIcon = FMaterialManager::Get().GetOrCreateMaterial(AmbientLightIconPath);
+	BillboardComponent->SetMaterial(AmbientLightIcon);
 }

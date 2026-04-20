@@ -28,6 +28,7 @@ namespace ECBSlot
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
+	constexpr uint32 LocalLights = 6;  // t6: LocalLights StructuredBuffer (StructuredBuffer는 SRV 슬롯 사용)
 	constexpr uint32 SceneDepth  = 10; // t10: CopyResource된 Depth (R24_UNORM)
 	constexpr uint32 SceneColor  = 11; // t11: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	// constexpr uint32 SceneAlbedo  = 12; // t12: (미래)
@@ -52,6 +53,7 @@ namespace ECBPoolKey
 	constexpr uint32 Outline = 3;
 	constexpr uint32 SceneDepth = 4;
 	constexpr uint32 FXAA = 5;
+	constexpr uint32 Light = 6;
 }
 
 //PerObject
@@ -162,6 +164,13 @@ struct FLocalLightInfo
 
     float OuterConeAngle;    // 4B
     float Padding[3];        // 12B
+};
+
+// 프레임당 수집된 라이트 데이터 — FFrameContext에 값으로 보관
+struct FCollectedLights
+{
+	FGlobalLightConstants GlobalLights;
+	TArray<FLocalLightInfo> LocalLights;
 };
 
 // Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응

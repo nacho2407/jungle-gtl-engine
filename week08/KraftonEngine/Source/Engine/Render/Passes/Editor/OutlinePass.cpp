@@ -1,47 +1,49 @@
 ﻿#include "Render/Passes/Editor/OutlinePass.h"
-#include "Render/Core/RenderPassContext.h"
-#include "Render/Core/FrameContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommand.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Resource/ConstantBufferPool.h"
+#include "Render/Systems/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 
 void FOutlinePass::PrepareInputs(FRenderPassContext& Context)
 {
+    const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.Frame)
     {
         return;
     }
 
-    if (Context.Frame->ViewportRenderTexture && Context.Frame->SceneColorCopyTexture &&
-        Context.Frame->ViewportRenderTexture != Context.Frame->SceneColorCopyTexture)
+    if (Targets && Targets->ViewportRenderTexture && Targets->SceneColorCopyTexture &&
+        Targets->ViewportRenderTexture != Targets->SceneColorCopyTexture)
     {
         Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-        Context.Context->CopyResource(Context.Frame->SceneColorCopyTexture, Context.Frame->ViewportRenderTexture);
+        Context.Context->CopyResource(Targets->SceneColorCopyTexture, Targets->ViewportRenderTexture);
     }
 
-    if (Context.Frame->DepthTexture && Context.Frame->DepthCopyTexture && Context.Frame->DepthTexture != Context.Frame->DepthCopyTexture)
+    if (Targets && Targets->DepthTexture && Targets->DepthCopyTexture && Targets->DepthTexture != Targets->DepthCopyTexture)
     {
-        Context.Context->CopyResource(Context.Frame->DepthCopyTexture, Context.Frame->DepthTexture);
+        Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
     }
 
-    if (Context.Frame->SceneColorCopySRV)
+    if (Targets && Targets->SceneColorCopySRV)
     {
-        ID3D11ShaderResourceView* SceneColorSRV = Context.Frame->SceneColorCopySRV;
+        ID3D11ShaderResourceView* SceneColorSRV = Targets->SceneColorCopySRV;
         Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
     }
 
-    if (Context.Frame->DepthCopySRV)
+    if (Targets && Targets->DepthCopySRV)
     {
-        ID3D11ShaderResourceView* DepthSRV = Context.Frame->DepthCopySRV;
+        ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
         Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
     }
 
-    if (Context.Frame->StencilCopySRV)
+    if (Targets && Targets->StencilCopySRV)
     {
-        ID3D11ShaderResourceView* StencilSRV = Context.Frame->StencilCopySRV;
+        ID3D11ShaderResourceView* StencilSRV = Targets->StencilCopySRV;
         Context.Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &StencilSRV);
     }
 

@@ -1,12 +1,13 @@
 ﻿#include "Render/Passes/Scene/DecalPass.h"
-#include "Render/Core/RenderPassContext.h"
-#include "Render/Core/FrameContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders/DecalDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Frame/ViewModeSurfaceSet.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 
 namespace
 {
@@ -20,6 +21,7 @@ bool UsesDecalPass(const FRenderPassContext& Context)
 
 void FDecalPass::PrepareInputs(FRenderPassContext& Context)
 {
+    const FViewportRenderTargets* Targets = Context.Targets;
     if (!UsesDecalPass(Context))
     {
         return;
@@ -37,14 +39,14 @@ void FDecalPass::PrepareInputs(FRenderPassContext& Context)
         Context.Context->PSSetShaderResources(1, ARRAYSIZE(BaseInputs), BaseInputs);
     }
 
-    if (Context.Frame && Context.Frame->DepthTexture && Context.Frame->DepthCopyTexture && Context.Frame->DepthTexture != Context.Frame->DepthCopyTexture)
+    if (Targets && Targets->DepthTexture && Targets->DepthCopyTexture && Targets->DepthTexture != Targets->DepthCopyTexture)
     {
-        Context.Context->CopyResource(Context.Frame->DepthCopyTexture, Context.Frame->DepthTexture);
+        Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
     }
 
-    if (Context.Frame && Context.Frame->DepthCopySRV)
+    if (Targets && Targets->DepthCopySRV)
     {
-        ID3D11ShaderResourceView* DepthSRV = Context.Frame->DepthCopySRV;
+        ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
         Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
     }
 
@@ -124,6 +126,7 @@ void FDecalPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitive
 
 void FDecalPass::SubmitDrawCommands(FRenderPassContext& Context)
 {
+    const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.DrawCommandList || !UsesDecalPass(Context))
     {
         return;
@@ -139,7 +142,7 @@ void FDecalPass::SubmitDrawCommands(FRenderPassContext& Context)
         Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
     }
 
-    if (!Context.Frame || !Context.Frame->ViewportRenderTexture)
+    if (!Targets || !Targets->ViewportRenderTexture)
     {
         return;
     }
@@ -153,15 +156,15 @@ void FDecalPass::SubmitDrawCommands(FRenderPassContext& Context)
             Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor)->GetResource(&Src);
             if (Src)
             {
-                Context.Context->CopyResource(Context.Frame->ViewportRenderTexture, Src);
+                Context.Context->CopyResource(Targets->ViewportRenderTexture, Src);
                 Src->Release();
             }
         }
 
-        if (Context.Frame->SceneColorCopyTexture && Context.Frame->SceneColorCopyTexture != Context.Frame->ViewportRenderTexture)
+        if (Targets->SceneColorCopyTexture && Targets->SceneColorCopyTexture != Targets->ViewportRenderTexture)
         {
             Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-            Context.Context->CopyResource(Context.Frame->SceneColorCopyTexture, Context.Frame->ViewportRenderTexture);
+            Context.Context->CopyResource(Targets->SceneColorCopyTexture, Targets->ViewportRenderTexture);
         }
 
         ID3D11RenderTargetView* RTV = Context.GetViewportRTV();

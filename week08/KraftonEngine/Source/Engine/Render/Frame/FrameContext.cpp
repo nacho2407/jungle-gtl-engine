@@ -21,15 +21,13 @@ void FFrameContext::SetCameraInfo(const UCameraComponent* Camera)
 
 void FFrameContext::SetViewportInfo(const FViewport* VP)
 {
-	ViewportWidth    = static_cast<float>(VP->GetWidth());
-	ViewportHeight   = static_cast<float>(VP->GetHeight());
-	ViewportRTV             = VP->GetRTV();
-	ViewportDSV             = VP->GetDSV();
-	SceneColorCopySRV       = VP->GetSceneColorCopySRV();
-	SceneColorCopyTexture   = VP->GetSceneColorCopyTexture();
-	ViewportRenderTexture   = VP->GetRTTexture();
-	DepthTexture            = VP->GetDepthTexture();
-	DepthCopyTexture        = VP->GetDepthCopyTexture();
-	DepthCopySRV            = VP->GetDepthCopySRV();
-	StencilCopySRV          = VP->GetStencilCopySRV();
+	if (!VP)
+	{
+		ViewportWidth = 0.0f;
+		ViewportHeight = 0.0f;
+		return;
+	}
+
+	ViewportWidth = static_cast<float>(VP->GetWidth());
+	ViewportHeight = static_cast<float>(VP->GetHeight());
 }

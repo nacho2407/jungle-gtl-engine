@@ -1,5 +1,5 @@
 ﻿#include "Render/Passes/Scene/DepthPrePass.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 

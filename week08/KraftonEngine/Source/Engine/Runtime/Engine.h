@@ -5,7 +5,8 @@
 #include "GameFramework/WorldContext.h"
 #include "Render/Execution/Renderer.h"
 #include "Render/Collectors/RenderCollector.h"
-#include "Render/Core/FrameContext.h"
+#include "Render/Frame/FrameContext.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 
 #include <memory>
 
@@ -78,6 +79,7 @@ protected:
 protected:
     FRenderCollector RenderCollector;
     FFrameContext RenderFrame;
+    FViewportRenderTargets RenderTargets;
 };
 
 extern UEngine* GEngine;

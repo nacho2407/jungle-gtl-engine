@@ -1,5 +1,5 @@
 ﻿#include "Render/Passes/Editor/DebugLinePass.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders/LineDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"

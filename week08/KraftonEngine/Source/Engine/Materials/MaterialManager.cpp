@@ -7,7 +7,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Systems/ShaderManager.h"
 #include "Render/Hardware/Resources/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Render/Execution/Renderer.h"

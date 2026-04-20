@@ -4,7 +4,7 @@
 
 class UStaticMeshComponent;
 class UCylindricalBillboardComponent;
-class UDecalComponent;;
+class UDecalComponent;
 
 class AFakeLightActor : public AActor
 {

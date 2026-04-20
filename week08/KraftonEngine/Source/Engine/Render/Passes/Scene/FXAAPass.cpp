@@ -1,26 +1,28 @@
 ﻿#include "Render/Passes/Scene/FXAAPass.h"
-#include "Render/Core/RenderPassContext.h"
-#include "Render/Core/FrameContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 
 void FFXAAPass::PrepareInputs(FRenderPassContext& Context)
 {
-    if (!Context.Frame || !Context.Frame->SceneColorCopySRV)
+    const FViewportRenderTargets* Targets = Context.Targets;
+    if (!Targets || !Targets->SceneColorCopySRV)
     {
         return;
     }
 
-    if (Context.Frame->ViewportRenderTexture && Context.Frame->SceneColorCopyTexture &&
-        Context.Frame->ViewportRenderTexture != Context.Frame->SceneColorCopyTexture)
+    if (Targets->ViewportRenderTexture && Targets->SceneColorCopyTexture &&
+        Targets->ViewportRenderTexture != Targets->SceneColorCopyTexture)
     {
         Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-        Context.Context->CopyResource(Context.Frame->SceneColorCopyTexture, Context.Frame->ViewportRenderTexture);
+        Context.Context->CopyResource(Targets->SceneColorCopyTexture, Targets->ViewportRenderTexture);
     }
 
-    ID3D11ShaderResourceView* SceneColorSRV = Context.Frame->SceneColorCopySRV;
+    ID3D11ShaderResourceView* SceneColorSRV = Targets->SceneColorCopySRV;
     Context.Context->PSSetShaderResources(0, 1, &SceneColorSRV);
     Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
 }
@@ -33,6 +35,7 @@ void FFXAAPass::PrepareTargets(FRenderPassContext& Context)
 
 void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context)
 {
+    const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.Frame || !Context.Frame->ShowFlags.bFXAA)
     {
         return;
@@ -45,7 +48,7 @@ void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context)
         return;
     }
 
-    if (!Context.Frame->SceneColorCopySRV || !Context.Frame->SceneColorCopyTexture)
+    if (!Targets || !Targets->SceneColorCopySRV || !Targets->SceneColorCopyTexture)
     {
         return;
     }

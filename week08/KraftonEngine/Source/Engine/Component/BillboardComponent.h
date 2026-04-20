@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "PrimitiveComponent.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Systems/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 

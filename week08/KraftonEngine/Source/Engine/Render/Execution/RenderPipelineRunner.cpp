@@ -1,10 +1,10 @@
 ﻿#include "Render/Execution/RenderPipelineRunner.h"
 
 #include "Render/Core/PassTypes.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Pipelines/RenderPassRegistry.h"
 #include "Render/Pipelines/RenderPipelineRegistry.h"
-#include "Render/Debug/RenderMarkers.h"
+#include "Render/DebugDraw/RenderMarkers.h"
 
 namespace
 {

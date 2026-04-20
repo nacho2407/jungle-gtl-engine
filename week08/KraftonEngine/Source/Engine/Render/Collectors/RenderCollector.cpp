@@ -8,7 +8,7 @@
 #include "Profiling/Stats.h"
 #include "Render/Visibility/ConvexVolume.h"
 #include "Render/Visibility/GPUOcclusionCulling.h"
-#include "Render/Debug/DebugDrawQueue.h"
+#include "Render/DebugDraw/DebugDrawQueue.h"
 #include "Render/Execution/LODContext.h"
 #include "Render/Execution/Renderer.h"
 #include "Render/Core/PassTypes.h"
@@ -19,7 +19,7 @@
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
@@ -92,7 +92,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
     Renderer.SetCollectedScene(&Scene);
 
     // Visible Primitive Proxies → pass-specific draw command build
-    CollectVisibleProxies(CollectedPrimitives.VisibleProxies, Frame, Scene, Renderer);
+    CollectPrimitives(CollectedPrimitives.VisibleProxies, Frame, Scene, Renderer);
 
     // Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
     CollectLights(Scene, CollectedLights);
@@ -101,7 +101,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
     Renderer.SetCollectedScene(&Scene);
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
+    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, &CollectedPrimitives.VisibleProxies);
 
     if (Renderer.HasActiveViewModePassConfig())
     {
@@ -236,7 +236,7 @@ void FRenderCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FRenderCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
     if (!Frame.ShowFlags.bPrimitives)
         return;
@@ -250,7 +250,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
     CollectedPrimitives.OpaqueProxies.clear();
     CollectedPrimitives.TransparentProxies.clear();
 
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, &Scene, &CollectedPrimitives.VisibleProxies);
+    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, &CollectedPrimitives.VisibleProxies);
     // Pass-specific command building now happens during pipeline execution.
     const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
     const bool bHasViewModeConfig = Renderer.HasActiveViewModePassConfig() && ViewModeRegistry && ViewModeRegistry->HasConfig(Frame.ViewMode);
@@ -299,7 +299,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
         // if (Proxy->Pass == ERenderPass::GizmoOuter || Proxy->Pass == ERenderPass::GizmoInner)
         //{
-        //     CollectorDebugLog("[CollectVisibleProxies] Gizmo candidate pass=%d visible=%d mesh=%p shader=%p owner=%p",
+        //     CollectorDebugLog("[CollectPrimitives] Gizmo candidate pass=%d visible=%d mesh=%p shader=%p owner=%p",
         //         static_cast<int>(Proxy->Pass), Proxy->bVisible ? 1 : 0, Proxy->MeshBuffer, Proxy->Shader, Proxy->Owner);
         // }
 

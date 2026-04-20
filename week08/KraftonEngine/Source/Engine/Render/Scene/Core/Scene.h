@@ -4,7 +4,7 @@
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Render/Types/FogParams.h"
-#include "Render/Debug/DebugDrawQueue.h"
+#include "Render/DebugDraw/DebugDrawQueue.h"
 
 class UPrimitiveComponent;
 class ULightComponent;
