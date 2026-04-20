@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 
 class UDirectionalLightComponent;
+class UBillboardComponent;
 
 class ADirectionalLightActor : public AActor
 {
@@ -14,4 +15,6 @@ public:
 
 private:
     UDirectionalLightComponent* DirectionalLightComponent = nullptr;
+	UBillboardComponent* BillboardComponent = nullptr;
+	FString DirectionalLightIconPath = "Asset/Materials/DirectionalLightIcon.json";
 };

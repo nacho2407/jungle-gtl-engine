@@ -62,4 +62,20 @@ void FPointLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
     AddDebugCircle(Scene, C, FVector(1,0,0), FVector(0,1,0), R, Color);
     AddDebugCircle(Scene, C, FVector(1,0,0), FVector(0,0,1), R, Color);
     AddDebugCircle(Scene, C, FVector(0,1,0), FVector(0,0,1), R, Color);
+
+    // YZ 평면을 Z축 기준으로 22.5°씩 회전한 원 8개
+    for (int i = 1; i <= 8; ++i)
+    {
+        float Angle = 3.14159265f * 0.125f * i; // 22.5° * i
+        FVector AX(-sinf(Angle), cosf(Angle), 0.0f);
+        AddDebugCircle(Scene, C, AX, FVector(0, 0, 1), R, Color);
+    }
+
+	// XY 평면을 따라 구를 8등분해서 구형 격자 그리기
+    for (int i = 1; i <= 8; ++i)
+    {
+        float Angle = (- 3.14159265f / 2) + 3.14159265f * 0.125f * i; // 22.5° * i
+        FVector NC = C + FVector(0, 0, R * sin(Angle));
+        AddDebugCircle(Scene, NC, FVector(1, 0, 0), FVector(0, 1, 0), R * cos(Angle), Color);
+    }
 }
