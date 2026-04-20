@@ -49,6 +49,10 @@ public:
 	ID3D11RenderTargetView* GetNormalRTV() const { return NormalRTV; }
 	ID3D11ShaderResourceView* GetNormalSRV() const { return NormalSRV; }
 
+	// Culling Heatmap RT
+	ID3D11RenderTargetView* GetCullingHeatmapRTV() const { return CullingHeatmapRTV; }
+	ID3D11ShaderResourceView* GetCullingHeatmapSRV() const { return CullingHeatmapSRV; }
+
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
 
 private:
@@ -82,6 +86,11 @@ private:
 	ID3D11Texture2D* NormalTexture = nullptr;
 	ID3D11RenderTargetView* NormalRTV = nullptr;
 	ID3D11ShaderResourceView* NormalSRV = nullptr;
+
+	// Culling Heatmap RT — Opaque 패스에서 MRT[2]로 타일 컬링 히트맵 기록
+	ID3D11Texture2D* CullingHeatmapTexture = nullptr;
+	ID3D11RenderTargetView* CullingHeatmapRTV = nullptr;
+	ID3D11ShaderResourceView* CullingHeatmapSRV = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 
