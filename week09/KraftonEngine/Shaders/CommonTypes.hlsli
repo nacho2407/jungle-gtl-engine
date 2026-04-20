@@ -4,24 +4,7 @@
 #include "Common/Functions.hlsl"
 #include "Common/SystemSamplers.hlsl"
 #include "Common/SystemResources.hlsl"
-
-cbuffer PerShader1 : register(b2)
-{
-    float4 SectionColor;
-}
-
-float4 GetSectionColorOrWhite()
-{
-    float Magnitude = abs(SectionColor.x) + abs(SectionColor.y) + abs(SectionColor.z) + abs(SectionColor.w);
-    return (Magnitude < 0.0001f) ? float4(1.0f, 1.0f, 1.0f, 1.0f) : SectionColor;
-}
-
-float4 SampleBaseTexture(Texture2D TextureRef, float2 UV)
-{
-    float4 Sampled = TextureRef.Sample(LinearWrapSampler, UV);
-    float Magnitude = abs(Sampled.x) + abs(Sampled.y) + abs(Sampled.z) + abs(Sampled.w);
-    return (Magnitude < 0.0001f) ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Sampled;
-}
+#include "StaticMeshMaterialCommon.hlsli"
 
 struct FBaseDrawVSOutput
 {
