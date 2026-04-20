@@ -5,6 +5,8 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Core/PassRenderState.h"
 #include "Render/Core/PassTypes.h"
+#include "Render/Core/FrameContext.h"
+#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
 
 void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {
@@ -60,5 +62,18 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& 
     Cmd.Topology = S.Topology;
     Cmd.VertexCount = 3;
     Cmd.Pass = Pass;
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, nullptr, UserBits);
+
+    if (Pass == ERenderPass::Lighting && Context.ActiveViewSurfaceSet)
+    {
+        // Lighting fullscreen shaders read the base color buffer from t0.
+        Cmd.DiffuseSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor);
+    }
+    else if (Pass == ERenderPass::FXAA && Context.Frame)
+    {
+        // FXAA prepares SceneColor on t0 before submission; keep the command in sync
+        // so SubmitCommand does not overwrite it with nullptr on a forced bind.
+        Cmd.DiffuseSRV = Context.Frame->SceneColorCopySRV;
+    }
+
+    Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, UserBits);
 }
