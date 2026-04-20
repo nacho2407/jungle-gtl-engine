@@ -23,7 +23,7 @@ void FRenderer::Create(HWND hWindow)
 	FConstantBufferPool::Get().Initialize(Device.GetDevice());
 	Resources.Create(Device.GetDevice());
 
-	TileBaseCulling.Initialize(Device.GetDevice());
+	TileBasedCulling.Initialize(Device.GetDevice());
 
 	PassRenderStateTable.Initialize();
 
@@ -40,7 +40,7 @@ void FRenderer::Release()
 	Builder.Release();
 
 	Resources.Release();
-	TileBaseCulling.Release();
+	TileBasedCulling.Release();
 	FConstantBufferPool::Get().Release();
 	FShaderManager::Get().Release();
 	FMaterialManager::Get().Release();
