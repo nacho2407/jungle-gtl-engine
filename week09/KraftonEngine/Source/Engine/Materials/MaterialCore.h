@@ -3,7 +3,7 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 
-#include "Render/D3D11/Resource/Buffer.h"
+#include "Render/Hardware/Resources/Buffer.h"
 
 
 class FShader;

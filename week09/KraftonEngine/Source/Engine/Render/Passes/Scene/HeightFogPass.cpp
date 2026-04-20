@@ -3,8 +3,8 @@
 #include "Render/Core/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//FullscreenDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FHeightFogPass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -64,12 +64,6 @@ void FHeightFogPass::BuildDrawCommands(FRenderPassContext& Context)
     }
 
     FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, 0);
-}
-
-void FHeightFogPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FHeightFogPass::SubmitDrawCommands(FRenderPassContext& Context)

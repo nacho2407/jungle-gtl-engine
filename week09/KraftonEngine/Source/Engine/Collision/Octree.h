@@ -2,7 +2,7 @@
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Math/Vector.h"
 #include "Component/PrimitiveComponent.h"
-#include "Render/Renderer/Visibility/ConvexVolume.h"
+#include "Render/Visibility/ConvexVolume.h"
 #include <memory>
 
 class FPrimitiveSceneProxy;

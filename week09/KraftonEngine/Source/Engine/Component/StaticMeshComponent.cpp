@@ -8,8 +8,8 @@
 #include "Engine/Runtime/Engine.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Texture/Texture2D.h"
-#include "Render/Scene/StaticMeshSceneProxy.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)

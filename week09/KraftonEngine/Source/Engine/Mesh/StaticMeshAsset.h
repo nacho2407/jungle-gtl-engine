@@ -3,7 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Engine/Object/Object.h"
-#include "Render/D3D11/Resource/Buffer.h"
+#include "Render/Hardware/Resources/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
 #include "Materials/Material.h"

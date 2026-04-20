@@ -1,9 +1,9 @@
 ﻿#include "Materials/Material.h"
 #include "Serialization/Archive.h"
-#include "Render/D3D11/Resource/Shader.h"
+#include "Render/Hardware/Resources/Shader.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Execution/Renderer.h"
 
 
 IMPLEMENT_CLASS(UMaterial, UMaterialInterface)

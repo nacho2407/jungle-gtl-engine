@@ -1,14 +1,14 @@
-﻿#include "Render/Builders//MeshDrawCommandBuilder.h"
+﻿#include "Render/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Core/RenderPassContext.h"
-#include "Render/D3D11/Frame/FrameSharedResources.h"
+#include "Render/Frame/FrameSharedResources.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Commands/DrawCommand.h"
 #include "Render/Core/PassRenderState.h"
 #include "Render/Core/PassTypes.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Execution/Renderer.h"
 
 
 namespace

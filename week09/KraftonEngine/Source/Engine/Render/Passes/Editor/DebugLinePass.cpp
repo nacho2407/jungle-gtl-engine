@@ -1,8 +1,8 @@
 ﻿#include "Render/Passes/Editor/DebugLinePass.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//LineDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Builders/LineDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FDebugLinePass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -18,12 +18,6 @@ void FDebugLinePass::PrepareTargets(FRenderPassContext& Context)
 void FDebugLinePass::BuildDrawCommands(FRenderPassContext& Context)
 {
     FLineDrawCommandBuilder::Build(Context, *Context.DrawCommandList);
-}
-
-void FDebugLinePass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FDebugLinePass::SubmitDrawCommands(FRenderPassContext& Context)

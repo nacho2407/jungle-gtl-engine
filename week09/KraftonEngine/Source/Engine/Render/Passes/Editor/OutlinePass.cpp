@@ -4,9 +4,9 @@
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommand.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//FullscreenDrawCommandBuilder.h"
+#include "Render/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Resource/ConstantBufferPool.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FOutlinePass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -80,12 +80,6 @@ void FOutlinePass::BuildDrawCommands(FRenderPassContext& Context)
 
     OutlineCB->Update(Context.Context, &Constants, sizeof(Constants));
     Context.DrawCommandList->GetCommands().back().PerShaderCB[0] = OutlineCB;
-}
-
-void FOutlinePass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FOutlinePass::SubmitDrawCommands(FRenderPassContext& Context)

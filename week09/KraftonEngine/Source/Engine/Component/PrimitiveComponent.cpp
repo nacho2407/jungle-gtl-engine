@@ -5,8 +5,8 @@
 #include "Collision/RayUtils.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
-#include "Render/Scene/FScene.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 

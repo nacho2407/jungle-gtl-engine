@@ -1,15 +1,15 @@
 ﻿#include "Render/Passes/Scene/ViewModePostProcessPass.h"
 
-#include "Render/Builders//FullscreenDrawCommandBuilder.h"
+#include "Render/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Commands/DrawCommand.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Core/FrameContext.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Core/RenderPassContext.h"
-#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
+#include "Render/Frame/ViewModeSurfaceSet.h"
 #include "Render/Resource/ConstantBufferPool.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 namespace
 {
@@ -127,12 +127,6 @@ void FViewModePostProcessPass::BuildDrawCommands(FRenderPassContext& Context)
         nullptr,
         Command.DiffuseSRV,
         UserBits);
-}
-
-void FViewModePostProcessPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FViewModePostProcessPass::SubmitDrawCommands(FRenderPassContext& Context)

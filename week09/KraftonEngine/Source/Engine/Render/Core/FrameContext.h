@@ -4,8 +4,8 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"
-#include "Render/Renderer/LODContext.h"
-#include "Render/Renderer/Visibility//ConvexVolume.h"
+#include "Render/Execution/LODContext.h"
+#include "Render/Visibility/ConvexVolume.h"
 
 #include <d3d11.h>
 

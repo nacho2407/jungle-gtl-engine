@@ -1,7 +1,7 @@
 ﻿#include "AmbientLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-#include "Render/Scene/AmbientLightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/AmbientLightSceneProxy.h"
 
 IMPLEMENT_CLASS(UAmbientLightComponent, ULightComponent)
 

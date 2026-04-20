@@ -4,7 +4,7 @@
 
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
-#include "Render/Renderer/Visibility/GPUOcclusionCulling.h"
+#include "Render/Visibility/GPUOcclusionCulling.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
