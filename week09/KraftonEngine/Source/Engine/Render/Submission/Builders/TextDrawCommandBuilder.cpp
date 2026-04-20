@@ -1,11 +1,11 @@
-﻿#include "Render/Submission/Builders/TextDrawCommandBuilder.h"
+#include "Render/Submission/Builders/TextDrawCommandBuilder.h"
 
 #include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Execution/Renderer.h"
-#include "Render/Systems/ShaderManager.h"
+#include "Render/Resources/Managers/ShaderManager.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
 #include "Resource/ResourceManager.h"
@@ -26,7 +26,7 @@ void FTextDrawCommandBuilder::BuildOverlay(FRenderPassContext& Context, FDrawCom
     FFontBatch& FontBatch = Context.Renderer->GetFontBatch();
     FontBatch.ClearScreen();
 
-    for (const FScene::FOverlayText& Text : *Context.OverlayTexts)
+    for (const FSceneOverlayText& Text : *Context.OverlayTexts)
     {
         if (!Text.Text.empty())
         {

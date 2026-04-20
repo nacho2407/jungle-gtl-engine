@@ -1,13 +1,13 @@
-﻿#include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
+#include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Frame/FrameSharedResources.h"
+#include "Render/Resources/Frame/FrameSharedResources.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Systems/ConstantBufferPool.h"
-#include "Render/Systems/ShaderManager.h"
+#include "Render/Resources/Pools/ConstantBufferPool.h"
+#include "Render/Resources/Managers/ShaderManager.h"
 #include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Passes/Common/PassRenderState.h"
-#include "Render/Core/PassTypes.h"
+#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
 #include "Render/Execution/Renderer.h"
 
 

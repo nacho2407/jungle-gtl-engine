@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /*
     실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -7,24 +7,25 @@
 #include "Render/Types/RenderTypes.h"
 #include "Render/Passes/Common/RenderPassContext.h"
 
-#include "Render/Frame/FrameContext.h"
+#include "Render/View/SceneView.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Hardware/Device/D3DDevice.h"
-#include "Render/Frame/FrameSharedResources.h"
-#include "Render/Frame/ViewportRenderTargets.h"
-#include "Render/Systems/ShaderManager.h"
-#include "Render/Batching/LineBatch.h"
-#include "Render/Batching/FontBatch.h"
-#include "Render/Pipelines/RenderPassRegistry.h"
-#include "Render/Pipelines/RenderPipelineRegistry.h"
+#include "Render/D3D11/Device/D3DDevice.h"
+#include "Render/Resources/Frame/FrameSharedResources.h"
+#include "Render/View/ViewportRenderTargets.h"
+#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Submission/Batching/LineBatch.h"
+#include "Render/Submission/Batching/FontBatch.h"
+#include "Render/Pipelines/Registry/RenderPassRegistry.h"
+#include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
 #include "Render/Execution/RenderPipelineRunner.h"
 
 class FTextRenderSceneProxy;
 class FScene;
 class FViewModePassRegistry;
 class FViewModeSurfaceSet;
+struct FCollectedPrimitives;
 
 
 class FRenderer
@@ -58,6 +59,7 @@ public:
     void EndFrame();
 
     FRenderPassContext CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets = nullptr, FScene* Scene = nullptr, const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
+    FRenderPassContext CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives);
     void RunRootPipeline(ERenderPipelineType RootType, FRenderPassContext& PassContext);
     void ExecutePipeline(ERenderPipelineType Type, FRenderPassContext& PassContext);
 

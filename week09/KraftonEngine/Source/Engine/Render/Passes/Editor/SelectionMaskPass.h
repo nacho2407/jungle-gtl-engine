@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "Render/Passes/RenderPass.h"
-struct FFrameContext;
+struct FSceneView; using FFrameContext = FSceneView;
 struct FRenderPassContext;
 class FPrimitiveSceneProxy;
 class FSelectionMaskPass : public FRenderPass

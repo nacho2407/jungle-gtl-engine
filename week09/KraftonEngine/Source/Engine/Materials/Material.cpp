@@ -1,6 +1,6 @@
-﻿#include "Materials/Material.h"
+#include "Materials/Material.h"
 #include "Serialization/Archive.h"
-#include "Render/Hardware/Resources/Shader.h"
+#include "Render/D3D11/Shaders/Programs/GraphicsShaderProgram.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Execution/Renderer.h"

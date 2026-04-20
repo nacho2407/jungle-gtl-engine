@@ -1,4 +1,4 @@
-﻿#include "DecalComponent.h"
+#include "DecalComponent.h"
 
 #include "Materials/MaterialManager.h"
 #include "Collision/OBB.h"
@@ -6,7 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
-#include "Render/DebugDraw/DrawDebugHelpers.h"
+#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Mesh/ObjManager.h"

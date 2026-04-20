@@ -1,4 +1,5 @@
-﻿#include "Render/Execution/Renderer.h"
+#include "Render/Execution/Renderer.h"
+#include "Render/Submission/Collectors/SceneVisibilityCollector.h"
 
 #include <iostream>
 #include <algorithm>
@@ -6,18 +7,18 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
-#include "Render/Systems/ConstantBufferPool.h"
+#include "Render/Resources/Pools/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
-#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Scene.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
 #include "Render/Core/RenderConstants.h"
-#include "Render/Core/PassTypes.h"
-#include "Render/Frame/FrameSharedResources.h"
-#include "Render/Frame/ViewModeSurfaceSet.h"
-#include "Render/Frame/ViewportRenderTargets.h"
+#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
+#include "Render/Resources/Frame/FrameSharedResources.h"
+#include "Render/View/ViewModeSurfaceSet.h"
+#include "Render/View/ViewportRenderTargets.h"
 #include "Render/Execution/PipelineShaderResolver.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Types/ShadingTypes.h"
@@ -308,14 +309,22 @@ FRenderPassContext FRenderer::CreatePassContext(const FFrameContext& Frame, cons
     PassContext.ViewModePassRegistry = ViewModePassRegistry;
     PassContext.ActiveViewSurfaceSet = ActiveViewSurfaceSet;
     PassContext.ActiveViewMode = ActiveViewMode;
+    PassContext.CollectedPrimitives = nullptr;
     PassContext.VisibleProxies = VisibleProxies;
     if (PassContext.Scene)
     {
-        PassContext.DebugLines = &PassContext.Scene->GetDebugLines();
-        PassContext.OverlayTexts = &PassContext.Scene->GetOverlayTexts();
+        PassContext.DebugLines = &PassContext.Scene->GetDebugData().GetDebugLines();
+        PassContext.OverlayTexts = &PassContext.Scene->GetDebugData().GetOverlayTexts();
     }
     PassContext.Occlusion = Frame.OcclusionCulling;
     PassContext.LODContext = &Frame.LODContext;
+    return PassContext;
+}
+
+FRenderPassContext FRenderer::CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives)
+{
+    FRenderPassContext PassContext = CreatePassContext(Frame, Targets, Scene, &CollectedPrimitives.VisibleProxies);
+    PassContext.CollectedPrimitives = &CollectedPrimitives;
     return PassContext;
 }
 

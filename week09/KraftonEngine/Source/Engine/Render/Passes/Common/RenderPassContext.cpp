@@ -1,6 +1,6 @@
-﻿#include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Frame/FrameContext.h"
-#include "Render/Frame/ViewportRenderTargets.h"
+#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/View/SceneView.h"
+#include "Render/View/ViewportRenderTargets.h"
 #include "Render/Passes/Common/PassRenderState.h"
 
 const FPassRenderState& FRenderPassContext::GetPassState(ERenderPass Pass) const

@@ -1,7 +1,7 @@
 ﻿#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Scene.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "GameFramework/World.h"
 
@@ -30,8 +30,10 @@ void ULightComponent::OnTransformDirty()
 
 void ULightComponent::CreateRenderState()
 {
-    if (LightSceneProxy) return;
-    if (!Owner || !Owner->GetWorld()) return;
+    if (LightSceneProxy)
+        return;
+    if (!Owner || !Owner->GetWorld())
+        return;
 
     FScene& Scene = Owner->GetWorld()->GetScene();
     LightSceneProxy = Scene.AddLight(this);
@@ -39,8 +41,10 @@ void ULightComponent::CreateRenderState()
 
 void ULightComponent::DestroyRenderState()
 {
-    if (!LightSceneProxy) return;
-    if (!Owner || !Owner->GetWorld()) return;
+    if (!LightSceneProxy)
+        return;
+    if (!Owner || !Owner->GetWorld())
+        return;
 
     FScene& Scene = Owner->GetWorld()->GetScene();
     Scene.RemoveLight(LightSceneProxy);
@@ -49,8 +53,10 @@ void ULightComponent::DestroyRenderState()
 
 void ULightComponent::MarkRenderStateDirty()
 {
-    if (!LightSceneProxy) return;
-    if (!Owner || !Owner->GetWorld()) return;
+    if (!LightSceneProxy)
+        return;
+    if (!Owner || !Owner->GetWorld())
+        return;
 
     FScene& Scene = Owner->GetWorld()->GetScene();
     Scene.RemoveLight(LightSceneProxy);
@@ -60,8 +66,10 @@ void ULightComponent::MarkRenderStateDirty()
 
 void ULightComponent::MarkRenderTransformDirty()
 {
-    if (!LightSceneProxy) return;
-    if (!Owner || !Owner->GetWorld()) return;
+    if (!LightSceneProxy)
+        return;
+    if (!Owner || !Owner->GetWorld())
+        return;
 
     Owner->GetWorld()->GetScene().MarkLightProxyDirty(LightSceneProxy, EDirtyFlag::Transform);
 }

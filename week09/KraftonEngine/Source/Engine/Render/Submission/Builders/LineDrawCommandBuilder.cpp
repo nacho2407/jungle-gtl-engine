@@ -3,9 +3,10 @@
 #include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
+#include "Render/Scene/Scene.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Execution/Renderer.h"
-#include "Render/Systems/ShaderManager.h"
+#include "Render/Resources/Managers/ShaderManager.h"
 
 void FLineDrawCommandBuilder::Build(FRenderPassContext& Context, FDrawCommandList& OutList)
 {
@@ -32,7 +33,7 @@ void FLineDrawCommandBuilder::Build(FRenderPassContext& Context, FDrawCommandLis
 
     if (Context.DebugLines)
     {
-        for (const FScene::FDebugLine& Line : *Context.DebugLines)
+        for (const FSceneDebugLine& Line : *Context.DebugLines)
         {
             EditorLines.AddLine(Line.Start, Line.End, Line.Color.ToVector4());
         }

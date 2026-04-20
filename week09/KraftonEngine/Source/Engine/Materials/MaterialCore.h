@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 
-#include "Render/Hardware/Resources/Buffer.h"
+#include "Render/D3D11/Buffers/Buffers.h"
 
 
 class FShader;

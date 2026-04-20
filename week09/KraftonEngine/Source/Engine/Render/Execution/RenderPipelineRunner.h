@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
-#include "Render/Pipelines/RenderPipelineType.h"
+#include "Render/Pipelines/Registry/RenderPipelineType.h"
 
 class FRenderPipelineRegistry;
 class FRenderPassRegistry;
 struct FRenderPassContext;
-struct FFrameContext;
+struct FSceneView; using FFrameContext = FSceneView;
 
 class FRenderPipelineRunner
 {

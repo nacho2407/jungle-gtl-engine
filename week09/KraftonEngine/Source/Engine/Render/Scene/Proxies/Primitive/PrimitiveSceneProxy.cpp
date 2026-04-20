@@ -1,9 +1,9 @@
-﻿#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Scene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
-#include "Render/Systems/ShaderManager.h"
+#include "Render/Resources/Managers/ShaderManager.h"
 
 // ============================================================
 // FPrimitiveSceneProxy — 기본 구현

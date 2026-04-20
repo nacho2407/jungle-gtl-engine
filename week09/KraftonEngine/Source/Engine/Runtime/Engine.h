@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Execution/Renderer.h"
 #include "Render/Submission/Collectors/RenderCollector.h"
-#include "Render/Frame/FrameContext.h"
-#include "Render/Frame/ViewportRenderTargets.h"
+#include "Render/View/SceneView.h"
+#include "Render/View/ViewportRenderTargets.h"
 
 #include <memory>
 
