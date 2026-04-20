@@ -9,7 +9,7 @@
   "PathFileName" : "Asset/Materials/BasicShapeMaterial.json",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/UberLit.hlsl",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/BasicShape/BasicShape.png"
   }

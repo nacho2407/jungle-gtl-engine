@@ -4,5 +4,5 @@
   },
   "PathFileName" : "Asset/Materials/or.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/UberLit.hlsl"
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl"
 }

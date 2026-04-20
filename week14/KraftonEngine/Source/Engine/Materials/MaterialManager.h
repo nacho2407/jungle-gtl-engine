@@ -64,7 +64,7 @@ private:
 	bool InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
 	bool PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template);
 	
-	const FString DefaultShaderPath = "Shaders/UberLit.hlsl";
+	const FString DefaultShaderPath = "Shaders/Geometry/UberLit.hlsl";
 
 
 };

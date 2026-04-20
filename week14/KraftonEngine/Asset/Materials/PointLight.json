@@ -1,6 +1,6 @@
 {
   "PathFileName" : "Asset/Materials/PointLight.json",
-  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
+  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
   "RenderPass" : "AlphaBlend",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/PointLight_64x.png"

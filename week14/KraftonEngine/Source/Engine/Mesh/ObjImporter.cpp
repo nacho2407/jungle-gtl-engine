@@ -455,7 +455,7 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 	json::JSON JsonData;
 	JsonData["PathFileName"] = JsonPath;
-	JsonData["ShaderPath"] = "Shaders/UberLit.hlsl"; // 기본 셰이더
+	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl"; // 기본 셰이더
 	JsonData["RenderPass"] = "Opaque";
 
 	if (!MtlInfo->map_Kd.empty())

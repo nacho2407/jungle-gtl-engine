@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/Doors_Old_Wooden_1.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/UberLit.hlsl",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/church/TextureAtlasEntree.png"
   }
