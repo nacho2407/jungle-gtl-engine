@@ -2,8 +2,8 @@
 #include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Frame/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
-#include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Frame/ViewportRenderTargets.h"
 

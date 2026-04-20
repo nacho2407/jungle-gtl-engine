@@ -73,15 +73,6 @@
     <Filter Include="Source\Engine\Render\Batching">
       <UniqueIdentifier>{fde76375-d03b-4b69-e7ea-a35a7745de12}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Builders">
-      <UniqueIdentifier>{59428dd1-0c5b-37d8-2739-c501238a8b47}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Collectors">
-      <UniqueIdentifier>{e6cdc88e-d910-3258-dc12-ce12368a4d57}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Commands">
-      <UniqueIdentifier>{aa770597-1880-1438-1c9f-d468ec4ccd24}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Render\Core">
       <UniqueIdentifier>{10f600ed-a596-906f-6415-275e93d7f337}</UniqueIdentifier>
     </Filter>
@@ -135,6 +126,18 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Scene\Proxies\Primitive">
       <UniqueIdentifier>{9f981728-91ca-763b-bca8-5db990a390b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Submission">
+      <UniqueIdentifier>{2087514d-385b-db99-7f6e-638e97bfaa6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Submission\Builders">
+      <UniqueIdentifier>{8b53dad4-718e-f1eb-f891-8f8bdde8d47a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Submission\Collectors">
+      <UniqueIdentifier>{8229e9da-13c4-a415-e8dd-263299ff61f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Submission\Commands">
+      <UniqueIdentifier>{ad848118-57f9-c31b-950d-22821c01db01}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Systems">
       <UniqueIdentifier>{35b4eaef-70f6-af7e-431b-02a08328bb9b}</UniqueIdentifier>
@@ -524,27 +527,6 @@
     <ClCompile Include="Source\Engine\Render\Batching\LineBatch.cpp">
       <Filter>Source\Engine\Render\Batching</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Builders\DecalDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Builders\FullscreenDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Builders\LineDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Builders\MeshDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Builders\TextDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Collectors\RenderCollector.cpp">
-      <Filter>Source\Engine\Render\Collectors</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Commands\DrawCommandList.cpp">
-      <Filter>Source\Engine\Render\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
@@ -682,6 +664,27 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.cpp">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Builders\DecalDrawCommandBuilder.cpp">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Builders\FullscreenDrawCommandBuilder.cpp">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Builders\LineDrawCommandBuilder.cpp">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Builders\MeshDrawCommandBuilder.cpp">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Builders\TextDrawCommandBuilder.cpp">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Collectors\RenderCollector.cpp">
+      <Filter>Source\Engine\Render\Submission\Collectors</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Commands\DrawCommandList.cpp">
+      <Filter>Source\Engine\Render\Submission\Commands</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Systems\ConstantBufferPool.cpp">
       <Filter>Source\Engine\Render\Systems</Filter>
@@ -1088,33 +1091,6 @@
     <ClInclude Include="Source\Engine\Render\Batching\LineBatch.h">
       <Filter>Source\Engine\Render\Batching</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Builders\DecalDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Builders\FullscreenDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Builders\LineDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Builders\MeshDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Builders\TextDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Builders</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Collectors\RenderCollector.h">
-      <Filter>Source\Engine\Render\Collectors</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Commands\DrawCommand.h">
-      <Filter>Source\Engine\Render\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Commands\DrawCommandList.h">
-      <Filter>Source\Engine\Render\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Commands\ShaderBindingSet.h">
-      <Filter>Source\Engine\Render\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Core\PassTypes.h">
       <Filter>Source\Engine\Render\Core</Filter>
     </ClInclude>
@@ -1285,6 +1261,33 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Builders\DecalDrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Builders\FullscreenDrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Builders\LineDrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Builders\MeshDrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Builders\TextDrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Collectors\RenderCollector.h">
+      <Filter>Source\Engine\Render\Submission\Collectors</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Commands\DrawCommand.h">
+      <Filter>Source\Engine\Render\Submission\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Commands\DrawCommandList.h">
+      <Filter>Source\Engine\Render\Submission\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Commands\ShaderBindingSet.h">
+      <Filter>Source\Engine\Render\Submission\Commands</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Systems\ConstantBufferPool.h">
       <Filter>Source\Engine\Render\Systems</Filter>

@@ -1,8 +1,8 @@
-﻿#include "Render/Builders/TextDrawCommandBuilder.h"
+﻿#include "Render/Submission/Builders/TextDrawCommandBuilder.h"
 
 #include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Commands/DrawCommandList.h"
-#include "Render/Commands/DrawCommand.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Execution/Renderer.h"
 #include "Render/Systems/ShaderManager.h"

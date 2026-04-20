@@ -1,11 +1,11 @@
-﻿#include "Render/Builders/MeshDrawCommandBuilder.h"
+﻿#include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Frame/FrameSharedResources.h"
-#include "Render/Commands/DrawCommandList.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Systems/ConstantBufferPool.h"
 #include "Render/Systems/ShaderManager.h"
-#include "Render/Commands/DrawCommand.h"
+#include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Execution/Renderer.h"
@@ -30,7 +30,7 @@ bool TryResolveViewModeStage(ERenderPass Pass, EPipelineStage& OutStage)
         return false;
     }
 }
-}
+} // namespace
 
 void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList)
 {

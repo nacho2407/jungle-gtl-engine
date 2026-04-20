@@ -4,7 +4,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Execution/Renderer.h"
-#include "Render/Collectors/RenderCollector.h"
+#include "Render/Submission/Collectors/RenderCollector.h"
 #include "Render/Frame/FrameContext.h"
 #include "Render/Frame/ViewportRenderTargets.h"
 

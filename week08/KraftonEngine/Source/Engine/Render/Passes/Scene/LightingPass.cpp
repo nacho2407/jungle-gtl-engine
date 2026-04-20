@@ -1,7 +1,7 @@
 ﻿#include "Render/Passes/Scene/LightingPass.h"
 #include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Frame/ViewModeSurfaceSet.h"
 #include "Render/Core/PassTypes.h"
@@ -24,7 +24,7 @@ void FLightingPass::PrepareInputs(FRenderPassContext& Context)
     }
 
     const bool bNeedsReadableDepth = Targets && Targets->DepthTexture && Targets->DepthCopyTexture &&
-        Targets->DepthTexture != Targets->DepthCopyTexture;
+                                     Targets->DepthTexture != Targets->DepthCopyTexture;
 
     Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
 

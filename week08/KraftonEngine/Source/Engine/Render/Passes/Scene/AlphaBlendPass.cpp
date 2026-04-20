@@ -1,7 +1,7 @@
 ﻿#include "Render/Passes/Scene/AlphaBlendPass.h"
 #include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders/MeshDrawCommandBuilder.h"
+#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FAlphaBlendPass::PrepareInputs(FRenderPassContext& Context)
