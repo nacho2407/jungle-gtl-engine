@@ -360,13 +360,13 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
 	// HeightFog (UserBits=0 → Outline보다 먼저)
-	if (Frame.RenderOptions.ShowFlags.bFog && CollectScene && CollectScene->HasFog())
+	if (Frame.RenderOptions.ShowFlags.bFog && CollectScene && CollectScene->GetEnvironment().HasFog())
 	{
 		FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
 		if (FogShader)
 		{
 			FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Fog, sizeof(FFogConstants));
-			const FFogParams& FogParams = CollectScene->GetFogParams();
+			const FFogParams& FogParams = CollectScene->GetEnvironment().GetFogParams();
 			FFogConstants fogData = {};
 			fogData.InscatteringColor = FogParams.InscatteringColor;
 			fogData.Density = FogParams.Density;

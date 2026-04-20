@@ -126,9 +126,10 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 
 	FLightingCBData GlobalLightingData = {};
-	if (Scene.HasGlobalAmbientLight())
+	const FSceneEnvironment& Env = Scene.GetEnvironment();
+	if (Env.HasGlobalAmbientLight())
 	{
-		FGlobalAmbientLightParams DirLightParams = Scene.GetGlobalAmbientLightParams();
+		FGlobalAmbientLightParams DirLightParams = Env.GetGlobalAmbientLightParams();
 		GlobalLightingData.Ambient.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Ambient.Color = DirLightParams.LightColor;
 	}
@@ -138,42 +139,28 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 		GlobalLightingData.Ambient.Intensity = 0.15f;
 		GlobalLightingData.Ambient.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
-	if (Scene.HasGlobalDirectionalLight())
+	if (Env.HasGlobalDirectionalLight())
 	{
-		FGlobalDirectionalLightParams DirLightParams = Scene.GetGlobalDirectionalLightParams();
+		FGlobalDirectionalLightParams DirLightParams = Env.GetGlobalDirectionalLightParams();
 		GlobalLightingData.Directional.Intensity = DirLightParams.Intensity;
 		GlobalLightingData.Directional.Color = DirLightParams.LightColor;
 		GlobalLightingData.Directional.Direction = DirLightParams.Direction;
 	}
 
-	const TArray<FPointLightParams>& PointLightParams = Scene.GetPointLights();
-	if (!PointLightParams.empty())
-	{
-		GlobalLightingData.NumActivePointLights = static_cast<uint32>(PointLightParams.size());
-	}
-	else
-	{
-		GlobalLightingData.NumActivePointLights = 0;
-	}
-
-	const TArray<FSpotLightParams>& SpotLightParams = Scene.GetSpotLights();
-	if (!SpotLightParams.empty())
-	{
-		GlobalLightingData.NumActiveSpotLights = static_cast<uint32>(SpotLightParams.size());
-	}
-	else
-	{
-		GlobalLightingData.NumActiveSpotLights = 0;
-	}
+	const uint32 NumPointLights = Env.GetNumPointLights();
+	const uint32 NumSpotLights  = Env.GetNumSpotLights();
+	GlobalLightingData.NumActivePointLights = NumPointLights;
+	GlobalLightingData.NumActiveSpotLights  = NumSpotLights;
 
 	TArray<FLightInfo> Infos;
-	for (const FPointLightParams& PointLigth : PointLightParams)
+	Infos.reserve(NumPointLights + NumSpotLights);
+	for (uint32 i = 0; i < NumPointLights; ++i)
 	{
-		Infos.emplace_back(PointLigth.ToLightInfo());
+		Infos.emplace_back(Env.GetPointLight(i).ToLightInfo());
 	}
-	for (const FSpotLightParams& SpotLight : SpotLightParams)
+	for (uint32 i = 0; i < NumSpotLights; ++i)
 	{
-		Infos.emplace_back(SpotLight.ToLightInfo());
+		Infos.emplace_back(Env.GetSpotLight(i).ToLightInfo());
 	}
 
 	LastNumLights = static_cast<uint32>(Infos.size());

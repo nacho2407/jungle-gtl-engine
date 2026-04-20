@@ -20,7 +20,7 @@ void UAmbientLightComponent::PushToScene()
 	Params.LightColor = LightColor;
 	Params.bVisible = bVisible;
 
-	World->GetScene().AddGlobalAmbientLight(this, Params);
+	World->GetScene().GetEnvironment().AddGlobalAmbientLight(this, Params);
 }
 
 void UAmbientLightComponent::DestroyFromScene()
@@ -29,5 +29,5 @@ void UAmbientLightComponent::DestroyFromScene()
 	UWorld* World = Owner->GetWorld();
 	if (!World) return;
 
-	World->GetScene().RemoveGlobalAmbientLight(this);
+	World->GetScene().GetEnvironment().RemoveGlobalAmbientLight(this);
 }

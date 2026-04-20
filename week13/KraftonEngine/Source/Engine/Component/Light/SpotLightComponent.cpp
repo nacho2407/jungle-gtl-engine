@@ -23,7 +23,7 @@ void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 	FVector FirstDirection = (Forward + Right * tanf(AngleRadInner)).Normalized() * ConeLength;
 	float AngleRadOuter = OuterConeAngle * FMath::DegToRad;
 	FVector SecondDirection = (Forward + Right * tanf(AngleRadOuter)).Normalized() * ConeLength;
-	for (float i = 0.f; i < 2 * FMath::Pi; i += 0.3)
+	for (float i = 0.f; i < 2 * FMath::Pi; i += 0.3f)
 	{
 		FQuat Rotation = FQuat::FromAxisAngle(Forward, i);
 		FVector ResInner = Rotation.RotateVector(FirstDirection);
@@ -55,7 +55,7 @@ void USpotLightComponent::PushToScene()
 	Params.InnerConeCos = std::cos(ClampedInnerAngle * FMath::DegToRad);
 	Params.OuterConeCos = std::cos(ClampedOuterAngle * FMath::DegToRad);
 
-	World->GetScene().AddSpotLight(this, Params);
+	World->GetScene().GetEnvironment().AddSpotLight(this, Params);
 }
 
 void USpotLightComponent::DestroyFromScene()
@@ -65,7 +65,7 @@ void USpotLightComponent::DestroyFromScene()
 	UWorld* World = Owner->GetWorld();
 	if (!World) return;
 
-	World->GetScene().RemoveSpotLight(this);
+	World->GetScene().GetEnvironment().RemoveSpotLight(this);
 }
 
 void USpotLightComponent::Serialize(FArchive& Ar)
