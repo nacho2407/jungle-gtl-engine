@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Render/Types/RenderTypes.h"
-#include "Editor/UI/ContentBrowser/ContentBrower.h"
+#include "Editor/UI/EditorDragSource.h"
+#include "Editor/UI/ContentBrowser/ContentBrowserElement.h"
 #include "imgui.h"
 
 class PrefabDragSource final : public EditorDragSource
