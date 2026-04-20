@@ -35,13 +35,13 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 	{
 		Context.SelectedElement = this;
 		bIsSelected = true;
-		OnClicked(Context);
+		OnRightClicked(Context);
 	}
 
 	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 	if (bDoubleClicked)
 	{
-		OnDoubleClicked(Context);
+		OnDoubleRightClicked(Context);
 	}
 
 	if (ImGui::BeginDragDropSource())
@@ -81,7 +81,7 @@ FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
 	return result;
 }
 
-void DirectoryElement::OnDoubleClicked(ContentBrowserContext& Context)
+void DirectoryElement::OnDoubleRightClicked(ContentBrowserContext& Context)
 {
 	Context.CurrentPath = ContentItem.Path;
 	Context.bIsNeedRefresh = true;
@@ -90,7 +90,7 @@ void DirectoryElement::OnDoubleClicked(ContentBrowserContext& Context)
 #include "Serialization/SceneSaveManager.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-void SceneElement::OnDoubleClicked(ContentBrowserContext& Context)
+void SceneElement::OnDoubleRightClicked(ContentBrowserContext& Context)
 {
 	std::filesystem::path ScenePath = ContentItem.Path;
 	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());

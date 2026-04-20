@@ -4,15 +4,6 @@
 #include "WICTextureLoader.h"
 
 
-FEditorContentBrowserWidget::~FEditorContentBrowserWidget()
-{
-	//for (auto pair : ICons)
-	//{
-	//	delete pair.second;
-	//	pair.second = nullptr;
-	//}
-}
-
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
 	FEditorWidget::Initialize(InEditor);
@@ -117,9 +108,14 @@ void FEditorContentBrowserWidget::RefreshContent()
 			element.get()->SetIcon(ICons["Directory"].Get());
 
 		}
-		else if (ICons.contains(Extension))
+		else if (Content.Path.extension() == ".Scene")
 		{
 			element = std::make_unique<SceneElement>();
+			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".obj")
+		{
+			element = std::make_unique<ObjectElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else
