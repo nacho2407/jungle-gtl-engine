@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 
 class USpotLightComponent;
+class UBillboardComponent;
 
 class ASpotLightActor : public AActor
 {
@@ -14,4 +15,6 @@ public:
 
 private:
     USpotLightComponent* SpotLightComponent = nullptr;
+	UBillboardComponent* BillboardComponent = nullptr;
+	FString SpotLightIconPath = "Asset/Materials/SpotLightIcon.json";
 };
