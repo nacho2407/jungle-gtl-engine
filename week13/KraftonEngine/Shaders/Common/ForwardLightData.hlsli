@@ -89,6 +89,10 @@ cbuffer LightingBuffer : register(b4)
     uint NumTilesX;
     uint NumTilesY;
     FClusterCullingState CullState;
+
+    uint  ShowClusterHeatMap;  //  4B | offset 112
+    float MaxHeatLightCount;   //  4B | offset 116
+    uint2 _padFlags;           //  8B | offset 120 → 128B
 };
 
 // ── Structured Buffers (t8~t10) ──

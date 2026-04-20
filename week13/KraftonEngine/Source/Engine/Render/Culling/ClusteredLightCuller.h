@@ -9,6 +9,7 @@ struct FAABB
 	FVector4 Min;
 	FVector4 Max;
 };
+static_assert(sizeof(FAABB) == sizeof(FVector4) * 2, "FAABB size mismatch with HLSL");
 
 class FClusteredLightCuller
 {

@@ -59,6 +59,23 @@ struct UberVS_Output
 };
 
 // =============================================================================
+// Cluster HeatMap 유틸
+// =============================================================================
+float3 HeatColor(float t)
+{
+    t = saturate(t);
+    float3 cold   = float3(0.02f, 0.05f, 0.15f);
+    float3 blue   = float3(0.0f,  0.25f, 1.0f);
+    float3 cyan   = float3(0.0f,  0.9f,  1.0f);
+    float3 yellow = float3(1.0f,  0.95f, 0.0f);
+    float3 red    = float3(1.0f,  0.05f, 0.0f);
+    if (t < 0.25f) return lerp(cold,   blue,   t / 0.25f);
+    if (t < 0.50f) return lerp(blue,   cyan,   (t - 0.25f) / 0.25f);
+    if (t < 0.75f) return lerp(cyan,   yellow, (t - 0.50f) / 0.25f);
+    return             lerp(yellow, red,    (t - 0.75f) / 0.25f);
+}
+
+// =============================================================================
 // Culling Utility
 // =============================================================================
 uint DepthToSlice(float viewDepth)
@@ -388,6 +405,16 @@ UberPS_Output PS(UberVS_Output input)
     finalColor += rimColor;
 #endif
     finalColor = ApplyWireframe(finalColor);
+
+#if defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
+    if (ShowClusterHeatMap)
+    {
+        uint ClusterIdx = ComputeClusterIndex(input.position, input.worldPos);
+        uint LightCount = g_ClusterLightGrid[ClusterIdx].y;
+        float t = (float) LightCount / max(MaxHeatLightCount, 1.0f);
+        finalColor = lerp(finalColor, HeatColor(t), 0.65f);
+    }
+#endif
 
     output.Color = float4(finalColor, baseColor.a);
     output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
