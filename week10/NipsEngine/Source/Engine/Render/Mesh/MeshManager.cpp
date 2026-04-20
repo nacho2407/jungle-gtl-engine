@@ -252,5 +252,3 @@ void FEditorMeshLibrary::CreateTranslationGizmo()
 		}
 	}
 }
-
-

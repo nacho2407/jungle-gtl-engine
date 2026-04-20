@@ -421,6 +421,16 @@ void FRenderer::InitializePassBatchers()
 			{
 				EditorLineBatcher.AddOBB(FOBB{ Cmd.Constants.OBB.Center, Cmd.Constants.OBB.Extents, Cmd.Constants.OBB.Rotation }, Cmd.Constants.OBB.Color);
 			}
+			else if (Cmd.Type == ERenderCommandType::DebugDirectionalLight)
+			{
+				const auto& D = Cmd.Constants.DirectionalLight;
+				EditorLineBatcher.AddDirectionalLight(D.Position, D.Direction, 1.5f, D.Color);
+			}
+			else if (Cmd.Type == ERenderCommandType::DebugPointLight)
+			{
+				const auto& P = Cmd.Constants.PointLight;
+				EditorLineBatcher.AddPointLight(P.Position, P.Range, P.Color);
+			}
 			else if (Cmd.Type == ERenderCommandType::DebugSpotlight)
 			{
 				const auto& S = Cmd.Constants.SpotLight;

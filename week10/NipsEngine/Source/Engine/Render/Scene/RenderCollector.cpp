@@ -232,11 +232,6 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			continue;
 		}
 
-		if (Actor->IsA<ADecalSpotLightActor>())
-		{
-			CollectSpotLightCommand(static_cast<const ADecalSpotLightActor*>(Actor), ShowFlags, RenderBus);
-		}
-
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
 			if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
@@ -387,6 +382,22 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	bool bHasSelectionMask = false;
 	std::unordered_set<int32> SeenBVHNodeIndices;
+
+	for (UActorComponent* Comp : Actor->GetComponents())
+	{
+		if (UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Comp))
+		{
+			CollectDirectionalLightCommand(DirLight, ShowFlags, RenderBus);
+		}
+		else if (USpotlightComponent* Spotlight = Cast<USpotlightComponent>(Comp))
+		{
+			CollectSpotLightCommand(Spotlight, ShowFlags, RenderBus);
+		}
+		else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(Comp))
+		{
+			CollectPointLightCommand(PointLight, ShowFlags, RenderBus);
+		}
+	}
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
@@ -834,17 +845,40 @@ void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent
 	CollectOBBCommand(Box, FColor::Green(), RenderBus);
 }
 
-void FRenderCollector::CollectSpotLightCommand(const ADecalSpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+void FRenderCollector::CollectDirectionalLightCommand(const UDirectionalLightComponent* DirLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugDirectionalLight;
+	Cmd.Constants.DirectionalLight.Position = DirLight->GetWorldLocation();
+	Cmd.Constants.DirectionalLight.Direction = DirLight->GetForwardVector();
+	Cmd.Constants.DirectionalLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
+void FRenderCollector::CollectPointLightCommand(const UPointLightComponent* PointLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugPointLight;
+	Cmd.Constants.PointLight.Position = PointLight->GetWorldLocation();
+	Cmd.Constants.PointLight.Range = PointLight->AttenuationRadius;
+	Cmd.Constants.PointLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
+void FRenderCollector::CollectSpotLightCommand(const USpotlightComponent* Spotlight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
 	if (!ShowFlags.bBoundingVolume) return;
 
 	FRenderCommand Cmd = {};
 	Cmd.Type = ERenderCommandType::DebugSpotlight;
-	Cmd.Constants.SpotLight.Position = SpotlightActor->GetActorLocation();
-	Cmd.Constants.SpotLight.Direction = SpotlightActor->GetActorForward();
-	Cmd.Constants.SpotLight.InnerAngle = 12.0f;
-	Cmd.Constants.SpotLight.OuterAngle = SpotlightActor->GetAngle();
-	Cmd.Constants.SpotLight.Range = SpotlightActor->GetRange();
+	Cmd.Constants.SpotLight.Position = Spotlight->GetWorldLocation();
+	Cmd.Constants.SpotLight.Direction = Spotlight->GetForwardVector();
+	Cmd.Constants.SpotLight.InnerAngle = Spotlight->InnerConeAngle;
+	Cmd.Constants.SpotLight.OuterAngle = Spotlight->OuterConeAngle;
+	Cmd.Constants.SpotLight.Range = Spotlight->AttenuationRadius;
 	Cmd.Constants.SpotLight.Color = FColor::Yellow();
 	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }
@@ -868,7 +902,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		FDirectionalLightInfo DirLightData	= {};
 		DirLightData.Color					= Color;
 		DirLightData.Intensity				= DirLight->Intensity;
-		DirLightData.Direction				= DirLight->LightDirection;
+		DirLightData.Direction				= DirLight->GetForwardVector();
 		RenderBus.DirectionalLightInfo = DirLightData;
 	}
 
@@ -878,7 +912,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.Color				= Color;
 		LightData.Intensity			= SpotLight->Intensity;
         LightData.Position			= SpotLight->GetWorldLocation();
-		LightData.Direction			= SpotLight->Direction;
+		LightData.Direction			= SpotLight->GetForwardVector();
         LightData.Radius			= SpotLight->AttenuationRadius;
         LightData.Falloff			= SpotLight->LightFalloffExponent;
 		LightData.InnerAngle		= SpotLight->InnerConeAngle;

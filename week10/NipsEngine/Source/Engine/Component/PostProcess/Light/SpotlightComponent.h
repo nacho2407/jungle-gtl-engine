@@ -10,7 +10,6 @@ public:
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 public:
-    FVector Direction = FVector(0, 0, 1);
     float InnerConeAngle = 10.f;
     float OuterConeAngle = 15.f;
 };
