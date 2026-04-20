@@ -916,8 +916,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.Direction			= SpotLight->GetForwardVector();
         LightData.Radius			= SpotLight->AttenuationRadius;
         LightData.Falloff			= SpotLight->LightFalloffExponent;
-		LightData.InnerAngle		= SpotLight->InnerConeAngle;
-		LightData.OuterAngle		= SpotLight->OuterConeAngle;
+		LightData.InnerAngle		= MathUtil::DegreesToRadians(SpotLight->InnerConeAngle);
+		LightData.OuterAngle		= MathUtil::DegreesToRadians(SpotLight->OuterConeAngle);
         LightData.Type				= 0;
 
 		RenderBus.LightInfos.push_back(LightData);
