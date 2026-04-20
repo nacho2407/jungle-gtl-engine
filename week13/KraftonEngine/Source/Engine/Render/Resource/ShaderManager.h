@@ -66,20 +66,28 @@ namespace std
 // ============================================================
 namespace EShaderPath
 {
-	inline constexpr const char* Primitive         = "Shaders/Primitive.hlsl";
-	inline constexpr const char* Gizmo             = "Shaders/Gizmo.hlsl";
-	inline constexpr const char* Editor            = "Shaders/Editor.hlsl";
-	inline constexpr const char* UberLit           = "Shaders/UberLit.hlsl";
-	inline constexpr const char* Decal             = "Shaders/DecalShader.hlsl";
-	inline constexpr const char* OutlinePostProcess = "Shaders/OutlinePostProcess.hlsl";
-	inline constexpr const char* Font              = "Shaders/ShaderFont.hlsl";
-	inline constexpr const char* OverlayFont       = "Shaders/ShaderOverlayFont.hlsl";
-	inline constexpr const char* SubUV             = "Shaders/ShaderSubUV.hlsl";
-	inline constexpr const char* Billboard         = "Shaders/ShaderBillboard.hlsl";
-	inline constexpr const char* HeightFog         = "Shaders/HeightFog.hlsl";
-	inline constexpr const char* SceneDepth        = "Shaders/SceneDepth.hlsl";
-	inline constexpr const char* SceneNormal       = "Shaders/SceneNormal.hlsl";
-	inline constexpr const char* FXAA              = "Shaders/FXAA.hlsl";
+	// Geometry — 메시 렌더링
+	inline constexpr const char* Primitive         = "Shaders/Geometry/Primitive.hlsl";
+	inline constexpr const char* UberLit           = "Shaders/Geometry/UberLit.hlsl";
+	inline constexpr const char* Decal             = "Shaders/Geometry/Decal.hlsl";
+	inline constexpr const char* FakeLight         = "Shaders/Geometry/FakeLight.hlsl";
+
+	// Editor — 에디터 전용
+	inline constexpr const char* Editor            = "Shaders/Editor/Editor.hlsl";
+	inline constexpr const char* Gizmo             = "Shaders/Editor/Gizmo.hlsl";
+
+	// PostProcess — 후처리
+	inline constexpr const char* FXAA              = "Shaders/PostProcess/FXAA.hlsl";
+	inline constexpr const char* Outline           = "Shaders/PostProcess/Outline.hlsl";
+	inline constexpr const char* SceneDepth        = "Shaders/PostProcess/SceneDepth.hlsl";
+	inline constexpr const char* SceneNormal       = "Shaders/PostProcess/SceneNormal.hlsl";
+	inline constexpr const char* HeightFog         = "Shaders/PostProcess/HeightFog.hlsl";
+
+	// UI — 2D/텍스트/파티클
+	inline constexpr const char* Font              = "Shaders/UI/Font.hlsl";
+	inline constexpr const char* OverlayFont       = "Shaders/UI/OverlayFont.hlsl";
+	inline constexpr const char* SubUV             = "Shaders/UI/SubUV.hlsl";
+	inline constexpr const char* Billboard         = "Shaders/UI/Billboard.hlsl";
 }
 
 // ============================================================

@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/clean_retro_light_mat.002.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/UberLit.hlsl",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/Retro-light/Texture/Clean_retro_light_albedo.png"
   }

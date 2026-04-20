@@ -396,7 +396,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	// Outline (UserBits=1 → HeightFog 뒤)
 	if (bHasSelectionMaskCommands)
 	{
-		FShader* PPShader = FShaderManager::Get().GetOrCreate(EShaderPath::OutlinePostProcess);
+		FShader* PPShader = FShaderManager::Get().GetOrCreate(EShaderPath::Outline);
 		if (PPShader)
 		{
 			FOutlinePostProcessConstants ppConstants;
