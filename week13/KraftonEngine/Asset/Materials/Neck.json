@@ -1,8 +1,13 @@
 {
+  "BlendState" : "",
+  "DepthStencilState" : "",
   "Parameters" : {
-    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
   },
   "PathFileName" : "Asset/Materials/Neck.json",
+  "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
