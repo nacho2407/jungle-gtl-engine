@@ -67,6 +67,26 @@ struct FRenderTargetSet
                Width > 0.0f &&
                Height > 0.0f;
     }
+
+	ID3D11RenderTargetView* ResolvePostProcessOutputRTV(ID3D11RenderTargetView* PrevRTV) const
+    {
+        if (PrevRTV == SceneColorPingRTV)
+        {
+            return SceneColorPongRTV;
+        }
+
+        return SceneColorPingRTV;
+    }
+
+    ID3D11ShaderResourceView* ResolvePostProcessOutputSRV(ID3D11RenderTargetView* PrevRTV) const
+    {
+        if (PrevRTV == SceneColorPingRTV)
+        {
+            return SceneColorPongSRV;
+        }
+
+        return SceneColorPingSRV;
+    }
 };
 
 class FD3DDevice
