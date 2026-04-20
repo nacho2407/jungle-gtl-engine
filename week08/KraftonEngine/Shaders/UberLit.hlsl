@@ -51,6 +51,9 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float3 Normal = DecodeNormal(ResolveSurface1(UV));
     float4 MaterialParam = DecodeMaterialParam(ResolveSurface2(UV));
     return ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, UV);
+#elif defined(LIGHTING_MODEL_WORLDNORMAL)
+    float3 Normal = DecodeNormal(ResolveSurface1(UV));
+    return float4(Normal * 0.5f + 0.5f, 1.0f);
 #else
     return BaseColor;
 #endif
