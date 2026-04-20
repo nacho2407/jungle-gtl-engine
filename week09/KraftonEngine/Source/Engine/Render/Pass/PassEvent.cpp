@@ -40,16 +40,17 @@ void BuildDefaultPassEvents(
 			});
 
 		OutPrePassEvents.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
-                                     [Context, &Frame, &Cache, ShadingModel, &Resources, &LightCulling, ActiveViewSurfaces]()
+            [Context, &Frame, &Cache, ShadingModel, &Resources, &LightCulling, ActiveViewSurfaces]()
 			{
 				//1. Clustering 등록
                 Context->OMSetRenderTargets(0, nullptr, nullptr);
+                ID3D11ShaderResourceView* NullSRV = nullptr;
+                Context->PSSetShaderResources(7, 1, &NullSRV);
 
                 // Z-Prepass에서 생성된 원본 Depth SRV 바인딩
 
 				if (Frame.DepthTexture && Frame.DepthCopyTexture)
                 {
-
                     Context->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
                 }
                 if (Frame.DepthCopySRV)
@@ -75,9 +76,14 @@ void BuildDefaultPassEvents(
                 if (Device)
                     Device->Release();
                 if (Resources.LocalLightSRV)
+                {
+                    Context->CSSetShaderResources(6, 1, &Resources.LocalLightSRV);  
                     Context->PSSetShaderResources(6, 1, &Resources.LocalLightSRV);
+                }
 
-				LightCulling.Dispatch(Frame.ViewportWidth, Frame.ViewportHeight, true);	
+					LightCulling.SetPointLightData(Frame.CollectedLights.LocalLights);
+					LightCulling.Dispatch(Frame, true);	
+
 				
 				//2. Opaque Rendering
 				ID3D11ShaderResourceView* NullSRVs[6] = {};
@@ -177,6 +183,13 @@ void BuildDefaultPassEvents(
 					Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
 				}
 
+				// 히트맵 텍스처를 남는 슬롯(예: t7)에 바인딩합니다.
+                ID3D11ShaderResourceView* HitMapSRV = LightCulling.GetDebugHitMapSRV();
+                if (HitMapSRV)
+                {
+                    Context->PSSetShaderResources(7, 1, &HitMapSRV); // 7번 슬롯 사용
+                }
+
 				Cache.bForceAll = true;
 			}
 		});
@@ -192,6 +205,7 @@ void BuildDefaultPassEvents(
 
 				ID3D11ShaderResourceView* sceneColorSRV = Frame.SceneColorCopySRV;
 				Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &sceneColorSRV);
+
 
 				Cache.bForceAll = true;
 			}

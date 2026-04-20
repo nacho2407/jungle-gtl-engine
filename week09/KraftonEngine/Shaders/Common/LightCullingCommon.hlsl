@@ -1,7 +1,9 @@
-#include "Common/ConstantBuffers.hlsl"
 
 #ifndef LIGHT_CULLING_COMMON_HLSL
 #define LIGHT_CULLING_COMMON_HLSL
+
+#include "Common/ConstantBuffers.hlsl"
+
 
 // ============================================================
 // Defines
@@ -175,11 +177,16 @@ void CullLight(
 // ============================================================
 float4 HeatColor(float t)
 {
-    // 파랑(cold) → 초록 → 빨강(hot)
-    float r = saturate(t * 2.0 - 1.0);
-    float g = saturate(1.0 - abs(t * 2.0 - 1.0));
-    float b = saturate(1.0 - t * 2.0);
-    return float4(r, g, b, 0.5);
+    // 0.0 → 검정, 0.25 → 어두운 파랑, 0.5 → 시안, 0.75 → 연두, 1.0 → 빨강
+    float3 color = float3(0, 0, 0);
+    
+    color = lerp(color, float3(0.0, 0.0, 0.5), saturate(t * 4.0)); // 검정 → 어두운 파랑
+    color = lerp(color, float3(0.0, 1.0, 1.0), saturate(t * 4.0 - 1.0)); // 어두운 파랑 → 시안
+    color = lerp(color, float3(0.0, 1.0, 0.0), saturate(t * 4.0 - 2.0)); // 시안 → 연두
+    color = lerp(color, float3(1.0, 0.0, 0.0), saturate(t * 4.0 - 3.0)); // 연두 → 빨강
+    
+    float alpha = saturate(t * 2.0); // 빛 없으면 alpha=0 → scene color 그대로
+    return float4(color, alpha);
 }
 
 void WriteHeatmap(uint2 tileCoord, uint threadFlatIndex)
@@ -187,7 +194,7 @@ void WriteHeatmap(uint2 tileCoord, uint threadFlatIndex)
     if (threadFlatIndex != 0)
         return;
 
-    float heat  = saturate((float) hitCount / 64.0);
+    float heat = saturate((float) hitCount / 16.0); // 16개면 최대 (TILE_SIZE=4 기준 조정)
     float4 color = HeatColor(heat);
 
     for (uint y = 0; y < TILE_SIZE; ++y)
