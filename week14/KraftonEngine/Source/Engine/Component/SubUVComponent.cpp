@@ -67,7 +67,7 @@ void USubUVComponent::RebuildSubUVMaterial()
 		SubUVMaterial = UMaterial::CreateTransient(
 			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
 			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
-			FShaderManager::Get().GetShader(EShaderType::SubUV));
+			FShaderManager::Get().GetOrCreate(EShaderPath::SubUV));
 	}
 
 	if (CachedParticle && CachedParticle->IsLoaded())
