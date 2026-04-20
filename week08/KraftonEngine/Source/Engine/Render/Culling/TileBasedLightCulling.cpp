@@ -2,7 +2,7 @@
 #include "Viewport/ViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/Device/D3DDevice.h"
-
+#include "Render/Pipeline/FrameContext.h"
 #include <d3dcompiler.h>
 
 #define TILE_SIZE                       4
@@ -108,23 +108,20 @@ void FTileBasedLightCulling::SetPointLightData(const TArray<FLocalLightInfo>& In
     CreatePointLightBufferGPU();
 }
 
-void FTileBasedLightCulling::Dispatch(float ViewportWidth,float ViewportHeight, bool bEnable25DCulling)
+void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bEnable25DCulling)
 {
     if (!IsInitialized())
         return;
 
-    const uint32 Width = (uint32)ViewportWidth;
-    const uint32 Height = (uint32)ViewportHeight;
-
-    OnResize(Width, Height);
-    UpdateLightCullingParamsCB(Width, Height, bEnable25DCulling);
+    OnResize(frameContext.ViewportWidth, frameContext.ViewportHeight);
+    UpdateLightCullingParamsCB(frameContext, bEnable25DCulling);
 
     ID3D11DeviceContext* Context = Device->GetDeviceContext();
 
     // ---- CS 바인딩 ----
     Context->CSSetShader(LightCullingCS, nullptr, 0);
 
-    // ---- SRV (t0: PointLight 데이터, t1: SceneDepth는 외부에서 바인딩) ----
+    // ---- SRV (t0: PointLight 데이터, t1: SceneDepth) ----
 	// 현재 외부에서 주입중
     //ID3D11ShaderResourceView* SRVs[] = { PointLightDataSRV };
     //Context->CSSetShaderResources(0, 1, SRVs);
@@ -142,8 +139,8 @@ void FTileBasedLightCulling::Dispatch(float ViewportWidth,float ViewportHeight, 
     Context->CSSetConstantBuffers(2, 1, &LightCullingParamsCB);
 
     // ---- Dispatch ----
-    const UINT GroupSizeX = (Width  + TILE_SIZE - 1) / TILE_SIZE;
-    const UINT GroupSizeY = (Height + TILE_SIZE - 1) / TILE_SIZE;
+    const UINT GroupSizeX = (frameContext.ViewportWidth + TILE_SIZE - 1) / TILE_SIZE;
+    const UINT GroupSizeY = (frameContext.ViewportHeight + TILE_SIZE - 1) / TILE_SIZE;
     Context->Dispatch(GroupSizeX, GroupSizeY, 1);
 
     // ---- 바인딩 해제 ----
@@ -308,19 +305,19 @@ void FTileBasedLightCulling::CreateDebugHitMap(uint32 InWidth, uint32 InHeight)
     check(SUCCEEDED(hr));
 }
 
-void FTileBasedLightCulling::UpdateLightCullingParamsCB(uint32 InWidth, uint32 InHeight, bool bEnable25DCulling)
+void FTileBasedLightCulling::UpdateLightCullingParamsCB(const FFrameContext& frameContext, bool bEnable25DCulling)
 {
     if (!LightCullingParamsCB)
         return;
 
     FLightCullingParams Params = {};
-    Params.ScreenSizeX      = InWidth;
-    Params.ScreenSizeY      = InHeight;
+    Params.ScreenSizeX = frameContext.ViewportWidth;
+    Params.ScreenSizeY = frameContext.ViewportHeight;
     Params.TileSizeX        = TILE_SIZE;
     Params.TileSizeY        = TILE_SIZE;
     Params.Enable25DCulling = bEnable25DCulling ? 1u : 0u;
-    Params.NearZ            = 0.1f;  // 카메라 상수에서 가져오도록 교체 권장
-    Params.FarZ             = 1000.f;
+    Params.NearZ            = frameContext.NearClip;  // 카메라 상수에서 가져오도록 교체 권장
+    Params.FarZ             = frameContext.FarClip;
     Params.NumLights        = (float)Lights.size();
 
     D3D11_MAPPED_SUBRESOURCE Mapped = {};

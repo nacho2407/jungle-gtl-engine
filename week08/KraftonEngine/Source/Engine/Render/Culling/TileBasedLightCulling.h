@@ -23,8 +23,9 @@ struct FLightCullingParams
 
 class FViewportClient;
 class FD3DDevice;
+struct FFrameContext;
 
-// ============================================================
+    // ============================================================
 // FTileBasedLightCulling
 // ============================================================
 class FTileBasedLightCulling
@@ -49,7 +50,7 @@ public:
     void SetPointLightData(const TArray<FLocalLightInfo>& InLights);
 
     // ---- Dispatch ----
-    void Dispatch(float ViewportWidth, float ViewportHeight, bool bEnable25DCulling = true );
+    void Dispatch(const FFrameContext& frameContext, bool bEnable25DCulling = true);
 
     // ---- 결과 SRV (Pixel Shader에서 타일별 마스크 읽기) ----
     ID3D11ShaderResourceView* GetPerTileMaskSRV()    const { return PerTilePointLightIndexMaskSRV; }
@@ -64,7 +65,7 @@ private:
     void CreatePointLightBufferGPU();
     void CreateTileMaskBuffers();
     void CreateDebugHitMap(uint32 InWidth, uint32 InHeight);
-    void UpdateLightCullingParamsCB(uint32 InWidth, uint32 InHeight, bool bEnable25DCulling);
+    void UpdateLightCullingParamsCB(const FFrameContext& frameContext, bool bEnable25DCulling);
 
     // ---- Device ----
     FD3DDevice* Device = nullptr;
@@ -101,4 +102,6 @@ private:
     uint32 NumBucketsPerTile = 0;
     uint32 CurrentWidth     = 0;
     uint32 CurrentHeight    = 0;
+    float NearZ;
+    float FarZ;
 };

@@ -14,6 +14,7 @@ void CS_LightCulling(
     uint2 tileCoord = groupID.xy;
     uint2 pixel     = tileCoord * TILE_SIZE + threadID.xy;
 
+
     // --------------------------------------------------------
     // 1. Groupshared 초기화 (첫 번째 스레드만)
     // --------------------------------------------------------
@@ -81,8 +82,9 @@ void CS_LightCulling(
     float4x4 InverseProjection = float4x4(
     1.0f / Projection._11, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f / Projection._22, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f / Projection._43,
-    0.0f, 0.0f, 1.0f, -Projection._33 / Projection._43);
+    0.0f, 0.0f, 0.0f, 1.0f / Projection._43, // 이 부분이 핵심
+    0.0f, 0.0f, -1.0f, Projection._33 / Projection._43 
+);
     float3 viewCorners[8];
     [unroll]
     for (uint i = 0; i < 4; ++i)
