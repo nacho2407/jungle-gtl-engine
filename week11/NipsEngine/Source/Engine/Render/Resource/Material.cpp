@@ -22,35 +22,18 @@ void UMaterial::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
 	Context->RSSetState(RasterizerState);
 	Context->PSSetSamplers(0, 1, &Sampler);
 
-	ApplyParams(Context, MaterialParams);
+	ApplyParams(Context, MaterialParams, PermutationKey);
 }
 
-void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const
+void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, uint32 PermutationKey) const
 {
-	TMap<uint32, TArray<uint8>> CBufferCPUCaches;
-
-	const TMap<uint32, uint32>& BufferSizes = Shader->GetCBufferSizes();
-	if (!BufferSizes.empty())
-	{
-		for (const auto& Pair : BufferSizes)
-		{
-			uint32 Slot = Pair.first;
-			uint32 Size = Pair.second;
-
-			TArray<uint8>& NewArray = CBufferCPUCaches[Slot];
-			NewArray.resize(Size, 0);
-		}
-	}
-
+	TArray<uint8> CBufferData(Shader->GetCBufferSize());
 
 	for (const auto& [Name, ParamValue] : Params)
 	{
 		FShaderVariableInfo VarInfo;
-
 		if (Shader->GetShaderVariableInfo(Name, VarInfo))
 		{
-			TArray<uint8>& CBufferData = CBufferCPUCaches[VarInfo.BufferSlot];
-
 			switch (ParamValue.Type)
 			{
 			case EMaterialParamType::Bool:
@@ -123,10 +106,7 @@ void UMaterial::ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FM
 		}
 	}
 
-	for (auto& [Slot, Data] : CBufferCPUCaches)
-	{
-		Shader->UpdateAndBindCBuffer(Context, Data.data(), Slot, BufferSizes.at(Slot));
-	}
+	Shader->UpdateAndBindCBuffer(Context, CBufferData.data(), 2, static_cast<uint32>(CBufferData.size()), PermutationKey);
 }
 
 void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
@@ -142,5 +122,5 @@ void UMaterialInstance::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey
 		CombinedParams[Name] = Value;
 	}
 
-	Parent->ApplyParams(Context, CombinedParams);
+	Parent->ApplyParams(Context, CombinedParams, PermutationKey);
 }
