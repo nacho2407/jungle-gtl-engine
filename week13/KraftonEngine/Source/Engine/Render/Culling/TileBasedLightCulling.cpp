@@ -1,12 +1,14 @@
 ﻿#include "Engine/Render/Culling/TileBasedLightCulling.h"
+#include "Render/Resource/ShaderInclude.h"
 
 
 static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, const char* Entry)
 {
 	ID3DBlob* csBlob  = nullptr;
 	ID3DBlob* errBlob = nullptr;
+	FShaderInclude IncludeHandler;
 
-	HRESULT hr = D3DCompileFromFile(Path, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+	HRESULT hr = D3DCompileFromFile(Path, nullptr, &IncludeHandler,
 		Entry, "cs_5_0", 0, 0, &csBlob, &errBlob);
 
 	if (FAILED(hr))
@@ -31,7 +33,7 @@ void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	TileLightCullingCS = CompileCS(Device, L"Shaders/TileLightCulling.hlsl", "mainCS");
+	TileLightCullingCS = CompileCS(Device, L"Shaders/Lighting/TileLightCulling.hlsl", "mainCS");
 
 	if (!TileLightCullingCS)
 		return;

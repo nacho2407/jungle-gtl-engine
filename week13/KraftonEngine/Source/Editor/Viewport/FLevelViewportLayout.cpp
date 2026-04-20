@@ -850,6 +850,35 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				}
 			}
 
+			// ── View Mode 팝업 ──
+			ImGui::SameLine();
+
+			static const char* ViewModeNames[] = { "Phong", "Unlit", "Gouraud", "Lambert", "Wireframe", "SceneDepth", "WorldNormal" };
+			const char* CurrentViewModeName = ViewModeNames[static_cast<int32>(Opts.ViewMode)];
+
+			char ViewModePopupID[64];
+			snprintf(ViewModePopupID, sizeof(ViewModePopupID), "ViewModePopup_%d", SlotIndex);
+
+			if (ImGui::Button(CurrentViewModeName))
+			{
+				ImGui::OpenPopup(ViewModePopupID);
+			}
+
+			if (ImGui::BeginPopup(ViewModePopupID))
+			{
+				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
+				ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
+				ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
+				ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
+				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+				ImGui::Separator();
+				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
+				ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
+				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
+				ImGui::EndPopup();
+			}
+
 			// ── Settings 팝업 ──
 			ImGui::SameLine();
 
@@ -863,26 +892,6 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 			if (ImGui::BeginPopup(SettingsPopupID))
 			{
-				// View Mode
-				ImGui::Text("View Mode");
-				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-				ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
-				ImGui::SameLine();
-				ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
-				ImGui::SameLine();
-				ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
-				ImGui::SameLine();
-				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-				ImGui::SameLine();
-				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-				ImGui::SameLine();
-				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
-				ImGui::SameLine();
-				ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
-				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
-
-				ImGui::Separator();
-
 				// Show Flags
 				ImGui::Text("Show");
 				ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);

@@ -52,17 +52,6 @@ namespace ESamplerSlot
 	// s3-s4: 셰이더별 커스텀 용도
 }
 
-// FConstantBufferPool 조회 키 — 바인딩 슬롯과 독립적인 고유 식별자
-// [260413 WJ] : Material 개선 이후 다시 생각해본다. 이Key로 공유 상수버퍼를 얻어오는 형태. (@see FScontantBufferPool::GetBuffer)
-namespace ECBPoolKey
-{
-	constexpr uint32 Gizmo = 0;
-	constexpr uint32 Fog = 2;
-	constexpr uint32 Outline = 3;
-	constexpr uint32 SceneDepth = 4;
-	constexpr uint32 FXAA = 5;
-}
-
 //PerObject
 struct FPerObjectConstants
 {

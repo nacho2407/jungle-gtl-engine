@@ -15,7 +15,9 @@ class UWorld;
 // _DEBUG 빌드에서만 동작, Release/Demo에서는 no-op
 // ============================================================
 
-#if defined(_DEBUG)
+#define DEBUG_DRAW_ENABLED 1
+
+#if DEBUG_DRAW_ENABLED
 
 void DrawDebugLine(UWorld* World,
 	const FVector& Start, const FVector& End,

@@ -43,6 +43,7 @@ public:
 		bool bProperty = true;
 		bool bScene = true;
 		bool bStat = false;
+		bool bContentBrowser = true;
 	} UI;
 
 	void SaveToFile(const FString& Path) const;

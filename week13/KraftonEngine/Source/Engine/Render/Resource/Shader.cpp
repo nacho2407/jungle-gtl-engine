@@ -1,4 +1,5 @@
 ﻿#include "Shader.h"
+#include "ShaderInclude.h"
 #include "Profiling/MemoryStats.h"
 #include "Materials/Material.h"
 #include <iostream>
@@ -39,9 +40,10 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	ID3DBlob* vertexShaderCSO = nullptr;
 	ID3DBlob* pixelShaderCSO = nullptr;
 	ID3DBlob* errorBlob = nullptr;
+	FShaderInclude IncludeHandler;
 
 	// Vertex Shader 컴파일
-	HRESULT hr = D3DCompileFromFile(InFilePath, InDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
+	HRESULT hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)
@@ -53,7 +55,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	}
 
 	// Pixel Shader 컴파일
-	hr = D3DCompileFromFile(InFilePath, InDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
+	hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)

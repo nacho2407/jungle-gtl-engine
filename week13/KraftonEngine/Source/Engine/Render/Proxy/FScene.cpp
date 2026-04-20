@@ -1,6 +1,5 @@
 ﻿#include "Render/Proxy/FScene.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include <algorithm>
@@ -120,6 +119,23 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	if (Proxy->SelectedListIndex != UINT32_MAX)
 	{
 		RemoveSelectedProxyFast(SelectedProxies, Proxy);
+
+		// SelectedActors에서도 정리 — 같은 Actor의 다른 프록시가 없으면 제거
+		AActor* Actor = Proxy->Owner ? Proxy->Owner->GetOwner() : nullptr;
+		if (Actor)
+		{
+			bool bActorStillSelected = false;
+			for (const FPrimitiveSceneProxy* P : SelectedProxies)
+			{
+				if (P && P->Owner && P->Owner->GetOwner() == Actor)
+				{
+					bActorStillSelected = true;
+					break;
+				}
+			}
+			if (!bActorStillSelected)
+				SelectedActors.erase(Actor);
+		}
 	}
 
 	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
@@ -213,6 +229,8 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 	if (!Proxy) return;
 	Proxy->bSelected = bSelected;
 
+	AActor* Actor = Proxy->Owner ? Proxy->Owner->GetOwner() : nullptr;
+
 	if (bSelected)
 	{
 		if (Proxy->SelectedListIndex == UINT32_MAX)
@@ -220,36 +238,34 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 			Proxy->SelectedListIndex = static_cast<uint32>(SelectedProxies.size());
 			SelectedProxies.push_back(Proxy);
 		}
+		if (Actor)
+			SelectedActors.insert(Actor);
 	}
 	else
 	{
 		RemoveSelectedProxyFast(SelectedProxies, Proxy);
+
+		// Actor의 다른 프록시가 아직 선택 중인지 확인
+		if (Actor)
+		{
+			bool bActorStillSelected = false;
+			for (const FPrimitiveSceneProxy* P : SelectedProxies)
+			{
+				if (P && P->Owner && P->Owner->GetOwner() == Actor)
+				{
+					bActorStillSelected = true;
+					break;
+				}
+			}
+			if (!bActorStillSelected)
+				SelectedActors.erase(Actor);
+		}
 	}
 }
 
 bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
 	return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
-}
-
-// ============================================================
-// CollectSelectedDebugVisuals — 매 프레임 선택된 프록시의 디버그 시각화 수집
-// ============================================================
-void FScene::CollectSelectedDebugVisuals()
-{
-	for (FPrimitiveSceneProxy* Proxy : SelectedProxies)
-	{
-		if (!Proxy || !Proxy->Owner) continue;
-
-		AActor* Actor = Proxy->Owner->GetOwner();
-		if (!Actor) continue;
-
-		for (UActorComponent* Comp : Actor->GetComponents())
-		{
-			if (Comp)
-				Comp->ContributeSelectedVisuals(*this);
-		}
-	}
 }
 
 // ============================================================

@@ -195,9 +195,47 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 	{
 		RenderActorProperties(PrimaryActor, SelectedActors);
 	}
+	else if (SelectedComponent && SelectedActors.size() >= 2)
+	{
+		// 다중 선택 시 모든 액터의 타입이 동일한지 검증
+		UClass* PrimaryClass = PrimaryActor->GetClass();
+		bool bAllSameType = true;
+		for (const AActor* Actor : SelectedActors)
+		{
+			if (Actor && Actor->GetClass() != PrimaryClass)
+			{
+				bAllSameType = false;
+				break;
+			}
+		}
+
+		if (!bAllSameType)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Multi-edit unavailable");
+			ImGui::TextWrapped(
+				"Selected actors have different types. "
+				"Multi-component editing requires all selected actors to be the same type.");
+
+			ImGui::Spacing();
+			ImGui::TextDisabled("Primary: %s", PrimaryClass->GetName());
+			for (const AActor* Actor : SelectedActors)
+			{
+				if (Actor && Actor->GetClass() != PrimaryClass)
+				{
+					ImGui::TextDisabled("  Mismatch: %s (%s)",
+						Actor->GetFName().ToString().c_str(),
+						Actor->GetClass()->GetName());
+				}
+			}
+		}
+		else
+		{
+			RenderComponentProperties(PrimaryActor, SelectedActors);
+		}
+	}
 	else if (SelectedComponent)
 	{
-		RenderComponentProperties(PrimaryActor);
+		RenderComponentProperties(PrimaryActor, SelectedActors);
 	}
 	else
 	{
@@ -416,7 +454,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	}
 }
 
-void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
+void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors)
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetClass()->GetName());
 	ImGui::Text("Name: %s", SelectedComponent->GetFName().ToString().c_str());
@@ -454,35 +492,106 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor)
 			|| Name == "Scale";
 		};
 
+	bool bAnyChanged = false;
+
 	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
-	// Transform 변경은 배열 재할당을 일으키지 않으므로 break 불필요
 	if (!bIsRoot)
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
 			if (IsTransformProp(Props[i].Name))
-				RenderPropertyWidget(Props, i);
+			{
+				if (RenderPropertyWidget(Props, i))
+				{
+					bAnyChanged = true;
+					PropagatePropertyChange(Props[i].Name, SelectedActors);
+				}
+			}
 		}
 		ImGui::Separator();
 	}
 
 	// Pass 2: 나머지 프로퍼티
-	// StaticMeshRef 변경은 OverrideMaterialPaths 재할당을 유발하므로 Props 포인터가
-	// 무효화된다. 이 경우에만 즉시 중단하고 다음 프레임에 재렌더링한다.
 	for (int32 i = 0; i < (int32)Props.size(); ++i)
 	{
 		if (IsTransformProp(Props[i].Name))
 			continue;
 
 		bool bChanged = RenderPropertyWidget(Props, i);
-		if (bChanged && Props[i].Type == EPropertyType::StaticMeshRef)
-			break;
+		if (bChanged)
+		{
+			bAnyChanged = true;
+			PropagatePropertyChange(Props[i].Name, SelectedActors);
+
+			if (Props[i].Type == EPropertyType::StaticMeshRef)
+				break;
+		}
 	}
 
-	// 프로퍼티 직접 편집 후 월드 행렬 갱신
-	if (SelectedComponent->IsA<USceneComponent>())
+	// 실제 변경이 있었을 때만 Transform dirty 마킹
+	if (bAnyChanged && SelectedComponent->IsA<USceneComponent>())
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
+	}
+}
+
+void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors)
+{
+	if (!SelectedComponent || SelectedActors.size() < 2) return;
+
+	UClass* CompClass = SelectedComponent->GetClass();
+	AActor* PrimaryActor = SelectedActors[0];
+
+	// Primary 컴포넌트에서 변경된 프로퍼티의 값 포인터 찾기
+	TArray<FPropertyDescriptor> SrcProps;
+	SelectedComponent->GetEditableProperties(SrcProps);
+
+	const FPropertyDescriptor* SrcProp = nullptr;
+	for (const auto& P : SrcProps)
+	{
+		if (P.Name == PropName) { SrcProp = &P; break; }
+	}
+	if (!SrcProp) return;
+
+	for (AActor* Actor : SelectedActors)
+	{
+		if (!Actor || Actor == PrimaryActor) continue;
+
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			if (!Comp || Comp->GetClass() != CompClass) continue;
+
+			TArray<FPropertyDescriptor> DstProps;
+			Comp->GetEditableProperties(DstProps);
+
+			for (const auto& DstProp : DstProps)
+			{
+				if (DstProp.Name != PropName || DstProp.Type != SrcProp->Type) continue;
+
+				size_t Size = 0;
+				switch (DstProp.Type)
+				{
+				case EPropertyType::Bool:          Size = sizeof(bool); break;
+				case EPropertyType::ByteBool:       Size = sizeof(uint8); break;
+				case EPropertyType::Int:            Size = sizeof(int32); break;
+				case EPropertyType::Float:          Size = sizeof(float); break;
+				case EPropertyType::Vec3:
+				case EPropertyType::Rotator:        Size = sizeof(float) * 3; break;
+				case EPropertyType::Vec4:
+				case EPropertyType::Color4:         Size = sizeof(float) * 4; break;
+				case EPropertyType::String:
+				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
+				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
+				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
+				}
+				if (Size > 0)
+					memcpy(DstProp.ValuePtr, SrcProp->ValuePtr, Size);
+
+				Comp->PostEditProperty(PropName.c_str());
+				break;
+			}
+			break; // 같은 타입의 첫 번째 컴포넌트에만 전파
+		}
 	}
 }
 
