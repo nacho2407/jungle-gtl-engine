@@ -155,6 +155,7 @@ inline FRenderPipelinePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingM
     default:
         Pass.ShaderVariant.PSEntry = "PS_Decal_Unlit";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_BASECOLOR");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "DECAL_DIRECT_FINAL_OUTPUT");
         break;
     }
 
@@ -166,21 +167,28 @@ inline FRenderPipelinePassDesc BuildViewModeLightingPassDesc(EShadingModel Shadi
     FRenderPipelinePassDesc Pass;
     Pass.Stage = EPipelineStage::Lighting;
     Pass.RenderPass = ERenderPass::Lighting;
-    Pass.ShaderVariant.FilePath = "Shaders/UberLit.hlsl";
+    Pass.ShaderVariant.FilePath = "Shaders/LightingPass.hlsl";
     Pass.ShaderVariant.VSEntry = "VS_Fullscreen";
-    Pass.ShaderVariant.PSEntry = "PS_UberLit";
     Pass.bFullscreenPass = true;
 
     switch (ShadingModel)
     {
     case EShadingModel::Gouraud:
+        Pass.ShaderVariant.PSEntry = "PS_Lighting_Gouraud";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_GOURAUD");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_GOURAUD_L");
         break;
     case EShadingModel::Lambert:
+        Pass.ShaderVariant.PSEntry = "PS_Lighting_Lambert";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_LAMBERT");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL");
         break;
     case EShadingModel::BlinnPhong:
+        Pass.ShaderVariant.PSEntry = "PS_Lighting_BlinnPhong";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_PHONG");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_MATERIAL_PARAM");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_SPECULAR");
         break;
     case EShadingModel::Unlit:
     default:
@@ -289,7 +297,13 @@ public:
     const FViewModePassConfig* GetConfig(EViewMode ViewMode) const
     {
         auto It = Configs.find(static_cast<int32>(ViewMode));
-        return (It != Configs.end()) ? &It->second : nullptr;
+        if (It == Configs.end())
+        {
+            return nullptr;
+        }
+
+        RefreshCompiledShaders(It->second);
+        return &It->second;
     }
 
     const FRenderPipelinePassDesc* FindPassDesc(EViewMode ViewMode, EPipelineStage Stage) const
@@ -333,6 +347,14 @@ public:
     }
 
 private:
-    FShaderVariantCache VariantCache;
-    TMap<int32, FViewModePassConfig> Configs;
+    void RefreshCompiledShaders(FViewModePassConfig& Config) const
+    {
+        for (FRenderPipelinePassDesc& Pass : Config.Passes)
+        {
+            Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
+        }
+    }
+
+    mutable FShaderVariantCache VariantCache;
+    mutable TMap<int32, FViewModePassConfig> Configs;
 };
