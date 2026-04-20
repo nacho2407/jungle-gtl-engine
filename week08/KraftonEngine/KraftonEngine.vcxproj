@@ -334,8 +334,8 @@
     <ClCompile Include="Source\Engine\Render\Core\FrameContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Core\PassRenderState.cpp" />
     <ClCompile Include="Source\Engine\Render\Core\RenderPassContext.cpp" />
-    <ClCompile Include="Source\Engine\Render\Debug\DebugDrawQueue.cpp" />
-    <ClCompile Include="Source\Engine\Render\Debug\DrawDebugHelpers.cpp" />
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
+    <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Execution\RenderPipelineRunner.cpp" />
     <ClCompile Include="Source\Engine\Render\Execution\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Frame\FrameSharedResources.cpp" />
@@ -528,9 +528,9 @@
     <ClInclude Include="Source\Engine\Render\Core\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Core\RenderPassContext.h" />
     <ClInclude Include="Source\Engine\Render\Core\SortKey.h" />
-    <ClInclude Include="Source\Engine\Render\Debug\DebugDrawQueue.h" />
-    <ClInclude Include="Source\Engine\Render\Debug\DrawDebugHelpers.h" />
-    <ClInclude Include="Source\Engine\Render\Debug\RenderMarkers.h" />
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
+    <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
+    <ClInclude Include="Source\Engine\Render\DebugDraw\RenderMarkers.h" />
     <ClInclude Include="Source\Engine\Render\Execution\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Execution\PipelineShaderResolver.h" />
     <ClInclude Include="Source\Engine\Render\Execution\RenderPipelineRunner.h" />
