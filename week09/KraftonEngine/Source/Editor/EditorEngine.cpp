@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -81,6 +81,7 @@ void UEditorEngine::Shutdown()
 	CloseScene();
 	SelectionManager.Shutdown();
 	MainPanel.Release();
+    GPUOcclusion.Release();
 
 	// 뷰포트 레이아웃 해제
 	ViewportLayout.Release();
