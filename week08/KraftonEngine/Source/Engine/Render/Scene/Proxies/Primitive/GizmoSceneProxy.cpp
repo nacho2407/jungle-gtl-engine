@@ -1,8 +1,8 @@
-﻿#include "Render/Scene/Proxies/Primitive/GizmoSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
-#include "Render/Systems/ShaderManager.h"
-#include "Render/Systems/ConstantBufferPool.h"
-#include "Render/Frame/FrameContext.h"
+#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Resources/Pools/ConstantBufferPool.h"
+#include "Render/View/SceneView.h"
 
 // ============================================================
 // FGizmoSceneProxy

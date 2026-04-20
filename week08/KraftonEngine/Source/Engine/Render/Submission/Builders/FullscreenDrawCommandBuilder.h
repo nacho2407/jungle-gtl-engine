@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Render/Core/PassTypes.h"
+#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
 
 struct FRenderPassContext;
 class FDrawCommandList;

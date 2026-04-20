@@ -5,7 +5,7 @@
 
 #include "Profiling/Stats.h"
 #include "Render/Core/RenderConstants.h"
-#include "Render/Hardware/Resources/Shader.h"
+#include "Render/D3D11/Shaders/Programs/GraphicsShaderProgram.h"
 
 // ============================================================
 // FStateCache

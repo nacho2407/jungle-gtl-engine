@@ -1,4 +1,4 @@
-﻿#include "MaterialManager.h"
+#include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -7,8 +7,8 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
-#include "Render/Systems/ShaderManager.h"
-#include "Render/Hardware/Resources/Buffer.h"
+#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/D3D11/Buffers/Buffers.h"
 #include "Texture/Texture2D.h"
 #include "Render/Execution/Renderer.h"
 

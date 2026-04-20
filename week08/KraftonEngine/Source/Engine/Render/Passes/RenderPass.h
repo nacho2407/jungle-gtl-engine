@@ -1,6 +1,6 @@
 #pragma once
 
-struct FFrameContext;
+struct FSceneView; using FFrameContext = FSceneView;
 struct FRenderPassContext;
 class FPrimitiveSceneProxy;
 

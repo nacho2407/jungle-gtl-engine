@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Render/Frame/FrameContext.h"
-#include "Render/Core/RenderConstants.h"
-#include "Engine/Collision/Octree.h"
+#include "Render/View/SceneView.h"
+#include "Render/Submission/Collectors/SceneVisibilityCollector.h"
+#include "Render/Submission/Collectors/SceneDebugCollector.h"
 
 class UWorld;
 class FOverlayStatSystem;
@@ -10,37 +10,26 @@ class UEditorEngine;
 class FScene;
 class FOctree;
 class FRenderer;
-
 class FPrimitiveSceneProxy;
-class FLightSceneProxy;
-
-struct FCollectedPrimitives
-{
-    TArray<FPrimitiveSceneProxy*> VisibleProxies;
-    TArray<FPrimitiveSceneProxy*> OpaqueProxies;
-    TArray<FPrimitiveSceneProxy*> TransparentProxies;
-};
 
 class FRenderCollector
 {
 public:
     void CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
     void BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
-    void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
-    void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
-    void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene);
-    void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
-    void CollectWorldBVHDebug(const class FWorldPrimitivePickingBVH& BVH, FScene& Scene);
-    void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene);
 
-    const FCollectedPrimitives& GetCollectedPrimitives() const { return CollectedPrimitives; }
-    const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return CollectedPrimitives.VisibleProxies; }
-    const FCollectedLights& GetCollectedLights() const { return CollectedLights; }
+    void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene) { DebugCollector.CollectGrid(GridSpacing, GridHalfLineCount, Scene); }
+    void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene) { DebugCollector.CollectOverlayText(OverlaySystem, Editor, Scene); }
+    void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene) { DebugCollector.CollectDebugDraw(Frame, Scene); }
+    void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0) { DebugCollector.CollectOctreeDebug(Node, Scene, Depth); }
+    void CollectWorldBVHDebug(const class FWorldPrimitivePickingBVH& BVH, FScene& Scene) { DebugCollector.CollectWorldBVHDebug(BVH, Scene); }
+    void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene) { DebugCollector.CollectWorldBoundsDebug(Proxies, Scene); }
+
+    const FCollectedPrimitives& GetCollectedPrimitives() const { return VisibilityCollector.GetCollectedPrimitives(); }
+    const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return VisibilityCollector.GetLastVisibleProxies(); }
+    const FCollectedLights& GetCollectedLights() const { return VisibilityCollector.GetCollectedLights(); }
 
 private:
-    void CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
-    void CollectLights(FScene& Scene, FCollectedLights& OutLights);
-
-    FCollectedPrimitives CollectedPrimitives;
-    FCollectedLights CollectedLights;
+    FSceneVisibilityCollector VisibilityCollector;
+    FSceneDebugCollector DebugCollector;
 };

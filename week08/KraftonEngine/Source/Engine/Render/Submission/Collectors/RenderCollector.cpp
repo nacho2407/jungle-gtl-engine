@@ -1,4 +1,4 @@
-﻿#include "RenderCollector.h"
+#include "RenderCollector.h"
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -8,14 +8,14 @@
 #include "Profiling/Stats.h"
 #include "Render/Visibility/ConvexVolume.h"
 #include "Render/Visibility/GPUOcclusionCulling.h"
-#include "Render/DebugDraw/DebugDrawQueue.h"
-#include "Render/Execution/LODContext.h"
+#include "Render/Scene/DebugDraw/DebugDrawQueue.h"
+#include "Render/Visibility/LOD/LODContext.h"
 #include "Render/Execution/Renderer.h"
-#include "Render/Core/PassTypes.h"
+#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
 #include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Submission/Builders/TextDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
-#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Scene.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
@@ -59,7 +59,42 @@ static ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
     }
 }
 
+
 void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+{
+    VisibilityCollector.CollectWorld(World, Frame, Scene, Renderer);
+}
+
+void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+{
+    Renderer.SetCollectedScene(&Scene);
+    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, VisibilityCollector.GetCollectedPrimitives());
+
+    if (Renderer.HasActiveViewModePassConfig())
+    {
+        const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
+        if (ViewModeRegistry && ViewModeRegistry->UsesLightingPass(Frame.ViewMode))
+        {
+            if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::LightingPass))
+                Pass->BuildDrawCommands(PassContext);
+        }
+    }
+
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ViewModePostProcessPass))
+        Pass->BuildDrawCommands(PassContext);
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::HeightFogPass))
+        Pass->BuildDrawCommands(PassContext);
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::OutlinePass))
+        Pass->BuildDrawCommands(PassContext);
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DebugLinePass))
+        Pass->BuildDrawCommands(PassContext);
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::OverlayTextPass))
+        Pass->BuildDrawCommands(PassContext);
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::FXAAPass))
+        Pass->BuildDrawCommands(PassContext);
+}
+
+void FSceneVisibilityCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
     if (!World)
         return;
@@ -99,41 +134,12 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
     Renderer.SetCollectedLights(&CollectedLights);
 }
 
-void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
-{
-    Renderer.SetCollectedScene(&Scene);
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, &CollectedPrimitives.VisibleProxies);
-
-    if (Renderer.HasActiveViewModePassConfig())
-    {
-        const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
-        if (ViewModeRegistry && ViewModeRegistry->UsesLightingPass(Frame.ViewMode))
-        {
-            if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::LightingPass))
-                Pass->BuildDrawCommands(PassContext);
-        }
-    }
-
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ViewModePostProcessPass))
-        Pass->BuildDrawCommands(PassContext);
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::HeightFogPass))
-        Pass->BuildDrawCommands(PassContext);
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::OutlinePass))
-        Pass->BuildDrawCommands(PassContext);
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::DebugLinePass))
-        Pass->BuildDrawCommands(PassContext);
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::OverlayTextPass))
-        Pass->BuildDrawCommands(PassContext);
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::FXAAPass))
-        Pass->BuildDrawCommands(PassContext);
-}
-
-void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
+void FSceneDebugCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
 {
     Scene.SetGrid(GridSpacing, GridHalfLineCount);
 }
 
-void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
+void FSceneDebugCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene)
 {
     TArray<FOverlayStatLine> Lines;
     OverlaySystem.BuildLines(Editor, Lines);
@@ -148,7 +154,7 @@ void FRenderCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySyste
     }
 }
 
-void FRenderCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
+void FSceneDebugCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
 {
     if (!Frame.ShowFlags.bDebugDraw)
         return;
@@ -166,7 +172,7 @@ static const FColor OctreeDebugColor = FColor(0, 255, 255);
 static const FColor BVHDebugColor = FColor(0, 255, 0);
 static const FColor WorldBoundDebugColor = FColor(255, 0, 255);
 
-void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
+void FSceneDebugCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
 {
     if (!Node)
         return;
@@ -209,7 +215,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 }
 
 
-void FRenderCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene)
+void FSceneDebugCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene)
 {
     const TArray<FWorldPrimitivePickingBVH::FNode>& Nodes = BVH.GetNodes();
     for (const FWorldPrimitivePickingBVH::FNode& Node : Nodes)
@@ -222,7 +228,7 @@ void FRenderCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH
     }
 }
 
-void FRenderCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene)
+void FSceneDebugCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FScene& Scene)
 {
     for (FPrimitiveSceneProxy* Proxy : Proxies)
     {
@@ -237,7 +243,7 @@ void FRenderCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FRenderCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
     if (!Frame.ShowFlags.bPrimitives)
         return;
@@ -251,7 +257,7 @@ void FRenderCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Pr
     CollectedPrimitives.OpaqueProxies.clear();
     CollectedPrimitives.TransparentProxies.clear();
 
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, &CollectedPrimitives.VisibleProxies);
+    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, CollectedPrimitives);
     // Pass-specific command building now happens during pipeline execution.
     const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
     const bool bHasViewModeConfig = Renderer.HasActiveViewModePassConfig() && ViewModeRegistry && ViewModeRegistry->HasConfig(Frame.ViewMode);
@@ -404,7 +410,7 @@ void FRenderCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Pr
 // Light는 드로우콜이 없으므로 Proxy가 아닌 GPU 상수값만 추출해 저장한다.
 // 순회·필터링은 RenderCollector가 직접 담당한다.
 // ============================================================
-void FRenderCollector::CollectLights(FScene& Scene, FCollectedLights& OutLights)
+void FSceneVisibilityCollector::CollectLights(FScene& Scene, FCollectedLights& OutLights)
 {
     const TArray<FLightSceneProxy*>& LightProxies = Scene.GetLightProxies();
     OutLights.GlobalLights = FGlobalLightConstants();

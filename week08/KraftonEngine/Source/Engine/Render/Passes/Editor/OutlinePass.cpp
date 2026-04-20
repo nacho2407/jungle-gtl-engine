@@ -1,13 +1,13 @@
-﻿#include "Render/Passes/Editor/OutlinePass.h"
+#include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Frame/FrameContext.h"
+#include "Render/View/SceneView.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Systems/ConstantBufferPool.h"
+#include "Render/Resources/Pools/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Frame/ViewportRenderTargets.h"
+#include "Render/View/ViewportRenderTargets.h"
 
 void FOutlinePass::PrepareInputs(FRenderPassContext& Context)
 {

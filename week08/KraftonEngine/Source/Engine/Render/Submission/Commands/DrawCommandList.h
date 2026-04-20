@@ -1,8 +1,8 @@
 #pragma once
 
 #include "DrawCommand.h"
-#include "Render/Hardware/Device/D3DDevice.h"
-#include "Render/Hardware/Resources/Buffer.h"
+#include "Render/D3D11/Device/D3DDevice.h"
+#include "Render/D3D11/Buffers/Buffers.h"
 
 /*
     FStateCache — Submit 루프에서 중복 GPU 상태 전환을 방지합니다.

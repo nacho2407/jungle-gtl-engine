@@ -1,8 +1,8 @@
-﻿#include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
-#include "Render/Frame/FrameContext.h"
-#include "Render/Systems/ShaderManager.h"
-#include "Render/Systems/MeshBufferManager.h"
+#include "Render/View/SceneView.h"
+#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Resources/Managers/MeshBufferManager.h"
 
 // ============================================================
 // FSubUVSceneProxy

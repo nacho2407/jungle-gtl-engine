@@ -1,13 +1,13 @@
-﻿#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Systems/ShaderManager.h"
+#include "Render/Resources/Managers/ShaderManager.h"
 #include "Render/Passes/Common/PassRenderState.h"
-#include "Render/Core/PassTypes.h"
-#include "Render/Frame/FrameContext.h"
-#include "Render/Frame/ViewModeSurfaceSet.h"
-#include "Render/Frame/ViewportRenderTargets.h"
+#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
+#include "Render/View/SceneView.h"
+#include "Render/View/ViewModeSurfaceSet.h"
+#include "Render/View/ViewportRenderTargets.h"
 
 void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {

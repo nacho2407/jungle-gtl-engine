@@ -1,6 +1,6 @@
 ﻿#include "Render/Scene/Proxies/Light/SpotLightSceneProxy.h"
 #include "Component/SpotLightComponent.h"
-#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Scene.h"
 #include <cmath>
 
 namespace
@@ -24,14 +24,15 @@ void AddDebugCircle(FScene& Scene, const FVector& Center,
 
 void AddArrow(FScene& Scene, const FVector& Start, const FVector& Dir, float Length, const FColor& Color, int Segs = 8)
 {
-    const float StemLen    = Length * 0.8f;
+    const float StemLen = Length * 0.8f;
     const float StemRadius = Length * 0.04f;
     const float HeadRadius = Length * 0.1f;
-    const FVector Tip     = Start + Dir * Length;
+    const FVector Tip = Start + Dir * Length;
     const FVector StemEnd = Start + Dir * StemLen;
 
     FVector WorldUp(0.f, 0.f, 1.f);
-    if (fabsf(Dir.Dot(WorldUp)) > 0.98f) WorldUp = FVector(1.f, 0.f, 0.f);
+    if (fabsf(Dir.Dot(WorldUp)) > 0.98f)
+        WorldUp = FVector(1.f, 0.f, 0.f);
     const FVector AxisX = Dir.Cross(WorldUp).Normalized();
     const FVector AxisY = Dir.Cross(AxisX);
 
