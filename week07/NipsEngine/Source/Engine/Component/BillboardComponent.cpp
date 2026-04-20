@@ -84,6 +84,10 @@ void UBillboardComponent::SetTextureName(FString InName)
 {
     TextureName = InName;
     Texture = FResourceManager::Get().GetTexture(InName);
+    if (Texture == nullptr)
+    {
+        Texture = FResourceManager::Get().LoadTexture(InName);
+    }
 }
 
 FString UBillboardComponent::GetTextureName()
@@ -96,6 +100,10 @@ UTexture* UBillboardComponent::GetTexture()
     if (Texture == nullptr)
     {
         Texture = FResourceManager::Get().GetTexture(TextureName.ToString());
+        if (Texture == nullptr)
+        {
+            Texture = FResourceManager::Get().LoadTexture(TextureName.ToString());
+        }
     }
     return Texture;
 }
