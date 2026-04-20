@@ -67,6 +67,7 @@ struct FAmbientLightInfo
 	FVector Color;
 	float Intensity;
 };
+
 struct FDirectionalLightInfo
 {
 	FVector Direction;

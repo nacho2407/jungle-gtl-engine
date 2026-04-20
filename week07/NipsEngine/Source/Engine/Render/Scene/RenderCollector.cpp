@@ -852,17 +852,32 @@ void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightA
 void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus)
 {
 	if (!Light) return;
+    if (!Light->bVisible) return;
 
 	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
 	{
-		// Collect Ambient Light Data
-		FAmbientLightInfo AmbientLightData = {};
-		
-		RenderBus.AmbientLightInfo = AmbientLightData;
+		const FVector AmbientLightColor(
+			AmbientLight->LightColor.R,
+			AmbientLight->LightColor.G,
+			AmbientLight->LightColor.B);
+		RenderBus.AmbientLightInfo.Color += AmbientLightColor * AmbientLight->Intensity;
+		RenderBus.AmbientLightInfo.Intensity = 1.0f;
 	}
 	else if (const UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Light))
 	{
+		// 현재 프레임에서 이미 directional이 하나 채워진 상태면, 이후에 만나는 visible directional은 무시
+		if (RenderBus.DirectionalLightInfo.Direction.IsNearlyZero() == false)
+		{
+			return;
+		}
+
 		FDirectionalLightInfo DirLightData = {};
+		DirLightData.Direction = DirLight->GetLightDirection().GetSafeNormal();
+		DirLightData.Color = FVector(
+			DirLight->LightColor.R,
+			DirLight->LightColor.G,
+			DirLight->LightColor.B);
+		DirLightData.Intensity = DirLight->Intensity;
 
 		RenderBus.DirectionalLightInfo = DirLightData;
 	}

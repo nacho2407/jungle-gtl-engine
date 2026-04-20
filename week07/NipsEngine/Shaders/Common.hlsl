@@ -17,16 +17,7 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor; 
 };
 
-cbuffer OverlayBuffer : register(b3)
-{
-    float2 OverlayCenterScreen;
-    float2 ViewportSize;
-
-    float OverlayRadius;
-    float3 Padding2;
-
-    float4 OverlayColor;
-};
+// b2는 shader별 material/pass-local constant buffer
 
 #define MAX_FOG_LAYER_COUNT 32
 
