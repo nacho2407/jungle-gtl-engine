@@ -41,6 +41,7 @@ namespace ESystemTexSlot
 	constexpr uint32 SceneColor  = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	constexpr uint32 GBufferNormal = 18; // t18: GBuffer World Normal (R16G16B16A16_FLOAT)
 	constexpr uint32 Stencil     = 19; // t19: CopyResource된 Stencil (X24_G8_UINT)
+	constexpr uint32 CullingHeatmap = 20; // t20: Tile Culling Heatmap (R8G8B8A8_UNORM)
 }
 
 // HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩

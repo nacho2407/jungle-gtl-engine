@@ -82,6 +82,7 @@ namespace EShaderPath
 	inline constexpr const char* SceneDepth        = "Shaders/PostProcess/SceneDepth.hlsl";
 	inline constexpr const char* SceneNormal       = "Shaders/PostProcess/SceneNormal.hlsl";
 	inline constexpr const char* HeightFog         = "Shaders/PostProcess/HeightFog.hlsl";
+	inline constexpr const char* LightCulling     = "Shaders/PostProcess/LightCulling.hlsl";
 
 	// UI — 2D/텍스트/파티클
 	inline constexpr const char* Font              = "Shaders/UI/Font.hlsl";

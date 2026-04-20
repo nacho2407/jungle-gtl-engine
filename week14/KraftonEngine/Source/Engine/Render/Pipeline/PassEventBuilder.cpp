@@ -64,11 +64,12 @@ void FPassEventBuilder::RegisterDepthCopyAndMRTEvents(ID3D11DeviceContext* Ctx,
 				Ctx->OMSetRenderTargets(0, nullptr, nullptr);
 				Ctx->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
 
-				// MRT: Normal RT를 SV_TARGET1로 사용
+				// MRT: Normal RT를 SV_TARGET1, CullingHeatmap RT를 SV_TARGET2로 사용
 				if (Frame.NormalRTV)
 				{
-					ID3D11RenderTargetView* RTVs[2] = { Cache.RTV, Frame.NormalRTV };
-					Ctx->OMSetRenderTargets(2, RTVs, Cache.DSV);
+					ID3D11RenderTargetView* RTVs[3] = { Cache.RTV, Frame.NormalRTV, Frame.CullingHeatmapRTV };
+					uint32 NumRTs = Frame.CullingHeatmapRTV ? 3 : 2;
+					Ctx->OMSetRenderTargets(NumRTs, RTVs, Cache.DSV);
 				}
 				else
 				{
@@ -83,7 +84,7 @@ void FPassEventBuilder::RegisterDepthCopyAndMRTEvents(ID3D11DeviceContext* Ctx,
 			});
 	}
 
-	// Post-Opaque: MRT 해제 → 1 RTV 복귀 + Normal SRV 바인딩
+	// Post-Opaque: MRT 해제 → 1 RTV 복귀 + Normal/Heatmap SRV 바인딩
 	if (Frame.NormalRTV)
 	{
 		Post.push_back({ ERenderPass::Opaque, EPassCompare::Equal, true, false,
@@ -95,6 +96,11 @@ void FPassEventBuilder::RegisterDepthCopyAndMRTEvents(ID3D11DeviceContext* Ctx,
 				{
 					ID3D11ShaderResourceView* normalSRV = Frame.NormalSRV;
 					Ctx->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &normalSRV);
+				}
+				if (Frame.CullingHeatmapSRV)
+				{
+					ID3D11ShaderResourceView* heatmapSRV = Frame.CullingHeatmapSRV;
+					Ctx->PSSetShaderResources(ESystemTexSlot::CullingHeatmap, 1, &heatmapSRV);
 				}
 
 				Cache.bForceAll = true;
@@ -174,8 +180,9 @@ void FPassEventBuilder::RegisterTileCullingEvents(ID3D11DeviceContext* Ctx,
 
 			if (Frame.NormalRTV)
 			{
-				ID3D11RenderTargetView* RTVs[2] = { Cache.RTV, Frame.NormalRTV };
-				Ctx->OMSetRenderTargets(2, RTVs, Cache.DSV);
+				ID3D11RenderTargetView* RTVs[3] = { Cache.RTV, Frame.NormalRTV, Frame.CullingHeatmapRTV };
+				uint32 NumRTs = Frame.CullingHeatmapRTV ? 3 : 2;
+				Ctx->OMSetRenderTargets(NumRTs, RTVs, Cache.DSV);
 			}
 			else
 			{
