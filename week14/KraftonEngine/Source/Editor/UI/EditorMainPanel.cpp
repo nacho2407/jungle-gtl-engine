@@ -34,7 +34,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	PropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
-	ContentBrowserWidget.Initialize(InEditorEngine);
+	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 }
 
 void FEditorMainPanel::Release()

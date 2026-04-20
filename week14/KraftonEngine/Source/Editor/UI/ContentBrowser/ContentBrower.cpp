@@ -1,14 +1,32 @@
 ﻿#include "ContentBrower.h"
 
+#include "WICTextureLoader.h"
+
 
 void DefaultElement::Render(ContentBrowserContext& Context)
 {
-	ImGui::Button("TestButton", Context.ContentSize);
+	ImGui::SetNextWindowSize(Context.ContentSize);
+	ImGui::BeginChild("ElementArea", ImVec2(0, 0), true);
+	ImGui::Image((ImTextureID)Icon, Context.ContentSize);
+	ImGui::Text(FPaths::ToUtf8(ContentItem.Name).c_str());
+	ImGui::EndChild();
+
 }
 
-void FEditorContextBrwoserWidget::Initialize(UEditorEngine* InEditorEngine)
+void FEditorContextBrwoserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
-	FEditorWidget::Initialize(InEditorEngine);
+	FEditorWidget::Initialize(InEditor);
+	if (!InDevice) return;
+
+	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
+
+	DirectX::CreateWICTextureFromFile(
+		InDevice, (IconDir + L"StartMerge_42x.png").c_str(),
+		nullptr, &DefaultIcon);
+
+	DirectX::CreateWICTextureFromFile(
+		InDevice, (IconDir + L"Folder_Base_256x.png").c_str(),
+		nullptr, &FolderIcon);
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -67,7 +85,11 @@ void FEditorContextBrwoserWidget::RefreshContent()
 	TArray<FContentItem> CurrentContents = ReadDirectory(CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
-		CachedBrowserElements.push_back(std::make_unique<DefaultElement>());
+		auto element = std::make_unique<DefaultElement>();
+		element.get()->SetContent(Content);
+		element.get()->SetIcon(DefaultIcon);
+
+		CachedBrowserElements.push_back(std::move(element));
 	}
 }
 

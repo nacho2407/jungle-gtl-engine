@@ -5,7 +5,14 @@
 #include "Platform/Paths.h"
 #include <fstream>
 #include <filesystem>
+#include <d3d11.h>
 
+struct FContentItem
+{
+	std::filesystem::path Path;
+	std::wstring Name;
+	bool bIsDirectory = false;
+};
 
 struct ContentBrowserContext final
 {
@@ -16,19 +23,18 @@ class ContentBrowserElement
 {
 public:
 	virtual void Render(ContentBrowserContext& Context) = 0;
+	void SetIcon(ID3D11ShaderResourceView* InIcon) { Icon = InIcon; }
+	void SetContent(FContentItem InContent) { ContentItem = InContent; }
+
+protected:
+	ID3D11ShaderResourceView* Icon;
+	FContentItem ContentItem;
 };
 
 class DefaultElement final : public ContentBrowserElement
 {
 public:
 	void Render(ContentBrowserContext& Context) override;
-};
-
-struct FContentItem
-{
-	std::filesystem::path Path;
-	std::wstring Name;
-	bool bIsDirectory = false;
 };
 
 struct FDirNode
@@ -40,7 +46,7 @@ struct FDirNode
 class FEditorContextBrwoserWidget final : public FEditorWidget
 {
 public:
-	void Initialize(UEditorEngine* InEditorEngine) override;
+	void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
 	void Render(float DeltaTime) override;
 	void Refresh();
 
@@ -59,4 +65,7 @@ private:
 	TArray<FContentItem> CachedDirectories;
 	TArray<std::unique_ptr<ContentBrowserElement>> CachedBrowserElements;
 	ContentBrowserContext BrowserContext;
+
+	ID3D11ShaderResourceView* DefaultIcon = nullptr;
+	ID3D11ShaderResourceView* FolderIcon = nullptr;
 };
