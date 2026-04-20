@@ -38,7 +38,11 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		Refresh();
 
 	ImGui::SameLine();
-	ImGui::Text(FPaths::ToUtf8(BrowserContext.CurrentPath).c_str());
+	std::wstring PathText = BrowserContext.CurrentPath;
+	if(BrowserContext.SelectedElement)
+		PathText += L"/" + BrowserContext.SelectedElement->GetFileName();
+
+	ImGui::Text(FPaths::ToUtf8(PathText).c_str());
 
 	ImGui::SameLine();
 	int size = static_cast<int>(BrowserContext.ContentSize.x);
@@ -77,7 +81,6 @@ void FEditorContentBrowserWidget::Refresh()
 	RootNode = BuildDirectoryTree(FPaths::RootDir());
 	RefreshContent();
 
-	BrowserContext.SelectedElement = nullptr;
 	BrowserContext.bIsNeedRefresh = false;
 }
 
@@ -97,7 +100,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		}
 		else
 		{
-			element = std::make_unique<DefaultElement>();
+			element = std::make_unique<ContentBrowserElement>();
 			element.get()->SetIcon(DefaultIcon);
 		}
 		
@@ -105,6 +108,8 @@ void FEditorContentBrowserWidget::RefreshContent()
 		element.get()->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(element));
 	}
+
+	BrowserContext.SelectedElement = nullptr;
 }
 
 void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)

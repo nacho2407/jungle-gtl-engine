@@ -1,6 +1,37 @@
 ﻿#include "ContentBrowserElement.h"
 #include "Platform/Paths.h"
 
+void ContentBrowserElement::Render(ContentBrowserContext& Context)
+{
+	FString Name = FPaths::ToUtf8(ContentItem.Name);
+	ImGui::PushID(Name.c_str());
+
+	bIsSelected = Context.SelectedElement == this;
+
+	if (ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize))
+	{
+		Context.SelectedElement = this;
+		bIsSelected = true;
+	}
+
+
+	ImVec2 Min = ImGui::GetItemRectMin();
+	ImVec2 Max = ImGui::GetItemRectMax();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	ImFont* font = ImGui::GetFont();
+	float fontSize = ImGui::GetFontSize();
+	Max.y -= fontSize;
+	Max.x -= fontSize * 0.5f;
+	Min.x += fontSize * 0.5f;
+	DrawList->AddImage(Icon, Min, Max);
+
+	ImVec2 TextPos(Min.x, Max.y);
+	FString Text = EllipsisText(FPaths::ToUtf8(ContentItem.Name), Context.ContentSize.x);
+	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Text.c_str());
+	ImGui::PopID();
+}
+
 FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
 {
 	ImFont* font = ImGui::GetFont();
@@ -29,74 +60,13 @@ FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
 	return result;
 }
 
-
-void DefaultElement::Render(ContentBrowserContext& Context)
-{
-	FString Name = FPaths::ToUtf8(ContentItem.Name);
-	ImGui::PushID(Name.c_str());
-
-	bIsSelected = Context.SelectedElement == this;
-
-	if (ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize))
-	{
-		Context.SelectedElement = this;
-		bIsSelected = true;
-	}
-
-
-	ImVec2 Min = ImGui::GetItemRectMin();
-	ImVec2 Max = ImGui::GetItemRectMax();
-	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-	ImFont* font = ImGui::GetFont();
-	float fontSize = ImGui::GetFontSize();
-	Max.y -= fontSize;
-	Max.x -= fontSize * 0.5f;
-	Min.x += fontSize * 0.5f;
-	DrawList->AddImage(Icon, Min, Max);
-
-	ImVec2 TextPos(Min.x, Max.y);
-	FString Text = EllipsisText(FPaths::ToUtf8(ContentItem.Name), Context.ContentSize.x);
-	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Text.c_str());
-	ImGui::PopID();
-}
-
 void DirectoryElement::Render(ContentBrowserContext& Context)
 {
-	FString Name = FPaths::ToUtf8(ContentItem.Name);
-	ImGui::PushID(Name.c_str());
-
-	bIsSelected = Context.SelectedElement == this;
-
-	if (ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize))
-	{
-		Context.SelectedElement = this;
-		bIsSelected = true;
-	}
-
-
-	ImVec2 Min = ImGui::GetItemRectMin();
-	ImVec2 Max = ImGui::GetItemRectMax();
-	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-	ImFont* font = ImGui::GetFont();
-	float fontSize = ImGui::GetFontSize();
-	Max.y -= fontSize;
-	Max.x -= fontSize * 0.5f;
-	Min.x += fontSize * 0.5f;
-	DrawList->AddImage(Icon, Min, Max);
-
-	ImVec2 TextPos(Min.x, Max.y);
-	FString Text = EllipsisText(FPaths::ToUtf8(ContentItem.Name), Context.ContentSize.x);
-	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Text.c_str());
-
+	ContentBrowserElement::Render(Context);
 	bool bDoubleClicked = ImGui::IsItemHovered() &&	ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 	if (bDoubleClicked)
 	{
 		Context.CurrentPath = ContentItem.Path;
 		Context.bIsNeedRefresh = true;
 	}
-
-
-	ImGui::PopID();
 }
