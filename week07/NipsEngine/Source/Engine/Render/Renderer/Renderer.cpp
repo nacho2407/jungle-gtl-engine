@@ -152,18 +152,19 @@ void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
 
 void FRenderer::UseBackBufferRenderTargets()
 {
-	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
+	CurrentRenderTargets = {};
 
-	if (CurrentRenderTargets.IsValid())
+	ID3D11RenderTargetView* RTV = Device.GetFrameBufferRTV();
+	ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
+	if (RTV != nullptr && DSV != nullptr)
 	{
-        ID3D11RenderTargetView* RTV =
-                CurrentRenderTargets.SceneColorRTV; // Back Buffer 의 경우 SceneColorRTV 가 FinalRTV 역할
         SceneFinalRTV = RTV;
+		SceneFinalSRV.Reset();
         
-		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, CurrentRenderTargets.DepthStencilView);
+		Device.GetDeviceContext()->OMSetRenderTargets(1, &RTV, DSV);
 		Device.SetSubViewport(0, 0,
-			static_cast<int32>(CurrentRenderTargets.Width),
-			static_cast<int32>(CurrentRenderTargets.Height));
+			static_cast<int32>(Device.GetViewportWidth()),
+			static_cast<int32>(Device.GetViewportHeight()));
 	}
 }
 
@@ -171,7 +172,11 @@ void FRenderer::UseViewportRenderTargets(FRenderTargetSet InRenderTargetSet)
 {
     CurrentRenderTargets = InRenderTargetSet;
 
-    if (!CurrentRenderTargets.IsValid())
+    const bool bSceneTargetsReady =
+        CurrentRenderTargets.HasGeometryTargets() &&
+        CurrentRenderTargets.HasPingPongColorTargets();
+
+    if (!bSceneTargetsReady)
     {
         InvalidateSceneFinalTargets();
 		// Back Buffer 아마 쓰이면 안될텐데 여기 중단점 찍히면 확인
@@ -230,7 +235,10 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, 
         (Res.Height == Height);
 
     const bool bResourcesValid =
-        (Res.ColorRTV != nullptr) &&
+        (Res.ColorPingRTV != nullptr) &&
+        (Res.ColorPongRTV != nullptr) &&
+        (Res.NormalRTV != nullptr) &&
+        (Res.WorldPosRTV != nullptr) &&
         (Res.SelectionMaskRTV != nullptr) &&
         (Res.DepthStencilView != nullptr);
 
@@ -515,35 +523,20 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
 	/** Pass 별 RTV 설정 */
 	switch (Pass)
 	{
-		/**
-		* TODO: Final 로 쓰이는 경로가 Light, Fog 만 있어서 현재는 해당 패스들만 Final 기록 (추후 확장 필요)
-		* 
-		*/
         case ERenderPass::Opaque:
-			RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+			RTVs[0] = CurrentRenderTargets.SceneColorPingRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
             RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
 			break;
 		case ERenderPass::Decal:
-            RTVs[0] = CurrentRenderTargets.SceneColorRTV;
+            RTVs[0] = CurrentRenderTargets.SceneColorPingRTV;
             RTVs[1] = CurrentRenderTargets.SceneNormalRTV;
             RTVs[2] = CurrentRenderTargets.SceneWorldPosRTV;
-            break;
-        case ERenderPass::Fog:
-            RTVs[0] = CurrentRenderTargets.SceneFogRTV;
-            SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
-            SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
             break;
         case ERenderPass::SelectionMask:
             RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;
             break;
-        case ERenderPass::FXAA:
-            RTVs[0] = CurrentRenderTargets.SceneFXAARTV; // FXAA 결과도 최종 출력이므로 SceneFinalRTV 사용
-            SceneFinalRTV = CurrentRenderTargets.SceneFXAARTV;
-            SceneFinalSRV = CurrentRenderTargets.SceneFXAASRV;
-            break;
         default:
-			// 나머지 Pass (UI, ...) 들은 하나의 RTV 에 그린다 가정
             RTVs[0] = SceneFinalRTV.Get();
             break;
 	}

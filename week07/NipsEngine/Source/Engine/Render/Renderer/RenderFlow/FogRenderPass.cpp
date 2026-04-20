@@ -26,8 +26,13 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
         return true;
     }
 
-    if (!Context->RenderTargets->SceneFogRTV ||
-        !Context->RenderTargets->SceneFogSRV ||
+    ID3D11RenderTargetView* OutputRTV =
+        Context->RenderTargets->ResolvePostProcessOutputRTV(PrevPassRTV);
+    ID3D11ShaderResourceView* OutputSRV =
+        Context->RenderTargets->ResolvePostProcessOutputSRV(PrevPassRTV);
+
+    if (!OutputRTV ||
+        !OutputSRV ||
         !PrevPassSRV ||
         !Context->RenderTargets->SceneDepthSRV ||
         !Context->RenderTargets->SceneWorldPosSRV)
@@ -47,7 +52,7 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
     ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
     Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 
-    ID3D11RenderTargetView* RTVs[3] = { Context->RenderTargets->SceneFogRTV, nullptr, nullptr };
+    ID3D11RenderTargetView* RTVs[3] = { OutputRTV, nullptr, nullptr };
     Context->DeviceContext->OMSetRenderTargets(3, RTVs, nullptr);
 
     Context->DeviceContext->IASetInputLayout(nullptr);
@@ -55,8 +60,8 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
     Context->DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    OutSRV = Context->RenderTargets->SceneFogSRV;
-    OutRTV = Context->RenderTargets->SceneFogRTV;
+    OutSRV = OutputSRV;
+    OutRTV = OutputRTV;
     return true;
 }
 

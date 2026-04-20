@@ -1530,6 +1530,12 @@ ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type,
 	case ESamplerType::EST_Linear:
 		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		break;
+	case ESamplerType::EST_LinearClamp:
+		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		Desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		Desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		Desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		break;
 	case ESamplerType::EST_Anisotropic:
 		Desc.Filter = D3D11_FILTER_ANISOTROPIC;
 		Desc.MaxAnisotropy = 16;

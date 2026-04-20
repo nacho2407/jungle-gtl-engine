@@ -62,10 +62,12 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
     // 2. 렌더링 대상을 서브 영역으로 제한
     const FViewportRect& Rect = SceneView.ViewRect;
-    if (Rect.Width <= 0 || Rect.Height <= 0)
-        return;
-
     FSceneViewport& SceneViewport = Editor->GetViewportLayout().GetSceneViewport(ViewportIndex);
+    if (Rect.Width <= 0 || Rect.Height <= 0)
+    {
+        SceneViewport.SetOutSRV(nullptr);
+        return;
+    }
     
 	// Width, Height 변경 여부에 따라 Resource 버퍼 재생성
 	// 만약 최소화 등의 상황으로 (H, W) == (0, 0) 일 경우 Render 안함
@@ -114,6 +116,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
     Renderer.PrepareBatchers(Bus);
     Renderer.Render(Bus);
+    SceneViewport.SetOutSRV(const_cast<ID3D11ShaderResourceView*>(Renderer.GetCurrentSceneSRV()));
 }
 
 const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCullingStats(int32 ViewportIndex) const

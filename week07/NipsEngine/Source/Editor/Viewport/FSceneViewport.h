@@ -54,15 +54,17 @@ public:
 
 	FRenderTargetSet GetViewportRenderTargets() const;
 
-	// 최종 출력 (임시용)
-	ID3D11ShaderResourceView* GetOutSRV() const 
-	{ 
-		if (!RenderTargetSet)
-            return nullptr;
-		return RenderTargetSet->SceneColorSRV;
-	}
+	ID3D11ShaderResourceView* GetOutSRV() const { return OutSRV; }
+	void SetOutSRV(ID3D11ShaderResourceView* InOutSRV) { OutSRV = InOutSRV; }
 
-	void SetRenderTargetSet(FRenderTargetSet* InRenderTargetSet) { RenderTargetSet = InRenderTargetSet; }
+	void SetRenderTargetSet(FRenderTargetSet* InRenderTargetSet)
+	{
+		RenderTargetSet = InRenderTargetSet;
+		if (InRenderTargetSet == nullptr)
+		{
+			OutSRV = nullptr;
+		}
+	}
     FRenderTargetSet* GetRenderTargetSet() const { return RenderTargetSet; }
 
 private:
@@ -72,6 +74,7 @@ private:
 
 	// Renderer 의 자원을 참조
 	FRenderTargetSet* RenderTargetSet = nullptr;
+	ID3D11ShaderResourceView* OutSRV = nullptr;
 
 	uint32 ViewportRenderTargetWidth = 0;
     uint32 ViewportRenderTargetHeight = 0;

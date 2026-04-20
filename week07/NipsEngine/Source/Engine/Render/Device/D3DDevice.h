@@ -160,6 +160,5 @@ public:
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView.Get(); }
 	float GetViewportWidth() const { return ViewportInfo.Width; }
 	float GetViewportHeight() const { return ViewportInfo.Height; }
-	FRenderTargetSet GetBackBufferRenderTargets() const;
 };
 

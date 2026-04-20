@@ -124,19 +124,6 @@ ID3D11DeviceContext* FD3DDevice::GetDeviceContext() const
 	return DeviceContext.Get();
 }
 
-FRenderTargetSet FD3DDevice::GetBackBufferRenderTargets() const
-{
-	FRenderTargetSet Targets;
-	Targets.SceneColorRTV = FrameBufferRTV.Get();
-        
-	Targets.SelectionMaskRTV = SelectionMaskRTV.Get();
-	Targets.SelectionMaskSRV = SelectionMaskSRV.Get();
-	Targets.DepthStencilView = DepthStencilView.Get();
-	Targets.Width = ViewportInfo.Width;
-	Targets.Height = ViewportInfo.Height;
-	return Targets;
-}
-
 void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 {
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0 };

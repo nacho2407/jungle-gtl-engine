@@ -22,6 +22,7 @@ enum class ESamplerType
 {
 	EST_Point,
 	EST_Linear,
+	EST_LinearClamp,
 	EST_Anisotropic,
 };
 
