@@ -3,7 +3,6 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
-#include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/Proxy/FScene.h"
@@ -25,6 +24,11 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	EditorLines.Create(InDevice);
 	GridLines.Create(InDevice);
 	FontGeometry.Create(InDevice);
+
+	FogCB.Create(InDevice, sizeof(FFogConstants));
+	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants));
+	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants));
+	FXAACB.Create(InDevice, sizeof(FFXAAConstants));
 }
 
 void FDrawCommandBuilder::Release()
@@ -38,6 +42,11 @@ void FDrawCommandBuilder::Release()
 		CB.Release();
 	}
 	PerObjectCBPool.clear();
+
+	FogCB.Release();
+	OutlineCB.Release();
+	SceneDepthCB.Release();
+	FXAACB.Release();
 }
 
 // ============================================================
@@ -365,7 +374,6 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
 		if (FogShader)
 		{
-			FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Fog, sizeof(FFogConstants));
 			const FFogParams& FogParams = CollectScene->GetEnvironment().GetFogParams();
 			FFogConstants fogData = {};
 			fogData.InscatteringColor = FogParams.InscatteringColor;
@@ -375,11 +383,11 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			fogData.StartDistance = FogParams.StartDistance;
 			fogData.CutoffDistance = FogParams.CutoffDistance;
 			fogData.MaxOpacity = FogParams.MaxOpacity;
-			FogCB->Update(Ctx, &fogData, sizeof(FFogConstants));
+			FogCB.Update(Ctx, &fogData, sizeof(FFogConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = FogCB;
+			Cmd.Bindings.PerShaderCB[0] = &FogCB;
 			Cmd.BuildSortKey(0);
 		}
 	}
@@ -390,15 +398,14 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		FShader* PPShader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
 		if (PPShader)
 		{
-			FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Outline, sizeof(FOutlinePostProcessConstants));
 			FOutlinePostProcessConstants ppConstants;
 			ppConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
 			ppConstants.OutlineThickness = 3.0f;
-			OutlineCB->Update(Ctx, &ppConstants, sizeof(ppConstants));
+			OutlineCB.Update(Ctx, &ppConstants, sizeof(ppConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(PPShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = OutlineCB;
+			Cmd.Bindings.PerShaderCB[0] = &OutlineCB;
 			Cmd.BuildSortKey(1);
 		}
 	}
@@ -409,18 +416,17 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		FShader* DepthShader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
 		if (DepthShader)
 		{
-			FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
 			FViewportRenderOptions Opts = Frame.RenderOptions;
 			FSceneDepthPConstants depthData = {};
 			depthData.Exponent = Opts.Exponent;
 			depthData.NearClip = Frame.NearClip;
 			depthData.FarClip = Frame.FarClip;
 			depthData.Mode = Opts.SceneDepthVisMode;
-			SceneDepthCB->Update(Ctx, &depthData, sizeof(FSceneDepthPConstants));
+			SceneDepthCB.Update(Ctx, &depthData, sizeof(FSceneDepthPConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(DepthShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = SceneDepthCB;
+			Cmd.Bindings.PerShaderCB[0] = &SceneDepthCB;
 			Cmd.BuildSortKey(2);
 		}
 	}
@@ -443,17 +449,16 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
 		if (FXAAShader)
 		{
-			FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::FXAA, sizeof(FFXAAConstants));
 			FViewportRenderOptions Opts = Frame.RenderOptions;
 			FFXAAConstants FXAAData = {};
 			FXAAData.EdgeThreshold = Opts.EdgeThreshold;
 			FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
-			FXAACB->Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
+			FXAACB.Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(FXAAShader, ERenderPass::FXAA,
 				PassRenderStateTable->ToDrawCommandState(ERenderPass::FXAA, ViewMode));
-			Cmd.Bindings.PerShaderCB[0] = FXAACB;
+			Cmd.Bindings.PerShaderCB[0] = &FXAACB;
 			Cmd.BuildSortKey(0);
 		}
 	}

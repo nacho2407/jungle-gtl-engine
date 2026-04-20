@@ -13,7 +13,7 @@
 	프레임 공용 CB (Frame, Lighting), 라이트 StructuredBuffer,
 	렌더 상태 오브젝트(DSS/Blend/Rasterizer/Sampler),
 	시스템 텍스처 언바인딩(t16-t19)을 소유합니다.
-	셰이더별 CB(Gizmo, Outline 등)는 FConstantBufferPool에서 관리됩니다.
+	셰이더별 CB(Gizmo, PostProcess 등)는 각 소유자(Proxy, Builder)가 직접 관리합니다.
 */
 
 class FD3DDevice;
