@@ -17,13 +17,38 @@
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
+namespace
+{
+void PreloadDefaultObjAssets(ID3D11Device* Device)
+{
+	if (!Device)
+	{
+		return;
+	}
+
+	FObjManager::ScanObjSourceFiles();
+	const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
+	for (const FMeshAssetListItem& Item : ObjFiles)
+	{
+		if (Item.FullPath.rfind("Data/BasicShape/", 0) != 0)
+		{
+			continue;
+		}
+
+		FObjManager::LoadObjStaticMesh(Item.FullPath, Device);
+	}
+}
+}
+
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
 
 	FObjManager::ScanMeshAssets();
+	FObjManager::ScanObjSourceFiles();
 	FMaterialManager::Get().ScanMaterialAssets();
+	PreloadDefaultObjAssets(Renderer.GetFD3DDevice().GetDevice());
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
