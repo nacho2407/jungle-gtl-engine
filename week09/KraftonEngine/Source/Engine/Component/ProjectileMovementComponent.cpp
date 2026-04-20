@@ -4,7 +4,7 @@
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Proxy/FScene.h"
+#include "Render/Scene/Core/Scene.h"
 #include "Serialization/Archive.h"
 
 #include <cmath>

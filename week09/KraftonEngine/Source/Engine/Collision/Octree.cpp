@@ -2,7 +2,7 @@
 #include <Collision/RayUtils.h>
 #include <algorithm>
 #include "Editor/UI/EditorConsolePanel.h"
-#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 namespace {
 	int GetChildIndex(const FVector& Center, const FVector& NodeCenter)

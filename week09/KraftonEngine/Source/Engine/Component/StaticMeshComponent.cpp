@@ -6,10 +6,10 @@
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Systems/ShaderManager.h"
 #include "Texture/Texture2D.h"
-#include "Render/Proxy/StaticMeshSceneProxy.h"
-#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)

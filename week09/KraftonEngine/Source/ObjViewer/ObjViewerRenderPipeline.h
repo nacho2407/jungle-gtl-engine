@@ -1,26 +1,25 @@
-#pragma once
-
-#include "Render/Pipeline/IRenderPipeline.h"
-#include "Render/Pipeline/RenderCollector.h"
-#include "Render/Pipeline/FrameContext.h"
-
-class UObjViewerEngine;
-class FViewport;
-class UCameraComponent;
-
-class FObjViewerRenderPipeline : public IRenderPipeline
-{
-public:
-	FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer);
-	~FObjViewerRenderPipeline() override;
-
-	void Execute(float DeltaTime, FRenderer& Renderer) override;
-
-private:
-	void RenderPreviewViewport(FRenderer& Renderer);
-
-private:
-	UObjViewerEngine* Engine = nullptr;
-	FRenderCollector Collector;
-	FFrameContext Frame;
-};
+﻿// #pragma once
+//
+// #include "Render/Collectors/RenderCollector.h"
+// #include "Render/Core/FrameContext.h"
+//
+// class UObjViewerEngine;
+// class FViewport;
+// class UCameraComponent;
+//
+// class FObjViewerRenderPipeline
+//{
+// public:
+//	FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer);
+//	~FObjViewerRenderPipeline() override;
+//
+//	void Execute(float DeltaTime, FRenderer& Renderer);
+//
+// private:
+//	void RenderPreviewViewport(FRenderer& Renderer);
+//
+// private:
+//	UObjViewerEngine* Engine = nullptr;
+//	FRenderCollector Collector;
+//	FFrameContext Frame;
+// };

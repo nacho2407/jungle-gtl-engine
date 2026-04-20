@@ -1,7 +1,7 @@
-#include "Component/CylindricalBillboardComponent.h"
+﻿#include "Component/CylindricalBillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
-#include "Render/Proxy/CylindricalBillboardSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/CylindricalBillboardSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 

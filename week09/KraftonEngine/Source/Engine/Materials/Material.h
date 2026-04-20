@@ -44,6 +44,10 @@ private:
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
+	TMap<FString, float> LooseScalarParameters;
+	TMap<FString, FVector> LooseVector3Parameters;
+	TMap<FString, FVector4> LooseVector4Parameters;
+	TMap<FString, FMatrix> LooseMatrixParameters;
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 

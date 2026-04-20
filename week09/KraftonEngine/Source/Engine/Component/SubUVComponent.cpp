@@ -2,12 +2,12 @@
 #include "Object/ObjectFactory.h"
 
 #include <cstring>
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Systems/MeshBufferManager.h"
 #include "Resource/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
-#include "Render/Proxy/SubUVSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)

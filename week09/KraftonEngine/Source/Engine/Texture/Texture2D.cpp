@@ -9,7 +9,8 @@
 
 IMPLEMENT_CLASS(UTexture2D, UObject)
 
-std::map<FString, UTexture2D*> UTexture2D::TextureCache;
+std::map<FString, FTextureCacheEntry> UTexture2D::TextureCache;
+std::vector<UTexture2D*> UTexture2D::RetiredTextures;
 
 UTexture2D::~UTexture2D()
 {
@@ -25,9 +26,8 @@ UTexture2D::~UTexture2D()
 		SRV = nullptr;
 	}
 
-	// 캐시에서 제거
 	auto It = TextureCache.find(SourceFilePath);
-	if (It != TextureCache.end() && It->second == this)
+	if (It != TextureCache.end() && It->second.Texture == this)
 	{
 		TextureCache.erase(It);
 	}
@@ -35,8 +35,9 @@ UTexture2D::~UTexture2D()
 
 void UTexture2D::ReleaseAllGPU()
 {
-	for (auto& [Path, Texture] : TextureCache)
+	for (auto& [Path, Entry] : TextureCache)
 	{
+		UTexture2D* Texture = Entry.Texture;
 		if (Texture && Texture->SRV)
 		{
 			if (Texture->TrackedTextureMemory > 0)
@@ -49,46 +50,74 @@ void UTexture2D::ReleaseAllGPU()
 		}
 	}
 	TextureCache.clear();
+
+    for (UTexture2D* Texture : RetiredTextures)
+    {
+        if (Texture)
+        {
+            if (Texture->SRV)
+            {
+                if (Texture->TrackedTextureMemory > 0)
+                {
+                    MemoryStats::SubTextureMemory(Texture->TrackedTextureMemory);
+                    Texture->TrackedTextureMemory = 0;
+                }
+                Texture->SRV->Release();
+                Texture->SRV = nullptr;
+            }
+            UObjectManager::Get().DestroyObject(Texture);
+        }
+    }
+    RetiredTextures.clear();
 }
 
 UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Device)
 {
 	if (FilePath.empty() || !Device) return nullptr;
 
-	// 캐시 히트
-	auto It = TextureCache.find(FilePath);
+    const std::filesystem::path FullPath = ResolveFullPath(FilePath);
+    const FString CacheKey = FPaths::FromPath(FullPath);
+
+	auto It = TextureCache.find(CacheKey);
 	if (It != TextureCache.end())
 	{
-		return It->second;
+        if (!HasCacheEntryChanged(It->second))
+        {
+		    return It->second.Texture;
+        }
+
+        if (It->second.Texture)
+        {
+            RetiredTextures.push_back(It->second.Texture);
+        }
+        TextureCache.erase(It);
 	}
 
-	// 새 UTexture2D 생성
 	UTexture2D* Texture = UObjectManager::Get().CreateObject<UTexture2D>();
-	if (!Texture->LoadInternal(FilePath, Device))
+	if (!Texture->LoadInternal(CacheKey, Device))
 	{
 		UObjectManager::Get().DestroyObject(Texture);
 		return nullptr;
 	}
 
-	TextureCache[FilePath] = Texture;
+	TextureCache[CacheKey] = BuildCacheEntry(FullPath);
+    TextureCache[CacheKey].Texture = Texture;
 	return Texture;
 }
 
 bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 {
-	//std::filesystem::path TexPath(FilePath);
-	//std::wstring WidePath = TexPath.wstring();
 	std::wstring WidePath = FPaths::ToWide(FilePath);
 
 	ID3D11Resource* Resource = nullptr;
 	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
 		Device, WidePath.c_str(),
-		0,                                    // maxsize
-		D3D11_USAGE_DEFAULT,                  // usage
-		D3D11_BIND_SHADER_RESOURCE,           // bindFlags
-		0,                                    // cpuAccessFlags
-		0,                                    // miscFlags
-		DirectX::WIC_LOADER_IGNORE_SRGB,     // sRGB 메타데이터 무시 → UNORM 포맷 강제
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		DirectX::WIC_LOADER_IGNORE_SRGB,
 		&Resource, &SRV);
 
 	if (FAILED(hr))
@@ -97,7 +126,6 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 		return false;
 	}
 
-	// 텍스처 크기 추출
 	if (Resource)
 	{
 		TrackedTextureMemory = MemoryStats::CalculateTextureMemory(Resource);
@@ -121,4 +149,63 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 
 	SourceFilePath = FilePath;
 	return true;
+}
+
+std::filesystem::path UTexture2D::ResolveFullPath(const FString& FilePath)
+{
+    std::filesystem::path Path = FPaths::ToPath(FPaths::ToWide(FilePath));
+    if (!Path.is_absolute())
+    {
+        Path = FPaths::ToPath(FPaths::RootDir()) / Path;
+    }
+
+    std::error_code Ec;
+    std::filesystem::path Canonical = std::filesystem::weakly_canonical(Path, Ec);
+    if (!Ec)
+    {
+        return Canonical;
+    }
+
+    return Path.lexically_normal();
+}
+
+FTextureCacheEntry UTexture2D::BuildCacheEntry(const std::filesystem::path& FilePath)
+{
+    FTextureCacheEntry Entry;
+    Entry.FullPath = FPaths::FromPath(FilePath);
+
+    std::error_code Ec;
+    Entry.bExists = std::filesystem::exists(FilePath, Ec) && !Ec;
+    if (Entry.bExists)
+    {
+        Entry.LastWriteTime = std::filesystem::last_write_time(FilePath, Ec);
+        if (Ec)
+        {
+            Entry.bExists = false;
+            Entry.LastWriteTime = {};
+        }
+    }
+
+    return Entry;
+}
+
+bool UTexture2D::HasCacheEntryChanged(const FTextureCacheEntry& Entry)
+{
+    if (Entry.FullPath.empty())
+    {
+        return false;
+    }
+
+    const FTextureCacheEntry Current = BuildCacheEntry(ResolveFullPath(Entry.FullPath));
+    if (Current.bExists != Entry.bExists)
+    {
+        return true;
+    }
+
+    if (!Current.bExists)
+    {
+        return false;
+    }
+
+    return Current.LastWriteTime != Entry.LastWriteTime;
 }

@@ -5,8 +5,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Resource/ResourceManager.h"
-#include "Render/Pipeline/DefaultRenderPipeline.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Systems/MeshBufferManager.h"
 #include "Mesh/ObjManager.h"
 #include "Texture/Texture2D.h"
 #include "GameFramework/World.h"
@@ -49,12 +48,10 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FMeshBufferManager::Get().Initialize(Device);
 	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
 
-	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 }
 
 void UEngine::Shutdown()
 {
-	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
 	UTexture2D::ReleaseAllGPU();
 	FObjManager::ReleaseAllGPU();
@@ -83,16 +80,42 @@ void UEngine::Tick(float DeltaTime)
 
 void UEngine::Render(float DeltaTime)
 {
-	if (RenderPipeline)
-	{
-		SCOPE_STAT_CAT("UEngine::Render", "2_Render");
-		RenderPipeline->Execute(DeltaTime, Renderer);
-	}
-}
+	SCOPE_STAT_CAT("UEngine::Render", "2_Render");
 
-void UEngine::SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline)
-{
-	RenderPipeline = std::move(InPipeline);
+	RenderTargets.Reset();
+
+	UWorld* World = GetWorld();
+	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	FScene* Scene = nullptr;
+	if (Camera)
+	{
+		FShowFlags ShowFlags;
+		EViewMode ViewMode = EViewMode::Lit_Phong;
+
+		RenderFrame.SetCameraInfo(Camera);
+		RenderFrame.SetRenderSettings(ViewMode, ShowFlags);
+		Renderer.ClearActiveViewMode();
+		Renderer.ReleaseViewModeSurfaceSet();
+
+		Scene = &World->GetScene();
+		Scene->ClearFrameData();
+
+		Renderer.BeginCollect(RenderFrame, Scene->GetPrimitiveProxyCount());
+		RenderCollector.CollectWorld(World, RenderFrame, *Scene, Renderer);
+		RenderCollector.CollectDebugDraw(RenderFrame, *Scene);
+		RenderCollector.BuildFramePassCommands(RenderFrame, *Scene, Renderer);
+	}
+	else
+	{
+		Renderer.ClearActiveViewMode();
+		Renderer.ReleaseViewModeSurfaceSet();
+		Renderer.BeginCollect(RenderFrame);
+	}
+
+	{
+		FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, &RenderTargets, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
+		Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PassContext);
+	}
 }
 
 void UEngine::OnWindowResized(uint32 Width, uint32 Height)

@@ -3,10 +3,10 @@
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Systems/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
-#include "Render/Proxy/FScene.h"
-#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Scene/Core/Scene.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 

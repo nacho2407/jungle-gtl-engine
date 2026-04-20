@@ -242,7 +242,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
-    <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
@@ -323,45 +322,67 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
-    <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
-    <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Batching\FontBatch.cpp" />
+    <ClCompile Include="Source\Engine\Render\Batching\LineBatch.cpp" />
+    <ClCompile Include="Source\Engine\Render\Builders\DecalDrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Builders\FullscreenDrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Builders\LineDrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Builders\MeshDrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Builders\TextDrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Collectors\RenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Commands\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\BlendStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\DepthStencilStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Device\RasterizerStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pass\DrawCommandList.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pass\PassEvent.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pass\PassRenderState.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pass\UberLitPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\DirectionalLightSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\FScene.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\LightSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\PointLightSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\SpotLightSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ConstantBufferPool.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\RenderResources.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ShaderManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execution\RenderPipelineRunner.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execution\Renderer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Frame\FrameContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Frame\FrameSharedResources.cpp" />
+    <ClCompile Include="Source\Engine\Render\Frame\ViewModeSurfaceSet.cpp" />
+    <ClCompile Include="Source\Engine\Render\Frame\ViewportRenderTargets.cpp" />
+    <ClCompile Include="Source\Engine\Render\Hardware\Device\D3DDevice.cpp" />
+    <ClCompile Include="Source\Engine\Render\Hardware\Resources\Buffer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Hardware\Resources\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Hardware\State\BlendStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Hardware\State\DepthStencilStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Hardware\State\RasterizerStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Common\PassRenderState.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Common\RenderPassContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\DebugLinePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\DecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\DepthPrePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModePostProcessPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\RenderPassRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\RenderPipelineRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Core\Scene.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\AmbientLightSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\DirectionalLightSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\LightSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\SpotLightSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\BillboardSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\CylindricalBillboardSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\DecalSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\GizmoSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\SubUVSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Systems\ConstantBufferPool.cpp" />
+    <ClCompile Include="Source\Engine\Render\Systems\MeshBufferManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Systems\ShaderManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\ConvexVolume.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\GPUOcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\OcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
@@ -390,7 +411,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
-    <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
@@ -465,6 +485,7 @@
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
+    <ClInclude Include="Source\Engine\Materials\MaterialSemantics.h" />
     <ClInclude Include="Source\Engine\Math\MathUtils.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
     <ClInclude Include="Source\Engine\Math\Quat.h" />
@@ -490,61 +511,88 @@
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer.h" />
-    <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
-    <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
-    <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Batching\BatchBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\Batching\FontBatch.h" />
+    <ClInclude Include="Source\Engine\Render\Batching\LineBatch.h" />
+    <ClInclude Include="Source\Engine\Render\Builders\DecalDrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Builders\FullscreenDrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Builders\LineDrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Builders\MeshDrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Builders\TextDrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Collectors\RenderCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Commands\DrawCommand.h" />
+    <ClInclude Include="Source\Engine\Render\Commands\DrawCommandList.h" />
+    <ClInclude Include="Source\Engine\Render\Commands\ShaderBindingSet.h" />
+    <ClInclude Include="Source\Engine\Render\Core\PassTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Core\RenderConstants.h" />
+    <ClInclude Include="Source\Engine\Render\Core\SortKey.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
-    <ClInclude Include="Source\Engine\Render\Device\BlendStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
-    <ClInclude Include="Source\Engine\Render\Device\DepthStencilStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\Device\RasterizerStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h" />
-    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h" />
-    <ClInclude Include="Source\Engine\Render\Pass\DrawCommand.h" />
-    <ClInclude Include="Source\Engine\Render\Pass\DrawCommandList.h" />
-    <ClInclude Include="Source\Engine\Render\Pass\PassEvent.h" />
-    <ClInclude Include="Source\Engine\Render\Pass\PassRenderState.h" />
-    <ClInclude Include="Source\Engine\Render\Pass\PassTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Pass\UberLitPass.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\PipelineShaderResolver.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeRenderPipeline.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\ViewModeSurfaceResources.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\AmbientLightSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\DirectionalLightSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\FScene.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\LightSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\PointLightSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\SpotLightSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ConstantBufferPool.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderVariantCache.h" />
+    <ClInclude Include="Source\Engine\Render\DebugDraw\RenderMarkers.h" />
+    <ClInclude Include="Source\Engine\Render\Execution\LODContext.h" />
+    <ClInclude Include="Source\Engine\Render\Execution\PipelineShaderResolver.h" />
+    <ClInclude Include="Source\Engine\Render\Execution\RenderPipelineRunner.h" />
+    <ClInclude Include="Source\Engine\Render\Execution\Renderer.h" />
+    <ClInclude Include="Source\Engine\Render\Frame\FrameContext.h" />
+    <ClInclude Include="Source\Engine\Render\Frame\FrameSharedResources.h" />
+    <ClInclude Include="Source\Engine\Render\Frame\ViewModeSurfaceSet.h" />
+    <ClInclude Include="Source\Engine\Render\Frame\ViewportRenderTargets.h" />
+    <ClInclude Include="Source\Engine\Render\Hardware\Device\D3DDevice.h" />
+    <ClInclude Include="Source\Engine\Render\Hardware\Resources\Buffer.h" />
+    <ClInclude Include="Source\Engine\Render\Hardware\Resources\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Hardware\State\BlendStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\Hardware\State\DepthStencilStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\Hardware\State\RasterizerStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\RenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Common\FullscreenPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Common\MeshPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Common\PassRenderState.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Common\RenderPassContext.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\DecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\DepthPrePass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModePostProcessPass.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPassRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPipelineRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPipelineType.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Core\DirtyFlag.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Core\Scene.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\AmbientLightSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\DirectionalLightSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\SpotLightSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\BillboardSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\CylindricalBillboardSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\DecalSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\GizmoSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\SubUVSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Systems\ConstantBufferPool.h" />
+    <ClInclude Include="Source\Engine\Render\Systems\MeshBufferManager.h" />
+    <ClInclude Include="Source\Engine\Render\Systems\ShaderManager.h" />
+    <ClInclude Include="Source\Engine\Render\Systems\ShaderVariantCache.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\ShadingTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\ViewTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\ConvexVolume.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\GPUOcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\OcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Resource\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
@@ -608,6 +656,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\DepthOnly.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Editor.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -656,6 +710,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\NormalView.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\OcclusionTest.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -699,6 +759,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\StaticMeshMaterialCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>

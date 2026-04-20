@@ -5,7 +5,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
-#include "Render/Renderer.h"
+#include "Render/Execution/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
 #include "Math/MathUtils.h"
@@ -14,6 +14,7 @@
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include <filesystem>
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
@@ -54,17 +55,35 @@ static const wchar_t* GetLayoutIconFileName(EViewportLayout Layout)
 	}
 }
 
+std::wstring ResolveEditorIconPath(const std::wstring& FileName)
+{
+    const std::filesystem::path RootCandidate = std::filesystem::path(FPaths::RootDir()) / L"Asset/Editor/Icons" / FileName;
+    if (std::filesystem::exists(RootCandidate))
+    {
+        return RootCandidate.wstring();
+    }
+
+    WCHAR Buffer[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
+    const std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
+    const std::filesystem::path ExeCandidate = ExeDir / L"Asset/Editor/Icons" / FileName;
+    if (std::filesystem::exists(ExeCandidate))
+    {
+        return ExeCandidate.wstring();
+    }
+
+    return (std::filesystem::current_path() / L"Asset/Editor/Icons" / FileName).wstring();
+}
+
 // ─── 아이콘 로드/해제 ────────────────────────────────────────
 
 void FLevelViewportLayout::LoadLayoutIcons(ID3D11Device* Device)
 {
 	if (!Device) return;
 
-	std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
-
 	for (int32 i = 0; i < static_cast<int32>(EViewportLayout::MAX); ++i)
 	{
-		std::wstring Path = IconDir + GetLayoutIconFileName(static_cast<EViewportLayout>(i));
+		std::wstring Path = ResolveEditorIconPath(GetLayoutIconFileName(static_cast<EViewportLayout>(i)));
 		DirectX::CreateWICTextureFromFile(
 			Device, Path.c_str(),
 			nullptr, &LayoutIcons[i]);

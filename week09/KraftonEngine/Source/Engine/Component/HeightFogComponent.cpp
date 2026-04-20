@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Render/Proxy/FScene.h"
+#include "Render/Scene/Core/Scene.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UHeightFogComponent, USceneComponent)
