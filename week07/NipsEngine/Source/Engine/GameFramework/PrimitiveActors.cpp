@@ -336,7 +336,10 @@ void AAmbientLightActor::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
-	BillboardComp->SetColor(GetLight()->LightColor);
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
 }
 
 void ADirectionalLightActor::InitDefaultComponents()
@@ -359,7 +362,10 @@ void ADirectionalLightActor::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
-	BillboardComp->SetColor(GetLight()->LightColor);
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
 }
 
 void APointLightActor::InitDefaultComponents()
@@ -382,7 +388,10 @@ void APointLightActor::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
-	BillboardComp->SetColor(GetLight()->LightColor);
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
 }
 
 void ASpotlightActor::InitDefaultComponents() {
@@ -404,5 +413,8 @@ void ASpotlightActor::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
-	BillboardComp->SetColor(GetLight()->LightColor);
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
 }

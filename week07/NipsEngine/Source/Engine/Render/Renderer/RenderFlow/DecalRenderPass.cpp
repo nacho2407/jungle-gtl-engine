@@ -1,4 +1,4 @@
-#include "DecalRenderPass.h"
+﻿#include "DecalRenderPass.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
@@ -69,7 +69,7 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
 
         if (Cmd.Material)
         {
-            Cmd.Material->Bind(Context->DeviceContext);
+            Cmd.Material->Bind(Context->DeviceContext, (uint32)Context->ActiveLightingModel);
         }
 
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
