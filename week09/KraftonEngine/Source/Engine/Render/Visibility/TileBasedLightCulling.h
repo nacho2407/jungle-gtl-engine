@@ -2,7 +2,8 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
-#include "Render/Pipeline/RenderConstants.h"
+#include "Render/Types/LightTypes.h"
+#include "Render/View/SceneView.h"
 #include <d3d11.h>
 
 // ============================================================
@@ -23,7 +24,7 @@ struct FLightCullingParams
 
 class FViewportClient;
 class FD3DDevice;
-struct FFrameContext;
+using FFrameContext = FSceneView;
 
     // ============================================================
 // FTileBasedLightCulling
