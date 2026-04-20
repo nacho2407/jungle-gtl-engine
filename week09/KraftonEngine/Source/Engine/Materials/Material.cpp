@@ -22,6 +22,11 @@ UMaterial::~UMaterial()
     {
         Pair.second = nullptr;
     }
+
+    LooseScalarParameters.clear();
+    LooseVector3Parameters.clear();
+    LooseVector4Parameters.clear();
+    LooseMatrixParameters.clear();
 }
 
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
@@ -43,6 +48,11 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 
 bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 {
+    if (!Template)
+    {
+        return false;
+    }
+
     FMaterialParameterInfo Info;
     if (!Template->GetParameterInfo(Name, Info))
     {
@@ -62,19 +72,25 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 
 bool UMaterial::SetScalarParameter(const FString& ParamName, float Value)
 {
-    return SetParameter(ParamName, &Value, sizeof(float));
+    LooseScalarParameters[ParamName] = Value;
+    SetParameter(ParamName, &Value, sizeof(float));
+    return true;
 }
 
 bool UMaterial::SetVector3Parameter(const FString& ParamName, const FVector& Value)
 {
+    LooseVector3Parameters[ParamName] = Value;
     float Data[3] = { Value.X, Value.Y, Value.Z };
-    return SetParameter(ParamName, Data, sizeof(Data));
+    SetParameter(ParamName, Data, sizeof(Data));
+    return true;
 }
 
 bool UMaterial::SetVector4Parameter(const FString& ParamName, const FVector4& Value)
 {
+    LooseVector4Parameters[ParamName] = Value;
     float Data[4] = { Value.X, Value.Y, Value.Z, Value.W };
-    return SetParameter(ParamName, Data, sizeof(Data));
+    SetParameter(ParamName, Data, sizeof(Data));
+    return true;
 }
 
 bool UMaterial::SetTextureParameter(const FString& ParamName, UTexture2D* Texture)
@@ -85,51 +101,83 @@ bool UMaterial::SetTextureParameter(const FString& ParamName, UTexture2D* Textur
 
 bool UMaterial::SetMatrixParameter(const FString& ParamName, const FMatrix& Value)
 {
-    return SetParameter(ParamName, Value.Data, sizeof(float) * 16);
+    LooseMatrixParameters[ParamName] = Value;
+    SetParameter(ParamName, Value.Data, sizeof(float) * 16);
+    return true;
 }
 
 bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) const
 {
-    FMaterialParameterInfo Info;
-    if (!Template->GetParameterInfo(ParamName, Info))
+    if (Template)
+    {
+        FMaterialParameterInfo Info;
+        if (Template->GetParameterInfo(ParamName, Info))
+        {
+            auto It = ConstantBufferMap.find(Info.BufferName);
+            if (It != ConstantBufferMap.end())
+            {
+                const uint8* Ptr = It->second->CPUData + Info.Offset;
+                OutValue = *reinterpret_cast<const float*>(Ptr);
+                return true;
+            }
+        }
+    }
+
+    auto LooseIt = LooseScalarParameters.find(ParamName);
+    if (LooseIt == LooseScalarParameters.end())
         return false;
 
-    auto It = ConstantBufferMap.find(Info.BufferName);
-    if (It == ConstantBufferMap.end())
-        return false;
-
-    const uint8* Ptr = It->second->CPUData + Info.Offset;
-    OutValue = *reinterpret_cast<const float*>(Ptr);
+    OutValue = LooseIt->second;
     return true;
 }
 
 bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue) const
 {
-    FMaterialParameterInfo Info;
-    if (!Template->GetParameterInfo(ParamName, Info))
+    if (Template)
+    {
+        FMaterialParameterInfo Info;
+        if (Template->GetParameterInfo(ParamName, Info))
+        {
+            auto It = ConstantBufferMap.find(Info.BufferName);
+            if (It != ConstantBufferMap.end())
+            {
+                const uint8* Ptr = It->second->CPUData + Info.Offset;
+                OutValue = *reinterpret_cast<const FVector*>(Ptr);
+                return true;
+            }
+        }
+    }
+
+    auto LooseIt = LooseVector3Parameters.find(ParamName);
+    if (LooseIt == LooseVector3Parameters.end())
         return false;
 
-    auto It = ConstantBufferMap.find(Info.BufferName);
-    if (It == ConstantBufferMap.end())
-        return false;
-
-    const uint8* Ptr = It->second->CPUData + Info.Offset;
-    OutValue = *reinterpret_cast<const FVector*>(Ptr);
+    OutValue = LooseIt->second;
     return true;
 }
 
 bool UMaterial::GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const
 {
-    FMaterialParameterInfo Info;
-    if (!Template->GetParameterInfo(ParamName, Info))
+    if (Template)
+    {
+        FMaterialParameterInfo Info;
+        if (Template->GetParameterInfo(ParamName, Info))
+        {
+            auto It = ConstantBufferMap.find(Info.BufferName);
+            if (It != ConstantBufferMap.end())
+            {
+                const uint8* Ptr = It->second->CPUData + Info.Offset;
+                OutValue = *reinterpret_cast<const FVector4*>(Ptr);
+                return true;
+            }
+        }
+    }
+
+    auto LooseIt = LooseVector4Parameters.find(ParamName);
+    if (LooseIt == LooseVector4Parameters.end())
         return false;
 
-    auto It = ConstantBufferMap.find(Info.BufferName);
-    if (It == ConstantBufferMap.end())
-        return false;
-
-    const uint8* Ptr = It->second->CPUData + Info.Offset;
-    OutValue = *reinterpret_cast<const FVector4*>(Ptr);
+    OutValue = LooseIt->second;
     return true;
 }
 
@@ -145,16 +193,26 @@ bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTe
 
 bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) const
 {
-    FMaterialParameterInfo Info;
-    if (!Template->GetParameterInfo(ParamName, Info))
+    if (Template)
+    {
+        FMaterialParameterInfo Info;
+        if (Template->GetParameterInfo(ParamName, Info))
+        {
+            auto It = ConstantBufferMap.find(Info.BufferName);
+            if (It != ConstantBufferMap.end())
+            {
+                const uint8* Ptr = It->second->CPUData + Info.Offset;
+                memcpy(Value.Data, Ptr, sizeof(float) * 16);
+                return true;
+            }
+        }
+    }
+
+    auto LooseIt = LooseMatrixParameters.find(ParamName);
+    if (LooseIt == LooseMatrixParameters.end())
         return false;
 
-    auto It = ConstantBufferMap.find(Info.BufferName);
-    if (It == ConstantBufferMap.end())
-        return false;
-
-    const uint8* Ptr = It->second->CPUData + Info.Offset;
-    memcpy(Value.Data, Ptr, sizeof(float) * 16);
+    Value = LooseIt->second;
     return true;
 }
 

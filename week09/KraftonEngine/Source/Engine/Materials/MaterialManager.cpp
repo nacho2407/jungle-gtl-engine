@@ -1,7 +1,11 @@
 ﻿#include "MaterialManager.h"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
+#include <unordered_set>
 #include "Materials/Material.h"
+#include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/D3D11/Resource/Buffer.h"
@@ -19,6 +23,117 @@ static constexpr const char* RasterizerState = "RasterizerState";
 static constexpr const char* Parameters = "Parameters";
 static constexpr const char* Textures = "Textures";
 } // namespace MatKeys
+
+
+namespace
+{
+FString CanonicalizeTextureSlotName(const FString& SlotName)
+{
+    return MaterialSemantics::CanonicalizeTextureSlot(SlotName);
+}
+
+FString CanonicalizeParameterName(const FString& ParamName)
+{
+    return MaterialSemantics::CanonicalizeParameterName(ParamName);
+}
+
+uint64 HashString64(const std::string& Value)
+{
+    uint64 Hash = 1469598103934665603ull;
+    for (unsigned char Ch : Value)
+    {
+        Hash ^= static_cast<uint64>(Ch);
+        Hash *= 1099511628211ull;
+    }
+    return Hash;
+}
+
+void HashCombine64(uint64& Seed, uint64 Value)
+{
+    Seed ^= Value + 0x9e3779b97f4a7c15ull + (Seed << 6) + (Seed >> 2);
+}
+
+bool TryExtractIncludePath(const std::string& Line, std::string& OutInclude)
+{
+    const size_t IncludePos = Line.find("#include");
+    if (IncludePos == std::string::npos)
+    {
+        return false;
+    }
+
+    const size_t OpenQuote = Line.find('"', IncludePos);
+    if (OpenQuote == std::string::npos)
+    {
+        return false;
+    }
+
+    const size_t CloseQuote = Line.find('"', OpenQuote + 1);
+    if (CloseQuote == std::string::npos || CloseQuote <= OpenQuote + 1)
+    {
+        return false;
+    }
+
+    OutInclude = Line.substr(OpenQuote + 1, CloseQuote - OpenQuote - 1);
+    return true;
+}
+
+uint64 BuildDependencyHashRecursive(const std::filesystem::path& FilePath, std::unordered_set<std::wstring>& Visited)
+{
+    std::error_code Ec;
+    std::filesystem::path Canonical = std::filesystem::weakly_canonical(FilePath, Ec);
+    if (Ec)
+    {
+        Canonical = FilePath.lexically_normal();
+    }
+
+    const std::wstring CanonicalKey = Canonical.generic_wstring();
+    if (!Visited.insert(CanonicalKey).second)
+    {
+        return 0;
+    }
+
+    uint64 Hash = HashString64(std::string(CanonicalKey.begin(), CanonicalKey.end()));
+    const bool bExists = std::filesystem::exists(Canonical, Ec) && !Ec;
+    HashCombine64(Hash, bExists ? 1ull : 0ull);
+    if (!bExists)
+    {
+        return Hash;
+    }
+
+    const auto LastWrite = std::filesystem::last_write_time(Canonical, Ec);
+    if (!Ec)
+    {
+        HashCombine64(Hash, static_cast<uint64>(LastWrite.time_since_epoch().count()));
+    }
+
+    std::ifstream File(Canonical);
+    if (!File.is_open())
+    {
+        return Hash;
+    }
+
+    std::string Line;
+    while (std::getline(File, Line))
+    {
+        std::string IncludePath;
+        if (!TryExtractIncludePath(Line, IncludePath))
+        {
+            continue;
+        }
+
+        std::filesystem::path IncludedFile = (Canonical.parent_path() / std::filesystem::path(IncludePath)).lexically_normal();
+        HashCombine64(Hash, BuildDependencyHashRecursive(IncludedFile, Visited));
+    }
+
+    return Hash;
+}
+
+uint64 BuildDependencyHash(const std::filesystem::path& FilePath)
+{
+    std::unordered_set<std::wstring> Visited;
+    return BuildDependencyHashRecursive(FilePath, Visited);
+}
+}
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -40,11 +155,10 @@ void FMaterialManager::ScanMaterialAssets()
 
         const std::filesystem::path& Path = Entry.path();
 
-        // 확장자가 .json인지 확인
         if (Path.extension() != L".json")
             continue;
         if (Path.stem() == L"None")
-            continue; // Fallback 머티리얼은 목록에서 제외
+            continue;
 
         FMaterialAssetListItem Item;
         Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
@@ -55,55 +169,63 @@ void FMaterialManager::ScanMaterialAssets()
 
 UMaterial* FMaterialManager::GetOrCreateStaticMeshMaterial(const FString& MatFilePath)
 {
-    // 정적 메시 머티리얼은 반드시 StaticMeshShader 템플릿을 사용
-    auto It = MaterialCache.find(MatFilePath);
-    if (It != MaterialCache.end())
-    {
-        return It->second;
-    }
-
-    json::JSON JsonData = ReadJsonFile(MatFilePath);
-    if (JsonData.IsNull())
-    {
-        return GetOrCreateMaterial(MatFilePath);
-    }
-
-    JsonData[MatKeys::ShaderPath] = DefaultShaderPath.c_str();
-    SaveToJSON(JsonData, MatFilePath);
-    return GetOrCreateMaterial(MatFilePath);
+    return GetOrCreateMaterial(NormalizeCacheKey(MatFilePath));
 }
 
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
-    // 1. 캐시 반환
-    auto It = MaterialCache.find(MatFilePath);
+    const FString CacheKey = NormalizeCacheKey(MatFilePath);
+
+    auto It = MaterialCache.find(CacheKey);
     if (It != MaterialCache.end())
     {
-        return It->second;
+        FMaterialCacheEntry& Cached = It->second;
+        const bool bMaterialChanged = HasDependencyChanged(Cached.MaterialFile);
+        const bool bShaderChanged = HasDependencyChanged(Cached.ShaderFile);
+        const bool bTextureChanged = HasAnyDependencyChanged(Cached.TextureFiles);
+        if (!bMaterialChanged && !bShaderChanged && !bTextureChanged)
+        {
+            return Cached.Material;
+        }
+
+        RetireMaterialCacheEntry(Cached);
+        MaterialCache.erase(It);
     }
 
-    // 2. 캐시에 없다면 JSON에서 읽기
-    json::JSON JsonData = ReadJsonFile(MatFilePath);
+    json::JSON JsonData = ReadJsonFile(CacheKey);
     if (JsonData.IsNull())
     {
-        // 기본 머티리얼 생성
         UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
         FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath);
+        if (!Template)
+        {
+            UObjectManager::Get().DestroyObject(DefaultMaterial);
+            return nullptr;
+        }
+
         TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-        DefaultMaterial->Create(MatFilePath, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
-        // 폴백: 핑크색으로 미지정 머티리얼임을 표시
+        DefaultMaterial->Create(CacheKey, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
         DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
-        MaterialCache.emplace(MatFilePath, DefaultMaterial);
+
+        FMaterialCacheEntry NewEntry;
+        NewEntry.Material = DefaultMaterial;
+        NewEntry.MaterialFile = BuildFileDependency(ResolveFullPath(CacheKey));
+        NewEntry.ShaderFile = BuildFileDependency(ResolveFullPath(DefaultShaderPath));
+        MaterialCache.emplace(CacheKey, std::move(NewEntry));
         return DefaultMaterial;
     }
 
-    // 3. JSON에서 기본 정보 추출
-    FString PathFileName = JsonData[MatKeys::PathFileName].ToString().c_str();
-    FString ShaderPath = JsonData[MatKeys::ShaderPath].ToString().c_str();
-    FString RenderPassStr = JsonData[MatKeys::RenderPass].ToString().c_str();
+    const bool bNormalized = NormalizeMaterialJson(JsonData, CacheKey);
+
+    FString PathFileName = (JsonData.hasKey(MatKeys::PathFileName) && !JsonData[MatKeys::PathFileName].ToString().empty())
+        ? JsonData[MatKeys::PathFileName].ToString().c_str()
+        : CacheKey;
+    FString ShaderPath = (JsonData.hasKey(MatKeys::ShaderPath) && !JsonData[MatKeys::ShaderPath].ToString().empty())
+        ? JsonData[MatKeys::ShaderPath].ToString().c_str()
+        : DefaultShaderPath;
+    FString RenderPassStr = JsonData.hasKey(MatKeys::RenderPass) ? JsonData[MatKeys::RenderPass].ToString().c_str() : FString();
     ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 
-    // 새로운 렌더 상태 추출 (JSON에 없으면 패스 기반 기본값)
     FString BlendStr = JsonData.hasKey(MatKeys::BlendState) ? JsonData[MatKeys::BlendState].ToString().c_str() : "";
     FString DepthStr = JsonData.hasKey(MatKeys::DepthStencilState) ? JsonData[MatKeys::DepthStencilState].ToString().c_str() : "";
     FString RasterStr = JsonData.hasKey(MatKeys::RasterizerState) ? JsonData[MatKeys::RasterizerState].ToString().c_str() : "";
@@ -112,54 +234,42 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
     EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
     ERasterizerState RasterState = StringToRasterizerState(RasterStr, RenderPass);
 
-    // 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
     FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
     if (!Template)
         return nullptr;
 
-    // 5. D3D 상수 버퍼 생성
     auto InjectedBuffers = CreateConstantBuffers(Template);
 
-    // 6. UMaterial 인스턴스 생성 및 초기화 (RenderPass는 인스턴스별)
     UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
     Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
-    MaterialCache.emplace(MatFilePath, Material);
 
-    // 템플릿을 통해 material에 넣기
     bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
-
-    // 이전 셰이더의 찌꺼기 파라미터 정리
     bool bPurged = PurgeStaleParameters(JsonData, Template);
 
-    // 5. 파라미터 및 텍스처 적용
     ApplyParameters(Material, JsonData);
-    ApplyTextures(Material, JsonData, MatFilePath);
+    ApplyTextures(Material, JsonData, CacheKey);
 
-    // JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
-    JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
-    JsonData[MatKeys::DepthStencilState] = DepthStr.empty() ? "" : DepthStr.c_str();
-    JsonData[MatKeys::RasterizerState] = RasterStr.empty() ? "" : RasterStr.c_str();
-
-    // 최종적으로 material 저장
-    if (bInjected || bPurged)
+    if (bNormalized || bInjected || bPurged)
     {
-        SaveToJSON(JsonData, MatFilePath);
+        SaveToJSON(JsonData, CacheKey);
     }
 
+    FMaterialCacheEntry NewEntry;
+    NewEntry.Material = Material;
+    NewEntry.MaterialFile = BuildFileDependency(ResolveFullPath(CacheKey));
+    NewEntry.ShaderFile = BuildFileDependency(ResolveFullPath(ShaderPath));
+    NewEntry.TextureFiles = CollectTextureDependencies(JsonData, CacheKey);
+    MaterialCache.emplace(CacheKey, std::move(NewEntry));
     return Material;
 }
 
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 {
-    std::filesystem::path JsonPath = FPaths::ToPath(FPaths::ToWide(FilePath));
-    if (!JsonPath.is_absolute())
-    {
-        JsonPath = FPaths::ToPath(FPaths::RootDir()) / JsonPath;
-    }
+    const std::filesystem::path JsonPath = ResolveFullPath(FilePath);
 
     std::ifstream File(JsonPath);
     if (!File.is_open())
-        return json::JSON(); // Null JSON 반환
+        return json::JSON();
 
     std::stringstream Buffer;
     Buffer << File.rdbuf();
@@ -197,7 +307,7 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
 
     for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
     {
-        FString ParamName = Pair.first.c_str();
+        const FString ParamName = CanonicalizeParameterName(Pair.first.c_str());
         json::JSON& Value = Pair.second;
 
         if (Value.JSONType() == json::JSON::Class::Array)
@@ -223,36 +333,11 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData, 
     if (!JsonData.hasKey(MatKeys::Textures))
         return;
 
-    const std::filesystem::path MaterialPath = [&]()
-    {
-        std::filesystem::path P = FPaths::ToPath(FPaths::ToWide(MatFilePath));
-        if (!P.is_absolute())
-        {
-            P = FPaths::ToPath(FPaths::RootDir()) / P;
-        }
-        return P.lexically_normal();
-    }();
-
     for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
     {
-        FString SlotName = Pair.first.c_str();
-        FString TexturePath = Pair.second.ToString().c_str();
-
-        std::filesystem::path ResolvedTexturePath = FPaths::ToPath(FPaths::ToWide(TexturePath));
-        if (!ResolvedTexturePath.is_absolute())
-        {
-            const std::filesystem::path RelativeToMaterial = (MaterialPath.parent_path() / ResolvedTexturePath).lexically_normal();
-            const std::filesystem::path RelativeToRoot = (FPaths::ToPath(FPaths::RootDir()) / ResolvedTexturePath).lexically_normal();
-
-            if (std::filesystem::exists(RelativeToMaterial))
-            {
-                ResolvedTexturePath = RelativeToMaterial;
-            }
-            else
-            {
-                ResolvedTexturePath = RelativeToRoot;
-            }
-        }
+        const FString SlotName = CanonicalizeTextureSlotName(Pair.first.c_str());
+        const FString TexturePath = Pair.second.ToString().c_str();
+        const std::filesystem::path ResolvedTexturePath = ResolveTexturePath(TexturePath, MatFilePath);
 
         UTexture2D* Texture = UTexture2D::LoadFromFile(FPaths::FromPath(ResolvedTexturePath), Device);
         if (Texture)
@@ -261,7 +346,6 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData, 
         }
     }
 }
-
 
 ERenderPass FMaterialManager::StringToRenderPass(const FString& Str) const
 {
@@ -275,7 +359,6 @@ EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass
     if (!Str.empty())
         return FromString(BlendStateMap, Str, EBlendState::Opaque);
 
-    // 문자열이 비어있으면 Pass 기반 기본값
     switch (Pass)
     {
     case ERenderPass::AlphaBlend:
@@ -300,7 +383,6 @@ EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& St
     if (!Str.empty())
         return FromString(DepthStencilStateMap, Str, EDepthStencilState::Default);
 
-    // 문자열이 비어있으면 Pass 기반 기본값
     switch (Pass)
     {
     case ERenderPass::Decal:
@@ -326,7 +408,6 @@ ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, E
     if (!Str.empty())
         return FromString(RasterizerStateMap, Str, ERasterizerState::SolidBackCull);
 
-    // 문자열이 비어있으면 Pass 기반 기본값
     switch (Pass)
     {
     case ERenderPass::Decal:
@@ -339,9 +420,59 @@ ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, E
     }
 }
 
+bool FMaterialManager::NormalizeMaterialJson(json::JSON& JsonData, const FString& MaterialPath)
+{
+    bool bChanged = false;
+
+    if (!JsonData.hasKey(MatKeys::PathFileName) || JsonData[MatKeys::PathFileName].ToString().empty())
+    {
+        JsonData[MatKeys::PathFileName] = MaterialPath.c_str();
+        bChanged = true;
+    }
+
+    if (JsonData.hasKey(MatKeys::Textures))
+    {
+        json::JSON CanonicalTextures = json::JSON::Make(json::JSON::Class::Object);
+        for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
+        {
+            const FString CanonicalSlot = CanonicalizeTextureSlotName(Pair.first.c_str());
+            CanonicalTextures[CanonicalSlot] = Pair.second;
+            if (CanonicalSlot != Pair.first.c_str())
+            {
+                bChanged = true;
+            }
+        }
+        JsonData[MatKeys::Textures] = std::move(CanonicalTextures);
+    }
+
+    if (JsonData.hasKey(MatKeys::Parameters))
+    {
+        json::JSON CanonicalParams = json::JSON::Make(json::JSON::Class::Object);
+        for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
+        {
+            const FString CanonicalName = CanonicalizeParameterName(Pair.first.c_str());
+            CanonicalParams[CanonicalName] = Pair.second;
+            if (CanonicalName != Pair.first.c_str())
+            {
+                bChanged = true;
+            }
+        }
+        JsonData[MatKeys::Parameters] = std::move(CanonicalParams);
+    }
+
+    if (!JsonData.hasKey(MatKeys::RenderPass) || JsonData[MatKeys::RenderPass].ToString().empty())
+    {
+        JsonData[MatKeys::RenderPass] = "Opaque";
+        bChanged = true;
+    }
+
+    return bChanged;
+}
+
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
 {
-    std::ofstream File(FPaths::ToWide(MatFilePath));
+    const std::filesystem::path FullPath = ResolveFullPath(MatFilePath);
+    std::ofstream File(FullPath);
     File << JsonData.dump();
 }
 
@@ -355,7 +486,6 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
         const FString& ParamName = Pair.first;
         const FMaterialParameterInfo* Info = Pair.second;
 
-        // 이미 JSON에 있으면 스킵
         if (!JsonData[MatKeys::Parameters][ParamName].IsNull())
             continue;
 
@@ -363,28 +493,28 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 
         switch (Info->Size)
         {
-        case sizeof(float): // 4바이트 - Scalar
+        case sizeof(float):
         {
             float Value = 0.f;
             Material->GetScalarParameter(ParamName, Value);
             JsonData[MatKeys::Parameters][ParamName] = Value;
             break;
         }
-        case sizeof(float) * 3: // 12바이트 - Vector3
+        case sizeof(float) * 3:
         {
             FVector Value;
             Material->GetVector3Parameter(ParamName, Value);
             JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
             break;
         }
-        case sizeof(float) * 4: // 16바이트 - Vector4
+        case sizeof(float) * 4:
         {
             FVector4 Value;
             Material->GetVector4Parameter(ParamName, Value);
             JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
             break;
         }
-        case sizeof(float) * 16: // 64바이트 - Matrix
+        case sizeof(float) * 16:
         {
             FMatrix Value;
             Material->GetMatrixParameter(ParamName, Value);
@@ -395,7 +525,7 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
             break;
         }
         default:
-            break; // uint, bool 등 특수 케이스는 별도 처리 필요
+            break;
         }
     }
 
@@ -404,45 +534,32 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 
 bool FMaterialManager::PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template)
 {
-    if (!JsonData.hasKey(MatKeys::Parameters))
-        return false;
-
-    const auto& Layout = Template->GetParameterInfo();
-    json::JSON CleanParams = json::JSON::Make(json::JSON::Class::Object);
-    bool bPurged = false;
-
-    for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
-    {
-        FString ParamName = Pair.first.c_str();
-        if (Layout.find(ParamName) != Layout.end())
-        {
-            CleanParams[Pair.first] = Pair.second;
-        }
-        else
-        {
-            bPurged = true;
-        }
-    }
-
-    if (bPurged)
-    {
-        JsonData[MatKeys::Parameters] = std::move(CleanParams);
-    }
-
-    return bPurged;
+    (void)JsonData;
+    (void)Template;
+    return false;
 }
 
 FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath)
 {
-    // 1. 템플릿이 캐시에 있는지 확인 (셰이더 경로를 키값으로 사용)
-    auto It = TemplateCache.find(ShaderPath);
+    const FString CacheKey = NormalizeCacheKey(ShaderPath);
+    const FMaterialFileDependency CurrentShaderFile = BuildFileDependency(ResolveFullPath(CacheKey));
+
+    auto It = TemplateCache.find(CacheKey);
     if (It != TemplateCache.end())
     {
-        return It->second;
+        if (!HasDependencyChanged(It->second.ShaderFile))
+        {
+            return It->second.Template;
+        }
+
+        if (It->second.Template)
+        {
+            RetiredTemplates.push_back(It->second.Template);
+        }
+        TemplateCache.erase(It);
     }
 
-    // 2. 템플릿이 기존에 없다면 새로 제작 — 셰이더 파일 읽고 컴파일
-    FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(ShaderPath).c_str());
+    FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(CacheKey).c_str());
     if (!Shader)
     {
         return nullptr;
@@ -450,8 +567,144 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
 
     FMaterialTemplate* NewTemplate = new FMaterialTemplate();
     NewTemplate->Create(Shader);
-    TemplateCache.emplace(ShaderPath, NewTemplate);
+
+    FTemplateCacheEntry Entry;
+    Entry.Template = NewTemplate;
+    Entry.ShaderFile = CurrentShaderFile;
+    TemplateCache.emplace(CacheKey, Entry);
     return NewTemplate;
+}
+
+std::filesystem::path FMaterialManager::ResolveFullPath(const FString& FilePath) const
+{
+    std::filesystem::path Path = FPaths::ToPath(FPaths::ToWide(FilePath));
+    if (!Path.is_absolute())
+    {
+        Path = FPaths::ToPath(FPaths::RootDir()) / Path;
+    }
+
+    std::error_code Ec;
+    std::filesystem::path Canonical = std::filesystem::weakly_canonical(Path, Ec);
+    if (!Ec)
+    {
+        return Canonical;
+    }
+
+    return Path.lexically_normal();
+}
+
+FString FMaterialManager::NormalizeCacheKey(const FString& FilePath) const
+{
+    return FPaths::FromPath(ResolveFullPath(FilePath));
+}
+
+FMaterialFileDependency FMaterialManager::BuildFileDependency(const std::filesystem::path& FilePath) const
+{
+    FMaterialFileDependency Dependency;
+    Dependency.FullPath = FPaths::FromPath(FilePath);
+
+    std::error_code Ec;
+    Dependency.bExists = std::filesystem::exists(FilePath, Ec) && !Ec;
+    if (Dependency.bExists)
+    {
+        Dependency.LastWriteTime = std::filesystem::last_write_time(FilePath, Ec);
+        if (Ec)
+        {
+            Dependency.bExists = false;
+            Dependency.LastWriteTime = {};
+        }
+    }
+
+    Dependency.DependencyHash = BuildDependencyHash(FilePath);
+    return Dependency;
+}
+
+bool FMaterialManager::HasDependencyChanged(const FMaterialFileDependency& Dependency) const
+{
+    if (Dependency.FullPath.empty())
+    {
+        return false;
+    }
+
+    const FMaterialFileDependency Current = BuildFileDependency(ResolveFullPath(Dependency.FullPath));
+    if (Current.bExists != Dependency.bExists)
+    {
+        return true;
+    }
+
+    if (!Current.bExists)
+    {
+        return false;
+    }
+
+    return Current.LastWriteTime != Dependency.LastWriteTime || Current.DependencyHash != Dependency.DependencyHash;
+}
+
+bool FMaterialManager::HasAnyDependencyChanged(const std::vector<FMaterialFileDependency>& Dependencies) const
+{
+    for (const FMaterialFileDependency& Dependency : Dependencies)
+    {
+        if (HasDependencyChanged(Dependency))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::filesystem::path FMaterialManager::ResolveTexturePath(const FString& TexturePath, const FString& MatFilePath) const
+{
+    const std::filesystem::path MaterialPath = ResolveFullPath(MatFilePath);
+    std::filesystem::path ResolvedTexturePath = FPaths::ToPath(FPaths::ToWide(TexturePath));
+    if (!ResolvedTexturePath.is_absolute())
+    {
+        const std::filesystem::path RelativeToMaterial = (MaterialPath.parent_path() / ResolvedTexturePath).lexically_normal();
+        const std::filesystem::path RelativeToRoot = (FPaths::ToPath(FPaths::RootDir()) / ResolvedTexturePath).lexically_normal();
+
+        if (std::filesystem::exists(RelativeToMaterial))
+        {
+            ResolvedTexturePath = RelativeToMaterial;
+        }
+        else
+        {
+            ResolvedTexturePath = RelativeToRoot;
+        }
+    }
+
+    std::error_code Ec;
+    std::filesystem::path Canonical = std::filesystem::weakly_canonical(ResolvedTexturePath, Ec);
+    if (!Ec)
+    {
+        return Canonical;
+    }
+
+    return ResolvedTexturePath.lexically_normal();
+}
+
+std::vector<FMaterialFileDependency> FMaterialManager::CollectTextureDependencies(json::JSON& JsonData, const FString& MatFilePath) const
+{
+    std::vector<FMaterialFileDependency> Result;
+    if (!JsonData.hasKey(MatKeys::Textures))
+    {
+        return Result;
+    }
+
+    for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
+    {
+        const FString TexturePath = Pair.second.ToString().c_str();
+        Result.push_back(BuildFileDependency(ResolveTexturePath(TexturePath, MatFilePath)));
+    }
+
+    return Result;
+}
+
+void FMaterialManager::RetireMaterialCacheEntry(FMaterialCacheEntry& Entry)
+{
+    if (Entry.Material)
+    {
+        RetiredMaterials.push_back(Entry.Material);
+        Entry.Material = nullptr;
+    }
 }
 
 FMaterialManager::~FMaterialManager()
@@ -464,30 +717,37 @@ FMaterialManager::~FMaterialManager()
 
 void FMaterialManager::Release()
 {
-    // 1. TemplateCache 메모리 해제
-    // GetOrCreateTemplate()에서 new FMaterialTemplate()로 직접 할당했으므로 여기서 delete 해줍니다.
     for (auto& Pair : TemplateCache)
     {
-        if (Pair.second != nullptr)
+        if (Pair.second.Template != nullptr)
         {
-            delete Pair.second;
-            Pair.second = nullptr;
+            delete Pair.second.Template;
+            Pair.second.Template = nullptr;
         }
     }
     TemplateCache.clear();
 
-    // 2. MaterialCache 메모리 해제
+    for (FMaterialTemplate* RetiredTemplate : RetiredTemplates)
+    {
+        delete RetiredTemplate;
+    }
+    RetiredTemplates.clear();
+
     for (auto& Pair : MaterialCache)
     {
-        if (Pair.second != nullptr)
+        if (Pair.second.Material != nullptr)
         {
-            delete Pair.second;
-            Pair.second = nullptr;
+            UObjectManager::Get().DestroyObject(Pair.second.Material);
+            Pair.second.Material = nullptr;
         }
     }
     MaterialCache.clear();
 
-    // 3. Device 참조 해제
-    // 외부에서 주입받은 리소스이므로 포인터만 초기화합니다.
+    for (UMaterial* RetiredMaterial : RetiredMaterials)
+    {
+        UObjectManager::Get().DestroyObject(RetiredMaterial);
+    }
+    RetiredMaterials.clear();
+
     Device = nullptr;
 }
