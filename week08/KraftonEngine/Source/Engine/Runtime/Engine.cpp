@@ -93,28 +93,28 @@ void UEngine::Render(float DeltaTime)
 		FShowFlags ShowFlags;
 		EViewMode ViewMode = EViewMode::Lit_Phong;
 
-		RenderFrame.SetCameraInfo(Camera);
-		RenderFrame.SetRenderSettings(ViewMode, ShowFlags);
+		SceneView.SetCameraInfo(Camera);
+		SceneView.SetRenderSettings(ViewMode, ShowFlags);
 		Renderer.ClearActiveViewMode();
 		Renderer.ReleaseViewModeSurfaceSet();
 
 		Scene = &World->GetScene();
 		Scene->ClearFrameData();
 
-		Renderer.BeginCollect(RenderFrame, Scene->GetPrimitiveProxyCount());
-		RenderCollector.CollectWorld(World, RenderFrame, *Scene, Renderer);
-		RenderCollector.CollectDebugDraw(RenderFrame, *Scene);
-		RenderCollector.BuildFramePassCommands(RenderFrame, *Scene, Renderer);
+		Renderer.BeginCollect(SceneView, Scene->GetPrimitiveProxyCount());
+		RenderCollector.CollectWorld(World, SceneView, *Scene, Renderer);
+		RenderCollector.CollectDebugDraw(SceneView, *Scene);
+		RenderCollector.BuildFramePassCommands(SceneView, *Scene, Renderer);
 	}
 	else
 	{
 		Renderer.ClearActiveViewMode();
 		Renderer.ReleaseViewModeSurfaceSet();
-		Renderer.BeginCollect(RenderFrame);
+		Renderer.BeginCollect(SceneView);
 	}
 
 	{
-		FRenderPipelineContext PassContext = Renderer.CreatePassContext(RenderFrame, &RenderTargets, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
+		FRenderPipelineContext PassContext = Renderer.CreatePassContext(SceneView, &RenderTargets, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
 		Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PassContext);
 	}
 }

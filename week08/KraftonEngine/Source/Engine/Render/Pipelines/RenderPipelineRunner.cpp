@@ -50,17 +50,17 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
 void FRenderPipelineRunner::ExecutePipeline(
     ERenderPipelineType Root,
     FRenderPipelineContext& Context,
-    const FFrameContext& Frame,
+    const FSceneView& SceneView,
     const FRenderPipelineRegistry& PipelineRegistry,
     const FRenderPassRegistry& PassRegistry) const
 {
-    ExecutePipelineRecursive(Root, Context, Frame, PipelineRegistry, PassRegistry);
+    ExecutePipelineRecursive(Root, Context, SceneView, PipelineRegistry, PassRegistry);
 }
 
 void FRenderPipelineRunner::ExecutePipelineRecursive(
     ERenderPipelineType Type,
     FRenderPipelineContext& Context,
-    const FFrameContext& Frame,
+    const FSceneView& SceneView,
     const FRenderPipelineRegistry& PipelineRegistry,
     const FRenderPassRegistry& PassRegistry) const
 {
@@ -84,7 +84,7 @@ void FRenderPipelineRunner::ExecutePipelineRecursive(
     {
         if (Child.Kind == ERenderNodeKind::Pipeline)
         {
-            ExecutePipelineRecursive((ERenderPipelineType)Child.TypeValue, Context, Frame, PipelineRegistry, PassRegistry);
+            ExecutePipelineRecursive((ERenderPipelineType)Child.TypeValue, Context, SceneView, PipelineRegistry, PassRegistry);
         }
         else
         {

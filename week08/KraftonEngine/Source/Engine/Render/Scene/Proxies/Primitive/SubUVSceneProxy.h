@@ -17,7 +17,7 @@ public:
     ~FSubUVSceneProxy() override;
 
     void UpdateMesh() override;
-    void UpdatePerViewport(const FFrameContext& Frame) override;
+    void UpdatePerViewport(const FSceneView& SceneView) override;
 
 private:
     USubUVComponent* GetSubUVComponent() const;

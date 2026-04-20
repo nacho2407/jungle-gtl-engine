@@ -13,7 +13,7 @@
 void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Context.Frame)
+    if (!Context.SceneView)
     {
         return;
     }

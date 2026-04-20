@@ -131,10 +131,10 @@ void FRenderer::ClearActiveViewMode()
 // BeginCollect — DrawCommandList + 동적 지오메트리 초기화
 // Collector가 BuildCommandForProxy/AddWorldText를 호출하기 전에 반드시 호출
 // ============================================================
-void FRenderer::BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount)
+void FRenderer::BeginCollect(const FSceneView& SceneView, uint32 MaxProxyCount)
 {
     DrawCommandList.Reset();
-    CollectViewMode = Frame.ViewMode;
+    CollectViewMode = SceneView.ViewMode;
     bHasSelectionMaskCommands = false;
     ActiveSceneForFrame = nullptr;
     ActiveCollectedLights = nullptr;
@@ -171,14 +171,14 @@ void FRenderer::BeginFrame()
     Context->OMSetRenderTargets(1, &RTV, DSV);
 }
 
-void FRenderer::PreparePipelineExecution(const FFrameContext& Frame, const FViewportRenderTargets* Targets)
+void FRenderer::PreparePipelineExecution(const FSceneView& SceneView, const FViewportRenderTargets* Targets)
 {
     FDrawCallStats::Reset();
 
     ID3D11DeviceContext* Context = Device.GetDeviceContext();
     {
         SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
-        UpdateFrameBuffer(Context, Frame);
+        UpdateFrameBuffer(Context, SceneView);
     }
 
     Resources.BindSystemSamplers(Context);
@@ -267,15 +267,15 @@ void FRenderer::EndFrame()
     Device.Present();
 }
 
-void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame)
+void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FSceneView& SceneView)
 {
     FFrameConstants frameConstantData = {};
-    frameConstantData.View = Frame.View;
-    frameConstantData.Projection = Frame.Proj;
-    frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
-    frameConstantData.bIsWireframe = (Frame.ViewMode == EViewMode::Wireframe);
-    frameConstantData.WireframeColor = Frame.WireframeColor;
-    frameConstantData.CameraWorldPos = Frame.CameraPosition;
+    frameConstantData.View = SceneView.View;
+    frameConstantData.Projection = SceneView.Proj;
+    frameConstantData.InvViewProj = (SceneView.View * SceneView.Proj).GetInverse();
+    frameConstantData.bIsWireframe = (SceneView.ViewMode == EViewMode::Wireframe);
+    frameConstantData.WireframeColor = SceneView.WireframeColor;
+    frameConstantData.CameraWorldPos = SceneView.CameraPosition;
 
     if (GEngine && GEngine->GetTimer())
     {
@@ -295,10 +295,10 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 }
 
 
-FRenderPipelineContext FRenderer::CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets, FScene* Scene, const TArray<FPrimitiveSceneProxy*>* VisibleProxies)
+FRenderPipelineContext FRenderer::CreatePassContext(const FSceneView& SceneView, const FViewportRenderTargets* Targets, FScene* Scene, const TArray<FPrimitiveSceneProxy*>* VisibleProxies)
 {
     FRenderPipelineContext PassContext = {};
-    PassContext.Frame = &Frame;
+    PassContext.SceneView = &SceneView;
     PassContext.Targets = Targets;
     PassContext.Scene = Scene ? Scene : const_cast<FScene*>(ActiveSceneForFrame);
     PassContext.Renderer = this;
@@ -318,28 +318,28 @@ FRenderPipelineContext FRenderer::CreatePassContext(const FFrameContext& Frame, 
         PassContext.DebugLines = &PassContext.Scene->GetDebugData().GetDebugLines();
         PassContext.OverlayTexts = &PassContext.Scene->GetDebugData().GetOverlayTexts();
     }
-    PassContext.Occlusion = Frame.OcclusionCulling;
-    PassContext.LODContext = &Frame.LODContext;
+    PassContext.Occlusion = SceneView.OcclusionCulling;
+    PassContext.LODContext = &SceneView.LODContext;
     return PassContext;
 }
 
-FRenderPipelineContext FRenderer::CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives)
+FRenderPipelineContext FRenderer::CreatePassContext(const FSceneView& SceneView, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives)
 {
-    FRenderPipelineContext PassContext = CreatePassContext(Frame, Targets, Scene, &CollectedPrimitives.VisibleProxies);
+    FRenderPipelineContext PassContext = CreatePassContext(SceneView, Targets, Scene, &CollectedPrimitives.VisibleProxies);
     PassContext.CollectedPrimitives = &CollectedPrimitives;
     return PassContext;
 }
 
 void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PassContext)
 {
-    const FFrameContext& Frame = *PassContext.Frame;
+    const FSceneView& SceneView = *PassContext.SceneView;
     const bool bRootToBackBuffer = !(PassContext.Targets && PassContext.Targets->ViewportRTV);
     if (bRootToBackBuffer)
     {
         BeginFrame();
     }
 
-    PreparePipelineExecution(Frame, PassContext.Targets);
+    PreparePipelineExecution(SceneView, PassContext.Targets);
     PassContext.Renderer = this;
     PassContext.Renderer = this;
     PassContext.StateCache = &PipelineStateCache;
@@ -351,7 +351,7 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineCon
     PassContext.ViewModePassRegistry = ViewModePassRegistry;
     PassContext.ActiveViewSurfaceSet = ActiveViewSurfaceSet;
     PassContext.ActiveViewMode = ActiveViewMode;
-    PipelineRunner.ExecutePipeline(RootType, PassContext, *PassContext.Frame, PipelineRegistry, PassRegistry);
+    PipelineRunner.ExecutePipeline(RootType, PassContext, *PassContext.SceneView, PipelineRegistry, PassRegistry);
     FinalizePipelineExecution();
 
     if (bRootToBackBuffer)
@@ -362,7 +362,7 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineCon
 
 void FRenderer::ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext& PassContext)
 {
-    const FFrameContext& Frame = *PassContext.Frame;
+    const FSceneView& SceneView = *PassContext.SceneView;
     PassContext.Renderer = this;
     PassContext.Renderer = this;
     PassContext.StateCache = &PipelineStateCache;
@@ -374,5 +374,5 @@ void FRenderer::ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext
     PassContext.ViewModePassRegistry = ViewModePassRegistry;
     PassContext.ActiveViewSurfaceSet = ActiveViewSurfaceSet;
     PassContext.ActiveViewMode = ActiveViewMode;
-    PipelineRunner.ExecutePipeline(Type, PassContext, *PassContext.Frame, PipelineRegistry, PassRegistry);
+    PipelineRunner.ExecutePipeline(Type, PassContext, *PassContext.SceneView, PipelineRegistry, PassRegistry);
 }
