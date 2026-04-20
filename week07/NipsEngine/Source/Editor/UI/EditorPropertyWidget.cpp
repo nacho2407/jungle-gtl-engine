@@ -807,10 +807,19 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	case EPropertyType::Float:
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
+		float EditedValue = *Val;
 		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed, Prop.Min, Prop.Max);
+			bChanged = ImGui::DragFloat(Prop.Name, &EditedValue, Prop.Speed, Prop.Min, Prop.Max);
 		else
-			bChanged = ImGui::DragFloat(Prop.Name, Val, Prop.Speed);
+			bChanged = ImGui::DragFloat(Prop.Name, &EditedValue, Prop.Speed);
+
+		if (bChanged)
+		{
+			if (Prop.FloatSetter)
+				Prop.FloatSetter(EditedValue);
+			else
+				*Val = EditedValue;
+		}
 		break;
 	}
 	case EPropertyType::Vec3:

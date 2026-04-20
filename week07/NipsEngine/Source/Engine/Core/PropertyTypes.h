@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <functional>
 #include "CoreTypes.h"      // int32, uint8, …
 #include "Math/Vector.h"    // FVector  (for sizeof in GetPropertySize)
 #include "Math/Vector4.h"   // FVector4 (for sizeof in GetPropertySize)
@@ -41,6 +42,9 @@ struct FPropertyDescriptor
 	// Enum Metadata
 	const char** EnumNames  = nullptr;
 	uint32		 EnumCount  = 0;
+
+    // Optional callbacks for editor/serialization writes.
+    std::function<void(float)> FloatSetter;
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.

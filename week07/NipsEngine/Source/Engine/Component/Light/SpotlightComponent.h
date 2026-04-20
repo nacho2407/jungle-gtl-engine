@@ -16,9 +16,9 @@ public:
 	FVector GetLightDirection() const { return GetForwardVector(); }
 
 	float GetInnerConeAngle() const { return InnerConeAngle; }
-	void SetInnerConeAngle(float InAngle) { InnerConeAngle = InAngle; }
+	void SetInnerConeAngle(float InAngle);
 	float GetOuterConeAngle() const { return OuterConeAngle; }
-	void SetOuterConeAngle(float InAngle) { OuterConeAngle = InAngle; }
+	void SetOuterConeAngle(float InAngle);
 
 private:
 	float InnerConeAngle = 15.0f;

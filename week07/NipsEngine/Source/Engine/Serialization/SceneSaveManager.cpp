@@ -867,8 +867,14 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 		break;
 
 	case EPropertyType::Float:
-		*static_cast<float*>(Prop.ValuePtr) = static_cast<float>(Value.ToFloat());
+	{
+		float DeserializedValue = static_cast<float>(Value.ToFloat());
+		if (Prop.FloatSetter)
+			Prop.FloatSetter(DeserializedValue);
+		else
+			*static_cast<float*>(Prop.ValuePtr) = DeserializedValue;
 		break;
+	}
 
 	case EPropertyType::Vec3: {
 		float* v = static_cast<float*>(Prop.ValuePtr);
