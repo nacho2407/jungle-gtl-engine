@@ -47,6 +47,7 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 	if (ImGui::BeginDragDropSource())
 	{
 		RenderSelectSpace(Context);
+		ImGui::SetDragDropPayload(GetDragItemType(), &ContentItem, sizeof(ContentItem));
 		OnDrag(Context);
 		ImGui::EndDragDropSource();
 	}
@@ -129,9 +130,4 @@ void SceneElement::OnDoubleClicked(ContentBrowserContext& Context)
 			}
 		}
 	}
-}
-
-void ObjectElement::OnDrag(ContentBrowserContext& Context)
-{
-	(void)Context;
 }
