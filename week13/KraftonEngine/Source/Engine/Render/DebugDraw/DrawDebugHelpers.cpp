@@ -1,6 +1,6 @@
-#include "Render/DebugDraw/DrawDebugHelpers.h"
+﻿#include "Render/DebugDraw/DrawDebugHelpers.h"
 
-#if defined(_DEBUG)
+#if DEBUG_DRAW_ENABLED
 
 #include "GameFramework/World.h"
 
