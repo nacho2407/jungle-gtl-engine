@@ -24,7 +24,6 @@ struct FDrawCommand
 	EBlendState              Blend        = EBlendState::Opaque;
 	ERasterizerState         Rasterizer   = ERasterizerState::SolidBackCull;
 	D3D11_PRIMITIVE_TOPOLOGY Topology     = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	uint8                    StencilRef   = 0;
 
 	// ===== Geometry =====
 	FMeshBuffer* MeshBuffer  = nullptr;   // VB + IB (nullptr → RawVB 또는 SV_VertexID 기반 드로우)
