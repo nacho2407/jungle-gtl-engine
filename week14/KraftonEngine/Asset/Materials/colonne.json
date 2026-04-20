@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/colonne.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/church/TextureAtlasColInt.png"
   }

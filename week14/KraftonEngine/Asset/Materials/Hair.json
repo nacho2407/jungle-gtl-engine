@@ -7,7 +7,7 @@
   "PathFileName" : "Asset/Materials/Hair.json",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/Lumine/Texture/Hair.png"
   }

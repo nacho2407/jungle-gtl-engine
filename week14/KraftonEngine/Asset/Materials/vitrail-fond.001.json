@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/vitrail-fond.001.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/UberLit.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/church/TexturesCom_WindowStainedGlass0126_7_M.jpg"
   }

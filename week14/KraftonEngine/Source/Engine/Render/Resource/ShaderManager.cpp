@@ -24,15 +24,12 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::Billboard);
 	GetOrCreate(EShaderPath::HeightFog);
 
-	// UberLit 기본 + permutation (매크로 포함 → PreCompile)
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Default),  EUberLitDefines::Default);
+	// UberLit 기본 (매크로 없음 → Phong 기본값) + permutation (매크로 포함 → PreCompile)
+	GetOrCreate(EShaderPath::UberLit);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit),    EUberLitDefines::Unlit);
 	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud),  EUberLitDefines::Gouraud);
 	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert),  EUberLitDefines::Lambert);
 	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),    EUberLitDefines::Phong);
-
-	// 레거시 경로 별칭 — MaterialManager가 이 경로를 사용하는 기존 .json 호환
-	RegisterAlias("Shaders/StaticMeshShader.hlsl", FShaderKey(EShaderPath::UberLit, EUberLitDefines::Default));
-	RegisterAlias("Shaders/UberLit.hlsl",          FShaderKey(EShaderPath::UberLit, EUberLitDefines::Default));
 
 	bIsInitialized = true;
 }
@@ -44,7 +41,6 @@ void FShaderManager::Release()
 		Shader->Release();
 	}
 	ShaderCache.clear();
-	AliasMap.clear();
 
 	CachedDevice = nullptr;
 	bIsInitialized = false;
@@ -106,28 +102,9 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 }
 
 // ============================================================
-// FindOrCreate — MaterialManager용: 별칭 우선 조회, 없으면 컴파일
+// FindOrCreate — MaterialManager용: 경로로 셰이더 조회, 없으면 컴파일
 // ============================================================
 FShader* FShaderManager::FindOrCreate(const FString& Path)
 {
-	// 레거시 별칭 우선
-	auto AliasIt = AliasMap.find(Path);
-	if (AliasIt != AliasMap.end())
-	{
-		return AliasIt->second;
-	}
-
 	return GetOrCreate(Path);
-}
-
-// ============================================================
-// RegisterAlias — 경로 별칭 등록
-// ============================================================
-void FShaderManager::RegisterAlias(const FString& AliasPath, const FShaderKey& TargetKey)
-{
-	FShader* Target = GetOrCreate(TargetKey);
-	if (Target)
-	{
-		AliasMap[AliasPath] = Target;
-	}
 }
