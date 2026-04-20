@@ -1,8 +1,8 @@
 ﻿#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Proxy/FScene.h"
+#include "Render/Scene/Core/Scene.h"
 #include "Serialization/Archive.h"
-#include "Render/Proxy/DirectionalLightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/DirectionalLightSceneProxy.h"
 
 namespace
 {

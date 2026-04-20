@@ -1,7 +1,7 @@
 ﻿#include "PointLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
-#include "Render/Proxy/PointLightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/PointLightSceneProxy.h"
 
 IMPLEMENT_CLASS(UPointLightComponent, ULightComponent)
 

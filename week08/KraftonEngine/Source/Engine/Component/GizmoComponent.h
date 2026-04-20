@@ -64,6 +64,8 @@ public:
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
 
+	void MarkGizmoDirty(EDirtyFlag Flag);
+	void MarkAllGizmoDirty();
 
 	//UActorComponent Override
 	void Deactivate() override;

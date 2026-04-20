@@ -1,7 +1,7 @@
 ﻿#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
-#include "Render/Proxy/BillboardSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/BillboardSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"

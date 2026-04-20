@@ -568,13 +568,15 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 
 		ImGui::Text("%s", Prop.Name.c_str());
 		ImGui::SameLine(120);
+		ImGui::SetNextItemWidth(-1.0f);
 
 		float ButtonWidth = ImGui::CalcTextSize("Import OBJ").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-		float Spacing = ImGui::GetStyle().ItemSpacing.x;
-		// ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
 
 		if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
 		{
+			FObjManager::ScanMeshAssets();
+			FObjManager::ScanObjSourceFiles();
+
 			bool bSelectedNone = (*Val == "None");
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
@@ -584,11 +586,29 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 			if (bSelectedNone)
 				ImGui::SetItemDefaultFocus();
 
+			ImGui::TextDisabled("OBJ Source");
+			const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
+			for (const FMeshAssetListItem& Item : ObjFiles)
+			{
+				const FString Label = Item.DisplayName + "##obj_" + Item.FullPath;
+				bool bSelected = (*Val == Item.FullPath);
+				if (ImGui::Selectable(Label.c_str(), bSelected))
+				{
+					*Val = Item.FullPath;
+					bChanged = true;
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+
+			ImGui::Separator();
+			ImGui::TextDisabled("Cached Mesh");
 			const TArray<FMeshAssetListItem>& MeshFiles = FObjManager::GetAvailableMeshFiles();
 			for (const FMeshAssetListItem& Item : MeshFiles)
 			{
+				const FString Label = Item.DisplayName + "##bin_" + Item.FullPath;
 				bool bSelected = (*Val == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				if (ImGui::Selectable(Label.c_str(), bSelected))
 				{
 					*Val = Item.FullPath;
 					bChanged = true;
@@ -599,9 +619,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 			ImGui::EndCombo();
 		}
 
-		// .obj 임포트 버튼
-		ImGui::SameLine();
-
+		// .obj 임포트 버튼은 다음 줄 우측 정렬
+		ImGui::Dummy(ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y));
 		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
 		if (ImGui::Button("Import OBJ"))
 		{
@@ -612,7 +631,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 				UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(ObjPath, Device);
 				if (Loaded)
 				{
-					*Val = FObjManager::GetBinaryFilePath(ObjPath);
+					*Val = ObjPath;
 					bChanged = true;
 				}
 			}
@@ -650,6 +669,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
 		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 		{
+			FMaterialManager::Get().ScanMaterialAssets();
+
 			// "None" 선택지 기본 제공
 			bool bSelectedNone = (Slot->Path == "None" || Slot->Path.empty());
 			if (ImGui::Selectable("None", bSelectedNone))

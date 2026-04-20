@@ -4,7 +4,7 @@
 #include "Collision/RayUtils.h"
 #include "Core/RayTypes.h"
 #include "Component/PrimitiveComponent.h"
-#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "GameFramework/AActor.h"
 #include <algorithm>
 

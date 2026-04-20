@@ -18,7 +18,7 @@ struct VS_Input_PNCT
     float3 position : POSITION;
     float3 normal   : NORMAL;
     float4 color    : COLOR;
-    float2 texcoord : TEXTCOORD;
+    float2 texcoord : TEXCOORD0;
 };
 
 // FVertexPNCT_T (Position + Normal + Color + TexCoord + Tangent)

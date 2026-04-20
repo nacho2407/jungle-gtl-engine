@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "imgui.h"
+#include "ImGui/imgui.h"
 
 struct ID3D11Device;
 struct ID3D11ShaderResourceView;

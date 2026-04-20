@@ -13,21 +13,14 @@ float3 ResolveBaseDrawNormal(FBaseDrawVSOutput Input)
     float3 N = normalize(Input.worldNormal);
 
 #if defined(USE_NORMAL_MAP)
-    float3 T = normalize(Input.worldTangent.xyz);
-    
-    // 그람-슈미트 정규직교화
-    T = normalize(T - dot(T, N) * N);
-    
-    // Bitangent 생성 (Handedness w 적용)
-    float3 B = cross(N, T) * Input.worldTangent.w;
-    
-    float3x3 TBN = float3x3(T, B, N);
-
-    float3 normalSample = g_NormalMap.Sample(LinearWrapSampler, Input.texcoord).rgb;
-    
-    // 노멀 맵 데이터가 있는 경우에만 TBN 변환 적용
-    if (length(normalSample) > 0.0001f)
+    if (StaticMeshHasNormalTexture())
     {
+        float3 T = normalize(Input.worldTangent.xyz);
+        T = normalize(T - dot(T, N) * N);
+        float3 B = cross(N, T) * Input.worldTangent.w;
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 normalSample = g_NormalMap.Sample(LinearWrapSampler, Input.texcoord).rgb;
         float3 tangentNormal = normalSample * 2.0f - 1.0f;
         return normalize(mul(tangentNormal, TBN));
     }
@@ -38,8 +31,8 @@ float3 ResolveBaseDrawNormal(FBaseDrawVSOutput Input)
 
 float4 ResolveBaseDrawColor(FBaseDrawVSOutput Input)
 {
-    float4 BaseSample = SampleBaseTexture(g_txColor, Input.texcoord);
-    return BaseSample * Input.color * GetSectionColorOrWhite();
+    float4 BaseSample = SampleStaticMeshBaseColor(g_txColor, Input.texcoord);
+    return BaseSample * GetStaticMeshSectionColorOrWhite();
 }
 
 FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
@@ -52,7 +45,6 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.worldNormal = VSNormal;
     Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3)NormalMatrix));
     Output.worldTangent.w = Input.tangent.w;
-
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
 
