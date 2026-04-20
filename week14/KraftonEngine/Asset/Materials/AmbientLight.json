@@ -1,6 +1,6 @@
 {
   "PathFileName" : "Asset/Materials/AmbientLight.json",
-  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
+  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
   "RenderPass" : "AlphaBlend",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/AmbientLight_64x.png"

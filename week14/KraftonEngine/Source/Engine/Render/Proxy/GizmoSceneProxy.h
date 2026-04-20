@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Resource/Buffer.h"
 
 class UGizmoComponent;
 class UMaterial;
@@ -24,5 +25,6 @@ private:
 	void RebuildGizmoSectionDraws();
 
 	UMaterial* GizmoMaterial = nullptr;
+	FConstantBuffer GizmoCB;		// FlushDirtyBuffers에서 lazy 생성
 	bool bIsInner = false;
 };

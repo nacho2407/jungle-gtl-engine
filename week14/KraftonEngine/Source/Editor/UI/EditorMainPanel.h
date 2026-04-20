@@ -6,6 +6,7 @@
 #include "Editor/UI/EditorPropertyWidget.h"
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
+#include "Editor/UI/ContentBrowser/ContentBrower.h"
 
 class FRenderer;
 class UEditorEngine;
@@ -29,6 +30,7 @@ private:
 	FEditorPropertyWidget PropertyWidget;
 	FEditorSceneWidget SceneWidget;
 	FEditorStatWidget StatWidget;
+	FEditorContextBrwoserWidget ContentBrowserWidget;
 	bool bShowWidgetList = false;
 	bool bHideEditorWindows = false;
 	bool bHasSavedUIVisibility = false;

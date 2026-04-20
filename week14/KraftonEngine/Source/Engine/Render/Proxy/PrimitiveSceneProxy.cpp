@@ -72,7 +72,7 @@ void FPrimitiveSceneProxy::UpdateMesh()
 		DefaultMaterial = UMaterial::CreateTransient(
 			ERenderPass::Opaque, EBlendState::Opaque,
 			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
-			FShaderManager::Get().GetShader(EShaderType::Primitive));
+			FShaderManager::Get().GetOrCreate(EShaderPath::Primitive));
 	}
 
 	SectionDraws.clear();

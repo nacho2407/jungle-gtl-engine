@@ -3,7 +3,6 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
-#include "Render/Resource/ConstantBufferPool.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/Proxy/FScene.h"
@@ -25,6 +24,11 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	EditorLines.Create(InDevice);
 	GridLines.Create(InDevice);
 	FontGeometry.Create(InDevice);
+
+	FogCB.Create(InDevice, sizeof(FFogConstants));
+	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants));
+	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants));
+	FXAACB.Create(InDevice, sizeof(FFXAAConstants));
 }
 
 void FDrawCommandBuilder::Release()
@@ -38,6 +42,11 @@ void FDrawCommandBuilder::Release()
 		CB.Release();
 	}
 	PerObjectCBPool.clear();
+
+	FogCB.Release();
+	OutlineCB.Release();
+	SceneDepthCB.Release();
+	FXAACB.Release();
 }
 
 // ============================================================
@@ -69,14 +78,15 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame, uint32 MaxPro
 // ============================================================
 FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode)
 {
-	if (ProxyShader != FShaderManager::Get().GetShader(EShaderType::StaticMesh))
+	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
 		return ProxyShader;
 
 	switch (ViewMode)
 	{
-	case EViewMode::Lit_Gouraud:  return FShaderManager::Get().GetShader(EShaderType::UberLit_Gouraud);
-	case EViewMode::Lit_Lambert:  return FShaderManager::Get().GetShader(EShaderType::UberLit_Lambert);
-	case EViewMode::Lit_Phong:    return FShaderManager::Get().GetShader(EShaderType::UberLit_Phong);
+	case EViewMode::Unlit:        return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit));
+	case EViewMode::Lit_Gouraud:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud));
+	case EViewMode::Lit_Lambert:  return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert));
+	case EViewMode::Lit_Phong:    return FShaderManager::Get().GetOrCreate(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong));
 	default:                      return ProxyShader;
 	}
 }
@@ -343,7 +353,7 @@ void FDrawCommandBuilder::EmitLineCommand(FLineGeometry& Lines, FShader* Shader,
 // ============================================================
 void FDrawCommandBuilder::BuildEditorLineCommands(EViewMode ViewMode)
 {
-	FShader* EditorShader = FShaderManager::Get().GetShader(EShaderType::Editor);
+	FShader* EditorShader = FShaderManager::Get().GetOrCreate(EShaderPath::Editor);
 	const FDrawCommandRenderState EditorLinesRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::EditorLines, ViewMode);
 
 	EmitLineCommand(EditorLines, EditorShader, EditorLinesRS);
@@ -362,10 +372,9 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	// HeightFog (UserBits=0 → Outline보다 먼저)
 	if (Frame.RenderOptions.ShowFlags.bFog && CollectScene && CollectScene->GetEnvironment().HasFog())
 	{
-		FShader* FogShader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
+		FShader* FogShader = FShaderManager::Get().GetOrCreate(EShaderPath::HeightFog);
 		if (FogShader)
 		{
-			FConstantBuffer* FogCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Fog, sizeof(FFogConstants));
 			const FFogParams& FogParams = CollectScene->GetEnvironment().GetFogParams();
 			FFogConstants fogData = {};
 			fogData.InscatteringColor = FogParams.InscatteringColor;
@@ -375,11 +384,11 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			fogData.StartDistance = FogParams.StartDistance;
 			fogData.CutoffDistance = FogParams.CutoffDistance;
 			fogData.MaxOpacity = FogParams.MaxOpacity;
-			FogCB->Update(Ctx, &fogData, sizeof(FFogConstants));
+			FogCB.Update(Ctx, &fogData, sizeof(FFogConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = FogCB;
+			Cmd.Bindings.PerShaderCB[0] = &FogCB;
 			Cmd.BuildSortKey(0);
 		}
 	}
@@ -387,18 +396,17 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	// Outline (UserBits=1 → HeightFog 뒤)
 	if (bHasSelectionMaskCommands)
 	{
-		FShader* PPShader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
+		FShader* PPShader = FShaderManager::Get().GetOrCreate(EShaderPath::Outline);
 		if (PPShader)
 		{
-			FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Outline, sizeof(FOutlinePostProcessConstants));
 			FOutlinePostProcessConstants ppConstants;
 			ppConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
 			ppConstants.OutlineThickness = 3.0f;
-			OutlineCB->Update(Ctx, &ppConstants, sizeof(ppConstants));
+			OutlineCB.Update(Ctx, &ppConstants, sizeof(ppConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(PPShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = OutlineCB;
+			Cmd.Bindings.PerShaderCB[0] = &OutlineCB;
 			Cmd.BuildSortKey(1);
 		}
 	}
@@ -406,21 +414,20 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	// SceneDepth (UserBits=2 → Outline 뒤)
 	if (CollectViewMode == EViewMode::SceneDepth)
 	{
-		FShader* DepthShader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
+		FShader* DepthShader = FShaderManager::Get().GetOrCreate(EShaderPath::SceneDepth);
 		if (DepthShader)
 		{
-			FConstantBuffer* SceneDepthCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
 			FViewportRenderOptions Opts = Frame.RenderOptions;
 			FSceneDepthPConstants depthData = {};
 			depthData.Exponent = Opts.Exponent;
 			depthData.NearClip = Frame.NearClip;
 			depthData.FarClip = Frame.FarClip;
 			depthData.Mode = Opts.SceneDepthVisMode;
-			SceneDepthCB->Update(Ctx, &depthData, sizeof(FSceneDepthPConstants));
+			SceneDepthCB.Update(Ctx, &depthData, sizeof(FSceneDepthPConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(DepthShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = SceneDepthCB;
+			Cmd.Bindings.PerShaderCB[0] = &SceneDepthCB;
 			Cmd.BuildSortKey(2);
 		}
 	}
@@ -428,7 +435,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	// WorldNormal (UserBits=3 → SceneDepth 뒤)
 	if (CollectViewMode == EViewMode::WorldNormal)
 	{
-		FShader* NormalShader = FShaderManager::Get().GetShader(EShaderType::SceneNormal);
+		FShader* NormalShader = FShaderManager::Get().GetOrCreate(EShaderPath::SceneNormal);
 		if (NormalShader)
 		{
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
@@ -440,20 +447,19 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	// FXAA
 	if (Frame.RenderOptions.ShowFlags.bFXAA)
 	{
-		FShader* FXAAShader = FShaderManager::Get().GetShader(EShaderType::FXAA);
+		FShader* FXAAShader = FShaderManager::Get().GetOrCreate(EShaderPath::FXAA);
 		if (FXAAShader)
 		{
-			FConstantBuffer* FXAACB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::FXAA, sizeof(FFXAAConstants));
 			FViewportRenderOptions Opts = Frame.RenderOptions;
 			FFXAAConstants FXAAData = {};
 			FXAAData.EdgeThreshold = Opts.EdgeThreshold;
 			FXAAData.EdgeThresholdMin = Opts.EdgeThresholdMin;
-			FXAACB->Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
+			FXAACB.Update(Ctx, &FXAAData, sizeof(FFXAAConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
 			Cmd.InitFullscreenTriangle(FXAAShader, ERenderPass::FXAA,
 				PassRenderStateTable->ToDrawCommandState(ERenderPass::FXAA, ViewMode));
-			Cmd.Bindings.PerShaderCB[0] = FXAACB;
+			Cmd.Bindings.PerShaderCB[0] = &FXAACB;
 			Cmd.BuildSortKey(0);
 		}
 	}
@@ -473,7 +479,7 @@ void FDrawCommandBuilder::BuildFontCommands(EViewMode ViewMode)
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass        = ERenderPass::AlphaBlend;
-		Cmd.Shader      = FShaderManager::Get().GetShader(EShaderType::Font);
+		Cmd.Shader      = FShaderManager::Get().GetOrCreate(EShaderPath::Font);
 		Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::AlphaBlend, ViewMode);
 		Cmd.Buffer      = { FontGeometry.GetWorldVBBuffer(), FontGeometry.GetWorldVBStride(), FontGeometry.GetWorldIBBuffer() };
 		Cmd.Buffer.IndexCount = FontGeometry.GetWorldIndexCount();
@@ -485,7 +491,7 @@ void FDrawCommandBuilder::BuildFontCommands(EViewMode ViewMode)
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass        = ERenderPass::OverlayFont;
-		Cmd.Shader      = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
+		Cmd.Shader      = FShaderManager::Get().GetOrCreate(EShaderPath::OverlayFont);
 		Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::OverlayFont, ViewMode);
 		Cmd.Buffer      = { FontGeometry.GetScreenVBBuffer(), FontGeometry.GetScreenVBStride(), FontGeometry.GetScreenIBBuffer() };
 		Cmd.Buffer.IndexCount = FontGeometry.GetScreenIndexCount();

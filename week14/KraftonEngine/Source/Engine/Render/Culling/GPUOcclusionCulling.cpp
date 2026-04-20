@@ -1,4 +1,5 @@
 ﻿#include "GPUOcclusionCulling.h"
+#include "Render/Resource/ShaderInclude.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Profiling/Stats.h"
 
@@ -29,8 +30,9 @@ static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, co
 {
 	ID3DBlob* csBlob = nullptr;
 	ID3DBlob* errBlob = nullptr;
+	FShaderInclude IncludeHandler;
 
-	HRESULT hr = D3DCompileFromFile(Path, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+	HRESULT hr = D3DCompileFromFile(Path, nullptr, &IncludeHandler,
 		Entry, "cs_5_0", 0, 0, &csBlob, &errBlob);
 
 	if (FAILED(hr))
@@ -59,9 +61,9 @@ void FGPUOcclusionCulling::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	HiZCopyCS = CompileCS(Device, L"Shaders/HiZGenerate.hlsl", "CSCopyDepth");
-	HiZDownsampleCS = CompileCS(Device, L"Shaders/HiZGenerate.hlsl", "CSDownsample");
-	OcclusionTestCS = CompileCS(Device, L"Shaders/OcclusionTest.hlsl", "CSOcclusionTest");
+	HiZCopyCS = CompileCS(Device, L"Shaders/Lighting/HiZGenerate.hlsl", "CSCopyDepth");
+	HiZDownsampleCS = CompileCS(Device, L"Shaders/Lighting/HiZGenerate.hlsl", "CSDownsample");
+	OcclusionTestCS = CompileCS(Device, L"Shaders/Lighting/OcclusionTest.hlsl", "CSOcclusionTest");
 
 	if (!HiZCopyCS || !HiZDownsampleCS || !OcclusionTestCS)
 	{

@@ -59,7 +59,7 @@ void FDecalSceneProxy::UpdateMaterial()
 	{
 		FShader* Shader = (DecalMaterial && DecalMaterial->GetShader())
 			? DecalMaterial->GetShader()
-			: FShaderManager::Get().GetShader(EShaderType::Decal);
+			: FShaderManager::Get().GetOrCreate(EShaderPath::Decal);
 		ERenderPass Pass = DecalMaterial ? DecalMaterial->GetRenderPass() : ERenderPass::Decal;
 		EBlendState Blend = DecalMaterial ? DecalMaterial->GetBlendState() : EBlendState::Opaque;
 		EDepthStencilState Depth = DecalMaterial ? DecalMaterial->GetDepthStencilState() : EDepthStencilState::Default;
