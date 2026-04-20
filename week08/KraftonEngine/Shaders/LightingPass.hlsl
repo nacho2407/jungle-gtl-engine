@@ -43,8 +43,8 @@ float4 PS_Lighting_Unlit(PS_Input_UV Input) : SV_TARGET0
 float4 PS_Lighting_Gouraud(PS_Input_UV Input) : SV_TARGET0
 {
     float4 BaseColor = ResolveBaseColor(Input.uv);
-    float4 GouraudL = g_Surface1Tex.Sample(LinearClampSampler, Input.uv);
-    return ComputeGouraudLighting(BaseColor, GouraudL);
+    float Gouraud = g_Surface1Tex.Sample(LinearClampSampler, Input.uv).r;
+    return ComputeGouraudLighting(BaseColor, float4(Gouraud, Gouraud, Gouraud, 1.0f));
 }
 
 float4 PS_Lighting_Lambert(PS_Input_UV Input) : SV_TARGET0
