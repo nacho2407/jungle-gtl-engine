@@ -300,6 +300,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthViewRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.cpp" />
@@ -499,6 +500,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthViewRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
@@ -653,6 +655,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Multipass\FXAAPass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Multipass\DepthViewPass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>

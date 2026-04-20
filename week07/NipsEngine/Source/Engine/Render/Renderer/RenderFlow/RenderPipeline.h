@@ -3,6 +3,7 @@
 #include "RenderPassContext.h"
 
 class FFXAARenderPass;
+class FDepthViewRenderPass;
 class FFogRenderPass;
 class FDecalRenderPass;
 class FFontRenderPass;
@@ -28,6 +29,7 @@ public:
 private:
     std::shared_ptr<FOpaqueRenderPass> OpaqueRenderPass;
     std::shared_ptr<FDecalRenderPass> DecalRenderPass;
+    std::shared_ptr<FDepthViewRenderPass> DepthViewRenderPass;
     std::shared_ptr<FFogRenderPass> FogRenderPass;
     std::shared_ptr<FFXAARenderPass> FXAARenderPass;
     std::shared_ptr<FFontRenderPass> FontRenderPass;

@@ -195,6 +195,9 @@
     <FxCompile Include="Shaders\Multipass\FXAAPass.hlsl">
       <Filter>Shaders\Multipass</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Multipass\DepthViewPass.hlsl">
+      <Filter>Shaders\Multipass</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Multipass\FogPass.hlsl">
       <Filter>Shaders\Multipass</Filter>
     </FxCompile>
@@ -466,6 +469,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.cpp">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthViewRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.cpp">
@@ -1037,6 +1043,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthViewRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.h">

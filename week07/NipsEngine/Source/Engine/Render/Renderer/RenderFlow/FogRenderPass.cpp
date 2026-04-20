@@ -17,8 +17,11 @@ bool FFogRenderPass::Release()
 
 bool FFogRenderPass::Begin(const FRenderPassContext* Context)
 {
-    if (Context->RenderBus->GetViewMode() == EViewMode::Wireframe)
+    bShouldRender = true;
+    if (Context->RenderBus->GetViewMode() == EViewMode::Wireframe ||
+        Context->RenderBus->GetViewMode() == EViewMode::Depth)
     {
+        bShouldRender = false;
         OutSRV = PrevPassSRV;
         OutRTV = PrevPassRTV;
         return true;
@@ -27,6 +30,7 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
     const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Fog);
     if (Commands.empty())
     {
+        bShouldRender = false;
         // Fog command가 없으면 이전 패스 결과를 그대로 넘긴다.
         OutSRV = PrevPassSRV;
         OutRTV = PrevPassRTV;
@@ -74,6 +78,11 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FFogRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (!bShouldRender)
+    {
+        return true;
+    }
+
     const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Fog);
     if (Commands.empty())
     {
@@ -106,6 +115,11 @@ bool FFogRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FFogRenderPass::End(const FRenderPassContext* Context)
 {
+    if (!bShouldRender)
+    {
+        return true;
+    }
+
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
     Context->DeviceContext->PSSetShaderResources(0, 5, nullSRVs);
     return true;

@@ -1,6 +1,7 @@
 ﻿#include "RenderPipeline.h"
 #include "OpaqueRenderPass.h"
 #include "DecalRenderPass.h"
+#include "DepthViewRenderPass.h"
 #include "FogRenderPass.h"
 #include "FXAARenderPass.h"
 #include "FontRenderPass.h"
@@ -19,6 +20,9 @@ bool FRenderPipeline::Initialize()
 
     DecalRenderPass = std::make_shared<FDecalRenderPass>();
     DecalRenderPass->Initialize();
+
+    DepthViewRenderPass = std::make_shared<FDepthViewRenderPass>();
+    DepthViewRenderPass->Initialize();
 
 	FogRenderPass = std::make_shared<FFogRenderPass>();
     FogRenderPass->Initialize();
@@ -61,7 +65,7 @@ bool FRenderPipeline::Initialize()
 	 */
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(DecalRenderPass);
-
+    RenderPasses.push_back(DepthViewRenderPass);
     RenderPasses.push_back(FogRenderPass);
     RenderPasses.push_back(FXAARenderPass);   
 	RenderPasses.push_back(FontRenderPass);
@@ -105,6 +109,12 @@ void FRenderPipeline::Release()
     {
         DecalRenderPass->Release();
         DecalRenderPass.reset();
+    }
+
+    if (DepthViewRenderPass)
+    {
+        DepthViewRenderPass->Release();
+        DepthViewRenderPass.reset();
     }
 
 	if (FogRenderPass)
