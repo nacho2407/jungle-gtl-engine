@@ -71,7 +71,7 @@ Frustum MakeFrustum(uint2 tileCoord)
     
     frustum.planes[0] = ComputePlane(viewCorners[0], viewCorners[2]); // 왼쪽 면
     frustum.planes[1] = ComputePlane(viewCorners[3], viewCorners[1]); // 오른쪽 면
-    frustum.planes[2] = ComputePlane(viewCorners[0], viewCorners[1]); // 위쪽 면
+    frustum.planes[2] = ComputePlane(viewCorners[1], viewCorners[0]); // 위쪽 면
     frustum.planes[3] = ComputePlane(viewCorners[2], viewCorners[3]); // 아래쪽 면
     
     return frustum;
@@ -115,17 +115,20 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         
         if(depthSample > 0.0f)
         {
-            // 비선형 깊이를 선형으로 변환 후 0과 1사이로 정규화
-            float linearZ = (NearZ * FarZ) / (depthSample * (FarZ - NearZ) + NearZ);
-            float depthNormalized = saturate((linearZ - NearZ) / (FarZ - NearZ));
-            
+            // 비선형 깊이를 선형으로 변환 (Reverse-Z)
+            float linearZ = NearZ * FarZ / (NearZ + depthSample * (FarZ - NearZ));
+
             // 타일 안의 min, max depth 갱신하기
             InterlockedMin(groupMinZ, asuint(linearZ));
             InterlockedMax(groupMaxZ, asuint(linearZ));
-    
+
             if (Enable25DCulling != 0)
             {
-                // 깊이값에 맞는 index를 찾아서 비트 마스크에 기록
+                // 로그 기반 정규화: 카메라 근처 해상도 향상
+                float logNear = log(NearZ);
+                float logFar  = log(FarZ);
+                float depthNormalized = saturate((log(linearZ) - logNear) / (logFar - logNear));
+
                 int sliceIndex = (int) floor(depthNormalized * NUM_SLICES);
                 sliceIndex = clamp(sliceIndex, 0, NUM_SLICES - 1);
                 uint sliceBit = 1u << sliceIndex;
@@ -166,10 +169,15 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         // (2차 검사) 실제로 광원의 범위와 물체가 겹치는지 검사 후 컬링
         bool depthOverlap = true;
         if(Enable25DCulling != 0)
-        {  
-            float normMin = saturate((lightMinZ - NearZ) / (FarZ - NearZ)); // 광원 구체의 최소 깊이를 0~1로 정규화
-            float normMax = saturate((lightMaxZ - NearZ) / (FarZ - NearZ)); // 광원 구체의 최대 깊이를 0~1로 정규화
-            
+        {
+            // 광원 구체의 Z 범위를 로그 기반으로 정규화 (픽셀 깊이 마스크와 동일한 공간)
+            float logNear = log(NearZ);
+            float logFar  = log(FarZ);
+            float clampedMin = max(lightMinZ, NearZ);
+            float clampedMax = min(lightMaxZ, FarZ);
+            float normMin = saturate((log(clampedMin) - logNear) / (logFar - logNear));
+            float normMax = saturate((log(clampedMax) - logNear) / (logFar - logNear));
+
             int sphereSliceMin = (int) floor(normMin * NUM_SLICES);
             int sphereSliceMax = (int) floor(normMax * NUM_SLICES);
             
