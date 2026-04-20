@@ -118,6 +118,10 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
 
     ID3D11DeviceContext* Context = Device->GetDeviceContext();
 
+	//이전 바인딩 해제
+    float ClearColor[4] = { 0, 0, 0, 0 };
+    Context->ClearUnorderedAccessViewFloat(DebugHitMapUAV, ClearColor);
+
     // ---- CS 바인딩 ----
     Context->CSSetShader(LightCullingCS, nullptr, 0);
 
