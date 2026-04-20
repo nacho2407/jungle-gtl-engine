@@ -329,14 +329,20 @@ void AAmbientLightActor::InitDefaultComponents()
 	Billboard->SetEditorOnly(true);
 
     SetLight(Ambient);
+	SetBillboard(Billboard);
 }
 
-void AAmbientLightActor::Tick()
+void AAmbientLightActor::Tick(float DeltaTime)
 {
+	AActor::Tick(DeltaTime);
+
+	BillboardComp->SetColor(GetLight()->LightColor);
 }
 
 void ADirectionalLightActor::InitDefaultComponents()
 {
+	SetTickInEditor(true);
+
 	UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
 	SetRootComponent(Directional);
 
@@ -346,14 +352,20 @@ void ADirectionalLightActor::InitDefaultComponents()
 	Billboard->SetEditorOnly(true);
 
     SetLight(Directional);
+	SetBillboard(Billboard);
 }
 
-void ADirectionalLightActor::Tick()
+void ADirectionalLightActor::Tick(float DeltaTime)
 {
+	AActor::Tick(DeltaTime);
+
+	BillboardComp->SetColor(GetLight()->LightColor);
 }
 
 void APointLightActor::InitDefaultComponents()
 {
+	SetTickInEditor(true);
+
 	UPointLightComponent* Point = AddComponent<UPointLightComponent>();
 	SetRootComponent(Point);
 
@@ -363,13 +375,19 @@ void APointLightActor::InitDefaultComponents()
 	Billboard->SetEditorOnly(true);
 
     SetLight(Point);
+	SetBillboard(Billboard);
 }
 
-void APointLightActor::Tick()
+void APointLightActor::Tick(float DeltaTime)
 {
+	AActor::Tick(DeltaTime);
+
+	BillboardComp->SetColor(GetLight()->LightColor);
 }
 
 void ASpotlightActor::InitDefaultComponents() {
+	SetTickInEditor(true);
+
 	USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
 	SetRootComponent(Spot);
 
@@ -379,8 +397,12 @@ void ASpotlightActor::InitDefaultComponents() {
 	Billboard->SetEditorOnly(true);
 
 	SetLight(Spot);
+	SetBillboard(Billboard);
 }
 
-void ASpotlightActor::Tick() 
+void ASpotlightActor::Tick(float DeltaTime) 
 {
+	AActor::Tick(DeltaTime);
+
+	BillboardComp->SetColor(GetLight()->LightColor);
 }

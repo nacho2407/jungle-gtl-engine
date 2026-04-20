@@ -525,7 +525,8 @@ void FRenderer::InitializePassBatchers()
 					1,   // Columns 고정
 					1,   // Rows 고정
 					Cmd.Constants.Billboard.Width,
-					Cmd.Constants.Billboard.Height
+					Cmd.Constants.Billboard.Height,
+					Cmd.Constants.Billboard.Color
 				);
 			}
 		},

@@ -200,6 +200,7 @@ struct FBillboardConstants
 	UTexture* Texture = nullptr;
 	float Width = 1.0f;
 	float Height = 1.0f;
+	FColor Color = FColor::White();
 };
 // StaticMeshBuffer (b6) — ShaderStaticMesh.hlsl 대응
 // 완전 Obj전용입니다. 추후 Bump를 Normal로 바꾸면 됩니다.
