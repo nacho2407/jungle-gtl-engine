@@ -2,7 +2,7 @@
 
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Core/EngineTypes.h"
-#include "Engine/Render/Culling/ConvexVolume.h"
+#include "Render/Visibility/ConvexVolume.h"
 #include <memory>
 
 class UPrimitiveComponent;
@@ -13,9 +13,9 @@ struct FRay;
 
 class FSpatialPartition
 {
-	public:
+public:
     void FlushPrimitive();
-	void Reset(const FBoundingBox& RootBounds);
+    void Reset(const FBoundingBox& RootBounds);
 
     void InsertActor(AActor* Actor);
     void RemoveActor(AActor* Actor);
@@ -27,7 +27,7 @@ class FSpatialPartition
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
-    //void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
+    // void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
     const FOctree* GetOctree() const { return Octree.get(); }
 
@@ -44,4 +44,3 @@ private:
     TArray<UPrimitiveComponent*> OverflowPrimitives;
     TArray<AActor*> DirtyActors;
 };
-

@@ -1,13 +1,13 @@
-﻿#include "TextRenderComponent.h"
+#include "TextRenderComponent.h"
 
 #include <cstring>
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Resource/MeshBufferManager.h"
-#include "Render/Resource/ShaderManager.h"
-#include "Render/Proxy/TextRenderSceneProxy.h"
+#include "Render/Resources/Managers/MeshBufferManager.h"
+#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)

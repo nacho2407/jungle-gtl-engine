@@ -507,7 +507,7 @@ void FEditorViewportClient::RenderViewportBorder()
     if (BorderThickness <= 0.0f)
         return;
 
-    ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
     const float HalfThickness = BorderThickness * 0.5f;
 
     DrawList->AddRect(

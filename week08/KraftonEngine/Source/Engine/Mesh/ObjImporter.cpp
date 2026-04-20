@@ -455,7 +455,6 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 	json::JSON JsonData;
 	JsonData["PathFileName"] = JsonPath;
-	JsonData["ShaderPath"] = "Shaders/StaticMeshShader.hlsl"; // 기본 셰이더
 	JsonData["RenderPass"] = "Opaque";
 
 	if (!MtlInfo->map_Kd.empty())
@@ -469,12 +468,15 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 	}
 	else
 	{
-
 		JsonData["Parameters"]["SectionColor"][0] = MtlInfo->Kd.X;
 		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
 		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
 	}
+
+	JsonData["Parameters"]["SpecularPower"] = (MtlInfo->Ns > 0.0f) ? MtlInfo->Ns : 32.0f;
+	const float AvgSpecular = (MtlInfo->Ks.X + MtlInfo->Ks.Y + MtlInfo->Ks.Z) / 3.0f;
+	JsonData["Parameters"]["SpecularStrength"] = (AvgSpecular > 0.0f) ? AvgSpecular : 1.0f;
 
 	std::ofstream File(FPaths::ToWide(JsonPath));
 	File << JsonData.dump();
