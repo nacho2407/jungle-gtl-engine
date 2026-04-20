@@ -30,7 +30,7 @@ void FViewModeResolvePass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
     const EViewModePostProcessVariant Variant = GetViewModePostProcessVariant(Context);
-    if (Variant == EViewModePostProcessVariant::None || !Context.Frame)
+    if (Variant == EViewModePostProcessVariant::None || !Context.SceneView)
     {
         return;
     }
@@ -100,10 +100,10 @@ void FViewModeResolvePass::BuildDrawCommands(FRenderPipelineContext& Context)
     case EViewModePostProcessVariant::SceneDepth:
     {
         FSceneDepthPConstants Constants = {};
-        Constants.Exponent = Context.Frame->RenderOptions.Exponent;
-        Constants.NearClip = Context.Frame->NearClip;
-        Constants.FarClip = Context.Frame->FarClip;
-        Constants.Mode = static_cast<uint32>(Context.Frame->RenderOptions.SceneDepthVisMode);
+        Constants.Exponent = Context.SceneView->RenderOptions.Exponent;
+        Constants.NearClip = Context.SceneView->NearClip;
+        Constants.FarClip = Context.SceneView->FarClip;
+        Constants.Mode = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
 
         FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
         if (CB)

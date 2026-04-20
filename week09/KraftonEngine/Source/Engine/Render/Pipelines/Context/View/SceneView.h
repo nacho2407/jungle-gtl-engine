@@ -75,4 +75,3 @@ struct FSceneView
     }
 };
 
-using FFrameContext = FSceneView;

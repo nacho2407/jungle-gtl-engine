@@ -50,7 +50,7 @@ public:
     // --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
     // MaxProxyCount: Scene의 프록시 수. PerObjectCBPool을 미리 할당하여
     // Collect 도중 resize로 인한 포인터 무효화를 방지.
-    void BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount = 0);
+    void BeginCollect(const FSceneView& SceneView, uint32 MaxProxyCount = 0);
 
     void SetCollectedScene(const FScene* InScene) { ActiveSceneForFrame = InScene; }
     void SetCollectedLights(const FCollectedLights* InCollectedLights) { ActiveCollectedLights = InCollectedLights; }
@@ -59,8 +59,8 @@ public:
     void BeginFrame();
     void EndFrame();
 
-    FRenderPipelineContext CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets = nullptr, FScene* Scene = nullptr, const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
-    FRenderPipelineContext CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives);
+    FRenderPipelineContext CreatePassContext(const FSceneView& SceneView, const FViewportRenderTargets* Targets = nullptr, FScene* Scene = nullptr, const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
+    FRenderPipelineContext CreatePassContext(const FSceneView& SceneView, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives);
     void RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PassContext);
     void ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext& PassContext);
 
@@ -76,8 +76,8 @@ public:
 
 private:
     friend struct FRenderPipelineContext;
-    void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
-    void PreparePipelineExecution(const FFrameContext& Frame, const FViewportRenderTargets* Targets);
+    void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FSceneView& SceneView);
+    void PreparePipelineExecution(const FSceneView& SceneView, const FViewportRenderTargets* Targets);
     void FinalizePipelineExecution();
 
 

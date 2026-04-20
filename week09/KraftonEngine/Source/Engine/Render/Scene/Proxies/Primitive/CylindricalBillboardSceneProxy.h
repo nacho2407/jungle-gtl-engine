@@ -14,5 +14,5 @@ public:
     FCylindricalBillboardSceneProxy(UCylindricalBillboardComponent* InComponent);
 
     void UpdateMesh() override;
-    void UpdatePerViewport(const FFrameContext& Frame) override;
+    void UpdatePerViewport(const FSceneView& SceneView) override;
 };

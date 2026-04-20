@@ -12,7 +12,7 @@
 void FHeightFogPass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Context.Frame)
+    if (!Context.SceneView)
     {
         return;
     }
@@ -49,7 +49,7 @@ void FHeightFogPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FHeightFogPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    if (!Context.Frame || !Context.Frame->ShowFlags.bFog)
+    if (!Context.SceneView || !Context.SceneView->ShowFlags.bFog)
     {
         return;
     }

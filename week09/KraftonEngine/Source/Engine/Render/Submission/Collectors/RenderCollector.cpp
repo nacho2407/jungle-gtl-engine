@@ -63,20 +63,20 @@ static ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
 }
 
 
-void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FRenderCollector::CollectWorld(UWorld* World, const FSceneView& SceneView, FScene& Scene, FRenderer& Renderer)
 {
-    VisibilityCollector.CollectWorld(World, Frame, Scene, Renderer);
+    VisibilityCollector.CollectWorld(World, SceneView, Scene, Renderer);
 }
 
-void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FRenderCollector::BuildFramePassCommands(const FSceneView& SceneView, FScene& Scene, FRenderer& Renderer)
 {
     Renderer.SetCollectedScene(&Scene);
-    FRenderPipelineContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, VisibilityCollector.GetCollectedPrimitives());
+    FRenderPipelineContext PassContext = Renderer.CreatePassContext(SceneView, nullptr, &Scene, VisibilityCollector.GetCollectedPrimitives());
 
     if (Renderer.HasActiveViewModePassConfig())
     {
         const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
-        if (ViewModeRegistry && ViewModeRegistry->UsesLightingPass(Frame.ViewMode))
+        if (ViewModeRegistry && ViewModeRegistry->UsesLightingPass(SceneView.ViewMode))
         {
             if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::LightingPass))
                 Pass->BuildDrawCommands(PassContext);
@@ -97,7 +97,7 @@ void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene
         Pass->BuildDrawCommands(PassContext);
 }
 
-void FSceneVisibilityCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FSceneVisibilityCollector::CollectWorld(UWorld* World, const FSceneView& SceneView, FScene& Scene, FRenderer& Renderer)
 {
     if (!World)
         return;
@@ -124,13 +124,13 @@ void FSceneVisibilityCollector::CollectWorld(UWorld* World, const FFrameContext&
             }
         }
 
-        World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, CollectedPrimitives.VisibleProxies);
+        World->GetPartition().QueryFrustumAllProxies(SceneView.FrustumVolume, CollectedPrimitives.VisibleProxies);
     }
 
     Renderer.SetCollectedScene(&Scene);
 
     // Visible Primitive Proxies → pass-specific draw command build
-    CollectPrimitives(CollectedPrimitives.VisibleProxies, Frame, Scene, Renderer);
+    CollectPrimitives(CollectedPrimitives.VisibleProxies, SceneView, Scene, Renderer);
 
     // Light Proxy → FLightConstants 배열로 수집 (드로우콜 불필요, CB 데이터만 추출)
     CollectLights(Scene, CollectedLights);
@@ -157,9 +157,9 @@ void FSceneDebugCollector::CollectOverlayText(const FOverlayStatSystem& OverlayS
     }
 }
 
-void FSceneDebugCollector::CollectDebugDraw(const FFrameContext& Frame, FScene& Scene)
+void FSceneDebugCollector::CollectDebugDraw(const FSceneView& SceneView, FScene& Scene)
 {
-    if (!Frame.ShowFlags.bDebugDraw)
+    if (!SceneView.ShowFlags.bDebugDraw)
         return;
 
     for (const FDebugDrawItem& Item : Scene.GetDebugDrawQueue().GetItems())
@@ -246,9 +246,9 @@ void FSceneDebugCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneP
 // ============================================================
 // Visible 프록시 수집 — Proxy → FDrawCommand 직접 변환
 // ============================================================
-void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
+void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FSceneView& SceneView, FScene& Scene, FRenderer& Renderer)
 {
-    if (!Frame.ShowFlags.bPrimitives)
+    if (!SceneView.ShowFlags.bPrimitives)
         return;
 
     SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
@@ -260,13 +260,13 @@ void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveScenePr
     CollectedPrimitives.OpaqueProxies.clear();
     CollectedPrimitives.TransparentProxies.clear();
 
-    FRenderPipelineContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, CollectedPrimitives);
+    FRenderPipelineContext PassContext = Renderer.CreatePassContext(SceneView, nullptr, &Scene, CollectedPrimitives);
     // Pass-specific command building now happens during pipeline execution.
     const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
-    const bool bHasViewModeConfig = Renderer.HasActiveViewModePassConfig() && ViewModeRegistry && ViewModeRegistry->HasConfig(Frame.ViewMode);
-    const bool bUsesBaseDraw = bHasViewModeConfig && ViewModeRegistry->UsesBaseDraw(Frame.ViewMode);
-    const bool bUsesDecal = bHasViewModeConfig && ViewModeRegistry->UsesDecal(Frame.ViewMode);
-    const bool bSuppressSceneExtras = bHasViewModeConfig && ViewModeRegistry->SuppressesSceneExtras(Frame.ViewMode);
+    const bool bHasViewModeConfig = Renderer.HasActiveViewModePassConfig() && ViewModeRegistry && ViewModeRegistry->HasConfig(SceneView.ViewMode);
+    const bool bUsesBaseDraw = bHasViewModeConfig && ViewModeRegistry->UsesBaseDraw(SceneView.ViewMode);
+    const bool bUsesDecal = bHasViewModeConfig && ViewModeRegistry->UsesDecal(SceneView.ViewMode);
+    const bool bSuppressSceneExtras = bHasViewModeConfig && ViewModeRegistry->SuppressesSceneExtras(SceneView.ViewMode);
 
     TSet<FPrimitiveSceneProxy*> VisibleProxySet;
     VisibleProxySet.reserve(CandidateProxies.size());
@@ -276,9 +276,9 @@ void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveScenePr
             VisibleProxySet.insert(Proxy);
     }
 
-    const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
-    FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
-    const FLODUpdateContext& LODCtx = Frame.LODContext;
+    const FGPUOcclusionCulling* Occlusion = SceneView.OcclusionCulling;
+    FGPUOcclusionCulling* OcclusionMut = SceneView.OcclusionCulling;
+    const FLODUpdateContext& LODCtx = SceneView.LODContext;
 
     if (OcclusionMut && OcclusionMut->IsInitialized())
     {
@@ -304,7 +304,7 @@ void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveScenePr
 
         if (Proxy->bPerViewportUpdate)
         {
-            Proxy->UpdatePerViewport(Frame);
+            Proxy->UpdatePerViewport(SceneView);
         }
 
         // if (Proxy->Pass == ERenderPass::GizmoOuter || Proxy->Pass == ERenderPass::GizmoInner)

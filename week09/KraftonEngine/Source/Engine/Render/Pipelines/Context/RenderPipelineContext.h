@@ -7,7 +7,6 @@
 #include "Render/Scene/DebugDraw/SceneDebugData.h"
 
 struct FSceneView;
-using FFrameContext = FSceneView;
 struct FViewportRenderTargets;
 class FScene;
 class FD3DDevice;
@@ -30,7 +29,7 @@ struct FStateCache;
 */
 struct FRenderPipelineContext
 {
-    const FFrameContext* Frame = nullptr;
+    const FSceneView* SceneView = nullptr;
     const FViewportRenderTargets* Targets = nullptr;
     FScene* Scene = nullptr;
 
