@@ -15,6 +15,6 @@ public:
 
 public:
 	FColor LightColor = FColor::White();
-	float Intensity = 1.0f;
+	float Intensity = 0.1f;
 	bool bVisible = true;
 };

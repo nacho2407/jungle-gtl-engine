@@ -1,5 +1,4 @@
 #include "Common.hlsl"
-#include "UberLit.hlsl"
 
 cbuffer StaticMeshBuffer : register(b2)
 {
@@ -80,7 +79,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     
     if (any(EmissiveColor > 0.f))
     {
-        FinalColor += EmissiveColor * DiffuseTex.rgb;
+        // FinalColor += EmissiveColor * DiffuseTex.rgb;
     }
 
     if (bIsWireframe > 0.5f)

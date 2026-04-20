@@ -1,5 +1,4 @@
 #include "Common.hlsl"
-#include "UberLit.hlsl"
 
 cbuffer DecalBuffer : register(b2)
 {

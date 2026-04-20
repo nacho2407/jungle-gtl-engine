@@ -9,7 +9,7 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
     USceneComponent::GetEditableProperties(OutProps);
     OutProps.push_back({ "Visible", EPropertyType::Bool, &bVisible });
-    OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity, 0.0f, 100.0f, 1.0f }); // 색 변화 보면서 세부 조정
+    OutProps.push_back({ "Intensity", EPropertyType::Float, &Intensity, 0.0f, 10.0f, 0.1f }); // 색 변화 보면서 세부 조정
     OutProps.push_back({ "Light Color", EPropertyType::Color, &LightColor });
 }
 
