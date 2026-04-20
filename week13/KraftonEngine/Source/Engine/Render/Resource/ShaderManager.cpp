@@ -67,6 +67,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 		Shaders[(uint32)EShaderType::UberLit_Phong].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", PhongMacros);
 		Shaders[(uint32)EShaderType::UberLit_Toon].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", ToonMacros);
 	}
+	//awe
 	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl", "VS", "PS");
 	Shaders[(uint32)EShaderType::SceneDepth].Create(InDevice, L"Shaders/SceneDepth.hlsl", "VS", "PS");
