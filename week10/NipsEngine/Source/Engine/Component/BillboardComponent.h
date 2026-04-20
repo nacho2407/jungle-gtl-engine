@@ -44,6 +44,8 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	float GetWidth()  const { return Width; }
 	float GetHeight() const { return Height; }
+	FColor GetColor() const { return Color; }
+	void SetColor(const FColor& InColor) { Color = InColor; }
 	// Billboard는 outline 미지원 (Batcher 계열)
 	//void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
 
@@ -52,6 +54,7 @@ public:
 private:
 	FName TextureName;
 	UTexture* Texture = nullptr; // ResourceManager 소유, 여기선 참조만
+	FColor Color = FColor::White();
 
 protected:
 	uint32 FrameIndex = 0;
