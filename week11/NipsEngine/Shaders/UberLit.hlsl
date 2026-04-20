@@ -217,9 +217,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         output.Color    = float4(rawSample, 1.f);
         output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
         output.WorldPos = float4(input.WorldPos, 1.f);
-        // return output;
     }
-    
     
     float3 N_Phong = (bHasBumpMap)
         ? PerturbNormal(input.PixelNormal, input.WorldTangent, input.UV)
