@@ -17,6 +17,13 @@ bool FFogRenderPass::Release()
 
 bool FFogRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (Context->RenderBus->GetViewMode() == EViewMode::Wireframe)
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Fog);
     if (Commands.empty())
     {

@@ -53,6 +53,10 @@ bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
     UShader* FXAAShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
     FXAAShader->Bind(Context->DeviceContext);
 
+    ID3D11RasterizerState* FullscreenRS =
+        FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull, Context->Device);
+    Context->DeviceContext->RSSetState(FullscreenRS);
+
     Context->DeviceContext->IASetInputLayout(nullptr);
     Context->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     Context->DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
