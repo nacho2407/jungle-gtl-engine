@@ -1,4 +1,5 @@
 #include "Common.hlsl"
+#include "UberLit.hlsl"
 
 cbuffer StaticMeshBuffer : register(b2)
 {
@@ -63,7 +64,7 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
-PSOutput mainPS(PSInput input) : SV_TARGET
+PSOutput mainPS(PSInput input)
 {
     PSOutput output;
     
@@ -75,12 +76,19 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
     
     float3 Albedo = DiffuseColor * DiffuseTex.rgb;
-    float3 FinalColor = ApplyAmbientDirectionalLambert(Albedo, input.WorldNormal);
     
-    if (any(EmissiveColor > 0.f))
-    {
-        // FinalColor += EmissiveColor * DiffuseTex.rgb;
-    }
+    FUberMaterialInput MaterialInput;
+    MaterialInput.Albedo = Albedo;
+    MaterialInput.Emissive = EmissiveColor;
+    MaterialInput.SpecularColor = SpecularColor;
+    MaterialInput.Shininess = Shininess;
+    
+    FUberLightingInput LightingInput;
+    LightingInput.WorldPos = input.WorldPos;
+    LightingInput.WorldNormal = input.WorldNormal;
+    LightingInput.ViewDir = normalize(CameraPosition - input.WorldPos);
+    
+    float3 FinalColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
 
     if (bIsWireframe > 0.5f)
     {

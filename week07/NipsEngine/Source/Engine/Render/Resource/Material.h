@@ -22,7 +22,7 @@ struct FMaterial
 
     float Shininess  = 0.0f; 
     float Opacity    = 1.0f; 
-    int   IllumModel = 2;    
+    int   IllumModel = 2;
 
 	// Texture 정보
     FString DiffuseTexPath;   // map_Kd

@@ -75,29 +75,64 @@ public:
 	}
 	
 	void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0)
-	{
-		FShader* Target = &Permutations[PermutationKey];
+    {
+		// Permutation Fallback 추가
 
-		if (Target)
-		{
-			Context->IASetInputLayout(Target->InputLayout);
-			Context->VSSetShader(Target->VS, nullptr, 0);
-			Context->PSSetShader(Target->PS, nullptr, 0);
-		}
-	}
+        FShader* Target = nullptr;
+
+        auto It = Permutations.find(PermutationKey);
+        if (It != Permutations.end())
+        {
+            Target = &It->second;
+        }
+        else
+        {
+            auto DefaultIt = Permutations.find(0);
+            if (DefaultIt != Permutations.end())
+            {
+                Target = &DefaultIt->second;
+            }
+        }
+
+        if (!Target || !Target->VS || !Target->PS)
+        {
+            return;
+        }
+
+        Context->IASetInputLayout(Target->InputLayout);
+        Context->VSSetShader(Target->VS, nullptr, 0);
+        Context->PSSetShader(Target->PS, nullptr, 0);
+    }
 
 	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size, uint32 PermutationKey = 0)
-	{
-		FShader* Target = &Permutations[PermutationKey];
-		if (!Target || !Target->ConstantBuffer)
-		{
-			return;
-		}
+    {
+		// Permutation Fallback 추가
 
-		Context->UpdateSubresource(Target->ConstantBuffer, 0, nullptr, Data, 0, 0);
-		Context->VSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
-		Context->PSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
-	}
+        FShader* Target = nullptr;
+
+        auto It = Permutations.find(PermutationKey);
+        if (It != Permutations.end())
+        {
+            Target = &It->second;
+        }
+        else
+        {
+            auto DefaultIt = Permutations.find(0);
+            if (DefaultIt != Permutations.end())
+            {
+                Target = &DefaultIt->second;
+            }
+        }
+
+        if (!Target || !Target->ConstantBuffer)
+        {
+            return;
+        }
+
+        Context->UpdateSubresource(Target->ConstantBuffer, 0, nullptr, Data, 0, 0);
+        Context->VSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
+        Context->PSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
+    }
 
 	int32 GetTextureBindSlot(const FString& Name) const
 	{

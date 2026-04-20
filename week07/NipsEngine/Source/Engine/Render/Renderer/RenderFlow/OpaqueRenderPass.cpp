@@ -33,6 +33,21 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
     const FRenderBus* RenderBus = Context->RenderBus;
 
+	FShaderPermutationDesc PermDesc = {};
+    PermDesc.bUseNormalMap = false;
+    PermDesc.bUseDecalLighting = false;
+
+    if (RenderBus->GetViewMode() == EViewMode::Unlit)
+    {
+        PermDesc.ShadingModel = EShadingModel::Unlit;
+    }
+    else
+    {
+        PermDesc.ShadingModel = RenderBus->GetShadingModel();
+    }
+
+    const uint32 PermutationKey = PermDesc.ToKey();
+
     const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);
 
     if (Commands.empty())
@@ -71,7 +86,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
         if (Cmd.Material)
         {
-            Cmd.Material->Bind(Context->DeviceContext);
+            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
         }
 
 		CheckOverrideViewMode(Context);

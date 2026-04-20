@@ -1,4 +1,5 @@
 #include "Common.hlsl"
+#include "UberLit.hlsl"
 
 cbuffer DecalBuffer : register(b2)
 {
@@ -50,11 +51,6 @@ PSOutput mainPS(PSInput input) : SV_Target
     float4 localPos = mul(float4(input.WorldPos, 1.0f), InvDecalWorld);
     clip(0.5f - abs(localPos.xyz));
     
-    //float3 decalForward = normalize(InvDecalWorld[0].xyz);
-    
-    //float cosAngle = abs(dot(input.WorldNormal, decalForward));
-    //float angleFade = saturate(cosAngle);
-    
     float2 decalUV;
     decalUV.xy = localPos.yz + 0.5f;
     decalUV.y = 1.0f - decalUV.y;
@@ -62,11 +58,11 @@ PSOutput mainPS(PSInput input) : SV_Target
     float4 decalTex = DiffuseMap.Sample(SampleState, decalUV);
         
     float3 Albedo = decalTex.rgb * DecalColorTint.rgb;
-    float3 LitColor = ApplyAmbientDirectionalLambert(Albedo, input.WorldNormal);
+    
+    float3 LitColor = Albedo;
 
     output.Color = float4(LitColor, decalTex.a * DecalColorTint.a);
     
-    // output.Color.a *= angleFade;
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     
     return output;

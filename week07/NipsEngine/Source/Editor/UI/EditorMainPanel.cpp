@@ -47,20 +47,31 @@ const char* GetViewportTypeName(EEditorViewportType Type)
     }
 }
 
-const char* GetViewModeName(EViewMode Mode)
+const char* GetViewModeName(EViewMode Mode, EShadingModel ShadingModel)
 {
     switch (Mode)
     {
-    case EViewMode::Lit:
-        return "Lit";
     case EViewMode::Unlit:
         return "Unlit";
     case EViewMode::Wireframe:
         return "Wireframe";
-	case EViewMode::Depth: 
-		return "Depth"; 
-	default:
-        return "Lit";
+    case EViewMode::Depth:
+        return "Depth";
+    case EViewMode::Lit:
+    default:
+        switch (ShadingModel)
+        {
+        case EShadingModel::Gouraud:
+            return "Lit_Gouraud";
+        case EShadingModel::Lambert:
+            return "Lit_Lambert";
+        case EShadingModel::Phong:
+            return "Lit_Phong";
+        case EShadingModel::Unlit:
+            return "Unlit";
+        default:
+            return "Lit_Lambert";
+        }
     }
 }
 
@@ -359,7 +370,7 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
     ImGui::TextDisabled("%s | %s | %s",
                         GetViewportSlotName(Index),
                         GetViewportTypeName(Client->GetViewportType()),
-                        GetViewModeName(State.ViewMode));
+                        GetViewModeName(State.ViewMode, State.ShadingModel));
     ImGui::SameLine();
 
     if (ImGui::BeginMenu("Layout"))
@@ -417,20 +428,48 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
 
     if (ImGui::BeginMenu("View"))
     {
-        static constexpr EViewMode Modes[] = {
-            EViewMode::Lit,
-            EViewMode::Unlit,
-            EViewMode::Wireframe,
-            EViewMode::Depth,
-        };
-        static constexpr const char* Labels[] = { "Lit", "Unlit", "Wireframe", "Depth" };
+        const bool bLitGouraud = (State.ViewMode == EViewMode::Lit && State.ShadingModel == EShadingModel::Gouraud);
+        const bool bLitLambert = (State.ViewMode == EViewMode::Lit && State.ShadingModel == EShadingModel::Lambert);
+        const bool bLitPhong = (State.ViewMode == EViewMode::Lit && State.ShadingModel == EShadingModel::Phong);
+        const bool bUnlit = (State.ViewMode == EViewMode::Unlit);
+        const bool bWireframe = (State.ViewMode == EViewMode::Wireframe);
+        const bool bDepth = (State.ViewMode == EViewMode::Depth);
 
-        for (int32 j = 0; j < static_cast<int32>(EViewMode::Count); ++j)
+        if (ImGui::MenuItem("Lit_Gouraud", nullptr, bLitGouraud))
         {
-            const bool bSel = (State.ViewMode == Modes[j]);
-            if (ImGui::MenuItem(Labels[j], nullptr, bSel))
-                State.ViewMode = Modes[j];
+            State.ViewMode = EViewMode::Lit;
+            State.ShadingModel = EShadingModel::Gouraud;
         }
+
+        if (ImGui::MenuItem("Lit_Lambert", nullptr, bLitLambert))
+        {
+            State.ViewMode = EViewMode::Lit;
+            State.ShadingModel = EShadingModel::Lambert;
+        }
+
+        if (ImGui::MenuItem("Lit_Phong", nullptr, bLitPhong))
+        {
+            State.ViewMode = EViewMode::Lit;
+            State.ShadingModel = EShadingModel::Phong;
+        }
+
+        if (ImGui::MenuItem("Unlit", nullptr, bUnlit))
+        {
+            State.ViewMode = EViewMode::Unlit;
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Wireframe", nullptr, bWireframe))
+        {
+            State.ViewMode = EViewMode::Wireframe;
+        }
+
+        if (ImGui::MenuItem("Depth", nullptr, bDepth))
+        {
+            State.ViewMode = EViewMode::Depth;
+        }
+
         ImGui::EndMenu();
     }
 

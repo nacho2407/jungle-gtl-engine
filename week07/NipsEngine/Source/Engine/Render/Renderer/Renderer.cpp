@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <algorithm>
+
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
@@ -9,6 +10,7 @@
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
 #include "Editor/Viewport/FSceneViewport.h"
+#include "Render/Common/ShaderTypes.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 
@@ -28,7 +30,6 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
     FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
     FResourceManager::Get().LoadShader("Shaders/Multipass/DepthViewPass.hlsl", "mainVS", "mainPS", nullptr, 0);
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
@@ -36,7 +37,52 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	// UberLit.hlsl 컴파일 필요
+	auto LoadStaticMeshPermutation = [&](EShadingModel ShadingModel)
+    {
+        FShaderPermutationDesc Desc = {};
+        Desc.ShadingModel = ShadingModel;
+        Desc.bUseNormalMap = false;
+        Desc.bUseDecalLighting = false;
+
+        TArray<D3D_SHADER_MACRO> Defines;
+
+        switch (ShadingModel)
+        {
+        case EShadingModel::Unlit:
+            Defines.push_back({ "LIGHTING_MODEL_UNLIT", "1" });
+            break;
+        case EShadingModel::Lambert:
+            Defines.push_back({ "LIGHTING_MODEL_LAMBERT", "1" });
+            break;
+        case EShadingModel::Phong:
+            Defines.push_back({ "LIGHTING_MODEL_PHONG", "1" });
+            break;
+        case EShadingModel::Gouraud:
+            Defines.push_back({ "LIGHTING_MODEL_GOURAUD", "1" });
+            break;
+        default:
+            Defines.push_back({ "LIGHTING_MODEL_LAMBERT", "1" });
+            break;
+        }
+
+        Defines.push_back({ "USE_NORMAL_MAP", "0" });
+        Defines.push_back({ "USE_DECAL_LIGHTING", "0" });
+        Defines.push_back({ nullptr, nullptr });
+
+        FResourceManager::Get().LoadShader(
+            "Shaders/ShaderStaticMesh.hlsl",
+            "mainVS",
+            "mainPS",
+            NormalVertexInputLayout,
+            ARRAYSIZE(NormalVertexInputLayout),
+            Defines.data(),
+            Desc.ToKey());
+    };
+
+	LoadStaticMeshPermutation(EShadingModel::Unlit);
+    LoadStaticMeshPermutation(EShadingModel::Lambert);
+    LoadStaticMeshPermutation(EShadingModel::Phong);
+    LoadStaticMeshPermutation(EShadingModel::Gouraud);
 }
 
 void FRenderer::CreateResources()

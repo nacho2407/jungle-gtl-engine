@@ -17,7 +17,7 @@ enum class EViewportPlayState : uint8
 struct FEditorViewportState
 {
 	EViewMode ViewMode = EViewMode::Lit;
-    EShadingModel ShadingModel = EShadingModel::Phong;
+    EShadingModel ShadingModel = EShadingModel::Lambert;
     bool bEnableDecalLighting = false;
 	bool bHovered = false;
 
