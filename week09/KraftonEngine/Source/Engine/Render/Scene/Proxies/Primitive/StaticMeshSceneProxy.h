@@ -15,28 +15,28 @@ class UStaticMeshComponent;
 class FStaticMeshSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-	static constexpr uint32 MAX_LOD = 4;
+    static constexpr uint32 MAX_LOD = 4;
 
-	FStaticMeshSceneProxy(UStaticMeshComponent* InComponent);
+    FStaticMeshSceneProxy(UStaticMeshComponent* InComponent);
 
-	void UpdateMaterial() override;
-	void UpdateMesh() override;
-	void UpdateLOD(uint32 LODLevel) override;
+    void UpdateMaterial() override;
+    void UpdateMesh() override;
+    void UpdateLOD(uint32 LODLevel) override;
 
 private:
-	UStaticMeshComponent* GetStaticMeshComponent() const;
+    UStaticMeshComponent* GetStaticMeshComponent() const;
 
-	// 모든 LOD의 SectionDraws 재구축
-	void RebuildSectionDraws();
+    // 모든 LOD의 SectionDraws 재구축
+    void RebuildSectionDraws();
 
-	struct FLODDrawData
-	{
-		FMeshBuffer* MeshBuffer = nullptr;
-		TArray<FMeshSectionDraw> SectionDraws;
-		TArray<std::unique_ptr<FMaterialConstantBuffer>> OwnedMaterialCBs;
-	};
+    struct FLODDrawData
+    {
+        FMeshBuffer* MeshBuffer = nullptr;
+        TArray<FMeshSectionDraw> SectionDraws;
+        TArray<std::unique_ptr<FMaterialConstantBuffer>> OwnedMaterialCBs;
+    };
 
-	FLODDrawData LODData[MAX_LOD];
-	TArray<std::unique_ptr<FMaterialConstantBuffer>> ActiveOwnedMaterialCBs;
-	uint32 LODCount = 1;
+    FLODDrawData LODData[MAX_LOD];
+    TArray<std::unique_ptr<FMaterialConstantBuffer>> ActiveOwnedMaterialCBs;
+    uint32 LODCount = 1;
 };

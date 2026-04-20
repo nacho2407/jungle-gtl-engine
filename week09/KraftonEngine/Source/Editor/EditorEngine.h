@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "Engine/Runtime/Engine.h"
 
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
-#include "Render/Visibility/GPUOcclusionCulling.h"
+#include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"

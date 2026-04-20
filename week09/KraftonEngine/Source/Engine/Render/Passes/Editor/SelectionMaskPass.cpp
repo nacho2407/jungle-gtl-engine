@@ -1,32 +1,26 @@
-﻿#include "Render/Passes/Editor/SelectionMaskPass.h"
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Editor/SelectionMaskPass.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
-void FSelectionMaskPass::PrepareInputs(FRenderPassContext& Context)
+void FSelectionMaskPass::PrepareInputs(FRenderPipelineContext& Context)
 {
     (void)Context;
 }
 
-void FSelectionMaskPass::PrepareTargets(FRenderPassContext& Context)
+void FSelectionMaskPass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
-    Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
+    BindViewportTarget(Context);
 }
 
-void FSelectionMaskPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FSelectionMaskPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
     FMeshDrawCommandBuilder::Build(Proxy, ERenderPass::SelectionMask, Context, *Context.DrawCommandList);
 }
 
-void FSelectionMaskPass::SubmitDrawCommands(FRenderPassContext& Context)
+void FSelectionMaskPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
-    if (Context.DrawCommandList)
-    {
-        uint32 s, e;
-        Context.DrawCommandList->GetPassRange(ERenderPass::SelectionMask, s, e);
-        if (s < e)
-            Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
-    }
+    SubmitPassRange(Context, ERenderPass::SelectionMask);
 }

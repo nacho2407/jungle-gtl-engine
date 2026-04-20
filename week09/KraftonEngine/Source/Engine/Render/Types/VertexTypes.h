@@ -1,7 +1,14 @@
-﻿#pragma once
+    #pragma once
+
+    #include "Math/Vector.h"
+    #include <cassert>
+
+    /*
+        렌더러가 사용하는 기본 정점 형식과 CPU 메시 데이터 뷰를 정의합니다.
+        기본 프리미티브, 폰트, 디버그 드로우, 정적 메시가 함께 사용합니다.
+    */
 
 #include "Math/Vector.h"
-#include "Render/Types/RenderTypes.h"
 #include <cassert>
 
 struct FVertex

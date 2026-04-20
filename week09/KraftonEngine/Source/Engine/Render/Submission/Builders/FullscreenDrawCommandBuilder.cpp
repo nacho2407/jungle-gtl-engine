@@ -1,15 +1,16 @@
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Resources/Managers/ShaderManager.h"
-#include "Render/Passes/Common/PassRenderState.h"
-#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
-#include "Render/View/SceneView.h"
-#include "Render/View/ViewModeSurfaceSet.h"
-#include "Render/View/ViewportRenderTargets.h"
+#include "Render/Resources/ShaderManager.h"
+#include "Render/Passes/Base/PassRenderState.h"
+#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
+#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
 
-void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList, uint16 UserBits)
+void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
     FShader* Shader = nullptr;
@@ -35,15 +36,15 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& 
     }
     else if (Pass == ERenderPass::PostProcess)
     {
-        switch (UserBits)
+        switch (PostProcessVariant)
         {
-        case 1:
+        case EViewModePostProcessVariant::Outline:
             Shader = FShaderManager::Get().GetShader(EShaderType::OutlinePostProcess);
             break;
-        case 2:
+        case EViewModePostProcessVariant::SceneDepth:
             Shader = FShaderManager::Get().GetShader(EShaderType::SceneDepth);
             break;
-        case 3:
+        case EViewModePostProcessVariant::WorldNormal:
             Shader = FShaderManager::Get().GetShader(EShaderType::NormalView);
             break;
         default:
@@ -77,5 +78,5 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& 
         Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
     }
 
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, UserBits);
+    Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, ToPostProcessUserBits(PostProcessVariant));
 }

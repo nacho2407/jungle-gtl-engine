@@ -1,7 +1,9 @@
+#include "Render/Resources/ConstantBufferLayouts.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
-#include "Render/View/SceneView.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/ShaderManager.h"
 
 // ============================================================
 // FTextRenderSceneProxy

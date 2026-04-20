@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/Scene/Proxies/Primitive/BillboardSceneProxy.h"
-#include "Render/D3D11/Buffers/Buffers.h"
+#include "Render/RHI/D3D11/Buffers/Buffers.h"
 
 class USubUVComponent;
 
@@ -13,15 +13,15 @@ class USubUVComponent;
 class FSubUVSceneProxy : public FBillboardSceneProxy
 {
 public:
-	FSubUVSceneProxy(USubUVComponent* InComponent);
-	~FSubUVSceneProxy() override;
+    FSubUVSceneProxy(USubUVComponent* InComponent);
+    ~FSubUVSceneProxy() override;
 
-	void UpdateMesh() override;
-	void UpdatePerViewport(const FFrameContext& Frame) override;
+    void UpdateMesh() override;
+    void UpdatePerViewport(const FFrameContext& Frame) override;
 
 private:
-	USubUVComponent* GetSubUVComponent() const;
+    USubUVComponent* GetSubUVComponent() const;
 
-	// 프록시별 UV region CB (공유 풀이 아닌 자체 소유)
-	FConstantBuffer UVRegionCB;
+    // 프록시별 UV region CB (공유 풀이 아닌 자체 소유)
+    FConstantBuffer UVRegionCB;
 };

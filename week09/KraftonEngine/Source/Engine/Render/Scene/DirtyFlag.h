@@ -7,17 +7,37 @@
 // ============================================================
 enum class EDirtyFlag : uint32
 {
-	None       = 0,
-	Transform  = 1 << 0,
-	Material   = 1 << 1,
-	Visibility = 1 << 2,
-	Mesh       = 1 << 3,
-	All        = 0xFFFFFFFF,
+    None = 0,
+    Transform = 1 << 0,
+    Material = 1 << 1,
+    Visibility = 1 << 2,
+    Mesh = 1 << 3,
+    All = 0xFFFFFFFF,
 };
 
-inline EDirtyFlag  operator|(EDirtyFlag A, EDirtyFlag B)  { return static_cast<EDirtyFlag>(static_cast<uint32>(A) | static_cast<uint32>(B)); }
-inline EDirtyFlag  operator&(EDirtyFlag A, EDirtyFlag B)  { return static_cast<EDirtyFlag>(static_cast<uint32>(A) & static_cast<uint32>(B)); }
-inline EDirtyFlag& operator|=(EDirtyFlag& A, EDirtyFlag B) { A = A | B; return A; }
-inline EDirtyFlag& operator&=(EDirtyFlag& A, EDirtyFlag B) { A = A & B; return A; }
-inline EDirtyFlag  operator~(EDirtyFlag A) { return static_cast<EDirtyFlag>(~static_cast<uint32>(A)); }
-inline bool HasFlag(EDirtyFlag Flags, EDirtyFlag Test) { return (Flags & Test) != EDirtyFlag::None; }
+inline EDirtyFlag operator|(EDirtyFlag A, EDirtyFlag B)
+{
+    return static_cast<EDirtyFlag>(static_cast<uint32>(A) | static_cast<uint32>(B));
+}
+inline EDirtyFlag operator&(EDirtyFlag A, EDirtyFlag B)
+{
+    return static_cast<EDirtyFlag>(static_cast<uint32>(A) & static_cast<uint32>(B));
+}
+inline EDirtyFlag& operator|=(EDirtyFlag& A, EDirtyFlag B)
+{
+    A = A | B;
+    return A;
+}
+inline EDirtyFlag& operator&=(EDirtyFlag& A, EDirtyFlag B)
+{
+    A = A & B;
+    return A;
+}
+inline EDirtyFlag operator~(EDirtyFlag A)
+{
+    return static_cast<EDirtyFlag>(~static_cast<uint32>(A));
+}
+inline bool HasFlag(EDirtyFlag Flags, EDirtyFlag Test)
+{
+    return (Flags & Test) != EDirtyFlag::None;
+}

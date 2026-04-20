@@ -2,7 +2,7 @@
 #include "Component/LightComponent.h"
 
 FLightSceneProxy::FLightSceneProxy(ULightComponent* InComponent)
-	: Owner(InComponent)
+    : Owner(InComponent)
 {
 }
 
@@ -10,9 +10,9 @@ void FLightSceneProxy::UpdateLightConstants()
 {
     if (!Owner)
         return;
-    LightConstants.Position   = Owner->GetWorldLocation();
-    LightConstants.Direction  = Owner->GetForwardVector();
-    LightConstants.Intensity  = Owner->GetIntensity();
+    LightConstants.Position = Owner->GetWorldLocation();
+    LightConstants.Direction = Owner->GetForwardVector();
+    LightConstants.Intensity = Owner->GetIntensity();
     LightConstants.LightColor = Owner->GetLightColor();
 }
 
@@ -20,6 +20,6 @@ void FLightSceneProxy::UpdateTransform()
 {
     if (!Owner)
         return;
-    LightConstants.Position  = Owner->GetWorldLocation();
+    LightConstants.Position = Owner->GetWorldLocation();
     LightConstants.Direction = Owner->GetForwardVector();
 }

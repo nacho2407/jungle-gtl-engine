@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "DrawCommand.h"
-#include "Render/D3D11/Device/D3DDevice.h"
-#include "Render/D3D11/Buffers/Buffers.h"
+#include "Render/RHI/D3D11/Device/D3DDevice.h"
+#include "Render/RHI/D3D11/Buffers/Buffers.h"
 
 /*
     FStateCache — Submit 루프에서 중복 GPU 상태 전환을 방지합니다.

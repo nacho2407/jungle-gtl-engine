@@ -1,15 +1,17 @@
 #pragma once
-#include "Render/Passes/RenderPass.h"
-struct FSceneView; using FFrameContext = FSceneView;
-struct FRenderPassContext;
+#include "Render/Passes/Base/MeshPassBase.h"
+struct FRenderPipelineContext;
 class FPrimitiveSceneProxy;
-class FGizmoPass : public FRenderPass
+/*
+    기즈모 프록시를 별도 상태로 렌더링하는 에디터 패스입니다.
+*/
+class FGizmoPass : public FMeshPassBase
 {
 public:
-    void PrepareInputs(FRenderPassContext& Context) override;
-    void PrepareTargets(FRenderPassContext& Context) override;
+    void PrepareInputs(FRenderPipelineContext& Context) override;
+    void PrepareTargets(FRenderPipelineContext& Context) override;
     // Gizmo pass는 gizmo proxy만 개별적으로 처리한다.
-    void BuildDrawCommands(FRenderPassContext& Context) override { (void)Context; }
-    void BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy) override;
-    void SubmitDrawCommands(FRenderPassContext& Context) override;
+    void BuildDrawCommands(FRenderPipelineContext& Context) override { (void)Context; }
+    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) override;
+    void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
