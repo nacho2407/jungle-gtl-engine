@@ -59,7 +59,18 @@ PSOutput mainPS(PSInput input) : SV_Target
         
     float3 Albedo = decalTex.rgb * DecalColorTint.rgb;
     
-    float3 LitColor = Albedo;
+    FUberMaterialInput MaterialInput;
+    MaterialInput.Albedo = Albedo;
+    MaterialInput.Emissive = float3(0.0f, 0.0f, 0.0f);
+    MaterialInput.SpecularColor = float3(0.0f, 0.0f, 0.0f);
+    MaterialInput.Shininess = 1.0f;
+
+    FUberLightingInput LightingInput;
+    LightingInput.WorldPos = input.WorldPos;
+    LightingInput.WorldNormal = input.WorldNormal;
+    LightingInput.ViewDir = normalize(CameraPosition - input.WorldPos);
+
+    float3 LitColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
 
     output.Color = float4(LitColor, decalTex.a * DecalColorTint.a);
     

@@ -70,6 +70,118 @@ float3 CalculateSpecularTerm(FUberMaterialInput materialInput, FUberLightingInpu
     return materialInput.SpecularColor * DirectionalLight.Color.rgb * DirectionalLight.Intensity * specular;
 }
 
+float CalculateLocalLightAttenuation(float3 lightPosition, float radius, float falloffExponent, float3 worldPos)
+{
+    float safeRadius = max(radius, 1e-4f);
+    float distanceToLight = distance(lightPosition, worldPos);
+    float normalizedFalloff = saturate(1.0f - (distanceToLight / safeRadius));
+    return pow(normalizedFalloff, max(falloffExponent, 1e-4f));
+}
+
+float CalculateSpotConeAttenuation(FSpotLightInfo light, float3 worldPos)
+{
+    float3 lightToSurface = GetSafeNormal(worldPos - light.Position);
+    float coneCos = dot(GetSafeNormal(light.Direction), lightToSurface);
+    float coneRange = max(light.InnerConeCos - light.OuterConeCos, 1e-4f);
+    return saturate((coneCos - light.OuterConeCos) / coneRange);
+}
+
+float3 CalculatePointDiffuseTerm(FPointLightInfo light, FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 N = GetSafeNormal(lightingInput.WorldNormal);
+    float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
+    float attenuation = CalculateLocalLightAttenuation(light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
+    float NdotL = saturate(dot(N, L));
+
+    return materialInput.Albedo * light.Color.rgb * light.Intensity * attenuation * NdotL;
+}
+
+float3 CalculatePointSpecularTerm(FPointLightInfo light, FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 N = GetSafeNormal(lightingInput.WorldNormal);
+    float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
+    float3 V = GetSafeNormal(lightingInput.ViewDir);
+    float3 H = GetSafeNormal(L + V);
+    float attenuation = CalculateLocalLightAttenuation(light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
+
+    float NdotH = saturate(dot(N, H));
+    float specular = pow(NdotH, max(materialInput.Shininess, 1.0f));
+
+    return materialInput.SpecularColor * light.Color.rgb * light.Intensity * attenuation * specular;
+}
+
+float3 CalculateSpotDiffuseTerm(FSpotLightInfo light, FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 N = GetSafeNormal(lightingInput.WorldNormal);
+    float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
+    float distanceAttenuation = CalculateLocalLightAttenuation(
+        light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
+    float coneAttenuation = CalculateSpotConeAttenuation(light, lightingInput.WorldPos);
+    float NdotL = saturate(dot(N, L));
+
+    return materialInput.Albedo * light.Color.rgb * light.Intensity * distanceAttenuation * coneAttenuation * NdotL;
+}
+
+float3 CalculateSpotSpecularTerm(FSpotLightInfo light, FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 N = GetSafeNormal(lightingInput.WorldNormal);
+    float3 L = GetSafeNormal(light.Position - lightingInput.WorldPos);
+    float3 V = GetSafeNormal(lightingInput.ViewDir);
+    float3 H = GetSafeNormal(L + V);
+    float distanceAttenuation = CalculateLocalLightAttenuation(
+        light.Position, light.Radius, light.FalloffExponent, lightingInput.WorldPos);
+    float coneAttenuation = CalculateSpotConeAttenuation(light, lightingInput.WorldPos);
+
+    float NdotH = saturate(dot(N, H));
+    float specular = pow(NdotH, max(materialInput.Shininess, 1.0f));
+
+    return materialInput.SpecularColor * light.Color.rgb * light.Intensity * distanceAttenuation * coneAttenuation * specular;
+}
+
+float3 AccumulatePointDiffuseTerms(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 accumulated = float3(0.0f, 0.0f, 0.0f);
+    [loop]
+    for (uint i = 0; i < PointLightCount; ++i)
+    {
+        accumulated += CalculatePointDiffuseTerm(PointLights[i], materialInput, lightingInput);
+    }
+    return accumulated;
+}
+
+float3 AccumulatePointSpecularTerms(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 accumulated = float3(0.0f, 0.0f, 0.0f);
+    [loop]
+    for (uint i = 0; i < PointLightCount; ++i)
+    {
+        accumulated += CalculatePointSpecularTerm(PointLights[i], materialInput, lightingInput);
+    }
+    return accumulated;
+}
+
+float3 AccumulateSpotDiffuseTerms(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 accumulated = float3(0.0f, 0.0f, 0.0f);
+    [loop]
+    for (uint i = 0; i < SpotLightCount; ++i)
+    {
+        accumulated += CalculateSpotDiffuseTerm(SpotLights[i], materialInput, lightingInput);
+    }
+    return accumulated;
+}
+
+float3 AccumulateSpotSpecularTerms(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
+{
+    float3 accumulated = float3(0.0f, 0.0f, 0.0f);
+    [loop]
+    for (uint i = 0; i < SpotLightCount; ++i)
+    {
+        accumulated += CalculateSpotSpecularTerm(SpotLights[i], materialInput, lightingInput);
+    }
+    return accumulated;
+}
+
 FUberLightingResult EvaluateUnlit(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
 {
     FUberLightingResult result;
@@ -84,6 +196,8 @@ FUberLightingResult EvaluateLambert(FUberMaterialInput materialInput, FUberLight
 
     // 순수 Lambertian 조명 모델은 Diffuse Term만 계산하기 때문에, 우선 Ambient Term은 포함시키지 않음
     result.Color += CalculateDiffuseTerm(materialInput, lightingInput);
+    result.Color += AccumulatePointDiffuseTerms(materialInput, lightingInput);
+    result.Color += AccumulateSpotDiffuseTerms(materialInput, lightingInput);
     result.Color += materialInput.Emissive;
 
     return result;
@@ -96,7 +210,11 @@ FUberLightingResult EvaluatePhong(FUberMaterialInput materialInput, FUberLightin
 
     result.Color += CalculateAmbientTerm(materialInput);
     result.Color += CalculateDiffuseTerm(materialInput, lightingInput);
+    result.Color += AccumulatePointDiffuseTerms(materialInput, lightingInput);
+    result.Color += AccumulateSpotDiffuseTerms(materialInput, lightingInput);
     result.Color += CalculateSpecularTerm(materialInput, lightingInput);
+    result.Color += AccumulatePointSpecularTerms(materialInput, lightingInput);
+    result.Color += AccumulateSpotSpecularTerms(materialInput, lightingInput);
     result.Color += materialInput.Emissive;
 
     return result;
