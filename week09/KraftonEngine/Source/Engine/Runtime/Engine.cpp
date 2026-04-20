@@ -1,3 +1,4 @@
+#include "Render/Types/ViewTypes.h"
 #include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
@@ -5,7 +6,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Resource/ResourceManager.h"
-#include "Render/Resources/Managers/MeshBufferManager.h"
+#include "Render/Resources/MeshBufferManager.h"
 #include "Mesh/ObjManager.h"
 #include "Texture/Texture2D.h"
 #include "GameFramework/World.h"
@@ -113,7 +114,7 @@ void UEngine::Render(float DeltaTime)
 	}
 
 	{
-		FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, &RenderTargets, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
+		FRenderPipelineContext PassContext = Renderer.CreatePassContext(RenderFrame, &RenderTargets, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
 		Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PassContext);
 	}
 }

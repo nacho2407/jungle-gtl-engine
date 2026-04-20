@@ -1,26 +1,26 @@
-﻿#include "Render/Passes/Editor/GizmoPass.h"
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Editor/GizmoPass.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
-void FGizmoPass::PrepareInputs(FRenderPassContext& Context)
+void FGizmoPass::PrepareInputs(FRenderPipelineContext& Context)
 {
     (void)Context;
 }
 
-void FGizmoPass::PrepareTargets(FRenderPassContext& Context)
+void FGizmoPass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
-    Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
+    BindViewportTarget(Context);
 }
 
-void FGizmoPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FGizmoPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
     FMeshDrawCommandBuilder::Build(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
 }
 
-void FGizmoPass::SubmitDrawCommands(FRenderPassContext& Context)
+void FGizmoPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     if (!Context.DrawCommandList)
     {

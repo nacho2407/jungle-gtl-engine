@@ -1,4 +1,11 @@
-#pragma once
+    #pragma once
+
+    #include "Math/Vector.h"
+
+    /*
+        높이 안개 컴포넌트가 씬에 전달하는 파라미터 구조체입니다.
+        라이팅/포스트 프로세스 단계에서 그대로 사용됩니다.
+    */
 
 #include "Math/Vector.h"
 

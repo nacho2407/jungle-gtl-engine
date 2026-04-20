@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
-#include "Render/Types/RenderTypes.h"
+#include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"

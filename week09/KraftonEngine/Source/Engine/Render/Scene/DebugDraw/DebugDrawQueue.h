@@ -9,11 +9,11 @@
 // ============================================================
 struct FDebugDrawItem
 {
-	FVector Start;
-	FVector End;
-	FColor  Color;
-	float   RemainingTime;	// <= 0이면 이번 프레임 후 제거 (0 = 1프레임만)
-	bool    bOneFrame;		// Duration == 0으로 추가된 항목 (1프레임 표시 후 제거)
+    FVector Start;
+    FVector End;
+    FColor Color;
+    float RemainingTime; // <= 0이면 이번 프레임 후 제거 (0 = 1프레임만)
+    bool bOneFrame;      // Duration == 0으로 추가된 항목 (1프레임 표시 후 제거)
 };
 
 // ============================================================
@@ -26,22 +26,22 @@ struct FDebugDrawItem
 class FDebugDrawQueue
 {
 public:
-	void AddLine(const FVector& Start, const FVector& End,
-		const FColor& Color, float Duration);
+    void AddLine(const FVector& Start, const FVector& End,
+                 const FColor& Color, float Duration);
 
-	void AddBox(const FVector& Center, const FVector& Extent,
-		const FColor& Color, float Duration);
+    void AddBox(const FVector& Center, const FVector& Extent,
+                const FColor& Color, float Duration);
 
-	void AddSphere(const FVector& Center, float Radius, int32 Segments,
-		const FColor& Color, float Duration);
+    void AddSphere(const FVector& Center, float Radius, int32 Segments,
+                   const FColor& Color, float Duration);
 
-	// Duration 감소 + 만료 항목 제거. 매 프레임 Tick 시 호출.
-	void Tick(float DeltaTime);
+    // Duration 감소 + 만료 항목 제거. 매 프레임 Tick 시 호출.
+    void Tick(float DeltaTime);
 
-	const TArray<FDebugDrawItem>& GetItems() const { return Items; }
+    const TArray<FDebugDrawItem>& GetItems() const { return Items; }
 
-	void Clear() { Items.clear(); }
+    void Clear() { Items.clear(); }
 
 private:
-	TArray<FDebugDrawItem> Items;
+    TArray<FDebugDrawItem> Items;
 };

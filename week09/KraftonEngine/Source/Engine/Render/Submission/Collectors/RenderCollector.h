@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/View/SceneView.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
 #include "Render/Submission/Collectors/SceneVisibilityCollector.h"
 #include "Render/Submission/Collectors/SceneDebugCollector.h"
 

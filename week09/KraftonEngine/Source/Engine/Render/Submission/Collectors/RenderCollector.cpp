@@ -1,3 +1,6 @@
+#include "Render/Types/LightTypes.h"
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "RenderCollector.h"
 
 #include "Component/DecalComponent.h"
@@ -6,12 +9,12 @@
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
-#include "Render/Visibility/ConvexVolume.h"
-#include "Render/Visibility/GPUOcclusionCulling.h"
+#include "Render/Visibility/Frustum/ConvexVolume.h"
+#include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 #include "Render/Scene/DebugDraw/DebugDrawQueue.h"
 #include "Render/Visibility/LOD/LODContext.h"
-#include "Render/Execution/Renderer.h"
-#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
+#include "Render/Renderer.h"
+#include "Render/Pipelines/Registry/ViewModePassConfig.h"
 #include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
 #include "Render/Submission/Builders/TextDrawCommandBuilder.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
@@ -19,7 +22,7 @@
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
@@ -68,7 +71,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, F
 void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer)
 {
     Renderer.SetCollectedScene(&Scene);
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, VisibilityCollector.GetCollectedPrimitives());
+    FRenderPipelineContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, VisibilityCollector.GetCollectedPrimitives());
 
     if (Renderer.HasActiveViewModePassConfig())
     {
@@ -80,7 +83,7 @@ void FRenderCollector::BuildFramePassCommands(const FFrameContext& Frame, FScene
         }
     }
 
-    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ViewModePostProcessPass))
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ViewModeResolvePass))
         Pass->BuildDrawCommands(PassContext);
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::HeightFogPass))
         Pass->BuildDrawCommands(PassContext);
@@ -257,7 +260,7 @@ void FSceneVisibilityCollector::CollectPrimitives(const TArray<FPrimitiveScenePr
     CollectedPrimitives.OpaqueProxies.clear();
     CollectedPrimitives.TransparentProxies.clear();
 
-    FRenderPassContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, CollectedPrimitives);
+    FRenderPipelineContext PassContext = Renderer.CreatePassContext(Frame, nullptr, &Scene, CollectedPrimitives);
     // Pass-specific command building now happens during pipeline execution.
     const FViewModePassRegistry* ViewModeRegistry = Renderer.GetViewModePassRegistry();
     const bool bHasViewModeConfig = Renderer.HasActiveViewModePassConfig() && ViewModeRegistry && ViewModeRegistry->HasConfig(Frame.ViewMode);

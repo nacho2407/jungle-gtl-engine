@@ -5,8 +5,8 @@
 #include "GameFramework/World.h"
 #include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Resources/Managers/MeshBufferManager.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Resources/MeshBufferManager.h"
+#include "Render/Resources/ShaderManager.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
 

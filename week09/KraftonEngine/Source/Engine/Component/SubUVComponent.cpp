@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 
 #include <cstring>
-#include "Render/Resources/Managers/MeshBufferManager.h"
+#include "Render/Resources/MeshBufferManager.h"
 #include "Resource/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"

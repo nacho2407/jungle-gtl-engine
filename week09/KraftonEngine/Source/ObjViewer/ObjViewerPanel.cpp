@@ -1,18 +1,18 @@
-﻿//#include "ObjViewer/ObjViewerPanel.h"
+﻿// #include "ObjViewer/ObjViewerPanel.h"
 //
-//#include "ObjViewer/ObjViewerEngine.h"
-//#include "ObjViewer/ObjViewerViewportClient.h"
-//#include "Engine/Runtime/WindowsWindow.h"
-//#include "Engine/Input/InputSystem.h"
-//#include "Render/Renderer/Renderer.h"
-//#include "Mesh/ObjManager.h"
-//#include "Viewport/Viewport.h"
+// #include "ObjViewer/ObjViewerEngine.h"
+// #include "ObjViewer/ObjViewerViewportClient.h"
+// #include "Engine/Runtime/WindowsWindow.h"
+// #include "Engine/Input/InputSystem.h"
+// #include "Render/Renderer/Renderer.h"
+// #include "Mesh/ObjManager.h"
+// #include "Viewport/Viewport.h"
 //
-//#include "ImGui/imgui.h"
-//#include "ImGui/imgui_impl_dx11.h"
-//#include "ImGui/imgui_impl_win32.h"
+// #include "ImGui/imgui.h"
+// #include "ImGui/imgui_impl_dx11.h"
+// #include "ImGui/imgui_impl_win32.h"
 //
-//void FObjViewerPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UObjViewerEngine* InEngine)
+// void FObjViewerPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UObjViewerEngine* InEngine)
 //{
 //	IMGUI_CHECKVERSION();
 //	ImGui::CreateContext();
@@ -27,16 +27,16 @@
 //
 //	ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
 //	ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
-//}
+// }
 //
-//void FObjViewerPanel::Release()
+// void FObjViewerPanel::Release()
 //{
 //	ImGui_ImplDX11_Shutdown();
 //	ImGui_ImplWin32_Shutdown();
 //	ImGui::DestroyContext();
-//}
+// }
 //
-//void FObjViewerPanel::Render(float DeltaTime)
+// void FObjViewerPanel::Render(float DeltaTime)
 //{
 //	ImGui_ImplDX11_NewFrame();
 //	ImGui_ImplWin32_NewFrame();
@@ -50,9 +50,9 @@
 //
 //	ImGui::Render();
 //	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-//}
+// }
 //
-//void FObjViewerPanel::Update()
+// void FObjViewerPanel::Update()
 //{
 //	ImGuiIO& IO = ImGui::GetIO();
 //
@@ -67,9 +67,9 @@
 //	}
 //	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
 //	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
-//}
+// }
 //
-//void FObjViewerPanel::RenderMeshList()
+// void FObjViewerPanel::RenderMeshList()
 //{
 //	ImGui::Begin("Mesh List");
 //
@@ -124,9 +124,9 @@
 //	}
 //
 //	ImGui::End();
-//}
+// }
 //
-//void FObjViewerPanel::RenderImportPopup()
+// void FObjViewerPanel::RenderImportPopup()
 //{
 //	if (!bShowImportPopup) return;
 //
@@ -153,7 +153,7 @@
 //		// Forward Axis
 //		const char* AxisLabels[] = { "X", "-X", "Y", "-Y", "Z", "-Z" };
 //		int AxisIndex = static_cast<int>(PendingImportOptions.ForwardAxis);
-//		if (ImGui::Combo("Forward Axis", &AxisIndex, AxisLabels, IM_ARRAYSIZE(AxisLabels)))
+//		if (ImGui::Combo("Forward Axis", &AxisIndex, AxisLabels, IM_ARRAY_SIZE(AxisLabels)))
 //		{
 //			PendingImportOptions.ForwardAxis = static_cast<EForwardAxis>(AxisIndex);
 //		}
@@ -161,7 +161,7 @@
 //		// Winding Order
 //		const char* WindingLabels[] = { "CCW -> CW (DirectX)", "Keep Original" };
 //		int WindingIndex = static_cast<int>(PendingImportOptions.WindingOrder);
-//		if (ImGui::Combo("Winding Order", &WindingIndex, WindingLabels, IM_ARRAYSIZE(WindingLabels)))
+//		if (ImGui::Combo("Winding Order", &WindingIndex, WindingLabels, IM_ARRAY_SIZE(WindingLabels)))
 //		{
 //			PendingImportOptions.WindingOrder = static_cast<EWindingOrder>(WindingIndex);
 //		}
@@ -190,9 +190,9 @@
 //
 //		ImGui::EndPopup();
 //	}
-//}
+// }
 //
-//void FObjViewerPanel::RenderPreviewViewport(float DeltaTime)
+// void FObjViewerPanel::RenderPreviewViewport(float DeltaTime)
 //{
 //	ImGui::Begin("Preview");
 //
@@ -218,4 +218,4 @@
 //	}
 //
 //	ImGui::End();
-//}
+// }

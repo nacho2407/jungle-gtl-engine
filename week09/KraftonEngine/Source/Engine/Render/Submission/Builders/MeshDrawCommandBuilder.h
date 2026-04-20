@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
+#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Pipelines/Registry/ViewModePassConfig.h"
 
 class FPrimitiveSceneProxy;
-struct FRenderPassContext;
+struct FRenderPipelineContext;
 class FDrawCommandList;
 
 class FMeshDrawCommandBuilder
 {
 public:
-    static void Build(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList);
+    static void Build(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 };

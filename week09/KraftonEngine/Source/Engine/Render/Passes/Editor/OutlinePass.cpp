@@ -1,15 +1,16 @@
 #include "Render/Passes/Editor/OutlinePass.h"
-#include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/View/SceneView.h"
-#include "Render/Core/RenderConstants.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/RenderResources.h"
 #include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Resources/Pools/ConstantBufferPool.h"
+#include "Render/Resources/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/View/ViewportRenderTargets.h"
+#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
+#include "Render/Pipelines/Registry/ViewModePassConfig.h"
 
-void FOutlinePass::PrepareInputs(FRenderPassContext& Context)
+void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.Frame)
@@ -55,15 +56,14 @@ void FOutlinePass::PrepareInputs(FRenderPassContext& Context)
     }
 }
 
-void FOutlinePass::PrepareTargets(FRenderPassContext& Context)
+void FOutlinePass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
-    Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
+    BindViewportTarget(Context);
 }
 
-void FOutlinePass::BuildDrawCommands(FRenderPassContext& Context)
+void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, 1);
+    FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::Outline);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
@@ -84,7 +84,7 @@ void FOutlinePass::BuildDrawCommands(FRenderPassContext& Context)
     Context.DrawCommandList->GetCommands().back().PerShaderCB[0] = OutlineCB;
 }
 
-void FOutlinePass::SubmitDrawCommands(FRenderPassContext& Context)
+void FOutlinePass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     if (Context.DrawCommandList)
     {
@@ -93,7 +93,7 @@ void FOutlinePass::SubmitDrawCommands(FRenderPassContext& Context)
         for (uint32 i = s; i < e; ++i)
         {
             const auto& c = Context.DrawCommandList->GetCommands()[i];
-            if ((c.SortKey & 0xFFFu) == 1)
+            if ((c.SortKey & 0xFFFu) == ToPostProcessUserBits(EViewModePostProcessVariant::Outline))
                 Context.DrawCommandList->SubmitRange(i, i + 1, *Context.Device, Context.Context, *Context.StateCache);
         }
     }

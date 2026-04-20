@@ -1,14 +1,15 @@
-﻿#include "Render/Submission/Builders/LineDrawCommandBuilder.h"
+#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Submission/Builders/LineDrawCommandBuilder.h"
 
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
 #include "Render/Scene/Scene.h"
-#include "Render/Passes/Common/PassRenderState.h"
-#include "Render/Execution/Renderer.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Passes/Base/PassRenderState.h"
+#include "Render/Renderer.h"
+#include "Render/Resources/ShaderManager.h"
 
-void FLineDrawCommandBuilder::Build(FRenderPassContext& Context, FDrawCommandList& OutList)
+void FLineDrawCommandBuilder::Build(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Scene || !Context.Frame)
     {

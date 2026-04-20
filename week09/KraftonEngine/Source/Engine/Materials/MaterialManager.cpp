@@ -1,3 +1,6 @@
+#include "Render/Types/RenderStateStrings.h"
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>
@@ -7,10 +10,10 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
-#include "Render/Resources/Managers/ShaderManager.h"
-#include "Render/D3D11/Buffers/Buffers.h"
+#include "Render/Resources/ShaderManager.h"
+#include "Render/RHI/D3D11/Buffers/Buffers.h"
 #include "Texture/Texture2D.h"
-#include "Render/Execution/Renderer.h"
+#include "Render/Renderer.h"
 
 namespace MatKeys
 {

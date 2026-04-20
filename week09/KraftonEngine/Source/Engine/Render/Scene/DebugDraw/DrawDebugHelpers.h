@@ -18,52 +18,52 @@ class UWorld;
 #if defined(_DEBUG)
 
 void DrawDebugLine(UWorld* World,
-	const FVector& Start, const FVector& End,
-	const FColor& Color = FColor::White(),
-	float Duration = 0.0f);
+                   const FVector& Start, const FVector& End,
+                   const FColor& Color = FColor::White(),
+                   float Duration = 0.0f);
 
 void DrawDebugBox(UWorld* World,
-	const FVector& Center, const FVector& Extent,
-	const FColor& Color = FColor::White(),
-	float Duration = 0.0f);
+                  const FVector& Center, const FVector& Extent,
+                  const FColor& Color = FColor::White(),
+                  float Duration = 0.0f);
 
 // 4개 꼭짓점으로 사각형(Quad) 외곽선 그리기 (P0→P1→P2→P3→P0)
 void DrawDebugBox(UWorld* World,
-	const FVector& P0, const FVector& P1,
-	const FVector& P2, const FVector& P3,
-	const FColor& Color = FColor::White(),
-	float Duration = 0.0f);
+                  const FVector& P0, const FVector& P1,
+                  const FVector& P2, const FVector& P3,
+                  const FColor& Color = FColor::White(),
+                  float Duration = 0.0f);
 
 // 8개 꼭짓점 직육면체 — 하단면(P0~P3) + 상단면(P4~P7), 12에지
 //   하단: P0→P1→P2→P3→P0
 //   상단: P4→P5→P6→P7→P4
 //   수직: P0→P4, P1→P5, P2→P6, P3→P7
 void DrawDebugBox(UWorld* World,
-	const FVector& P0, const FVector& P1,
-	const FVector& P2, const FVector& P3,
-	const FVector& P4, const FVector& P5,
-	const FVector& P6, const FVector& P7,
-	const FColor& Color = FColor::White(),
-	float Duration = 0.0f);
+                  const FVector& P0, const FVector& P1,
+                  const FVector& P2, const FVector& P3,
+                  const FVector& P4, const FVector& P5,
+                  const FVector& P6, const FVector& P7,
+                  const FColor& Color = FColor::White(),
+                  float Duration = 0.0f);
 
 void DrawDebugSphere(UWorld* World,
-	const FVector& Center, float Radius,
-	int32 Segments = 16,
-	const FColor& Color = FColor::White(),
-	float Duration = 0.0f);
+                     const FVector& Center, float Radius,
+                     int32 Segments = 16,
+                     const FColor& Color = FColor::White(),
+                     float Duration = 0.0f);
 
 void DrawDebugPoint(UWorld* World,
-	const FVector& Position, float Size = 0.1f,
-	const FColor& Color = FColor::White(),
-	float Duration = 0.0f);
+                    const FVector& Position, float Size = 0.1f,
+                    const FColor& Color = FColor::White(),
+                    float Duration = 0.0f);
 
 #else
 
-inline void DrawDebugLine(UWorld*, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
-inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
-inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
-inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
-inline void DrawDebugSphere(UWorld*, const FVector&, float, int32 = 16, const FColor & = FColor::White(), float = 0.0f) {}
-inline void DrawDebugPoint(UWorld*, const FVector&, float = 0.1f, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugLine(UWorld*, const FVector&, const FVector&, const FColor& = FColor::White(), float = 0.0f) {}
+inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FColor& = FColor::White(), float = 0.0f) {}
+inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FColor& = FColor::White(), float = 0.0f) {}
+inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FColor& = FColor::White(), float = 0.0f) {}
+inline void DrawDebugSphere(UWorld*, const FVector&, float, int32 = 16, const FColor& = FColor::White(), float = 0.0f) {}
+inline void DrawDebugPoint(UWorld*, const FVector&, float = 0.1f, const FColor& = FColor::White(), float = 0.0f) {}
 
 #endif

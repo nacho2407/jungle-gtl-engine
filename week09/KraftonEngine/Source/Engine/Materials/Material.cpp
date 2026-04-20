@@ -1,9 +1,11 @@
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Materials/Material.h"
 #include "Serialization/Archive.h"
-#include "Render/D3D11/Shaders/Programs/GraphicsShaderProgram.h"
+#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
-#include "Render/Execution/Renderer.h"
+#include "Render/Renderer.h"
 
 
 IMPLEMENT_CLASS(UMaterial, UMaterialInterface)

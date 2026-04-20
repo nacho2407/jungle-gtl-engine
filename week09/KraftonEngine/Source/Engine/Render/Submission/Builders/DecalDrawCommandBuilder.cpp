@@ -1,10 +1,12 @@
-﻿#include "Render/Submission/Builders/DecalDrawCommandBuilder.h"
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Submission/Builders/DecalDrawCommandBuilder.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
-void FDecalDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, FRenderPassContext& Context, FDrawCommandList& OutList)
+void FDecalDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Proxy.DiffuseSRV)
         return;
@@ -20,7 +22,7 @@ void FDecalDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, FRenderP
     Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
-void FDecalDrawCommandBuilder::BuildReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy, FRenderPassContext& Context, FDrawCommandList& OutList)
+void FDecalDrawCommandBuilder::BuildReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!ReceiverProxy.MeshBuffer)
         return;

@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Core/EngineTypes.h"
-#include "Render/Visibility/ConvexVolume.h"
+#include "Render/Visibility/Frustum/ConvexVolume.h"
 #include <memory>
 
 class UPrimitiveComponent;

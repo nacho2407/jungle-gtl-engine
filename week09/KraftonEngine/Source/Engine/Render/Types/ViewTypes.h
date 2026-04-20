@@ -2,6 +2,11 @@
 
 #include "Core/CoreTypes.h"
 
+/*
+    뷰 모드, ShowFlag, 뷰포트 카메라 프리셋, 뷰포트 렌더 옵션을 정의합니다.
+    에디터 뷰포트와 렌더 파이프라인이 공통으로 참조합니다.
+*/
+
 enum class EViewMode : int32
 {
 	Lit_Gouraud = 0,

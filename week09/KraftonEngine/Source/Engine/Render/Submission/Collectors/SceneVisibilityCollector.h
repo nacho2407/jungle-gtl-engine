@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Render/View/SceneView.h"
-#include "Render/Core/RenderConstants.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/RenderResources.h"
 
 class UWorld;
 class FScene;

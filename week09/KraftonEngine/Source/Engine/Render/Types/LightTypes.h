@@ -1,9 +1,21 @@
-#pragma once
+    #pragma once
 
-#include "Core/CoreTypes.h"
-#include "Math/Vector.h"
+    #include "Core/CoreTypes.h"
+    #include "Math/Vector.h"
 
-struct FAmbientLightInfo
+    /*
+        라이트 종류와 GPU 업로드용 라이트 데이터 구조를 정의하는 헤더입니다.
+        씬 수집 단계와 라이팅 패스가 공통으로 사용합니다.
+    */
+    enum class ELightType
+{
+    Directional,
+    Point,
+    Spot,
+    Ambient,
+};
+
+    struct FAmbientLightInfo
 {
     FVector Color;
     float Intensity;
