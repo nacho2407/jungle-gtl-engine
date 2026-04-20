@@ -12,6 +12,13 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 	{
 		Context.SelectedElement = this;
 		bIsSelected = true;
+		OnClicked(Context);
+	}
+
+	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+	if (bDoubleClicked)
+	{
+		OnDoubleClicked(Context);
 	}
 
 
@@ -60,13 +67,53 @@ FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
 	return result;
 }
 
-void DirectoryElement::Render(ContentBrowserContext& Context)
+void DirectoryElement::OnDoubleClicked(ContentBrowserContext& Context)
 {
-	ContentBrowserElement::Render(Context);
-	bool bDoubleClicked = ImGui::IsItemHovered() &&	ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
-	if (bDoubleClicked)
+	Context.CurrentPath = ContentItem.Path;
+	Context.bIsNeedRefresh = true;
+}
+
+#include "Serialization/SceneSaveManager.h"
+#include "Editor/EditorEngine.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
+void SceneElement::OnDoubleClicked(ContentBrowserContext& Context)
+{
+	std::filesystem::path ScenePath = ContentItem.Path;
+	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
+	UEditorEngine* EditorEngine = Context.EditorEngine;
+
+	EditorEngine->ClearScene();
+	FWorldContext LoadCtx;
+	FPerspectiveCameraData CamData;
+	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
+	if (LoadCtx.World)
 	{
-		Context.CurrentPath = ContentItem.Path;
-		Context.bIsNeedRefresh = true;
+		EditorEngine->GetWorldList().push_back(LoadCtx);
+		EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
+		EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
+		LoadCtx.World->WarmupPickingData(); // 씬 로드 후 메시 BVH와 월드 primitive BVH를 모두 빌드
+	}
+	EditorEngine->ResetViewport();
+
+	// ResetViewport()가 카메라를 기본값으로 초기화하므로 그 이후에 복원
+	if (CamData.bValid)
+	{
+		for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+		{
+			if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
+			{
+				if (UCameraComponent* Cam = VC->GetCamera())
+				{
+					Cam->SetWorldLocation(CamData.Location);
+					Cam->SetRelativeRotation(CamData.Rotation);
+					FCameraState CS = Cam->GetCameraState();
+					CS.FOV = CamData.FOV;
+					CS.NearZ = CamData.NearClip;
+					CS.FarZ = CamData.FarClip;
+					Cam->SetCameraState(CS);
+				}
+				break;
+			}
+		}
 	}
 }

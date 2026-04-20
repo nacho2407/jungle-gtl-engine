@@ -35,4 +35,5 @@ private:
 
 	ID3D11ShaderResourceView* DefaultIcon = nullptr;
 	ID3D11ShaderResourceView* FolderIcon = nullptr;
+	ID3D11ShaderResourceView* SceneICon = nullptr;
 };

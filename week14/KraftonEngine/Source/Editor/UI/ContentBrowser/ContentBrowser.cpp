@@ -19,8 +19,13 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 		InDevice, (IconDir + L"Folder_Base_256x.png").c_str(),
 		nullptr, &FolderIcon);
 
+	DirectX::CreateWICTextureFromFile(
+		InDevice, (IconDir + L"icon_landscape_40x.png").c_str(),
+		nullptr, &SceneICon);
+
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
+	Context.EditorEngine = InEditor;
 	BrowserContext = Context;
 
 	Refresh();
@@ -97,6 +102,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 			element = std::make_unique<DirectoryElement>();
 			element.get()->SetIcon(FolderIcon);
 
+		}
+		else if (Content.Path.extension() == ".Scene")
+		{
+			element = std::make_unique<SceneElement>();
+			element.get()->SetIcon(SceneICon);
 		}
 		else
 		{
