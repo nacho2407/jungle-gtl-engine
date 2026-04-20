@@ -388,7 +388,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
             }
         }
 
-        if (Proxy->bSelected)
+        if (Proxy->bSelected && Proxy->bSupportsOutline)
         {
             if (FRenderPass* SelectionMaskPass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::SelectionMaskPass))
             {

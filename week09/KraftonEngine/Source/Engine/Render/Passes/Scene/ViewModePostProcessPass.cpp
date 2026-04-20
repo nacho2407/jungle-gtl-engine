@@ -1,4 +1,4 @@
-#include "Render/Passes/Scene/ViewModePostProcessPass.h"
+﻿#include "Render/Passes/Scene/ViewModePostProcessPass.h"
 
 #include "Render/Builders//FullscreenDrawCommandBuilder.h"
 #include "Render/Commands/DrawCommand.h"
@@ -22,6 +22,7 @@ uint16 GetViewModePostProcessBits(const FRenderPassContext& Context)
 
     return Context.ViewModePassRegistry->GetPostProcessUserBits(Context.ActiveViewMode);
 }
+
 }
 
 void FViewModePostProcessPass::PrepareInputs(FRenderPassContext& Context)
@@ -47,39 +48,14 @@ void FViewModePostProcessPass::PrepareInputs(FRenderPassContext& Context)
             Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
         }
 
-        FSceneDepthPConstants Constants = {};
-        Constants.Exponent = Context.Frame->RenderOptions.Exponent;
-        Constants.NearClip = Context.Frame->NearClip;
-        Constants.FarClip = Context.Frame->FarClip;
-        Constants.Mode = static_cast<uint32>(Context.Frame->RenderOptions.SceneDepthVisMode);
-
-        FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
-        if (CB)
-        {
-            CB->Update(Context.Context, &Constants, sizeof(Constants));
-            ID3D11Buffer* RawCB = CB->GetBuffer();
-            Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &RawCB);
-        }
-    }
-    else if (UserBits == 3)
-    {
-        if (!Context.ActiveViewSurfaceSet)
-        {
-            return;
-        }
-
-        ID3D11ShaderResourceView* NormalSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedSurface1);
-        if (!NormalSRV)
-        {
-            NormalSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface1);
-        }
-
-        Context.Context->PSSetShaderResources(0, 1, &NormalSRV);
     }
 
     if (Context.StateCache)
     {
         Context.StateCache->DiffuseSRV = nullptr;
+        Context.StateCache->NormalSRV = nullptr;
+        Context.StateCache->PerShaderCB[0] = nullptr;
+        Context.StateCache->PerShaderCB[1] = nullptr;
         Context.StateCache->bForceAll = true;
     }
 }
@@ -104,6 +80,53 @@ void FViewModePostProcessPass::BuildDrawCommands(FRenderPassContext& Context)
     }
 
     FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, UserBits);
+
+    if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
+    {
+        return;
+    }
+
+    FDrawCommand& Command = Context.DrawCommandList->GetCommands().back();
+    if (UserBits == 2)
+    {
+        FSceneDepthPConstants Constants = {};
+        Constants.Exponent = Context.Frame->RenderOptions.Exponent;
+        Constants.NearClip = Context.Frame->NearClip;
+        Constants.FarClip = Context.Frame->FarClip;
+        Constants.Mode = static_cast<uint32>(Context.Frame->RenderOptions.SceneDepthVisMode);
+
+        FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
+        if (CB)
+        {
+            CB->Update(Context.Context, &Constants, sizeof(Constants));
+            Command.PerShaderCB[0] = CB;
+        }
+
+        // SceneDepth/Normal visualization은 기존 scene color 위에 반투명 합성이 아니라
+        // 자체가 최종 화면이어야 한다.
+        Command.Blend = EBlendState::Opaque;
+    }
+    else if (UserBits == 3)
+    {
+        // Normal view visualizes the normal surface directly through t0.
+        // Decal pass copies Surface1 into ModifiedSurface1 even when no decal draw
+        // occurs, so prefer the post-decal surface to reflect the final normal field.
+        ID3D11ShaderResourceView* NormalSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedSurface1);
+        if (!NormalSRV)
+        {
+            NormalSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface1);
+        }
+
+        Command.DiffuseSRV = NormalSRV;
+        Command.Blend = EBlendState::Opaque;
+    }
+
+    Command.SortKey = FDrawCommand::BuildSortKey(
+        Command.Pass,
+        Command.Shader,
+        nullptr,
+        Command.DiffuseSRV,
+        UserBits);
 }
 
 void FViewModePostProcessPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)

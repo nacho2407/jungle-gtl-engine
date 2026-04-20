@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 class FConstantBuffer;
@@ -9,4 +9,5 @@ struct FShaderBindingSet
     FConstantBuffer* PerObjectCB = nullptr;
     FConstantBuffer* PerShaderCB[2] = {};
     ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+    ID3D11ShaderResourceView* NormalSRV = nullptr;
 };

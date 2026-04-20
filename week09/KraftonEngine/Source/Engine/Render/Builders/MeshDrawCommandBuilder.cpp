@@ -102,7 +102,9 @@ void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPa
         }
     }
 
-    auto AddSection = [&](uint32 FirstIndex, uint32 IndexCount, ID3D11ShaderResourceView* SRV, FConstantBuffer* CB0, FConstantBuffer* CB1)
+    auto AddSection = [&](uint32 FirstIndex, uint32 IndexCount, ID3D11ShaderResourceView* BaseSRV, ID3D11ShaderResourceView* InNormalSRV,
+                          FConstantBuffer* CB0, FConstantBuffer* CB1,
+                          EBlendState SectionBlend, EDepthStencilState SectionDepthStencil, ERasterizerState SectionRasterizer)
     {
         if (IndexCount == 0)
         {
@@ -123,15 +125,28 @@ void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPa
         }
         else
         {
-            // ViewMode BaseDraw도 실제 scene geometry pass이므로 depth pre-pass에 의존해
-            // read-only depth로 강제하면, depth pre가 비었거나 규약이 어긋난 프레임에서
-            // 모든 opaque가 깊이 테스트에서 탈락해 화면이 통째로 비어 보일 수 있다.
-            // Opaque는 기본적으로 depth write 가능한 기본 상태를 사용한다.
-            Cmd.DepthStencil = (Pass == ERenderPass::Opaque && Proxy.DepthStencil != EDepthStencilState::Default)
-                                 ? Proxy.DepthStencil
-                                 : PassState.DepthStencil;
-            Cmd.Blend = (Pass == ERenderPass::Opaque && Proxy.Blend != EBlendState::Opaque) ? Proxy.Blend : PassState.Blend;
-            Cmd.Rasterizer = (Pass == ERenderPass::Opaque && Proxy.Rasterizer != ERasterizerState::SolidBackCull) ? Proxy.Rasterizer : PassState.Rasterizer;
+            const bool bUsesViewModeBaseDraw =
+                (Pass == ERenderPass::Opaque) &&
+                Context.ViewModePassRegistry &&
+                Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode);
+
+            // Reversed-Z depth pre-pass writes the same geometry depth first.
+            // BaseDraw must then use GREATER_EQUAL-style read-only depth or every
+            // opaque pixel at the exact same depth fails the comparison.
+            if (Pass == ERenderPass::Opaque && SectionDepthStencil != EDepthStencilState::Default)
+            {
+                Cmd.DepthStencil = SectionDepthStencil;
+            }
+            else if (bUsesViewModeBaseDraw)
+            {
+                Cmd.DepthStencil = EDepthStencilState::DepthReadOnly;
+            }
+            else
+            {
+                Cmd.DepthStencil = PassState.DepthStencil;
+            }
+            Cmd.Blend = (Pass == ERenderPass::Opaque && SectionBlend != EBlendState::Opaque) ? SectionBlend : PassState.Blend;
+            Cmd.Rasterizer = (Pass == ERenderPass::Opaque && SectionRasterizer != ERasterizerState::SolidBackCull) ? SectionRasterizer : PassState.Rasterizer;
         }
 
         if (Pass == ERenderPass::Opaque &&
@@ -146,18 +161,49 @@ void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPa
         Cmd.PerObjectCB = PerObjCB;
         Cmd.PerShaderCB[0] = (Pass == ERenderPass::DepthPre) ? nullptr : (CB0 ? CB0 : ExtraCB0);
         Cmd.PerShaderCB[1] = (Pass == ERenderPass::DepthPre) ? nullptr : (CB1 ? CB1 : ExtraCB1);
-        Cmd.DiffuseSRV = (Pass == ERenderPass::DepthPre) ? nullptr : SRV;
+        Cmd.DiffuseSRV = (Pass == ERenderPass::DepthPre) ? nullptr : BaseSRV;
+        Cmd.NormalSRV = (Pass == ERenderPass::DepthPre) ? nullptr : InNormalSRV;
         Cmd.Pass = Pass;
-        Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Cmd.Shader, Proxy.MeshBuffer, Cmd.DiffuseSRV);
+        const uintptr_t MaterialHash =
+            (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[0]) >> 4) ^
+            (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[1]) >> 9) ^
+            (reinterpret_cast<uintptr_t>(Cmd.DiffuseSRV) >> 14) ^
+            (reinterpret_cast<uintptr_t>(Cmd.NormalSRV) >> 19);
+        Cmd.SortKey = FDrawCommand::BuildSortKey(
+            Pass,
+            Cmd.Shader,
+            Proxy.MeshBuffer,
+            Cmd.DiffuseSRV,
+            static_cast<uint16>(MaterialHash & 0x0FFFu));
     };
 
     if (!Proxy.SectionDraws.empty())
     {
         for (const FMeshSectionDraw& S : Proxy.SectionDraws)
-            AddSection(S.FirstIndex, S.IndexCount, S.DiffuseSRV, S.MaterialCB[0], S.MaterialCB[1]);
+        {
+            AddSection(
+                S.FirstIndex,
+                S.IndexCount,
+                S.DiffuseSRV,
+                S.NormalSRV,
+                S.MaterialCB[0],
+                S.MaterialCB[1],
+                S.Blend,
+                S.DepthStencil,
+                S.Rasterizer);
+        }
     }
     else
     {
-        AddSection(0, Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount(), Proxy.DiffuseSRV, nullptr, nullptr);
+        AddSection(
+            0,
+            Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount(),
+            Proxy.DiffuseSRV,
+            nullptr,
+            nullptr,
+            nullptr,
+            Proxy.Blend,
+            Proxy.DepthStencil,
+            Proxy.Rasterizer);
     }
 }
