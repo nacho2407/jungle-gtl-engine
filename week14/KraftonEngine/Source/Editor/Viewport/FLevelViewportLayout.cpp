@@ -15,6 +15,8 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 
+#include "GameFramework/StaticMeshActor.h"
+
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
 int32 FLevelViewportLayout::GetSlotCount(EViewportLayout Layout)
@@ -668,6 +670,22 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				}
 			}
 		}
+	}
+
+	ImGui::SetCursorScreenPos(ContentPos);
+	ImGui::InvisibleButton("##DropTarget", ContentSize);
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ObjectContentItem"))
+		{
+			FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+
+			AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
+			NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
+			Editor->GetWorld()->AddActor(NewActor);
+		}
+		ImGui::EndDragDropTarget();
 	}
 
 	ImGui::End();
