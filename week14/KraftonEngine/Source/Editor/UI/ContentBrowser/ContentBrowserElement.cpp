@@ -1,26 +1,14 @@
 ﻿#include "ContentBrowserElement.h"
 #include "Platform/Paths.h"
 
-void ContentBrowserElement::Render(ContentBrowserContext& Context)
+bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
 	FString Name = FPaths::ToUtf8(ContentItem.Name);
 	ImGui::PushID(Name.c_str());
 
 	bIsSelected = Context.SelectedElement == this;
 
-	if (ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize))
-	{
-		Context.SelectedElement = this;
-		bIsSelected = true;
-		OnClicked(Context);
-	}
-
-	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
-	if (bDoubleClicked)
-	{
-		OnDoubleClicked(Context);
-	}
-
+	bool bIsClicked = ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize);
 
 	ImVec2 Min = ImGui::GetItemRectMin();
 	ImVec2 Max = ImGui::GetItemRectMax();
@@ -37,6 +25,31 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 	FString Text = EllipsisText(FPaths::ToUtf8(ContentItem.Name), Context.ContentSize.x);
 	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Text.c_str());
 	ImGui::PopID();
+
+	return bIsClicked;
+}
+
+void ContentBrowserElement::Render(ContentBrowserContext& Context)
+{
+	if (RenderSelectSpace(Context))
+	{
+		Context.SelectedElement = this;
+		bIsSelected = true;
+		OnClicked(Context);
+	}
+
+	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+	if (bDoubleClicked)
+	{
+		OnDoubleClicked(Context);
+	}
+
+	if (ImGui::BeginDragDropSource())
+	{
+		RenderSelectSpace(Context);
+		OnDrag(Context);
+		ImGui::EndDragDropSource();
+	}
 }
 
 FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
@@ -116,4 +129,9 @@ void SceneElement::OnDoubleClicked(ContentBrowserContext& Context)
 			}
 		}
 	}
+}
+
+void ObjectElement::OnDrag(ContentBrowserContext& Context)
+{
+	(void)Context;
 }
