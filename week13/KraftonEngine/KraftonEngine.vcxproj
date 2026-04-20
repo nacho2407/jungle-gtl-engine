@@ -324,6 +324,7 @@
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\TileBaseCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
@@ -381,7 +382,6 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="TileBaseCulling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
@@ -486,6 +486,7 @@
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\TileBaseCulling.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
@@ -562,7 +563,6 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
-    <ClInclude Include="TileBaseCulling.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\DecalShader.hlsl">
@@ -675,6 +675,9 @@
     </FxCompile>
     <FxCompile Include="Shaders\TileLightCulling.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\UberLit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

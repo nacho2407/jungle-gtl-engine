@@ -183,6 +183,9 @@
     <FxCompile Include="Shaders\StaticMeshShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\TileLightCulling.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\UberLit.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -206,9 +209,6 @@
     </FxCompile>
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsli">
       <Filter>Shaders\Common</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TileLightCulling.hlsl">
-      <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -461,6 +461,9 @@
     <ClCompile Include="Source\Engine\Render\Culling\OcclusionCulling.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\TileBaseCulling.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClCompile>
@@ -630,7 +633,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="TileBaseCulling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -939,6 +941,9 @@
     <ClInclude Include="Source\Engine\Render\Culling\OcclusionCulling.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\TileBaseCulling.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h">
       <Filter>Source\Engine\Render\DebugDraw</Filter>
     </ClInclude>
@@ -1167,7 +1172,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="TileBaseCulling.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
