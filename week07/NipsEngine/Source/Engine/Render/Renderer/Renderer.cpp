@@ -43,7 +43,7 @@ void FRenderer::CreateResources()
 {
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
-	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FLightConstants));
+	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FGlobalLightConstants));
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
@@ -689,11 +689,9 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	Context->VSSetConstantBuffers(0, 1, &b0);
 	Context->PSSetConstantBuffers(0, 1, &b0);
 
-	FLightConstants LightConstantData = {};
-	LightConstantData.AmbientLight = InRenderBus.AmbientLightInfo;
-	LightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
+	FGlobalLightConstants LightConstantData = InRenderBus.GlobalLights;
 
-	Resources.LightBuffer.Update(Context, &LightConstantData, sizeof(FLightConstants));
+	Resources.LightBuffer.Update(Context, &LightConstantData, sizeof(FGlobalLightConstants));
 	ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(3, 1, &b3);
 	Context->PSSetConstantBuffers(3, 1, &b3);

@@ -267,6 +267,7 @@
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLight.h" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLight.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Light\PointLight.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\Light.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
@@ -455,6 +456,7 @@
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\DirectionalLight.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\Light.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Light\PointLight.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />

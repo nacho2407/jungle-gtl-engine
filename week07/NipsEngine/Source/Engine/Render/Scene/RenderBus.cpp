@@ -8,8 +8,9 @@ void FRenderBus::Clear()
 		PassQueues[i].clear();
 	}
 
-	AmbientLightInfo = {};
-	DirectionalLightInfo = {};
+	GlobalLights = {};
+	PointLights.clear();
+	SpotLights.clear();
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)

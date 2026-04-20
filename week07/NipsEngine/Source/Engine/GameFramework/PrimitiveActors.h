@@ -1,6 +1,9 @@
 ﻿#pragma once
 
 #include "AActor.h"
+#include "GameFramework/Light/Light.h"
+
+class USpotLightComponent;
 
 class UTextRenderComponent;
 class UDecalComponent;
@@ -103,24 +106,21 @@ public:
 	void InitDefaultComponents();
 };
 
-class ASpotLightActor : public AActor {
+class ASpotLightActor : public ALight {
 public:
-	DECLARE_CLASS(ASpotLightActor, AActor)
+	DECLARE_CLASS(ASpotLightActor, ALight)
 	ASpotLightActor() = default;
 
 	void InitDefaultComponents();
 
-	void Tick(float DeltaTime) override;
+	USpotLightComponent* GetSpotLightComponent() const;
 
-	const float GetRange() const { return Range; }
-	void SetRange(float InRange) { Range = InRange; }
+	FVector GetLightDirection() const;
+	float GetInnerConeAngle() const;
+	float GetOuterConeAngle() const;
 
-	const float GetAngle() const { return Angle; }
-	void SetAngle(float InAngle) { Angle = InAngle; }
-
-private:
-	UDecalComponent* DecalComp = nullptr;
-
-	float Range = 10.0f;
-	float Angle = 30.0f;
+	float GetRange() const;
+	void SetRange(float InRange);
+	float GetAngle() const;
+	void SetAngle(float InAngle);
 };

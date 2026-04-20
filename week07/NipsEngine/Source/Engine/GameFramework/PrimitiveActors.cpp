@@ -1,7 +1,9 @@
 ﻿#include "GameFramework/PrimitiveActors.h"
 
-#include "Component/FireballComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
+#include "Component/FireballComponent.h"
+#include "Component/Light/SpotlightComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
@@ -50,7 +52,7 @@ REGISTER_FACTORY(ADecalActor)
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
 
-DEFINE_CLASS(ASpotLightActor, AActor)
+DEFINE_CLASS(ASpotLightActor, ALight)
 REGISTER_FACTORY(ASpotLightActor)
 
 void ACubeActor::InitDefaultComponents()
@@ -257,33 +259,63 @@ void AFireballActor::InitDefaultComponents()
 	Fireball->AttachToComponent(Sphere);
 }
 
-void ASpotLightActor::InitDefaultComponents() {
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    Billboard->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
-	Billboard->SetEditorOnly(true);
-	SetRootComponent(Billboard);
+void ASpotLightActor::InitDefaultComponents()
+{
+	auto* SpotLightComponent = AddComponent<USpotLightComponent>();
+	SetRootComponent(SpotLightComponent);
 
-	UDecalComponent* Decal = AddComponent<UDecalComponent>();
-	Decal->AttachToComponent(Billboard);
-	Decal->SetRelativeLocation(FVector(10, 0, 0));
-	DecalComp = Decal;
-
-	UMaterialInterface* DecalMat = FResourceManager::Get().GetMaterialInterface("DecalMat_SpotLight");
-	if (DecalMat == nullptr)
-	{
-		UMaterial* DecalOriginMat = FResourceManager::Get().GetMaterial("DecalMat");
-		DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
-	}
-	Decal->SetMaterial(DecalMat);
-	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+	auto* BillboardComponent = AddComponent<UBillboardComponent>();
+	BillboardComponent->SetTextureName("Asset/Texture/SpotLight_64x.png");
+	BillboardComponent->SetEditorOnly(true);
+	BillboardComponent->AttachToComponent(SpotLightComponent);
 }
 
-void ASpotLightActor::Tick(float DeltaTime)
+USpotLightComponent* ASpotLightActor::GetSpotLightComponent() const
 {
-	AActor::Tick(DeltaTime);
+	return Cast<USpotLightComponent>(GetLightComponent());
+}
 
-	if (DecalComp)
+FVector ASpotLightActor::GetLightDirection() const
+{
+	const auto* SpotLightComponent = GetSpotLightComponent();
+	return SpotLightComponent ? SpotLightComponent->GetLightDirection() : FVector::ZeroVector;
+}
+
+float ASpotLightActor::GetInnerConeAngle() const
+{
+	const auto* SpotLightComponent = GetSpotLightComponent();
+	return SpotLightComponent ? SpotLightComponent->GetInnerConeAngle() : 0.0f;
+}
+
+float ASpotLightActor::GetOuterConeAngle() const
+{
+	const auto* SpotLightComponent = GetSpotLightComponent();
+	return SpotLightComponent ? SpotLightComponent->GetOuterConeAngle() : 0.0f;
+}
+
+float ASpotLightActor::GetRange() const
+{
+	const auto* SpotLightComponent = GetSpotLightComponent();
+	return SpotLightComponent ? SpotLightComponent->GetAttenuationRadius() : 0.0f;
+}
+
+void ASpotLightActor::SetRange(float InRange)
+{
+	if (auto* SpotLightComponent = GetSpotLightComponent())
 	{
-		DecalComp->SetSize(FVector(Range, Range, Range));
+		SpotLightComponent->SetAttenuationRadius(InRange);
+	}
+}
+
+float ASpotLightActor::GetAngle() const
+{
+	return GetOuterConeAngle();
+}
+
+void ASpotLightActor::SetAngle(float InAngle)
+{
+	if (auto* SpotLightComponent = GetSpotLightComponent())
+	{
+		SpotLightComponent->SetOuterConeAngle(InAngle);
 	}
 }

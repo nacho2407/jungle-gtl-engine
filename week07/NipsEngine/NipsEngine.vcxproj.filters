@@ -665,6 +665,7 @@
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLight.h" />
     <ClCompile Include="Source\Engine\GameFramework\Light\Light.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLight.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Light\PointLight.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1278,5 +1279,6 @@
     <ClInclude Include="Source\Engine\Component\Light\SpotlightComponent.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\Light.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\DirectionalLight.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Light\PointLight.h" />
   </ItemGroup>
 </Project>

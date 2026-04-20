@@ -64,22 +64,60 @@ struct FFrameConstants
 
 struct FAmbientLightInfo
 {
-	FVector Color;
+	FColor Color;
+
 	float Intensity;
+	float Padding[3];
 };
 
 struct FDirectionalLightInfo
 {
 	FVector Direction;
 	float Padding0;
-	FVector Color;
+
+	FColor Color;
+
 	float Intensity;
+	float Padding1[3];
 };
 
-struct FLightConstants
+struct FGlobalLightConstants
 {
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
+	uint32 PointLightCount = 0;
+	uint32 SpotLightCount = 0;
+	float Padding[2];
+};
+
+using FLightConstants = FGlobalLightConstants;
+
+struct FPointLightInfo
+{
+	FVector Position;
+	float Intensity;
+
+	FColor Color;
+
+	float Radius;
+	float FalloffExponent;
+	float Padding[2];
+};
+
+struct FSpotLightInfo
+{
+	FVector Position;
+	float Intensity;
+
+	FVector Direction;
+	float Radius;
+
+	FColor Color;
+
+	float InnerConeCos;
+	float OuterConeCos;
+	float FalloffExponent;
+	float Padding[1];
 };
 
 struct FGizmoConstants

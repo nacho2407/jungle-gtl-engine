@@ -47,9 +47,12 @@ public:
 	const FVector2& GetViewportOrigin() const { return ViewportOrigin; }
 
 public:
-	// Light
-	FAmbientLightInfo AmbientLightInfo;
-	FDirectionalLightInfo DirectionalLightInfo;
+	FGlobalLightConstants GlobalLights;
+	TArray<FPointLightInfo> PointLights;
+	TArray<FSpotLightInfo> SpotLights;
+
+	constexpr static uint32 MaxPointLights = 128;
+	constexpr static uint32 MaxSpotLights = 128;
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];

@@ -21,6 +21,7 @@
 #include "Engine/Geometry/Frustum.h"
 #include "Engine/Asset/StaticMesh.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
+#include "Math/Utils.h"
 #include "Render/Resource/Material.h"
 #include "Object/ObjectIterator.h"
 #include "Runtime/Stats/ScopeCycleCounter.h"
@@ -856,29 +857,54 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 
 	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
 	{
-		const FVector AmbientLightColor(
-			AmbientLight->LightColor.R,
-			AmbientLight->LightColor.G,
-			AmbientLight->LightColor.B);
-		RenderBus.AmbientLightInfo.Color += AmbientLightColor * AmbientLight->Intensity;
-		RenderBus.AmbientLightInfo.Intensity = 1.0f;
+		FAmbientLightInfo AmbientLightData = {};
+		AmbientLightData.Color = AmbientLight->LightColor;
+		AmbientLightData.Intensity = AmbientLight->Intensity;
+		RenderBus.GlobalLights.AmbientLight = AmbientLightData;
 	}
 	else if (const UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Light))
 	{
-		// 현재 프레임에서 이미 directional이 하나 채워진 상태면, 이후에 만나는 visible directional은 무시
-		if (RenderBus.DirectionalLightInfo.Direction.IsNearlyZero() == false)
+		FDirectionalLightInfo DirLightData = {};
+		DirLightData.Direction = DirLight->GetLightDirection().GetSafeNormal();
+		DirLightData.Color = DirLight->LightColor;
+		DirLightData.Intensity = DirLight->Intensity;
+		RenderBus.GlobalLights.DirectionalLight = DirLightData;
+	}
+	else if (const USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Light))
+	{
+		if (RenderBus.GlobalLights.SpotLightCount >= FRenderBus::MaxSpotLights)
 		{
 			return;
 		}
 
-		FDirectionalLightInfo DirLightData = {};
-		DirLightData.Direction = DirLight->GetLightDirection().GetSafeNormal();
-		DirLightData.Color = FVector(
-			DirLight->LightColor.R,
-			DirLight->LightColor.G,
-			DirLight->LightColor.B);
-		DirLightData.Intensity = DirLight->Intensity;
+		FSpotLightInfo SpotLightData = {};
+		SpotLightData.Position = SpotLight->GetWorldLocation();
+		SpotLightData.Intensity = SpotLight->Intensity;
+		SpotLightData.Direction = SpotLight->GetLightDirection().GetSafeNormal();
+		SpotLightData.Radius = SpotLight->GetAttenuationRadius();
+		SpotLightData.Color = SpotLight->LightColor;
+		SpotLightData.InnerConeCos = std::cos(MathUtil::DegreesToRadians(SpotLight->GetInnerConeAngle()));
+		SpotLightData.OuterConeCos = std::cos(MathUtil::DegreesToRadians(SpotLight->GetOuterConeAngle()));
+		SpotLightData.FalloffExponent = SpotLight->GetLightFalloffExponent();
 
-		RenderBus.DirectionalLightInfo = DirLightData;
+		RenderBus.SpotLights.push_back(SpotLightData);
+		RenderBus.GlobalLights.SpotLightCount += 1;
+	}
+	else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light))
+	{
+		if (RenderBus.GlobalLights.PointLightCount >= FRenderBus::MaxPointLights)
+		{
+			return;
+		}
+
+		FPointLightInfo PointLightData = {};
+		PointLightData.Position = PointLight->GetWorldLocation();
+		PointLightData.Color = PointLight->LightColor;
+		PointLightData.Intensity = PointLight->Intensity;
+		PointLightData.Radius = PointLight->GetAttenuationRadius();
+		PointLightData.FalloffExponent = PointLight->GetLightFalloffExponent();
+
+		RenderBus.PointLights.push_back(PointLightData);
+		RenderBus.GlobalLights.PointLightCount += 1;
 	}
 }
