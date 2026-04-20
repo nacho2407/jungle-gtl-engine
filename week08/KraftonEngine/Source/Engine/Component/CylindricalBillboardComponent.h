@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "BillboardComponent.h"
 
 class UCylindricalBillboardComponent : public UBillboardComponent

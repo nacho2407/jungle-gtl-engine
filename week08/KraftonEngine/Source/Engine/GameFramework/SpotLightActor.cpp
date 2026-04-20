@@ -1,5 +1,7 @@
 ﻿#include "SpotLightActor.h"
 #include "Component/SpotLightComponent.h"
+#include "Component/BillboardComponent.h"
+#include "Materials/MaterialManager.h"
 #include "Object/ObjectFactory.h"
 
 IMPLEMENT_CLASS(ASpotLightActor, AActor)
@@ -14,4 +16,9 @@ void ASpotLightActor::InitDefaultComponents()
 {
     SpotLightComponent = AddComponent<USpotLightComponent>();
     SetRootComponent(SpotLightComponent);
+
+	BillboardComponent = AddComponent<UBillboardComponent>();
+	auto SpotLightIcon = FMaterialManager::Get().GetOrCreateMaterial(SpotLightIconPath);
+	BillboardComponent->SetMaterial(SpotLightIcon);
+	BillboardComponent->AttachToComponent(SpotLightComponent);
 }
