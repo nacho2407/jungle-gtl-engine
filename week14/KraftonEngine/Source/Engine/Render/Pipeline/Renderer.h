@@ -12,7 +12,7 @@
 #include "Render/Pipeline/PassEventBuilder.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
-#include "TileBaseCulling.h"
+#include "Render/Culling/TileBasedLightCulling.h"
 
 class FScene;
 
@@ -40,7 +40,7 @@ public:
 	ID3D11ShaderResourceView* GetLightBufferSRV()      { return Resources.ForwardLights.LightBufferSRV; }
 	FTileCullingResource&     GetTileCullingResource() { return Resources.TileCullingResource; }
 	uint32                    GetNumLights()    const  { return Resources.LastNumLights; }
-	FTileBaseCulling&         GetTileBaseCulling()     { return TileBaseCulling; }
+	FTileBasedLightCulling&         GetTileBaseCulling()     { return TileBasedCulling; }
 
 	void BindTileCullingResources() { Resources.BindTileCullingBuffers(Device); }
 
@@ -56,5 +56,5 @@ private:
 	FPassRenderStateTable PassRenderStateTable;
 	FPassEventBuilder PassEventBuilder;
 	
-	FTileBaseCulling TileBaseCulling;
+	FTileBasedLightCulling TileBasedCulling;
 };
