@@ -59,36 +59,6 @@ struct PSOutput
     float4 WorldPos : SV_TARGET2;
 };
 
-LightResult EvaluateLightByType(FLightInfo LightData, float3 normal, float3 worldPos, float3 camPos, float Shininess)
-{
-    switch (LightData.Type)
-    {
-        case 0:
-#if LIGHTING_MODEL_GOURAUD
-            return EvaluateSpotlightGouraud(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
-                                            LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
-#elif LIGHTING_MODEL_LAMBERT
-            return EvaluateSpotlightLambert(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
-                                            LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle);
-#elif LIGHTING_MODEL_PHONG
-            return EvaluateSpotlightBlinnPhong(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos,
-                                               LightData.Radius, LightData.Falloff, LightData.Direction, LightData.InnerAngle, LightData.OuterAngle, camPos - worldPos, Shininess);
-#endif
-            return (LightResult) 0;
-        case 1:
-#if LIGHTING_MODEL_GOURAUD
-            return EvaluatePointGouraud(LightData.Color, LightData.Intensity, LightData.Position, worldPos, normal, LightData.Radius, LightData.Falloff, camPos - worldPos, Shininess);
-#elif LIGHTING_MODEL_LAMBERT
-            return EvaluatePointLambert(LightData.Color, LightData.Intensity, normal, LightData.Position, worldPos, LightData.Radius, LightData.Falloff);
-#elif LIGHTING_MODEL_PHONG
-            return EvaluatePointBlinnPhong(LightData.Color, LightData.Intensity, LightData.Position, worldPos, normal, LightData.Radius, LightData.Falloff, camPos - worldPos, Shininess);
-#endif
-            return (LightResult) 0;
-        default:
-            return (LightResult) 0;
-    }
-}
-
 
 PSInput mainVS(VSInput input)
 {
@@ -97,43 +67,45 @@ PSInput mainVS(VSInput input)
     output.WorldPos = mul(float4(input.Position, 1.0f), Model).xyz;
     output.ClipPos = ApplyMVP(input.Position);
     output.UV = input.UV + ScrollUV;
-    
+        
 #if LIGHTING_MODEL_GOURAUD
+    uint2 tileCoord = uint2(output.ClipPos.xy) / TILE_SIZE;
+    uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+    uint2 tileData = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
+    
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
-    float3 accumulated_light = float3(0, 0, 0);
-    for (uint i = 0; i < LightCount; i++) {
-        LightResult result = EvaluateLightByType(Lights[i], output.WorldNormal, output.WorldPos, CameraPosition, Shininess);
-        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
+    
+    float3 accumulatedLight = float3(0, 0, 0);
+    accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess);
+    
+    for (uint i = 0; i < tileData.y; i++) {
+        LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+        accumulatedLight += light.Type == 0 ?
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess);
     }
     
-    // Apply Ambience
-    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
-    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
+    output.LitColor = accumulatedLight;
     
-    // Apply Directional
-    float3 DColor     = DirectionalLight.Color;
-    float3 DDirection = DirectionalLight.Direction;
-    float  DIntensity = DirectionalLight.Intensity;
-    LightResult DResult = EvaluateDirectionalGouraud(DColor, DIntensity, DDirection, output.WorldNormal, CameraPosition - output.WorldPos, Shininess);
-    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
-    
-    output.LitColor = accumulated_light;
     return output;
+    
 #elif LIGHTING_MODEL_LAMBERT
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
-    // Transform world tangent
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
     return output;
+    
 #elif LIGHTING_MODEL_PHONG
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     output.PixelNormal = output.WorldNormal;
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
     return output;
+    
 #else 
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
-#endif
-   
     return output;
+    
+#endif
 }
 
 float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
@@ -182,34 +154,29 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
     return output;
+    
 #elif LIGHTING_MODEL_LAMBERT
     float3 N_Lambert = (bHasBumpMap)
         ? PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV)
         : normalize(input.WorldNormal);
 
-    float3 accumulated_light = float3(0, 0, 0);
-    for (uint j = 0; j < tileData.y; j++)
+    float3 accumulatedLight = float3(0, 0, 0);
+    accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
+    accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N_Lambert);
+    
+    for (uint i = 0; i < tileData.y; i++)
     {
-        LightResult result = EvaluateLightByType(Lights[CulledIndexBuffer[tileData.x + j]], N_Lambert, input.WorldPos, CameraPosition, Shininess);
-        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
+        LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+        accumulatedLight += light.Type == 0 ?
+            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), input.WorldNormal, input.WorldPos)
+            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), input.WorldNormal, input.WorldPos);
     }
 
-    // Apply Ambience
-    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
-    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
-
-    // Apply Directional
-    float3 DColor     = DirectionalLight.Color;
-    float3 DDirection = DirectionalLight.Direction;
-    float  DIntensity = DirectionalLight.Intensity;
-    LightResult DResult = EvaluateDirectionalLambert(DColor, DIntensity, DDirection, N_Lambert);
-    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
-
-    output.Color = float4(FinalColor * accumulated_light, 1.f);
+    output.Color = float4(FinalColor * accumulatedLight, 1.f);
     output.Normal = float4(N_Lambert * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-
     return output;
+    
 #elif LIGHTING_MODEL_PHONG
     if (bHasBumpMap)
     {
@@ -223,55 +190,28 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         ? PerturbNormal(input.PixelNormal, input.WorldTangent, input.UV)
         : normalize(input.PixelNormal);
 
-    float3 accumulated_light = float3(0, 0, 0);
-    for (uint j = 0; j < tileData.y; j++)
+    float3 accumulatedLight = float3(0, 0, 0);
+    accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, Shininess);
+    
+    for (uint i = 0; i < tileData.y; i++)
     {
-        LightResult result = EvaluateLightByType(Lights[CulledIndexBuffer[tileData.x + j]], N_Phong, input.WorldPos, CameraPosition, Shininess);
-        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
+        LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+        accumulatedLight += light.Type == 0 ?
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, Shininess)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, Shininess);
     }
 
-    // Apply Ambience
-    LightResult AResult = EvaluateAmbientLight(AmbientLight.Color, AmbientLight.Intensity);
-    accumulated_light += AResult.Diffuse + AResult.Specular + AResult.Ambient;
-
-    // Apply Directional
-    float3 DColor     = DirectionalLight.Color;
-    float3 DDirection = DirectionalLight.Direction;
-    float  DIntensity = DirectionalLight.Intensity;
-    LightResult DResult = EvaluateDirectionalBlinnPhong(DColor, DIntensity, DDirection, N_Phong, CameraPosition - input.WorldPos, Shininess);
-    accumulated_light += DResult.Diffuse + DResult.Specular + DResult.Ambient;
-
-    output.Color = float4(FinalColor * accumulated_light, 1.f);
+    output.Color = float4(FinalColor * accumulatedLight, 1.f);
     output.Normal = float4(N_Phong * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-    
-    //float count = float(tileData.y);
-    //float heat = saturate(count / 5.0f);
-    //float3 debugColor = float3(heat, 1.0f - heat, 0.0f);
-    //if (count == 0)
-    //    debugColor = float3(0.1f, 0.1f, 0.1f);
-    
-    //uint2 pixelPos = uint2(input.ClipPos.xy);
-    //if (pixelPos.x % TILE_SIZE == 0 || pixelPos.y % TILE_SIZE == 0)
-    //    debugColor = float3(1.0f, 1.0f, 1.0f);
-    
-    //output.Color = float4(debugColor, 1.f);
-    //output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
-    //output.WorldPos = float4(input.WorldPos, 1.f);
-
     return output;
+    
 #else
-    float3 accumulated_light = float3(0, 0, 0);
-    for (uint j = 0; j < tileData.y; j++)
-    {
-        LightResult result = EvaluateLightByType(Lights[CulledIndexBuffer[tileData.x + j]], input.WorldNormal, input.WorldPos, CameraPosition, Shininess);
-        accumulated_light += result.Diffuse + result.Specular + result.Ambient;
-    }
-
-    output.Color = float4(FinalColor * accumulated_light, 1.f);
+    output.Color = float4(FinalColor, 1.0f);
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-    
     return output;
+    
 #endif
 }
