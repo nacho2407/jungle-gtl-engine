@@ -5,7 +5,7 @@
 #include "Math/Matrix.h"
 #include "Math/MathUtils.h"
 #include "Math/Vector.h"
-#include "Render/Renderer/Visibility/ConvexVolume.h"
+#include "Render/Visibility/ConvexVolume.h"
 
 struct FCameraState
 {

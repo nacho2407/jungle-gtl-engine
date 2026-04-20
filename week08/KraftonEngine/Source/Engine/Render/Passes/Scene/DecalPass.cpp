@@ -4,9 +4,9 @@
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//DecalDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
-#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
+#include "Render/Builders/DecalDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Frame/ViewModeSurfaceSet.h"
 
 namespace
 {
@@ -115,11 +115,6 @@ void FDecalPass::PrepareTargets(FRenderPassContext& Context)
     }
 
     Context.ActiveViewSurfaceSet->BindDecalTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
-}
-
-void FDecalPass::BuildDrawCommands(FRenderPassContext& Context)
-{
-    (void)Context;
 }
 
 void FDecalPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)

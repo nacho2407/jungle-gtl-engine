@@ -1,9 +1,9 @@
 ﻿#include "Render/Passes/Scene/LightingPass.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//FullscreenDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
-#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
+#include "Render/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Frame/ViewModeSurfaceSet.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
@@ -73,12 +73,6 @@ void FLightingPass::BuildDrawCommands(FRenderPassContext& Context)
     }
 
     FFullscreenDrawCommandBuilder::Build(ERenderPass::Lighting, Context, *Context.DrawCommandList);
-}
-
-void FLightingPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FLightingPass::SubmitDrawCommands(FRenderPassContext& Context)

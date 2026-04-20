@@ -1,4 +1,4 @@
-﻿#include "Render/Builders//FullscreenDrawCommandBuilder.h"
+﻿#include "Render/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Commands/DrawCommand.h"
@@ -6,7 +6,7 @@
 #include "Render/Core/PassRenderState.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/FrameContext.h"
-#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
+#include "Render/Frame/ViewModeSurfaceSet.h"
 
 void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {

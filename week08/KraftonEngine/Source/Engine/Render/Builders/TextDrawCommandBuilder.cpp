@@ -1,12 +1,12 @@
-﻿#include "Render/Builders//TextDrawCommandBuilder.h"
+﻿#include "Render/Builders/TextDrawCommandBuilder.h"
 
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Commands/DrawCommand.h"
 #include "Render/Core/PassRenderState.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Execution/Renderer.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/Scene/TextRenderSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
 #include "Resource/ResourceManager.h"
 

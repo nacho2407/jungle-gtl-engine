@@ -4,7 +4,7 @@
 #include "Core/Singleton.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/VertexTypes.h"
-#include "Render/D3D11/Resource/Buffer.h"
+#include "Render/Hardware/Resources/Buffer.h"
 
 class FMeshBufferManager : public TSingleton<FMeshBufferManager>
 {

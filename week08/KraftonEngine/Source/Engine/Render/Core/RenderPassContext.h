@@ -5,7 +5,7 @@
 #include "Render/Types/ViewTypes.h"
 
 struct FFrameContext;
-#include "Render/Scene/FScene.h"
+#include "Render/Scene/Core/Scene.h"
 class FD3DDevice;
 struct ID3D11DeviceContext;
 struct ID3D11RenderTargetView;

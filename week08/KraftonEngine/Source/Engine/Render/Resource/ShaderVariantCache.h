@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Platform/Paths.h"
-#include "Render/D3D11/Resource/Shader.h"
+#include "Render/Hardware/Resources/Shader.h"
 
 #include <cstdlib>
 #include <chrono>

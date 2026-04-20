@@ -8,9 +8,9 @@
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Render/D3D11/Resource/Buffer.h"
+#include "Render/Hardware/Resources/Buffer.h"
 #include "Texture/Texture2D.h"
-#include "Render/Renderer/Renderer.h"
+#include "Render/Execution/Renderer.h"
 
 namespace MatKeys
 {

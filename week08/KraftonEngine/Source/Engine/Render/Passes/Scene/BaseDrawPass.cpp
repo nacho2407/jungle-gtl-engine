@@ -1,9 +1,9 @@
 ﻿#include "Render/Passes/Scene/BaseDrawPass.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//MeshDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
-#include "Render/D3D11/Frame/ViewModeSurfaceSet.h"
+#include "Render/Builders/MeshDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Frame/ViewModeSurfaceSet.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
 
@@ -38,11 +38,6 @@ void FBaseDrawPass::PrepareTargets(FRenderPassContext& Context)
         ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
         Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
     }
-}
-
-void FBaseDrawPass::BuildDrawCommands(FRenderPassContext& Context)
-{
-    (void)Context;
 }
 
 void FBaseDrawPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)

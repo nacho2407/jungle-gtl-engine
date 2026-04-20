@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/Singleton.h"
-#include "Render/D3D11/Resource/Shader.h"
+#include "Render/Hardware/Resources/Shader.h"
 #include "Core/CoreTypes.h"
 #include <chrono>
 #include <filesystem>

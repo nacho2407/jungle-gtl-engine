@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/Singleton.h"
-#include "Render/D3D11/Resource/Buffer.h"
+#include "Render/Hardware/Resources/Buffer.h"
 #include "Core/CoreTypes.h"
 
 /* 수정될 구조

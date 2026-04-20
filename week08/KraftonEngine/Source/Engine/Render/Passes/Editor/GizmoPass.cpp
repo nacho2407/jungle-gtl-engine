@@ -1,8 +1,8 @@
 ﻿#include "Render/Passes/Editor/GizmoPass.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//MeshDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Builders/MeshDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FGizmoPass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -13,11 +13,6 @@ void FGizmoPass::PrepareTargets(FRenderPassContext& Context)
 {
     ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
     Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
-}
-
-void FGizmoPass::BuildDrawCommands(FRenderPassContext& Context)
-{
-    (void)Context;
 }
 
 void FGizmoPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)

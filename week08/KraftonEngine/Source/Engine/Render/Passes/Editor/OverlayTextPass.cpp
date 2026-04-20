@@ -1,8 +1,8 @@
 ﻿#include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Core/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//TextDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Builders/TextDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FOverlayTextPass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -18,12 +18,6 @@ void FOverlayTextPass::PrepareTargets(FRenderPassContext& Context)
 void FOverlayTextPass::BuildDrawCommands(FRenderPassContext& Context)
 {
     FTextDrawCommandBuilder::BuildOverlay(Context, *Context.DrawCommandList);
-}
-
-void FOverlayTextPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FOverlayTextPass::SubmitDrawCommands(FRenderPassContext& Context)

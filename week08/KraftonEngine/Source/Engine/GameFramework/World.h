@@ -6,8 +6,8 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
-#include "Render/Scene/FScene.h"
-#include "Render/Renderer/LODContext.h"
+#include "Render/Scene/Core/Scene.h"
+#include "Render/Execution/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 

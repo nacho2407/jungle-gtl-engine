@@ -3,8 +3,8 @@
 #include "Render/Core/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Builders//FullscreenDrawCommandBuilder.h"
-#include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Render/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FFXAAPass::PrepareInputs(FRenderPassContext& Context)
 {
@@ -51,12 +51,6 @@ void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context)
     }
 
     FFullscreenDrawCommandBuilder::Build(ERenderPass::FXAA, Context, *Context.DrawCommandList);
-}
-
-void FFXAAPass::BuildDrawCommands(FRenderPassContext& Context, const FPrimitiveSceneProxy& Proxy)
-{
-    (void)Context;
-    (void)Proxy;
 }
 
 void FFXAAPass::SubmitDrawCommands(FRenderPassContext& Context)
