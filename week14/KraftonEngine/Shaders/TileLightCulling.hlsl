@@ -106,7 +106,7 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
     }
     GroupMemoryBarrierWithGroupSync();
 
-    float depthSample = 0.0f;
+    float depthSample = 1.0f;
     // 현재 화면에서 벗어나는 픽셀인지 검사
     if (all(pixel < screenSize))
     {
@@ -150,9 +150,9 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         Sphere s;
         s.position = mul(float4(light.Position, 1), View).xyz;
         s.radius = light.AttenuationRadius;
-
+        
         // 광원의 bounding sphere의 Min, Max
-        float lightMinZ = s.position.z - s.radius; 
+        float lightMinZ = s.position.z - s.radius;
         float lightMaxZ = s.position.z + s.radius;
         
         // 절두체 안에 들어오지 않았으면 컬링
@@ -169,10 +169,13 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         {  
             float normMin = saturate((lightMinZ - NearZ) / (FarZ - NearZ)); // 광원 구체의 최소 깊이를 0~1로 정규화
             float normMax = saturate((lightMaxZ - NearZ) / (FarZ - NearZ)); // 광원 구체의 최대 깊이를 0~1로 정규화
+            
             int sphereSliceMin = (int) floor(normMin * NUM_SLICES);
-            int sphereSliceMax = (int) ceil(normMax * NUM_SLICES);
+            int sphereSliceMax = (int) floor(normMax * NUM_SLICES);
+            
             sphereSliceMin = clamp(sphereSliceMin, 0, NUM_SLICES - 1);
             sphereSliceMax = clamp(sphereSliceMax, 0, NUM_SLICES - 1);
+            
             uint sphereMask = 0;
             for (int j = sphereSliceMin; j <= sphereSliceMax; ++j)
             {

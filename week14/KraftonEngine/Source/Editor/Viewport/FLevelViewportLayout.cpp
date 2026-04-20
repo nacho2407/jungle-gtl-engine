@@ -925,7 +925,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 				// Tile Base Lgiht Culling Setting
 				ImGui::Text("TileBaseLgihtCulling");
-				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, ".0f");
+				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
+				ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
 
 				ImGui::EndPopup();
 			}
