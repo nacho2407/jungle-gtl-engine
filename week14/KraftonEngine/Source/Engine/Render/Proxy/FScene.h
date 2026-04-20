@@ -5,6 +5,7 @@
 #include "Render/Proxy/SceneEnvironment.h"
 #include "Render/DebugDraw/DebugDrawQueue.h"
 
+class AActor;
 class UPrimitiveComponent;
 
 // ============================================================
@@ -32,9 +33,7 @@ public:
 	// --- 선택 ---
 	void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
 	bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
-
-	// --- 선택 디버그 시각화 ---
-	void CollectSelectedDebugVisuals();
+	const TSet<AActor*>& GetSelectedActors() const { return SelectedActors; }
 
 	// --- 조회 ---
 	const TArray<FPrimitiveSceneProxy*>& GetAllProxies() const { return Proxies; }
@@ -87,6 +86,9 @@ private:
 
 	// 선택된 프록시 dense 목록
 	TArray<FPrimitiveSceneProxy*> SelectedProxies;
+
+	// 선택된 Actor (프록시 선택/해제 시 자동 관리)
+	TSet<AActor*> SelectedActors;
 
 	// bNeverCull 프록시 (Gizmo 등) — Frustum 쿼리와 무관하게 항상 수집
 	TArray<FPrimitiveSceneProxy*> NeverCullProxies;

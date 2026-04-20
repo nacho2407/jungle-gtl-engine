@@ -1,5 +1,7 @@
 ﻿#include "RenderCollector.h"
 
+#include "Component/ActorComponent.h"
+#include "GameFramework/AActor.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "GameFramework/World.h"
@@ -164,7 +166,7 @@ void FRenderCollector::CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDraw
 }
 
 // ============================================================
-// CollectSelectionVisuals — 아웃라인 + AABB + 컴포넌트 디버그
+// CollectSelectionVisuals — 아웃라인 + AABB
 // ============================================================
 void FRenderCollector::CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
 	FScene& Scene, FDrawCommandBuilder& Builder)
@@ -174,8 +176,22 @@ void FRenderCollector::CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool
 
 	if (bShowBoundingVolume && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
 		Scene.AddDebugAABB(Proxy->GetCachedBounds().Min, Proxy->GetCachedBounds().Max, FColor::White());
+}
 
-	// 디버그 시각화는 FScene::CollectSelectedDebugVisuals()에서 일괄 수집
+// ============================================================
+// CollectSelectedActorVisuals — Actor 단위 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
+// ============================================================
+void FRenderCollector::CollectSelectedActorVisuals(FScene& Scene)
+{
+	for (AActor* Actor : Scene.GetSelectedActors())
+	{
+		if (!Actor) continue;
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			if (Comp)
+				Comp->ContributeSelectedVisuals(Scene);
+		}
+	}
 }
 
 // ============================================================
@@ -229,10 +245,13 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		else
 			CollectMeshProxy(Proxy, Builder);
 
-		// 선택된 오브젝트 시각화
+		// 선택된 프록시 시각화 (아웃라인 + AABB)
 		if (Proxy->IsSelected())
 			CollectSelectionVisuals(Proxy, bShowBoundingVolume, Scene, Builder);
 	}
+
+	// 선택된 Actor의 컴포넌트 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
+	CollectSelectedActorVisuals(Scene);
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
 		OcclusionMut->EndGatherAABB();

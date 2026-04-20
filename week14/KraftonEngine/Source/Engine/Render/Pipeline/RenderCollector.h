@@ -2,6 +2,7 @@
 #include "Render/Pipeline/FrameContext.h"
 #include "Engine/Collision/Octree.h"
 
+class AActor;
 class UWorld;
 class FOverlayStatSystem;
 class UEditorEngine;
@@ -31,6 +32,7 @@ private:
 	void CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDrawCommandBuilder& Builder);
 	void CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
 		FScene& Scene, FDrawCommandBuilder& Builder);
+	void CollectSelectedActorVisuals(FScene& Scene);
 
 	TArray<FPrimitiveSceneProxy*> LastVisibleProxies;
 };
