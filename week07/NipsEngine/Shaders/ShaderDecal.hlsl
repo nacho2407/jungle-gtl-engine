@@ -1,4 +1,5 @@
 #include "Common.hlsl"
+#include "UberLit.hlsl"
 
 cbuffer DecalBuffer : register(b2)
 {
@@ -61,7 +62,11 @@ PSOutput mainPS(PSInput input) : SV_Target
     
     float4 decalTex = DiffuseMap.Sample(SampleState, decalUV);
         
-    output.Color = decalTex * DecalColorTint;
+    float3 Albedo = decalTex.rgb * DecalColorTint.rgb;
+    float3 LitColor = ApplyAmbientDirectionalLambert(Albedo, input.WorldNormal);
+
+    output.Color = float4(LitColor, decalTex.a * DecalColorTint.a);
+    
     // output.Color.a *= angleFade;
     output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
     

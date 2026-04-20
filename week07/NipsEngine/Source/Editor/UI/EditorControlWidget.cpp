@@ -11,6 +11,9 @@
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 
+#include "GameFramework/Light/AmbientLight.h"
+#include "GameFramework/Light/DirectionalLight.h"
+#include "GameFramework/Light/PointLight.h"
 #include "GameFramework/PrimitiveActors.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
@@ -100,8 +103,29 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
+            }
+            case 7: // AmbientLight
+            {
+                AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+                Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+                break;
+            }
+            case 8:  // DirectionalLight
+			{
+				ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+                break;
 			}
-			case 7: // Spotlight
+			case 9: // PointLight
+			{
+				APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(CurSpawnPoint);
+				break;
+            }
+			case 10: // Spotlight
 			{
 				ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
 				Actor->InitDefaultComponents();

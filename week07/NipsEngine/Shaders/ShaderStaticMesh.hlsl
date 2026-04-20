@@ -1,4 +1,5 @@
 #include "Common.hlsl"
+#include "UberLit.hlsl"
 
 cbuffer StaticMeshBuffer : register(b2)
 {
@@ -74,15 +75,12 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         clip(DiffuseTex.a - 0.001f);
     }
     
-    float3 FinalColor = DiffuseColor * DiffuseTex.rgb;
+    float3 Albedo = DiffuseColor * DiffuseTex.rgb;
+    float3 FinalColor = ApplyAmbientDirectionalLambert(Albedo, input.WorldNormal);
     
     if (any(EmissiveColor > 0.f))
     {
-        // Emissive surface: write the glow color and mark normal.a = 2
-        output.Color = float4(EmissiveColor, 1.f) * DiffuseTex;
-        output.Normal   = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
-        output.WorldPos = float4(input.WorldPos, 1.f);
-        return output;
+        FinalColor += EmissiveColor * DiffuseTex.rgb;
     }
 
     if (bIsWireframe > 0.5f)

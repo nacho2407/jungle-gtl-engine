@@ -17,6 +17,31 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor; 
 };
 
+struct FAmbientLightInfo
+{
+    float4 Color;
+    float Intensity;
+    float3 Padding0;
+};
+
+struct FDirectionalLightInfo
+{
+    float3 Direction;
+    float Padding1;
+    float4 Color;
+    float Intensity;
+    float3 Padding2;
+};
+
+cbuffer GlobalLighting : register(b3)
+{
+    FAmbientLightInfo AmbientLight;
+    FDirectionalLightInfo DirectionalLight;
+    uint PointLightCount;
+    uint SpotLightCount;
+    float2 Padding3;
+};
+
 // b2는 shader별 material/pass-local constant buffer
 
 #define MAX_FOG_LAYER_COUNT 32
