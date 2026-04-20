@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/D3D11/Buffers/Buffers.h"
+#include "Render/RHI/D3D11/Buffers/Buffers.h"
 
 template <typename TVertex>
 struct TBatchBuffer

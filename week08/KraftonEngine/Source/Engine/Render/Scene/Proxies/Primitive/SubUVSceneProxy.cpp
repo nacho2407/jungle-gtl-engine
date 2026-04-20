@@ -1,8 +1,11 @@
+#include "Render/Resources/ConstantBufferLayouts.h"
+#include "Render/Types/PrimitiveShapeTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
-#include "Render/View/SceneView.h"
-#include "Render/Resources/Managers/ShaderManager.h"
-#include "Render/Resources/Managers/MeshBufferManager.h"
+#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/ShaderManager.h"
+#include "Render/Resources/MeshBufferManager.h"
 
 // ============================================================
 // FSubUVSceneProxy

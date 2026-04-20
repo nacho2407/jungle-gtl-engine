@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "PrimitiveComponent.h"
 #include "Core/CoreTypes.h"

@@ -4,8 +4,8 @@
 #include <cstring>
 
 #include "Profiling/Stats.h"
-#include "Render/Core/RenderConstants.h"
-#include "Render/D3D11/Shaders/Programs/GraphicsShaderProgram.h"
+#include "Render/Resources/RenderResources.h"
+#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
 
 // ============================================================
 // FStateCache
@@ -39,7 +39,7 @@ void FStateCache::Reset()
 void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
     ID3D11ShaderResourceView* NullSRVs[8] = {};
-    Ctx->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+    Ctx->PSSetShaderResources(0, ARRAY_SIZE(NullSRVs), NullSRVs);
     DiffuseSRV = nullptr;
     NormalSRV = nullptr;
 

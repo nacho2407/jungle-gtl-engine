@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Core/RayTypes.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Math/Matrix.h"
 #include "Math/MathUtils.h"
 #include "Math/Vector.h"
-#include "Render/Visibility/ConvexVolume.h"
+#include "Render/Visibility/Frustum/ConvexVolume.h"
 
 struct FCameraState
 {

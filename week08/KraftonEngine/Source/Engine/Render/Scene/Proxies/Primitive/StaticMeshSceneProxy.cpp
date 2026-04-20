@@ -1,13 +1,15 @@
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Resources/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
-#include "Render/Execution/Renderer.h"
+#include "Render/Renderer.h"
 
 #include <algorithm>
 #include <initializer_list>

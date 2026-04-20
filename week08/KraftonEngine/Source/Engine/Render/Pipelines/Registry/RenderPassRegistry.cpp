@@ -1,16 +1,17 @@
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
 
-#include "Render/Passes/Geometry/AdditiveDecalPass.h"
-#include "Render/Passes/Geometry/AlphaBlendPass.h"
-#include "Render/Passes/Geometry/BaseDrawPass.h"
+#include "Render/Passes/Scene/AdditiveDecalPass.h"
+#include "Render/Passes/Scene/AlphaBlendPass.h"
+#include "Render/Passes/Scene/BaseDrawPass.h"
 #include "Render/Passes/Editor/DebugLinePass.h"
-#include "Render/Passes/Geometry/DecalPass.h"
-#include "Render/Passes/Geometry/DepthPrePass.h"
-#include "Render/Passes/PostProcess/FXAAPass.h"
+#include "Render/Passes/Scene/DecalPass.h"
+#include "Render/Passes/Scene/DepthPrePass.h"
+#include "Render/Passes/Scene/FXAAPass.h"
 #include "Render/Passes/Editor/GizmoPass.h"
-#include "Render/Passes/PostProcess/HeightFogPass.h"
-#include "Render/Passes/Resolve/LightingPass.h"
-#include "Render/Passes/Resolve/ViewModePostProcessPass.h"
+#include "Render/Passes/Scene/HeightFogPass.h"
+#include "Render/Passes/Scene/LightingPass.h"
+#include "Render/Passes/Scene/ViewModeResolvePass.h"
 #include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Passes/Editor/SelectionMaskPass.h"
@@ -29,7 +30,7 @@ void FRenderPassRegistry::Initialize()
     Passes.emplace((int32)ERenderPassNodeType::LightingPass, new FLightingPass());
     Passes.emplace((int32)ERenderPassNodeType::AdditiveDecalPass, new FAdditiveDecalPass());
     Passes.emplace((int32)ERenderPassNodeType::AlphaBlendPass, new FAlphaBlendPass());
-    Passes.emplace((int32)ERenderPassNodeType::ViewModePostProcessPass, new FViewModePostProcessPass());
+    Passes.emplace((int32)ERenderPassNodeType::ViewModeResolvePass, new FViewModeResolvePass());
     Passes.emplace((int32)ERenderPassNodeType::HeightFogPass, new FHeightFogPass());
     Passes.emplace((int32)ERenderPassNodeType::FXAAPass, new FFXAAPass());
     Passes.emplace((int32)ERenderPassNodeType::SelectionMaskPass, new FSelectionMaskPass());

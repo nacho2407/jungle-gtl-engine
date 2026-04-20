@@ -1,12 +1,12 @@
 ﻿#pragma once
 
-struct FRenderPassContext;
+struct FRenderPipelineContext;
 class FDrawCommandList;
 class FTextRenderSceneProxy;
 
 class FTextDrawCommandBuilder
 {
 public:
-    static void BuildOverlay(FRenderPassContext& Context, FDrawCommandList& OutList);
-    static void BuildWorld(const FTextRenderSceneProxy& Proxy, FRenderPassContext& Context, FDrawCommandList& OutList);
+    static void BuildOverlay(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+    static void BuildWorld(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 };

@@ -1,15 +1,16 @@
-﻿#pragma once
+#pragma once
 
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
-#include "Render/Types/RenderTypes.h"
+#include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "SimpleJSON/json.hpp"
 #include "Materials/MaterialSemantics.h"
 #include <filesystem>
 #include <memory>
 #include <vector>
 
-#include "Render/Types/RenderStateTypes.h"
+#include "Render/Types/PipelineStateTypes.h"
 
 class FMaterialTemplate;
 class UMaterial;
@@ -99,5 +100,5 @@ private:
     std::vector<FMaterialFileDependency> CollectTextureDependencies(json::JSON& JsonData, const FString& MatFilePath) const;
     void RetireMaterialCacheEntry(FMaterialCacheEntry& Entry);
 
-	const FString DefaultShaderPath = "Shaders/StaticMeshShader.hlsl";
+	const FString DefaultShaderPath = "Shaders/Materials/StaticMeshShader.hlsl";
 };
