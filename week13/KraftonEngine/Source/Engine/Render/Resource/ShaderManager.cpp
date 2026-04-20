@@ -1,158 +1,133 @@
 ﻿#include "ShaderManager.h"
-#include <string>
-#include <Windows.h>
+#include "Platform/Paths.h"
 
-namespace
-{
-	inline std::string WStringToString(const std::wstring& wstr)
-	{
-		if (wstr.empty()) return std::string();
-	
-		int sizeNeeded = WideCharToMultiByte(
-			CP_UTF8,
-			0,
-			wstr.data(),
-			(int)wstr.size(),
-			nullptr,
-			0,
-			nullptr,
-			nullptr
-		);
-	
-		if (sizeNeeded <= 0) return std::string();
-	
-		std::string result(sizeNeeded, 0);
-	
-		WideCharToMultiByte(
-			CP_UTF8,
-			0,
-			wstr.data(),
-			(int)wstr.size(),
-			&result[0],
-			sizeNeeded,
-			nullptr,
-			nullptr
-		);
-	
-		return result;
-	}
-}
-
+// ============================================================
+// Initialize — 시스템 셰이더 사전 컴파일 (GetOrCreate로 캐시에 등록)
+// ============================================================
 void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
 	if (bIsInitialized) return;
+	CachedDevice = InDevice;
 
-	const D3D_SHADER_MACRO UberLitDefines[] =
-	{
-		{ "DEBUG_LIGHTS", "0" },
-		{ nullptr, nullptr }
-	};
+	// 단순 셰이더 (매크로 없음)
+	GetOrCreate(EShaderPath::Primitive);
+	GetOrCreate(EShaderPath::Gizmo);
+	GetOrCreate(EShaderPath::Editor);
+	GetOrCreate(EShaderPath::Decal);
+	GetOrCreate(EShaderPath::OutlinePostProcess);
+	GetOrCreate(EShaderPath::SceneDepth);
+	GetOrCreate(EShaderPath::SceneNormal);
+	GetOrCreate(EShaderPath::FXAA);
+	GetOrCreate(EShaderPath::Font);
+	GetOrCreate(EShaderPath::OverlayFont);
+	GetOrCreate(EShaderPath::SubUV);
+	GetOrCreate(EShaderPath::Billboard);
+	GetOrCreate(EShaderPath::HeightFog);
 
-	Shaders[(uint32)EShaderType::Primitive].Create(InDevice, L"Shaders/Primitive.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::Gizmo].Create(InDevice, L"Shaders/Gizmo.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::Editor].Create(InDevice, L"Shaders/Editor.hlsl", "VS", "PS");
-	// [UberLit] StaticMesh 기본(Phong) + 3개 라이팅 모델 변형 컴파일
-	// UberLitDefines(DEBUG_LIGHTS=0)를 공통으로 포함하여 실제 CB/SB 바인딩 사용
-	Shaders[(uint32)EShaderType::StaticMesh].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", UberLitDefines);
+	// UberLit 기본 + permutation (매크로 포함 → PreCompile)
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Default),  EUberLitDefines::Default);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud),  EUberLitDefines::Gouraud);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert),  EUberLitDefines::Lambert);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),    EUberLitDefines::Phong);
 
-	// UberLit 변형 — 라이팅 모델 매크로 + DEBUG_LIGHTS=0
-	{
-		D3D_SHADER_MACRO GouraudMacros[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {"DEBUG_LIGHTS", "0"}, { "USE_TILE_CULLING", "0" }, {nullptr, nullptr} };
-		D3D_SHADER_MACRO LambertMacros[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {"DEBUG_LIGHTS", "0"}, { "USE_TILE_CULLING", "1" }, {nullptr, nullptr} };
-		D3D_SHADER_MACRO PhongMacros[]   = { {"LIGHTING_MODEL_PHONG",   "1"}, {"DEBUG_LIGHTS", "0"}, { "USE_TILE_CULLING", "1" }, {nullptr, nullptr} };
-		Shaders[(uint32)EShaderType::UberLit_Gouraud].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", GouraudMacros);
-		Shaders[(uint32)EShaderType::UberLit_Lambert].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", LambertMacros);
-		Shaders[(uint32)EShaderType::UberLit_Phong].Create(InDevice, L"Shaders/UberLit.hlsl", "VS", "PS", PhongMacros);
-	}
-	Shaders[(uint32)EShaderType::Decal].Create(InDevice, L"Shaders/DecalShader.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::OutlinePostProcess].Create(InDevice, L"Shaders/OutlinePostProcess.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::SceneDepth].Create(InDevice, L"Shaders/SceneDepth.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::SceneNormal].Create(InDevice, L"Shaders/SceneNormal.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::FXAA].Create(InDevice, L"Shaders/FXAA.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::Font].Create(InDevice, L"Shaders/ShaderFont.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::OverlayFont].Create(InDevice, L"Shaders/ShaderOverlayFont.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::SubUV].Create(InDevice, L"Shaders/ShaderSubUV.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::Billboard].Create(InDevice, L"Shaders/ShaderBillboard.hlsl", "VS", "PS");
-	Shaders[(uint32)EShaderType::HeightFog].Create(InDevice, L"Shaders/HeightFog.hlsl", "VS", "PS");
-
-	// 경로 레지스트리 등록 — MaterialManager가 Template 생성 시 기 컴파일된 셰이더를 우선 사용
-	RegisterShaderPath("Shaders/UberLit.hlsl",            EShaderType::StaticMesh);
-	RegisterShaderPath("Shaders/StaticMeshShader.hlsl",   EShaderType::StaticMesh); // 레거시 호환
-	RegisterShaderPath("Shaders/ShaderBillboard.hlsl",    EShaderType::Billboard);
-	RegisterShaderPath("Shaders/ShaderSubUV.hlsl",        EShaderType::SubUV);
-	RegisterShaderPath("Shaders/DecalShader.hlsl",        EShaderType::Decal);
+	// 레거시 경로 별칭 — MaterialManager가 이 경로를 사용하는 기존 .json 호환
+	RegisterAlias("Shaders/StaticMeshShader.hlsl", FShaderKey(EShaderPath::UberLit, EUberLitDefines::Default));
+	RegisterAlias("Shaders/UberLit.hlsl",          FShaderKey(EShaderPath::UberLit, EUberLitDefines::Default));
 
 	bIsInitialized = true;
 }
 
-
-
 void FShaderManager::Release()
 {
-	for (uint32 i = 0; i < (uint32)EShaderType::MAX; ++i)
+	for (auto& [Key, Shader] : ShaderCache)
 	{
-		Shaders[i].Release();
-	}
-
-	for (auto& [Key, Shader] : CustomShaderCache)
 		Shader->Release();
+	}
+	ShaderCache.clear();
+	AliasMap.clear();
 
-	CustomShaderCache.clear();
-
+	CachedDevice = nullptr;
 	bIsInitialized = false;
 }
 
-FShader* FShaderManager::GetShader(EShaderType InType)
+// ============================================================
+// GetOrCreate — 캐시 히트 시 반환, 미스 시 컴파일
+// ============================================================
+FShader* FShaderManager::GetOrCreate(const FShaderKey& Key)
 {
-	uint32 Idx = (uint32)InType;
-	if (Idx < (uint32)EShaderType::MAX)
+	auto It = ShaderCache.find(Key);
+	if (It != ShaderCache.end())
 	{
-		return &Shaders[Idx];
+		return It->second.get();
 	}
-	return nullptr;
-}
 
-FShader* FShaderManager::GetCustomShader(const FString& Key)
-{
-	auto It = CustomShaderCache.find(Key);
-	if (It != CustomShaderCache.end())
-	{
-		return It->second.get();  // 이미 캐시에 있으면 반환
-	}
-	return nullptr;
-}
-
-FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath)
-{
-	FString Key = WStringToString(InFilePath);
-
-	auto It = CustomShaderCache.find(Key);
-	if (It != CustomShaderCache.end())
-	{
-		return It->second.get();  // 이미 캐시에 있으면 반환
-	}
+	if (!CachedDevice) return nullptr;
 
 	auto NewShader = std::make_unique<FShader>();
-	NewShader->Create(InDevice, InFilePath, "VS", "PS");
+	std::wstring WidePath = FPaths::ToWide(Key.Path);
+
+	// DefinesHash가 0이면 매크로 없음
+	if (Key.DefinesHash == 0)
+	{
+		NewShader->Create(CachedDevice, WidePath.c_str(), "VS", "PS");
+	}
+	else
+	{
+		// 매크로가 있는 셰이더는 Initialize에서 사전 컴파일되어야 함.
+		// 런타임에 새 매크로 조합이 필요하면 해시만으로는 매크로를 복원할 수 없음.
+		return nullptr;
+	}
+
 	auto* RawPtr = NewShader.get();
-	CustomShaderCache[Key] = std::move(NewShader);
+	ShaderCache.emplace(Key, std::move(NewShader));
 	return RawPtr;
 }
 
-void FShaderManager::RegisterShaderPath(const FString& Path, EShaderType Type)
+// ============================================================
+// PreCompile — 매크로 포함 셰이더 사전 컴파일
+// ============================================================
+FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines)
 {
-	RegisteredShaderPaths[Path] = &Shaders[(uint32)Type];
-}
-
-FShader* FShaderManager::FindRegisteredShader(const FString& Path) const
-{
-	auto It = RegisteredShaderPaths.find(Path);
-	if (It != RegisteredShaderPaths.end())
+	auto It = ShaderCache.find(Key);
+	if (It != ShaderCache.end())
 	{
-		return It->second;
+		return It->second.get();
 	}
-	return nullptr;
+
+	if (!CachedDevice) return nullptr;
+
+	auto NewShader = std::make_unique<FShader>();
+	std::wstring WidePath = FPaths::ToWide(Key.Path);
+	NewShader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines);
+
+	auto* RawPtr = NewShader.get();
+	ShaderCache.emplace(Key, std::move(NewShader));
+	return RawPtr;
 }
 
+// ============================================================
+// FindOrCreate — MaterialManager용: 별칭 우선 조회, 없으면 컴파일
+// ============================================================
+FShader* FShaderManager::FindOrCreate(const FString& Path)
+{
+	// 레거시 별칭 우선
+	auto AliasIt = AliasMap.find(Path);
+	if (AliasIt != AliasMap.end())
+	{
+		return AliasIt->second;
+	}
 
+	return GetOrCreate(Path);
+}
 
+// ============================================================
+// RegisterAlias — 경로 별칭 등록
+// ============================================================
+void FShaderManager::RegisterAlias(const FString& AliasPath, const FShaderKey& TargetKey)
+{
+	FShader* Target = GetOrCreate(TargetKey);
+	if (Target)
+	{
+		AliasMap[AliasPath] = Target;
+	}
+}

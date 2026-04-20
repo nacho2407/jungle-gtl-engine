@@ -22,7 +22,7 @@ FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
 		bInner ? EBlendState::AlphaBlend : EBlendState::Opaque,
 		bInner ? EDepthStencilState::GizmoInside : EDepthStencilState::GizmoOutside,
 		ERasterizerState::SolidBackCull,
-		FShaderManager::Get().GetShader(EShaderType::Gizmo));
+		FShaderManager::Get().GetOrCreate(EShaderPath::Gizmo));
 }
 
 FGizmoSceneProxy::~FGizmoSceneProxy()

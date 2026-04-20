@@ -38,7 +38,7 @@ void FTextRenderSceneProxy::UpdateMesh()
 		TextMaterial = UMaterial::CreateTransient(
 			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
 			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
-			FShaderManager::Get().GetShader(EShaderType::Primitive));
+			FShaderManager::Get().GetOrCreate(EShaderPath::Primitive));
 	}
 
 	SectionDraws.clear();
