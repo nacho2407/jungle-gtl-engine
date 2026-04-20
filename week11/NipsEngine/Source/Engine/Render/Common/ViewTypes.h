@@ -4,7 +4,9 @@
 
 enum class EViewMode : int32
 {
-    Lit = 0,
+    Lit_Gouraud,
+	Lit_Lambert,
+	Lit_BlinnPhong,
     Unlit,
     Wireframe,
     Depth,
