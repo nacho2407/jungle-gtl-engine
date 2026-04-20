@@ -197,7 +197,7 @@ void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uin
 }
 
 void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements) {
-	if (InElementSize == 0) {
+	if (InDevice == nullptr || InElementSize == 0 || InMaxElements == 0) {
 		Release();
 		return;
 	}
@@ -230,11 +230,19 @@ void FStructuredBuffer::Release() {
 }
 
 void FStructuredBuffer::Update(ID3D11DeviceContext* InContext, const void* InData, uint32 InElementCount) {
+	if (Buffer == nullptr || InContext == nullptr) {
+		return;
+	}
+
+	Count = InElementCount;
+	if (InElementCount == 0 || InData == nullptr) {
+		return;
+	}
+
 	if (Buffer) {
 		D3D11_MAPPED_SUBRESOURCE structuredMSR;
         InContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &structuredMSR);
         std::memcpy(structuredMSR.pData, InData, InElementCount * ElementSize);
-		Count = InElementCount;
         InContext->Unmap(Buffer.Get(), 0);
 	}
 }

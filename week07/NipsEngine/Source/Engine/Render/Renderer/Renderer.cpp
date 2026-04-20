@@ -90,6 +90,8 @@ void FRenderer::CreateResources()
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FGlobalLightConstants));
+	Resources.PointLightBuffer.Create(Device.GetDevice(), sizeof(FPointLightInfo), FRenderBus::MaxPointLights);
+	Resources.SpotLightBuffer.Create(Device.GetDevice(), sizeof(FSpotLightInfo), FRenderBus::MaxSpotLights);
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
@@ -125,6 +127,8 @@ void FRenderer::Release()
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
 	Resources.LightBuffer.Release();
+	Resources.PointLightBuffer.Release();
+	Resources.SpotLightBuffer.Release();
 
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
@@ -748,9 +752,30 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	Context->PSSetConstantBuffers(0, 1, &b0);
 
 	FGlobalLightConstants LightConstantData = InRenderBus.GlobalLights;
+	const uint32 PointLightCount = std::min<uint32>(static_cast<uint32>(InRenderBus.PointLights.size()), FRenderBus::MaxPointLights);
+	const uint32 SpotLightCount = std::min<uint32>(static_cast<uint32>(InRenderBus.SpotLights.size()), FRenderBus::MaxSpotLights);
+	LightConstantData.PointLightCount = PointLightCount;
+	LightConstantData.SpotLightCount = SpotLightCount;
 
 	Resources.LightBuffer.Update(Context, &LightConstantData, sizeof(FGlobalLightConstants));
 	ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(3, 1, &b3);
 	Context->PSSetConstantBuffers(3, 1, &b3);
+
+	Resources.PointLightBuffer.Update(
+		Context,
+		PointLightCount > 0 ? InRenderBus.PointLights.data() : nullptr,
+		PointLightCount);
+	Resources.SpotLightBuffer.Update(
+		Context,
+		SpotLightCount > 0 ? InRenderBus.SpotLights.data() : nullptr,
+		SpotLightCount);
+
+	ID3D11ShaderResourceView* LightSRVs[2] = {
+		Resources.PointLightBuffer.GetSRV(),
+		Resources.SpotLightBuffer.GetSRV()
+	};
+
+	Context->VSSetShaderResources(10, 2, LightSRVs);
+	Context->PSSetShaderResources(10, 2, LightSRVs);
 }

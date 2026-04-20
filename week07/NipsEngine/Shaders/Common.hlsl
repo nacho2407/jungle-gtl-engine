@@ -38,6 +38,34 @@ struct FDirectionalLightInfo
     float3 Padding2;
 };
 
+struct FPointLightInfo
+{
+    float3 Position;
+    float Intensity;
+
+    float4 Color;
+
+    float Radius;
+    float FalloffExponent;
+    float2 Padding4;
+};
+
+struct FSpotLightInfo
+{
+    float3 Position;
+    float Intensity;
+
+    float3 Direction;
+    float Radius;
+
+    float4 Color;
+
+    float InnerConeCos;
+    float OuterConeCos;
+    float FalloffExponent;
+    float Padding5;
+};
+
 cbuffer GlobalLighting : register(b3)
 {
     FAmbientLightInfo AmbientLight;
@@ -46,6 +74,9 @@ cbuffer GlobalLighting : register(b3)
     uint SpotLightCount;
     float2 Padding3;
 };
+
+StructuredBuffer<FPointLightInfo> PointLights : register(t10);
+StructuredBuffer<FSpotLightInfo> SpotLights : register(t11);
 
 #define MAX_FOG_LAYER_COUNT 32
 
