@@ -1,10 +1,10 @@
 ﻿#pragma once
 
-struct FRenderPassContext;
+struct FRenderPipelineContext;
 class FDrawCommandList;
 
 class FLineDrawCommandBuilder
 {
 public:
-    static void Build(FRenderPassContext& Context, FDrawCommandList& OutList);
+    static void Build(FRenderPipelineContext& Context, FDrawCommandList& OutList);
 };

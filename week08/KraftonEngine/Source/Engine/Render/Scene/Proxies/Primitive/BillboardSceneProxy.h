@@ -12,11 +12,11 @@ class UBillboardComponent;
 class FBillboardSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-	FBillboardSceneProxy(UBillboardComponent* InComponent);
+    FBillboardSceneProxy(UBillboardComponent* InComponent);
 
-	void UpdateMesh() override;
-	void UpdatePerViewport(const FFrameContext& Frame) override;
+    void UpdateMesh() override;
+    void UpdatePerViewport(const FFrameContext& Frame) override;
 
 protected:
-	UBillboardComponent* GetBillboardComponent() const;
+    UBillboardComponent* GetBillboardComponent() const;
 };

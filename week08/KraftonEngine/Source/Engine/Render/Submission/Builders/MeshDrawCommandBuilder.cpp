@@ -1,14 +1,17 @@
+#include "Render/Resources/ConstantBufferLayouts.h"
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
-#include "Render/Passes/Common/RenderPassContext.h"
-#include "Render/Resources/Frame/FrameSharedResources.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
+#include "Render/Pipelines/Context/FrameSharedResources.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Resources/Pools/ConstantBufferPool.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Resources/ConstantBufferPool.h"
+#include "Render/Resources/ShaderManager.h"
 #include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Passes/Common/PassRenderState.h"
-#include "Render/Pipelines/ViewMode/ViewModePassConfig.h"
-#include "Render/Execution/Renderer.h"
+#include "Render/Passes/Base/PassRenderState.h"
+#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Renderer.h"
 
 
 namespace
@@ -32,7 +35,7 @@ bool TryResolveViewModeStage(ERenderPass Pass, EPipelineStage& OutStage)
 }
 } // namespace
 
-void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList)
+void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     const bool bHasMeshBuffer = (Proxy.MeshBuffer != nullptr);
     const bool bMeshValid = bHasMeshBuffer && Proxy.MeshBuffer->IsValid();

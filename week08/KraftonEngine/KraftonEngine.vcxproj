@@ -322,36 +322,39 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
-    <ClCompile Include="Source\Engine\Render\D3D11\Buffers\Buffers.cpp" />
-    <ClCompile Include="Source\Engine\Render\D3D11\Device\D3DDevice.cpp" />
-    <ClCompile Include="Source\Engine\Render\D3D11\Shaders\Programs\GraphicsShaderProgram.cpp" />
-    <ClCompile Include="Source\Engine\Render\D3D11\State\BlendStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\D3D11\State\DepthStencilStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\D3D11\State\RasterizerStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Execution\RenderPipelineRunner.cpp" />
-    <ClCompile Include="Source\Engine\Render\Execution\Renderer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Common\PassRenderState.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Common\RenderPassContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Base\PassRenderState.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\DebugLinePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Geometry\AdditiveDecalPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Geometry\AlphaBlendPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Geometry\BaseDrawPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Geometry\DecalPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Geometry\DepthPrePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\PostProcess\FXAAPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\PostProcess\HeightFogPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Resolve\LightingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Resolve\ViewModePostProcessPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\DecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\DepthPrePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\RenderPipelineRunner.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\View\SceneView.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\View\ViewModeSurfaceSet.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\View\ViewportRenderTargets.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resources\Frame\FrameSharedResources.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resources\Managers\MeshBufferManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resources\Managers\ShaderManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resources\Pools\ConstantBufferPool.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resources\ConstantBufferPool.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resources\MeshBufferManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resources\ShaderManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RHI\D3D11\Buffers\Buffers.cpp" />
+    <ClCompile Include="Source\Engine\Render\RHI\D3D11\Device\D3DDevice.cpp" />
+    <ClCompile Include="Source\Engine\Render\RHI\D3D11\Shaders\GraphicsShaderProgram.cpp" />
+    <ClCompile Include="Source\Engine\Render\RHI\D3D11\State\BlendStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RHI\D3D11\State\DepthStencilStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RHI\D3D11\State\RasterizerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Scene.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\DebugDraw\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\DebugDraw\DrawDebugHelpers.cpp" />
@@ -378,13 +381,9 @@
     <ClCompile Include="Source\Engine\Render\Submission\Builders\TextDrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collectors\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Commands\DrawCommandList.cpp" />
-    <ClCompile Include="Source\Engine\Render\View\SceneView.cpp" />
-    <ClCompile Include="Source\Engine\Render\View\ViewModeSurfaceSet.cpp" />
-    <ClCompile Include="Source\Engine\Render\View\ViewportRenderTargets.cpp" />
-    <ClCompile Include="Source\Engine\Render\Visibility\ConvexVolume.cpp" />
-    <ClCompile Include="Source\Engine\Render\Visibility\GPUOcclusionCulling.cpp" />
-    <ClCompile Include="Source\Engine\Render\Visibility\OcclusionCulling.cpp" />
-    <ClCompile Include="Source\Engine\Render\Visibility\TileBasedLightCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\Occlusion\GPUOcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\Occlusion\OcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
@@ -513,58 +512,65 @@
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
-    <ClInclude Include="Source\Engine\Render\Bindings\BindingSlots.h" />
-    <ClInclude Include="Source\Engine\Render\Bindings\ConstantBufferLayouts.h" />
-    <ClInclude Include="Source\Engine\Render\Core\RenderConstants.h" />
-    <ClInclude Include="Source\Engine\Render\Core\SortKey.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\Buffers.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\ConstantBuffer.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\DynamicIndexBuffer.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\DynamicVertexBuffer.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\IndexBuffer.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\MeshBuffer.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Buffers\VertexBuffer.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Device\D3DDevice.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Shaders\Programs\GraphicsShaderProgram.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Shaders\Stages\ComputeShaderStage.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Shaders\Stages\PixelShaderStage.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\Shaders\Stages\VertexShaderStage.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\State\BlendStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\State\DepthStencilStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\D3D11\State\RasterizerStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\Execution\PipelineShaderResolver.h" />
-    <ClInclude Include="Source\Engine\Render\Execution\RenderMarkers.h" />
-    <ClInclude Include="Source\Engine\Render\Execution\RenderPipelineRunner.h" />
-    <ClInclude Include="Source\Engine\Render\Execution\Renderer.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\RenderPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Common\FullscreenPassBase.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Common\MeshPassBase.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Common\PassRenderState.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Common\RenderPassContext.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Base\FullscreenPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Base\MeshPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Geometry\AdditiveDecalPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Geometry\AlphaBlendPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Geometry\BaseDrawPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Geometry\DecalPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Geometry\DepthPrePass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\PostProcess\FXAAPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\PostProcess\HeightFogPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Resolve\LightingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Resolve\ViewModePostProcessPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\DecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\DepthPrePass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPassTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPipelineRunner.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPipelineType.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\ShadingTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\PipelineShaderResolver.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderMarkers.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\View\SceneView.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\View\ViewModeSurfaceSet.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\View\ViewportRenderTargets.h" />
     <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.h" />
     <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineType.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\ViewMode\ViewModePassConfig.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Caches\ShaderVariantCache.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Frame\FrameSharedResources.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Managers\MeshBufferManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Managers\ShaderManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Pools\ConstantBufferPool.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderDependencyUtils.h" />
+    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\ViewModePassConfig.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\BindingSlots.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferBinding.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferLayouts.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferPool.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\MeshBufferManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\RenderResources.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\ShaderManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\ShaderVariantCache.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\Buffers.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\ConstantBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\DynamicIndexBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\DynamicVertexBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\IndexBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\MeshBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\VertexBuffer.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Common\D3D11API.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Device\D3DDevice.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\ComputeShaderStage.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\GraphicsShaderProgram.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\PixelShaderStage.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\ShaderDependencyUtils.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\ShaderIncludeLoader.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\VertexShaderStage.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\State\BlendStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\State\DepthStencilStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\State\RasterizerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Scene\DirtyFlag.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Scene.h" />
     <ClInclude Include="Source\Engine\Render\Scene\DebugDraw\DebugDrawQueue.h" />
@@ -600,21 +606,15 @@
     <ClInclude Include="Source\Engine\Render\Submission\Types\MeshSectionDraw.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\LightTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Types\RenderAPI.h" />
-    <ClInclude Include="Source\Engine\Render\Types\RenderEnums.h" />
-    <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Types\ShadingTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\PipelineStateTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\PrimitiveShapeTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\RenderStateStrings.h" />
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\ViewTypes.h" />
-    <ClInclude Include="Source\Engine\Render\View\SceneView.h" />
-    <ClInclude Include="Source\Engine\Render\View\ViewModeSurfaceSet.h" />
-    <ClInclude Include="Source\Engine\Render\View\ViewportRenderTargets.h" />
-    <ClInclude Include="Source\Engine\Render\Visibility\ConvexVolume.h" />
-    <ClInclude Include="Source\Engine\Render\Visibility\GPUOcclusionCulling.h" />
-    <ClInclude Include="Source\Engine\Render\Visibility\OcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.h" />
     <ClInclude Include="Source\Engine\Render\Visibility\LOD\LODContext.h" />
-    <ClInclude Include="Source\Engine\Render\Visibility\TileBasedLightCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\Occlusion\GPUOcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\Occlusion\OcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Resource\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
@@ -648,196 +648,211 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\BaseDraw.hlsl">
+    <FxCompile Include="Shaders\Common\Geometry\VertexLayouts.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\CommonTypes.hlsli">
+    <FxCompile Include="Shaders\Common\Resources\ConstantBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\LightCullingCommon.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\DecalCommon.hlsli">
+    <FxCompile Include="Shaders\Common\Resources\SystemResources.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\DecalPass.hlsl">
+    <FxCompile Include="Shaders\Common\Resources\SystemSamplers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\DecalShader.hlsl">
+    <FxCompile Include="Shaders\Common\Types\CommonTypes.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\DepthOnly.hlsl">
+    <FxCompile Include="Shaders\Common\Types\DecalCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Editor.hlsl">
+    <FxCompile Include="Shaders\Common\Types\LightingCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\FXAA.hlsl">
+    <FxCompile Include="Shaders\Common\Types\StaticMeshMaterialCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\FakeLightShader.hlsl">
+    <FxCompile Include="Shaders\Common\Types\SurfaceData.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Gizmo.hlsl">
+    <FxCompile Include="Shaders\Common\Utils\Functions.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\HeightFog.hlsl">
+    <FxCompile Include="Shaders\Editor\Editor.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\HiZGenerate.hlsl">
+    <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\LightingPass.hlsl">
+    <FxCompile Include="Shaders\Editor\Primitive.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\NormalView.hlsl">
+    <FxCompile Include="Shaders\Editor\ShaderBillboard.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\OcclusionTest.hlsl">
+    <FxCompile Include="Shaders\Editor\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\OutlinePostProcess.hlsl">
+    <FxCompile Include="Shaders\Editor\ShaderOverlayFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\PreDepth.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\Primitive.hlsl">
+    <FxCompile Include="Shaders\Editor\ShaderSubUV.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\SceneDepth.hlsl">
+    <FxCompile Include="Shaders\Materials\DecalShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderBillboard.hlsl">
+    <FxCompile Include="Shaders\Materials\StaticMeshShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderFont.hlsl">
+    <FxCompile Include="Shaders\Passes\PostProcess\FXAA.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderOverlayFont.hlsl">
+    <FxCompile Include="Shaders\Passes\PostProcess\OutlinePostProcess.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+    <FxCompile Include="Shaders\Passes\Scene\BaseDraw.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\StaticMeshMaterialCommon.hlsli">
+    <FxCompile Include="Shaders\Passes\Scene\DecalPass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\StaticMeshShader.hlsl">
+    <FxCompile Include="Shaders\Passes\Scene\DepthOnly.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\SurfaceData.hlsli">
+    <FxCompile Include="Shaders\Passes\Scene\HeightFog.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\TileBasedLightCullingCS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\UberLit.hlsl">
+    <FxCompile Include="Shaders\Passes\Scene\LightingPass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\ConstantBuffers.hlsl">
+    <FxCompile Include="Shaders\Passes\Visibility\ClusterBinningCS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\Functions.hlsl">
+    <FxCompile Include="Shaders\Passes\Visibility\FrustumCullCS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\SystemResources.hlsl">
+    <FxCompile Include="Shaders\Passes\Visibility\HiZGenerate.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\SystemSamplers.hlsl">
+    <FxCompile Include="Shaders\Passes\Visibility\InstanceCullCS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
+    <FxCompile Include="Shaders\Passes\Visibility\OcclusionTest.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ViewModes\FakeLightShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ViewModes\NormalView.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ViewModes\SceneDepth.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ViewModes\UberLit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -846,11 +861,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\LightingCommon.hlsli">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,16 +1,17 @@
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Submission/Builders/TextDrawCommandBuilder.h"
 
-#include "Render/Passes/Common/RenderPassContext.h"
+#include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Passes/Common/PassRenderState.h"
-#include "Render/Execution/Renderer.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Passes/Base/PassRenderState.h"
+#include "Render/Renderer.h"
+#include "Render/Resources/ShaderManager.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Component/TextRenderComponent.h"
 #include "Resource/ResourceManager.h"
 
-void FTextDrawCommandBuilder::BuildOverlay(FRenderPassContext& Context, FDrawCommandList& OutList)
+void FTextDrawCommandBuilder::BuildOverlay(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Frame || !Context.OverlayTexts)
     {
@@ -68,7 +69,7 @@ void FTextDrawCommandBuilder::BuildOverlay(FRenderPassContext& Context, FDrawCom
     Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
-void FTextDrawCommandBuilder::BuildWorld(const FTextRenderSceneProxy& Proxy, FRenderPassContext& Context, FDrawCommandList& OutList)
+void FTextDrawCommandBuilder::BuildWorld(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Frame || Proxy.CachedText.empty())
     {

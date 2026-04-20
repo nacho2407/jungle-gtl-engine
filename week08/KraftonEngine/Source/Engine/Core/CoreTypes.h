@@ -50,9 +50,13 @@ using TQueue = std::queue<T>;
 
 // ===== Assert =====
 #ifdef _DEBUG
-#define check(expr)       assert(expr)
+#define check(expr) assert(expr)
 #define checkf(expr, msg) assert((expr) && (msg))
 #else
-#define check(expr)       ((void)0)
+#define check(expr) ((void)0)
 #define checkf(expr, msg) ((void)0)
+#endif
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif

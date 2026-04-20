@@ -1,7 +1,9 @@
+#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
-#include "Render/Resources/Managers/ShaderManager.h"
+#include "Render/Resources/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"

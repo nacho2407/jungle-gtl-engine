@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/Types/RenderStateTypes.h"
+#include "Render/Types/PipelineStateTypes.h"
 
 class FConstantBuffer;
 struct ID3D11ShaderResourceView;
