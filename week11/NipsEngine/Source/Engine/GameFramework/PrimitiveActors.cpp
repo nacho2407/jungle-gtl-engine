@@ -319,12 +319,15 @@ void ALightActor::SetLight(ULightComponent* InLight)
 
 void AAmbientLightActor::InitDefaultComponents()
 {
-    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    SetRootComponent(Billboard);
-    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+	UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
+	Ambient->Intensity = 0.2f;
+	SetRootComponent(Ambient);
 
-    UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
-    Ambient->AttachToComponent(Billboard);
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+    Billboard->AttachToComponent(Ambient);
+	Billboard->SetEditorOnly(true);
+
     SetLight(Ambient);
 }
 
@@ -334,12 +337,14 @@ void AAmbientLightActor::Tick()
 
 void ADirectionalLightActor::InitDefaultComponents()
 {
-    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    SetRootComponent(Billboard);
-    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+	UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
+	SetRootComponent(Directional);
 
-    UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
-    Directional->AttachToComponent(Billboard);
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\DirectionalLight_64x.png"));
+	Billboard->AttachToComponent(Directional);
+	Billboard->SetEditorOnly(true);
+
     SetLight(Directional);
 }
 
@@ -349,13 +354,14 @@ void ADirectionalLightActor::Tick()
 
 void APointLightActor::InitDefaultComponents()
 {
-    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    SetRootComponent(Billboard);
-    Billboard->SetVisibility(true);
-    Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
+	UPointLightComponent* Point = AddComponent<UPointLightComponent>();
+	SetRootComponent(Point);
 
-    UPointLightComponent* Point = AddComponent<UPointLightComponent>();
-    Point->AttachToComponent(Billboard);
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\PointLight_64x.png"));
+	Billboard->AttachToComponent(Point);
+	Billboard->SetEditorOnly(true);
+
     SetLight(Point);
 }
 
@@ -364,13 +370,14 @@ void APointLightActor::Tick()
 }
 
 void ASpotlightActor::InitDefaultComponents() {
-    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    SetRootComponent(Billboard);
-    Billboard->SetVisibility(true);
-    Billboard->SetTextureName(("Asset\\Texture\\Pawn_64x.png"));
-
 	USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
-	Spot->AttachToComponent(Billboard);
+	SetRootComponent(Spot);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+	Billboard->AttachToComponent(Spot);
+	Billboard->SetEditorOnly(true);
+
 	SetLight(Spot);
 }
 

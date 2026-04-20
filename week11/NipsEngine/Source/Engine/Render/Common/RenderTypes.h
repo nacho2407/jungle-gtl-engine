@@ -34,6 +34,7 @@ enum class EPrimitiveType
 	EPT_FOG,
 	EPT_Decal,
 	EPT_Fireball,
+	EPT_Arrow,
     MAX
 };
 
