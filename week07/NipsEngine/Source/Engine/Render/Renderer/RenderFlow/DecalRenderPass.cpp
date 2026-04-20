@@ -37,7 +37,6 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
     const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Decal);
     FShaderPermutationDesc PermDesc = {};
     PermDesc.bUseNormalMap = false;
-    PermDesc.bUseDecalLighting = false;
 
     if (RenderBus->GetViewMode() == EViewMode::Unlit)
     {

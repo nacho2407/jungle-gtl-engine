@@ -35,7 +35,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 	FShaderPermutationDesc PermDesc = {};
     PermDesc.bUseNormalMap = false;
-    PermDesc.bUseDecalLighting = false;
 
     if (RenderBus->GetViewMode() == EViewMode::Unlit)
     {

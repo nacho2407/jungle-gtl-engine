@@ -41,7 +41,6 @@ void FRenderer::Create(HWND hWindow)
         FShaderPermutationDesc Desc = {};
         Desc.ShadingModel = ShadingModel;
         Desc.bUseNormalMap = false;
-        Desc.bUseDecalLighting = true;
 
         TArray<D3D_SHADER_MACRO> Defines;
 
@@ -65,7 +64,6 @@ void FRenderer::Create(HWND hWindow)
         }
 
         Defines.push_back({ "USE_NORMAL_MAP", "0" });
-        Defines.push_back({ "USE_DECAL_LIGHTING", "1"});
         Defines.push_back({ nullptr, nullptr });
 
         FResourceManager::Get().LoadShader(

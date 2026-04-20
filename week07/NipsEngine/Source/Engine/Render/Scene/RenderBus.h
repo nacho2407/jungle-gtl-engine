@@ -33,7 +33,6 @@ public:
 	const FVector& GetCameraRight() const { return CameraRight; }
 	EViewMode GetViewMode() const { return RenderSettings.ViewMode; }
     EShadingModel GetShadingModel() const { return RenderSettings.ShadingModel; }
-    bool IsDecalLightingEnabled() const { return RenderSettings.bEnableDecalLighting; }
 	FShowFlags GetShowFlags() const { return RenderSettings.ShowFlags; }
     const FRenderSettings& GetRenderSettings() const { return RenderSettings; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }

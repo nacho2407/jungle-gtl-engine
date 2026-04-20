@@ -31,5 +31,4 @@ struct FRenderSettings
     EViewMode ViewMode = EViewMode::Lit;
     FShowFlags ShowFlags;
     EShadingModel ShadingModel = EShadingModel::Lambert;
-    bool bEnableDecalLighting = false;
 };

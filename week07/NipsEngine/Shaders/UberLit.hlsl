@@ -11,10 +11,6 @@
     #define USE_NORMAL_MAP 0
 #endif
 
-#ifndef USE_DECAL_LIGHTING
-    #define USE_DECAL_LIGHTING 0
-#endif
-
 struct FUberMaterialInput
 {
     float3 Albedo;
