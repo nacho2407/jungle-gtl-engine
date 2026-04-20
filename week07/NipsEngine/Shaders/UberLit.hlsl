@@ -104,9 +104,9 @@ FUberLightingResult EvaluatePhong(FUberMaterialInput materialInput, FUberLightin
 
 FUberLightingResult EvaluateUberLighting(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
 {
-#if LIGHTING_MODEL_PHONG
+#if LIGHTING_MODEL_PHONG || LIGHTING_MODEL_GOURAUD
     return EvaluatePhong(materialInput, lightingInput);
-#elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_GOURAUD
+#elif LIGHTING_MODEL_LAMBERT
     return EvaluateLambert(materialInput, lightingInput);
 #else
     return EvaluateUnlit(materialInput, lightingInput);

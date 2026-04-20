@@ -41,6 +41,7 @@ struct PSInput
     float3 WorldPos    : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV          : TEXCOORD2;
+    float3 VertexLighting : TEXCOORD3;
 };
 
 struct PSOutput
@@ -61,34 +62,55 @@ PSInput mainVS(VSInput input)
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     output.UV          = input.UV + ScrollUV;
     output.ClipPos     = ApplyMVP(input.Position);
+    
+#ifdef LIGHTING_MODEL_GOURAUD
+    FUberMaterialInput MaterialInput;
+    MaterialInput.Albedo = float3(1.0f, 1.0f, 1.0f);   // 조명 factor만 계산
+    MaterialInput.Emissive = float3(0.0f, 0.0f, 0.0f);
+    MaterialInput.SpecularColor = SpecularColor;
+    MaterialInput.Shininess = Shininess;
+
+    FUberLightingInput LightingInput;
+    LightingInput.WorldPos = output.WorldPos;
+    LightingInput.WorldNormal = output.WorldNormal;
+    LightingInput.ViewDir = normalize(CameraPosition - output.WorldPos);
+
+    output.VertexLighting = EvaluateUberLighting(MaterialInput, LightingInput).Color;
+#endif
+    
     return output;
 }
 
 PSOutput mainPS(PSInput input)
 {
     PSOutput output;
-    
+
     float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
-    if ((bool)bHasDiffuseMap)
+    if ((bool) bHasDiffuseMap)
     {
         DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
         clip(DiffuseTex.a - 0.001f);
     }
-    
+
     float3 Albedo = DiffuseColor * DiffuseTex.rgb;
-    
+    float3 FinalColor = Albedo;
+
+#ifndef LIGHTING_MODEL_GOURAUD
     FUberMaterialInput MaterialInput;
     MaterialInput.Albedo = Albedo;
     MaterialInput.Emissive = EmissiveColor;
     MaterialInput.SpecularColor = SpecularColor;
     MaterialInput.Shininess = Shininess;
-    
+
     FUberLightingInput LightingInput;
     LightingInput.WorldPos = input.WorldPos;
     LightingInput.WorldNormal = input.WorldNormal;
     LightingInput.ViewDir = normalize(CameraPosition - input.WorldPos);
-    
-    float3 FinalColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
+
+    FinalColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
+#else
+    FinalColor = Albedo * input.VertexLighting + EmissiveColor;
+#endif
 
     if (bIsWireframe > 0.5f)
     {
