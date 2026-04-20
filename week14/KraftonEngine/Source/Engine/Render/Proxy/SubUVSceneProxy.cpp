@@ -1,8 +1,8 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
 #include "Render/Pipeline/FrameContext.h"
-#include "Render/Resource/ShaderManager.h"
 #include "Render/Resource/MeshBufferManager.h"
+#include "Materials/Material.h"
 
 // ============================================================
 // FSubUVSceneProxy
@@ -24,20 +24,23 @@ void FSubUVSceneProxy::UpdateMesh()
 
 	// TexturedQuad (FVertexPNCT with UVs) for rendering
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
-	Shader = FShaderManager::Get().GetShader(EShaderType::SubUV);
-	Pass = ERenderPass::AlphaBlend;
 
-	// ExtraCB bind (UV region, b2 slot) — 실제 GPU 버퍼는 Renderer에서 lazy 생성
-	ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
+	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
+
+	// UV region CB를 Material에 바인딩 (b2 슬롯)
+	if (SubUVMat)
+		SubUVMat->BindPerShaderCB<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
 
 	// Particle/FrameIndex 캐싱
 	CachedParticle = Comp->GetParticle();
 	CachedFrameIndex = Comp->GetFrameIndex();
 
-	// Set DiffuseSRV from particle resource
-	if (CachedParticle && CachedParticle->IsLoaded())
+	// SectionDraws 단일 항목 — SubUVMaterial로 Particle SRV 바인딩
+	SectionDraws.clear();
+	if (SubUVMat)
 	{
-		DiffuseSRV = CachedParticle->SRV;
+		const uint32 IdxCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+		SectionDraws.push_back({ SubUVMat, 0, IdxCount });
 	}
 }
 
@@ -48,9 +51,13 @@ void FSubUVSceneProxy::UpdateMaterial()
 	CachedFrameIndex = Comp->GetFrameIndex();
 	CachedParticle = Comp->GetParticle();
 
-	if (CachedParticle && CachedParticle->IsLoaded())
+	// SectionDraws 갱신 — SubUVMaterial의 CachedSRV는 Component가 관리
+	SectionDraws.clear();
+	UMaterial* SubUVMat = Comp->GetSubUVMaterial();
+	if (SubUVMat)
 	{
-		DiffuseSRV = CachedParticle->SRV;
+		const uint32 IdxCount = MeshBuffer ? MeshBuffer->GetIndexBuffer().GetIndexCount() : 0;
+		SectionDraws.push_back({ SubUVMat, 0, IdxCount });
 	}
 }
 
@@ -84,7 +91,9 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		const uint32 Col = CachedFrameIndex % Cols;
 		const uint32 Row = CachedFrameIndex / Cols;
 
-		FSubUVRegionConstants& Region = ExtraCB.As<FSubUVRegionConstants>();
+		UMaterial* SubUVMat = SectionDraws.empty() ? nullptr : SectionDraws[0].Material;
+		if (!SubUVMat) return;
+		FSubUVRegionConstants& Region = SubUVMat->GetPerShaderAs<FSubUVRegionConstants>();
 		Region.U = Col * FrameW;
 		Region.V = Row * FrameH;
 		Region.Width = FrameW;

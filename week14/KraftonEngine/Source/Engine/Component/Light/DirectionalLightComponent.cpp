@@ -25,7 +25,7 @@ void UDirectionalLightComponent::PushToScene()
 	Params.LightColor = LightColor;
 	Params.bVisible = bVisible;
 
-	World->GetScene().AddGlobalDirectionalLight(this, Params);
+	World->GetScene().GetEnvironment().AddGlobalDirectionalLight(this, Params);
 }
 
 void UDirectionalLightComponent::DestroyFromScene()
@@ -34,5 +34,5 @@ void UDirectionalLightComponent::DestroyFromScene()
 	UWorld* World = Owner->GetWorld();
 	if (!World) return;
 
-	World->GetScene().RemoveGlobalDirectionalLight(this);
+	World->GetScene().GetEnvironment().RemoveGlobalDirectionalLight(this);
 }

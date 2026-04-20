@@ -3,12 +3,14 @@
 
 #include <cstring>
 #include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/ShaderManager.h"
 #include "Resource/ResourceManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
+#include "Materials/Material.h"
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
@@ -42,10 +44,36 @@ USubUVComponent::USubUVComponent()
 	SetVisibility(false);
 }
 
+USubUVComponent::~USubUVComponent()
+{
+	if (SubUVMaterial)
+	{
+		UObjectManager::Get().DestroyObject(SubUVMaterial);
+		SubUVMaterial = nullptr;
+	}
+}
+
 void USubUVComponent::SetParticle(const FName& InParticleName)
 {
 	ParticleName = InParticleName;
 	CachedParticle = FResourceManager::Get().FindParticle(InParticleName);
+	RebuildSubUVMaterial();
+}
+
+void USubUVComponent::RebuildSubUVMaterial()
+{
+	if (!SubUVMaterial)
+	{
+		SubUVMaterial = UMaterial::CreateTransient(
+			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
+			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
+			FShaderManager::Get().GetShader(EShaderType::SubUV));
+	}
+
+	if (CachedParticle && CachedParticle->IsLoaded())
+		SubUVMaterial->SetCachedSRV(EMaterialTextureSlot::Diffuse, CachedParticle->SRV);
+	else
+		SubUVMaterial->SetCachedSRV(EMaterialTextureSlot::Diffuse, nullptr);
 }
 
 void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

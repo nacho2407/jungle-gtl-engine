@@ -14,6 +14,7 @@ FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer&
 {
 	ID3D11Device* Dev = InRenderer.GetFD3DDevice().GetDevice();
 	GPUOcclusion.Initialize(Dev);
+	TileLightCulling.Initialize(Dev);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline()
