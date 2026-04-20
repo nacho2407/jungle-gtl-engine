@@ -119,6 +119,23 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	if (Proxy->SelectedListIndex != UINT32_MAX)
 	{
 		RemoveSelectedProxyFast(SelectedProxies, Proxy);
+
+		// SelectedActors에서도 정리 — 같은 Actor의 다른 프록시가 없으면 제거
+		AActor* Actor = Proxy->Owner ? Proxy->Owner->GetOwner() : nullptr;
+		if (Actor)
+		{
+			bool bActorStillSelected = false;
+			for (const FPrimitiveSceneProxy* P : SelectedProxies)
+			{
+				if (P && P->Owner && P->Owner->GetOwner() == Actor)
+				{
+					bActorStillSelected = true;
+					break;
+				}
+			}
+			if (!bActorStillSelected)
+				SelectedActors.erase(Actor);
+		}
 	}
 
 	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
