@@ -8,6 +8,8 @@ public:
     virtual void PostDuplicate(UObject* Original) override;
     virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 public:
     float AttenuationRadius		= 10.f;
     float LightFalloffExponent	= 1.f;

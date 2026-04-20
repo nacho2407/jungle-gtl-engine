@@ -60,6 +60,8 @@ DEFINE_CLASS(ADecalSpotLightActor, AActor)
 REGISTER_FACTORY(ADecalSpotLightActor)
 
 DEFINE_CLASS(ALightActor, AActor)
+REGISTER_FACTORY(ALightActor)
+
 DEFINE_CLASS(AAmbientLightActor, ALightActor)
 REGISTER_FACTORY(AAmbientLightActor)
 DEFINE_CLASS(ADirectionalLightActor, ALightActor)

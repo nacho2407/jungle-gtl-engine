@@ -15,3 +15,10 @@ void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
     OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius });
     OutProps.push_back({ "Light Falloff", EPropertyType::Float, &LightFalloffExponent });
 }
+
+void UPointLightComponent::Serialize(FArchive& Ar)
+{
+	ULightComponentBase::Serialize(Ar);
+	Ar << "AttenuationRadius" << AttenuationRadius;
+	Ar << "LightFalloffExponent" << LightFalloffExponent;
+}

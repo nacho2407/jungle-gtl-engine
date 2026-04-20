@@ -9,6 +9,8 @@ public:
     void PostDuplicate(UObject* Origiunal) override;
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
+	void Serialize(FArchive& Ar) override;
+
 public:
     float InnerConeAngle = 10.f;
     float OuterConeAngle = 15.f;
