@@ -8,6 +8,7 @@ cbuffer TileCulling : register(b2)
     float NearZ;
     float FarZ;
     uint NumLights;
+    float Padding[2];
 };
 
 struct Frustum

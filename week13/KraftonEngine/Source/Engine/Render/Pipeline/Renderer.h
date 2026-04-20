@@ -12,6 +12,7 @@
 #include "Render/Pipeline/PassEventBuilder.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
+#include "TileBaseCulling.h"
 
 class FScene;
 
@@ -39,6 +40,9 @@ public:
 	ID3D11ShaderResourceView* GetLightBufferSRV()      { return Resources.ForwardLights.LightBufferSRV; }
 	FTileCullingResource&     GetTileCullingResource() { return Resources.TileCullingResource; }
 	uint32                    GetNumLights()    const  { return Resources.LastNumLights; }
+	FTileBaseCulling&         GetTileBaseCulling()     { return TileBaseCulling; }
+
+	void BindTileCullingResources() { Resources.BindTileCullingBuffers(Device); }
 
 private:
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
@@ -51,4 +55,6 @@ private:
 	FDrawCommandBuilder Builder;
 	FPassRenderStateTable PassRenderStateTable;
 	FPassEventBuilder PassEventBuilder;
+	
+	FTileBaseCulling TileBaseCulling;
 };

@@ -203,6 +203,7 @@ void FSystemResources::BindTileCullingBuffers(FD3DDevice& Device)
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
 	Ctx->PSSetShaderResources(ELightTexSlot::TileLightIndices, 1, &TileCullingResource.IndicesSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::TileLightGrid,    1, &TileCullingResource.GridSRV);
+	Ctx->PSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 }
 
 void FSystemResources::BindSystemSamplers(FD3DDevice& Device)

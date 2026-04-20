@@ -6,6 +6,7 @@
 #include "Render/Pipeline/DrawCommandList.h"
 
 class FD3DDevice;
+class FRenderer;
 
 /*
 	FPassEvent — 패스 루프 내 Pre/Post 이벤트 훅
@@ -50,6 +51,7 @@ class FPassEventBuilder
 public:
 	void Build(FD3DDevice& Device,
 		const FFrameContext& Frame, FStateCache& Cache,
+		FRenderer* Renderer,
 		TArray<FPassEvent>& OutPreEvents,
 		TArray<FPassEvent>& OutPostEvents);
 
@@ -73,4 +75,8 @@ private:
 	void RegisterSceneColorCopyEvents(ID3D11DeviceContext* Ctx,
 		const FFrameContext& Frame, FStateCache& Cache,
 		TArray<FPassEvent>& Pre);
+
+	void RegisterTileCullingEvents(ID3D11DeviceContext* Ctx,
+		const FFrameContext& Frame, FStateCache& Cache,
+		FRenderer* Renderer,TArray<FPassEvent>& Pre);
 };
