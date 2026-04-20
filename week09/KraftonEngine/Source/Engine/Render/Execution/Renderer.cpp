@@ -6,7 +6,7 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
-#include "Render/Resource/ConstantBufferPool.h"
+#include "Render/Systems/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Render/Scene/Core/Scene.h"
 #include "Profiling/Stats.h"
@@ -17,8 +17,9 @@
 #include "Render/Core/PassTypes.h"
 #include "Render/Frame/FrameSharedResources.h"
 #include "Render/Frame/ViewModeSurfaceSet.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 #include "Render/Execution/PipelineShaderResolver.h"
-#include "Render/Core/PassRenderState.h"
+#include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Types/ShadingTypes.h"
 #include "Materials/MaterialManager.h"
 
@@ -166,7 +167,7 @@ void FRenderer::BeginFrame()
     Context->OMSetRenderTargets(1, &RTV, DSV);
 }
 
-void FRenderer::PreparePipelineExecution(const FFrameContext& Frame)
+void FRenderer::PreparePipelineExecution(const FFrameContext& Frame, const FViewportRenderTargets* Targets)
 {
     FDrawCallStats::Reset();
 
@@ -180,8 +181,8 @@ void FRenderer::PreparePipelineExecution(const FFrameContext& Frame)
     DrawCommandList.Sort();
 
     PipelineStateCache.Reset();
-    PipelineStateCache.RTV = Frame.ViewportRTV ? Frame.ViewportRTV : Device.GetFrameBufferRTV();
-    PipelineStateCache.DSV = Frame.ViewportDSV ? Frame.ViewportDSV : Device.GetDepthStencilView();
+    PipelineStateCache.RTV = (Targets && Targets->ViewportRTV) ? Targets->ViewportRTV : Device.GetFrameBufferRTV();
+    PipelineStateCache.DSV = (Targets && Targets->ViewportDSV) ? Targets->ViewportDSV : Device.GetDepthStencilView();
 
     bPipelineExecutionPrepared = true;
 }
@@ -282,10 +283,11 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameCont
 }
 
 
-FRenderPassContext FRenderer::CreatePassContext(const FFrameContext& Frame, FScene* Scene, const TArray<FPrimitiveSceneProxy*>* VisibleProxies)
+FRenderPassContext FRenderer::CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets, FScene* Scene, const TArray<FPrimitiveSceneProxy*>* VisibleProxies)
 {
     FRenderPassContext PassContext = {};
     PassContext.Frame = &Frame;
+    PassContext.Targets = Targets;
     PassContext.Scene = Scene ? Scene : const_cast<FScene*>(ActiveSceneForFrame);
     PassContext.Renderer = this;
     PassContext.Device = &Device;
@@ -311,13 +313,13 @@ FRenderPassContext FRenderer::CreatePassContext(const FFrameContext& Frame, FSce
 void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPassContext& PassContext)
 {
     const FFrameContext& Frame = *PassContext.Frame;
-    const bool bRootToBackBuffer = (Frame.ViewportRTV == nullptr);
+    const bool bRootToBackBuffer = !(PassContext.Targets && PassContext.Targets->ViewportRTV);
     if (bRootToBackBuffer)
     {
         BeginFrame();
     }
 
-    PreparePipelineExecution(Frame);
+    PreparePipelineExecution(Frame, PassContext.Targets);
     PassContext.Renderer = this;
     PassContext.Renderer = this;
     PassContext.StateCache = &PipelineStateCache;

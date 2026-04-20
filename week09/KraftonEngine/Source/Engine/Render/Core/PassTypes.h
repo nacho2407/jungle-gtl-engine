@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Resource/ShaderVariantCache.h"
+#include "Render/Systems/ShaderVariantCache.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/ShadingTypes.h"
 
@@ -236,7 +236,7 @@ inline void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode 
         Config.bSuppressSceneExtras = true;
         Config.PostProcessUserBits = 2;
         break;
-    case EViewMode::Normal:
+    case EViewMode::WorldNormal:
         Config.bEnableLighting = false;
         Config.bSuppressSceneExtras = true;
         Config.PostProcessUserBits = 3;
@@ -272,7 +272,7 @@ public:
             EViewMode::Unlit,
             EViewMode::Wireframe,
             EViewMode::SceneDepth,
-            EViewMode::Normal,
+            EViewMode::WorldNormal,
         };
 
         for (EViewMode Mode : Modes)

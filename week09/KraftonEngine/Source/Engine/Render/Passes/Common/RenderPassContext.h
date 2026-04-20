@@ -5,6 +5,7 @@
 #include "Render/Types/ViewTypes.h"
 
 struct FFrameContext;
+struct FViewportRenderTargets;
 #include "Render/Scene/Core/Scene.h"
 class FD3DDevice;
 struct ID3D11DeviceContext;
@@ -25,6 +26,7 @@ struct FStateCache;
 struct FRenderPassContext
 {
     const FFrameContext* Frame = nullptr;
+    const FViewportRenderTargets* Targets = nullptr;
     FScene* Scene = nullptr;
 
     FRenderer* Renderer = nullptr;

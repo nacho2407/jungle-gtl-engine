@@ -5,7 +5,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Resource/ResourceManager.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Systems/MeshBufferManager.h"
 #include "Mesh/ObjManager.h"
 #include "Texture/Texture2D.h"
 #include "GameFramework/World.h"
@@ -82,7 +82,7 @@ void UEngine::Render(float DeltaTime)
 {
 	SCOPE_STAT_CAT("UEngine::Render", "2_Render");
 
-	RenderFrame.ClearViewportResources();
+	RenderTargets.Reset();
 
 	UWorld* World = GetWorld();
 	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
@@ -113,7 +113,7 @@ void UEngine::Render(float DeltaTime)
 	}
 
 	{
-		FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
+		FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, &RenderTargets, Scene, Scene ? &RenderCollector.GetLastVisibleProxies() : nullptr);
 		Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PassContext);
 	}
 }

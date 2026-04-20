@@ -1,14 +1,15 @@
 ﻿#include "Render/Passes/Scene/ViewModePostProcessPass.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 
 #include "Render/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Commands/DrawCommand.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Core/FrameContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Core/PassTypes.h"
 #include "Render/Core/RenderConstants.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Frame/ViewModeSurfaceSet.h"
-#include "Render/Resource/ConstantBufferPool.h"
+#include "Render/Systems/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 namespace
@@ -27,6 +28,7 @@ uint16 GetViewModePostProcessBits(const FRenderPassContext& Context)
 
 void FViewModePostProcessPass::PrepareInputs(FRenderPassContext& Context)
 {
+    const FViewportRenderTargets* Targets = Context.Targets;
     const uint16 UserBits = GetViewModePostProcessBits(Context);
     if (UserBits == 0 || !Context.Frame)
     {
@@ -35,16 +37,16 @@ void FViewModePostProcessPass::PrepareInputs(FRenderPassContext& Context)
 
     if (UserBits == 2)
     {
-        if (Context.Frame->DepthTexture && Context.Frame->DepthCopyTexture &&
-            Context.Frame->DepthTexture != Context.Frame->DepthCopyTexture)
+        if (Targets && Targets->DepthTexture && Targets->DepthCopyTexture &&
+            Targets->DepthTexture != Targets->DepthCopyTexture)
         {
             Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-            Context.Context->CopyResource(Context.Frame->DepthCopyTexture, Context.Frame->DepthTexture);
+            Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
         }
 
-        if (Context.Frame->DepthCopySRV)
+        if (Targets && Targets->DepthCopySRV)
         {
-            ID3D11ShaderResourceView* DepthSRV = Context.Frame->DepthCopySRV;
+            ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
             Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
         }
 

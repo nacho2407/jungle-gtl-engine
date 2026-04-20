@@ -1,15 +1,17 @@
 ﻿#include "Render/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Commands/DrawCommand.h"
-#include "Render/Resource/ShaderManager.h"
-#include "Render/Core/PassRenderState.h"
+#include "Render/Systems/ShaderManager.h"
+#include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Core/PassTypes.h"
-#include "Render/Core/FrameContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Frame/ViewModeSurfaceSet.h"
+#include "Render/Frame/ViewportRenderTargets.h"
 
 void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {
+    const FViewportRenderTargets* Targets = Context.Targets;
     FShader* Shader = nullptr;
 
     if (Pass == ERenderPass::Lighting)
@@ -72,7 +74,7 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPassContext& 
     {
         // FXAA prepares SceneColor on t0 before submission; keep the command in sync
         // so SubmitCommand does not overwrite it with nullptr on a forced bind.
-        Cmd.DiffuseSRV = Context.Frame->SceneColorCopySRV;
+        Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
     }
 
     Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, UserBits);

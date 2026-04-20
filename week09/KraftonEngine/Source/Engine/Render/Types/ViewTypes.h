@@ -10,7 +10,7 @@ enum class EViewMode : int32
 	SceneDepth = 3,
 	Lit_Lambert = 4,
 	Lit_Phong = 5,
-	Normal = 6,
+	WorldNormal = 6,
 	Lit = Lit_Phong,
 	Count
 };

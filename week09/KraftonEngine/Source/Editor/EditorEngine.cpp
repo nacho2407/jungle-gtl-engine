@@ -535,7 +535,8 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
 	VP->BeginRender(Ctx);
 
-	RenderFrame.ClearViewportResources();
+	RenderTargets.Reset();
+	RenderTargets.SetFromViewport(VP);
 	FScene& Scene = World->GetScene();
 	Scene.ClearFrameData();
 
@@ -563,8 +564,8 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 		Renderer.ReleaseViewModeSurfaceSet();
 	}
 
-	Renderer.BeginCollect(RenderFrame, Scene.GetProxyCount());
-	FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, &Scene);
+	Renderer.BeginCollect(RenderFrame, Scene.GetPrimitiveProxyCount());
+	FRenderPassContext PassContext = Renderer.CreatePassContext(RenderFrame, &RenderTargets, &Scene);
 
 	{
 		SCOPE_STAT_CAT("Collector", "3_Collect");

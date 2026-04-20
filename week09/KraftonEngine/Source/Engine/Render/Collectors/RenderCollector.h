@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Render/Core/FrameContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Core/RenderConstants.h"
 #include "Engine/Collision/Octree.h"
 
@@ -14,6 +14,9 @@ class FRenderer;
 class FPrimitiveSceneProxy;
 class FLightSceneProxy;
 
+
+// TODO: 선언 위치 합의 (RenderConstants랑 겹침)
+
 struct FCollectedPrimitives
 {
     TArray<FPrimitiveSceneProxy*> VisibleProxies;
@@ -21,11 +24,11 @@ struct FCollectedPrimitives
     TArray<FPrimitiveSceneProxy*> TransparentProxies;
 };
 
-struct FCollectedLights
-{
-    FGlobalLightConstants GlobalLights;
-    TArray<FLocalLightInfo> LocalLights;
-};
+// struct FCollectedLights
+// {
+//     FGlobalLightConstants GlobalLights;
+//     TArray<FLocalLightInfo> LocalLights;
+// };
 
 class FRenderCollector
 {
@@ -43,11 +46,8 @@ public:
     const FCollectedPrimitives& GetCollectedPrimitives() const { return CollectedPrimitives; }
     const TArray<FPrimitiveSceneProxy*>& GetLastVisibleProxies() const { return CollectedPrimitives.VisibleProxies; }
 
-    // 마지막 CollectWorld에서 수집된 Light 상수 배열 — Renderer가 CB 업로드에 사용
-    const FCollectedLights& GetCollectedLights() const { return CollectedLights; }
-
 private:
-    void CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
+    void CollectPrimitives(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FRenderer& Renderer);
     void CollectLights(FScene& Scene, FCollectedLights& OutLights);
 
     FCollectedPrimitives CollectedPrimitives;

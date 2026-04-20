@@ -1,4 +1,4 @@
-﻿#include "Render/Core/PassRenderState.h"
+﻿#include "Render/Passes/Common/PassRenderState.h"
 
 void InitializeDefaultPassRenderStates(FPassRenderState (&OutStates)[(uint32)ERenderPass::MAX])
 {

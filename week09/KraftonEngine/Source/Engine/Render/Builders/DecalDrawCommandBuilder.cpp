@@ -1,7 +1,7 @@
 ﻿#include "Render/Builders/DecalDrawCommandBuilder.h"
 #include "Render/Commands/DrawCommandList.h"
 #include "Render/Commands/DrawCommand.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FDecalDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, FRenderPassContext& Context, FDrawCommandList& OutList)

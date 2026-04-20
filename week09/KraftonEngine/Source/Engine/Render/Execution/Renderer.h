@@ -5,15 +5,16 @@
 */
 
 #include "Render/Types/RenderTypes.h"
-#include "Render/Core/RenderPassContext.h"
+#include "Render/Passes/Common/RenderPassContext.h"
 
-#include "Render/Core/FrameContext.h"
+#include "Render/Frame/FrameContext.h"
 #include "Render/Commands/DrawCommandList.h"
-#include "Render/Core/PassRenderState.h"
+#include "Render/Passes/Common/PassRenderState.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Hardware/Device/D3DDevice.h"
 #include "Render/Frame/FrameSharedResources.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Frame/ViewportRenderTargets.h"
+#include "Render/Systems/ShaderManager.h"
 #include "Render/Batching/LineBatch.h"
 #include "Render/Batching/FontBatch.h"
 #include "Render/Pipelines/RenderPassRegistry.h"
@@ -55,7 +56,7 @@ public:
     void BeginFrame();
     void EndFrame();
 
-    FRenderPassContext CreatePassContext(const FFrameContext& Frame, FScene* Scene = nullptr, const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
+    FRenderPassContext CreatePassContext(const FFrameContext& Frame, const FViewportRenderTargets* Targets = nullptr, FScene* Scene = nullptr, const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
     void RunRootPipeline(ERenderPipelineType RootType, FRenderPassContext& PassContext);
     void ExecutePipeline(ERenderPipelineType Type, FRenderPassContext& PassContext);
 
@@ -72,7 +73,7 @@ public:
 private:
     friend struct FRenderPassContext;
     void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FFrameContext& Frame);
-    void PreparePipelineExecution(const FFrameContext& Frame);
+    void PreparePipelineExecution(const FFrameContext& Frame, const FViewportRenderTargets* Targets);
     void FinalizePipelineExecution();
 
 

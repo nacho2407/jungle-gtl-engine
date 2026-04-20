@@ -9,7 +9,7 @@ void FFrameSharedResources::Create(ID3D11Device* InDevice)
 	// s0: LinearClamp (PostProcess, UI, 기본)
 	{
 		D3D11_SAMPLER_DESC desc = {};
-		desc.Filter   = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -22,7 +22,7 @@ void FFrameSharedResources::Create(ID3D11Device* InDevice)
 	// s1: LinearWrap (메시 텍스처, 데칼)
 	{
 		D3D11_SAMPLER_DESC desc = {};
-		desc.Filter   = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -35,7 +35,7 @@ void FFrameSharedResources::Create(ID3D11Device* InDevice)
 	// s2: PointClamp (폰트, 깊이/스텐실 정밀 읽기)
 	{
 		D3D11_SAMPLER_DESC desc = {};
-		desc.Filter   = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -52,9 +52,10 @@ void FFrameSharedResources::Release()
 {
 	FrameBuffer.Release();
 	PerObjectConstantBuffer.Release();
+
 	if (LinearClampSampler) { LinearClampSampler->Release(); LinearClampSampler = nullptr; }
-	if (LinearWrapSampler)  { LinearWrapSampler->Release();  LinearWrapSampler  = nullptr; }
-	if (PointClampSampler)  { PointClampSampler->Release();  PointClampSampler  = nullptr; }
+	if (LinearWrapSampler)  { LinearWrapSampler->Release();  LinearWrapSampler = nullptr; }
+	if (PointClampSampler)  { PointClampSampler->Release();  PointClampSampler = nullptr; }
 }
 
 void FFrameSharedResources::BindSystemSamplers(ID3D11DeviceContext* Ctx)
