@@ -5,7 +5,7 @@
 #include "Engine/Render/Pipeline/FrameContext.h"
 
 
-struct FTileCullingCBData
+struct FTileLightCullingCBData
 {
 	uint32 ScreenSizeX;
 	uint32 ScreenSizeY;
@@ -16,14 +16,14 @@ struct FTileCullingCBData
 	float  _pad[2];
 };
 
-class FTileBaseCulling
+class FTileBasedLightCulling
 {
 public:
-	FTileBaseCulling() = default;
-	~FTileBaseCulling() { Release(); }
+	FTileBasedLightCulling() = default;
+	~FTileBasedLightCulling() { Release(); }
 
-	FTileBaseCulling(const FTileBaseCulling&) = delete;
-	FTileBaseCulling& operator=(const FTileBaseCulling&) = delete;
+	FTileBasedLightCulling(const FTileBasedLightCulling&) = delete;
+	FTileBasedLightCulling& operator=(const FTileBasedLightCulling&) = delete;
 
 	void Initialize(ID3D11Device* InDevice);
 

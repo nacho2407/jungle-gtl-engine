@@ -96,10 +96,10 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			VP->GetWidth(), VP->GetHeight());
 	}
 
-	// TileBaseCulling — Render 후 Depth가 유효할 때 디스패치 (결과는 다음 프레임 PS에서 사용)
+	// TileBasedLightCulling — Render 후 Depth가 유효할 때 디스패치 (결과는 다음 프레임 PS에서 사용)
 	{
-		SCOPE_STAT_CAT("TileBaseCulling", "4_ExecutePass");
-		TileCulling.Dispatch(
+		SCOPE_STAT_CAT("TileBasedLightCulling", "4_ExecutePass");
+		TileLightCulling.Dispatch(
 			Ctx,
 			Frame,
 			Renderer.GetFrameBuffer(),
