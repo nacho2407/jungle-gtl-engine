@@ -39,6 +39,110 @@ void FEditorControlWidget::Render(float DeltaTime)
 	// Spawn
 	ImGui::Combo("Primitive", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
 
+	if (ImGui::CollapsingHeader("Grid Spawn"))
+	{
+		ImGui::DragFloat3("Center Offset", GridCenterOffset, 0.5f);
+		ImGui::InputInt("Count X", &GridCountX, 1, 5);
+		ImGui::InputInt("Count Y", &GridCountY, 1, 5);
+		ImGui::DragFloat("Spacing X", &GridSpacingX, 0.1f, 0.1f, 100.f);
+		ImGui::DragFloat("Spacing Y", &GridSpacingY, 0.1f, 0.1f, 100.f);
+		if (GridCountX < 1) GridCountX = 1;
+		if (GridCountY < 1) GridCountY = 1;
+
+		if (ImGui::Button("Spawn Grid"))
+		{
+			UWorld* World = EditorEngine->GetWorld();
+			FVector Center(GridCenterOffset[0], GridCenterOffset[1], GridCenterOffset[2]);
+			float HalfX = (GridCountX - 1) * GridSpacingX * 0.5f;
+			float HalfY = (GridCountY - 1) * GridSpacingY * 0.5f;
+
+			for (int32 iy = 0; iy < GridCountY; ++iy)
+			{
+				for (int32 ix = 0; ix < GridCountX; ++ix)
+				{
+					FVector Pos = Center + FVector(ix * GridSpacingX - HalfX, iy * GridSpacingY - HalfY, 0.f);
+
+					switch (SelectedPrimitiveType)
+					{
+					case 0:
+					{
+						AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+						Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+						Actor->SetActorLocation(Pos);
+						World->InsertActorToOctree(Actor);
+						break;
+					}
+					case 1:
+					{
+						AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+						Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
+						Actor->SetActorLocation(Pos);
+						World->InsertActorToOctree(Actor);
+						break;
+					}
+					case 2:
+					{
+						ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						World->InsertActorToOctree(Actor);
+						break;
+					}
+					case 3:
+					{
+						AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					case 4:
+					{
+						AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					case 5:
+					{
+						AFireballActor* Actor = World->SpawnActor<AFireballActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					case 6:
+					{
+						AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					case 7:
+					{
+						ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					case 8:
+					{
+						APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					case 9:
+					{
+						ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
+						Actor->InitDefaultComponents();
+						Actor->SetActorLocation(Pos);
+						break;
+					}
+					}
+				}
+			}
+		}
+	}
+
 	if (ImGui::Button("Spawn"))
 	{
 		UWorld* World = EditorEngine->GetWorld();
@@ -46,7 +150,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 		{
 			switch (SelectedPrimitiveType)
 			{
-			case 0: // Cube
+			case 0:
 			{
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
@@ -54,7 +158,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 				World->InsertActorToOctree(Actor);
 				break;
 			}
-			case 1: // Sphere
+			case 1:
 			{
 				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
 				Actor->SetActorLocation(CurSpawnPoint);
@@ -62,7 +166,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 				World->InsertActorToOctree(Actor);
 				break;
 			}
-			case 2: // Decal
+			case 2:
 			{
 				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
 				Actor->InitDefaultComponents();
@@ -70,21 +174,21 @@ void FEditorControlWidget::Render(float DeltaTime)
 				World->InsertActorToOctree(Actor);
 				break;
 			}
-			case 3: // Height Fog
+			case 3:
 			{
 				AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 4: // FakeLight
+			case 4:
 			{
 				AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 5: // Fireball
+			case 5:
 			{
 				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
 				Actor->InitDefaultComponents();
@@ -119,7 +223,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-
 			}
 		}
 		NumberOfSpawnedActors = 1;
