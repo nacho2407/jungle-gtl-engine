@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "Render/Scene/PrimitiveSceneProxy.h"
+#include "Materials/MaterialCore.h"
+#include <memory>
 
 class UStaticMeshComponent;
 
@@ -31,8 +33,10 @@ private:
 	{
 		FMeshBuffer* MeshBuffer = nullptr;
 		TArray<FMeshSectionDraw> SectionDraws;
+		TArray<std::unique_ptr<FMaterialConstantBuffer>> OwnedMaterialCBs;
 	};
 
 	FLODDrawData LODData[MAX_LOD];
+	TArray<std::unique_ptr<FMaterialConstantBuffer>> ActiveOwnedMaterialCBs;
 	uint32 LODCount = 1;
 };
