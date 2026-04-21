@@ -239,9 +239,7 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		Partition.FlushPrimitive();
 	}
 
-#if _DEBUG
 	Scene.GetDebugDrawQueue().Tick(DeltaTime);
-#endif
 
 	TickManager.Tick(this, DeltaTime, TickType);
 }

@@ -83,6 +83,7 @@ void FTileCullingVisualizer::Release()
 void FTileCullingVisualizer::PreDispatch(ID3D11DeviceContext* Ctx, const FFrameContext& Frame, bool bVisualize)
 {
 	bCurrentFrameActive = bVisualize;
+	bDispatchedThisFrame = true;
 
 	// CB 업데이트
 	D3D11_MAPPED_SUBRESOURCE Mapped = {};
@@ -136,7 +137,19 @@ void FTileCullingVisualizer::ReadbackData(ID3D11DeviceContext* Ctx)
 
 void FTileCullingVisualizer::SubmitDebugLines(ID3D11DeviceContext* Ctx, UWorld* World)
 {
+	// 이전 프레임에 Dispatch가 호출됐는지 확인 후 플래그 리셋
+	bDispatchedLastFrame = bDispatchedThisFrame;
+	bDispatchedThisFrame = false;
+
 	ReadbackData(Ctx);
+
+	// 이전 프레임에 Dispatch가 ���출되지 않았으면 (Cluster ���드 등)
+	// stale bDataReady로 매 프레임 라인이 누적되는 것을 방지
+	if (!bDispatchedLastFrame)
+	{
+		bDataReady = false;
+		return;
+	}
 
 	if (!bDataReady || !World) return;
 
