@@ -3,6 +3,14 @@
 #include "Resource/ResourceManager.h"
 #include "Editor/UI/ContentBrowser/ContentItem.h"
 #include "SimpleJSON/json.hpp"
+#include "Engine/Materials/Material.h"
+#include "Engine/Texture/Texture2D.h"
+
+FEditorMaterialInspector::FEditorMaterialInspector(std::filesystem::path InPath)
+{
+	MaterialPath = InPath;
+	CachedMaterial = FMaterialManager::Get().GetOrCreateMaterial(FPaths::ToUtf8(InPath.lexically_relative(FPaths::RootDir())));
+}
 
 void FEditorMaterialInspector::Render()
 {
@@ -22,7 +30,7 @@ void FEditorMaterialInspector::Render()
 
 		std::stringstream Buffer;
 		Buffer << File.rdbuf();
-		CachedJson =  json::JSON::Load(Buffer.str());
+		CachedJson = json::JSON::Load(Buffer.str());
 	}
 
 
@@ -35,13 +43,18 @@ void FEditorMaterialInspector::Render()
 
 	RenderTextureSection();
 
+	if (CachedMaterial)
+	{
+		ImGui::Text("NiceNiceNiceNiceNiceNiceNiceNiceNiceNice");
+		ImGui::Text(CachedMaterial->GetAssetPathFileName().c_str());
+	}
 
 	ImGui::End();
 }
 
 void FEditorMaterialInspector::RenderTextureSection()
 {
-	if (!CachedJson.hasKey(MatKeys::Textures)) 
+	/*if (!CachedJson.hasKey(MatKeys::Textures))
 		return;
 
 	ImGui::Text("Textures");
@@ -72,6 +85,41 @@ void FEditorMaterialInspector::RenderTextureSection()
 				}
 				ImGui::EndDragDropTarget();
 			}
+		}
+	}*/
+
+
+	ImGui::Text("NiceNiceNiceNiceNiceNiceNiceNiceNiceNiceTextures");
+	TMap<FString, UTexture2D*>* Textures = CachedMaterial->GetTexture();
+
+	for (auto& Pair : *Textures)
+	{
+		FString SlotName = Pair.first.c_str();
+		UTexture2D* Texture = Pair.second;
+
+		if (!Texture)
+			continue;
+
+
+		ImGui::Text(SlotName.c_str());
+		ImGui::Image(Texture->GetSRV(), ImVec2(100, 100));
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PNGElement"))
+			{
+				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+				FString NewTexturePath = FPaths::ToUtf8(ContentItem.Path);
+
+				UTexture2D* NewTexture = UTexture2D::LoadFromCached(NewTexturePath);
+				if (NewTexture)
+				{
+					CachedMaterial->SetTextureParameter(SlotName, NewTexture);
+					CachedMaterial->RebuildCachedSRVs();
+				}
+
+			}
+			ImGui::EndDragDropTarget();
+
 		}
 	}
 }

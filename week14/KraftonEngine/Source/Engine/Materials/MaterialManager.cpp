@@ -40,25 +40,27 @@ void FMaterialManager::ScanMaterialAssets()
 
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
+	std::filesystem::path Path = MatFilePath;
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
 	// 1. 캐시 반환
-	auto It = MaterialCache.find(MatFilePath);
+	auto It = MaterialCache.find(GenericPath);
 	if (It != MaterialCache.end())
 	{
 		return It->second;
 	}
 
 	// 2. 캐시에 없다면 JSON에서 읽기 
-	json::JSON JsonData = ReadJsonFile(MatFilePath);
+	json::JSON JsonData = ReadJsonFile(GenericPath);
 	if (JsonData.IsNull())
 	{
 		// 기본 머티리얼 생성
 		UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
 		FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath);
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-		DefaultMaterial->Create(MatFilePath, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
+		DefaultMaterial->Create(GenericPath, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
 		// 폴백: 핑크색으로 미지정 머티리얼임을 표시
 		DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
-		MaterialCache.emplace(MatFilePath, DefaultMaterial);
+		MaterialCache.emplace(GenericPath, DefaultMaterial);
 		return DefaultMaterial;
 	}
 
@@ -87,7 +89,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	// 6. UMaterial 인스턴스 생성 및 초기화 (RenderPass는 인스턴스별)
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
 	Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
-	MaterialCache.emplace(MatFilePath, Material);
+	MaterialCache.emplace(GenericPath, Material);
 
 	//템플릿을 통해 material에 넣기
 	bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
@@ -108,7 +110,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	//최종적으로 material 저장
 	if (bInjected || bPurged)
 	{
-		SaveToJSON(JsonData, MatFilePath);
+		SaveToJSON(JsonData, GenericPath);
 	}
 
 	return Material;
