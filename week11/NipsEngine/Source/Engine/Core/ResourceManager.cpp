@@ -18,6 +18,7 @@
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
 #include "Render/Resource/ObjMtlLoader.h"
+#include "Render/Resource/ShaderCompiler.h"
 
 #pragma region __BINARY__
 
@@ -700,46 +701,32 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 
 	TComPtr<ID3DBlob> VSBlob;
 	TComPtr<ID3DBlob> PSBlob;
-	TComPtr<ID3DBlob> ErrorBlob;
 
-	HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		VSEntryPoint.c_str(), "vs_5_0", 0, 0, &VSBlob, &ErrorBlob);
-	if (FAILED(hr))
+	FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(FilePath, VSEntryPoint, "vs_5_0", Defines, PermutationKey);
+	if (CompileResult.bSuccess)
 	{
-		if (ErrorBlob)
-		{
-			UE_LOG("Vertex Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
-		}
-		else
-		{
-			UE_LOG("Failed to compile vertex shader: %s", FilePath.c_str());
-		}
+		VSBlob = CompileResult.Blob;
+		Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation);
+	}
+	else
+	{
+		Shaders.erase(FilePath);
 		return false;
 	}
-	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation);
-	ErrorBlob.Reset();
 
-	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		PSEntryPoint.c_str(), "ps_5_0", 0, 0, &PSBlob, &ErrorBlob);
-	if (FAILED(hr))
+	CompileResult = FShaderCompiler::CompileFromFile(FilePath, PSEntryPoint, "ps_5_0", Defines, PermutationKey);
+	if (CompileResult.bSuccess)
 	{
-		if (ErrorBlob)
-		{
-			UE_LOG("Pixel Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
-		}
-		else
-		{
-			UE_LOG("Failed to compile pixel shader: %s", FilePath.c_str());
-		}
-		return false;
+		PSBlob = CompileResult.Blob;
+		Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
 	}
-	Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
 
-	hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
+	HRESULT hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
 		&Permutation.VS);
 	if (FAILED(hr))
 	{
 		UE_LOG("Failed to create vertex shader: %s", FilePath.c_str());
+		Shaders.erase(FilePath);
 		return false;
 	}
 
@@ -748,6 +735,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	if (FAILED(hr))
 	{
 		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
+		Shaders.erase(FilePath);
 		return false;
 	}
 
