@@ -50,8 +50,8 @@ public:
 	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 };
 
-//class MaterialElement final : public ContentBrowserElement
-//{
-//public:
-//	void Render(ContentBrowserContext& Context) override;
-//};
+class MaterialJSonElement final : public ContentBrowserElement
+{
+public:
+	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
+};
