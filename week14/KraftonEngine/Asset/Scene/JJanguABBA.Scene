@@ -1,0 +1,115 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "8",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/Eyes.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/EyeWhites.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Skirt.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Shoes.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Gloves.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Neck.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Face.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Hair.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Expression.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Skin.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Clothes.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Pants.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/BackAccessory.mat"
+          },
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADirectionalLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDirectionalLightComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [-42.899994, -90.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 1.000000,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Material" : {
+            "Path" : "Asset/Materials/DirectionalLight.json"
+          },
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "Width" : 1.000000,
+          "bEditorOnly" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "JJanguABBA",
+  "PerspectiveCamera" : {
+    "FOV" : 1.570796,
+    "FarClip" : 1000.000000,
+    "Location" : [-0.001254, 0.145703, 1.183993],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, -14.982605, -91.349739]
+  },
+  "Primitives" : {
+    "8" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "C:\\Users\\jungle\\Desktop\\cpp_project\\Jungle\\Jungle_week7_Team6\\KraftonEngine\\Data\\Lumine\\LumineModel.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
