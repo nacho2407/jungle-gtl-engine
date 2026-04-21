@@ -1,8 +1,7 @@
-#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Passes/Editor/GridPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/LineDrawCommandBuilder.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 
 void FGridPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -17,7 +16,7 @@ void FGridPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FGridPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    FLineDrawCommandBuilder::BuildGrid(Context, *Context.DrawCommandList);
+    DrawCommandBuilder::BuildLineDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FGridPass::SubmitDrawCommands(FRenderPipelineContext& Context)

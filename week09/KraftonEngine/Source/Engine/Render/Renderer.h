@@ -1,126 +1,125 @@
 ﻿#pragma once
 
-#include "Render/Pipelines/RenderPassTypes.h"
-/*
-    실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
-*/
+#include <memory>
+#include <unordered_map>
 
-#include "Render/RHI/D3D11/Common/D3D11API.h"
+#include "Render/Overlay/OverlayBatchSet.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Pipelines/Context/FrameRenderResources.h"
+#include "Render/Pipelines/Context/RenderCollectContext.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-
-#include "Render/Pipelines/Context/View/SceneView.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Passes/Base/PassRenderState.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/RHI/D3D11/Device/D3DDevice.h"
-#include "Render/Pipelines/Context/FrameSharedResources.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
-#include "Render/Resources/ShaderManager.h"
-#include "Render/Submission/Batching/LineBatch.h"
-#include "Render/Submission/Batching/FontBatch.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
 #include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
-#include "Render/Pipelines/RenderPipelineRunner.h"
+#include "Render/Pipelines/Runner/RenderPipelineRunner.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
+#include "Render/RHI/D3D11/Common/D3D11API.h"
+#include "Render/RHI/D3D11/Device/D3DDevice.h"
+#include "Render/Submission/Collect/DrawCollector.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Visibility/TileBasedLightCulling.h"
 
-class FTextRenderSceneProxy;
 class FScene;
 class FViewModePassRegistry;
-class FViewModeSurfaceSet;
-struct FCollectedPrimitives;
-class FTileBasedLightCulling;
+class FViewport;
+class UWorld;
+class FOverlayStatSystem;
+class UEditorEngine;
+class FOctree;
+class FWorldPrimitivePickingBVH;
 
+/*
+    렌더링 전체를 총괄하는 최상위 오케스트레이터입니다.
+    프레임 공용 자원 준비, 드로우 대상 수집, 커맨드 생성, 파이프라인 실행만 담당합니다.
+*/
 class FRenderer
 {
 public:
+    ~FRenderer();
+
     void Create(HWND hWindow);
     void Release();
 
-    void SetActiveViewMode(EViewMode InViewMode);
-    void ClearActiveViewMode();
-    EViewMode GetActiveViewMode() const { return ActiveViewMode; }
-    bool HasActiveViewModePassConfig() const { return bHasActiveViewModePassConfig; }
-    bool HasActiveViewModeConfig() const { return HasActiveViewModePassConfig(); }
+    FSceneViewModeSurfaces* AcquireViewModeSurfaces(FViewport* Viewport, uint32 Width, uint32 Height);
+    void                    ReleaseViewModeSurfaces(FViewport* Viewport = nullptr);
 
-    FViewModeSurfaceSet* AcquireViewModeSurfaceSet(uint32 Width, uint32 Height);
-    void ReleaseViewModeSurfaceSet();
-    FViewModeSurfaceSet* GetActiveViewModeSurfaceSet() const { return ActiveViewSurfaceSet; }
     const FViewModePassRegistry* GetViewModePassRegistry() const { return ViewModePassRegistry; }
-    const FRenderPassRegistry& GetPassRegistry() const { return PassRegistry; }
+    const FRenderPassRegistry&   GetPassRegistry() const { return PassRegistry; }
 
-    // --- Collect phase: Pipeline이 호출하여 커맨드 수집 시작/종료 ---
-    // MaxProxyCount: Scene의 프록시 수. PerObjectCBPool을 미리 할당하여
-    // Collect 도중 resize로 인한 포인터 무효화를 방지.
     void BeginCollect(const FSceneView& SceneView, uint32 MaxProxyCount = 0);
 
-    void SetCollectedScene(const FScene* InScene) { ActiveSceneForFrame = InScene; }
-    void SetCollectedLights(const FCollectedLights* InCollectedLights) { ActiveCollectedLights = InCollectedLights; }
+    // 수집 단계 facade
+    void CollectWorld(UWorld* World, FRenderCollectContext& CollectContext);
+    void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
+    void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
+    void CollectDebugDraw(const FSceneView& SceneView, const FScene& Scene);
+    void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
+    void CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene);
+    void CollectWorldBoundsDebug(const TArray<class FPrimitiveSceneProxy*>& Proxies, FScene& Scene);
 
-    // --- Render phase: 정렬 + GPU 제출 ---
+    const FCollectedSceneData&                 GetCollectedSceneData() const { return DrawCollector.GetCollectedSceneData(); }
+    const FCollectedPrimitives&                GetCollectedPrimitives() const { return DrawCollector.GetCollectedPrimitives(); }
+    const TArray<class FPrimitiveSceneProxy*>& GetLastVisiblePrimitiveProxies() const { return DrawCollector.GetLastVisiblePrimitiveProxies(); }
+    const FCollectedLights&                    GetCollectedLights() const { return DrawCollector.GetCollectedLights(); }
+
+    // 수집된 결과를 드로우 커맨드로 변환
+    void BuildDrawCommands(FRenderPipelineContext& PipelineContext);
+
     void BeginFrame();
     void EndFrame();
 
-    FRenderPipelineContext CreatePassContext(const FSceneView& SceneView, const FViewportRenderTargets* Targets = nullptr, FScene* Scene = nullptr, const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
-    FRenderPipelineContext CreatePassContext(const FSceneView& SceneView, const FViewportRenderTargets* Targets, FScene* Scene, const FCollectedPrimitives& CollectedPrimitives);
-    void RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PassContext);
-    void ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext& PassContext);
+    FRenderPipelineContext CreatePassContext(
+        const FSceneView&                          SceneView,
+        const FViewportRenderTargets*              Targets        = nullptr,
+        FScene*                                    Scene          = nullptr,
+        const TArray<class FPrimitiveSceneProxy*>* VisibleProxies = nullptr);
 
-    FD3DDevice& GetFD3DDevice() { return Device; }
-    FFrameSharedResources& GetResources() { return Resources; }
-    FLineBatch& GetEditorLineBatch() { return EditorLines; }
-    FLineBatch& GetGridLineBatch() { return GridLines; }
-    FFontBatch& GetFontBatch() { return FontGeometry; }
+    FRenderPipelineContext CreatePassContext(
+        const FSceneView&             SceneView,
+        const FViewportRenderTargets* Targets,
+        FScene*                       Scene,
+        const FCollectedPrimitives&   CollectedPrimitives);
 
-    const FPassRenderState& GetPassRenderState(ERenderPass Pass) const { return PassRenderStates[(uint32)Pass]; }
-    bool HasSelectionMaskCommands() const { return bHasSelectionMaskCommands; }
-    FConstantBuffer* AcquirePerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy) { return GetPerObjectCBForProxy(Proxy); }
+    void RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext);
+    void ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext& PipelineContext);
+
+    FD3DDevice&            GetFD3DDevice() { return Device; }
+    FFrameRenderResources& GetResources() { return FrameResources; }
+    FFontBatch&            GetTextBatch() { return FrameResources.TextBatch; }
+    FLineBatch&            GetEditorLineBatch() { return OverlayBatches.DebugLines; }
+    FLineBatch&            GetGridLineBatch() { return OverlayBatches.GridLines; }
+
+    const FPassRenderStateDesc& GetPassStateDesc(ERenderPass Pass) const { return PassRegistry.GetPassStateDesc(Pass); }
+    FConstantBuffer*            AcquirePerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
 
 private:
     friend struct FRenderPipelineContext;
+
     void UpdateFrameBuffer(ID3D11DeviceContext* Context, const FSceneView& SceneView);
     void PreparePipelineExecution(const FSceneView& SceneView, const FViewportRenderTargets* Targets);
     void FinalizePipelineExecution();
-
-
-    // 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
-    void CleanupPassState(ID3D11DeviceContext* Context, FStateCache& Cache);
-
-    // PerObjectCB 풀 관리
-    void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
-    FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
+    void CleanupPassState(ID3D11DeviceContext* Context, FDrawSubmitStateCache& Cache);
 
 private:
-    FD3DDevice Device;
-    FFrameSharedResources Resources;
-    FLineBatch EditorLines;
-    FLineBatch GridLines;
-    FFontBatch FontGeometry;
+    FD3DDevice            Device;
+    FFrameRenderResources FrameResources;
 
-    // Pipeline/Pass ownership lives outside the renderer.
-    FRenderPassRegistry PassRegistry;
+    FRenderPassRegistry     PassRegistry;
     FRenderPipelineRegistry PipelineRegistry;
-    FRenderPipelineRunner PipelineRunner;
+    FRenderPipelineRunner   PipelineRunner;
 
-    // FDrawCommand 기반 렌더링
+    FDrawCollector   DrawCollector;
     FDrawCommandList DrawCommandList;
 
-    TArray<FConstantBuffer> PerObjectCBPool;
+    std::unordered_map<FViewport*, std::unique_ptr<FSceneViewModeSurfaces>> ViewModeSurfacesMap;
+    FViewModePassRegistry*                                                  ViewModePassRegistry = nullptr;
 
-    FPassRenderState PassRenderStates[(uint32)ERenderPass::MAX];
-
-    // BeginCollect에서 저장, BuildCommandForProxy에서 사용
-    EViewMode CollectViewMode = EViewMode::Lit_Phong;
-    bool bHasSelectionMaskCommands = false;
-
-    EViewMode ActiveViewMode = EViewMode::Lit_Phong;
-    bool bHasActiveViewModePassConfig = false;
-    FViewModeSurfaceSet* OwnedViewModeSurfaceSet = nullptr;
-    FViewModeSurfaceSet* ActiveViewSurfaceSet = nullptr;
-    FViewModePassRegistry* ViewModePassRegistry = nullptr;
-
-    bool bPipelineExecutionPrepared = false;
-    FStateCache PipelineStateCache;
-    const FScene* ActiveSceneForFrame = nullptr;
-    const FCollectedLights* ActiveCollectedLights = nullptr;
+    FOverlayBatchSet OverlayBatches;
     std::unique_ptr<FTileBasedLightCulling> LightCulling;
+
+    bool                  bPipelineExecutionPrepared = false;
+    FDrawSubmitStateCache SubmitStateCache;
+    const FScene*         ActiveScene = nullptr;
 };

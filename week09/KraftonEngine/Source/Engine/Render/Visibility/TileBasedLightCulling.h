@@ -2,8 +2,8 @@
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
-#include "Render/Types/LightTypes.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Scene/Proxies/Light/LightTypes.h"
 #include <d3d11.h>
 
 // ============================================================

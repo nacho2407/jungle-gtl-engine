@@ -1,10 +1,10 @@
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
-#include "Render/Passes/Base/PassRenderState.h"
 
-const FPassRenderState& FRenderPipelineContext::GetPassState(ERenderPass Pass) const
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
+
+const FPassRenderStateDesc& FRenderPipelineContext::GetPassState(ERenderPass Pass) const
 {
-    return PassRenderStates[(uint32)Pass];
+    return PassStateDescs[(uint32)Pass];
 }
 
 ID3D11RenderTargetView* FRenderPipelineContext::GetViewportRTV() const

@@ -1,0 +1,176 @@
+#include "Render/Submission/Collect/DrawCollector.h"
+
+#include "GameFramework/World.h"
+#include "Profiling/Stats.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Scene.h"
+#include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
+
+#define LOD_STATS_ENABLE 1
+#if LOD_STATS_ENABLE
+thread_local uint64 GLOD0 = 0;
+thread_local uint64 GLOD1 = 0;
+thread_local uint64 GLOD2 = 0;
+#define DRAW_COLLECTOR_LOD_STATS_RESET() \
+    do                                   \
+    {                                    \
+        GLOD0 = GLOD1 = GLOD2 = 0;       \
+    } while (0)
+#define DRAW_COLLECTOR_LOD_STATS_RECORD(L) \
+    do                                      \
+    {                                       \
+        if ((L) == 0)                       \
+            ++GLOD0;                        \
+        else if ((L) == 1)                  \
+            ++GLOD1;                        \
+        else                                \
+            ++GLOD2;                        \
+    } while (0)
+#else
+#define DRAW_COLLECTOR_LOD_STATS_RESET() \
+    do                                   \
+    {                                    \
+    } while (0)
+#define DRAW_COLLECTOR_LOD_STATS_RECORD(L) \
+    do                                      \
+    {                                       \
+    } while (0)
+#endif
+
+// ==================== Scene Helpers ====================
+
+uint32 FDrawCollector::SelectLOD(uint32 CurrentLOD, float DistSq)
+{
+    (void)CurrentLOD;
+
+    constexpr float LOD1Distance = 500.0f;
+    constexpr float LOD2Distance = 1500.0f;
+
+    if (DistSq >= LOD2Distance * LOD2Distance)
+        return 2;
+    if (DistSq >= LOD1Distance * LOD1Distance)
+        return 1;
+    return 0;
+}
+
+
+// ==================== Public API ====================
+
+void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectContext)
+{
+    CollectScenePrimitives(World, CollectContext);
+    CollectSceneLights(CollectContext.Scene);
+}
+
+void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext)
+{
+    ResetCollectedPrimitives(CollectedSceneData.Primitives, false);
+
+    if (!World || !CollectContext.SceneView || !CollectContext.Scene)
+    {
+        if (CollectContext.CollectedPrimitives)
+        {
+            *CollectContext.CollectedPrimitives = CollectedSceneData.Primitives;
+        }
+        return;
+    }
+
+    const FSceneView& SceneView = *CollectContext.SceneView;
+    FScene&           Scene     = *CollectContext.Scene;
+
+    Scene.UpdateDirtyProxies();
+    Scene.UpdateDirtyLightProxies();
+
+    {
+        SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
+        const uint32 ExpectedCount = Scene.GetPrimitiveProxyCount() + static_cast<uint32>(Scene.GetNeverCullProxies().size());
+        if (CollectedSceneData.Primitives.VisibleProxies.capacity() < ExpectedCount)
+        {
+            CollectedSceneData.Primitives.VisibleProxies.reserve(ExpectedCount);
+        }
+
+        for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
+        {
+            if (Proxy)
+            {
+                CollectedSceneData.Primitives.VisibleProxies.push_back(Proxy);
+            }
+        }
+
+        World->GetPartition().QueryFrustumAllProxies(SceneView.FrustumVolume, CollectedSceneData.Primitives.VisibleProxies);
+    }
+
+    const TArray<FPrimitiveSceneProxy*> CandidateProxies = CollectedSceneData.Primitives.VisibleProxies;
+    CollectedSceneData.Primitives.VisibleProxies.clear();
+    CollectedSceneData.Primitives.OpaqueProxies.clear();
+    CollectedSceneData.Primitives.TransparentProxies.clear();
+
+    const FGPUOcclusionCulling* Occlusion    = SceneView.OcclusionCulling;
+    FGPUOcclusionCulling*       OcclusionMut = SceneView.OcclusionCulling;
+    const FLODUpdateContext&    LODCtx       = SceneView.LODContext;
+
+    if (OcclusionMut && OcclusionMut->IsInitialized())
+    {
+        OcclusionMut->BeginGatherAABB(static_cast<uint32>(CandidateProxies.size()));
+    }
+
+    DRAW_COLLECTOR_LOD_STATS_RESET();
+
+    for (FPrimitiveSceneProxy* Proxy : CandidateProxies)
+    {
+        if (!Proxy)
+        {
+            continue;
+        }
+
+        if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
+        {
+            const FVector& ProxyPos = Proxy->CachedWorldPos;
+            const float    dx       = LODCtx.CameraPos.X - ProxyPos.X;
+            const float    dy       = LODCtx.CameraPos.Y - ProxyPos.Y;
+            const float    dz       = LODCtx.CameraPos.Z - ProxyPos.Z;
+            const float    DistSq   = dx * dx + dy * dy + dz * dz;
+            Proxy->UpdateLOD(SelectLOD(Proxy->CurrentLOD, DistSq));
+            Proxy->LastLODUpdateFrame = LODCtx.LODUpdateFrame;
+        }
+
+        DRAW_COLLECTOR_LOD_STATS_RECORD(Proxy->CurrentLOD);
+
+        if (Proxy->bPerViewportUpdate)
+        {
+            Proxy->UpdatePerViewport(SceneView);
+        }
+
+        if (!Proxy->bVisible)
+        {
+            continue;
+        }
+
+        if (OcclusionMut)
+        {
+            OcclusionMut->GatherAABB(Proxy);
+        }
+
+        if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
+        {
+            continue;
+        }
+
+        CollectedSceneData.Primitives.VisibleProxies.push_back(Proxy);
+
+        if (Proxy->Blend == EBlendState::AlphaBlend)
+        {
+            CollectedSceneData.Primitives.TransparentProxies.push_back(Proxy);
+        }
+        else
+        {
+            CollectedSceneData.Primitives.OpaqueProxies.push_back(Proxy);
+        }
+    }
+
+    if (CollectContext.CollectedPrimitives)
+    {
+        *CollectContext.CollectedPrimitives = CollectedSceneData.Primitives;
+    }
+}

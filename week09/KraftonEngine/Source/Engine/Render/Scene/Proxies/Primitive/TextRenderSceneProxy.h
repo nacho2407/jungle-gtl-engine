@@ -1,15 +1,14 @@
-﻿#pragma once
+#pragma once
 
-#include "Render/Scene/Proxies/Primitive/BillboardSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 class UTextRenderComponent;
 
-// ============================================================
-// FTextRenderSceneProxy — UTextRenderComponent 전용 프록시
-// ============================================================
-// Collector가 CachedText를 읽어 FFontGeometry로 배칭.
-// PerObjectConstants는 SelectionMask 전용 아웃라인 행렬.
-class FTextRenderSceneProxy : public FBillboardSceneProxy
+/*
+    FTextRenderSceneProxy는 UTextRenderComponent 전용 프록시입니다.
+    실제 글자 쿼드는 font batch로 만들고, selection mask용 outline만 quad primitive 경로를 재사용합니다.
+*/
+class FTextRenderSceneProxy : public FPrimitiveSceneProxy
 {
 public:
     FTextRenderSceneProxy(UTextRenderComponent* InComponent);
@@ -17,10 +16,11 @@ public:
     void UpdateMesh() override;
     void UpdatePerViewport(const FSceneView& SceneView) override;
 
-    // Collector가 FFontGeometry 배칭에 사용하는 캐싱된 텍스트 데이터
     FString CachedText;
     float CachedFontScale = 1.0f;
-    FMatrix CachedBillboardMatrix;
+    FVector CachedTextRight = FVector(0.0f, 1.0f, 0.0f);
+    FVector CachedTextUp = FVector(0.0f, 0.0f, 1.0f);
+    FMatrix CachedTextWorldMatrix;
 
 private:
     UTextRenderComponent* GetTextRenderComponent() const;
