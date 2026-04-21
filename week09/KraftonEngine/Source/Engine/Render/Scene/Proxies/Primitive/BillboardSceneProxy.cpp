@@ -41,6 +41,7 @@ ID3D11ShaderResourceView* ResolveBillboardTextureSRV(UMaterial* Material)
     for (const char* SlotName : { MaterialSemantics::DiffuseTextureSlot, "BaseColorTexture", "AlbedoTexture", "BaseTexture", "DiffuseMap", "AlbedoMap" })
     {
         UTexture2D* DiffuseTex = nullptr;
+
         if (Material->GetTextureParameter(SlotName, DiffuseTex) && DiffuseTex)
         {
             if (ID3D11ShaderResourceView* SRV = DiffuseTex->GetSRV())
@@ -52,7 +53,9 @@ ID3D11ShaderResourceView* ResolveBillboardTextureSRV(UMaterial* Material)
 
     return nullptr;
 }
-}
+} // namespace
+
+#include "Editor/UI/EditorConsolePanel.h"
 
 // ============================================================
 // UpdateMesh — TexturedQuad + Material shader/states
@@ -81,6 +84,11 @@ void FBillboardSceneProxy::UpdateMesh()
         MaterialCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
         MaterialCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
     }
+
+    if (Mat && !DiffuseSRV)
+    {
+        UE_LOG("Billboard DiffuseSRV is null. Material=%s", Mat->GetAssetPathFileName().c_str());
+    }
 }
 
 // ============================================================
@@ -93,7 +101,7 @@ void FBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     if (!bVisible)
         return;
 
-        UMaterial* Mat = Comp->GetMaterial();
+    UMaterial* Mat = Comp->GetMaterial();
     if (Mat)
     {
         DiffuseSRV = ResolveBillboardTextureSRV(Mat);
@@ -111,9 +119,7 @@ void FBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     }
     else
     {
-        WorldMatrix = FMatrix::MakeScaleMatrix(SpriteScale)
-            * Comp->GetRelativeMatrix()
-            * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
+        WorldMatrix = FMatrix::MakeScaleMatrix(SpriteScale) * Comp->GetRelativeMatrix() * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
     }
 
     PerObjectConstants = FPerObjectConstants::FromWorldMatrix(WorldMatrix);

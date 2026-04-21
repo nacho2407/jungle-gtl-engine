@@ -22,7 +22,6 @@
 #include "Resource/ResourceManager.h"
 
 
-
 namespace
 {
 bool TryResolveViewModeStage(ERenderPass Pass, EPipelineStage& OutStage)
@@ -137,6 +136,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
         }
         else
         {
+
             const bool bUsesViewModeBaseDraw =
                 (Pass == ERenderPass::Opaque) &&
                 Context.ViewModePassRegistry &&
@@ -145,7 +145,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             // Reversed-Z depth pre-pass writes the same geometry depth first.
             // BaseDraw must then use GREATER_EQUAL-style read-only depth or every
             // opaque pixel at the exact same depth fails the comparison.
-            if (Pass == ERenderPass::Opaque && SectionDepthStencil != EDepthStencilState::Default)
+            if (SectionDepthStencil != EDepthStencilState::Default)
             {
                 Cmd.DepthStencil = SectionDepthStencil;
             }
@@ -157,8 +157,24 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             {
                 Cmd.DepthStencil = PassState.DepthStencil;
             }
-            Cmd.Blend = (Pass == ERenderPass::Opaque && SectionBlend != EBlendState::Opaque) ? SectionBlend : PassState.Blend;
-            Cmd.Rasterizer = (Pass == ERenderPass::Opaque && SectionRasterizer != ERasterizerState::SolidBackCull) ? SectionRasterizer : PassState.Rasterizer;
+
+            if (SectionBlend != EBlendState::Opaque || Pass != ERenderPass::Opaque)
+            {
+                Cmd.Blend = SectionBlend;
+            }
+            else
+            {
+                Cmd.Blend = PassState.Blend;
+            }
+
+            if (SectionRasterizer != ERasterizerState::SolidBackCull)
+            {
+                Cmd.Rasterizer = SectionRasterizer;
+            }
+            else
+            {
+                Cmd.Rasterizer = PassState.Rasterizer;
+            }
         }
 
         if (Pass == ERenderPass::Opaque &&
@@ -295,7 +311,6 @@ void DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPip
 }
 
 
-
 void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Scene || !Context.SceneView)
@@ -334,8 +349,14 @@ void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, F
             const FVector& Min = Box.Min;
             const FVector& Max = Box.Max;
             const FVector V[8] = {
-                FVector(Min.X, Min.Y, Min.Z), FVector(Max.X, Min.Y, Min.Z), FVector(Max.X, Max.Y, Min.Z), FVector(Min.X, Max.Y, Min.Z),
-                FVector(Min.X, Min.Y, Max.Z), FVector(Max.X, Min.Y, Max.Z), FVector(Max.X, Max.Y, Max.Z), FVector(Min.X, Max.Y, Max.Z),
+                FVector(Min.X, Min.Y, Min.Z),
+                FVector(Max.X, Min.Y, Min.Z),
+                FVector(Max.X, Max.Y, Min.Z),
+                FVector(Min.X, Max.Y, Min.Z),
+                FVector(Min.X, Min.Y, Max.Z),
+                FVector(Max.X, Min.Y, Max.Z),
+                FVector(Max.X, Max.Y, Max.Z),
+                FVector(Min.X, Max.Y, Max.Z),
             };
             static constexpr int32 Edges[][2] = {
                 { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 0 }, { 4, 5 }, { 5, 6 }, { 6, 7 }, { 7, 4 }, { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 }
@@ -377,7 +398,6 @@ void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, F
         AddBatch(EditorLines, "DebugLines");
     }
 }
-
 
 
 void DrawCommandBuilder::BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
