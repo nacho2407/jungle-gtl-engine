@@ -38,7 +38,7 @@ public:
 	FWorldContext* GetWorldContextFromWorld(const UWorld* World);
 
 	// Active world
-	void SetActiveWorld(const FName& Handle);
+	virtual void SetActiveWorld(const FName& Handle);
 	FName GetActiveWorldHandle() const { return ActiveWorldHandle; }
 
 	// Accessors

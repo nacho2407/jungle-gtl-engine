@@ -18,6 +18,8 @@ public:
 
 	void ResetSelection();
 
+	void OnActorDestroyed(AActor* Actor);
+
 private:
 	// 선택 상태 관리
 	void UpdateSelectionState(AActor* PrimaryActor);

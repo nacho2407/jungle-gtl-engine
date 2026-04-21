@@ -252,9 +252,26 @@ void UEditorEngine::ResetViewport()
     }
 }
 
+void UEditorEngine::SetActiveWorld(const FName& Handle)
+{
+    UWorld* PreviousWorld = GetWorld();
+    if (PreviousWorld)
+    {
+        UnbindActorDestroyedListener(PreviousWorld);
+    }
+
+    UEngine::SetActiveWorld(Handle);
+
+    if (UWorld* ActiveWorld = GetWorld())
+    {
+        BindActorDestroyedListener(ActiveWorld);
+    }
+}
+
 void UEditorEngine::CloseScene()
 {
     SelectionManager.ClearSelection();
+    UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
 
     for (FWorldContext& Ctx : WorldList)
     {
@@ -328,6 +345,7 @@ FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
 void UEditorEngine::ClearScene()
 {
     SelectionManager.ClearSelection();
+    UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
 
     for (FWorldContext& Ctx : WorldList)
     {
@@ -372,6 +390,10 @@ void UEditorEngine::UnregisterWorld(const FName& Handle)
         {
             if (it->World)
             {
+                if (it->World == ActorDestroyedListenerWorld)
+                {
+                    UnbindActorDestroyedListener(it->World);
+                }
                 it->World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
                 UObjectManager::Get().DestroyObject(it->World);
             }
@@ -392,4 +414,48 @@ FName UEditorEngine::GetEditorWorldHandle() const
         }
     }
     return FName::None;
+}
+
+void UEditorEngine::HandleActorDestroyed(AActor* Actor)
+{
+    SelectionManager.OnActorDestroyed(Actor);
+    MainPanel.GetPropertyWidget().OnActorDestroyed(Actor);
+}
+
+void UEditorEngine::BindActorDestroyedListener(UWorld* World)
+{
+    if (!World)
+    {
+        return;
+    }
+
+    if (ActorDestroyedListenerWorld == World && ActorDestroyedListenerId != 0)
+    {
+        return;
+    }
+
+    if (ActorDestroyedListenerWorld && ActorDestroyedListenerWorld != World)
+    {
+        UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
+    }
+
+    ActorDestroyedListenerId = World->AddActorDestroyedListener(
+        [this](AActor* Actor)
+        {
+            HandleActorDestroyed(Actor);
+        });
+    ActorDestroyedListenerWorld = World;
+}
+
+void UEditorEngine::UnbindActorDestroyedListener(UWorld* World)
+{
+    UWorld* TargetWorld = ActorDestroyedListenerWorld ? ActorDestroyedListenerWorld : World;
+    if (!TargetWorld || ActorDestroyedListenerId == 0)
+    {
+        return;
+    }
+
+    TargetWorld->RemoveActorDestroyedListener(ActorDestroyedListenerId);
+    ActorDestroyedListenerId = 0;
+    ActorDestroyedListenerWorld = nullptr;
 }
