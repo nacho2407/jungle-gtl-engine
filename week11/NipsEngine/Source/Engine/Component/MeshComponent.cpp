@@ -1,5 +1,6 @@
 ﻿#include "MeshComponent.h"
 #include "Render/Resource/Material.h"
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
@@ -54,7 +55,14 @@ void UMeshComponent::Serialize(FArchive& Ar)
 	{
 		for (auto& Mat : Materials)
 		{
-			MaterialPaths.push_back(Mat ? Mat->GetName() : "");
+			if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Mat))
+			{
+				MaterialPaths.push_back(FPaths::Normalize(MatInst->GetFilePath()));
+			}
+			else
+			{
+				MaterialPaths.push_back(Mat ? Mat->GetName() : "");
+			}
 		}
 		Ar << "Materials" << MaterialPaths;
 	}
