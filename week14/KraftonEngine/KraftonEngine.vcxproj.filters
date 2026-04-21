@@ -43,6 +43,9 @@
     <Filter Include="Source\Editor\UI">
       <UniqueIdentifier>{d23c3ab5-7e26-ff59-be61-b2a81e9921c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\ContentBrowser">
+      <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{42b90bf1-e993-e912-0e50-58d7095d5e8c}</UniqueIdentifier>
     </Filter>
@@ -198,6 +201,9 @@
     <FxCompile Include="Shaders\PostProcess\HeightFog.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\LightCulling.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\NormalView.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
@@ -245,7 +251,13 @@
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp">
@@ -265,6 +277,15 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
@@ -642,11 +663,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -673,7 +689,13 @@
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorDragSource.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorMaterialInspector.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h">
@@ -693,6 +715,21 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorWidget.h">
       <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h">
+      <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
@@ -1186,13 +1223,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h" />
-    <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
-    <ClInclude Include="Source\Editor\UI\EditorMaterialInspector.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

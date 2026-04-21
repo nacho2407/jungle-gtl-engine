@@ -1,4 +1,4 @@
-﻿#include "ShaderManager.h"
+#include "ShaderManager.h"
 #include "Platform/Paths.h"
 
 // ============================================================
@@ -24,12 +24,13 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::Billboard);
 	GetOrCreate(EShaderPath::HeightFog);
 
-	// UberLit 기본 (매크로 없음 → Phong 기본값) + permutation (매크로 포함 → PreCompile)
+	// UberLit 기본은 Phong + Cluster Culling으로 컴파일한다.
 	GetOrCreate(EShaderPath::UberLit);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit),    EUberLitDefines::Unlit);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud),  EUberLitDefines::Gouraud);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert),  EUberLitDefines::Lambert);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),    EUberLitDefines::Phong);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit),   EUberLitDefines::Unlit);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud), EUberLitDefines::Gouraud);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert), EUberLitDefines::Lambert);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),   EUberLitDefines::Phong);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Toon),    EUberLitDefines::Toon);
 
 	bIsInitialized = true;
 }
@@ -62,10 +63,12 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key)
 	auto NewShader = std::make_unique<FShader>();
 	std::wstring WidePath = FPaths::ToWide(Key.Path);
 
-	// DefinesHash가 0이면 매크로 없음
+	// DefinesHash가 0이면 매크로 없음. UberLit만 기본 Cluster Culling define을 적용한다.
 	if (Key.DefinesHash == 0)
 	{
-		NewShader->Create(CachedDevice, WidePath.c_str(), "VS", "PS");
+		const bool bIsUberLit = (Key.Path == EShaderPath::UberLit);
+		const D3D_SHADER_MACRO* Defines = bIsUberLit ? EUberLitDefines::Default : nullptr;
+		NewShader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines);
 	}
 	else
 	{
