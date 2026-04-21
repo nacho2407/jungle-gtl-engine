@@ -8,12 +8,12 @@ cbuffer FrameBuffer : register(b0)
     row_major float4x4 View;
     row_major float4x4 Projection;
     float3 CameraPosition;
-    float Padding1;
     float bIsWireframe;
     float3 WireframeRGB;
     float2 ViewportSize;
     float NearZ;
     float FarZ;
+    float Pad;
 }
 
 cbuffer PerObjectBuffer : register(b1)

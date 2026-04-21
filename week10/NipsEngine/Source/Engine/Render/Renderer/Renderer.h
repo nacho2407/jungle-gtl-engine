@@ -182,6 +182,10 @@ private:
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
 	UTexture* SubUVCachedTexture = nullptr;
+    TArray<UTexture*> CachedDecalTextures;
+    TComPtr<ID3D11Texture2D> DecalTextureArray;
+    TComPtr<ID3D11ShaderResourceView> DecalTextureArraySRV;
+    uint32 UniqueDecalCount = 0;
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
