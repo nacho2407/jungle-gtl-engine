@@ -1,7 +1,7 @@
-#pragma once
-#include "Render/Types/PrimitiveShapeTypes.h"
+﻿#pragma once
+#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
 #include "PrimitiveComponent.h"
-#include "Render/Resources/MeshBufferManager.h"
+#include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
@@ -21,7 +21,8 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
-	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
+	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; MarkProxyDirty(EDirtyFlag::Transform); MarkWorldBoundsDirty(); }
+	bool IsBillboardEnabled() const { return bIsBillboard; }
 
 	// --- Material ---
 	void SetMaterial(class UMaterial* InMaterial);
@@ -37,6 +38,7 @@ public:
 
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
 	FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
+	void UpdateWorldAABB() const override;
 
 protected:
 	bool bIsBillboard = true;

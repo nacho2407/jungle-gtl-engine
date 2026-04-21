@@ -38,7 +38,8 @@ void CS_LightCulling(
         if (depthSample < 1.0)
         {
             // 비선형 depth → View Space 선형 거리
-            linearZ = (NearZ * FarZ) / (FarZ - depthSample * (FarZ - NearZ));
+// Reverse-Z 환경에서의 올바른 View Space Linear Z 변환
+            linearZ = (NearZ * FarZ) / (NearZ + depthSample * (FarZ - NearZ));
             InterlockedMin(groupMinZ, asuint(linearZ));
             InterlockedMax(groupMaxZ, asuint(linearZ));
         }
@@ -78,11 +79,12 @@ void CS_LightCulling(
     // --------------------------------------------------------
     float2 tileMin = float2(tileCoord * TileSize);
     float2 tileMax = tileMin + float2(TileSize);
+    // HLSL의 float4x4 생성자는 행(Row) 단위로 값을 채워 넣습니다.
     float4x4 InverseProjection = float4x4(
     1.0f / Projection._11, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f / Projection._22, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f / Projection._43, // 이 부분이 핵심
-    0.0f, 0.0f, -1.0f, Projection._33 / Projection._43 
+    0.0f, 0.0f, 0.0f, 1.0f / Projection._43,
+    0.0f, 0.0f, 1.0f, -Projection._33 / Projection._43
 );
     float3 viewCorners[8];
     [unroll]
@@ -95,9 +97,9 @@ void CS_LightCulling(
 
         uv.y = 1.0 - uv.y; // D3D UV → NDC Y 반전
 
-        float4 clipNear = float4(uv * 2.0 - 1.0, 0.0, 1.0); // Near plane (D3D: z=0)
-        float4 clipFar  = float4(uv * 2.0 - 1.0, 1.0, 1.0); // Far  plane (D3D: z=1)
-
+// Reverse-Z 환경이라면 Z값을 반대로 뒤집어야 합니다.
+        float4 clipNear = float4(uv * 2.0 - 1.0, 1.0, 1.0); // Near Plane
+        float4 clipFar = float4(uv * 2.0 - 1.0, 0.0, 1.0); // Far Plane
         float4 viewNear = mul(clipNear, InverseProjection);
         float4 viewFar = mul(clipFar, InverseProjection);
 

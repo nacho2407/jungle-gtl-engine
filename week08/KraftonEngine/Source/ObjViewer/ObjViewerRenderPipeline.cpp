@@ -1,23 +1,23 @@
-﻿//#include "ObjViewer/ObjViewerRenderPipeline.h"
+﻿// #include "ObjViewer/ObjViewerRenderPipeline.h"
 //
-//#include "ObjViewer/ObjViewerEngine.h"
-//#include "Render/Renderer/Renderer.h"
-//#include "Render/Scene/FScene.h"
-//#include "Viewport/Viewport.h"
-//#include "Component/CameraComponent.h"
-//#include "GameFramework/World.h"
-//#include "Render/Core/RenderPipeline.h"
+// #include "ObjViewer/ObjViewerEngine.h"
+// #include "Render/Renderer/Renderer.h"
+// #include "Render/Scene/FScene.h"
+// #include "Viewport/Viewport.h"
+// #include "Component/CameraComponent.h"
+// #include "GameFramework/World.h"
+// #include "Render/Core/RenderPipeline.h"
 //
-//FObjViewerRenderPipeline::FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer)
+// FObjViewerRenderPipeline::FObjViewerRenderPipeline(UObjViewerEngine* InEngine, FRenderer& InRenderer)
 //	: Engine(InEngine)
 //{
-//}
+// }
 //
-//FObjViewerRenderPipeline::~FObjViewerRenderPipeline()
+// FObjViewerRenderPipeline::~FObjViewerRenderPipeline()
 //{
-//}
+// }
 //
-//void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
+// void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 //{
 //	// 오프스크린 RT에 3D 씬 렌더
 //	RenderPreviewViewport(Renderer);
@@ -26,9 +26,9 @@
 //	Renderer.BeginFrame();
 //	Engine->RenderUI(DeltaTime);
 //	Renderer.EndFrame();
-//}
+// }
 //
-//void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
+// void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 //{
 //	FObjViewerViewportClient* VC = Engine->GetViewportClient();
 //	if (!VC) return;
@@ -70,12 +70,12 @@
 //		Registry && Registry->HasConfig(EViewMode::Lit_Phong))
 //	{
 //		Renderer.SetActiveViewMode(EViewMode::Lit_Phong);
-//		Renderer.AcquireViewModeSurfaceSet(VP->GetWidth(), VP->GetHeight());
+//		Renderer.AcquireViewModeTextures(VP->GetWidth(), VP->GetHeight());
 //	}
 //	else
 //	{
 //		Renderer.ClearActiveViewMode();
-//		Renderer.ReleaseViewModeSurfaceSet();
+//		Renderer.ReleaseViewModeTextures();
 //	}
 //
 //	// BeginCollect → 월드 수집 → 동적 커맨드 → Scene pipeline 실행
@@ -85,4 +85,4 @@
 //	Renderer.PreparePipelineExecution(Frame);
 //	Renderer.ExecutePipeline(ERenderPipelineType::Scene, Frame);
 //	Renderer.FinalizePipelineExecution();
-//}
+// }

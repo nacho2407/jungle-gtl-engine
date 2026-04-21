@@ -1,7 +1,7 @@
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Passes/Scene/DepthPrePass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FDepthPrePass::PrepareInputs(FRenderPipelineContext& Context)

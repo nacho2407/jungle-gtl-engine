@@ -78,7 +78,13 @@ void FTileBasedLightCulling::Release()
     };
 
     SafeRelease(LightCullingCS);
-    SafeRelease(LightCullingParamsCBWrapper);
+    if (LightCullingParamsCBWrapper)
+    {
+        LightCullingParamsCBWrapper->Release();
+        delete LightCullingParamsCBWrapper;
+        LightCullingParamsCBWrapper = nullptr;
+    }
+    LightCullingParamsCB = nullptr;
 
     //SafeRelease(PointLightDataSRV);
     //SafeRelease(PointLightBuffer);
@@ -124,7 +130,12 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     if (!IsInitialized())
         return;
 
-    OnResize(frameContext.ViewportWidth, frameContext.ViewportHeight);
+    const uint32 ViewWidth = static_cast<uint32>(frameContext.ViewportWidth);
+    const uint32 ViewHeight = static_cast<uint32>(frameContext.ViewportHeight);
+    if (ViewWidth == 0 || ViewHeight == 0)
+        return;
+
+    OnResize(ViewWidth, ViewHeight);
     UpdateLightCullingParamsCB(frameContext, bEnable25DCulling);
 
     ID3D11DeviceContext* Context = Device->GetDeviceContext();
@@ -132,6 +143,12 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
 	//이전 바인딩 해제
     float ClearColor[4] = { 0, 0, 0, 0 };
     Context->ClearUnorderedAccessViewFloat(DebugHitMapUAV, ClearColor);
+
+    ID3D11ShaderResourceView* NullSRVs1[1] = { nullptr };
+    ID3D11UnorderedAccessView* NullUAVs1[4] = { nullptr, nullptr, nullptr, nullptr };
+    Context->CSSetShaderResources(0, 1, NullSRVs1);
+    Context->CSSetUnorderedAccessViews(0, 4, NullUAVs1, nullptr);
+    Context->CSSetShader(nullptr, nullptr, 0);
 
     // ---- CS 바인딩 ----
     Context->CSSetShader(LightCullingCS, nullptr, 0);
@@ -153,9 +170,11 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     // ---- 상수 버퍼 ----
     Context->CSSetConstantBuffers(2, 1, &LightCullingParamsCB);
 
+
+
     // ---- Dispatch ----
-    const UINT GroupSizeX = (frameContext.ViewportWidth + TILE_SIZE - 1) / TILE_SIZE;
-    const UINT GroupSizeY = (frameContext.ViewportHeight + TILE_SIZE - 1) / TILE_SIZE;
+    const UINT GroupSizeX = (ViewWidth + TILE_SIZE - 1) / TILE_SIZE;
+    const UINT GroupSizeY = (ViewHeight + TILE_SIZE - 1) / TILE_SIZE;
     Context->Dispatch(GroupSizeX, GroupSizeY, 1);
 
     // ---- 바인딩 해제 ----
@@ -327,8 +346,8 @@ void FTileBasedLightCulling::UpdateLightCullingParamsCB(const FFrameContext& fra
         return;
 
     FLightCullingParams Params = {};
-    Params.ScreenSizeX = frameContext.ViewportWidth;
-    Params.ScreenSizeY = frameContext.ViewportHeight;
+    Params.ScreenSizeX = static_cast<uint32>(frameContext.ViewportWidth);
+    Params.ScreenSizeY = static_cast<uint32>(frameContext.ViewportHeight);
     Params.TileSizeX        = TILE_SIZE;
     Params.TileSizeY        = TILE_SIZE;
     Params.Enable25DCulling = bEnable25DCulling ? 1u : 0u;

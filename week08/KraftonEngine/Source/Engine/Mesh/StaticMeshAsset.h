@@ -8,7 +8,7 @@
 #include "Engine/Object/FName.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
-#include "Render/Types/VertexTypes.h"
+#include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include <memory>
 #include <algorithm>
 

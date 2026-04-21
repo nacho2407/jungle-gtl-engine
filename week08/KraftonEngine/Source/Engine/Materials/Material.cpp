@@ -1,6 +1,7 @@
-#include "Render/Types/PipelineStateTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialSemantics.h"
 #include "Serialization/Archive.h"
 #include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
 #include "Texture/Texture2D.h"
@@ -74,46 +75,51 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 
 bool UMaterial::SetScalarParameter(const FString& ParamName, float Value)
 {
-    LooseScalarParameters[ParamName] = Value;
-    SetParameter(ParamName, &Value, sizeof(float));
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
+    LooseScalarParameters[CanonicalName] = Value;
+    SetParameter(CanonicalName, &Value, sizeof(float));
     return true;
 }
 
 bool UMaterial::SetVector3Parameter(const FString& ParamName, const FVector& Value)
 {
-    LooseVector3Parameters[ParamName] = Value;
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
+    LooseVector3Parameters[CanonicalName] = Value;
     float Data[3] = { Value.X, Value.Y, Value.Z };
-    SetParameter(ParamName, Data, sizeof(Data));
+    SetParameter(CanonicalName, Data, sizeof(Data));
     return true;
 }
 
 bool UMaterial::SetVector4Parameter(const FString& ParamName, const FVector4& Value)
 {
-    LooseVector4Parameters[ParamName] = Value;
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
+    LooseVector4Parameters[CanonicalName] = Value;
     float Data[4] = { Value.X, Value.Y, Value.Z, Value.W };
-    SetParameter(ParamName, Data, sizeof(Data));
+    SetParameter(CanonicalName, Data, sizeof(Data));
     return true;
 }
 
 bool UMaterial::SetTextureParameter(const FString& ParamName, UTexture2D* Texture)
 {
-    TextureParameters[ParamName] = Texture;
+    TextureParameters[MaterialSemantics::CanonicalizeTextureSlot(ParamName)] = Texture;
     return true;
 }
 
 bool UMaterial::SetMatrixParameter(const FString& ParamName, const FMatrix& Value)
 {
-    LooseMatrixParameters[ParamName] = Value;
-    SetParameter(ParamName, Value.Data, sizeof(float) * 16);
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
+    LooseMatrixParameters[CanonicalName] = Value;
+    SetParameter(CanonicalName, Value.Data, sizeof(float) * 16);
     return true;
 }
 
 bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) const
 {
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
     if (Template)
     {
         FMaterialParameterInfo Info;
-        if (Template->GetParameterInfo(ParamName, Info))
+        if (Template->GetParameterInfo(CanonicalName, Info))
         {
             auto It = ConstantBufferMap.find(Info.BufferName);
             if (It != ConstantBufferMap.end())
@@ -125,7 +131,7 @@ bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) co
         }
     }
 
-    auto LooseIt = LooseScalarParameters.find(ParamName);
+    auto LooseIt = LooseScalarParameters.find(CanonicalName);
     if (LooseIt == LooseScalarParameters.end())
         return false;
 
@@ -135,10 +141,11 @@ bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) co
 
 bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue) const
 {
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
     if (Template)
     {
         FMaterialParameterInfo Info;
-        if (Template->GetParameterInfo(ParamName, Info))
+        if (Template->GetParameterInfo(CanonicalName, Info))
         {
             auto It = ConstantBufferMap.find(Info.BufferName);
             if (It != ConstantBufferMap.end())
@@ -150,7 +157,7 @@ bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue)
         }
     }
 
-    auto LooseIt = LooseVector3Parameters.find(ParamName);
+    auto LooseIt = LooseVector3Parameters.find(CanonicalName);
     if (LooseIt == LooseVector3Parameters.end())
         return false;
 
@@ -160,10 +167,11 @@ bool UMaterial::GetVector3Parameter(const FString& ParamName, FVector& OutValue)
 
 bool UMaterial::GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const
 {
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
     if (Template)
     {
         FMaterialParameterInfo Info;
-        if (Template->GetParameterInfo(ParamName, Info))
+        if (Template->GetParameterInfo(CanonicalName, Info))
         {
             auto It = ConstantBufferMap.find(Info.BufferName);
             if (It != ConstantBufferMap.end())
@@ -175,7 +183,7 @@ bool UMaterial::GetVector4Parameter(const FString& ParamName, FVector4& OutValue
         }
     }
 
-    auto LooseIt = LooseVector4Parameters.find(ParamName);
+    auto LooseIt = LooseVector4Parameters.find(CanonicalName);
     if (LooseIt == LooseVector4Parameters.end())
         return false;
 
@@ -185,7 +193,8 @@ bool UMaterial::GetVector4Parameter(const FString& ParamName, FVector4& OutValue
 
 bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const
 {
-    auto It = TextureParameters.find(ParamName);
+    const FString CanonicalName = MaterialSemantics::CanonicalizeTextureSlot(ParamName);
+    auto It = TextureParameters.find(CanonicalName);
     if (It == TextureParameters.end())
         return false;
 
@@ -195,10 +204,11 @@ bool UMaterial::GetTextureParameter(const FString& ParamName, UTexture2D*& OutTe
 
 bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) const
 {
+    const FString CanonicalName = MaterialSemantics::CanonicalizeParameterName(ParamName);
     if (Template)
     {
         FMaterialParameterInfo Info;
-        if (Template->GetParameterInfo(ParamName, Info))
+        if (Template->GetParameterInfo(CanonicalName, Info))
         {
             auto It = ConstantBufferMap.find(Info.BufferName);
             if (It != ConstantBufferMap.end())
@@ -210,7 +220,7 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
         }
     }
 
-    auto LooseIt = LooseMatrixParameters.find(ParamName);
+    auto LooseIt = LooseMatrixParameters.find(CanonicalName);
     if (LooseIt == LooseMatrixParameters.end())
         return false;
 
@@ -221,7 +231,7 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName) const
 {
-    auto it = TextureParameters.find(TextureName);
+    auto it = TextureParameters.find(MaterialSemantics::CanonicalizeTextureSlot(TextureName));
     if (it != TextureParameters.end())
     {
         UTexture2D* Texture = it->second;

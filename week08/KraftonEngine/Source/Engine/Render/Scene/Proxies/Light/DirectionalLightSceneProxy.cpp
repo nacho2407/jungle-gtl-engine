@@ -1,6 +1,7 @@
 ﻿#include "Render/Scene/Proxies/Light/DirectionalLightSceneProxy.h"
 #include "Component/DirectionalLightComponent.h"
 #include "Render/Scene/Scene.h"
+#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
 #include <cmath>
 
 namespace
@@ -30,7 +31,7 @@ void AddArrow(FScene& Scene, const FVector& Start, const FVector& Dir, float Len
             float A1 = TwoPI * (i + 1) / Segs;
             FVector P0 = Center + AxisX * (cosf(A0) * Radius) + AxisY * (sinf(A0) * Radius);
             FVector P1 = Center + AxisX * (cosf(A1) * Radius) + AxisY * (sinf(A1) * Radius);
-            Scene.AddDebugLine(P0, P1, Color);
+            DrawDebugLine(Scene, P0, P1, Color);
         }
     };
 
@@ -41,7 +42,7 @@ void AddArrow(FScene& Scene, const FVector& Start, const FVector& Dir, float Len
     {
         float A = TwoPI * i / 4;
         FVector P = AxisX * (cosf(A) * StemRadius) + AxisY * (sinf(A) * StemRadius);
-        Scene.AddDebugLine(Start + P, StemEnd + P, Color);
+        DrawDebugLine(Scene, Start + P, StemEnd + P, Color);
     }
 
     // 원뿔 head
@@ -50,7 +51,7 @@ void AddArrow(FScene& Scene, const FVector& Start, const FVector& Dir, float Len
     {
         float A = TwoPI * i / 4;
         FVector P = AxisX * (cosf(A) * HeadRadius) + AxisY * (sinf(A) * HeadRadius);
-        Scene.AddDebugLine(StemEnd + P, Tip, Color);
+        DrawDebugLine(Scene, StemEnd + P, Tip, Color);
     }
 }
 } // namespace

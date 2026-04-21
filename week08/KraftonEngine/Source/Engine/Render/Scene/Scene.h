@@ -1,14 +1,21 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Passes/Scene/FogParams.h"
+#include "Render/Scene/DebugDraw/DebugDrawQueue.h"
+#include "Render/Scene/Proxies/Effects/FogSceneProxy.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
-#include "Render/Types/FogParams.h"
-#include "Render/Scene/DebugDraw/SceneDebugData.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/SceneProxyRegistry.h"
 
 class UPrimitiveComponent;
 class ULightComponent;
+class UHeightFogComponent;
 
+/*
+    FScene는 렌더용 프록시 registry를 관리하는 컨테이너입니다.
+    Primitive / Light / Effect 프록시의 등록, dirty 추적, 선택 상태, free slot 재사용을 담당합니다.
+*/
 class FScene
 {
 public:
@@ -23,6 +30,9 @@ public:
     void RegisterLightProxy(FLightSceneProxy* Proxy);
     void RemoveLight(FLightSceneProxy* Proxy);
 
+    FFogSceneProxy* AddFog(const UHeightFogComponent* Owner, const FFogParams& Params);
+    void RemoveFog(const UHeightFogComponent* Owner);
+
     void UpdateDirtyProxies();
     void UpdateDirtyLightProxies();
     void MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag);
@@ -32,56 +42,38 @@ public:
     void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
     bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
 
-    const TArray<FPrimitiveSceneProxy*>& GetPrimitiveProxies() const { return Proxies; }
-    const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return NeverCullProxies; }
-    const TArray<FLightSceneProxy*>& GetLightProxies() const { return LightProxies; }
-    uint32 GetPrimitiveProxyCount() const { return static_cast<uint32>(Proxies.size()); }
-    uint32 GetLightProxyCount() const { return static_cast<uint32>(LightProxies.size()); }
+    const TArray<FPrimitiveSceneProxy*>& GetPrimitiveProxies() const { return PrimitiveProxyRegistry.Proxies; }
+    const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return PrimitiveProxyRegistry.NeverCullProxies; }
+    const TArray<FLightSceneProxy*>& GetLightProxies() const { return LightProxyRegistry.Proxies; }
+    const TArray<FFogSceneProxy*>& GetFogProxies() const { return FogProxyRegistry.Proxies; }
+    uint32 GetPrimitiveProxyCount() const { return static_cast<uint32>(PrimitiveProxyRegistry.Proxies.size()); }
+    uint32 GetLightProxyCount() const { return static_cast<uint32>(LightProxyRegistry.Proxies.size()); }
     uint32 GetProxyCount() const { return GetPrimitiveProxyCount() + GetLightProxyCount(); }
 
-    void ClearFrameData();
+    void ClearFrameData() { ImmediateDebugLines.clear(); }
 
-    void AddOverlayText(FString Text, const FVector2& Position, float Scale) { DebugData.AddOverlayText(std::move(Text), Position, Scale); }
-    const TArray<FSceneOverlayText>& GetOverlayTexts() const { return DebugData.GetOverlayTexts(); }
+    FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
+    const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
+    const TArray<FDebugDrawItem>& GetImmediateDebugLines() const { return ImmediateDebugLines; }
+    void AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color)
+    {
+        FDebugDrawItem Item;
+        Item.Start = Start;
+        Item.End = End;
+        Item.Color = Color;
+        Item.RemainingTime = 0.0f;
+        Item.bOneFrame = true;
+        ImmediateDebugLines.push_back(Item);
+    }
 
-    void AddDebugAABB(const FVector& Min, const FVector& Max, const FColor& Color) { DebugData.AddDebugAABB(Min, Max, Color); }
-    const TArray<FSceneDebugAABB>& GetDebugAABBs() const { return DebugData.GetDebugAABBs(); }
-
-    void AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color) { DebugData.AddDebugLine(Start, End, Color); }
-    const TArray<FSceneDebugLine>& GetDebugLines() const { return DebugData.GetDebugLines(); }
-
-    void SetGrid(float Spacing, int32 HalfLineCount) { DebugData.SetGrid(Spacing, HalfLineCount); }
-    bool HasGrid() const { return DebugData.HasGrid(); }
-    float GetGridSpacing() const { return DebugData.GetGridSpacing(); }
-    int32 GetGridHalfLineCount() const { return DebugData.GetGridHalfLineCount(); }
-
-    FDebugDrawQueue& GetDebugDrawQueue() { return DebugData.GetDebugDrawQueue(); }
-    const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugData.GetDebugDrawQueue(); }
-    FSceneDebugData& GetDebugData() { return DebugData; }
-    const FSceneDebugData& GetDebugData() const { return DebugData; }
-
-    void AddFog(const class UHeightFogComponent* Owner, const FFogParams& Params);
-    void RemoveFog(const class UHeightFogComponent* Owner);
-    bool HasFog() const { return !Fogs.empty(); }
-    const FFogParams& GetFogParams() const { return Fogs[0].Params; }
+    bool HasFog() const;
+    const FFogParams& GetFogParams() const;
 
 private:
-    TArray<FPrimitiveSceneProxy*> Proxies;
-    TArray<FPrimitiveSceneProxy*> DirtyProxies;
-    TArray<FPrimitiveSceneProxy*> SelectedProxies;
-    TArray<FPrimitiveSceneProxy*> NeverCullProxies;
-    TArray<uint32> FreeSlots;
+    FPrimitiveSceneProxyRegistry PrimitiveProxyRegistry;
+    TSceneProxyRegistry<FLightSceneProxy> LightProxyRegistry;
+    TSceneProxyRegistry<FFogSceneProxy> FogProxyRegistry;
 
-    TArray<FLightSceneProxy*> LightProxies;
-    TArray<FLightSceneProxy*> DirtyLightProxies;
-    TArray<uint32> FreeLightSlots;
-
-    FSceneDebugData DebugData;
-
-    struct FFogEntry
-    {
-        const class UHeightFogComponent* Owner = nullptr;
-        FFogParams Params;
-    };
-    TArray<FFogEntry> Fogs;
+    FDebugDrawQueue DebugDrawQueue;
+    TArray<FDebugDrawItem> ImmediateDebugLines;
 };

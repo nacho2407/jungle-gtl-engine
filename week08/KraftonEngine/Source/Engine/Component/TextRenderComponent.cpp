@@ -1,206 +1,271 @@
-#include "TextRenderComponent.h"
+﻿#include "TextRenderComponent.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstring>
+
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
-#include "Render/Resources/MeshBufferManager.h"
-#include "Render/Resources/ShaderManager.h"
+#include "Render/Resources/Buffers/MeshBufferManager.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
+#include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UTextRenderComponent, UBillboardComponent)
+IMPLEMENT_CLASS(UTextRenderComponent, UPrimitiveComponent)
 
 FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
 {
-	return new FTextRenderSceneProxy(this);
+    return new FTextRenderSceneProxy(this);
+}
+
+
+void UTextRenderComponent::SetText(const FString& InText)
+{
+    if (Text == InText)
+    {
+        return;
+    }
+
+    Text = InText;
+    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkWorldBoundsDirty();
+}
+
+FMeshBuffer* UTextRenderComponent::GetMeshBuffer() const
+{
+    return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad);
+}
+
+FMeshDataView UTextRenderComponent::GetMeshDataView() const
+{
+    return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad));
 }
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
 {
-	FontName = InFontName;
-	CachedFont = FResourceManager::Get().FindFont(FontName);
+    if (FontName == InFontName)
+    {
+        return;
+    }
+
+    FontName = InFontName;
+    CachedFont = FResourceManager::Get().FindFont(FontName);
+    MarkProxyDirty(EDirtyFlag::Mesh);
+}
+
+void UTextRenderComponent::SetFontSize(float InSize)
+{
+    if (FontSize == InSize)
+    {
+        return;
+    }
+
+    FontSize = InSize;
+    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkWorldBoundsDirty();
+}
+
+void UTextRenderComponent::SetBillboard(bool bEnable)
+{
+    if (bBillboard == bEnable)
+    {
+        return;
+    }
+
+    bBillboard = bEnable;
+    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkWorldBoundsDirty();
 }
 
 void UTextRenderComponent::UpdateWorldAABB() const
 {
-	// 빌보드는 어느 방향에서든 보이므로 view-independent 구형 바운드 사용
-	float TotalWidth = GetUTF8Length(Text) * CharWidth;
-	float MaxExtent = std::max(TotalWidth, CharHeight);
+    const float TotalWidth = GetUTF8Length(Text) * CharWidth;
+    const float MaxExtent = std::max(TotalWidth, CharHeight);
 
-	FVector WorldScale = GetWorldScale();
-	float ScaledMax = MaxExtent * std::max({ WorldScale.X, WorldScale.Y, WorldScale.Z });
+    const FVector WorldScale = GetWorldScale();
+    const float ScaledMax = MaxExtent * std::max({ WorldScale.X, WorldScale.Y, WorldScale.Z });
 
-	FVector WorldCenter = GetWorldLocation();
-	FVector Extent(ScaledMax, ScaledMax, ScaledMax);
+    const FVector WorldCenter = GetWorldLocation();
+    const FVector Extent(ScaledMax, ScaledMax, ScaledMax);
 
-	WorldAABBMinLocation = WorldCenter - Extent;
-	WorldAABBMaxLocation = WorldCenter + Extent;
+    WorldAABBMinLocation = WorldCenter - Extent;
+    WorldAABBMaxLocation = WorldCenter + Extent;
+    bWorldAABBDirty = false;
+    bHasValidWorldAABB = true;
 }
 
 bool UTextRenderComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	// Ray 방향으로 빌보드 행렬을 계산 (CachedWorldMatrix는 active 카메라 기준이라 다른 뷰포트에서 틀림)
-	FMatrix PerRayBillboard = ComputeBillboardMatrix(Ray.Direction);
-	FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(PerRayBillboard);
-	FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
+    const FMatrix TextWorldMatrix = bBillboard ? CalculateBillboardWorldMatrix(Ray.Direction) : GetWorldMatrix();
+    const FMatrix OutlineWorldMatrix = CalculateOutlineMatrix(TextWorldMatrix);
+    const FMatrix InvWorldMatrix = OutlineWorldMatrix.GetInverse();
 
-	FRay LocalRay;
-	LocalRay.Origin = InvWorldMatrix.TransformPositionWithW(Ray.Origin);
-	LocalRay.Direction = InvWorldMatrix.TransformVector(Ray.Direction).Normalized();
+    FRay LocalRay;
+    LocalRay.Origin = InvWorldMatrix.TransformPositionWithW(Ray.Origin);
+    LocalRay.Direction = InvWorldMatrix.TransformVector(Ray.Direction).Normalized();
 
+    if (std::abs(LocalRay.Direction.X) < 0.00111f)
+    {
+        return false;
+    }
 
-	if (std::abs(LocalRay.Direction.X) < 0.00111f) return false;
+    const float t = -LocalRay.Origin.X / LocalRay.Direction.X;
+    if (t < 0.0f)
+    {
+        return false;
+    }
 
-	float t = -LocalRay.Origin.X / LocalRay.Direction.X;
+    const FVector LocalHitPos = LocalRay.Origin + LocalRay.Direction * t;
+    if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
+        LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
+    {
+        const FVector WorldHitPos = OutlineWorldMatrix.TransformPositionWithW(LocalHitPos);
+        OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
+        OutHitResult.HitComponent = this;
+        return true;
+    }
 
-	if (t < 0.0f) return false;
-
-	FVector LocalHitPos = LocalRay.Origin + LocalRay.Direction * t;
-
-	if (LocalHitPos.Y >= -0.5f && LocalHitPos.Y <= 0.5f &&
-		LocalHitPos.Z >= -0.5f && LocalHitPos.Z <= 0.5f)
-	{
-		FVector WorldHitPos = OutlineWorldMatrix.TransformVector(LocalHitPos);
-		OutHitResult.Distance = (WorldHitPos - Ray.Origin).Length();
-		return true;
-	}
-
-	return false;
+    return false;
 }
 
 void UTextRenderComponent::Serialize(FArchive& Ar)
 {
-	UBillboardComponent::Serialize(Ar);
+    UPrimitiveComponent::Serialize(Ar);
 
-	Ar << Text;
-	Ar << FontName;
-	Ar << Color;
-	Ar << FontSize;
-	Ar << Spacing;
-	Ar << CharWidth;
-	Ar << CharHeight;
-	Ar << RenderSpace;
-	Ar << HAlign;
-	Ar << VAlign;
-	Ar << ScreenX;
-	Ar << ScreenY;
+    Ar << Text;
+    Ar << FontName;
+    Ar << Color;
+    Ar << FontSize;
+    Ar << Spacing;
+    Ar << CharWidth;
+    Ar << CharHeight;
+    Ar << bBillboard;
+    Ar << HAlign;
+    Ar << VAlign;
+
+    if (Ar.IsLoading())
+    {
+        CachedFont = FResourceManager::Get().FindFont(FontName);
+    }
 }
 
 void UTextRenderComponent::PostDuplicate()
 {
-	UBillboardComponent::PostDuplicate();
-	// 폰트 리소스 재바인딩 — 직렬화된 FontName 기준으로 ResourceManager에서 다시 lookup
-	SetFont(FontName);
+    UPrimitiveComponent::PostDuplicate();
+    SetFont(FontName);
 }
 
 FString UTextRenderComponent::GetOwnerUUIDToString() const
 {
-	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
-	{
-		return FName::None.ToString();
-	}
-	return std::to_string(OwnerActor->GetUUID());
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        return FName::None.ToString();
+    }
+    return std::to_string(OwnerActor->GetUUID());
 }
 
 FString UTextRenderComponent::GetOwnerNameToString() const
 {
-	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
-	{
-		return FName::None.ToString();
-	}
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        return FName::None.ToString();
+    }
 
-	FName Name = OwnerActor->GetFName();
-	if (Name.IsValid())
-	{
-		return Name.ToString();
-	}
-	return FName::None.ToString();
+    FName Name = OwnerActor->GetFName();
+    return Name.IsValid() ? Name.ToString() : FName::None.ToString();
 }
 
 UTextRenderComponent::UTextRenderComponent()
 {
+    CachedFont = FResourceManager::Get().FindFont(FontName);
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Text", EPropertyType::String, &Text });
-	OutProps.push_back({ "Font", EPropertyType::Name, &FontName });
-	//OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
-	OutProps.push_back({ "Font Size", EPropertyType::Float, &FontSize, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+    UPrimitiveComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "Text", EPropertyType::String, &Text });
+    OutProps.push_back({ "Font", EPropertyType::Name, &FontName });
+    OutProps.push_back({ "Font Size", EPropertyType::Float, &FontSize, 0.1f, 100.0f, 0.1f });
+    OutProps.push_back({ "Billboard", EPropertyType::Bool, &bBillboard });
 }
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
-	// TextRender의 GetEditableProperties는 USceneComponent 베이스를 직접 사용한다.
-	USceneComponent::PostEditProperty(PropertyName);
+    UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Font") == 0)
-	{
-		SetFont(FontName);
-		MarkProxyDirty(EDirtyFlag::Mesh);
-	}
-	else if (strcmp(PropertyName, "Text") == 0)
-	{
-		// 문자 길이가 바뀌면 빌보드 바운드/아웃라인 행렬이 변한다.
-		MarkProxyDirty(EDirtyFlag::Transform);
-		MarkWorldBoundsDirty();
-	}
-	else if (strcmp(PropertyName, "Font Size") == 0)
-	{
-		MarkProxyDirty(EDirtyFlag::Transform);
-	}
-	else if (strcmp(PropertyName, "Visible") == 0)
-	{
-		MarkRenderVisibilityDirty();
-	}
+    if (strcmp(PropertyName, "Font") == 0)
+    {
+        SetFont(FontName);
+        MarkProxyDirty(EDirtyFlag::Mesh);
+    }
+    else if (strcmp(PropertyName, "Text") == 0)
+    {
+        MarkProxyDirty(EDirtyFlag::Transform);
+        MarkWorldBoundsDirty();
+    }
+    else if (strcmp(PropertyName, "Font Size") == 0 || strcmp(PropertyName, "Billboard") == 0)
+    {
+        MarkProxyDirty(EDirtyFlag::Transform);
+        MarkWorldBoundsDirty();
+    }
 }
 
+FMatrix UTextRenderComponent::CalculateBillboardWorldMatrix(const FVector& CameraForward) const
+{
+    FVector Forward = (CameraForward * -1.0f).Normalized();
+    FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
+
+    if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
+    {
+        WorldUp = FVector(0.0f, 1.0f, 0.0f);
+    }
+
+    const FVector Right = WorldUp.Cross(Forward).Normalized();
+    const FVector Up = Forward.Cross(Right).Normalized();
+
+    FMatrix RotMatrix;
+    RotMatrix.SetAxes(Forward, Right, Up);
+
+    return FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+}
 
 FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
 {
-	int32 Len = GetUTF8Length(Text);
-
-	if (Len <= 0) return FMatrix::Identity;
-
-	float TotalLocalWidth = (Len * CharWidth);
-
-	float CenterY = TotalLocalWidth * -0.5f;
-	float CenterZ = 0.0f; // 상하 정렬이 중앙이라면 0
-
-	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
-	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
-
-	return (ScaleMatrix * TransMatrix) * CachedWorldMatrix;
+    const FMatrix BaseWorldMatrix = bBillboard ? CachedWorldMatrix : GetWorldMatrix();
+    return CalculateOutlineMatrix(BaseWorldMatrix);
 }
 
-FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& BillboardWorldMatrix) const
+FMatrix UTextRenderComponent::CalculateOutlineMatrix(const FMatrix& TextWorldMatrix) const
 {
-	int32 Len = GetUTF8Length(Text);
+    const int32 Len = GetUTF8Length(Text);
+    if (Len <= 0)
+    {
+        return FMatrix::Identity;
+    }
 
-	if (Len <= 0) return FMatrix::Identity;
+    const float TotalLocalWidth = (Len * CharWidth);
+    const float CenterY = TotalLocalWidth * -0.5f;
+    const float CenterZ = 0.0f;
 
-	float TotalLocalWidth = (Len * CharWidth);
+    const FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
+    const FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
 
-	float CenterY = TotalLocalWidth * -0.5f;
-	float CenterZ = 0.0f;
-
-	FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(1.0f, TotalLocalWidth, CharHeight));
-	FMatrix TransMatrix = FMatrix::MakeTranslationMatrix(FVector(0.0f, CenterY, CenterZ));
-
-	return (ScaleMatrix * TransMatrix) * BillboardWorldMatrix;
+    return (ScaleMatrix * TransMatrix) * TextWorldMatrix;
 }
 
-int32 UTextRenderComponent::GetUTF8Length(const FString& str) const {
-	int32 count = 0;
-	for (size_t i = 0; i < str.length(); ++i) {
-		// UTF-8의 첫 바이트가 10xxxxxx 이 아니면 새로운 글자의 시작임
-		if ((str[i] & 0xC0) != 0x80) count++;
-	}
-	return count;
+int32 UTextRenderComponent::GetUTF8Length(const FString& Str) const
+{
+    int32 Count = 0;
+    for (size_t i = 0; i < Str.length(); ++i)
+    {
+        if ((Str[i] & 0xC0) != 0x80)
+        {
+            Count++;
+        }
+    }
+    return Count;
 }

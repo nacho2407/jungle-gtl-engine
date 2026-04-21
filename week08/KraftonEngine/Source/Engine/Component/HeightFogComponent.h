@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SceneComponent.h"
-#include "Render/Types/FogParams.h"
+#include "Render/Passes/Scene/FogParams.h"
 
 class UHeightFogComponent : public USceneComponent
 {

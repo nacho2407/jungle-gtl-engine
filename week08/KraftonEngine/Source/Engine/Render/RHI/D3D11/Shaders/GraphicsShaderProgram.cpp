@@ -3,7 +3,7 @@
 
 #include "Materials/Material.h"
 #include "Profiling/MemoryStats.h"
-#include "Render/RHI/D3D11/Shaders/ShaderIncludeLoader.h"
+#include "Render/Resources/Shaders/ShaderIncludeLoader.h"
 
 #include <comdef.h>
 #include <iostream>

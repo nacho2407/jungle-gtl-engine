@@ -1,18 +1,20 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+
+#include "Render/Passes/Base/PassRenderState.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Pipelines/Context/Scene/ViewTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Pipelines/RenderPassTypes.h"
-#include "Render/Types/ViewTypes.h"
-#include "Render/Scene/DebugDraw/SceneDebugData.h"
+#include "Render/Submission/Collect/CollectedOverlayData.h"
 
 struct FSceneView;
 struct FViewportRenderTargets;
 class FScene;
 class FD3DDevice;
-struct FFrameSharedResources;
+struct FFrameRenderResources;
 class FViewModePassRegistry;
-class FViewModeSurfaceSet;
+class FSceneViewModeSurfaces;
 class FGPUOcclusionCulling;
 class FRenderer;
 struct FLODUpdateContext;
@@ -20,9 +22,8 @@ class FPrimitiveSceneProxy;
 class FDecalSceneProxy;
 struct FCollectedPrimitives;
 class FDrawCommandList;
-struct FPassRenderState;
-struct FStateCache;
 class FTileBasedLightCulling;
+struct FDrawSubmitStateCache;
 
 /*
     렌더 파이프라인 실행에 필요한 문맥을 한 곳에 모아 둔 구조체입니다.
@@ -30,34 +31,35 @@ class FTileBasedLightCulling;
 */
 struct FRenderPipelineContext
 {
-    const FSceneView* SceneView = nullptr;
-    const FViewportRenderTargets* Targets = nullptr;
-    FScene* Scene = nullptr;
+    const FSceneView*             SceneView = nullptr;
+    const FViewportRenderTargets* Targets   = nullptr;
+    FScene*                       Scene     = nullptr;
 
-    FRenderer* Renderer = nullptr;
-    FD3DDevice* Device = nullptr;
-    ID3D11DeviceContext* Context = nullptr;
+    FRenderer*           Renderer = nullptr;
+    FD3DDevice*          Device   = nullptr;
+    ID3D11DeviceContext* Context  = nullptr;
 
-    FFrameSharedResources* Resources = nullptr;
-    FStateCache* StateCache = nullptr;
-    FDrawCommandList* DrawCommandList = nullptr;
-    const FPassRenderState* PassRenderStates = nullptr;
+    FFrameRenderResources*      Resources       = nullptr;
+    FDrawSubmitStateCache*      StateCache      = nullptr;
+    FDrawCommandList*           DrawCommandList = nullptr;
+    const FPassRenderStateDesc* PassStateDescs  = nullptr;
 
     const FViewModePassRegistry* ViewModePassRegistry = nullptr;
-    FViewModeSurfaceSet* ActiveViewSurfaceSet = nullptr;
-    EViewMode ActiveViewMode = EViewMode::Lit_Phong;
+    FSceneViewModeSurfaces*      ActiveViewSurfaces   = nullptr;
+    EViewMode                    ActiveViewMode       = {};
 
-    const FCollectedPrimitives* CollectedPrimitives = nullptr;
-    const TArray<FPrimitiveSceneProxy*>* VisibleProxies = nullptr;
-    const TArray<FDecalSceneProxy*>* VisibleDecals = nullptr;
-    const TArray<FSceneDebugLine>* DebugLines = nullptr;
-    const TArray<FSceneOverlayText>* OverlayTexts = nullptr;
+    const FCollectedPrimitives*          CollectedPrimitives = nullptr;
+    const TArray<FPrimitiveSceneProxy*>* VisibleProxies      = nullptr;
+    const TArray<FDecalSceneProxy*>*     VisibleDecals       = nullptr;
+    const FCollectedOverlayData*         OverlayData         = nullptr;
+    const TArray<FSceneDebugLine>*       DebugLines          = nullptr;
+    const TArray<FSceneOverlayText>*     OverlayTexts        = nullptr;
 
-    FGPUOcclusionCulling* Occlusion = nullptr;
-    FTileBasedLightCulling* LightCulling = nullptr;
+    FGPUOcclusionCulling*    Occlusion  = nullptr;
+    FTileBasedLightCulling*  LightCulling = nullptr;
     const FLODUpdateContext* LODContext = nullptr;
 
-    const FPassRenderState& GetPassState(ERenderPass Pass) const;
-    ID3D11RenderTargetView* GetViewportRTV() const;
-    ID3D11DepthStencilView* GetViewportDSV() const;
+    const FPassRenderStateDesc& GetPassState(ERenderPass Pass) const;
+    ID3D11RenderTargetView*     GetViewportRTV() const;
+    ID3D11DepthStencilView*     GetViewportDSV() const;
 };

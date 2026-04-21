@@ -1,6 +1,6 @@
 ﻿// #pragma once
 //
-// #include "Render/Submission/Collectors/RenderCollector.h"
+// #include "Render/Submission/Collect/RenderCollector.h"
 // #include "Render/Core/FrameContext.h"
 //
 // class UObjViewerEngine;
