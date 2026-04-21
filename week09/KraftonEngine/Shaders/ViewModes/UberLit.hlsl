@@ -49,7 +49,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
 
 #elif defined(LIGHTING_MODEL_LAMBERT)
     // Lambert Shading: Per-pixel diffuse lighting
-    float3 Normal = DecodeNormal(ResolveSurface1(UV));
+    float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
+    float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
     
     // Ambient + Directional Lights
     FinalColor = ComputeLambertLighting(BaseColor, Normal);
@@ -57,24 +58,29 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     // Local Lights (Point, Spot)
     for (int i = 0; i < NumLocalLights; ++i)
     {
-        FLocalLightInfo LocalLight = g_LightBuffer[i];
-        FinalColor.rgb += LocalLightLambert(LocalLight, Normal, BaseColor, UV);
+        FinalColor.rgb += LocalLightLambert(g_LightBuffer[i], Normal, WorldPos);
     }
+    FinalColor.rgb = saturate(FinalColor.rgb);
 
 #elif defined(LIGHTING_MODEL_PHONG)
     // Blinn-Phong Shading: Per-pixel specular lighting
-    float3 Normal = DecodeNormal(ResolveSurface1(UV));
+    float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
     float4 MaterialParam = DecodeMaterialParam(ResolveSurface2(UV));
+    float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
+    float3 ViewDir = normalize(CameraWorldPos - WorldPos);
+
+    float Shininess = max(MaterialParam.x, 1.0f);
+    float SpecularStrength = max(MaterialParam.y, 0.0f);
     
     // Ambient + Directional Lights
-    FinalColor = ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, UV);
+    FinalColor = ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, WorldPos, ViewDir);
 
     // Local Lights (Point, Spot)
     for (int j = 0; j < NumLocalLights; ++j)
     {
-        FLocalLightInfo LocalLight = g_LightBuffer[j];
-        FinalColor.rgb += LocalLightBlinnPhong(LocalLight, Normal, BaseColor, MaterialParam, UV);
+        FinalColor.rgb += LocalLightBlinnPhong(g_LightBuffer[j], Normal, WorldPos, ViewDir, Shininess, SpecularStrength);
     }
+    FinalColor.rgb = saturate(FinalColor.rgb);
 
 #elif defined(LIGHTING_MODEL_WORLDNORMAL)
     // Debug view mode: World Normal
