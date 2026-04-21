@@ -64,6 +64,5 @@ void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	Ar << "Enable Tick" << bCanEverTick;
-	Ar << "Be Serialized" << bTransient;
 	Ar << "Editor Only" << bIsEditorOnly;
 }

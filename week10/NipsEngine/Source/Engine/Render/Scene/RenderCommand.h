@@ -28,6 +28,8 @@ enum class ERenderCommandType
 	Billboard,
 	DebugBox,
 	DebugOBB,
+	DebugDirectionalLight,
+	DebugPointLight,
 	DebugSpotlight,
 	Grid,		// Grid 패스 — LineBatcher 경유
 	Font,		// TextRenderComponent — FontBatcher 경유
@@ -60,6 +62,10 @@ struct FFrameConstants
 	float Padding0;
 	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
+
+	FVector2 ViewportSize;
+    float NearPlane;
+    float FarPlane;
 };
 
 struct FAmbientLightInfo
@@ -85,7 +91,7 @@ struct FLightInfo
 	float OuterAngle;
 
 	FVector Direction;
-	float Padding0;
+	float Falloff;
 
 	FVector Position;
 	float Padding1;
@@ -95,6 +101,8 @@ struct FLightConstants
 {
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
+	uint32 LightCount;
+	float Padding[3];
 };
 
 struct FGizmoConstants
@@ -141,6 +149,20 @@ struct FOBBConstants
 	FColor Color;
 };
 
+struct FDirectionalLightConstants
+{
+	FVector Position;
+	FVector Direction;
+	FColor Color;
+};
+
+struct FPointLightConstants
+{
+	FVector Position;
+	float Range;
+	FColor Color;
+};
+
 struct FSpotLightConstants
 {
 	FVector Position;
@@ -178,41 +200,7 @@ struct FBillboardConstants
 	UTexture* Texture = nullptr;
 	float Width = 1.0f;
 	float Height = 1.0f;
-};
-// StaticMeshBuffer (b6) — ShaderStaticMesh.hlsl 대응
-// 완전 Obj전용입니다. 추후 Bump를 Normal로 바꾸면 됩니다.
-struct FStaticMeshConstants
-{
-	// Phong Material
-	FVector AmbientColor  = { 0.2f, 0.2f, 0.2f };
-	float   _Pad0         = 0.0f;
-
-	FVector DiffuseColor  = { 0.8f, 0.8f, 0.8f };
-	float   _Pad1         = 0.0f;
-
-	FVector SpecularColor = { 0.5f, 0.5f, 0.5f };
-	float   Shininess     = 32.0f;
-
-	// ScrollUV
-	float  ScrollX          = 0.f;
-	float  ScrollY          = 0.f;
-	uint32 bHasDiffuseMap   = 0;     // cbuffer bytes 76-79  — HLSL uint bHasDiffuseMap 대응
-	uint32  bHasSpecularMap  = 0;        // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
-
-	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
-	float _Pad2 = 0.0f;
-
-	// Texture SRV (CPU-only, cbuffer 범위 밖)
-	//ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
-	//ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
-	//ID3D11ShaderResourceView* SpecularSRV = { nullptr };
-	//ID3D11ShaderResourceView* BumpSRV     = { nullptr };
-};
-
-struct FDecalConstants
-{
-	FMatrix InvDecalWorld;
-	FVector4 ColorTint;
+	FColor Color = FColor::White();
 };
 
 constexpr uint32 MaxFogLayerCount = 32;
@@ -257,10 +245,9 @@ struct FLightPassConstants
 {
 	FVector CameraWorldPos;
 	uint32	LightCount;
-
-	uint32 ViewMode;   // 4 bytes (필요시 더 압축해서 보냅니다.)
-	uint32 WorldLit;  // 4 bytes
-	float  Padding[2]; // 8 bytes
+	uint32	ViewMode;		// 4 bytes (필요시 더 압축해서 보냅니다.)
+	uint32	WorldLit;		// 4 bytes
+	float	Padding[2];		// 8 bytes
 };
 
 struct FRenderCommand
@@ -277,6 +264,8 @@ struct FRenderCommand
 	{
 		FAABBConstants AABB;
 		FOBBConstants OBB;
+		FDirectionalLightConstants DirectionalLight;
+		FPointLightConstants PointLight;
 		FSpotLightConstants SpotLight;
 		FGridConstants Grid;
 		FFontConstants Font;

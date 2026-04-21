@@ -238,12 +238,6 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\LineBatchComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp" />
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
@@ -254,6 +248,12 @@
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\PursuitMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
@@ -288,6 +288,8 @@
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
     <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
@@ -295,11 +297,13 @@
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DepthPrePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp" />
@@ -316,6 +320,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ComputeShader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
@@ -331,7 +336,6 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsPlatformTime.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp" />
-    <ClCompile Include="Source\Engine\Serialization\JsonReader.h" />
     <ClCompile Include="Source\Engine\Serialization\JsonWriter.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
@@ -405,12 +409,6 @@
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LineBatchComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
@@ -421,6 +419,12 @@
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\PursuitMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\AmbientLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\DirectionalLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
@@ -482,6 +486,8 @@
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
@@ -493,11 +499,13 @@
     <ClInclude Include="Source\Engine\Render\Renderer\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DecalRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthLessRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DepthPrePass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\EditorRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h" />
@@ -514,6 +522,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ComputeShader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
@@ -537,6 +546,7 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
+    <ClInclude Include="Source\Engine\Serialization\JsonReader.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
@@ -603,6 +613,16 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\LightCullingCS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\OcclusionCull.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -638,12 +658,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderStaticMesh.hlsl">
+    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+    <FxCompile Include="Shaders\UberLit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
@@ -662,9 +682,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\UberLit.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

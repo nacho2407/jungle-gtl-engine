@@ -4,6 +4,8 @@
 
 class UTextRenderComponent;
 class UDecalComponent;
+class ULightComponent;
+class UBillboardComponent;
 
 class ACubeActor : public AActor
 {
@@ -103,10 +105,10 @@ public:
 	void InitDefaultComponents();
 };
 
-class ASpotLightActor : public AActor {
+class ADecalSpotLightActor : public AActor {
 public:
-	DECLARE_CLASS(ASpotLightActor, AActor)
-	ASpotLightActor() = default;
+	DECLARE_CLASS(ADecalSpotLightActor, AActor)
+	ADecalSpotLightActor() = default;
 
 	void InitDefaultComponents();
 
@@ -123,4 +125,53 @@ private:
 
 	float Range = 10.0f;
 	float Angle = 30.0f;
+};
+
+class ALightActor : public AActor
+{
+public:
+    DECLARE_CLASS(ALightActor, AActor)
+    ALightActor() = default;
+
+    ULightComponent* GetLight() const;
+    void SetLight(ULightComponent* InLight);
+
+	UBillboardComponent* GetBillboard() const { return BillboardComp; }
+	void SetBillboard(UBillboardComponent* InBillboard) { BillboardComp = InBillboard; }
+
+protected:
+    ULightComponent* LightComp = nullptr;
+	UBillboardComponent* BillboardComp = nullptr;
+};
+
+class AAmbientLightActor : public ALightActor
+{
+public:
+    DECLARE_CLASS(AAmbientLightActor, ALightActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
+
+class ADirectionalLightActor : public ALightActor
+{
+public:
+    DECLARE_CLASS(ADirectionalLightActor, ALightActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
+
+class APointLightActor : public ALightActor
+{
+public:
+    DECLARE_CLASS(APointLightActor, ALightActor)
+    virtual void InitDefaultComponents() override;
+    virtual void Tick(float DeltaTime) override;
+};
+
+class ASpotlightActor : public APointLightActor 
+{
+public:
+	DECLARE_CLASS(ASpotlightActor, APointLightActor)
+	void InitDefaultComponents() override;
+	void Tick(float DeltaTime) override;
 };

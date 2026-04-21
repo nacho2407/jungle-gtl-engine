@@ -666,9 +666,9 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		}
 	}
 
-	if (PrimaryActor->IsA<ASpotLightActor>())
+	if (PrimaryActor->IsA<ADecalSpotLightActor>())
 	{
-		ASpotLightActor* SpotActor = static_cast<ASpotLightActor*>(PrimaryActor);
+		ADecalSpotLightActor* SpotActor = static_cast<ADecalSpotLightActor*>(PrimaryActor);
 		ImGui::Separator();
 		ImGui::Text("Spot Light Properties");
 		float Range = SpotActor->GetRange();
@@ -676,7 +676,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		{
 			for (AActor* Actor : SelectedActors)
 			{
-				if (ASpotLightActor* SA = dynamic_cast<ASpotLightActor*>(Actor))
+				if (ADecalSpotLightActor* SA = dynamic_cast<ADecalSpotLightActor*>(Actor))
 				{
 					SA->SetRange(Range);
 				}
@@ -687,7 +687,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		{
 			for (AActor* Actor : SelectedActors)
 			{
-				if (ASpotLightActor* SA = dynamic_cast<ASpotLightActor*>(Actor))
+				if (ADecalSpotLightActor* SA = dynamic_cast<ADecalSpotLightActor*>(Actor))
 				{
 					SA->SetAngle(Angle);
 				}

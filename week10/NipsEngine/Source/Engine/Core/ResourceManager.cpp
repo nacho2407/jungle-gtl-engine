@@ -18,6 +18,7 @@
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
 #include "Render/Resource/ObjMtlLoader.h"
+#include "Render/Resource/ShaderCompiler.h"
 
 #pragma region __BINARY__
 
@@ -170,7 +171,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		{
 			// TODO: 현재는 임의로 static mesh shader로 로드하도록 설정
 			MaterialFilePaths.push_back(RelativePath);
-			LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+			LoadMaterial(RelativePath, "Shaders/UberLit.hlsl", CachedDevice.Get());
 		}
 		else if (Extension == L".mat")
 		{
@@ -286,7 +287,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			else if (Extension == L".mtl")
 			{
 				MaterialFilePaths.push_back(RelativePath);
-				LoadMaterial(RelativePath, "Shaders/ShaderStaticMesh.hlsl", CachedDevice.Get());
+				LoadMaterial(RelativePath, "Shaders/UberLit.hlsl", CachedDevice.Get());
 			}
 			else if (Extension == L".mat")
 			{
@@ -551,7 +552,7 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 		}
 	}
 
-	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/ShaderStaticMesh.hlsl");
+	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/UberLit.hlsl");
 	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
 	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
 	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
@@ -580,11 +581,6 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.BumpTexPath, Device));
 	else
 		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(DefaultWhite);
-
-	DefaultMat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasDiffuseTexture);
-	DefaultMat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasSpecularTexture);
-	DefaultMat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasAmbientTexture);
-	DefaultMat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasBumpTexture);
 
 	DefaultMat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
 	
@@ -634,6 +630,16 @@ void FResourceManager::ReleaseGPUResources()
 	}
 	Shaders.clear();
 
+	for (auto& [Key, Shader] : ComputeShaders)
+    {
+        if (Shader)
+        {
+            Shader->Release();
+            delete Shader;
+        }
+    }
+    ComputeShaders.clear();
+
 	for (auto& [Key, Font] : FontResources)
 	{
 		if (Font.Texture)
@@ -670,7 +676,6 @@ void FResourceManager::ReleaseGPUResources()
 }
 
 bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-                                  const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount,
 								  const D3D_SHADER_MACRO* Defines, uint32 PermutationKey)
 {
 	UShader* Shader = nullptr;
@@ -691,42 +696,30 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 
 	TComPtr<ID3DBlob> VSBlob;
 	TComPtr<ID3DBlob> PSBlob;
-	TComPtr<ID3DBlob> ErrorBlob;
 
-	HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		VSEntryPoint.c_str(), "vs_5_0", 0, 0, &VSBlob, &ErrorBlob);
-	if (FAILED(hr))
+	FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(FilePath, VSEntryPoint, "vs_5_0", Defines, PermutationKey);
+	if (CompileResult.bSuccess)
 	{
-		if (ErrorBlob)
-		{
-			UE_LOG("Vertex Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
-		}
-		else
-		{
-			UE_LOG("Failed to compile vertex shader: %s", FilePath.c_str());
-		}
+		VSBlob = CompileResult.Blob;
+		Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation);
+	}
+	else
+	{
 		return false;
 	}
-	Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation);
-	ErrorBlob.Reset();
 
-	hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		PSEntryPoint.c_str(), "ps_5_0", 0, 0, &PSBlob, &ErrorBlob);
-	if (FAILED(hr))
+	CompileResult = FShaderCompiler::CompileFromFile(FilePath, PSEntryPoint, "ps_5_0", Defines, PermutationKey);
+	if (CompileResult.bSuccess)
 	{
-		if (ErrorBlob)
-		{
-			UE_LOG("Pixel Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
-		}
-		else
-		{
-			UE_LOG("Failed to compile pixel shader: %s", FilePath.c_str());
-		}
+		PSBlob = CompileResult.Blob;
+		Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
+	}
+	else
+	{
 		return false;
 	}
-	Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
 
-	hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
+	HRESULT hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
 		&Permutation.VS);
 	if (FAILED(hr))
 	{
@@ -742,17 +735,6 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		return false;
 	}
 
-	if (InputElements != nullptr && InputElementCount > 0)
-	{
-		hr = CachedDevice->CreateInputLayout(InputElements, InputElementCount, VSBlob->GetBufferPointer(),
-			VSBlob->GetBufferSize(), &Permutation.InputLayout);
-		if (FAILED(hr))
-		{
-			UE_LOG("Failed to create input layout: %s", FilePath.c_str());
-			return false;
-		}
-	}
-
 	Shader->AddPermutation(PermutationKey, Permutation);
 
 	return true;
@@ -762,6 +744,57 @@ UShader* FResourceManager::GetShader(const FString& FilePath) const
 {
 	auto It = Shaders.find(FilePath);
 	return (It != Shaders.end()) ? It->second : nullptr;
+}
+
+bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint)
+{
+    FComputeShader* Shader = nullptr;
+    auto It = ComputeShaders.find(FilePath);
+    if (It != ComputeShaders.end())
+    {
+        Shader = It->second;
+        return Shader;
+    }
+    else
+    {
+        Shader = new FComputeShader();
+        ComputeShaders[FilePath] = Shader;
+    }
+
+    TComPtr<ID3DBlob> CSBlob;
+    TComPtr<ID3DBlob> ErrorBlob;
+
+    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                                    EntryPoint.c_str(), "cs_5_0", 0, 0, &CSBlob, &ErrorBlob);
+    if (FAILED(hr))
+    {
+        if (ErrorBlob)
+        {
+            UE_LOG("Compute Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+        }
+        else
+        {
+            UE_LOG("Failed to compile compute shader: %s", FilePath.c_str());
+        }
+        return false;
+    }
+    ErrorBlob.Reset();
+
+    hr = CachedDevice->CreateComputeShader(CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(), nullptr,
+                                           &Shader->CS);
+    if (FAILED(hr))
+    {
+        UE_LOG("Failed to create compute shader: %s", FilePath.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+FComputeShader* FResourceManager::GetComputeShader(const FString& FilePath) const
+{
+    auto It = ComputeShaders.find(FilePath);
+    return (It != ComputeShaders.end()) ? It->second : nullptr;
 }
 
 TArray<FString> FResourceManager::GetMaterialNames() const
@@ -1381,7 +1414,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return FoundMesh;
 	}
 
- 	LoadMaterial(Path, "Shaders/ShaderStaticMesh.hlsl");
+ 	LoadMaterial(Path, "Shaders/UberLit.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
 

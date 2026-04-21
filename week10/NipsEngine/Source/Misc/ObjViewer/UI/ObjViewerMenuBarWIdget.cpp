@@ -71,7 +71,7 @@ void FObjViewerMenuBarWidget::LoadScene()
 
 	FWorldContext LoadCtx;
 	FEditorCameraState LoadedCam;
-	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, &LoadedCam);
+	FSceneSaveManager::Load(FilePath, LoadCtx, &LoadedCam);
 	
 	if (LoadCtx.World)
 	{

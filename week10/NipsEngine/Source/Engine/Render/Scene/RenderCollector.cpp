@@ -232,16 +232,11 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			continue;
 		}
 
-		if (Actor->IsA<ASpotLightActor>())
-		{
-			CollectSpotLightCommand(static_cast<const ASpotLightActor*>(Actor), ShowFlags, RenderBus);
-		}
-
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
 			if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
 			{
-				CollectLight(Light);
+				CollectLight(Light, RenderBus);
 			}
 		}
 
@@ -296,7 +291,7 @@ void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, c
 		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
 		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
         Material->SetVector2("OutlineViewportOrigin", RenderBus.GetViewportOrigin());
-		Material->DepthStencilType = EDepthStencilType::Default;
+		Material->DepthStencilType = EDepthStencilType::DepthReadOnly;
 		Material->RasterizerType = ERasterizerType::SolidBackCull;
 		Material->BlendType = EBlendType::AlphaBlend;
 
@@ -374,9 +369,9 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
 	}
 
-	if (Actor->IsA<ASpotLightActor>())
+	if (Actor->IsA<ADecalSpotLightActor>())
 	{
-		ASpotLightActor* SpotlightActor = Cast<ASpotLightActor>(Actor);
+		ADecalSpotLightActor* SpotlightActor = Cast<ADecalSpotLightActor>(Actor);
 
 	}
 }
@@ -387,6 +382,22 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 	bool bHasSelectionMask = false;
 	std::unordered_set<int32> SeenBVHNodeIndices;
+
+	for (UActorComponent* Comp : Actor->GetComponents())
+	{
+		if (UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Comp))
+		{
+			CollectDirectionalLightCommand(DirLight, ShowFlags, RenderBus);
+		}
+		else if (USpotlightComponent* Spotlight = Cast<USpotlightComponent>(Comp))
+		{
+			CollectSpotLightCommand(Spotlight, ShowFlags, RenderBus);
+		}
+		else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(Comp))
+		{
+			CollectPointLightCommand(PointLight, ShowFlags, RenderBus);
+		}
+	}
 
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
@@ -601,6 +612,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.Constants.Billboard.Texture = Texture;
 		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
 		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
+		Cmd.Constants.Billboard.Color = BillboardComp->GetColor();
 
 		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
 		break;
@@ -834,17 +846,40 @@ void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent
 	CollectOBBCommand(Box, FColor::Green(), RenderBus);
 }
 
-void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+void FRenderCollector::CollectDirectionalLightCommand(const UDirectionalLightComponent* DirLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugDirectionalLight;
+	Cmd.Constants.DirectionalLight.Position = DirLight->GetWorldLocation();
+	Cmd.Constants.DirectionalLight.Direction = DirLight->GetForwardVector();
+	Cmd.Constants.DirectionalLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
+void FRenderCollector::CollectPointLightCommand(const UPointLightComponent* PointLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
+{
+	if (!ShowFlags.bBoundingVolume) return;
+	FRenderCommand Cmd = {};
+	Cmd.Type = ERenderCommandType::DebugPointLight;
+	Cmd.Constants.PointLight.Position = PointLight->GetWorldLocation();
+	Cmd.Constants.PointLight.Range = PointLight->AttenuationRadius;
+	Cmd.Constants.PointLight.Color = FColor::Yellow();
+	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
+}
+
+void FRenderCollector::CollectSpotLightCommand(const USpotlightComponent* Spotlight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
 {
 	if (!ShowFlags.bBoundingVolume) return;
 
 	FRenderCommand Cmd = {};
 	Cmd.Type = ERenderCommandType::DebugSpotlight;
-	Cmd.Constants.SpotLight.Position = SpotlightActor->GetActorLocation();
-	Cmd.Constants.SpotLight.Direction = SpotlightActor->GetActorForward();
-	Cmd.Constants.SpotLight.InnerAngle = 12.0f;
-	Cmd.Constants.SpotLight.OuterAngle = SpotlightActor->GetAngle();
-	Cmd.Constants.SpotLight.Range = SpotlightActor->GetRange();
+	Cmd.Constants.SpotLight.Position = Spotlight->GetWorldLocation();
+	Cmd.Constants.SpotLight.Direction = Spotlight->GetForwardVector();
+	Cmd.Constants.SpotLight.InnerAngle = Spotlight->InnerConeAngle;
+	Cmd.Constants.SpotLight.OuterAngle = Spotlight->OuterConeAngle;
+	Cmd.Constants.SpotLight.Range = Spotlight->AttenuationRadius;
 	Cmd.Constants.SpotLight.Color = FColor::Yellow();
 	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }
@@ -852,31 +887,49 @@ void FRenderCollector::CollectSpotLightCommand(const ASpotLightActor* SpotlightA
 void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus)
 {
 	if (!Light) return;
+	const auto& LightColor = Light->LightColor;
+	FVector Color = FVector(LightColor.R, LightColor.G, LightColor.B);
 
 	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
 	{
 		// Collect Ambient Light Data
-		FAmbientLightInfo AmbientLightData = {};
-		
-		RenderBus.AmbientLightInfo = AmbientLightData;
+		FAmbientLightInfo AmbientLightData	= {};
+		AmbientLightData.Color				= Color;
+		AmbientLightData.Intensity			= AmbientLight->Intensity;
+		RenderBus.AmbientLightInfo			= AmbientLightData;
 	}
 	else if (const UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Light))
 	{
-		FDirectionalLightInfo DirLightData = {};
-
+		FDirectionalLightInfo DirLightData	= {};
+		DirLightData.Color					= Color;
+		DirLightData.Intensity				= DirLight->Intensity;
+		DirLightData.Direction				= DirLight->GetForwardVector();
 		RenderBus.DirectionalLightInfo = DirLightData;
 	}
 
-	RenderBus.LightInfos.clear();
-	if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light))
+	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
 	{
-		FLightInfo LightData = {};
-		LightData.Type = 0;
+        FLightInfo LightData		= {};
+		LightData.Color				= Color;
+		LightData.Intensity			= SpotLight->Intensity;
+        LightData.Position			= SpotLight->GetWorldLocation();
+		LightData.Direction			= SpotLight->GetForwardVector();
+        LightData.Radius			= SpotLight->AttenuationRadius;
+        LightData.Falloff			= SpotLight->LightFalloffExponent;
+		LightData.InnerAngle		= MathUtil::DegreesToRadians(SpotLight->InnerConeAngle);
+		LightData.OuterAngle		= MathUtil::DegreesToRadians(SpotLight->OuterConeAngle);
+        LightData.Type				= 0;
 
-		if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
-		{
-			LightData.Type = 1;
-		}
+		RenderBus.LightInfos.push_back(LightData);
+	}
+    else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
+        FLightInfo LightData = {};
+		LightData.Color				= Color;
+		LightData.Intensity			= PointLight->Intensity;
+		LightData.Position			= PointLight->GetWorldLocation();
+		LightData.Radius			= PointLight->AttenuationRadius;
+		LightData.Falloff			= PointLight->LightFalloffExponent;
+        LightData.Type				= 1;
 
 		RenderBus.LightInfos.push_back(LightData);
 	}

@@ -1,4 +1,4 @@
-#include "DecalRenderPass.h"
+﻿#include "DecalRenderPass.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
@@ -67,9 +67,23 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
             return false;
         }
 
+		uint32 PermutationKey = (uint32)ELightingModel::Unlit;
+		switch (Context->RenderBus->GetViewMode())
+		{
+		case EViewMode::Lit_Gouraud:
+			PermutationKey = (uint32)ELightingModel::Gouraud;
+			break;
+		case EViewMode::Lit_Lambert:
+			PermutationKey = (uint32)ELightingModel::Lambert;
+			break;
+		case EViewMode::Lit_BlinnPhong:
+			PermutationKey = (uint32)ELightingModel::BlinnPhong;
+			break;
+		}
+
         if (Cmd.Material)
         {
-            Cmd.Material->Bind(Context->DeviceContext);
+            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
         }
 
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);

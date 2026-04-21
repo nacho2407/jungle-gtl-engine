@@ -9,12 +9,14 @@ enum class EWorldType : uint32;
 
 class UWorld;
 class AActor;
-class ASpotLightActor;
 class UPrimitiveComponent;
 class UGizmoComponent;
 class UDecalComponent;
 class UFireballComponent;
 class ULightComponentBase;
+class UDirectionalLightComponent;
+class UPointLightComponent;
+class USpotlightComponent;
 struct FFrustum;
 
 class FRenderCollector {
@@ -66,6 +68,9 @@ private:
 	void CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 	void CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus);
 	void CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
-	void CollectSpotLightCommand(const ASpotLightActor* SpotlightActor, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	
+	void CollectDirectionalLightCommand(const UDirectionalLightComponent* Light, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectPointLightCommand(const UPointLightComponent* PointLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
+	void CollectSpotLightCommand(const USpotlightComponent* Spotlight, const FShowFlags& ShowFlags, FRenderBus& RenderBus);
 	void CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus);
 };

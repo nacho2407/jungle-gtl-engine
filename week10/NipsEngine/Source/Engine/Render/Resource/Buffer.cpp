@@ -196,7 +196,7 @@ void FIndexBuffer::Update(ID3D11DeviceContext* InDeviceContext, const TArray<uin
 	//	 Do nothing
 }
 
-void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements) {
+void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uint32 InMaxElements, bool bEnableUAV) {
 	if (InElementSize == 0) {
 		Release();
 		return;
@@ -205,12 +205,20 @@ void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uin
 	ElementSize = InElementSize;
 
 	D3D11_BUFFER_DESC desc = {};
-	desc.Usage = D3D11_USAGE_DYNAMIC;
 	desc.ByteWidth = InElementSize * InMaxElements;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    desc.StructureByteStride = InElementSize;   
+	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	desc.StructureByteStride = InElementSize;
+
+	if (bEnableUAV) {
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+		desc.CPUAccessFlags = 0;
+	}
+	else {
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	}
 
 	InDevice->CreateBuffer(&desc, nullptr, Buffer.ReleaseAndGetAddressOf());
 
@@ -220,27 +228,57 @@ void FStructuredBuffer::Create(ID3D11Device* InDevice, uint32 InElementSize, uin
 	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.NumElements = InMaxElements;
 	InDevice->CreateShaderResourceView(Buffer.Get(), &srvDesc, SRV.ReleaseAndGetAddressOf());
+
+	if (bEnableUAV)
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.NumElements = InMaxElements;
+		InDevice->CreateUnorderedAccessView(Buffer.Get(), &uavDesc, UAV.ReleaseAndGetAddressOf());
+	}
 }
 
 void FStructuredBuffer::Release() {
 	Buffer.Reset();
+	UAV.Reset();
 	SRV.Reset();
 	Count = 0;
 	ElementSize = 0;
 }
 
-void FStructuredBuffer::Update(ID3D11DeviceContext* InContext, const void* InData, uint32 InElementCount) {
-	if (Buffer) {
-		D3D11_MAPPED_SUBRESOURCE structuredMSR;
-        InContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &structuredMSR);
-        std::memcpy(structuredMSR.pData, InData, InElementCount * ElementSize);
-		Count = InElementCount;
-        InContext->Unmap(Buffer.Get(), 0);
-	}
+void FStructuredBuffer::Update(ID3D11DeviceContext* InContext, const void* InData, uint32 InElementCount)
+{
+    if (!Buffer || !InData)
+        return;
+
+    D3D11_BUFFER_DESC desc;
+    Buffer->GetDesc(&desc);
+
+    if (desc.Usage == D3D11_USAGE_DYNAMIC)
+    {
+        D3D11_MAPPED_SUBRESOURCE msr;
+        if (SUCCEEDED(InContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr)))
+        {
+            std::memcpy(msr.pData, InData, InElementCount * ElementSize);
+            InContext->Unmap(Buffer.Get(), 0);
+        }
+    }
+    else
+    {
+        InContext->UpdateSubresource(Buffer.Get(), 0, nullptr, InData, 0, 0);
+    }
+    Count = InElementCount;
 }
 
 ID3D11ShaderResourceView* FStructuredBuffer::GetSRV() const {
 	return SRV.Get();
+}
+
+ID3D11UnorderedAccessView* FStructuredBuffer::GetUAV() const
+{
+    return UAV.Get();
 }
 
 ID3D11Buffer * FIndexBuffer::GetBuffer() const
