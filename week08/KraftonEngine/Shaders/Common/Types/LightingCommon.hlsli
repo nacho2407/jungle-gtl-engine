@@ -3,34 +3,37 @@
 
 #include "CommonTypes.hlsli"
 
+// LocalLights StructuredBuffer - t6 slot
+StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
+
 float3 GetAmbientLightColor()
 {
     return Ambient.Color * Ambient.Intensity;
 }
 
-float3 GetMainLightDirection()
+// 특정 인덱스의 Directional Light 방향 반환
+float3 GetDirectionalLightDirection(int Index)
 {
-    if (NumDirectionalLights > 0)
+    if (Index < NumDirectionalLights)
     {
-        return normalize(float3(Directional[0].Direction));
+        return normalize(Directional[Index].Direction);
     }
-
-    return normalize(float3(0.4f, -0.8f, 0.2f));
+    return float3(0, 0, 0);
 }
 
-float3 GetMainLightColor()
+// 특정 인덱스의 Directional Light 색상 반환
+float3 GetDirectionalLightColor(int Index)
 {
-    if (NumDirectionalLights > 0)
+    if (Index < NumDirectionalLights)
     {
-        return Directional[0].Color * Directional[0].Intensity;
+        return Directional[Index].Color * Directional[Index].Intensity;
     }
-
-    return float3(1.0f, 0.98f, 0.95f);
+    return float3(0, 0, 0);
 }
 
-float ComputeLambertTerm(float3 Normal)
+float ComputeLambertTerm(float3 Normal, float3 LightDirection)
 {
-    return saturate(dot(normalize(Normal), -GetMainLightDirection()));
+    return saturate(dot(normalize(Normal), -normalize(LightDirection)));
 }
 
 float4 ComputeGouraudLighting(float4 BaseColor, float4 GouraudL)
@@ -38,15 +41,50 @@ float4 ComputeGouraudLighting(float4 BaseColor, float4 GouraudL)
     return float4(BaseColor.rgb * GouraudL.rgb, BaseColor.a);
 }
 
-float ComputeGouraudLightingFactor(float3 Normal)
+float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
 {
-    return 0.2f + ComputeLambertTerm(Normal) * 0.8f;
-}
+    float3 TotalLight = GetAmbientLightColor();
 
-float3 ComputeGouraudLightingColor(float3 Normal)
-{
-    float Diffuse = ComputeLambertTerm(Normal);
-    return saturate(GetAmbientLightColor() + Diffuse * GetMainLightColor());
+    // Directional Lights
+    for (int i = 0; i < NumDirectionalLights; ++i)
+    {
+        float Diffuse = ComputeLambertTerm(Normal, Directional[i].Direction);
+        TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity;
+    }
+
+    // Local Lights (Point / Spot)
+    // Note: This requires access to g_LightBuffer, which must be bound to VS for Gouraud
+    for (int j = 0; j < NumLocalLights; ++j)
+    {
+        FLocalLightInfo LocalLight = g_LightBuffer[j];    
+        
+        float3 LightVector = LocalLight.Position - WorldPosition;
+        float Distance = length(LightVector);
+        
+        if (Distance < LocalLight.AttenuationRadius && LocalLight.AttenuationRadius > 0.001f)
+        {
+            float3 L = LightVector / Distance;
+            float Diffuse = saturate(dot(normalize(Normal), L));
+            
+            float DistanceFalloff = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
+            DistanceFalloff *= DistanceFalloff;
+            
+            float SpotFalloff = 1.0f;
+            float DirLengthSq = dot(LocalLight.Direction, LocalLight.Direction);
+            if (DirLengthSq > 0.0001f)
+            {
+                float3 SpotDirection = normalize(LocalLight.Direction);
+                float CosAngle = dot(-L, SpotDirection);
+                float CosInner = cos(radians(LocalLight.InnerConeAngle));
+                float CosOuter = cos(radians(LocalLight.OuterConeAngle));
+                SpotFalloff = smoothstep(CosOuter, CosInner, CosAngle);
+            }
+            
+            TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * DistanceFalloff * SpotFalloff;
+        }
+    }
+
+    return saturate(TotalLight);
 }
 
 float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
@@ -60,9 +98,15 @@ float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
 
 float4 ComputeLambertLighting(float4 BaseColor, float3 Normal)
 {
-    float Diffuse = ComputeLambertTerm(Normal);
-    float3 LightColor = GetMainLightColor();
-    float3 LitColor = BaseColor.rgb * saturate(GetAmbientLightColor() + Diffuse * LightColor);
+    float3 TotalLight = GetAmbientLightColor();
+
+    for (int i = 0; i < NumDirectionalLights; ++i)
+    {
+        float Diffuse = ComputeLambertTerm(Normal, Directional[i].Direction);
+        TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity;
+    }
+
+    float3 LitColor = BaseColor.rgb * saturate(TotalLight);
     return float4(LitColor, BaseColor.a);
 }
 
@@ -70,19 +114,28 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
 {
     float3 WorldPosition = ReconstructWorldPositionFromSceneDepth(UV);
     float3 ViewDirection = normalize(CameraWorldPos - WorldPosition);
-    float3 LightDirection = normalize(-GetMainLightDirection());
-    float3 HalfVector = normalize(ViewDirection + LightDirection);
+    
+    float3 TotalDiffuse = GetAmbientLightColor();
+    float3 TotalSpecular = float3(0, 0, 0);
 
-    float Diffuse = ComputeLambertTerm(Normal);
     float Shininess = max(MaterialParam.x, 1.0f);
     float SpecularStrength = max(MaterialParam.y, 0.0f);
-    float Specular = pow(saturate(dot(normalize(Normal), HalfVector)), Shininess) * SpecularStrength;
 
-    float3 LightColor = GetMainLightColor();
-    float3 DiffuseColor = BaseColor.rgb * saturate(GetAmbientLightColor() + Diffuse * LightColor);
-    float3 SpecularColor = LightColor * Specular;
+    for (int i = 0; i < NumDirectionalLights; ++i)
+    {
+        float3 LightDirection = normalize(-Directional[i].Direction);
+        float3 HalfVector = normalize(ViewDirection + LightDirection);
 
-    return float4(DiffuseColor + SpecularColor, BaseColor.a);
+        float Diffuse = saturate(dot(normalize(Normal), LightDirection));
+        float Specular = pow(saturate(dot(normalize(Normal), HalfVector)), Shininess) * SpecularStrength;
+
+        float3 LightColor = Directional[i].Color * Directional[i].Intensity;
+        TotalDiffuse += Diffuse * LightColor;
+        TotalSpecular += Specular * LightColor;
+    }
+
+    float3 FinalColor = BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular;
+    return float4(FinalColor, BaseColor.a);
 }
 
 float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 Normal, float4 BaseColor, float4 MaterialParam, float2 UV)
