@@ -13,8 +13,6 @@ cbuffer SceneDepthCB : register(b2)
     float3 _Padding;
 }
 
-// SceneDepth (t10) is declared in Common/ConstantBuffers.hlsl
-
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
     return FullscreenTriangleVS(vertexID);
@@ -24,31 +22,33 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 {
     int2 coord = int2(input.position.xy);
     
-    float d = SceneDepth.Load(int3(coord, 0));
+    // Reversed-Z: Near = 1.0, Far = 0.0
+    float d = SceneDepth.Load(int3(coord, 0)).r;
     
+    // 배경 (d=0) 처리: 물체가 없는 곳은 순수한 검은색
+    if (d <= 0.0000001f)
+    {
+        return float4(0, 0, 0, 1);
+    }
+
+    // 실제 거리 계산 (NearClip 유닛 ~ FarClip 유닛)
+    float linearZ = (NearClip * FarClip) / (d * (FarClip - NearClip) + NearClip);
     float v = 0.0f;
     
-    if (Mode == 1)
+    if (Mode == 1) // Linear Mode (Repeating Sawtooth)
     {
-        // Reversed-Z linearization: d=1 at near, d=0 at far
-        float linZ = NearClip * FarClip / (NearClip - d * (NearClip - FarClip));
-
-        // 전체 far clip 기준으로 정규화하면 원거리 카메라에서 화면이 거의 검게 뭉개진다.
-        // UI의 Range 값을 시각화 상한으로 사용해 근거리 깊이 분포를 더 잘 보이게 한다.
-        float visFar = max(Range, NearClip + 0.001f);
-        v = saturate((linZ - NearClip) / (visFar - NearClip));
+        // Range 단위로 명암 반복 (0 -> 1 -> 0 ...)
+        v = frac((linearZ - NearClip) / max(0.1f, Range));
+        // Exponent를 통해 반복되는 명암의 대비(Contrast) 조절 가능
+        v = pow(v, Exponent);
     }
-    else
+    else // Power Mode (Smooth Transition)
     {
-        // Reversed-Z: invert so near=dark, far=bright (matching Forward-Z visual)
-        v = pow(saturate(1.0 - d), Exponent);
+        // frac 없이 Range 거리까지 부드럽게 0에서 1로 변함
+        v = saturate((linearZ - NearClip) / max(0.1f, Range));
+        // Exponent를 통해 거리별 감쇄율 조절
+        v = pow(v, Exponent);
     }
-
-    // UE-style repeated checker toward the bright/far range to improve depth readability.
-    int2 checkerCoord = coord / 8;
-    float checker = ((checkerCoord.x + checkerCoord.y) & 1) ? 0.82f : 1.0f;
-    float checkerStrength = smoothstep(0.55f, 0.98f, v);
-    v *= lerp(1.0f, checker, checkerStrength);
     
-    return float4(v, v, v, 1.0f);
+    return float4(v.xxx, 1.0f);
 }
