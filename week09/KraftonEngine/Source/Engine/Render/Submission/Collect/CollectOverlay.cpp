@@ -1,4 +1,4 @@
-#include "Render/Submission/Collect/DrawCollector.h"
+﻿#include "Render/Submission/Collect/DrawCollector.h"
 
 #include "Collision/WorldPrimitivePickingBVH.h"
 #include "Editor/EditorEngine.h"
@@ -111,8 +111,9 @@ void FDrawCollector::CollectDebugDraw(const FSceneView& SceneView, const FScene&
     {
         return;
     }
-
-    for (const FDebugDrawItem& Item : Scene.GetDebugDrawQueue().GetItems())
+	
+	const TArray<FDebugDrawItem> Items = Scene.GetDebugDrawQueue().GetItems();
+    for (const FDebugDrawItem& Item : Items)
     {
         OverlayData.Debug.Lines.push_back({ Item.Start, Item.End, Item.Color });
     }
@@ -185,7 +186,7 @@ void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>
 {
     for (FPrimitiveSceneProxy* Proxy : Proxies)
     {
-        if (!Proxy || !Proxy->CachedBounds.IsValid())
+        if (!Proxy || !Proxy->CachedBounds.IsValid() || !Proxy->bShowAABB || Proxy->bNeverCull || !Proxy->CachedBounds.IsValid())
         {
             continue;
         }
