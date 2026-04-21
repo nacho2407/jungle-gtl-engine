@@ -2,6 +2,7 @@
 #include "Viewport/ViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
+#include "Render/RHI/D3D11/Buffers/ConstantBuffer.h"
 //#include "Render/Pipelines/Registry/RenderPipelineType.h"
 
 #include <d3dcompiler.h>
@@ -56,14 +57,17 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     check(SUCCEEDED(hr));
 
     // ---- LightCullingParams 상수 버퍼 (b2) ----
-    D3D11_BUFFER_DESC CBDesc = {};
-    CBDesc.ByteWidth      = sizeof(FLightCullingParams);
-    CBDesc.Usage          = D3D11_USAGE_DYNAMIC;
-    CBDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
-    CBDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    //D3D11_BUFFER_DESC CBDesc = {};
+    //CBDesc.ByteWidth      = sizeof(FLightCullingParams);
+    //CBDesc.Usage          = D3D11_USAGE_DYNAMIC;
+    //CBDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+    //CBDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    hr = Device->GetDevice()->CreateBuffer(&CBDesc, nullptr, &LightCullingParamsCB);
-    check(SUCCEEDED(hr));
+    //hr = Device->GetDevice()->CreateBuffer(&CBDesc, nullptr, &LightCullingParamsCB);
+    //check(SUCCEEDED(hr));
+    LightCullingParamsCBWrapper = new FConstantBuffer();
+    LightCullingParamsCBWrapper->Create(Device->GetDevice(), sizeof(FLightCullingParams));
+    LightCullingParamsCB = LightCullingParamsCBWrapper->GetBuffer();
 }
 
 void FTileBasedLightCulling::Release()
@@ -74,7 +78,7 @@ void FTileBasedLightCulling::Release()
     };
 
     SafeRelease(LightCullingCS);
-    SafeRelease(LightCullingParamsCB);
+    SafeRelease(LightCullingParamsCBWrapper);
 
     //SafeRelease(PointLightDataSRV);
     //SafeRelease(PointLightBuffer);
@@ -161,6 +165,7 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     Context->CSSetUnorderedAccessViews(0, 4, NullUAVs, nullptr);
     Context->CSSetShader(nullptr, nullptr, 0);
 }
+
 
 // ============================================================
 // Private helpers

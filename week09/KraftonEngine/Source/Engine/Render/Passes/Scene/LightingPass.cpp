@@ -99,6 +99,16 @@ void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
     }
 
     FFullscreenDrawCommandBuilder::Build(ERenderPass::Lighting, Context, *Context.DrawCommandList);
+
+	// LightCulling 관련 데이터 바이딩(b2 LightCullingParams)
+	if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
+    {
+        return;
+    }
+
+    FDrawCommand& Command = Context.DrawCommandList->GetCommands().back();
+    Command.PerShaderCB[0] = Context.LightCulling ? Context.LightCulling->GetLightCullingParamsCBWrapper() : nullptr;
+
 }
 
 void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
