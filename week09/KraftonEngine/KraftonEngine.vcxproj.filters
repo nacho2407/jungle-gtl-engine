@@ -336,6 +336,8 @@
     <FxCompile Include="Shaders\ViewModes\UberLit.hlsl">
       <Filter>Shaders\ViewModes</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\LightCullingCommon.hlsl" />
+    <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -840,6 +842,8 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Visibility\TileBasedLightCulling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1547,6 +1551,8 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Visibility\TileBasedLightCulling.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

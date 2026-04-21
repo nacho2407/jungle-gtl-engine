@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -66,7 +66,9 @@ struct FSceneDepthPConstants
     float Exponent;
     float NearClip;
     float FarClip;
+    float Range;
     uint32 Mode;
+    FVector _Padding;
 };
 
 struct FFogConstants

@@ -63,7 +63,7 @@ public:
 
 	// FViewport 소유
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
-	FViewport* GetViewport() const { return Viewport; }
+	FViewport* GetViewport() const override { return Viewport; }
 
 	// SWindow 레이아웃 연결 — SSplitter 리프 노드
 	void SetLayoutWindow(SWindow* InWindow) { LayoutWindow = InWindow; }

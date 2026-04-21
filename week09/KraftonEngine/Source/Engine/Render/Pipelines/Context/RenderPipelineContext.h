@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
@@ -22,6 +22,7 @@ struct FCollectedPrimitives;
 class FDrawCommandList;
 struct FPassRenderState;
 struct FStateCache;
+class FTileBasedLightCulling;
 
 /*
     렌더 파이프라인 실행에 필요한 문맥을 한 곳에 모아 둔 구조체입니다.
@@ -53,6 +54,7 @@ struct FRenderPipelineContext
     const TArray<FSceneOverlayText>* OverlayTexts = nullptr;
 
     FGPUOcclusionCulling* Occlusion = nullptr;
+    FTileBasedLightCulling* LightCulling = nullptr;
     const FLODUpdateContext* LODContext = nullptr;
 
     const FPassRenderState& GetPassState(ERenderPass Pass) const;
