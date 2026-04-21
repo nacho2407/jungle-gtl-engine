@@ -27,7 +27,7 @@ public:
     bool DoesCastShadows() const { return bCastShadows; }
 
 protected:
-    float Intensity = 10.0f;
+    float Intensity = 2.5f;
     FVector4 LightColor = { 1, 1, 1, 1 }; // linear RGBA (0~1)
     bool bAffectsWorld = true; // 조명의 영향 여부를 켜고 끕니다.
     bool bCastShadows = true;  // Shadow 구현 주차에 사용: 조명이 그림자를 드리울지 여부를 켜고 끕니다.
