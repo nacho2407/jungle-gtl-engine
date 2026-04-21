@@ -145,6 +145,11 @@ std::string FPaths::ToAbsoluteString(const std::wstring &RelativePath)
 
 FString FPaths::Normalize(const FString& Path)
 {
-	std::filesystem::path Normalized(Path);
-	return Normalized.generic_string();
+    if (Path.empty())
+    {
+        return {};
+    }
+
+    const std::filesystem::path NormalizedPath(ToWide(Path));
+    return ToString(NormalizedPath.lexically_normal().generic_wstring());
 }
