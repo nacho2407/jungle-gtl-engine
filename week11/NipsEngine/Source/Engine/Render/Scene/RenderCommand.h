@@ -59,13 +59,13 @@ struct FFrameConstants
 	FMatrix View;          
 	FMatrix Projection;    
 	FVector CameraPosition;
-	float Padding0;
 	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
 
 	FVector2 ViewportSize;
     float NearPlane;
     float FarPlane;
+	float Pad;
 };
 
 struct FAmbientLightInfo
@@ -102,7 +102,16 @@ struct FLightConstants
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;
 	uint32 LightCount;
-	float Padding[3];
+	uint32 DecalCount;
+	float Padding[2];
+};
+
+struct FDecalInfo
+{
+    FMatrix InvDecalWorld;
+    FVector4 ColorTint;
+    uint32 TextureIndex;
+    float Padding[3];
 };
 
 struct FGizmoConstants
@@ -274,6 +283,7 @@ struct FRenderCommand
         FFogConstants Fog;
         FFXAAConstants FXAA;
 		FLightPassConstants Light;
+		FDecalInfo Decal;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;

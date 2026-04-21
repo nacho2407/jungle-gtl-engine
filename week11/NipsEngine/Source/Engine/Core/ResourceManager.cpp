@@ -1564,9 +1564,9 @@ ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type,
 	}
 
 	D3D11_SAMPLER_DESC Desc = {};
-	Desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	Desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	Desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	Desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	Desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	Desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	Desc.MinLOD = 0;
 	Desc.MaxLOD = D3D11_FLOAT32_MAX;
 	switch (Type)
