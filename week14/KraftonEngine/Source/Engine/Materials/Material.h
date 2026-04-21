@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "Math/Vector.h"
@@ -120,6 +120,7 @@ public:
 	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const;
 	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const;
 
+	TMap<FString, UTexture2D*>* GetTexture() { return &TextureParameters; }
 
 	void Bind(ID3D11DeviceContext* Context);
 
@@ -144,7 +145,7 @@ public:
 
 	const FString& GetTexturePathFileName(const FString& TextureName)const;
 
-	const FString& GetAssetPathFileName() const { return PathFileName;}
+	const FString& GetAssetPathFileName() const { return PathFileName; }
 	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
 	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
 

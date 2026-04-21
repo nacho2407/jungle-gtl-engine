@@ -2,6 +2,7 @@
 
 #include "ContentBrowserElement.h"
 #include "WICTextureLoader.h"
+#include "Resource/ResourceManager.h"
 
 
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
@@ -9,23 +10,13 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	FEditorWidget::Initialize(InEditor);
 	if (!InDevice) return;
 
-	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
+	const std::wstring IconDir = L"Asset/Editor/Icons/";
 
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"StartMerge_42x.png").c_str(),
-		nullptr, ICons["Default"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"Folder_Base_256x.png").c_str(),
-		nullptr, ICons["Directory"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_landscape_40x.png").c_str(),
-		nullptr, ICons[".Scene"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_MatEd_Mesh_40x.png").c_str(),
-		nullptr, ICons[".obj"].GetAddressOf());
+	ICons["Default"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"StartMerge_42x.png"));
+	ICons["Directory"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Folder_Base_256x.png"));
+	ICons[".Scene"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_landscape_40x.png"));
+	ICons[".obj"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
+	ICons[".mat"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Sphere_64x.png"));
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -81,6 +72,9 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndChild();
 	}
 
+	if (BrowserContext.SelectedElement)
+		BrowserContext.SelectedElement->RenderDetail();
+
 	ImGui::EndTable();
 	ImGui::End();
 }
@@ -99,36 +93,44 @@ void FEditorContentBrowserWidget::RefreshContent()
 	TArray<FContentItem> CurrentContents = ReadDirectory(BrowserContext.CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
-		std::unique_ptr<ContentBrowserElement> element;
+		std::shared_ptr<ContentBrowserElement> element;
 		FString Extension = FPaths::ToUtf8(Content.Path.extension());
 
 		if (Content.bIsDirectory)
 		{
-			element = std::make_unique<DirectoryElement>();
+			element = std::make_shared<DirectoryElement>();
 			element.get()->SetIcon(ICons["Directory"].Get());
 
 		}
 		else if (Content.Path.extension() == ".Scene")
 		{
-			element = std::make_unique<SceneElement>();
+			element = std::make_shared<SceneElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".obj")
 		{
-			element = std::make_unique<ObjectElement>();
+			element = std::make_shared<ObjectElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".mat")
+		{
+			element = std::make_shared<MaterialElement>();
+			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".png" || Content.Path.extension() == ".PNG")
+		{
+			element = std::make_shared<PNGElement>();
+			element.get()->SetIcon(FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring())).Get());
 		}
 		else
 		{
-			element = std::make_unique<ContentBrowserElement>();
+			element = std::make_shared<ContentBrowserElement>();
 			element.get()->SetIcon(ICons["Default"].Get());
 		}
 		
 		element.get()->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(element));
 	}
-
-	BrowserContext.SelectedElement = nullptr;
 }
 
 void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)

@@ -48,6 +48,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
 	FMeshBufferManager::Get().Initialize(Device);
 	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+	FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::RootDir()), Device);
 
 	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 }

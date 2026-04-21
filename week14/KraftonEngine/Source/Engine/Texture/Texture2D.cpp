@@ -74,6 +74,19 @@ UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Devi
 	return Texture;
 }
 
+UTexture2D* UTexture2D::LoadFromCached(const FString& FilePath)
+{
+	if (FilePath.empty()) return nullptr;
+
+	auto It = TextureCache.find(FilePath);
+	if (It != TextureCache.end())
+	{
+		return It->second;
+	}
+
+	return nullptr;
+}
+
 bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 {
 	//std::filesystem::path TexPath(FilePath);
