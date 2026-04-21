@@ -35,7 +35,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 
         // 전체 far clip 기준으로 정규화하면 원거리 카메라에서 화면이 거의 검게 뭉개진다.
         // UI의 Range 값을 시각화 상한으로 사용해 근거리 깊이 분포를 더 잘 보이게 한다.
-        float visFar = max(Range, NearClip + 0.001f);
+        float visFar = max(128, NearClip + 0.001f);
         v = saturate((linZ - NearClip) / (visFar - NearClip));
     }
     else
@@ -44,11 +44,11 @@ float4 PS(PS_Input_UV input) : SV_TARGET
         v = pow(saturate(1.0 - d), Exponent);
     }
 
-    // UE-style repeated checker toward the bright/far range to improve depth readability.
-    int2 checkerCoord = coord / 8;
-    float checker = ((checkerCoord.x + checkerCoord.y) & 1) ? 0.82f : 1.0f;
-    float checkerStrength = smoothstep(0.55f, 0.98f, v);
-    v *= lerp(1.0f, checker, checkerStrength);
+    //// UE-style repeated checker toward the bright/far range to improve depth readability.
+    //int2 checkerCoord = coord / 8;
+    //float checker = ((checkerCoord.x + checkerCoord.y) & 1) ? 0.82f : 1.0f;
+    //float checkerStrength = smoothstep(0.55f, 0.98f, v);
+    //v *= lerp(1.0f, checker, checkerStrength);
     
-    return float4(v, v, v, 1.0f);
+    return float4(1-v, 1-v, 1-v, 1.0f);
 }

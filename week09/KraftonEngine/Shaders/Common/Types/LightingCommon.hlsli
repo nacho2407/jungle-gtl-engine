@@ -5,6 +5,7 @@
 
 float3 GetMainLightDirection()
 {
+    return normalize(float3(Directional[0].Direction));
     return normalize(float3(0.4f, -0.8f, 0.2f));
 }
 
@@ -62,5 +63,38 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
     float3 SpecularColor = LightColor * Specular;
 
     return float4(DiffuseColor + SpecularColor, BaseColor.a);
+}
+
+float4 LocalLightLambert(FLocalLightInfo LocalLight, float3 Normal, float4 BaseColor, float2 UV)
+{
+    // 1. 픽셀의 월드 좌표 복원
+    float3 WorldPosition = ReconstructWorldPositionFromSceneDepth(UV);
+    
+    // 2. 빛의 방향(L)과 거리(Distance) 계산
+    float3 LightVector = LocalLight.Position - WorldPosition;
+    float Distance = length(LightVector);
+    
+    // 정규화된 빛의 방향 벡터 (L)
+    float3 L = LightVector / Distance;
+
+    float Diffuse = saturate(dot(normalize(Normal), L));
+    
+    // 4. 거리 감쇠 (Distance Attenuation)
+    // 거리가 AttenuationRadius에 가까워질수록 빛이 0으로 부드럽게 사라집니다.
+    float DistanceFalloff = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
+    DistanceFalloff *= DistanceFalloff; // 물리적으로 좀 더 자연스러운 역제곱(Inverse Square) 형태의 근사치
+
+    // 5. 스팟 라이트 원뿔 감쇠 (Spotlight Cone Falloff)
+    // 픽셀을 향하는 빛의 역방향(-L)과 스팟 라이트가 비추는 방향(Direction)의 내적
+    float CosAngle = dot(-L, normalize(LocalLight.Direction));
+    float CosInner = cos(LocalLight.InnerConeAngle);
+    float CosOuter = cos(LocalLight.OuterConeAngle);
+    
+    float SpotFalloff = smoothstep(CosOuter, CosInner, CosAngle);
+    
+    float3 LightColor = LocalLight.Color * LocalLight.Intensity;
+    float3 LitColor = BaseColor.rgb * Diffuse * LightColor * DistanceFalloff * SpotFalloff;
+    return float4(LocalLight.Color, 1);
+    return float4(LitColor, BaseColor.a);
 }
 #endif
