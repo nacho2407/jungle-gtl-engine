@@ -146,9 +146,20 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 	Builder.BeginCollect(Frame, Scene.GetProxyCount());
 
-	Collector.CollectWorld(World, Frame, Builder);
-	Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
-	Collector.CollectDebugDraw(Frame, Scene);
+	{
+		SCOPE_STAT_CAT("CollectWorld", "3_Collect");
+		Collector.CollectWorld(World, Frame, Builder);
+	}
+
+	{
+		SCOPE_STAT_CAT("CollectGrid", "3_Collect");
+		Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
+	}
+
+	{
+		SCOPE_STAT_CAT("CollectDebugDraw", "3_Collect");
+		Collector.CollectDebugDraw(Frame, Scene);
+	}
 
 	if (Frame.RenderOptions.ShowFlags.bOctree)
 		Collector.CollectOctreeDebug(World->GetOctree(), Scene);
@@ -156,6 +167,10 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	if (VC == Editor->GetActiveViewport())
 		Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
 
-	Builder.BuildDynamicCommands(Frame, &Scene);
+
+	{
+		SCOPE_STAT_CAT("BuildDynamicCommands", "3_Collect");
+		Builder.BuildDynamicCommands(Frame, &Scene);
+	}
 }
 
