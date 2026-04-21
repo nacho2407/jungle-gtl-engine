@@ -4,13 +4,13 @@
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Types/ViewTypes.h"
+#include "Render/Pipelines/Context/Scene/ViewTypes.h"
 #include "Render/Submission/Batching/BatchBuffer.h"
 
 // FLineVertex — 라인 렌더링용 버텍스 (Position + Color)
 struct FLineVertex
 {
-    FVector Position;
+    FVector  Position;
     FVector4 Color;
 
     FLineVertex() = default;
@@ -33,12 +33,12 @@ public:
 
     void Clear();
 
-    bool UploadBuffers(ID3D11DeviceContext* Context);
+    bool          UploadBuffers(ID3D11DeviceContext* Context);
     ID3D11Buffer* GetVBBuffer() const { return LineBuffer.GetVBBuffer(); }
-    uint32 GetVBStride() const { return LineBuffer.GetVBStride(); }
+    uint32        GetVBStride() const { return LineBuffer.GetVBStride(); }
     ID3D11Buffer* GetIBBuffer() const { return LineBuffer.GetIBBuffer(); }
-    uint32 GetIndexCount() const { return LineBuffer.GetIndexCount(); }
-    uint32 GetLineCount() const { return static_cast<uint32>(LineBuffer.Indices.size() / 2); }
+    uint32        GetIndexCount() const { return LineBuffer.GetIndexCount(); }
+    uint32        GetLineCount() const { return static_cast<uint32>(LineBuffer.Indices.size() / 2); }
 
 private:
     TBatchBuffer<FLineVertex> LineBuffer;

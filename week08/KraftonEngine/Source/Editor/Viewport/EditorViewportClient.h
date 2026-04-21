@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Viewport/ViewportClient.h"
-#include "Render/Types/ViewTypes.h"
+#include "Render/Pipelines/Context/Scene/ViewTypes.h"
 
 #include "UI/SWindow.h"
 #include <string>

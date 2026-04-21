@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+
+#include "Render/Passes/Base/PassRenderState.h"
 #include "Render/Passes/Base/RenderPass.h"
 
 class FDepthPrePass;
@@ -44,8 +45,7 @@ enum class ERenderPassNodeType
 };
 
 /*
-    패스 노드 타입과 실제 패스 객체를 연결해 주는 레지스트리입니다.
-    파이프라인 실행기는 이 레지스트리에서 패스를 찾아 순서대로 실행합니다.
+    패스 노드 타입과 실제 패스 객체, 패스별 기본 상태 표를 함께 관리하는 레지스트리입니다.
 */
 class FRenderPassRegistry
 {
@@ -57,7 +57,10 @@ public:
     void Release();
 
     FRenderPass* FindPass(ERenderPassNodeType Type) const;
+    const FPassRenderStateDesc& GetPassStateDesc(ERenderPass Pass) const;
+    const FPassRenderStateDesc* GetPassStateDescs() const;
 
 private:
     TMap<int32, FRenderPass*> Passes;
+    FPassRenderStateDesc PassStateDescs[(uint32)ERenderPass::MAX] = {};
 };

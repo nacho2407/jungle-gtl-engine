@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Object/ObjectFactory.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
 #include "MaterialCore.h"
 #include <memory>
 

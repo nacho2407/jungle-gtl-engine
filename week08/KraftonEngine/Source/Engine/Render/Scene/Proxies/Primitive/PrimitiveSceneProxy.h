@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Scene/DirtyFlag.h"
+#include "Render/Scene/Proxies/SceneProxy.h"
 #include "Render/Resources/RenderResources.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 
@@ -17,7 +17,7 @@ struct FSceneView;
 // 컴포넌트 등록 시 CreateSceneProxy()로 1회 생성.
 // 이후 DirtyFlags가 켜진 필드만 가상 함수를 통해 갱신.
 // Renderer가 매 프레임 이 프록시를 직접 순회하여 draw call 수행.
-class FPrimitiveSceneProxy
+class FPrimitiveSceneProxy : public FSceneProxy
 {
 public:
     FPrimitiveSceneProxy(UPrimitiveComponent* InComponent);
@@ -29,20 +29,8 @@ public:
     virtual void UpdateVisibility();
     virtual void UpdateMesh();
 
-    // --- Dirty 관리 ---
-    void MarkDirty(EDirtyFlag Flag) { DirtyFlags |= Flag; }
-    void ClearDirty(EDirtyFlag Flag) { DirtyFlags &= ~Flag; }
-    bool IsDirty(EDirtyFlag Flag) const { return HasFlag(DirtyFlags, Flag); }
-    bool IsAnyDirty() const { return DirtyFlags != EDirtyFlag::None; }
-
-    // --- 식별 ---
-    uint32 ProxyId = UINT32_MAX;          // FScene 내 인덱스
+    // --- 소유 컴포넌트 ---
     UPrimitiveComponent* Owner = nullptr; // 소유 컴포넌트 (역참조용)
-    uint32 SelectedListIndex = UINT32_MAX;
-
-    // --- 변경 추적 ---
-    EDirtyFlag DirtyFlags = EDirtyFlag::All;
-    bool bQueuedForDirtyUpdate = false;
 
     // --- LOD ---
     FVector CachedWorldPos; // Transform 갱신 시 캐싱 — LOD 거리 계산용
@@ -79,17 +67,20 @@ public:
     mutable bool bPerObjectCBDirty = true;
 
     // 섹션별 드로우 정보 (메시/머티리얼 변경 시만 재구축)
-    TArray<FMeshSectionDraw> SectionDraws;
+    TArray<FMeshSectionRenderData> SectionRenderData;
 
     // 특수 CB (Gizmo, SubUV 등)
     FConstantBufferBinding ExtraCB;
 
-    // 텍스처 바인딩 (SubUV, Billboard 등 프록시 직접 렌더링용)
+    // 텍스처/머티리얼 바인딩 (Billboard/SubUV/간단한 primitive 렌더링용)
     ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+    ID3D11ShaderResourceView* NormalSRV = nullptr;
+    FConstantBuffer* MaterialCB[2] = {};
 
     // 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)
     bool bPerViewportUpdate = false;
     bool bFontBatched = false; // true면 FFontGeometry 배칭 경로 사용 (TextRenderProxy)
+    bool bAllowViewModeShaderOverride = false; // true면 ViewMode BaseDraw/Decal/Lighting 셰이더로 대체 가능
 
     // 큰 씬에서는 visible proxy 빌드 중 LOD 갱신을 프레임 분산한다.
     uint32 LastLODUpdateFrame = UINT32_MAX;

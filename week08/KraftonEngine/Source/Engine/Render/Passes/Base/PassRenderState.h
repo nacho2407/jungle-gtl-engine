@@ -1,17 +1,19 @@
 #pragma once
 
-#include "Render/Types/PipelineStateTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 
-// 패스별 기본 렌더 상태 — Single Source of Truth
-struct FPassRenderState
+/*
+    각 렌더 패스가 기본적으로 사용할 상태 기술서입니다.
+    패스별 기본 Depth / Blend / Rasterizer / Topology 조합을 한 군데에서 정의합니다.
+*/
+struct FPassRenderStateDesc
 {
-	EDepthStencilState       DepthStencil = EDepthStencilState::Default;
-	EBlendState              Blend = EBlendState::Opaque;
-	ERasterizerState         Rasterizer = ERasterizerState::SolidBackCull;
-	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	bool                     bWireframeAware = false;
+    EDepthStencilState DepthStencil;
+    EBlendState Blend;
+    ERasterizerState Rasterizer;
+    D3D11_PRIMITIVE_TOPOLOGY Topology;
 };
 
-void InitializeDefaultPassRenderStates(FPassRenderState (&OutStates)[(uint32)ERenderPass::MAX]);
+void InitializeDefaultPassRenderStateDescs(FPassRenderStateDesc (&OutStateDescs)[(uint32)ERenderPass::MAX]);

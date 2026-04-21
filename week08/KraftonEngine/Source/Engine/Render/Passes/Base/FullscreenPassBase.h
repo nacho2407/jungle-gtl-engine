@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
-#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Passes/Base/RenderPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 
 /*
     화면 전체를 1번 그리는 fullscreen 패스의 공통 베이스 클래스입니다.

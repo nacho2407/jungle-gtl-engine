@@ -1,10 +1,10 @@
-#include "Render/Passes/Scene/BaseDrawPass.h"
+﻿#include "Render/Passes/Scene/BaseDrawPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
-#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
 #include "Render/Resources/RenderResources.h"
 
 void FBaseDrawPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -29,11 +29,11 @@ void FBaseDrawPass::PrepareInputs(FRenderPipelineContext& Context)
 
 void FBaseDrawPass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    if (Context.ActiveViewSurfaceSet && Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (Context.ActiveViewSurfaces && Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
     {
         const EShadingModel ShadingModel = Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode);
-        Context.ActiveViewSurfaceSet->ClearBaseTargets(Context.Context, ShadingModel);
-        Context.ActiveViewSurfaceSet->BindBaseDrawTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
+        Context.ActiveViewSurfaces->ClearBaseTargets(Context.Context, ShadingModel);
+        Context.ActiveViewSurfaces->BindBaseDrawTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
     }
     else
     {
@@ -44,7 +44,7 @@ void FBaseDrawPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FBaseDrawPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    FMeshDrawCommandBuilder::Build(Proxy, ERenderPass::Opaque, Context, *Context.DrawCommandList);
+    DrawCommandBuilder::BuildMeshDrawCommand(Proxy, ERenderPass::Opaque, Context, *Context.DrawCommandList);
 }
 
 void FBaseDrawPass::SubmitDrawCommands(FRenderPipelineContext& Context)

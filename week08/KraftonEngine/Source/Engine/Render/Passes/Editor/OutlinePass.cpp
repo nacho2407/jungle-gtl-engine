@@ -1,14 +1,15 @@
-#include "Render/Passes/Editor/OutlinePass.h"
+﻿#include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "Render/Resources/RenderResources.h"
-#include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Resources/ConstantBufferPool.h"
+#include "Render/Submission/Command/DrawCommand.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
+#include "Render/Resources/Buffers/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
-#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Resources/Bindings/RenderCBKeys.h"
 
 void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -63,7 +64,7 @@ void FOutlinePass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::Outline);
+    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::Outline);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
@@ -74,7 +75,7 @@ void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
     Constants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
     Constants.OutlineThickness = 1.0f;
 
-    FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Outline, sizeof(FOutlinePostProcessConstants));
+    FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ERenderCBKey::Outline, sizeof(FOutlinePostProcessConstants));
     if (!OutlineCB)
     {
         return;
