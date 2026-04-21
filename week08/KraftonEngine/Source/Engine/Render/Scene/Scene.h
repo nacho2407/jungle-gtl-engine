@@ -45,7 +45,6 @@ public:
     const TArray<FSceneOverlayText>& GetOverlayTexts() const { return DebugData.GetOverlayTexts(); }
 
     void AddDebugAABB(const FVector& Min, const FVector& Max, const FColor& Color) { DebugData.AddDebugAABB(Min, Max, Color); }
-    const TArray<FSceneDebugAABB>& GetDebugAABBs() const { return DebugData.GetDebugAABBs(); }
 
     void AddDebugLine(const FVector& Start, const FVector& End, const FColor& Color) { DebugData.AddDebugLine(Start, End, Color); }
     const TArray<FSceneDebugLine>& GetDebugLines() const { return DebugData.GetDebugLines(); }
