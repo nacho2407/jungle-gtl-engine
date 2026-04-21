@@ -48,13 +48,13 @@ const char* GetViewportTypeName(EEditorViewportType Type)
     }
 }
 
-const char* GetLightingModelName(EShaderLightPermutationKey Key)
+const char* GetLightingModelName(ELightingModel Key)
 {
     switch (Key)
     {
-    case EShaderLightPermutationKey::Gouraud:   return "Gouraud";
-    case EShaderLightPermutationKey::Lambert:   return "Lambert";
-    case EShaderLightPermutationKey::BlinnPhong: return "BlinnPhong";
+    case ELightingModel::Gouraud:   return "Gouraud";
+    case ELightingModel::Lambert:   return "Lambert";
+    case ELightingModel::BlinnPhong: return "BlinnPhong";
     default:                                     return "Unlit";
     }
 }

@@ -582,11 +582,6 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	else
 		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(DefaultWhite);
 
-	DefaultMat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasDiffuseTexture);
-	DefaultMat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasSpecularTexture);
-	DefaultMat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasAmbientTexture);
-	DefaultMat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasBumpTexture);
-
 	DefaultMat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
 	
 	// Outline Material
@@ -710,7 +705,6 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	}
 	else
 	{
-		Shaders.erase(FilePath);
 		return false;
 	}
 
@@ -720,13 +714,16 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		PSBlob = CompileResult.Blob;
 		Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
 	}
+	else
+	{
+		return false;
+	}
 
 	HRESULT hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
 		&Permutation.VS);
 	if (FAILED(hr))
 	{
 		UE_LOG("Failed to create vertex shader: %s", FilePath.c_str());
-		Shaders.erase(FilePath);
 		return false;
 	}
 
@@ -735,7 +732,6 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	if (FAILED(hr))
 	{
 		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
-		Shaders.erase(FilePath);
 		return false;
 	}
 

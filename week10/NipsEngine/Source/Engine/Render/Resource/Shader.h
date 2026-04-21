@@ -6,17 +6,12 @@
 */
 
 #include "Render/Common/RenderTypes.h"
+#include "Render/Resource/ShaderHelper.h"
 
 #include "Core/CoreTypes.h"
 #include "Object/Object.h"
 
-enum class EShaderLightPermutationKey : uint32
-{
-	Unlit = 0,
-	Gouraud,
-	Lambert,
-	BlinnPhong,
-};
+#include "UI/EditorConsoleWidget.h"
 
 struct FShaderVariableInfo
 {
@@ -83,7 +78,14 @@ public:
 	
 	void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0)
 	{
-		FShader* Target = &Permutations[PermutationKey];
+		auto It = Permutations.find(PermutationKey);
+		if (It == Permutations.end())
+		{
+			UE_LOG("Missing shader permutation: %s key=%u", FilePath.c_str(), PermutationKey);
+			return;
+		}
+
+		FShader* Target = &It->second;
 
 		if (Target)
 		{
@@ -95,15 +97,21 @@ public:
 
 	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size, uint32 PermutationKey = 0)
 	{
-		FShader* Target = &Permutations[PermutationKey];
-		if (!Target || !Target->ConstantBuffer)
+		auto It = Permutations.find(PermutationKey);
+		if (It == Permutations.end())
 		{
+			UE_LOG("Missing shader permutation: %s key=%u", FilePath.c_str(), PermutationKey);
 			return;
 		}
 
-		Context->UpdateSubresource(Target->ConstantBuffer, 0, nullptr, Data, 0, 0);
-		Context->VSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
-		Context->PSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
+		FShader* Target = &It->second;
+
+		if (Target->ConstantBuffer)
+		{
+			Context->UpdateSubresource(Target->ConstantBuffer, 0, nullptr, Data, 0, 0);
+			Context->VSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
+			Context->PSSetConstantBuffers(Slot, 1, &Target->ConstantBuffer);
+		}
 	}
 
 	int32 GetTextureBindSlot(const FString& Name) const
