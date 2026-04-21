@@ -22,8 +22,8 @@ protected:
 	FString EllipsisText(const FString& text, float maxWidth);
 	virtual const char* GetDragItemType() { return "ParkSangHyeok"; }
 
-	virtual void OnRightClicked(ContentBrowserContext& Context) { (void)Context; };
-	virtual void OnDoubleRightClicked(ContentBrowserContext& Context) { ShellExecuteW(nullptr, L"open", ContentItem.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL); };
+	virtual void OnLeftClicked(ContentBrowserContext& Context) { (void)Context; };
+	virtual void OnDoubleLeftClicked(ContentBrowserContext& Context) { ShellExecuteW(nullptr, L"open", ContentItem.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL); };
 	virtual void OnDrag(ContentBrowserContext& Context) { (void)Context; }
 
 protected:
@@ -35,13 +35,13 @@ protected:
 class DirectoryElement final : public ContentBrowserElement
 {
 public:
-	void OnDoubleRightClicked(ContentBrowserContext& Context) override;
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 
 class SceneElement final : public ContentBrowserElement
 {
 public:
-	void OnDoubleRightClicked(ContentBrowserContext& Context) override;
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 
 class ObjectElement final : public ContentBrowserElement
@@ -50,8 +50,14 @@ public:
 	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 };
 
+#include "Editor/UI/EditorMaterialInspector.h"
 class MaterialElement final : public ContentBrowserElement
 {
 public:
+	void Render(ContentBrowserContext& Context) override;
+	virtual void OnLeftClicked(ContentBrowserContext& Context) override;
 	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
+
+private:
+	FEditorMaterialInspector MaterialInspector;
 };
