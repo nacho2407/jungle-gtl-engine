@@ -49,8 +49,8 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.texcoord = Input.texcoord;
 
     // Gouraud Shading용 정점 라이팅 계산
-    float GouraudFactor = ComputeGouraudLightingFactor(VSNormal);
-    Output.gouraud = float4(GouraudFactor.xxx, 1.0f);
+    float3 GouraudLighting = ComputeGouraudLightingColor(VSNormal);
+    Output.gouraud = float4(GouraudLighting, 1.0f);
 
     return Output;
 }
@@ -84,6 +84,8 @@ FBaseDrawOutput3 PS_BaseDraw_BlinnPhong(FBaseDrawVSOutput Input)
     Output.Surface1 = EncodeNormal(ResolveBaseDrawNormal(Input));
     
     // SpecularStrength를 0.3으로 낮춰서 하이라이트가 하얗게 타버리는 현상을 방지
-    Output.Surface2 = EncodeMaterialParam(float4(32.0f, 0.3f, 0.0f, 1.0f));
+    float Shininess = MaterialParam.x > 0.0f ? MaterialParam.x : 32.0f;
+    float SpecularStrength = MaterialParam.y > 0.0f ? MaterialParam.y : 0.3f;
+    Output.Surface2 = EncodeMaterialParam(float4(Shininess, SpecularStrength, 0.0f, 1.0f));
     return Output;
 }
