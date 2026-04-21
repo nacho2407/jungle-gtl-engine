@@ -24,6 +24,7 @@ struct FLightCullingParams
 
 class FViewportClient;
 class FD3DDevice;
+class FConstantBuffer;
 using FFrameContext = FSceneView;
 
     // ============================================================
@@ -57,6 +58,10 @@ public:
     ID3D11ShaderResourceView* GetPerTileMaskSRV()    const { return PerTilePointLightIndexMaskSRV; }
     ID3D11ShaderResourceView* GetDebugHitMapSRV()    const { return DebugHitMapSRV; }
     //ID3D11ShaderResourceView* GetPointLightDataSRV() const { return PointLightDataSRV; }
+
+	//----WRAPPER for LightCullingParamsCB----
+    FConstantBuffer* GetLightCullingParamsCBWrapper() { return LightCullingParamsCBWrapper; }
+
 
 	//LightPass에 던질 param 정보
     ID3D11Buffer* GetLightCullingParamsCB() const { return LightCullingParamsCB; }
@@ -98,6 +103,7 @@ private:
 
     // ---- LightCullingParams 상수 버퍼 (b2) ----
     ID3D11Buffer* LightCullingParamsCB = nullptr;
+    FConstantBuffer* LightCullingParamsCBWrapper = nullptr;
 
     // ---- Tile 메타데이터 ----
     uint32 NumTilesX        = 0;
