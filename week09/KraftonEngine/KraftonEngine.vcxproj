@@ -326,6 +326,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Base\PassRenderState.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\DebugLinePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp" />
@@ -521,6 +522,7 @@
     <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h" />
