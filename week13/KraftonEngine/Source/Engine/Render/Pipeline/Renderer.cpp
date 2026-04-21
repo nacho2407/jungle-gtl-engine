@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+#include "Renderer.h"
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ShaderManager.h"
@@ -22,6 +22,7 @@ void FRenderer::Create(HWND hWindow)
 	Resources.Create(Device.GetDevice());
 
 	TileBasedCulling.Initialize(Device.GetDevice());
+	ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
 
 	PassRenderStateTable.Initialize();
 
@@ -61,7 +62,17 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	{
 		SCOPE_STAT_CAT("UpdateFrameBuffer", "4_ExecutePass");
 		Resources.UpdateFrameBuffer(Device, Frame);
-		Resources.UpdateLightBuffer(Device, Scene, Frame);
+	}
+	{
+		SCOPE_STAT_CAT("UpdateLightBuffer", "4_ExecutePass");
+
+		FClusterCullingState& ClusterState = ClusteredLightCuller.GetCullingState();
+		ClusterState.NearZ = Frame.NearClip;
+		ClusterState.FarZ = Frame.FarClip;
+		ClusterState.ScreenWidth = static_cast<uint32>(Frame.ViewportWidth);
+		ClusterState.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
+
+		Resources.UpdateLightBuffer(Device, Scene, Frame, &ClusterState);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -118,9 +129,47 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 void FRenderer::CleanupPassState(FStateCache& Cache)
 {
 	Resources.UnbindSystemTextures(Device);
+	Resources.UnbindTileCullingBuffers(Device);
+	UnbindClusterCullingResources();
 
 	Cache.Cleanup(Device.GetDeviceContext());
 	Builder.GetCommandList().Reset();
+}
+
+void FRenderer::DispatchClusterCullingResources()
+{
+	if (!ClusteredLightCuller.IsInitialized())
+	{
+		return;
+	}
+
+	Resources.UnbindTileCullingBuffers(Device);
+	UnbindClusterCullingResources();
+
+	ClusteredLightCuller.DispatchViewSpaceAABB();
+	ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
+
+	BindClusterCullingResources();
+}
+
+void FRenderer::BindClusterCullingResources()
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	ID3D11ShaderResourceView* LightIndexList = ClusteredLightCuller.GetLightIndexListSRV();
+	ID3D11ShaderResourceView* LightGridList = ClusteredLightCuller.GetLightGridSRV();
+	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
+	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
+	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
+	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
+}
+
+void FRenderer::UnbindClusterCullingResources()
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	ID3D11ShaderResourceView* NullSRVs[2] = {};
+	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+	Ctx->CSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
@@ -128,4 +177,3 @@ void FRenderer::EndFrame()
 {
 	Device.Present();
 }
-

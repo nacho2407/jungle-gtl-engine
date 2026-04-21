@@ -8,11 +8,19 @@ enum class EViewMode : int32
 	Unlit,
 	Lit_Gouraud,
 	Lit_Lambert,
+	Lit_Toon,
 	Wireframe,
 	SceneDepth,
 	WorldNormal,
 	LightCulling,
 	Count
+};
+
+enum class ELightCullingMode : uint32
+{
+	Off = 0,
+	Tile = 1,
+	Cluster = 2
 };
 
 struct FShowFlags
@@ -67,6 +75,7 @@ struct FViewportRenderOptions
 	float EdgeThresholdMin = 0.0625f;
 
 	// Light Culling 뷰모드 전용 설정
+	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;
 	float HeatMapMax = 20.0f;
 	bool Enable25DCulling = true;
 };

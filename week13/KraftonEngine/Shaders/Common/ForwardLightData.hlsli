@@ -20,10 +20,18 @@
 #define TILE_SIZE             16
 #define MAX_LIGHTS_PER_TILE   256
 
+#define LIGHT_CULLING_OFF     0
+#define LIGHT_CULLING_TILE    1
+#define LIGHT_CULLING_CLUSTER 2
+
 // =============================================================================
 // 구조체 — C++ POD와 레이아웃 동일
 // =============================================================================
-
+struct FAABB
+{
+    float4 minPt;
+    float4 maxPt;
+};
 struct FAmbientLightInfo
 {
     float4 Color; // 16B
@@ -57,6 +65,18 @@ struct FLightInfo
     float OuterConeCos; //  4B  (Spot 전용)
     float3 _pad1; // 12B → 합계 80B
 };
+struct FClusterCullingState
+{
+    float NearZ;
+    float FarZ;
+    uint ClusterX;
+    uint ClusterY;
+
+    uint ClusterZ;
+    uint ScreenWidth;
+    uint ScreenHeight;
+    uint MaxLightsPerCluster;
+};
 
 // =============================================================================
 // 리소스 바인딩
@@ -72,15 +92,17 @@ cbuffer LightingBuffer : register(b4)
     uint NumActiveSpotLights;
     uint NumTilesX;
     uint NumTilesY;
-    
-    uint ViewLightCulling;
+    FClusterCullingState CullState;
+    uint LightCullingMode;
+    uint VisualizeLightCulling;
     float HeatMapMax;
-    uint Pad[2];
+    uint Pad;
 };
 
 // ── Structured Buffers (t8~t10) ──
 StructuredBuffer<FLightInfo> AllLights : register(t8);
 StructuredBuffer<uint> TileLightIndices : register(t9);
 StructuredBuffer<uint2> TileLightGrid : register(t10);
-
+StructuredBuffer<uint> g_ClusterLightIndices : register(t11);
+StructuredBuffer<uint2> g_ClusterLightGrid : register(t12);
 #endif // FORWARD_LIGHT_DATA_HLSLI
