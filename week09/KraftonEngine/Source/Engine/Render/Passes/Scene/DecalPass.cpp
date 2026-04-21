@@ -97,7 +97,7 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
             Src->Release();
     }
 
-    if (ShadingModel == EShadingModel::Lambert || ShadingModel == EShadingModel::BlinnPhong)
+    if (ShadingModel == EShadingModel::Lambert || ShadingModel == EShadingModel::BlinnPhong || ShadingModel == EShadingModel::WorldNormal)
     {
         ID3D11Resource* Src = nullptr;
         ID3D11Resource* Dst = nullptr;
