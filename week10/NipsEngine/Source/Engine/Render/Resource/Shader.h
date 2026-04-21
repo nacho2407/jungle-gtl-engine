@@ -20,6 +20,20 @@ struct FShaderVariableInfo
 	uint32 Size = 0;
 };
 
+struct FShaderDefineDesc
+{
+	FString Name;
+	FString Value;
+};
+
+struct FShaderPermutationDesc
+{
+	FString VSEntryPoint;
+	FString PSEntryPoint;
+	uint32 PermutationKey = 0;
+	TArray<FShaderDefineDesc> Defines;
+};
+
 //	Shader Set
 struct FShader
 {
@@ -67,6 +81,10 @@ public:
 		Permutations.clear();
 	}
 
+	void SetPermutationDesc(uint32 Key, const FShaderPermutationDesc& Desc)
+	{
+		PermutationDescs[Key] = Desc;
+	}
 	void AddPermutation(uint32 Key, const FShader& Data)
 	{
 		if (Permutations.contains(Key))
@@ -75,7 +93,7 @@ public:
 		}
 		Permutations[Key] = Data;
 	}
-	
+
 	void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0)
 	{
 		auto It = Permutations.find(PermutationKey);
@@ -97,6 +115,8 @@ public:
 
 	void UpdateAndBindCBuffer(ID3D11DeviceContext* Context, const void* Data, uint32 Slot, uint32 Size, uint32 PermutationKey = 0)
 	{
+		if (!Data || Size == 0) return;
+
 		auto It = Permutations.find(PermutationKey);
 		if (It == Permutations.end())
 		{
@@ -123,7 +143,6 @@ public:
 		}
 		return -1;
 	}
-
 	bool GetShaderVariableInfo(const FString& Name, FShaderVariableInfo& OutInfo) const
 	{
 		auto It = ShaderVariables.find(Name);
@@ -135,7 +154,10 @@ public:
 		return false;
 	}
 
-	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target);
+	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target,
+		TMap<FString, uint32>& OutTextureBindSlots, TMap<FString, FShaderVariableInfo>& OutShaderVariables, uint32& OutCBufferSize);
+	
+	void Reload(ID3D11Device* Device);
 
 	uint32 GetCBufferSize() const { return CBufferSize; }
 
@@ -143,6 +165,8 @@ public:
 
 private:
 	TMap<uint32, FShader> Permutations;
+	TMap<uint32, FShaderPermutationDesc> PermutationDescs;
+	uint32 Version = 0;
 
 	TMap<FString, uint32> TextureBindSlots;
 	TMap<FString, FShaderVariableInfo> ShaderVariables;
