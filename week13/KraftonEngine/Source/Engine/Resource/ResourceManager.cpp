@@ -9,6 +9,8 @@
 #include "WICTextureLoader.h"
 #include "UI/EditorConsoleWidget.h"
 #include "Profiling/MemoryStats.h"
+#include "Engine/Texture/Texture2D.h"
+
 
 namespace ResourceKey
 {
@@ -105,6 +107,8 @@ void FResourceManager::LoadFromDirectory(const FString& Path, ID3D11Device* InDe
 	{
 		if (Entry.path().extension() != ".png")
 			continue;
+
+		UTexture2D::LoadFromFile(FPaths::ToUtf8(Entry.path()), InDevice);
 
 		DirectX::CreateWICTextureFromFile(
 			InDevice, (Entry.path()).c_str(),
