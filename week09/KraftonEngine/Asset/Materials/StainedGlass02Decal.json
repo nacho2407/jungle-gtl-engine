@@ -8,7 +8,7 @@
   "PathFileName" : "Asset/Materials/StainedGlass02Decal.json",
   "RasterizerState" : "",
   "RenderPass" : "Decal",
-  "ShaderPath" : "Shaders/DecalShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/DecalShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/StainedGlass_02_Decal.jpg"
   }
