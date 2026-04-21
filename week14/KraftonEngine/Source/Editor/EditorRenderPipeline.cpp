@@ -1,4 +1,4 @@
-﻿#include "EditorRenderPipeline.h"
+#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
@@ -12,9 +12,8 @@
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
+	, CachedDevice(InRenderer.GetFD3DDevice().GetDevice())
 {
-	ID3D11Device* Dev = InRenderer.GetFD3DDevice().GetDevice();
-	GPUOcclusion.Initialize(Dev);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline()
@@ -23,7 +22,23 @@ FEditorRenderPipeline::~FEditorRenderPipeline()
 
 void FEditorRenderPipeline::OnSceneCleared()
 {
-	GPUOcclusion.InvalidateResults();
+	for (auto& [VC, Occlusion] : GPUOcclusionMap)
+	{
+		Occlusion->InvalidateResults();
+	}
+}
+
+FGPUOcclusionCulling& FEditorRenderPipeline::GetOcclusionForViewport(FLevelEditorViewportClient* VC)
+{
+	auto it = GPUOcclusionMap.find(VC);
+	if (it != GPUOcclusionMap.end())
+		return *it->second;
+
+	auto ptr = std::make_unique<FGPUOcclusionCulling>();
+	ptr->Initialize(CachedDevice);
+	auto& ref = *ptr;
+	GPUOcclusionMap.emplace(VC, std::move(ptr));
+	return ref;
 }
 
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
@@ -75,7 +90,9 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	UWorld* World = Editor->GetWorld();
 	if (!World) return;
 
-	// GPU Occlusion — 이전 프레임 결과 읽기
+	FGPUOcclusionCulling& GPUOcclusion = GetOcclusionForViewport(VC);
+
+	// GPU Occlusion — 이전 프레임 결과 읽기 (이 뷰포트 전용)
 	GPUOcclusion.ReadbackResults(Ctx);
 
 	PrepareViewport(VP, Camera, Ctx);
@@ -89,7 +106,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		Renderer.Render(Frame, Scene);
 	}
 
-	// GPU Occlusion — Render 후 DepthBuffer가 유효할 때 디스패치
+	// GPU Occlusion — Render 후 DepthBuffer가 유효할 때 디스패치 (이 뷰포트 전용)
 	{
 		SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");
 		GPUOcclusion.DispatchOcclusionTest(
@@ -122,7 +139,7 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraCo
 	Frame.SetCameraInfo(Camera);
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 	Frame.SetViewportInfo(VP);
-	Frame.OcclusionCulling = &GPUOcclusion;
+	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
 	Frame.LODContext = World->PrepareLODContext();
 
 	// Cursor position relative to viewport (for 2.5D culling visualization)
@@ -167,10 +184,8 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	if (VC == Editor->GetActiveViewport())
 		Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
 
-
 	{
 		SCOPE_STAT_CAT("BuildDynamicCommands", "3_Collect");
 		Builder.BuildDynamicCommands(Frame, &Scene);
 	}
 }
-
