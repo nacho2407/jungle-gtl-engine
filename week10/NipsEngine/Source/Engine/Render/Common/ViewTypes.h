@@ -8,6 +8,7 @@ enum class EViewMode : int32
 	Lit_Lambert,
 	Lit_BlinnPhong,
     Unlit,
+	Heatmap,
     Wireframe,
     Depth,
 	Normal,

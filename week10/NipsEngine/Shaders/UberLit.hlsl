@@ -106,6 +106,17 @@ float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
 }
 #endif
 
+#if LIGHT_HEATMAP
+float3 GetHeatmapColor(float weight)
+{
+    float3 color;
+    color.r = smoothstep(0.4f, 0.7f, weight);
+    color.g = smoothstep(0.0f, 0.4f, weight) - smoothstep(0.7f, 1.0f, weight);
+    color.b = 1.0f - smoothstep(0.0f, 0.4f, weight);
+    return color;
+}
+#endif
+
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
@@ -134,6 +145,27 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     
     float3 accumulatedLight = float3(1, 1, 1);
     
+#if LIGHT_HEATMAP
+    uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
+    uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+    uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
+
+    float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
+    float3 heatmapColor = GetHeatmapColor(weight);
+    
+    // 타일 경계선 시각화 (선택 사항: 타일의 가장자리 1픽셀을 어둡게 처리)
+    uint2 pixelInTile = uint2(input.ClipPos.xy) % TILE_SIZE;
+    if (pixelInTile.x == 0 || pixelInTile.y == 0)
+    {
+        heatmapColor *= 0.5f; 
+    }
+
+    output.Color = float4(heatmapColor, 1.0f);
+    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.WorldPos = float4(input.WorldPos, 1.f);
+    return output;
+#endif
+    
 #if LIGHTING_MODEL_GOURAUD
     accumulatedLight = input.LitColor;
     
@@ -148,7 +180,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N);
     #elif LIGHTING_MODEL_PHONG
         accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos, CameraPosition - input.WorldPos, Shininess);
-    #endif    
+    #endif
 
     for (uint i = 0; i < tileData.y; i++)
     {

@@ -61,6 +61,9 @@ void FRenderer::Create(HWND hWindow)
 		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap),
 		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
 		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap) | FEAT(HasSpecularMap),
+
+		LIGHT(Heatmap),
+		LIGHT(Heatmap) | FEAT(HasDiffuseMap),
 	};
 
 	for (uint32 Key : UberLitPermutations)
