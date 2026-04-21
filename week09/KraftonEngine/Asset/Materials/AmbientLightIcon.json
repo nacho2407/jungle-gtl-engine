@@ -1,6 +1,6 @@
 {
   "PathFileName" : "Asset/Materials/AmbientLightIcon.json",
-  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
+  "ShaderPath" : "Shaders/Editor/ShaderBillboard.hlsl",
   "RenderPass" : "AlphaBlend",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/SkyLightComponent_64x.png"

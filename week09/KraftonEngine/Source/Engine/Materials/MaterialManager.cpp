@@ -1,4 +1,4 @@
-#include "Render/Passes/Base/RenderStateStrings.h"
+﻿#include "Render/Passes/Base/RenderStateStrings.h"
 #include "Render/Passes/Base/PipelineStateTypes.h"
 #include "Render/Passes/Base/RenderPassTypes.h"
 #include "MaterialManager.h"
