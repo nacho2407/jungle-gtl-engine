@@ -672,21 +672,21 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		}
 	}
 
-	ImGui::SetCursorScreenPos(ContentPos);
-	ImGui::InvisibleButton("##DropTarget", ContentSize);
+	//ImGui::SetCursorScreenPos(ContentPos);
+	//ImGui::InvisibleButton("##DropTarget", ContentSize);
 
-	if (ImGui::BeginDragDropTarget())
-	{
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ObjectContentItem"))
-		{
-			FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+	//if (ImGui::BeginDragDropTarget())
+	//{
+	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ObjectContentItem"))
+	//	{
+	//		FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
 
-			AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
-			NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
-			Editor->GetWorld()->AddActor(NewActor);
-		}
-		ImGui::EndDragDropTarget();
-	}
+	//		AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
+	//		NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
+	//		Editor->GetWorld()->AddActor(NewActor);
+	//	}
+	//	ImGui::EndDragDropTarget();
+	//}
 
 	ImGui::End();
 	ImGui::PopStyleVar();
