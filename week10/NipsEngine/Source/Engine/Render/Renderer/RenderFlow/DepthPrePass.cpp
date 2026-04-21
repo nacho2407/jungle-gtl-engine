@@ -68,6 +68,7 @@ bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 		uint32 Offset = 0;
 		Context->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 		DepthShader->Bind(Context->DeviceContext);
+        CheckOverrideViewMode(Context);  
 
 		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
 		if (IndexBuffer != nullptr)
