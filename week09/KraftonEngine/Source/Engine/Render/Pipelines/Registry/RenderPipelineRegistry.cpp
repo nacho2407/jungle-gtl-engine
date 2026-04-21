@@ -1,22 +1,15 @@
-﻿#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
 
 namespace
 {
 FRenderNodeRef PipelineNode(ERenderPipelineType Type)
 {
-    FRenderNodeRef Ref;
-    Ref.Kind = ERenderNodeKind::Pipeline;
-    Ref.TypeValue = (int32)Type;
-    return Ref;
+    return { ERenderNodeKind::Pipeline, (int32)Type };
 }
 
 FRenderNodeRef PassNode(ERenderPassNodeType Type)
 {
-    FRenderNodeRef Ref;
-    Ref.Kind = ERenderNodeKind::Pass;
-    Ref.TypeValue = (int32)Type;
-    return Ref;
+    return { ERenderNodeKind::Pass, (int32)Type };
 }
 } // namespace
 
@@ -24,73 +17,51 @@ void FRenderPipelineRegistry::Initialize()
 {
     Release();
 
-    // ==================== Default Scene Pipeline ====================
-    FRenderPipelineDesc DefaultScene;
-    DefaultScene.Type = ERenderPipelineType::DefaultScene;
-    DefaultScene.Children = { PipelineNode(ERenderPipelineType::Scene) };
+    FRenderPipelineDesc DefaultScene = { ERenderPipelineType::DefaultScene, { PipelineNode(ERenderPipelineType::Scene) } };
     Pipelines.emplace((int32)DefaultScene.Type, DefaultScene);
 
-    // ==================== Editor Scene Pipeline =====================
-    FRenderPipelineDesc EditorScene;
-    EditorScene.Type = ERenderPipelineType::EditorScene;
-    EditorScene.Children = {
+    FRenderPipelineDesc EditorScene = { ERenderPipelineType::EditorScene, {
         PipelineNode(ERenderPipelineType::Scene),
         PipelineNode(ERenderPipelineType::EditorOverlay)
-    };
+    } };
     Pipelines.emplace((int32)EditorScene.Type, EditorScene);
 
-    // ======================= Scene Pipeline =========================
-    FRenderPipelineDesc Scene;
-    Scene.Type = ERenderPipelineType::Scene;
-    Scene.Children = {
-        PipelineNode(ERenderPipelineType::SceneViewMode),
+    FRenderPipelineDesc Scene = { ERenderPipelineType::Scene, {
+        PipelineNode(ERenderPipelineType::SceneMain),
         PassNode(ERenderPassNodeType::AdditiveDecalPass),
         PassNode(ERenderPassNodeType::AlphaBlendPass),
         PipelineNode(ERenderPipelineType::ScenePostProcess)
-    };
+    } };
     Pipelines.emplace((int32)Scene.Type, Scene);
 
-    // ==================== Scene ViewMode Pipeline ===================
-    FRenderPipelineDesc SceneViewMode;
-    SceneViewMode.Type = ERenderPipelineType::SceneViewMode;
-    SceneViewMode.Children = {
+    FRenderPipelineDesc SceneMain = { ERenderPipelineType::SceneMain, {
         PassNode(ERenderPassNodeType::DepthPrePass),
         PassNode(ERenderPassNodeType::LightCullingPass),
         PassNode(ERenderPassNodeType::BaseDrawPass),
         PassNode(ERenderPassNodeType::DecalPass),
         PassNode(ERenderPassNodeType::LightingPass)
-    };
-    Pipelines.emplace((int32)SceneViewMode.Type, SceneViewMode);
+    } };
+    Pipelines.emplace((int32)SceneMain.Type, SceneMain);
 
-    // =================== Scene PostProcess Pipeline =================
-    FRenderPipelineDesc ScenePostProcess;
-    ScenePostProcess.Type = ERenderPipelineType::ScenePostProcess;
-    ScenePostProcess.Children = {
+    FRenderPipelineDesc ScenePostProcess = { ERenderPipelineType::ScenePostProcess, {
         PassNode(ERenderPassNodeType::ViewModeResolvePass),
         PassNode(ERenderPassNodeType::HeightFogPass),
         PassNode(ERenderPassNodeType::FXAAPass)
-    };
+    } };
     Pipelines.emplace((int32)ScenePostProcess.Type, ScenePostProcess);
 
-    // ==================== Editor Overlay Pipeline ===================
-    FRenderPipelineDesc EditorOverlay;
-    EditorOverlay.Type = ERenderPipelineType::EditorOverlay;
-    EditorOverlay.Children = {
-        PassNode(ERenderPassNodeType::GridPass),
+    FRenderPipelineDesc EditorOverlay = { ERenderPipelineType::EditorOverlay, {
         PipelineNode(ERenderPipelineType::Outline),
         PassNode(ERenderPassNodeType::DebugLinePass),
         PassNode(ERenderPassNodeType::GizmoPass),
         PassNode(ERenderPassNodeType::OverlayTextPass)
-    };
+    } };
     Pipelines.emplace((int32)EditorOverlay.Type, EditorOverlay);
 
-    // ====================== Outline Pipeline ========================
-    FRenderPipelineDesc Outline;
-    Outline.Type = ERenderPipelineType::Outline;
-    Outline.Children = {
+    FRenderPipelineDesc Outline = { ERenderPipelineType::Outline, {
         PassNode(ERenderPassNodeType::SelectionMaskPass),
         PassNode(ERenderPassNodeType::OutlinePass)
-    };
+    } };
     Pipelines.emplace((int32)Outline.Type, Outline);
 }
 

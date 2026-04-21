@@ -1,8 +1,10 @@
 #pragma once
+
 #include "Core/CoreTypes.h"
-#include "Render/Types/VertexTypes.h"
+#include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include "Render/RHI/D3D11/Buffers/VertexBuffer.h"
 #include "Render/RHI/D3D11/Buffers/IndexBuffer.h"
+
 class FMeshBuffer
 {
 public:

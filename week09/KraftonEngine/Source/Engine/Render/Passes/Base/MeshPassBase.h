@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
-#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Passes/Base/RenderPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 
 /*
     프록시 단위 드로우를 처리하는 메시 기반 패스의 공통 베이스 클래스입니다.

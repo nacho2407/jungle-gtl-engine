@@ -103,6 +103,9 @@
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{16ec6128-166d-ab0f-2135-c0c61f984faf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Overlay">
+      <UniqueIdentifier>{55d83cb8-92ff-676c-072d-c5a44987acf1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Passes">
       <UniqueIdentifier>{e4d448db-9827-dd2f-72e0-d0d4895c5a13}</UniqueIdentifier>
     </Filter>
@@ -121,11 +124,20 @@
     <Filter Include="Source\Engine\Render\Pipelines\Context">
       <UniqueIdentifier>{cde126ec-d756-7f65-1633-898c1f0b7042}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Context\View">
-      <UniqueIdentifier>{e2327075-a491-3049-4773-3c149c9d77c1}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Pipelines\Context\Scene">
+      <UniqueIdentifier>{395612e1-6daf-d177-045b-09d607f6301c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Pipelines\Context\ViewMode">
+      <UniqueIdentifier>{edac6024-3ede-b434-78ab-9c6e08ababcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Pipelines\Context\Viewport">
+      <UniqueIdentifier>{6b8ba19a-c78f-7adc-8518-feb3c70cdb15}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Pipelines\Registry">
       <UniqueIdentifier>{dba787e5-a0fa-ede1-f833-fee6bb52a1bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Pipelines\Runner">
+      <UniqueIdentifier>{3e259020-0355-0193-5f8f-8b97fbc1c8bf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\RHI">
       <UniqueIdentifier>{4ccd1579-714b-42a3-62e9-a42acaa67b2b}</UniqueIdentifier>
@@ -148,8 +160,20 @@
     <Filter Include="Source\Engine\Render\RHI\D3D11\State">
       <UniqueIdentifier>{428857ca-4aa7-6296-99b4-4607a2177581}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\RHI\D3D11\Textures">
+      <UniqueIdentifier>{302b54b7-b79c-e4b7-0a68-3e51b45b7670}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Resources">
       <UniqueIdentifier>{54f9b97e-db09-0b7b-d34a-9901f4ec6b20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Resources\Bindings">
+      <UniqueIdentifier>{6018b564-d3fb-9962-9511-fa36d3b43fd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Resources\Buffers">
+      <UniqueIdentifier>{c578f6e2-c3e9-c6b1-37d6-02cfde79b05a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Resources\Shaders">
+      <UniqueIdentifier>{e7f06a05-364a-9d03-9db8-9afb0e7f7547}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Scene">
       <UniqueIdentifier>{773edb3e-6615-a398-31f8-5f6fe4028008}</UniqueIdentifier>
@@ -159,6 +183,9 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Scene\Proxies">
       <UniqueIdentifier>{c86ce6c1-d35b-837d-97ed-051762b239df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Scene\Proxies\Effects">
+      <UniqueIdentifier>{e58d257b-07c8-cce6-dc5e-c84d675b380f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Scene\Proxies\Light">
       <UniqueIdentifier>{f4621ee0-a1eb-ae4f-1eb1-cb560fafbbfc}</UniqueIdentifier>
@@ -172,20 +199,11 @@
     <Filter Include="Source\Engine\Render\Submission\Batching">
       <UniqueIdentifier>{713a2c72-6eb2-ac6b-0cfc-082bd3ff2aa7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Submission\Builders">
-      <UniqueIdentifier>{8b53dad4-718e-f1eb-f891-8f8bdde8d47a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Submission\Collectors">
+    <Filter Include="Source\Engine\Render\Submission\Collect">
       <UniqueIdentifier>{8229e9da-13c4-a415-e8dd-263299ff61f3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Submission\Commands">
-      <UniqueIdentifier>{ad848118-57f9-c31b-950d-22821c01db01}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Submission\Types">
-      <UniqueIdentifier>{a95c60b9-94a7-3366-cefd-f22cbe3c75a0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Types">
-      <UniqueIdentifier>{5c8a6ef8-769c-e1cf-6594-03b5821e5f57}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Submission\Command">
+      <UniqueIdentifier>{bdf8f055-a06f-aa65-8bbf-bea4e8e09e4c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Visibility">
       <UniqueIdentifier>{8ab460b5-5671-63a0-b501-8a85e166be17}</UniqueIdentifier>
@@ -631,23 +649,20 @@
     <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.cpp">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\RenderPipelineRunner.cpp">
-      <Filter>Source\Engine\Render\Pipelines</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.cpp">
       <Filter>Source\Engine\Render\Pipelines\Context</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.cpp">
       <Filter>Source\Engine\Render\Pipelines\Context</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\View\SceneView.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context\View</Filter>
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\Scene\SceneView.cpp">
+      <Filter>Source\Engine\Render\Pipelines\Context\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\View\ViewModeSurfaceSet.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context\View</Filter>
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\ViewMode\SceneViewModeSurfaces.cpp">
+      <Filter>Source\Engine\Render\Pipelines\Context\ViewMode</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\View\ViewportRenderTargets.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context\View</Filter>
+    <ClCompile Include="Source\Engine\Render\Pipelines\Context\Viewport\ViewportRenderTargets.cpp">
+      <Filter>Source\Engine\Render\Pipelines\Context\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.cpp">
       <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
@@ -655,14 +670,20 @@
     <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.cpp">
       <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resources\ConstantBufferPool.cpp">
-      <Filter>Source\Engine\Render\Resources</Filter>
+    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\ViewModePassRegistry.cpp">
+      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resources\MeshBufferManager.cpp">
-      <Filter>Source\Engine\Render\Resources</Filter>
+    <ClCompile Include="Source\Engine\Render\Pipelines\Runner\RenderPipelineRunner.cpp">
+      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resources\ShaderManager.cpp">
-      <Filter>Source\Engine\Render\Resources</Filter>
+    <ClCompile Include="Source\Engine\Render\Resources\Buffers\ConstantBufferPool.cpp">
+      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resources\Buffers\MeshBufferManager.cpp">
+      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resources\Shaders\ShaderManager.cpp">
+      <Filter>Source\Engine\Render\Resources\Shaders</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RHI\D3D11\Buffers\Buffers.cpp">
       <Filter>Source\Engine\Render\RHI\D3D11\Buffers</Filter>
@@ -739,26 +760,23 @@
     <ClCompile Include="Source\Engine\Render\Submission\Batching\LineBatch.cpp">
       <Filter>Source\Engine\Render\Submission\Batching</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Builders\DecalDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Builders\FullscreenDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectOverlay.cpp">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Builders\LineDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectSceneLights.cpp">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Builders\MeshDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectScenePrimitives.cpp">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Builders\TextDrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClCompile Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.cpp">
+      <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Collectors\RenderCollector.cpp">
-      <Filter>Source\Engine\Render\Submission\Collectors</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Commands\DrawCommandList.cpp">
-      <Filter>Source\Engine\Render\Submission\Commands</Filter>
+    <ClCompile Include="Source\Engine\Render\Submission\Command\DrawCommandList.cpp">
+      <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Visibility\Frustum</Filter>
@@ -1153,6 +1171,12 @@
     <ClInclude Include="Source\Engine\Render\Renderer.h">
       <Filter>Source\Engine\Render</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Overlay\OverlayBatchSet.h">
+      <Filter>Source\Engine\Render\Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Overlay\CollectedOverlayData.h">
+      <Filter>Source\Engine\Render\Overlay</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Base\FullscreenPassBase.h">
       <Filter>Source\Engine\Render\Passes\Base</Filter>
     </ClInclude>
@@ -1162,7 +1186,16 @@
     <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h">
       <Filter>Source\Engine\Render\Passes\Base</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Base\PipelineStateTypes.h">
+      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h">
+      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPassTypes.h">
+      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderStateStrings.h">
       <Filter>Source\Engine\Render\Passes\Base</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h">
@@ -1198,47 +1231,44 @@
     <ClInclude Include="Source\Engine\Render\Passes\Scene\FXAAPass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\FogParams.h">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\ShadingTypes.h">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPassTypes.h">
-      <Filter>Source\Engine\Render\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPipelineRunner.h">
-      <Filter>Source\Engine\Render\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\RenderPipelineType.h">
-      <Filter>Source\Engine\Render\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\ShadingTypes.h">
-      <Filter>Source\Engine\Render\Pipelines</Filter>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameRenderResources.h">
+      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.h">
       <Filter>Source\Engine\Render\Pipelines\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\PipelineShaderResolver.h">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderMarkers.h">
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderCollectContext.h">
       <Filter>Source\Engine\Render\Pipelines\Context</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.h">
       <Filter>Source\Engine\Render\Pipelines\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\View\SceneView.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\View</Filter>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Scene\SceneView.h">
+      <Filter>Source\Engine\Render\Pipelines\Context\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\View\ViewModeSurfaceSet.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\View</Filter>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Scene\ViewTypes.h">
+      <Filter>Source\Engine\Render\Pipelines\Context\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\View\ViewportRenderTargets.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\View</Filter>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\ViewMode\SceneViewModeSurfaces.h">
+      <Filter>Source\Engine\Render\Pipelines\Context\ViewMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Viewport\ViewportRenderTargets.h">
+      <Filter>Source\Engine\Render\Pipelines\Context\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.h">
       <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
@@ -1246,32 +1276,53 @@
     <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.h">
       <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\ViewModePassConfig.h">
+    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineType.h">
       <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\BindingSlots.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\ViewModePassRegistry.h">
+      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\PipelineShaderResolver.h">
+      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\RenderMarkers.h">
+      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\RenderPipelineRunner.h">
+      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferBinding.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferLayouts.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferPool.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\MeshBufferManager.h">
       <Filter>Source\Engine\Render\Resources</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\RenderResources.h">
       <Filter>Source\Engine\Render\Resources</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\ShaderManager.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
+    <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderBindingSlots.h">
+      <Filter>Source\Engine\Render\Resources\Bindings</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\ShaderVariantCache.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
+    <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderCBKeys.h">
+      <Filter>Source\Engine\Render\Resources\Bindings</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferLayouts.h">
+      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferPool.h">
+      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Buffers\MeshBufferManager.h">
+      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderDependencyUtils.h">
+      <Filter>Source\Engine\Render\Resources\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderIncludeLoader.h">
+      <Filter>Source\Engine\Render\Resources\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderManager.h">
+      <Filter>Source\Engine\Render\Resources\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderVariantCache.h">
+      <Filter>Source\Engine\Render\Resources\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\Buffers.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Buffers</Filter>
@@ -1294,6 +1345,9 @@
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\VertexBuffer.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Buffers</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\VertexTypes.h">
+      <Filter>Source\Engine\Render\RHI\D3D11\Buffers</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Common\D3D11API.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Common</Filter>
     </ClInclude>
@@ -1309,12 +1363,6 @@
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\PixelShaderStage.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\ShaderDependencyUtils.h">
-      <Filter>Source\Engine\Render\RHI\D3D11\Shaders</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\ShaderIncludeLoader.h">
-      <Filter>Source\Engine\Render\RHI\D3D11\Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Shaders\VertexShaderStage.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Shaders</Filter>
     </ClInclude>
@@ -1327,10 +1375,16 @@
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\State\RasterizerStateManager.h">
       <Filter>Source\Engine\Render\RHI\D3D11\State</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RHI\D3D11\Textures\SurfaceTexture.h">
+      <Filter>Source\Engine\Render\RHI\D3D11\Textures</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\DirtyFlag.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Scene.h">
+      <Filter>Source\Engine\Render\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\SceneProxyRegistry.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\DebugDraw\DebugDrawQueue.h">
@@ -1342,6 +1396,15 @@
     <ClInclude Include="Source\Engine\Render\Scene\DebugDraw\SceneDebugData.h">
       <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\SceneProxy.h">
+      <Filter>Source\Engine\Render\Scene\Proxies</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Effects\FogSceneProxy.h">
+      <Filter>Source\Engine\Render\Scene\Proxies\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Effects\SceneEffectProxy.h">
+      <Filter>Source\Engine\Render\Scene\Proxies\Effects</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\AmbientLightSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
     </ClInclude>
@@ -1349,6 +1412,9 @@
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightSceneProxy.h">
+      <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightTypes.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.h">
@@ -1369,7 +1435,13 @@
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\GizmoSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\MeshSectionRenderData.h">
+      <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveSceneProxy.h">
+      <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveShapeTypes.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.h">
@@ -1390,62 +1462,23 @@
     <ClInclude Include="Source\Engine\Render\Submission\Batching\LineBatch.h">
       <Filter>Source\Engine\Render\Submission\Batching</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Builders\DecalDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedOverlayData.h">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Builders\FullscreenDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedSceneData.h">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Builders\LineDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClInclude Include="Source\Engine\Render\Submission\Collect\DrawCollector.h">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Builders\MeshDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClInclude Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.h">
+      <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Builders\TextDrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Submission\Builders</Filter>
+    <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommand.h">
+      <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Collectors\RenderCollector.h">
-      <Filter>Source\Engine\Render\Submission\Collectors</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Collectors\SceneDebugCollector.h">
-      <Filter>Source\Engine\Render\Submission\Collectors</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Collectors\SceneVisibilityCollector.h">
-      <Filter>Source\Engine\Render\Submission\Collectors</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Commands\DrawCommand.h">
-      <Filter>Source\Engine\Render\Submission\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Commands\DrawCommandList.h">
-      <Filter>Source\Engine\Render\Submission\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Commands\ShaderBindingSet.h">
-      <Filter>Source\Engine\Render\Submission\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Types\MeshSectionDraw.h">
-      <Filter>Source\Engine\Render\Submission\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\FogParams.h">
-      <Filter>Source\Engine\Render\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\LightTypes.h">
-      <Filter>Source\Engine\Render\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\PipelineStateTypes.h">
-      <Filter>Source\Engine\Render\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\PrimitiveShapeTypes.h">
-      <Filter>Source\Engine\Render\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\RenderStateStrings.h">
-      <Filter>Source\Engine\Render\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h">
-      <Filter>Source\Engine\Render\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Types\ViewTypes.h">
-      <Filter>Source\Engine\Render\Types</Filter>
+    <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommandList.h">
+      <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.h">
       <Filter>Source\Engine\Render\Visibility\Frustum</Filter>

@@ -1,12 +1,13 @@
-#include "Render/Resources/ConstantBufferLayouts.h"
-#include "Render/Types/PipelineStateTypes.h"
+﻿#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
 #include "Render/Scene/Proxies/Primitive/CylindricalBillboardSceneProxy.h"
 #include "Component/CylindricalBillboardComponent.h"
-#include "Render/Resources/ShaderManager.h"
-#include "Render/Resources/MeshBufferManager.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
+#include "Render/Resources/Buffers/MeshBufferManager.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialSemantics.h"
 #include "Texture/Texture2D.h"
 
 // ============================================================
@@ -35,15 +36,30 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
     if (!bVisible)
         return;
 
-    // Update DiffuseSRV (material or texture may have changed)
+    // Update DiffuseSRV / material constants (material or texture may have changed)
     UMaterial* Mat = Comp->GetMaterial();
     if (Mat)
     {
-        UTexture2D* DiffuseTex = nullptr;
-        if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
+        for (const char* SlotName : { MaterialSemantics::DiffuseTextureSlot, "BaseColorTexture", "AlbedoTexture", "BaseTexture", "DiffuseMap", "AlbedoMap" })
         {
-            DiffuseSRV = DiffuseTex->GetSRV();
+            UTexture2D* DiffuseTex = nullptr;
+            if (Mat->GetTextureParameter(SlotName, DiffuseTex) && DiffuseTex)
+            {
+                DiffuseSRV = DiffuseTex->GetSRV();
+                break;
+            }
         }
+
+        MaterialCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        MaterialCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
+    }
+
+    if (!Comp->IsBillboardEnabled())
+    {
+		// TODO: 미구현
+        //PerObjectConstants = FPerObjectConstants::FromWorldMatrix(Comp->GetSpriteWorldMatrix());
+        //MarkPerObjectCBDirty();
+        return;
     }
 
     FVector BillboardPos = Comp->GetWorldLocation();
@@ -91,7 +107,13 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
     FMatrix RotMatrix;
     RotMatrix.SetAxes(Forward, Right, Up);
 
-    FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(BillboardPos);
+    const FVector WorldScale = Comp->GetWorldScale();
+    const FVector SpriteScale(
+        (std::abs(WorldScale.X) > 0.0001f) ? WorldScale.X : 0.0001f,
+        (std::abs(WorldScale.Y * Comp->GetWidth()) > 0.0001f) ? (WorldScale.Y * Comp->GetWidth()) : 0.0001f,
+        (std::abs(WorldScale.Z * Comp->GetHeight()) > 0.0001f) ? (WorldScale.Z * Comp->GetHeight()) : 0.0001f);
+
+    FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(SpriteScale) * RotMatrix * FMatrix::MakeTranslationMatrix(BillboardPos);
 
     PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
     MarkPerObjectCBDirty();

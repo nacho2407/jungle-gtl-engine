@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Scene/DirtyFlag.h"
+#include "Render/Scene/Proxies/SceneProxy.h"
 #include "Render/Resources/RenderResources.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 
@@ -22,7 +22,7 @@ struct FLightConstants
     float Padding;           //  4B  — 16B 경계 맞춤
 };
 
-class FLightSceneProxy
+class FLightSceneProxy : public FSceneProxy
 {
 public:
     FLightSceneProxy(ULightComponent* InComponent);
@@ -35,20 +35,8 @@ public:
     // ─── 에디터 디버그 시각화 (와이어프레임 화살표/구/콘) ───
     virtual void VisualizeLightsInEditor(FScene& Scene) const {}
 
-    // ─── Dirty 관리 ───
-    void MarkDirty(EDirtyFlag Flag) { DirtyFlags |= Flag; }
-    void ClearDirty(EDirtyFlag Flag) { DirtyFlags &= ~Flag; }
-    bool IsDirty(EDirtyFlag Flag) const { return HasFlag(DirtyFlags, Flag); }
-    bool IsAnyDirty() const { return DirtyFlags != EDirtyFlag::None; }
-
-    // ─── 식별 ───
-    uint32 ProxyId = UINT32_MAX;
+    // ─── 소유 컴포넌트 / 캐싱된 렌더 데이터 ───
     ULightComponent* Owner = nullptr; // 소유 컴포넌트 (역참조용)
-    uint32 SelectedListIndex = UINT32_MAX;
-
-    // ─── 변경 추적 ───
-    EDirtyFlag DirtyFlags = EDirtyFlag::All;
-    bool bQueuedForDirtyUpdate = false;
 
     // ─── 캐싱된 렌더 데이터 (등록 시 초기화, dirty 시에만 갱신) ───
     FLightConstants LightConstants = {};

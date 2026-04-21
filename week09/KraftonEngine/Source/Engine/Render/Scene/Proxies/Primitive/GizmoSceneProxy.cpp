@@ -1,10 +1,11 @@
-#include "Render/Resources/ConstantBufferLayouts.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
-#include "Render/Resources/ShaderManager.h"
-#include "Render/Resources/ConstantBufferPool.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
+#include "Render/Resources/Buffers/ConstantBufferPool.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Resources/Bindings/RenderCBKeys.h"
 
 // ============================================================
 // FGizmoSceneProxy
@@ -63,7 +64,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 
     // ExtraCB — FGizmoConstants
     auto& G = ExtraCB.Bind<FGizmoConstants>(
-        FConstantBufferPool::Get().GetBuffer(ECBPoolKey::Gizmo, sizeof(FGizmoConstants)),
+        FConstantBufferPool::Get().GetBuffer(ERenderCBKey::Gizmo, sizeof(FGizmoConstants)),
         ECBSlot::PerShader0);
     G.ColorTint = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
     G.bIsInnerGizmo = bIsInner ? 1 : 0;

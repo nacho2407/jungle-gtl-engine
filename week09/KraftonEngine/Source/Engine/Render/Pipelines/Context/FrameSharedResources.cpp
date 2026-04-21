@@ -1,16 +1,19 @@
-﻿#include "Render/Types/LightTypes.h"
-#include "Render/Resources/ConstantBufferLayouts.h"
+#include "Render/Scene/Proxies/Light/LightTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
 #include "Render/Pipelines/Context/FrameSharedResources.h"
 
 #include <cstring>
 
+#include "Core/ResourceTypes.h"
 #include "Materials/MaterialManager.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
-void FFrameSharedResources::Create(ID3D11Device* InDevice)
+void FFrameRenderResources::Create(ID3D11Device* InDevice)
 {
     FrameBuffer.Create(InDevice, sizeof(FFrameConstants));
     PerObjectConstantBuffer.Create(InDevice, sizeof(FPerObjectConstants));
     GlobalLightBuffer.Create(InDevice, sizeof(FGlobalLightConstants));
+    TextBatch.Create(InDevice);
 
     // s0: LinearClamp (PostProcess, UI, 기본)
     {
@@ -54,8 +57,16 @@ void FFrameSharedResources::Create(ID3D11Device* InDevice)
     FMaterialManager::Get().Initialize(InDevice);
 }
 
-void FFrameSharedResources::Release()
+void FFrameRenderResources::Release()
 {
+    TextBatch.Release();
+
+    for (FConstantBuffer& CB : PerObjectCBPool)
+    {
+        CB.Release();
+    }
+    PerObjectCBPool.clear();
+
     FrameBuffer.Release();
     PerObjectConstantBuffer.Release();
     GlobalLightBuffer.Release();
@@ -93,12 +104,10 @@ void FFrameSharedResources::Release()
     }
 }
 
-// Local Lights (SpotLight, PointLight) 정보가 담긴 StructuredBuffer을 t6 슬롯에 업로드합니다.
-void FFrameSharedResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightInfo>& Lights)
+void FFrameRenderResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightInfo>& Lights)
 {
     const uint32 Count = static_cast<uint32>(Lights.size());
     LocalLightCount = Count;
-    // 현재 버퍼 용량이 부족하면 해제 후 재생성
     if (Count > LocalLightCapacity)
     {
         if (LocalLightSRV)
@@ -142,7 +151,6 @@ void FFrameSharedResources::UpdateLocalLights(ID3D11Device* Device, ID3D11Device
         LocalLightCapacity = NewCapacity;
     }
 
-    // 버퍼에 라이트 데이터 업로드
     if (LocalLightBuffer && Count > 0)
     {
         D3D11_MAPPED_SUBRESOURCE Mapped = {};
@@ -154,8 +162,40 @@ void FFrameSharedResources::UpdateLocalLights(ID3D11Device* Device, ID3D11Device
     }
 }
 
-void FFrameSharedResources::BindSystemSamplers(ID3D11DeviceContext* Ctx)
+void FFrameRenderResources::BindSystemSamplers(ID3D11DeviceContext* Ctx)
 {
     ID3D11SamplerState* Samplers[3] = { LinearClampSampler, LinearWrapSampler, PointClampSampler };
     Ctx->PSSetSamplers(0, 3, Samplers);
+}
+
+void FFrameRenderResources::EnsurePerObjectCBPoolCapacity(ID3D11Device* Device, uint32 RequiredCount)
+{
+    if (PerObjectCBPool.size() >= RequiredCount)
+    {
+        return;
+    }
+
+    const size_t OldCount = PerObjectCBPool.size();
+    PerObjectCBPool.resize(RequiredCount);
+
+    for (size_t Index = OldCount; Index < PerObjectCBPool.size(); ++Index)
+    {
+        PerObjectCBPool[Index].Create(Device, sizeof(FPerObjectConstants));
+    }
+}
+
+FConstantBuffer* FFrameRenderResources::GetPerObjectCBForProxy(ID3D11Device* Device, const FPrimitiveSceneProxy& Proxy)
+{
+    if (Proxy.ProxyId == UINT32_MAX)
+    {
+        return nullptr;
+    }
+
+    EnsurePerObjectCBPoolCapacity(Device, Proxy.ProxyId + 1);
+    return &PerObjectCBPool[Proxy.ProxyId];
+}
+
+void FFrameRenderResources::EnsureTextCharInfoMap(const FFontResource* Resource)
+{
+    TextBatch.EnsureCharInfoMap(Resource);
 }

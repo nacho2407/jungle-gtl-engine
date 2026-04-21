@@ -1,6 +1,6 @@
-#include "Render/Types/RenderStateStrings.h"
-#include "Render/Types/PipelineStateTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+#include "Render/Passes/Base/RenderStateStrings.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>
@@ -10,7 +10,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
-#include "Render/Resources/ShaderManager.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 #include "Texture/Texture2D.h"
 #include "Render/Renderer.h"
