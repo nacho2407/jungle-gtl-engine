@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Pipelines/RenderPipelineType.h"
+
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
+#include "Render/Pipelines/Registry/RenderPipelineType.h"
 
 /*
     파이프라인 그래프에서 자식 노드가 또 다른 파이프라인인지, 단일 패스인지 구분합니다.
@@ -18,8 +19,8 @@ enum class ERenderNodeKind
 */
 struct FRenderNodeRef
 {
-    ERenderNodeKind Kind = ERenderNodeKind::Pipeline;
-    int32 TypeValue = 0;
+    ERenderNodeKind Kind;
+    int32 TypeValue;
 };
 
 /*
@@ -27,7 +28,7 @@ struct FRenderNodeRef
 */
 struct FRenderPipelineDesc
 {
-    ERenderPipelineType Type = ERenderPipelineType::Scene;
+    ERenderPipelineType Type;
     TArray<FRenderNodeRef> Children;
 };
 

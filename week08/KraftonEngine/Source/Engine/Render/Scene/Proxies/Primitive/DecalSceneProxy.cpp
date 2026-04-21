@@ -1,9 +1,9 @@
-#include "Render/Types/PipelineStateTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
-#include "Render/Resources/ShaderManager.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
@@ -70,7 +70,7 @@ void FDecalSceneProxy::UpdateMesh()
     UpdateMaterial();
 
     MeshBuffer = nullptr;
-    SectionDraws.clear();
+    SectionRenderData.clear();
 
     if (DecalMaterial && DecalMaterial->GetShader())
     {

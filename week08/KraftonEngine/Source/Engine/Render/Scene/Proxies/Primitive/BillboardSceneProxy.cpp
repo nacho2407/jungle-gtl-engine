@@ -1,15 +1,17 @@
-#include "Render/Resources/ConstantBufferLayouts.h"
-#include "Render/Types/PipelineStateTypes.h"
-#include "Render/Types/PrimitiveShapeTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/BillboardSceneProxy.h"
 #include "Component/BillboardComponent.h"
-#include "Render/Resources/ShaderManager.h"
-#include "Render/Resources/MeshBufferManager.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
+#include "Render/Resources/Buffers/MeshBufferManager.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialSemantics.h"
 #include "Texture/Texture2D.h"
+#include <algorithm>
 
 // ============================================================
 // FBillboardSceneProxy
@@ -19,11 +21,37 @@ FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 {
     bPerViewportUpdate = true;
     bShowAABB = false;
+    bAllowViewModeShaderOverride = false;
 }
 
 UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const
 {
     return static_cast<UBillboardComponent*>(Owner);
+}
+
+namespace
+{
+ID3D11ShaderResourceView* ResolveBillboardTextureSRV(UMaterial* Material)
+{
+    if (!Material)
+    {
+        return nullptr;
+    }
+
+    for (const char* SlotName : { MaterialSemantics::DiffuseTextureSlot, "BaseColorTexture", "AlbedoTexture", "BaseTexture", "DiffuseMap", "AlbedoMap" })
+    {
+        UTexture2D* DiffuseTex = nullptr;
+        if (Material->GetTextureParameter(SlotName, DiffuseTex) && DiffuseTex)
+        {
+            if (ID3D11ShaderResourceView* SRV = DiffuseTex->GetSRV())
+            {
+                return SRV;
+            }
+        }
+    }
+
+    return nullptr;
+}
 }
 
 // ============================================================
@@ -34,45 +62,24 @@ void FBillboardSceneProxy::UpdateMesh()
     UBillboardComponent* Comp = GetBillboardComponent();
     UMaterial* Mat = Comp ? Comp->GetMaterial() : nullptr;
 
+    // Billboard는 ViewMode BaseDraw가 아닌 전용 textured-quad 경로를 사용합니다.
+    MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
+    Shader = FShaderManager::Get().GetShader(EShaderType::Billboard);
+    Pass = ERenderPass::AlphaBlend;
+    Blend = EBlendState::AlphaBlend;
+    DepthStencil = EDepthStencilState::DepthReadOnly;
+    Rasterizer = ERasterizerState::SolidNoCull;
+
+    DiffuseSRV = nullptr;
+    NormalSRV = nullptr;
+    MaterialCB[0] = nullptr;
+    MaterialCB[1] = nullptr;
+
     if (Mat)
     {
-        // TexturedQuad (FVertexPNCT with UVs)
-        MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
-
-        Shader = Mat->GetShader();
-        if (!Shader)
-        {
-            Shader = FShaderManager::Get().GetShader(EShaderType::Billboard);
-        }
-
-        Pass = Mat->GetRenderPass();
-
-        // 머티리얼 기반 렌더 상태 전파
-        Blend = Mat->GetBlendState();
-        DepthStencil = Mat->GetDepthStencilState();
-        Rasterizer = Mat->GetRasterizerState();
-
-        UTexture2D* DiffuseTex = nullptr;
-        if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
-        {
-            DiffuseSRV = DiffuseTex->GetSRV();
-        }
-        else
-        {
-            DiffuseSRV = nullptr;
-        }
-    }
-    else
-    {
-        MeshBuffer = Owner->GetMeshBuffer();
-        Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-        Pass = ERenderPass::Opaque;
-        DiffuseSRV = nullptr;
-
-        // 기본 상태
-        Blend = EBlendState::Opaque;
-        DepthStencil = EDepthStencilState::Default;
-        Rasterizer = ERasterizerState::SolidBackCull;
+        DiffuseSRV = ResolveBillboardTextureSRV(Mat);
+        MaterialCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        MaterialCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
     }
 }
 
@@ -86,23 +93,29 @@ void FBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     if (!bVisible)
         return;
 
-    // Update DiffuseSRV (material or texture may have changed)
-    UMaterial* Mat = Comp->GetMaterial();
+        UMaterial* Mat = Comp->GetMaterial();
     if (Mat)
     {
-        UTexture2D* DiffuseTex = nullptr;
-        if (Mat->GetTextureParameter("DiffuseTexture", DiffuseTex))
-        {
-            DiffuseSRV = DiffuseTex->GetSRV();
-        }
+        DiffuseSRV = ResolveBillboardTextureSRV(Mat);
+        MaterialCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        MaterialCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
     }
 
-    // SceneView 카메라 벡터로 per-view 빌보드 행렬 계산
-    FVector BillboardForward = SceneView.CameraForward * -1.0f;
-    FMatrix RotMatrix;
-    RotMatrix.SetAxes(BillboardForward, SceneView.CameraRight, SceneView.CameraUp);
-    FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
+    const FVector WorldScale = Comp->GetWorldScale();
+    const FVector SpriteScale(std::max(WorldScale.X, 1.0f), Comp->GetWidth() * WorldScale.Y, Comp->GetHeight() * WorldScale.Z);
 
-    PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
+    FMatrix WorldMatrix;
+    if (Comp->IsBillboardEnabled())
+    {
+        WorldMatrix = Comp->ComputeBillboardMatrix(SceneView.CameraForward);
+    }
+    else
+    {
+        WorldMatrix = FMatrix::MakeScaleMatrix(SpriteScale)
+            * Comp->GetRelativeMatrix()
+            * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
+    }
+
+    PerObjectConstants = FPerObjectConstants::FromWorldMatrix(WorldMatrix);
     MarkPerObjectCBDirty();
 }
