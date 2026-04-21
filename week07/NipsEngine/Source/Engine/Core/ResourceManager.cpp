@@ -22,11 +22,12 @@
 
 #pragma region __BINARY__
 
+namespace fs = std::filesystem;
+
 uint64 FResourceManager::GetFileWriteTimeTicks(const FString& Path) const
 {
-	namespace fs = std::filesystem;
-
-	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(Path)));
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	fs::path FilePath(FPaths::ToAbsolute(FPaths::ToWide(NormalizedPath)));
 	if (!fs::exists(FilePath))
 	{
 		return 0;
@@ -41,9 +42,8 @@ uint64 FResourceManager::GetFileWriteTimeTicks(const FString& Path) const
 
 FString FResourceManager::MakeStaticMeshBinaryPath(const FString& SourcePath) const
 {
-	namespace fs = std::filesystem;
-
-	fs::path SourceFsPath(FPaths::ToWide(SourcePath));
+	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
+	fs::path SourceFsPath(FPaths::ToWide(NormalizedSourcePath));
 
 	//	Root/Asset/Mesh/Bin
 	fs::path BinDir = fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin";
@@ -64,12 +64,13 @@ FString FResourceManager::MakeStaticMeshBinaryPath(const FString& SourcePath) co
 bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
 {
 	FStaticMeshBinaryHeader Header;
-	if (!BinarySerializer.ReadStaticMeshHeader(BinaryPath, Header))
+	const FString NormalizedBinaryPath = FPaths::Normalize(BinaryPath);
+	if (!BinarySerializer.ReadStaticMeshHeader(NormalizedBinaryPath, Header))
 	{
 		return false;
 	}
 
-	const uint64 SourceWriteTime = GetFileWriteTimeTicks(SourcePath);
+	const uint64 SourceWriteTime = GetFileWriteTimeTicks(FPaths::Normalize(SourcePath));
 	if (SourceWriteTime == 0)
 	{
 		return false;
@@ -154,7 +155,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			continue;
 		}
 		
-		const FString RelativePath = FPaths::ToString(fs::relative(FilePath, ProjectRootPath));
+		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
 
 		if (Extension == L".obj")
 		{
@@ -271,7 +272,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 				continue;
 			}
 
-			const FString RelativePath = FPaths::ToString(fs::relative(FilePath, ProjectRootPath));
+		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
 
 			if (Extension == L".obj")
 			{
@@ -678,8 +679,9 @@ void FResourceManager::ReleaseGPUResources()
 bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
 								  const D3D_SHADER_MACRO* Defines, uint32 PermutationKey)
 {
+	const FString NormalizedFilePath = FPaths::Normalize(FilePath);
 	UShader* Shader = nullptr;
-	auto It = Shaders.find(FilePath);
+	auto It = Shaders.find(NormalizedFilePath);
 
 	if (It != Shaders.end())
 	{
@@ -688,8 +690,8 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	else
 	{
 		Shader = UObjectManager::Get().CreateObject<UShader>();
-		Shader->FilePath = FilePath;
-		Shaders[FilePath] = Shader;
+		Shader->FilePath = NormalizedFilePath;
+		Shaders[NormalizedFilePath] = Shader;
 	}
 
 	FShader Permutation;
@@ -697,7 +699,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	TComPtr<ID3DBlob> VSBlob;
 	TComPtr<ID3DBlob> PSBlob;
 
-	FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(FilePath, VSEntryPoint, "vs_5_0", Defines, PermutationKey);
+	FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(NormalizedFilePath, VSEntryPoint, "vs_5_0", Defines, PermutationKey);
 	if (CompileResult.bSuccess)
 	{
 		VSBlob = CompileResult.Blob;
@@ -723,7 +725,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		&Permutation.VS);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create vertex shader: %s", FilePath.c_str());
+		UE_LOG("Failed to create vertex shader: %s", NormalizedFilePath.c_str());
 		return false;
 	}
 
@@ -731,7 +733,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		&Permutation.PS);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
+		UE_LOG("Failed to create pixel shader: %s", NormalizedFilePath.c_str());
 		return false;
 	}
 
@@ -742,39 +744,41 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 
 UShader* FResourceManager::GetShader(const FString& FilePath) const
 {
-	auto It = Shaders.find(FilePath);
+	const FString NormalizedFilePath = FPaths::Normalize(FilePath);
+	auto It = Shaders.find(NormalizedFilePath);
 	return (It != Shaders.end()) ? It->second : nullptr;
 }
 
 bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint)
 {
+    const FString NormalizedFilePath = FPaths::Normalize(FilePath);
     FComputeShader* Shader = nullptr;
-    auto It = ComputeShaders.find(FilePath);
+    auto It = ComputeShaders.find(NormalizedFilePath);
     if (It != ComputeShaders.end())
     {
         Shader = It->second;
-        return Shader;
+        return true;
     }
     else
     {
         Shader = new FComputeShader();
-        ComputeShaders[FilePath] = Shader;
+        ComputeShaders[NormalizedFilePath] = Shader;
     }
 
     TComPtr<ID3DBlob> CSBlob;
     TComPtr<ID3DBlob> ErrorBlob;
 
-    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(FilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(NormalizedFilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
                                     EntryPoint.c_str(), "cs_5_0", 0, 0, &CSBlob, &ErrorBlob);
     if (FAILED(hr))
     {
         if (ErrorBlob)
         {
-            UE_LOG("Compute Shader Compile Error (%s): %s", FilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+            UE_LOG("Compute Shader Compile Error (%s): %s", NormalizedFilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
         }
         else
         {
-            UE_LOG("Failed to compile compute shader: %s", FilePath.c_str());
+            UE_LOG("Failed to compile compute shader: %s", NormalizedFilePath.c_str());
         }
         return false;
     }
@@ -784,7 +788,7 @@ bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString&
                                            &Shader->CS);
     if (FAILED(hr))
     {
-        UE_LOG("Failed to create compute shader: %s", FilePath.c_str());
+        UE_LOG("Failed to create compute shader: %s", NormalizedFilePath.c_str());
         return false;
     }
 
@@ -793,7 +797,8 @@ bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString&
 
 FComputeShader* FResourceManager::GetComputeShader(const FString& FilePath) const
 {
-    auto It = ComputeShaders.find(FilePath);
+    const FString NormalizedFilePath = FPaths::Normalize(FilePath);
+    auto It = ComputeShaders.find(NormalizedFilePath);
     return (It != ComputeShaders.end()) ? It->second : nullptr;
 }
 
@@ -857,7 +862,8 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
 {
-	if (MtlFilePath.empty())
+	const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
+	if (NormalizedMtlFilePath.empty())
 	{
 		return false;
 	}
@@ -870,9 +876,9 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	}
 
 	TMap<FString, UMaterial*> Parsed;
-	if (!FObjMtlLoader::Load(MtlFilePath, Parsed, CachedDevice.Get()))
+	if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get()))
 	{
-		UE_LOG("Failed to load MTL: %s", MtlFilePath.c_str());
+		UE_LOG("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
 		return false;
 	}
 
@@ -883,7 +889,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
 	for (auto& [Name, Mat] : Parsed)
 	{
-		Mat->FilePath = MtlFilePath;
+		Mat->FilePath = NormalizedMtlFilePath;
 		Mat->SetShader(Shader);
 
 		if (Materials.find(Name) != Materials.end())
@@ -907,7 +913,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 		if (MaterialData.bHasBumpTexture && !MaterialData.BumpTexPath.empty())     LoadTexture(MaterialData.BumpTexPath, CachedDevice.Get());
 	}
 
-	UE_LOG("Loaded MTL: %s", MtlFilePath.c_str());
+	UE_LOG("Loaded MTL: %s", NormalizedMtlFilePath.c_str());
 	return true;
 }
 
@@ -940,6 +946,7 @@ UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name) 
 bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMaterial* Material)
 {
 	using json::JSON;
+	const FString NormalizedMatFilePath = FPaths::Normalize(MatFilePath);
 	JSON Root = JSON::Make(JSON::Class::Object);
 	Root["Name"] = Material->Name;
 	Root["Shader"] = Material->Shader ? Material->Shader->FilePath : "";
@@ -1012,10 +1019,10 @@ bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMate
 		Params.append(Param);
 	}
 	Root["Params"] = Params;
-	std::ofstream OutFile(FPaths::ToWide(MatFilePath));
+	std::ofstream OutFile(FPaths::ToWide(NormalizedMatFilePath));
 	if (!OutFile.is_open())
 	{
-		UE_LOG("Failed to open material file for writing: %s", MatFilePath.c_str());
+		UE_LOG("Failed to open material file for writing: %s", NormalizedMatFilePath.c_str());
 		return false;
 	}
 	OutFile << Root.dump(4);
@@ -1025,6 +1032,7 @@ bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMate
 bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath, const UMaterialInstance* MaterialInstance)
 {
 	using json::JSON;
+	const FString NormalizedMatInstFilePath = FPaths::Normalize(MatInstFilePath);
 	JSON Root = JSON::Make(JSON::Class::Object);
 	Root["Name"] = MaterialInstance->GetName();
 	Root["Parent"] = MaterialInstance->Parent->Name;
@@ -1105,10 +1113,10 @@ bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath,
 		Params.append(Param);
 	}
 	Root["OverridedParams"] = Params;
-	std::ofstream OutFile(FPaths::ToWide(MatInstFilePath));
+	std::ofstream OutFile(FPaths::ToWide(NormalizedMatInstFilePath));
 	if (!OutFile.is_open())
 	{
-		UE_LOG("Failed to open material instance file for writing: %s", MatInstFilePath.c_str());
+		UE_LOG("Failed to open material instance file for writing: %s", NormalizedMatInstFilePath.c_str());
 		return false;
 	}
 	OutFile << Root.dump(4);
@@ -1118,11 +1126,12 @@ bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath,
 bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 {
 	using json::JSON;
+	const FString NormalizedMatFilePath = FPaths::Normalize(MatFilePath);
 
-	std::ifstream MatFile(FPaths::ToWide(MatFilePath));
+	std::ifstream MatFile(FPaths::ToWide(NormalizedMatFilePath));
 	if (!MatFile.is_open())
 	{
-		UE_LOG("Failed to open material file: %s", MatFilePath.c_str());
+		UE_LOG("Failed to open material file: %s", NormalizedMatFilePath.c_str());
 		return false;
 	}
 
@@ -1219,7 +1228,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 
 	FString MatName = Root["Name"].ToString();
 	FString ShaderPath = Root["Shader"].ToString();
-	UMaterial* Material = GetOrCreateMaterial(MatName, MatFilePath, ShaderPath);
+	UMaterial* Material = GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderPath);
 
 	for (auto& Param : Root["Params"].ArrayRange())
 	{
@@ -1300,30 +1309,33 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 
 UTexture* FResourceManager::GetTexture(const FString& Path) const
 {
-	auto It = Textures.find(Path);
-	return (It != Textures.end()) ? It->second : nullptr;
+    const FString NormalizedPath = FPaths::Normalize(Path);
+    auto It = Textures.find(NormalizedPath);
+    return (It != Textures.end()) ? It->second : nullptr;
 }
 
 UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Device)
 {
-	if (Device == nullptr)
-	{
-		Device = CachedDevice.Get();
-	}
+    if (Device == nullptr)
+    {
+        Device = CachedDevice.Get();
+    }
 
-	if (UTexture* Cached = GetTexture(Path))
-	{
-		return Cached;
-	}
+    const FString NormalizedPath = FPaths::Normalize(Path);
 
-	UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
-	if (!Texture->LoadFromFile(Path, Device))
-	{
-		return nullptr;
-	}
+    if (UTexture* Cached = GetTexture(NormalizedPath))
+    {
+        return Cached;
+    }
 
-	Textures[Path] = Texture;
-	return Texture;
+    UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
+    if (!Texture->LoadFromFile(NormalizedPath, Device))
+    {
+        return nullptr;
+    }
+
+    Textures[NormalizedPath] = Texture;
+    return Texture;
 }
 
 // --- Font ---
@@ -1354,7 +1366,7 @@ void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath
 {
 	FFontResource Resource;
 	Resource.Name = FontName;
-	Resource.Path = InPath;
+	Resource.Path = FPaths::Normalize(InPath);
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
 	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
@@ -1389,7 +1401,7 @@ void FResourceManager::RegisterParticle(const FName& ParticleName, const FString
 {
 	FParticleResource Resource;
 	Resource.Name = ParticleName;
-	Resource.Path = InPath;
+	Resource.Path = FPaths::Normalize(InPath);
 	Resource.Columns = Columns;
 	Resource.Rows = Rows;
 	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
@@ -1408,33 +1420,34 @@ TArray<FString> FResourceManager::GetParticleNames() const
 
 UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 {
+	const FString NormalizedPath = FPaths::Normalize(Path);
 	// 메모리 캐시 확인
-	if (UStaticMesh* FoundMesh = FindStaticMesh(Path))
+	if (UStaticMesh* FoundMesh = FindStaticMesh(NormalizedPath))
 	{
 		return FoundMesh;
 	}
 
- 	LoadMaterial(Path, "Shaders/UberLit.hlsl");
+ 	LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
 
 	for (const auto& [Key, Resource] : StaticMeshRegistry)
 	{
-		if (Resource.Path == Path)
+		if (Resource.Path == NormalizedPath)
 		{
 			LoadOptions.bNormalizeToUnitCube = Resource.bNormalizeToUnitCube;
 			break;
 		}
 	}
 
-	const FString BinaryPath = MakeStaticMeshBinaryPath(Path);
+	const FString BinaryPath = MakeStaticMeshBinaryPath(NormalizedPath);
 
 	FStaticMesh* LoadedMeshData = nullptr;
 	double BinaryLoadSec = 0.0;
 	double ObjLoadSec = 0.0;
 
 	//	2. Binary Load 시도
-	if (IsStaticMeshBinaryValid(Path, BinaryPath))
+	if (IsStaticMeshBinaryValid(NormalizedPath, BinaryPath))
 	{
 		const auto BinaryStart = std::chrono::steady_clock::now();
 
@@ -1453,22 +1466,22 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	if (LoadedMeshData == nullptr)
 	{
 		const auto ObjStart = std::chrono::steady_clock::now();
-		LoadedMeshData = ObjLoader.Load(Path, LoadOptions);
+		LoadedMeshData = ObjLoader.Load(NormalizedPath, LoadOptions);
 		const auto ObjEnd = std::chrono::steady_clock::now();
 		ObjLoadSec = std::chrono::duration<double>(ObjEnd - ObjStart).count();
 
 		if (LoadedMeshData == nullptr)
 		{
-			UE_LOG("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", Path.c_str(), BinaryLoadSec,
+			UE_LOG("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", NormalizedPath.c_str(), BinaryLoadSec,
 			       ObjLoadSec);
 			return nullptr;
 		}
 
 		//	4. OBJ 로드 성공 시 Binary 저장
-		const bool bSaveBinaryOk = BinarySerializer.SaveStaticMesh(BinaryPath, Path, *LoadedMeshData);
+		const bool bSaveBinaryOk = BinarySerializer.SaveStaticMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
 		UE_LOG(
 			"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=%s | BinaryPath=%s",
-			Path.c_str(),
+			NormalizedPath.c_str(),
 			ObjLoadSec,
 			bSaveBinaryOk ? "OK" : "FAIL",
 			BinaryPath.c_str());
@@ -1477,7 +1490,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	{
 		UE_LOG(
 			"[StaticMeshLoad] Source=Binary | Path=%s | BinarySec=%.6f | BinaryPath=%s",
-			Path.c_str(),
+			NormalizedPath.c_str(),
 			BinaryLoadSec,
 			BinaryPath.c_str());
 	}
@@ -1503,21 +1516,22 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
         const auto LodEnd = std::chrono::steady_clock::now();
         double LodSec = std::chrono::duration<double>(LodEnd - LodStart).count();
         UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec",
-               LoadedMesh->GetValidLODCount(), Path.c_str(), LodSec);
+               LoadedMesh->GetValidLODCount(), NormalizedPath.c_str(), LodSec);
     }
     else
     {
-        UE_LOG("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", Path.c_str());
+        UE_LOG("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", NormalizedPath.c_str());
     }
 
-    StaticMeshes.insert({Path, LoadedMesh});
+    StaticMeshes.insert({NormalizedPath, LoadedMesh});
     
     return LoadedMesh;
 }
 
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 {
-	auto It = StaticMeshes.find(Path);
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	auto It = StaticMeshes.find(NormalizedPath);
 	if (It == StaticMeshes.end())
 	{
 		return nullptr;

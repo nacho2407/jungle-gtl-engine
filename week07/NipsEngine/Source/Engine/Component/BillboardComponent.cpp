@@ -2,6 +2,8 @@
 #include <cmath>
 #include "GameFramework/World.h"
 #include "Editor/Viewport/ViewportCamera.h"
+
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 
 DEFINE_CLASS(UBillboardComponent, UPrimitiveComponent)
@@ -82,7 +84,7 @@ FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
 
 void UBillboardComponent::SetTextureName(FString InName)
 {
-    TextureName = InName;
+    TextureName = FPaths::Normalize(InName);
     Texture = FResourceManager::Get().GetTexture(InName);
 }
 
