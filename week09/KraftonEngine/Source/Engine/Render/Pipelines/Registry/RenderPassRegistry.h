@@ -25,6 +25,7 @@ class FOverlayTextPass;
 */
 enum class ERenderPassNodeType
 {
+    GridPass,
     DepthPrePass,
     LightCullingPass,
     BaseDrawPass,

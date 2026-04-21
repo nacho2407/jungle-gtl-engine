@@ -6,5 +6,6 @@ class FDrawCommandList;
 class FLineDrawCommandBuilder
 {
 public:
-    static void Build(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+    static void BuildGrid(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+    static void BuildDebugLines(FRenderPipelineContext& Context, FDrawCommandList& OutList);
 };
