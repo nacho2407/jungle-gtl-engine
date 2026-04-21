@@ -90,6 +90,7 @@ void FRenderer::CreateResources()
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
+	Resources.DecalStructuredBuffer.Create(Device.GetDevice(), sizeof(FDecalInfo), 256);
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -126,6 +127,7 @@ void FRenderer::Release()
 	Resources.LightCulledIndexBuffer.Release();
 	Resources.LightTileBuffer.Release();
     Resources.MPLightStructuredBuffer.Release();
+	Resources.DecalStructuredBuffer.Release();
 
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
@@ -245,8 +247,8 @@ void FRenderer::InvalidateSceneFinalTargets()
 void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	UpdateFrameBuffer(Context, InRenderBus);
-    UpdateLightBuffer(Context, InRenderBus);
+	UpdateLightBuffer(Context, InRenderBus);
+    UpdateFrameBuffer(Context, InRenderBus);
 
 	/** Opaque 만 테스트 */
     
@@ -412,7 +414,8 @@ void FRenderer::InitializePassRenderStates()
 	UShader* OutlineShader = FResourceManager::Get().GetShader("Shaders/OutlinePostProcess.hlsl");
 
 	S[(uint32)E::Opaque] = { PrimitiveShader, false };
-	S[(uint32)E::Light] = { LightPassShader, false};	
+	S[(uint32)E::Decal] = { DecalShader, false };
+	S[(uint32)E::Light] = { LightPassShader, false};
 	S[(uint32)E::Translucent] = { PrimitiveShader, false };
 	S[(uint32)E::Fog] = { FogPassShader, false};
     S[(uint32)E::FXAA] = { FXAAShader, false};
@@ -792,10 +795,119 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 
 void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
 {
-    FLightConstants lightConstantData;
+	// Update Decal struct buf and textures — one entry per unique decal
+    TArray<UTexture*> DecalTextures;
+    TArray<FDecalInfo> DecalConstantArray;
+    const auto& Cmds = InRenderBus.GetCommands(ERenderPass::Decal);
+    for (const auto& Cmd : Cmds)
+    {
+        bool bAlreadyAdded = false;
+        for (const auto& Existing : DecalConstantArray)
+        {
+            if (memcmp(&Existing.InvDecalWorld, &Cmd.Constants.Decal.InvDecalWorld, sizeof(FMatrix)) == 0)
+            {
+                bAlreadyAdded = true;
+                break;
+            }
+        }
+        if (bAlreadyAdded) continue;
+
+        FDecalInfo Constant = {};
+        FMaterialParamValue TexValue;
+        UTexture* Tex = nullptr;
+        if (Cmd.Material && Cmd.Material->GetParam("DiffuseMap", TexValue))
+            Tex = std::get<UTexture*>(TexValue.Value);
+        DecalTextures.push_back(Tex);
+        Constant.TextureIndex = (uint32)DecalConstantArray.size();
+        Constant.InvDecalWorld = Cmd.Constants.Decal.InvDecalWorld;
+        Constant.ColorTint = Cmd.Constants.Decal.ColorTint;
+        DecalConstantArray.push_back(Constant);
+    }
+    UniqueDecalCount = (uint32)DecalConstantArray.size();
+    if (!DecalConstantArray.empty())
+    {
+        Resources.DecalStructuredBuffer.Update(Context, DecalConstantArray.data(), UniqueDecalCount);
+        ID3D11ShaderResourceView* DecalSRV = Resources.DecalStructuredBuffer.GetSRV();
+        Context->PSSetShaderResources(7, 1, &DecalSRV);
+    }
+
+    if (DecalTextures != CachedDecalTextures)
+    {
+        DecalTextureArray.Reset();
+        DecalTextureArraySRV.Reset();
+
+        // Read dimensions/format from first valid texture
+        ID3D11Texture2D* FirstTex2D = nullptr;
+        for (auto* Tex : DecalTextures)
+        {
+            if (!Tex || !Tex->GetSRV())
+                continue;
+            ID3D11Resource* Res = nullptr;
+            Tex->GetSRV()->GetResource(&Res);
+            Res->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&FirstTex2D));
+            Res->Release();
+            if (FirstTex2D)
+                break;
+        }
+
+        if (FirstTex2D)
+        {
+            D3D11_TEXTURE2D_DESC SrcDesc = {};
+            FirstTex2D->GetDesc(&SrcDesc);
+            FirstTex2D->Release();
+
+            D3D11_TEXTURE2D_DESC Desc = {};
+            Desc.Width = SrcDesc.Width;
+            Desc.Height = SrcDesc.Height;
+            Desc.MipLevels = 1;
+            Desc.ArraySize = (uint32)DecalTextures.size();
+            Desc.Format = SrcDesc.Format;
+            Desc.SampleDesc.Count = 1;
+            Desc.Usage = D3D11_USAGE_DEFAULT;
+            Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+            Device.GetDevice()->CreateTexture2D(&Desc, nullptr, &DecalTextureArray);
+
+            for (uint32 i = 0; i < (uint32)DecalTextures.size(); i++)
+            {
+                auto* Tex = DecalTextures[i];
+                if (!Tex || !Tex->GetSRV())
+                    continue;
+                ID3D11Resource* Res = nullptr;
+                Tex->GetSRV()->GetResource(&Res);
+                Context->CopySubresourceRegion(
+                    DecalTextureArray.Get(), D3D11CalcSubresource(0, i, 1),
+                    0, 0, 0,
+                    Res, 0, nullptr);
+                Res->Release();
+            }
+
+            D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+            SRVDesc.Format = Desc.Format;
+            SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+            SRVDesc.Texture2DArray.MostDetailedMip = 0;
+            SRVDesc.Texture2DArray.MipLevels = 1;
+            SRVDesc.Texture2DArray.FirstArraySlice = 0;
+            SRVDesc.Texture2DArray.ArraySize = Desc.ArraySize;
+
+            Device.GetDevice()->CreateShaderResourceView(DecalTextureArray.Get(), &SRVDesc, &DecalTextureArraySRV);
+        }
+
+        CachedDecalTextures = DecalTextures;
+    }
+
+    if (DecalTextureArraySRV)
+    {
+        ID3D11ShaderResourceView* ArraySRV = DecalTextureArraySRV.Get();
+        Context->VSSetShaderResources(8, 1, &ArraySRV);
+        Context->PSSetShaderResources(8, 1, &ArraySRV);
+    }
+
+	FLightConstants lightConstantData;
     lightConstantData.AmbientLight = InRenderBus.AmbientLightInfo;
     lightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
     lightConstantData.LightCount = (uint32)InRenderBus.LightInfos.size();
+	lightConstantData.DecalCount = UniqueDecalCount;
 
     Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FLightConstants));
     ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
@@ -803,8 +915,10 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus
     Context->PSSetConstantBuffers(3, 1, &b3);
     Context->CSSetConstantBuffers(3, 1, &b3);
 
-	Resources.LightStructuredBuffer.Update(Context, InRenderBus.LightInfos.data(), (uint32)InRenderBus.LightInfos.size());
-    ID3D11ShaderResourceView* SRVs[] = { Resources.LightStructuredBuffer.GetSRV(), };
+    Resources.LightStructuredBuffer.Update(Context, InRenderBus.LightInfos.data(), (uint32)InRenderBus.LightInfos.size());
+    ID3D11ShaderResourceView* SRVs[] = {
+        Resources.LightStructuredBuffer.GetSRV(),
+    };
     Context->VSSetShaderResources(4, 1, SRVs);
     Context->PSSetShaderResources(4, 1, SRVs);
 }
