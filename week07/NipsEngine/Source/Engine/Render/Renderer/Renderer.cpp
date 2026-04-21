@@ -30,26 +30,26 @@ void FRenderer::Create(HWND hWindow)
     auto defines_blinnphong = LightMacros("LIGHTING_MODEL_PHONG");
 
 	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
-	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_gouraud.data(),    (uint32)EShaderLightPermutationKey::Gouraud);
-    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_lambert.data(),    (uint32)EShaderLightPermutationKey::Lambert);
-    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_blinnphong.data(), (uint32)EShaderLightPermutationKey::BlinnPhong);
-    FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_gouraud.data(), (uint32)EShaderLightPermutationKey::Gouraud);
-    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_lambert.data(), (uint32)EShaderLightPermutationKey::Lambert);
-    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout), defines_blinnphong.data(), (uint32)EShaderLightPermutationKey::BlinnPhong);
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
+	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", defines_gouraud.data(),    (uint32)EShaderLightPermutationKey::Gouraud);
+    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", defines_lambert.data(),    (uint32)EShaderLightPermutationKey::Lambert);
+    FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", defines_blinnphong.data(), (uint32)EShaderLightPermutationKey::BlinnPhong);
+    FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", defines_gouraud.data(), (uint32)EShaderLightPermutationKey::Gouraud);
+    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", defines_lambert.data(), (uint32)EShaderLightPermutationKey::Lambert);
+    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", defines_blinnphong.data(), (uint32)EShaderLightPermutationKey::BlinnPhong);
+    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
 
 	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main");
 }

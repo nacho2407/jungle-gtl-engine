@@ -680,7 +680,6 @@ void FResourceManager::ReleaseGPUResources()
 }
 
 bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-                                  const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount,
 								  const D3D_SHADER_MACRO* Defines, uint32 PermutationKey)
 {
 	UShader* Shader = nullptr;
@@ -750,17 +749,6 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	{
 		UE_LOG("Failed to create pixel shader: %s", FilePath.c_str());
 		return false;
-	}
-
-	if (InputElements != nullptr && InputElementCount > 0)
-	{
-		hr = CachedDevice->CreateInputLayout(InputElements, InputElementCount, VSBlob->GetBufferPointer(),
-			VSBlob->GetBufferSize(), &Permutation.InputLayout);
-		if (FAILED(hr))
-		{
-			UE_LOG("Failed to create input layout: %s", FilePath.c_str());
-			return false;
-		}
 	}
 
 	Shader->AddPermutation(PermutationKey, Permutation);
