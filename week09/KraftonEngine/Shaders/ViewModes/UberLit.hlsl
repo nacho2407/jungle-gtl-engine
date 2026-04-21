@@ -104,7 +104,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     {
  
         FLocalLightInfo LocalLight = g_LightBuffer[i];
-        FinalColor+= LocalLightLambert(LocalLight, Normal, BaseColor, UV);
+        FinalColor+= float4( LocalLightLambert(LocalLight, Normal, BaseColor, UV), 0);
 
     }
     
