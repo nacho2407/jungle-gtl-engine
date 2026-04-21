@@ -94,7 +94,6 @@ float4 LocalLightLambert(FLocalLightInfo LocalLight, float3 Normal, float4 BaseC
     
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;
     float3 LitColor = BaseColor.rgb * Diffuse * LightColor * DistanceFalloff * SpotFalloff;
-    return float4(LocalLight.Color, 1);
     return float4(LitColor, BaseColor.a);
 }
 #endif

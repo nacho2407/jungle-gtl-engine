@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Pipelines/Registry/ViewModePassConfig.h"
 
 struct FRenderPipelineContext;
 class FDrawCommandList;
+
 
 class FFullscreenDrawCommandBuilder
 {
