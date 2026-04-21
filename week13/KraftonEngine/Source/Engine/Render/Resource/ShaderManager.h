@@ -1,10 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Singleton.h"
 #include "Render/Resource/Shader.h"
 #include "Core/CoreTypes.h"
 #include <memory>
 #include <functional>
+#include <string_view>
 
 // ============================================================
 // FShaderKey — 셰이더 캐시 조회 키 (경로 + 매크로 조합)
@@ -82,7 +83,7 @@ namespace EShaderPath
 	inline constexpr const char* SceneDepth        = "Shaders/PostProcess/SceneDepth.hlsl";
 	inline constexpr const char* SceneNormal       = "Shaders/PostProcess/SceneNormal.hlsl";
 	inline constexpr const char* HeightFog         = "Shaders/PostProcess/HeightFog.hlsl";
-	inline constexpr const char* LightCulling     = "Shaders/PostProcess/LightCulling.hlsl";
+	inline constexpr const char* LightCulling      = "Shaders/PostProcess/LightCulling.hlsl";
 
 	// UI — 2D/텍스트/파티클
 	inline constexpr const char* Font              = "Shaders/UI/Font.hlsl";
@@ -96,10 +97,12 @@ namespace EShaderPath
 // ============================================================
 namespace EUberLitDefines
 {
-	inline const D3D_SHADER_MACRO Unlit[]    = { {"LIGHTING_MODEL_UNLIT","1"}, {nullptr,nullptr} };
-	inline const D3D_SHADER_MACRO Gouraud[]  = { {"LIGHTING_MODEL_GOURAUD","1"}, {"USE_TILE_CULLING","0"}, {nullptr,nullptr} };
-	inline const D3D_SHADER_MACRO Lambert[]  = { {"LIGHTING_MODEL_LAMBERT","1"}, {"USE_TILE_CULLING","1"}, {nullptr,nullptr} };
-	inline const D3D_SHADER_MACRO Phong[]    = { {"LIGHTING_MODEL_PHONG","1"},   {"USE_TILE_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Default[] = { {"LIGHTING_MODEL_PHONG","1"},   {"USE_CLUSTER_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Unlit[]   = { {"LIGHTING_MODEL_UNLIT","1"},   {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Gouraud[] = { {"LIGHTING_MODEL_GOURAUD","1"}, {"USE_CLUSTER_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Lambert[] = { {"LIGHTING_MODEL_LAMBERT","1"}, {"USE_CLUSTER_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Phong[]   = { {"LIGHTING_MODEL_PHONG","1"},   {"USE_CLUSTER_CULLING","1"}, {nullptr,nullptr} };
+	inline const D3D_SHADER_MACRO Toon[]    = { {"LIGHTING_MODEL_TOON","1"},    {"USE_CLUSTER_CULLING","1"}, {nullptr,nullptr} };
 }
 
 // ============================================================

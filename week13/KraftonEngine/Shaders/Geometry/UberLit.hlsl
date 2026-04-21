@@ -19,7 +19,7 @@
 #endif
 
 // ── 기본값 설정 ──
-#if !defined(LIGHTING_MODEL_GOURAUD) && !defined(LIGHTING_MODEL_LAMBERT) && !defined(LIGHTING_MODEL_PHONG) && !defined(LIGHTING_MODEL_UNLIT)
+#if !defined(LIGHTING_MODEL_GOURAUD) && !defined(LIGHTING_MODEL_LAMBERT) && !defined(LIGHTING_MODEL_PHONG) && !defined(LIGHTING_MODEL_TOON) && !defined(LIGHTING_MODEL_UNLIT)
 #define LIGHTING_MODEL_PHONG 1
 #endif
 
@@ -163,6 +163,9 @@ UberPS_Output PS(UberVS_Output input)
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
     diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
     specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
+
+#elif defined(LIGHTING_MODEL_TOON) && LIGHTING_MODEL_TOON
+    diffuse = AccumulateToonDiffuse(input.worldPos, N, input.position);
 #endif
 
     // Culling Heatmap → SV_TARGET2
@@ -172,6 +175,9 @@ UberPS_Output PS(UberVS_Output input)
         uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
         uint2 gridData = TileLightGrid[tileIdx];
         uint LightCount = gridData.y;
+        #elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
+        uint clusterIdx = ComputeClusterIndex(input.position, input.worldPos);
+        uint LightCount = g_ClusterLightGrid[clusterIdx].y;
         #else
         uint LightCount = NumActivePointLights + NumActiveSpotLights;
         #endif
@@ -184,6 +190,10 @@ UberPS_Output PS(UberVS_Output input)
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
     // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
+#if defined(LIGHTING_MODEL_TOON) && LIGHTING_MODEL_TOON
+    float rimMask = CalcRimMask(N, V);
+    finalColor += baseColor.rgb * rimMask * g_ToonRimStrength;
+#endif
     finalColor = ApplyWireframe(finalColor);
 #endif
 
@@ -192,7 +202,7 @@ UberPS_Output PS(UberVS_Output input)
 
 #if !defined(LIGHTING_MODEL_UNLIT)
     // ViewLightCulling 토글 시 Color도 히트맵으로 대체
-    if (ViewLightCulling)
+    if (ViewLightCulling || ShowClusterHeatMap)
     {
         output.Color = output.Culling;
     }

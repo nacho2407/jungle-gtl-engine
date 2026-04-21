@@ -8,6 +8,7 @@ enum class EViewMode : int32
 	Unlit,
 	Lit_Gouraud,
 	Lit_Lambert,
+	Lit_Toon,
 	Wireframe,
 	SceneDepth,
 	WorldNormal,
@@ -28,6 +29,7 @@ struct FShowFlags
 	bool bFog = true;
 	bool bFXAA = false;
 	bool bViewLightCulling = false;
+	bool bClusterHeatMap = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

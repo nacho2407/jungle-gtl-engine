@@ -104,6 +104,7 @@ void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext
 	FFrameConstants frameConstantData = {};
 	frameConstantData.View = Frame.View;
 	frameConstantData.Projection = Frame.Proj;
+	frameConstantData.InvProj = Frame.Proj.GetInverse();
 	frameConstantData.InvViewProj = (Frame.View * Frame.Proj).GetInverse();
 	frameConstantData.bIsWireframe = (Frame.RenderOptions.ViewMode == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = Frame.WireframeColor;
@@ -118,9 +119,10 @@ void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext
 	ID3D11Buffer* b0 = FrameBuffer.GetBuffer();
 	Ctx->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Ctx->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+	Ctx->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame)
+void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame, const FClusterCullingState* ClusterState)
 {
 	ID3D11Device* Dev = Device.GetDevice();
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
@@ -167,6 +169,11 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 
 	GlobalLightingData.ViewLightCulling = Frame.RenderOptions.ShowFlags.bViewLightCulling;
 	GlobalLightingData.HeatMapMax = Frame.RenderOptions.HeatMapMax;
+	GlobalLightingData.ShowClusterHeatMap = Frame.RenderOptions.ShowFlags.bClusterHeatMap ? 1u : 0u;
+	if (ClusterState)
+	{
+		GlobalLightingData.ClusterCullingState = *ClusterState;
+	}
 
 	// 이전 프레임 타일 컬링 결과에서 타일 수 읽기 (1-frame latent)
 	GlobalLightingData.NumTilesX = TileCullingResource.TileCountX;
@@ -176,6 +183,7 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 	ID3D11Buffer* b4 = LightingConstantBuffer.GetBuffer();
 	Ctx->VSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 	Ctx->PSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
+	Ctx->CSSetConstantBuffers(ECBSlot::Lighting, 1, &b4);
 
 	ForwardLights.Update(Dev, Ctx, Infos);
 	Ctx->VSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
