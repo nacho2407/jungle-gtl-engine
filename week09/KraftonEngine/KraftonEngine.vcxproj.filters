@@ -200,7 +200,7 @@
       <UniqueIdentifier>{713a2c72-6eb2-ac6b-0cfc-082bd3ff2aa7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Submission\Collect">
-      <UniqueIdentifier>{8229e9da-13c4-a415-e8dd-263299ff61f3}</UniqueIdentifier>
+      <UniqueIdentifier>{1388fa05-c6d9-4e54-2522-b0c4bb380e6c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Submission\Command">
       <UniqueIdentifier>{bdf8f055-a06f-aa65-8bbf-bea4e8e09e4c}</UniqueIdentifier>
@@ -249,6 +249,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\PreDepth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\Geometry\VertexLayouts.hlsl">
       <Filter>Shaders\Common\Geometry</Filter>
     </FxCompile>
@@ -324,7 +327,13 @@
     <FxCompile Include="Shaders\Passes\Scene\HeightFog.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\LightCullingCommon.hlsl">
+      <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\LightingPass.hlsl">
+      <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Visibility\ClusterBinningCS.hlsl">
@@ -354,8 +363,6 @@
     <FxCompile Include="Shaders\ViewModes\UberLit.hlsl">
       <Filter>Shaders\ViewModes</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\LightCullingCommon.hlsl" />
-    <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -613,6 +620,9 @@
     <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp">
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp">
+      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp">
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClCompile>
@@ -641,6 +651,9 @@
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp">
@@ -760,9 +773,6 @@
     <ClCompile Include="Source\Engine\Render\Submission\Batching\LineBatch.cpp">
       <Filter>Source\Engine\Render\Submission\Batching</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp">
-      <Filter>Source\Engine\Render\Submission\Collect</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectOverlay.cpp">
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
@@ -772,11 +782,17 @@
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectScenePrimitives.cpp">
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.cpp">
       <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Command\DrawCommandList.cpp">
       <Filter>Source\Engine\Render\Submission\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Visibility\TileBasedLightCulling.cpp">
+      <Filter>Source\Engine\Render\Visibility</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Visibility\Frustum</Filter>
@@ -860,9 +876,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Visibility\TileBasedLightCulling.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1174,9 +1187,6 @@
     <ClInclude Include="Source\Engine\Render\Overlay\OverlayBatchSet.h">
       <Filter>Source\Engine\Render\Overlay</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Overlay\CollectedOverlayData.h">
-      <Filter>Source\Engine\Render\Overlay</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Base\FullscreenPassBase.h">
       <Filter>Source\Engine\Render\Passes\Base</Filter>
     </ClInclude>
@@ -1202,6 +1212,9 @@
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h">
+      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h">
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h">
@@ -1235,6 +1248,9 @@
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h">
@@ -1480,6 +1496,9 @@
     <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommandList.h">
       <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Visibility\TileBasedLightCulling.h">
+      <Filter>Source\Engine\Render\Visibility</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.h">
       <Filter>Source\Engine\Render\Visibility\Frustum</Filter>
     </ClInclude>
@@ -1585,9 +1604,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Visibility\TileBasedLightCulling.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
