@@ -798,6 +798,17 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			ImGui::EndCombo();
 		}
 
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
+			{
+				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+				Slot->Path = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()));
+				bChanged = true;
+			}
+			ImGui::EndDragDropTarget();
+		}
+
 		ImGui::EndGroup();
 		break;
 	}

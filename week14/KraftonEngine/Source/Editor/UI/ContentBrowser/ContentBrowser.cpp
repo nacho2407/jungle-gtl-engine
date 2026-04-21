@@ -20,12 +20,16 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 		nullptr, ICons["Directory"].GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_landscape_40x.png").c_str(),
+		InDevice, (IconDir + L"World_64x.png").c_str(),
 		nullptr, ICons[".Scene"].GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(
 		InDevice, (IconDir + L"icon_MatEd_Mesh_40x.png").c_str(),
 		nullptr, ICons[".obj"].GetAddressOf());
+
+	DirectX::CreateWICTextureFromFile(
+		InDevice, (IconDir + L"Sphere_64x.png").c_str(),
+		nullptr, ICons[".mat"].GetAddressOf());
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -116,6 +120,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 		else if (Content.Path.extension() == ".obj")
 		{
 			element = std::make_unique<ObjectElement>();
+			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".mat")
+		{
+			element = std::make_unique<MaterialElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else

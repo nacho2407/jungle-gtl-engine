@@ -482,6 +482,44 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 	return JsonPath;
 }
 
+// MTL 정보에서 머티리얼 mat 파일로 변환하는 함수
+FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
+{
+	FString MatPath = "Asset/Materials/" + MtlInfo->MaterialSlotName + ".mat";
+
+	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
+	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
+		return MatPath;
+
+	json::JSON JsonData;
+	JsonData["PathFileName"] = MatPath;
+	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl"; // 기본 셰이더
+	JsonData["RenderPass"] = "Opaque";
+
+	if (!MtlInfo->map_Kd.empty())
+	{
+		JsonData["Textures"]["DiffuseTexture"] = MtlInfo->map_Kd;
+
+		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+	else
+	{
+
+		JsonData["Parameters"]["SectionColor"][0] = MtlInfo->Kd.X;
+		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
+		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
+		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+
+	std::ofstream File(FPaths::ToWide(MatPath));
+	File << JsonData.dump();
+
+	return MatPath;
+}
+
 FVector FObjImporter::RemapPosition(const FVector& ObjPos, EForwardAxis Axis)
 {
 	// OBJ 원본 좌표 (Ox, Oy, Oz) → 엔진 (Ex, Ey, Ez)
@@ -550,8 +588,10 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
 
 			// Convert() 안에서 기존 직접 세팅 대신
-			FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
-			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
+			//FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
+			FString MaterialPath = ConvertMtlInfoToMat(MatchedMaterial); // .mat 파일 생성
+
+			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(MaterialPath);
 
 			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
 			FStaticMaterial NewStaticMaterial;
