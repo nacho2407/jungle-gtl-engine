@@ -202,42 +202,6 @@ struct FBillboardConstants
 	float Height = 1.0f;
 	FColor Color = FColor::White();
 };
-// StaticMeshBuffer (b6) — ShaderStaticMesh.hlsl 대응
-// 완전 Obj전용입니다. 추후 Bump를 Normal로 바꾸면 됩니다.
-struct FStaticMeshConstants
-{
-	// Phong Material
-	FVector AmbientColor  = { 0.2f, 0.2f, 0.2f };
-	float   _Pad0         = 0.0f;
-
-	FVector DiffuseColor  = { 0.8f, 0.8f, 0.8f };
-	float   _Pad1         = 0.0f;
-
-	FVector SpecularColor = { 0.5f, 0.5f, 0.5f };
-	float   Shininess     = 32.0f;
-
-	// ScrollUV
-	float  ScrollX          = 0.f;
-	float  ScrollY          = 0.f;
-	uint32 bHasDiffuseMap   = 0;     // cbuffer bytes 76-79  — HLSL uint bHasDiffuseMap 대응
-	uint32  bHasSpecularMap  = 0;        // cbuffer bytes 80-83  — HLSL uint bHasSpecularMap 대응
-
-	FVector EmissiveColor    = {0.0f, 0.0f, 0.0f}; // cbuffer bytes 84-95  — emissive glow color
-	uint32  bHasNormalMap	= 0;
-	//float _Pad2 = 0.0f;
-
-	// Texture SRV (CPU-only, cbuffer 범위 밖)
-	//ID3D11ShaderResourceView* DiffuseSRV  = { nullptr };
-	//ID3D11ShaderResourceView* AmbientSRV  = { nullptr };
-	//ID3D11ShaderResourceView* SpecularSRV = { nullptr };
-	//ID3D11ShaderResourceView* BumpSRV     = { nullptr };
-};
-
-struct FDecalConstants
-{
-	FMatrix InvDecalWorld;
-	FVector4 ColorTint;
-};
 
 constexpr uint32 MaxFogLayerCount = 32;
 
