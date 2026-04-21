@@ -844,6 +844,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Visibility\TileBasedLightCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1553,6 +1554,7 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Visibility\TileBasedLightCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

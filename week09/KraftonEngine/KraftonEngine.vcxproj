@@ -241,6 +241,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -413,6 +414,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
