@@ -69,7 +69,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
     float depth = SceneDepth.Load(int3(ip, 0)).r;
     float3 worldPos = SceneWorldPos.Load(int3(ip, 0)).rgb;
     
-    if (ViewMode == 3) // Depth View Mode
+    if (ViewMode == 5) // Depth View Mode
     {
         if (depth >= 1.0f)
             return float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -96,7 +96,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
         
         return float4(visual, visual, visual, 1.0f);
     }
-    if (ViewMode == 4)
+    if (ViewMode == 6)
     {
         return normal;
     }
