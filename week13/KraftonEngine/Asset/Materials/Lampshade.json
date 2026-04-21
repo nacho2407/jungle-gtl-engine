@@ -1,8 +1,0 @@
-{
-  "PathFileName" : "Asset/Materials/Lampshade.json",
-  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
-  "RenderPass" : "AlphaBlend",
-  "Textures" : {
-    "DiffuseTexture" : "Data/FakeLight/FakeLight_LampShade.png"
-  }
-}

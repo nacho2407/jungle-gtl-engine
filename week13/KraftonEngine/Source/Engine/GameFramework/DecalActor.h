@@ -20,5 +20,5 @@ private:
 	UDecalComponent* DecalComponent;
 	UTextRenderComponent* TextRenderComponent = nullptr;
 	
-	const FString DefaultDecalMaterialPath = "Asset/Materials/DefaultDecal.json";
+	const FString DefaultDecalMaterialPath = "Asset/Materials/DefaultDecal.mat";
 };
