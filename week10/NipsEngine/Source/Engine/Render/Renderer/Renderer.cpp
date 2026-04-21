@@ -79,7 +79,7 @@ void FRenderer::CreateResources()
 {
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
-	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FLightConstants));
+	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
 	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
@@ -247,7 +247,7 @@ void FRenderer::InvalidateSceneFinalTargets()
 void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
-	UpdateLightBuffer(Context, InRenderBus);
+	UpdateUberBuffer(Context, InRenderBus);
     UpdateFrameBuffer(Context, InRenderBus);
 
 	/** Opaque 만 테스트 */
@@ -793,7 +793,7 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	Context->PSSetConstantBuffers(0, 1, &b0);
 }
 
-void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
+void FRenderer::UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
 {
 	// Update Decal struct buf and textures — one entry per unique decal
     TArray<UTexture*> DecalTextures;
@@ -823,10 +823,10 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus
         Constant.ColorTint = Cmd.Constants.Decal.ColorTint;
         DecalConstantArray.push_back(Constant);
     }
-    UniqueDecalCount = (uint32)DecalConstantArray.size();
+
     if (!DecalConstantArray.empty())
     {
-        Resources.DecalStructuredBuffer.Update(Context, DecalConstantArray.data(), UniqueDecalCount);
+        Resources.DecalStructuredBuffer.Update(Context, DecalConstantArray.data(), (uint32)DecalConstantArray.size());
         ID3D11ShaderResourceView* DecalSRV = Resources.DecalStructuredBuffer.GetSRV();
         Context->PSSetShaderResources(7, 1, &DecalSRV);
     }
@@ -903,13 +903,13 @@ void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus
         Context->PSSetShaderResources(8, 1, &ArraySRV);
     }
 
-	FLightConstants lightConstantData;
+	FUberConstants lightConstantData;
     lightConstantData.AmbientLight = InRenderBus.AmbientLightInfo;
     lightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
     lightConstantData.LightCount = (uint32)InRenderBus.LightInfos.size();
-	lightConstantData.DecalCount = UniqueDecalCount;
+    lightConstantData.DecalCount = (uint32)DecalConstantArray.size();
 
-    Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FLightConstants));
+    Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FUberConstants));
     ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
     Context->VSSetConstantBuffers(3, 1, &b3);
     Context->PSSetConstantBuffers(3, 1, &b3);
