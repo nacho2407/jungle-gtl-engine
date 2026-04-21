@@ -565,7 +565,18 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
     FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(CacheKey).c_str());
     if (!Shader)
     {
-        return nullptr;
+        // Fallback: Shaders/StaticMeshShader.hlsl -> Shaders/Materials/StaticMeshShader.hlsl
+        std::filesystem::path Path(FPaths::ToWide(ShaderPath));
+        if (Path.parent_path() == L"Shaders")
+        {
+            FString FallbackPath = "Shaders/Materials/" + FPaths::FromWide(Path.filename().wstring());
+            Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(NormalizeCacheKey(FallbackPath)).c_str());
+        }
+        
+        if (!Shader)
+        {
+            return nullptr;
+        }
     }
 
     FMaterialTemplate* NewTemplate = new FMaterialTemplate();
