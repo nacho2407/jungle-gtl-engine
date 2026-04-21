@@ -691,6 +691,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1330,5 +1331,6 @@
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
   </ItemGroup>
 </Project>

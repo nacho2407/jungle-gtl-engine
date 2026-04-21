@@ -68,22 +68,28 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            return false;  
        }  
 
-	   uint32 PermutationKey = (uint32)EShaderLightPermutationKey::Unlit;
+	   uint32 PermutationKey = (uint32)ELightingModel::Unlit;
 	   switch (Context->RenderBus->GetViewMode())
 	   {
 	   case EViewMode::Lit_Gouraud:
-		   PermutationKey = (uint32)EShaderLightPermutationKey::Gouraud;
+		   PermutationKey = (uint32)ELightingModel::Gouraud;
 		   break;
 	   case EViewMode::Lit_Lambert:
-		   PermutationKey = (uint32)EShaderLightPermutationKey::Lambert;
+		   PermutationKey = (uint32)ELightingModel::Lambert;
 		   break;
 	   case EViewMode::Lit_BlinnPhong:
-		   PermutationKey = (uint32)EShaderLightPermutationKey::BlinnPhong;
+		   PermutationKey = (uint32)ELightingModel::BlinnPhong;
 		   break;
 	   }
 
        if (Cmd.Material)
        {
+		   if (Cmd.Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
+		   if (Cmd.Material->HasNormalMap()) PermutationKey |= (uint32)EShaderFeature::HasNormalMap;
+		   if (Cmd.Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
+		   if (Cmd.Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
+		   if (Cmd.Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
+
            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
        }
 
