@@ -167,9 +167,9 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 
 	LastNumLights = static_cast<uint32>(Infos.size());
 
-	GlobalLightingData.ViewLightCulling = Frame.RenderOptions.ShowFlags.bViewLightCulling;
+	GlobalLightingData.LightCullingMode = static_cast<uint32>(Frame.RenderOptions.LightCullingMode);
+	GlobalLightingData.VisualizeLightCulling = Frame.RenderOptions.ViewMode == EViewMode::LightCulling ? 1u : 0u;
 	GlobalLightingData.HeatMapMax = Frame.RenderOptions.HeatMapMax;
-	GlobalLightingData.ShowClusterHeatMap = Frame.RenderOptions.ShowFlags.bClusterHeatMap ? 1u : 0u;
 	if (ClusterState)
 	{
 		GlobalLightingData.ClusterCullingState = *ClusterState;
@@ -189,16 +189,34 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 	Ctx->VSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 
-	// 이전 프레임 타일 컬링 결과 바인딩 (t9, t10)
-	BindTileCullingBuffers(Device);
+	if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
+	{
+		BindTileCullingBuffers(Device);
+	}
+	else
+	{
+		UnbindTileCullingBuffers(Device);
+	}
 }
 
 void FSystemResources::BindTileCullingBuffers(FD3DDevice& Device)
 {
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	Ctx->VSSetShaderResources(ELightTexSlot::TileLightIndices, 1, &TileCullingResource.IndicesSRV);
+	Ctx->VSSetShaderResources(ELightTexSlot::TileLightGrid,    1, &TileCullingResource.GridSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::TileLightIndices, 1, &TileCullingResource.IndicesSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::TileLightGrid,    1, &TileCullingResource.GridSRV);
+	Ctx->VSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
 	Ctx->PSSetShaderResources(ELightTexSlot::AllLights, 1, &ForwardLights.LightBufferSRV);
+}
+
+void FSystemResources::UnbindTileCullingBuffers(FD3DDevice& Device)
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	ID3D11ShaderResourceView* NullSRVs[2] = {};
+	Ctx->VSSetShaderResources(ELightTexSlot::TileLightIndices, 2, NullSRVs);
+	Ctx->PSSetShaderResources(ELightTexSlot::TileLightIndices, 2, NullSRVs);
+	Ctx->CSSetShaderResources(ELightTexSlot::TileLightIndices, 2, NullSRVs);
 }
 
 void FSystemResources::BindSystemSamplers(FD3DDevice& Device)

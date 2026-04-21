@@ -44,12 +44,14 @@ public:
 	FTileBasedLightCulling&   GetTileBaseCulling()     { return TileBasedCulling; }
 
 	void BindTileCullingResources() { Resources.BindTileCullingBuffers(Device); }
+	void UnbindTileCullingResources() { Resources.UnbindTileCullingBuffers(Device); }
+	void DispatchClusterCullingResources();
+	void BindClusterCullingResources();
+	void UnbindClusterCullingResources();
 
 private:
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(FStateCache& Cache);
-	void BindClusterCullingResources();
-	void UnbindClusterCullingResources();
 
 private:
 	FD3DDevice Device;

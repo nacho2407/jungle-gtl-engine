@@ -33,6 +33,9 @@ namespace Key
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* LightCullingMode = "LightCullingMode";
+	constexpr const char* HeatMapMax = "HeatMapMax";
+	constexpr const char* Enable25DCulling = "Enable25DCulling";
 
 	// Paths
 	constexpr const char* EditorStartLevel = "EditorStartLevel";
@@ -111,6 +114,9 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
 		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
+		SlotObj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
+		SlotObj[Key::HeatMapMax] = Opts.HeatMapMax;
+		SlotObj[Key::Enable25DCulling] = Opts.Enable25DCulling;
 		SlotsArr.append(SlotObj);
 	}
 	LayoutObj[Key::Slots] = SlotsArr;
@@ -255,6 +261,12 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
 				if (S.hasKey(Key::CameraRotateSensitivity))
 					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
+				if (S.hasKey(Key::LightCullingMode))
+					Opts.LightCullingMode = static_cast<ELightCullingMode>(S[Key::LightCullingMode].ToInt());
+				if (S.hasKey(Key::HeatMapMax))
+					Opts.HeatMapMax = static_cast<float>(S[Key::HeatMapMax].ToFloat());
+				if (S.hasKey(Key::Enable25DCulling))
+					Opts.Enable25DCulling = S[Key::Enable25DCulling].ToBool();
 			}
 		}
 

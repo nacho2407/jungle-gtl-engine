@@ -131,6 +131,7 @@ struct FSystemResources
 
 	// 타일 컬링 결과 SRV 바인딩 (t9, t10) — Renderer::Render 시작 시 호출
 	void BindTileCullingBuffers(FD3DDevice& Device);
+	void UnbindTileCullingBuffers(FD3DDevice& Device);
 
 	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
 	void UnbindSystemTextures(FD3DDevice& Device);

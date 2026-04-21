@@ -1,16 +1,7 @@
 #ifndef FORWARD_LIGHTING_HLSLI
 #define FORWARD_LIGHTING_HLSLI
 
-// =============================================================================
-// ForwardLighting.hlsli — 공용 Forward Lighting 유틸 함수
-// UberLit, DecalShader 등 라이팅이 필요한 모든 셰이더에서 include
-// =============================================================================
-
 #include "Common/ForwardLightData.hlsli"
-
-// =============================================================================
-// 기본 라이팅 유틸 함수
-// =============================================================================
 
 float CalcAttenuation(float dist, float radius, float falloff)
 {
@@ -65,20 +56,15 @@ uint ComputeClusterIndex(float4 screenPos, float3 worldPos)
         + tileX;
 }
 
-// =============================================================================
-// FLightInfo 기반 계산 (Point/Spot 공용)
-// =============================================================================
-
 float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
 {
-    float3 L    = light.Position - worldPos;
-    float  dist = length(L);
+    float3 L = light.Position - worldPos;
+    float dist = length(L);
     L = normalize(L);
 
     float atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
     float NdotL = saturate(dot(N, L));
 
-    // Spot cone falloff (Point는 InnerConeCos=-1, OuterConeCos=-1 → spotFactor=1)
     float spotFactor = 1.0f;
     if (light.LightType == LIGHT_TYPE_SPOT)
     {
@@ -91,9 +77,9 @@ float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
 
 float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, float shininess)
 {
-    float3 L    = normalize(light.Position - worldPos);
-    float  dist = length(light.Position - worldPos);
-    float  atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
+    float3 L = normalize(light.Position - worldPos);
+    float dist = length(light.Position - worldPos);
+    float atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
 
     float spotFactor = 1.0f;
     if (light.LightType == LIGHT_TYPE_SPOT)
@@ -105,6 +91,66 @@ float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, 
     float3 H = normalize(L + V);
     float NdotH = saturate(dot(N, H));
     return light.Color.rgb * light.Intensity * pow(NdotH, max(shininess, 1.0f)) * atten * spotFactor;
+}
+
+void AccumulatePointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, inout float3 result)
+{
+    if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
+    {
+        uint2 tileCoord = min(uint2(screenPos.xy) / TILE_SIZE, uint2(NumTilesX - 1, NumTilesY - 1));
+        uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+        uint2 gridData = TileLightGrid[tileIdx];
+        for (uint t = 0; t < gridData.y; ++t)
+        {
+            result += CalcLightDiffuse(AllLights[TileLightIndices[gridData.x + t]], worldPos, N);
+        }
+    }
+    else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
+    {
+        uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
+        uint2 gridData = g_ClusterLightGrid[clusterIdx];
+        for (uint t = 0; t < gridData.y; ++t)
+        {
+            result += CalcLightDiffuse(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N);
+        }
+    }
+    else
+    {
+        for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
+        {
+            result += CalcLightDiffuse(AllLights[i], worldPos, N);
+        }
+    }
+}
+
+void AccumulatePointSpotSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos, inout float3 result)
+{
+    if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
+    {
+        uint2 tileCoord = min(uint2(screenPos.xy) / TILE_SIZE, uint2(NumTilesX - 1, NumTilesY - 1));
+        uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+        uint2 gridData = TileLightGrid[tileIdx];
+        for (uint t = 0; t < gridData.y; ++t)
+        {
+            result += CalcLightSpecular(AllLights[TileLightIndices[gridData.x + t]], worldPos, N, V, shininess);
+        }
+    }
+    else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
+    {
+        uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
+        uint2 gridData = g_ClusterLightGrid[clusterIdx];
+        for (uint t = 0; t < gridData.y; ++t)
+        {
+            result += CalcLightSpecular(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N, V, shininess);
+        }
+    }
+    else
+    {
+        for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
+        {
+            result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
+        }
+    }
 }
 
 #if defined(LIGHTING_MODEL_TOON) && LIGHTING_MODEL_TOON
@@ -147,35 +193,41 @@ float3 CalcToonPointSpotDiffuse(FLightInfo light, float3 worldPos, float3 N)
     return light.Color.rgb * light.Intensity * atten * spotFactor * band;
 }
 
+void AccumulateToonPointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, inout float3 result)
+{
+    if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
+    {
+        uint2 tileCoord = min(uint2(screenPos.xy) / TILE_SIZE, uint2(NumTilesX - 1, NumTilesY - 1));
+        uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+        uint2 gridData = TileLightGrid[tileIdx];
+        for (uint t = 0; t < gridData.y; ++t)
+        {
+            result += CalcToonPointSpotDiffuse(AllLights[TileLightIndices[gridData.x + t]], worldPos, N);
+        }
+    }
+    else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
+    {
+        uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
+        uint2 gridData = g_ClusterLightGrid[clusterIdx];
+        for (uint t = 0; t < gridData.y; ++t)
+        {
+            result += CalcToonPointSpotDiffuse(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N);
+        }
+    }
+    else
+    {
+        for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
+        {
+            result += CalcToonPointSpotDiffuse(AllLights[i], worldPos, N);
+        }
+    }
+}
+
 float3 AccumulateToonDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity) * 0.15f;
     result += CalcToonDirectionalDiffuse(N);
-
-    #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
-    uint2 tileCoord = uint2(screenPos.xy) / 16;
-    uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
-    uint2 gridData = TileLightGrid[tileIdx];
-    for (uint t = 0; t < gridData.y; ++t)
-    {
-        uint lightIdx = TileLightIndices[gridData.x + t];
-        result += CalcToonPointSpotDiffuse(AllLights[lightIdx], worldPos, N);
-    }
-    #elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
-    uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
-    uint2 gridData = g_ClusterLightGrid[clusterIdx];
-    for (uint t = 0; t < gridData.y; ++t)
-    {
-        uint lightIdx = g_ClusterLightIndices[gridData.x + t];
-        result += CalcToonPointSpotDiffuse(AllLights[lightIdx], worldPos, N);
-    }
-    #else
-    for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
-    {
-        result += CalcToonPointSpotDiffuse(AllLights[i], worldPos, N);
-    }
-    #endif
-
+    AccumulateToonPointSpotDiffuse(worldPos, N, screenPos, result);
     return result;
 }
 
@@ -186,80 +238,22 @@ float CalcRimMask(float3 N, float3 V)
 }
 #endif
 
-// =============================================================================
-// 통합 라이팅 누적
-// =============================================================================
-
 float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
-
-    // Ambient + Directional (CB b4)
     result += CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity);
     result += CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                      DirectionalLight.Intensity, N);
-
-    // Point/Spot (StructuredBuffer t8, Tile Culling 적용 시 t9/t10 경유)
-    #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
-    uint2 tileCoord = uint2(screenPos.xy) / 16;
-    uint tileIdx    = tileCoord.y * NumTilesX + tileCoord.x;
-    uint2 gridData  = TileLightGrid[tileIdx];
-    for (uint t = 0; t < gridData.y; ++t)
-    {
-        uint lightIdx = TileLightIndices[gridData.x + t];
-        result += CalcLightDiffuse(AllLights[lightIdx], worldPos, N);
-    }
-    #elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
-    uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
-    uint2 gridData = g_ClusterLightGrid[clusterIdx];
-    for (uint t = 0; t < gridData.y; ++t)
-    {
-        uint lightIdx = g_ClusterLightIndices[gridData.x + t];
-        result += CalcLightDiffuse(AllLights[lightIdx], worldPos, N);
-    }
-    #else
-    // 전수 순회 (Culling 미적용)
-    for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
-        result += CalcLightDiffuse(AllLights[i], worldPos, N);
-    #endif
-
+    AccumulatePointSpotDiffuse(worldPos, N, screenPos, result);
     return result;
 }
 
 float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
-
     result += CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                       DirectionalLight.Intensity, N, V, shininess);
-    
-    #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
-    uint2 tileCoord = uint2(screenPos.xy) / 16;
-    uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
-    uint2 gridData = TileLightGrid[tileIdx];
-    uint tileLightCount = gridData.y;
-    
-    for (uint t = 0; t < gridData.y; ++t)
-    {
-        uint lightIdx = TileLightIndices[gridData.x + t];
-        result += CalcLightSpecular(AllLights[lightIdx], worldPos, N, V, shininess);
-    }
-    #elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
-    uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
-    uint2 gridData = g_ClusterLightGrid[clusterIdx];
-    uint tileLightCount = gridData.y;
-
-    for (uint t = 0; t < gridData.y; ++t)
-    {
-        uint lightIdx = g_ClusterLightIndices[gridData.x + t];
-        result += CalcLightSpecular(AllLights[lightIdx], worldPos, N, V, shininess);
-    }
-    #else
-    uint tileLightCount = NumActivePointLights + NumActiveSpotLights;
-    for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
-        result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
-    #endif
-    
+    AccumulatePointSpotSpecular(worldPos, N, V, shininess, screenPos, result);
     return result;
 }
 
