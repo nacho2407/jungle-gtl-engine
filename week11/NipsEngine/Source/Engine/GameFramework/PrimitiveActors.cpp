@@ -321,12 +321,12 @@ void ALightActor::SetLight(ULightComponent* InLight)
 
 void AAmbientLightActor::InitDefaultComponents()
 {
-	UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
+    UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
 	Ambient->Intensity = 0.2f;
 	SetRootComponent(Ambient);
 
     UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+    Billboard->SetTextureName("Asset/Texture/SkyLight_64x.png");
     Billboard->AttachToComponent(Ambient);
 	Billboard->SetEditorOnly(true);
 
