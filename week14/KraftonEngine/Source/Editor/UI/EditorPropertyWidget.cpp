@@ -135,6 +135,8 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 					Actor->GetWorld()->DestroyActor(Actor);
 				}
 			}
+			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
+			EditorEngine->InvalidateOcclusionResults();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
@@ -158,11 +160,15 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ImGui::SameLine();
 		if (ImGui::Button("Remove"))
 		{
-			if (PrimaryActor->GetWorld())
-			{
-				PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
-			}
+			// 선택 해제를 먼저 수행 (dangling pointer로 Proxy 접근 방지)
+			AActor* ToDelete = PrimaryActor;
 			Selection.ClearSelection();
+			if (ToDelete && ToDelete->GetWorld())
+			{
+				ToDelete->GetWorld()->DestroyActor(ToDelete);
+			}
+			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
+			EditorEngine->InvalidateOcclusionResults();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
