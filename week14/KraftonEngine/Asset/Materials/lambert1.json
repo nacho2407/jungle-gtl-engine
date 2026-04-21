@@ -1,0 +1,8 @@
+{
+  "Parameters" : {
+    "SectionColor" : [0.400000, 0.400000, 0.400000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/lambert1.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl"
+}

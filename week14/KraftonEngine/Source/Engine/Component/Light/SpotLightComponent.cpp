@@ -21,16 +21,24 @@ void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 
 	float AngleRadInner = InnerConeAngle * FMath::DegToRad;
 	FVector FirstDirection = (Forward + Right * tanf(AngleRadInner)).Normalized() * ConeLength;
+	FVector FirstPrev = FirstDirection;
 	float AngleRadOuter = OuterConeAngle * FMath::DegToRad;
 	FVector SecondDirection = (Forward + Right * tanf(AngleRadOuter)).Normalized() * ConeLength;
-	for (float i = 0.f; i < 2 * FMath::Pi; i += 0.3f)
+	FVector SecondPrev = SecondDirection;
+	for (float i = 0.f; i < 2 * FMath::Pi; i += 0.3)
 	{
 		FQuat Rotation = FQuat::FromAxisAngle(Forward, i);
 		FVector ResInner = Rotation.RotateVector(FirstDirection);
 		FVector ResOuter = Rotation.RotateVector(SecondDirection);
 		Scene.AddDebugLine(Apex, Apex + ResInner, FColor::Green());
+		Scene.AddDebugLine(FirstPrev, Apex + ResInner, FColor::Green());
 		Scene.AddDebugLine(Apex, Apex + ResOuter, FColor::Yellow());
+		Scene.AddDebugLine(SecondPrev, Apex + ResOuter, FColor::Yellow());
+		FirstPrev = Apex + ResInner;
+		SecondPrev = Apex + ResOuter;
 	}
+	//Scene.AddDebugLine(FirstPrev, FirstDirection, FColor::Green());
+	//Scene.AddDebugLine(SecondPrev, SecondDirection, FColor::Yellow());
 }
 
 void USpotLightComponent::PushToScene()
