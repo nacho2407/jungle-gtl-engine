@@ -44,10 +44,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 		ImGui::DragFloat3("Center Offset", GridCenterOffset, 0.5f);
 		ImGui::InputInt("Count X", &GridCountX, 1, 5);
 		ImGui::InputInt("Count Y", &GridCountY, 1, 5);
+		ImGui::InputInt("Count Z", &GridCountZ, 1, 5);
 		ImGui::DragFloat("Spacing X", &GridSpacingX, 0.1f, 0.1f, 100.f);
 		ImGui::DragFloat("Spacing Y", &GridSpacingY, 0.1f, 0.1f, 100.f);
+		ImGui::DragFloat("Spacing Z", &GridSpacingZ, 0.1f, 0.1f, 100.f);
 		if (GridCountX < 1) GridCountX = 1;
 		if (GridCountY < 1) GridCountY = 1;
+		if (GridCountZ < 1) GridCountZ = 1;
 
 		if (ImGui::Button("Spawn Grid"))
 		{
@@ -55,12 +58,15 @@ void FEditorControlWidget::Render(float DeltaTime)
 			FVector Center(GridCenterOffset[0], GridCenterOffset[1], GridCenterOffset[2]);
 			float HalfX = (GridCountX - 1) * GridSpacingX * 0.5f;
 			float HalfY = (GridCountY - 1) * GridSpacingY * 0.5f;
+			float HalfZ = (GridCountZ - 1) * GridSpacingZ * 0.5f;
 
+			for (int32 iz = 0; iz < GridCountZ; ++iz)
+			{
 			for (int32 iy = 0; iy < GridCountY; ++iy)
 			{
 				for (int32 ix = 0; ix < GridCountX; ++ix)
 				{
-					FVector Pos = Center + FVector(ix * GridSpacingX - HalfX, iy * GridSpacingY - HalfY, 0.f);
+					FVector Pos = Center + FVector(ix * GridSpacingX - HalfX, iy * GridSpacingY - HalfY, iz * GridSpacingZ - HalfZ);
 
 					switch (SelectedPrimitiveType)
 					{
@@ -139,6 +145,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 					}
 					}
 				}
+			}
 			}
 		}
 	}
