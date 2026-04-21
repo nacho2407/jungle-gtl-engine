@@ -52,6 +52,7 @@ void UEditorEngine::Shutdown()
 {
 	// 에디터 해제 (엔진보다 먼저)
 	ViewportLayout.SaveToSettings();
+	MainPanel.SaveToSettings();
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	SelectionManager.Shutdown();

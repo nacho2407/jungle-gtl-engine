@@ -34,6 +34,7 @@ public:
 
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드
+	FString ContentBrowserPath; // 비어있으면 프로젝트 루트
 
 	// UI 위젯 표시 여부
 	struct FUIVisibility

@@ -19,6 +19,7 @@ public:
 	void Release();
 	void Render(float DeltaTime);
 	void Update();
+	void SaveToSettings() const;
 	void HideEditorWindowsForPIE();
 	void RestoreEditorWindowsAfterPIE();
 

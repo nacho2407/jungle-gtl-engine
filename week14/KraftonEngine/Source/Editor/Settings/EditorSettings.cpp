@@ -39,6 +39,7 @@ namespace Key
 
 	// Paths
 	constexpr const char* EditorStartLevel = "EditorStartLevel";
+	constexpr const char* ContentBrowserPath = "ContentBrowserPath";
 
 	// Layout
 	constexpr const char* Layout = "Layout";
@@ -87,6 +88,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	// Paths
 	JSON PathsObj = Object();
 	PathsObj[Key::EditorStartLevel] = EditorStartLevel;
+	PathsObj[Key::ContentBrowserPath] = ContentBrowserPath;
 	Root[Key::Paths] = PathsObj;
 
 	// Layout
@@ -214,6 +216,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 
 		if (PathsObj.hasKey(Key::EditorStartLevel))
 			EditorStartLevel = PathsObj[Key::EditorStartLevel].ToString();
+		if (PathsObj.hasKey(Key::ContentBrowserPath))
+			ContentBrowserPath = PathsObj[Key::ContentBrowserPath].ToString();
 	}
 
 	// Layout
