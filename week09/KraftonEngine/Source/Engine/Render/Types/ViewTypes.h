@@ -64,8 +64,8 @@ struct FViewportRenderOptions
 
 	// Scene Depth 전용 설정
 	int32 SceneDepthVisMode = 1;
-	float Exponent = 128.0f;
-	float Range = 1000.0f;
+	float Exponent = 1.0f;
+	float Range = 16.0f;
 
 	// FXAA 전용 설정
 	float EdgeThreshold = 0.125f;
