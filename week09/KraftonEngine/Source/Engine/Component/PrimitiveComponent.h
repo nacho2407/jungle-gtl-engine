@@ -6,7 +6,7 @@
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
-#include "Render/Types/VertexTypes.h"
+#include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include "Render/Scene/DirtyFlag.h"
 
 class FPrimitiveSceneProxy;

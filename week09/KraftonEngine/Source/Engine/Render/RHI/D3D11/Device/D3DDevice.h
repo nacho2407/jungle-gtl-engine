@@ -1,7 +1,7 @@
 #pragma once
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include <d3d11_1.h>
-#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
 #include "Core/CoreTypes.h"
 
 #include "Render/RHI/D3D11/State/RasterizerStateManager.h"

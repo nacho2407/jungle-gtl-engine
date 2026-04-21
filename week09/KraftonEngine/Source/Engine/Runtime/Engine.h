@@ -1,12 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Renderer.h"
-#include "Render/Submission/Collectors/RenderCollector.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
 
 #include <memory>
 
@@ -77,7 +76,6 @@ protected:
     FRenderer Renderer;
 
 protected:
-    FRenderCollector RenderCollector;
     FSceneView SceneView;
     FViewportRenderTargets RenderTargets;
 };

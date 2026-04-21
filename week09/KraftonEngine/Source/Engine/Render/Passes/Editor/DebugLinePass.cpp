@@ -1,8 +1,8 @@
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Passes/Editor/DebugLinePass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/LineDrawCommandBuilder.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FDebugLinePass::PrepareInputs(FRenderPipelineContext& Context)
@@ -18,7 +18,7 @@ void FDebugLinePass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FDebugLinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    FLineDrawCommandBuilder::BuildDebugLines(Context, *Context.DrawCommandList);
+    DrawCommandBuilder::BuildLineDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FDebugLinePass::SubmitDrawCommands(FRenderPipelineContext& Context)
