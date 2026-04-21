@@ -771,7 +771,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		ImGui::BeginGroup();
 		ImGui::SetNextItemWidth(-1);
 
-		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
+		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : Slot->Path;
 		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 		{
 			// "None" 선택지 기본 제공
