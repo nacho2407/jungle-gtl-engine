@@ -1,6 +1,7 @@
 ﻿#include "Render/Scene/Proxies/Light/PointLightSceneProxy.h"
 #include "Component/PointLightComponent.h"
 #include "Render/Scene/Scene.h"
+#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
 #include <cmath>
 
 namespace
@@ -17,7 +18,7 @@ void AddDebugCircle(FScene& Scene, const FVector& Center,
         float A1 = TwoPI * (i + 1) / Segs;
         FVector P0 = Center + AxisX * (cosf(A0) * Radius) + AxisY * (sinf(A0) * Radius);
         FVector P1 = Center + AxisX * (cosf(A1) * Radius) + AxisY * (sinf(A1) * Radius);
-        Scene.AddDebugLine(P0, P1, Color);
+        DrawDebugLine(Scene, P0, P1, Color);
     }
 }
 } // namespace
