@@ -2,6 +2,7 @@
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Object/ObjectFactory.h"
@@ -38,7 +39,25 @@ void UDecalComponent::PostDuplicate(UObject* Original)
 void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
-	Ar << "Material" << Materials[0]->GetNameRef();
+	if (Materials.empty())
+	{
+		Materials.resize(1);
+	}
+
+	FString MaterialIdentifier;
+	if (Ar.IsSaving())
+	{
+		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Materials[0]))
+		{
+			MaterialIdentifier = FPaths::Normalize(MatInst->GetFilePath());
+		}
+		else if (Materials[0] != nullptr)
+		{
+			MaterialIdentifier = Materials[0]->GetName();
+		}
+	}
+
+	Ar << "Material" << MaterialIdentifier;
 	Ar << "Size" << DecalSize;
 	Ar << "Color" << DecalColor;
 	Ar << "Fade Start Delay" << FadeStartDelay;
@@ -49,9 +68,9 @@ void UDecalComponent::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
-		if (!Materials[0]->GetName().empty())
+		if (!MaterialIdentifier.empty())
 		{
-			SetMaterial(FResourceManager::Get().GetMaterialInterface(Materials[0]->GetName()));
+			SetMaterial(FResourceManager::Get().GetMaterialInterface(MaterialIdentifier));
 		}
 	}
 }
