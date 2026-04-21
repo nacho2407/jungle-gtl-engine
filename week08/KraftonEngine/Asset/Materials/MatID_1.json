@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/MatID_1.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg"
   }
