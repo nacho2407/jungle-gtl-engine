@@ -73,14 +73,6 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 		ClusterState.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
 
 		Resources.UpdateLightBuffer(Device, Scene, Frame, &ClusterState);
-
-		if (ClusteredLightCuller.IsInitialized())
-		{
-			UnbindClusterCullingResources();
-			ClusteredLightCuller.DispatchViewSpaceAABB();
-			ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
-			BindClusterCullingResources();
-		}
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -137,10 +129,27 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 void FRenderer::CleanupPassState(FStateCache& Cache)
 {
 	Resources.UnbindSystemTextures(Device);
+	Resources.UnbindTileCullingBuffers(Device);
 	UnbindClusterCullingResources();
 
 	Cache.Cleanup(Device.GetDeviceContext());
 	Builder.GetCommandList().Reset();
+}
+
+void FRenderer::DispatchClusterCullingResources()
+{
+	if (!ClusteredLightCuller.IsInitialized())
+	{
+		return;
+	}
+
+	Resources.UnbindTileCullingBuffers(Device);
+	UnbindClusterCullingResources();
+
+	ClusteredLightCuller.DispatchViewSpaceAABB();
+	ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
+
+	BindClusterCullingResources();
 }
 
 void FRenderer::BindClusterCullingResources()

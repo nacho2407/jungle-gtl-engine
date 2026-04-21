@@ -76,7 +76,7 @@ private:
 		const FFrameContext& Frame, FStateCache& Cache,
 		TArray<FPassEvent>& Pre);
 
-	void RegisterTileCullingEvents(ID3D11DeviceContext* Ctx,
+	void RegisterLightCullingEvents(ID3D11DeviceContext* Ctx,
 		const FFrameContext& Frame, FStateCache& Cache,
-		FRenderer* Renderer,TArray<FPassEvent>& Pre);
+		FRenderer* Renderer, TArray<FPassEvent>& Pre);
 };

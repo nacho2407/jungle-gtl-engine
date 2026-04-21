@@ -170,17 +170,18 @@ UberPS_Output PS(UberVS_Output input)
 
     // Culling Heatmap → SV_TARGET2
     {
-        #if defined(USE_TILE_CULLING) && USE_TILE_CULLING
-        uint2 tileCoord = uint2(input.position.xy) / 16;
-        uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
-        uint2 gridData = TileLightGrid[tileIdx];
-        uint LightCount = gridData.y;
-        #elif defined(USE_CLUSTER_CULLING) && USE_CLUSTER_CULLING
-        uint clusterIdx = ComputeClusterIndex(input.position, input.worldPos);
-        uint LightCount = g_ClusterLightGrid[clusterIdx].y;
-        #else
         uint LightCount = NumActivePointLights + NumActiveSpotLights;
-        #endif
+        if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
+        {
+            uint2 tileCoord = min(uint2(input.position.xy) / TILE_SIZE, uint2(NumTilesX - 1, NumTilesY - 1));
+            uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+            LightCount = TileLightGrid[tileIdx].y;
+        }
+        else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
+        {
+            uint clusterIdx = ComputeClusterIndex(input.position, input.worldPos);
+            LightCount = g_ClusterLightGrid[clusterIdx].y;
+        }
 
         float MaxCount = HeatMapMax;
         float ratio = saturate((float) LightCount / MaxCount);
@@ -201,8 +202,8 @@ UberPS_Output PS(UberVS_Output input)
     output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
 
 #if !defined(LIGHTING_MODEL_UNLIT)
-    // ViewLightCulling 토글 시 Color도 히트맵으로 대체
-    if (ViewLightCulling || ShowClusterHeatMap)
+    // LightCulling view mode shows the heatmap as the final color.
+    if (VisualizeLightCulling)
     {
         output.Color = output.Culling;
     }

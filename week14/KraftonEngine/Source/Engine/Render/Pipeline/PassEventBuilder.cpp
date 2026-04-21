@@ -17,7 +17,10 @@ void FPassEventBuilder::Build(FD3DDevice& Device,
 
 	RegisterPreDepthEvents(Ctx, Frame, Cache, OutPreEvents, OutPostEvents);
 	RegisterDepthCopyAndMRTEvents(Ctx, Frame, Cache, OutPreEvents, OutPostEvents);
-	RegisterTileCullingEvents(Ctx, Frame, Cache, Renderer, OutPreEvents);
+	if (Frame.RenderOptions.LightCullingMode != ELightCullingMode::Off)
+	{
+		RegisterLightCullingEvents(Ctx, Frame, Cache, Renderer, OutPreEvents);
+	}
 	RegisterStencilCopyEvents(Ctx, Frame, Cache, OutPreEvents);
 	RegisterSceneColorCopyEvents(Ctx, Frame, Cache, OutPreEvents);
 }
@@ -158,7 +161,7 @@ void FPassEventBuilder::RegisterSceneColorCopyEvents(ID3D11DeviceContext* Ctx,
 		});
 }
 
-void FPassEventBuilder::RegisterTileCullingEvents(ID3D11DeviceContext* Ctx, 
+void FPassEventBuilder::RegisterLightCullingEvents(ID3D11DeviceContext* Ctx,
 	const FFrameContext& Frame, FStateCache& Cache, FRenderer* Renderer,
 	TArray<FPassEvent>& Pre)
 {
@@ -167,16 +170,26 @@ void FPassEventBuilder::RegisterTileCullingEvents(ID3D11DeviceContext* Ctx,
 		{
 			Ctx->OMSetRenderTargets(0, nullptr, nullptr);
 
-			Renderer->GetTileBaseCulling().Dispatch(
-				Ctx,
-				Frame,
-				Renderer->GetFrameBuffer(),
-				Renderer->GetTileCullingResource(),
-				Renderer->GetLightBufferSRV(),
-				Renderer->GetNumLights(),
-				static_cast<uint32>(Frame.ViewportWidth),
-				static_cast<uint32>(Frame.ViewportHeight)
-			);
+			if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
+			{
+				Renderer->UnbindClusterCullingResources();
+				Renderer->UnbindTileCullingResources();
+
+				Renderer->GetTileBaseCulling().Dispatch(
+					Ctx,
+					Frame,
+					Renderer->GetFrameBuffer(),
+					Renderer->GetTileCullingResource(),
+					Renderer->GetLightBufferSRV(),
+					Renderer->GetNumLights(),
+					static_cast<uint32>(Frame.ViewportWidth),
+					static_cast<uint32>(Frame.ViewportHeight)
+				);
+			}
+			else if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Cluster)
+			{
+				Renderer->DispatchClusterCullingResources();
+			}
 
 			if (Frame.NormalRTV)
 			{
@@ -189,7 +202,10 @@ void FPassEventBuilder::RegisterTileCullingEvents(ID3D11DeviceContext* Ctx,
 				Ctx->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
 			}
 
-			Renderer->BindTileCullingResources();
+			if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
+			{
+				Renderer->BindTileCullingResources();
+			}
 
 			Cache.bForceAll = true;
         }

@@ -20,6 +20,10 @@
 #define TILE_SIZE             16
 #define MAX_LIGHTS_PER_TILE   256
 
+#define LIGHT_CULLING_OFF     0
+#define LIGHT_CULLING_TILE    1
+#define LIGHT_CULLING_CLUSTER 2
+
 // =============================================================================
 // 구조체 — C++ POD와 레이아웃 동일
 // =============================================================================
@@ -89,8 +93,8 @@ cbuffer LightingBuffer : register(b4)
     uint NumTilesX;
     uint NumTilesY;
     FClusterCullingState CullState;
-    uint ShowClusterHeatMap; //  4B | offset 112
-    uint ViewLightCulling;
+    uint LightCullingMode;
+    uint VisualizeLightCulling;
     float HeatMapMax;
     uint Pad;
 };
