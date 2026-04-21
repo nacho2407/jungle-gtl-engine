@@ -9,16 +9,44 @@
 #include "Render/Renderer.h"
 #include "Render/Resources/ShaderManager.h"
 
-void FLineDrawCommandBuilder::Build(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+namespace
+{
+void AddBatch(FRenderPipelineContext& Context, FDrawCommandList& OutList, FLineBatch& Batch, ERenderPass Pass, const char* DebugName)
+{
+    if (Batch.GetIndexCount() == 0 || !Batch.UploadBuffers(Context.Context))
+    {
+        return;
+    }
+
+    if (const FShader* Shader = FShaderManager::Get().GetShader(EShaderType::Editor))
+    {
+        const FPassRenderState& State = Context.GetPassState(Pass);
+
+        FDrawCommand& Cmd = OutList.AddCommand();
+        Cmd.Shader = const_cast<FShader*>(Shader);
+        Cmd.DepthStencil = State.DepthStencil;
+        Cmd.Blend = State.Blend;
+        Cmd.Rasterizer = State.Rasterizer;
+        Cmd.Topology = State.Topology;
+        Cmd.RawVB = Batch.GetVBBuffer();
+        Cmd.RawVBStride = Batch.GetVBStride();
+        Cmd.RawIB = Batch.GetIBBuffer();
+        Cmd.IndexCount = Batch.GetIndexCount();
+        Cmd.Pass = Pass;
+        Cmd.DebugName = DebugName;
+        Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, nullptr);
+    }
+}
+} // namespace
+
+void FLineDrawCommandBuilder::BuildGrid(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Scene || !Context.SceneView)
     {
         return;
     }
 
-    FLineBatch& EditorLines = Context.Renderer->GetEditorLineBatch();
     FLineBatch& GridLines = Context.Renderer->GetGridLineBatch();
-    EditorLines.Clear();
     GridLines.Clear();
 
     if (Context.Scene->HasGrid())
@@ -32,6 +60,19 @@ void FLineDrawCommandBuilder::Build(FRenderPipelineContext& Context, FDrawComman
             Context.SceneView->bIsOrtho);
     }
 
+    AddBatch(Context, OutList, GridLines, ERenderPass::Grid, "GridLines");
+}
+
+void FLineDrawCommandBuilder::BuildDebugLines(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+{
+    if (!Context.Renderer || !Context.Scene || !Context.SceneView)
+    {
+        return;
+    }
+
+    FLineBatch& EditorLines = Context.Renderer->GetEditorLineBatch();
+    EditorLines.Clear();
+
     if (Context.DebugLines)
     {
         for (const FSceneDebugLine& Line : *Context.DebugLines)
@@ -40,33 +81,5 @@ void FLineDrawCommandBuilder::Build(FRenderPipelineContext& Context, FDrawComman
         }
     }
 
-    if (const FShader* Shader = FShaderManager::Get().GetShader(EShaderType::Editor))
-    {
-        const FPassRenderState& State = Context.GetPassState(ERenderPass::EditorLines);
-
-        auto AddBatch = [&](FLineBatch& Batch, const char* DebugName)
-        {
-            if (Batch.GetIndexCount() == 0 || !Batch.UploadBuffers(Context.Context))
-            {
-                return;
-            }
-
-            FDrawCommand& Cmd = OutList.AddCommand();
-            Cmd.Shader = const_cast<FShader*>(Shader);
-            Cmd.DepthStencil = State.DepthStencil;
-            Cmd.Blend = State.Blend;
-            Cmd.Rasterizer = State.Rasterizer;
-            Cmd.Topology = State.Topology;
-            Cmd.RawVB = Batch.GetVBBuffer();
-            Cmd.RawVBStride = Batch.GetVBStride();
-            Cmd.RawIB = Batch.GetIBBuffer();
-            Cmd.IndexCount = Batch.GetIndexCount();
-            Cmd.Pass = ERenderPass::EditorLines;
-            Cmd.DebugName = DebugName;
-            Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, nullptr);
-        };
-
-        AddBatch(GridLines, "GridLines");
-        AddBatch(EditorLines, "DebugLines");
-    }
+    AddBatch(Context, OutList, EditorLines, ERenderPass::EditorLines, "DebugLines");
 }

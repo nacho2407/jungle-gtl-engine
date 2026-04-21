@@ -46,6 +46,7 @@ void FRenderPipelineRegistry::Initialize()
         PipelineNode(ERenderPipelineType::SceneViewMode),
         PassNode(ERenderPassNodeType::AdditiveDecalPass),
         PassNode(ERenderPassNodeType::AlphaBlendPass),
+        PassNode(ERenderPassNodeType::GridPass),
         PipelineNode(ERenderPipelineType::ScenePostProcess)
     };
     Pipelines.emplace((int32)Scene.Type, Scene);
