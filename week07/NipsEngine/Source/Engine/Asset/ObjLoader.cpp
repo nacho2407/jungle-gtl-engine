@@ -213,6 +213,8 @@ bool FObjLoader::BuildStaticMesh(const FString& Path, FStaticMesh* InStaticMesh,
 
 	InStaticMesh->LocalBounds = BuildLocalBounds(InStaticMesh);
 
+	ComputeTangets(InStaticMesh);
+
 	return !InStaticMesh->Vertices.empty() && !InStaticMesh->Indices.empty();
 }
 
@@ -605,6 +607,91 @@ void FObjLoader::ComputeNormals(FObjRawData& RawData)
 			Idx.NormalIndex = Idx.PositionIndex;
 		}
 	}
+}
+
+void FObjLoader::ComputeTangets(FStaticMesh* InStaticMesh)
+{
+    TArray<FVector> AccumulatedBitangents(InStaticMesh->Vertices.size(), FVector(0.0f, 0.0f, 0.0f));
+
+    if (InStaticMesh->Vertices.empty() || InStaticMesh->Indices.size() < 3)
+    {
+        return;
+    }
+
+    for (FNormalVertex& Vertex : InStaticMesh->Vertices)
+    {
+        Vertex.Tangent = FVector(0.0f, 0.0f, 0.0f);
+    }
+
+    const uint32 IndexCount = static_cast<uint32>(InStaticMesh->Indices.size());
+    for (uint32 Index = 0; Index + 2 < IndexCount; Index += 3)
+    {
+        const uint32 I0 = InStaticMesh->Indices[Index + 0];
+        const uint32 I1 = InStaticMesh->Indices[Index + 1];
+        const uint32 I2 = InStaticMesh->Indices[Index + 2];
+
+        if (I0 >= InStaticMesh->Vertices.size() ||
+            I1 >= InStaticMesh->Vertices.size() ||
+            I2 >= InStaticMesh->Vertices.size())
+        {
+            continue;
+        }
+
+        FNormalVertex& V0 = InStaticMesh->Vertices[I0];
+        FNormalVertex& V1 = InStaticMesh->Vertices[I1];
+        FNormalVertex& V2 = InStaticMesh->Vertices[I2];
+
+        const FVector Edge1 = V1.Position - V0.Position;
+        const FVector Edge2 = V2.Position - V0.Position;
+        const FVector2 DeltaUV1 = V1.UVs - V0.UVs;
+        const FVector2 DeltaUV2 = V2.UVs - V0.UVs;
+
+        const float Determinant = DeltaUV1.X * DeltaUV2.Y - DeltaUV1.Y * DeltaUV2.X;
+        if (MathUtil::IsNearlyZero(Determinant))
+        {
+            continue;
+        }
+
+        const float InvDeterminant = 1.0f / Determinant;
+        const FVector TriangleTangent =
+            (Edge1 * DeltaUV2.Y - Edge2 * DeltaUV1.Y) * InvDeterminant;
+        const FVector TriangleBitangent =
+            (Edge2 * DeltaUV1.X - Edge1 * DeltaUV2.X) * InvDeterminant;
+
+        V0.Tangent += TriangleTangent;
+        V1.Tangent += TriangleTangent;
+        V2.Tangent += TriangleTangent;
+
+		AccumulatedBitangents[I0] += TriangleBitangent;
+		AccumulatedBitangents[I1] += TriangleBitangent;
+        AccumulatedBitangents[I2] += TriangleBitangent;
+    }
+
+    for (size_t i = 0; i < InStaticMesh->Vertices.size(); ++i)
+    {
+        FNormalVertex& Vertex = InStaticMesh->Vertices[i];
+
+        const FVector Normal = Vertex.Normal.GetSafeNormal();
+
+		// Gram-Schmidt 직교화
+        FVector Tangent = Vertex.Tangent - Normal * FVector::DotProduct(Vertex.Tangent, Normal);
+
+        if (Tangent.SizeSquared() <= MathUtil::SmallNumber)
+        {
+            const FVector FallbackAxis =
+                (MathUtil::Abs(Normal.Z) < 0.999f) ? FVector(0.0f, 0.0f, 1.0f)
+                                                   : FVector(0.0f, 1.0f, 0.0f);
+            Tangent = FVector::CrossProduct(FallbackAxis, Normal);
+        }
+
+        Vertex.Tangent = Tangent.GetSafeNormal();
+
+        Vertex.TangentSign =
+            (FVector::DotProduct(
+                 FVector::CrossProduct(Normal, Vertex.Tangent),
+                 AccumulatedBitangents[i]) < 0.0f)
+                ? -1.0f: 1.0f;
+    }
 }
 
 #pragma endregion

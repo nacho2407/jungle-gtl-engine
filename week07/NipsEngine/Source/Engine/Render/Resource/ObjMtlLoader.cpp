@@ -133,6 +133,7 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 			Current->MaterialData.bHasSpecularTexture = true;
 		}
 		// 범프 맵은 그레이스케일로 높이값이 저장되어 있고 추후 노말로 변환한다고 한다.
+        // 노멀 매핑은 범프 매핑의 구현체 중 하나이므로, 이번 구현에서는 노멀 텍스처를 범프 텍스처로 간주하여 처리합니다.
 		else if (Token == "map_bump" || Token == "bump")
 		{
 			Current->MaterialData.BumpTexPath = ResolveTexPath(ISS);

@@ -32,7 +32,9 @@ struct VSInput
     float3 Position : POSITION;
     float4 Color    : COLOR;
     float3 Normal   : NORMAL;
-    float2 UV       : TEXCOORD;
+    float2 UV       : TEXCOORD0;
+    float3 Tangent : TANGENT;
+    float TangentSign : TEXCOORD1;
 };
 
 struct PSInput
@@ -42,6 +44,8 @@ struct PSInput
     float3 WorldNormal : TEXCOORD1;
     float2 UV          : TEXCOORD2;
     float3 VertexLighting : TEXCOORD3;
+    float3 WorldTangent : TEXCOORD4;
+    float TangentSign : TEXCOORD5;
 };
 
 struct PSOutput
@@ -62,7 +66,10 @@ PSInput mainVS(VSInput input)
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)WorldInvTrans));
     output.UV          = input.UV + ScrollUV;
     output.ClipPos     = ApplyMVP(input.Position);
-    
+    output.WorldTangent = normalize(mul(input.Tangent, (float3x3) Model));
+    output.TangentSign = input.TangentSign;
+
+// Gouraud Shading에서는 Normal Mapping을 적용하지 않음
 #ifdef LIGHTING_MODEL_GOURAUD
     FUberMaterialInput MaterialInput;
     MaterialInput.Albedo = float3(1.0f, 1.0f, 1.0f);   // 조명 factor만 계산
@@ -94,6 +101,21 @@ PSOutput mainPS(PSInput input)
 
     float3 Albedo = DiffuseColor * DiffuseTex.rgb;
     float3 FinalColor = Albedo;
+    
+    float3 FinalWorldNormal = normalize(input.WorldNormal);
+    
+#if USE_NORMAL_MAP
+    float3 WorldTangent = input.WorldTangent;
+    WorldTangent = normalize(WorldTangent - FinalWorldNormal * dot(FinalWorldNormal, WorldTangent));
+    
+    float3 WorldBitangent = normalize(cross(FinalWorldNormal, WorldTangent) * input.TangentSign * sign(determinant((float3x3)Model))); // 음수 스케일링이 있을 때 좌표계 반전 고려
+    
+    float3x3 TBN = float3x3(WorldTangent, WorldBitangent, FinalWorldNormal);
+    
+    float3 NormalMapSample = BumpMap.Sample(SampleState, input.UV).rgb;
+    float3 NormalTS = NormalMapSample * 2.f - 1.f;
+    FinalWorldNormal = normalize(mul(NormalTS, TBN));
+#endif
 
 #ifndef LIGHTING_MODEL_GOURAUD
     FUberMaterialInput MaterialInput;
@@ -104,7 +126,7 @@ PSOutput mainPS(PSInput input)
 
     FUberLightingInput LightingInput;
     LightingInput.WorldPos = input.WorldPos;
-    LightingInput.WorldNormal = input.WorldNormal;
+    LightingInput.WorldNormal = FinalWorldNormal;
     LightingInput.ViewDir = normalize(CameraPosition - input.WorldPos);
 
     FinalColor = EvaluateUberLighting(MaterialInput, LightingInput).Color;
@@ -118,7 +140,7 @@ PSOutput mainPS(PSInput input)
     }
 
     output.Color = float4(FinalColor, 1.f);
-    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
+    output.Normal = float4(FinalWorldNormal * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
     return output;
 }

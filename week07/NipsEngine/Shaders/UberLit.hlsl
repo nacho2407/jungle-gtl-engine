@@ -47,9 +47,6 @@ float3 CalculateDiffuseTerm(FUberMaterialInput materialInput, FUberLightingInput
     float3 N = GetSafeNormal(lightingInput.WorldNormal);
     float3 L = GetSafeNormal(-DirectionalLight.Direction);
     float NdotL = saturate(dot(N, L));
-    
-    if (NdotL <= 0.0f)
-        return float3(0.0f, 0.0f, 0.0f);
 
     return materialInput.Albedo * DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
 }
@@ -193,7 +190,7 @@ FUberLightingResult EvaluateLambert(FUberMaterialInput materialInput, FUberLight
     FUberLightingResult result;
     result.Color = 0.0f;
 
-    // 순수 Lambertian 조명 모델은 Diffuse Term만 계산하기 때문에, 우선 Ambient Term은 포함시키지 않음
+    result.Color += CalculateAmbientTerm(materialInput);
     result.Color += CalculateDiffuseTerm(materialInput, lightingInput);
     result.Color += AccumulatePointDiffuseTerms(materialInput, lightingInput);
     result.Color += AccumulateSpotDiffuseTerms(materialInput, lightingInput);
@@ -221,9 +218,9 @@ FUberLightingResult EvaluatePhong(FUberMaterialInput materialInput, FUberLightin
 
 FUberLightingResult EvaluateUberLighting(FUberMaterialInput materialInput, FUberLightingInput lightingInput)
 {
-#if LIGHTING_MODEL_PHONG || LIGHTING_MODEL_GOURAUD
+#if LIGHTING_MODEL_PHONG
     return EvaluatePhong(materialInput, lightingInput);
-#elif LIGHTING_MODEL_LAMBERT
+#elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_GOURAUD
     return EvaluateLambert(materialInput, lightingInput);
 #else
     return EvaluateUnlit(materialInput, lightingInput);

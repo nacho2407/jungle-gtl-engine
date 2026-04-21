@@ -1,0 +1,13 @@
+{
+        "Name" : "Asset/Mesh/sphere_Inst_2.matinst",
+        "OverridedParams" : [{
+            "Name" : "BumpMap",
+            "Type" : "Texture",
+            "Value" : "Asset\\\\Texture\\\\bump\\\\face.png"
+          }, {
+            "Name" : "bHasBumpMap",
+            "Type" : "Bool",
+            "Value" : true
+          }],
+        "Parent" : "DefaultWhite"
+      }

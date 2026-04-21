@@ -33,7 +33,11 @@
 
 /* Validation Check Constants */
 constexpr uint32 STATIC_MESH_BINARY_MAGIC = 0x4853454D; // 'MESH'
-constexpr uint32 STATIC_MESH_BINARY_VERSION = 1;
+
+// Version Log
+// Version 1: Initial version
+// Version 2: 정점 읽기 / 쓰기 시 Tangent 정보 추가
+constexpr uint32 STATIC_MESH_BINARY_VERSION = 2;
 
 //	Vailidation Checkers
 constexpr uint32 MAX_STATIC_MESH_VERTEX_COUNT   = 10'000'000;
@@ -349,6 +353,14 @@ void FBinarySerializer::WriteVertices(std::ofstream& Out, const FStaticMesh& Dat
 		//	UVs
 		WriteFloatLE(Out, Vertex.UVs.X);
 		WriteFloatLE(Out, Vertex.UVs.Y);
+
+		// Tangent
+        WriteFloatLE(Out, Vertex.Tangent.X);
+        WriteFloatLE(Out, Vertex.Tangent.Y);
+        WriteFloatLE(Out, Vertex.Tangent.Z);
+
+		// TangentSign
+        WriteFloatLE(Out, Vertex.TangentSign);
 	}
 }
 
@@ -398,6 +410,20 @@ bool FBinarySerializer::ReadVertices(std::ifstream& In, FStaticMesh& OutData, ui
 		//	UVs
 		if (!ReadFloatLE(In, Vertex.UVs.X) ||
 			!ReadFloatLE(In, Vertex.UVs.Y))
+		{
+			return false;
+		}
+
+		// Tangent
+		if (!ReadFloatLE(In, Vertex.Tangent.X) ||
+			!ReadFloatLE(In, Vertex.Tangent.Y) ||
+			!ReadFloatLE(In, Vertex.Tangent.Z))
+		{
+			return false;
+        }
+
+		// TangentSign
+        if (!ReadFloatLE(In, Vertex.TangentSign))
 		{
 			return false;
 		}

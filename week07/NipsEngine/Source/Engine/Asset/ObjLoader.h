@@ -40,6 +40,7 @@ private:
 	int32 GetOrAddMaterialSlot(const FString& MaterialName);
 	FAABB BuildLocalBounds(FStaticMesh* InStaticMesh) const;
 	void ComputeNormals(FObjRawData& RawData);
+    void ComputeTangets(FStaticMesh* InStaticMesh);
 
 private:
 	TArray<FString> BuiltMaterialSlotName;

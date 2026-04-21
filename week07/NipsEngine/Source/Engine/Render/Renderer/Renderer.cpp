@@ -36,11 +36,11 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
 
-	auto LoadUberLitPermutation = [&](const char* ShaderPath, EShadingModel ShadingModel)
+	auto LoadUberLitPermutation = [&](const char* ShaderPath, EShadingModel ShadingModel, bool bUseNormalMap)
     {
         FShaderPermutationDesc Desc = {};
         Desc.ShadingModel = ShadingModel;
-        Desc.bUseNormalMap = false;
+        Desc.bUseNormalMap = bUseNormalMap;
 
         TArray<D3D_SHADER_MACRO> Defines;
 
@@ -63,7 +63,7 @@ void FRenderer::Create(HWND hWindow)
             break;
         }
 
-        Defines.push_back({ "USE_NORMAL_MAP", "0" });
+        Defines.push_back({ "USE_NORMAL_MAP", bUseNormalMap ? "1" : "0" });
         Defines.push_back({ nullptr, nullptr });
 
         FResourceManager::Get().LoadShader(
@@ -76,15 +76,23 @@ void FRenderer::Create(HWND hWindow)
             Desc.ToKey());
     };
 
-	LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Unlit);
-    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Lambert);
-    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Phong);
-    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Gouraud);
+	LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Unlit, false);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Lambert, false);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Phong, false);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Gouraud, false);
 
-    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Unlit);
-    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Lambert);
-    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Phong);
-    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Gouraud);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Lambert, true);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Phong, true);
+    LoadUberLitPermutation("Shaders/ShaderStaticMesh.hlsl", EShadingModel::Gouraud, true);
+
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Unlit, false);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Lambert, false);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Phong, false);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Gouraud, false);
+
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Lambert, true);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Phong, true);
+    LoadUberLitPermutation("Shaders/ShaderDecal.hlsl", EShadingModel::Gouraud, true);
 }
 
 void FRenderer::CreateResources()

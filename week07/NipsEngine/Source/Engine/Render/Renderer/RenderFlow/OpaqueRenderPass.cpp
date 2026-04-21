@@ -34,7 +34,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
     const FRenderBus* RenderBus = Context->RenderBus;
 
 	FShaderPermutationDesc PermDesc = {};
-    PermDesc.bUseNormalMap = false;
 
     if (RenderBus->GetViewMode() == EViewMode::Unlit)
     {
@@ -44,8 +43,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
     {
         PermDesc.ShadingModel = RenderBus->GetShadingModel();
     }
-
-    const uint32 PermutationKey = PermDesc.ToKey();
 
     const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);
 
@@ -85,6 +82,14 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
         if (Cmd.Material)
         {
+            FMaterialParamValue OutValue;
+            Cmd.Material->GetParam("bHasBumpMap", OutValue);
+            if (OutValue.Type == EMaterialParamType::Bool)
+				PermDesc.bUseNormalMap = std::get<bool>(OutValue.Value);
+            else
+                PermDesc.bUseNormalMap = false;
+
+            const uint32 PermutationKey = PermDesc.ToKey();
             Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
         }
 

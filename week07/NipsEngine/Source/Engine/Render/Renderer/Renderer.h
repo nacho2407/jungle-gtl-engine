@@ -174,12 +174,14 @@ private:
 	};
 
 	// StaticMesh (FNormalVertex) Input Layout
-	D3D11_INPUT_ELEMENT_DESC NormalVertexInputLayout[4] =
+	D3D11_INPUT_ELEMENT_DESC NormalVertexInputLayout[6] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Normal)),   D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Position)),		D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)),		D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Normal)),		D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),			D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Tangent)),		D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT,			 0, static_cast<uint32>(offsetof(FNormalVertex, TangentSign)),	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	D3D11_INPUT_ELEMENT_DESC FontBatcherInputLayout[3] =
@@ -197,4 +199,3 @@ private:
 	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
 	FViewportRenderResource ViewportResources[4];
 };
-

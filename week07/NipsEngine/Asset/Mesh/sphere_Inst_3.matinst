@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Mesh/sphere_Inst_3.matinst",
+        "OverridedParams" : [{
+            "Name" : "bHasBumpMap",
+            "Type" : "Bool",
+            "Value" : true
+          }],
+        "Parent" : "DefaultWhite"
+      }

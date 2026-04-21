@@ -42,7 +42,7 @@ PSInput mainVS(VSInput input)
     output.ClipPos = ApplyMVP(input.Position);
     output.ClipPos.z -= 0.0001f;
     output.UV = input.UV;
-
+    
 #ifdef LIGHTING_MODEL_GOURAUD
     FUberMaterialInput MaterialInput;
     MaterialInput.Albedo = float3(1.0f, 1.0f, 1.0f);
