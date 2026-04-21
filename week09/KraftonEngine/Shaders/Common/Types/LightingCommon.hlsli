@@ -77,7 +77,7 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, uint2 Pi
     }
 
     uint2 TileCoord = PixelCoord / TileSize; // 각 성분별 나눔
-    uint TilesX = ScreenSize.x / TileSize.x; // 한 행에 존재하는 타일 수
+    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x; // 한 행에 존재하는 타일 수
     uint FlatTileIndex = TileCoord.x + TileCoord.y * TilesX;
     
     int BucketsPerTile = MAX_LIGHTS_PER_TILE / 32;

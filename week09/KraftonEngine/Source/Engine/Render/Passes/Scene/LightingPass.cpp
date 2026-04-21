@@ -173,4 +173,8 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
         BindViewportTarget(Context);
     }
+    ID3D11ShaderResourceView* nullSRV = {};
+    Context.Context->PSSetShaderResources(7, 1, &nullSRV);
+
+    Context.Context->PSSetShaderResources(8, 1, &nullSRV);
 }
