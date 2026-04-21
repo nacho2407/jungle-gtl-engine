@@ -73,4 +73,9 @@ void FBaseDrawPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPr
 void FBaseDrawPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     SubmitPassRange(Context, ERenderPass::Opaque);
+
+	ID3D11ShaderResourceView* nullSRV = {};
+    Context.Context->PSSetShaderResources(7, 1, &nullSRV);
+
+    Context.Context->PSSetShaderResources(8, 1, &nullSRV);
 }
