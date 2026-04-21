@@ -17,7 +17,7 @@ public:
 	void Render();
 
 private:
-	void RenderTextureSection(json::JSON JsonData);
+	void RenderTextureSection();
 
 private:
 	std::filesystem::path MaterialPath;

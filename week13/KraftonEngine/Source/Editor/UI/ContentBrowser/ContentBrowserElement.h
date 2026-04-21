@@ -6,12 +6,13 @@
 #include <shellapi.h>
 
 
-class ContentBrowserElement
+class ContentBrowserElement : public std::enable_shared_from_this<ContentBrowserElement>
 {
 public:
 	virtual ~ContentBrowserElement() = default;
 	bool RenderSelectSpace(ContentBrowserContext& Context);
 	virtual void Render(ContentBrowserContext& Context);
+	virtual void RenderDetail() {};
 
 	void SetIcon(ID3D11ShaderResourceView* InIcon) { Icon = InIcon; }
 	void SetContent(FContentItem InContent) { ContentItem = InContent; }
@@ -50,13 +51,19 @@ public:
 	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 };
 
+class PNGElement final : public ContentBrowserElement
+{
+public:
+	virtual const char* GetDragItemType() override { return "PNGElement"; }
+};
+
 #include "Editor/UI/EditorMaterialInspector.h"
 class MaterialElement final : public ContentBrowserElement
 {
 public:
-	void Render(ContentBrowserContext& Context) override;
 	virtual void OnLeftClicked(ContentBrowserContext& Context) override;
 	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
+	virtual void RenderDetail() override;
 
 private:
 	FEditorMaterialInspector MaterialInspector;

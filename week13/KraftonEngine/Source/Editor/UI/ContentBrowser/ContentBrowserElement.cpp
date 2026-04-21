@@ -6,7 +6,7 @@ bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 	FString Name = FPaths::ToUtf8(ContentItem.Name);
 	ImGui::PushID(Name.c_str());
 
-	bIsSelected = Context.SelectedElement == this;
+	bIsSelected = Context.SelectedElement.get() == this;
 
 	bool bIsClicked = ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize);
 
@@ -33,7 +33,7 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 {
 	if (RenderSelectSpace(Context))
 	{
-		Context.SelectedElement = this;
+		Context.SelectedElement = shared_from_this();
 		bIsSelected = true;
 		OnLeftClicked(Context);
 	}
@@ -132,15 +132,12 @@ void SceneElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	}
 }
 
-void MaterialElement::Render(ContentBrowserContext& Context)
-{
-	ContentBrowserElement::Render(Context);
-	if(bIsSelected)
-		MaterialInspector.Render();
-}
-
 void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)
 {
 	MaterialInspector = { ContentItem.Path };
-	//Context.EditorEngine.
+}
+
+void MaterialElement::RenderDetail()
+{
+	MaterialInspector.Render();
 }
