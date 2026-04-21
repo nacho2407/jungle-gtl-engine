@@ -466,3 +466,20 @@ void FEditorViewportClient::RenderViewportImage(bool bIsActiveViewport)
 		DrawList->AddRect(Min, Max, IM_COL32(255, 200, 0, 200), 0.0f, 0, 2.0f);
 	}
 }
+
+bool FEditorViewportClient::GetCursorViewportPosition(uint32& OutX, uint32& OutY) const
+{
+	if (!bIsActive) return false;
+
+	ImVec2 MousePos = ImGui::GetIO().MousePos;
+	float LocalX = MousePos.x - ViewportScreenRect.X;
+	float LocalY = MousePos.y - ViewportScreenRect.Y;
+
+	if (LocalX >= 0 && LocalY >= 0 && LocalX < ViewportScreenRect.Width && LocalY < ViewportScreenRect.Height)
+	{
+		OutX = static_cast<uint32>(LocalX);
+		OutY = static_cast<uint32>(LocalY);
+		return true;
+	}
+	return false;
+}

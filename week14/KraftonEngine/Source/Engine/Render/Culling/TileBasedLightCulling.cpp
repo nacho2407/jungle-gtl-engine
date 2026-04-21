@@ -1,5 +1,7 @@
-﻿#include "Engine/Render/Culling/TileBasedLightCulling.h"
+#include "Engine/Render/Culling/TileBasedLightCulling.h"
 #include "Render/Resource/ShaderInclude.h"
+#include "Render/DebugDraw/DrawDebugHelpers.h"
+#include "GameFramework/World.h"
 
 
 static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, const char* Entry)
@@ -29,6 +31,156 @@ static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, co
 	return SUCCEEDED(hr) ? cs : nullptr;
 }
 
+// ════════════════════════════════════════════════════════════════
+// FTileCullingVisualizer
+// ════════════════════════════════════════════════════════════════
+
+void FTileCullingVisualizer::Initialize(ID3D11Device* InDevice)
+{
+	Device = InDevice;
+
+	// CB (b3)
+	D3D11_BUFFER_DESC cbDesc = {};
+	cbDesc.ByteWidth      = sizeof(FVisualizeCullingCBData);
+	cbDesc.Usage          = D3D11_USAGE_DYNAMIC;
+	cbDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	Device->CreateBuffer(&cbDesc, nullptr, &VisCullingCB);
+
+	// GPU StructuredBuffer (u3)
+	D3D11_BUFFER_DESC bufDesc = {};
+	bufDesc.ByteWidth           = kElementCount * sizeof(FVector4);
+	bufDesc.Usage               = D3D11_USAGE_DEFAULT;
+	bufDesc.BindFlags           = D3D11_BIND_UNORDERED_ACCESS;
+	bufDesc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	bufDesc.StructureByteStride = sizeof(FVector4);
+	Device->CreateBuffer(&bufDesc, nullptr, &VisBuffer);
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.Format             = DXGI_FORMAT_UNKNOWN;
+	uavDesc.ViewDimension      = D3D11_UAV_DIMENSION_BUFFER;
+	uavDesc.Buffer.NumElements = kElementCount;
+	Device->CreateUnorderedAccessView(VisBuffer, &uavDesc, &VisBufferUAV);
+
+	// Staging (CPU read)
+	D3D11_BUFFER_DESC stagingDesc = {};
+	stagingDesc.ByteWidth      = kElementCount * sizeof(FVector4);
+	stagingDesc.Usage          = D3D11_USAGE_STAGING;
+	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	Device->CreateBuffer(&stagingDesc, nullptr, &VisStagingBuf);
+
+	ReadbackData_.resize(kElementCount);
+}
+
+void FTileCullingVisualizer::Release()
+{
+	if (VisCullingCB)  { VisCullingCB->Release();  VisCullingCB = nullptr; }
+	if (VisBufferUAV)  { VisBufferUAV->Release();  VisBufferUAV = nullptr; }
+	if (VisBuffer)     { VisBuffer->Release();     VisBuffer = nullptr; }
+	if (VisStagingBuf) { VisStagingBuf->Release(); VisStagingBuf = nullptr; }
+}
+
+void FTileCullingVisualizer::PreDispatch(ID3D11DeviceContext* Ctx, const FFrameContext& Frame, bool bVisualize)
+{
+	bCurrentFrameActive = bVisualize;
+
+	// CB 업데이트
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	Ctx->Map(VisCullingCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
+
+	FVisualizeCullingCBData* VCB = reinterpret_cast<FVisualizeCullingCBData*>(Mapped.pData);
+	VCB->Visualize25DCulling = bVisualize ? 1 : 0;
+	VCB->CursorTileX         = Frame.CursorViewportX / ETileCulling::TileSize;
+	VCB->CursorTileY         = Frame.CursorViewportY / ETileCulling::TileSize;
+	VCB->_pad                = 0.0f;
+	FMatrix Inv = Frame.View.GetInverse();
+	memcpy(VCB->InvView, Inv.Data, sizeof(float) * 16);
+
+	Ctx->Unmap(VisCullingCB, 0);
+
+	// UAV 클리어
+	if (bVisualize && VisBufferUAV)
+	{
+		const UINT Zeros[4] = {};
+		Ctx->ClearUnorderedAccessViewUint(VisBufferUAV, Zeros);
+	}
+}
+
+void FTileCullingVisualizer::PostDispatch(ID3D11DeviceContext* Ctx, bool bVisualize)
+{
+	if (bVisualize && VisBuffer && VisStagingBuf)
+	{
+		Ctx->CopyResource(VisStagingBuf, VisBuffer);
+		bPendingReadback = true;
+	}
+	else
+	{
+		bDataReady = false;
+	}
+}
+
+void FTileCullingVisualizer::ReadbackData(ID3D11DeviceContext* Ctx)
+{
+	if (!bPendingReadback || !VisStagingBuf) return;
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	HRESULT hr = Ctx->Map(VisStagingBuf, 0, D3D11_MAP_READ, 0, &Mapped);
+	if (SUCCEEDED(hr))
+	{
+		memcpy(ReadbackData_.data(), Mapped.pData, kElementCount * sizeof(FVector4));
+		Ctx->Unmap(VisStagingBuf, 0);
+		bDataReady = true;
+	}
+	bPendingReadback = false;
+}
+
+void FTileCullingVisualizer::SubmitDebugLines(ID3D11DeviceContext* Ctx, UWorld* World)
+{
+	ReadbackData(Ctx);
+
+	if (!bDataReady || !World) return;
+
+	constexpr uint32 kBoundaries = 33; // NUM_SLICES + 1
+
+	// 각 슬라이스 경계에 사각형(quad) 외곽선
+	for (uint32 b = 0; b < kBoundaries; b++)
+	{
+		uint32 off = b * 4;
+		if (ReadbackData_[off].W == 0.0f) continue;
+
+		FVector TL(ReadbackData_[off + 0].X, ReadbackData_[off + 0].Y, ReadbackData_[off + 0].Z);
+		FVector TR(ReadbackData_[off + 1].X, ReadbackData_[off + 1].Y, ReadbackData_[off + 1].Z);
+		FVector BL(ReadbackData_[off + 2].X, ReadbackData_[off + 2].Y, ReadbackData_[off + 2].Z);
+		FVector BR(ReadbackData_[off + 3].X, ReadbackData_[off + 3].Y, ReadbackData_[off + 3].Z);
+
+		// 8슬라이스 간격마다 노란색, 나머지 시안
+		FColor Color = (b % 8 == 0) ? FColor::Yellow() : FColor(0, 255, 255);
+		DrawDebugLine(World, TL, TR, Color);
+		DrawDebugLine(World, TR, BR, Color);
+		DrawDebugLine(World, BR, BL, Color);
+		DrawDebugLine(World, BL, TL, Color);
+	}
+
+	// 코너끼리 수직 연결선 (슬라이스 깊이 방향)
+	for (uint32 c = 0; c < 4; c++)
+	{
+		for (uint32 b = 0; b < kBoundaries - 1; b++)
+		{
+			uint32 off0 = b * 4 + c;
+			uint32 off1 = (b + 1) * 4 + c;
+			if (ReadbackData_[off0].W == 0.0f || ReadbackData_[off1].W == 0.0f) continue;
+
+			FVector P0(ReadbackData_[off0].X, ReadbackData_[off0].Y, ReadbackData_[off0].Z);
+			FVector P1(ReadbackData_[off1].X, ReadbackData_[off1].Y, ReadbackData_[off1].Z);
+			DrawDebugLine(World, P0, P1, FColor::Green());
+		}
+	}
+}
+
+// ════════════════════════════════════════════════════════════════
+// FTileBasedLightCulling
+// ════════════════════════════════════════════════════════════════
+
 void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
@@ -39,11 +191,13 @@ void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 		return;
 
 	D3D11_BUFFER_DESC cbDesc = {};
-	cbDesc.ByteWidth = sizeof(FTileLightCullingCBData);
-	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth      = sizeof(FTileLightCullingCBData);
+	cbDesc.Usage          = D3D11_USAGE_DYNAMIC;
+	cbDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
 	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	Device->CreateBuffer(&cbDesc, nullptr, &TileCullingCB);
+
+	Visualizer.Initialize(Device);
 
 	bInitialized = (TileCullingCB != nullptr);
 }
@@ -52,6 +206,8 @@ void FTileBasedLightCulling::Release()
 {
 	if (TileLightCullingCS) { TileLightCullingCS->Release(); TileLightCullingCS = nullptr; }
 	if (TileCullingCB)      { TileCullingCB->Release();      TileCullingCB = nullptr; }
+
+	Visualizer.Release();
 
 	bInitialized = false;
 }
@@ -82,7 +238,7 @@ void FTileBasedLightCulling::Dispatch(
 		CachedViewportHeight = ViewportHeight;
 	}
 
-	// ── Step 2: CB 업데이트 ───────────────────────────────────────────
+	// ── Step 2: TileCulling CB (b2) 업데이트 ─────────────────────────
 	{
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};
 		Ctx->Map(TileCullingCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
@@ -94,38 +250,58 @@ void FTileBasedLightCulling::Dispatch(
 		CB->NearZ            = Frame.NearClip;
 		CB->FarZ             = Frame.FarClip;
 		CB->NumLights        = NumLights;
+		CB->_pad[0] = CB->_pad[1] = 0.0f;
 
 		Ctx->Unmap(TileCullingCB, 0);
 	}
 
-	// ── Step 3: 버퍼 초기화 (매 프레임 클리어) ───────────────────────
-	// GlobalLightCounter, TileLightGrid, TileLightIndices 모두 클리어
+	// ── Step 3: Visualizer CB (b3) + UAV 준비 ────────────────────────
+	const bool bVisualize = Frame.RenderOptions.ShowFlags.bVisualize25DCulling
+		&& Frame.CursorViewportX != UINT32_MAX;
+	Visualizer.PreDispatch(Ctx, Frame, bVisualize);
+
+	// ── Step 4: 타일 버퍼 초기화 ─────────────────────────────────────
 	const UINT Zeros[4] = {};
 	Ctx->ClearUnorderedAccessViewUint(TileCulling.CounterUAV, Zeros);
 	Ctx->ClearUnorderedAccessViewUint(TileCulling.GridUAV,    Zeros);
 	Ctx->ClearUnorderedAccessViewUint(TileCulling.IndicesUAV, Zeros);
 
-	// ── Step 4: CS 리소스 바인딩 ──────────────────────────────────────
-	// b0: Frame CB (View, Projection — CS 슬롯은 VS/PS와 독립적으로 바인딩 필요)
-	// b2: TileCulling CB (ScreenSize, NearZ, FarZ, NumLights)
+	// ── Step 5: CS 리소스 바인딩 ─────────────────────────────────────
 	Ctx->CSSetConstantBuffers(0, 1, &FrameCB);
 	Ctx->CSSetConstantBuffers(2, 1, &TileCullingCB);
+	ID3D11Buffer* visCB = Visualizer.GetCB();
+	Ctx->CSSetConstantBuffers(3, 1, &visCB);
 	Ctx->CSSetShaderResources(0, 1, &Frame.DepthCopySRV);
 	Ctx->CSSetShaderResources(8, 1, &AllLightsSRV);
 
-	ID3D11UnorderedAccessView* UAVs[3] = {
-		TileCulling.IndicesUAV,
-		TileCulling.GridUAV,
-		TileCulling.CounterUAV
-	};
-	Ctx->CSSetUnorderedAccessViews(0, 3, UAVs, nullptr);
+	if (Visualizer.IsActive() && Visualizer.GetBufferUAV())
+	{
+		ID3D11UnorderedAccessView* UAVs[4] = {
+			TileCulling.IndicesUAV,
+			TileCulling.GridUAV,
+			TileCulling.CounterUAV,
+			Visualizer.GetBufferUAV()
+		};
+		Ctx->CSSetUnorderedAccessViews(0, 4, UAVs, nullptr);
+	}
+	else
+	{
+		ID3D11UnorderedAccessView* UAVs[3] = {
+			TileCulling.IndicesUAV,
+			TileCulling.GridUAV,
+			TileCulling.CounterUAV
+		};
+		Ctx->CSSetUnorderedAccessViews(0, 3, UAVs, nullptr);
+	}
 
-	// ── Step 5: Dispatch ──────────────────────────────────────────────
+	// ── Step 6: Dispatch ─────────────────────────────────────────────
 	Ctx->CSSetShader(TileLightCullingCS, nullptr, 0);
 	Ctx->Dispatch(TileCountX, TileCountY, 1);
 
-	// ── Step 6: 언바인딩 ─────────────────────────────────────────────
-	ID3D11UnorderedAccessView* NullUAVs[3] = {};
-	Ctx->CSSetUnorderedAccessViews(0, 3, NullUAVs, nullptr);
+	// ── Step 7: 언바인딩 + 시각화 readback 요청 ─────────────────────
+	ID3D11UnorderedAccessView* NullUAVs[4] = {};
+	Ctx->CSSetUnorderedAccessViews(0, 4, NullUAVs, nullptr);
 	Ctx->CSSetShader(nullptr, nullptr, 0);
+
+	Visualizer.PostDispatch(Ctx, bVisualize);
 }
