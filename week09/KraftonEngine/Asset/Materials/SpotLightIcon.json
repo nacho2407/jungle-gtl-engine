@@ -1,6 +1,6 @@
 {
   "PathFileName" : "Asset/Materials/SpotLightIcon.json",
-  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
+  "ShaderPath" : "Shaders/Editor/ShaderBillboard.hlsl",
   "RenderPass" : "AlphaBlend",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/SpotLight_64x.png"
