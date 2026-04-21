@@ -29,7 +29,7 @@ struct DirectionalLightInfo
     float Intensity;
 };
 
-cbuffer LightConstants : register(b3)
+cbuffer UberConstants : register(b3)
 {
     AmbientLightInfo AmbientLight;
     DirectionalLightInfo DirectionalLight;

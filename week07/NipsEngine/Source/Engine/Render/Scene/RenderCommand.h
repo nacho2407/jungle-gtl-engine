@@ -97,7 +97,7 @@ struct FLightInfo
 	float Padding1;
 };
 
-struct FLightConstants
+struct FUberConstants
 {
 	FAmbientLightInfo AmbientLight;
 	FDirectionalLightInfo DirectionalLight;

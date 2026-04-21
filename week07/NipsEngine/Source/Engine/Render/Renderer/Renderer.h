@@ -160,7 +160,7 @@ private:
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
-	void UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
+	void UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
 
 private:
 	FD3DDevice Device;
@@ -185,7 +185,6 @@ private:
     TArray<UTexture*> CachedDecalTextures;
     TComPtr<ID3D11Texture2D> DecalTextureArray;
     TComPtr<ID3D11ShaderResourceView> DecalTextureArraySRV;
-    uint32 UniqueDecalCount = 0;
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;
