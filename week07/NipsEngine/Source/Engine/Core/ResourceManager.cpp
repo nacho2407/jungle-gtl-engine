@@ -942,17 +942,29 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
 UMaterialInstance* FResourceManager::CreateMaterialInstance(const FString& Path, UMaterial* Parent)
 {
+    FString NormalizedPath = FPaths::Normalize(Path);
+
+	// 기존 경로를 쓰는 인스턴스가 있으면 부모만 설정해주고 반환
+	if (UMaterialInstance* Existing = GetMaterialInstance(NormalizedPath))
+	{
+		if (Existing->Parent == nullptr)
+		{
+			Existing->Parent = Parent;
+		}
+		return Existing;
+	}
+
 	UMaterialInstance* Instance = UObjectManager::Get().CreateObject<UMaterialInstance>();
 	Instance->Parent = Parent;
-	Instance->Name = Path;
-	Instance->FilePath = Path;
-	MaterialInstances[Path] = Instance;
+	Instance->Name = NormalizedPath;
+	Instance->FilePath = NormalizedPath;
+	MaterialInstances[NormalizedPath] = Instance;
 	return Instance;
 }
 
 UMaterialInstance* FResourceManager::GetMaterialInstance(const FString& Path) const
 {
-	auto It = MaterialInstances.find(Path);
+    auto It = MaterialInstances.find(FPaths::Normalize(Path));
 	return (It != MaterialInstances.end()) ? It->second : nullptr;
 }
 
@@ -962,8 +974,16 @@ UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name) 
 	if (Mat)
 	{
 		return Mat;
+    }
+	else if (Mat = GetMaterial(FPaths::Normalize(Name)))
+	{
+        return Mat;
 	}
-	return GetMaterialInstance(Name);
+    else if (UMaterialInstance* MatInst = GetMaterialInstance(Name))
+	{
+		return MatInst;
+    }
+    return GetMaterialInstance(FPaths::Normalize(Name));
 }
 
 bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMaterial* Material)
@@ -1057,7 +1077,9 @@ bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath,
 	using json::JSON;
 	const FString NormalizedMatInstFilePath = FPaths::Normalize(MatInstFilePath);
 	JSON Root = JSON::Make(JSON::Class::Object);
-	Root["Name"] = MaterialInstance->GetName();
+
+	// 이름에는 이제 파일 경로를 넣는 것으로 통일. 파일 경로가 없으면 기존 방식대로 이름을 넣음
+	Root["Name"] = MaterialInstance->GetFilePath().empty() ? NormalizedMatInstFilePath : FPaths::Normalize(MaterialInstance->GetFilePath());
 	Root["Parent"] = MaterialInstance->Parent->Name;
 	JSON Params = JSON::Make(JSON::Class::Array);
 	for (const auto& [ParamName, ParamValue] : MaterialInstance->OverridedParams)
@@ -1163,16 +1185,22 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 
 	if (Root.hasKey("Parent"))
 	{
-		FString MatName = Root["Name"].ToString();
-		UMaterial* ParentMat = GetMaterial(FPaths::Normalize(Root["Parent"].ToString()));
+		const FString InstancePath = NormalizedMatFilePath;
+		const FString ParentIdentifier = Root["Parent"].ToString();
+		UMaterial* ParentMat = GetMaterial(ParentIdentifier);
 
 		if (!ParentMat)
 		{
-			UE_LOG("Parent material not found: %s", Root["Parent"].ToString().c_str());
+			ParentMat = GetMaterial(FPaths::Normalize(ParentIdentifier));
+		}
+
+		if (!ParentMat)
+		{
+			UE_LOG("Parent material not found: %s", ParentIdentifier.c_str());
 			return false;
 		}
 
-		UMaterialInstance* MatInstance = CreateMaterialInstance(MatName, ParentMat);
+		UMaterialInstance* MatInstance = CreateMaterialInstance(InstancePath, ParentMat);
 
 		for (auto& Param : Root["OverridedParams"].ArrayRange())
 		{
@@ -1245,7 +1273,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 			}
 		}
 
-		MaterialInstances[MatName] = MatInstance;
+		MaterialInstances[InstancePath] = MatInstance;
 		return true;
 	}
 
