@@ -55,8 +55,9 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
 
     ID3D11DeviceContext* Ctx = Context.Context;
     FShader* Shader = Proxy.Shader;
+    const bool bIsMaskLikePass = (Pass == ERenderPass::DepthPre || Pass == ERenderPass::SelectionMask);
 
-    if (Pass == ERenderPass::DepthPre)
+    if (bIsMaskLikePass)
     {
         Shader = FShaderManager::Get().GetShader(EShaderType::DepthOnly);
     }
@@ -99,7 +100,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
 
     FConstantBuffer* ExtraCB0 = nullptr;
     FConstantBuffer* ExtraCB1 = nullptr;
-    if (Pass != ERenderPass::DepthPre && Proxy.ExtraCB.Buffer && Proxy.ExtraCB.Size > 0 && Ctx)
+    if (!bIsMaskLikePass && Proxy.ExtraCB.Buffer && Proxy.ExtraCB.Size > 0 && Ctx)
     {
         Proxy.ExtraCB.Buffer->Update(Ctx, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
 
@@ -128,11 +129,11 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
         Cmd.FirstIndex = FirstIndex;
         Cmd.IndexCount = IndexCount;
 
-        if (Pass == ERenderPass::DepthPre)
+        if (bIsMaskLikePass)
         {
-            Cmd.DepthStencil = EDepthStencilState::Default;
-            Cmd.Blend = EBlendState::NoColor;
-            Cmd.Rasterizer = ERasterizerState::SolidBackCull;
+            Cmd.DepthStencil = PassState.DepthStencil;
+            Cmd.Blend = PassState.Blend;
+            Cmd.Rasterizer = PassState.Rasterizer;
         }
         else
         {
@@ -185,12 +186,12 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
 
         Cmd.Topology = PassState.Topology;
         Cmd.PerObjectCB = PerObjCB;
-        Cmd.PerShaderCB[0] = (Pass == ERenderPass::DepthPre) ? nullptr : (CB0 ? CB0 : (Proxy.MaterialCB[0] ? Proxy.MaterialCB[0] : ExtraCB0));
-        Cmd.PerShaderCB[1] = (Pass == ERenderPass::DepthPre) ? nullptr : (CB1 ? CB1 : (Proxy.MaterialCB[1] ? Proxy.MaterialCB[1] : ExtraCB1));
-        Cmd.LightCB = (Pass == ERenderPass::DepthPre || !Context.Resources) ? nullptr : &Context.Resources->GlobalLightBuffer;
-        Cmd.LocalLightSRV = (Pass == ERenderPass::DepthPre || !Context.Resources) ? nullptr : Context.Resources->LocalLightSRV;
-        Cmd.DiffuseSRV = (Pass == ERenderPass::DepthPre) ? nullptr : BaseSRV;
-        Cmd.NormalSRV = (Pass == ERenderPass::DepthPre) ? nullptr : InNormalSRV;
+        Cmd.PerShaderCB[0] = bIsMaskLikePass ? nullptr : (CB0 ? CB0 : (Proxy.MaterialCB[0] ? Proxy.MaterialCB[0] : ExtraCB0));
+        Cmd.PerShaderCB[1] = bIsMaskLikePass ? nullptr : (CB1 ? CB1 : (Proxy.MaterialCB[1] ? Proxy.MaterialCB[1] : ExtraCB1));
+        Cmd.LightCB = (bIsMaskLikePass || !Context.Resources) ? nullptr : &Context.Resources->GlobalLightBuffer;
+        Cmd.LocalLightSRV = (bIsMaskLikePass || !Context.Resources) ? nullptr : Context.Resources->LocalLightSRV;
+        Cmd.DiffuseSRV = bIsMaskLikePass ? nullptr : BaseSRV;
+        Cmd.NormalSRV = bIsMaskLikePass ? nullptr : InNormalSRV;
         Cmd.Pass = Pass;
         const uintptr_t MaterialHash =
             (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[0]) >> 4) ^
