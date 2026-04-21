@@ -5,6 +5,12 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+
+#include "Component/PostProcess/Light/AmbientLightComponent.h"
+#include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Component/PostProcess/Light/SpotlightComponent.h"
+
 #include "Component/Movement/RotatingMovementComponent.h"
 #include "Core/ResourceManager.h"
 #include <format>
@@ -50,8 +56,20 @@ REGISTER_FACTORY(ADecalActor)
 DEFINE_CLASS(AFireballActor, AActor)
 REGISTER_FACTORY(AFireballActor)
 
-DEFINE_CLASS(ASpotLightActor, AActor)
-REGISTER_FACTORY(ASpotLightActor)
+DEFINE_CLASS(ADecalSpotLightActor, AActor)
+REGISTER_FACTORY(ADecalSpotLightActor)
+
+DEFINE_CLASS(ALightActor, AActor)
+REGISTER_FACTORY(ALightActor)
+
+DEFINE_CLASS(AAmbientLightActor, ALightActor)
+REGISTER_FACTORY(AAmbientLightActor)
+DEFINE_CLASS(ADirectionalLightActor, ALightActor)
+REGISTER_FACTORY(ADirectionalLightActor)
+DEFINE_CLASS(APointLightActor, ALightActor)
+REGISTER_FACTORY(APointLightActor)
+DEFINE_CLASS(ASpotlightActor, APointLightActor)
+REGISTER_FACTORY(ASpotlightActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -257,7 +275,7 @@ void AFireballActor::InitDefaultComponents()
 	Fireball->AttachToComponent(Sphere);
 }
 
-void ASpotLightActor::InitDefaultComponents() {
+void ADecalSpotLightActor::InitDefaultComponents() {
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
 	Billboard->SetEditorOnly(true);
@@ -278,12 +296,127 @@ void ASpotLightActor::InitDefaultComponents() {
 	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
 }
 
-void ASpotLightActor::Tick(float DeltaTime)
+void ADecalSpotLightActor::Tick(float DeltaTime)
 {
 	AActor::Tick(DeltaTime);
 
 	if (DecalComp)
 	{
 		DecalComp->SetSize(FVector(Range, Range, Range));
+	}
+}
+
+ULightComponent* ALightActor::GetLight() const
+{
+    if (!LightComp)
+        return nullptr;
+    return LightComp;
+}
+
+void ALightActor::SetLight(ULightComponent* InLight)
+{
+    if (InLight)
+        LightComp = InLight;
+}
+
+void AAmbientLightActor::InitDefaultComponents()
+{
+	UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
+	Ambient->Intensity = 0.2f;
+	SetRootComponent(Ambient);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+    Billboard->AttachToComponent(Ambient);
+	Billboard->SetEditorOnly(true);
+
+    SetLight(Ambient);
+	SetBillboard(Billboard);
+}
+
+void AAmbientLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}
+
+void ADirectionalLightActor::InitDefaultComponents()
+{
+	SetTickInEditor(true);
+
+	UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
+	SetRootComponent(Directional);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\DirectionalLight_64x.png"));
+	Billboard->AttachToComponent(Directional);
+	Billboard->SetEditorOnly(true);
+
+    SetLight(Directional);
+	SetBillboard(Billboard);
+}
+
+void ADirectionalLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}
+
+void APointLightActor::InitDefaultComponents()
+{
+	SetTickInEditor(true);
+
+	UPointLightComponent* Point = AddComponent<UPointLightComponent>();
+	SetRootComponent(Point);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\PointLight_64x.png"));
+	Billboard->AttachToComponent(Point);
+	Billboard->SetEditorOnly(true);
+
+    SetLight(Point);
+	SetBillboard(Billboard);
+}
+
+void APointLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}
+
+void ASpotlightActor::InitDefaultComponents() {
+	SetTickInEditor(true);
+
+	USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
+	SetRootComponent(Spot);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+	Billboard->AttachToComponent(Spot);
+	Billboard->SetEditorOnly(true);
+
+	SetLight(Spot);
+	SetBillboard(Billboard);
+}
+
+void ASpotlightActor::Tick(float DeltaTime) 
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
 	}
 }

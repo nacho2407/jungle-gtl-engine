@@ -349,6 +349,11 @@ void FBinarySerializer::WriteVertices(std::ofstream& Out, const FStaticMesh& Dat
 		//	UVs
 		WriteFloatLE(Out, Vertex.UVs.X);
 		WriteFloatLE(Out, Vertex.UVs.Y);
+
+		// Tangent
+		WriteFloatLE(Out, Vertex.Tangent.X);
+        WriteFloatLE(Out, Vertex.Tangent.Y);
+        WriteFloatLE(Out, Vertex.Tangent.Z);
 	}
 }
 

@@ -17,6 +17,7 @@ private:
 	static FMeshData TranslationGizmoMeshData;
 	static FMeshData RotationGizmoMeshData;
 	static FMeshData ScaleGizmoMeshData;
+	static FMeshData ArrowMeshData;
 	
 	static void CreateTranslationGizmo();
 	static void CreateRotationGizmo();
@@ -29,7 +30,6 @@ public:
 	static const FMeshData& GetTranslationGizmo() { return Get().TranslationGizmoMeshData; }
 	static const FMeshData& GetRotationGizmo() { return Get().RotationGizmoMeshData; }
 	static const FMeshData& GetScaleGizmo() { return Get().ScaleGizmoMeshData; }
-
 };
 
 // Backward compatibility alias (to be removed after all callsites migrate).

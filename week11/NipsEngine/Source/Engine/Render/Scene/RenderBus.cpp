@@ -7,6 +7,10 @@ void FRenderBus::Clear()
 	{
 		PassQueues[i].clear();
 	}
+
+	LightInfos.clear();
+	AmbientLightInfo	 = {};
+	DirectionalLightInfo = {};
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)

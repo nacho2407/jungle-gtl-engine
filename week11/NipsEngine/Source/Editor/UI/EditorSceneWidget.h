@@ -16,8 +16,6 @@ public:
 	void RefreshSceneAndAssets();
 
 private:
-	void RefreshSceneFileList();
-
 	char SceneName[128] = "Default";
 
 	TArray<FString> SceneFiles;

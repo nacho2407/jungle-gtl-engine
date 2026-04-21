@@ -6,6 +6,7 @@
 
 #include "Render/Common/RenderTypes.h"
 #include "Render/Resource/VertexTypes.h"
+#include "Render/Resource/Shader.h"
 
 #include "Render/Scene/RenderBus.h"
 #include "Render/Device/D3DDevice.h"
@@ -159,6 +160,8 @@ private:
 	// LineBatcher Flush 공통 — EditorConstants 업데이트 + EditorShader 바인딩
 	void FlushLineBatcher(FLineBatcher& Batcher, ERenderPass Pass, const FRenderBus& Bus, ID3D11DeviceContext* Context);
 
+	void UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus);
+
 private:
 	FD3DDevice Device;
 	FRenderTargetSet CurrentRenderTargets;
@@ -179,28 +182,6 @@ private:
 	FPassRenderState    PassRenderStates[(uint32)ERenderPass::MAX];
 	FPassBatcherBinding PassBatchers[(uint32)ERenderPass::MAX];
 	UTexture* SubUVCachedTexture = nullptr;
-
-	//	Primitive and Gizmo Input Layout
-	D3D11_INPUT_ELEMENT_DESC PrimitiveInputLayout[2] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,  static_cast<uint32>(offsetof(FVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FVertex, Color)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	// StaticMesh (FNormalVertex) Input Layout
-	D3D11_INPUT_ELEMENT_DESC NormalVertexInputLayout[4] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Position)), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, static_cast<uint32>(offsetof(FNormalVertex, Normal)),   D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, static_cast<uint32>(offsetof(FNormalVertex, UVs)),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	D3D11_INPUT_ELEMENT_DESC FontBatcherInputLayout[2] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
 
 	// FinalRTV 는 Render Pass 구성에 따라 달라지므로 Renderer 내에서 보관
 	TComPtr<ID3D11RenderTargetView> SceneFinalRTV = nullptr;

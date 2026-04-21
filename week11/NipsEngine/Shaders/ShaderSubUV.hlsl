@@ -7,12 +7,14 @@ struct VSInput
 {
     float3 position : POSITION;
     float2 texCoord : TEXCOORD;
+    float4 color : COLOR;
 };
 
 struct PSInput
 {
     float4 position : SV_POSITION;
     float2 texCoord : TEXCOORD;
+    float4 color : COLOR;
 };
 
 PSInput VS(VSInput input)
@@ -20,6 +22,7 @@ PSInput VS(VSInput input)
     PSInput output;
     output.position = mul(mul(float4(input.position, 1.0f), View), Projection);
     output.texCoord = input.texCoord;
+    output.color = input.color;
     return output;
 }
 
@@ -33,7 +36,7 @@ float4 PS(PSInput input) : SV_TARGET
             
             discard;
         }
-        return col;
+        return col * input.color;
     }
 
     return lerp(col, float4(WireframeRGB, 1.0f), bIsWireframe);

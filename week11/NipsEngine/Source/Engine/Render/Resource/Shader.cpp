@@ -2,6 +2,35 @@
 
 DEFINE_CLASS(UShader, UObject)
 
+DXGI_FORMAT GetDXGIFormat(const D3D11_SIGNATURE_PARAMETER_DESC& ParamDesc)
+{
+	if (ParamDesc.Mask == 1)
+	{
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32_UINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32_SINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (ParamDesc.Mask <= 3)
+	{
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32G32_UINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32G32_SINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32G32_FLOAT;
+	}
+	else if (ParamDesc.Mask <= 7)
+	{
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32G32B32_UINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32G32B32_SINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32G32B32_FLOAT;
+	}
+	else if (ParamDesc.Mask <= 15)
+	{
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32G32B32A32_UINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32G32B32A32_SINT;
+		if (ParamDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	}
+	return DXGI_FORMAT_UNKNOWN;
+}
+
 void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target)
 {
 	if (!ShaderBlob || !Device) return;
@@ -14,6 +43,36 @@ void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader&
 
 	D3D11_SHADER_DESC ShaderDesc;
 	Reflector->GetDesc(&ShaderDesc);
+
+	UINT ShaderType = D3D11_SHVER_GET_TYPE(ShaderDesc.Version);
+	if (ShaderType == D3D11_SHVER_VERTEX_SHADER)
+	{
+		TArray<D3D11_INPUT_ELEMENT_DESC> InputElements;
+
+		for (UINT i = 0; i < ShaderDesc.InputParameters; ++i)
+		{
+			D3D11_SIGNATURE_PARAMETER_DESC ParamDesc;
+			Reflector->GetInputParameterDesc(i, &ParamDesc);
+
+			D3D11_INPUT_ELEMENT_DESC ElementDesc = {};
+			ElementDesc.SemanticName = ParamDesc.SemanticName;
+			ElementDesc.SemanticIndex = ParamDesc.SemanticIndex;
+			ElementDesc.InputSlot = 0;
+			ElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+			ElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+			ElementDesc.InstanceDataStepRate = 0;
+
+			ElementDesc.Format = GetDXGIFormat(ParamDesc);
+
+			InputElements.push_back(ElementDesc);
+		}
+
+		if (InputElements.size() > 0)
+		{
+			Device->CreateInputLayout(InputElements.data(), (UINT)InputElements.size(),
+				ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(), &Target.InputLayout);
+		}
+	}
 
 	for (UINT i = 0; i < ShaderDesc.BoundResources; ++i)
 	{

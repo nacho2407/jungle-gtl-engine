@@ -29,74 +29,103 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
     return true;
 }
 
-bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
-{
-    const FRenderBus* RenderBus = Context->RenderBus;
+bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)  
+{  
+   const FRenderBus* RenderBus = Context->RenderBus;  
+   const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);  
 
-    const TArray<FRenderCommand>& Commands = RenderBus->GetCommands(ERenderPass::Opaque);
+   if (Commands.empty())  
+       return true;  
 
-    if (Commands.empty())
-        return true;
+   for (const FRenderCommand& Cmd : Commands)  
+   {  
+       Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));  
+       ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();  
+       Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
+       Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);  
 
-    for (const FRenderCommand& Cmd : Commands)
-    {
-        Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
-        ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
-        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+       if (Cmd.Type == ERenderCommandType::PostProcessOutline)  
+       {  
+           continue;  
+       }  
 
-        if (Cmd.Type == ERenderCommandType::PostProcessOutline)
-        {
-            continue;
-        }
+       if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
+       {  
+           return false;  
+       }  
 
-        if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-        {
-            return false;
-        }
+       uint32 offset = 0;  
+       ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();  
+       if (vertexBuffer == nullptr)  
+       {  
+           return false;  
+       }  
 
-        uint32 offset = 0;
-        ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-        if (vertexBuffer == nullptr)
-        {
-            return false;
-        }
+       uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
+       uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
+       if (vertexCount == 0 || stride == 0)  
+       {  
+           return false;  
+       }  
 
-        uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-        uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-        if (vertexCount == 0 || stride == 0)
-        {
-            return false;
-        }
+	   uint32 PermutationKey = (uint32)ELightingModel::Unlit;
+	   switch (Context->RenderBus->GetViewMode())
+	   {
+	   case EViewMode::Lit_Gouraud:
+		   PermutationKey = (uint32)ELightingModel::Gouraud;
+		   break;
+	   case EViewMode::Lit_Lambert:
+		   PermutationKey = (uint32)ELightingModel::Lambert;
+		   break;
+	   case EViewMode::Lit_BlinnPhong:
+		   PermutationKey = (uint32)ELightingModel::BlinnPhong;
+		   break;
+	   case EViewMode::Heatmap:
+		   PermutationKey = (uint32)ELightingModel::Heatmap;
+		   break;
+	   }
 
-        if (Cmd.Material)
-        {
-            Cmd.Material->Bind(Context->DeviceContext);
-        }
+       if (Cmd.Material)
+       {
+		   if (Cmd.Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
+		   if (Cmd.Material->HasNormalMap()) PermutationKey |= (uint32)EShaderFeature::HasNormalMap;
+		   if (Cmd.Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
+		   if (Cmd.Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
+		   if (Cmd.Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
 
-		CheckOverrideViewMode(Context);
+           Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
+       }
 
-        Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+       // Depth prepass already wrote correct depth values, so use LESS_EQUAL + no writes
+       auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
+       Context->DeviceContext->OMSetDepthStencilState(DSState, 0);
 
-        ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-        if (indexBuffer != nullptr)
-        {
-            uint32 indexStart = Cmd.SectionIndexStart;
-            uint32 indexCount = Cmd.SectionIndexCount;
-            Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-            Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);
-        }
-        else
-        {
-            Context->DeviceContext->Draw(vertexCount, 0);
-        }
-    }
+       CheckOverrideViewMode(Context);  
 
-    return true;
+       Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
+
+       ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
+       if (indexBuffer != nullptr)  
+       {  
+           uint32 indexStart = Cmd.SectionIndexStart;  
+           uint32 indexCount = Cmd.SectionIndexCount;  
+           Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);  
+           Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);  
+       }  
+       else  
+       {  
+           Context->DeviceContext->Draw(vertexCount, 0);  
+       }  
+   }  
+
+   return true;  
 }
 
 bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 {
+	//ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
+	//Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
+	//Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
     return true;
 }
 

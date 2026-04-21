@@ -10,16 +10,17 @@
 struct FVertex
 { 
 	FVector Position;
-	FColor Color;
-	int SubID;
+	FColor	Color;
+	int		SubID;
 };
 
 struct FNormalVertex
 {
-	FVector Position;
-	FColor Color;
-	FVector Normal;
-	FVector2 UVs;	//	TexCoord
+	FVector		Position;
+	FColor		Color;
+	FVector		Normal;
+	FVector2	UVs;	//	TexCoord
+    FVector4	Tangent;
 };
 
 struct FOverlayVertex
@@ -32,6 +33,7 @@ struct FTextureVertex
 {
 	FVector  Position;
 	FVector2 TexCoord;
+	FColor Color;
 };
 
 struct FMeshData

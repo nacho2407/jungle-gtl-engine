@@ -17,16 +17,6 @@
 void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
-	RefreshSceneFileList();
-}
-
-void FEditorSceneWidget::RefreshSceneFileList()
-{
-	SceneFiles = FSceneSaveManager::GetSceneFileList();
-	if (SelectedSceneIndex >= static_cast<int32>(SceneFiles.size()))
-	{
-		SelectedSceneIndex = SceneFiles.empty() ? -1 : 0;
-	}
 }
 
 void FEditorSceneWidget::NewScene()
@@ -110,7 +100,6 @@ void FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 	}
 
 	SceneSaveNotificationTimer = common::constants::ImGui::NotificationTimer;
-	RefreshSceneFileList();
 }
 
 void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
@@ -156,7 +145,6 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 
 void FEditorSceneWidget::RefreshSceneAndAssets()
 {
-	RefreshSceneFileList();
 	FResourceManager::Get().RefreshFromAssetDirectory(FPaths::ToUtf8(FPaths::AssetDirectoryPath()));
 }
 

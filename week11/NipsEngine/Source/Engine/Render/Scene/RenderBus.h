@@ -42,6 +42,8 @@ public:
 	const FVector2& GetViewportSize() const { return ViewportSize; }
 	void SetViewportOrigin(const FVector2& InViewportOrigin) { ViewportOrigin = InViewportOrigin; }
 	const FVector2& GetViewportOrigin() const { return ViewportOrigin; }
+    float GetNearPlane() const { return NearPlane; }
+    float GetFarPlane() const { return FarPlane; }
 
 public:
 	// Light
@@ -58,11 +60,13 @@ private:
 	FVector CameraForward;
 	FVector CameraRight;
 	FVector CameraUp;
+	float NearPlane = 0.1f;
+	float FarPlane = 1000.0f;
 	FVector2 ViewportSize;
 	FVector2 ViewportOrigin = FVector2(0.0f, 0.0f);
 
 	//Editor Settings
-	EViewMode ViewMode = EViewMode::Lit;
+	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 	FShowFlags ShowFlags;
 	FVector WireframeColor = FVector(1.0f, 1.0f, 1.0f);
 	bool bFXAAEnabled = true;

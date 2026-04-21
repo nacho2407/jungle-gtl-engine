@@ -77,6 +77,12 @@ public:
 	virtual FString& GetNameRef() = 0;
 	virtual const FString& GetFilePath() const = 0;
 	virtual FString& GetFilePathRef() = 0;
+
+	virtual bool HasDiffuseMap() const = 0;
+	virtual bool HasNormalMap() const = 0;
+	virtual bool HasSpecularMap() const = 0;
+	virtual bool HasEmissiveMap() const = 0;
+	virtual bool HasAlphaMask() const = 0;
 	
 	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const = 0;
 	virtual bool GetParam(const FString& Name, FMaterialParamValue& OutValue) const = 0;
@@ -120,6 +126,12 @@ public:
 	const FString& GetFilePath() const override { return FilePath; }
 	FString& GetFilePathRef() override { return FilePath; }
 
+	bool HasDiffuseMap() const override { return MaterialData.bHasDiffuseTexture; }
+	bool HasNormalMap() const override { return MaterialData.bHasBumpTexture; }
+	bool HasSpecularMap() const override { return MaterialData.bHasSpecularTexture; }
+	bool HasEmissiveMap() const override { return MaterialData.bHasAmbientTexture; }
+	bool HasAlphaMask() const override { return false; }
+
 	void SetShader(UShader* InShader)
 	{
 		Shader = InShader;
@@ -143,7 +155,7 @@ public:
 
 	virtual void Bind(ID3D11DeviceContext* Context, uint32 PermutationKey = 0) const override;
 
-	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params) const;
+	void ApplyParams(ID3D11DeviceContext* Context, const TMap<FString, FMaterialParamValue>& Params, uint32 PermutationKey = 0) const;
 
 	void GatherAllParams(TMap<FString, FMaterialParamValue>& OutParams) const
 	{
@@ -170,6 +182,12 @@ public:
 	FString& GetNameRef() override { return Name; }
 	const FString& GetFilePath() const override { return FilePath; }
 	FString& GetFilePathRef() override { return FilePath; }
+
+	bool HasDiffuseMap() const override { return Parent ? Parent->HasDiffuseMap() : false; }
+	bool HasNormalMap() const override { return Parent ? Parent->HasNormalMap() : false; }
+	bool HasSpecularMap() const override { return Parent ? Parent->HasSpecularMap() : false; }
+	bool HasEmissiveMap() const override { return Parent ? Parent->HasEmissiveMap() : false; }
+	bool HasAlphaMask() const override { return Parent ? Parent->HasAlphaMask() : false; }
 
 	static UMaterialInstance* Create(UMaterial* Material)
 	{
