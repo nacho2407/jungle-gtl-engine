@@ -1,4 +1,4 @@
-#include "Render/Resources/ConstantBufferLayouts.h"
+﻿#include "Render/Resources/ConstantBufferLayouts.h"
 #include "Render/Types/PipelineStateTypes.h"
 #include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Submission/Builders/MeshDrawCommandBuilder.h"
