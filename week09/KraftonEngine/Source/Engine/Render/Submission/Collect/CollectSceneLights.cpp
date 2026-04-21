@@ -1,4 +1,4 @@
-#include "Render/Submission/Collect/DrawCollector.h"
+﻿#include "Render/Submission/Collect/DrawCollector.h"
 
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Render/Scene/Scene.h"
@@ -17,7 +17,7 @@ void FDrawCollector::CollectSceneLights(FScene* Scene)
     const TArray<FLightSceneProxy*>& LightProxies = Scene->GetLightProxies();
     for (FLightSceneProxy* Proxy : LightProxies)
     {
-        if (!Proxy)
+        if (!Proxy || !Proxy->bAffectsWorld)
         {
             continue;
         }
