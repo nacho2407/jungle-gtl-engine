@@ -41,14 +41,14 @@ uint DepthToClusterSlice(float viewDepth)
 {
     float safeDepth = clamp(viewDepth, CullState.NearZ, CullState.FarZ);
     float logDepth = log(safeDepth / CullState.NearZ) / log(CullState.FarZ / CullState.NearZ);
-    return min((uint)floor(logDepth * CullState.ClusterZ), CullState.ClusterZ - 1);
+    return min((uint) floor(logDepth * CullState.ClusterZ), CullState.ClusterZ - 1);
 }
 
 uint ComputeClusterIndex(float4 screenPos, float3 worldPos)
 {
     float4 viewPos = mul(float4(worldPos, 1.0f), View);
-    uint tileX = min((uint)(screenPos.x / CullState.ScreenWidth * CullState.ClusterX), CullState.ClusterX - 1);
-    uint tileY = min((uint)(screenPos.y / CullState.ScreenHeight * CullState.ClusterY), CullState.ClusterY - 1);
+    uint tileX = min((uint) (screenPos.x / CullState.ScreenWidth * CullState.ClusterX), CullState.ClusterX - 1);
+    uint tileY = min((uint) (screenPos.y / CullState.ScreenHeight * CullState.ClusterY), CullState.ClusterY - 1);
     uint sliceZ = DepthToClusterSlice(abs(viewPos.z));
 
     return sliceZ * CullState.ClusterX * CullState.ClusterY
@@ -163,7 +163,7 @@ static const float g_ToonRimStrength = 0.25f;
 float ToonStep(float NdotL)
 {
     float x = saturate(NdotL);
-    float stepped = floor(x * g_ToonSteps);
+    float stepped = smoothstep(g_ToonDarknessFloor, 1.0f, x * g_ToonSteps);
     stepped /= max(g_ToonSteps - 1.0f, 1.0f);
     return lerp(g_ToonDarknessFloor, 1.0f, saturate(stepped));
 }
