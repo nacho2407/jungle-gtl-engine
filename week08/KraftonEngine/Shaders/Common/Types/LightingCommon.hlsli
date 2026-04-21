@@ -100,8 +100,8 @@ float3 LocalLightLambert(FLocalLightInfo LocalLight, float3 Normal, float4 BaseC
         float3 SpotDirection = normalize(LocalLight.Direction);
         float CosAngle = dot(-L, SpotDirection);
         
-        float CosInner = cos(LocalLight.InnerConeAngle);
-        float CosOuter = cos(LocalLight.OuterConeAngle);
+        float CosInner = cos(radians(LocalLight.InnerConeAngle));
+        float CosOuter = cos(radians(LocalLight.OuterConeAngle));
         
         // 원뿔의 내부 각도와 외부 각도 사이를 부드럽게 보간
         SpotFalloff = smoothstep(CosOuter, CosInner, CosAngle);
