@@ -10,49 +10,49 @@
           "Element 0" : {
             "Path" : "None"
           },
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [100.000000, 1.000000, 100.000000],
+          "Location" : [0.000000, -7.255380, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
           "Visible" : true,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
-      "ClassName" : "ASpotLightActor",
+      "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
+      "PrimitiveKey" : "10",
       "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/SpotLightIcon.json"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "USpotLightComponent",
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
         "Properties" : {
-          "AttenuationRadius" : 10.000000,
-          "InnerConeAngle" : 0.000000,
-          "Intensity" : 2.500000,
-          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "LightFalloffExponent" : 8.000000,
-          "Location" : [0.000000, 5.000000, 0.000000],
-          "OuterConeAngle" : 44.000000,
-          "Rotation" : [0.000000, -90.000000, 0.000000],
+          "Element 0" : {
+            "Path" : "None"
+          },
+          "Location" : [0.000000, 7.919561, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "12",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "None"
+          },
+          "Location" : [-29.272213, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
         }
       },
       "bVisible" : true
@@ -64,16 +64,30 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-65.358093, 214.617920, 23.516636],
+    "Location" : [13.537819, -1.724252, 7.428248],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000000, 5.060897, -71.365822]
+    "Rotation" : [0.000000, 26.565046, 179.999985]
   },
   "Primitives" : {
-    "8" : {
-      "Location" : [0.000000, 0.000000, 0.000000],
+    "10" : {
+      "Location" : [0.000000, 7.919561, 0.000000],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [100.000000, 1.000000, 100.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "12" : {
+      "Location" : [-29.272213, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "8" : {
+      "Location" : [0.000000, -7.255380, 0.000000],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     }
   },
