@@ -7,7 +7,7 @@
   "PathFileName" : "Asset/Materials/AdditiveBillboardTest.json",
   "RasterizerState" : "",
   "RenderPass" : "AlphaBlend",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/PointLight_64x.png"
   }

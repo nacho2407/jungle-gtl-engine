@@ -4,5 +4,6 @@
   },
   "PathFileName" : "Asset/Materials/Basic_White.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl"
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl"
 }
+

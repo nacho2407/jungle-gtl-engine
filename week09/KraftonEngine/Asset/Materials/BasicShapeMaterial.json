@@ -11,7 +11,7 @@
   "PathFileName" : "Asset/Materials/BasicShapeMaterial.json",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/BasicShape/BasicShape.png"
   }
