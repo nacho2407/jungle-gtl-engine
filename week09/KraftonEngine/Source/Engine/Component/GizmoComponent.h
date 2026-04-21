@@ -3,7 +3,7 @@
 #include "PrimitiveComponent.h"
 #include "Core/CoreTypes.h"
 #include "Math/Rotator.h"
-#include "Render/Types/ViewTypes.h"
+#include "Render/Pipelines/Context/Scene/ViewTypes.h"
 
 class AActor;
 class FPrimitiveSceneProxy;

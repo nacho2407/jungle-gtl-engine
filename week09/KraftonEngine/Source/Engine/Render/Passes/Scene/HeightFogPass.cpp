@@ -1,12 +1,12 @@
-#include "Render/Passes/Scene/HeightFogPass.h"
+﻿#include "Render/Passes/Scene/HeightFogPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "Render/Resources/RenderResources.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
-#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
 #include "Render/Scene/Scene.h"
 
 void FHeightFogPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -54,19 +54,12 @@ void FHeightFogPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    if (Context.ViewModePassRegistry &&
-        Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
-        Context.ViewModePassRegistry->SuppressesSceneExtras(Context.ActiveViewMode))
-    {
-        return;
-    }
-
     if (!Context.Scene || !Context.Scene->HasFog())
     {
         return;
     }
 
-    FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::None);
+    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::None);
 }
 
 void FHeightFogPass::SubmitDrawCommands(FRenderPipelineContext& Context)

@@ -9,6 +9,7 @@
 #include "Materials/MaterialManager.h"
 
 #include <cstring>
+#include <algorithm>
 
 IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
 
@@ -115,14 +116,13 @@ void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(Forward, Right, Up);
 
-	CachedWorldMatrix = FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
+	CachedWorldMatrix = ComputeBillboardMatrix(CameraForward);
 
 	UpdateWorldAABB();
 }
 
 FMatrix UBillboardComponent::ComputeBillboardMatrix(const FVector& CameraForward) const
 {
-	// TickComponent와 동일한 로직
 	FVector Forward = (CameraForward * -1.0f).Normalized();
 	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
 
@@ -137,5 +137,27 @@ FMatrix UBillboardComponent::ComputeBillboardMatrix(const FVector& CameraForward
 	FMatrix RotMatrix;
 	RotMatrix.SetAxes(Forward, Right, Up);
 
-	return FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+	const FVector WorldScale = GetWorldScale();
+	const FVector SpriteScale(
+		std::max(WorldScale.X, 1.0f),
+		Width * WorldScale.Y,
+		Height * WorldScale.Z);
+
+	return FMatrix::MakeScaleMatrix(SpriteScale) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+}
+
+
+void UBillboardComponent::UpdateWorldAABB() const
+{
+	const FVector WorldScale = GetWorldScale();
+	const float HalfWidth = 0.5f * Width * std::abs(WorldScale.Y);
+	const float HalfHeight = 0.5f * Height * std::abs(WorldScale.Z);
+	const float HalfDepth = 0.5f * std::max(std::abs(WorldScale.X), 0.1f);
+
+	const FVector Center = GetWorldLocation();
+	const FVector Extent(HalfDepth, HalfWidth, HalfHeight);
+	WorldAABBMinLocation = Center - Extent;
+	WorldAABBMaxLocation = Center + Extent;
+	bWorldAABBDirty = false;
+	bHasValidWorldAABB = true;
 }
