@@ -85,7 +85,7 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
         {
             Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
         }
-
+        CheckOverrideViewMode(Context);  
         Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
         ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
