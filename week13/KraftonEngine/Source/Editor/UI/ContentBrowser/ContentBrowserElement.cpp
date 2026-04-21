@@ -84,6 +84,7 @@ FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
 void DirectoryElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	Context.CurrentPath = ContentItem.Path;
+	Context.PendingRevealPath = ContentItem.Path;
 	Context.bIsNeedRefresh = true;
 }
 

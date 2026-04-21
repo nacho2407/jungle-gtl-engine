@@ -55,6 +55,23 @@ namespace
 
 		return FPaths::RootDir();
 	}
+
+	bool IsSubPath(const std::filesystem::path& parent, const std::filesystem::path& child)
+	{
+		std::filesystem::path p = std::filesystem::weakly_canonical(parent);
+		std::filesystem::path c = std::filesystem::weakly_canonical(child);
+
+		auto pIt = p.begin();
+		auto cIt = c.begin();
+
+		for (; pIt != p.end() && cIt != c.end(); ++pIt, ++cIt)
+		{
+			if (*pIt != *cIt)
+				return false;
+		}
+
+		return pIt == p.end(); // parent 끝까지 다 맞았으면 포함됨
+	}
 }
 
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
@@ -115,6 +132,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	{
 		ImGui::BeginChild("DirectoryTree", ImVec2(0, 0), true);
 		DrawDirNode(RootNode);
+		BrowserContext.PendingRevealPath.clear();
 		ImGui::EndChild();
 	}
 
@@ -143,6 +161,7 @@ void FEditorContentBrowserWidget::Refresh()
 void FEditorContentBrowserWidget::LoadFromSettings()
 {
 	BrowserContext.CurrentPath = ResolveContentBrowserSettingsPath(FEditorSettings::Get().ContentBrowserPath);
+	BrowserContext.PendingRevealPath = BrowserContext.CurrentPath;
 }
 
 void FEditorContentBrowserWidget::SaveToSettings() const
@@ -198,7 +217,17 @@ void FEditorContentBrowserWidget::RefreshContent()
 
 void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
 {
-	ImGuiTreeNodeFlags Flag = InNode.Children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
+	ImGuiTreeNodeFlags Flag =
+		InNode.Children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
+
+	if (InNode.Self.Path == BrowserContext.CurrentPath)
+	{
+		Flag |= ImGuiTreeNodeFlags_Selected;
+	}
+	if (!BrowserContext.PendingRevealPath.empty() && IsSubPath(InNode.Self.Path, BrowserContext.PendingRevealPath))
+	{
+		ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+	}
 
 	bool bIsOpen = ImGui::TreeNodeEx(FPaths::ToUtf8(InNode.Self.Name).c_str(), Flag);
 	if (ImGui::IsItemClicked())
