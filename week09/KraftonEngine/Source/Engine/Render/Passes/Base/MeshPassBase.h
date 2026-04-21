@@ -47,7 +47,14 @@ protected:
     void BindViewportTarget(FRenderPipelineContext& Context) const
     {
         ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
-        Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
+        ID3D11DepthStencilView* DSV = Context.GetViewportDSV();
+        Context.Context->OMSetRenderTargets(1, &RTV, DSV);
+
+        if (Context.StateCache)
+        {
+            Context.StateCache->RTV = RTV;
+            Context.StateCache->DSV = DSV;
+        }
     }
 
     void SubmitPassRange(FRenderPipelineContext& Context, ERenderPass Pass) const

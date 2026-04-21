@@ -1,4 +1,4 @@
-#include "Render/Pipelines/Registry/RenderPassRegistry.h"
+﻿#include "Render/Pipelines/Registry/RenderPassRegistry.h"
 
 #include "Render/Passes/Editor/DebugLinePass.h"
 #include "Render/Passes/Editor/GizmoPass.h"
@@ -14,6 +14,7 @@
 #include "Render/Passes/Scene/HeightFogPass.h"
 #include "Render/Passes/Scene/LightCullingPass.h"
 #include "Render/Passes/Scene/LightingPass.h"
+#include "Render/Passes/Scene/PresentPass.h"
 #include "Render/Passes/Scene/ViewModeResolvePass.h"
 
 FRenderPassRegistry::~FRenderPassRegistry()
@@ -37,6 +38,7 @@ void FRenderPassRegistry::Initialize()
     Passes.emplace((int32)ERenderPassNodeType::ViewModeResolvePass, new FViewModeResolvePass());
     Passes.emplace((int32)ERenderPassNodeType::HeightFogPass, new FHeightFogPass());
     Passes.emplace((int32)ERenderPassNodeType::FXAAPass, new FFXAAPass());
+    Passes.emplace((int32)ERenderPassNodeType::PresentPass, new FPresentPass());
     Passes.emplace((int32)ERenderPassNodeType::SelectionMaskPass, new FSelectionMaskPass());
     Passes.emplace((int32)ERenderPassNodeType::OutlinePass, new FOutlinePass());
     Passes.emplace((int32)ERenderPassNodeType::DebugLinePass, new FDebugLinePass());

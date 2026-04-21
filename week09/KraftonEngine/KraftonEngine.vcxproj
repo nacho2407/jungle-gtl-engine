@@ -339,6 +339,7 @@
     <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\PresentPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.cpp" />
@@ -521,6 +522,7 @@
     <ClInclude Include="Source\Engine\Render\Passes\Base\MeshPassBase.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\PipelineStateTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Base\PostProcessPassBase.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPassTypes.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderStateStrings.h" />
@@ -540,6 +542,7 @@
     <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\PresentPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\ShadingTypes.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.h" />
     <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameRenderResources.h" />

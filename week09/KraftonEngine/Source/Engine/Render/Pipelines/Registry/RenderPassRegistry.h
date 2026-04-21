@@ -14,6 +14,7 @@ class FAlphaBlendPass;
 class FHeightFogPass;
 class FViewModeResolvePass;
 class FFXAAPass;
+class FPresentPass;
 class FSelectionMaskPass;
 class FOutlinePass;
 class FDebugLinePass;
@@ -37,6 +38,7 @@ enum class ERenderPassNodeType
     ViewModeResolvePass,
     HeightFogPass,
     FXAAPass,
+    PresentPass,
     SelectionMaskPass,
     OutlinePass,
     DebugLinePass,

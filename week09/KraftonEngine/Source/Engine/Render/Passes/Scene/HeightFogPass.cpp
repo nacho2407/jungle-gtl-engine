@@ -2,6 +2,8 @@
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "Render/Resources/RenderResources.h"
+#include "Render/Resources/Buffers/ConstantBufferPool.h"
+#include "Render/Resources/Bindings/RenderCBKeys.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
@@ -11,55 +13,53 @@
 
 void FHeightFogPass::PrepareInputs(FRenderPipelineContext& Context)
 {
-    const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.SceneView)
     {
         return;
     }
 
-    if (Targets && Targets->ViewportRenderTexture && Targets->SceneColorCopyTexture &&
-        Targets->ViewportRenderTexture != Targets->SceneColorCopyTexture)
-    {
-        Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-        Context.Context->CopyResource(Targets->SceneColorCopyTexture, Targets->ViewportRenderTexture);
-    }
-
-    if (Targets && Targets->DepthTexture && Targets->DepthCopyTexture && Targets->DepthTexture != Targets->DepthCopyTexture)
-    {
-        Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
-    }
-
-    if (Targets && Targets->SceneColorCopySRV)
-    {
-        ID3D11ShaderResourceView* SceneColorSRV = Targets->SceneColorCopySRV;
-        Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
-    }
-
-    if (Targets && Targets->DepthCopySRV)
-    {
-        ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
-        Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
-    }
+    CopyViewportColorToSceneColor(Context);
+    CopyViewportDepthToReadable(Context);
+    BindSceneColorInput(Context);
+    BindDepthInput(Context);
 }
 
-void FHeightFogPass::PrepareTargets(FRenderPipelineContext& Context)
-{
-    BindViewportTarget(Context);
-}
 
 void FHeightFogPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     if (!Context.SceneView || !Context.SceneView->ShowFlags.bFog)
-    {
         return;
-    }
 
     if (!Context.Scene || !Context.Scene->HasFog())
-    {
         return;
-    }
 
-    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::None);
+    DrawCommandBuilder::BuildFullscreenDrawCommand(
+        ERenderPass::PostProcess,
+        Context,
+        *Context.DrawCommandList,
+        EViewModePostProcessVariant::None);
+
+    if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
+        return;
+
+    const FFogParams& Fog = Context.Scene->GetFogParams();
+
+    FFogConstants Constants = {};
+    Constants.InscatteringColor = Fog.InscatteringColor;
+    Constants.Density = Fog.Density;
+    Constants.HeightFalloff = Fog.HeightFalloff;
+    Constants.FogBaseHeight = Fog.FogBaseHeight;
+    Constants.StartDistance = Fog.StartDistance;
+    Constants.CutoffDistance = Fog.CutoffDistance;
+    Constants.MaxOpacity = Fog.MaxOpacity;
+
+    FConstantBuffer* FogCB =
+        FConstantBufferPool::Get().GetBuffer(ERenderCBKey::Fog, sizeof(FFogConstants));
+    if (!FogCB)
+        return;
+
+    FogCB->Update(Context.Context, &Constants, sizeof(Constants));
+    Context.DrawCommandList->GetCommands().back().PerShaderCB[0] = FogCB;
 }
 
 void FHeightFogPass::SubmitDrawCommands(FRenderPipelineContext& Context)
