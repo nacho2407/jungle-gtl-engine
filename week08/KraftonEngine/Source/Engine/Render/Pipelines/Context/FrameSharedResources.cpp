@@ -122,15 +122,23 @@ void FFrameSharedResources::UpdateLocalLights(ID3D11Device* Device, ID3D11Device
         Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
         Desc.StructureByteStride = sizeof(FLocalLightInfo);
-        Device->CreateBuffer(&Desc, nullptr, &LocalLightBuffer);
-
+        HRESULT hr = Device->CreateBuffer(&Desc, nullptr, &LocalLightBuffer);
+        if (FAILED(hr) || LocalLightBuffer == nullptr)
+        {
+            // 에러 처리 (로그 출력, assert 등)
+            MessageBox(nullptr, TEXT("LocalLightBuffer 생성 실패"), TEXT("Error"), MB_OK | MB_ICONERROR);
+            return;
+        }
         D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
         SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
         SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
         SRVDesc.Buffer.FirstElement = 0;
         SRVDesc.Buffer.NumElements = NewCapacity;
-        Device->CreateShaderResourceView(LocalLightBuffer, &SRVDesc, &LocalLightSRV);
-
+        hr = Device->CreateShaderResourceView(LocalLightBuffer, &SRVDesc, &LocalLightSRV);
+        if (FAILED(hr))
+        {
+            MessageBox(nullptr, TEXT("LocalLightSRV 생성 실패"), TEXT("Error"), MB_OK | MB_ICONERROR);
+        }
         LocalLightCapacity = NewCapacity;
     }
 

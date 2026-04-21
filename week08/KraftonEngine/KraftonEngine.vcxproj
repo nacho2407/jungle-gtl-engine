@@ -326,7 +326,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Base\PassRenderState.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\DebugLinePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp" />
@@ -522,7 +521,6 @@
     <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h" />
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h" />
@@ -662,6 +660,7 @@
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\LightCullingCommon.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Common\Resources\ConstantBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -846,8 +845,6 @@
     <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\ViewModes\FakeLightShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

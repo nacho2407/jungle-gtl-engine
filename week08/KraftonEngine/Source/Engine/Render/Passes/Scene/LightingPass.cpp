@@ -1,4 +1,4 @@
-#include "Render/Passes/Scene/LightingPass.h"
+﻿#include "Render/Passes/Scene/LightingPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
 #include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
@@ -9,6 +9,7 @@
 #include "Render/Resources/RenderResources.h"
 #include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
 #include "Render/Pipelines/Context/FrameSharedResources.h"
+#include "Render/Visibility/TileBasedLightCulling.h"
 
 void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -42,6 +43,18 @@ void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
         Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedSurface2),
     };
     Context.Context->PSSetShaderResources(0, ARRAY_SIZE(SurfaceSRVs), SurfaceSRVs);
+
+	// LightCulling 관련 데이터 바이딩
+    if (Context.LightCulling)
+    {
+        // TileMask SRV 추가
+        ID3D11ShaderResourceView* TileMaskSRV = Context.LightCulling->GetPerTileMaskSRV();
+        Context.Context->PSSetShaderResources(7, 1, &TileMaskSRV);
+
+		//b2 LightCullingParams
+		ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
+        Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &LightCullingParamsCB);
+    }
 
     if (Targets && Targets->DepthCopySRV)
     {
