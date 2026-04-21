@@ -6,11 +6,11 @@
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
-  "PathFileName" : "Asset/Materials/MatID_1.001.json",
+  "PathFileName" : "Asset/Materials/Pants.mat",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "Data/Bitten_Apple_tgyociqpa_Mid_2K_BaseColor.jpg"
+    "DiffuseTexture" : "Data/Lumine/Texture/Clothes.png"
   }
 }
