@@ -7,6 +7,7 @@
 #include "SimpleJSON/json.hpp"
 #include <wrl/client.h>
 
+struct ID3D11ShaderResourceView;
 
 class FEditorMaterialInspector final
 {
@@ -21,5 +22,7 @@ private:
 private:
 	std::filesystem::path MaterialPath;
 	json::JSON CachedJson;
+
+	TMap<FString, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> CachedSRVs;
 };
 
