@@ -45,6 +45,7 @@ static const char* GetViewModeName(EViewMode Mode)
 	case EViewMode::Lit_Lambert:   return "Lit (Lambert)";
 	case EViewMode::Lit_BlinnPhong: return "Lit (Blinn-Phong)";
 	case EViewMode::Unlit:     return "Unlit";
+	case EViewMode::Heatmap:   return "Heatmap";
 	case EViewMode::Wireframe: return "Wireframe";
 	default:                   return "Lit";
 	}
