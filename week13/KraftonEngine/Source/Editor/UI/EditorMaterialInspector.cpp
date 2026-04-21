@@ -1,5 +1,6 @@
 ﻿#include "EditorMaterialInspector.h"
 #include "Materials/MaterialManager.h"
+#include "Resource/ResourceManager.h"
 
 void FEditorMaterialInspector::Render()
 {
@@ -46,6 +47,10 @@ void FEditorMaterialInspector::RenderTextureSection(json::JSON JsonData)
 		FString SlotName = Pair.first.c_str();
 		FString TexturePath = Pair.second.ToString().c_str();
 
-		ImGui::Text(TexturePath.c_str());
+		if (!CachedSRVs.contains(TexturePath))
+			CachedSRVs[TexturePath] = FResourceManager::Get().FindLoadedTexture(TexturePath);
+
+		if (CachedSRVs[TexturePath])
+			ImGui::Image(CachedSRVs[TexturePath].Get(), ImVec2(50, 50));
 	}
 }
