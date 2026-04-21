@@ -20,6 +20,7 @@ enum class ELightingModel : uint32
 	Gouraud		= 1 << 8,
 	Lambert		= 2 << 8,
 	BlinnPhong	= 3 << 8,
+	Heatmap		= 4 << 8,
 };
 
 class FShaderHelper

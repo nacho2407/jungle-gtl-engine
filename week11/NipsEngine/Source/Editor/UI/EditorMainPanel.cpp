@@ -71,6 +71,8 @@ const char* GetViewModeName(EViewMode Mode)
         return "Lit (Blinn-Phong)";
     case EViewMode::Unlit:
         return "Unlit";
+	case EViewMode::Heatmap:
+		return "Heatmap";
     case EViewMode::Wireframe:
         return "Wireframe";
 	case EViewMode::Depth: 
@@ -440,11 +442,12 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             EViewMode::Lit_Lambert,
             EViewMode::Lit_BlinnPhong,
             EViewMode::Unlit,
+			EViewMode::Heatmap,
             EViewMode::Wireframe,
             EViewMode::Depth,
 			EViewMode::Normal,
         };
-        static constexpr const char* Labels[] = { "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit", "Wireframe", "Depth", "Normal" };
+        static constexpr const char* Labels[] = { "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit", "Heatmap", "Wireframe", "Depth", "Normal" };
 
         for (int32 j = 0; j < static_cast<int32>(EViewMode::Count); ++j)
         {

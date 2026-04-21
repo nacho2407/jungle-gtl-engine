@@ -80,6 +80,9 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 	   case EViewMode::Lit_BlinnPhong:
 		   PermutationKey = (uint32)ELightingModel::BlinnPhong;
 		   break;
+	   case EViewMode::Heatmap:
+		   PermutationKey = (uint32)ELightingModel::Heatmap;
+		   break;
 	   }
 
        if (Cmd.Material)
