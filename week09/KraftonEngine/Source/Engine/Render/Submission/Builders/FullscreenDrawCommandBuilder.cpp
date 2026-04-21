@@ -1,4 +1,4 @@
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Submission/Commands/DrawCommandList.h"
@@ -9,6 +9,7 @@
 #include "Render/Pipelines/Context/View/SceneView.h"
 #include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
 #include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
+#include "Render/Pipelines/Context/FrameSharedResources.h"
 
 void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant)
 {
@@ -70,6 +71,7 @@ void FFullscreenDrawCommandBuilder::Build(ERenderPass Pass, FRenderPipelineConte
     {
         // Lighting fullscreen shaders read the base color buffer from t0.
         Cmd.DiffuseSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor);
+        Cmd.LocalLightSRV = Context.Resources ? Context.Resources->LocalLightSRV : nullptr;
     }
     else if (Pass == ERenderPass::FXAA && Context.SceneView)
     {

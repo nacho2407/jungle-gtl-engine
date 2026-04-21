@@ -58,6 +58,9 @@ public:
     ID3D11ShaderResourceView* GetDebugHitMapSRV()    const { return DebugHitMapSRV; }
     //ID3D11ShaderResourceView* GetPointLightDataSRV() const { return PointLightDataSRV; }
 
+	//LightPass에 던질 param 정보
+    ID3D11Buffer* GetLightCullingParamsCB() const { return LightCullingParamsCB; }
+
     uint32 GetNumTilesX()        const { return NumTilesX; }
     uint32 GetNumTilesY()        const { return NumTilesY; }
     uint32 GetNumBucketsPerTile() const { return NumBucketsPerTile; }
