@@ -135,6 +135,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
 	{
 		NewMeshAsset->PathFileName = PathFileName;
 		// MaterialIndex 캐싱을 위해 Materials를 먼저 설정
+
 		StaticMesh->SetStaticMaterials(std::move(ParsedMaterials));
 		StaticMesh->SetStaticMeshAsset(NewMeshAsset);
 

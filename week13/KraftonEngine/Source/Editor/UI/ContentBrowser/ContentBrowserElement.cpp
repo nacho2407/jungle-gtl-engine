@@ -6,7 +6,7 @@ bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 	FString Name = FPaths::ToUtf8(ContentItem.Name);
 	ImGui::PushID(Name.c_str());
 
-	bIsSelected = Context.SelectedElement == this;
+	bIsSelected = Context.SelectedElement.get() == this;
 
 	bool bIsClicked = ImGui::Selectable("##Element", bIsSelected, 0, Context.ContentSize);
 
@@ -33,15 +33,15 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 {
 	if (RenderSelectSpace(Context))
 	{
-		Context.SelectedElement = this;
+		Context.SelectedElement = shared_from_this();
 		bIsSelected = true;
-		OnRightClicked(Context);
+		OnLeftClicked(Context);
 	}
 
 	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 	if (bDoubleClicked)
 	{
-		OnDoubleRightClicked(Context);
+		OnDoubleLeftClicked(Context);
 	}
 
 	if (ImGui::BeginDragDropSource())
@@ -81,7 +81,7 @@ FString ContentBrowserElement::EllipsisText(const FString& text, float maxWidth)
 	return result;
 }
 
-void DirectoryElement::OnDoubleRightClicked(ContentBrowserContext& Context)
+void DirectoryElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	Context.CurrentPath = ContentItem.Path;
 	Context.bIsNeedRefresh = true;
@@ -90,7 +90,7 @@ void DirectoryElement::OnDoubleRightClicked(ContentBrowserContext& Context)
 #include "Serialization/SceneSaveManager.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-void SceneElement::OnDoubleRightClicked(ContentBrowserContext& Context)
+void SceneElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	std::filesystem::path ScenePath = ContentItem.Path;
 	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
@@ -130,4 +130,14 @@ void SceneElement::OnDoubleRightClicked(ContentBrowserContext& Context)
 			}
 		}
 	}
+}
+
+void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)
+{
+	MaterialInspector = { ContentItem.Path };
+}
+
+void MaterialElement::RenderDetail()
+{
+	MaterialInspector.Render();
 }

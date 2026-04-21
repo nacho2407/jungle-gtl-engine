@@ -1,4 +1,4 @@
-#include "DecalComponent.h"
+﻿#include "DecalComponent.h"
 
 #include "Materials/MaterialManager.h"
 #include "Collision/OBB.h"

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
@@ -7,6 +7,18 @@
 #include <memory>
 
 #include "Render/Types/RenderStateTypes.h"
+
+namespace MatKeys
+{
+	static constexpr const char* PathFileName = "PathFileName";
+	static constexpr const char* ShaderPath = "ShaderPath";
+	static constexpr const char* RenderPass = "RenderPass";
+	static constexpr const char* BlendState = "BlendState";
+	static constexpr const char* DepthStencilState = "DepthStencilState";
+	static constexpr const char* RasterizerState = "RasterizerState";
+	static constexpr const char* Parameters = "Parameters";
+	static constexpr const char* Textures = "Textures";
+}
 
 class FMaterialTemplate;
 class UMaterial;

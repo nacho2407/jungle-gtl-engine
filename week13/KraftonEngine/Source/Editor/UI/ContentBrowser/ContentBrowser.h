@@ -32,6 +32,6 @@ private:
 	ContentBrowserContext BrowserContext;
 
 	FDirNode RootNode;
-	TArray<std::unique_ptr<ContentBrowserElement>> CachedBrowserElements;
+	TArray<std::shared_ptr<ContentBrowserElement>> CachedBrowserElements;
 	TMap<FString, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> ICons;
 };
