@@ -12,7 +12,7 @@ void FSelectionMaskPass::PrepareInputs(FRenderPipelineContext& Context)
 
 void FSelectionMaskPass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    BindViewportTarget(Context);
+    Context.Context->OMSetRenderTargets(0, nullptr, Context.GetViewportDSV());
 }
 
 void FSelectionMaskPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
