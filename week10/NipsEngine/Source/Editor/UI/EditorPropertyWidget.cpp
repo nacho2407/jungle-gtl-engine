@@ -260,6 +260,25 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::End();
 }
 
+void FEditorPropertyWidget::OnActorDestroyed(AActor* Actor)
+{
+    if (!Actor)
+    {
+        return;
+    }
+
+    if (LastSelectedActor == Actor)
+    {
+        ResetSelection();
+        return;
+    }
+
+    if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
+    {
+        ResetSelection();
+    }
+}
+
 void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 {
 	if (PrimaryActor != LastSelectedActor)
