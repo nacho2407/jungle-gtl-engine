@@ -83,6 +83,8 @@ void FRenderCollector::BuildFramePassCommands(const FSceneView& SceneView, FScen
         }
     }
 
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::GridPass))
+        Pass->BuildDrawCommands(PassContext);
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ViewModeResolvePass))
         Pass->BuildDrawCommands(PassContext);
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::HeightFogPass))

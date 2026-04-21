@@ -5,6 +5,7 @@
 #include "Render/Passes/Scene/AlphaBlendPass.h"
 #include "Render/Passes/Scene/BaseDrawPass.h"
 #include "Render/Passes/Editor/DebugLinePass.h"
+#include "Render/Passes/Editor/GridPass.h"
 #include "Render/Passes/Scene/DecalPass.h"
 #include "Render/Passes/Scene/DepthPrePass.h"
 #include "Render/Passes/Scene/FXAAPass.h"
@@ -25,6 +26,7 @@ FRenderPassRegistry::~FRenderPassRegistry()
 void FRenderPassRegistry::Initialize()
 {
     Release();
+    Passes.emplace((int32)ERenderPassNodeType::GridPass, new FGridPass());
     Passes.emplace((int32)ERenderPassNodeType::DepthPrePass, new FDepthPrePass());
     Passes.emplace((int32)ERenderPassNodeType::LightCullingPass, new FLightCullingPass()); 
     Passes.emplace((int32)ERenderPassNodeType::BaseDrawPass, new FBaseDrawPass());
