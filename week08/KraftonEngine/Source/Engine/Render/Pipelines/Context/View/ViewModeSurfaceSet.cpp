@@ -1,4 +1,4 @@
-#include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
+﻿#include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
 
 bool FViewModeSurfaceSet::Initialize(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
 {
@@ -45,7 +45,7 @@ void FViewModeSurfaceSet::ClearBaseTargets(ID3D11DeviceContext* Ctx, EShadingMod
     const float ClearColor[4] = { 0, 0, 0, 0 };
     Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::BaseColor), ClearColor);
 
-    if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+    if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
     {
         Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::Surface1), ClearColor);
     }
@@ -61,7 +61,7 @@ void FViewModeSurfaceSet::ClearModifiedTargets(ID3D11DeviceContext* Ctx, EShadin
     const float ClearColor[4] = { 0, 0, 0, 0 };
     Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::ModifiedBaseColor), ClearColor);
 
-    if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+    if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
     {
         Ctx->ClearRenderTargetView(GetRTV(ESurfaceSlot::ModifiedSurface1), ClearColor);
     }
@@ -81,7 +81,7 @@ void FViewModeSurfaceSet::BindBaseDrawTargets(ID3D11DeviceContext* Ctx, EShading
     };
     uint32 TargetCount = 1;
 
-    if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+    if (Model == EShadingModel::Gouraud || Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
     {
         Targets[1] = GetRTV(ESurfaceSlot::Surface1);
         TargetCount = 2;
@@ -105,7 +105,7 @@ void FViewModeSurfaceSet::BindDecalTargets(ID3D11DeviceContext* Ctx, EShadingMod
     };
     uint32 TargetCount = 1;
 
-    if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong)
+    if (Model == EShadingModel::Lambert || Model == EShadingModel::BlinnPhong || Model == EShadingModel::WorldNormal)
     {
         Targets[1] = GetRTV(ESurfaceSlot::ModifiedSurface1);
         TargetCount = 2;

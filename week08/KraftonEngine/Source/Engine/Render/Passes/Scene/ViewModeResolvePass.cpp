@@ -103,6 +103,7 @@ void FViewModeResolvePass::BuildDrawCommands(FRenderPipelineContext& Context)
         Constants.Exponent = Context.SceneView->RenderOptions.Exponent;
         Constants.NearClip = Context.SceneView->NearClip;
         Constants.FarClip = Context.SceneView->FarClip;
+        Constants.Range = Context.SceneView->RenderOptions.Range;
         Constants.Mode = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
 
         FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));

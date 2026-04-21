@@ -442,7 +442,8 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         if (Opts.ViewMode == EViewMode::SceneDepth)
         {
             ImGui::Separator();
-            ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
+            ImGui::DragFloat("Exponent", &Opts.Exponent, 0.05f, 0.1f, 10.0f, "%.2f");
+            ImGui::DragFloat("Range", &Opts.Range, 0.5f, 0.1f, 1000.0f, "%.1f");
             ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
         }
     });

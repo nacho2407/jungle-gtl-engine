@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
@@ -132,6 +132,7 @@ inline FRenderPipelinePassDesc BuildViewModeBaseDrawPassDesc(EShadingModel Shadi
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_GOURAUD_L");
         break;
     case EShadingModel::Lambert:
+    case EShadingModel::WorldNormal:
         Pass.ShaderVariant.PSEntry = "PS_BaseDraw_Lambert";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_LAMBERT");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
@@ -144,7 +145,7 @@ inline FRenderPipelinePassDesc BuildViewModeBaseDrawPassDesc(EShadingModel Shadi
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_MATERIAL_PARAM");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
         break;
-    case EShadingModel::Unlit:
+    case EShadingModel::Unlit:  
     default:
         Pass.ShaderVariant.PSEntry = "PS_BaseDraw_Unlit";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_UNLIT");
@@ -170,6 +171,7 @@ inline FRenderPipelinePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingM
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_BASECOLOR");
         break;
     case EShadingModel::Lambert:
+    case EShadingModel::WorldNormal:
         Pass.ShaderVariant.PSEntry = "PS_Decal_Lambert";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_BASECOLOR");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "DECAL_MODIFY_NORMAL");
@@ -264,6 +266,7 @@ inline void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode 
         break;
 
     case EViewMode::WorldNormal:
+        Config.ShadingModel = EShadingModel::WorldNormal;
         Config.bEnableLighting = false;
         Config.bSuppressSceneExtras = true;
         Config.PostProcessVariant = EViewModePostProcessVariant::WorldNormal;

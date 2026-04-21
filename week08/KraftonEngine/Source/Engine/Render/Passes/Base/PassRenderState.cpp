@@ -7,6 +7,7 @@ void InitializeDefaultPassRenderStates(FPassRenderState (&OutStates)[(uint32)ERe
     using E = ERenderPass;
     auto& S = OutStates;
 
+    S[(uint32)E::Grid] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST, false };
     S[(uint32)E::DepthPre] = { EDepthStencilState::Default, EBlendState::NoColor, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
     S[(uint32)E::Opaque] = { EDepthStencilState::Default, EBlendState::Opaque, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
     S[(uint32)E::Decal] = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
