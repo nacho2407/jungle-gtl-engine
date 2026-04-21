@@ -44,6 +44,11 @@ void FEditorMainPanel::Release()
 	ImGui::DestroyContext();
 }
 
+void FEditorMainPanel::SaveToSettings() const
+{
+	ContentBrowserWidget.SaveToSettings();
+}
+
 void FEditorMainPanel::Render(float DeltaTime)
 {
 	ImGui_ImplDX11_NewFrame();

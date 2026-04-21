@@ -19,8 +19,10 @@ public:
 	void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
 	void Render(float DeltaTime) override;
 	void Refresh();
+	void SaveToSettings() const;
 
 private:
+	void LoadFromSettings();
 	void RefreshContent();
 	void DrawDirNode(FDirNode InNode);
 	void DrawContents();

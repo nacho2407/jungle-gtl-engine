@@ -1,9 +1,61 @@
 ﻿#include "ContentBrowser.h"
 
 #include "ContentBrowserElement.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "WICTextureLoader.h"
 #include "Resource/ResourceManager.h"
 
+namespace
+{
+	bool IsParentDirectoryReference(const std::filesystem::path& Path)
+	{
+		for (const std::filesystem::path& Part : Path)
+		{
+			if (Part == L"..")
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	FString MakeContentBrowserSettingsPath(const std::wstring& CurrentPath)
+	{
+		const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+		const std::filesystem::path Path = std::filesystem::path(CurrentPath).lexically_normal();
+		const std::filesystem::path RelativePath = Path.lexically_relative(RootPath);
+
+		if (!RelativePath.empty() && !IsParentDirectoryReference(RelativePath))
+		{
+			return FPaths::ToUtf8(RelativePath.generic_wstring());
+		}
+
+		return FPaths::ToUtf8(Path.wstring());
+	}
+
+	std::wstring ResolveContentBrowserSettingsPath(const FString& SavedPath)
+	{
+		if (SavedPath.empty())
+		{
+			return FPaths::RootDir();
+		}
+
+		std::filesystem::path Path(FPaths::ToWide(SavedPath));
+		if (!Path.is_absolute())
+		{
+			Path = std::filesystem::path(FPaths::RootDir()) / Path;
+		}
+
+		Path = Path.lexically_normal();
+		if (std::filesystem::exists(Path) && std::filesystem::is_directory(Path))
+		{
+			return Path.wstring();
+		}
+
+		return FPaths::RootDir();
+	}
+}
 
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
@@ -22,6 +74,7 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	Context.ContentSize = ImVec2(50, 50);
 	Context.EditorEngine = InEditor;
 	BrowserContext = Context;
+	LoadFromSettings();
 
 	Refresh();
 }
@@ -85,6 +138,16 @@ void FEditorContentBrowserWidget::Refresh()
 	RefreshContent();
 
 	BrowserContext.bIsNeedRefresh = false;
+}
+
+void FEditorContentBrowserWidget::LoadFromSettings()
+{
+	BrowserContext.CurrentPath = ResolveContentBrowserSettingsPath(FEditorSettings::Get().ContentBrowserPath);
+}
+
+void FEditorContentBrowserWidget::SaveToSettings() const
+{
+	FEditorSettings::Get().ContentBrowserPath = MakeContentBrowserSettingsPath(BrowserContext.CurrentPath);
 }
 
 void FEditorContentBrowserWidget::RefreshContent()
@@ -223,7 +286,7 @@ FEditorContentBrowserWidget::FDirNode FEditorContentBrowserWidget::BuildDirector
 	}
 
 	if(Node.Self.Name.empty())
-		Node.Self.Name = FPaths::ToWide("<Unnamed>");
+		Node.Self.Name = FPaths::ToWide("Project");
 
 	return Node;
 }
