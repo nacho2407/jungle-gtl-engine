@@ -1,5 +1,7 @@
 /* Constant Buffers */
 
+#define TILE_SIZE 16
+
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -9,6 +11,9 @@ cbuffer FrameBuffer : register(b0)
     float Padding1;
     float bIsWireframe;
     float3 WireframeRGB;
+    float2 ViewportSize;
+    float NearZ;
+    float FarZ;
 }
 
 cbuffer PerObjectBuffer : register(b1)
@@ -16,17 +21,6 @@ cbuffer PerObjectBuffer : register(b1)
     row_major float4x4 Model;
     row_major float4x4 WorldInvTrans;
     float4 PrimitiveColor; 
-};
-
-cbuffer OverlayBuffer : register(b3)
-{
-    float2 OverlayCenterScreen;
-    float2 ViewportSize;
-
-    float OverlayRadius;
-    float3 Padding2;
-
-    float4 OverlayColor;
 };
 
 #define MAX_FOG_LAYER_COUNT 32
@@ -76,4 +70,10 @@ float3x3 Inverse3x3(float3x3 m)
     result[2][1] = -(m[0][0] * m[2][1] - m[0][1] * m[2][0]) * invDet;
     result[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * invDet;
     return result;
+}
+
+float LinearizeDepth(float d)
+{
+    return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
+
 }

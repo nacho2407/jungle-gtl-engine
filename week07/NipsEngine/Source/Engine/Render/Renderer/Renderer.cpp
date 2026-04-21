@@ -1,5 +1,6 @@
 ﻿#include "Renderer.h"
 
+#include <array>
 #include <iostream>
 #include <algorithm>
 #include "Core/Paths.h"
@@ -21,22 +22,57 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
-	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderStaticMesh.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", NormalVertexInputLayout, ARRAYSIZE(NormalVertexInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS", nullptr, 0);
-    FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS", FontBatcherInputLayout, ARRAYSIZE(FontBatcherInputLayout));
-    FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS", PrimitiveInputLayout, ARRAYSIZE(PrimitiveInputLayout));
+	uint32 PermutationKey = static_cast<uint32>(ELightingModel::Gouraud) | static_cast<uint32>(EShaderFeature::HasNormalMap);
 
-	// UberLit.hlsl 컴파일 필요
+	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
+	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
+
+	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
+	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
+
+	static const uint32 UberLitPermutations[] =
+	{
+		// 1. 기본 라이팅 모델 (No Maps)
+		LIGHT(Unlit),
+		LIGHT(Gouraud),
+		LIGHT(Lambert),
+		LIGHT(BlinnPhong),
+
+		LIGHT(Unlit) | FEAT(HasDiffuseMap),
+
+		LIGHT(Gouraud) | FEAT(HasDiffuseMap),
+		LIGHT(Gouraud) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
+
+		LIGHT(Lambert) | FEAT(HasDiffuseMap),
+		LIGHT(Lambert) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
+
+		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap),
+		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
+		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap) | FEAT(HasSpecularMap),
+
+		LIGHT(Heatmap),
+		LIGHT(Heatmap) | FEAT(HasDiffuseMap),
+	};
+
+	for (uint32 Key : UberLitPermutations)
+	{
+		FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(Key).data(), Key);
+		FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(Key).data(), Key);
+	}
+
+	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main");
 }
 
 void FRenderer::CreateResources()
@@ -46,14 +82,14 @@ void FRenderer::CreateResources()
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FLightConstants));
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
-	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 1024);
-	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024);
-	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 1024);
+	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
+	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 522240, true);
+	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 522240, true);
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
-	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
+	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -89,6 +125,7 @@ void FRenderer::Release()
 	Resources.LightStructuredBuffer.Release();
 	Resources.LightCulledIndexBuffer.Release();
 	Resources.LightTileBuffer.Release();
+    Resources.MPLightStructuredBuffer.Release();
 
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
@@ -209,6 +246,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 {
 	ID3D11DeviceContext* Context = Device.GetDeviceContext();
 	UpdateFrameBuffer(Context, InRenderBus);
+    UpdateLightBuffer(Context, InRenderBus);
 
 	/** Opaque 만 테스트 */
     
@@ -405,6 +443,16 @@ void FRenderer::InitializePassBatchers()
 			{
 				EditorLineBatcher.AddOBB(FOBB{ Cmd.Constants.OBB.Center, Cmd.Constants.OBB.Extents, Cmd.Constants.OBB.Rotation }, Cmd.Constants.OBB.Color);
 			}
+			else if (Cmd.Type == ERenderCommandType::DebugDirectionalLight)
+			{
+				const auto& D = Cmd.Constants.DirectionalLight;
+				EditorLineBatcher.AddDirectionalLight(D.Position, D.Direction, 1.5f, D.Color);
+			}
+			else if (Cmd.Type == ERenderCommandType::DebugPointLight)
+			{
+				const auto& P = Cmd.Constants.PointLight;
+				EditorLineBatcher.AddPointLight(P.Position, P.Range, P.Color);
+			}
 			else if (Cmd.Type == ERenderCommandType::DebugSpotlight)
 			{
 				const auto& S = Cmd.Constants.SpotLight;
@@ -499,7 +547,8 @@ void FRenderer::InitializePassBatchers()
 					1,   // Columns 고정
 					1,   // Rows 고정
 					Cmd.Constants.Billboard.Width,
-					Cmd.Constants.Billboard.Height
+					Cmd.Constants.Billboard.Height,
+					Cmd.Constants.Billboard.Color
 				);
 			}
 		},
@@ -731,9 +780,31 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	frameConstantData.CameraPosition = InRenderBus.GetCameraPosition();
 	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
 	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
+    frameConstantData.ViewportSize = InRenderBus.GetViewportSize();
+    frameConstantData.NearPlane = InRenderBus.GetNearPlane();
+    frameConstantData.FarPlane = InRenderBus.GetFarPlane();
 
 	Resources.FrameBuffer.Update(Context, &frameConstantData, sizeof(FFrameConstants));
 	ID3D11Buffer* b0 = Resources.FrameBuffer.GetBuffer();
 	Context->VSSetConstantBuffers(0, 1, &b0);
 	Context->PSSetConstantBuffers(0, 1, &b0);
+}
+
+void FRenderer::UpdateLightBuffer(ID3D11DeviceContext* Context, const FRenderBus& InRenderBus)
+{
+    FLightConstants lightConstantData;
+    lightConstantData.AmbientLight = InRenderBus.AmbientLightInfo;
+    lightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
+    lightConstantData.LightCount = (uint32)InRenderBus.LightInfos.size();
+
+    Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FLightConstants));
+    ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
+    Context->VSSetConstantBuffers(3, 1, &b3);
+    Context->PSSetConstantBuffers(3, 1, &b3);
+    Context->CSSetConstantBuffers(3, 1, &b3);
+
+	Resources.LightStructuredBuffer.Update(Context, InRenderBus.LightInfos.data(), (uint32)InRenderBus.LightInfos.size());
+    ID3D11ShaderResourceView* SRVs[] = { Resources.LightStructuredBuffer.GetSRV(), };
+    Context->VSSetShaderResources(4, 1, SRVs);
+    Context->PSSetShaderResources(4, 1, SRVs);
 }

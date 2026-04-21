@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <d3d11.h>
 #include "Core/CoreMinimal.h"
+#include "Render/Resource/Shader.h"
 
 struct FPassRenderState;
 struct FRenderTargetSet;

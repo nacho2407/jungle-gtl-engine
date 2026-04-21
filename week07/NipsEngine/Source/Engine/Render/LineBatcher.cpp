@@ -180,7 +180,7 @@ void FLineBatcher::Create(ID3D11Device* InDevice)
 	}
 
 	UMaterial* LineMaterial = FResourceManager::Get().GetMaterial("LineMat");
-	LineMaterial->DepthStencilType = EDepthStencilType::Default;
+	LineMaterial->DepthStencilType = EDepthStencilType::DepthReadOnly;
 	LineMaterial->BlendType = EBlendType::AlphaBlend;
 	LineMaterial->RasterizerType = ERasterizerType::SolidBackCull;
 	LineMaterial->SamplerType = ESamplerType::EST_Linear;
@@ -278,6 +278,101 @@ void FLineBatcher::AddOBB(const FOBB& Box, const FColor& InColor)
 	}
 }
 
+void FLineBatcher::AddDirectionalLight(const FVector& Position, const FVector& Direction, float Length, const FColor& InColor)
+{
+	const FVector4 LineColor = InColor.ToVector4();
+	FVector Forward = Direction.GetSafeNormal();
+	FVector Up, Right;
+	Forward.FindBestAxisVectors(Up, Right);
+
+	// 1. 화살표 몸통 끝점 계산
+	FVector StartPos = Position;
+	FVector EndPos = Position + (Forward * Length);
+
+	// --- 몸통 그리기 ---
+	uint32 StemStart = static_cast<uint32>(IndexedVertices.size());
+	IndexedVertices.emplace_back(StartPos, LineColor);
+	IndexedVertices.emplace_back(EndPos, LineColor);
+
+	Indices.push_back(StemStart);
+	Indices.push_back(StemStart + 1);
+
+	// --- 화살촉 그리기 ---
+	const float ArrowSize = Length * 0.15f; // 화살촉 길이
+	const float ArrowWidth = Length * 0.1f; // 화살촉 너비
+
+	// 화살촉의 날개들이 시작될 지점 (끝점에서 약간 뒤로 후퇴)
+	FVector ArrowBase = EndPos - (Forward * ArrowSize);
+
+	// 4개의 날개 정점 (상, 하, 좌, 우)
+	FVector Top = ArrowBase + (Up * ArrowWidth);
+	FVector Bottom = ArrowBase - (Up * ArrowWidth);
+	FVector Left = ArrowBase - (Right * ArrowWidth);
+	FVector RightV = ArrowBase + (Right * ArrowWidth);
+
+	uint32 HeadStart = static_cast<uint32>(IndexedVertices.size());
+	IndexedVertices.emplace_back(Top, LineColor);    // HeadStart + 0
+	IndexedVertices.emplace_back(Bottom, LineColor); // HeadStart + 1
+	IndexedVertices.emplace_back(Left, LineColor);   // HeadStart + 2
+	IndexedVertices.emplace_back(RightV, LineColor); // HeadStart + 3
+
+	// 모든 날개 끝을 EndPos(화살표 팁)에 연결
+	for (int32 i = 0; i < 4; ++i)
+	{
+		Indices.push_back(HeadStart + i);
+		Indices.push_back(StemStart + 1); // EndPos 인덱스
+	}
+
+	// (선택사항) 화살촉 날개들끼리 연결하여 사각형 베이스 형성 (더 명확한 형태)
+	Indices.push_back(HeadStart + 0); Indices.push_back(HeadStart + 2);
+	Indices.push_back(HeadStart + 2); Indices.push_back(HeadStart + 1);
+	Indices.push_back(HeadStart + 1); Indices.push_back(HeadStart + 3);
+	Indices.push_back(HeadStart + 3); Indices.push_back(HeadStart + 0);
+}
+
+void FLineBatcher::AddPointLight(const FVector& Position, float Range, const FColor& InColor)
+{
+	const FVector4 LineColor = InColor.ToVector4();
+	const int32 Segments = 64; // 더 부드럽게 보이도록 세그먼트 증가
+	const float AngleStep = MathUtil::TwoPi / Segments;
+
+	// 1. XY 평면 (가로 지르는 원 - 위도 0도)
+	uint32 BaseXY = static_cast<uint32>(IndexedVertices.size());
+	for (int32 i = 0; i < Segments; ++i)
+	{
+		float Angle = i * AngleStep;
+		FVector VertexPos = Position + FVector(std::cos(Angle) * Range, std::sin(Angle) * Range, 0.0f);
+		IndexedVertices.emplace_back(VertexPos, LineColor);
+
+		Indices.push_back(BaseXY + i);
+		Indices.push_back(BaseXY + ((i + 1) % Segments));
+	}
+
+	// 2. XZ 평면 (세로 원 1)
+	uint32 BaseXZ = static_cast<uint32>(IndexedVertices.size());
+	for (int32 i = 0; i < Segments; ++i)
+	{
+		float Angle = i * AngleStep;
+		FVector VertexPos = Position + FVector(std::cos(Angle) * Range, 0.0f, std::sin(Angle) * Range);
+		IndexedVertices.emplace_back(VertexPos, LineColor);
+
+		Indices.push_back(BaseXZ + i);
+		Indices.push_back(BaseXZ + ((i + 1) % Segments));
+	}
+
+	// 3. YZ 평면 (세로 원 2)
+	uint32 BaseYZ = static_cast<uint32>(IndexedVertices.size());
+	for (int32 i = 0; i < Segments; ++i)
+	{
+		float Angle = i * AngleStep;
+		FVector VertexPos = Position + FVector(0.0f, std::cos(Angle) * Range, std::sin(Angle) * Range);
+		IndexedVertices.emplace_back(VertexPos, LineColor);
+
+		Indices.push_back(BaseYZ + i);
+		Indices.push_back(BaseYZ + ((i + 1) % Segments));
+	}
+}
+
 void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Direction, float Range,
 	float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& InColor)
 {
@@ -288,34 +383,39 @@ void FLineBatcher::AddSpotLight(const FVector& Position, const FVector& Directio
 	FVector Up, Right;
 	Forward.FindBestAxisVectors(Up, Right);
 
-	const float OuterRad = MathUtil::DegreesToRadians(OuterConeAngleDeg);
-	const float ConeRadius = Range * std::tan(OuterRad);
-	const FVector ConeBaseCenter = Position + (Forward * Range);
-
-	const int32 Segments = 32;
-	for (int32 i = 0; i < Segments; ++i)
-	{
-		float Angle = (static_cast<float>(i) / Segments) * MathUtil::TwoPi;
-		float CosA = std::cos(Angle);
-		float SinA = std::sin(Angle);
-
-		FVector VertexPos = ConeBaseCenter + (Right * CosA * ConeRadius) + (Up * SinA * ConeRadius);
-		IndexedVertices.emplace_back(VertexPos, LineColor);
-	}
-
-	for (int32 i = 0; i < Segments; ++i)
-	{
-		Indices.push_back(BaseVertex + i);
-		Indices.push_back(BaseVertex + ((i + 1) % Segments));
-	
+	auto DrawCone = [&](float AngleDeg, const FVector4& Color, int32 Segments)
 		{
-			uint32 TipIdx = static_cast<uint32>(IndexedVertices.size());
-			IndexedVertices.emplace_back(Position, LineColor);
+			const uint32 StartVertexIdx = static_cast<uint32>(IndexedVertices.size());
+			const float Rad = MathUtil::DegreesToRadians(AngleDeg);
+			const float ConeRadius = Range * std::tan(Rad);
+			const FVector ConeBaseCenter = Position + (Forward * Range);
 
-			Indices.push_back(TipIdx);
-			Indices.push_back(BaseVertex + i);
-		}
-	}
+			for (int32 i = 0; i < Segments; ++i)
+			{
+				float Angle = (static_cast<float>(i) / Segments) * MathUtil::TwoPi;
+				FVector VertexPos = ConeBaseCenter + (Right * std::cos(Angle) * ConeRadius) + (Up * std::sin(Angle) * ConeRadius);
+				IndexedVertices.emplace_back(VertexPos, Color);
+			}
+
+			for (int32 i = 0; i < Segments; ++i)
+			{
+				Indices.push_back(StartVertexIdx + i);
+				Indices.push_back(StartVertexIdx + ((i + 1) % Segments));
+
+				if (i % (Segments / 4) == 0)
+				{
+					uint32 TipIdx = static_cast<uint32>(IndexedVertices.size());
+					IndexedVertices.emplace_back(Position, Color);
+					Indices.push_back(TipIdx);
+					Indices.push_back(StartVertexIdx + i);
+				}
+			}
+		};
+
+	DrawCone(OuterConeAngleDeg, LineColor, 32);
+
+	FVector4 InnerColor = FColor::Green().ToVector4();
+	DrawCone(InnerConeAngleDeg, InnerColor, 16);
 }
 
 void FLineBatcher::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpacing, int32 GridHalfLineCount,

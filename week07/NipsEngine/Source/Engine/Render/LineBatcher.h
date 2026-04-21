@@ -63,6 +63,12 @@ public:
 	// OBB 와이어프레임 (12개 Edge)
 	void AddOBB(const FOBB& Box, const FColor& Color);
 
+	// DirectionalLight의 와이어프레임 (빛 방향을 향하는 화살표)
+	void AddDirectionalLight(const FVector& Position, const FVector& Direction, float Length, const FColor& Color);
+
+	// PointLight의 와이어프레임 (빛 위치에서 일정 반경의 원)
+	void AddPointLight(const FVector& Position, float Range, const FColor& Color);
+
 	// SpotLight의 원뿔 와이어프레임
 	void AddSpotLight(const FVector& Position, const FVector& Direction, float Range, float InnerConeAngleDeg, float OuterConeAngleDeg, const FColor& Color);
 

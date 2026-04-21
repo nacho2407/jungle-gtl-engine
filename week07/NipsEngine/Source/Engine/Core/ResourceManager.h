@@ -9,6 +9,7 @@
 #include "Core/Singleton.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
+#include "Render/Resource/ComputeShader.h"
 #include "Render/Resource/Shader.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/Texture.h"
@@ -99,8 +100,10 @@ public:
 
 	UShader* GetShader(const FString& FilePath) const;
 	bool LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-                    const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount,
 					const D3D_SHADER_MACRO* Defines = nullptr, uint32 PermutationKey = 0);
+
+	FComputeShader* GetComputeShader(const FString& FilePath) const;
+    bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint);
 
 	UMaterial* GetMaterial(const FString& Path) const;
 	UMaterial* GetOrCreateMaterial(const FString& Path, const FString& ShaderName);
@@ -168,6 +171,7 @@ private:
 
 	TMap<FString, UStaticMesh*> StaticMeshes;
 	TMap<FString, UShader*> Shaders;
+	TMap<FString, FComputeShader*> ComputeShaders;
 	TMap<FString, UTexture*> Textures;
 	TMap<FString, UMaterial*> Materials;
 	TMap<FString, UMaterialInstance*> MaterialInstances;

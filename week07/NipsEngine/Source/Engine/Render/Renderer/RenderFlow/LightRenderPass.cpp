@@ -38,14 +38,16 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
 	case (EViewMode::Wireframe):
         LightPassConstant.WorldLit = 1;
         break;
-    case (EViewMode::Lit):
+    case (EViewMode::Lit_Gouraud):
+    case (EViewMode::Lit_Lambert):
+    case (EViewMode::Lit_BlinnPhong):
 		LightPassConstant.WorldLit = 0;
 		break;
     default:
 		break;
     }
 
-    LightPassConstant.LightCount = 0;
+    LightPassConstant.LightCount = static_cast<uint32>(RenderBus->LightInfos.size());
     LightPassConstant.CameraWorldPos = RenderBus->GetCameraPosition();
     LightPassConstant.ViewMode = static_cast<uint32>(RenderBus->GetViewMode());
     Context->RenderResources->LightPassConstantBuffer.Update(Context->DeviceContext, &LightPassConstant, sizeof(LightPassConstant));

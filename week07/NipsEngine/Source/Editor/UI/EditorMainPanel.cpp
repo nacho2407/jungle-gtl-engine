@@ -11,6 +11,7 @@
 #include "ImGui/imgui_impl_win32.h"
 
 #include "Render/Renderer/Renderer.h"
+#include "Render/Resource/Shader.h"
 #include "Engine/Input/InputSystem.h"
 namespace
 {
@@ -47,18 +48,37 @@ const char* GetViewportTypeName(EEditorViewportType Type)
     }
 }
 
+const char* GetLightingModelName(ELightingModel Key)
+{
+    switch (Key)
+    {
+    case ELightingModel::Gouraud:   return "Gouraud";
+    case ELightingModel::Lambert:   return "Lambert";
+    case ELightingModel::BlinnPhong: return "BlinnPhong";
+    default:                                     return "Unlit";
+    }
+}
+
 const char* GetViewModeName(EViewMode Mode)
 {
     switch (Mode)
     {
-    case EViewMode::Lit:
-        return "Lit";
+    case EViewMode::Lit_Gouraud:
+        return "Lit (Gouraud)";
+    case EViewMode::Lit_Lambert:
+        return "Lit (Lambert)";
+    case EViewMode::Lit_BlinnPhong:
+        return "Lit (Blinn-Phong)";
     case EViewMode::Unlit:
         return "Unlit";
+	case EViewMode::Heatmap:
+		return "Heatmap";
     case EViewMode::Wireframe:
         return "Wireframe";
 	case EViewMode::Depth: 
-		return "Depth"; 
+		return "Depth";
+	case EViewMode::Normal:
+		return "Normal";
 	default:
         return "Lit";
     }
@@ -418,12 +438,16 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
     if (ImGui::BeginMenu("View"))
     {
         static constexpr EViewMode Modes[] = {
-            EViewMode::Lit,
+            EViewMode::Lit_Gouraud,
+            EViewMode::Lit_Lambert,
+            EViewMode::Lit_BlinnPhong,
             EViewMode::Unlit,
+			EViewMode::Heatmap,
             EViewMode::Wireframe,
             EViewMode::Depth,
+			EViewMode::Normal,
         };
-        static constexpr const char* Labels[] = { "Lit", "Unlit", "Wireframe", "Depth" };
+        static constexpr const char* Labels[] = { "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit", "Heatmap", "Wireframe", "Depth", "Normal" };
 
         for (int32 j = 0; j < static_cast<int32>(EViewMode::Count); ++j)
         {

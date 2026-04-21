@@ -20,7 +20,7 @@ protected:
 	// FObjViewer만의 기본값 세팅
 	FObjViewerSettings()
 	{
-		ViewMode = EViewMode::Lit;
+		ViewMode = EViewMode::Lit_BlinnPhong;
 		ShowFlags.bAxis = false;
 		ShowFlags.bBillboardText = false;
 	}
@@ -34,7 +34,7 @@ public:
 	FVector InitLookAt = FVector(0, 0, 0);
 
 	// View
-	EViewMode ViewMode = EViewMode::Lit;
+	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 	FShowFlags ShowFlags;
 
 	// Grid
