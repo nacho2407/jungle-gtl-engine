@@ -100,7 +100,6 @@ public:
 
 	UShader* GetShader(const FString& FilePath) const;
 	bool LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
-                    const D3D11_INPUT_ELEMENT_DESC* InputElements, UINT InputElementCount,
 					const D3D_SHADER_MACRO* Defines = nullptr, uint32 PermutationKey = 0);
 
 	FComputeShader* GetComputeShader(const FString& FilePath) const;
