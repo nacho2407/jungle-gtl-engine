@@ -1,8 +1,8 @@
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/TextDrawCommandBuilder.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 void FOverlayTextPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -18,7 +18,7 @@ void FOverlayTextPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOverlayTextPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    FTextDrawCommandBuilder::BuildOverlay(Context, *Context.DrawCommandList);
+    DrawCommandBuilder::BuildOverlayTextDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FOverlayTextPass::SubmitDrawCommands(FRenderPipelineContext& Context)

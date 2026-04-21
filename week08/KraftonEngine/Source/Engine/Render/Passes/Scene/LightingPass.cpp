@@ -1,25 +1,71 @@
 ﻿#include "Render/Passes/Scene/LightingPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
-#include "Render/Pipelines/Registry/ViewModePassConfig.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "Render/Resources/RenderResources.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
-#include "Render/Pipelines/Context/FrameSharedResources.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Pipelines/Context/FrameRenderResources.h"
 #include "Render/Visibility/TileBasedLightCulling.h"
 
-void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
+namespace
 {
-    const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Context.ActiveViewSurfaceSet || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+void BuildSurfaceSRVTable(const FRenderPipelineContext& Context, EShadingModel ShadingModel, ID3D11ShaderResourceView* OutSurfaceSRVs[6])
+{
+    for (uint32 i = 0; i < 6; ++i)
+    {
+        OutSurfaceSRVs[i] = nullptr;
+    }
+
+    if (!Context.ActiveViewSurfaces)
     {
         return;
     }
 
-    if (Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode) == EShadingModel::Unlit)
+    OutSurfaceSRVs[0] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor);
+    OutSurfaceSRVs[3] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedBaseColor);
+
+    switch (ShadingModel)
+    {
+    case EShadingModel::Gouraud:
+        // Surface1 = GouraudL, 나머지 표면은 사용하지 않습니다.
+        OutSurfaceSRVs[1] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
+        break;
+
+    case EShadingModel::Lambert:
+        // Surface1 = Normal, ModifiedSurface1 = Decal 적용 Normal
+        OutSurfaceSRVs[1] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
+        OutSurfaceSRVs[4] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface1);
+        break;
+
+    case EShadingModel::BlinnPhong:
+        // Surface1 = Normal, Surface2 = MaterialParam
+        OutSurfaceSRVs[1] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
+        OutSurfaceSRVs[2] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface2);
+        OutSurfaceSRVs[4] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface1);
+        OutSurfaceSRVs[5] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface2);
+        break;
+
+    case EShadingModel::Unlit:
+    default:
+        break;
+    }
+}
+} // namespace
+
+void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
+{
+    const FViewportRenderTargets* Targets = Context.Targets;
+    if (!Context.ActiveViewSurfaces || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    {
+        return;
+    }
+
+    const EShadingModel ShadingModel = Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode);
+    if (ShadingModel == EShadingModel::Unlit)
     {
         return;
     }
@@ -34,14 +80,8 @@ void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
         Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
     }
 
-    ID3D11ShaderResourceView* SurfaceSRVs[6] = {
-        Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::BaseColor),
-        Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface1),
-        Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface2),
-        Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedBaseColor),
-        Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedSurface1),
-        Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedSurface2),
-    };
+    ID3D11ShaderResourceView* SurfaceSRVs[6] = {};
+    BuildSurfaceSRVTable(Context, ShadingModel, SurfaceSRVs);
     Context.Context->PSSetShaderResources(0, ARRAY_SIZE(SurfaceSRVs), SurfaceSRVs);
 
 	// LightCulling 관련 데이터 바이딩
@@ -88,7 +128,7 @@ void FLightingPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    if (!Context.ActiveViewSurfaceSet || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (!Context.ActiveViewSurfaces || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
     {
         return;
     }
@@ -98,17 +138,15 @@ void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    FFullscreenDrawCommandBuilder::Build(ERenderPass::Lighting, Context, *Context.DrawCommandList);
+    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::Lighting, Context, *Context.DrawCommandList);
 
-	// LightCulling 관련 데이터 바이딩(b2 LightCullingParams)
-	if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
+    if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
         return;
     }
 
     FDrawCommand& Command = Context.DrawCommandList->GetCommands().back();
     Command.PerShaderCB[0] = Context.LightCulling ? Context.LightCulling->GetLightCullingParamsCBWrapper() : nullptr;
-
 }
 
 void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)

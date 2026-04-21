@@ -13,7 +13,9 @@
 #include "Viewport/Viewport.h"
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/Stats.h"
-#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Pipelines/Context/RenderCollectContext.h"
+#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -364,7 +366,7 @@ void UEditorEngine::EndPlayMap()
     // NeedsVisibleProxyRebuild()가 카메라 변화 기반이라 false를 반환하면 stale
     // VisibleProxies가 그대로 재사용되어 dangling proxy 참조로 크래시가 날 수 있다.
     //
-    // 또한 Renderer::PerObjectCBPool은 ProxyId로 인덱싱되는 월드 간 공유 풀이라,
+    // 또한 Renderer::FrameResources.PerObjectCBPool은 ProxyId로 인덱싱되는 월드 간 공유 풀이라,
     // PIE 중 PIE 프록시가 덮어쓴 슬롯이 그대로 남아 있으면 Editor 프록시의
     // bPerObjectCBDirty=false 상태로 인해 업로드가 skip되어 PIE 마지막 transform으로
     // 렌더된다. 모든 Editor 프록시를 PerObjectCB dirty로 마킹해 재업로드 강제.
@@ -552,56 +554,60 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     SceneView.OcclusionCulling = &GPUOcclusion;
     SceneView.LODContext = World->PrepareLODContext();
 
+    FSceneViewModeSurfaces* ViewModeSurfaces = nullptr;
     if (const auto* ViewModePassRegistry = Renderer.GetViewModePassRegistry();
         ViewModePassRegistry && ViewModePassRegistry->HasConfig(ViewMode))
     {
-        Renderer.SetActiveViewMode(ViewMode);
-        if (Renderer.AcquireViewModeSurfaceSet(VP->GetWidth(), VP->GetHeight()) == nullptr)
-        {
-            Renderer.ClearActiveViewMode();
-            Renderer.ReleaseViewModeSurfaceSet();
-        }
+        ViewModeSurfaces = Renderer.AcquireViewModeSurfaces(VP, VP->GetWidth(), VP->GetHeight());
     }
     else
     {
-        Renderer.ClearActiveViewMode();
-        Renderer.ReleaseViewModeSurfaceSet();
+        Renderer.ReleaseViewModeSurfaces(VP);
     }
 
     Renderer.BeginCollect(SceneView, Scene.GetPrimitiveProxyCount());
-    FRenderPipelineContext PassContext = Renderer.CreatePassContext(SceneView, &RenderTargets, &Scene);
+    auto PassContext = Renderer.CreatePassContext(SceneView, &RenderTargets, &Scene);
+    PassContext.ActiveViewMode = ViewMode;
+    PassContext.ActiveViewSurfaces = ViewModeSurfaces;
+
+    FRenderCollectContext CollectContext = {};
+    CollectContext.SceneView = &SceneView;
+    CollectContext.Scene = &Scene;
+    CollectContext.ViewModePassRegistry = Renderer.GetViewModePassRegistry();
+    CollectContext.ActiveViewMode = ViewMode;
+    CollectContext.CollectedPrimitives = const_cast<FCollectedPrimitives*>(&Renderer.GetCollectedPrimitives());
 
     {
         SCOPE_STAT_CAT("Collector", "3_Collect");
 
-        RenderCollector.CollectWorld(World, SceneView, Scene, Renderer);
-        RenderCollector.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
-        RenderCollector.CollectDebugDraw(SceneView, Scene);
+        Renderer.CollectWorld(World, CollectContext);
+        Renderer.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
+        Renderer.CollectDebugDraw(SceneView, Scene);
 
         if (ShowFlags.bSceneOctree)
         {
-            RenderCollector.CollectOctreeDebug(World->GetOctree(), Scene);
+            Renderer.CollectOctreeDebug(World->GetOctree(), Scene);
         }
 
         if (ShowFlags.bSceneBVH)
         {
             World->BuildWorldPrimitivePickingBVHNow();
-            RenderCollector.CollectWorldBVHDebug(World->GetWorldPrimitivePickingBVH(), Scene);
+            Renderer.CollectWorldBVHDebug(World->GetWorldPrimitivePickingBVH(), Scene);
         }
 
         if (ShowFlags.bWorldBound)
         {
-            RenderCollector.CollectWorldBoundsDebug(RenderCollector.GetCollectedPrimitives().VisibleProxies, Scene);
+            Renderer.CollectWorldBoundsDebug(Renderer.GetCollectedPrimitives().VisibleProxies, Scene);
         }
 
         if (VC == GetActiveViewport())
-            RenderCollector.CollectOverlayText(GetOverlayStatSystem(), *this, Scene);
-        RenderCollector.BuildFramePassCommands(SceneView, Scene, Renderer);
+            Renderer.CollectOverlayText(GetOverlayStatSystem(), *this, Scene);
     }
 
     {
         SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-        PassContext.VisibleProxies = &RenderCollector.GetCollectedPrimitives().VisibleProxies;
+        PassContext.VisibleProxies = &Renderer.GetCollectedPrimitives().VisibleProxies;
+        Renderer.BuildDrawCommands(PassContext);
         Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PassContext);
     }
 
@@ -612,7 +618,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
         GPUOcclusion.DispatchOcclusionTest(
             Ctx,
             VP->GetDepthCopySRV(),
-            RenderCollector.GetCollectedPrimitives().VisibleProxies,
+            Renderer.GetCollectedPrimitives().VisibleProxies,
             SceneView.View, SceneView.Proj,
             VP->GetWidth(), VP->GetHeight());
     }

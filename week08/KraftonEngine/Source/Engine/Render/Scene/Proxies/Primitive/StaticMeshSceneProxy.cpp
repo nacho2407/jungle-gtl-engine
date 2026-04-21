@@ -1,8 +1,8 @@
-#include "Render/Types/PipelineStateTypes.h"
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resources/ShaderManager.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
@@ -26,7 +26,7 @@ struct FStaticMeshMaterialViewConstants
     float Padding[2] = { 0.0f, 0.0f };
 };
 
-bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
+bool SectionMaterialLess(const FMeshSectionRenderData& A, const FMeshSectionRenderData& B)
 {
     const uintptr_t ACB0 = reinterpret_cast<uintptr_t>(A.MaterialCB[0]);
     const uintptr_t BCB0 = reinterpret_cast<uintptr_t>(B.MaterialCB[0]);
@@ -131,7 +131,7 @@ std::unique_ptr<FMaterialConstantBuffer> BuildStaticMeshMaterialCB(const UMateri
     return Buffer;
 }
 
-void SortSectionDrawsByMaterial(TArray<FMeshSectionDraw>& Draws)
+void SortSectionRenderDataByMaterial(TArray<FMeshSectionRenderData>& Draws)
 {
     if (Draws.size() > 1)
     {
@@ -143,6 +143,7 @@ void SortSectionDrawsByMaterial(TArray<FMeshSectionDraw>& Draws)
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
     : FPrimitiveSceneProxy(InComponent)
 {
+    bAllowViewModeShaderOverride = true;
 }
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
@@ -152,7 +153,7 @@ UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
 
 void FStaticMeshSceneProxy::UpdateMaterial()
 {
-    RebuildSectionDraws();
+    RebuildSectionRenderData();
 }
 
 void FStaticMeshSceneProxy::UpdateMesh()
@@ -161,7 +162,7 @@ void FStaticMeshSceneProxy::UpdateMesh()
     Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
     Pass = ERenderPass::Opaque;
 
-    RebuildSectionDraws();
+    RebuildSectionRenderData();
 }
 
 void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
@@ -172,16 +173,16 @@ void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
         return;
 
     std::swap(MeshBuffer, LODData[CurrentLOD].MeshBuffer);
-    std::swap(SectionDraws, LODData[CurrentLOD].SectionDraws);
+    std::swap(SectionRenderData, LODData[CurrentLOD].SectionRenderData);
     std::swap(ActiveOwnedMaterialCBs, LODData[CurrentLOD].OwnedMaterialCBs);
 
     CurrentLOD = LODLevel;
     std::swap(MeshBuffer, LODData[LODLevel].MeshBuffer);
-    std::swap(SectionDraws, LODData[LODLevel].SectionDraws);
+    std::swap(SectionRenderData, LODData[LODLevel].SectionRenderData);
     std::swap(ActiveOwnedMaterialCBs, LODData[LODLevel].OwnedMaterialCBs);
 }
 
-void FStaticMeshSceneProxy::RebuildSectionDraws()
+void FStaticMeshSceneProxy::RebuildSectionRenderData()
 {
     UStaticMeshComponent* SMC = GetStaticMeshComponent();
     UStaticMesh* Mesh = SMC->GetStaticMesh();
@@ -190,14 +191,14 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
         for (uint32 lod = 0; lod < MAX_LOD; ++lod)
         {
             LODData[lod].MeshBuffer = nullptr;
-            LODData[lod].SectionDraws.clear();
+            LODData[lod].SectionRenderData.clear();
             LODData[lod].OwnedMaterialCBs.clear();
         }
 
         LODCount = 1;
         CurrentLOD = 0;
         MeshBuffer = nullptr;
-        SectionDraws.clear();
+        SectionRenderData.clear();
         ActiveOwnedMaterialCBs.clear();
         return;
     }
@@ -213,14 +214,14 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
     {
         const auto& Sections = Mesh->GetLODSections(lod);
         LODData[lod].MeshBuffer = Mesh->GetLODMeshBuffer(lod);
-        LODData[lod].SectionDraws.clear();
+        LODData[lod].SectionRenderData.clear();
         LODData[lod].OwnedMaterialCBs.clear();
-        LODData[lod].SectionDraws.reserve(Sections.size());
+        LODData[lod].SectionRenderData.reserve(Sections.size());
         LODData[lod].OwnedMaterialCBs.reserve(Sections.size());
 
         for (const FStaticMeshSection& Section : Sections)
         {
-            FMeshSectionDraw Draw;
+            FMeshSectionRenderData Draw;
             Draw.FirstIndex = Section.FirstIndex;
             Draw.IndexCount = Section.NumTriangles * 3;
             Draw.Blend = EBlendState::Opaque;
@@ -259,14 +260,14 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
                 LODData[lod].OwnedMaterialCBs.push_back(std::move(MaterialCB));
             }
 
-            LODData[lod].SectionDraws.push_back(Draw);
+            LODData[lod].SectionRenderData.push_back(Draw);
         }
 
-        SortSectionDrawsByMaterial(LODData[lod].SectionDraws);
+        SortSectionRenderDataByMaterial(LODData[lod].SectionRenderData);
     }
 
     CurrentLOD = 0;
     std::swap(MeshBuffer, LODData[0].MeshBuffer);
-    std::swap(SectionDraws, LODData[0].SectionDraws);
+    std::swap(SectionRenderData, LODData[0].SectionRenderData);
     std::swap(ActiveOwnedMaterialCBs, LODData[0].OwnedMaterialCBs);
 }

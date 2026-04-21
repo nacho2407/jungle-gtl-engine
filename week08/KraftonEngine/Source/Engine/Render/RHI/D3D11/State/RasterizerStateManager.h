@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Types/PipelineStateTypes.h"
+#include "Render/Passes/Base/PipelineStateTypes.h"
 
 class FRasterizerStateManager
 {

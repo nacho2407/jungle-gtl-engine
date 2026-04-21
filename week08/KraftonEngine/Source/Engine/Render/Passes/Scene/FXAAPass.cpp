@@ -1,11 +1,11 @@
-#include "Render/Passes/Scene/FXAAPass.h"
+﻿#include "Render/Passes/Scene/FXAAPass.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "Render/Resources/RenderResources.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
 
 void FFXAAPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -40,19 +40,12 @@ void FFXAAPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    if (Context.ViewModePassRegistry &&
-        Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
-        Context.ViewModePassRegistry->SuppressesSceneExtras(Context.ActiveViewMode))
-    {
-        return;
-    }
-
     if (!Targets || !Targets->SceneColorCopySRV || !Targets->SceneColorCopyTexture)
     {
         return;
     }
 
-    FFullscreenDrawCommandBuilder::Build(ERenderPass::FXAA, Context, *Context.DrawCommandList);
+    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::FXAA, Context, *Context.DrawCommandList);
 }
 
 void FFXAAPass::SubmitDrawCommands(FRenderPipelineContext& Context)

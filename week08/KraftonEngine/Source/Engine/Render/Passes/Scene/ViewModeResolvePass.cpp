@@ -1,16 +1,17 @@
-#include "Render/Passes/Scene/ViewModeResolvePass.h"
-#include "Render/Pipelines/Context/View/ViewportRenderTargets.h"
+﻿#include "Render/Passes/Scene/ViewModeResolvePass.h"
+#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
 
-#include "Render/Submission/Builders/FullscreenDrawCommandBuilder.h"
-#include "Render/Submission/Commands/DrawCommand.h"
-#include "Render/Submission/Commands/DrawCommandList.h"
-#include "Render/Pipelines/Context/View/SceneView.h"
-#include "Render/Pipelines/Registry/ViewModePassConfig.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
+#include "Render/Submission/Command/DrawCommand.h"
+#include "Render/Submission/Command/DrawCommandList.h"
+#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
 #include "Render/Resources/RenderResources.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/View/ViewModeSurfaceSet.h"
-#include "Render/Resources/ConstantBufferPool.h"
+#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Resources/Buffers/ConstantBufferPool.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Resources/Bindings/RenderCBKeys.h"
 
 namespace
 {
@@ -82,12 +83,12 @@ void FViewModeResolvePass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    if (Variant == EViewModePostProcessVariant::WorldNormal && !Context.ActiveViewSurfaceSet)
+    if (Variant == EViewModePostProcessVariant::WorldNormal && !Context.ActiveViewSurfaces)
     {
         return;
     }
 
-    FFullscreenDrawCommandBuilder::Build(ERenderPass::PostProcess, Context, *Context.DrawCommandList, Variant);
+    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, Variant);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
@@ -106,7 +107,7 @@ void FViewModeResolvePass::BuildDrawCommands(FRenderPipelineContext& Context)
         Constants.Range = Context.SceneView->RenderOptions.Range;
         Constants.Mode = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
 
-        FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ECBPoolKey::SceneDepth, sizeof(FSceneDepthPConstants));
+        FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ERenderCBKey::SceneDepth, sizeof(FSceneDepthPConstants));
         if (CB)
         {
             CB->Update(Context.Context, &Constants, sizeof(Constants));
@@ -118,10 +119,10 @@ void FViewModeResolvePass::BuildDrawCommands(FRenderPipelineContext& Context)
     }
     case EViewModePostProcessVariant::WorldNormal:
     {
-        ID3D11ShaderResourceView* NormalSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::ModifiedSurface1);
+        ID3D11ShaderResourceView* NormalSRV = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface1);
         if (!NormalSRV)
         {
-            NormalSRV = Context.ActiveViewSurfaceSet->GetSRV(ESurfaceSlot::Surface1);
+            NormalSRV = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
         }
 
         Command.DiffuseSRV = NormalSRV;

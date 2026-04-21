@@ -5,7 +5,7 @@
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
-#include "Render/Types/ViewTypes.h"
+#include "Render/Pipelines/Context/Scene/ViewTypes.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {

@@ -4,7 +4,7 @@
 #include "Core/EngineTypes.h"
 #include "Core/ResourceTypes.h"
 #include "Math/Vector.h"
-#include "Render/Types/VertexTypes.h"
+#include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include "Render/Submission/Batching/BatchBuffer.h"
 
 // Texture Atlas UV 정보
@@ -29,7 +29,7 @@ public:
                       const FVector& CamRight,
                       const FVector& CamUp,
                       const FVector& WorldScale,
-                      float Scale = 1.0f);
+                      float          Scale = 1.0f);
 
     // 스크린 공간 오버레이 텍스트
     void AddScreenText(const FString& Text,
@@ -47,14 +47,14 @@ public:
     bool UploadScreenBuffers(ID3D11DeviceContext* Context);
 
     ID3D11Buffer* GetWorldVBBuffer() const { return WorldBuffer.GetVBBuffer(); }
-    uint32 GetWorldVBStride() const { return WorldBuffer.GetVBStride(); }
+    uint32        GetWorldVBStride() const { return WorldBuffer.GetVBStride(); }
     ID3D11Buffer* GetWorldIBBuffer() const { return WorldBuffer.GetIBBuffer(); }
-    uint32 GetWorldIndexCount() const { return WorldBuffer.GetIndexCount(); }
+    uint32        GetWorldIndexCount() const { return WorldBuffer.GetIndexCount(); }
 
     ID3D11Buffer* GetScreenVBBuffer() const { return ScreenBuffer.GetVBBuffer(); }
-    uint32 GetScreenVBStride() const { return ScreenBuffer.GetVBStride(); }
+    uint32        GetScreenVBStride() const { return ScreenBuffer.GetVBStride(); }
     ID3D11Buffer* GetScreenIBBuffer() const { return ScreenBuffer.GetIBBuffer(); }
-    uint32 GetScreenIndexCount() const { return ScreenBuffer.GetIndexCount(); }
+    uint32        GetScreenIndexCount() const { return ScreenBuffer.GetIndexCount(); }
 
     uint32 GetWorldQuadCount() const { return static_cast<uint32>(WorldBuffer.Vertices.size() / 4); }
     uint32 GetScreenQuadCount() const { return static_cast<uint32>(ScreenBuffer.Vertices.size() / 4); }
@@ -67,6 +67,6 @@ private:
     TBatchBuffer<FTextureVertex> ScreenBuffer;
 
     TMap<uint32, FCharacterInfo> CharInfoMap;
-    uint32 CachedColumns = 0;
-    uint32 CachedRows = 0;
+    uint32                       CachedColumns = 0;
+    uint32                       CachedRows    = 0;
 };

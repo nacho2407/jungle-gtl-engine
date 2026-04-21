@@ -1,22 +1,20 @@
-﻿#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
 
-#include "Render/Passes/Scene/AdditiveDecalPass.h"
-#include "Render/Passes/Scene/AlphaBlendPass.h"
-#include "Render/Passes/Scene/BaseDrawPass.h"
 #include "Render/Passes/Editor/DebugLinePass.h"
-#include "Render/Passes/Editor/GridPass.h"
-#include "Render/Passes/Scene/DecalPass.h"
-#include "Render/Passes/Scene/DepthPrePass.h"
-#include "Render/Passes/Scene/FXAAPass.h"
 #include "Render/Passes/Editor/GizmoPass.h"
-#include "Render/Passes/Scene/HeightFogPass.h"
-#include "Render/Passes/Scene/LightingPass.h"
-#include "Render/Passes/Scene/ViewModeResolvePass.h"
-#include "Render/Passes/Scene/LightCullingPass.h"
 #include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Passes/Editor/SelectionMaskPass.h"
+#include "Render/Passes/Scene/AdditiveDecalPass.h"
+#include "Render/Passes/Scene/AlphaBlendPass.h"
+#include "Render/Passes/Scene/BaseDrawPass.h"
+#include "Render/Passes/Scene/DecalPass.h"
+#include "Render/Passes/Scene/DepthPrePass.h"
+#include "Render/Passes/Scene/FXAAPass.h"
+#include "Render/Passes/Scene/HeightFogPass.h"
+#include "Render/Passes/Scene/LightCullingPass.h"
+#include "Render/Passes/Scene/LightingPass.h"
+#include "Render/Passes/Scene/ViewModeResolvePass.h"
 
 FRenderPassRegistry::~FRenderPassRegistry()
 {
@@ -26,9 +24,11 @@ FRenderPassRegistry::~FRenderPassRegistry()
 void FRenderPassRegistry::Initialize()
 {
     Release();
-    Passes.emplace((int32)ERenderPassNodeType::GridPass, new FGridPass());
+
+    InitializeDefaultPassRenderStateDescs(PassStateDescs);
+
     Passes.emplace((int32)ERenderPassNodeType::DepthPrePass, new FDepthPrePass());
-    Passes.emplace((int32)ERenderPassNodeType::LightCullingPass, new FLightCullingPass()); 
+    Passes.emplace((int32)ERenderPassNodeType::LightCullingPass, new FLightCullingPass());
     Passes.emplace((int32)ERenderPassNodeType::BaseDrawPass, new FBaseDrawPass());
     Passes.emplace((int32)ERenderPassNodeType::DecalPass, new FDecalPass());
     Passes.emplace((int32)ERenderPassNodeType::LightingPass, new FLightingPass());
@@ -50,6 +50,7 @@ void FRenderPassRegistry::Release()
     {
         delete Pair.second;
     }
+
     Passes.clear();
 }
 
@@ -57,4 +58,14 @@ FRenderPass* FRenderPassRegistry::FindPass(ERenderPassNodeType Type) const
 {
     auto It = Passes.find((int32)Type);
     return It != Passes.end() ? It->second : nullptr;
+}
+
+const FPassRenderStateDesc& FRenderPassRegistry::GetPassStateDesc(ERenderPass Pass) const
+{
+    return PassStateDescs[(uint32)Pass];
+}
+
+const FPassRenderStateDesc* FRenderPassRegistry::GetPassStateDescs() const
+{
+    return PassStateDescs;
 }
