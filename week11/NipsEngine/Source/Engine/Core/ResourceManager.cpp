@@ -699,11 +699,15 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	TComPtr<ID3DBlob> VSBlob;
 	TComPtr<ID3DBlob> PSBlob;
 
+	TMap<FString, uint32> LocalTextureBindSlots;
+	TMap<FString, FShaderVariableInfo> LocalVariableInfoMap;
+	uint32 OutCBufferSize;
+
 	FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(NormalizedFilePath, VSEntryPoint, "vs_5_0", Defines, PermutationKey);
 	if (CompileResult.bSuccess)
 	{
 		VSBlob = CompileResult.Blob;
-		Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation);
+		Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation, LocalTextureBindSlots, LocalVariableInfoMap, OutCBufferSize);
 	}
 	else
 	{
@@ -714,7 +718,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	if (CompileResult.bSuccess)
 	{
 		PSBlob = CompileResult.Blob;
-		Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation);
+		Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation, LocalTextureBindSlots, LocalVariableInfoMap, OutCBufferSize);
 	}
 	else
 	{
@@ -737,9 +741,28 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		return false;
 	}
 
+	FShaderPermutationDesc Desc;
+	Desc.VSEntryPoint = VSEntryPoint;
+	Desc.PSEntryPoint = PSEntryPoint;
+	Desc.PermutationKey = PermutationKey;
+	for (const D3D_SHADER_MACRO* Define = Defines; Define && Define->Name; ++Define)
+	{
+		Desc.Defines.push_back({ Define->Name, Define->Definition });
+	}
+
+	Shader->SetPermutationDesc(PermutationKey, Desc);
 	Shader->AddPermutation(PermutationKey, Permutation);
 
 	return true;
+}
+
+void FResourceManager::ReloadShader(const FString& FilePath)
+{
+	UShader* Shader = GetShader(FilePath);
+	if (Shader)
+	{
+		Shader->Reload(CachedDevice.Get());
+	}
 }
 
 UShader* FResourceManager::GetShader(const FString& FilePath) const

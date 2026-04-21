@@ -1,8 +1,11 @@
 ﻿#include "Shader.h"
 
+#include "Core/ResourceManager.h"
+#include "Render/Resource/ShaderCompiler.h"
+
 DEFINE_CLASS(UShader, UObject)
 
-DXGI_FORMAT GetDXGIFormat(const D3D11_SIGNATURE_PARAMETER_DESC& ParamDesc)
+static DXGI_FORMAT GetDXGIFormat(const D3D11_SIGNATURE_PARAMETER_DESC& ParamDesc)
 {
 	if (ParamDesc.Mask == 1)
 	{
@@ -31,7 +34,34 @@ DXGI_FORMAT GetDXGIFormat(const D3D11_SIGNATURE_PARAMETER_DESC& ParamDesc)
 	return DXGI_FORMAT_UNKNOWN;
 }
 
-void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target)
+static TArray<D3D_SHADER_MACRO> BuildShaderMacros(const TArray<FShaderDefineDesc>& Defines)
+{
+	static std::vector<D3D_SHADER_MACRO> Macros;
+	Macros.clear();
+	for (const auto& Define : Defines)
+	{
+		D3D_SHADER_MACRO Macro = {};
+		Macro.Name = Define.Name.c_str();
+		Macro.Definition = Define.Value.c_str();
+		Macros.push_back(Macro);
+	}
+	D3D_SHADER_MACRO EndMacro = {};
+	Macros.push_back(EndMacro);
+
+	return Macros;
+}
+
+static void ReleasePermutationMap(TMap<uint32, FShader>& Permutations)
+{
+	for (auto& Pair : Permutations)
+	{
+		Pair.second.Release();
+	}
+	Permutations.clear();
+}
+
+void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target,
+	TMap<FString, uint32>& OutTextureBindSlots, TMap<FString, FShaderVariableInfo>& OutShaderVariables, uint32& OutCBufferSize)
 {
 	if (!ShaderBlob || !Device) return;
 
@@ -148,5 +178,98 @@ void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader&
 		Device->CreateBuffer(&CBufferDesc, nullptr, &Target.ConstantBuffer);
 	}
 
+	OutTextureBindSlots = TextureBindSlots;
+	OutShaderVariables = ShaderVariables;
+	OutCBufferSize = CBufferSize;
+
 	Reflector->Release();
+}
+
+void UShader::Reload(ID3D11Device* Device)
+{
+	if (!Device) return;
+
+	TMap<uint32, FShader> NewPermutations;
+
+	TMap<FString, uint32> NewTextureBindSlots;
+	TMap<FString, FShaderVariableInfo> NewShaderVariables;
+	uint32 NewCBufferSize = 0;
+
+	for (const auto& [Key, Desc] : PermutationDescs)
+	{
+		FShader NewShader;
+		TComPtr<ID3DBlob> VSBlob;
+		TComPtr<ID3DBlob> PSBlob;
+
+		TArray<D3D_SHADER_MACRO> Macros = BuildShaderMacros(Desc.Defines);
+
+		FShaderCompileResult VSResult = FShaderCompiler::CompileFromFile(FilePath, Desc.VSEntryPoint, "vs_5_0",
+			Macros.data(), Desc.PermutationKey);
+		if (!VSResult.bSuccess)
+		{
+			UE_LOG("Failed to compile vertex shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
+			ReleasePermutationMap(NewPermutations);
+			return;
+		}
+		VSBlob = VSResult.Blob;
+
+		FShaderCompileResult PSResult = FShaderCompiler::CompileFromFile(FilePath, Desc.PSEntryPoint, "ps_5_0",
+			Macros.data(), Desc.PermutationKey);
+		if (!PSResult.bSuccess)
+		{
+			UE_LOG("Failed to compile pixel shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
+			ReleasePermutationMap(NewPermutations);
+			return;
+		}
+		PSBlob = PSResult.Blob;
+
+		if (FAILED(Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &NewShader.VS)))
+		{
+			UE_LOG("Failed to create vertex shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
+			ReleasePermutationMap(NewPermutations);
+			return;
+		}
+
+		if (FAILED(Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &NewShader.PS)))
+		{
+			UE_LOG("Failed to create pixel shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
+			NewShader.Release();
+			ReleasePermutationMap(NewPermutations);
+			return;
+		}
+
+		ReflectShader(VSBlob.Get(), Device, NewShader, NewTextureBindSlots, NewShaderVariables, NewCBufferSize);
+		ReflectShader(PSBlob.Get(), Device, NewShader, NewTextureBindSlots, NewShaderVariables, NewCBufferSize);
+
+		if (CBufferSize > 0)
+		{
+			if (NewShader.ConstantBuffer)
+			{
+				NewShader.ConstantBuffer->Release();
+				NewShader.ConstantBuffer = nullptr;
+			}
+
+			D3D11_BUFFER_DESC CBufferDesc = {};
+			CBufferDesc.ByteWidth = CBufferSize;
+			CBufferDesc.Usage = D3D11_USAGE_DEFAULT; // Dynamic 에서 Default로 변경 (UpdateSubresource 사용을 위함)
+			CBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			CBufferDesc.CPUAccessFlags = 0;
+			Device->CreateBuffer(&CBufferDesc, nullptr, &NewShader.ConstantBuffer);
+		}
+
+		NewPermutations[Key] = NewShader;
+	}
+
+	for (auto& Pair : Permutations)
+	{
+		Pair.second.Release();
+	}
+
+	Permutations = std::move(NewPermutations);
+	TextureBindSlots = std::move(NewTextureBindSlots);
+	ShaderVariables = std::move(NewShaderVariables);
+	CBufferSize = NewCBufferSize;
+	++Version;
+	
+	UE_LOG("Shader reloaded: %s (version %u)\n", FilePath.c_str(), Version);
 }
