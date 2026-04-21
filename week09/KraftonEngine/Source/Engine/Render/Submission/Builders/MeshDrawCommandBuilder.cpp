@@ -164,8 +164,10 @@ void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPa
         Cmd.PerObjectCB = PerObjCB;
         Cmd.PerShaderCB[0] = (Pass == ERenderPass::DepthPre) ? nullptr : (CB0 ? CB0 : ExtraCB0);
         Cmd.PerShaderCB[1] = (Pass == ERenderPass::DepthPre) ? nullptr : (CB1 ? CB1 : ExtraCB1);
+        Cmd.LightCB = (Pass == ERenderPass::DepthPre) ? nullptr : (Context.Resources ? &Context.Resources->GlobalLightBuffer : nullptr);
         Cmd.DiffuseSRV = (Pass == ERenderPass::DepthPre) ? nullptr : BaseSRV;
         Cmd.NormalSRV = (Pass == ERenderPass::DepthPre) ? nullptr : InNormalSRV;
+        Cmd.LocalLightSRV = (Pass == ERenderPass::DepthPre) ? nullptr : (Context.Resources ? Context.Resources->LocalLightSRV : nullptr);
         Cmd.Pass = Pass;
         const uintptr_t MaterialHash =
             (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[0]) >> 4) ^

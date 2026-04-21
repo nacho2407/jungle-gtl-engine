@@ -48,8 +48,9 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
 
-    // Gouraud Shading용 정점 라이팅 계산
-    float3 GouraudLighting = ComputeGouraudLightingColor(VSNormal);
+    // Gouraud Shading용 정점 라이팅 계산을 위해 월드 포지션 계산
+    float3 WorldPos = mul(Input.position, Model).xyz;
+    float3 GouraudLighting = ComputeGouraudLightingColor(VSNormal, WorldPos);
     Output.gouraud = float4(GouraudLighting, 1.0f);
 
     return Output;
