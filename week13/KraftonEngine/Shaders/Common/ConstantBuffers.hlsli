@@ -8,6 +8,7 @@ cbuffer FrameBuffer : register(b0)
 {
     float4x4 View;
     float4x4 Projection;
+    float4x4 InvProj;
     float4x4 InvViewProj;
     float bIsWireframe;
     float3 WireframeRGB;

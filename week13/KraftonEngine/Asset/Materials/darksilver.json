@@ -1,0 +1,8 @@
+{
+  "Parameters" : {
+    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000]
+  },
+  "PathFileName" : "Asset/Materials/darksilver.json",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/StaticMeshShader.hlsl"
+}

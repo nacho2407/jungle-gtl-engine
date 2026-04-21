@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -13,6 +13,7 @@
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Culling/TileBasedLightCulling.h"
+#include "Render/Culling/ClusteredLightCuller.h"
 
 class FScene;
 
@@ -40,9 +41,13 @@ public:
 	ID3D11ShaderResourceView* GetLightBufferSRV()      { return Resources.ForwardLights.LightBufferSRV; }
 	FTileCullingResource&     GetTileCullingResource() { return Resources.TileCullingResource; }
 	uint32                    GetNumLights()    const  { return Resources.LastNumLights; }
-	FTileBasedLightCulling&         GetTileBaseCulling()     { return TileBasedCulling; }
+	FTileBasedLightCulling&   GetTileBaseCulling()     { return TileBasedCulling; }
 
 	void BindTileCullingResources() { Resources.BindTileCullingBuffers(Device); }
+	void UnbindTileCullingResources() { Resources.UnbindTileCullingBuffers(Device); }
+	void DispatchClusterCullingResources();
+	void BindClusterCullingResources();
+	void UnbindClusterCullingResources();
 
 private:
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
@@ -57,4 +62,5 @@ private:
 	FPassEventBuilder PassEventBuilder;
 	
 	FTileBasedLightCulling TileBasedCulling;
+	FClusteredLightCuller ClusteredLightCuller;
 };

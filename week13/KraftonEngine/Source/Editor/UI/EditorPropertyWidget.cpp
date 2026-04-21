@@ -125,14 +125,16 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
 		if (ImGui::Button(RemoveLabel))
 		{
-			for (AActor* Actor : SelectedActors)
+			// 선택 해제를 먼저 수행 (dangling pointer로 Proxy 접근 방지)
+			TArray<AActor*> ToDelete(SelectedActors.begin(), SelectedActors.end());
+			Selection.ClearSelection();
+			for (AActor* Actor : ToDelete)
 			{
 				if (Actor && Actor->GetWorld())
 				{
 					Actor->GetWorld()->DestroyActor(Actor);
 				}
 			}
-			Selection.ClearSelection();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();

@@ -96,6 +96,22 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 	}
 }
 
+void FResourceManager::LoadFromDirectory(const FString& Path, ID3D11Device* InDevice)
+{
+
+	std::wstring RootPath = FPaths::RootDir();
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(Path))
+	{
+		if (Entry.path().extension() != ".png")
+			continue;
+
+		DirectX::CreateWICTextureFromFile(
+			InDevice, (Entry.path()).c_str(),
+			nullptr, LoadedResource[FPaths::ToUtf8(Entry.path().lexically_relative(RootPath).generic_wstring())].GetAddressOf());
+	}
+}
+
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 {
 	if (!Device)
@@ -329,3 +345,10 @@ TArray<FString> FResourceManager::GetTextureNames() const
 	}
 	return Names;
 }
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FResourceManager::FindLoadedTexture(FString InPath)
+{
+	auto It = LoadedResource.find(InPath);
+	return (It != LoadedResource.end()) ? It->second : nullptr;
+}
+

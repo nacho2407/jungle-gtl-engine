@@ -873,7 +873,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			// ── View Mode 팝업 ──
 			ImGui::SameLine();
 
-			static const char* ViewModeNames[] = { "Phong", "Unlit", "Gouraud", "Lambert", "Wireframe", "SceneDepth", "WorldNormal", "LightCulling" };
+			static const char* ViewModeNames[] = { "Phong", "Unlit", "Gouraud", "Lambert", "Toon", "Wireframe", "SceneDepth", "WorldNormal", "LightCulling" };
 			const char* CurrentViewModeName = ViewModeNames[static_cast<int32>(Opts.ViewMode)];
 
 			char ViewModePopupID[64];
@@ -890,6 +890,9 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
 				ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
 				ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
+				ImGui::SameLine();
+				ImGui::RadioButton("Toon", &CurrentMode, static_cast<int32>(EViewMode::Lit_Toon));
+				ImGui::SameLine();
 				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
 				ImGui::Separator();
 				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
@@ -925,7 +928,6 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
 				ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
 				ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
-				ImGui::Checkbox("ViewLightCulling", &Opts.ShowFlags.bViewLightCulling);
 
 				ImGui::Separator();
 
@@ -953,10 +955,18 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
 				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
-				// Tile Base Lgiht Culling Setting
-				ImGui::Text("TileBaseLgihtCulling");
+				// Light Culling Setting
+				ImGui::Text("Light Culling");
+				int32 CullingMode = static_cast<int32>(Opts.LightCullingMode);
+				ImGui::RadioButton("Off", &CullingMode, static_cast<int32>(ELightCullingMode::Off));
+				ImGui::SameLine();
+				ImGui::RadioButton("Tile", &CullingMode, static_cast<int32>(ELightCullingMode::Tile));
+				ImGui::SameLine();
+				ImGui::RadioButton("Cluster", &CullingMode, static_cast<int32>(ELightCullingMode::Cluster));
+				Opts.LightCullingMode = static_cast<ELightCullingMode>(CullingMode);
 				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
 				ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
+				ImGui::Checkbox("Visualize2.5DCulling", &Opts.ShowFlags.bVisualize25DCulling);
 
 				ImGui::EndPopup();
 			}

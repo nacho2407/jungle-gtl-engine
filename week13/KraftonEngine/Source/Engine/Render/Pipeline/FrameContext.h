@@ -59,6 +59,10 @@ struct FFrameContext
 	ID3D11RenderTargetView*   CullingHeatmapRTV     = nullptr;
 	ID3D11ShaderResourceView* CullingHeatmapSRV     = nullptr;
 
+	// Cursor position relative to viewport (for debug visualization)
+	uint32 CursorViewportX = UINT32_MAX;
+	uint32 CursorViewportY = UINT32_MAX;
+
 	// Render Settings (Single Source of Truth)
 	FViewportRenderOptions RenderOptions;
 

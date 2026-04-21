@@ -2,6 +2,7 @@
 
 #include "ContentBrowserElement.h"
 #include "WICTextureLoader.h"
+#include "Resource/ResourceManager.h"
 
 
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
@@ -9,27 +10,13 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	FEditorWidget::Initialize(InEditor);
 	if (!InDevice) return;
 
-	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
+	const std::wstring IconDir = L"Asset/Editor/Icons/";
 
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"StartMerge_42x.png").c_str(),
-		nullptr, ICons["Default"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"Folder_Base_256x.png").c_str(),
-		nullptr, ICons["Directory"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"World_64x.png").c_str(),
-		nullptr, ICons[".Scene"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_MatEd_Mesh_40x.png").c_str(),
-		nullptr, ICons[".obj"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"Sphere_64x.png").c_str(),
-		nullptr, ICons[".mat"].GetAddressOf());
+	ICons["Default"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"StartMerge_42x.png"));
+	ICons["Directory"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Folder_Base_256x.png"));
+	ICons[".Scene"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_landscape_40x.png"));
+	ICons[".obj"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
+	ICons[".mat"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Sphere_64x.png"));
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
