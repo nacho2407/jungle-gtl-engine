@@ -3,8 +3,27 @@
 
 #include "CommonTypes.hlsli"
 
+#define TILE_SIZE                       4
+#define NUM_SLICES                      32
+#define MAX_LIGHTS_PER_TILE             1024
+#define SHADER_ENTITY_TILE_BUCKET_COUNT (MAX_LIGHTS_PER_TILE / 32)   // 32
+
 // LocalLights StructuredBuffer - t6 slot
 StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
+//Lighting Masking Buffers
+StructuredBuffer<uint> PerTileLightMask : register(t7);
+Texture2D g_DebugHitMapTex : register(t8);
+//Light Culling Parameters - b2 slot
+cbuffer LightCullingParams : register(b2)
+{
+    uint2 ScreenSize;
+    uint2 TileSize; // == TILE_SIZE
+
+    uint Enable25DCulling;
+    float NearZ;
+    float FarZ;
+    float NumLights;
+};
 
 float3 GetAmbientLightColor()
 {
@@ -43,8 +62,10 @@ float4 ComputeGouraudLighting(float4 BaseColor, float4 GouraudL)
     return float4(BaseColor.rgb * GouraudL.rgb, BaseColor.a);
 }
 
-float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
+float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, uint2 PixelCoord)
 {
+
+    
     float3 N = normalize(Normal);
     float3 TotalLight = GetAmbientLightColor();
 
@@ -55,32 +76,50 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity;
     }
 
-    for (int j = 0; j < NumLocalLights; ++j)
+    uint2 TileCoord = PixelCoord / TileSize; // 각 성분별 나눔
+    uint TilesX = ScreenSize.x / TileSize.x; // 한 행에 존재하는 타일 수
+    uint FlatTileIndex = TileCoord.x + TileCoord.y * TilesX;
+    
+    int BucketsPerTile = MAX_LIGHTS_PER_TILE / 32;
+    int StartIndex = FlatTileIndex * BucketsPerTile;
+    
+    for (int Bucket = 0; Bucket < BucketsPerTile; ++Bucket)
     {
-        FLocalLightInfo LocalLight = g_LightBuffer[j];
-        float3 LightVector = LocalLight.Position - WorldPosition;
-        float Distance = length(LightVector);
-        
-        if (Distance < LocalLight.AttenuationRadius && LocalLight.AttenuationRadius > 0.001f)
+        int PointMask = PerTileLightMask[StartIndex + Bucket];
+        for (int bit = 0; bit < 32; ++bit)
         {
-            float3 L = LightVector / Distance;
-            float Diffuse = saturate(dot(N, L));
-            float Attenuation = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
-            Attenuation *= Attenuation;
-            
-            if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
+            if (PointMask & (1u << bit))
             {
-                float3 SpotDir = normalize(LocalLight.Direction);
-                float CosAngle = dot(-L, SpotDir);
-                float CosInner = cos(radians(LocalLight.InnerConeAngle));
-                float CosOuter = cos(radians(LocalLight.OuterConeAngle));
-                Attenuation *= smoothstep(CosOuter, CosInner, CosAngle);
-            }
+                int GlobalPointLightIndex = Bucket * 32 + bit;
+                
+                if (GlobalPointLightIndex < NumLocalLights)
+                {
+                    FLocalLightInfo LocalLight = g_LightBuffer[GlobalPointLightIndex];
+                    float3 LightVector = LocalLight.Position - WorldPosition;
+                    float Distance = length(LightVector);
+        
+                    if (Distance < LocalLight.AttenuationRadius && LocalLight.AttenuationRadius > 0.001f)
+                    {
+                        float3 L = LightVector / Distance;
+                        float Diffuse = saturate(dot(N, L));
+                        float Attenuation = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
+                        Attenuation *= Attenuation;
             
-            TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
+                        if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
+                        {
+                            float3 SpotDir = normalize(LocalLight.Direction);
+                            float CosAngle = dot(-L, SpotDir);
+                            float CosInner = cos(radians(LocalLight.InnerConeAngle));
+                            float CosOuter = cos(radians(LocalLight.OuterConeAngle));
+                            Attenuation *= smoothstep(CosOuter, CosInner, CosAngle);
+                        }
+            
+                        TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
+                    }
+                }
+            }
         }
     }
-
     return saturate(TotalLight);
 }
 
