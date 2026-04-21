@@ -16,12 +16,18 @@ float SliceToViewDepth(uint zSlice)
     return CullState.NearZ * pow(CullState.FarZ / CullState.NearZ, (float) zSlice / CullState.ClusterZ);
 }
 
-[numthreads(1, 1, 1)]
-void CSMain(uint3 id : SV_DispatchThreadID)
+[numthreads(8, 3, 4)]
+void CSMain(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadID)
 {
-    uint tileX = id.x;
-    uint tileY = id.y;
-    uint sliceZ = id.z;
+    uint3 clusterCoord = groupId * uint3(8, 3, 4) + groupThreadId;
+    if (clusterCoord.x >= CullState.ClusterX || clusterCoord.y >= CullState.ClusterY || clusterCoord.z >= CullState.ClusterZ)
+    {
+        return;
+    }
+
+    uint tileX = clusterCoord.x;
+    uint tileY = clusterCoord.y;
+    uint sliceZ = clusterCoord.z;
     //Get Clusters NDCs X,Y Size
     float2 tileSize = float2(2.0f / CullState.ClusterX, 2.0f / CullState.ClusterY);
 

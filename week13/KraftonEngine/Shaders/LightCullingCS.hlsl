@@ -70,19 +70,34 @@ bool SphereOverlapsCluster(float3 center, float radius, float3 corners[8])
     return true;
 }
 
-// 클러스터 하나당 스레드 1개
-[numthreads(1, 1, 1)]
-void CSMain(uint3 id : SV_DispatchThreadID)
+float ComputeLightImportance(FLightInfo light, float3 viewLightPos, float3 clusterCenter)
 {
-    uint clusterIdx = id.z * CullState.ClusterX * CullState.ClusterY
-                    + id.y * CullState.ClusterX
-                    + id.x;
+    float dist = length(viewLightPos - clusterCenter);
+    float ratio = saturate(dist / max(light.AttenuationRadius, 0.0001f));
+    float attenuation = pow(1.0f - ratio, light.FalloffExponent);
+    float luminance = dot(light.Color.rgb, float3(0.299f, 0.587f, 0.114f));
+    return luminance * light.Intensity * attenuation;
+}
+
+//하나의 group당 4^3의 스레드
+[numthreads(8, 3, 4)]
+void CSMain(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadID)
+{
+    uint3 clusterCoord = groupId * uint3(8, 3, 4) + groupThreadId;
+    if (clusterCoord.x >= CullState.ClusterX || clusterCoord.y >= CullState.ClusterY || clusterCoord.z >= CullState.ClusterZ)
+    {
+        return;
+    }
+
+    uint clusterIdx = clusterCoord.z * CullState.ClusterX * CullState.ClusterY
+                    + clusterCoord.y * CullState.ClusterX
+                    + clusterCoord.x;
 
     float2 tileSize = float2(2.0f / CullState.ClusterX, 2.0f / CullState.ClusterY);
-    float2 ndcMin = float2(-1.0f + id.x * tileSize.x, 1.0f - (id.y + 1) * tileSize.y);
-    float2 ndcMax = float2(ndcMin.x + tileSize.x, 1.0f - id.y * tileSize.y);
-    float nearZ = SliceToViewDepth(id.z);
-    float farZ = SliceToViewDepth(id.z + 1);
+    float2 ndcMin = float2(-1.0f + clusterCoord.x * tileSize.x, 1.0f - (clusterCoord.y + 1) * tileSize.y);
+    float2 ndcMax = float2(ndcMin.x + tileSize.x, 1.0f - clusterCoord.y * tileSize.y);
+    float nearZ = SliceToViewDepth(clusterCoord.z);
+    float farZ = SliceToViewDepth(clusterCoord.z + 1);
 
     float3 corners[8];
     corners[0] = NDCToViewSpace(float2(ndcMin.x, ndcMin.y), nearZ);
@@ -94,9 +109,21 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     corners[6] = NDCToViewSpace(float2(ndcMin.x, ndcMax.y), farZ);
     corners[7] = NDCToViewSpace(float2(ndcMax.x, ndcMax.y), farZ);
 
+    float3 clusterCenter = 0.0f;
+    [unroll]
+    for (int c = 0; c < 8; ++c)
+    {
+        clusterCenter += corners[c];
+    }
+    clusterCenter *= 0.125f;
+
     // 임시 버퍼 (로컬 광원 인덱스 리스트)
-    uint localLightIndices[128];
+    uint localLightIndices[256];
+    float localLightScores[256];
     uint localCount = 0;
+    uint localCapacity = min(CullState.MaxLightsPerCluster, 256);
+    uint minIndex = 0;
+    float minScore = 3.402823e38f;
 
     // 모든 광원과 교차 테스트
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; i++)
@@ -106,8 +133,36 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         float4 ViewPos = mul(LightPos4, View);
         if (SphereOverlapsCluster(ViewPos.xyz, light.AttenuationRadius, corners))
         {
-            if (localCount < min(CullState.MaxLightsPerCluster, 128))
+            float importance = ComputeLightImportance(light, ViewPos.xyz, clusterCenter);
+            if (localCount < localCapacity)
+            {
                 localLightIndices[localCount++] = i;
+                localLightScores[localCount - 1] = importance;
+                if (importance < minScore)
+                {
+                    minScore = importance;
+                    minIndex = localCount - 1;
+                }
+            }
+            else if (localCapacity > 0)
+            {
+                if (importance > minScore)
+                {
+                    localLightIndices[minIndex] = i;
+                    localLightScores[minIndex] = importance;
+
+                    minIndex = 0;
+                    minScore = localLightScores[0];
+                    for (uint s = 1; s < localCapacity; ++s)
+                    {
+                        if (localLightScores[s] < minScore)
+                        {
+                            minScore = localLightScores[s];
+                            minIndex = s;
+                        }
+                    }
+                }
+            }
         }
     }
 
