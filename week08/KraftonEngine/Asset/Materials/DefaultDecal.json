@@ -8,7 +8,7 @@
   "PathFileName" : "Asset/Materials/DefaultDecal.json",
   "RasterizerState" : "",
   "RenderPass" : "Decal",
-  "ShaderPath" : "Shaders/DecalShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/DecalShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Editor/Icons/Pawn_64x.png"
   }
