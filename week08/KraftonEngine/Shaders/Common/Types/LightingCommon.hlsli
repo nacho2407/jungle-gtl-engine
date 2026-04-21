@@ -16,9 +16,10 @@ float3 GetDirectionalLightDirection(int Index)
 {
     if (Index < NumDirectionalLights)
     {
-        return normalize(Directional[Index].Direction);
+        float3 Dir = Directional[Index].Direction;
+        return (length(Dir) > 0.0001f) ? normalize(Dir) : float3(0, -1, 0);
     }
-    return float3(0, 0, 0);
+    return float3(0, -1, 0);
 }
 
 // 특정 인덱스의 Directional Light 색상 반환
@@ -31,9 +32,10 @@ float3 GetDirectionalLightColor(int Index)
     return float3(0, 0, 0);
 }
 
-float ComputeLambertTerm(float3 Normal, float3 LightDirection)
+float ComputeLambertTerm(float3 Normal, float3 L)
 {
-    return saturate(dot(normalize(Normal), -normalize(LightDirection)));
+    // Normal과 L은 호출부에서 정규화되어 넘어온다고 가정 (성능 최적화)
+    return saturate(dot(Normal, -L));
 }
 
 float4 ComputeGouraudLighting(float4 BaseColor, float4 GouraudL)
@@ -43,44 +45,39 @@ float4 ComputeGouraudLighting(float4 BaseColor, float4 GouraudL)
 
 float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
 {
+    float3 N = normalize(Normal);
     float3 TotalLight = GetAmbientLightColor();
 
-    // Directional Lights
     for (int i = 0; i < NumDirectionalLights; ++i)
     {
-        float Diffuse = ComputeLambertTerm(Normal, Directional[i].Direction);
+        float3 L = normalize(Directional[i].Direction);
+        float Diffuse = saturate(dot(N, -L));
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity;
     }
 
-    // Local Lights (Point / Spot)
-    // Note: This requires access to g_LightBuffer, which must be bound to VS for Gouraud
     for (int j = 0; j < NumLocalLights; ++j)
     {
-        FLocalLightInfo LocalLight = g_LightBuffer[j];    
-        
+        FLocalLightInfo LocalLight = g_LightBuffer[j];
         float3 LightVector = LocalLight.Position - WorldPosition;
         float Distance = length(LightVector);
         
         if (Distance < LocalLight.AttenuationRadius && LocalLight.AttenuationRadius > 0.001f)
         {
             float3 L = LightVector / Distance;
-            float Diffuse = saturate(dot(normalize(Normal), L));
+            float Diffuse = saturate(dot(N, L));
+            float Attenuation = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
+            Attenuation *= Attenuation;
             
-            float DistanceFalloff = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
-            DistanceFalloff *= DistanceFalloff;
-            
-            float SpotFalloff = 1.0f;
-            float DirLengthSq = dot(LocalLight.Direction, LocalLight.Direction);
-            if (DirLengthSq > 0.0001f)
+            if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
             {
-                float3 SpotDirection = normalize(LocalLight.Direction);
-                float CosAngle = dot(-L, SpotDirection);
+                float3 SpotDir = normalize(LocalLight.Direction);
+                float CosAngle = dot(-L, SpotDir);
                 float CosInner = cos(radians(LocalLight.InnerConeAngle));
                 float CosOuter = cos(radians(LocalLight.OuterConeAngle));
-                SpotFalloff = smoothstep(CosOuter, CosInner, CosAngle);
+                Attenuation *= smoothstep(CosOuter, CosInner, CosAngle);
             }
             
-            TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * DistanceFalloff * SpotFalloff;
+            TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
         }
     }
 
@@ -98,132 +95,89 @@ float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
 
 float4 ComputeLambertLighting(float4 BaseColor, float3 Normal)
 {
+    float3 N = normalize(Normal);
     float3 TotalLight = GetAmbientLightColor();
 
     for (int i = 0; i < NumDirectionalLights; ++i)
     {
-        float Diffuse = ComputeLambertTerm(Normal, Directional[i].Direction);
-        TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity;
+        float3 L = normalize(Directional[i].Direction);
+        TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity;
     }
 
-    float3 LitColor = BaseColor.rgb * saturate(TotalLight);
-    return float4(LitColor, BaseColor.a);
+    return float4(BaseColor.rgb * saturate(TotalLight), BaseColor.a);
 }
 
-float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 MaterialParam, float2 UV)
+float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 MaterialParam, float3 WorldPosition, float3 ViewDirection)
 {
-    float3 WorldPosition = ReconstructWorldPositionFromSceneDepth(UV);
-    float3 ViewDirection = normalize(CameraWorldPos - WorldPosition);
-    
+    float3 N = normalize(Normal);
     float3 TotalDiffuse = GetAmbientLightColor();
-    float3 TotalSpecular = float3(0, 0, 0);
+    float3 TotalSpecular = 0;
 
     float Shininess = max(MaterialParam.x, 1.0f);
     float SpecularStrength = max(MaterialParam.y, 0.0f);
 
     for (int i = 0; i < NumDirectionalLights; ++i)
     {
-        float3 LightDirection = normalize(-Directional[i].Direction);
-        float3 HalfVector = normalize(ViewDirection + LightDirection);
+        float3 L = normalize(-Directional[i].Direction);
+        float3 H = normalize(ViewDirection + L);
 
-        float Diffuse = saturate(dot(normalize(Normal), LightDirection));
-        float Specular = pow(saturate(dot(normalize(Normal), HalfVector)), Shininess) * SpecularStrength;
+        float Diffuse = saturate(dot(N, L));
+        float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
         TotalDiffuse += Diffuse * LightColor;
         TotalSpecular += Specular * LightColor;
     }
 
-    float3 FinalColor = BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular;
-    return float4(FinalColor, BaseColor.a);
+    return float4(BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular, BaseColor.a);
 }
 
-float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 Normal, float4 BaseColor, float4 MaterialParam, float2 UV)
+float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition, float3 V, float Shininess, float SpecularStrength)
 {
-    float3 WorldPosition = ReconstructWorldPositionFromSceneDepth(UV);
     float3 LightVector = LocalLight.Position - WorldPosition;
     float Distance = length(LightVector);
 
     if (Distance >= LocalLight.AttenuationRadius || LocalLight.AttenuationRadius <= 0.001f)
-    {
-        return float3(0, 0, 0);
-    }
+        return 0;
 
     float3 L = LightVector / Distance;
-    float3 V = normalize(CameraWorldPos - WorldPosition);
     float3 H = normalize(V + L);
 
-    float Diffuse = saturate(dot(normalize(Normal), L));
-    float Shininess = max(MaterialParam.x, 1.0f);
-    float SpecularStrength = max(MaterialParam.y, 0.0f);
-    float Specular = pow(saturate(dot(normalize(Normal), H)), Shininess) * SpecularStrength;
+    float Diffuse = saturate(dot(N, L));
+    float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
-    float DistanceFalloff = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
-    DistanceFalloff *= DistanceFalloff;
+    float Attenuation = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
+    Attenuation *= Attenuation;
 
-    float SpotFalloff = 1.0f;
-    float DirLengthSq = dot(LocalLight.Direction, LocalLight.Direction);
-    if (DirLengthSq > 0.0001f)
+    if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
     {
-        float3 SpotDirection = normalize(LocalLight.Direction);
-        float CosAngle = dot(-L, SpotDirection);
-
-        float CosInner = cos(radians(LocalLight.InnerConeAngle));
-        float CosOuter = cos(radians(LocalLight.OuterConeAngle));
-        SpotFalloff = smoothstep(CosOuter, CosInner, CosAngle);
+        float3 SpotDir = normalize(LocalLight.Direction);
+        Attenuation *= smoothstep(cos(radians(LocalLight.OuterConeAngle)), cos(radians(LocalLight.InnerConeAngle)), dot(-L, SpotDir));
     }
 
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;
-    float Attenuation = DistanceFalloff * SpotFalloff;
-    float3 DiffuseColor = BaseColor.rgb * Diffuse * LightColor;
-    float3 SpecularColor = LightColor * Specular;
-    return (DiffuseColor + SpecularColor) * Attenuation;
+    return (Diffuse * LightColor + Specular * LightColor) * Attenuation;
 }
 
-// 반환 타입을 float3로 유지하여 메인 루프에서 rgb에만 더할 수 있도록 합니다.
-float3 LocalLightLambert(FLocalLightInfo LocalLight, float3 Normal, float4 BaseColor, float2 UV)
+float3 LocalLightLambert(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition)
 {
-    // 1. 픽셀의 월드 좌표 복원 및 거리 계산
-    float3 WorldPosition = ReconstructWorldPositionFromSceneDepth(UV);
     float3 LightVector = LocalLight.Position - WorldPosition;
     float Distance = length(LightVector);
     
-    // [최적화] 거리가 감쇠 반경 밖이거나 비정상적인 반경이면 계산 종료
     if (Distance >= LocalLight.AttenuationRadius || LocalLight.AttenuationRadius <= 0.001f)
-    {
-        return float3(0, 0, 0);
-    }
+        return 0;
     
-    // 2. 빛의 방향(L) 및 Lambert (Diffuse) 계산
     float3 L = LightVector / Distance;
-    float Diffuse = saturate(dot(normalize(Normal), L));
+    float Diffuse = saturate(dot(N, L));
+    float Attenuation = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
+    Attenuation *= Attenuation;
     
-    // 3. 거리 감쇠 (Distance Attenuation) - Point, Spot 공통 적용
-    float DistanceFalloff = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
-    DistanceFalloff *= DistanceFalloff;
-    
-    // 4. 스팟 라이트 원뿔 감쇠 (Spotlight Cone Falloff)
-    float SpotFalloff = 1.0f; // 기본값 1.0 (감쇠 없음 = 포인트 라이트로 동작)
-    
-    // Direction 벡터의 길이 제곱을 구합니다. (루트 연산을 피하기 위한 최적화)
-    float DirLengthSq = dot(LocalLight.Direction, LocalLight.Direction);
-    
-    // 방향 벡터의 길이가 0보다 크다면 스팟 라이트로 간주하고 계산 수행
-    if (DirLengthSq > 0.0001f)
+    if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
     {
-        // 이때는 Direction이 0이 아니므로 안심하고 normalize 할 수 있습니다.
-        float3 SpotDirection = normalize(LocalLight.Direction);
-        float CosAngle = dot(-L, SpotDirection);
-        
-        float CosInner = cos(radians(LocalLight.InnerConeAngle));
-        float CosOuter = cos(radians(LocalLight.OuterConeAngle));
-        
-        // 원뿔의 내부 각도와 외부 각도 사이를 부드럽게 보간
-        SpotFalloff = smoothstep(CosOuter, CosInner, CosAngle);
+        float3 SpotDir = normalize(LocalLight.Direction);
+        Attenuation *= smoothstep(cos(radians(LocalLight.OuterConeAngle)), cos(radians(LocalLight.InnerConeAngle)), dot(-L, SpotDir));
     }
     
-    // 5. 최종 컬러 출력 (강도, 거리 감쇠, 스팟 감쇠 모두 곱함)
-    float3 LightColor = LocalLight.Color * LocalLight.Intensity;
-    return BaseColor.rgb * Diffuse * LightColor * DistanceFalloff * SpotFalloff;
+    return Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
 }
 #endif
