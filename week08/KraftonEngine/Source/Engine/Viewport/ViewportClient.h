@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -14,4 +14,6 @@ public:
 	virtual void Draw(FViewport* Viewport, float DeltaTime) {}
 	virtual bool InputKey(int32 Key, bool bPressed) { return false; }
 	virtual bool InputAxis(float DeltaX, float DeltaY) { return false; }
+
+	virtual FViewport* GetViewport() const { return nullptr; }
 };

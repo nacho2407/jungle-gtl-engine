@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -10,8 +10,8 @@
 class UCameraComponent;
 class FViewport;
 class FGPUOcclusionCulling;
-
-/*
+class FTileBasedLightCulling;
+    /*
     한 개의 뷰포트/카메라 시점에서 렌더링할 때 필요한 읽기 전용 뷰 정보입니다.
     카메라 행렬, 뷰 모드, ShowFlag, 프러스텀, LOD 문맥을 함께 보관합니다.
 */
@@ -39,6 +39,7 @@ struct FSceneView
     FVector WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
     FGPUOcclusionCulling* OcclusionCulling = nullptr;
+    FTileBasedLightCulling* LightCulling = nullptr;
     FConvexVolume FrustumVolume;
     FLODUpdateContext LODContext;
 

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Pipelines/RenderPassTypes.h"
@@ -26,6 +26,7 @@ class FOverlayTextPass;
 enum class ERenderPassNodeType
 {
     DepthPrePass,
+    LightCullingPass,
     BaseDrawPass,
     DecalPass,
     LightingPass,

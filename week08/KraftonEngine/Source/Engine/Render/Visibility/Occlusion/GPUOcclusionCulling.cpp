@@ -324,7 +324,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 		UpdateParamsCB(Ctx, &p, sizeof(p));
 
 		Ctx->CSSetShader(HiZCopyCS, nullptr, 0);
-		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
+		Ctx->CSSetConstantBuffers(1, 1, &ParamsCB);
 		Ctx->CSSetShaderResources(0, 1, &DepthSRV);
 		Ctx->CSSetUnorderedAccessViews(0, 1, &HiZUAVs_A[0], nullptr);
 
@@ -354,7 +354,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 		ID3D11ShaderResourceView* srcSRV = bSrcIsA ? HiZSRVs_A[mip - 1] : HiZSRVs_B[mip - 1];
 		ID3D11UnorderedAccessView* dstUAV = bSrcIsA ? HiZUAVs_B[mip] : HiZUAVs_A[mip];
 
-		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
+		Ctx->CSSetConstantBuffers(1, 1, &ParamsCB);
 		Ctx->CSSetShaderResources(0, 1, &srcSRV);
 		Ctx->CSSetUnorderedAccessViews(0, 1, &dstUAV, nullptr);
 
@@ -526,7 +526,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 		UpdateParamsCB(Ctx, &params, sizeof(params));
 
 		Ctx->CSSetShader(OcclusionTestCS, nullptr, 0);
-		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
+		Ctx->CSSetConstantBuffers(1, 1, &ParamsCB);
 
 		ID3D11ShaderResourceView* srvs[3] = { AABBSRV, HiZSRV_A, HiZSRV_B };
 		Ctx->CSSetShaderResources(0, 3, srvs);

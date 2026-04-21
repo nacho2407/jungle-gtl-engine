@@ -74,12 +74,13 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 void UEditorEngine::Shutdown()
 {
-    // 에디터 해제 (엔진보다 먼저)
-    ViewportLayout.SaveToSettings();
-    FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
-    CloseScene();
-    SelectionManager.Shutdown();
-    MainPanel.Release();
+	// 에디터 해제 (엔진보다 먼저)
+	ViewportLayout.SaveToSettings();
+	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
+	CloseScene();
+	SelectionManager.Shutdown();
+	MainPanel.Release();
+    GPUOcclusion.Release();
 
     // 뷰포트 레이아웃 해제
     ViewportLayout.Release();

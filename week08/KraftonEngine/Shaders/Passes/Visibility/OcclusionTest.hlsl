@@ -11,7 +11,7 @@ struct AABB
     float _pad1;
 };
 
-cbuffer OcclusionParams : register(b0)
+cbuffer OcclusionParams : register(b1)
 {
     float4x4 ViewProj;
     float2 ViewportSize;

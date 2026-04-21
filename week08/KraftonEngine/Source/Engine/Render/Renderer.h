@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Pipelines/RenderPassTypes.h"
 /*
@@ -21,13 +21,14 @@
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
 #include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
 #include "Render/Pipelines/RenderPipelineRunner.h"
+#include "Render/Visibility/TileBasedLightCulling.h"
 
 class FTextRenderSceneProxy;
 class FScene;
 class FViewModePassRegistry;
 class FViewModeSurfaceSet;
 struct FCollectedPrimitives;
-
+class FTileBasedLightCulling;
 
 class FRenderer
 {
@@ -121,4 +122,5 @@ private:
     FStateCache PipelineStateCache;
     const FScene* ActiveSceneForFrame = nullptr;
     const FCollectedLights* ActiveCollectedLights = nullptr;
+    std::unique_ptr<FTileBasedLightCulling> LightCulling;
 };

@@ -1,4 +1,4 @@
-#include "Render/Pipelines/RenderPassTypes.h"
+﻿#include "Render/Pipelines/RenderPassTypes.h"
 #include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
 
 namespace
@@ -55,6 +55,7 @@ void FRenderPipelineRegistry::Initialize()
     SceneViewMode.Type = ERenderPipelineType::SceneViewMode;
     SceneViewMode.Children = {
         PassNode(ERenderPassNodeType::DepthPrePass),
+        PassNode(ERenderPassNodeType::LightCullingPass),
         PassNode(ERenderPassNodeType::BaseDrawPass),
         PassNode(ERenderPassNodeType::DecalPass),
         PassNode(ERenderPassNodeType::LightingPass)
