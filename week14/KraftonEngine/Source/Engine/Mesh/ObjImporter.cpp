@@ -444,42 +444,10 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 	return true;
 }
 
-// MTL 정보에서 머티리얼 JSON 파일로 변환하는 함수
+// MTL 정보에서 머티리얼 파일로 변환하는 레거시 래퍼
 FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 {
-	FString JsonPath = "Asset/Materials/" + MtlInfo->MaterialSlotName + ".json";
-
-	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
-	if (std::filesystem::exists(FPaths::ToWide(JsonPath)))
-		return JsonPath;
-
-	json::JSON JsonData;
-	JsonData["PathFileName"] = JsonPath;
-	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl"; // 기본 셰이더
-	JsonData["RenderPass"] = "Opaque";
-
-	if (!MtlInfo->map_Kd.empty())
-	{
-		JsonData["Textures"]["DiffuseTexture"] = MtlInfo->map_Kd;
-
-		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
-		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
-		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
-	}
-	else
-	{
-
-		JsonData["Parameters"]["SectionColor"][0] = MtlInfo->Kd.X;
-		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
-		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
-		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
-	}
-
-	std::ofstream File(FPaths::ToWide(JsonPath));
-	File << JsonData.dump();
-
-	return JsonPath;
+	return ConvertMtlInfoToMat(MtlInfo);
 }
 
 // MTL 정보에서 머티리얼 mat 파일로 변환하는 함수
@@ -588,7 +556,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
 
 			// Convert() 안에서 기존 직접 세팅 대신
-			//FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
 			FString MaterialPath = ConvertMtlInfoToMat(MatchedMaterial); // .mat 파일 생성
 
 			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(MaterialPath);

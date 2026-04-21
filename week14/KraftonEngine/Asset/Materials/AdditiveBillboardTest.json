@@ -1,9 +1,0 @@
-{
-  "PathFileName" : "Asset/Materials/AdditiveBillboardTest.json",
-  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
-  "RenderPass" : "AlphaBlend",
-  "BlendState" : "Additive",
-  "Textures" : {
-    "DiffuseTexture" : "Asset/Editor/Icons/PointLight_64x.png"
-  }
-}

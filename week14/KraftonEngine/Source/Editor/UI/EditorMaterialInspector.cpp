@@ -9,7 +9,9 @@
 FEditorMaterialInspector::FEditorMaterialInspector(std::filesystem::path InPath)
 {
 	MaterialPath = InPath;
-	CachedMaterial = FMaterialManager::Get().GetOrCreateMaterial(FPaths::ToUtf8(InPath.lexically_relative(FPaths::RootDir())));
+	CachedMaterial = FMaterialManager::Get().GetOrCreateMaterial(
+		FPaths::ToUtf8(InPath.lexically_relative(FPaths::RootDir()).generic_wstring())
+	);
 }
 
 void FEditorMaterialInspector::Render()
@@ -26,7 +28,7 @@ void FEditorMaterialInspector::Render()
 
 	if (CachedJson.IsNull())
 	{
-		std::ifstream File(MaterialPath.c_str());
+		std::ifstream File(MaterialPath);
 
 		std::stringstream Buffer;
 		Buffer << File.rdbuf();
@@ -54,41 +56,6 @@ void FEditorMaterialInspector::Render()
 
 void FEditorMaterialInspector::RenderTextureSection()
 {
-	/*if (!CachedJson.hasKey(MatKeys::Textures))
-		return;
-
-	ImGui::Text("Textures");
-	for (auto& Pair : CachedJson[MatKeys::Textures].ObjectRange())
-	{
-		FString SlotName = Pair.first.c_str();
-		FString TexturePath = Pair.second.ToString().c_str();
-
-		if (!CachedSRVs.contains(TexturePath))
-			CachedSRVs[TexturePath] = FResourceManager::Get().FindLoadedTexture(TexturePath);
-
-		if (CachedSRVs[TexturePath])
-		{
-			ImGui::Text(SlotName.c_str());
-			ImGui::Image(CachedSRVs[TexturePath].Get(), ImVec2(100, 100));
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PNGElement"))
-				{
-					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-					FString NewTexturePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()));
-					Pair.second = NewTexturePath.c_str();
-
-					std::ofstream File(MaterialPath);
-					File << CachedJson.dump();
-					CachedJson = json::JSON();
-					break;
-				}
-				ImGui::EndDragDropTarget();
-			}
-		}
-	}*/
-
-
 	ImGui::Text("NiceNiceNiceNiceNiceNiceNiceNiceNiceNiceTextures");
 	TMap<FString, UTexture2D*>* Textures = CachedMaterial->GetTexture();
 
@@ -108,8 +75,9 @@ void FEditorMaterialInspector::RenderTextureSection()
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PNGElement"))
 			{
 				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-				FString NewTexturePath = FPaths::ToUtf8(ContentItem.Path);
-
+				FString NewTexturePath = FPaths::ToUtf8(
+					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+				);
 				UTexture2D* NewTexture = UTexture2D::LoadFromCached(NewTexturePath);
 				if (NewTexture)
 				{

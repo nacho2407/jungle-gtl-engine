@@ -805,7 +805,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
 			{
 				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-				Slot->Path = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()));
+				Slot->Path = FPaths::ToUtf8(
+					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+				);
 				bChanged = true;
 			}
 			ImGui::EndDragDropTarget();

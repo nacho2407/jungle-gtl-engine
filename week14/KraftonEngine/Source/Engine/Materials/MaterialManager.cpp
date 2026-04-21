@@ -27,8 +27,7 @@ void FMaterialManager::ScanMaterialAssets()
 
 		const std::filesystem::path& Path = Entry.path();
 
-		// 확장자가 .json인지 확인
-		if (Path.extension() != L".json") continue;
+		if (Path.extension() != L".mat") continue;
 		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
 
 		FMaterialAssetListItem Item;
@@ -40,7 +39,7 @@ void FMaterialManager::ScanMaterialAssets()
 
 UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 {
-	std::filesystem::path Path = MatFilePath;
+	std::filesystem::path Path(FPaths::ToWide(MatFilePath));
 	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
 	// 1. 캐시 반환
 	auto It = MaterialCache.find(GenericPath);

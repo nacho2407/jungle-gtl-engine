@@ -103,7 +103,7 @@ void FResourceManager::LoadFromDirectory(const FString& Path, ID3D11Device* InDe
 
 	std::wstring RootPath = FPaths::RootDir();
 
-	for (const auto& Entry : std::filesystem::recursive_directory_iterator(Path))
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(FPaths::ToWide(Path)))
 	{
 		if (Entry.path().extension() != ".png")
 			continue;
