@@ -10,6 +10,7 @@ void FLightSceneProxy::UpdateLightConstants()
 {
     if (!Owner)
         return;
+	bAffectsWorld = Owner->AffectsWorld();
     LightConstants.Position = Owner->GetWorldLocation();
     LightConstants.Direction = Owner->GetForwardVector();
     LightConstants.Intensity = Owner->GetIntensity();
