@@ -1,4 +1,4 @@
-#include "Render/Types/LightTypes.h"
+﻿#include "Render/Types/LightTypes.h"
 #include "Render/Types/PipelineStateTypes.h"
 #include "Render/Pipelines/RenderPassTypes.h"
 #include "RenderCollector.h"
@@ -163,8 +163,9 @@ void FSceneDebugCollector::CollectDebugDraw(const FSceneView& SceneView, FScene&
 {
     if (!SceneView.ShowFlags.bDebugDraw)
         return;
-
-    for (const FDebugDrawItem& Item : Scene.GetDebugDrawQueue().GetItems())
+	
+	const TArray<FDebugDrawItem> Items = Scene.GetDebugDrawQueue().GetItems();
+    for (const FDebugDrawItem& Item : Items)
     {
         Scene.AddDebugLine(Item.Start, Item.End, Item.Color);
     }
@@ -237,7 +238,7 @@ void FSceneDebugCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneP
 {
     for (FPrimitiveSceneProxy* Proxy : Proxies)
     {
-        if (!Proxy || !Proxy->CachedBounds.IsValid())
+        if (!Proxy || !Proxy->bVisible || !Proxy->bShowAABB || Proxy->bNeverCull || !Proxy->CachedBounds.IsValid())
         {
             continue;
         }

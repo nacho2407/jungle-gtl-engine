@@ -10,13 +10,6 @@ struct FSceneOverlayText
     float Scale = 1.0f;
 };
 
-struct FSceneDebugAABB
-{
-    FVector Min;
-    FVector Max;
-    FColor Color;
-};
-
 struct FSceneDebugLine
 {
     FVector Start;
@@ -42,7 +35,6 @@ public:
     void SetGrid(float Spacing, int32 HalfLineCount);
 
     const TArray<FSceneOverlayText>& GetOverlayTexts() const { return OverlayTexts; }
-    const TArray<FSceneDebugAABB>& GetDebugAABBs() const { return DebugAABBs; }
     const TArray<FSceneDebugLine>& GetDebugLines() const { return DebugLines; }
     bool HasGrid() const { return Grid.bEnabled; }
     float GetGridSpacing() const { return Grid.Spacing; }
@@ -53,7 +45,6 @@ public:
 
 private:
     TArray<FSceneOverlayText> OverlayTexts;
-    TArray<FSceneDebugAABB> DebugAABBs;
     TArray<FSceneDebugLine> DebugLines;
     FSceneGridParams Grid;
     FDebugDrawQueue DebugDrawQueue;
