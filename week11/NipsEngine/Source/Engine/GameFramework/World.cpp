@@ -88,3 +88,26 @@ void UWorld::SyncSpatialIndex()
 {
     SpatialIndex.FlushDirtyBounds();
 }
+
+int32 UWorld::AddActorDestroyedListener(FActorDestroyedListener Listener)
+{
+    const int32 Id = NextActorDestroyedListenerId++;
+    ActorDestroyedListeners[Id] = std::move(Listener);
+    return Id;
+}
+
+void UWorld::RemoveActorDestroyedListener(int32 ListenerId)
+{
+    ActorDestroyedListeners.erase(ListenerId);
+}
+
+void UWorld::NotifyActorDestroyed(AActor* Actor)
+{
+    for (auto& [Id, Listener] : ActorDestroyedListeners)
+    {
+        if (Listener)
+        {
+            Listener(Actor);
+        }
+    }
+}

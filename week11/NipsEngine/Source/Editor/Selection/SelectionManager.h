@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreMinimal.h"
 
@@ -32,6 +32,8 @@ public:
 	bool IsEmpty() const { return SelectedActors.empty(); }
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
+
+	void OnActorDestroyed(AActor* Actor);
 
 private:
 	void SyncGizmo();

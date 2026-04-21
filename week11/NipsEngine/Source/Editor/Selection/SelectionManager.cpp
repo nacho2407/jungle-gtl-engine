@@ -125,6 +125,22 @@ void FSelectionManager::ClearSelection()
 	SyncGizmo();
 }
 
+void FSelectionManager::OnActorDestroyed(AActor* Actor)
+{
+    if (!Actor)
+    {
+        return;
+    }
+
+	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
+    if (It != SelectedActors.end())
+    {
+        SelectedActors.erase(It);
+
+        SyncGizmo();
+    }
+}
+
 void FSelectionManager::SyncGizmo()
 {
 	if (!Gizmo) return;
