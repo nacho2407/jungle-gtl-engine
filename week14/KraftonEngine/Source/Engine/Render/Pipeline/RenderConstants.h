@@ -32,13 +32,28 @@ namespace ELightTexSlot
 	constexpr uint32 AllLights = 8;  // t8:  StructuredBuffer<FLightInfo>
 	constexpr uint32 TileLightIndices = 9;  // t9:  StructuredBuffer<uint>
 	constexpr uint32 TileLightGrid = 10;  // t10: StructuredBuffer<uint2>
+	constexpr uint32 ClusterLightIndexList = 11; // t11 : StructuredBuffer<uint>
+	constexpr uint32 ClusterLightGrid = 12; // t12 : StructuredBuffer<uint2>
+}
+
+namespace ELightCullingUAVSlot
+{
+	constexpr uint32 ClusterAABB = 0;
+	constexpr uint32 LightIndexList = 1;
+	constexpr uint32 LightGrid = 2;
+	constexpr uint32 GlobalCount = 3;
+}
+namespace ELightCullingSRVSlot
+{
+	constexpr uint32 ClusterAABB = 0;
+	constexpr uint32 LightInfos = 1;
 }
 
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
-	constexpr uint32 SceneDepth  = 16; // t16: CopyResource된 Depth (R24_UNORM)
-	constexpr uint32 SceneColor  = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
+	constexpr uint32 SceneDepth = 16; // t16: CopyResource된 Depth (R24_UNORM)
+	constexpr uint32 SceneColor = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
 	constexpr uint32 GBufferNormal = 18; // t18: GBuffer World Normal (R16G16B16A16_FLOAT)
 	constexpr uint32 Stencil     = 19; // t19: CopyResource된 Stencil (X24_G8_UINT)
 	constexpr uint32 CullingHeatmap = 20; // t20: Tile Culling Heatmap (R8G8B8A8_UNORM)
@@ -75,6 +90,7 @@ struct FFrameConstants
 {
 	FMatrix View;
 	FMatrix Projection;
+	FMatrix InvProj;
 	FMatrix InvViewProj;
 	float bIsWireframe;
 	FVector WireframeColor;

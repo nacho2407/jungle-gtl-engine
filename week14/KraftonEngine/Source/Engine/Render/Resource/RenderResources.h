@@ -69,7 +69,6 @@ struct FLightingResource
 	}
 };
 
-
 struct FTileCullingResource
 {
 	// Buffers
@@ -125,13 +124,14 @@ struct FSystemResources
 	void UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame);
 
 	// 라이팅 CB + StructuredBuffer 업데이트 + 바인딩 (b4, t8)
-	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame);
+	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame, const FClusterCullingState* ClusterState = nullptr);
 
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
 	void BindSystemSamplers(FD3DDevice& Device);
 
 	// 타일 컬링 결과 SRV 바인딩 (t9, t10) — Renderer::Render 시작 시 호출
 	void BindTileCullingBuffers(FD3DDevice& Device);
+	void UnbindTileCullingBuffers(FD3DDevice& Device);
 
 	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
 	void UnbindSystemTextures(FD3DDevice& Device);
