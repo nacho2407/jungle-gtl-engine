@@ -11,6 +11,7 @@
 #include "Profiling/Stats.h"
 #include "Profiling/Timer.h"
 #include "Render/Passes/Scene/FogParams.h"
+#include "Render/Passes/Scene/PresentPass.h"
 #include "Render/Pipelines/Registry/ViewModePassRegistry.h"
 #include "Render/Resources/Buffers/ConstantBufferPool.h"
 #include "Render/Pipelines/Runner/PipelineShaderResolver.h"
@@ -233,18 +234,34 @@ void FRenderer::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Pro
     DrawCollector.CollectWorldBoundsDebug(Proxies);
 }
 
-void FRenderer::BeginFrame()
+void FRenderer::BeginFrame(const FSceneView& SceneView, const FViewportRenderTargets* Targets)
 {
     FShaderManager::Get().TickHotReload();
 
     ID3D11DeviceContext* Context = Device.GetDeviceContext();
-    ID3D11RenderTargetView* RTV = Device.GetFrameBufferRTV();
-    ID3D11DepthStencilView* DSV = Device.GetDepthStencilView();
+    ID3D11RenderTargetView* RTV = (Targets && Targets->ViewportRTV) ? Targets->ViewportRTV : Device.GetFrameBufferRTV();
+    ID3D11DepthStencilView* DSV = (Targets && Targets->ViewportDSV) ? Targets->ViewportDSV : Device.GetDepthStencilView();
 
-    Context->ClearRenderTargetView(RTV, Device.GetClearColor());
-    Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+    if (RTV)
+    {
+        Context->ClearRenderTargetView(RTV, Device.GetClearColor());
+    }
+    if (DSV)
+    {
+        Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+    }
 
-    const D3D11_VIEWPORT& Viewport = Device.GetViewport();
+    D3D11_VIEWPORT Viewport = Device.GetViewport();
+    if (Targets && Targets->HasViewportTargets() && SceneView.ViewportWidth > 0.0f && SceneView.ViewportHeight > 0.0f)
+    {
+        Viewport.TopLeftX = 0.0f;
+        Viewport.TopLeftY = 0.0f;
+        Viewport.Width = SceneView.ViewportWidth;
+        Viewport.Height = SceneView.ViewportHeight;
+        Viewport.MinDepth = 0.0f;
+        Viewport.MaxDepth = 1.0f;
+    }
+
     Context->RSSetViewports(1, &Viewport);
     Context->OMSetRenderTargets(1, &RTV, DSV);
 }
@@ -548,14 +565,21 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     }
 }
 
-void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext)
+void FRenderer::RenderFrame(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext)
 {
-    const bool bRootToBackBuffer = !(PipelineContext.Targets && PipelineContext.Targets->ViewportRTV);
-    if (bRootToBackBuffer)
+    if (!PipelineContext.SceneView)
     {
-        BeginFrame();
+        return;
     }
 
+    BeginFrame(*PipelineContext.SceneView, PipelineContext.Targets);
+    RunRootPipeline(RootType, PipelineContext);
+    ExecutePresentPass(PipelineContext);
+    EndFrame();
+}
+
+void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext)
+{
     PreparePipelineExecution(*PipelineContext.SceneView, PipelineContext.Targets);
     PipelineContext.Renderer = this;
     PipelineContext.StateCache = &SubmitStateCache;
@@ -569,10 +593,18 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineCon
 
     PipelineRunner.ExecutePipeline(RootType, PipelineContext, *PipelineContext.SceneView, PipelineRegistry, PassRegistry);
     FinalizePipelineExecution();
+}
 
-    if (bRootToBackBuffer)
+void FRenderer::ExecutePresentPass(FRenderPipelineContext& PipelineContext)
+{
+    if (!PipelineContext.Targets || !PipelineContext.Targets->HasViewportTargets())
     {
-        EndFrame();
+        return;
+    }
+
+    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::PresentPass))
+    {
+        Pass->Execute(PipelineContext);
     }
 }
 

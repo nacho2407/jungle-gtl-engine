@@ -659,6 +659,9 @@
     <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Passes\Scene\PresentPass.cpp">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.cpp">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClCompile>
@@ -1199,6 +1202,9 @@
     <ClInclude Include="Source\Engine\Render\Passes\Base\PipelineStateTypes.h">
       <Filter>Source\Engine\Render\Passes\Base</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Base\PostProcessPassBase.h">
+      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h">
       <Filter>Source\Engine\Render\Passes\Base</Filter>
     </ClInclude>
@@ -1254,6 +1260,9 @@
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Scene\PresentPass.h">
       <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Scene\ShadingTypes.h">
