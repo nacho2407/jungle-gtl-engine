@@ -536,6 +536,24 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 	ImVec2 ContentPos = ImGui::GetCursorScreenPos();
 	ImVec2 ContentSize = ImGui::GetContentRegionAvail();
 
+	if (ImGui::GetDragDropPayload())
+	{
+		ImGui::SetCursorScreenPos(ContentPos);
+		ImGui::Selectable("##ViewportArea", false, 0, ContentSize);
+		if (ImGui::BeginDragDropTarget())
+		{			
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ObjectContentItem"))
+			{
+				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+
+				AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
+				NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
+				Editor->GetWorld()->AddActor(NewActor);
+			}
+			ImGui::EndDragDropTarget();
+		}
+	}
+
 	if (ContentSize.x > 0 && ContentSize.y > 0)
 	{
 		// 상단에 Play/Stop 툴바 영역 확보 후 나머지를 뷰포트에 할당
@@ -671,22 +689,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			}
 		}
 	}
-
-	//ImGui::SetCursorScreenPos(ContentPos);
-	//ImGui::InvisibleButton("##DropTarget", ContentSize);
-
-	//if (ImGui::BeginDragDropTarget())
-	//{
-	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ObjectContentItem"))
-	//	{
-	//		FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-
-	//		AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
-	//		NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
-	//		Editor->GetWorld()->AddActor(NewActor);
-	//	}
-	//	ImGui::EndDragDropTarget();
-	//}
 
 	ImGui::End();
 	ImGui::PopStyleVar();
@@ -948,8 +950,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 				// FXAA Settings
 				ImGui::Text("FXAA");
-			    ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-			    ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
+				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
 				// Tile Base Lgiht Culling Setting
 				ImGui::Text("TileBaseLgihtCulling");
