@@ -188,7 +188,7 @@ void AActor::RemoveComponent(UActorComponent* Component)
     // RootComponent가 제거되면 nullptr로
     if (RootComponent == Component)
         RootComponent = nullptr;
-
+	
     UObjectManager::Get().DestroyObject(Component);
 }
 

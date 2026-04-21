@@ -1,4 +1,7 @@
 ﻿#pragma once
+
+#include <functional>
+
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
 #include "Level.h"
@@ -10,6 +13,8 @@ class FViewportCamera;
 
 class UWorld : public UObject {
 public:
+    using FActorDestroyedListener = std::function<void(AActor*)>;
+
     DECLARE_CLASS(UWorld, UObject)
 	UWorld();
 	~UWorld() override;
@@ -45,6 +50,10 @@ public:
 
         Actor->EndPlay(EEndPlayReason::Type::Destroyed);
 		PersistentLevel->RemoveActor(Actor);
+
+		// Actor의 raw pointer를 들고 있는 하위 시스템들에게 Actor가 파괴되었음을 알림
+		NotifyActorDestroyed(Actor);
+
         Actor->SetWorld(nullptr);
         UObjectManager::Get().DestroyObject(Actor);
     }
@@ -78,10 +87,18 @@ public:
 	EWorldType GetWorldType() const { return WorldType; }
 	void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
 
+	// Actor 삭제 시 하위 시스템들이 들고 있는 Actor의 raw pointer가 위험해지는 것을 방지하기 위한 리스너 시스템
+	int32 AddActorDestroyedListener(FActorDestroyedListener Listener);
+    void RemoveActorDestroyedListener(int32 ListenerId);
+    void NotifyActorDestroyed(AActor* Actor);
+
 private:
 	EWorldType WorldType = EWorldType::Editor;
 	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
     FWorldSpatialIndex SpatialIndex;
     bool bHasBegunPlay = false;
+
+	int32 NextActorDestroyedListenerId = 1;
+    TMap<int32, FActorDestroyedListener> ActorDestroyedListeners;
 };

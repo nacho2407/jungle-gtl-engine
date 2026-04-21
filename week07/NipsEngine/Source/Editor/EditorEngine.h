@@ -40,6 +40,7 @@ public:
 	void ResetViewport();
 	void CloseScene();
 	void NewScene();
+	virtual void SetActiveWorld(const FName& Handle) override;
 	void ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld = nullptr);
 
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
@@ -97,4 +98,12 @@ private:
 	FEditorMainPanel  MainPanel;
 	FEditorViewportLayout   ViewportLayout;
 	TMap<int32, FName> ViewportPIEHandles;  // 뷰포트 인덱스 → PIE 월드 컨텍스트 핸들
+
+	int32 ActorDestroyedListenerId = 0;
+	UWorld* ActorDestroyedListenerWorld = nullptr;
+
+private:
+    void HandleActorDestroyed(AActor* Actor);
+    void BindActorDestroyedListener(UWorld* World);
+    void UnbindActorDestroyedListener(UWorld* World);
 };
