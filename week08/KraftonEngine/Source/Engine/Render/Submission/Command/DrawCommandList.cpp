@@ -269,6 +269,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         ID3D11Buffer* RawCB = Cmd.LightCB->GetBuffer();
         if (RawCB)
         {
+            Ctx->VSSetConstantBuffers(ECBSlot::Light, 1, &RawCB);
             Ctx->PSSetConstantBuffers(ECBSlot::Light, 1, &RawCB);
         }
         Cache.LightCB = Cmd.LightCB;
@@ -277,6 +278,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     if (bForce || Cmd.LocalLightSRV != Cache.LocalLightSRV)
     {
         ID3D11ShaderResourceView* SRV = Cmd.LocalLightSRV;
+        Ctx->VSSetShaderResources(ESystemTexSlot::LocalLights, 1, &SRV);
         Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &SRV);
         Cache.LocalLightSRV = Cmd.LocalLightSRV;
     }

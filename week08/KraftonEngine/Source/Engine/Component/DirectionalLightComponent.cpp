@@ -42,7 +42,7 @@ IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
     // UE5 Directional Light Default Intensity
-    Intensity = 10.0f;
+    Intensity = 2.5f;
 }
 
 void UDirectionalLightComponent::Serialize(FArchive& Ar)
