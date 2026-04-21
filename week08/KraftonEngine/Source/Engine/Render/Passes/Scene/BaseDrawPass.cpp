@@ -29,7 +29,13 @@ void FBaseDrawPass::PrepareInputs(FRenderPipelineContext& Context)
 
 void FBaseDrawPass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    if (Context.ActiveViewSurfaces && Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    const bool bUseViewModeSurfaces =
+        Context.ActiveViewSurfaces &&
+        Context.ViewModePassRegistry &&
+        Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) &&
+        Context.ActiveViewMode != EViewMode::Wireframe;
+
+    if (bUseViewModeSurfaces)
     {
         const EShadingModel ShadingModel = Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode);
         Context.ActiveViewSurfaces->ClearBaseTargets(Context.Context, ShadingModel);
