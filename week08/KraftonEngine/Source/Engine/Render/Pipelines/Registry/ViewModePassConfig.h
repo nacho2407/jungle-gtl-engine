@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
@@ -145,7 +145,7 @@ inline FRenderPipelinePassDesc BuildViewModeBaseDrawPassDesc(EShadingModel Shadi
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_MATERIAL_PARAM");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
         break;
-    case EShadingModel::Unlit:
+    case EShadingModel::Unlit:  
     default:
         Pass.ShaderVariant.PSEntry = "PS_BaseDraw_Unlit";
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_UNLIT");
