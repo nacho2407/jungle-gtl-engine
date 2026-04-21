@@ -72,6 +72,9 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndChild();
 	}
 
+	if (BrowserContext.SelectedElement)
+		BrowserContext.SelectedElement->RenderDetail();
+
 	ImGui::EndTable();
 	ImGui::End();
 }
@@ -90,41 +93,44 @@ void FEditorContentBrowserWidget::RefreshContent()
 	TArray<FContentItem> CurrentContents = ReadDirectory(BrowserContext.CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
-		std::unique_ptr<ContentBrowserElement> element;
+		std::shared_ptr<ContentBrowserElement> element;
 		FString Extension = FPaths::ToUtf8(Content.Path.extension());
 
 		if (Content.bIsDirectory)
 		{
-			element = std::make_unique<DirectoryElement>();
+			element = std::make_shared<DirectoryElement>();
 			element.get()->SetIcon(ICons["Directory"].Get());
 
 		}
 		else if (Content.Path.extension() == ".Scene")
 		{
-			element = std::make_unique<SceneElement>();
+			element = std::make_shared<SceneElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".obj")
 		{
-			element = std::make_unique<ObjectElement>();
+			element = std::make_shared<ObjectElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".mat")
 		{
-			element = std::make_unique<MaterialElement>();
+			element = std::make_shared<MaterialElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".png" || Content.Path.extension() == ".PNG")
+		{
+			element = std::make_shared<PNGElement>();
+			element.get()->SetIcon(FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring())).Get());
 		}
 		else
 		{
-			element = std::make_unique<ContentBrowserElement>();
+			element = std::make_shared<ContentBrowserElement>();
 			element.get()->SetIcon(ICons["Default"].Get());
 		}
 		
 		element.get()->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(element));
 	}
-
-	BrowserContext.SelectedElement = nullptr;
 }
 
 void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
