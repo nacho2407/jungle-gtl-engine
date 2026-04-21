@@ -101,6 +101,7 @@ public:
 	UShader* GetShader(const FString& FilePath) const;
 	bool LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
 					const D3D_SHADER_MACRO* Defines = nullptr, uint32 PermutationKey = 0);
+	void ReloadShader(const FString& Path);
 
 	FComputeShader* GetComputeShader(const FString& FilePath) const;
     bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint);

@@ -333,6 +333,7 @@
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\WindowsFileWatcher.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsPlatformTime.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp" />
@@ -535,6 +536,7 @@
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
+    <ClInclude Include="Source\Engine\Runtime\WindowsFileWatcher.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Runtime\SceneView.h" />
     <ClInclude Include="Source\Engine\Runtime\Viewport.h" />

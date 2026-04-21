@@ -39,6 +39,8 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 			}
 		});
 
+	ShaderDirectoryWatcher.Initialize(FPaths::ShaderDir());
+
 	CreateEngine();
 	GEngine->Init(&Application.GetWindow());
 	GEngine->SetTimer(&Timer);
@@ -62,6 +64,8 @@ int FEngineLoop::Run()
 
 		Timer.Tick();
 		GEngine->Tick(Timer.GetDeltaTime());
+
+		ShaderDirectoryWatcher.Tick();
 	}
 
 	return 0;
@@ -74,5 +78,7 @@ void FEngineLoop::Shutdown()
 		GEngine->Shutdown();
 		UObjectManager::Get().DestroyObject(GEngine);
 		GEngine = nullptr;
+
+		ShaderDirectoryWatcher.Shutdown();
 	}
 }
