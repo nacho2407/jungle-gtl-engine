@@ -140,7 +140,7 @@ void FMeshDrawCommandBuilder::Build(const FPrimitiveSceneProxy& Proxy, ERenderPa
             {
                 Cmd.DepthStencil = SectionDepthStencil;
             }
-            else if (bUsesViewModeBaseDraw)
+            else if (bUsesViewModeBaseDraw && Context.ViewModePassRegistry->UsesDepthPrePass(Context.ActiveViewMode))
             {
                 Cmd.DepthStencil = EDepthStencilState::DepthReadOnly;
             }

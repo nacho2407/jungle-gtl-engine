@@ -41,6 +41,7 @@ inline constexpr FEnumEntry RasterizerStateMap[] = {
 };
 
 inline constexpr FEnumEntry RenderPassMap[] = {
+    { "Grid", (int)ERenderPass::Grid },
     { "DepthPre", (int)ERenderPass::DepthPre },
     { "Opaque", (int)ERenderPass::Opaque },
     { "Decal", (int)ERenderPass::Decal },

@@ -76,6 +76,7 @@ void FRenderPipelineRegistry::Initialize()
     FRenderPipelineDesc EditorOverlay;
     EditorOverlay.Type = ERenderPipelineType::EditorOverlay;
     EditorOverlay.Children = {
+        PassNode(ERenderPassNodeType::GridPass),
         PipelineNode(ERenderPipelineType::Outline),
         PassNode(ERenderPassNodeType::DebugLinePass),
         PassNode(ERenderPassNodeType::GizmoPass),
