@@ -144,6 +144,12 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     float ClearColor[4] = { 0, 0, 0, 0 };
     Context->ClearUnorderedAccessViewFloat(DebugHitMapUAV, ClearColor);
 
+    ID3D11ShaderResourceView* NullSRVs1[1] = { nullptr };
+    ID3D11UnorderedAccessView* NullUAVs1[4] = { nullptr, nullptr, nullptr, nullptr };
+    Context->CSSetShaderResources(0, 1, NullSRVs1);
+    Context->CSSetUnorderedAccessViews(0, 4, NullUAVs1, nullptr);
+    Context->CSSetShader(nullptr, nullptr, 0);
+
     // ---- CS 바인딩 ----
     Context->CSSetShader(LightCullingCS, nullptr, 0);
 
@@ -163,6 +169,8 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
 
     // ---- 상수 버퍼 ----
     Context->CSSetConstantBuffers(2, 1, &LightCullingParamsCB);
+
+
 
     // ---- Dispatch ----
     const UINT GroupSizeX = (ViewWidth + TILE_SIZE - 1) / TILE_SIZE;
