@@ -54,6 +54,12 @@ public:
 	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
 	FViewport* GetViewport() const { return Viewport; }
 
+	// 뷰포트 스크린 좌표 (ImGui screen space)
+	const FRect& GetViewportScreenRect() const { return ViewportScreenRect; }
+
+	// 마우스가 뷰포트 안에 있으면 뷰포트 로컬 좌표 반환 (시각화용)
+	bool GetCursorViewportPosition(uint32& OutX, uint32& OutY) const;
+
 	// SWindow 레이아웃 연결 — SSplitter 리프 노드
 	void SetLayoutWindow(SWindow* InWindow) { LayoutWindow = InWindow; }
 	SWindow* GetLayoutWindow() const { return LayoutWindow; }

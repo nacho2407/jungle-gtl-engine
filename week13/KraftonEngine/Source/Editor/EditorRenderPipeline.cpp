@@ -33,6 +33,10 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FGPUProfiler::Get().BeginFrame();
 #endif
 
+	// 이전 프레임 시각화 데이터 readback + 디버그 라인 제출
+	Renderer.GetTileBaseCulling().SubmitVisualizationDebugLines(
+		Renderer.GetFD3DDevice().GetDeviceContext(), Editor->GetWorld());
+
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{
 		SCOPE_STAT_CAT("RenderViewport", "2_Render");
@@ -119,6 +123,13 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraCo
 	Frame.SetViewportInfo(VP);
 	Frame.OcclusionCulling = &GPUOcclusion;
 	Frame.LODContext = World->PrepareLODContext();
+
+	// Cursor position relative to viewport (for 2.5D culling visualization)
+	if (!VC->GetCursorViewportPosition(Frame.CursorViewportX, Frame.CursorViewportY))
+	{
+		Frame.CursorViewportX = UINT32_MAX;
+		Frame.CursorViewportY = UINT32_MAX;
+	}
 }
 
 // ============================================================
@@ -146,3 +157,4 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 
 	Builder.BuildDynamicCommands(Frame, &Scene);
 }
+

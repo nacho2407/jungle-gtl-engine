@@ -951,10 +951,11 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			    ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
 			    ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
-				// Tile Base Lgiht Culling Setting
-				ImGui::Text("TileBaseLgihtCulling");
+				// Tile Base Light Culling Setting
+				ImGui::Text("TileBaseLightCulling");
 				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
 				ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
+				ImGui::Checkbox("Visualize2.5DCulling", &Opts.ShowFlags.bVisualize25DCulling);
 
 				ImGui::EndPopup();
 			}
