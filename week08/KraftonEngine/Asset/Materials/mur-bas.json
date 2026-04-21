@@ -1,10 +1,14 @@
 {
   "Parameters" : {
-    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+    "HasBaseTexture" : 0.000000,
+    "HasNormalTexture" : 0.000000,
+    "MaterialParam" : [0.000000, 0.000000, 0.000000, 0.000000],
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "StaticMeshMaterialPadding" : null
   },
   "PathFileName" : "Asset/Materials/mur-bas.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/church/TextureAtlasMurBasInt.png"
   }

@@ -8,5 +8,5 @@
   },
   "PathFileName" : "Asset/Materials/Basic_Yellow.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl"
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl"
 }

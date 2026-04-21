@@ -1,6 +1,6 @@
 {
   "PathFileName" : "Asset/Materials/AdditiveBillboardTyndall.json",
-  "ShaderPath" : "Shaders/ShaderBillboard.hlsl",
+  "ShaderPath" : "Shaders/Editor/ShaderBillboard.hlsl",
   "RenderPass" : "AlphaBlend",
   "BlendState" : "Additive",
   "DepthStencilState" : "DepthReadOnly",

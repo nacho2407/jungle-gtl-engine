@@ -4,7 +4,7 @@
   },
   "PathFileName" : "Asset/Materials/clean_bulb_light_mat.002.json",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/StaticMeshShader.hlsl",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Data/Retro-light/Texture/Clean_light_bulb_albedo.png"
   }
