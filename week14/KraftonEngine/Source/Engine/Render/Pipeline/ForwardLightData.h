@@ -75,13 +75,13 @@ struct FClusterCullingState
 {
 	float NearZ;
 	float FarZ;
-	uint32 ClusterX = 32;
-	uint32 ClusterY = 18;
+	uint32 ClusterX = 16;
+	uint32 ClusterY = 9;
 
-	uint32 ClusterZ = 32;
+	uint32 ClusterZ = 24;
 	uint32 ScreenWidth = 0;
 	uint32 ScreenHeight = 0;
-	uint32 MaxLightsPerCluster = 128;
+	uint32 MaxLightsPerCluster = 256;
 };
 
 struct FLightingCBData
