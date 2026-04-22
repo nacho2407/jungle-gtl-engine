@@ -299,6 +299,7 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	}
 	case EPropertyType::String:
 	case EPropertyType::StaticMeshRef:
+	case EPropertyType::ComponentRef:
 		return JSON(*static_cast<FString*>(Prop.ValuePtr));
 
 	case EPropertyType::MaterialSlot: {
@@ -679,6 +680,7 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	}
 	case EPropertyType::String:
 	case EPropertyType::StaticMeshRef:
+	case EPropertyType::ComponentRef:
 		*static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
 		break;
 
