@@ -22,7 +22,7 @@ public:
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
 
 	// Getter,Setter
-	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj);
+	void SetViewProjection(const FMatrix& InView, const FMatrix& InProj, float InNearPlane, float InFarPlane);
 	void SetRenderSettings(const EViewMode NewViewMode, const FShowFlags NewShowFlags);
 
 	const FMatrix& GetView() const { return View; }

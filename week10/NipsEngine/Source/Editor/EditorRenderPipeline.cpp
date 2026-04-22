@@ -84,7 +84,11 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     const FShowFlags&      ShowFlags = Settings.ShowFlags;
     const EViewMode        ViewMode = SceneView.ViewMode;
 
-    Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix);
+    const FViewportCamera* Camera = VC->GetCamera();
+    if (Camera == nullptr)
+        return;
+
+    Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix, Camera->GetNearPlane(), Camera->GetFarPlane());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));

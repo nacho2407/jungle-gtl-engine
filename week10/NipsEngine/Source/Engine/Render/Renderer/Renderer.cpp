@@ -781,8 +781,9 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FRenderBus
 	frameConstantData.View = InRenderBus.GetView();
 	frameConstantData.Projection = InRenderBus.GetProj();
 	frameConstantData.CameraPosition = InRenderBus.GetCameraPosition();
-	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
+	frameConstantData.bIsOrthographic = InRenderBus.IsOrthographic();
 	frameConstantData.WireframeColor = InRenderBus.GetWireframeColor();
+	frameConstantData.bIsWireframe = (InRenderBus.GetViewMode() == EViewMode::Wireframe);
     frameConstantData.ViewportSize = InRenderBus.GetViewportSize();
     frameConstantData.NearPlane = InRenderBus.GetNearPlane();
     frameConstantData.FarPlane = InRenderBus.GetFarPlane();

@@ -28,10 +28,12 @@ const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const
 	return PassQueues[(uint32)Pass];
 }
 
-void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj)
+void FRenderBus::SetViewProjection(const FMatrix& InView, const FMatrix& InProj, float InNearPlane, float InFarPlane)
 {
 	View = InView;
 	Proj = InProj;
+	NearPlane = InNearPlane;
+	FarPlane = InFarPlane;
 
 	const FMatrix CameraWorldMatrix = InView.GetInverse();
 	CameraPosition = CameraWorldMatrix.GetOrigin();
