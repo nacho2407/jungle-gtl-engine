@@ -165,6 +165,30 @@ bool FPaths::PathContainsDirectory(const std::filesystem::path& Path, const std:
 	return false;
 }
 
+bool FPaths::IsEditorAssetPath(const std::filesystem::path& Path)
+{
+	const std::filesystem::path Normalized = Path.lexically_normal();
+	const std::filesystem::path EditorRoot = std::filesystem::path(EditorDir()).lexically_normal();
+
+	std::error_code Ec;
+	std::filesystem::path Relative = std::filesystem::relative(Normalized, EditorRoot, Ec);
+	if (!Ec && !Relative.empty())
+	{
+		auto It = Relative.begin();
+		if (It == Relative.end() || It->wstring() != L"..")
+		{
+			return true;
+		}
+	}
+
+	return PathContainsDirectory(Normalized, L"Editor");
+}
+
+bool FPaths::IsEditorAssetPath(const std::string& Path)
+{
+	return IsEditorAssetPath(ToPath(Path));
+}
+
 std::string FPaths::AssetRelativePath(const std::string& RelativePath)
 {
 	return MakeRelativeToRoot(std::filesystem::path(AssetDir()) / ToWide(RelativePath));
