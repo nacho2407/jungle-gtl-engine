@@ -13,8 +13,12 @@ public:
 
 	// 주요 디렉터리
 	static std::wstring ShaderDir();      // Shaders/
+	static std::wstring AssetDir();       // Asset/
 	static std::wstring SceneDir();       // Asset/Scene/
+	static std::wstring DataDir();        // Data/
+	static std::wstring SaveDir();        // Saves/
 	static std::wstring DumpDir();        // Saves/Dump/
+	static std::wstring LogDir();         // Saves/Logs/
 	static std::wstring SettingsDir();    // Settings/
 
 	// 주요 파일 경로
