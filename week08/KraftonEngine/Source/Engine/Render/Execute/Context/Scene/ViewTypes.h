@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -34,6 +34,7 @@ struct FShowFlags
 	bool bFog = true;
 	bool bFXAA = false;
     bool bLightHitMap = false;
+    bool b25DCulling = true;	//false는 tile_based_culling
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)
