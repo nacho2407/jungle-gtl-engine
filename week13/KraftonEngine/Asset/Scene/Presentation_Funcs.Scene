@@ -8,7 +8,7 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/BasicShapeMaterial.mat"
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
           "Location" : [11.025560, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -28,7 +28,7 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/BasicShapeMaterial.mat"
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
           "Location" : [-8.540888, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -48,7 +48,7 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/BasicShapeMaterial.mat"
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
           "Location" : [0.000000, 0.000000, -2.033567],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -76,43 +76,43 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/Eyes.mat"
+            "Path" : "Asset/Materials/Auto/Eyes.mat"
           },
           "Element 1" : {
-            "Path" : "Asset/Materials/EyeWhites.mat"
+            "Path" : "Asset/Materials/Auto/EyeWhites.mat"
           },
           "Element 10" : {
-            "Path" : "Asset/Materials/Skirt.mat"
+            "Path" : "Asset/Materials/Auto/Skirt.mat"
           },
           "Element 11" : {
-            "Path" : "Asset/Materials/Shoes.mat"
+            "Path" : "Asset/Materials/Auto/Shoes.mat"
           },
           "Element 12" : {
-            "Path" : "Asset/Materials/Gloves.mat"
+            "Path" : "Asset/Materials/Auto/Gloves.mat"
           },
           "Element 2" : {
-            "Path" : "Asset/Materials/Neck.mat"
+            "Path" : "Asset/Materials/Auto/Neck.mat"
           },
           "Element 3" : {
-            "Path" : "Asset/Materials/Face.mat"
+            "Path" : "Asset/Materials/Auto/Face.mat"
           },
           "Element 4" : {
-            "Path" : "Asset/Materials/Hair.mat"
+            "Path" : "Asset/Materials/Auto/Hair.mat"
           },
           "Element 5" : {
-            "Path" : "Asset/Materials/Expression.mat"
+            "Path" : "Asset/Materials/Auto/Expression.mat"
           },
           "Element 6" : {
-            "Path" : "Asset/Materials/Skin.mat"
+            "Path" : "Asset/Materials/Auto/Skin.mat"
           },
           "Element 7" : {
-            "Path" : "Asset/Materials/Clothes.mat"
+            "Path" : "Asset/Materials/Auto/Clothes.mat"
           },
           "Element 8" : {
-            "Path" : "Asset/Materials/Pants.mat"
+            "Path" : "Asset/Materials/Auto/Pants.mat"
           },
           "Element 9" : {
-            "Path" : "Asset/Materials/BackAccessory.mat"
+            "Path" : "Asset/Materials/Auto/BackAccessory.mat"
           },
           "Location" : [0.343728, 19.320919, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -146,7 +146,7 @@
           "Height" : 1.000000,
           "Location" : [0.000000, 1.437209, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/AmbientLight.mat"
+            "Path" : "Asset/Materials/Editor/AmbientLight.mat"
           },
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -188,7 +188,7 @@
           "Height" : 1.000000,
           "Location" : [1.057600, 0.000000, 2.029715],
           "Material" : {
-            "Path" : "Asset/Materials/DirectionalLight.mat"
+            "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
           },
           "Rotation" : [14.199997, 9.399994, 45.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -226,7 +226,7 @@
           "Height" : 1.000000,
           "Location" : [-3.329634, 17.581076, 4.930143],
           "Material" : {
-            "Path" : "Asset/Materials/SpotLight.mat"
+            "Path" : "Asset/Materials/Editor/SpotLight.mat"
           },
           "Rotation" : [0.000000, -176.598373, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -262,7 +262,7 @@
           "Height" : 1.000000,
           "Location" : [0.285738, 20.992941, 4.299304],
           "Material" : {
-            "Path" : "Asset/Materials/PointLight.mat"
+            "Path" : "Asset/Materials/Editor/PointLight.mat"
           },
           "Rotation" : [1.600006, 0.000000, 0.000000],
           "Scale" : [1.000000, 0.300000, 0.300000],
@@ -300,7 +300,7 @@
           "Height" : 1.000000,
           "Location" : [-3.329634, 5.971004, 5.367615],
           "Material" : {
-            "Path" : "Asset/Materials/SpotLight.mat"
+            "Path" : "Asset/Materials/Editor/SpotLight.mat"
           },
           "Rotation" : [0.000000, -176.597061, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
