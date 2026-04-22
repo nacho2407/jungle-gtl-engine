@@ -5,7 +5,8 @@
 RWStructuredBuffer<uint>  CulledIndexBuffer : register(u0);
 RWStructuredBuffer<uint2> TileBuffer        : register(u1);
 
-#define MAX_LIGHTS_PER_TILE 64
+#define MAX_LIGHTS_PER_TILE 128
+#define MAX_LIGHTS_SCRATCH  512
 
 Texture2D<float> DepthTexture : register(t0);
 
@@ -14,7 +15,8 @@ groupshared uint MinDepth;
 groupshared uint MaxDepth;
 #endif
 groupshared uint TileLightCount;
-groupshared uint TileLightIndices[MAX_LIGHTS_PER_TILE];
+groupshared uint TileLightIndices[MAX_LIGHTS_SCRATCH];
+groupshared float TileImportance[MAX_LIGHTS_SCRATCH];
 
 [numthreads(TILE_SIZE, TILE_SIZE, 1)]
 void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint threadIndex : SV_GroupIndex)
@@ -122,20 +124,55 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
         
         uint index;
         InterlockedAdd(TileLightCount, 1, index);
-        if (index < MAX_LIGHTS_PER_TILE)
+        if (index < MAX_LIGHTS_SCRATCH)
+        {
             TileLightIndices[index] = i;
+            uint sortKey = 0;
+            float3 frustumCenter;
+            float3 delta = CameraPosition - lightPosView;
+            float distSq = max(dot(delta, delta), 0.0001f);
+
+            uint importance = 0;
+            float weight = light.Intensity * light.Radius * length(light.Color);
+            uint weightBits = (uint) (weight * 1000.f);
+            importance |= weightBits << 8;
+            
+            uint distanceBits = (uint) (100000.f - distSq * 10.f);
+            importance |= distanceBits << 4;
+            
+            TileImportance[index] = importance;
+        }
     }
     GroupMemoryBarrierWithGroupSync();
 
     if (threadIndex == 0)
     {
+        uint scratchCount = min(TileLightCount, MAX_LIGHTS_SCRATCH);
+        uint clampedCount = min(TileLightCount, MAX_LIGHTS_PER_TILE);
+        // Sort all scratch candidates by importance so the top MAX_LIGHTS_PER_TILE are deterministic
+        for (uint i = 1; i < scratchCount; i++)
+        {
+            float keyImp = TileImportance[i];
+            uint keyIdx = TileLightIndices[i];
+            int j = (int) i - 1;
+        
+            while (j >= 0 && TileImportance[j] < keyImp)
+            {
+                TileImportance[j + 1] = TileImportance[j];
+                TileLightIndices[j + 1] = TileLightIndices[j];
+                j--;
+            }
+        
+            TileImportance[j + 1] = keyImp;
+            TileLightIndices[j + 1] = keyIdx;
+        }
+        
 #if CULLING_MODEL_CLUSTERED
         uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint numTilesY = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
         uint flatClusterIndex = (groupID.z * numTilesY + groupID.y) * numTilesX + groupID.x;
         uint storageOffset = flatClusterIndex * MAX_LIGHTS_PER_TILE;
 
-        uint clampedCount = min(TileLightCount, MAX_LIGHTS_PER_TILE);
         for (uint j = 0; j < clampedCount; j++)
         {
             CulledIndexBuffer[storageOffset + j] = TileLightIndices[j];
@@ -147,7 +184,6 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
         uint flatTileIndex = groupID.y * numTilesX + groupID.x;
         uint storageOffset = flatTileIndex * MAX_LIGHTS_PER_TILE;
 
-        uint clampedCount = min(TileLightCount, MAX_LIGHTS_PER_TILE);
         for (uint j = 0; j < clampedCount; j++)
         {
             CulledIndexBuffer[storageOffset + j] = TileLightIndices[j];
