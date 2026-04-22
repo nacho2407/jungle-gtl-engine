@@ -59,9 +59,9 @@ struct FFrameConstants
 	FMatrix View;          
 	FMatrix Projection;    
 	FVector CameraPosition;
-	float bIsWireframe = 0.0f;
+	float bIsOrthographic = 0.0f; // 0: Perspective, 1: Orthographic
 	FVector WireframeColor;
-	float Padding0 = 0.0f; // HLSL cbuffer packs float2 to the next float4 row after float3
+	float bIsWireframe = 0.0f;
 
 	FVector2 ViewportSize;
     float NearPlane;
