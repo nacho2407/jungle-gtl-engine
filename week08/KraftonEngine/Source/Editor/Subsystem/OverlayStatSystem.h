@@ -18,7 +18,7 @@ struct FOverlayStatLayout
 	float StartY = 25.0f;
 	float LineHeight = 20.0f;
 	float GroupSpacing = 12.0f;
-	float TextScale = 1.0f;
+	float TextScale = 2.0f;
 };
 
 class FOverlayStatSystem
@@ -26,16 +26,12 @@ class FOverlayStatSystem
 public:
 	FOverlayStatSystem() = default;
 
-	void ShowFPS(bool bEnable = true) { bShowFPS = bEnable; }
-	void ShowPickingTime(bool bEnable = true) { bShowPickingTime = bEnable; }
-	void ShowMemory(bool bEnable = true) { bShowMemory = bEnable; }
+	void ShowFPS(bool bEnable = true);
+	void ShowPickingTime(bool bEnable = true);
+	void ShowMemory(bool bEnable = true);
+	void ShowLightCull(bool bEnable = true);
 	void RecordPickingAttempt(double ElapsedMs);
-	void HideAll()
-	{
-		bShowFPS = false;
-		bShowPickingTime = false;
-		bShowMemory = false;
-	}
+	void HideAll();
 
 	const FOverlayStatLayout& GetLayout() const { return Layout; }
 	FOverlayStatLayout& GetLayout() { return Layout; }
@@ -45,10 +41,12 @@ public:
 
 private:
 	void AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const;
+	void ClearDisplayFlags();
 
 	bool bShowFPS = false;
 	bool bShowPickingTime = false; // WM_LBUTTONDOWN , VK_LBUTTON 입력 시점이 아닌 오브젝트 충돌 판정에 걸린 시간을 측정합니다.
 	bool bShowMemory = false;
+	bool bShowLightCull = false;
 	double LastPickingTimeMs = 0.0;
 	double AccumulatedPickingTimeMs = 0.0;
 	uint32 PickingAttemptCount = 0;

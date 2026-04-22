@@ -4,6 +4,11 @@
 
 uint32 FDrawCallStats::Count = 0;
 
+bool FLightCullStats::bEnabled = false;
+bool FLightCullStats::bHasSample = false;
+float FLightCullStats::LastGPUTimeMs = 0.0f;
+uint32 FLightCullStats::LastEvaluationCount = 0;
+
 #if STATS
 uint32 FLODStats::LODCount[4] = { 0, 0, 0, 0 };
 #endif

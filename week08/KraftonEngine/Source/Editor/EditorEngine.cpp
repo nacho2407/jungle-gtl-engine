@@ -611,8 +611,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
             }
         }
 
-        if (VC == GetActiveViewport())
-            Renderer.CollectOverlayText(GetOverlayStatSystem(), *this, Scene);
+        // Stat overlays are rendered by ImGui in FLevelViewportLayout.
     }
 
     {
