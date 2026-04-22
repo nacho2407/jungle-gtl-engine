@@ -1,4 +1,4 @@
-#include "GameFramework/World.h"
+﻿#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -248,9 +248,9 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		Partition.FlushPrimitive();
 	}
 
-#if _DEBUG
+
 	Scene.GetDebugDrawQueue().Tick(DeltaTime);
-#endif
+
 
 	TickManager.Tick(this, DeltaTime, TickType);
 }
