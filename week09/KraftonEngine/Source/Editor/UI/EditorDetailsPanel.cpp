@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorDetailsPanel.h"
+#include "Editor/UI/EditorDetailsPanel.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -720,7 +720,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 			if (bSelectedNone) ImGui::SetItemDefaultFocus();
 
 			// TObjectIterator 대신 FMaterialManager 파일 목록 스캔 데이터 사용
-			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableRuntimeMaterialFiles();
 			for (const FMaterialAssetListItem& Item : MatFiles)
 			{
 				bool bSelected = (Slot->Path == Item.FullPath);

@@ -49,6 +49,8 @@ public:
 	// 프로젝트 루트 기준 상대 경로 생성 유틸
 	static std::string MakeRelativeToRoot(const std::filesystem::path& Path);
 	static bool PathContainsDirectory(const std::filesystem::path& Path, const std::wstring& DirectoryName);
+	static bool IsEditorAssetPath(const std::filesystem::path& Path);
+	static bool IsEditorAssetPath(const std::string& Path);
 
 	// Asset 루트 기반 경로 생성 유틸
 	static std::string AssetRelativePath(const std::string& RelativePath);

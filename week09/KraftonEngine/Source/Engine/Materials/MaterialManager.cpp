@@ -1,4 +1,4 @@
-﻿#include "Render/Passes/Base/RenderStateStrings.h"
+#include "Render/Passes/Base/RenderStateStrings.h"
 #include "Render/Passes/Base/PipelineStateTypes.h"
 #include "Render/Passes/Base/RenderPassTypes.h"
 #include "MaterialManager.h"
@@ -150,6 +150,7 @@ uint64 BuildDependencyHash(const std::filesystem::path& FilePath)
 void FMaterialManager::ScanMaterialAssets()
 {
     AvailableMaterialFiles.clear();
+    AvailableEditorMaterialFiles.clear();
 
     const std::filesystem::path AssetRoot = FPaths::AssetDir();
     if (!std::filesystem::exists(AssetRoot))
@@ -174,12 +175,25 @@ void FMaterialManager::ScanMaterialAssets()
         FMaterialAssetListItem Item;
         Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
         Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
-        AvailableMaterialFiles.push_back(std::move(Item));
+
+        if (FPaths::IsEditorAssetPath(Path))
+        {
+            AvailableEditorMaterialFiles.push_back(Item);
+        }
+        else
+        {
+            AvailableMaterialFiles.push_back(Item);
+        }
     }
 }
 
 
 UMaterial* FMaterialManager::GetOrCreateStaticMeshMaterial(const FString& MatFilePath)
+{
+    return GetOrCreateMaterial(NormalizeCacheKey(MatFilePath));
+}
+
+UMaterial* FMaterialManager::GetOrCreateEditorMaterial(const FString& MatFilePath)
 {
     return GetOrCreateMaterial(NormalizeCacheKey(MatFilePath));
 }
