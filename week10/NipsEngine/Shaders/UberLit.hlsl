@@ -166,7 +166,8 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-        float z          = abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
+        float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
+    
         uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
         uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
         float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
@@ -199,7 +200,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-        float z          = abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
+        float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
         uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
         uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
     #elif CULLING_MODEL_TILED
