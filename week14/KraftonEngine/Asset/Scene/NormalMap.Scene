@@ -1,0 +1,87 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "PrimitiveKey" : "79",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADirectionalLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDirectionalLightComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "Intensity" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 1.000000,
+          "Location" : [0.000000, 5.525556, 0.000000],
+          "Material" : {
+            "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
+          },
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "Width" : 1.000000,
+          "bEditorOnly" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "NormalMap",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [3.635506, 0.266901, 1.470309],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 28.064892, -174.150238]
+  },
+  "Primitives" : {
+    "79" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

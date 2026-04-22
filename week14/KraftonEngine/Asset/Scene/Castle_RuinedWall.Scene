@@ -1,0 +1,1615 @@
+{
+  "Actors": [
+    {
+      "ClassName": "ADirectionalLightActor",
+      "NonSceneComponents": [],
+      "RootComponent": {
+        "Children": [
+          {
+            "Children": [],
+            "ClassName": "UDirectionalLightComponent",
+            "Properties": {
+              "Color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Intensity": 1.0,
+              "Location": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Scale": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Visible": true,
+              "bEditorOnly": false,
+              "bTickEnable": true
+            }
+          }
+        ],
+        "ClassName": "UBillboardComponent",
+        "Properties": {
+          "Height": 1.0,
+          "Location": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Material": {
+            "Path": "Asset/Materials/Editor/DirectionalLight.mat"
+          },
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Visible": true,
+          "Width": 1.0,
+          "bEditorOnly": true,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "266",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -10.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "270",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -10.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "274",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -10.0,
+            0.0,
+            4.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "276",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -8.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "284",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -8.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "286",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -8.0,
+            0.0,
+            4.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            -4.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "288",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -6.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "296",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -6.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "302",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -6.2,
+            0.2,
+            4.0
+          ],
+          "Rotation": [
+            0.0,
+            8.0,
+            -10.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "304",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -4.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "306",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -4.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            6.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "308",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -2.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "310",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            2.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "312",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "318",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            4.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            -5.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "320",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            6.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "322",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            6.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "324",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            6.2,
+            -0.1,
+            4.0
+          ],
+          "Rotation": [
+            0.0,
+            -7.0,
+            9.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "328",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "336",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            8.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "344",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            8.0,
+            0.0,
+            4.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "350",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            10.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "352",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            10.0,
+            0.0,
+            2.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "354",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            10.0,
+            0.0,
+            4.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "358",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -3.2,
+            1.0,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            22.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "360",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            -1.0,
+            2.2,
+            0.0
+          ],
+          "Rotation": [
+            12.0,
+            18.0,
+            65.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "362",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            0.2,
+            4.1,
+            0.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            88.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "368",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            1.4,
+            2.7,
+            0.0
+          ],
+          "Rotation": [
+            -15.0,
+            -25.0,
+            -52.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    },
+    {
+      "ClassName": "AStaticMeshActor",
+      "NonSceneComponents": [],
+      "PrimitiveKey": "370",
+      "RootComponent": {
+        "Children": [],
+        "ClassName": "UStaticMeshComponent",
+        "Properties": {
+          "Element 0": {
+            "Path": "Asset/Materials/Auto/DollByeok.mat"
+          },
+          "Location": [
+            0.0,
+            1.3,
+            2.0
+          ],
+          "Rotation": [
+            18.0,
+            0.0,
+            35.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Static Mesh": "Data/BasicShape/Cube.OBJ",
+          "Visible": true,
+          "bEditorOnly": false,
+          "bTickEnable": true
+        }
+      },
+      "bVisible": true
+    }
+  ],
+  "ClassName": "UWorld",
+  "ContextHandle": "NewScene",
+  "ContextName": "New Scene",
+  "Name": "Castle",
+  "Primitives": {
+    "266": {
+      "Location": [
+        2.028909,
+        -11.394349,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        7.376409
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "270": {
+      "Location": [
+        -10.839542,
+        7.214745,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "274": {
+      "Location": [
+        0.0,
+        -10.950918,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        7.875398
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "276": {
+      "Location": [
+        -11.048664,
+        -3.136845,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -18.800215
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "284": {
+      "Location": [
+        9.89849,
+        -4.147608,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "286": {
+      "Location": [
+        -11.676036,
+        1.812399,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "288": {
+      "Location": [
+        10.212175,
+        -5.4372,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -18.339127
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "296": {
+      "Location": [
+        10.491005,
+        2.683746,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "302": {
+      "Location": [
+        -6.691937,
+        -8.643751,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -27.241261
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "304": {
+      "Location": [
+        11.118376,
+        -0.592515,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -3.544563
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "306": {
+      "Location": [
+        4.05209,
+        -10.316737,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -44.655884
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "308": {
+      "Location": [
+        -1.97766,
+        -10.226895,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -13.212459
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "310": {
+      "Location": [
+        10.665276,
+        -2.370062,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "312": {
+      "Location": [
+        -5.165144,
+        -9.939136,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -22.48781
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "318": {
+      "Location": [
+        -11.083516,
+        3.311115,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "320": {
+      "Location": [
+        -10.769832,
+        5.262931,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "322": {
+      "Location": [
+        10.80469,
+        1.219887,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "324": {
+      "Location": [
+        -8.469482,
+        -7.772405,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -18.162844
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "328": {
+      "Location": [
+        -9.759075,
+        -6.482815,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -46.495987
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "336": {
+      "Location": [
+        8.574045,
+        -6.796497,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -42.675953
+      ],
+      "Scale": [
+        1.000001,
+        1.000001,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "344": {
+      "Location": [
+        -10.700129,
+        -1.394153,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "350": {
+      "Location": [
+        -10.700128,
+        10.560714,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "352": {
+      "Location": [
+        -10.247026,
+        -4.949246,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -28.073509
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "354": {
+      "Location": [
+        -11.18808,
+        0.0,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "358": {
+      "Location": [
+        7.214746,
+        -8.364923,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -48.345764
+      ],
+      "Scale": [
+        1.000004,
+        1.000004,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "360": {
+      "Location": [
+        -10.734981,
+        9.201413,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "362": {
+      "Location": [
+        5.367492,
+        -9.34083,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -84.368164
+      ],
+      "Scale": [
+        1.000009,
+        1.000009,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "368": {
+      "Location": [
+        -3.578037,
+        -10.41832,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        -7.522008
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "370": {
+      "Location": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "ObjStaticMeshAsset": "Data/BasicShape/Cube.OBJ",
+      "Rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    }
+  },
+  "Version": 2,
+  "WorldType": "Editor"
+}
