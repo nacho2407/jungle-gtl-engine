@@ -9,28 +9,15 @@
 
 void FFXAAPass::PrepareInputs(FRenderPipelineContext& Context)
 {
-    const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Targets || !Targets->SceneColorCopySRV)
+    if (!Context.Targets || !Context.Targets->SceneColorCopySRV)
     {
         return;
     }
 
-    if (Targets->ViewportRenderTexture && Targets->SceneColorCopyTexture &&
-        Targets->ViewportRenderTexture != Targets->SceneColorCopyTexture)
-    {
-        Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-        Context.Context->CopyResource(Targets->SceneColorCopyTexture, Targets->ViewportRenderTexture);
-    }
-
-    ID3D11ShaderResourceView* SceneColorSRV = Targets->SceneColorCopySRV;
-    Context.Context->PSSetShaderResources(0, 1, &SceneColorSRV);
-    Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
+    CopyViewportColorToSceneColor(Context);
+    BindSceneColorInput(Context, true);
 }
 
-void FFXAAPass::PrepareTargets(FRenderPipelineContext& Context)
-{
-    BindViewportTarget(Context);
-}
 
 void FFXAAPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {

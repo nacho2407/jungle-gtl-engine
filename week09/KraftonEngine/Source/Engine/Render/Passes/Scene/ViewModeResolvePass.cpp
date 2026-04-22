@@ -39,17 +39,10 @@ void FViewModeResolvePass::PrepareInputs(FRenderPipelineContext& Context)
     switch (Variant)
     {
     case EViewModePostProcessVariant::SceneDepth:
-        if (Targets && Targets->DepthTexture && Targets->DepthCopyTexture &&
-            Targets->DepthTexture != Targets->DepthCopyTexture)
+        if (Targets)
         {
-            Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-            Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
-        }
-
-        if (Targets && Targets->DepthCopySRV)
-        {
-            ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
-            Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
+            CopyViewportDepthToReadable(Context);
+            BindDepthInput(Context);
         }
         break;
 
@@ -60,19 +53,6 @@ void FViewModeResolvePass::PrepareInputs(FRenderPipelineContext& Context)
         break;
     }
 
-    if (Context.StateCache)
-    {
-        Context.StateCache->DiffuseSRV = nullptr;
-        Context.StateCache->NormalSRV = nullptr;
-        Context.StateCache->PerShaderCB[0] = nullptr;
-        Context.StateCache->PerShaderCB[1] = nullptr;
-        Context.StateCache->bForceAll = true;
-    }
-}
-
-void FViewModeResolvePass::PrepareTargets(FRenderPipelineContext& Context)
-{
-    BindViewportTarget(Context);
 }
 
 void FViewModeResolvePass::BuildDrawCommands(FRenderPipelineContext& Context)

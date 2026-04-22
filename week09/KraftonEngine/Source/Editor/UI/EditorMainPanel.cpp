@@ -33,8 +33,8 @@ namespace
 		Ofn.lpstrDefExt = L"scene";
 		Ofn.lpstrInitialDir = SceneDir.c_str();
 		Ofn.Flags = bSave
-			? (OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT)
-			: (OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST);
+			? (OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR)
+			: (OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR);
 
 		const BOOL bResult = bSave ? GetSaveFileNameW(&Ofn) : GetOpenFileNameW(&Ofn);
 		return bResult ? FPaths::FromWide(FileName) : std::string();
