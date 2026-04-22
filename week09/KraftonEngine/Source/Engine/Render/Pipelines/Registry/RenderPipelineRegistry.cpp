@@ -1,4 +1,4 @@
-#include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
+﻿#include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
 
 namespace
 {
@@ -51,8 +51,9 @@ void FRenderPipelineRegistry::Initialize()
     Pipelines.emplace((int32)ScenePostProcess.Type, ScenePostProcess);
 
     FRenderPipelineDesc EditorOverlay = { ERenderPipelineType::EditorOverlay, {
-        PipelineNode(ERenderPipelineType::Outline),
         PassNode(ERenderPassNodeType::DebugLinePass),
+        PipelineNode(ERenderPipelineType::Outline),
+        PassNode(ERenderPassNodeType::OverlayBillboardPass),
         PassNode(ERenderPassNodeType::GizmoPass),
         PassNode(ERenderPassNodeType::OverlayTextPass)
     } };

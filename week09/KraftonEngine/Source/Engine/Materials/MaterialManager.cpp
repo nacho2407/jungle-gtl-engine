@@ -369,6 +369,8 @@ EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass
     case ERenderPass::EditorLines:
     case ERenderPass::PostProcess:
     case ERenderPass::GizmoInner:
+    case ERenderPass::OverlayBillboard:
+    case ERenderPass::OverlayTextWorld:
     case ERenderPass::OverlayFont:
         return EBlendState::AlphaBlend;
     case ERenderPass::AdditiveDecal:
@@ -394,6 +396,8 @@ EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& St
     case ERenderPass::SelectionMask:
         return EDepthStencilState::StencilWrite;
     case ERenderPass::PostProcess:
+    case ERenderPass::OverlayBillboard:
+    case ERenderPass::OverlayTextWorld:
     case ERenderPass::OverlayFont:
         return EDepthStencilState::NoDepth;
     case ERenderPass::GizmoOuter:
@@ -417,6 +421,8 @@ ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, E
     case ERenderPass::AdditiveDecal:
     case ERenderPass::SelectionMask:
     case ERenderPass::PostProcess:
+    case ERenderPass::OverlayBillboard:
+    case ERenderPass::OverlayTextWorld:
         return ERasterizerState::SolidNoCull;
     default:
         return ERasterizerState::SolidBackCull;

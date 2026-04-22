@@ -97,7 +97,7 @@ void FBillboardSceneProxy::UpdateMesh()
 void FBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     UBillboardComponent* Comp = GetBillboardComponent();
-    bVisible = Comp->IsVisible();
+    bVisible = Comp->ShouldRenderInCurrentWorld();
     if (!bVisible)
         return;
 

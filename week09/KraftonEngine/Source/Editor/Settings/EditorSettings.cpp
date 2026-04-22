@@ -26,7 +26,6 @@ namespace Key
 	constexpr const char* bGizmo = "bGizmo";
 	constexpr const char* bBillboardText = "bBillboardText";
 	constexpr const char* bSceneBVH = "bSceneBVH";
-	constexpr const char* bDebugDraw = "bDebugDraw";
 	constexpr const char* bSceneOctree = "bSceneOctree";
 	constexpr const char* bWorldBound = "bWorldBound";
 	constexpr const char* bFog = "bFog";
@@ -105,7 +104,6 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
 		SlotObj[Key::bBillboardText] = Opts.ShowFlags.bBillboardText;
 		SlotObj[Key::bSceneBVH] = Opts.ShowFlags.bSceneBVH;
-		SlotObj[Key::bDebugDraw] = Opts.ShowFlags.bDebugDraw;
 		SlotObj[Key::bSceneOctree] = Opts.ShowFlags.bSceneOctree;
 		SlotObj[Key::bWorldBound] = Opts.ShowFlags.bWorldBound;
 		SlotObj[Key::bFog] = Opts.ShowFlags.bFog;
@@ -243,8 +241,6 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.ShowFlags.bBillboardText = S[Key::bBillboardText].ToBool();
 				if (S.hasKey(Key::bSceneBVH))
 					Opts.ShowFlags.bSceneBVH = S[Key::bSceneBVH].ToBool();
-				if (S.hasKey(Key::bDebugDraw))
-					Opts.ShowFlags.bDebugDraw = S[Key::bDebugDraw].ToBool();
 				if (S.hasKey(Key::bSceneOctree))
 					Opts.ShowFlags.bSceneOctree = S[Key::bSceneOctree].ToBool();
 				if (S.hasKey(Key::bWorldBound))

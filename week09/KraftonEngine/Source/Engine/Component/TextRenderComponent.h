@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
@@ -39,6 +39,7 @@ public:
     void PostDuplicate() override;
 
     void SetText(const FString& InText);
+    bool ReacquireDefaultFont();
     const FString& GetText() const { return Text; }
 
     FString GetOwnerUUIDToString() const;

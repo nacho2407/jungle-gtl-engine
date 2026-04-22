@@ -1,6 +1,8 @@
-#include "Render/Submission/Collect/DrawCollector.h"
+﻿#include "Render/Submission/Collect/DrawCollector.h"
 
 #include "GameFramework/World.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include "Render/Pipelines/Registry/ViewModePassRegistry.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
@@ -61,6 +63,11 @@ void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectC
 {
     CollectScenePrimitives(World, CollectContext);
     CollectSceneLights(CollectContext.Scene);
+
+    if (World && CollectContext.SceneView)
+    {
+        CollectEditorHelpers(World, *CollectContext.SceneView, CollectedOverlayData);
+    }
 }
 
 void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext)
@@ -122,6 +129,15 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
         if (!Proxy)
         {
             continue;
+        }
+
+        if (World->GetWorldType() == EWorldType::Editor)
+        {
+            const UPrimitiveComponent* PrimitiveOwner = Proxy->Owner;
+            if (PrimitiveOwner && PrimitiveOwner->IsEditorHelper())
+            {
+                continue;
+            }
         }
 
         if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))

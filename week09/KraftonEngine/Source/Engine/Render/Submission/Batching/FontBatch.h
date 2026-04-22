@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -31,6 +31,14 @@ public:
                       const FVector& WorldScale,
                       float          Scale = 1.0f);
 
+    // 오버레이 helper 월드 텍스트
+    void AddOverlayWorldText(const FString& Text,
+                             const FVector& WorldPos,
+                             const FVector& CamRight,
+                             const FVector& CamUp,
+                             const FVector& WorldScale,
+                             float          Scale = 1.0f);
+
     // 스크린 공간 오버레이 텍스트
     void AddScreenText(const FString& Text,
                        float ScreenX, float ScreenY,
@@ -38,12 +46,14 @@ public:
                        float Scale = 1.0f);
 
     void ClearWorld();
+    void ClearOverlayWorld();
     void ClearScreen();
     void ClearAll();
 
     void EnsureCharInfoMap(const FFontResource* Resource);
 
     bool UploadWorldBuffers(ID3D11DeviceContext* Context);
+    bool UploadOverlayWorldBuffers(ID3D11DeviceContext* Context);
     bool UploadScreenBuffers(ID3D11DeviceContext* Context);
 
     ID3D11Buffer* GetWorldVBBuffer() const { return WorldBuffer.GetVBBuffer(); }
@@ -51,19 +61,26 @@ public:
     ID3D11Buffer* GetWorldIBBuffer() const { return WorldBuffer.GetIBBuffer(); }
     uint32        GetWorldIndexCount() const { return WorldBuffer.GetIndexCount(); }
 
+    ID3D11Buffer* GetOverlayWorldVBBuffer() const { return OverlayWorldBuffer.GetVBBuffer(); }
+    uint32        GetOverlayWorldVBStride() const { return OverlayWorldBuffer.GetVBStride(); }
+    ID3D11Buffer* GetOverlayWorldIBBuffer() const { return OverlayWorldBuffer.GetIBBuffer(); }
+    uint32        GetOverlayWorldIndexCount() const { return OverlayWorldBuffer.GetIndexCount(); }
+
     ID3D11Buffer* GetScreenVBBuffer() const { return ScreenBuffer.GetVBBuffer(); }
     uint32        GetScreenVBStride() const { return ScreenBuffer.GetVBStride(); }
     ID3D11Buffer* GetScreenIBBuffer() const { return ScreenBuffer.GetIBBuffer(); }
     uint32        GetScreenIndexCount() const { return ScreenBuffer.GetIndexCount(); }
 
     uint32 GetWorldQuadCount() const { return static_cast<uint32>(WorldBuffer.Vertices.size() / 4); }
+    uint32 GetOverlayWorldQuadCount() const { return static_cast<uint32>(OverlayWorldBuffer.Vertices.size() / 4); }
     uint32 GetScreenQuadCount() const { return static_cast<uint32>(ScreenBuffer.Vertices.size() / 4); }
+    void GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
 
 private:
     void BuildCharInfoMap(uint32 Columns, uint32 Rows);
-    void GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
 
     TBatchBuffer<FTextureVertex> WorldBuffer;
+    TBatchBuffer<FTextureVertex> OverlayWorldBuffer;
     TBatchBuffer<FTextureVertex> ScreenBuffer;
 
     TMap<uint32, FCharacterInfo> CharInfoMap;

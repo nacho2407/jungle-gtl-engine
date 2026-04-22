@@ -15,8 +15,9 @@ PS_Input_Tex VS(VS_Input_PT input)
 float4 PS(PS_Input_Tex input) : SV_TARGET
 {
     float4 col = FontAtlas.Sample(PointClampSampler, input.texcoord);
-    if (!bIsWireframe && ShouldDiscardFontPixel(col.r))
+    float coverage = col.r;
+    if (!bIsWireframe && ShouldDiscardFontPixel(coverage))
         discard;
 
-    return float4(ApplyWireframe(col.rgb), bIsWireframe ? 1.0f : col.a);
+    return float4(ApplyWireframe(float3(1.0f, 1.0f, 1.0f)), bIsWireframe ? 1.0f : coverage);
 }

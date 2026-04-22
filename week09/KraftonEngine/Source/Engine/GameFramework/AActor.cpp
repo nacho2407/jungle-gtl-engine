@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/TextRenderComponent.h"
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
 #include "GameFramework/Level.h"
@@ -8,6 +9,7 @@
 #include "Serialization/Archive.h"
 
 #include <algorithm>
+#include <string>
 
 IMPLEMENT_CLASS(AActor, UObject)
 
@@ -97,10 +99,56 @@ void AActor::RemoveComponent(UActorComponent* Component)
 	UObjectManager::Get().DestroyObject(Component);
 }
 
+void AActor::EnsureDefaultEditorHelperTextComponent()
+{
+    if (bSuppressDefaultEditorHelperCreation || !RootComponent)
+    {
+        return;
+    }
+
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        UTextRenderComponent* TextComponent = Cast<UTextRenderComponent>(Component);
+        if (!TextComponent || !TextComponent->IsEditorHelper())
+        {
+            continue;
+        }
+
+        if (TextComponent->GetParent() != RootComponent)
+        {
+            TextComponent->AttachToComponent(RootComponent);
+        }
+
+        TextComponent->SetBillboard(true);
+        TextComponent->SetVisibleInEditor(true);
+        TextComponent->SetVisibleInGame(false);
+        TextComponent->SetEditorHelper(true);
+        TextComponent->SetFont(FName("Default"));
+        TextComponent->SetText("UUID : " + std::to_string(GetUUID()));
+        return;
+    }
+
+    UTextRenderComponent* TextComponent = AddComponent<UTextRenderComponent>();
+    if (!TextComponent)
+    {
+        return;
+    }
+
+    TextComponent->AttachToComponent(RootComponent);
+    TextComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 1.3f));
+    TextComponent->SetBillboard(true);
+    TextComponent->SetVisibleInEditor(true);
+    TextComponent->SetVisibleInGame(false);
+    TextComponent->SetEditorHelper(true);
+    TextComponent->SetFont(FName("Default"));
+    TextComponent->SetText("UUID : " + std::to_string(GetUUID()));
+}
+
 void AActor::SetRootComponent(USceneComponent* Comp)
 {
 	if (!Comp) return;
 	RootComponent = Comp;
+    EnsureDefaultEditorHelperTextComponent();
 }
 
 UWorld* AActor::GetWorld() const
@@ -312,6 +360,7 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	Dup->OwnedComponents.clear();
 	Dup->RootComponent = nullptr;
 	Dup->bPrimitiveCacheDirty = true;
+    Dup->bSuppressDefaultEditorHelperCreation = true;
 
 	TSet<const UActorComponent*> Visited;
 
@@ -339,6 +388,8 @@ UObject* AActor::Duplicate(UObject* NewOuter) const
 	}
 
 	Dup->bPrimitiveCacheDirty = true;
+    Dup->bSuppressDefaultEditorHelperCreation = false;
+    Dup->EnsureDefaultEditorHelperTextComponent();
 
 	// 4) 월드에 등록 — Dup의 Outer(=대상 World)에 등록해야 PIE 복제 시에도 올바르게 동작.
 	if (UWorld* DestWorld = Dup->GetWorld())

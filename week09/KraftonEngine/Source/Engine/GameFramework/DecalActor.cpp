@@ -1,6 +1,6 @@
 ﻿#include "DecalActor.h"
+#include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
-#include "Component/TextRenderComponent.h"
 #include "Materials/MaterialManager.h"
 
 IMPLEMENT_CLASS(ADecalActor, AActor)
@@ -18,11 +18,12 @@ void ADecalActor::InitDefaultComponents()
 	auto Material = FMaterialManager::Get().GetOrCreateMaterial(DefaultDecalMaterialPath);
 	DecalComponent->SetMaterial(0, Material);
 	SetRootComponent(DecalComponent);
-	
-	// UUID 텍스트 표시
-	TextRenderComponent = AddComponent<UTextRenderComponent>();
-	TextRenderComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 1.3f));
-	TextRenderComponent->SetText("UUID : " + TextRenderComponent->GetOwnerUUIDToString());
-	TextRenderComponent->AttachToComponent(DecalComponent);
-	TextRenderComponent->SetFont(FName("Default"));
+
+	BillboardComponent = AddComponent<UBillboardComponent>();
+	auto DecalIcon = FMaterialManager::Get().GetOrCreateMaterial(DecalIconPath);
+	BillboardComponent->SetVisibleInEditor(true);
+	BillboardComponent->SetVisibleInGame(false);
+	BillboardComponent->SetEditorHelper(true);
+	BillboardComponent->SetMaterial(DecalIcon);
+	BillboardComponent->AttachToComponent(DecalComponent);
 }

@@ -47,11 +47,14 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
         return ERenderPassNodeType::SelectionMaskPass;
     case ERenderPass::EditorLines:
         return ERenderPassNodeType::DebugLinePass;
+    case ERenderPass::OverlayBillboard:
+        return ERenderPassNodeType::OverlayBillboardPass;
     case ERenderPass::FXAA:
         return ERenderPassNodeType::FXAAPass;
     case ERenderPass::GizmoOuter:
     case ERenderPass::GizmoInner:
         return ERenderPassNodeType::GizmoPass;
+    case ERenderPass::OverlayTextWorld:
     case ERenderPass::OverlayFont:
         return ERenderPassNodeType::OverlayTextPass;
     case ERenderPass::PostProcess:
@@ -376,6 +379,8 @@ FRenderPipelineContext FRenderer::CreatePassContext(
     PipelineContext.OverlayData = &DrawCollector.GetCollectedOverlayData();
     PipelineContext.DebugLines = &DrawCollector.GetCollectedOverlayData().GetDebugLines();
     PipelineContext.OverlayTexts = &DrawCollector.GetCollectedPrimitives().OverlayTexts;
+    PipelineContext.OverlayBillboardProxies = &DrawCollector.GetCollectedOverlayData().GetEditorHelperBillboards();
+    PipelineContext.OverlayTextProxies = &DrawCollector.GetCollectedOverlayData().GetEditorHelperTexts();
     PipelineContext.Occlusion = SceneView.OcclusionCulling;
     PipelineContext.LightCulling = LightCulling.get();
     PipelineContext.LODContext = &SceneView.LODContext;
@@ -556,6 +561,10 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         Pass->BuildDrawCommands(PipelineContext);
     }
     if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DebugLinePass))
+    {
+        Pass->BuildDrawCommands(PipelineContext);
+    }
+    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::OverlayBillboardPass))
     {
         Pass->BuildDrawCommands(PipelineContext);
     }

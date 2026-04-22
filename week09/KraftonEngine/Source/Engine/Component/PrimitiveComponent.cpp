@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+﻿#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
@@ -50,15 +50,83 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 {
     USceneComponent::Serialize(Ar);
     Ar << bIsVisible;
+    Ar << bVisibleInEditor;
+    Ar << bVisibleInGame;
+    Ar << bIsEditorHelper;
     // LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
 void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 {
-    if (bIsVisible == bNewVisible)
+    const bool bNeedsChildSync = (bVisibleInEditor != bNewVisible) || (bVisibleInGame != bNewVisible);
+    if (bIsVisible == bNewVisible && !bNeedsChildSync)
+    {
         return;
+    }
+
     bIsVisible = bNewVisible;
+    bVisibleInEditor = bNewVisible;
+    bVisibleInGame = bNewVisible;
     MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetVisibleInEditor(bool bNewVisible)
+{
+    if (bVisibleInEditor == bNewVisible)
+    {
+        return;
+    }
+
+    bVisibleInEditor = bNewVisible;
+    MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetVisibleInGame(bool bNewVisible)
+{
+    if (bVisibleInGame == bNewVisible)
+    {
+        return;
+    }
+
+    bVisibleInGame = bNewVisible;
+    MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetEditorHelper(bool bNewHelper)
+{
+    if (bIsEditorHelper == bNewHelper)
+    {
+        return;
+    }
+
+    bIsEditorHelper = bNewHelper;
+    MarkRenderVisibilityDirty();
+}
+
+bool UPrimitiveComponent::ShouldRenderInWorld(EWorldType WorldType) const
+{
+    if (!bIsVisible)
+    {
+        return false;
+    }
+
+    switch (WorldType)
+    {
+    case EWorldType::Editor:
+        return bVisibleInEditor;
+    case EWorldType::PIE:
+    case EWorldType::Game:
+        return bVisibleInGame;
+    default:
+        return bVisibleInGame;
+    }
+}
+
+bool UPrimitiveComponent::ShouldRenderInCurrentWorld() const
+{
+    AActor* OwnerActor = GetOwner();
+    UWorld* World = OwnerActor ? OwnerActor->GetWorld() : nullptr;
+    return ShouldRenderInWorld(World ? World->GetWorldType() : EWorldType::Game);
 }
 
 // ============================================================
@@ -101,6 +169,9 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
     USceneComponent::GetEditableProperties(OutProps);
     OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+    OutProps.push_back({ "Visible In Editor", EPropertyType::Bool, &bVisibleInEditor });
+    OutProps.push_back({ "Visible In Game", EPropertyType::Bool, &bVisibleInGame });
+    OutProps.push_back({ "Is Editor Helper", EPropertyType::Bool, &bIsEditorHelper });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -110,7 +181,12 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 
     if (strcmp(PropertyName, "Visible") == 0)
     {
-        // Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
+        bVisibleInEditor = bIsVisible;
+        bVisibleInGame = bIsVisible;
+        MarkRenderVisibilityDirty();
+    }
+    else if (strcmp(PropertyName, "Visible In Editor") == 0 || strcmp(PropertyName, "Visible In Game") == 0 || strcmp(PropertyName, "Is Editor Helper") == 0)
+    {
         MarkRenderVisibilityDirty();
     }
 }

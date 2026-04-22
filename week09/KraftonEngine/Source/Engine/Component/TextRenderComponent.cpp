@@ -20,6 +20,56 @@ FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
     return new FTextRenderSceneProxy(this);
 }
 
+namespace
+{
+FMatrix BuildStableTextBillboardMatrix(const FVector& CameraForward, const FVector& WorldLocation, const FVector& WorldScale, const FVector& PreferredUp)
+{
+    FVector Forward = (CameraForward * -1.0f).Normalized();
+    FVector UpSeed = PreferredUp;
+
+    if (UpSeed.Dot(UpSeed) < 1.0e-4f)
+    {
+        UpSeed = FVector(0.0f, 0.0f, 1.0f);
+    }
+
+    FVector UpSeedNormalized = UpSeed.Normalized();
+    if (std::abs(Forward.Dot(UpSeedNormalized)) > 0.95f)
+    {
+        UpSeed = FVector(0.0f, 0.0f, 1.0f);
+        if (std::abs(Forward.Dot(UpSeed)) > 0.95f)
+        {
+            UpSeed = FVector(0.0f, 1.0f, 0.0f);
+        }
+    }
+
+    FVector Right = Forward.Cross(UpSeed);
+    if (Right.Dot(Right) < 1.0e-4f)
+    {
+        Right = FVector(1.0f, 0.0f, 0.0f);
+    }
+    Right = Right.Normalized();
+
+    const FVector Up = Right.Cross(Forward).Normalized();
+
+    FMatrix RotMatrix;
+    RotMatrix.SetAxes(Forward, Right, Up);
+    return FMatrix::MakeScaleMatrix(WorldScale) * RotMatrix * FMatrix::MakeTranslationMatrix(WorldLocation);
+}
+} // namespace
+
+
+bool UTextRenderComponent::ReacquireDefaultFont()
+{
+    CachedFont = FResourceManager::Get().FindFont(FontName);
+    if (CachedFont && CachedFont->IsLoaded())
+    {
+        return true;
+    }
+
+    FontName = FName("Default");
+    CachedFont = FResourceManager::Get().FindFont(FontName);
+    return CachedFont && CachedFont->IsLoaded();
+}
 
 void UTextRenderComponent::SetText(const FString& InText)
 {
@@ -52,6 +102,10 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 
     FontName = InFontName;
     CachedFont = FResourceManager::Get().FindFont(FontName);
+    if (!CachedFont || !CachedFont->IsLoaded())
+    {
+        ReacquireDefaultFont();
+    }
     MarkProxyDirty(EDirtyFlag::Mesh);
 }
 
@@ -147,7 +201,7 @@ void UTextRenderComponent::Serialize(FArchive& Ar)
 
     if (Ar.IsLoading())
     {
-        CachedFont = FResourceManager::Get().FindFont(FontName);
+        ReacquireDefaultFont();
     }
 }
 
@@ -181,7 +235,7 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
-    CachedFont = FResourceManager::Get().FindFont(FontName);
+    ReacquireDefaultFont();
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -216,21 +270,7 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 
 FMatrix UTextRenderComponent::CalculateBillboardWorldMatrix(const FVector& CameraForward) const
 {
-    FVector Forward = (CameraForward * -1.0f).Normalized();
-    FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
-
-    if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
-    {
-        WorldUp = FVector(0.0f, 1.0f, 0.0f);
-    }
-
-    const FVector Right = WorldUp.Cross(Forward).Normalized();
-    const FVector Up = Forward.Cross(Right).Normalized();
-
-    FMatrix RotMatrix;
-    RotMatrix.SetAxes(Forward, Right, Up);
-
-    return FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+    return BuildStableTextBillboardMatrix(CameraForward, GetWorldLocation(), GetWorldScale(), GetUpVector());
 }
 
 FMatrix UTextRenderComponent::CalculateOutlineMatrix() const
