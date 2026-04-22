@@ -162,11 +162,20 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     float3 accumulatedLight = float3(1, 1, 1);
     
 #if LIGHT_HEATMAP
-    uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-    uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-    uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-
-    float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
+    #if CULLING_MODEL_CLUSTERED
+        uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
+        uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+        uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
+        float z          = abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
+        uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
+        uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
+        float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
+    #elif CULLING_MODEL_TILED
+        uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
+        uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+        uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
+        float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
+    #endif
     float3 heatmapColor = GetHeatmapColor(weight);
     
     // 타일 경계선 시각화 (선택 사항: 타일의 가장자리 1픽셀을 어둡게 처리)
@@ -186,9 +195,18 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     accumulatedLight = input.LitColor;
     
 #elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_PHONG
-    uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-    uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-    uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
+    #if CULLING_MODEL_CLUSTERED
+        uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
+        uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+        uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
+        float z          = abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
+        uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
+        uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
+    #elif CULLING_MODEL_TILED
+        uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
+        uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+        uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
+    #endif
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
@@ -204,9 +222,25 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
     #endif
 
-    for (uint i = 0; i < tileData.y; i++)
+    uint LightsToIterate;
+    #if CULLING_MODEL_CLUSTERED
+        LightsToIterate = clusterData.y;
+    #elif CULLING_MODEL_TILED
+        LightsToIterate = tileData.y;
+    #else
+        LightsToIterate = LightCount;
+    #endif 
+    
+    for (uint i = 0; i < LightsToIterate; i++)
     {
+    #if CULLING_MODEL_CLUSTERED
+        LightInfo light = Lights[CulledIndexBuffer[clusterData.x + i]];
+    #elif CULLING_MODEL_TILED
         LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+    #else 
+        LightInfo light = Lights[i];
+    #endif
+    
     #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += light.Type == 0 ?
             CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)
@@ -216,7 +250,6 @@ PSOutput mainPS(PSInput input) : SV_TARGET
             CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)
             : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
     #endif
-        //accumulatedLight = float4(1,1,1,1);
     }
 #endif
     

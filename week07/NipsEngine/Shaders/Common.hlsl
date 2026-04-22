@@ -1,7 +1,7 @@
 /* Constant Buffers */
 
 #define TILE_SIZE 16
-
+#define NUM_SLICE 24
 
 cbuffer FrameBuffer : register(b0)
 {

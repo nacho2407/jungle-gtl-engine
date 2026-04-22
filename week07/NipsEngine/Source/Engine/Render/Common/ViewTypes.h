@@ -15,6 +15,13 @@ enum class EViewMode : int32
     Count
 };
 
+enum class ELightCullMode : int32
+{
+    None,       // iterate all lights
+    Clustered,  // clustered light culling
+	Tiled,		// Tiled light culling
+};
+
 struct FShowFlags
 {
     bool bPrimitives = true;

@@ -1,8 +1,10 @@
 ﻿#include "LightCullingPass.h"
 #include "Core/ResourceManager.h"
+#include "Render/Common/ViewTypes.h"
 
 namespace {
 	const int TileSize = 16;
+	const int NumSlice = 24;
 }
 
 bool FLightCullingPass::Initialize()
@@ -36,8 +38,13 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 
 	FVector2 ViewportSize = RenderBus->GetViewportSize();
+	ELightCullMode CullMode = RenderBus->GetLightCullMode();
 
-	FComputeShader* CullingCS = FResourceManager::Get().GetComputeShader("Shaders/LightCullingCS.hlsl");
+	if (CullMode == ELightCullMode::None)
+		return true;
+
+	const char* CSKey = (CullMode == ELightCullMode::Tiled) ? "LightCullingCS_Tiled" : "LightCullingCS_Clustered";
+	FComputeShader* CullingCS = FResourceManager::Get().GetComputeShader(CSKey);
 	if (!CullingCS) {
 		return false;
 	}
@@ -61,8 +68,9 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
 
 	uint32 groupsX = (ViewportSize.X + TileSize - 1) / TileSize;
     uint32 groupsY = (ViewportSize.Y + TileSize - 1) / TileSize;
+	uint32 groupsZ = (CullMode == ELightCullMode::Tiled) ? 1 : NumSlice;
 
-	CullingCS->Dispatch(Context->DeviceContext, groupsX, groupsY, 1);
+	CullingCS->Dispatch(Context->DeviceContext, groupsX, groupsY, groupsZ);
     CullingCS->Unbind(Context->DeviceContext);
 
     ID3D11UnorderedAccessView* nullUAVs[] = { nullptr, nullptr };

@@ -103,8 +103,9 @@ public:
 					const D3D_SHADER_MACRO* Defines = nullptr, uint32 PermutationKey = 0);
 	void ReloadShader(const FString& Path);
 
-	FComputeShader* GetComputeShader(const FString& FilePath) const;
-    bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint);
+	FComputeShader* GetComputeShader(const FString& Key) const;
+    bool LoadComputeShader(const FString& FilePath, const FString& CSEntryPoint,
+                           const D3D_SHADER_MACRO* Defines = nullptr, const FString& Key = "");
 
 	UMaterial* GetMaterial(const FString& Path) const;
 	UMaterial* GetOrCreateMaterial(const FString& Path, const FString& ShaderName);

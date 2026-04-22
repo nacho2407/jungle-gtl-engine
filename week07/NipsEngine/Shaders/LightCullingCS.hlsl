@@ -9,32 +9,32 @@ RWStructuredBuffer<uint2> TileBuffer        : register(u1);
 
 Texture2D<float> DepthTexture : register(t0);
 
+#if CULLING_MODEL_TILED
 groupshared uint MinDepth;
 groupshared uint MaxDepth;
+#endif
 groupshared uint TileLightCount;
 groupshared uint TileLightIndices[MAX_LIGHTS_PER_TILE];
-
-float4 ComputePlane(float3 p0, float3 p1, float3 p2)
-{
-    float4 plane;
-    float3 v0 = p1 - p0;
-    float3 v1 = p2 - p0;
-    plane.xyz = normalize(cross(v0, v1));
-    plane.w = dot(plane.xyz, p0);
-    return plane;
-}
 
 [numthreads(TILE_SIZE, TILE_SIZE, 1)]
 void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint threadIndex : SV_GroupIndex)
 {
+#if CULLING_MODEL_CLUSTERED
     if (threadIndex == 0)
-    {
+        TileLightCount = 0;
+#elif CULLING_MODEL_TILED
+    if (threadIndex == 0) {
+        TileLightCount = 0;
         MinDepth = 0xFFFFFFFF;
         MaxDepth = 0;
-        TileLightCount = 0;
     }
+#endif
     GroupMemoryBarrierWithGroupSync();
-
+    
+#if CULLING_MODEL_CLUSTERED
+    float sliceNear = NearZ * pow(FarZ / NearZ, float(groupID.z) / NUM_SLICE);
+    float sliceFar  = NearZ * pow(FarZ / NearZ, float(groupID.z + 1) / NUM_SLICE);
+#elif CULLING_MODEL_TILED
     uint2 groupCoords = groupID.xy * TILE_SIZE + groupThreadID.xy;
     float depth = DepthTexture.Load(uint3(groupCoords, 0));
 
@@ -50,13 +50,14 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
     if (MinDepth == 0xFFFFFFFF)
     {
         tileNear = NearZ;
-        tileFar = FarZ;
+        tileFar  = FarZ;
     }
     else
     {
         tileNear = LinearizeDepth(asfloat(MinDepth));
-        tileFar = LinearizeDepth(asfloat(MaxDepth));
+        tileFar  = LinearizeDepth(asfloat(MaxDepth));
     }
+#endif
     
     float ndcL = (float(groupID.x)     * TILE_SIZE) / ViewportSize.x * 2.0f - 1.0f;
     float ndcR = (float(groupID.x + 1) * TILE_SIZE) / ViewportSize.x * 2.0f - 1.0f;
@@ -91,9 +92,14 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
 
         float3 lightPosView = mul(float4(light.Position, 1.0f), View).xyz;
         float radius = light.Radius;
-        
+
+#if CULLING_MODEL_CLUSTERED
+        if (lightPosView.x + radius < sliceNear || lightPosView.x - radius > sliceFar)
+            continue;
+#elif CULLING_MODEL_TILED
         if (lightPosView.x + radius < tileNear || lightPosView.x - radius > tileFar)
             continue;
+#endif
 
         if (IsOrthographic > 0.5f)
         {
@@ -123,6 +129,20 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
 
     if (threadIndex == 0)
     {
+#if CULLING_MODEL_CLUSTERED
+        uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
+        uint numTilesY = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
+        uint flatClusterIndex = (groupID.z * numTilesY + groupID.y) * numTilesX + groupID.x;
+        uint storageOffset = flatClusterIndex * MAX_LIGHTS_PER_TILE;
+
+        uint clampedCount = min(TileLightCount, MAX_LIGHTS_PER_TILE);
+        for (uint j = 0; j < clampedCount; j++)
+        {
+            CulledIndexBuffer[storageOffset + j] = TileLightIndices[j];
+        }
+        
+        TileBuffer[flatClusterIndex] = uint2(storageOffset, min(TileLightCount, MAX_LIGHTS_PER_TILE));
+#elif CULLING_MODEL_TILED
         uint numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint flatTileIndex = groupID.y * numTilesX + groupID.x;
         uint storageOffset = flatTileIndex * MAX_LIGHTS_PER_TILE;
@@ -134,5 +154,6 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
         }
         
         TileBuffer[flatTileIndex] = uint2(storageOffset, min(TileLightCount, MAX_LIGHTS_PER_TILE));
+#endif
     }
 }

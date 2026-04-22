@@ -90,6 +90,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 
     Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix, Camera->GetNearPlane(), Camera->GetFarPlane());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
+    Bus.SetLightCullMode(SceneView.LightCullMode);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
