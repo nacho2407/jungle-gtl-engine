@@ -50,6 +50,9 @@ public:
 
     // ---- 조명 데이터 갱신 ----
     void SetPointLightData(const uint32 InLightsCount);
+	
+	// ---- 디버그 히트맵 갱신(wireframe 모드일때 사용)
+    void ClearDebugHitMap();
 
     // ---- Dispatch ----
     void Dispatch(const FFrameContext& frameContext, bool bEnable25DCulling = true);
