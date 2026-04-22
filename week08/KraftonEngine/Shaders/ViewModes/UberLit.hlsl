@@ -56,28 +56,9 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     FinalColor = ComputeLambertLighting(BaseColor, Normal);
     
     // Local Lights (Point, Spot)
-    uint2 PixelCoord = uint2(Input.position.xy);
-    uint2 TileCoord = PixelCoord / TileSize; // 각 성분별 나눔
-    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x; // 한 행에 존재하는 타일 수
-    uint FlatTileIndex = TileCoord.x + TileCoord.y * TilesX;
-    
-    int BucketsPerTile = MAX_LIGHTS_PER_TILE / 32;
-    int StartIndex = FlatTileIndex * BucketsPerTile;
-    for (int Bucket = 0; Bucket < BucketsPerTile; ++Bucket)
+    for (int i = 0; i < NumLocalLights; ++i)
     {
-        int PointMask = PerTileLightMask[StartIndex + Bucket];
-        for (int bit = 0; bit < 32; ++bit)
-        {
-            if (PointMask & (1u << bit))
-            {
-                int GlobalPointLightIndex = Bucket * 32 + bit;
-                if (GlobalPointLightIndex < NumLocalLights)
-                {
-                    FinalColor.rgb += LocalLightLambert(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
-                }
-
-            }
-        }
+        FinalColor.rgb += LocalLightLambert(g_LightBuffer[i], Normal, WorldPos);
     }
     FinalColor.rgb = saturate(FinalColor.rgb);
 
@@ -95,28 +76,9 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     FinalColor = ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, WorldPos, ViewDir);
 
     // Local Lights (Point, Spot)
-    uint2 PixelCoord = uint2(Input.position.xy);
-    uint2 TileCoord = PixelCoord / TileSize; // 각 성분별 나눔
-    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x; // 한 행에 존재하는 타일 수
-    uint FlatTileIndex = TileCoord.x + TileCoord.y * TilesX;
-    
-    int BucketsPerTile = MAX_LIGHTS_PER_TILE / 32;
-    int StartIndex = FlatTileIndex * BucketsPerTile;
-    for (int Bucket = 0; Bucket < BucketsPerTile; ++Bucket)
+    for (int j = 0; j < NumLocalLights; ++j)
     {
-        int PointMask = PerTileLightMask[StartIndex + Bucket];
-        for (int bit = 0; bit < 32; ++bit)
-        {
-            if (PointMask & (1u << bit))
-            {
-                int GlobalPointLightIndex = Bucket * 32 + bit;
-                if (GlobalPointLightIndex < NumLocalLights)
-                {
-                    FinalColor.rgb += LocalLightBlinnPhong(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos, ViewDir, Shininess, SpecularStrength);
-                }
-
-            }
-        }
+        FinalColor.rgb += LocalLightBlinnPhong(g_LightBuffer[j], Normal, WorldPos, ViewDir, Shininess, SpecularStrength);
     }
     FinalColor.rgb = saturate(FinalColor.rgb);
 
