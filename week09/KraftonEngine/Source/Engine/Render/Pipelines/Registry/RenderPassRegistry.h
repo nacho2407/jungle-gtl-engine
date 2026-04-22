@@ -44,6 +44,7 @@ enum class ERenderPassNodeType
     DebugLinePass,
     GizmoPass,
     OverlayTextPass,
+	LightHitMapPass,
 };
 
 /*

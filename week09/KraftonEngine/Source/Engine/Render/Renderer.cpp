@@ -563,6 +563,10 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     {
         Pass->BuildDrawCommands(PipelineContext);
     }
+    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::LightHitMapPass))
+    {
+        Pass->BuildDrawCommands(PipelineContext);
+    }
 }
 
 void FRenderer::RenderFrame(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext)
