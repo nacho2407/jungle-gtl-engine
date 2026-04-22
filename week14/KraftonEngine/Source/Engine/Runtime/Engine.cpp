@@ -1,6 +1,7 @@
 ﻿#include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
+#include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
@@ -51,10 +52,13 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::RootDir()), Device);
 
 	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
+
+	FDirectoryWatcher::Get().Initialize();
 }
 
 void UEngine::Shutdown()
 {
+	FDirectoryWatcher::Get().Shutdown();
 	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
 	UTexture2D::ReleaseAllGPU();
@@ -77,6 +81,7 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
+	FDirectoryWatcher::Get().ProcessChanges();
 	InputSystem::Get().Tick();
 	WorldTick(DeltaTime);
 	Render(DeltaTime);

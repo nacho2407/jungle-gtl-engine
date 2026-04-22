@@ -10,11 +10,15 @@ FShader::FShader(FShader&& Other) noexcept
 	: VertexShader(Other.VertexShader)
 	, PixelShader(Other.PixelShader)
 	, InputLayout(Other.InputLayout)
-	, ShaderParameterLayout(std::move(Other.ShaderParameterLayout)) 
+	, CachedVertexShaderSize(Other.CachedVertexShaderSize)
+	, CachedPixelShaderSize(Other.CachedPixelShaderSize)
+	, ShaderParameterLayout(std::move(Other.ShaderParameterLayout))
 {
 	Other.VertexShader = nullptr;
 	Other.PixelShader = nullptr;
 	Other.InputLayout = nullptr;
+	Other.CachedVertexShaderSize = 0;
+	Other.CachedPixelShaderSize = 0;
 }
 
 FShader& FShader::operator=(FShader&& Other) noexcept
@@ -25,15 +29,20 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 		VertexShader = Other.VertexShader;
 		PixelShader = Other.PixelShader;
 		InputLayout = Other.InputLayout;
+		CachedVertexShaderSize = Other.CachedVertexShaderSize;
+		CachedPixelShaderSize = Other.CachedPixelShaderSize;
+		ShaderParameterLayout = std::move(Other.ShaderParameterLayout);
 		Other.VertexShader = nullptr;
 		Other.PixelShader = nullptr;
 		Other.InputLayout = nullptr;
+		Other.CachedVertexShaderSize = 0;
+		Other.CachedPixelShaderSize = 0;
 	}
 	return *this;
 }
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-	const D3D_SHADER_MACRO* InDefines)
+	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes)
 {
 	Release();
 
@@ -41,6 +50,7 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	ID3DBlob* pixelShaderCSO = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 	FShaderInclude IncludeHandler;
+	IncludeHandler.OutIncludes = OutIncludes;
 
 	// Vertex Shader 컴파일
 	HRESULT hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
