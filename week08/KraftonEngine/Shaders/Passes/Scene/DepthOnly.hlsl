@@ -12,7 +12,6 @@ FDepthOnlyVSOutput VS(VS_Input_PNCT_T input)
     return output;
 }
 
-float4 PS(FDepthOnlyVSOutput input) : SV_TARGET
-{
-    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+void PS(FDepthOnlyVSOutput input) {
+    //return float4(0.0f, 0.0f, 0.0f, 0.0f);
 }
