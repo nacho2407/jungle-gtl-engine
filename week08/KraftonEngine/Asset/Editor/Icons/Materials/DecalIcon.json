@@ -1,8 +1,8 @@
 {
-  "PathFileName" : "Asset/Materials/DecalIcon.json",
-  "ShaderPath" : "Shaders/Editor/ShaderBillboard.hlsl",
-  "RenderPass" : "AlphaBlend",
-  "Textures" : {
-    "DiffuseTexture" : "Asset/Editor/Icons/S_DecalActorIcon.png"
+  "PathFileName": "Asset/Editor/Icons/Materials/DecalIcon.json",
+  "ShaderPath": "Shaders/Editor/ShaderBillboard.hlsl",
+  "RenderPass": "AlphaBlend",
+  "Textures": {
+    "DiffuseTexture": "Asset/Editor/Icons/S_DecalActorIcon.png"
   }
 }

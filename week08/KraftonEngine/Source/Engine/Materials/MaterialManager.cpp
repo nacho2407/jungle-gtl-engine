@@ -151,25 +151,24 @@ void FMaterialManager::ScanMaterialAssets()
 {
     AvailableMaterialFiles.clear();
 
-    const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Asset\\Materials\\";
-
-    if (!std::filesystem::exists(MaterialRoot))
+    const std::filesystem::path AssetRoot = FPaths::AssetDir();
+    if (!std::filesystem::exists(AssetRoot))
     {
         return;
     }
 
     const std::filesystem::path ProjectRoot(FPaths::RootDir());
-
-    for (const auto& Entry : std::filesystem::recursive_directory_iterator(MaterialRoot))
+    for (const auto& Entry : std::filesystem::recursive_directory_iterator(AssetRoot))
     {
         if (!Entry.is_regular_file())
             continue;
 
         const std::filesystem::path& Path = Entry.path();
-
         if (Path.extension() != L".json")
             continue;
         if (Path.stem() == L"None")
+            continue;
+        if (!FPaths::PathContainsDirectory(Path.parent_path(), L"Materials"))
             continue;
 
         FMaterialAssetListItem Item;
@@ -178,6 +177,7 @@ void FMaterialManager::ScanMaterialAssets()
         AvailableMaterialFiles.push_back(std::move(Item));
     }
 }
+
 
 UMaterial* FMaterialManager::GetOrCreateStaticMeshMaterial(const FString& MatFilePath)
 {
