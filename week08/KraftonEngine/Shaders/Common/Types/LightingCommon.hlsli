@@ -8,6 +8,8 @@
 #define MAX_LIGHTS_PER_TILE             1024
 #define SHADER_ENTITY_TILE_BUCKET_COUNT (MAX_LIGHTS_PER_TILE / 32)   // 32
 
+//총 몇번 조명 연산이 도는지
+
 // LocalLights StructuredBuffer - t6 slot
 StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
 //Lighting Masking Buffers
@@ -102,6 +104,8 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
                 float CosOuter = cos(radians(LocalLight.OuterConeAngle));
                 Attenuation *= smoothstep(CosOuter, CosInner, CosAngle);
             }
+            //조명 연산 횟수 카운트
+
             
             TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
         }
