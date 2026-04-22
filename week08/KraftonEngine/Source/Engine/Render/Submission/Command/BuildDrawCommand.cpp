@@ -637,33 +637,40 @@ void DrawCommandBuilder::BuildOverlayWorldTextDrawCommand(const FTextRenderScene
 
 void DrawCommandBuilder::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Proxy.DiffuseSRV)
+    if (!Proxy.DiffuseSRV || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    {
         return;
+    }
+
+    const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EPipelineStage::Decal);
+    if (!Desc || !Desc->CompiledShader)
+    {
+        return;
+    }
+
     FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = Proxy.Shader;
+    Cmd.Shader = Desc->CompiledShader;
     Cmd.DepthStencil = EDepthStencilState::NoDepth;
-    Cmd.Blend = EBlendState::AlphaBlend;
+    Cmd.Blend = EBlendState::Opaque;
     Cmd.Rasterizer = ERasterizerState::SolidNoCull;
     Cmd.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     Cmd.VertexCount = 3;
     Cmd.DiffuseSRV = Proxy.DiffuseSRV;
     Cmd.Pass = ERenderPass::Decal;
-    Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
-}
 
-void DrawCommandBuilder::BuildDecalReceiverDrawCommand(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
-{
-    if (!ReceiverProxy.MeshBuffer)
-        return;
-    FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = DecalProxy.Shader;
-    Cmd.MeshBuffer = ReceiverProxy.MeshBuffer;
-    Cmd.IndexCount = ReceiverProxy.MeshBuffer->GetIndexBuffer().GetIndexCount();
-    Cmd.Blend = DecalProxy.Blend;
-    Cmd.DepthStencil = DecalProxy.DepthStencil;
-    Cmd.Rasterizer = DecalProxy.Rasterizer;
-    Cmd.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    Cmd.DiffuseSRV = DecalProxy.DiffuseSRV;
-    Cmd.Pass = DecalProxy.Pass;
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, Cmd.MeshBuffer, Cmd.DiffuseSRV);
+    if (Proxy.ExtraCB.Buffer && Proxy.ExtraCB.Size > 0 && Context.Context)
+    {
+        Proxy.ExtraCB.Buffer->Update(Context.Context, Proxy.ExtraCB.Data, Proxy.ExtraCB.Size);
+
+        if (Proxy.ExtraCB.Slot == ECBSlot::PerShader0)
+        {
+            Cmd.PerShaderCB[0] = Proxy.ExtraCB.Buffer;
+        }
+        else if (Proxy.ExtraCB.Slot == ECBSlot::PerShader1)
+        {
+            Cmd.PerShaderCB[1] = Proxy.ExtraCB.Buffer;
+        }
+    }
+
+    Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }

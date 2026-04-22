@@ -29,8 +29,8 @@
   },
   "PathFileName": "Asset/Editor/Icons/Materials/PawnIcon.json",
   "RasterizerState": "",
-  "RenderPass": "Decal",
-  "ShaderPath": "Shaders/Materials/DecalShader.hlsl",
+  "RenderPass": "AlphaBlend",
+  "ShaderPath": "Shaders/Editor/ShaderBillboard.hlsl",
   "Textures": {
     "DiffuseTexture": "Asset/Editor/Icons/Pawn_64x.png"
   }

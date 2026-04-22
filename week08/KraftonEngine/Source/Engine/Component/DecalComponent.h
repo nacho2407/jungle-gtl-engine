@@ -1,10 +1,6 @@
 #pragma once
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
-#include "Render/Visibility/Frustum/ConvexVolume.h"
-
-class UStaticMeshComponent;
-// class DecalProxy;
 
 class UDecalComponent : public UPrimitiveComponent
 {
@@ -33,20 +29,14 @@ public:
     void SetMaterial(int32 ElementIndex, UMaterial* InMaterial) override;
     UMaterial* GetMaterial(int32 ElementIndex) const override { return Material; }
 
-    const FConvexVolume GetDecalVolume() { return ConvexVolume; }
-    void UpdateDecalVolumeFromTransform();
     void OnTransformDirty() override;
 
-    const TArray<UStaticMeshComponent*>& GetReceivers() const { return Receivers; }
-
 private:
+    bool ShouldDrawDebugBox() const;
     void HandleFade(float DeltaTime);
-    void UpdateReceivers();
     void DrawDebugBox();
 
 private:
-    FConvexVolume ConvexVolume;
-    TArray<UStaticMeshComponent*> Receivers;
     FMaterialSlot MaterialSlot;
     UMaterial* Material = nullptr;
     FVector4 Color = { 1, 1, 1, 1 };

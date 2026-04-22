@@ -1,4 +1,4 @@
-﻿#include "PrimitiveComponent.h"
+#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
@@ -286,14 +286,21 @@ FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
 // --- 렌더 상태 관리 (UE RegisterComponent 대응) ---
 void UPrimitiveComponent::CreateRenderState()
 {
-    if (SceneProxy)
-        return; // 이미 등록됨
-
-    // Owner → World → FScene 경로로 접근
     if (!Owner || !Owner->GetWorld())
         return;
-    FScene& Scene = Owner->GetWorld()->GetScene();
-    SceneProxy = Scene.AddPrimitive(this);
+
+    UWorld* World = Owner->GetWorld();
+
+    if (!SceneProxy)
+    {
+        FScene& Scene = World->GetScene();
+        SceneProxy = Scene.AddPrimitive(this);
+    }
+
+    // Proxy가 이미 살아 있어도 partition에서만 빠진 상태가 있을 수 있다.
+    // render visibility/frustum query는 partition 기반이므로 등록을 idempotent하게 보정한다.
+    World->GetPartition().AddSinglePrimitive(this);
+    World->MarkWorldPrimitivePickingBVHDirty();
 }
 
 void UPrimitiveComponent::DestroyRenderState()
@@ -322,7 +329,6 @@ void UPrimitiveComponent::MarkRenderStateDirty()
     DestroyRenderState();
     CreateRenderState();
 }
-
 
 void UPrimitiveComponent::OnTransformDirty()
 {

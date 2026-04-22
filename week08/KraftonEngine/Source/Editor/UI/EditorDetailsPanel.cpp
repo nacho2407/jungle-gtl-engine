@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorDetailsPanel.h"
+﻿#include "Editor/UI/EditorDetailsPanel.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -414,7 +414,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 		bIsRoot = (SceneComp->GetParent() == nullptr);
 	}
 
-	if (!bIsRoot && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+	if (SelectedComponent->IsA<USceneComponent>() && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
@@ -446,7 +446,17 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 		}
 	}
 
-	if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
+	bool bHasMaterialProp = false;
+	for (const FPropertyDescriptor& Prop : Props)
+	{
+		if (IsMaterialProp(Prop.Name, Prop.Type))
+		{
+			bHasMaterialProp = true;
+			break;
+		}
+	}
+
+	if (bHasMaterialProp && ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
@@ -680,7 +690,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 	case EPropertyType::MaterialSlot:
 	{
 		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
-		int32          ElemIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
+		const bool bHasElementPrefix = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0);
+		const int32 ElemIdx = bHasElementPrefix ? atoi(&Prop.Name[8]) : -1;
 
 		FString SlotName = "None";
 		if (ElemIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComponent>())
@@ -690,13 +701,22 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 				SlotName = SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
 		}
 
-		// 좌측: Element 인덱스 + 슬롯 이름
+		const bool bIsArrayElementSlot = (ElemIdx != -1);
+
+		// 좌측: Element 인덱스 + 슬롯 이름, 또는 단일 Material 라벨
 		ImGui::BeginGroup();
-		ImGui::Text("Element %d", ElemIdx);
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-		ImGui::TextUnformatted(SlotName.c_str());
-		ImGui::PopStyleColor();
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+		if (bIsArrayElementSlot)
+		{
+			ImGui::Text("Element %d", ElemIdx);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::TextUnformatted(SlotName.c_str());
+			ImGui::PopStyleColor();
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+		}
+		else
+		{
+			ImGui::TextUnformatted(Prop.Name.c_str());
+		}
 		ImGui::EndGroup();
 
 		ImGui::SameLine(120);
@@ -706,7 +726,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 		ImGui::SetNextItemWidth(-1);
 
 		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
-		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
+		FString ComboId = bIsArrayElementSlot ? "##Mat" : "##SingleMaterial";
+		if (ImGui::BeginCombo(ComboId.c_str(), Preview.c_str()))
 		{
 			FMaterialManager::Get().ScanMaterialAssets();
 

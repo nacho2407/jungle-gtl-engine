@@ -327,10 +327,7 @@ void FSpatialPartition::InsertActor(AActor* Actor)
 	{
 		if (!ShouldTrackInScenePartition(Prim)) continue;
 
-		if (!Octree->Insert(Prim))
-		{
-			InsertPrimitive(Prim);
-		}
+		AddSinglePrimitive(Prim);
 	}
 }
 
@@ -437,6 +434,37 @@ void FSpatialPartition::InsertPrimitive(UPrimitiveComponent* Primitive)
 	{
 		OverflowPrimitives.push_back(Primitive);
 		Primitive->SetOctreeLocation(nullptr, true);
+	}
+}
+
+void FSpatialPartition::AddSinglePrimitive(UPrimitiveComponent* Primitive)
+{
+	if (!Primitive)
+	{
+		return;
+	}
+
+	// CreateRenderState can run before actor-level insertion, and render-state
+	// recreation removes then re-adds this primitive. Start from a clean location
+	// so the partition never keeps duplicate entries for the same component.
+	RemoveSinglePrimitive(Primitive);
+
+	if (!ShouldTrackInScenePartition(Primitive))
+	{
+		return;
+	}
+
+	const FBoundingBox Bounds = Primitive->GetWorldBoundingBox();
+	EnsureRootContains(Bounds);
+
+	if (!Octree)
+	{
+		return;
+	}
+
+	if (!Octree->Insert(Primitive))
+	{
+		InsertPrimitive(Primitive);
 	}
 }
 

@@ -21,6 +21,6 @@ private:
     UDecalComponent* DecalComponent;
     UBillboardComponent* BillboardComponent = nullptr;
 
-    const FString DefaultDecalMaterialPath = FPaths::EditorRelativePath("Icons/Materials/PawnIcon.json");
+    const FString DefaultDecalMaterialPath = FPaths::AssetRelativePath("Content/Materials/DefaultDecal.json");
     const FString DecalIconPath = FPaths::EditorRelativePath("Icons/Materials/DecalIcon.json");
 };
