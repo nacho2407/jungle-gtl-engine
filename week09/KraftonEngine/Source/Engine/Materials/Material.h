@@ -75,6 +75,9 @@ public:
 	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const override;
 	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const override;
 	bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const override;
+	UTexture2D* GetDiffuseTexture() const;
+	UTexture2D* GetNormalTexture() const;
+	UTexture2D* GetSpecularTexture() const;
 
 	FShader* GetShader() const { return Template ? Template->GetShader() : nullptr; }
 	ERenderPass GetRenderPass() const { return RenderPass; }

@@ -19,23 +19,28 @@ PS_Input_UV VS(uint vertexID : SV_VertexID)
 float4 PS(PS_Input_UV input) : SV_TARGET
 {
     const int2 coord = int2(input.position.xy);
-    const int offset = max((int)OutlineThickness, 1);
+    const int radius = min(max((int)(OutlineThickness + 0.5f), 1), 6);
 
     const uint center = StencilTex.Load(int3(coord, 0)).g;
-    const uint up = StencilTex.Load(int3(coord + int2(0, -offset), 0)).g;
-    const uint down = StencilTex.Load(int3(coord + int2(0, offset), 0)).g;
-    const uint left = StencilTex.Load(int3(coord + int2(-offset, 0), 0)).g;
-    const uint right = StencilTex.Load(int3(coord + int2(offset, 0), 0)).g;
-    const uint upLeft = StencilTex.Load(int3(coord + int2(-offset, -offset), 0)).g;
-    const uint upRight = StencilTex.Load(int3(coord + int2(offset, -offset), 0)).g;
-    const uint downLeft = StencilTex.Load(int3(coord + int2(-offset, offset), 0)).g;
-    const uint downRight = StencilTex.Load(int3(coord + int2(offset, offset), 0)).g;
 
     // Draw the outline on background pixels adjacent to selected geometry.
     if (center != 0)
         discard;
 
-    const uint neighborMask = up | down | left | right | upLeft | upRight | downLeft | downRight;
+    uint neighborMask = 0;
+    [loop]
+    for (int y = -radius; y <= radius; ++y)
+    {
+        [loop]
+        for (int x = -radius; x <= radius; ++x)
+        {
+            if (x == 0 && y == 0)
+                continue;
+
+            neighborMask |= StencilTex.Load(int3(coord + int2(x, y), 0)).g;
+        }
+    }
+
     if (neighborMask == 0)
         discard;
 

@@ -30,6 +30,7 @@ void FDrawSubmitStateCache::Reset()
     LightCB = nullptr;
     DiffuseSRV = nullptr;
     NormalSRV = nullptr;
+    SpecularSRV = nullptr;
     LocalLightSRV = nullptr;
 
     RTV = nullptr;
@@ -42,6 +43,7 @@ void FDrawSubmitStateCache::Cleanup(ID3D11DeviceContext* Ctx)
     Ctx->PSSetShaderResources(0, ARRAY_SIZE(NullSRVs), NullSRVs);
     DiffuseSRV = nullptr;
     NormalSRV = nullptr;
+    SpecularSRV = nullptr;
 
     ID3D11ShaderResourceView* NullLocalLightSRV = nullptr;
     Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullLocalLightSRV);
@@ -296,17 +298,19 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         }
     }
     else if (!bUsesPreBoundLightingInputs &&
-             (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV || Cmd.NormalSRV != Cache.NormalSRV))
+             (bForce || Cmd.DiffuseSRV != Cache.DiffuseSRV || Cmd.NormalSRV != Cache.NormalSRV || Cmd.SpecularSRV != Cache.SpecularSRV))
     {
-        ID3D11ShaderResourceView* SRVs[2] = { Cmd.DiffuseSRV, Cmd.NormalSRV };
-        Ctx->PSSetShaderResources(0, 2, SRVs);
+        ID3D11ShaderResourceView* SRVs[3] = { Cmd.DiffuseSRV, Cmd.NormalSRV, Cmd.SpecularSRV };
+        Ctx->PSSetShaderResources(0, 3, SRVs);
         Cache.DiffuseSRV = Cmd.DiffuseSRV;
         Cache.NormalSRV = Cmd.NormalSRV;
+        Cache.SpecularSRV = Cmd.SpecularSRV;
     }
     else if (bUsesPreBoundLightingInputs)
     {
         Cache.DiffuseSRV = Cmd.DiffuseSRV;
         Cache.NormalSRV = Cmd.NormalSRV;
+        Cache.SpecularSRV = Cmd.SpecularSRV;
     }
 
     Cache.bForceAll = false;

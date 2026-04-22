@@ -8,6 +8,8 @@ Texture2D g_txColor : register(t0);
 Texture2D g_NormalMap : register(t1);
 #endif
 
+Texture2D g_SpecularMap : register(t2);
+
 float3 ResolveBaseDrawNormal(FBaseDrawVSOutput Input)
 {
     float3 N = normalize(Input.worldNormal);
@@ -49,7 +51,8 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.texcoord = Input.texcoord;
 
     // Gouraud Shading용 정점 라이팅 계산을 위해 월드 포지션 계산
-    float3 WorldPos = mul(Input.position, Model).xyz;
+    // float4(pos, 1.0f)로 w=1을 명시해야 Model 행렬의 이동 성분이 적용됨 (안 그럴 시 w=0 되며 날아감)
+    float3 WorldPos = mul(float4(Input.position, 1.0f), Model).xyz;
     float3 GouraudLighting = ComputeGouraudLightingColor(VSNormal, WorldPos);
     Output.gouraud = float4(GouraudLighting, 1.0f);
 
@@ -87,6 +90,10 @@ FBaseDrawOutput3 PS_BaseDraw_BlinnPhong(FBaseDrawVSOutput Input)
     // SpecularStrength를 0.3으로 낮춰서 하이라이트가 하얗게 타버리는 현상을 방지
     float Shininess = MaterialParam.x > 0.0f ? MaterialParam.x : 32.0f;
     float SpecularStrength = MaterialParam.y > 0.0f ? MaterialParam.y : 0.3f;
+    if (StaticMeshHasSpecularTexture())
+    {
+        SpecularStrength *= g_SpecularMap.Sample(LinearWrapSampler, Input.texcoord).r;
+    }
     Output.Surface2 = EncodeMaterialParam(float4(Shininess, SpecularStrength, 0.0f, 1.0f));
     return Output;
 }

@@ -475,11 +475,11 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
         if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
-            ImGui::Checkbox("Scene BVH", &Opts.ShowFlags.bSceneBVH);
-            ImGui::Checkbox("Scene Octree", &Opts.ShowFlags.bSceneOctree);
-            ImGui::Checkbox("World Bound", &Opts.ShowFlags.bWorldBound);
+            ImGui::Checkbox("Scene BVH (Green)", &Opts.ShowFlags.bSceneBVH);
+            ImGui::Checkbox("Scene Octree (Cyan)", &Opts.ShowFlags.bSceneOctree);
+            ImGui::Checkbox("World Bound (Magenta)", &Opts.ShowFlags.bWorldBound);
             ImGui::Checkbox("LightHitMap", &Opts.ShowFlags.bLightHitMap);
+
         }
 
         if (ImGui::CollapsingHeader("Post-Processing Show Flags", ImGuiTreeNodeFlags_DefaultOpen))

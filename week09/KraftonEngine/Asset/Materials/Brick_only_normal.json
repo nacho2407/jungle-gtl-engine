@@ -1,0 +1,16 @@
+{
+  "PathFileName": "Asset/Materials/Brick.json",
+  "ShaderPath": "Shaders/Materials/StaticMeshShader.hlsl",
+  "RenderPass": "Opaque",
+  "BlendState": "Opaque",
+  "DepthStencilState": "Default",
+  "RasterizerState": "SolidBackCull",
+  "Parameters": {
+    "SectionColor": [1.0, 1.0, 1.0, 1.0],
+    "SpecularPower": 32.0,
+    "SpecularStrength": 1.0
+  },
+  "Textures": {
+    "NormalTexture": "Asset/Texture/brick_nor-512.png"
+  }
+}

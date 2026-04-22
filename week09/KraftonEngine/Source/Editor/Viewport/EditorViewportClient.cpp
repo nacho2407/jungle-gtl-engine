@@ -386,6 +386,14 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
  */
 void FEditorViewportClient::HandleDragStart(const FRay &Ray)
 {
+    if (UWorld* World = GetWorld())
+    {
+        if (World->GetWorldType() == EWorldType::PIE)
+        {
+            return;
+        }
+    }
+
     FScopeCycleCounter PickCounter; // 시간측정용 카운터 시작
 
     FHitResult HitResult{};

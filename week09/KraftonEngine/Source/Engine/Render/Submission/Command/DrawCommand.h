@@ -45,6 +45,7 @@ struct FDrawCommand
     FConstantBuffer*          LightCB        = nullptr; // b4: Global Lights Constant Buffer
     ID3D11ShaderResourceView* DiffuseSRV     = nullptr; // t0: Base / Diffuse 텍스처
     ID3D11ShaderResourceView* NormalSRV      = nullptr; // t1: Normal map 텍스처
+    ID3D11ShaderResourceView* SpecularSRV    = nullptr; // t2: Specular map 텍스처
     ID3D11ShaderResourceView* LocalLightSRV  = nullptr; // t6: LocalLights StructuredBuffer
 
     // ===== Sort =====

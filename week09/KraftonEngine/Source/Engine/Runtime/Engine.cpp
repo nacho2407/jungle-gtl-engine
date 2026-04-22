@@ -19,19 +19,19 @@ UEngine* GEngine = nullptr;
 
 namespace
 {
-    ELevelTick ToLevelTickType(EWorldType WorldType)
+ELevelTick ToLevelTickType(EWorldType WorldType)
+{
+    switch (WorldType)
     {
-        switch (WorldType)
-        {
-        case EWorldType::Editor:
-            return ELevelTick::LEVELTICK_ViewportsOnly;
-        case EWorldType::PIE:
-        case EWorldType::Game:
-            return ELevelTick::LEVELTICK_All;
-        default:
-            return ELevelTick::LEVELTICK_TimeOnly;
-        }
+    case EWorldType::Editor:
+        return ELevelTick::LEVELTICK_ViewportsOnly;
+    case EWorldType::PIE:
+    case EWorldType::Game:
+        return ELevelTick::LEVELTICK_All;
+    default:
+        return ELevelTick::LEVELTICK_TimeOnly;
     }
+}
 } // namespace
 
 void UEngine::Init(FWindowsWindow* InWindow)
@@ -84,13 +84,13 @@ void UEngine::Render(float DeltaTime)
 
     RenderTargets.Reset();
 
-    UWorld*           World  = GetWorld();
+    UWorld* World = GetWorld();
     UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
-    FScene*           Scene  = nullptr;
+    FScene* Scene = nullptr;
     if (Camera)
     {
         FShowFlags ShowFlags;
-        EViewMode  ViewMode = EViewMode::Lit_Phong;
+        EViewMode ViewMode = EViewMode::Lit_Phong;
 
         SceneView.SetCameraInfo(Camera);
         SceneView.SetRenderSettings(ViewMode, ShowFlags);
@@ -102,10 +102,10 @@ void UEngine::Render(float DeltaTime)
         Renderer.BeginCollect(SceneView, Scene->GetPrimitiveProxyCount());
 
         FRenderCollectContext CollectContext = {};
-        CollectContext.SceneView             = &SceneView;
-        CollectContext.Scene                 = Scene;
-        CollectContext.ViewModePassRegistry  = Renderer.GetViewModePassRegistry();
-        CollectContext.ActiveViewMode        = SceneView.ViewMode;
+        CollectContext.SceneView = &SceneView;
+        CollectContext.Scene = Scene;
+        CollectContext.ViewModePassRegistry = Renderer.GetViewModePassRegistry();
+        CollectContext.ActiveViewMode = SceneView.ViewMode;
 
         Renderer.CollectWorld(World, CollectContext);
         Renderer.CollectDebugDraw(SceneView, *Scene);
@@ -117,9 +117,9 @@ void UEngine::Render(float DeltaTime)
     }
 
     {
-        FRenderPipelineContext PassContext = Renderer.CreatePassContext(SceneView, &RenderTargets, Scene, Scene ? &Renderer.GetLastVisiblePrimitiveProxies() : nullptr);
-        Renderer.BuildDrawCommands(PassContext);
-        Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PassContext);
+        FRenderPipelineContext PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, Scene, Scene ? &Renderer.GetLastVisiblePrimitiveProxies() : nullptr);
+        Renderer.BuildDrawCommands(PipelineContext);
+        Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PipelineContext);
     }
 }
 
@@ -181,10 +181,14 @@ UWorld* UEngine::GetWorld() const
 FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name)
 {
     FWorldContext Context;
-    Context.WorldType     = Type;
+    Context.WorldType = Type;
     Context.ContextHandle = Handle;
-    Context.ContextName   = Name.empty() ? Handle.ToString() : Name;
-    Context.World         = UObjectManager::Get().CreateObject<UWorld>();
+    Context.ContextName = Name.empty() ? Handle.ToString() : Name;
+    Context.World = UObjectManager::Get().CreateObject<UWorld>();
+    if (Context.World)
+    {
+        Context.World->SetWorldType(Type);
+    }
     WorldList.push_back(Context);
     return WorldList.back();
 }

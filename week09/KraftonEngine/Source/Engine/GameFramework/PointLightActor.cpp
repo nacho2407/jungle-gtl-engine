@@ -19,6 +19,9 @@ void APointLightActor::InitDefaultComponents()
 	
 	BillboardComponent = AddComponent<UBillboardComponent>();
 	auto PointLightIcon = FMaterialManager::Get().GetOrCreateMaterial(PointLightIconPath);
+	BillboardComponent->SetVisibleInEditor(true);
+	BillboardComponent->SetVisibleInGame(false);
+	BillboardComponent->SetEditorHelper(true);
 	BillboardComponent->SetMaterial(PointLightIcon);
 	BillboardComponent->AttachToComponent(PointLightComponent);
 }

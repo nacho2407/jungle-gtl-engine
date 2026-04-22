@@ -21,6 +21,8 @@ enum class ERenderPass : uint32
     FXAA,
     GizmoOuter,
     GizmoInner,
+    OverlayBillboard,
+    OverlayTextWorld,
     OverlayFont,
     MAX
 };
@@ -41,6 +43,8 @@ inline const char* GetRenderPassName(ERenderPass Pass)
         "RenderPass::FXAA",
         "RenderPass::GizmoOuter",
         "RenderPass::GizmoInner",
+        "RenderPass::OverlayBillboard",
+        "RenderPass::OverlayTextWorld",
         "RenderPass::OverlayFont",
     };
     static_assert(ARRAY_SIZE(Names) == (uint32)ERenderPass::MAX, "Names must match ERenderPass entries");
