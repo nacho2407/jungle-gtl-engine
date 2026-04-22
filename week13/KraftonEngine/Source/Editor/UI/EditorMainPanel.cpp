@@ -12,6 +12,7 @@
 #include "Engine/Input/InputSystem.h"
 
 #include "Editor/UI/ImGuiSetting.h"
+#include "Editor/UI/NotificationToast.h"
 
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
@@ -21,6 +22,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ImGuiSetting::LoadSetting();
 
 	ImGuiIO& IO = ImGui::GetIO();
+	IO.IniFilename = "Settings/imgui.ini";
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	Window = InWindow;
@@ -144,6 +146,9 @@ void FEditorMainPanel::Render(float DeltaTime)
 		SCOPE_STAT_CAT("ContentBrowserWidget.Render", "5_UI");
 		ContentBrowserWidget.Render(DeltaTime);
 	}
+
+	// 토스트 알림 (항상 최상위에 표시)
+	FNotificationToast::Render();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

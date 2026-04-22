@@ -2,6 +2,8 @@
 #include "ShaderInclude.h"
 #include "Profiling/MemoryStats.h"
 #include "Materials/Material.h"
+#include "Core/Log.h"
+#include "Core/Notification.h"
 #include <iostream>
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -58,7 +60,9 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	{
 		if (errorBlob)
 		{
-			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Vertex Shader Compile Error", MB_OK | MB_ICONERROR);
+			const char* Msg = (const char*)errorBlob->GetBufferPointer();
+			UE_LOG("[Shader] VS Compile Error: %s", Msg);
+			FNotificationManager::Get().AddNotification("VS Compile Error (see log)", ENotificationType::Error, 5.0f);
 			errorBlob->Release();
 		}
 		return;
@@ -70,7 +74,9 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	{
 		if (errorBlob)
 		{
-			MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Pixel Shader Compile Error", MB_OK | MB_ICONERROR);
+			const char* Msg = (const char*)errorBlob->GetBufferPointer();
+			UE_LOG("[Shader] PS Compile Error: %s", Msg);
+			FNotificationManager::Get().AddNotification("PS Compile Error (see log)", ENotificationType::Error, 5.0f);
 			errorBlob->Release();
 		}
 		vertexShaderCSO->Release();

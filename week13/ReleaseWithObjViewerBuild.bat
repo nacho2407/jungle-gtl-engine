@@ -49,8 +49,6 @@ echo [4/4] Copying files...
 copy "%BUILD_OUTPUT%\KraftonEngine.exe" "%RELEASE_DIR%\" >nul
 copy "%BUILD_OUTPUT_OBJVIEW%\KraftonEngine.exe" "%RELEASE_DIR%\ObjViewer.exe" >nul
 
-if exist "%PROJECT_DIR%\imgui.ini" copy "%PROJECT_DIR%\imgui.ini" "%RELEASE_DIR%\" >nul
-
 xcopy "%PROJECT_DIR%\Shaders" "%RELEASE_DIR%\Shaders\" /e /i /q >nul
 
 xcopy "%PROJECT_DIR%\Asset" "%RELEASE_DIR%\Asset\" /e /i /q >nul
@@ -61,10 +59,6 @@ if exist "%PROJECT_DIR%\Data" (
 
 xcopy "%PROJECT_DIR%\Settings" "%RELEASE_DIR%\Settings\" /e /i /q >nul
 
-if exist "%PROJECT_DIR%\Saves" (
-    xcopy "%PROJECT_DIR%\Saves" "%RELEASE_DIR%\Saves\" /e /i /q >nul
-)
-
 echo.
 echo ============================================
 echo  Build complete: %RELEASE_DIR%
@@ -73,11 +67,9 @@ echo.
 echo  ReleaseBuild/
 echo    KraftonEngine.exe  (Editor)
 echo    ObjViewer.exe      (OBJ Viewer)
-echo    imgui.ini
 echo    Shaders/
 echo    Asset/
 echo    Data/
 echo    Settings/
-echo    Saves/
 echo.
 pause
