@@ -27,15 +27,10 @@ void ImGuiSetting::ShowSetting()
 	ImGuiStyle& Style = ImGui::GetStyle();
 	ImVec4* colors = Style.Colors;
 
-	for (int i = 0; i < ImGuiCol_COUNT; i++)
-	{
-		ImVec4 prevColor = colors[i];
+	if (ImGui::Button("Save Setting"))
+		SaveSetting();
 
-		ImGui::ColorPicker4(ImGui::GetStyleColorName(i), (float*)&colors[i],
-			ImGuiColorEditFlags_DisplayRGB,
-			(float*)&prevColor
-		);
-	}
+	ImGui::Separator();
 
 	ImGui::DragFloat("WindowRounding", &Style.WindowRounding, 1.f, 0.f);
 	ImGui::DragFloat("FrameRounding", &Style.FrameRounding, 1.f, 0.f);
@@ -44,8 +39,18 @@ void ImGuiSetting::ShowSetting()
 	ImGui::DragFloat("WindowBorderSize", &Style.WindowBorderSize, 1.f, 0.f);
 	ImGui::DragFloat("FrameBorderSize", &Style.FrameBorderSize, 1.f, 0.f);
 
-	if (ImGui::Button("Save Setting"))
-		SaveSetting();
+	ImGui::Separator();
+
+	const float FooterHeight = 0.0f;
+	if (ImGui::BeginChild("##StyleScrollRegion", ImVec2(0, -FooterHeight), false))
+	{
+		for (int i = 0; i < ImGuiCol_COUNT; i++)
+		{
+			ImGui::ColorEdit4(ImGui::GetStyleColorName(i), (float*)&colors[i],
+				ImGuiColorEditFlags_AlphaPreviewHalf);
+		}
+	}
+	ImGui::EndChild();
 
 	ImGui::End();
 }
