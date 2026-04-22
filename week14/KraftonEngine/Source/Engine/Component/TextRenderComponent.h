@@ -97,7 +97,7 @@ public:
 	float GetCharHeight() const { return CharHeight; }
 
 private:
-	FString Text;
+	FString Text = FString("Empty");
 	FName FontName = FName("Default");
 	FFontResource* CachedFont = nullptr;	// ResourceManager 소유, 여기선 참조만
 
