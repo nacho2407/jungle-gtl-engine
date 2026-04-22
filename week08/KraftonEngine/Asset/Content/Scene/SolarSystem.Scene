@@ -1,7 +1,15 @@
 {
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.000000, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "12",
       "RootComponent" : {
         "Children" : [{
@@ -41,7 +49,23 @@
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 12.455951, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.680023, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "19",
       "RootComponent" : {
         "Children" : [{
@@ -83,9 +107,27 @@
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [190.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.029999, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 30.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 5.200000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 8.000000,
+              "Location" : [182.199997, 0.000000, 0.000000],
+              "OuterConeAngle" : 44.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -98,16 +140,32 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 4.876502, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, -0.164115, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "22",
       "RootComponent" : {
         "Children" : [{
@@ -149,9 +207,27 @@
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [220.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [177.399994, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 70.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 2.700000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 8.000000,
+              "Location" : [199.100006, 0.000000, 0.000000],
+              "OuterConeAngle" : 44.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -164,9 +240,9 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
@@ -186,14 +262,6 @@
           "Properties" : {
             "Auto Register Updated" : true,
             "Rotation Rate" : [0.000000, 40.000000, 0.000000],
-            "Updated Component" : "1",
-            "bTickEnable" : true
-          }
-        }, {
-          "ClassName" : "URotatingMovementComponent",
-          "Properties" : {
-            "Auto Register Updated" : true,
-            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
             "Updated Component" : "1/0",
             "bTickEnable" : true
           }
@@ -201,7 +269,15 @@
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "Rotation Rate" : [0.000000, 40.107979, 0.000000],
+            "Updated Component" : "1/1",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 1.459814, 0.000000],
             "Updated Component" : "1/1/0",
             "bTickEnable" : true
           }
@@ -254,7 +330,7 @@
                       "Is Editor Helper" : false,
                       "Location" : [0.000000, 0.000000, 0.000000],
                       "Rotation" : [0.000000, 0.000000, 0.000000],
-                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Scale" : [0.710000, 0.710000, 0.710000],
                       "Static Mesh" : "Asset/Content/Models/SolarSystem/source/moon.obj",
                       "Visible" : true,
                       "Visible In Editor" : true,
@@ -264,8 +340,8 @@
                   }],
                 "ClassName" : "USceneComponent",
                 "Properties" : {
-                  "Location" : [1.000000, 10.000000, 0.000000],
-                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Location" : [5.000000, 0.000000, 0.000000],
+                  "Rotation" : [6.679993, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "bTickEnable" : true
                 }
@@ -276,6 +352,24 @@
               "Rotation" : [23.500000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 50.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 6.900000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 0.000000,
+              "Location" : [234.399994, 0.000000, 0.000000],
+              "OuterConeAngle" : 44.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -288,16 +382,32 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 1.595048, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 38.878960, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "28",
       "RootComponent" : {
         "Children" : [{
@@ -339,7 +449,7 @@
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [300.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [25.190002, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
             }
@@ -354,16 +464,32 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.252909, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 96.394760, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "31",
       "RootComponent" : {
         "Children" : [{
@@ -405,9 +531,27 @@
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [350.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [3.130005, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 90.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 5.000000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 7.200000,
+              "Location" : [300.700012, 0.000000, 0.000000],
+              "OuterConeAngle" : 44.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -420,16 +564,32 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.101843, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 89.793617, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "34",
       "RootComponent" : {
         "Children" : [{
@@ -474,9 +634,27 @@
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [450.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [26.729996, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 80.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 5.400000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 2.400000,
+              "Location" : [395.500000, 0.000000, 0.000000],
+              "OuterConeAngle" : 58.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -489,16 +667,32 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.035706, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, -55.522041, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "37",
       "RootComponent" : {
         "Children" : [{
@@ -540,9 +734,27 @@
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [500.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [97.769989, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 60.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 2.900000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 2.400000,
+              "Location" : [475.799988, 0.000000, 0.000000],
+              "OuterConeAngle" : 60.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -555,16 +767,32 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
         }
       },
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 0.018203, 0.000000],
+            "Updated Component" : "Root",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 59.416512, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "40",
       "RootComponent" : {
         "Children" : [{
@@ -602,13 +830,49 @@
                   "Visible In Game" : true,
                   "bTickEnable" : true
                 }
+              }, {
+                "Children" : [],
+                "ClassName" : "USpotLightComponent",
+                "Properties" : {
+                  "AttenuationRadius" : 10.000000,
+                  "InnerConeAngle" : 0.000000,
+                  "Intensity" : 0.000000,
+                  "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "LightFalloffExponent" : 8.000000,
+                  "Location" : [0.000000, 0.000000, 0.000000],
+                  "OuterConeAngle" : 44.000000,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "UseInverseSquaredFalloff" : true,
+                  "bAffectsWorld" : true,
+                  "bCastShadows" : true,
+                  "bTickEnable" : false
+                }
               }],
             "ClassName" : "USceneComponent",
             "Properties" : {
               "Location" : [550.000000, 0.000000, 0.000000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [28.320007, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 200.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 4.600000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 8.000000,
+              "Location" : [525.000000, 0.000000, 0.000000],
+              "OuterConeAngle" : 44.000000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bCastShadows" : true,
+              "bTickEnable" : false
             }
           }],
         "ClassName" : "UStaticMeshComponent",
@@ -621,10 +885,66 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
+          "Visible" : false,
           "Visible In Editor" : true,
-          "Visible In Game" : true,
+          "Visible In Game" : false,
           "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 129",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 10.000000,
+          "Intensity" : 2.500000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "LightFalloffExponent" : 8.000000,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
         }
       },
       "bVisible" : true
@@ -636,9 +956,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [207.586487, 80.569389, 13.866868],
+    "Location" : [313.090515, -173.020157, 83.716187],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 6.321136, -99.818260]
+    "Rotation" : [-0.000000, 15.141098, 146.534225]
   },
   "Primitives" : {
     "12" : {
