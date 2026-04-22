@@ -1,0 +1,15 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "Parameters" : {
+    "DecalColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "DecalWorldToLocal" : [0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Asset/Materials/PawnIcon.json",
+  "RasterizerState" : "",
+  "RenderPass" : "Decal",
+  "ShaderPath" : "Shaders/Materials/DecalShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Editor/Icons/Pawn_64x.png"
+  }
+}
