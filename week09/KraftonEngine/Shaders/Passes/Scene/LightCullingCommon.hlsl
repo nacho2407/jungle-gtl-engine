@@ -185,7 +185,7 @@ float4 HeatColor(float t)
     color = lerp(color, float3(0.0, 1.0, 0.0), saturate(t * 4.0 - 2.0)); // 시안 → 연두
     color = lerp(color, float3(1.0, 0.0, 0.0), saturate(t * 4.0 - 3.0)); // 연두 → 빨강
     
-    float alpha = saturate(t * 2.0); // 빛 없으면 alpha=0 → scene color 그대로
+    float alpha = saturate(t * 4.0); // 빛 없으면 alpha=0 → scene color 그대로
     return float4(color, alpha);
 }
 

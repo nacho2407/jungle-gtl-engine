@@ -280,6 +280,9 @@ void DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPip
         case EViewModePostProcessVariant::WorldNormal:
             Shader = FShaderManager::Get().GetShader(EShaderType::NormalView);
             break;
+        case EViewModePostProcessVariant::LightHitMap:
+            Shader = FShaderManager::Get().GetShader(EShaderType::LightHitMap);
+            break;
         default:
             Shader = FShaderManager::Get().GetShader(EShaderType::HeightFog);
             break;

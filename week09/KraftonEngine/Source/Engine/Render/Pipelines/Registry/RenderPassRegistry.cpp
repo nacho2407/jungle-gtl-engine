@@ -6,6 +6,7 @@
 #include "Render/Passes/Editor/OutlinePass.h"
 #include "Render/Passes/Editor/OverlayTextPass.h"
 #include "Render/Passes/Editor/SelectionMaskPass.h"
+#include "Render/Passes/Editor/LightHitMapPass.h"
 #include "Render/Passes/Scene/AdditiveDecalPass.h"
 #include "Render/Passes/Scene/AlphaBlendPass.h"
 #include "Render/Passes/Scene/BaseDrawPass.h"
@@ -46,6 +47,7 @@ void FRenderPassRegistry::Initialize()
     Passes.emplace((int32)ERenderPassNodeType::OverlayBillboardPass, new FOverlayBillboardPass());
     Passes.emplace((int32)ERenderPassNodeType::GizmoPass, new FGizmoPass());
     Passes.emplace((int32)ERenderPassNodeType::OverlayTextPass, new FOverlayTextPass());
+    Passes.emplace((int32)ERenderPassNodeType::LightHitMapPass, new FLightHitMapPass());
 }
 
 void FRenderPassRegistry::Release()

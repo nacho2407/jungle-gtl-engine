@@ -46,6 +46,7 @@ enum class ERenderPassNodeType
     OverlayBillboardPass,
     GizmoPass,
     OverlayTextPass,
+	LightHitMapPass,
 };
 
 /*

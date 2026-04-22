@@ -47,15 +47,18 @@ void FRenderPipelineRegistry::Initialize()
         PassNode(ERenderPassNodeType::ViewModeResolvePass),
         PassNode(ERenderPassNodeType::HeightFogPass),
         PassNode(ERenderPassNodeType::FXAAPass)
+
     } };
     Pipelines.emplace((int32)ScenePostProcess.Type, ScenePostProcess);
 
     FRenderPipelineDesc EditorOverlay = { ERenderPipelineType::EditorOverlay, {
+        PassNode(ERenderPassNodeType::LightHitMapPass),
         PassNode(ERenderPassNodeType::DebugLinePass),
         PipelineNode(ERenderPipelineType::Outline),
         PassNode(ERenderPassNodeType::OverlayBillboardPass),
         PassNode(ERenderPassNodeType::GizmoPass),
-        PassNode(ERenderPassNodeType::OverlayTextPass)
+        PassNode(ERenderPassNodeType::OverlayTextPass),
+		PipelineNode(ERenderPipelineType::Outline),
     } };
     Pipelines.emplace((int32)EditorOverlay.Type, EditorOverlay);
 

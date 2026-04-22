@@ -1,4 +1,4 @@
-#include "Render/Resources/Shaders/ShaderManager.h"
+﻿#include "Render/Resources/Shaders/ShaderManager.h"
 
 #include "Platform/Paths.h"
 
@@ -221,6 +221,8 @@ FString FShaderManager::GetBuiltInShaderPath(EShaderType InType) const
         return "Shaders/Passes/Scene/HeightFog.hlsl";
     case EShaderType::DepthOnly:
         return "Shaders/Passes/Scene/DepthOnly.hlsl";
+    case EShaderType::LightHitMap:
+        return "Shaders/Passes/PostProcess/LightHitMap.hlsl";
     default:
         return "";
     }

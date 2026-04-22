@@ -91,6 +91,10 @@ void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
         ID3D11ShaderResourceView* TileMaskSRV = Context.LightCulling->GetPerTileMaskSRV();
         Context.Context->PSSetShaderResources(7, 1, &TileMaskSRV);
 
+		// 디버그 용 히트맵 SRV 추가
+		ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
+        Context.Context->PSSetShaderResources(8, 1, &HipMapSRV);
+
 		//b2 LightCullingParams
 		ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
         Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &LightCullingParamsCB);
@@ -170,4 +174,9 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
         BindViewportTarget(Context);
     }
+
+	ID3D11ShaderResourceView* nullSRV = {};
+    Context.Context->PSSetShaderResources(7, 1, &nullSRV);
+
+    Context.Context->PSSetShaderResources(8, 1, &nullSRV);
 }
