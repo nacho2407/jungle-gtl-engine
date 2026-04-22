@@ -5,7 +5,6 @@
 #include "Core/CoreTypes.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include <memory>
-#include <functional>
 #include <string_view>
 
 struct FShaderKey
@@ -102,6 +101,38 @@ struct FShaderCacheEntry
 	TArray<FString> Includes;                // include 의존성 (Shaders/ 기준 상대 경로)
 };
 
+// CS 캐시 키: Path + EntryPoint
+struct FCSKey
+{
+	FString Path;
+	FString EntryPoint;
+
+	bool operator==(const FCSKey& Other) const
+	{
+		return Path == Other.Path && EntryPoint == Other.EntryPoint;
+	}
+};
+
+namespace std
+{
+	template<> struct hash<FCSKey>
+	{
+		size_t operator()(const FCSKey& K) const
+		{
+			size_t H1 = std::hash<FString>{}(K.Path);
+			size_t H2 = std::hash<FString>{}(K.EntryPoint);
+			return H1 ^ (H2 * 0x9e3779b97f4a7c15ULL);
+		}
+	};
+}
+
+// CS 캐시 엔트리
+struct FCSCacheEntry
+{
+	std::unique_ptr<FComputeShader> Shader;
+	TArray<FString> Includes;
+};
+
 class FShaderManager : public TSingleton<FShaderManager>
 {
 	friend class TSingleton<FShaderManager>;
@@ -115,6 +146,9 @@ public:
 	FShader* GetOrCreate(const FString& Path) { return GetOrCreate(FShaderKey(Path)); }
 	FShader* FindOrCreate(const FString& Path);
 
+	// Compute Shader — 캐시 기반. 호출자는 포인터만 보관, FShaderManager가 소유 + 핫 리로드.
+	FComputeShader* GetOrCreateCS(const FString& Path, const FString& EntryPoint);
+
 private:
 	FShaderManager() = default;
 
@@ -125,11 +159,13 @@ private:
 
 	ID3D11Device* CachedDevice = nullptr;
 	TMap<FShaderKey, FShaderCacheEntry> ShaderCache;
+	TMap<FCSKey, FCSCacheEntry> CSCache;
 	bool bIsInitialized = false;
 
 	// include 파일 → 이를 사용하는 셰이더 키 역매핑
-	// key: "Common/ConstantBuffers.hlsl", value: [FShaderKey...]
 	TMap<FString, TArray<FShaderKey>> IncludeDependents;
+	// include 파일 → CS 캐시 키 역매핑
+	TMap<FString, TArray<FCSKey>> CSIncludeDependents;
 
 	FSubscriptionID WatchSub = 0;
 };

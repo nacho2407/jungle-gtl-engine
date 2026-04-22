@@ -4,6 +4,8 @@
 #include "Engine/Render/Pipeline/ForwardLightData.h"
 #include <cstring>
 
+class FComputeShader;
+
 struct FAABB
 {
 	FVector4 Min;
@@ -15,6 +17,7 @@ class FClusteredLightCuller
 {
 public:
 	void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
+	void Release();
 	void DispatchViewSpaceAABB();
 	void DispatchLightCullingCS(ID3D11ShaderResourceView* LightInfos);
 	bool IsInitialized() const { return bIsInitialized; }
@@ -62,13 +65,11 @@ public:
 	ID3D11ShaderResourceView* GetLightGridSRV() const { return gLightGridSRV; }
 
 private:
-	void CompileComputeShader(const wchar_t* Path, const char* Entry, ID3D11ComputeShader*& CS);
-
 private:
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* Context = nullptr;
-	ID3D11ComputeShader* ViewSpaceAABBCS = nullptr; //RWStructuredBuffer 하나 필요 gClusterAABBs
-	ID3D11ComputeShader* LightCullingCS = nullptr; //StructuredBuffer 두개 gClusterAABBs gLightInfo, RWStructedBuffer gLightIndexList, gLightGrid, gGlobalCounter 총 3개 필요
+	FComputeShader* ViewSpaceAABBCS = nullptr;  // FShaderManager 소유
+	FComputeShader* LightCullingCS = nullptr;   // FShaderManager 소유
 
 	ID3D11Buffer* gClusterAABBs = nullptr; //Input, Output
 	ID3D11Buffer* gLightIndexList = nullptr; //Input, Output
