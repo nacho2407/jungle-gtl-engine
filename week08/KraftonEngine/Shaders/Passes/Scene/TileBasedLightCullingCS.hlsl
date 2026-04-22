@@ -20,8 +20,8 @@ void CS_LightCulling(
     if (groupIndex == 0)
     {
         tileDepthMask = 0;
-        groupMinZ     = 0x00000000; // float 0
-        groupMaxZ     = 0x7f7fffff; // float max
+        groupMinZ = 0x7f7fffff; // float 0
+        groupMaxZ     = 0x00000000; // float max
         hitCount      = 0;
     }
     GroupMemoryBarrierWithGroupSync();
