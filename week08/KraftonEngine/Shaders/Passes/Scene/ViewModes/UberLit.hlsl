@@ -10,6 +10,8 @@ Texture2D g_ModifiedBaseColorTex : register(t3);
 Texture2D g_ModifiedSurface1Tex : register(t4);
 Texture2D g_ModifiedSurface2Tex : register(t5);
 
+RWBuffer<uint> GlobalLightEvalCounter : register(u1);
+
 float4 ResolveBaseColor(float2 UV)
 {
     float4 BaseColor = g_BaseColorTex.Sample(LinearClampSampler, UV);
@@ -75,6 +77,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                 {
                     float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
                     FinalColor.rgb += BaseColor.rgb * LocalTerm;
+                    InterlockedAdd(GlobalLightEvalCounter[0], 1);
                 }
 
             }
@@ -121,6 +124,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                         Shininess,
                         SpecularStrength);
                     FinalColor.rgb += BaseColor.rgb * LocalTerm.Diffuse + LocalTerm.Specular;
+                    InterlockedAdd(GlobalLightEvalCounter[0], 1);
                 }
 
             }

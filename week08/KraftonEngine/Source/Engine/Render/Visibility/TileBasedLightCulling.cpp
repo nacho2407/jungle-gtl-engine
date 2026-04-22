@@ -163,6 +163,10 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     float ClearColor[4] = { 0, 0, 0, 0 };
     Context->ClearUnorderedAccessViewFloat(DebugHitMapUAV, ClearColor);
 
+	// 🎯 [여기 추가!] 타일 마스크 버퍼를 매 프레임 무조건 0으로 비워줍니다!
+    UINT clearMask[4] = { 0, 0, 0, 0 };
+    Context->ClearUnorderedAccessViewUint(PerTilePointLightIndexMaskOutUAV, clearMask);
+
     ID3D11ShaderResourceView* NullSRVs1[1] = { nullptr };
     ID3D11UnorderedAccessView* NullUAVs1[4] = { nullptr, nullptr, nullptr, nullptr };
     Context->CSSetShaderResources(0, 1, NullSRVs1);
