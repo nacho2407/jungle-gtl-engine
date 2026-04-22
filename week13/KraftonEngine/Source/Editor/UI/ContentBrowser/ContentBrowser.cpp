@@ -253,18 +253,39 @@ void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
 void FEditorContentBrowserWidget::DrawContents()
 {
 	int elementCount = static_cast<int>(CachedBrowserElements.size());
-	float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
-	for (int i = 0; i < elementCount; i++)
+	const float contentWidth = ImGui::GetContentRegionAvail().x;
+	const float itemWidth = BrowserContext.ContentSize.x;
+	const float itemHeight = BrowserContext.ContentSize.y;
+
+	int columnCount = static_cast<int>(contentWidth / itemWidth);
+	if (columnCount < 1)
 	{
-		CachedBrowserElements[i]->Render(BrowserContext);
-
-		float last_button_x2 = ImGui::GetItemRectMax().x;
-		float next_button_x2 = last_button_x2 + ImGui::GetStyle().ItemSpacing.x + 32;
-
-		if (i + 1 < BrowserContext.ContentSize.x && next_button_x2 < window_visible_x2)
-			ImGui::SameLine();
+		columnCount = 1;
 	}
+
+	float gapSize = 0.0f;
+	if (columnCount > 1)
+	{
+		gapSize = (contentWidth - itemWidth * columnCount) / (columnCount);
+	}
+
+	ImVec2 startPos = ImGui::GetCursorPos();
+
+	for (int i = 0; i < elementCount; ++i)
+	{
+		int column = i % columnCount;
+		int row = i / columnCount;
+
+		float x = startPos.x + column * (itemWidth + gapSize);
+		float y = startPos.y + row * (itemHeight + gapSize * 2.f);
+
+		ImGui::SetCursorPos(ImVec2(x, y));
+		CachedBrowserElements[i]->Render(BrowserContext);
+	}
+
+	int rowCount = (elementCount + columnCount - 1) / columnCount;
+	ImGui::SetCursorPos(ImVec2(startPos.x, startPos.y + rowCount * itemHeight));
 }
 
 TArray<FContentItem> FEditorContentBrowserWidget::ReadDirectory(std::wstring Path)
