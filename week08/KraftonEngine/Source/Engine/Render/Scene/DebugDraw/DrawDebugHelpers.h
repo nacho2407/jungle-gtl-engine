@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -16,7 +16,8 @@ class FScene; // FScene 전방 선언 추가
 // _DEBUG 빌드에서만 동작, Release/Demo에서는 no-op
 // ============================================================
 
-#if defined(_DEBUG)
+#define _DRAW_DEBUG_ENABLE
+#if defined(_DRAW_DEBUG_ENABLE)
 
 // ------------------------------------------------------------
 // FScene& 오버로딩 버전

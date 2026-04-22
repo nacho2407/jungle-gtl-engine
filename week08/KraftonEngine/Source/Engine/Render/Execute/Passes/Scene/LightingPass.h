@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/FullscreenPassBase.h"
 struct FRenderPipelineContext;
 class FPrimitiveSceneProxy;
@@ -14,4 +14,11 @@ public:
     // Lighting?� fullscreen ?�성 pass?�서 ?�록???�력???�용?��? ?�는??
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) override { (void)Context; (void)Proxy; }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
+
+private:
+    ID3D11Query* DisjointQuery = nullptr;
+    ID3D11Query* TimestampStartQuery = nullptr;
+    ID3D11Query* TimestampEndQuery = nullptr;
+    float LastGPUTimeMs = 0.0f;
+    bool bQueryInitialized = false; // 💡 쿼리가 한 번이라도 생성되었는지 체크하는 플래그
 };
