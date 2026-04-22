@@ -88,7 +88,7 @@ uint32 FDrawCollector::SelectLOD(uint32 CurrentLOD, float DistSq)
 void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectContext)
 {
     CollectScenePrimitives(World, CollectContext);
-    CollectSceneLights(World, CollectContext.Scene);
+    CollectSceneLights(World, CollectContext.Scene, CollectContext.SceneView);
 
     if (World && CollectContext.SceneView)
     {

@@ -5,10 +5,11 @@
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Component/LightComponent.h"
 #include "Render/Scene/Scene.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
 
 // ==================== Public API ====================
 
-void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene)
+void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView)
 {
     ResetCollectedLights(CollectedSceneData.Lights);
 
@@ -63,7 +64,7 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene)
             CollectedSceneData.Lights.LocalLights.push_back(LocalLight);
         }
 
-        if (bIsEditorWorld)
+        if (bIsEditorWorld && SceneView && SceneView->ShowFlags.bLightDebugLines)
         {
             Proxy->VisualizeLightsInEditor(*Scene);
         }
