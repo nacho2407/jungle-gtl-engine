@@ -3,6 +3,7 @@
 #include "Core/Singleton.h"
 #include "Render/Resource/Shader.h"
 #include "Core/CoreTypes.h"
+#include "Engine/Platform/DirectoryWatcher.h"
 #include <memory>
 #include <functional>
 #include <string_view>
@@ -94,6 +95,14 @@ namespace EUberLitDefines
 	inline const D3D_SHADER_MACRO Toon[] = { {"LIGHTING_MODEL_TOON", "1"}, {nullptr, nullptr} };
 }
 
+// 셰이더별 저장된 매크로 정보 (핫 리로드 시 재컴파일에 사용)
+struct FShaderCacheEntry
+{
+	std::unique_ptr<FShader> Shader;
+	TArray<D3D_SHADER_MACRO> StoredDefines;  // 마지막 원소는 {nullptr,nullptr}
+	TArray<FString> Includes;                // include 의존성 (Shaders/ 기준 상대 경로)
+};
+
 class FShaderManager : public TSingleton<FShaderManager>
 {
 	friend class TSingleton<FShaderManager>;
@@ -110,7 +119,18 @@ public:
 private:
 	FShaderManager() = default;
 
+	// 셰이더 핫 리로드
+	void OnShadersChanged(const TSet<FString>& ChangedFiles);
+	void RebuildIncludeDependents();
+	static TArray<D3D_SHADER_MACRO> CopyDefines(const D3D_SHADER_MACRO* Defines);
+
 	ID3D11Device* CachedDevice = nullptr;
-	TMap<FShaderKey, std::unique_ptr<FShader>> ShaderCache;
+	TMap<FShaderKey, FShaderCacheEntry> ShaderCache;
 	bool bIsInitialized = false;
+
+	// include 파일 → 이를 사용하는 셰이더 키 역매핑
+	// key: "Common/ConstantBuffers.hlsl", value: [FShaderKey...]
+	TMap<FString, TArray<FShaderKey>> IncludeDependents;
+
+	FSubscriptionID WatchSub = 0;
 };

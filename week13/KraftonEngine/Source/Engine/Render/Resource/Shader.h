@@ -15,10 +15,12 @@ public:
 	FShader& operator=(FShader&& Other) noexcept;
 
 	void Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-		const D3D_SHADER_MACRO* InDefines = nullptr);
+		const D3D_SHADER_MACRO* InDefines = nullptr, TArray<FString>* OutIncludes = nullptr);
 	void Release();
 
 	void Bind(ID3D11DeviceContext* InDeviceContext) const;
+
+	bool IsValid() const { return VertexShader != nullptr && PixelShader != nullptr; }
 
 	const TMap<FString, FMaterialParameterInfo*>& GetParameterLayout() const { return ShaderParameterLayout; }
 private:

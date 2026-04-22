@@ -147,6 +147,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\ClusterConstructCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\ClusterHeatMap.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\LightCullingCS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -470,6 +482,9 @@
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
       <Filter>Source\Engine\Platform</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\Paths.cpp">
       <Filter>Source\Engine\Platform</Filter>
     </ClCompile>
@@ -484,6 +499,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp">
       <Filter>Source\Engine\Profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Culling\ClusteredLightCuller.cpp">
+      <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
@@ -967,6 +985,9 @@
     <ClInclude Include="Source\Engine\Platform\CrashDump.h">
       <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h">
+      <Filter>Source\Engine\Platform</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Paths.h">
       <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
@@ -984,6 +1005,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Timer.h">
       <Filter>Source\Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\ClusteredLightCuller.h">
+      <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
       <Filter>Source\Engine\Render\Culling</Filter>
