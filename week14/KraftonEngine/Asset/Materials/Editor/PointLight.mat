@@ -1,0 +1,9 @@
+{
+  "PathFileName": "Asset/Materials/Editor/PointLight.mat",
+  "ShaderPath": "Shaders/UI/Billboard.hlsl",
+  "RenderPass": "AlphaBlend",
+  "Textures": {
+    "DiffuseTexture": "Asset/Editor/Icons/PointLight_64x.png"
+  },
+  "Origin": "Editor"
+}

@@ -36,7 +36,7 @@ enum class ERenderPass : uint32
 	PreDepth,		// Depth-only 프리패스 (color write 없음, Early-Z용)
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
 	Decal,			// 데칼 (DepthReadOnly)
-	AdditiveDecal,	// FakeLight 등
+	AdditiveDecal,	// Additive 빌보드 등
 	AlphaBlend,		// 반투명 지오메트리 (Font, SubUV, Billboard, Translucent)
 	SelectionMask,	// 선택 스텐실 마스크
 	EditorLines,	// 디버그 라인 + 그리드 (LINELIST)

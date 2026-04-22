@@ -453,15 +453,19 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 // MTL 정보에서 머티리얼 mat 파일로 변환하는 함수
 FString FObjImporter::ConvertMtlInfoToMat(const FObjMaterialInfo* MtlInfo)
 {
-	FString MatPath = "Asset/Materials/" + MtlInfo->MaterialSlotName + ".mat";
+	FString MatPath = "Asset/Materials/Auto/" + MtlInfo->MaterialSlotName + ".mat";
 
 	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
 	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
 		return MatPath;
 
+	// Auto/ 디렉토리 보장
+	std::filesystem::create_directories(FPaths::ToWide("Asset/Materials/Auto"));
+
 	json::JSON JsonData;
 	JsonData["PathFileName"] = MatPath;
-	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl"; // 기본 셰이더
+	JsonData["Origin"] = "ObjImport";
+	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl";
 	JsonData["RenderPass"] = "Opaque";
 
 	if (!MtlInfo->map_Kd.empty())
