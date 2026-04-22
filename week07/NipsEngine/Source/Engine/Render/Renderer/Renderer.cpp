@@ -828,7 +828,7 @@ void FRenderer::UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus&
     {
         Resources.DecalStructuredBuffer.Update(Context, DecalConstantArray.data(), (uint32)DecalConstantArray.size());
         ID3D11ShaderResourceView* DecalSRV = Resources.DecalStructuredBuffer.GetSRV();
-        Context->PSSetShaderResources(7, 1, &DecalSRV);
+        Context->PSSetShaderResources(8, 1, &DecalSRV);
     }
 
     if (DecalTextures != CachedDecalTextures)
@@ -899,8 +899,8 @@ void FRenderer::UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus&
     if (DecalTextureArraySRV)
     {
         ID3D11ShaderResourceView* ArraySRV = DecalTextureArraySRV.Get();
-        Context->VSSetShaderResources(8, 1, &ArraySRV);
-        Context->PSSetShaderResources(8, 1, &ArraySRV);
+        Context->VSSetShaderResources(9, 1, &ArraySRV);
+        Context->PSSetShaderResources(9, 1, &ArraySRV);
     }
 
 	FUberConstants lightConstantData;
