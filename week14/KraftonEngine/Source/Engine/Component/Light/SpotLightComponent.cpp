@@ -12,33 +12,37 @@ void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 	const FVector Apex = GetWorldLocation();
 	const FVector Forward = GetForwardVector();
 	const FVector Right = GetRightVector();
-	const FVector Up = GetUpVector();
 	const float ClampedOuterAngle = FMath::Clamp(OuterConeAngle, 0.0f, 89.0f);
 	const float ClampedInnerAngle = FMath::Clamp(InnerConeAngle, 0.0f, ClampedOuterAngle);
 	const float ConeLength = AttenuationRadius;
 
 	Scene.AddDebugLine(Apex, Apex + Forward * ConeLength, FColor::White());
 
-	float AngleRadInner = InnerConeAngle * FMath::DegToRad;
-	FVector FirstDirection = (Forward + Right * tanf(AngleRadInner)).Normalized() * ConeLength;
-	FVector FirstPrev = FirstDirection;
-	float AngleRadOuter = OuterConeAngle * FMath::DegToRad;
-	FVector SecondDirection = (Forward + Right * tanf(AngleRadOuter)).Normalized() * ConeLength;
-	FVector SecondPrev = SecondDirection;
-	for (float i = 0.f; i < 2 * FMath::Pi; i += 0.3)
+	const float AngleRadInner = ClampedInnerAngle * FMath::DegToRad;
+	const float AngleRadOuter = ClampedOuterAngle * FMath::DegToRad;
+	const FVector InnerEdge = Forward * ConeLength + Right * (tanf(AngleRadInner) * ConeLength);
+	const FVector OuterEdge = Forward * ConeLength + Right * (tanf(AngleRadOuter) * ConeLength);
+
+	constexpr int32 SegmentCount = 24;
+	const float SegmentStep = 2.0f * FMath::Pi / static_cast<float>(SegmentCount);
+	FVector PreviousInnerPoint = Apex + InnerEdge;
+	FVector PreviousOuterPoint = Apex + OuterEdge;
+
+	for (int32 SegmentIndex = 1; SegmentIndex <= SegmentCount; ++SegmentIndex)
 	{
-		FQuat Rotation = FQuat::FromAxisAngle(Forward, i);
-		FVector ResInner = Rotation.RotateVector(FirstDirection);
-		FVector ResOuter = Rotation.RotateVector(SecondDirection);
-		Scene.AddDebugLine(Apex, Apex + ResInner, FColor::Green());
-		Scene.AddDebugLine(FirstPrev, Apex + ResInner, FColor::Green());
-		Scene.AddDebugLine(Apex, Apex + ResOuter, FColor::Yellow());
-		Scene.AddDebugLine(SecondPrev, Apex + ResOuter, FColor::Yellow());
-		FirstPrev = Apex + ResInner;
-		SecondPrev = Apex + ResOuter;
+		const float Angle = SegmentStep * static_cast<float>(SegmentIndex);
+		const FQuat Rotation = FQuat::FromAxisAngle(Forward, Angle);
+		const FVector InnerPoint = Apex + Rotation.RotateVector(InnerEdge);
+		const FVector OuterPoint = Apex + Rotation.RotateVector(OuterEdge);
+
+		Scene.AddDebugLine(Apex, InnerPoint, FColor::Green());
+		Scene.AddDebugLine(PreviousInnerPoint, InnerPoint, FColor::Green());
+		Scene.AddDebugLine(Apex, OuterPoint, FColor::Yellow());
+		Scene.AddDebugLine(PreviousOuterPoint, OuterPoint, FColor::Yellow());
+
+		PreviousInnerPoint = InnerPoint;
+		PreviousOuterPoint = OuterPoint;
 	}
-	//Scene.AddDebugLine(FirstPrev, FirstDirection, FColor::Green());
-	//Scene.AddDebugLine(SecondPrev, SecondDirection, FColor::Yellow());
 }
 
 void USpotLightComponent::PushToScene()
