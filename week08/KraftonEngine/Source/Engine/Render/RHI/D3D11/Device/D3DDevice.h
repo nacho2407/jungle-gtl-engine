@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include <d3d11_1.h>
 #include "Render/Passes/Base/PipelineStateTypes.h"
@@ -23,6 +23,7 @@ public:
     ID3D11DeviceContext* GetDeviceContext() const;
     ID3DUserDefinedAnnotation* GetUserDefinedAnnotation() const { return UserDefinedAnnotation; }
     ID3D11RenderTargetView* GetFrameBufferRTV() const { return FrameBufferRTV; }
+    ID3D11Texture2D* GetFrameBufferTexture() const { return FrameBuffer; }
     ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
     const D3D11_VIEWPORT& GetViewport() const { return ViewportInfo; }
     const float* GetClearColor() const { return ClearColor; }

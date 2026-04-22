@@ -13,54 +13,18 @@
 
 void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 {
-    const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.SceneView)
     {
         return;
     }
 
-    if (Targets && Targets->ViewportRenderTexture && Targets->SceneColorCopyTexture &&
-        Targets->ViewportRenderTexture != Targets->SceneColorCopyTexture)
-    {
-        Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
-        Context.Context->CopyResource(Targets->SceneColorCopyTexture, Targets->ViewportRenderTexture);
-    }
-
-    if (Targets && Targets->DepthTexture && Targets->DepthCopyTexture && Targets->DepthTexture != Targets->DepthCopyTexture)
-    {
-        Context.Context->CopyResource(Targets->DepthCopyTexture, Targets->DepthTexture);
-    }
-
-    if (Targets && Targets->SceneColorCopySRV)
-    {
-        ID3D11ShaderResourceView* SceneColorSRV = Targets->SceneColorCopySRV;
-        Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
-    }
-
-    if (Targets && Targets->DepthCopySRV)
-    {
-        ID3D11ShaderResourceView* DepthSRV = Targets->DepthCopySRV;
-        Context.Context->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &DepthSRV);
-    }
-
-    if (Targets && Targets->StencilCopySRV)
-    {
-        ID3D11ShaderResourceView* StencilSRV = Targets->StencilCopySRV;
-        Context.Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &StencilSRV);
-    }
-
-    if (Context.StateCache)
-    {
-        Context.StateCache->DiffuseSRV = nullptr;
-        Context.StateCache->NormalSRV = nullptr;
-        Context.StateCache->bForceAll = true;
-    }
+    CopyViewportColorToSceneColor(Context);
+    CopyViewportDepthToReadable(Context);
+    BindSceneColorInput(Context);
+    BindDepthInput(Context);
+    BindStencilInput(Context);
 }
 
-void FOutlinePass::PrepareTargets(FRenderPipelineContext& Context)
-{
-    BindViewportTarget(Context);
-}
 
 void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {

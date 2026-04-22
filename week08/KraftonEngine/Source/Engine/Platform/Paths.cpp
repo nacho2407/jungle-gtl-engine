@@ -19,7 +19,8 @@ std::wstring FPaths::RootDir()
 		}
 		else
 		{
-			// 개발: CWD(= $(ProjectDir))에 리소스가 있음
+			// 개발: CWD(= $(ProjectDir))에 리소스가 있음. 
+			// 주의: 이 함수는 프로세스 시작 시점에 처음 호출되어야 합니다. (GetOpenFileName 등이 CWD를 바꿀 수 있음)
 			Cached = std::filesystem::current_path().wstring() + L"\\";
 		}
 	}

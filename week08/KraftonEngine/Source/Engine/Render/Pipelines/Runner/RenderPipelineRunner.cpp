@@ -1,4 +1,4 @@
-#include "Render/Pipelines/Runner/RenderPipelineRunner.h"
+﻿#include "Render/Pipelines/Runner/RenderPipelineRunner.h"
 
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
 #include "Render/Pipelines/Registry/RenderPassRegistry.h"
@@ -27,6 +27,7 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
     case ERenderPassNodeType::OverlayTextPass: return L"OverlayTextPass";
     case ERenderPassNodeType::HeightFogPass: return L"HeightFogPass";
     case ERenderPassNodeType::FXAAPass: return L"FXAAPass";
+    case ERenderPassNodeType::PresentPass: return L"PresentPass";
     default: return L"RenderPass";
     }
 }

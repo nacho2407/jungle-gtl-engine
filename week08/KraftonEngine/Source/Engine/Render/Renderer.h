@@ -67,8 +67,9 @@ public:
     // 수집된 결과를 드로우 커맨드로 변환
     void BuildDrawCommands(FRenderPipelineContext& PipelineContext);
 
-    void BeginFrame();
+    void BeginFrame(const FSceneView& SceneView, const FViewportRenderTargets* Targets = nullptr);
     void EndFrame();
+    void RenderFrame(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext);
 
     FRenderPipelineContext CreatePassContext(
         const FSceneView&                          SceneView,
@@ -84,6 +85,7 @@ public:
 
     void RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext);
     void ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext& PipelineContext);
+    void ExecutePresentPass(FRenderPipelineContext& PipelineContext);
 
     FD3DDevice&            GetFD3DDevice() { return Device; }
     FFrameRenderResources& GetResources() { return FrameResources; }

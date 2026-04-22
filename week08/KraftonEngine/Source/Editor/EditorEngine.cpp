@@ -491,7 +491,7 @@ void UEditorEngine::Render(float DeltaTime)
         RenderViewport(ViewportClient);
     }
 
-    Renderer.BeginFrame();
+    Renderer.BeginFrame(SceneView);
     {
         SCOPE_STAT_CAT("EditorUI", "5_UI");
         RenderUI(DeltaTime);
