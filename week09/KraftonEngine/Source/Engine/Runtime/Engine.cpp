@@ -1,4 +1,4 @@
-﻿#include "Render/Pipelines/Context/Scene/ViewTypes.h"
+#include "Render/Execute/Context/Scene/ViewTypes.h"
 #include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
@@ -38,7 +38,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 {
     Window = InWindow;
 
-    // 싱글턴 초기화 순서 보장
+    // �̱��� �ʱ�ȭ ���� ����
     FNamePool::Get();
     FObjectFactory::Get();
 
@@ -119,7 +119,7 @@ void UEngine::Render(float DeltaTime)
     {
         FRenderPipelineContext PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, Scene, Scene ? &Renderer.GetLastVisiblePrimitiveProxies() : nullptr);
         Renderer.BuildDrawCommands(PipelineContext);
-        Renderer.RunRootPipeline(ERenderPipelineType::DefaultScene, PipelineContext);
+        Renderer.RunRootPipeline(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
     }
 }
 
@@ -137,8 +137,8 @@ void UEngine::WorldTick(float DeltaTime)
 {
     SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
 
-    // PIE 활성 시 Editor 월드는 sleep (UE 동작과 동일).
-    // culling/octree/visibility 갱신을 건너뛰어 50k+ 환경에서 비용 2배를 방지.
+    // PIE Ȱ�� �� Editor ����� sleep (UE ���۰� ����).
+    // culling/octree/visibility ������ �ǳʶپ� 50k+ ȯ�濡�� ��� 2�踦 ����.
     bool bHasPIEWorld = false;
     for (const FWorldContext& Ctx : WorldList)
     {
@@ -149,17 +149,17 @@ void UEngine::WorldTick(float DeltaTime)
         }
     }
 
-    // 월드 타입별 Tick 라우팅:
-    // - Editor: bTickInEditor 액터만 TickManager 대상
-    // - PIE/Game: BeginPlay 이후 bNeedsTick 액터만 TickManager 대상
-    // - 기타:   시간 갱신만 유지
+    // ���� Ÿ�Ժ� Tick �����:
+    // - Editor: bTickInEditor ���͸� TickManager ���
+    // - PIE/Game: BeginPlay ���� bNeedsTick ���͸� TickManager ���
+    // - ��Ÿ:   �ð� ���Ÿ� ����
     for (FWorldContext& Ctx : WorldList)
     {
         UWorld* World = Ctx.World;
         if (!World)
             continue;
 
-        // PIE 활성 시 Editor 월드는 완전히 skip
+        // PIE Ȱ�� �� Editor ����� ������ skip
         if (bHasPIEWorld && Ctx.WorldType == EWorldType::Editor)
         {
             continue;
@@ -167,7 +167,7 @@ void UEngine::WorldTick(float DeltaTime)
 
         const ELevelTick TickType = ToLevelTickType(Ctx.WorldType);
 
-        // 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw /s TickManager)
+        // ���� ���� ������Ʈ (FlushPrimitive / VisibleProxies / DebugDraw /s TickManager)
         World->Tick(DeltaTime, TickType);
     }
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Core/CoreTypes.h"
 
 struct ID3D11Resource;

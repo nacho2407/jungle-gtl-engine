@@ -1,4 +1,4 @@
-﻿#include "Mesh/StaticMesh.h"
+#include "Mesh/StaticMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
 #include "Serialization/WindowsArchive.h"

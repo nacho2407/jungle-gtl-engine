@@ -1,4 +1,4 @@
-﻿#include "HeightFogComponent.h"
+#include "HeightFogComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"

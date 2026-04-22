@@ -1,5 +1,4 @@
-﻿#include "Render/Passes/Base/PipelineStateTypes.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Serialization/Archive.h"
@@ -11,7 +10,7 @@
 
 IMPLEMENT_CLASS(UMaterial, UMaterialInterface)
 
-// ─── UMaterial ───
+// ������ UMaterial ������
 
 UMaterial::~UMaterial()
 {
@@ -33,7 +32,6 @@ UMaterial::~UMaterial()
 }
 
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
-                       ERenderPass InRenderPass,
                        EBlendState InBlend,
                        EDepthStencilState InDepth,
                        ERasterizerState InRaster,
@@ -41,7 +39,6 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 {
     PathFileName = InPathFileName;
     Template = InTemplate;
-    RenderPass = InRenderPass;
     BlendState = InBlend;
     DepthStencilState = InDepth;
     RasterizerState = InRaster;
@@ -342,7 +339,7 @@ void UMaterial::Serialize(FArchive& Ar)
     }
 }
 
-// ─── UMaterialInstanceDynamic ───
+// ������ UMaterialInstanceDynamic ������
 
 IMPLEMENT_CLASS(UMaterialInstanceDynamic, UMaterial)
 

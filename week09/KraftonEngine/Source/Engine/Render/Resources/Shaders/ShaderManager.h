@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
@@ -10,8 +10,8 @@
 using ShaderDependencyUtils::FShaderFileDependency;
 
 /*
-    엔진이 자주 사용하는 내장 셰이더 종류입니다.
-    BaseDraw, Decal, Fog, Gizmo 같은 공용 셰이더를 여기서 관리합니다.
+    ������ ���� ����ϴ� ���� ���̴� �����Դϴ�.
+    Opaque, Decal, Fog, Gizmo ���� ���� ���̴��� ���⼭ �����մϴ�.
 */
 enum class EShaderType : uint32
 {
@@ -36,8 +36,8 @@ enum class EShaderType : uint32
 };
 
 /*
-    사용자 셰이더 캐시 항목입니다.
-    컴파일된 셰이더와 원본 파일 변경 감시 정보를 함께 보관합니다.
+    ����� ���̴� ĳ�� �׸��Դϴ�.
+    �����ϵ� ���̴��� ���� ���� ���� ���� ������ �Բ� �����մϴ�.
 */
 struct FCustomShaderCacheEntry
 {
@@ -46,7 +46,7 @@ struct FCustomShaderCacheEntry
 };
 
 /*
-    내장 셰이더와 사용자 셰이더를 생성/보관/핫리로드하는 매니저입니다.
+    ���� ���̴��� ����� ���̴��� ����/����/�ָ��ε��ϴ� �Ŵ����Դϴ�.
 */
 class FShaderManager : public TSingleton<FShaderManager>
 {

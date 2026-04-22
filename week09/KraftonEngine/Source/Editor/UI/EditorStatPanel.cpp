@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorStatPanel.h"
+#include "Editor/UI/EditorStatPanel.h"
 
 #include "Editor/Settings/EditorSettings.h"
 #include "Profiling/Stats.h"

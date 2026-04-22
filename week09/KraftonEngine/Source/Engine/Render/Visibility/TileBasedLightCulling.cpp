@@ -1,9 +1,9 @@
-﻿#include "TileBasedLightCulling.h"
+#include "TileBasedLightCulling.h"
 #include "Viewport/ViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
 #include "Render/RHI/D3D11/Buffers/ConstantBuffer.h"
-//#include "Render/Pipelines/Registry/RenderPipelineType.h"
+//#include "Render/Execute/Registry/RenderPipelineType.h"
 
 #include <d3dcompiler.h>
 
@@ -25,7 +25,7 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     check(InDevice);
     Device = InDevice;
 
-    // ---- Compute Shader 컴파일 ----
+    // ---- Compute Shader ������ ----
     ID3DBlob* CSBlob  = nullptr;
     ID3DBlob* ErrBlob = nullptr;
 
@@ -42,11 +42,11 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     {
         if (ErrBlob)
         {
-            // 컴파일 오류 로그 출력 (프로젝트 로깅 매크로로 교체)
+            // ������ ���� �α� ��� (������Ʈ �α� ��ũ�η� ��ü)
             OutputDebugStringA((const char*)ErrBlob->GetBufferPointer());
             ErrBlob->Release();
         }
-        check(false); // 셰이더 컴파일 실패
+        check(false); // ���̴� ������ ����
     }
 
     hr = Device->GetDevice()->CreateComputeShader(
@@ -56,7 +56,7 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     CSBlob->Release();
     check(SUCCEEDED(hr));
 
-    // ---- LightCullingParams 상수 버퍼 (b2) ----
+    // ---- LightCullingParams ��� ���� (b2) ----
     //D3D11_BUFFER_DESC CBDesc = {};
     //CBDesc.ByteWidth      = sizeof(FLightCullingParams);
     //CBDesc.Usage          = D3D11_USAGE_DYNAMIC;
@@ -148,7 +148,7 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
 
     ID3D11DeviceContext* Context = Device->GetDeviceContext();
 
-	//이전 바인딩 해제
+	//���� ���ε� ����
     float ClearColor[4] = { 0, 0, 0, 0 };
     Context->ClearUnorderedAccessViewFloat(DebugHitMapUAV, ClearColor);
 
@@ -158,24 +158,24 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     Context->CSSetUnorderedAccessViews(0, 4, NullUAVs1, nullptr);
     Context->CSSetShader(nullptr, nullptr, 0);
 
-    // ---- CS 바인딩 ----
+    // ---- CS ���ε� ----
     Context->CSSetShader(LightCullingCS, nullptr, 0);
 
-    // ---- SRV (t0: PointLight 데이터, t1: SceneDepth) ----
-	// 현재 외부에서 주입중
+    // ---- SRV (t0: PointLight ������, t1: SceneDepth) ----
+	// ���� �ܺο��� ������
     //ID3D11ShaderResourceView* SRVs[] = { PointLightDataSRV };
     //Context->CSSetShaderResources(0, 1, SRVs);
 
-    // ---- UAV (u0: 미사용, u1: PerTile, u2: Culled, u3: HitMap) ----
+    // ---- UAV (u0: �̻��, u1: PerTile, u2: Culled, u3: HitMap) ----
     ID3D11UnorderedAccessView* UAVs[] = {
-        nullptr,                           // u0 미사용
+        nullptr,                           // u0 �̻��
         PerTilePointLightIndexMaskOutUAV,  // u1
         CulledPointLightIndexMaskOUTUAV,   // u2
         DebugHitMapUAV,                    // u3
     };
     Context->CSSetUnorderedAccessViews(0, 4, UAVs, nullptr);
 
-    // ---- 상수 버퍼 ----
+    // ---- ��� ���� ----
     Context->CSSetConstantBuffers(2, 1, &LightCullingParamsCB);
 
 
@@ -185,7 +185,7 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     const UINT GroupSizeY = (ViewHeight + TILE_SIZE - 1) / TILE_SIZE;
     Context->Dispatch(GroupSizeX, GroupSizeY, 1);
 
-    // ---- 바인딩 해제 ----
+    // ---- ���ε� ���� ----
     ID3D11ShaderResourceView*  NullSRVs[1]  = { nullptr };
     ID3D11UnorderedAccessView* NullUAVs[4]  = { nullptr, nullptr, nullptr, nullptr };
     Context->CSSetShaderResources(0, 1, NullSRVs);
@@ -211,14 +211,14 @@ void FTileBasedLightCulling::ResizeTiles(uint32 InWidth, uint32 InHeight)
 
 void FTileBasedLightCulling::CreatePointLightBufferGPU()
 {
-    // 기존 리소스 해제
+    // ���� ���ҽ� ����
     //if (PointLightDataSRV) { PointLightDataSRV->Release(); PointLightDataSRV = nullptr; }
     //if (PointLightBuffer)  { PointLightBuffer->Release();  PointLightBuffer  = nullptr; }
 
     //if (Lights.empty())
     //    return;
 
-    //// StructuredBuffer 생성
+    //// StructuredBuffer ����
     //D3D11_BUFFER_DESC Desc = {};
     //Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
     //Desc.ByteWidth           = sizeof(FLocalLightInfo) * Lights.size();
@@ -232,7 +232,7 @@ void FTileBasedLightCulling::CreatePointLightBufferGPU()
     //HRESULT hr = Device->GetDevice()->CreateBuffer(&Desc, &InitData, &PointLightBuffer);
     //check(SUCCEEDED(hr));
 
-    // SRV (셰이더 t0)
+    // SRV (���̴� t0)
     //D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
     //SrvDesc.ViewDimension       = D3D11_SRV_DIMENSION_BUFFER;
     //SrvDesc.Format              = DXGI_FORMAT_UNKNOWN;
@@ -245,7 +245,7 @@ void FTileBasedLightCulling::CreatePointLightBufferGPU()
 
 void FTileBasedLightCulling::CreateTileMaskBuffers()
 {
-    // 기존 리소스 해제
+    // ���� ���ҽ� ����
     auto SafeRelease = [](auto*& ptr) { if (ptr) { ptr->Release(); ptr = nullptr; } };
     SafeRelease(PerTilePointLightIndexMaskSRV);
     SafeRelease(PerTilePointLightIndexMaskOutUAV);
@@ -253,7 +253,7 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
     SafeRelease(CulledPointLightIndexMaskOUTUAV);
     SafeRelease(CulledPointLightIndexMaskBuffer);
 
-    // 공통 Buffer + UAV + SRV 생성 람다
+    // ���� Buffer + UAV + SRV ���� ����
     auto CreateMaskBuffer = [&](
         uint32                      NumElements,
         ID3D11Buffer**              OutBuffer,
@@ -292,20 +292,20 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
         }
     };
 
-    // u1: 타일별 조명 마스크 (NumTiles * BucketCount 개의 uint)
+    // u1: Ÿ�Ϻ� ���� ����ũ (NumTiles * BucketCount ���� uint)
     CreateMaskBuffer(
         NumTiles * NumBucketsPerTile,
         &PerTilePointLightIndexMaskBuffer,
         &PerTilePointLightIndexMaskOutUAV,
-        &PerTilePointLightIndexMaskSRV     // PS에서 읽기 위해 SRV도 생성
+        &PerTilePointLightIndexMaskSRV     // PS���� �б� ���� SRV�� ����
     );
 
-    // u2: 전체 OR 누적 마스크 (BucketCount 개의 uint, Shadow Map 최적화용)
+    // u2: ��ü OR ���� ����ũ (BucketCount ���� uint, Shadow Map ����ȭ��)
     CreateMaskBuffer(
         NumBucketsPerTile,
         &CulledPointLightIndexMaskBuffer,
         &CulledPointLightIndexMaskOUTUAV,
-        nullptr                            // CPU 스테이징으로 읽으므로 SRV 불필요
+        nullptr                            // CPU ������¡���� �����Ƿ� SRV ���ʿ�
     );
 }
 
@@ -330,7 +330,7 @@ void FTileBasedLightCulling::CreateDebugHitMap(uint32 InWidth, uint32 InHeight)
     HRESULT hr = Device->GetDevice()->CreateTexture2D(&TexDesc, nullptr, &DebugHitMapTexture);
     check(SUCCEEDED(hr));
 
-    // UAV (셰이더 u3)
+    // UAV (���̴� u3)
     D3D11_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
     UavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
     UavDesc.Format        = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -338,7 +338,7 @@ void FTileBasedLightCulling::CreateDebugHitMap(uint32 InWidth, uint32 InHeight)
     hr = Device->GetDevice()->CreateUnorderedAccessView(DebugHitMapTexture, &UavDesc, &DebugHitMapUAV);
     check(SUCCEEDED(hr));
 
-    // SRV (후처리 패스에서 오버레이 렌더링)
+    // SRV (��ó�� �н����� �������� ������)
     D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
     SrvDesc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
     SrvDesc.Format              = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -359,7 +359,7 @@ void FTileBasedLightCulling::UpdateLightCullingParamsCB(const FFrameContext& fra
     Params.TileSizeX        = TILE_SIZE;
     Params.TileSizeY        = TILE_SIZE;
     Params.Enable25DCulling = bEnable25DCulling ? 1u : 0u;
-    Params.NearZ            = frameContext.NearClip;  // 카메라 상수에서 가져오도록 교체 권장
+    Params.NearZ            = frameContext.NearClip;  // ī�޶� ������� ���������� ��ü ����
     Params.FarZ             = frameContext.FarClip;
     Params.NumLights        = (float)LightCount;
 

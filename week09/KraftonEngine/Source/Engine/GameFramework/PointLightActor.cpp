@@ -1,4 +1,4 @@
-﻿#include "PointLightActor.h"
+#include "PointLightActor.h"
 #include "Component/PointLightComponent.h"
 #include "Component/CylindricalBillboardComponent.h"
 #include "Materials/MaterialManager.h"

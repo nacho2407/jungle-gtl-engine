@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 #include "Render/Submission/Collect/CollectedSceneData.h"

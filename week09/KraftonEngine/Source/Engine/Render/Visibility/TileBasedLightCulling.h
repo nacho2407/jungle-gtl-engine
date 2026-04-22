@@ -1,13 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
-#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Scene/Proxies/Light/LightTypes.h"
 #include <d3d11.h>
 
 // ============================================================
-// LightCulling 상수 버퍼 (b2 레지스터, 셰이더와 레이아웃 일치)
+// LightCulling ��� ���� (b2 ��������, ���̴��� ���̾ƿ� ��ġ)
 // ============================================================
 struct FLightCullingParams
 {
@@ -39,25 +39,25 @@ public:
     FTileBasedLightCulling(const FTileBasedLightCulling&)            = delete;
     FTileBasedLightCulling& operator=(const FTileBasedLightCulling&) = delete;
 
-    // ---- 초기화 / 해제 ----
+    // ---- �ʱ�ȭ / ���� ----
     void Initialize(FD3DDevice* InDevice);
     void Release();
     bool IsInitialized() const { return Device != nullptr && LightCullingCS != nullptr; }
     void ResizeTiles(uint32 InWidth, uint32 InHeight);
 
-    // ---- 화면 리사이즈 ----
+    // ---- ȭ�� �������� ----
     void OnResize(uint32 InWidth, uint32 InHeight);
 
-    // ---- 조명 데이터 갱신 ----
+    // ---- ���� ������ ���� ----
     void SetPointLightData(const uint32 InLightsCount);
 	
-	// ---- 디버그 히트맵 갱신(wireframe 모드일때 사용)
+	// ---- ����� ��Ʈ�� ����(wireframe ����϶� ���)
     void ClearDebugHitMap();
 
     // ---- Dispatch ----
     void Dispatch(const FFrameContext& frameContext, bool bEnable25DCulling = true);
 
-    // ---- 결과 SRV (Pixel Shader에서 타일별 마스크 읽기) ----
+    // ---- ��� SRV (Pixel Shader���� Ÿ�Ϻ� ����ũ �б�) ----
     ID3D11ShaderResourceView* GetPerTileMaskSRV()    const { return PerTilePointLightIndexMaskSRV; }
     ID3D11ShaderResourceView* GetDebugHitMapSRV()    const { return DebugHitMapSRV; }
     //ID3D11ShaderResourceView* GetPointLightDataSRV() const { return PointLightDataSRV; }
@@ -66,7 +66,7 @@ public:
     FConstantBuffer* GetLightCullingParamsCBWrapper() { return LightCullingParamsCBWrapper; }
 
 
-	//LightPass에 던질 param 정보
+	//LightPass�� ���� param ����
     ID3D11Buffer* GetLightCullingParamsCB() const { return LightCullingParamsCB; }
 
     uint32 GetNumTilesX()        const { return NumTilesX; }
@@ -95,20 +95,20 @@ private:
     ID3D11UnorderedAccessView* PerTilePointLightIndexMaskOutUAV  = nullptr;
     ID3D11ShaderResourceView*  PerTilePointLightIndexMaskSRV     = nullptr;
 
-    // ---- Culled (OR 누적) Mask Buffer (UAV u2, Shadow Map용) ----
+    // ---- Culled (OR ����) Mask Buffer (UAV u2, Shadow Map��) ----
     ID3D11Buffer*              CulledPointLightIndexMaskBuffer   = nullptr;
     ID3D11UnorderedAccessView* CulledPointLightIndexMaskOUTUAV   = nullptr;
 
-    // ---- Debug HitMap (UAV u3 / SRV for 후처리) ----
+    // ---- Debug HitMap (UAV u3 / SRV for ��ó��) ----
     ID3D11Texture2D*           DebugHitMapTexture = nullptr;
     ID3D11UnorderedAccessView* DebugHitMapUAV     = nullptr;
     ID3D11ShaderResourceView*  DebugHitMapSRV     = nullptr;
 
-    // ---- LightCullingParams 상수 버퍼 (b2) ----
+    // ---- LightCullingParams ��� ���� (b2) ----
     ID3D11Buffer* LightCullingParamsCB = nullptr;
     FConstantBuffer* LightCullingParamsCBWrapper = nullptr;
 
-    // ---- Tile 메타데이터 ----
+    // ---- Tile ��Ÿ������ ----
     uint32 NumTilesX        = 0;
     uint32 NumTilesY        = 0;
     uint32 NumTiles         = 0;

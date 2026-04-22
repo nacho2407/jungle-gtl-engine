@@ -1,4 +1,4 @@
-﻿#include "SceneComponent.h"
+#include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"

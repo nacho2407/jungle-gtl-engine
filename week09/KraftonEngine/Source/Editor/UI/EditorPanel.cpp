@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPanel.h"
+#include "Editor/UI/EditorPanel.h"
 
 void FEditorPanel::Initialize(UEditorEngine* InEditorEngine)
 {

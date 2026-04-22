@@ -1,4 +1,4 @@
-﻿#include "LightComponentBase.h"
+#include "LightComponentBase.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 

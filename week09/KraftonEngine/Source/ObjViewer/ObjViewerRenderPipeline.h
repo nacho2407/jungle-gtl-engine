@@ -1,4 +1,4 @@
-﻿// #pragma once
+// #pragma once
 //
 // #include "Render/Submission/Collect/RenderCollector.h"
 // #include "Render/Core/FrameContext.h"

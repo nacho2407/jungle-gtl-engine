@@ -1,18 +1,18 @@
-﻿#pragma once
+#pragma once
 
-#include "Render/Passes/Base/PipelineStateTypes.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
 #include "DrawCommand.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 
 /*
-    FDrawSubmitStateCache — Submit 루프에서 중복 GPU 상태 전환을 방지합니다.
-    이전 커맨드와 동일한 상태는 skip하여 DeviceContext 호출을 최소화합니다.
+    FDrawSubmitStateCache ? Submit �������� �ߺ� GPU ���� ��ȯ�� �����մϴ�.
+    ���� Ŀ�ǵ�� ������ ���´� skip�Ͽ� DeviceContext ȣ���� �ּ�ȭ�մϴ�.
 */
 struct FDrawSubmitStateCache
 {
-    // 첫 커맨드에서 모든 GPU 상태를 무조건 세팅 (센티넬 불필요)
+    // ù Ŀ�ǵ忡�� ��� GPU ���¸� ������ ���� (��Ƽ�� ���ʿ�)
     bool bForceAll = true;
 
     FShader*                  Shader         = nullptr;
@@ -22,8 +22,8 @@ struct FDrawSubmitStateCache
     D3D11_PRIMITIVE_TOPOLOGY  Topology       = {};
     uint8                     StencilRef     = 0;
     FMeshBuffer*              MeshBuffer     = nullptr;
-    ID3D11Buffer*             RawVB          = nullptr; // 동적 지오메트리 VB 추적
-    ID3D11Buffer*             RawIB          = nullptr; // 동적 지오메트리 IB 추적
+    ID3D11Buffer*             RawVB          = nullptr; // ���� ������Ʈ�� VB ����
+    ID3D11Buffer*             RawIB          = nullptr; // ���� ������Ʈ�� IB ����
     FConstantBuffer*          PerObjectCB    = nullptr;
     FConstantBuffer*          PerShaderCB[2] = {};
     FConstantBuffer*          LightCB        = nullptr;
@@ -32,19 +32,19 @@ struct FDrawSubmitStateCache
     ID3D11ShaderResourceView* SpecularSRV    = nullptr;
     ID3D11ShaderResourceView* LocalLightSRV  = nullptr;
 
-    // Render target 추적 (CopyResource 후 DSV 복원 등)
+    // Render target ���� (CopyResource �� DSV ���� ��)
     ID3D11RenderTargetView* RTV = nullptr;
     ID3D11DepthStencilView* DSV = nullptr;
 
     void Reset();
 
-    // 프레임 끝 정리 — material/system SRV 언바인딩
+    // ������ �� ���� ? material/system SRV ����ε�
     void Cleanup(ID3D11DeviceContext* Ctx);
 };
 
 /*
-    FDrawCommandList — 프레임 단위 커맨드 버퍼.
-    DrawCollector가 커맨드를 추가하고, Sort() 후 Submit()으로 GPU에 제출합니다.
+    FDrawCommandList ? ������ ���� Ŀ�ǵ� ����.
+    DrawCollector�� Ŀ�ǵ带 �߰��ϰ�, Sort() �� Submit()���� GPU�� �����մϴ�.
 */
 class FDrawCommandList
 {

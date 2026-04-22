@@ -1,4 +1,4 @@
-﻿#include "Render/Submission/Collect/DrawCollector.h"
+#include "Render/Submission/Collect/DrawCollector.h"
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"

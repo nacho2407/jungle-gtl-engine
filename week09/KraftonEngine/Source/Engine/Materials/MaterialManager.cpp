@@ -1,6 +1,5 @@
-#include "Render/Passes/Base/RenderStateStrings.h"
-#include "Render/Passes/Base/PipelineStateTypes.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Passes/Base/RenderStateStrings.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>
@@ -18,8 +17,6 @@
 namespace MatKeys
 {
 static constexpr const char* PathFileName = "PathFileName";
-static constexpr const char* ShaderPath = "ShaderPath";
-static constexpr const char* RenderPass = "RenderPass";
 static constexpr const char* BlendState = "BlendState";
 static constexpr const char* DepthStencilState = "DepthStencilState";
 static constexpr const char* RasterizerState = "RasterizerState";
@@ -207,9 +204,8 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
     {
         FMaterialCacheEntry& Cached = It->second;
         const bool bMaterialChanged = HasDependencyChanged(Cached.MaterialFile);
-        const bool bShaderChanged = HasDependencyChanged(Cached.ShaderFile);
         const bool bTextureChanged = HasAnyDependencyChanged(Cached.TextureFiles);
-        if (!bMaterialChanged && !bShaderChanged && !bTextureChanged)
+        if (!bMaterialChanged && !bTextureChanged)
         {
             return Cached.Material;
         }
@@ -222,7 +218,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
     if (JsonData.IsNull())
     {
         UMaterial* DefaultMaterial = UObjectManager::Get().CreateObject<UMaterial>();
-        FMaterialTemplate* Template = GetOrCreateTemplate(DefaultShaderPath);
+        FMaterialTemplate* Template = GetOrCreateTemplate();
         if (!Template)
         {
             UObjectManager::Get().DestroyObject(DefaultMaterial);
@@ -230,13 +226,12 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
         }
 
         TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-        DefaultMaterial->Create(CacheKey, Template, ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
+        DefaultMaterial->Create(CacheKey, Template, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
         DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
 
         FMaterialCacheEntry NewEntry;
         NewEntry.Material = DefaultMaterial;
         NewEntry.MaterialFile = BuildFileDependency(ResolveFullPath(CacheKey));
-        NewEntry.ShaderFile = BuildFileDependency(ResolveFullPath(DefaultShaderPath));
         MaterialCache.emplace(CacheKey, std::move(NewEntry));
         return DefaultMaterial;
     }
@@ -246,28 +241,22 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
     FString PathFileName = (JsonData.hasKey(MatKeys::PathFileName) && !JsonData[MatKeys::PathFileName].ToString().empty())
         ? JsonData[MatKeys::PathFileName].ToString().c_str()
         : CacheKey;
-    FString ShaderPath = (JsonData.hasKey(MatKeys::ShaderPath) && !JsonData[MatKeys::ShaderPath].ToString().empty())
-        ? JsonData[MatKeys::ShaderPath].ToString().c_str()
-        : DefaultShaderPath;
-    FString RenderPassStr = JsonData.hasKey(MatKeys::RenderPass) ? JsonData[MatKeys::RenderPass].ToString().c_str() : FString();
-    ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
-
     FString BlendStr = JsonData.hasKey(MatKeys::BlendState) ? JsonData[MatKeys::BlendState].ToString().c_str() : "";
     FString DepthStr = JsonData.hasKey(MatKeys::DepthStencilState) ? JsonData[MatKeys::DepthStencilState].ToString().c_str() : "";
     FString RasterStr = JsonData.hasKey(MatKeys::RasterizerState) ? JsonData[MatKeys::RasterizerState].ToString().c_str() : "";
 
-    EBlendState BlendState = StringToBlendState(BlendStr, RenderPass);
-    EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
-    ERasterizerState RasterState = StringToRasterizerState(RasterStr, RenderPass);
+    EBlendState BlendState = StringToBlendState(BlendStr);
+    EDepthStencilState DepthState = StringToDepthStencilState(DepthStr);
+    ERasterizerState RasterState = StringToRasterizerState(RasterStr);
 
-    FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
+    FMaterialTemplate* Template = GetOrCreateTemplate();
     if (!Template)
         return nullptr;
 
     auto InjectedBuffers = CreateConstantBuffers(Template);
 
     UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
-    Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
+    Material->Create(PathFileName, Template, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
 
     bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
     bool bPurged = PurgeStaleParameters(JsonData, Template);
@@ -283,7 +272,6 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
     FMaterialCacheEntry NewEntry;
     NewEntry.Material = Material;
     NewEntry.MaterialFile = BuildFileDependency(ResolveFullPath(CacheKey));
-    NewEntry.ShaderFile = BuildFileDependency(ResolveFullPath(ShaderPath));
     NewEntry.TextureFiles = CollectTextureDependencies(JsonData, CacheKey);
     MaterialCache.emplace(CacheKey, std::move(NewEntry));
     return Material;
@@ -373,83 +361,22 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData, 
     }
 }
 
-ERenderPass FMaterialManager::StringToRenderPass(const FString& Str) const
+EBlendState FMaterialManager::StringToBlendState(const FString& Str) const
 {
     using namespace RenderStateStrings;
-    return FromString(RenderPassMap, Str, ERenderPass::Opaque);
+    return !Str.empty() ? FromString(BlendStateMap, Str, EBlendState::Opaque) : EBlendState::Opaque;
 }
 
-EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass Pass) const
+EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& Str) const
 {
     using namespace RenderStateStrings;
-    if (!Str.empty())
-        return FromString(BlendStateMap, Str, EBlendState::Opaque);
-
-    switch (Pass)
-    {
-    case ERenderPass::AlphaBlend:
-    case ERenderPass::Decal:
-    case ERenderPass::EditorLines:
-    case ERenderPass::PostProcess:
-    case ERenderPass::GizmoInner:
-    case ERenderPass::OverlayBillboard:
-    case ERenderPass::OverlayTextWorld:
-    case ERenderPass::OverlayFont:
-        return EBlendState::AlphaBlend;
-    case ERenderPass::AdditiveDecal:
-        return EBlendState::Additive;
-    case ERenderPass::SelectionMask:
-        return EBlendState::NoColor;
-    default:
-        return EBlendState::Opaque;
-    }
+    return !Str.empty() ? FromString(DepthStencilStateMap, Str, EDepthStencilState::Default) : EDepthStencilState::Default;
 }
 
-EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& Str, ERenderPass Pass) const
+ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str) const
 {
     using namespace RenderStateStrings;
-    if (!Str.empty())
-        return FromString(DepthStencilStateMap, Str, EDepthStencilState::Default);
-
-    switch (Pass)
-    {
-    case ERenderPass::Decal:
-    case ERenderPass::AdditiveDecal:
-        return EDepthStencilState::DepthReadOnly;
-    case ERenderPass::SelectionMask:
-        return EDepthStencilState::StencilWrite;
-    case ERenderPass::PostProcess:
-    case ERenderPass::OverlayBillboard:
-    case ERenderPass::OverlayTextWorld:
-    case ERenderPass::OverlayFont:
-        return EDepthStencilState::NoDepth;
-    case ERenderPass::GizmoOuter:
-        return EDepthStencilState::GizmoOutside;
-    case ERenderPass::GizmoInner:
-        return EDepthStencilState::GizmoInside;
-    default:
-        return EDepthStencilState::Default;
-    }
-}
-
-ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, ERenderPass Pass) const
-{
-    using namespace RenderStateStrings;
-    if (!Str.empty())
-        return FromString(RasterizerStateMap, Str, ERasterizerState::SolidBackCull);
-
-    switch (Pass)
-    {
-    case ERenderPass::Decal:
-    case ERenderPass::AdditiveDecal:
-    case ERenderPass::SelectionMask:
-    case ERenderPass::PostProcess:
-    case ERenderPass::OverlayBillboard:
-    case ERenderPass::OverlayTextWorld:
-        return ERasterizerState::SolidNoCull;
-    default:
-        return ERasterizerState::SolidBackCull;
-    }
+    return !Str.empty() ? FromString(RasterizerStateMap, Str, ERasterizerState::SolidBackCull) : ERasterizerState::SolidBackCull;
 }
 
 bool FMaterialManager::NormalizeMaterialJson(json::JSON& JsonData, const FString& MaterialPath)
@@ -492,11 +419,6 @@ bool FMaterialManager::NormalizeMaterialJson(json::JSON& JsonData, const FString
         JsonData[MatKeys::Parameters] = std::move(CanonicalParams);
     }
 
-    if (!JsonData.hasKey(MatKeys::RenderPass) || JsonData[MatKeys::RenderPass].ToString().empty())
-    {
-        JsonData[MatKeys::RenderPass] = "Opaque";
-        bChanged = true;
-    }
 
     return bChanged;
 }
@@ -574,49 +496,20 @@ bool FMaterialManager::PurgeStaleParameters(json::JSON& JsonData, FMaterialTempl
     return false;
 }
 
-FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPath)
+FMaterialTemplate* FMaterialManager::GetOrCreateTemplate()
 {
-    const FString CacheKey = NormalizeCacheKey(ShaderPath);
-    const FMaterialFileDependency CurrentShaderFile = BuildFileDependency(ResolveFullPath(CacheKey));
-
+    const FString CacheKey = "SurfaceMaterial";
     auto It = TemplateCache.find(CacheKey);
     if (It != TemplateCache.end())
     {
-        if (!HasDependencyChanged(It->second.ShaderFile))
-        {
-            return It->second.Template;
-        }
-
-        if (It->second.Template)
-        {
-            RetiredTemplates.push_back(It->second.Template);
-        }
-        TemplateCache.erase(It);
-    }
-
-    FShader* Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(CacheKey).c_str());
-    if (!Shader)
-    {
-        // Fallback: Shaders/StaticMeshShader.hlsl -> Shaders/Materials/StaticMeshShader.hlsl
-        std::filesystem::path Path(FPaths::ToWide(ShaderPath));
-        if (Path.parent_path() == L"Shaders")
-        {
-            FString FallbackPath = "Shaders/Materials/" + FPaths::FromWide(Path.filename().wstring());
-            Shader = FShaderManager::Get().CreateCustomShader(Device, FPaths::ToWide(NormalizeCacheKey(FallbackPath)).c_str());
-        }
-        
-        if (!Shader)
-        {
-            return nullptr;
-        }
+        return It->second.Template;
     }
 
     FMaterialTemplate* NewTemplate = new FMaterialTemplate();
-    NewTemplate->Create(Shader);
+    NewTemplate->CreateSurfaceMaterialLayout();
 
     FTemplateCacheEntry Entry;
     Entry.Template = NewTemplate;
-    Entry.ShaderFile = CurrentShaderFile;
     TemplateCache.emplace(CacheKey, Entry);
     return NewTemplate;
 }

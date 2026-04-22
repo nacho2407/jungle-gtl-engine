@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorControlPanel.h"
+#include "Editor/UI/EditorControlPanel.h"
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"

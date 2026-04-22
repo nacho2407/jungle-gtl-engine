@@ -1,4 +1,4 @@
-﻿#include "Mesh/ObjImporter.h"
+#include "Mesh/ObjImporter.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
 #include "Editor/UI/EditorConsolePanel.h"
@@ -35,14 +35,14 @@ struct hash<FVertexKey>
 
 struct FStringParser
 {
-	// Delimiter로 구분된 다음 토큰을 추출하고, InOutView에서 해당 토큰과 구분자 제거
+	// Delimiter�� ���е� ���� ��ū�� �����ϰ�, InOutView���� �ش� ��ū�� ������ ����
 	static std::string_view GetNextToken(std::string_view& InOutView, char Delimiter = ' ')
 	{
 		size_t DelimiterPosition = InOutView.find(Delimiter);
-		std::string_view Token = InOutView.substr(0, DelimiterPosition); // [0, DelimiterPosition) 범위의 토큰 추출
+		std::string_view Token = InOutView.substr(0, DelimiterPosition); // [0, DelimiterPosition) ������ ��ū ����
 		if (DelimiterPosition != std::string_view::npos)
 		{
-			InOutView.remove_prefix(DelimiterPosition + 1); // 토큰과 구분자 제거
+			InOutView.remove_prefix(DelimiterPosition + 1); // ��ū�� ������ ����
 		}
 		else
 		{
@@ -51,7 +51,7 @@ struct FStringParser
 		return Token;
 	}
 
-	// 다수의 공백을 구분자로 사용하여 다음 토큰을 추출하고, InOutView에서 해당 토큰과 앞의 공백 제거
+	// �ټ��� ������ �����ڷ� ����Ͽ� ���� ��ū�� �����ϰ�, InOutView���� �ش� ��ū�� ���� ���� ����
 	static std::string_view GetNextWhitespaceToken(std::string_view& InOutView)
 	{
 		size_t Start = InOutView.find_first_not_of(" \t");
@@ -60,10 +60,10 @@ struct FStringParser
 			InOutView = std::string_view();
 			return std::string_view();
 		}
-		InOutView.remove_prefix(Start); // 유효한 문자 앞의 공백 제거
+		InOutView.remove_prefix(Start); // ��ȿ�� ���� ���� ���� ����
 
 		size_t End = InOutView.find_first_of(" \t");
-		std::string_view Token = InOutView.substr(0, End); // 공백 이전까지의 토큰 추출
+		std::string_view Token = InOutView.substr(0, End); // ���� ���������� ��ū ����
 
 		if (End != std::string_view::npos)
 		{
@@ -76,13 +76,13 @@ struct FStringParser
 		return Token;
 	}
 
-	// InOutView의 왼쪽 끝에 있는 공백 제거
+	// InOutView�� ���� ���� �ִ� ���� ����
 	static void TrimLeft(std::string_view& InOutView)
 	{
 		size_t Start = InOutView.find_first_not_of(" \t");
 		if (Start != std::string_view::npos)
 		{
-			InOutView.remove_prefix(Start);  // 유효한 문자 앞의 공백 제거
+			InOutView.remove_prefix(Start);  // ��ȿ�� ���� ���� ���� ����
 		}
 		else
 		{
@@ -167,11 +167,11 @@ FRawFaceVertex ParseSingleFaceVertex(std::string_view FaceToken)
 {
     FRawFaceVertex Result;
 
-    // 첫 번째 토큰: Position
+    // ù ��° ��ū: Position
     std::string_view PosStr = FStringParser::GetNextToken(FaceToken, '/');
     FStringParser::ParseInt(PosStr, Result.PosIndex);
 
-    // 두 번째 토큰: UV (있을 수도, 비어있을 수도 있음)
+    // �� ��° ��ū: UV (���� ����, ������� ���� ����)
     if (!FaceToken.empty())
     {
         std::string_view UVStr = FStringParser::GetNextToken(FaceToken, '/');
@@ -181,7 +181,7 @@ FRawFaceVertex ParseSingleFaceVertex(std::string_view FaceToken)
         }
     }
 
-    // 세 번째 토큰: Normal
+    // �� ��° ��ū: Normal
     if (!FaceToken.empty())
     {
         std::string_view NormalStr = FStringParser::GetNextToken(FaceToken, '/');
@@ -213,7 +213,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 
 	std::string_view FileView(Buffer.data(), Buffer.size());
 
-	// UTF-8 BOM 스킵
+	// UTF-8 BOM ��ŵ
 	if (FileView.size() >= 3 && FileView[0] == '\xEF' && FileView[1] == '\xBB' && FileView[2] == '\xBF')
 	{
 		FileView.remove_prefix(3);
@@ -226,7 +226,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 	{
 		std::string_view Line = FStringParser::GetNextToken(FileView, '\n');
 
-		// CRLF 제거
+		// CRLF ����
 		if (!Line.empty() && Line.back() == '\r')
 		{
 			Line.remove_suffix(1);
@@ -264,7 +264,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 		}
 		else if (Prefix == "f")
 		{
-			// default material section 추가 (usemtl이 없이 f가 먼저 나오는 경우)
+			// default material section �߰� (usemtl�� ���� f�� ���� ������ ���)
 			if (OutObjInfo.Sections.empty())
 			{
 				FStaticMeshSection DefaultSection;
@@ -378,7 +378,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 
 	std::string_view FileView(Buffer.data(), Buffer.size());
 
-	// UTF-8 BOM 스킵
+	// UTF-8 BOM ��ŵ
 	if (FileView.size() >= 3 && FileView[0] == '\xEF' && FileView[1] == '\xBB' && FileView[2] == '\xBF')
 	{
 		FileView.remove_prefix(3);
@@ -388,7 +388,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 	{
 		std::string_view Line = FStringParser::GetNextToken(FileView, '\n');
 
-		// CRLF 제거
+		// CRLF ����
 		if (!Line.empty() && Line.back() == '\r')
 		{
 			Line.remove_suffix(1);
@@ -492,7 +492,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 	return true;
 }
 
-// MTL 정보에서 머티리얼 JSON 파일로 변환하는 함수
+// MTL �������� ��Ƽ���� JSON ���Ϸ� ��ȯ�ϴ� �Լ�
 FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 {
 	std::filesystem::path JsonFullPath;
@@ -544,8 +544,6 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 	json::JSON JsonData;
 	JsonData["PathFileName"] = JsonPath;
-	JsonData["ShaderPath"] = "Shaders/Materials/StaticMeshShader.hlsl";
-	JsonData["RenderPass"] = "Opaque";
 	JsonData["BlendState"] = "Opaque";
 	JsonData["DepthStencilState"] = "Default";
 	JsonData["RasterizerState"] = "SolidBackCull";
@@ -589,22 +587,22 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 FVector FObjImporter::RemapPosition(const FVector& ObjPos, EForwardAxis Axis)
 {
-	// OBJ 원본 좌표 (Ox, Oy, Oz) → 엔진 (Ex, Ey, Ez)
-	// 엔진: X=Forward, Y=Right, Z=Up
-	// OBJ 기본: Y-up 우수 좌표계
+	// OBJ ���� ��ǥ (Ox, Oy, Oz) �� ���� (Ex, Ey, Ez)
+	// ����: X=Forward, Y=Right, Z=Up
+	// OBJ �⺻: Y-up ��� ��ǥ��
 	switch (Axis)
 	{
-	case EForwardAxis::X:    // OBJ +X → Engine Forward(+X)
+	case EForwardAxis::X:    // OBJ +X �� Engine Forward(+X)
 		return FVector(ObjPos.X, ObjPos.Z, ObjPos.Y);
-	case EForwardAxis::NegX: // OBJ -X → Engine Forward(+X)
+	case EForwardAxis::NegX: // OBJ -X �� Engine Forward(+X)
 		return FVector(-ObjPos.X, -ObjPos.Z, ObjPos.Y);
-	case EForwardAxis::Y:    // OBJ +Y → Engine Forward(+X)
+	case EForwardAxis::Y:    // OBJ +Y �� Engine Forward(+X)
 		return FVector(ObjPos.Y, ObjPos.X, ObjPos.Z);
-	case EForwardAxis::NegY: // OBJ -Y → Engine Forward(+X) — 블렌더 기본
+	case EForwardAxis::NegY: // OBJ -Y �� Engine Forward(+X) ? ����� �⺻
 		return FVector(-ObjPos.Y, -ObjPos.X, ObjPos.Z);
-	case EForwardAxis::Z:    // OBJ +Z → Engine Forward(+X)
+	case EForwardAxis::Z:    // OBJ +Z �� Engine Forward(+X)
 		return FVector(ObjPos.Z, ObjPos.X, ObjPos.Y);
-	case EForwardAxis::NegZ: // OBJ -Z → Engine Forward(+X) — OBJ 기본 (Y-up, -Z forward)
+	case EForwardAxis::NegZ: // OBJ -Z �� Engine Forward(+X) ? OBJ �⺻ (Y-up, -Z forward)
 		return FVector(-ObjPos.Z, ObjPos.X, ObjPos.Y);
 	default:
 		return FVector(ObjPos.X, ObjPos.Z, ObjPos.Y);
@@ -616,11 +614,11 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 	OutMesh = FStaticMesh();
 	OutMaterials.clear();
 
-	// Phase 1: usemtl 등장 순서를 기반으로 FStaticMaterial 배열 및 인덱스 맵 생성
+	// Phase 1: usemtl ���� ������ ������� FStaticMaterial �迭 �� �ε��� �� ����
 	TArray<FString> OrderedMaterialSlots;
 	bool bHasNoneSlot = false;
 
-	// OBJ의 Sections(usemtl) 등장 순서대로 고유 슬롯 수집
+	// OBJ�� Sections(usemtl) ���� ������� ���� ���� ����
 	for (const FStaticMeshSection& Section : ObjInfo.Sections)
 	{
 		const FString& CurrentSlotName = Section.MaterialSlotName;
@@ -631,17 +629,17 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			continue;
 		}
 
-		// 기존에 수집된 슬롯과 중복되지 않는 경우에만 추가
+		// ������ ������ ���԰� �ߺ����� �ʴ� ��쿡�� �߰�
 		if (std::find(OrderedMaterialSlots.begin(), OrderedMaterialSlots.end(), CurrentSlotName) == OrderedMaterialSlots.end())
 		{
 			OrderedMaterialSlots.push_back(CurrentSlotName);
 		}
 	}
 
-	// 수집된 순서대로 머티리얼 생성 및 인덱스 매핑
+	// ������ ������� ��Ƽ���� ���� �� �ε��� ����
 	for (const FString& TargetSlotName : OrderedMaterialSlots)
 	{
-		// 슬롯 이름과 일치하는 파싱된 머티리얼 데이터 선형 탐색
+		// ���� �̸��� ��ġ�ϴ� �Ľ̵� ��Ƽ���� ������ ���� Ž��
 		const FObjMaterialInfo* MatchedMaterial = nullptr;
 		auto It = std::find_if(MtlInfos.begin(), MtlInfos.end(),
 			[&TargetSlotName](const FObjMaterialInfo& Mat) {
@@ -651,24 +649,24 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		if (It != MtlInfos.end())
 		{
 			MatchedMaterial = &(*It);
-			// 섹션 머티리얼 슬롯 이름과 일치하는 머티리얼 이름이 MTL 파일에서 발견된 경우, 해당 머티리얼 로드 또는 생성
+			// ���� ��Ƽ���� ���� �̸��� ��ġ�ϴ� ��Ƽ���� �̸��� MTL ���Ͽ��� �߰ߵ� ���, �ش� ��Ƽ���� �ε� �Ǵ� ����
 			UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
 
-			// Convert() 안에서 기존 직접 세팅 대신
-			FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json 파일 생성
+			// Convert() �ȿ��� ���� ���� ���� ���
+			FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json ���� ����
 			UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(JsonPath);
 
-			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
+			// FStaticMaterial ���� ���� �� OutMaterials�� �߰�
 			FStaticMaterial NewStaticMaterial;
 			NewStaticMaterial.MaterialInterface = MaterialObject;
 			NewStaticMaterial.MaterialSlotName = TargetSlotName;
 			OutMaterials.push_back(NewStaticMaterial);
 		}
-		else // Material Slot이 MTL 파일에 정의되어 있지 않은 경우
+		else // Material Slot�� MTL ���Ͽ� ���ǵǾ� ���� ���� ���
 		{
 			UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
 
-			// FStaticMaterial 슬롯 생성 및 OutMaterials에 추가
+			// FStaticMaterial ���� ���� �� OutMaterials�� �߰�
 			FStaticMaterial NewEmptyStaticMaterial;
 			NewEmptyStaticMaterial.MaterialInterface = DefaultMaterial;
 			NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
@@ -676,7 +674,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 	}
 
-	// "None" 슬롯이 존재했다면 맨 마지막에 배치
+	// "None" ������ �����ߴٸ� �� �������� ��ġ
 	if (bHasNoneSlot)
 	{
 		UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
@@ -688,13 +686,13 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		OutMaterials.push_back(NewDefaultStaticMaterial);
 	}
 
-    // Phase 2: 파편화된 섹션들의 면(Face)을 머티리얼 인덱스 기준으로 재그룹화
+    // Phase 2: ����ȭ�� ���ǵ��� ��(Face)�� ��Ƽ���� �ε��� �������� ��׷�ȭ
 	TArray<TArray<uint32>> FacesPerMaterial;
 	FacesPerMaterial.resize(OutMaterials.size());
 
 	for (const FStaticMeshSection& RawSection : ObjInfo.Sections)
 	{
-		// 섹션의 머티리얼 슬롯 이름과 일치하는 OutMaterials 배열의 인덱스 찾기
+		// ������ ��Ƽ���� ���� �̸��� ��ġ�ϴ� OutMaterials �迭�� �ε��� ã��
 		auto It = std::find_if(OutMaterials.begin(), OutMaterials.end(),
 			[&RawSection](const FStaticMaterial& Mat) {
 				return Mat.MaterialSlotName == RawSection.MaterialSlotName;
@@ -707,8 +705,8 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 		else
 		{
-			// "None" 슬롯이 없고 매칭되는 슬롯도 없는 경우, 기본 머티리얼로 할당
-			MaterialIndex = OutMaterials.size() - 1; // "None" 슬롯이 마지막에 배치되어 있다고 가정
+			// "None" ������ ���� ��Ī�Ǵ� ���Ե� ���� ���, �⺻ ��Ƽ����� �Ҵ�
+			MaterialIndex = OutMaterials.size() - 1; // "None" ������ �������� ��ġ�Ǿ� �ִٰ� ����
 			UE_LOG("Warning: Material slot '%s' not found. Assigning to Default slot.", RawSection.MaterialSlotName.c_str());
 		}
 
@@ -719,7 +717,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		}
 	}
 
-    // Phase 3: 재그룹화된 면 데이터를 기반으로 최종 정점/인덱스 버퍼 구축
+    // Phase 3: ��׷�ȭ�� �� �����͸� ������� ���� ����/�ε��� ���� ����
 	TMap<FVertexKey, uint32> VertexMap;
 
 	for (size_t MaterialIndex = 0; MaterialIndex < OutMaterials.size(); ++MaterialIndex)
@@ -737,7 +735,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 		{
 			uint32 TriangleIndices[3];
 
-			// (P1 - P0) X (P2 - P0) 후 정규화
+			// (P1 - P0) X (P2 - P0) �� ����ȭ
 			FVector P0 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex]];
 			FVector P1 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex + 1]];
 			FVector P2 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex + 2]];
@@ -746,7 +744,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 			FVector Edge2 = P2 - P0;
 			FVector FaceNormal = Edge1.Cross(Edge2).Normalized();
 
-			// --- Tangent / Bitangent 계산 ---
+			// --- Tangent / Bitangent ��� ---
 			FVector T(1, 0, 0), B(0, 1, 0);
 			if (ObjInfo.UVIndices[FaceStartIndex] != -1)
 			{
@@ -783,18 +781,18 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
 				if (auto It = VertexMap.find(Key); It != VertexMap.end())
 				{
-					// 이미 생성된 정점이 있다면 인덱스 재사용
+					// �̹� ������ ������ �ִٸ� �ε��� ����
 					TriangleIndices[j] = It->second;
 				}
 				else
 				{
-					// 새로운 정점 생성
+					// ���ο� ���� ����
 					FVertexPNCT_T NewVertex;
 
-					// 축 리맵 + 스케일 적용
+					// �� ���� + ������ ����
 					NewVertex.Position = RemapPosition(ObjInfo.Positions[Key.p], Options.ForwardAxis) * Options.Scale;
 
-					// Normal 리맵
+					// Normal ����
 					FVector FinalNormal;
 					if (Key.n == -1)
 					{
@@ -806,7 +804,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 					}
 					NewVertex.Normal = FinalNormal;
 
-					// UV 예외 처리
+					// UV ���� ó��
 					if (Key.t == -1)
 					{
 						NewVertex.UV = { 0.0f, 0.0f };
@@ -814,13 +812,13 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 					else
 					{
 						NewVertex.UV = ObjInfo.UVs[Key.t];
-						// UV 변환 (left-bottom -> left-top)
+						// UV ��ȯ (left-bottom -> left-top)
 						NewVertex.UV.V = 1.0f - NewVertex.UV.V;
 					}
 
 					NewVertex.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-					// Tangent 리맵 및 Handedness(w) 계산
+					// Tangent ���� �� Handedness(w) ���
 					FVector WorldT = RemapPosition(T, Options.ForwardAxis).Normalized();
 					FVector WorldB = RemapPosition(B, Options.ForwardAxis).Normalized();
 					float w = (FinalNormal.Cross(WorldT).Dot(WorldB) < 0.0f) ? -1.0f : 1.0f;
@@ -834,7 +832,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 				}
 			}
 
-			// 와인딩 오더 처리
+			// ���ε� ���� ó��
 			OutMesh.Indices.push_back(TriangleIndices[0]);
 			if (Options.WindingOrder == EWindingOrder::CCW_to_CW)
 			{

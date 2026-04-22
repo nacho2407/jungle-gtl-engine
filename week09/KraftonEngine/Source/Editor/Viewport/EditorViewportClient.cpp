@@ -1,4 +1,4 @@
-﻿#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"

@@ -1,4 +1,4 @@
-﻿#include "FakeLightActor.h"
+#include "FakeLightActor.h"
 #include "AActor.h"
 #include "Component/CylindricalBillboardComponent.h"
 #include "Component/DecalComponent.h"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/Transform.h"
 #include "Math/Rotator.h"

@@ -1,19 +1,19 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 #include <unordered_map>
 
-#include "Render/Overlay/OverlayBatchSet.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
-#include "Render/Pipelines/Context/FrameRenderResources.h"
-#include "Render/Pipelines/Context/RenderCollectContext.h"
-#include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/Scene/SceneView.h"
-#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
-#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
-#include "Render/Pipelines/Registry/RenderPassRegistry.h"
-#include "Render/Pipelines/Registry/RenderPipelineRegistry.h"
-#include "Render/Pipelines/Runner/RenderPipelineRunner.h"
+#include "Render/Submission/Batching/OverlayBatchSet.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Context/FrameRenderResources.h"
+#include "Render/Execute/Context/RenderCollectContext.h"
+#include "Render/Execute/Context/RenderPipelineContext.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Execute/Registry/RenderPassRegistry.h"
+#include "Render/Execute/Registry/RenderPipelineRegistry.h"
+#include "Render/Execute/Runner/RenderPipelineRunner.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
@@ -31,8 +31,8 @@ class FOctree;
 class FWorldPrimitivePickingBVH;
 
 /*
-    렌더링 전체를 총괄하는 최상위 오케스트레이터입니다.
-    프레임 공용 자원 준비, 드로우 대상 수집, 커맨드 생성, 파이프라인 실행만 담당합니다.
+    ������ ��ü�� �Ѱ��ϴ� �ֻ��� ���ɽ�Ʈ�������Դϴ�.
+    ������ ���� �ڿ� �غ�, ��ο� ��� ����, Ŀ�ǵ� ����, ���������� ���ุ ����մϴ�.
 */
 class FRenderer
 {
@@ -50,7 +50,7 @@ public:
 
     void BeginCollect(const FSceneView& SceneView, uint32 MaxProxyCount = 0);
 
-    // 수집 단계 facade
+    // ���� �ܰ� facade
     void CollectWorld(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
     void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
@@ -64,7 +64,7 @@ public:
     const TArray<class FPrimitiveSceneProxy*>& GetLastVisiblePrimitiveProxies() const { return DrawCollector.GetLastVisiblePrimitiveProxies(); }
     const FCollectedLights& GetCollectedLights() const { return DrawCollector.GetCollectedLights(); }
 
-    // 수집된 결과를 드로우 커맨드로 변환
+    // ������ ����� ��ο� Ŀ�ǵ�� ��ȯ
     void BuildDrawCommands(FRenderPipelineContext& PipelineContext);
 
     void BeginFrame(const FSceneView& SceneView, const FViewportRenderTargets* Targets = nullptr);

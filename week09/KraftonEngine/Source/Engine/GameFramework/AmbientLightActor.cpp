@@ -1,4 +1,4 @@
-﻿#include "AmbientLightActor.h"
+#include "AmbientLightActor.h"
 #include "Component/AmbientLightComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"

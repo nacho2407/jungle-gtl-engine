@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Math/Matrix.h"
 #include "Engine/Math/Rotator.h"
 #include "Engine/Math/Quat.h"

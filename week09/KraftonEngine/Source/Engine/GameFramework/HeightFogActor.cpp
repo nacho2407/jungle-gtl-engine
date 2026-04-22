@@ -1,4 +1,4 @@
-﻿#include "HeightFogActor.h"
+#include "HeightFogActor.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"

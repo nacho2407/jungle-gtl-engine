@@ -1,4 +1,4 @@
-﻿//#pragma once
+//#pragma once
 //
 //#include "Engine/Runtime/Engine.h"
 //#include "Mesh/ObjImporter.h"

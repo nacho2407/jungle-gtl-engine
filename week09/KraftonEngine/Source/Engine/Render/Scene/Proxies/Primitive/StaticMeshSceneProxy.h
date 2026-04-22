@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Materials/MaterialCore.h"
