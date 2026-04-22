@@ -76,12 +76,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 void UEditorEngine::Shutdown()
 {
-	// 에디터 해제 (엔진보다 먼저)
-	ViewportLayout.SaveToSettings();
-	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
-	CloseScene();
-	SelectionManager.Shutdown();
-	MainPanel.Release();
+    // 에디터 해제 (엔진보다 먼저)
+    ViewportLayout.SaveToSettings();
+    FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
+    CloseScene();
+    SelectionManager.Shutdown();
+    MainPanel.Release();
     GPUOcclusion.Release();
 
     // 뷰포트 레이아웃 해제
@@ -346,7 +346,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 
     // 이 코드와 대응되는 게 아래 EndPlayMap()에 있음.
     // MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
-        ViewportLayout.DisableWorldAxisForPIE();
+    ViewportLayout.DisableWorldAxisForPIE();
 
     // 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
     //    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
@@ -411,7 +411,7 @@ void UEditorEngine::EndPlayMap()
 
     // 이 코드와 대응되는 게 위의 StartPlayInEditorSession()에 있음.
     // MainPanel.RestoreEditorWindowsAfterPIE();
-        ViewportLayout.RestoreWorldAxisAfterPIE();
+    ViewportLayout.RestoreWorldAxisAfterPIE();
 
     // PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
     DestroyWorldContext(FName("PIE"));
@@ -570,9 +570,9 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     }
 
     Renderer.BeginCollect(SceneView, Scene.GetPrimitiveProxyCount());
-    auto PassContext = Renderer.CreatePassContext(SceneView, &RenderTargets, &Scene);
-    PassContext.ActiveViewMode = ViewMode;
-    PassContext.ActiveViewSurfaces = ViewModeSurfaces;
+    auto PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, &Scene);
+    PipelineContext.ActiveViewMode = ViewMode;
+    PipelineContext.ActiveViewSurfaces = ViewModeSurfaces;
 
     FRenderCollectContext CollectContext = {};
     CollectContext.SceneView = &SceneView;
@@ -610,9 +610,9 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
     {
         SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-        PassContext.VisibleProxies = &Renderer.GetCollectedPrimitives().VisibleProxies;
-        Renderer.BuildDrawCommands(PassContext);
-        Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PassContext);
+        PipelineContext.VisibleProxies = &Renderer.GetCollectedPrimitives().VisibleProxies;
+        Renderer.BuildDrawCommands(PipelineContext);
+        Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PipelineContext);
     }
 
     if (GPUOcclusion.IsInitialized())
