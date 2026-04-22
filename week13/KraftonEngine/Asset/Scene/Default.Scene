@@ -8,7 +8,7 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/BasicShapeMaterial.json"
+            "Path" : "Asset/Materials/BasicShapeMaterial.mat"
           },
           "Location" : [0.000000, 0.000000, -2.033567],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -70,7 +70,7 @@
           "Height" : 1.000000,
           "Location" : [0.000000, 0.000000, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/AmbientLight.json"
+            "Path" : "Asset/Materials/AmbientLight.mat"
           },
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -104,7 +104,7 @@
           "Height" : 1.000000,
           "Location" : [0.000000, 0.000000, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/DirectionalLight.json"
+            "Path" : "Asset/Materials/DirectionalLight.mat"
           },
           "Rotation" : [45.000000, 0.000000, 45.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -142,7 +142,7 @@
           "Height" : 1.000000,
           "Location" : [-4.848839, -0.103040, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/SpotLight.json"
+            "Path" : "Asset/Materials/SpotLight.mat"
           },
           "Rotation" : [0.000000, -84.787331, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -178,7 +178,7 @@
           "Height" : 1.000000,
           "Location" : [-4.616034, -4.371713, 1.631225],
           "Material" : {
-            "Path" : "Asset/Materials/PointLight.json"
+            "Path" : "Asset/Materials/PointLight.mat"
           },
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -217,7 +217,7 @@
           "FadeOutDuration" : 0.000000,
           "Location" : [-6.200778, -4.083702, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/DefaultDecal.json"
+            "Path" : "Asset/Materials/DefaultDecal.mat"
           },
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -254,7 +254,7 @@
           "Height" : 1.000000,
           "Location" : [-6.708278, -3.989857, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/SpotLight.json"
+            "Path" : "Asset/Materials/SpotLight.mat"
           },
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],

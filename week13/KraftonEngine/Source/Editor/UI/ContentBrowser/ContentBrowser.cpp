@@ -1,36 +1,97 @@
 ﻿#include "ContentBrowser.h"
 
 #include "ContentBrowserElement.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "WICTextureLoader.h"
+#include "Resource/ResourceManager.h"
 
+namespace
+{
+	bool IsParentDirectoryReference(const std::filesystem::path& Path)
+	{
+		for (const std::filesystem::path& Part : Path)
+		{
+			if (Part == L"..")
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	FString MakeContentBrowserSettingsPath(const std::wstring& CurrentPath)
+	{
+		const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+		const std::filesystem::path Path = std::filesystem::path(CurrentPath).lexically_normal();
+		const std::filesystem::path RelativePath = Path.lexically_relative(RootPath);
+
+		if (!RelativePath.empty() && !IsParentDirectoryReference(RelativePath))
+		{
+			return FPaths::ToUtf8(RelativePath.generic_wstring());
+		}
+
+		return FPaths::ToUtf8(Path.wstring());
+	}
+
+	std::wstring ResolveContentBrowserSettingsPath(const FString& SavedPath)
+	{
+		if (SavedPath.empty())
+		{
+			return FPaths::RootDir();
+		}
+
+		std::filesystem::path Path(FPaths::ToWide(SavedPath));
+		if (!Path.is_absolute())
+		{
+			Path = std::filesystem::path(FPaths::RootDir()) / Path;
+		}
+
+		Path = Path.lexically_normal();
+		if (std::filesystem::exists(Path) && std::filesystem::is_directory(Path))
+		{
+			return Path.wstring();
+		}
+
+		return FPaths::RootDir();
+	}
+
+	bool IsSubPath(const std::filesystem::path& parent, const std::filesystem::path& child)
+	{
+		std::filesystem::path p = std::filesystem::weakly_canonical(parent);
+		std::filesystem::path c = std::filesystem::weakly_canonical(child);
+
+		auto pIt = p.begin();
+		auto cIt = c.begin();
+
+		for (; pIt != p.end() && cIt != c.end(); ++pIt, ++cIt)
+		{
+			if (*pIt != *cIt)
+				return false;
+		}
+
+		return pIt == p.end(); // parent 끝까지 다 맞았으면 포함됨
+	}
+}
 
 void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
 	FEditorWidget::Initialize(InEditor);
 	if (!InDevice) return;
 
-	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
+	const std::wstring IconDir = L"Asset/Editor/Icons/";
 
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"StartMerge_42x.png").c_str(),
-		nullptr, ICons["Default"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"Folder_Base_256x.png").c_str(),
-		nullptr, ICons["Directory"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_landscape_40x.png").c_str(),
-		nullptr, ICons[".Scene"].GetAddressOf());
-
-	DirectX::CreateWICTextureFromFile(
-		InDevice, (IconDir + L"icon_MatEd_Mesh_40x.png").c_str(),
-		nullptr, ICons[".obj"].GetAddressOf());
+	ICons["Default"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"StartMerge_42x.png"));
+	ICons["Directory"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Folder_Base_256x.png"));
+	ICons[".Scene"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"World_64x.png"));
+	ICons[".obj"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
+	ICons[".mat"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Sphere_64x.png"));
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
 	Context.EditorEngine = InEditor;
 	BrowserContext = Context;
+	LoadFromSettings();
 
 	Refresh();
 }
@@ -71,6 +132,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	{
 		ImGui::BeginChild("DirectoryTree", ImVec2(0, 0), true);
 		DrawDirNode(RootNode);
+		BrowserContext.PendingRevealPath.clear();
 		ImGui::EndChild();
 	}
 
@@ -80,6 +142,9 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		DrawContents();
 		ImGui::EndChild();
 	}
+
+	if (BrowserContext.SelectedElement)
+		BrowserContext.SelectedElement->RenderDetail();
 
 	ImGui::EndTable();
 	ImGui::End();
@@ -93,47 +158,76 @@ void FEditorContentBrowserWidget::Refresh()
 	BrowserContext.bIsNeedRefresh = false;
 }
 
+void FEditorContentBrowserWidget::LoadFromSettings()
+{
+	BrowserContext.CurrentPath = ResolveContentBrowserSettingsPath(FEditorSettings::Get().ContentBrowserPath);
+	BrowserContext.PendingRevealPath = BrowserContext.CurrentPath;
+}
+
+void FEditorContentBrowserWidget::SaveToSettings() const
+{
+	FEditorSettings::Get().ContentBrowserPath = MakeContentBrowserSettingsPath(BrowserContext.CurrentPath);
+}
+
 void FEditorContentBrowserWidget::RefreshContent()
 {
 	CachedBrowserElements.clear();
 	TArray<FContentItem> CurrentContents = ReadDirectory(BrowserContext.CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
-		std::unique_ptr<ContentBrowserElement> element;
+		std::shared_ptr<ContentBrowserElement> element;
 		FString Extension = FPaths::ToUtf8(Content.Path.extension());
 
 		if (Content.bIsDirectory)
 		{
-			element = std::make_unique<DirectoryElement>();
+			element = std::make_shared<DirectoryElement>();
 			element.get()->SetIcon(ICons["Directory"].Get());
 
 		}
 		else if (Content.Path.extension() == ".Scene")
 		{
-			element = std::make_unique<SceneElement>();
+			element = std::make_shared<SceneElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".obj")
 		{
-			element = std::make_unique<ObjectElement>();
+			element = std::make_shared<ObjectElement>();
 			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".mat")
+		{
+			element = std::make_shared<MaterialElement>();
+			element.get()->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".png" || Content.Path.extension() == ".PNG")
+		{
+			element = std::make_shared<PNGElement>();
+			element.get()->SetIcon(FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring())).Get());
 		}
 		else
 		{
-			element = std::make_unique<ContentBrowserElement>();
+			element = std::make_shared<ContentBrowserElement>();
 			element.get()->SetIcon(ICons["Default"].Get());
 		}
 		
 		element.get()->SetContent(Content);
 		CachedBrowserElements.push_back(std::move(element));
 	}
-
-	BrowserContext.SelectedElement = nullptr;
 }
 
 void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
 {
-	ImGuiTreeNodeFlags Flag = InNode.Children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
+	ImGuiTreeNodeFlags Flag =
+		InNode.Children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
+
+	if (InNode.Self.Path == BrowserContext.CurrentPath)
+	{
+		Flag |= ImGuiTreeNodeFlags_Selected;
+	}
+	if (!BrowserContext.PendingRevealPath.empty() && IsSubPath(InNode.Self.Path, BrowserContext.PendingRevealPath))
+	{
+		ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+	}
 
 	bool bIsOpen = ImGui::TreeNodeEx(FPaths::ToUtf8(InNode.Self.Name).c_str(), Flag);
 	if (ImGui::IsItemClicked())
@@ -221,7 +315,7 @@ FEditorContentBrowserWidget::FDirNode FEditorContentBrowserWidget::BuildDirector
 	}
 
 	if(Node.Self.Name.empty())
-		Node.Self.Name = FPaths::ToWide("<Unnamed>");
+		Node.Self.Name = FPaths::ToWide("Project");
 
 	return Node;
 }

@@ -257,6 +257,9 @@
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -660,6 +663,8 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\ClusteredLightCuller.cpp" />
+    <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -690,6 +695,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorMaterialInspector.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h">
@@ -1217,6 +1225,8 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Culling\ClusteredLightCuller.h" />
+    <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

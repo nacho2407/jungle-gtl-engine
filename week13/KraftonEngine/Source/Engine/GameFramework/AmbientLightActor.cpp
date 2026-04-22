@@ -11,7 +11,7 @@ void AAmbientLightActor::InitDefaultComponents()
 	BillboardComponent->SetEditorOnly(true);
 	SetRootComponent(BillboardComponent);
 
-	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/AmbientLight.json");
+	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/AmbientLight.mat");
 	BillboardComponent->SetMaterial(LightMaterial);
 
 	LightComponent = AddComponent<UAmbientLightComponent>();

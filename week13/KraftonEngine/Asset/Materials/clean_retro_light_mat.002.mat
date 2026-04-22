@@ -1,0 +1,16 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Asset/Materials/clean_retro_light_mat.002.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Data/Retro-light/Texture/Clean_retro_light_albedo.png"
+  }
+}

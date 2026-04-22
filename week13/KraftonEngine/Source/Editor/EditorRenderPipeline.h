@@ -3,6 +3,7 @@
 #include "Render/Pipeline/RenderCollector.h"
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Culling/GPUOcclusionCulling.h"
+#include <memory>
 
 class UEditorEngine;
 class FViewport;
@@ -27,9 +28,13 @@ private:
 	void BuildFrame(FLevelEditorViewportClient* VC, UCameraComponent* Camera, FViewport* VP, UWorld* World);
 	void CollectCommands(FLevelEditorViewportClient* VC, UWorld* World, FRenderer& Renderer);
 
+	// 뷰포트별 GPUOcclusion 인스턴스 (lazy init)
+	FGPUOcclusionCulling& GetOcclusionForViewport(FLevelEditorViewportClient* VC);
+
 private:
 	UEditorEngine* Editor = nullptr;
+	ID3D11Device* CachedDevice = nullptr;
 	FRenderCollector Collector;
 	FFrameContext Frame;
-	FGPUOcclusionCulling GPUOcclusion;
+	TMap<FLevelEditorViewportClient*, std::unique_ptr<FGPUOcclusionCulling>> GPUOcclusionMap;
 };

@@ -11,11 +11,14 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Engine/Input/InputSystem.h"
 
+#include "Editor/UI/ImGuiSetting.h"
+
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImGuiSetting::LoadSetting();
 
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -44,6 +47,11 @@ void FEditorMainPanel::Release()
 	ImGui::DestroyContext();
 }
 
+void FEditorMainPanel::SaveToSettings() const
+{
+	ContentBrowserWidget.SaveToSettings();
+}
+
 void FEditorMainPanel::Render(float DeltaTime)
 {
 	ImGui_ImplDX11_NewFrame();
@@ -51,6 +59,8 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui::NewFrame();
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+
+	ImGuiSetting::ShowSetting();
 
 	// --- 우상단 Windows 토글 버튼 ---
 	if (!bHideEditorWindows)

@@ -16,5 +16,5 @@ private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;
 	UDecalComponent* DecalComponents[3] = { nullptr, }; // xyz 각 방향으로 1개씩
 	const FString FireballMeshName = "Data/BasicShape/Sphere.OBJ";
-	const FString LightAreaMaterialPath = "Asset/Materials/FakeLight_LightArea.json";
+	const FString LightAreaMaterialPath = "Asset/Materials/FakeLight_LightArea.mat";
 };
