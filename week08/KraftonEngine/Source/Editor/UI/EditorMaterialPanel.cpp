@@ -1,4 +1,4 @@
-﻿#include "EditorMaterialPanel.h"
+#include "EditorMaterialPanel.h"
 #include "Materials/Material.h"
 
 #include "Editor/EditorEngine.h"

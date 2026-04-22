@@ -1,4 +1,4 @@
-﻿#include "Collision/RayUtilsSIMD.h"
+#include "Collision/RayUtilsSIMD.h"
 
 #include <cmath>
 

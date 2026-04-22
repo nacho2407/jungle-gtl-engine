@@ -1,10 +1,10 @@
-﻿#include "Render/Submission/Collect/DrawCollector.h"
+#include "Render/Submission/Collect/DrawCollector.h"
 
 #include "GameFramework/World.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
-#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"

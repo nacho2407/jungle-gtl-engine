@@ -1,15 +1,15 @@
-﻿#include "Render/Submission/Command/BuildDrawCommand.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 
 #include "Component/TextRenderComponent.h"
-#include "Render/Passes/Scene/ShadingTypes.h"
-#include "Render/Passes/Base/PassRenderState.h"
-#include "Render/Passes/Base/PipelineStateTypes.h"
-#include "Render/Pipelines/Context/FrameRenderResources.h"
-#include "Render/Pipelines/Context/RenderPipelineContext.h"
-#include "Render/Pipelines/Context/Scene/SceneView.h"
-#include "Render/Pipelines/Context/ViewMode/SceneViewModeSurfaces.h"
-#include "Render/Pipelines/Context/Viewport/ViewportRenderTargets.h"
-#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Execute/Passes/Scene/ShadingTypes.h"
+#include "Render/Execute/Passes/Base/PassRenderState.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Execute/Context/FrameRenderResources.h"
+#include "Render/Execute/Context/RenderPipelineContext.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Renderer.h"
 #include "Render/Resources/Buffers/ConstantBufferLayouts.h"
 #include "Render/Resources/Buffers/ConstantBufferPool.h"
@@ -24,18 +24,18 @@
 
 namespace
 {
-bool TryResolveViewModeStage(ERenderPass Pass, EPipelineStage& OutStage)
+bool TryResolveViewModeStage(ERenderPass Pass, EViewModeStage& OutStage)
 {
     switch (Pass)
     {
     case ERenderPass::Opaque:
-        OutStage = EPipelineStage::BaseDraw;
+        OutStage = EViewModeStage::Opaque;
         return true;
     case ERenderPass::Decal:
-        OutStage = EPipelineStage::Decal;
+        OutStage = EViewModeStage::Decal;
         return true;
     case ERenderPass::Lighting:
-        OutStage = EPipelineStage::Lighting;
+        OutStage = EViewModeStage::Lighting;
         return true;
     default:
         return false;
@@ -63,7 +63,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
     }
     else if (Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
     {
-        EPipelineStage ViewModeStage;
+        EViewModeStage ViewModeStage;
         const bool bSupportsViewModeStage = TryResolveViewModeStage(Pass, ViewModeStage);
         const bool bRequiresViewModeSurface = (Pass == ERenderPass::Opaque || Pass == ERenderPass::Decal);
 
@@ -139,19 +139,19 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
         else
         {
 
-            const bool bUsesViewModeBaseDraw =
+            const bool bUsesViewModeOpaque =
                 (Pass == ERenderPass::Opaque) &&
                 Context.ViewModePassRegistry &&
                 Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode);
 
             // Reversed-Z depth pre-pass writes the same geometry depth first.
-            // BaseDraw must then use GREATER_EQUAL-style read-only depth or every
+            // Opaque must then use GREATER_EQUAL-style read-only depth or every
             // opaque pixel at the exact same depth fails the comparison.
             if (SectionDepthStencil != EDepthStencilState::Default)
             {
                 Cmd.DepthStencil = SectionDepthStencil;
             }
-            else if (bUsesViewModeBaseDraw)
+            else if (bUsesViewModeOpaque)
             {
                 Cmd.DepthStencil = EDepthStencilState::DepthReadOnly;
             }
@@ -255,7 +255,7 @@ void DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPip
             return;
         }
 
-        const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EPipelineStage::Lighting);
+        const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EViewModeStage::Lighting);
         if (!Desc || !Desc->CompiledShader)
         {
             return;
@@ -642,7 +642,7 @@ void DrawCommandBuilder::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy
         return;
     }
 
-    const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EPipelineStage::Decal);
+    const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EViewModeStage::Decal);
     if (!Desc || !Desc->CompiledShader)
     {
         return;

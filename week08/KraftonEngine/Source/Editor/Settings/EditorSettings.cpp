@@ -1,4 +1,4 @@
-﻿#include "Editor/Settings/EditorSettings.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "SimpleJSON/json.hpp"
 

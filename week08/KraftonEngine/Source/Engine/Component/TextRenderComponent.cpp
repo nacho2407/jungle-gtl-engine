@@ -1,4 +1,4 @@
-﻿#include "TextRenderComponent.h"
+#include "TextRenderComponent.h"
 
 #include <algorithm>
 #include <cmath>

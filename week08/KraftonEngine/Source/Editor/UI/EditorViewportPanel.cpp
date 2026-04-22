@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorViewportPanel.h"
+#include "Editor/UI/EditorViewportPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"

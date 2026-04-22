@@ -34,6 +34,9 @@
     <Filter Include="Shaders\Passes\Scene">
       <UniqueIdentifier>{1d0d1969-ec61-71d5-6224-5454f7775c7b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Passes\Scene\ViewModes">
+      <UniqueIdentifier>{006f12e0-11c6-8333-b6b3-bf7d8aaf535e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders\Passes\Visibility">
       <UniqueIdentifier>{a22c5e4d-c1e3-eac4-f3a4-b1bb4496b72a}</UniqueIdentifier>
     </Filter>
@@ -103,41 +106,38 @@
     <Filter Include="Source\Engine\Render">
       <UniqueIdentifier>{16ec6128-166d-ab0f-2135-c0c61f984faf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Overlay">
-      <UniqueIdentifier>{55d83cb8-92ff-676c-072d-c5a44987acf1}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute">
+      <UniqueIdentifier>{0e561a97-c8e2-4987-dc9d-dda932ec92d7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Passes">
-      <UniqueIdentifier>{e4d448db-9827-dd2f-72e0-d0d4895c5a13}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Context">
+      <UniqueIdentifier>{8cb5007c-2cbf-bf8a-6f75-aa9d0ae208a0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Passes\Base">
-      <UniqueIdentifier>{35187413-c983-8b3d-0f2d-e8f5dfcb63b2}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Context\Scene">
+      <UniqueIdentifier>{f8a1d632-652e-e2d0-5ab7-2120f1845c21}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Passes\Editor">
-      <UniqueIdentifier>{535d2d8a-5164-b66c-9c0c-7c1c899f2627}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Context\ViewMode">
+      <UniqueIdentifier>{9f6e868d-1ed9-24c8-b3d1-0722a5b66bd6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Passes\Scene">
-      <UniqueIdentifier>{b0496778-85e5-6978-8464-f8967dd4fe95}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Context\Viewport">
+      <UniqueIdentifier>{49f0a503-ad02-8830-2095-a6f52074d3de}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines">
-      <UniqueIdentifier>{975cbfaf-fc09-ae58-b40d-4c7135cc2af0}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Passes">
+      <UniqueIdentifier>{d05ed685-9c31-de2d-e16f-8769e8c40dca}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Context">
-      <UniqueIdentifier>{cde126ec-d756-7f65-1633-898c1f0b7042}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Passes\Base">
+      <UniqueIdentifier>{86bf5ea5-bff3-a5c1-41dc-fba95b5d2a8f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Context\Scene">
-      <UniqueIdentifier>{395612e1-6daf-d177-045b-09d607f6301c}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Passes\Editor">
+      <UniqueIdentifier>{dd9ec9c6-ea93-0365-a018-584f86d1115e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Context\ViewMode">
-      <UniqueIdentifier>{edac6024-3ede-b434-78ab-9c6e08ababcf}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Passes\Scene">
+      <UniqueIdentifier>{6a99d777-7632-2645-3b94-0376fed3ea7e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Context\Viewport">
-      <UniqueIdentifier>{6b8ba19a-c78f-7adc-8518-feb3c70cdb15}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Registry">
+      <UniqueIdentifier>{1d67c8ca-d911-01cc-0b25-3ff0c6396d9a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Registry">
-      <UniqueIdentifier>{dba787e5-a0fa-ede1-f833-fee6bb52a1bd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Pipelines\Runner">
-      <UniqueIdentifier>{3e259020-0355-0193-5f8f-8b97fbc1c8bf}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Execute\Runner">
+      <UniqueIdentifier>{2a2893c5-ecfc-a050-203b-3f656c67316e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\RHI">
       <UniqueIdentifier>{4ccd1579-714b-42a3-62e9-a42acaa67b2b}</UniqueIdentifier>
@@ -249,6 +249,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\PreDepth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\Geometry\VertexLayouts.hlsl">
       <Filter>Shaders\Common\Geometry</Filter>
     </FxCompile>
@@ -303,17 +306,14 @@
     <FxCompile Include="Shaders\Materials\DecalShader.hlsl">
       <Filter>Shaders\Materials</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Materials\StaticMeshShader.hlsl">
-      <Filter>Shaders\Materials</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\FXAA.hlsl">
+      <Filter>Shaders\Passes\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\PostProcess\LightHitMap.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\OutlinePostProcess.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\BaseDraw.hlsl">
-      <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\DecalPass.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
@@ -330,8 +330,14 @@
     <FxCompile Include="Shaders\Passes\Scene\LightingPass.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\OpaquePass.hlsl">
+      <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\ViewModes\UberLit.hlsl">
+      <Filter>Shaders\Passes\Scene\ViewModes</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Visibility\ClusterBinningCS.hlsl">
       <Filter>Shaders\Passes\Visibility</Filter>
@@ -356,15 +362,6 @@
     </FxCompile>
     <FxCompile Include="Shaders\ViewModes\SceneDepth.hlsl">
       <Filter>Shaders\ViewModes</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ViewModes\UberLit.hlsl">
-      <Filter>Shaders\ViewModes</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Passes\PostProcess\LightHitMap.hlsl">
-      <Filter>Shaders\Passes\PostProcess</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\PreDepth.hlsl">
-      <Filter>Shaders\Passes</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -614,89 +611,92 @@
     <ClCompile Include="Source\Engine\Render\Renderer.cpp">
       <Filter>Source\Engine\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Base\PassRenderState.cpp">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Context\FrameSharedResources.cpp">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\DebugLinePass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.cpp">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Context\Scene\SceneView.cpp">
+      <Filter>Source\Engine\Render\Execute\Context\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Context\ViewMode\SceneViewModeSurfaces.cpp">
+      <Filter>Source\Engine\Render\Execute\Context\ViewMode</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Context\Viewport\ViewportRenderTargets.cpp">
+      <Filter>Source\Engine\Render\Execute\Context\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayBillboardPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Base\PassRenderState.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\DebugLinePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\GizmoPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\GridPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\LightHitMapPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\OutlinePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\DecalPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\OverlayBillboardPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\DepthPrePass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\OverlayTextPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\FXAAPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\SelectionMaskPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\AdditiveDecalPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\AlphaBlendPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DecalPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\PresentPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\Scene\SceneView.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context\Scene</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightingPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\ViewMode\SceneViewModeSurfaces.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context\ViewMode</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\Viewport\ViewportRenderTargets.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Context\Viewport</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\OpaquePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPassRegistry.cpp">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\ViewModePassRegistry.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPipelineRegistry.cpp">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipelines\Runner\RenderPipelineRunner.cpp">
-      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
+    <ClCompile Include="Source\Engine\Render\Execute\Registry\ViewModePassRegistry.cpp">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Runner\RenderPipelineRunner.cpp">
+      <Filter>Source\Engine\Render\Execute\Runner</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resources\Buffers\ConstantBufferPool.cpp">
       <Filter>Source\Engine\Render\Resources\Buffers</Filter>
@@ -885,9 +885,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\LightHitMapPass.cpp">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1196,137 +1193,137 @@
     <ClInclude Include="Source\Engine\Render\Renderer.h">
       <Filter>Source\Engine\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Overlay\OverlayBatchSet.h">
-      <Filter>Source\Engine\Render\Overlay</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\FrameRenderResources.h">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\FullscreenPassBase.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\FrameSharedResources.h">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\MeshPassBase.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\PipelineStateTypes.h">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\RenderCollectContext.h">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\PipelineStateTypes.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.h">
+      <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\PostProcessPassBase.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\Scene\SceneView.h">
+      <Filter>Source\Engine\Render\Execute\Context\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\Scene\ViewTypes.h">
+      <Filter>Source\Engine\Render\Execute\Context\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPassTypes.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\ViewMode\SceneViewModeSurfaces.h">
+      <Filter>Source\Engine\Render\Execute\Context\ViewMode</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderStateStrings.h">
-      <Filter>Source\Engine\Render\Passes\Base</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Context\Viewport\ViewportRenderTargets.h">
+      <Filter>Source\Engine\Render\Execute\Context\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\FullscreenPassBase.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\MeshPassBase.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\PassRenderState.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\PostProcessPassBase.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayBillboardPass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\RenderPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\RenderPassTypes.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.h">
-      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\RenderStateStrings.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\DebugLinePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\GizmoPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\GridPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\DecalPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\LightHitMapPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\DepthPrePass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\OutlinePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\FXAAPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\OverlayBillboardPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\FogParams.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\OverlayTextPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\SelectionMaskPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\AdditiveDecalPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\AlphaBlendPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\PresentPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DecalPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\ShadingTypes.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameRenderResources.h">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FogParams.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.h">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderCollectContext.h">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.h">
-      <Filter>Source\Engine\Render\Pipelines\Context</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightingPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Scene\SceneView.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Scene\ViewTypes.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\Scene</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\OpaquePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\ViewMode\SceneViewModeSurfaces.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\ViewMode</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Viewport\ViewportRenderTargets.h">
-      <Filter>Source\Engine\Render\Pipelines\Context\Viewport</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ShadingTypes.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.h">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPassRegistry.h">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.h">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPipelineRegistry.h">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineType.h">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPipelineType.h">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\ViewModePassRegistry.h">
-      <Filter>Source\Engine\Render\Pipelines\Registry</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\ViewModePassRegistry.h">
+      <Filter>Source\Engine\Render\Execute\Registry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\PipelineShaderResolver.h">
-      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Runner\PipelineShaderResolver.h">
+      <Filter>Source\Engine\Render\Execute\Runner</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\RenderMarkers.h">
-      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Runner\RenderMarkers.h">
+      <Filter>Source\Engine\Render\Execute\Runner</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\RenderPipelineRunner.h">
-      <Filter>Source\Engine\Render\Pipelines\Runner</Filter>
+    <ClInclude Include="Source\Engine\Render\Execute\Runner\RenderPipelineRunner.h">
+      <Filter>Source\Engine\Render\Execute\Runner</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferBinding.h">
       <Filter>Source\Engine\Render\Resources</Filter>
@@ -1499,6 +1496,9 @@
     <ClInclude Include="Source\Engine\Render\Submission\Batching\LineBatch.h">
       <Filter>Source\Engine\Render\Submission\Batching</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Batching\OverlayBatchSet.h">
+      <Filter>Source\Engine\Render\Submission\Batching</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedOverlayData.h">
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClInclude>
@@ -1624,9 +1624,6 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\LightHitMapPass.h">
-      <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

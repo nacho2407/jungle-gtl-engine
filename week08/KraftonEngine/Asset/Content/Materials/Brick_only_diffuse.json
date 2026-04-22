@@ -1,21 +1,19 @@
 {
-  "PathFileName": "Asset/Content/Materials/Brick_only_diffuse.json",
-  "ShaderPath": "Shaders/Materials/StaticMeshShader.hlsl",
-  "RenderPass": "Opaque",
-  "BlendState": "Opaque",
-  "DepthStencilState": "Default",
-  "RasterizerState": "SolidBackCull",
-  "Parameters": {
-    "SectionColor": [
-      1.0,
-      1.0,
-      1.0,
-      1.0
-    ],
-    "SpecularPower": 32.0,
-    "SpecularStrength": 1.0
-  },
-  "Textures": {
-    "DiffuseTexture": "Asset/Content/Textures/brick_diff-512.png"
-  }
+    "PathFileName":  "Asset/Content/Materials/Brick_only_diffuse.json",
+    "BlendState":  "Opaque",
+    "DepthStencilState":  "Default",
+    "RasterizerState":  "SolidBackCull",
+    "Parameters":  {
+                       "SectionColor":  [
+                                            1.0,
+                                            1.0,
+                                            1.0,
+                                            1.0
+                                        ],
+                       "SpecularPower":  32.0,
+                       "SpecularStrength":  1.0
+                   },
+    "Textures":  {
+                     "DiffuseTexture":  "Asset/Content/Textures/brick_diff-512.png"
+                 }
 }

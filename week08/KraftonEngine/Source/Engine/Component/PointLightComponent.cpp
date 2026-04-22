@@ -1,4 +1,4 @@
-﻿#include "PointLightComponent.h"
+#include "PointLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Light/PointLightSceneProxy.h"

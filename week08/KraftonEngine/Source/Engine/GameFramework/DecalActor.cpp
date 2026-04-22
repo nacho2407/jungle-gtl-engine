@@ -1,4 +1,4 @@
-﻿#include "DecalActor.h"
+#include "DecalActor.h"
 #include "Component/BillboardComponent.h"
 #include "Component/DecalComponent.h"
 #include "Materials/MaterialManager.h"

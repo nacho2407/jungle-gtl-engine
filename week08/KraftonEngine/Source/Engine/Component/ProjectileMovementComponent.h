@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/MovementComponent.h"
 #include "Core/CollisionTypes.h"

@@ -1,4 +1,4 @@
-#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
 
 //	Safe Release Macro
@@ -59,7 +59,7 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
     CreateDepthStencilBuffer();
     DepthStencilStateManager.Create(Device);
 
-    // 상태 캐시 초기화 — 새로 생성된 state 객체가 BeginFrame에서 재적용되도록
+    // ?�태 캐시 초기?????�로 ?�성??state 객체가 BeginFrame?�서 ?�적?�되?�록
     RasterizerStateManager.ResetCache();
     DepthStencilStateManager.ResetCache();
     BlendStateManager.ResetCache();
@@ -141,8 +141,8 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
         DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&UserDefinedAnnotation);
     }
 
-    // CPU가 GPU보다 1프레임 이상 앞서지 못하게 제한
-    // (기본값 3 → Present 큐 깊이로 인한 FPS 톱니파 현상 방지)
+    // CPU가 GPU보다 1?�레???�상 ?�서지 못하�??�한
+    // (기본�?3 ??Present ??깊이�??�한 FPS ?�니???�상 방�?)
     {
         IDXGIDevice1* DXGIDevice = nullptr;
         if (SUCCEEDED(Device->QueryInterface(__uuidof(IDXGIDevice1), (void**)&DXGIDevice)))
@@ -173,7 +173,7 @@ void FD3DDevice::ReleaseDeviceAndSwapChain()
     SAFE_RELEASE(DeviceContext);
 
 #ifdef _DEBUG
-    // 릭 진단: Device 해제 직전 남아있는 D3D 객체 리포트
+    // �?진단: Device ?�제 직전 ?�아?�는 D3D 객체 리포??
     if (Device)
     {
         ID3D11Debug* Debug = nullptr;

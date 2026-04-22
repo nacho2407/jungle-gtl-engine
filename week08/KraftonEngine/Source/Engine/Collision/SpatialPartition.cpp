@@ -1,4 +1,4 @@
-﻿#include "SpatialPartition.h"
+#include "SpatialPartition.h"
 
 #include "Collision/Octree.h"
 #include "Collision/RayUtils.h"

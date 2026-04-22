@@ -1,4 +1,4 @@
-#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "Render/RHI/D3D11/State/BlendStateManager.h"
 
 #define SAFE_RELEASE(Obj) \
@@ -22,7 +22,7 @@ void FBlendStateManager::Create(ID3D11Device* InDevice)
     Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
     InDevice->CreateBlendState(&Desc, &Alpha);
 
-    // Additive (ONE, ONE) — RGB = Src*1 + Dest*1
+    // Additive (ONE, ONE) ??RGB = Src*1 + Dest*1
     Desc = {};
     Desc.AlphaToCoverageEnable = FALSE;
     Desc.IndependentBlendEnable = FALSE;

@@ -1,4 +1,4 @@
-﻿#include "Engine/Runtime/EngineLoop.h"
+#include "Engine/Runtime/EngineLoop.h"
 
 #if IS_OBJ_VIEWER
 #include "ObjViewer/ObjViewerEngine.h"

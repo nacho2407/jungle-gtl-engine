@@ -1,5 +1,5 @@
-﻿#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Component/PrimitiveComponent.h"
@@ -8,7 +8,7 @@
 #include "Render/Resources/Shaders/ShaderManager.h"
 
 // ============================================================
-// FPrimitiveSceneProxy — 기본 구현
+// FPrimitiveSceneProxy ? �⺻ ����
 // ============================================================
 FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
     : Owner(InComponent)
@@ -27,7 +27,7 @@ void FPrimitiveSceneProxy::UpdateTransform()
 
 void FPrimitiveSceneProxy::UpdateMaterial()
 {
-    // 기본 PrimitiveComponent는 섹션별 머티리얼이 없음 — 서브클래스에서 오버라이드
+    // �⺻ PrimitiveComponent�� ���Ǻ� ��Ƽ������ ���� ? ����Ŭ�������� �������̵�
 }
 
 void FPrimitiveSceneProxy::UpdateVisibility()

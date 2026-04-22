@@ -3,7 +3,7 @@
 #include "PrimitiveComponent.h"
 #include "Core/CoreTypes.h"
 #include "Math/Rotator.h"
-#include "Render/Pipelines/Context/Scene/ViewTypes.h"
+#include "Render/Execute/Context/Scene/ViewTypes.h"
 
 class AActor;
 class FPrimitiveSceneProxy;
@@ -43,7 +43,7 @@ public:
 	void SetAxisMask(uint32 InMask) { AxisMask = InMask; }
 	uint32 GetAxisMask() const { return AxisMask; }
 
-	// ViewportType + GizmoMode → AxisMask 계산 (Proxy에서도 사용)
+	// ViewportType + GizmoMode ??AxisMask 계산 (Proxy?�서???�용)
 	static uint32 ComputeAxisMask(ELevelViewportType ViewportType, EGizmoMode Mode);
 	void UpdateHoveredAxis(int Index);
 	void UpdateDrag(const FRay& Ray);
@@ -76,7 +76,7 @@ public:
 	void CreateRenderState() override;
 	void DestroyRenderState() override;
 
-	// Actor 없이 독립 생성된 Gizmo용 — 외부에서 Scene을 직접 지정
+	// Actor ?�이 ?�립 ?�성??Gizmo?????��??�서 Scene??직접 지??
 	void SetScene(FScene* InScene) { RegisteredScene = InScene; }
 
 private:
@@ -100,14 +100,14 @@ private:
 	const float AxisLength = 1.0f;
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
-	static constexpr float GizmoScreenScale = 0.15f; // 화면 대비 기즈모 크기 비율
+	static constexpr float GizmoScreenScale = 0.15f; // ?�면 ?��?기즈�??�기 비율
 	int32 SelectedAxis = -1;
 	bool bIsFirstFrameOfDrag = true;
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;
 	bool bPressedOnHandle = false;
 	const FMeshData* MeshData = nullptr;
-	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — LineTrace용 (렌더링은 Proxy가 직접 계산)
-	FPrimitiveSceneProxy* InnerProxy = nullptr;	// GizmoInner 전용 프록시
-	FScene* RegisteredScene = nullptr;			// Actor 없이 독립 생성 시 사용
+	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z ??LineTrace??(?�더링�? Proxy가 직접 계산)
+	FPrimitiveSceneProxy* InnerProxy = nullptr;	// GizmoInner ?�용 ?�록??
+	FScene* RegisteredScene = nullptr;			// Actor ?�이 ?�립 ?�성 ???�용
 };

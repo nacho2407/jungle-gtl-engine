@@ -1,34 +1,63 @@
 #include "MaterialCore.h"
-#include "Materials/Material.h"
-#include "Serialization/Archive.h"
-#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
-#include "Texture/Texture2D.h"
-#include "Engine/Runtime/Engine.h"
-#include "Render/Renderer.h"
 
-// ─── FMaterialTemplate ───
+#include "Materials/MaterialSemantics.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
 
 void FMaterialTemplate::Create(FShader* InShader)
 {
-    ParameterLayout = InShader->GetParameterLayout(); // 셰이더에서 리플렉션된 파라미터 레이아웃 정보 확보
+    OwnedParameterLayout.clear();
+    ParameterLayout.clear();
+    if (InShader)
+    {
+        ParameterLayout = InShader->GetParameterLayout();
+    }
     Shader = InShader;
+}
+
+void FMaterialTemplate::CreateSurfaceMaterialLayout()
+{
+    Shader = nullptr;
+    ParameterLayout.clear();
+    OwnedParameterLayout.clear();
+
+    constexpr uint32 BufferSize = 48;
+    constexpr uint32 SlotIndex = ECBSlot::PerShader0;
+    const FString BufferName = "StaticMeshMaterialBuffer";
+
+    auto AddParameter = [&](const FString& Name, uint32 Offset, uint32 Size)
+    {
+        auto Info = std::make_unique<FMaterialParameterInfo>();
+        Info->BufferName = BufferName;
+        Info->SlotIndex = SlotIndex;
+        Info->Offset = Offset;
+        Info->Size = Size;
+        Info->BufferSize = BufferSize;
+        ParameterLayout[Name] = Info.get();
+        OwnedParameterLayout.push_back(std::move(Info));
+    };
+
+    AddParameter(MaterialSemantics::SectionColorParameter, 0, sizeof(float) * 4);
+    AddParameter("MaterialParam", 16, sizeof(float) * 4);
+    AddParameter(MaterialSemantics::SpecularPowerParameter, 16, sizeof(float));
+    AddParameter(MaterialSemantics::SpecularStrengthParameter, 20, sizeof(float));
+    AddParameter("HasBaseTexture", 32, sizeof(uint32));
+    AddParameter("HasNormalTexture", 36, sizeof(uint32));
+    AddParameter("HasSpecularTexture", 40, sizeof(uint32));
+    AddParameter("StaticMeshMaterialPadding", 44, sizeof(float));
 }
 
 bool FMaterialTemplate::GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const
 {
-    auto it = ParameterLayout.find(Name);
-    if (it != ParameterLayout.end())
-    {
-        OutInfo = *(it->second);
-        return true;
-    }
-    else
+    auto It = ParameterLayout.find(Name);
+    if (It == ParameterLayout.end() || !It->second)
     {
         return false;
     }
-}
 
-// ─── FMaterialConstantBuffer ───
+    OutInfo = *It->second;
+    return true;
+}
 
 FMaterialConstantBuffer::~FMaterialConstantBuffer()
 {
@@ -39,7 +68,7 @@ void FMaterialConstantBuffer::Init(ID3D11Device* InDevice, uint32 InSize, uint32
 {
     Release();
 
-    uint32 AlignedSize = (InSize + 15) & ~15;
+    const uint32 AlignedSize = (InSize + 15) & ~15;
     GPUBuffer.Create(InDevice, AlignedSize);
     CPUData = new uint8[AlignedSize]();
     Size = AlignedSize;
@@ -53,6 +82,7 @@ void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Of
     {
         return;
     }
+
     memcpy(CPUData + Offset, Data, InSize);
     bDirty = true;
 }
@@ -60,7 +90,9 @@ void FMaterialConstantBuffer::SetData(const void* Data, uint32 InSize, uint32 Of
 void FMaterialConstantBuffer::Upload(ID3D11DeviceContext* DeviceContext)
 {
     if (!bDirty)
+    {
         return;
+    }
 
     GPUBuffer.Update(DeviceContext, CPUData, Size);
     bDirty = false;
