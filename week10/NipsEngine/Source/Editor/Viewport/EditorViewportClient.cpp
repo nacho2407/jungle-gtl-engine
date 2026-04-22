@@ -204,12 +204,6 @@ void FEditorViewportClient::ApplyCameraMode()
 	InputRouter.GetEditorWorldController().ResetTargetLocation();
 }
 
-bool FEditorViewportClient::IsActiveOperation() const
-{
-	const InputSystem& IS = InputSystem::Get();
-	return IS.GetRightDragging() || IS.GetMiddleDragging();
-}
-
 // ── Input tick sub-steps ──────────────────────────────────────────────────────
 
 void FEditorViewportClient::TickInput(float DeltaTime)
