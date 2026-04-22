@@ -10,7 +10,6 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kd ../textures/2k_saturn.jpg
-map_Bump -bm 1.000000 ../textures/2k_saturn_normal.png
 
 newmtl saturn_ring
 Ns 250.000000
@@ -21,4 +20,4 @@ Ni 1.450000
 d 0.500000
 illum 9
 map_Kd ../textures/2k_saturn_ring_alpha.png
-map_Bump -bm 1.000000 ../textures/2k_saturn_ring_normal.png
+
