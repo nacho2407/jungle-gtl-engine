@@ -31,6 +31,7 @@ struct FShowFlags
 	bool bSceneOctree = false;
 	bool bBoundingVolume = false;
 	bool bWorldBound = false;
+	bool bLightDebugLines = true;
 	bool bFog = true;
 	bool bFXAA = false;
     bool bLightHitMap = false;

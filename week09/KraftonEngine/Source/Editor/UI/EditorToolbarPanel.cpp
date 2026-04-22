@@ -478,6 +478,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::Checkbox("Scene BVH (Green)", &Opts.ShowFlags.bSceneBVH);
             ImGui::Checkbox("Scene Octree (Cyan)", &Opts.ShowFlags.bSceneOctree);
             ImGui::Checkbox("World Bound (Magenta)", &Opts.ShowFlags.bWorldBound);
+            ImGui::Checkbox("Light Debug Lines", &Opts.ShowFlags.bLightDebugLines);
             ImGui::Checkbox("LightHitMap", &Opts.ShowFlags.bLightHitMap);
 
         }
