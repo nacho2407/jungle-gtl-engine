@@ -106,11 +106,6 @@ public:
 	/** Initialise camera position/orientation for the current ViewportType. */
 	void ApplyCameraMode();
 
-	/**
-	 * Returns true while a drag operation (RMB or MMB) is in progress for this viewport.
-	 * Used by the renderer to determine gizmo axis highlight behaviour.
-	 */
-	bool  IsActiveOperation() const;
 	bool  IsBoxSelecting()    const { return bBoxSelecting; }
 	POINT GetBoxSelectStart() const { return BoxSelectStart; }
 	POINT GetBoxSelectEnd()   const { return BoxSelectEnd; }

@@ -202,19 +202,8 @@ void FEditorMainPanel::Update()
 {
     ImGuiIO& IO = ImGui::GetIO();
 
-    bool bViewportOperationActive = false;
-    if (EditorEngine)
-    {
-        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
-        {
-            if (Layout.GetViewportClient(i)->IsActiveOperation())
-            {
-                bViewportOperationActive = true;
-                break;
-            }
-        }
-    }
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    bool bViewportOperationActive = Layout.HasActiveOperationViewport();
 
     if (bViewportOperationActive)
     {
