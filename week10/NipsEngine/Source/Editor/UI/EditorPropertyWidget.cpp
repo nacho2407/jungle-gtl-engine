@@ -13,6 +13,7 @@
 #include "Component/Movement/ProjectileMovementComponent.h"
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/PursuitMovementComponent.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Math/Color.h"
 #include "Core/ResourceManager.h"
@@ -192,6 +193,14 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		"Fireball Component",
 		[](AActor* Actor) -> UActorComponent* {
 			UFireballComponent* Comp = Actor->AddComponent<UFireballComponent>();
+			return Comp;
+		}
+	},
+
+	{
+		"PointLight Component",
+		[](AActor* Actor) -> UActorComponent* {
+			UPointLightComponent* Comp = Actor->AddComponent<UPointLightComponent>();
 			return Comp;
 		}
 	},

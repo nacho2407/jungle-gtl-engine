@@ -147,6 +147,8 @@ void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 
 void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 {
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
 	if (strcmp(PropertyName, "Font") == 0)
 	{
 		SetFont(FontName);
