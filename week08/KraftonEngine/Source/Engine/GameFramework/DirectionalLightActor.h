@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GameFramework/AActor.h"
+#include "Platform/Paths.h"
 
 class UDirectionalLightComponent;
 class UBillboardComponent;
@@ -16,5 +17,5 @@ public:
 private:
     UDirectionalLightComponent* DirectionalLightComponent = nullptr;
 	UBillboardComponent* BillboardComponent = nullptr;
-	FString DirectionalLightIconPath = "Asset/Materials/DirectionalLightIcon.json";
+	FString DirectionalLightIconPath = FPaths::EditorRelativePath("Icons/Materials/DirectionalLightIcon.json");
 };

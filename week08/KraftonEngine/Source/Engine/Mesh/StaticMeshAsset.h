@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
@@ -37,7 +37,7 @@ struct FStaticMaterial
         // 1. 슬롯 이름 직렬화 (메시 섹션과 매핑용)
         Ar << Mat.MaterialSlotName;
 
-        // 2. Material JSON 경로 직렬화 (Source of Truth = Asset/Materials/*.json)
+        // 2. Material JSON 경로 직렬화 (Source of Truth = Asset/**/Materials/*.json)
         FString JsonPath;
         if (Ar.IsSaving() && Mat.MaterialInterface)
         {

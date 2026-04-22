@@ -10,6 +10,7 @@
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
+#include "Engine/Platform/Paths.h"
 #include "Viewport/Viewport.h"
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/Stats.h"
@@ -32,7 +33,7 @@ void PreloadDefaultObjAssets(ID3D11Device* Device)
     const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
     for (const FMeshAssetListItem& Item : ObjFiles)
     {
-        if (Item.FullPath.rfind("Data/BasicShape/", 0) != 0)
+        if (Item.FullPath.rfind(FPaths::ContentRelativePath("Models/_Basic/"), 0) != 0)
         {
             continue;
         }

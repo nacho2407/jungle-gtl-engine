@@ -21,14 +21,19 @@ struct FMeshAssetListItem
 class FObjManager
 {
 	// path → UStaticMesh* 캐시 (소유권은 UObjectManager)
-	static TMap<std::string, UStaticMesh*> StaticMeshCache;
+	static TMap<FString, UStaticMesh*> StaticMeshCache;
 	static TArray<FMeshAssetListItem> AvailableMeshFiles;
 	static TArray<FMeshAssetListItem> AvailableObjFiles;
 
-
 public:
-	static std::string GetBinaryFilePath(const std::string& OriginalPath);
-	static UStaticMesh* LoadObjStaticMesh(const std::string& PathFileName, ID3D11Device* InDevice);
+	// 원본 경로(.obj 등)를 대응되는 바이너리 캐시 경로로 변환한다.
+	// 이미 .bin 이면 그대로 반환한다.
+	static FString GetBinaryFilePath(const FString& OriginalPath);
+
+	// 이전 패치/로컬 코드와의 호환용 별칭
+	static FString GetBinaryFilePathString(const FString& OriginalPath) { return GetBinaryFilePath(OriginalPath); }
+
+	static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice);
 	static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
 	static void ScanMeshAssets();
 	static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
