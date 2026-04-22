@@ -1,6 +1,6 @@
-#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
+﻿#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
 
-#if defined(_DEBUG)
+#if defined(_DRAW_DEBUG_ENABLE)
 
 #include "GameFramework/World.h"
 // 필요에 따라 FScene 관련 헤더를 추가해야 할 수 있습니다. 
