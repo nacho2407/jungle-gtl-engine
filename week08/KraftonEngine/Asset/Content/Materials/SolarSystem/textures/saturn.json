@@ -8,8 +8,6 @@
   },
   "PathFileName" : "Asset/Content/Materials/SolarSystem/textures/saturn.json",
   "RasterizerState" : "SolidBackCull",
-  "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Content/Models/SolarSystem/textures/2k_saturn.jpg",
     "NormalTexture" : "Asset/Content/Models/SolarSystem/textures/2k_saturn_normal.png"

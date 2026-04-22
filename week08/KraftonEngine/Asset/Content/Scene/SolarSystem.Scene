@@ -31,6 +31,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [285.200012, 285.200012, 285.200012],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/sun.obj",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -72,6 +73,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/mercury.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -80,7 +82,7 @@
               }],
             "ClassName" : "USceneComponent",
             "Properties" : {
-              "Location" : [200.000000, 0.000000, 0.000000],
+              "Location" : [190.000000, 0.000000, 0.000000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bTickEnable" : true
@@ -95,6 +97,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -136,6 +139,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [2.480000, 2.480000, 2.480000],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/venus.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -159,6 +163,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -173,13 +178,31 @@
           "Properties" : {
             "Auto Register Updated" : true,
             "Rotation Rate" : [0.000000, 3.000000, 0.000000],
+            "Updated Component" : "Root",
             "bTickEnable" : true
           }
         }, {
           "ClassName" : "URotatingMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "Rotation Rate" : [0.000000, 0.000000, 0.000000],
+            "Rotation Rate" : [0.000000, 40.000000, 0.000000],
+            "Updated Component" : "1",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "Updated Component" : "1/0",
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "Updated Component" : "1/1/0",
             "bTickEnable" : true
           }
         }],
@@ -214,6 +237,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [2.600000, 2.600000, 2.600000],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/earth.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -229,8 +253,9 @@
                       },
                       "Is Editor Helper" : false,
                       "Location" : [0.000000, 0.000000, 0.000000],
-                      "Rotation" : [-0.000000, 0.000000, 0.000000],
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
                       "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Static Mesh" : "Asset/Content/Models/SolarSystem/source/moon.obj",
                       "Visible" : true,
                       "Visible In Editor" : true,
                       "Visible In Game" : true,
@@ -240,7 +265,7 @@
                 "ClassName" : "USceneComponent",
                 "Properties" : {
                   "Location" : [1.000000, 10.000000, 0.000000],
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "bTickEnable" : true
                 }
@@ -262,6 +287,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -303,6 +329,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.390000, 1.390000, 1.390000],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/mars.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -326,6 +353,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -367,6 +395,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [29.299999, 29.299999, 29.299999],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/jupiter.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -390,6 +419,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -434,6 +464,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [24.700001, 24.700001, 24.700001],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/saturn.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -457,6 +488,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -498,6 +530,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [10.500000, 10.500000, 10.500000],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -521,6 +554,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -562,6 +596,7 @@
                   "Location" : [0.000000, 0.000000, 0.000000],
                   "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [10.100000, 10.100000, 10.100000],
+                  "Static Mesh" : "Asset/Content/Models/SolarSystem/source/neptune.obj",
                   "Visible" : true,
                   "Visible In Editor" : true,
                   "Visible In Game" : true,
@@ -585,6 +620,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -600,9 +636,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [223.644119, -2.311295, 11.367433],
+    "Location" : [207.586487, 80.569389, 13.866868],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 18.081053, 37.521790]
+    "Rotation" : [0.000000, 6.321136, -99.818260]
   },
   "Primitives" : {
     "12" : {

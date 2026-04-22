@@ -8,8 +8,6 @@
   },
   "PathFileName" : "Asset/Content/Materials/SolarSystem/textures/uranus.json",
   "RasterizerState" : "SolidBackCull",
-  "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Content/Models/SolarSystem/textures/2k_uranus.jpg",
     "NormalTexture" : "Asset/Content/Models/SolarSystem/textures/2k_uranus_normal.png"

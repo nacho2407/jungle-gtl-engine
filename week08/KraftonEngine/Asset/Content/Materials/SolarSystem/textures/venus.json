@@ -8,8 +8,6 @@
   },
   "PathFileName" : "Asset/Content/Materials/SolarSystem/textures/venus.json",
   "RasterizerState" : "SolidBackCull",
-  "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Asset/Content/Models/SolarSystem/textures/2k_venus.jpg",
     "NormalTexture" : "Asset/Content/Models/SolarSystem/textures/2k_venus_normal.png"
