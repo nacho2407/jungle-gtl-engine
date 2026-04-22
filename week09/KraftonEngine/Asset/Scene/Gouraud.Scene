@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "8",
+      "PrimitiveKey" : "27",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -10,7 +10,7 @@
           "Element 0" : {
             "Path" : "None"
           },
-          "Location" : [0.000000, 0.000000, 0.000000],
+          "Location" : [0.000000, -1.219524, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [100.000000, 1.000000, 100.000000],
           "Visible" : true,
@@ -31,7 +31,7 @@
               "Material" : {
                 "Path" : "Asset/Materials/SpotLightIcon.json"
               },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "Width" : 1.000000,
@@ -69,7 +69,7 @@
               "Material" : {
                 "Path" : "Asset/Materials/AmbientLightIcon.json"
               },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "Width" : 1.000000,
@@ -81,7 +81,7 @@
           "Intensity" : 0.500000,
           "LightColor" : [0.663892, 0.896059, 0.935484, 1.000000],
           "Location" : [0.000000, 59.720428, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "bAffectsWorld" : true,
           "bCastShadows" : true,
@@ -97,13 +97,13 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-66.116592, 72.898621, 38.805660],
+    "Location" : [-75.073059, 89.533699, 43.518841],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 8.420881, -62.545868]
+    "Rotation" : [0.000000, 13.880889, -62.125862]
   },
   "Primitives" : {
-    "8" : {
-      "Location" : [0.000000, 0.000000, 0.000000],
+    "27" : {
+      "Location" : [0.000000, -1.219524, 0.000000],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [100.000000, 1.000000, 100.000000],

@@ -1,0 +1,16 @@
+{
+  "Parameters" : {
+    "HasBaseTexture" : 0.000000,
+    "HasNormalTexture" : 0.000000,
+    "MaterialParam" : [0.000000, 0.000000, 0.000000, 0.000000],
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 32.000000,
+    "SpecularStrength" : 1.000000,
+    "StaticMeshMaterialPadding" : null
+  },
+  "PathFileName" : "Asset/Materials/uranus.json",
+  "RenderPass" : "Opaque",
+  "Textures" : {
+    "DiffuseTexture" : "Data/SolarSystem/textures/2k_uranus.jpg"
+  }
+}

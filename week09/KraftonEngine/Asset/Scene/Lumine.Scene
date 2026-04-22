@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "12",
+      "PrimitiveKey" : "86",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -10,8 +10,8 @@
           "Element 0" : {
             "Path" : "None"
           },
-          "Location" : [0.000000, -11.838642, 1.662751],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Location" : [0.000000, -12.057128, 8.178605],
+          "Rotation" : [-180.000000, 0.000000, 0.000000],
           "Scale" : [41.012989, 1.000000, 23.511438],
           "Visible" : true,
           "bTickEnable" : true
@@ -28,7 +28,7 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "14",
+      "PrimitiveKey" : "88",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -72,7 +72,7 @@
           "Element 9" : {
             "Path" : "Asset/Materials/BackAccessory.json"
           },
-          "Location" : [-3.786884, 0.000000, 2.840560],
+          "Location" : [-3.195151, 0.000000, 2.798827],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Visible" : true,
@@ -83,7 +83,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "33",
+      "PrimitiveKey" : "90",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -91,7 +91,7 @@
           "Element 0" : {
             "Path" : "None"
           },
-          "Location" : [0.000000, -11.838642, 1.785549],
+          "Location" : [0.000000, -8.732630, -13.744610],
           "Rotation" : [0.000000, 0.000000, -90.000000],
           "Scale" : [41.012989, 1.000000, 23.511438],
           "Visible" : true,
@@ -114,18 +114,234 @@
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
+              "Visible" : false,
               "Width" : 1.000000,
               "bTickEnable" : true
             }
           }],
         "ClassName" : "UAmbientLightComponent",
         "Properties" : {
-          "Intensity" : 0.800000,
-          "LightColor" : [0.304127, 0.526527, 0.866935, 1.000000],
+          "Intensity" : 0.600000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "Location" : [0.000000, 0.000000, 4.054000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 10.000000,
+          "Intensity" : 1.300000,
+          "LightColor" : [0.899194, 0.319127, 0.108773, 1.000000],
+          "LightFalloffExponent" : 9.800000,
+          "Location" : [-2.248429, -4.186194, 7.089199],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 40.000000,
+          "Intensity" : 0.700000,
+          "LightColor" : [0.479839, 0.150917, 0.000000, 1.000000],
+          "LightFalloffExponent" : 9.800000,
+          "Location" : [-4.598144, 1.632002, 9.637211],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 210.000000,
+          "Intensity" : 0.050000,
+          "LightColor" : [0.899194, 0.666588, 0.228424, 1.000000],
+          "LightFalloffExponent" : 8.500000,
+          "Location" : [-3.427995, 4.123605, 7.919621],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 180.000000,
+          "Intensity" : 10.500000,
+          "LightColor" : [0.003577, 0.008841, 0.016129, 1.000000],
+          "LightFalloffExponent" : 9.800000,
+          "Location" : [-2.624000, 0.033126, 10.562639],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 10.000000,
+          "Intensity" : 0.100000,
+          "LightColor" : [0.353278, 0.583901, 0.903226, 1.000000],
+          "LightFalloffExponent" : 9.800000,
+          "Location" : [-2.624000, 2.142108, 3.982584],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 20.000000,
+          "Intensity" : 0.300000,
+          "LightColor" : [0.396072, 0.870232, 0.935484, 1.000000],
+          "LightFalloffExponent" : 1.300000,
+          "Location" : [-4.560191, 1.920640, 3.905868],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
           "bAffectsWorld" : true,
           "bCastShadows" : true,
           "bTickEnable" : false
@@ -145,56 +361,20 @@
               "Material" : {
                 "Path" : "Asset/Materials/DirectionalLightIcon.json"
               },
-              "Rotation" : [1.000000, 0.000000, 0.000000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
+              "Visible" : false,
               "Width" : 1.000000,
               "bTickEnable" : true
             }
           }],
         "ClassName" : "UDirectionalLightComponent",
         "Properties" : {
-          "Intensity" : 0.000000,
-          "LightColor" : [0.021137, 0.262097, 0.227119, 1.000000],
-          "Location" : [-5.603387, 3.667543, 10.167602],
-          "Rotation" : [27.600006, -68.800003, 8.699997],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UPointLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 180.000000,
-          "Intensity" : 1.100000,
+          "Intensity" : 0.300000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "LightFalloffExponent" : 9.800000,
-          "Location" : [0.405782, -1.994725, 7.089199],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Location" : [-8.171599, 1.691844, 10.929905],
+          "Rotation" : [27.380005, -156.731949, 23.039246],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
           "bAffectsWorld" : true,
           "bCastShadows" : true,
           "bTickEnable" : false
@@ -202,7 +382,83 @@
       },
       "bVisible" : true
     }, {
-      "ClassName" : "APointLightActor",
+      "ClassName" : "AFireballActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "211",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [10.000000, 10.000000, 10.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [90.000000, 0.000000, 0.000000],
+              "Scale" : [10.000000, 10.000000, 10.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "FadeInDelay" : 0.000000,
+              "FadeInDuration" : 0.000000,
+              "FadeOutDelay" : 0.000000,
+              "FadeOutDuration" : 0.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+              },
+              "Rotation" : [0.000000, 90.000000, 0.000000],
+              "Scale" : [10.000000, 10.000000, 10.000000],
+              "Visible" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Materials/clean_bulb_light_mat.002.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/clean_retro_light_mat.002.json"
+          },
+          "Location" : [-1.229308, 0.211411, 9.545728],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
       "NonSceneComponents" : [],
       "RootComponent" : {
         "Children" : [{
@@ -212,246 +468,27 @@
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
+                "Path" : "Asset/Materials/HeightFog.json"
               },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "Width" : 1.000000,
               "bTickEnable" : true
             }
           }],
-        "ClassName" : "UPointLightComponent",
+        "ClassName" : "UHeightFogComponent",
         "Properties" : {
-          "AttenuationRadius" : 10.000000,
-          "Intensity" : 15.800000,
-          "LightColor" : [0.790323, 0.253555, 0.226262, 1.000000],
-          "LightFalloffExponent" : 8.000000,
-          "Location" : [-7.031785, 2.788574, 8.990211],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UPointLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 30.000000,
-          "Intensity" : 1.200000,
-          "LightColor" : [0.995968, 0.529723, 0.048192, 1.000000],
-          "LightFalloffExponent" : 8.600000,
-          "Location" : [-0.152164, -2.059991, 8.119848],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UPointLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 10.000000,
-          "Intensity" : 2.500000,
-          "LightColor" : [0.243448, 0.355497, 0.875000, 1.000000],
-          "LightFalloffExponent" : 8.000000,
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 1.000000,
+          "Height Falloff" : 0.321000,
+          "Inscattering Color" : [0.450000, 0.550000, 0.650000, 1.000000],
           "Location" : [0.000000, 0.000000, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/SpotLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 10.000000,
-          "InnerConeAngle" : 0.000000,
-          "Intensity" : 2.500000,
-          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "LightFalloffExponent" : 8.000000,
-          "Location" : [8.422750, 0.000000, 3.852633],
-          "OuterConeAngle" : 44.000000,
-          "Rotation" : [0.000000, 105.983215, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UPointLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 20.000000,
-          "Intensity" : 0.700000,
-          "LightColor" : [0.883065, 0.537988, 0.181598, 1.000000],
-          "LightFalloffExponent" : 8.000000,
-          "Location" : [-3.415063, 3.721816, 9.556435],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UPointLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 30.000000,
-          "Intensity" : 0.500000,
-          "LightColor" : [1.000000, 0.562435, 0.064516, 1.000000],
-          "LightFalloffExponent" : 8.600000,
-          "Location" : [-2.335593, 3.516959, 3.450845],
+          "Max Opacity" : 1.000000,
           "Rotation" : [-0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/PointLightIcon.json"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UPointLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 30.000000,
-          "Intensity" : 0.500000,
-          "LightColor" : [1.000000, 0.562435, 0.064516, 1.000000],
-          "LightFalloffExponent" : 8.600000,
-          "Location" : [2.312781, 1.940212, 3.450845],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "UseInverseSquaredFalloff" : true,
-          "bAffectsWorld" : true,
-          "bCastShadows" : true,
-          "bTickEnable" : false
+          "Start Distance" : 0.000000,
+          "bTickEnable" : true
         }
       },
       "bVisible" : true
@@ -463,27 +500,34 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-5.069922, 7.326147, 7.668763],
+    "Location" : [-4.261718, 2.375945, 8.883172],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 4.221008, -83.544815]
+    "Rotation" : [0.000000, -5.858933, -52.106506]
   },
   "Primitives" : {
-    "12" : {
-      "Location" : [0.000000, -11.838642, 1.662751],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+    "211" : {
+      "Location" : [-1.229308, 0.211411, 9.545728],
+      "ObjStaticMeshAsset" : "Data/Retro-light/RetroLight.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "86" : {
+      "Location" : [0.000000, -12.057128, 8.178605],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [180.000000, 0.000205, 180.000000],
       "Scale" : [41.012989, 1.000000, 23.511438],
       "Type" : "StaticMeshComp"
     },
-    "14" : {
-      "Location" : [-3.786884, 0.000000, 2.840560],
+    "88" : {
+      "Location" : [-3.195151, 0.000000, 2.798827],
       "ObjStaticMeshAsset" : "Data/Lumine/LumineModel.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "33" : {
-      "Location" : [0.000000, -11.838642, 1.785549],
+    "90" : {
+      "Location" : [0.000000, -8.732630, -13.744610],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [-89.999916, -0.000000, 0.000000],
       "Scale" : [41.012989, 1.000000, 23.511436],
