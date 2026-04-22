@@ -641,7 +641,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Prim);
 			const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
 
-			if (!StaticMesh || !StaticMesh->HasValidMeshData()) return;
+			if (!StaticMesh || !StaticMesh->HasValidMeshData()) continue;
 
 			// 1. 카메라 정보 및 AABB 가져오기
 			FVector CameraPos = RenderBus.GetCameraPosition();
@@ -656,7 +656,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			}
 
 			FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
-			if (!MeshBuffer) return;
+			if (!MeshBuffer) continue;
 
 			const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
 			const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
@@ -674,8 +674,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 				Cmd.SectionIndexCount = Section.IndexCount;
 
 				Cmd.Material = Material;
-				Material->SetMatrix4("InvDecalWorld", DecalComp->GetDecalMatrix().GetInverse());
-				Material->SetVector4("DecalColorTint", DecalComp->GetDecalColor().ToVector4());
+				//Material->SetMatrix4("InvDecalWorld", DecalComp->GetDecalMatrix().GetInverse());
+				//Material->SetVector4("DecalColorTint", DecalComp->GetDecalColor().ToVector4());
+
+				Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
+                Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
 
 				RenderBus.AddCommand(ERenderPass::Decal, Cmd);
 			}
