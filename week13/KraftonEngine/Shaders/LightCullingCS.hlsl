@@ -4,12 +4,18 @@
 StructuredBuffer<FAABB> gClusterAABBs : register(t0);
 StructuredBuffer<FLightInfo> gLights : register(t1);
 
-// 출력: 각 클러스터가 가진 광원 인덱스들의 압축 리스트
 RWStructuredBuffer<uint> gLightIndexList : register(u1);
-// 출력: 각 클러스터의 (offset, count)
 RWStructuredBuffer<uint2> gLightGrid : register(u2);
-// 전역 카운터 (atomic 사용)
 RWStructuredBuffer<uint> gGlobalCounter : register(u3);
+
+#define CLUSTER_LIGHT_CULLING_THREADS 256
+
+// One thread group owns one cluster. These values are shared by the 256 threads
+// inside that group while they split the light loop.
+groupshared uint gsLightIndices[256];
+groupshared uint gsHitCount;
+groupshared float4 gsClusterPlanes[6];
+
 float SliceToViewDepth(uint zSlice)
 {
     return CullState.NearZ * pow(CullState.FarZ / CullState.NearZ, (float) zSlice / CullState.ClusterZ);
@@ -40,7 +46,7 @@ bool SphereInsidePlane(float3 center, float radius, float4 plane)
     return dot(plane.xyz, center) + plane.w >= -radius;
 }
 
-bool SphereOverlapsCluster(float3 center, float radius, float3 corners[8])
+void BuildClusterPlanes(float3 corners[8], out float4 planes[6])
 {
     float3 insidePoint = 0.0f;
     [unroll]
@@ -50,18 +56,20 @@ bool SphereOverlapsCluster(float3 center, float radius, float3 corners[8])
     }
     insidePoint *= 0.125f;
 
-    float4 planes[6];
     planes[0] = MakePlane(corners[0], corners[1], corners[2], insidePoint); // near
     planes[1] = MakePlane(corners[4], corners[6], corners[5], insidePoint); // far
     planes[2] = MakePlane(corners[0], corners[2], corners[4], insidePoint); // left
     planes[3] = MakePlane(corners[1], corners[5], corners[3], insidePoint); // right
     planes[4] = MakePlane(corners[0], corners[4], corners[1], insidePoint); // bottom
     planes[5] = MakePlane(corners[2], corners[3], corners[6], insidePoint); // top
+}
 
+bool SphereOverlapsClusterPlanes(float3 center, float radius)
+{
     [unroll]
     for (int p = 0; p < 6; ++p)
     {
-        if (!SphereInsidePlane(center, radius, planes[p]))
+        if (!SphereInsidePlane(center, radius, gsClusterPlanes[p]))
         {
             return false;
         }
@@ -70,28 +78,14 @@ bool SphereOverlapsCluster(float3 center, float radius, float3 corners[8])
     return true;
 }
 
-float ComputeLightImportance(FLightInfo light, float3 viewLightPos, float3 clusterCenter)
+void BuildCurrentClusterPlanes(uint clusterIdx)
 {
-    float dist = length(viewLightPos - clusterCenter);
-    float ratio = saturate(dist / max(light.AttenuationRadius, 0.0001f));
-    float attenuation = pow(1.0f - ratio, light.FalloffExponent);
-    float luminance = dot(light.Color.rgb, float3(0.299f, 0.587f, 0.114f));
-    return luminance * light.Intensity * attenuation;
-}
-
-//하나의 group당 4^3의 스레드
-[numthreads(8, 3, 4)]
-void CSMain(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadID)
-{
-    uint3 clusterCoord = groupId * uint3(8, 3, 4) + groupThreadId;
-    if (clusterCoord.x >= CullState.ClusterX || clusterCoord.y >= CullState.ClusterY || clusterCoord.z >= CullState.ClusterZ)
-    {
-        return;
-    }
-
-    uint clusterIdx = clusterCoord.z * CullState.ClusterX * CullState.ClusterY
-                    + clusterCoord.y * CullState.ClusterX
-                    + clusterCoord.x;
+    uint sliceSize = CullState.ClusterX * CullState.ClusterY;
+    uint clusterZ = clusterIdx / sliceSize;
+    uint clusterXY = clusterIdx - clusterZ * sliceSize;
+    uint clusterY = clusterXY / CullState.ClusterX;
+    uint clusterX = clusterXY - clusterY * CullState.ClusterX;
+    uint3 clusterCoord = uint3(clusterX, clusterY, clusterZ);
 
     float2 tileSize = float2(2.0f / CullState.ClusterX, 2.0f / CullState.ClusterY);
     float2 ndcMin = float2(-1.0f + clusterCoord.x * tileSize.x, 1.0f - (clusterCoord.y + 1) * tileSize.y);
@@ -109,73 +103,77 @@ void CSMain(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadID)
     corners[6] = NDCToViewSpace(float2(ndcMin.x, ndcMax.y), farZ);
     corners[7] = NDCToViewSpace(float2(ndcMax.x, ndcMax.y), farZ);
 
-    float3 clusterCenter = 0.0f;
+    float4 planes[6];
+    BuildClusterPlanes(corners, planes);
+
     [unroll]
-    for (int c = 0; c < 8; ++c)
+    for (int p = 0; p < 6; ++p)
     {
-        clusterCenter += corners[c];
+        gsClusterPlanes[p] = planes[p];
     }
-    clusterCenter *= 0.125f;
+}
 
-    // 임시 버퍼 (로컬 광원 인덱스 리스트)
-    uint localLightIndices[256];
-    float localLightScores[256];
-    uint localCount = 0;
+// One dispatch group maps to one cluster.
+// The 256 threads in that group divide the light list with i += 256.
+[numthreads(CLUSTER_LIGHT_CULLING_THREADS, 1, 1)]
+void CSMain(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadID)
+{
+    uint clusterCount = CullState.ClusterX * CullState.ClusterY * CullState.ClusterZ;
+    uint clusterIdx = groupId.x;
+    uint threadIndex = groupThreadId.x;
     uint localCapacity = min(CullState.MaxLightsPerCluster, 256);
-    uint minIndex = 0;
-    float minScore = 3.402823e38f;
 
-    // 모든 광원과 교차 테스트
-    for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; i++)
+    if (clusterIdx >= clusterCount)
     {
-        FLightInfo light = gLights[i];
-        float4 LightPos4 = float4(gLights[i].Position, 1);
-        float4 ViewPos = mul(LightPos4, View);
-        if (SphereOverlapsCluster(ViewPos.xyz, light.AttenuationRadius, corners))
-        {
-            float importance = ComputeLightImportance(light, ViewPos.xyz, clusterCenter);
-            if (localCount < localCapacity)
-            {
-                localLightIndices[localCount++] = i;
-                localLightScores[localCount - 1] = importance;
-                if (importance < minScore)
-                {
-                    minScore = importance;
-                    minIndex = localCount - 1;
-                }
-            }
-            else if (localCapacity > 0)
-            {
-                if (importance > minScore)
-                {
-                    localLightIndices[minIndex] = i;
-                    localLightScores[minIndex] = importance;
+        return;
+    }
 
-                    minIndex = 0;
-                    minScore = localLightScores[0];
-                    for (uint s = 1; s < localCapacity; ++s)
-                    {
-                        if (localLightScores[s] < minScore)
-                        {
-                            minScore = localLightScores[s];
-                            minIndex = s;
-                        }
-                    }
+    // Thread 0 prepares the cluster data once. The rest of the group only tests
+    // lights against the shared planes, so plane construction is not repeated per light.
+    if (threadIndex == 0)
+    {
+        gsHitCount = 0;
+        BuildCurrentClusterPlanes(clusterIdx);
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    // Split the light loop across the group. With 720 lights, each thread tests
+    // roughly 3 lights instead of one thread testing all 720 lights by itself.
+    uint totalLights = NumActivePointLights + NumActiveSpotLights;
+    if (localCapacity > 0)
+    {
+        for (uint i = threadIndex; i < totalLights; i += CLUSTER_LIGHT_CULLING_THREADS)
+        {
+            FLightInfo light = gLights[i];
+            float4 viewPos = mul(float4(light.Position, 1.0f), View);
+            if (SphereOverlapsClusterPlanes(viewPos.xyz, light.AttenuationRadius))
+            {
+                uint slot;
+                InterlockedAdd(gsHitCount, 1, slot);
+
+                // Many threads can hit at the same time. InterlockedAdd gives each
+                // hit a unique slot, and the capacity check truncates overflow.
+                if (slot < localCapacity)
+                {
+                    gsLightIndices[slot] = i;
                 }
             }
         }
     }
+    GroupMemoryBarrierWithGroupSync();
 
-    // 전역 리스트에 atomic으로 공간 예약
-    uint offset;
-    InterlockedAdd(gGlobalCounter[0], localCount, offset);
-
-    // Light Grid에 offset/count 기록
-    gLightGrid[clusterIdx] = uint2(offset, localCount);
-
-    // Light Index List에 복사
-    for (uint j = 0; j < localCount; j++)
+    // Only one thread publishes the compacted list to the global buffers.
+    if (threadIndex == 0)
     {
-        gLightIndexList[offset + j] = localLightIndices[j];
+        uint localCount = min(gsHitCount, localCapacity);
+        uint offset;
+        InterlockedAdd(gGlobalCounter[0], localCount, offset);
+
+        gLightGrid[clusterIdx] = uint2(offset, localCount);
+
+        for (uint j = 0; j < localCount; j++)
+        {
+            gLightIndexList[offset + j] = gsLightIndices[j];
+        }
     }
 }
