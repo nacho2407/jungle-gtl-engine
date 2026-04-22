@@ -161,6 +161,13 @@ void UWorld::WarmupPickingData() const
 
 bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
+	if (WorldType == EWorldType::PIE)
+	{
+		OutActor = nullptr;
+		OutHitResult = FHitResult{};
+		return false;
+	}
+
 	//혹시라도 BVH 트리가 업데이트 되지 않았다면 업데이트
 	WorldPrimitivePickingBVH.EnsureBuilt(GetActors(), true);
 	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);

@@ -1,23 +1,34 @@
 ﻿#include "Render/Submission/Collect/DrawCollector.h"
 
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
+#include "Component/LightComponent.h"
 #include "Render/Scene/Scene.h"
 
 // ==================== Public API ====================
 
-void FDrawCollector::CollectSceneLights(FScene* Scene)
+void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene)
 {
     ResetCollectedLights(CollectedSceneData.Lights);
 
-    if (!Scene)
+    if (!Scene || !World)
     {
         return;
     }
 
+    const bool bIsEditorWorld = (World->GetWorldType() == EWorldType::Editor);
+
     const TArray<FLightSceneProxy*>& LightProxies = Scene->GetLightProxies();
     for (FLightSceneProxy* Proxy : LightProxies)
     {
-        if (!Proxy || !Proxy->bAffectsWorld)
+        if (!Proxy || !Proxy->bAffectsWorld || !Proxy->Owner)
+        {
+            continue;
+        }
+
+        AActor* OwnerActor = Proxy->Owner->GetOwner();
+        if (!OwnerActor || !OwnerActor->IsVisible())
         {
             continue;
         }
@@ -52,7 +63,10 @@ void FDrawCollector::CollectSceneLights(FScene* Scene)
             CollectedSceneData.Lights.LocalLights.push_back(LocalLight);
         }
 
-        Proxy->VisualizeLightsInEditor(*Scene);
+        if (bIsEditorWorld)
+        {
+            Proxy->VisualizeLightsInEditor(*Scene);
+        }
     }
 
     CollectedSceneData.Lights.GlobalLights.NumLocalLights = static_cast<int32>(CollectedSceneData.Lights.LocalLights.size());
