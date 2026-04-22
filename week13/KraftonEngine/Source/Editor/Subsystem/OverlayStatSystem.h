@@ -54,6 +54,10 @@ private:
 	uint32 PickingAttemptCount = 0;
 	mutable FString CachedFPSLine;
 	mutable FString CachedPickingLine;
+	mutable double FPSAverageWindowStartTime = 0.0;
+	mutable double FPSAccumulatedFrameTimeMs = 0.0;
+	mutable uint32 FPSAccumulatedFrameCount = 0;
+	mutable bool bFPSAverageInitialized = false;
 
 	FOverlayStatLayout Layout;
 };

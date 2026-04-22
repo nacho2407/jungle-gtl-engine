@@ -8,7 +8,7 @@
 // バイト数を適切な単位 (B / KB / MB / GB) に変換して文字列化
 static int FormatBytes(char* Buffer, int32 BufferSize, const char* Label, uint64 Bytes)
 {
-	const double B  = static_cast<double>(Bytes);
+	const double B = static_cast<double>(Bytes);
 	const double KB = B / 1024.0;
 	const double MB = KB / 1024.0;
 	const double GB = MB / 1024.0;
@@ -60,12 +60,50 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	if (bShowFPS)
 	{
 		const FTimer* Timer = Editor.GetTimer();
-		const float FPS = Timer ? Timer->GetDisplayFPS() : 0.0f;
-		const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
+		if (Timer)
+		{
+			constexpr double FPSAverageWindowSeconds = 0.3;
+			const double CurrentTime = Timer->GetTotalTime();
 
-		char Buffer[128] = {};
-		snprintf(Buffer, sizeof(Buffer), "FPS : %.1f (%.2f ms)", FPS, MS);
-		CachedFPSLine = Buffer;
+			if (!bFPSAverageInitialized)
+			{
+				FPSAverageWindowStartTime = CurrentTime;
+				FPSAccumulatedFrameTimeMs = 0.0;
+				FPSAccumulatedFrameCount = 0;
+				bFPSAverageInitialized = true;
+			}
+
+			FPSAccumulatedFrameTimeMs += Timer->GetFrameTimeMs();
+			++FPSAccumulatedFrameCount;
+
+			const double WindowElapsed = CurrentTime - FPSAverageWindowStartTime;
+			if (WindowElapsed >= FPSAverageWindowSeconds && FPSAccumulatedFrameCount > 0)
+			{
+				const float AverageMS = static_cast<float>(FPSAccumulatedFrameTimeMs / FPSAccumulatedFrameCount);
+				const float AverageFPS = AverageMS > 0.0f ? 1000.0f / AverageMS : 0.0f;
+
+				char Buffer[128] = {};
+				snprintf(Buffer, sizeof(Buffer), "FPS : %.1f (%.2f ms)", AverageFPS, AverageMS);
+				CachedFPSLine = Buffer;
+
+				FPSAverageWindowStartTime = CurrentTime;
+				FPSAccumulatedFrameTimeMs = 0.0;
+				FPSAccumulatedFrameCount = 0;
+			}
+		}
+		else
+		{
+			CachedFPSLine = "FPS : 0.0 (0.00 ms)";
+			bFPSAverageInitialized = false;
+			FPSAccumulatedFrameTimeMs = 0.0;
+			FPSAccumulatedFrameCount = 0;
+		}
+
+		if (CachedFPSLine.empty())
+		{
+			CachedFPSLine = "FPS : 0.0 (0.00 ms)";
+		}
+
 		AppendLine(OutLines, CurrentY, CachedFPSLine);
 		CurrentY += Layout.LineHeight + Layout.GroupSpacing;
 	}
