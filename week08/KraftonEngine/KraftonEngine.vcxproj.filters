@@ -629,6 +629,9 @@
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp">
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayBillboardPass.cpp">
+      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp">
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClCompile>
@@ -1230,6 +1233,9 @@
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h">
+      <Filter>Source\Engine\Render\Passes\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayBillboardPass.h">
       <Filter>Source\Engine\Render\Passes\Editor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h">

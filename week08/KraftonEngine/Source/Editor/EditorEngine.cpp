@@ -76,12 +76,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 void UEditorEngine::Shutdown()
 {
-	// 에디터 해제 (엔진보다 먼저)
-	ViewportLayout.SaveToSettings();
-	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
-	CloseScene();
-	SelectionManager.Shutdown();
-	MainPanel.Release();
+    // 에디터 해제 (엔진보다 먼저)
+    ViewportLayout.SaveToSettings();
+    FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
+    CloseScene();
+    SelectionManager.Shutdown();
+    MainPanel.Release();
     GPUOcclusion.Release();
 
     // 뷰포트 레이아웃 해제
@@ -289,6 +289,10 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     Ctx.ContextHandle = FName("PIE");
     Ctx.ContextName = "PIE";
     Ctx.World = PIEWorld;
+    if (PIEWorld)
+    {
+        PIEWorld->SetWorldType(EWorldType::PIE);
+    }
     WorldList.push_back(Ctx);
 
     // 3) 세션 정보 기록 (이전 활성 핸들 포함 — EndPlayMap에서 복원).
@@ -337,12 +341,12 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     // 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
     //    픽킹(=PIE 월드) / outliner / outline 렌더가 모두 어긋난다.
     SelectionManager.ClearSelection();
-    // SelectionManager.SetGizmoEnabled(false); //PIE가 시작되면 gizmo 비활성화
+    SelectionManager.SetGizmoEnabled(false); //PIE가 시작되면 gizmo 비활성화
     SelectionManager.SetWorld(PIEWorld);
 
     // 이 코드와 대응되는 게 아래 EndPlayMap()에 있음.
     // MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
-    // ViewportLayout.DisableWorldAxisForPIE(); //PIE 중에는 월드 축 렌더링을 비활성화.
+    ViewportLayout.DisableWorldAxisForPIE();
 
     // 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
     //    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
@@ -402,12 +406,12 @@ void UEditorEngine::EndPlayMap()
 
     // Selection을 에디터 월드로 복원 — PIE 액터는 곧 파괴되므로 먼저 비운다.
     SelectionManager.ClearSelection();
-    // SelectionManager.SetGizmoEnabled(true); //PIE가 끝나면 gizmo 활성화
+    SelectionManager.SetGizmoEnabled(true); //PIE가 끝나면 gizmo 활성화
     SelectionManager.SetWorld(GetWorld());
 
     // 이 코드와 대응되는 게 위의 StartPlayInEditorSession()에 있음.
     // MainPanel.RestoreEditorWindowsAfterPIE();
-    // ViewportLayout.RestoreWorldAxisAfterPIE();
+    ViewportLayout.RestoreWorldAxisAfterPIE();
 
     // PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
     DestroyWorldContext(FName("PIE"));
@@ -566,9 +570,9 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     }
 
     Renderer.BeginCollect(SceneView, Scene.GetPrimitiveProxyCount());
-    auto PassContext = Renderer.CreatePassContext(SceneView, &RenderTargets, &Scene);
-    PassContext.ActiveViewMode = ViewMode;
-    PassContext.ActiveViewSurfaces = ViewModeSurfaces;
+    auto PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, &Scene);
+    PipelineContext.ActiveViewMode = ViewMode;
+    PipelineContext.ActiveViewSurfaces = ViewModeSurfaces;
 
     FRenderCollectContext CollectContext = {};
     CollectContext.SceneView = &SceneView;
@@ -580,24 +584,30 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     {
         SCOPE_STAT_CAT("Collector", "3_Collect");
 
+        const bool bIsEditorWorld = (World->GetWorldType() == EWorldType::Editor);
+
         Renderer.CollectWorld(World, CollectContext);
         Renderer.CollectGrid(Opts.GridSpacing, Opts.GridHalfLineCount, Scene);
-        Renderer.CollectDebugDraw(SceneView, Scene);
 
-        if (ShowFlags.bSceneOctree)
+        if (bIsEditorWorld)
         {
-            Renderer.CollectOctreeDebug(World->GetOctree(), Scene);
-        }
+            Renderer.CollectDebugDraw(SceneView, Scene);
 
-        if (ShowFlags.bSceneBVH)
-        {
-            World->BuildWorldPrimitivePickingBVHNow();
-            Renderer.CollectWorldBVHDebug(World->GetWorldPrimitivePickingBVH(), Scene);
-        }
+            if (ShowFlags.bSceneOctree)
+            {
+                Renderer.CollectOctreeDebug(World->GetOctree(), Scene);
+            }
 
-        if (ShowFlags.bWorldBound)
-        {
-            Renderer.CollectWorldBoundsDebug(Renderer.GetCollectedPrimitives().VisibleProxies, Scene);
+            if (ShowFlags.bSceneBVH)
+            {
+                World->BuildWorldPrimitiveVisibleBVHNow();
+                Renderer.CollectWorldBVHDebug(World->GetWorldPrimitiveVisibleBVH(), Scene);
+            }
+
+            if (ShowFlags.bWorldBound)
+            {
+                Renderer.CollectWorldBoundsDebug(Renderer.GetCollectedPrimitives().VisibleProxies, Scene);
+            }
         }
 
         if (VC == GetActiveViewport())
@@ -606,9 +616,9 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
     {
         SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-        PassContext.VisibleProxies = &Renderer.GetCollectedPrimitives().VisibleProxies;
-        Renderer.BuildDrawCommands(PassContext);
-        Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PassContext);
+        PipelineContext.VisibleProxies = &Renderer.GetCollectedPrimitives().VisibleProxies;
+        Renderer.BuildDrawCommands(PipelineContext);
+        Renderer.RunRootPipeline(ERenderPipelineType::EditorScene, PipelineContext);
     }
 
     if (GPUOcclusion.IsInitialized())

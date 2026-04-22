@@ -31,13 +31,22 @@ static constexpr const char* Textures = "Textures";
 namespace
 {
 FString CanonicalizeTextureSlotName(const FString& SlotName)
-{
+{   
     return MaterialSemantics::CanonicalizeTextureSlot(SlotName);
 }
 
 FString CanonicalizeParameterName(const FString& ParamName)
 {
     return MaterialSemantics::CanonicalizeParameterName(ParamName);
+}
+
+bool IsRuntimeGeneratedMaterialParameter(const FString& ParamName)
+{
+    return ParamName == "MaterialParam" ||
+           ParamName == "HasBaseTexture" ||
+           ParamName == "HasNormalTexture" ||
+           ParamName == "HasSpecularTexture" ||
+           ParamName == "StaticMeshMaterialPadding";
 }
 
 uint64 HashString64(const std::string& Value)
@@ -369,6 +378,8 @@ EBlendState FMaterialManager::StringToBlendState(const FString& Str, ERenderPass
     case ERenderPass::EditorLines:
     case ERenderPass::PostProcess:
     case ERenderPass::GizmoInner:
+    case ERenderPass::OverlayBillboard:
+    case ERenderPass::OverlayTextWorld:
     case ERenderPass::OverlayFont:
         return EBlendState::AlphaBlend;
     case ERenderPass::AdditiveDecal:
@@ -394,6 +405,8 @@ EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& St
     case ERenderPass::SelectionMask:
         return EDepthStencilState::StencilWrite;
     case ERenderPass::PostProcess:
+    case ERenderPass::OverlayBillboard:
+    case ERenderPass::OverlayTextWorld:
     case ERenderPass::OverlayFont:
         return EDepthStencilState::NoDepth;
     case ERenderPass::GizmoOuter:
@@ -417,6 +430,8 @@ ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str, E
     case ERenderPass::AdditiveDecal:
     case ERenderPass::SelectionMask:
     case ERenderPass::PostProcess:
+    case ERenderPass::OverlayBillboard:
+    case ERenderPass::OverlayTextWorld:
         return ERasterizerState::SolidNoCull;
     default:
         return ERasterizerState::SolidBackCull;
@@ -488,6 +503,9 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
     {
         const FString& ParamName = Pair.first;
         const FMaterialParameterInfo* Info = Pair.second;
+
+        if (IsRuntimeGeneratedMaterialParameter(ParamName))
+            continue;
 
         if (!JsonData[MatKeys::Parameters][ParamName].IsNull())
             continue;

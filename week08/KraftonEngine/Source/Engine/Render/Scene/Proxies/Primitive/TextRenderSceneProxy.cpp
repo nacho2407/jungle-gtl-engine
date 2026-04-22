@@ -38,7 +38,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
         return;
     }
 
-    if (TextComp->GetText().empty() || !TextComp->GetFont() || !TextComp->GetFont()->IsLoaded())
+    if (TextComp->GetText().empty() || !TextComp->ReacquireDefaultFont())
     {
         bVisible = false;
         return;
@@ -50,7 +50,7 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
         return;
     }
 
-    bVisible = TextComp->IsVisible();
+    bVisible = TextComp->ShouldRenderInCurrentWorld();
     if (!bVisible)
     {
         return;
@@ -58,12 +58,9 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 
     if (TextComp->IsBillboard())
     {
-        FVector BillboardForward = SceneView.CameraForward * -1.0f;
-        FMatrix RotMatrix;
-        RotMatrix.SetAxes(BillboardForward, SceneView.CameraRight * -1.0f, SceneView.CameraUp);
-        CachedTextWorldMatrix = FMatrix::MakeScaleMatrix(TextComp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(TextComp->GetWorldLocation());
-        CachedTextRight = SceneView.CameraRight * -1.0f;
-        CachedTextUp = SceneView.CameraUp;
+        CachedTextWorldMatrix = TextComp->CalculateBillboardWorldMatrix(SceneView.CameraForward);
+        CachedTextRight = FVector(CachedTextWorldMatrix.M[1][0], CachedTextWorldMatrix.M[1][1], CachedTextWorldMatrix.M[1][2]).Normalized();
+        CachedTextUp = FVector(CachedTextWorldMatrix.M[2][0], CachedTextWorldMatrix.M[2][1], CachedTextWorldMatrix.M[2][2]).Normalized();
     }
     else
     {

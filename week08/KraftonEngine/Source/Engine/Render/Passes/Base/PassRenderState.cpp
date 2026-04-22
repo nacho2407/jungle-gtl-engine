@@ -1,4 +1,4 @@
-#include "Render/Passes/Base/PassRenderState.h"
+﻿#include "Render/Passes/Base/PassRenderState.h"
 
 void InitializeDefaultPassRenderStateDescs(FPassRenderStateDesc (&OutStateDescs)[(uint32)ERenderPass::MAX])
 {
@@ -18,5 +18,7 @@ void InitializeDefaultPassRenderStateDescs(FPassRenderStateDesc (&OutStateDescs)
     S[(uint32)E::FXAA] = { EDepthStencilState::NoDepth, EBlendState::Opaque, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     S[(uint32)E::GizmoOuter] = { EDepthStencilState::GizmoOutside, EBlendState::Opaque, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     S[(uint32)E::GizmoInner] = { EDepthStencilState::GizmoInside, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
+    S[(uint32)E::OverlayBillboard] = { EDepthStencilState::NoDepth, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
+    S[(uint32)E::OverlayTextWorld] = { EDepthStencilState::NoDepth, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     S[(uint32)E::OverlayFont] = { EDepthStencilState::NoDepth, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 }

@@ -54,8 +54,9 @@ void FRenderPipelineRegistry::Initialize()
     FRenderPipelineDesc EditorOverlay = { ERenderPipelineType::EditorOverlay, {
         PassNode(ERenderPassNodeType::LightHitMapPass),
         PassNode(ERenderPassNodeType::DebugLinePass),
+        PipelineNode(ERenderPipelineType::Outline),
+        PassNode(ERenderPassNodeType::OverlayBillboardPass),
         PassNode(ERenderPassNodeType::GizmoPass),
-
         PassNode(ERenderPassNodeType::OverlayTextPass),
 		PipelineNode(ERenderPipelineType::Outline),
     } };

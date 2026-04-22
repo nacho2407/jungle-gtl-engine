@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Collision/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/WorldContext.h"
 #include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
 #include "Render/Scene/Scene.h"
@@ -34,6 +35,8 @@ public:
     void MarkWorldPrimitivePickingBVHDirty();
     void BuildWorldPrimitivePickingBVHNow() const;
     const FWorldPrimitivePickingBVH& GetWorldPrimitivePickingBVH() const { return WorldPrimitivePickingBVH; }
+    void BuildWorldPrimitiveVisibleBVHNow() const;
+    const FWorldPrimitivePickingBVH& GetWorldPrimitiveVisibleBVH() const { return WorldPrimitiveVisibleBVH; }
     void BeginDeferredPickingBVHUpdate();
     void EndDeferredPickingBVHUpdate();
     void WarmupPickingData() const;
@@ -63,6 +66,8 @@ public:
     const FOctree* GetOctree() const { return Partition.GetOctree(); }
     void InsertActorToOctree(AActor* actor);
     void RemoveActorToOctree(AActor* actor);
+    void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
+    EWorldType GetWorldType() const { return WorldType; }
     void UpdateActorInOctree(AActor* actor);
 
 private:
@@ -74,6 +79,7 @@ private:
     bool bHasBegunPlay = false;
     bool bHasLastFullLODUpdateCameraPos = false;
     mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
+    mutable FWorldPrimitivePickingBVH WorldPrimitiveVisibleBVH;
     int32 DeferredPickingBVHUpdateDepth = 0;
     bool bDeferredPickingBVHDirty = false;
     uint32 VisibleProxyBuildFrame = 0;
@@ -83,6 +89,7 @@ private:
     FTickManager TickManager;
 
     FSpatialPartition Partition;
+    EWorldType WorldType = EWorldType::Editor;
 };
 
 template <typename T>

@@ -16,6 +16,7 @@ void FPresentPass::PrepareInputs(FRenderPipelineContext& Context)
     {
         Context.StateCache->DiffuseSRV = nullptr;
         Context.StateCache->NormalSRV = nullptr;
+        Context.StateCache->SpecularSRV = nullptr;
         Context.StateCache->LocalLightSRV = nullptr;
         Context.StateCache->RTV = nullptr;
         Context.StateCache->DSV = nullptr;

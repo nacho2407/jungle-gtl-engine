@@ -39,6 +39,7 @@ public:
 	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
 	FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
 	void UpdateWorldAABB() const override;
+	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 protected:
 	bool bIsBillboard = true;

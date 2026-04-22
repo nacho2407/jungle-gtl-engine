@@ -29,6 +29,7 @@ struct FDrawSubmitStateCache
     FConstantBuffer*          LightCB        = nullptr;
     ID3D11ShaderResourceView* DiffuseSRV     = nullptr;
     ID3D11ShaderResourceView* NormalSRV      = nullptr;
+    ID3D11ShaderResourceView* SpecularSRV    = nullptr;
     ID3D11ShaderResourceView* LocalLightSRV  = nullptr;
 
     // Render target 추적 (CopyResource 후 DSV 복원 등)

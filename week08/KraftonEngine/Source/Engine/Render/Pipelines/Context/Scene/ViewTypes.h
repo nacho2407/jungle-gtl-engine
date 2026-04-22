@@ -27,7 +27,6 @@ struct FShowFlags
 	bool bWorldAxis = true;
 	bool bGizmo = true;
 	bool bBillboardText = true;
-	bool bDebugDraw = true;
 	bool bSceneBVH = false;
 	bool bSceneOctree = false;
 	bool bBoundingVolume = false;

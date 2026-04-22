@@ -19,7 +19,7 @@ float4 PS(PS_Input_Tex input) : SV_TARGET
     float4 col = BillboardTex.Sample(LinearClampSampler, input.texcoord);
 
     // 알파 컷오프 (straight alpha PNG의 보간 헤일로 차단)
-    if (!bIsWireframe && col.a < 0.5f)
+    if (!bIsWireframe && col.a < 0.05f)
         discard;
 
     return float4(ApplyWireframe(col.rgb), bIsWireframe ? 1.0f : col.a);
