@@ -31,6 +31,9 @@ struct Sphere
     float radius;
 };
 
+#define NUM_SLICES  32
+#define LOCAL_LIGHT_MAx 256
+
 Texture2D<float> gDepthTexture : register(t0);
 RWStructuredBuffer<uint> RWTileLightIndices : register(u0);
 RWStructuredBuffer<uint2> RWTileLightGrid : register(u1);
@@ -42,9 +45,7 @@ groupshared uint groupMinZ; // 각 타일별 minZ
 groupshared uint groupMaxZ; // 각 타일별 maxZ
 groupshared uint hitCount; // 각 타일별 Light 교차 수
 groupshared Frustum frustum;
-groupshared uint localIndices[256];
-
-#define NUM_SLICES  32
+groupshared uint localIndices[LOCAL_LIGHT_MAx];
 
 // ── Depth 유틸리티 함수 ─────────────────────────────────────────
 // Reverse-Z 비선형 깊이 → 선형 깊이
@@ -259,7 +260,7 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         {
             uint slot;
             InterlockedAdd(hitCount, 1, slot);
-            if (slot < 256)
+            if (slot < LOCAL_LIGHT_MAx)
             {
                 localIndices[slot] = i;
             }
@@ -270,7 +271,7 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
     if (threadID.x == 0 && threadID.y == 0)
     {
         uint offset;
-        uint actualCount = min(hitCount, 256);
+        uint actualCount = min(hitCount, LOCAL_LIGHT_MAx);
 
         InterlockedAdd(RWGlobalLightCounter[0], actualCount, offset);
         RWTileLightGrid[flatTileIndex] = uint2(offset, actualCount);
