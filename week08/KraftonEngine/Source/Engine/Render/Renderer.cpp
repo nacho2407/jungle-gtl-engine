@@ -354,7 +354,7 @@ FConstantBuffer* FRenderer::AcquirePerObjectCBForProxy(const FPrimitiveSceneProx
     return FrameResources.GetPerObjectCBForProxy(Device.GetDevice(), Proxy);
 }
 
-FRenderPipelineContext FRenderer::CreatePassContext(
+FRenderPipelineContext FRenderer::CreatePipelineContext(
     const FSceneView& SceneView,
     const FViewportRenderTargets* Targets,
     FScene* Scene,
@@ -387,13 +387,13 @@ FRenderPipelineContext FRenderer::CreatePassContext(
     return PipelineContext;
 }
 
-FRenderPipelineContext FRenderer::CreatePassContext(
+FRenderPipelineContext FRenderer::CreatePipelineContext(
     const FSceneView& SceneView,
     const FViewportRenderTargets* Targets,
     FScene* Scene,
     const FCollectedPrimitives& CollectedPrimitives)
 {
-    FRenderPipelineContext PipelineContext = CreatePassContext(SceneView, Targets, Scene, &CollectedPrimitives.VisibleProxies);
+    FRenderPipelineContext PipelineContext = CreatePipelineContext(SceneView, Targets, Scene, &CollectedPrimitives.VisibleProxies);
     PipelineContext.CollectedPrimitives = &CollectedPrimitives;
     return PipelineContext;
 }
