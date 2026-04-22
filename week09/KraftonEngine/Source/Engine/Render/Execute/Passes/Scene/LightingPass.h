@@ -16,6 +16,9 @@ public:
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) override { (void)Context; (void)Proxy; }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 
+protected:
+    bool IsEnabled(const FRenderPipelineContext& Context) const override;
+
 private:
     Microsoft::WRL::ComPtr < ID3D11Query> DisjointQuery = nullptr;
     Microsoft::WRL::ComPtr < ID3D11Query> TimestampStartQuery = nullptr;

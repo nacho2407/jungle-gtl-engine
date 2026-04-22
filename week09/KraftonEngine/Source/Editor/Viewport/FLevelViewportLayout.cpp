@@ -14,6 +14,7 @@
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include <cfloat>
 #include <filesystem>
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
@@ -727,14 +728,30 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		if (!OverlayLines.empty())
 		{
 			const float OverlayPadding = 12.0f;
-			ImVec2 OverlayMin(ContentRect.X + OverlayPadding, ContentRect.Y + OverlayPadding);
+			const float OverlayTextScale = OverlaySystem.GetLayout().TextScale;
+			const float OverlayFontSize = ImGui::GetFontSize() * OverlayTextScale;
+			const float OverlayLineHeight = ImGui::GetTextLineHeightWithSpacing() * OverlayTextScale;
+			ImFont* OverlayFont = ImGui::GetFont();
+			FRect OverlayAnchorRect = ContentRect;
+			for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+			{
+				if (LevelViewportClients[i] == ActiveViewportClient && ViewportWindows[i])
+				{
+					OverlayAnchorRect = ViewportWindows[i]->GetRect();
+					break;
+				}
+			}
+
+			ImVec2 OverlayMin(
+				OverlayAnchorRect.X + OverlayPadding,
+				OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + OverlayPadding);
 			float OverlayWidth = 0.0f;
 			for (const FOverlayStatLine& Line : OverlayLines)
 			{
-				ImVec2 TextSize = ImGui::CalcTextSize(Line.Text.c_str());
+				ImVec2 TextSize = OverlayFont->CalcTextSizeA(OverlayFontSize, FLT_MAX, 0.0f, Line.Text.c_str());
 				OverlayWidth = (OverlayWidth > TextSize.x) ? OverlayWidth : TextSize.x;
 			}
-			const float OverlayHeight = OverlayPadding * 2.0f + static_cast<float>(OverlayLines.size()) * ImGui::GetTextLineHeightWithSpacing();
+			const float OverlayHeight = OverlayPadding * 2.0f + static_cast<float>(OverlayLines.size()) * OverlayLineHeight;
 			ImDrawList* OverlayDrawList = ImGui::GetWindowDrawList();
 			OverlayDrawList->AddRectFilled(
 				OverlayMin,
@@ -744,8 +761,8 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			ImVec2 TextPos(OverlayMin.x + OverlayPadding, OverlayMin.y + OverlayPadding - 1.0f);
 			for (const FOverlayStatLine& Line : OverlayLines)
 			{
-				OverlayDrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), Line.Text.c_str());
-				TextPos.y += ImGui::GetTextLineHeightWithSpacing();
+				OverlayDrawList->AddText(OverlayFont, OverlayFontSize, TextPos, IM_COL32(255, 255, 255, 255), Line.Text.c_str());
+				TextPos.y += OverlayLineHeight;
 			}
 		}
 	}

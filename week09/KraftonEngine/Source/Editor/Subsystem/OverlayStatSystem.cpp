@@ -1,8 +1,10 @@
 #include "Editor/Subsystem/OverlayStatSystem.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
+#include "Profiling/Stats.h"
 #include <cstdio>
 
 // バイト数を適切な単位 (B / KB / MB / GB) に変換して文字列化
@@ -22,6 +24,21 @@ static int FormatBytes(char* Buffer, int32 BufferSize, const char* Label, uint64
 	return snprintf(Buffer, BufferSize, "%s : %llu B", Label, static_cast<unsigned long long>(Bytes));
 }
 
+static bool UsesLightingPass(EViewMode ViewMode)
+{
+	switch (ViewMode)
+	{
+	case EViewMode::Lit_Gouraud:
+	case EViewMode::Unlit:
+	case EViewMode::WorldNormal:
+	case EViewMode::Wireframe:
+	case EViewMode::SceneDepth:
+		return false;
+	default:
+		return true;
+	}
+}
+
 void FOverlayStatSystem::AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const
 {
 	FOverlayStatLine Line;
@@ -35,6 +52,53 @@ void FOverlayStatSystem::RecordPickingAttempt(double ElapsedMs)
 	LastPickingTimeMs = ElapsedMs;
 	AccumulatedPickingTimeMs += ElapsedMs;
 	++PickingAttemptCount;
+}
+
+void FOverlayStatSystem::ClearDisplayFlags()
+{
+	bShowFPS = false;
+	bShowPickingTime = false;
+	bShowMemory = false;
+	bShowLightCull = false;
+}
+
+void FOverlayStatSystem::ShowFPS(bool bEnable)
+{
+	ClearDisplayFlags();
+	bShowFPS = bEnable;
+	FLightCullStats::SetEnabled(false);
+}
+
+void FOverlayStatSystem::ShowPickingTime(bool bEnable)
+{
+	ClearDisplayFlags();
+	bShowPickingTime = bEnable;
+	FLightCullStats::SetEnabled(false);
+}
+
+void FOverlayStatSystem::ShowMemory(bool bEnable)
+{
+	ClearDisplayFlags();
+	bShowMemory = bEnable;
+	FLightCullStats::SetEnabled(false);
+}
+
+void FOverlayStatSystem::ShowLightCull(bool bEnable)
+{
+	ClearDisplayFlags();
+	bShowLightCull = bEnable;
+	FLightCullStats::SetEnabled(bEnable);
+	if (!bEnable)
+	{
+		FLightCullStats::ResetSample();
+	}
+}
+
+void FOverlayStatSystem::HideAll()
+{
+	ClearDisplayFlags();
+	FLightCullStats::SetEnabled(false);
+	FLightCullStats::ResetSample();
 }
 
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
@@ -53,6 +117,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	if (bShowMemory)
 	{
 		EstimatedLineCount += 8;
+	}
+	if (bShowLightCull)
+	{
+		EstimatedLineCount += 2;
 	}
 	OutLines.reserve(EstimatedLineCount);
 
@@ -108,6 +176,40 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 			AppendLine(OutLines, CurrentY, FString(Buffer));
 			CurrentY += Layout.LineHeight;
 		}
+	}
+
+	if (bShowLightCull)
+	{
+		const FLevelEditorViewportClient* ActiveViewport = Editor.GetActiveViewport();
+		const EViewMode ActiveViewMode = ActiveViewport ? ActiveViewport->GetRenderOptions().ViewMode : EViewMode::Unlit;
+		if (!UsesLightingPass(ActiveViewMode))
+		{
+			AppendLine(OutLines, CurrentY, FString("Lighting Pass GPU Time: N/A"));
+			CurrentY += Layout.LineHeight;
+
+			AppendLine(OutLines, CurrentY, FString("Total Per-Pixel Local Light Evaluations: N/A"));
+			CurrentY += Layout.LineHeight;
+			return;
+		}
+
+		if (!FLightCullStats::HasSample())
+		{
+			AppendLine(OutLines, CurrentY, FString("Lighting Pass GPU Time: Not measured"));
+			CurrentY += Layout.LineHeight;
+
+			AppendLine(OutLines, CurrentY, FString("Total Per-Pixel Local Light Evaluations: Not measured"));
+			CurrentY += Layout.LineHeight;
+			return;
+		}
+
+		char Buffer[128] = {};
+		snprintf(Buffer, sizeof(Buffer), "Lighting Pass GPU Time: %.3f ms", FLightCullStats::GetGPUTimeMs());
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		snprintf(Buffer, sizeof(Buffer), "Total Per-Pixel Local Light Evaluations: %u", FLightCullStats::GetEvaluationCount());
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
 	}
 }
 

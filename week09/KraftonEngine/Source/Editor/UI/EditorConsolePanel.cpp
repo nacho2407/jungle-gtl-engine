@@ -32,7 +32,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 
 			if (Args.size() < 2)
 			{
-				AddLog("Usage: stat fps | stat memory | stat none\n");
+				AddLog("Usage: stat fps | stat memory | stat lightcull | stat none\n");
 				return;
 			}
 
@@ -49,6 +49,11 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 				StatSystem.ShowMemory(true);
 				AddLog("Overlay stat enabled: memory\n");
 			}
+			else if (SubCommand == "lightcull")
+			{
+				StatSystem.ShowLightCull(true);
+				AddLog("Overlay stat enabled: lightcull\n");
+			}
 			else if (SubCommand == "none")
 			{
 				StatSystem.HideAll();
@@ -57,7 +62,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 			else
 			{
 				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
-				AddLog("Usage: stat fps | stat memory | stat none\n");
+				AddLog("Usage: stat fps | stat memory | stat lightcull | stat none\n");
 			}
 		});
 }

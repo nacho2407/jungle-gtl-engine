@@ -10,7 +10,7 @@
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Execute/Context/FrameRenderResources.h"
 #include "Render/Visibility/TileBasedLightCulling.h"
-#include "Editor/UI/EditorConsolePanel.h"
+#include "Profiling/Stats.h"
 
 namespace
 {
@@ -56,6 +56,42 @@ void BuildSurfaceSRVTable(const FRenderPipelineContext& Context, EShadingModel S
     }
 }
 } // namespace
+
+bool FLightingPass::IsEnabled(const FRenderPipelineContext& Context) const
+{
+    if (!Context.SceneView)
+    {
+        return false;
+    }
+
+    switch (Context.SceneView->ViewMode)
+    {
+    case EViewMode::Unlit:
+    case EViewMode::WorldNormal:
+    case EViewMode::Wireframe:
+    case EViewMode::SceneDepth:
+        return false;
+    default:
+        break;
+    }
+
+    return Context.ViewModePassRegistry && Context.ViewModePassRegistry->UsesLightingPass(Context.ActiveViewMode);
+}
+
+static bool SupportsLightCullStats(EViewMode ViewMode)
+{
+    switch (ViewMode)
+    {
+    case EViewMode::Lit_Gouraud:
+    case EViewMode::Unlit:
+    case EViewMode::WorldNormal:
+    case EViewMode::Wireframe:
+    case EViewMode::SceneDepth:
+        return false;
+    default:
+        return true;
+    }
+}
 
 void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -163,8 +199,13 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
+    const bool bMeasureLightCullStats =
+        FLightCullStats::IsEnabled() &&
+        Context.SceneView &&
+        SupportsLightCullStats(Context.SceneView->ViewMode);
+
 	// ---- ⏱️ 1. 쿼리 지연 초기화 (최초 1회만 실행) ----
-    if (!bQueryInitialized && Context.Context)
+    if (bMeasureLightCullStats && !bQueryInitialized && Context.Context)
     {
         ID3D11Device* device = nullptr;
         Context.Context->GetDevice(&device); // DeviceContext에서 Device를 얻어옴
@@ -174,11 +215,11 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             D3D11_QUERY_DESC queryDesc;
             queryDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
             queryDesc.MiscFlags = 0;
-            device->CreateQuery(&queryDesc, DisjointQuery.GetAddressOf());
+            HRESULT disjointHr = device->CreateQuery(&queryDesc, DisjointQuery.GetAddressOf());
 
             queryDesc.Query = D3D11_QUERY_TIMESTAMP;
-            device->CreateQuery(&queryDesc, TimestampStartQuery.GetAddressOf());
-            device->CreateQuery(&queryDesc, TimestampEndQuery.GetAddressOf());
+            HRESULT startHr = device->CreateQuery(&queryDesc, TimestampStartQuery.GetAddressOf());
+            HRESULT endHr = device->CreateQuery(&queryDesc, TimestampEndQuery.GetAddressOf());
 
 			// 💡 1. 카운터 버퍼(UAV용) 생성 (Structured 아님!)
             D3D11_BUFFER_DESC bufDesc = {};
@@ -186,28 +227,36 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             bufDesc.Usage = D3D11_USAGE_DEFAULT;
             bufDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
             bufDesc.MiscFlags = 0; // 🚨 D3D11_RESOURCE_MISC_BUFFER_STRUCTURED 제거!
-            device->CreateBuffer(&bufDesc, nullptr, EvalCounterBuffer.GetAddressOf());
+            HRESULT counterHr = device->CreateBuffer(&bufDesc, nullptr, EvalCounterBuffer.GetAddressOf());
 
             // 💡 2. UAV 생성 (확실한 타입 명시!)
             D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
             uavDesc.Format = DXGI_FORMAT_R32_UINT; // 🚨 UNKNOWN 대신 R32_UINT 사용
             uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
             uavDesc.Buffer.NumElements = 4;
-            device->CreateUnorderedAccessView(EvalCounterBuffer.Get(), &uavDesc, EvalCounterUAV.GetAddressOf());
+            HRESULT uavHr = SUCCEEDED(counterHr)
+                ? device->CreateUnorderedAccessView(EvalCounterBuffer.Get(), &uavDesc, EvalCounterUAV.GetAddressOf())
+                : counterHr;
 
             // 3. Staging 버퍼(CPU Read용) 생성 (기존과 동일)
             bufDesc.Usage = D3D11_USAGE_STAGING;
             bufDesc.BindFlags = 0;
             bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-            device->CreateBuffer(&bufDesc, nullptr, EvalStagingBuffer.GetAddressOf());
+            HRESULT stagingHr = device->CreateBuffer(&bufDesc, nullptr, EvalStagingBuffer.GetAddressOf());
 
             device->Release(); // GetDevice는 참조 카운트를 올리므로 꼭 Release() 해줘야 메모리 누수가 안 생깁니다.
-            bQueryInitialized = true;
+            bQueryInitialized =
+                SUCCEEDED(disjointHr) &&
+                SUCCEEDED(startHr) &&
+                SUCCEEDED(endHr) &&
+                SUCCEEDED(counterHr) &&
+                SUCCEEDED(uavHr) &&
+                SUCCEEDED(stagingHr);
         }
     }
 
     // ---- ⏱️ 2. GPU 타이밍 측정 시작 ----
-    if (bQueryInitialized)
+    if (bMeasureLightCullStats && bQueryInitialized)
     {
         Context.Context->Begin(DisjointQuery.Get());
         Context.Context->End(TimestampStartQuery.Get());
@@ -235,7 +284,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 	//진짜 조명 연산 제출
     SubmitPassRange(Context, ERenderPass::Lighting);
 
-	if (bQueryInitialized)
+	if (bMeasureLightCullStats && bQueryInitialized)
     {
         ID3D11RenderTargetView* currentRTVs[1] = { nullptr };
         ID3D11DepthStencilView* currentDSV = nullptr;
@@ -250,7 +299,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             currentDSV->Release();
     }
 
-	if (bQueryInitialized)
+	if (bMeasureLightCullStats && bQueryInitialized)
     {
         Context.Context->End(TimestampEndQuery.Get());
         Context.Context->End(DisjointQuery.Get());
@@ -261,6 +310,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         {
         }
 
+        bool bHasValidGPUTime = false;
         if (disjointData.Disjoint == FALSE)
         {
             UINT64 startTime = 0;
@@ -274,22 +324,20 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             }
 
             LastGPUTimeMs = float(endTime - startTime) / float(disjointData.Frequency) * 1000.0f;
+            bHasValidGPUTime = true;
+        }
 
-            // 💡 여기서 브레이크 포인트를 걸거나 콘솔에 출력해서 ms를 확인하세요!
-            UE_LOG("Lighting Pass GPU Time: %f ms", LastGPUTimeMs);
+		// 💡 [추가] GPU의 버퍼 값을 CPU가 읽을 수 있는 Staging 버퍼로 복사
+        Context.Context->CopyResource(EvalStagingBuffer.Get(), EvalCounterBuffer.Get());
 
-			// 💡 [추가] GPU의 버퍼 값을 CPU가 읽을 수 있는 Staging 버퍼로 복사
-            Context.Context->CopyResource(EvalStagingBuffer.Get(), EvalCounterBuffer.Get());
+        // 💡 [추가] 메모리 맵핑을 통해 값 읽어오기
+        D3D11_MAPPED_SUBRESOURCE mapped;
+        if (SUCCEEDED(Context.Context->Map(EvalStagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+        {
+            uint32_t evaluations = *((uint32_t*)mapped.pData);
+            Context.Context->Unmap(EvalStagingBuffer.Get(), 0);
 
-            // 💡 [추가] 메모리 맵핑을 통해 값 읽어오기
-            D3D11_MAPPED_SUBRESOURCE mapped;
-            if (SUCCEEDED(Context.Context->Map(EvalStagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
-            {
-                uint32_t evaluations = *((uint32_t*)mapped.pData);
-                Context.Context->Unmap(EvalStagingBuffer.Get(), 0);
-
-                UE_LOG("Total Light Evaluations: %d", evaluations);
-            }
+            FLightCullStats::Record(bHasValidGPUTime ? LastGPUTimeMs : 0.0f, evaluations);
         }
     }
 

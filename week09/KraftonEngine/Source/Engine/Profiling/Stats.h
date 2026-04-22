@@ -102,6 +102,34 @@ struct FDrawCallStats
 	static uint32 Get() { return Count; }
 };
 
+// --- Light Culling GPU Stats ---
+struct FLightCullStats
+{
+	static void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
+	static bool IsEnabled() { return bEnabled; }
+	static void ResetSample()
+	{
+		LastGPUTimeMs = 0.0f;
+		LastEvaluationCount = 0;
+		bHasSample = false;
+	}
+	static void Record(float InGPUTimeMs, uint32 InEvaluationCount)
+	{
+		LastGPUTimeMs = InGPUTimeMs;
+		LastEvaluationCount = InEvaluationCount;
+		bHasSample = true;
+	}
+	static bool HasSample() { return bHasSample; }
+	static float GetGPUTimeMs() { return LastGPUTimeMs; }
+	static uint32 GetEvaluationCount() { return LastEvaluationCount; }
+
+private:
+	static bool bEnabled;
+	static bool bHasSample;
+	static float LastGPUTimeMs;
+	static uint32 LastEvaluationCount;
+};
+
 // --- LOD Distribution Counter ---
 #if STATS
 struct FLODStats
