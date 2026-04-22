@@ -258,6 +258,7 @@
     <ClCompile Include="Source\Editor\UI\EditorViewportWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
+    <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
@@ -294,6 +295,7 @@
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Log.cpp" />
+    <ClCompile Include="Source\Engine\Core\Notification.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
@@ -408,6 +410,7 @@
     <ClInclude Include="Source\Editor\UI\EditorViewportWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
+    <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
@@ -452,6 +455,7 @@
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
     <ClInclude Include="Source\Engine\Core\Log.h" />
+    <ClInclude Include="Source\Engine\Core\Notification.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
     <ClInclude Include="Source\Engine\Core\RayTypes.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />

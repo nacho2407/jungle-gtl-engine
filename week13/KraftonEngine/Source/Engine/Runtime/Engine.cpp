@@ -2,6 +2,7 @@
 
 #include "Platform/Paths.h"
 #include "Core/Log.h"
+#include "Core/Notification.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats.h"
 #include "Engine/Input/InputSystem.h"
@@ -85,6 +86,7 @@ void UEngine::BeginPlay()
 void UEngine::Tick(float DeltaTime)
 {
 	FDirectoryWatcher::Get().ProcessChanges();
+	FNotificationManager::Get().Tick(DeltaTime);
 	InputSystem::Get().Tick();
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
