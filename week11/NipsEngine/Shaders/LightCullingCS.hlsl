@@ -127,8 +127,6 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
         if (index < MAX_LIGHTS_SCRATCH)
         {
             TileLightIndices[index] = i;
-            uint sortKey = 0;
-            float3 frustumCenter;
             float3 delta = CameraPosition - lightPosView;
             float distSq = max(dot(delta, delta), 0.0001f);
 
