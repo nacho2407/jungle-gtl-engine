@@ -1,9 +1,0 @@
-# TwoSectionPlane.mtl
-
-newmtl LeftMat
-Kd 1.0 1.0 1.0
-map_Kd TwoSectionMaterial.png
-
-newmtl RightMat
-Kd 1.0 1.0 1.0
-map_Kd TwoSectionMaterial.png

@@ -6,14 +6,12 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/DecalActor.h"
-#include "GameFramework/FakeLightActor.h"
-#include "GameFramework/FireballActor.h"
 #include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
-#include "GameFramework/AmbientLightActor.h"
-#include "GameFramework/DirectionalLightActor.h"
-#include "GameFramework/PointLightActor.h"
-#include "GameFramework/SpotLightActor.h"
+#include "GameFramework/Light/AmbientLightActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
+#include "GameFramework/Light/PointLightActor.h"
+#include "GameFramework/Light/SpotLightActor.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -103,40 +101,26 @@ void FEditorControlWidget::Render(float DeltaTime)
 					}
 					case 4:
 					{
-						AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
+						AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
 						Actor->InitDefaultComponents();
 						Actor->SetActorLocation(Pos);
 						break;
 					}
 					case 5:
 					{
-						AFireballActor* Actor = World->SpawnActor<AFireballActor>();
+						ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
 						Actor->InitDefaultComponents();
 						Actor->SetActorLocation(Pos);
 						break;
 					}
 					case 6:
 					{
-						AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
-						Actor->InitDefaultComponents();
-						Actor->SetActorLocation(Pos);
-						break;
-					}
-					case 7:
-					{
-						ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
-						Actor->InitDefaultComponents();
-						Actor->SetActorLocation(Pos);
-						break;
-					}
-					case 8:
-					{
 						APointLightActor* Actor = World->SpawnActor<APointLightActor>();
 						Actor->InitDefaultComponents();
 						Actor->SetActorLocation(Pos);
 						break;
 					}
-					case 9:
+					case 7:
 					{
 						ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
 						Actor->InitDefaultComponents();
@@ -190,40 +174,26 @@ void FEditorControlWidget::Render(float DeltaTime)
 			}
 			case 4:
 			{
-				AFakeLightActor* Actor = World->SpawnActor<AFakeLightActor>();
+				AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
 			case 5:
 			{
-				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
+				ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
 			case 6:
 			{
-				AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 7:
-			{
-				ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 8:
-			{
 				APointLightActor* Actor = World->SpawnActor<APointLightActor>();
 				Actor->InitDefaultComponents();
 				Actor->SetActorLocation(CurSpawnPoint);
 				break;
 			}
-			case 9:
+			case 7:
 			{
 				ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
 				Actor->InitDefaultComponents();

@@ -1,0 +1,9 @@
+{
+  "PathFileName": "Asset/Materials/Editor/DirectionalLight.mat",
+  "ShaderPath": "Shaders/UI/Billboard.hlsl",
+  "RenderPass": "AlphaBlend",
+  "Textures": {
+    "DiffuseTexture": "Asset/Editor/Icons/DirectionalLight_64x.png"
+  },
+  "Origin": "Editor"
+}
