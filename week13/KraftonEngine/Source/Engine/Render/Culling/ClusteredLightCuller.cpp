@@ -1,5 +1,12 @@
 ﻿#include "ClusteredLightCuller.h"
 #include "Render/Pipeline/RenderConstants.h"
+
+namespace
+{
+	constexpr uint32 ClusterCullingThreadGroupSizeX = 8;
+	constexpr uint32 ClusterCullingThreadGroupSizeY = 3;
+	constexpr uint32 ClusterCullingThreadGroupSizeZ = 4;
+}
 void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext)
 {
 	Device = InDevice;
@@ -29,7 +36,10 @@ void FClusteredLightCuller::DispatchViewSpaceAABB()
 
 	Context->CSSetShader(ViewSpaceAABBCS, nullptr, 0);
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::ClusterAABB, 1, &gClusterAABBsUAV, nullptr);
-	Context->Dispatch(State.ClusterX, State.ClusterY, State.ClusterZ);
+	Context->Dispatch(
+		(State.ClusterX + ClusterCullingThreadGroupSizeX - 1) / ClusterCullingThreadGroupSizeX,
+		(State.ClusterY + ClusterCullingThreadGroupSizeY - 1) / ClusterCullingThreadGroupSizeY,
+		(State.ClusterZ + ClusterCullingThreadGroupSizeZ - 1) / ClusterCullingThreadGroupSizeZ);
 	ID3D11UnorderedAccessView* NullUAV = nullptr;
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::ClusterAABB, 1, &NullUAV, nullptr);
 }
@@ -47,7 +57,10 @@ void FClusteredLightCuller::DispatchLightCullingCS(ID3D11ShaderResourceView* Lig
 	Context->CSSetShader(LightCullingCS, nullptr, 0);
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::LightIndexList, 3, UAVs, nullptr);
 	Context->CSSetShaderResources(ELightCullingSRVSlot::ClusterAABB, 2, SRVs);
-	Context->Dispatch(State.ClusterX, State.ClusterY, State.ClusterZ);
+	Context->Dispatch(
+		(State.ClusterX + ClusterCullingThreadGroupSizeX - 1) / ClusterCullingThreadGroupSizeX,
+		(State.ClusterY + ClusterCullingThreadGroupSizeY - 1) / ClusterCullingThreadGroupSizeY,
+		(State.ClusterZ + ClusterCullingThreadGroupSizeZ - 1) / ClusterCullingThreadGroupSizeZ);
 	ID3D11UnorderedAccessView* NullUAV[3] = {};
 	ID3D11ShaderResourceView* NullSRV[2] = {};
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::LightIndexList, 3, NullUAV, nullptr);

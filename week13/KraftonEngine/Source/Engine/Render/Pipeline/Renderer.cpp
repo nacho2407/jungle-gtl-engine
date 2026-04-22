@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ShaderManager.h"
@@ -146,8 +146,14 @@ void FRenderer::DispatchClusterCullingResources()
 	Resources.UnbindTileCullingBuffers(Device);
 	UnbindClusterCullingResources();
 
-	ClusteredLightCuller.DispatchViewSpaceAABB();
-	ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
+	/*{
+		GPU_SCOPE_STAT_CAT("ClutserCulling AABB Creation", "AABBCreation");
+		ClusteredLightCuller.DispatchViewSpaceAABB();
+	}*/
+	{
+		GPU_SCOPE_STAT_CAT("Cluster Culling Dispatch", "Culling Dispatch");
+		ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
+	}
 
 	BindClusterCullingResources();
 }
