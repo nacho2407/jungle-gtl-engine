@@ -8,6 +8,8 @@ Texture2D g_txColor : register(t0);
 Texture2D g_NormalMap : register(t1);
 #endif
 
+Texture2D g_SpecularMap : register(t2);
+
 float3 ResolveBaseDrawNormal(FBaseDrawVSOutput Input)
 {
     float3 N = normalize(Input.worldNormal);
@@ -41,9 +43,9 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.position = ApplyMVP(Input.position);
     
     // 월드 노멀 및 탄젠트 변환 (정규화 포함)
-    float3 VSNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    float3 VSNormal = normalize(mul(Input.normal, (float3x3) NormalMatrix));
     Output.worldNormal = VSNormal;
-    Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3)NormalMatrix));
+    Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3) NormalMatrix));
     Output.worldTangent.w = Input.tangent.w;
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
@@ -88,6 +90,10 @@ FBaseDrawOutput3 PS_BaseDraw_BlinnPhong(FBaseDrawVSOutput Input)
     // SpecularStrength를 0.3으로 낮춰서 하이라이트가 하얗게 타버리는 현상을 방지
     float Shininess = MaterialParam.x > 0.0f ? MaterialParam.x : 32.0f;
     float SpecularStrength = MaterialParam.y > 0.0f ? MaterialParam.y : 0.3f;
+    if (StaticMeshHasSpecularTexture())
+    {
+        SpecularStrength *= g_SpecularMap.Sample(LinearWrapSampler, Input.texcoord).r;
+    }
     Output.Surface2 = EncodeMaterialParam(float4(Shininess, SpecularStrength, 0.0f, 1.0f));
     return Output;
 }

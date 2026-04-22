@@ -234,8 +234,12 @@ void FLevelViewportLayout::DisableWorldAxisForPIE()
 	{
 		for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
 		{
-			LevelViewportClients[i]->GetRenderOptions().ShowFlags.bGrid = false;
-			LevelViewportClients[i]->GetRenderOptions().ShowFlags.bWorldAxis = false;
+			FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
+			Opts.ShowFlags.bGrid = false;
+			Opts.ShowFlags.bWorldAxis = false;
+			Opts.ShowFlags.bSceneBVH = false;
+			Opts.ShowFlags.bSceneOctree = false;
+			Opts.ShowFlags.bWorldBound = false;
 		}
 		return;
 	}
@@ -244,6 +248,9 @@ void FLevelViewportLayout::DisableWorldAxisForPIE()
 	{
 		SavedGridVisibility[i] = false;
 		SavedWorldAxisVisibility[i] = false;
+		SavedSceneBVHVisibility[i] = false;
+		SavedSceneOctreeVisibility[i] = false;
+		SavedWorldBoundVisibility[i] = false;
 	}
 
 	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
@@ -251,8 +258,14 @@ void FLevelViewportLayout::DisableWorldAxisForPIE()
 		FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
 		SavedGridVisibility[i] = Opts.ShowFlags.bGrid;
 		SavedWorldAxisVisibility[i] = Opts.ShowFlags.bWorldAxis;
+		SavedSceneBVHVisibility[i] = Opts.ShowFlags.bSceneBVH;
+		SavedSceneOctreeVisibility[i] = Opts.ShowFlags.bSceneOctree;
+		SavedWorldBoundVisibility[i] = Opts.ShowFlags.bWorldBound;
 		Opts.ShowFlags.bGrid = false;
 		Opts.ShowFlags.bWorldAxis = false;
+		Opts.ShowFlags.bSceneBVH = false;
+		Opts.ShowFlags.bSceneOctree = false;
+		Opts.ShowFlags.bWorldBound = false;
 	}
 
 	bHasSavedWorldAxisVisibility = true;
@@ -267,8 +280,12 @@ void FLevelViewportLayout::RestoreWorldAxisAfterPIE()
 
 	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
 	{
-		LevelViewportClients[i]->GetRenderOptions().ShowFlags.bGrid = SavedGridVisibility[i];
-		LevelViewportClients[i]->GetRenderOptions().ShowFlags.bWorldAxis = SavedWorldAxisVisibility[i];
+		FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
+		Opts.ShowFlags.bGrid = SavedGridVisibility[i];
+		Opts.ShowFlags.bWorldAxis = SavedWorldAxisVisibility[i];
+		Opts.ShowFlags.bSceneBVH = SavedSceneBVHVisibility[i];
+		Opts.ShowFlags.bSceneOctree = SavedSceneOctreeVisibility[i];
+		Opts.ShowFlags.bWorldBound = SavedWorldBoundVisibility[i];
 	}
 
 	bHasSavedWorldAxisVisibility = false;

@@ -107,6 +107,7 @@ protected:
         {
             Context.StateCache->DiffuseSRV = nullptr;
             Context.StateCache->NormalSRV = nullptr;
+            Context.StateCache->SpecularSRV = nullptr;
             Context.StateCache->PerShaderCB[0] = nullptr;
             Context.StateCache->PerShaderCB[1] = nullptr;
             Context.StateCache->bForceAll = true;

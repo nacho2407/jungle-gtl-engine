@@ -23,6 +23,7 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
     case ERenderPassNodeType::SelectionMaskPass: return L"SelectionMaskPass";
     case ERenderPassNodeType::OutlinePass: return L"OutlinePass";
     case ERenderPassNodeType::DebugLinePass: return L"DebugLinePass";
+    case ERenderPassNodeType::OverlayBillboardPass: return L"OverlayBillboardPass";
     case ERenderPassNodeType::GizmoPass: return L"GizmoPass";
     case ERenderPassNodeType::OverlayTextPass: return L"OverlayTextPass";
     case ERenderPassNodeType::HeightFogPass: return L"HeightFogPass";

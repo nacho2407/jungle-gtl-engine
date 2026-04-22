@@ -1,19 +1,14 @@
 #include "DecalComponent.h"
 
 #include "Materials/MaterialManager.h"
-#include "Collision/OBB.h"
-#include "Component/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Profiling/Stats.h"
 #include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
-#include "Resource/ResourceManager.h"
-#include "Mesh/ObjManager.h"
-#include "Engine/Runtime/Engine.h"
-#include "Texture/Texture2D.h"
 #include "Materials/Material.h"
+#include "Serialization/Archive.h"
 #include <algorithm>
+#include <cstring>
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
@@ -24,8 +19,10 @@ void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
         HandleFade(DeltaTime);
     }
 
-    UpdateReceivers();
-    DrawDebugBox();
+    if (ShouldDrawDebugBox())
+    {
+        DrawDebugBox();
+    }
 }
 
 FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
@@ -117,15 +114,9 @@ void UDecalComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
     MarkProxyDirty(EDirtyFlag::Material);
 }
 
-void UDecalComponent::UpdateDecalVolumeFromTransform()
-{
-    ConvexVolume.UpdateAsOBB(GetWorldMatrix());
-}
-
 void UDecalComponent::OnTransformDirty()
 {
     UPrimitiveComponent::OnTransformDirty();
-    UpdateReceivers();
 }
 
 void UDecalComponent::HandleFade(float DeltaTime)
@@ -166,54 +157,21 @@ void UDecalComponent::HandleFade(float DeltaTime)
     MarkProxyDirty(EDirtyFlag::Material);
 }
 
-void UDecalComponent::UpdateReceivers()
+bool UDecalComponent::ShouldDrawDebugBox() const
 {
-    SCOPE_STAT_CAT("UpdateDecalReceivers", "6_Decal");
-
-    UpdateDecalVolumeFromTransform();
-
-    UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
-    if (!World)
+    const AActor* OwnerActor = GetOwner();
+    UWorld* World = OwnerActor ? OwnerActor->GetWorld() : nullptr;
+    if (!OwnerActor || !World)
     {
-        return;
+        return false;
     }
 
-    TArray<UPrimitiveComponent*> OverlappingPrimitives;
-    World->GetPartition().QueryFrustumAllPrimitive(ConvexVolume, OverlappingPrimitives);
-
-    Receivers.clear();
-
-    FOBB DecalOBB;
-    DecalOBB.UpdateAsOBB(GetWorldMatrix());
-
-    for (UPrimitiveComponent* PrimitiveComp : OverlappingPrimitives)
+    if (World->GetWorldType() != EWorldType::Editor)
     {
-        if (PrimitiveComp == this || PrimitiveComp->GetOwner() == GetOwner())
-        {
-            continue;
-        }
-
-        UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
-        if (!StaticMeshComp || !StaticMeshComp->GetStaticMesh())
-        {
-            continue;
-        }
-
-        const FBoundingBox ReceiverBounds = StaticMeshComp->GetWorldBoundingBox();
-        if (!ReceiverBounds.IsValid())
-        {
-            continue;
-        }
-
-        if (!DecalOBB.IntersectOBBAABB(ReceiverBounds))
-        {
-            continue;
-        }
-
-        Receivers.push_back(StaticMeshComp);
+        return false;
     }
 
-    MarkProxyDirty(EDirtyFlag::Mesh);
+    return OwnerActor->IsVisible() && IsVisible() && ShouldRenderInCurrentWorld();
 }
 
 void UDecalComponent::DrawDebugBox()

@@ -1,4 +1,4 @@
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+﻿#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
 #include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
@@ -44,7 +44,7 @@ void FSubUVSceneProxy::UpdateMesh()
 void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     USubUVComponent* Comp = GetSubUVComponent();
-    bVisible = Comp->IsVisible();
+    bVisible = Comp->ShouldRenderInCurrentWorld();
     if (!bVisible)
         return;
 
@@ -61,7 +61,7 @@ void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     // Billboard matrix
     FVector BillboardForward = SceneView.CameraForward * -1.0f;
     FMatrix RotMatrix;
-    RotMatrix.SetAxes(BillboardForward, SceneView.CameraRight, SceneView.CameraUp);
+    RotMatrix.SetAxes(SceneView.CameraRight, SceneView.CameraUp, BillboardForward);
     FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
     PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);

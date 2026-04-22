@@ -75,6 +75,7 @@ public:
     // 텍스처/머티리얼 바인딩 (Billboard/SubUV/간단한 primitive 렌더링용)
     ID3D11ShaderResourceView* DiffuseSRV = nullptr;
     ID3D11ShaderResourceView* NormalSRV = nullptr;
+    ID3D11ShaderResourceView* SpecularSRV = nullptr;
     FConstantBuffer* MaterialCB[2] = {};
 
     // 뷰포트별 갱신이 필요한 프록시 (Gizmo, Billboard 등)

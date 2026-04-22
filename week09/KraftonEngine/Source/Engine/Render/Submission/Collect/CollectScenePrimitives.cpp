@@ -1,11 +1,15 @@
-#include "Render/Submission/Collect/DrawCollector.h"
+﻿#include "Render/Submission/Collect/DrawCollector.h"
 
 #include "GameFramework/World.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include "Render/Pipelines/Registry/ViewModePassRegistry.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
+
+#include <algorithm>
 
 #define LOD_STATS_ENABLE 1
 #if LOD_STATS_ENABLE
@@ -38,6 +42,30 @@ thread_local uint64 GLOD2 = 0;
     } while (0)
 #endif
 
+namespace
+{
+bool ContainsProxy(const TArray<FPrimitiveSceneProxy*>& Proxies, const FPrimitiveSceneProxy* Target)
+{
+    return std::find(Proxies.begin(), Proxies.end(), Target) != Proxies.end();
+}
+
+void AppendSceneRegistryFrustumProxies(FScene& Scene, const FConvexVolume& Frustum, TArray<FPrimitiveSceneProxy*>& OutProxies)
+{
+    for (FPrimitiveSceneProxy* Proxy : Scene.GetPrimitiveProxies())
+    {
+        if (!Proxy || Proxy->bNeverCull || ContainsProxy(OutProxies, Proxy))
+        {
+            continue;
+        }
+
+        if (Frustum.IntersectAABB(Proxy->CachedBounds))
+        {
+            OutProxies.push_back(Proxy);
+        }
+    }
+}
+} // namespace
+
 // ==================== Scene Helpers ====================
 
 uint32 FDrawCollector::SelectLOD(uint32 CurrentLOD, float DistSq)
@@ -60,7 +88,12 @@ uint32 FDrawCollector::SelectLOD(uint32 CurrentLOD, float DistSq)
 void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectContext)
 {
     CollectScenePrimitives(World, CollectContext);
-    CollectSceneLights(CollectContext.Scene);
+    CollectSceneLights(World, CollectContext.Scene);
+
+    if (World && CollectContext.SceneView)
+    {
+        CollectEditorHelpers(World, *CollectContext.SceneView, CollectedOverlayData);
+    }
 }
 
 void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext)
@@ -99,6 +132,7 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
         }
 
         World->GetPartition().QueryFrustumAllProxies(SceneView.FrustumVolume, CollectedSceneData.Primitives.VisibleProxies);
+        AppendSceneRegistryFrustumProxies(Scene, SceneView.FrustumVolume, CollectedSceneData.Primitives.VisibleProxies);
     }
 
     const TArray<FPrimitiveSceneProxy*> CandidateProxies = CollectedSceneData.Primitives.VisibleProxies;
@@ -122,6 +156,15 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
         if (!Proxy)
         {
             continue;
+        }
+
+        if (World->GetWorldType() == EWorldType::Editor)
+        {
+            const UPrimitiveComponent* PrimitiveOwner = Proxy->Owner;
+            if (PrimitiveOwner && PrimitiveOwner->IsEditorHelper())
+            {
+                continue;
+            }
         }
 
         if (LODCtx.bValid && LODCtx.ShouldRefreshLOD(Proxy->ProxyId, Proxy->LastLODUpdateFrame))
@@ -152,7 +195,9 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
             OcclusionMut->GatherAABB(Proxy);
         }
 
-        if (Occlusion && !Proxy->bNeverCull && Occlusion->IsOccluded(Proxy))
+        // Opaque proxies must still reach DepthPre/Opaque command generation even
+        // when the previous GPU occlusion readback is stale or overly aggressive.
+        if (Occlusion && !Proxy->bNeverCull && Proxy->Pass != ERenderPass::Opaque && Occlusion->IsOccluded(Proxy))
         {
             continue;
         }

@@ -228,6 +228,26 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
     return true;
 }
 
+UTexture2D* UMaterial::GetDiffuseTexture() const
+{
+    UTexture2D* Texture = nullptr;
+    GetTextureParameter(MaterialSemantics::DiffuseTextureSlot, Texture);
+    return Texture;
+}
+
+UTexture2D* UMaterial::GetNormalTexture() const
+{
+    UTexture2D* Texture = nullptr;
+    GetTextureParameter(MaterialSemantics::NormalTextureSlot, Texture);
+    return Texture;
+}
+
+UTexture2D* UMaterial::GetSpecularTexture() const
+{
+    UTexture2D* Texture = nullptr;
+    GetTextureParameter(MaterialSemantics::SpecularTextureSlot, Texture);
+    return Texture;
+}
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName) const
 {

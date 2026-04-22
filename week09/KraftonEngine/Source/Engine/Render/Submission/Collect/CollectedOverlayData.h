@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Scene/DebugDraw/DebugDrawQueue.h"
+
+class FPrimitiveSceneProxy;
 
 struct FSceneOverlayText
 {
@@ -43,6 +45,8 @@ struct FCollectedOverlayData
         Debug.Lines.clear();
         Debug.Queue = {};
         Guides.Grid = {};
+        EditorHelpers.Billboards.clear();
+        EditorHelpers.Texts.clear();
     }
 
     bool HasGrid() const { return Guides.Grid.bEnabled; }
@@ -50,6 +54,8 @@ struct FCollectedOverlayData
     int32 GetGridHalfLineCount() const { return Guides.Grid.HalfLineCount; }
     const TArray<FSceneDebugAABB>& GetDebugAABBs() const { return Debug.AABBs; }
     const TArray<FSceneDebugLine>& GetDebugLines() const { return Debug.Lines; }
+    const TArray<FPrimitiveSceneProxy*>& GetEditorHelperBillboards() const { return EditorHelpers.Billboards; }
+    const TArray<FPrimitiveSceneProxy*>& GetEditorHelperTexts() const { return EditorHelpers.Texts; }
 
     struct FDebugPayload
     {
@@ -62,4 +68,10 @@ struct FCollectedOverlayData
     {
         FSceneGridParams Grid;
     } Guides;
+
+    struct FEditorHelperPayload
+    {
+        TArray<FPrimitiveSceneProxy*> Billboards;
+        TArray<FPrimitiveSceneProxy*> Texts;
+    } EditorHelpers;
 };

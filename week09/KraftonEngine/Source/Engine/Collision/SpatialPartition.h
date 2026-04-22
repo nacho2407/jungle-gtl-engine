@@ -20,6 +20,7 @@ public:
     void InsertActor(AActor* Actor);
     void RemoveActor(AActor* Actor);
     void UpdateActor(AActor* Actor);
+    void AddSinglePrimitive(UPrimitiveComponent* Primitive);
 
     // 단일 컴포넌트 제거 — overflow / octree leaf 양쪽 모두 정리한다.
     void RemoveSinglePrimitive(UPrimitiveComponent* Primitive);

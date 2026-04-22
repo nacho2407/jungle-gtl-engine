@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
@@ -31,6 +31,7 @@ enum class EShaderType : uint32
     SceneDepth,
     NormalView,
     FXAA,
+	LightHitMap,
     MAX,
 };
 

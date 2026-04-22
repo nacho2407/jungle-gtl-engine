@@ -20,5 +20,8 @@ void AAmbientLightActor::InitDefaultComponents()
 	BillboardComponent = AddComponent<UBillboardComponent>();
 	BillboardComponent->AttachToComponent(AmbientLightComponent);
 	auto AmbientLightIcon = FMaterialManager::Get().GetOrCreateMaterial(AmbientLightIconPath);
+	BillboardComponent->SetVisibleInEditor(true);
+	BillboardComponent->SetVisibleInGame(false);
+	BillboardComponent->SetEditorHelper(true);
 	BillboardComponent->SetMaterial(AmbientLightIcon);
 }

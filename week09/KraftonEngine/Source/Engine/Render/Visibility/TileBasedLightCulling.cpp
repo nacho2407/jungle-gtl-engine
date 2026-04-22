@@ -125,6 +125,14 @@ void FTileBasedLightCulling::SetPointLightData(const uint32 InLightsCount)
     CreatePointLightBufferGPU();
 }
 
+void FTileBasedLightCulling::ClearDebugHitMap()
+{
+    if (!IsInitialized() || !DebugHitMapUAV)
+		return;
+    float ClearColor[4] = { 0, 0, 0, 0 };
+    Device->GetDeviceContext()->ClearUnorderedAccessViewFloat(DebugHitMapUAV, ClearColor);
+}
+
 void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bEnable25DCulling)
 {
     if (!IsInitialized())

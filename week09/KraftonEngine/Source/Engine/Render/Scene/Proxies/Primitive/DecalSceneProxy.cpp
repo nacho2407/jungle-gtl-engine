@@ -3,10 +3,10 @@
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"
-#include "Render/Resources/Shaders/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Engine/Runtime/Engine.h"
 
 namespace
 {
@@ -21,8 +21,13 @@ FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
     : FPrimitiveSceneProxy(InComponent)
 {
     DecalCB = new FConstantBuffer();
-    // 최초 1회 초기화
+    if (DecalCB && GEngine)
+    {
+        DecalCB->Create(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), sizeof(FDecalConstants));
+    }
+
     UpdateMesh();
+    UpdateTransform();
 }
 
 FDecalSceneProxy::~FDecalSceneProxy()
@@ -38,6 +43,25 @@ FDecalSceneProxy::~FDecalSceneProxy()
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 {
     return static_cast<UDecalComponent*>(Owner);
+}
+
+void FDecalSceneProxy::UpdateDecalConstants()
+{
+    UDecalComponent* DecalComp = GetDecalComponent();
+    if (!DecalComp || !DecalCB)
+    {
+        return;
+    }
+
+    auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
+    CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
+    CB.Color = DecalComp->GetColor();
+}
+
+void FDecalSceneProxy::UpdateTransform()
+{
+    FPrimitiveSceneProxy::UpdateTransform();
+    UpdateDecalConstants();
 }
 
 void FDecalSceneProxy::UpdateMaterial()
@@ -60,9 +84,7 @@ void FDecalSceneProxy::UpdateMaterial()
         }
     }
 
-    auto& CB = ExtraCB.Bind<FDecalConstants>(DecalCB, ECBSlot::PerShader0);
-    CB.WorldToDecal = DecalComp->GetWorldMatrix().GetInverse();
-    CB.Color = DecalComp->GetColor();
+    UpdateDecalConstants();
 }
 
 void FDecalSceneProxy::UpdateMesh()
@@ -72,25 +94,10 @@ void FDecalSceneProxy::UpdateMesh()
     MeshBuffer = nullptr;
     SectionRenderData.clear();
 
-    if (DecalMaterial && DecalMaterial->GetShader())
-    {
-        Shader = DecalMaterial->GetShader();
-        Pass = DecalMaterial->GetRenderPass();
-
-        // 머티리얼 기반 렌더 상태 전파
-        Blend = DecalMaterial->GetBlendState();
-        DepthStencil = DecalMaterial->GetDepthStencilState();
-        Rasterizer = DecalMaterial->GetRasterizerState();
-    }
-    else
-    {
-        Shader = FShaderManager::Get().GetShader(EShaderType::Decal);
-        Pass = ERenderPass::Decal;
-
-        // 기본 상태
-        Blend = EBlendState::AlphaBlend;
-        DepthStencil = EDepthStencilState::DepthReadOnly;
-        Rasterizer = ERasterizerState::SolidNoCull;
-    }
+    Shader = nullptr;
+    Pass = ERenderPass::Decal;
+    Blend = EBlendState::Opaque;
+    DepthStencil = EDepthStencilState::NoDepth;
+    Rasterizer = ERasterizerState::SolidNoCull;
     bSupportsOutline = false;
 }
