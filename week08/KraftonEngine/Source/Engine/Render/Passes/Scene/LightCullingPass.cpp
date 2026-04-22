@@ -1,4 +1,4 @@
-#include "LightCullingPass.h"
+﻿#include "LightCullingPass.h"
 
 #include "Render/Pipelines/Context/FrameRenderResources.h"
 #include "Render/Pipelines/Context/RenderPipelineContext.h"
@@ -42,10 +42,14 @@ void FLightCullingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     if (Context.SceneView->ViewMode == EViewMode::Wireframe)
     {
+        if (Context.LightCulling)
+        {
+            Context.LightCulling->ClearDebugHitMap();
+        }
         return;
     }
 
-    if (Context.LightCulling && Context.Resources && Context.Resources->LocalLightCount > 0)
+    if (Context.LightCulling && Context.Resources && Context.Resources->LocalLightCount >= 0)
     {
 		//Frame Buffer 할당
         ID3D11Buffer* b0 = Context.Resources->FrameBuffer.GetBuffer();

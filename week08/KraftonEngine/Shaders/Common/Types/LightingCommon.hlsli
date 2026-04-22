@@ -3,8 +3,27 @@
 
 #include "CommonTypes.hlsli"
 
+#define TILE_SIZE                       4
+#define NUM_SLICES                      32
+#define MAX_LIGHTS_PER_TILE             1024
+#define SHADER_ENTITY_TILE_BUCKET_COUNT (MAX_LIGHTS_PER_TILE / 32)   // 32
+
 // LocalLights StructuredBuffer - t6 slot
 StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
+//Lighting Masking Buffers
+StructuredBuffer<uint> PerTileLightMask : register(t7);
+Texture2D g_DebugHitMapTex : register(t8);
+//Light Culling Parameters - b2 slot
+cbuffer LightCullingParams : register(b2)
+{
+    uint2 ScreenSize;
+    uint2 TileSize; // == TILE_SIZE
+
+    uint Enable25DCulling;
+    float NearZ;
+    float FarZ;
+    float NumLights;
+};
 
 float3 GetAmbientLightColor()
 {
@@ -45,6 +64,7 @@ float4 ComputeGouraudLighting(float4 BaseColor, float4 GouraudL)
 
 float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
 {
+
     float3 N = normalize(Normal);
     float3 TotalLight = GetAmbientLightColor();
 
@@ -80,7 +100,7 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
             TotalLight += Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
         }
     }
-
+    
     return saturate(TotalLight);
 }
 

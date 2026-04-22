@@ -43,9 +43,9 @@ FBaseDrawVSOutput VS_BaseDraw(VS_Input_PNCT_T Input)
     Output.position = ApplyMVP(Input.position);
     
     // 월드 노멀 및 탄젠트 변환 (정규화 포함)
-    float3 VSNormal = normalize(mul(Input.normal, (float3x3)NormalMatrix));
+    float3 VSNormal = normalize(mul(Input.normal, (float3x3) NormalMatrix));
     Output.worldNormal = VSNormal;
-    Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3)NormalMatrix));
+    Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3) NormalMatrix));
     Output.worldTangent.w = Input.tangent.w;
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;

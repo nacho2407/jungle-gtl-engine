@@ -249,9 +249,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\PreDepth.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Common\Geometry\VertexLayouts.hlsl">
       <Filter>Shaders\Common\Geometry</Filter>
     </FxCompile>
@@ -362,6 +359,12 @@
     </FxCompile>
     <FxCompile Include="Shaders\ViewModes\UberLit.hlsl">
       <Filter>Shaders\ViewModes</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\PostProcess\LightHitMap.hlsl">
+      <Filter>Shaders\Passes\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PreDepth.hlsl">
+      <Filter>Shaders\Passes</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -882,6 +885,9 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Render\Passes\Editor\LightHitMapPass.cpp">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1618,6 +1624,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Passes\Editor\LightHitMapPass.h">
+      <Filter>Source\Engine\Render\Passes\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
