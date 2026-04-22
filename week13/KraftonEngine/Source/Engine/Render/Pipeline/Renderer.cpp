@@ -146,10 +146,10 @@ void FRenderer::DispatchClusterCullingResources()
 	Resources.UnbindTileCullingBuffers(Device);
 	UnbindClusterCullingResources();
 
-	{
+	/*{
 		GPU_SCOPE_STAT_CAT("ClutserCulling AABB Creation", "AABBCreation");
 		ClusteredLightCuller.DispatchViewSpaceAABB();
-	}
+	}*/
 	{
 		GPU_SCOPE_STAT_CAT("Cluster Culling Dispatch", "Culling Dispatch");
 		ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
