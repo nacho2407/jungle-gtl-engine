@@ -1,5 +1,6 @@
-﻿#include "ClusteredLightCuller.h"
+#include "ClusteredLightCuller.h"
 #include "Render/Pipeline/RenderConstants.h"
+#include "Render/Resource/ShaderManager.h"
 
 namespace
 {
@@ -11,8 +12,10 @@ void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceConte
 {
 	Device = InDevice;
 	Context = InContext;
-	CompileComputeShader(L"Shaders\\ClusterConstructCS.hlsl", "CSMain", ViewSpaceAABBCS);
-	CompileComputeShader(L"Shaders\\LightCullingCS.hlsl", "CSMain", LightCullingCS);
+
+	ViewSpaceAABBCS = FShaderManager::Get().GetOrCreateCS("Shaders/ClusterConstructCS.hlsl", "CSMain");
+	LightCullingCS  = FShaderManager::Get().GetOrCreateCS("Shaders/LightCullingCS.hlsl", "CSMain");
+
 	const uint32 ClusterCount = State.ClusterX * State.ClusterY * State.ClusterZ;
 	struct Pair
 	{
@@ -24,17 +27,37 @@ void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceConte
 	ID3D11ShaderResourceView* NullSRV = nullptr;
 	InitializeBuffer<uint32>(gGlobalCounter, 1, NullSRV, gGlobalCounterUAV, false, true);
 
-	bIsInitialized = (ViewSpaceAABBCS != nullptr);
+	bIsInitialized = (ViewSpaceAABBCS != nullptr && ViewSpaceAABBCS->IsValid());
+}
+
+void FClusteredLightCuller::Release()
+{
+	ViewSpaceAABBCS = nullptr;  // FShaderManager 소유
+	LightCullingCS = nullptr;
+
+	if (gClusterAABBs)      { gClusterAABBs->Release();      gClusterAABBs = nullptr; }
+	if (gLightIndexList)    { gLightIndexList->Release();    gLightIndexList = nullptr; }
+	if (gLightGrid)         { gLightGrid->Release();         gLightGrid = nullptr; }
+	if (gGlobalCounter)     { gGlobalCounter->Release();     gGlobalCounter = nullptr; }
+	if (gClusterAABBsSRV)   { gClusterAABBsSRV->Release();   gClusterAABBsSRV = nullptr; }
+	if (gLightIndexListSRV) { gLightIndexListSRV->Release(); gLightIndexListSRV = nullptr; }
+	if (gLightGridSRV)      { gLightGridSRV->Release();      gLightGridSRV = nullptr; }
+	if (gClusterAABBsUAV)   { gClusterAABBsUAV->Release();   gClusterAABBsUAV = nullptr; }
+	if (gLightIndexListUAV) { gLightIndexListUAV->Release(); gLightIndexListUAV = nullptr; }
+	if (gLightGridUAV)      { gLightGridUAV->Release();      gLightGridUAV = nullptr; }
+	if (gGlobalCounterUAV)  { gGlobalCounterUAV->Release();  gGlobalCounterUAV = nullptr; }
+
+	bIsInitialized = false;
 }
 
 void FClusteredLightCuller::DispatchViewSpaceAABB()
 {
-	if (!ViewSpaceAABBCS)
+	if (!ViewSpaceAABBCS || !ViewSpaceAABBCS->IsValid())
 	{
 		return;
 	}
 
-	Context->CSSetShader(ViewSpaceAABBCS, nullptr, 0);
+	ViewSpaceAABBCS->Bind(Context);
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::ClusterAABB, 1, &gClusterAABBsUAV, nullptr);
 	Context->Dispatch(
 		(State.ClusterX + ClusterCullingThreadGroupSizeX - 1) / ClusterCullingThreadGroupSizeX,
@@ -46,7 +69,7 @@ void FClusteredLightCuller::DispatchViewSpaceAABB()
 
 void FClusteredLightCuller::DispatchLightCullingCS(ID3D11ShaderResourceView* LightInfos)
 {
-	if (!LightCullingCS)
+	if (!LightCullingCS || !LightCullingCS->IsValid())
 	{
 		return;
 	}
@@ -54,7 +77,7 @@ void FClusteredLightCuller::DispatchLightCullingCS(ID3D11ShaderResourceView* Lig
 	Context->ClearUnorderedAccessViewUint(gGlobalCounterUAV, ClearValues);
 	ID3D11ShaderResourceView* SRVs[2] = { gClusterAABBsSRV,LightInfos };
 	ID3D11UnorderedAccessView* UAVs[3] = { gLightIndexListUAV,gLightGridUAV,gGlobalCounterUAV };
-	Context->CSSetShader(LightCullingCS, nullptr, 0);
+	LightCullingCS->Bind(Context);
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::LightIndexList, 3, UAVs, nullptr);
 	Context->CSSetShaderResources(ELightCullingSRVSlot::ClusterAABB, 2, SRVs);
 	const uint32 ClusterCount = State.ClusterX * State.ClusterY * State.ClusterZ;
@@ -65,23 +88,3 @@ void FClusteredLightCuller::DispatchLightCullingCS(ID3D11ShaderResourceView* Lig
 	Context->CSSetShaderResources(ELightCullingSRVSlot::ClusterAABB, 2, NullSRV);
 
 }
-
-void FClusteredLightCuller::CompileComputeShader(const wchar_t* Path, const char* Entry, ID3D11ComputeShader*& CS)
-{
-	ID3DBlob* ShaderBlob = nullptr;
-	ID3DBlob* ErrorBlob = nullptr;
-	HRESULT Hr = D3DCompileFromFile(Path, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		Entry, "cs_5_0", 0, 0, &ShaderBlob, &ErrorBlob);
-	if (FAILED(Hr))
-	{
-		if (ErrorBlob)
-		{
-			OutputDebugStringA((char*)ErrorBlob->GetBufferPointer());
-			ErrorBlob->Release();
-		}
-		return;
-	}
-	Device->CreateComputeShader(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(), nullptr, &CS);
-	ShaderBlob->Release();
-}
-

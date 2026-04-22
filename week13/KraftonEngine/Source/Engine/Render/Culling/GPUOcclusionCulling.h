@@ -6,6 +6,7 @@
 #include "Profiling/Stats.h"
 
 class FPrimitiveSceneProxy;
+class FComputeShader;
 
 // GPU AABB layout — must match OcclusionTest.hlsl AABB struct
 struct FGPUOcclusionAABB
@@ -62,10 +63,10 @@ private:
 private:
 	ID3D11Device* Device = nullptr;
 
-	// Compute shaders
-	ID3D11ComputeShader* HiZCopyCS = nullptr;
-	ID3D11ComputeShader* HiZDownsampleCS = nullptr;
-	ID3D11ComputeShader* OcclusionTestCS = nullptr;
+	// Compute shaders (FShaderManager 소유)
+	FComputeShader* HiZCopyCS = nullptr;
+	FComputeShader* HiZDownsampleCS = nullptr;
+	FComputeShader* OcclusionTestCS = nullptr;
 
 	// Hi-Z ping-pong textures — even mips on A, odd mips on B (zero-copy)
 	ID3D11Texture2D* HiZTextureA = nullptr;

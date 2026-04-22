@@ -78,7 +78,9 @@ void FShaderManager::Release()
 		Entry.Shader->Release();
 	}
 	ShaderCache.clear();
+	CSCache.clear();
 	IncludeDependents.clear();
+	CSIncludeDependents.clear();
 
 	CachedDevice = nullptr;
 	bIsInitialized = false;
@@ -153,6 +155,33 @@ FShader* FShaderManager::FindOrCreate(const FString& Path)
 }
 
 // ============================================================
+// GetOrCreateCS — CS 캐시 히트 시 반환, 미스 시 컴파일
+// ============================================================
+FComputeShader* FShaderManager::GetOrCreateCS(const FString& Path, const FString& EntryPoint)
+{
+	FCSKey Key{ Path, EntryPoint };
+
+	auto It = CSCache.find(Key);
+	if (It != CSCache.end())
+	{
+		return It->second.Shader.get();
+	}
+
+	if (!CachedDevice) return nullptr;
+
+	FCSCacheEntry CacheEntry;
+	CacheEntry.Shader = std::make_unique<FComputeShader>();
+	std::wstring WidePath = FPaths::ToWide(Path);
+	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), EntryPoint.c_str(), &CacheEntry.Includes);
+
+	auto* RawPtr = CacheEntry.Shader.get();
+	CSCache.emplace(Key, std::move(CacheEntry));
+
+	RebuildIncludeDependents();
+	return RawPtr;
+}
+
+// ============================================================
 // RebuildIncludeDependents — include 역매핑 재구축
 // ============================================================
 void FShaderManager::RebuildIncludeDependents()
@@ -162,10 +191,18 @@ void FShaderManager::RebuildIncludeDependents()
 	{
 		for (const FString& IncFile : Entry.Includes)
 		{
-			// IncFile은 Shaders/ 기준 상대 경로 (e.g. "Common/ConstantBuffers.hlsl")
-			// 구독 콜백에선 "Shaders/Common/ConstantBuffers.hlsl" 형태로 수신
 			FString FullIncPath = "Shaders/" + IncFile;
 			IncludeDependents[FullIncPath].push_back(Key);
+		}
+	}
+
+	CSIncludeDependents.clear();
+	for (auto& [Key, Entry] : CSCache)
+	{
+		for (const FString& IncFile : Entry.Includes)
+		{
+			FString FullIncPath = "Shaders/" + IncFile;
+			CSIncludeDependents[FullIncPath].push_back(Key);
 		}
 	}
 }
@@ -177,12 +214,14 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 {
 	if (!CachedDevice) return;
 
-	// 리컴파일 대상 셰이더 키 수집
+	// VS+PS 리컴파일 대상 수집
 	TSet<FShaderKey> RecompileTargets;
+	// CS 리컴파일 대상 수집
+	TSet<FCSKey> CSRecompileTargets;
 
 	for (const FString& File : ChangedFiles)
 	{
-		// 1. 직접 셰이더 매칭 — ShaderCache의 키 Path와 비교
+		// 1. VS+PS 직접 매칭
 		for (auto& [Key, Entry] : ShaderCache)
 		{
 			if (Key.Path == File)
@@ -191,7 +230,7 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 			}
 		}
 
-		// 2. include 파일 → 부모 셰이더 수집
+		// 2. VS+PS include 역매핑
 		auto It = IncludeDependents.find(File);
 		if (It != IncludeDependents.end())
 		{
@@ -200,12 +239,33 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 				RecompileTargets.insert(DepKey);
 			}
 		}
+
+		// 3. CS 직접 매칭
+		for (auto& [Key, Entry] : CSCache)
+		{
+			if (Key.Path == File)
+			{
+				CSRecompileTargets.insert(Key);
+			}
+		}
+
+		// 4. CS include 역매핑
+		auto CSIt = CSIncludeDependents.find(File);
+		if (CSIt != CSIncludeDependents.end())
+		{
+			for (const FCSKey& DepKey : CSIt->second)
+			{
+				CSRecompileTargets.insert(DepKey);
+			}
+		}
 	}
 
-	if (RecompileTargets.empty()) return;
+	size_t TotalTargets = RecompileTargets.size() + CSRecompileTargets.size();
+	if (TotalTargets == 0) return;
 
-	UE_LOG("[ShaderHotReload] Recompiling %zu shader(s)...", RecompileTargets.size());
+	UE_LOG("[ShaderHotReload] Recompiling %zu shader(s)...", TotalTargets);
 
+	// VS+PS 리컴파일
 	for (const FShaderKey& Key : RecompileTargets)
 	{
 		auto It = ShaderCache.find(Key);
@@ -214,7 +274,6 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 		FShaderCacheEntry& Entry = It->second;
 		std::wstring WidePath = FPaths::ToWide(Key.Path);
 
-		// 새 셰이더 시도 컴파일
 		auto NewShader = std::make_unique<FShader>();
 		TArray<FString> NewIncludes;
 		const D3D_SHADER_MACRO* Defines = Entry.StoredDefines.empty() ? nullptr : Entry.StoredDefines.data();
@@ -222,7 +281,6 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 
 		if (NewShader->IsValid())
 		{
-			// 성공: 기존 FShader 객체에 in-place move (raw 포인터 유지)
 			*Entry.Shader = std::move(*NewShader);
 			Entry.Includes = std::move(NewIncludes);
 			UE_LOG("[ShaderHotReload] OK: %s", Key.Path.c_str());
@@ -230,9 +288,36 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 		}
 		else
 		{
-			// 실패: 기존 셰이더 유지
 			UE_LOG("[ShaderHotReload] FAILED: %s (keeping previous version)", Key.Path.c_str());
 			FNotificationManager::Get().AddNotification("Shader Failed: " + Key.Path, ENotificationType::Error, 5.0f);
+		}
+	}
+
+	// CS 리컴파일
+	for (const FCSKey& Key : CSRecompileTargets)
+	{
+		auto It = CSCache.find(Key);
+		if (It == CSCache.end()) continue;
+
+		FCSCacheEntry& Entry = It->second;
+		std::wstring WidePath = FPaths::ToWide(Key.Path);
+
+		auto NewCS = std::make_unique<FComputeShader>();
+		TArray<FString> NewIncludes;
+		NewCS->Create(CachedDevice, WidePath.c_str(), Key.EntryPoint.c_str(), &NewIncludes);
+
+		if (NewCS->IsValid())
+		{
+			// Detach로 NewCS에서 소유권 분리 후 Swap으로 Entry에 이전
+			Entry.Shader->Swap(NewCS->Detach());
+			Entry.Includes = std::move(NewIncludes);
+			UE_LOG("[ShaderHotReload] CS OK: %s (%s)", Key.Path.c_str(), Key.EntryPoint.c_str());
+			FNotificationManager::Get().AddNotification("CS Recompiled: " + Key.Path, ENotificationType::Success, 3.0f);
+		}
+		else
+		{
+			UE_LOG("[ShaderHotReload] CS FAILED: %s (keeping previous version)", Key.Path.c_str());
+			FNotificationManager::Get().AddNotification("CS Failed: " + Key.Path, ENotificationType::Error, 5.0f);
 		}
 	}
 

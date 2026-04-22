@@ -1,38 +1,7 @@
 #include "Engine/Render/Culling/TileBasedLightCulling.h"
-#include "Render/Resource/ShaderInclude.h"
+#include "Render/Resource/ShaderManager.h"
 #include "Render/DebugDraw/DrawDebugHelpers.h"
 #include "GameFramework/World.h"
-#include "Core/Log.h"
-#include "Core/Notification.h"
-
-
-static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, const char* Entry)
-{
-	ID3DBlob* csBlob  = nullptr;
-	ID3DBlob* errBlob = nullptr;
-	FShaderInclude IncludeHandler;
-
-	HRESULT hr = D3DCompileFromFile(Path, nullptr, &IncludeHandler,
-		Entry, "cs_5_0", 0, 0, &csBlob, &errBlob);
-
-	if (FAILED(hr))
-	{
-		if (errBlob)
-		{
-			const char* Msg = (const char*)errBlob->GetBufferPointer();
-			UE_LOG("[Shader] CS Compile Error: %s", Msg);
-			FNotificationManager::Get().AddNotification("CS Compile Error (see log)", ENotificationType::Error, 5.0f);
-			errBlob->Release();
-		}
-		return nullptr;
-	}
-
-	ID3D11ComputeShader* cs = nullptr;
-	hr = Dev->CreateComputeShader(csBlob->GetBufferPointer(), csBlob->GetBufferSize(), nullptr, &cs);
-	csBlob->Release();
-
-	return SUCCEEDED(hr) ? cs : nullptr;
-}
 
 // ════════════════════════════════════════════════════════════════
 // FTileCullingVisualizer
@@ -201,9 +170,10 @@ void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	TileLightCullingCS = CompileCS(Device, L"Shaders/Lighting/TileLightCulling.hlsl", "mainCS");
+	TileLightCullingCS = FShaderManager::Get().GetOrCreateCS(
+		"Shaders/Lighting/TileLightCulling.hlsl", "mainCS");
 
-	if (!TileLightCullingCS)
+	if (!TileLightCullingCS || !TileLightCullingCS->IsValid())
 		return;
 
 	D3D11_BUFFER_DESC cbDesc = {};
@@ -220,8 +190,8 @@ void FTileBasedLightCulling::Initialize(ID3D11Device* InDevice)
 
 void FTileBasedLightCulling::Release()
 {
-	if (TileLightCullingCS) { TileLightCullingCS->Release(); TileLightCullingCS = nullptr; }
-	if (TileCullingCB)      { TileCullingCB->Release();      TileCullingCB = nullptr; }
+	TileLightCullingCS = nullptr;  // FShaderManager가 소유
+	if (TileCullingCB) { TileCullingCB->Release(); TileCullingCB = nullptr; }
 
 	Visualizer.Release();
 
@@ -311,7 +281,7 @@ void FTileBasedLightCulling::Dispatch(
 	}
 
 	// ── Step 6: Dispatch ─────────────────────────────────────────────
-	Ctx->CSSetShader(TileLightCullingCS, nullptr, 0);
+	TileLightCullingCS->Bind(Ctx);
 	Ctx->Dispatch(TileCountX, TileCountY, 1);
 
 	// ── Step 7: 언바인딩 + 시각화 readback 요청 ─────────────────────

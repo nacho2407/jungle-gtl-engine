@@ -123,6 +123,7 @@ FString UTextRenderComponent::GetOwnerNameToString() const
 
 UTextRenderComponent::UTextRenderComponent()
 {
+	SetFont(FontName);
 }
 
 void UTextRenderComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -147,12 +148,14 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "Text") == 0)
 	{
-		// 문자 길이가 바뀌면 빌보드 바운드/아웃라인 행렬이 변한다.
+		// CachedText 갱신을 위해 Mesh dirty 필요 + 바운드/아웃라인 행렬도 변함
+		MarkProxyDirty(EDirtyFlag::Mesh);
 		MarkProxyDirty(EDirtyFlag::Transform);
 		MarkWorldBoundsDirty();
 	}
 	else if (strcmp(PropertyName, "Font Size") == 0)
 	{
+		MarkProxyDirty(EDirtyFlag::Mesh);
 		MarkProxyDirty(EDirtyFlag::Transform);
 	}
 	else if (strcmp(PropertyName, "Visible") == 0)

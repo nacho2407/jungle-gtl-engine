@@ -8,6 +8,52 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
+// ============================================================
+// FComputeShader
+// ============================================================
+
+bool FComputeShader::Create(ID3D11Device* InDevice, const wchar_t* Path, const char* EntryPoint,
+	TArray<FString>* OutIncludes)
+{
+	Release();
+
+	ID3DBlob* CSBlob = nullptr;
+	ID3DBlob* ErrBlob = nullptr;
+	FShaderInclude IncludeHandler;
+	if (OutIncludes)
+	{
+		IncludeHandler.OutIncludes = OutIncludes;
+	}
+
+	HRESULT hr = D3DCompileFromFile(Path, nullptr, &IncludeHandler,
+		EntryPoint, "cs_5_0", 0, 0, &CSBlob, &ErrBlob);
+
+	if (FAILED(hr))
+	{
+		if (ErrBlob)
+		{
+			UE_LOG("[Shader] CS Compile Error: %s", (const char*)ErrBlob->GetBufferPointer());
+			FNotificationManager::Get().AddNotification("CS Compile Error (see log)", ENotificationType::Error, 5.0f);
+			ErrBlob->Release();
+		}
+		return false;
+	}
+
+	hr = InDevice->CreateComputeShader(CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(), nullptr, &CS);
+	CSBlob->Release();
+
+	return SUCCEEDED(hr) && CS != nullptr;
+}
+
+void FComputeShader::Release()
+{
+	if (CS) { CS->Release(); CS = nullptr; }
+}
+
+// ============================================================
+// FShader
+// ============================================================
+
 FShader::FShader(FShader&& Other) noexcept
 	: VertexShader(Other.VertexShader)
 	, PixelShader(Other.PixelShader)
