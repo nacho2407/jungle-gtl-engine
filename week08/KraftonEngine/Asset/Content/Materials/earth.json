@@ -4,15 +4,14 @@
   "Parameters" : {
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "SpecularPower" : 250.000000,
-    "SpecularStrength" : 1.000000
+    "SpecularStrength" : 0.500000
   },
   "PathFileName" : "Asset/Content/Materials/earth.json",
   "RasterizerState" : "SolidBackCull",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
   "Textures" : {
-    "DiffuseTexture" : "../../../../Downloads/solar-system-animation/textures/2k_earth.jpg",
-    "NormalTexture" : "../../../../Downloads/solar-system-animation/textures/2k_earth.png",
-    "SpecularTexture" : "../../../../Downloads/solar-system-animation/textures/2k_earth.jpg"
+    "DiffuseTexture" : "Asset/Content/Models/SolarSystem/textures/2k_earth.jpg",
+    "NormalTexture" : "Asset/Content/Models/SolarSystem/textures/2k_earth_normal.png"
   }
 }
