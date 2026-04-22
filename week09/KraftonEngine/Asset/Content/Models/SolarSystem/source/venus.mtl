@@ -9,5 +9,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd C:/Users/Jungle/Downloads/solar-system-animation/textures/2k_venus.jpg
-map_Bump -bm 0.700000 C:/Users/Jungle/Downloads/solar-system-animation/textures/2k_venus.png
+map_Kd ../textures/2k_venus.jpg

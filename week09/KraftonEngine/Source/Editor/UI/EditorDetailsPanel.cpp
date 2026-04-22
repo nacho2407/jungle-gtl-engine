@@ -1,6 +1,7 @@
 #include "Editor/UI/EditorDetailsPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "GameFramework/AActor.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
@@ -20,6 +21,7 @@
 #include <Windows.h>
 #include <commdlg.h>
 #include <filesystem>
+#include <functional>
 
 #include "Materials/MaterialManager.h"
 
@@ -684,6 +686,97 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 					bChanged = true;
 				}
 			}
+		}
+		break;
+	}
+	case EPropertyType::ComponentRef:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+
+		// 현재 선택 라벨 계산
+		FString Preview = "None";
+		AActor* RefActor = SelectedComponent ? SelectedComponent->GetOwner() : nullptr;
+		if (RefActor && RefActor->GetRootComponent())
+		{
+			if (Val->empty())
+			{
+				Preview = "(auto)";
+			}
+			else if (*Val == "Root")
+			{
+				Preview = FString("Root - ") + RefActor->GetRootComponent()->GetClass()->GetName();
+			}
+			else
+			{
+				// 경로 탐색으로 라벨 구성
+				USceneComponent* Resolved = RefActor->GetRootComponent();
+				size_t Start = 0;
+				bool bValid = true;
+				while (Start < Val->size() && bValid)
+				{
+					size_t End = Val->find('/', Start);
+					size_t Len = (End == FString::npos) ? (Val->size() - Start) : (End - Start);
+					int32 Idx = std::stoi(Val->substr(Start, Len));
+					const TArray<USceneComponent*>& Ch = Resolved->GetChildren();
+					if (Idx >= 0 && Idx < static_cast<int32>(Ch.size()))
+						Resolved = Ch[Idx];
+					else
+						bValid = false;
+					Start = (End == FString::npos) ? Val->size() : (End + 1);
+				}
+				Preview = bValid ? (*Val + " - " + Resolved->GetClass()->GetName()) : "(invalid)";
+			}
+		}
+
+		ImGui::Text("%s", Prop.Name.c_str());
+		ImGui::SameLine(140);
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo(("##compref_" + Prop.Name).c_str(), Preview.c_str()))
+		{
+			// "(auto)" 선택지
+			bool bAutoSel = Val->empty();
+			if (ImGui::Selectable("(auto)", bAutoSel))
+			{
+				Val->clear();
+				bChanged = true;
+			}
+			if (bAutoSel) ImGui::SetItemDefaultFocus();
+
+			if (RefActor && RefActor->GetRootComponent())
+			{
+				// DFS로 SceneComponent 열거
+				struct FEntry { FString Path; FString Label; };
+				TArray<FEntry> Entries;
+				std::function<void(USceneComponent*, const FString&, int32)> Collect =
+					[&](USceneComponent* Comp, const FString& CurPath, int32 Depth)
+					{
+						if (!Comp) return;
+						FString Indent(static_cast<size_t>(Depth * 2), ' ');
+						Entries.push_back({ CurPath, Indent + Comp->GetClass()->GetName() });
+						const TArray<USceneComponent*>& Ch = Comp->GetChildren();
+						for (int32 ci = 0; ci < static_cast<int32>(Ch.size()); ++ci)
+						{
+							FString ChildPath = (CurPath == "Root")
+								? std::to_string(ci)
+								: (CurPath + "/" + std::to_string(ci));
+							Collect(Ch[ci], ChildPath, Depth + 1);
+						}
+					};
+				Collect(RefActor->GetRootComponent(), "Root", 0);
+
+				for (const FEntry& Entry : Entries)
+				{
+					bool bSel = (*Val == Entry.Path);
+					FString SelectLabel = Entry.Label + "##" + Entry.Path;
+					if (ImGui::Selectable(SelectLabel.c_str(), bSel))
+					{
+						*Val = Entry.Path;
+						bChanged = true;
+					}
+					if (bSel) ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
 		}
 		break;
 	}

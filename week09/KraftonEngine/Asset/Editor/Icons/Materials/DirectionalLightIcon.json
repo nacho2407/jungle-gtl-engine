@@ -1,9 +1,14 @@
 {
-    "PathFileName":  "Asset/Editor/Icons/Materials/DirectionalLightIcon.json",
-    "Textures":  {
-                     "DiffuseTexture":  "Asset/Editor/Icons/DirectionalLight_64x.png"
-                 },
-    "BlendState":  "AlphaBlend",
-    "DepthStencilState":  "NoDepth",
-    "RasterizerState":  "SolidNoCull"
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "NoDepth",
+  "Parameters" : {
+    "SectionColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+    "SpecularPower" : 0.000000,
+    "SpecularStrength" : 0.000000
+  },
+  "PathFileName" : "Asset/Editor/Icons/Materials/DirectionalLightIcon.json",
+  "RasterizerState" : "SolidNoCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Editor/Icons/DirectionalLight_64x.png"
+  }
 }

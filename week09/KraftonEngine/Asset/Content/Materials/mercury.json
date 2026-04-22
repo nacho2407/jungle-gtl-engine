@@ -1,0 +1,17 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 250.000000,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/mercury.json",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/SolarSystem/textures/2k_mercury.jpg",
+    "NormalTexture" : "Asset/Content/Models/SolarSystem/textures/2k_mercury_normal.png"
+  }
+}
