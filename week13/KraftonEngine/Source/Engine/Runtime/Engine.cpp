@@ -1,6 +1,7 @@
 ﻿#include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
+#include "Core/Log.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats.h"
 #include "Engine/Input/InputSystem.h"
@@ -53,12 +54,14 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 
+	FLogManager::Get().Initialize();
 	FDirectoryWatcher::Get().Initialize();
 }
 
 void UEngine::Shutdown()
 {
 	FDirectoryWatcher::Get().Shutdown();
+	FLogManager::Get().Shutdown();
 	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
 	UTexture2D::ReleaseAllGPU();

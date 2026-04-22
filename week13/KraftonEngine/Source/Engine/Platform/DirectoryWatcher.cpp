@@ -1,6 +1,6 @@
 ﻿#include "Engine/Platform/DirectoryWatcher.h"
 #include "Platform/Paths.h"
-#include "Editor/UI/EditorConsoleWidget.h"
+#include "Core/Log.h"
 #include <algorithm>
 
 // ============================================================

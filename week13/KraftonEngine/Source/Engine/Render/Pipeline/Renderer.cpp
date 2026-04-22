@@ -2,7 +2,7 @@
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/ShaderManager.h"
-#include "Editor/UI/EditorConsoleWidget.h"
+#include "Core/Log.h"
 #include "Render/Proxy/FScene.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"

@@ -5,19 +5,40 @@
 
 #include <algorithm>
 
+// ============================================================
+// FConsoleLogOutputDevice
+// ============================================================
+
+void FConsoleLogOutputDevice::Write(const char* Msg)
+{
+	Messages.push_back(_strdup(Msg));
+	if (AutoScroll) ScrollToBottom = true;
+}
+
+void FConsoleLogOutputDevice::Clear()
+{
+	for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
+	Messages.clear();
+}
+
+// ============================================================
+// FEditorConsoleWidget
+// ============================================================
+
+// 기존 코드 호환용 static 래퍼 — UE_LOG로 위임
 void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
-	char buf[1024];
 	va_list args;
 	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, args);
+	FLogManager::Get().LogV(fmt, args);
 	va_end(args);
-	Messages.push_back(_strdup(buf));
-	if (AutoScroll) ScrollToBottom = true;
 }
 
 void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
+
+	// 에디터 콘솔을 로그 출력 디바이스로 등록
+	FLogManager::Get().AddOutputDevice(&ConsoleDevice);
 
 	RegisterCommand("clear", [this](const TArray<FString>& Args)
 		{
@@ -141,6 +162,16 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 		});
 }
 
+void FEditorConsoleWidget::Shutdown()
+{
+	FLogManager::Get().RemoveOutputDevice(&ConsoleDevice);
+}
+
+void FEditorConsoleWidget::Clear()
+{
+	ConsoleDevice.Clear();
+}
+
 void FEditorConsoleWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
@@ -159,7 +190,7 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	//// Options menu
 	if (ImGui::BeginPopup("Options"))
 	{
-		ImGui::Checkbox("Auto-scroll", &AutoScroll);
+		ImGui::Checkbox("Auto-scroll", &ConsoleDevice.AutoScroll);
 		ImGui::EndPopup();
 	}
 
@@ -173,7 +204,8 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 
 	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar)) {
-		for (auto& Item : Messages) {
+		for (int32 i = 0; i < ConsoleDevice.GetMessageCount(); ++i) {
+			char* Item = ConsoleDevice.GetMessageAt(i);
 			if (!Filter.PassFilter(Item)) continue;
 
 			ImVec4 Color;
@@ -200,10 +232,10 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 			}
 		}
 
-		if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
+		if (ConsoleDevice.ScrollToBottom || (ConsoleDevice.AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
 			ImGui::SetScrollHereY(1.0f);
 		}
-		ScrollToBottom = false;
+		ConsoleDevice.ScrollToBottom = false;
 	}
 	ImGui::EndChild();
 	ImGui::Separator();
@@ -306,8 +338,4 @@ int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data) {
 	return 0;
 }
 
-ImVector<char*> FEditorConsoleWidget::Messages;
 ImVector<char*> FEditorConsoleWidget::History;
-
-bool FEditorConsoleWidget::AutoScroll = true;
-bool FEditorConsoleWidget::ScrollToBottom = true;

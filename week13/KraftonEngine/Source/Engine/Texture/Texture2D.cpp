@@ -1,6 +1,6 @@
 ﻿#include "Texture/Texture2D.h"
 #include "Object/ObjectFactory.h"
-#include "UI/EditorConsoleWidget.h"
+#include "Core/Log.h"
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
 

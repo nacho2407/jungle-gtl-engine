@@ -7,7 +7,7 @@
 #include <d3d11.h>
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
-#include "UI/EditorConsoleWidget.h"
+#include "Core/Log.h"
 #include "Profiling/MemoryStats.h"
 #include "Engine/Texture/Texture2D.h"
 
