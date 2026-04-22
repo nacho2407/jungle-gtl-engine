@@ -75,7 +75,7 @@ bool FRenderPipeline::Initialize()
 	RenderPasses.push_back(DepthPrePass);
 	RenderPasses.push_back(LightCullingPass);
 	RenderPasses.push_back(OpaqueRenderPass);
-    RenderPasses.push_back(DecalRenderPass);
+    //RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
 
     RenderPasses.push_back(FogRenderPass);
