@@ -293,6 +293,9 @@
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\NotificationToast.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClCompile>
@@ -399,6 +402,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Log.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Notification.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
@@ -737,6 +743,9 @@
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\NotificationToast.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClInclude>
@@ -867,6 +876,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Log.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Notification.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">

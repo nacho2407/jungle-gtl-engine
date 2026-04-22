@@ -2,6 +2,8 @@
 #include "Render/Resource/ShaderInclude.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Profiling/Stats.h"
+#include "Core/Log.h"
+#include "Core/Notification.h"
 
 #include <cstring>
 
@@ -39,8 +41,9 @@ static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, co
 	{
 		if (errBlob)
 		{
-			MessageBoxA(nullptr, (char*)errBlob->GetBufferPointer(),
-				"Compute Shader Compile Error", MB_OK | MB_ICONERROR);
+			const char* Msg = (const char*)errBlob->GetBufferPointer();
+			UE_LOG("[Shader] CS Compile Error: %s", Msg);
+			FNotificationManager::Get().AddNotification("CS Compile Error (see log)", ENotificationType::Error, 5.0f);
 			errBlob->Release();
 		}
 		return nullptr;

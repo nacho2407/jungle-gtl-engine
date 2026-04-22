@@ -1,6 +1,7 @@
 ﻿#include "ShaderManager.h"
 #include "Platform/Paths.h"
 #include "Core/Log.h"
+#include "Core/Notification.h"
 #include <algorithm>
 
 // ============================================================
@@ -225,11 +226,13 @@ void FShaderManager::OnShadersChanged(const TSet<FString>& ChangedFiles)
 			*Entry.Shader = std::move(*NewShader);
 			Entry.Includes = std::move(NewIncludes);
 			UE_LOG("[ShaderHotReload] OK: %s", Key.Path.c_str());
+			FNotificationManager::Get().AddNotification("Shader Recompiled: " + Key.Path, ENotificationType::Success, 3.0f);
 		}
 		else
 		{
 			// 실패: 기존 셰이더 유지
 			UE_LOG("[ShaderHotReload] FAILED: %s (keeping previous version)", Key.Path.c_str());
+			FNotificationManager::Get().AddNotification("Shader Failed: " + Key.Path, ENotificationType::Error, 5.0f);
 		}
 	}
 
