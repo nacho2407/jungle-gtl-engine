@@ -97,6 +97,12 @@ public:
 
 	// 스플리터 위젯 소유권 (new → BuildViewportLayout, delete → DestroyViewportLayout)
 	void DestroyViewportLayout();
+
+	bool HasActiveOperationViewport() const
+	{
+		return ActiveOperationViewportIndex >= 0 && ActiveOperationViewportIndex < MaxViewports;
+    }
+
 private:
 	// 1개 ↔ 4개 전환 상태
 	bool  bSingleViewport          = false;
@@ -105,6 +111,12 @@ private:
 	// 마지막으로 카메라 조작(포커스)이 발생한 뷰포트 인덱스
 	// stat 콘솔 명령의 적용 대상으로 사용됩니다.
 	int32 LastFocusedViewportIndex = 0;
+
+	// 현재 드래그 중인 뷰포트 인덱스 (없으면 -1)
+	int32 ActiveOperationViewportIndex = -1;
+
+	// UI에서 드래그를 시작하면 마우스 조작이 끝날 때까지 뷰포트에서의 조작을 막습니다.
+	bool bBlockViewportOperationUntilRelease = false;
 
 	// Slate 위젯 트리 — UEditorEngine 이 소유합니다.
 	SSplitterV*    RootSplitterV = nullptr;
@@ -120,5 +132,8 @@ private:
 	FWindowsWindow* Window = nullptr;
 	FViewportRect HostRect;
 	UEditorEngine* Editor = nullptr;
+
+private:
+    int32 FindViewportIndexAt(int32 MouseX, int32 MouseY) const;
 };
 

@@ -68,89 +68,131 @@ void FEditorViewportLayout::Shutdown()
 
 void FEditorViewportLayout::UpdateHoverStates()
 {
-	// 1. PumpMessages 에서 처리된 WM_MOUSEMOVE 드래그 결과를 즉시 뷰포트 Rect 에 반영
-	//    이렇게 해야 아래 bHovered 계산이 현재 프레임 Rect 를 사용할 수 있습니다.
-	if (GetRootSplitterV())
-	{
-		SyncViewportRects();
-	}
+    // 1. 이번 프레임의 우클릭/중클릭 조작 상태를 먼저 읽습니다.
+    const InputSystem& IS = InputSystem::Get();
 
-	// 1 - 1. 특정 뷰포트에서 기즈모 홀딩중이라면 스킵합니다.
-	for (int i = 0; i < MaxViewports; ++i)
-	{
-		if (ViewportWidgets[i].GetSceneViewport().GetClient()->GetGizmo()->IsHolding())
-			return;
-	}
+    const bool bOperationPressed =
+        IS.GetKeyDown(VK_RBUTTON) || IS.GetKeyDown(VK_MBUTTON);
 
-	// 2. 어느 뷰포트에 마우스가 있는지 판단합니다.
-	if (!Window)
-		return;
+    const bool bOperationDragging =
+        IS.GetRightDragging() || IS.GetMiddleDragging();
+
+    const bool bOperationReleased =
+        IS.GetKeyUp(VK_RBUTTON) || IS.GetKeyUp(VK_MBUTTON);
+
+    // 2. 우클릭/중클릭 조작이 끝나면 뷰포트 독점 조작 상태와 차단 상태를 함께 해제합니다.
+    if (bOperationReleased)
+    {
+        ActiveOperationViewportIndex = -1;
+        bBlockViewportOperationUntilRelease = false;
+    }
+
+    // 3. 스플리터 드래그로 바뀐 뷰포트 Rect를 먼저 동기화합니다.
+    //    이후 hover 계산은 항상 최신 Rect 기준으로 수행되어야 합니다.
+    if (GetRootSplitterV())
+    {
+        SyncViewportRects();
+    }
+
+    // 4. 기즈모를 드래그 중이면 현재 조작을 유지하고 hover 갱신을 건너뜁니다.
+    for (int i = 0; i < MaxViewports; ++i)
+    {
+        if (ViewportWidgets[i].GetSceneViewport().GetClient()->GetGizmo()->IsHolding())
+            return;
+    }
+
+    // 5. 마우스 좌표를 윈도우 client 기준으로 가져옵니다.
+    if (!Window)
+        return;
 	
-	POINT MousePt = InputSystem::Get().GetMousePos();
+    POINT MousePt = InputSystem::Get().GetMousePos();
 	MousePt = Window->ScreenToClientPoint(MousePt);
 	const int32 MouseX = static_cast<int32>(MousePt.x);
 	const int32 MouseY = static_cast<int32>(MousePt.y);
 
-	// 독점 조작 중(회전·팬·궤도)인 뷰포트가 있으면 해당 뷰포트만 hovered 유지합니다.
-	// 조작 중 마우스가 다른 뷰포트로 이동해도 입력이 누수되지 않도록 막습니다.
-
+	// 6. 현재 마우스가 viewport host 안에 있는지 확인합니다.
 	const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+    const bool bInViewportHost = GuiState.IsInViewportHost(MouseX, MouseY);
 
-	// Viewport host 밖이면 모든 hover를 해제합니다.
+    // 7. 우클릭/중클릭이 눌린 순간의 시작 위치를 먼저 기록합니다.
+    //    뷰포트 위에서 시작한 조작이면 해당 뷰포트를 고정하고,
+    //    뷰포트 밖에서 시작한 조작이면 버튼이 올라갈 때까지 뷰포트 입력을 차단합니다.
+    if (bOperationPressed)
+    {
+        if (bInViewportHost)
+        {
+            const int32 PressedViewport = FindViewportIndexAt(MouseX, MouseY);
+            if (PressedViewport >= 0)
+            {
+                ActiveOperationViewportIndex = PressedViewport;
+                bBlockViewportOperationUntilRelease = false;
+                SetLastFocusedViewportIndex(PressedViewport);
+            }
+            else
+            {
+                ActiveOperationViewportIndex = -1;
+                bBlockViewportOperationUntilRelease = true;
+            }
+        }
+        else
+        {
+            ActiveOperationViewportIndex = -1;
+            bBlockViewportOperationUntilRelease = true;
+        }
+    }
 
-	if (!GuiState.IsInViewportHost(MouseX, MouseY))
+	// 8. Viewport host 밖이면 모든 hover를 해제합니다.
+    //    현재 구현에서는 host 밖으로 나간 순간 뷰포트 독점 조작 대상도 함께 초기화합니다.
+	if (!bInViewportHost)
 	{
 		for (int32 i = 0; i < MaxViewports; ++i)
 		{
 			GetViewportState(i).bHovered = false;
 		}
+        if (!bBlockViewportOperationUntilRelease)
+        {
+            ActiveOperationViewportIndex = -1;
+        }
+
 		return;
 	}
 
-	// Find Active Viewport 
-	int32 ActiveOpViewport = -1;
-	for (int32 i = 0; i < MaxViewports; ++i)
-	{
-		if (GetViewportClient(i)->IsActiveOperation())
-		{
-			ActiveOpViewport = i;
-			break;
-		}
-	}
+	// 9. ImGui 패널 등 뷰포트 밖에서 조작이 시작된 경우,
+    //    버튼이 올라갈 때까지 어떤 뷰포트도 hovered 상태가 되지 않도록 막습니다.
+	if (bBlockViewportOperationUntilRelease)
+    {
+        for (int32 i = 0; i < MaxViewports; ++i)
+        {
+            GetViewportState(i).bHovered = false;
+        }
+        return;
+    }
 
-	// 독점 조작하는 뷰포트가 있다면 상태값 유지 + 포커스 인덱스 갱신
-	if (ActiveOpViewport >= 0)
-	{
-		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
-			GetViewportState(i).bHovered = (i == ActiveOpViewport);
+    // 10. 독점 조작 중이면 해당 뷰포트만 hovered 상태로 유지합니다.
+    //     조작 중 마우스가 다른 뷰포트로 이동해도 입력이 누수되지 않도록 막습니다.
+    if (ActiveOperationViewportIndex >= 0 && bOperationDragging)
+    {
+        for (int32 i = 0; i < MaxViewports; ++i)
+        {
+            GetViewportState(i).bHovered = (i == ActiveOperationViewportIndex);
+        }
 
-		SetLastFocusedViewportIndex(ActiveOpViewport);
-	}
-	else
-	{
-		// Hover 된 뷰포트 찾아서 상태값 변경하기
-		bool bFoundHover = false;
-		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
-		{
-			FEditorViewportState& ViewportState = GetViewportState(i);
-            FViewportRect ViewportRect = GetSceneViewport(i).GetRect();
-            if (!bFoundHover && ViewportRect.Contains(MouseX, MouseY))
-			{
-				ViewportState.bHovered = true;
-				bFoundHover = true;
+        SetLastFocusedViewportIndex(ActiveOperationViewportIndex);
+        return;
+    }
 
-				// 좌클릭 시 해당 뷰포트를 마지막 포커스로 등록
-				if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
-				{
-					SetLastFocusedViewportIndex(i);
-				}
-			}
-			else
-			{
-				ViewportState.bHovered = false;
-			}
-		}
-	}
+    // 11. 평상시에는 현재 마우스가 위치한 뷰포트만 hovered 상태로 갱신합니다.
+    const int32 HoveredViewport = FindViewportIndexAt(MouseX, MouseY);
+    for (int32 i = 0; i < MaxViewports; ++i)
+    {
+        GetViewportState(i).bHovered = (i == HoveredViewport);
+    }
+
+    // 12. 좌클릭으로 상호작용을 시작한 뷰포트를 마지막 포커스 대상으로 기록합니다.
+    if (HoveredViewport >= 0 && IS.GetKeyDown(VK_LBUTTON))
+    {
+        SetLastFocusedViewportIndex(HoveredViewport);
+    }
 }
 
 void FEditorViewportLayout::Tick(float DeltaTime)
@@ -415,4 +457,17 @@ void FEditorViewportLayout::DestroyViewportLayout()
 	delete TopSplitterH; TopSplitterH = nullptr;
 	delete BotSplitterH; BotSplitterH = nullptr;
 	delete RootSplitterV; RootSplitterV = nullptr;
+}
+
+int32 FEditorViewportLayout::FindViewportIndexAt(int32 MouseX, int32 MouseY) const
+{
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		const FViewportRect& VR = GetSceneViewport(i).GetRect();
+		if (VR.Contains(MouseX, MouseY))
+		{
+			return i;
+		}
+	}
+    return -1;
 }
