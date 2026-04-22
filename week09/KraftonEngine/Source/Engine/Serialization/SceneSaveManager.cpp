@@ -1,4 +1,4 @@
-#include "SceneSaveManager.h"
+﻿#include "SceneSaveManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -251,7 +251,7 @@ json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
 	Comp->GetEditableProperties(Descriptors);
 
 	for (const auto& Prop : Descriptors) {
-		if (Prop.Name == "Static Mesh") continue; // Primitives 블록에 이미 저장됨
+		// if (Prop.Name == "Static Mesh") continue; // Primitives 블록에 이미 저장됨
 		props[Prop.Name] = SerializePropertyValue(Prop);
 	}
 	return props;
@@ -299,6 +299,7 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	}
 	case EPropertyType::String:
 	case EPropertyType::StaticMeshRef:
+	case EPropertyType::ComponentRef:
 		return JSON(*static_cast<FString*>(Prop.ValuePtr));
 
 	case EPropertyType::MaterialSlot: {
@@ -679,6 +680,7 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 	}
 	case EPropertyType::String:
 	case EPropertyType::StaticMeshRef:
+	case EPropertyType::ComponentRef:
 		*static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
 		break;
 

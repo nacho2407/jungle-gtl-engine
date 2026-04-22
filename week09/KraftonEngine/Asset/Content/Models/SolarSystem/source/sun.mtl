@@ -8,6 +8,5 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd C:/Users/Jungle/Downloads/solar-system-animation/textures/2k_sun.jpg
-map_Ke C:/Users/Jungle/Downloads/solar-system-animation/textures/2k_sun.jpg
-map_Bump -bm 1.000000 C:/Users/Jungle/Downloads/solar-system-animation/textures/2k_sun.png
+map_Kd ../textures/2k_sun.jpg
+map_Ke ../textures/2k_sun.jpg

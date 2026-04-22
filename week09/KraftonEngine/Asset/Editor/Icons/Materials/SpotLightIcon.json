@@ -1,9 +1,14 @@
 {
-    "PathFileName":  "Asset/Editor/Icons/Materials/SpotLightIcon.json",
-    "Textures":  {
-                     "DiffuseTexture":  "Asset/Editor/Icons/SpotLight_64x.png"
-                 },
-    "BlendState":  "AlphaBlend",
-    "DepthStencilState":  "NoDepth",
-    "RasterizerState":  "SolidNoCull"
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "NoDepth",
+  "Parameters" : {
+    "SectionColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+    "SpecularPower" : 0.000000,
+    "SpecularStrength" : 0.000000
+  },
+  "PathFileName" : "Asset/Editor/Icons/Materials/SpotLightIcon.json",
+  "RasterizerState" : "SolidNoCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Editor/Icons/SpotLight_64x.png"
+  }
 }
