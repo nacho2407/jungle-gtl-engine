@@ -20,9 +20,16 @@ void CS_LightCulling(
     if (groupIndex == 0)
     {
         tileDepthMask = 0;
+        
+#if TILE_BASED_CULLING
+        groupMinZ = 0x00000000; // float max
+        groupMaxZ = 0x7f7fffff; // float 0
+#elif TILE_25D_CULLING_
         groupMinZ = 0x7f7fffff; // float 0
-        groupMaxZ     = 0x00000000; // float max
-        hitCount      = 0;
+        groupMaxZ = 0x00000000; // float max
+      
+ #endif
+        hitCount = 0;
     }
     GroupMemoryBarrierWithGroupSync();
 

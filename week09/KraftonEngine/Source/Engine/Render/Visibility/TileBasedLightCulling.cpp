@@ -1,4 +1,4 @@
-#include "TileBasedLightCulling.h"
+﻿#include "TileBasedLightCulling.h"
 #include "Viewport/ViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
@@ -25,46 +25,55 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     check(InDevice);
     Device = InDevice;
 
-    // ---- Compute Shader ������ ----
-    ID3DBlob* CSBlob  = nullptr;
-    ID3DBlob* ErrBlob = nullptr;
-
-    HRESULT hr = D3DCompileFromFile(
-        L"Shaders/Passes/Scene/TileBasedLightCullingCS.hlsl",
-        nullptr,
-        D3D_COMPILE_STANDARD_FILE_INCLUDE,
-        "CS_LightCulling", "cs_5_0",
-        D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
-        0, &CSBlob, &ErrBlob
-    );
-
-    if (FAILED(hr))
+    auto CompileCS = [&](D3D_SHADER_MACRO* macros, ID3D11ComputeShader** outCS)
     {
-        if (ErrBlob)
+        ID3DBlob* CSBlob = nullptr;
+        ID3DBlob* ErrBlob = nullptr;
+
+        HRESULT hr = D3DCompileFromFile(
+            L"Shaders/Passes/Scene/TileBasedLightCullingCS.hlsl",
+            macros, // 🔥 여기 중요
+            D3D_COMPILE_STANDARD_FILE_INCLUDE,
+            "CS_LightCulling", "cs_5_0",
+            D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+            0, &CSBlob, &ErrBlob);
+
+        if (FAILED(hr))
         {
-            // ������ ���� �α� ��� (������Ʈ �α� ��ũ�η� ��ü)
-            OutputDebugStringA((const char*)ErrBlob->GetBufferPointer());
-            ErrBlob->Release();
+            if (ErrBlob)
+            {
+                OutputDebugStringA((const char*)ErrBlob->GetBufferPointer());
+                ErrBlob->Release();
+            }
+            check(false);
         }
-        check(false); // ���̴� ������ ����
-    }
 
-    hr = Device->GetDevice()->CreateComputeShader(
-        CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(),
-        nullptr, &LightCullingCS
-    );
-    CSBlob->Release();
-    check(SUCCEEDED(hr));
+        hr = Device->GetDevice()->CreateComputeShader(
+            CSBlob->GetBufferPointer(),
+            CSBlob->GetBufferSize(),
+            nullptr,
+            outCS);
 
-    // ---- LightCullingParams ��� ���� (b2) ----
-    //D3D11_BUFFER_DESC CBDesc = {};
-    //CBDesc.ByteWidth      = sizeof(FLightCullingParams);
-    //CBDesc.Usage          = D3D11_USAGE_DYNAMIC;
-    //CBDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
-    //CBDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        CSBlob->Release();
+        check(SUCCEEDED(hr));
+    };
 
-    //hr = Device->GetDevice()->CreateBuffer(&CBDesc, nullptr, &LightCullingParamsCB);
-    //check(SUCCEEDED(hr));
+	D3D_SHADER_MACRO tileMacros[] = {
+        { "TILE_BASED_CULLING", "1" },
+        { "TILE_25D_CULLING_", "0" },
+        { nullptr, nullptr }
+    };
+
+    CompileCS(tileMacros, &LightCullingCS_Tile);
+
+	D3D_SHADER_MACRO tile25DMacros[] = {
+        { "TILE_BASED_CULLING", "0" },
+        { "TILE_25D_CULLING_", "1" },
+        { nullptr, nullptr }
+    };
+
+    CompileCS(tile25DMacros, &LightCullingCS_25D);
+
     LightCullingParamsCBWrapper = new FConstantBuffer();
     LightCullingParamsCBWrapper->Create(Device->GetDevice(), sizeof(FLightCullingParams));
     LightCullingParamsCB = LightCullingParamsCBWrapper->GetBuffer();
@@ -77,7 +86,9 @@ void FTileBasedLightCulling::Release()
         if (ptr) { ptr->Release(); ptr = nullptr; }
     };
 
-    SafeRelease(LightCullingCS);
+    //SafeRelease(LightCullingCS);
+    SafeRelease(LightCullingCS_Tile);
+    SafeRelease(LightCullingCS_25D);
     if (LightCullingParamsCBWrapper)
     {
         LightCullingParamsCBWrapper->Release();
@@ -159,7 +170,10 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
     Context->CSSetShader(nullptr, nullptr, 0);
 
     // ---- CS ���ε� ----
-    Context->CSSetShader(LightCullingCS, nullptr, 0);
+    if (frameContext.ShowFlags.b25DCulling)
+        Context->CSSetShader(LightCullingCS_25D, nullptr, 0);
+    else
+        Context->CSSetShader(LightCullingCS_Tile, nullptr, 0);
 
     // ---- SRV (t0: PointLight ������, t1: SceneDepth) ----
 	// ���� �ܺο��� ������

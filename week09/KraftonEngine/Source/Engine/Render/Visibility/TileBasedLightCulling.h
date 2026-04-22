@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -42,7 +42,7 @@ public:
     // ---- �ʱ�ȭ / ���� ----
     void Initialize(FD3DDevice* InDevice);
     void Release();
-    bool IsInitialized() const { return Device != nullptr && LightCullingCS != nullptr; }
+    bool IsInitialized() const { return Device != nullptr && LightCullingCS_Tile != nullptr && LightCullingCS_25D != nullptr; }
     void ResizeTiles(uint32 InWidth, uint32 InHeight);
 
     // ---- ȭ�� �������� ----
@@ -83,7 +83,9 @@ private:
     FD3DDevice* Device = nullptr;
 
     // ---- Shaders ----
-    ID3D11ComputeShader* LightCullingCS = nullptr;
+    //ID3D11ComputeShader* LightCullingCS = nullptr;
+    ID3D11ComputeShader* LightCullingCS_Tile = nullptr;
+    ID3D11ComputeShader* LightCullingCS_25D = nullptr;
 
     // ---- PointLight Buffer (SRV, t0) ----
     //ID3D11Buffer*              PointLightBuffer    = nullptr;

@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorToolbarPanel.h"
+﻿#include "Editor/UI/EditorToolbarPanel.h"
 
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
@@ -493,6 +493,16 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
                 ImGui::SliderFloat("Edge Threshold Min", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
                 ImGui::Unindent();
             });
+        }
+		if (ImGui::CollapsingHeader("Optimization Options", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            int mode = Opts.ShowFlags.b25DCulling ? 1 : 0;
+
+            ImGui::RadioButton("Tile Culling", &mode, 0);
+            ImGui::SameLine();
+            ImGui::RadioButton("25D Culling", &mode, 1);
+
+            Opts.ShowFlags.b25DCulling = (mode == 1);
         }
     });
 
