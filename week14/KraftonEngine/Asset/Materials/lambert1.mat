@@ -1,8 +1,11 @@
 {
+  "BlendState" : "",
+  "DepthStencilState" : "",
   "Parameters" : {
-    "SectionColor" : [0.400000, 0.400000, 0.400000, 1.000000]
+
   },
   "PathFileName" : "Asset/Materials/lambert1.mat",
+  "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/StaticMeshShader.hlsl"
 }
