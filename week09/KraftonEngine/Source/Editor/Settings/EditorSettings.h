@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Platform/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
-#include "Render/Pipelines/Context/Scene/ViewTypes.h"
+#include "Render/Execute/Context/Scene/ViewTypes.h"
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
@@ -25,7 +25,7 @@ public:
 	float SplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
 	int32 SplitterCount = 0;
 
-	// Perspective Camera (slot 0) 복원용
+	// Perspective Camera (slot 0) ������
 	FVector PerspCamLocation = FVector(10, 0, 5);
 	FRotator PerspCamRotation;
 	float PerspCamFOV = 60.0f;
@@ -35,7 +35,7 @@ public:
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
-	// UI 위젯 표시 여부
+	// UI ���� ǥ�� ����
 	struct FUIVisibility
 	{
 		bool bConsole = true;

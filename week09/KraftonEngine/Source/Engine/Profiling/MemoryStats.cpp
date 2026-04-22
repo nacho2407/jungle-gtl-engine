@@ -1,4 +1,4 @@
-﻿#include "MemoryStats.h"
+#include "MemoryStats.h"
 
 #include <d3d11.h>
 #include <algorithm>

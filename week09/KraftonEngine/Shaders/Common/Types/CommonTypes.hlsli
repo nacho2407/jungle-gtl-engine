@@ -6,7 +6,7 @@
 #include "../Resources/SystemResources.hlsl"
 #include "StaticMeshMaterialCommon.hlsli"
 
-struct FBaseDrawVSOutput
+struct FOpaqueVSOutput
 {
     float4 position     : SV_POSITION;
     float3 worldNormal  : TEXCOORD0;
@@ -16,13 +16,13 @@ struct FBaseDrawVSOutput
     float4 gouraud      : TEXCOORD2;
 };
 
-struct FBaseDrawOutput2
+struct FOpaqueOutput2
 {
     float4 BaseColor : SV_TARGET0;
     float4 Surface1  : SV_TARGET1;
 };
 
-struct FBaseDrawOutput3
+struct FOpaqueOutput3
 {
     float4 BaseColor : SV_TARGET0;
     float4 Surface1  : SV_TARGET1;

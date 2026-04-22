@@ -1,4 +1,4 @@
-﻿#include "Matrix.h"
+#include "Matrix.h"
 #include "Quat.h"
 #include "Rotator.h"
 #include "MathUtils.h"

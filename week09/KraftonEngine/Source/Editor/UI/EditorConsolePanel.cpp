@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorConsolePanel.h"
+#include "Editor/UI/EditorConsolePanel.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 

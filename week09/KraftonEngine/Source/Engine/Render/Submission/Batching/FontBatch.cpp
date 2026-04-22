@@ -1,4 +1,4 @@
-﻿#include "Render/Submission/Batching/FontBatch.h"
+#include "Render/Submission/Batching/FontBatch.h"
 #include "Resource/ResourceManager.h"
 
 void FFontBatch::Create(ID3D11Device* InDevice)

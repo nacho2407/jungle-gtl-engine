@@ -1,4 +1,4 @@
-﻿#include "Octree.h"
+#include "Octree.h"
 #include <Collision/RayUtils.h>
 #include <algorithm>
 #include "Editor/UI/EditorConsolePanel.h"

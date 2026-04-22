@@ -1,4 +1,4 @@
-﻿#include "GameFramework/World.h"
+#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"

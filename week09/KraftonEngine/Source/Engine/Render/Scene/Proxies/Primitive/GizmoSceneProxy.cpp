@@ -1,10 +1,10 @@
 #include "Render/Resources/Buffers/ConstantBufferLayouts.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/Resources/Buffers/ConstantBufferPool.h"
-#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Resources/Bindings/RenderCBKeys.h"
 
 // ============================================================
@@ -24,7 +24,7 @@ UGizmoComponent* FGizmoSceneProxy::GetGizmoComponent() const
 }
 
 // ============================================================
-// UpdateMesh — 현재 Gizmo 모드에 맞는 메시 버퍼 + 셰이더 캐싱
+// UpdateMesh ???�재 Gizmo 모드??맞는 메시 버퍼 + ?�이??캐싱
 // ============================================================
 void FGizmoSceneProxy::UpdateMesh()
 {
@@ -34,7 +34,7 @@ void FGizmoSceneProxy::UpdateMesh()
 }
 
 // ============================================================
-// UpdatePerViewport — 매 프레임 뷰포트별 스케일 + ExtraCB 갱신
+// UpdatePerViewport ??�??�레??뷰포?�별 ?��???+ ExtraCB 갱신
 // ============================================================
 void FGizmoSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
@@ -47,12 +47,12 @@ void FGizmoSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     }
     bVisible = true;
 
-    // 모드 변경 시 메시가 바뀌므로 매 프레임 갱신
+    // 모드 변�???메시가 바뀌�?�?�??�레??갱신
     MeshBuffer = Gizmo->GetMeshBuffer();
     Shader = FShaderManager::Get().GetShader(EShaderType::Gizmo);
 
 
-    // Per-viewport 스케일 계산
+    // Per-viewport ?��???계산
     const FVector CameraPos = SceneView.View.GetInverseFast().GetLocation();
     float PerViewScale = Gizmo->ComputeScreenSpaceScale(
         CameraPos, SceneView.bIsOrtho, SceneView.OrthoWidth);
@@ -62,7 +62,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     PerObjectConstants = FPerObjectConstants{ WorldMatrix };
     MarkPerObjectCBDirty();
 
-    // ExtraCB — FGizmoConstants
+    // ExtraCB ??FGizmoConstants
     auto& G = ExtraCB.Bind<FGizmoConstants>(
         FConstantBufferPool::Get().GetBuffer(ERenderCBKey::Gizmo, sizeof(FGizmoConstants)),
         ECBSlot::PerShader0);

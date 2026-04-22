@@ -4,10 +4,10 @@
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Pipelines/Context/Scene/ViewTypes.h"
+#include "Render/Execute/Context/Scene/ViewTypes.h"
 #include "Render/Submission/Batching/BatchBuffer.h"
 
-// FLineVertex — 라인 렌더링용 버텍스 (Position + Color)
+// FLineVertex ???�인 ?�더링용 버텍??(Position + Color)
 struct FLineVertex
 {
     FVector  Position;
@@ -18,7 +18,7 @@ struct FLineVertex
         : Position(InPos), Color(InColor) {}
 };
 
-// FLineBatch — 라인 배치를 만들고 업로드한다.
+// FLineBatch ???�인 배치�?만들�??�로?�한??
 class FLineBatch
 {
 public:

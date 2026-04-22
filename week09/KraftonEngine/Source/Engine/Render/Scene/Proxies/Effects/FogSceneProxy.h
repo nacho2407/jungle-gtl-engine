@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Render/Passes/Scene/FogParams.h"
+#include "Render/Execute/Passes/Scene/FogParams.h"
 #include "Render/Scene/Proxies/Effects/SceneEffectProxy.h"
 
 class UHeightFogComponent;
 
 /*
-    FFogSceneProxy는 HeightFogComponent의 렌더 파라미터를 Scene effect 계층에 보관합니다.
-    현재는 HeightFogPass가 첫 번째 fog 프록시의 파라미터를 읽어 사용합니다.
+    FFogSceneProxy??HeightFogComponent???�더 ?�라미터�?Scene effect 계층??보�??�니??
+    ?�재??HeightFogPass가 �?번째 fog ?�록?�의 ?�라미터�??�어 ?�용?�니??
 */
 class FFogSceneProxy : public FSceneEffectProxy
 {

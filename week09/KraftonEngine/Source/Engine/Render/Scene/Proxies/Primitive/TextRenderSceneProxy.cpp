@@ -1,7 +1,7 @@
-﻿#include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 
 #include "Component/TextRenderComponent.h"
-#include "Render/Pipelines/Context/Scene/SceneView.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Resources/Buffers/ConstantBufferLayouts.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 

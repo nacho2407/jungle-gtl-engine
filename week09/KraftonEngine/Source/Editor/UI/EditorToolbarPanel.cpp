@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorToolbarPanel.h"
+#include "Editor/UI/EditorToolbarPanel.h"
 
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"

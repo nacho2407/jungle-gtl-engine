@@ -1,13 +1,11 @@
 {
-  "Parameters": {
-    "SectionColor": [
-      1.0,
-      1.0,
-      1.0,
-      1.0
-    ]
-  },
-  "PathFileName": "Asset/Content/Materials/_Basic/Basic_White.json",
-  "RenderPass": "Opaque",
-  "ShaderPath": "Shaders/Materials/StaticMeshShader.hlsl"
+    "Parameters":  {
+                       "SectionColor":  [
+                                            1.0,
+                                            1.0,
+                                            1.0,
+                                            1.0
+                                        ]
+                   },
+    "PathFileName":  "Asset/Content/Materials/_Basic/Basic_White.json"
 }

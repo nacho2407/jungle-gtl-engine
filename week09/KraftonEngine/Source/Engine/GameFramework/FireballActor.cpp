@@ -1,4 +1,4 @@
-﻿#include "FireballActor.h"
+#include "FireballActor.h"
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"

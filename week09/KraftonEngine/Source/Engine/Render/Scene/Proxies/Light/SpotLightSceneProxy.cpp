@@ -1,4 +1,4 @@
-﻿#include "Render/Scene/Proxies/Light/SpotLightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/SpotLightSceneProxy.h"
 #include "Component/SpotLightComponent.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Scene/DebugDraw/DrawDebugHelpers.h"

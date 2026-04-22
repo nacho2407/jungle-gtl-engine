@@ -1,4 +1,4 @@
-﻿//#pragma once
+//#pragma once
 //
 //#include "Viewport/ViewportClient.h"
 //#include "Math/Vector.h"

@@ -241,7 +241,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\LightHitMapPass.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
@@ -324,34 +323,35 @@
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Base\PassRenderState.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\DebugLinePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\GizmoPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\GridPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\OutlinePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayBillboardPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\DecalPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\DepthPrePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\FXAAPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\HeightFogPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightCullingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\LightingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\PresentPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\Scene\SceneView.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\ViewMode\SceneViewModeSurfaces.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Context\Viewport\ViewportRenderTargets.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Registry\ViewModePassRegistry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipelines\Runner\RenderPipelineRunner.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Context\FrameSharedResources.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Context\Scene\SceneView.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Context\ViewMode\SceneViewModeSurfaces.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Context\Viewport\ViewportRenderTargets.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Base\PassRenderState.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\DebugLinePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\GizmoPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\GridPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\LightHitMapPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\OutlinePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\OverlayBillboardPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\OverlayTextPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\SelectionMaskPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\AdditiveDecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\AlphaBlendPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\OpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPassRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPipelineRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Registry\ViewModePassRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Runner\RenderPipelineRunner.cpp" />
     <ClCompile Include="Source\Engine\Render\Resources\Buffers\ConstantBufferPool.cpp" />
     <ClCompile Include="Source\Engine\Render\Resources\Buffers\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resources\Shaders\ShaderManager.cpp" />
@@ -417,7 +417,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\LightHitMapPass.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
@@ -520,50 +519,50 @@
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
     <ClInclude Include="Source\Engine\Render\Renderer.h" />
-    <ClInclude Include="Source\Engine\Render\Overlay\OverlayBatchSet.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\FullscreenPassBase.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\MeshPassBase.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\PassRenderState.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\PipelineStateTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\PostProcessPassBase.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderPassTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Base\RenderStateStrings.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\DebugLinePass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\GizmoPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\GridPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\OutlinePass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayBillboardPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\OverlayTextPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Editor\SelectionMaskPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\AdditiveDecalPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\AlphaBlendPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\BaseDrawPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\DecalPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\DepthPrePass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\FXAAPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\FogParams.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\HeightFogPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightCullingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\LightingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\PresentPass.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\ShadingTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Passes\Scene\ViewModeResolvePass.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameRenderResources.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\FrameSharedResources.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderCollectContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\RenderPipelineContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Scene\SceneView.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Scene\ViewTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\ViewMode\SceneViewModeSurfaces.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Context\Viewport\ViewportRenderTargets.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPassRegistry.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineRegistry.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\RenderPipelineType.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Registry\ViewModePassRegistry.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\PipelineShaderResolver.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\RenderMarkers.h" />
-    <ClInclude Include="Source\Engine\Render\Pipelines\Runner\RenderPipelineRunner.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\FrameRenderResources.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\FrameSharedResources.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\PipelineStateTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\RenderCollectContext.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\Scene\SceneView.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\Scene\ViewTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\ViewMode\SceneViewModeSurfaces.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Context\Viewport\ViewportRenderTargets.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\FullscreenPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\MeshPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\PassRenderState.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\PostProcessPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\RenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\RenderPassTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Base\RenderStateStrings.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\DebugLinePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\GizmoPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\GridPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\LightHitMapPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\OutlinePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\OverlayBillboardPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\OverlayTextPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\SelectionMaskPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\AdditiveDecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\AlphaBlendPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FogParams.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\OpaquePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ShadingTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPassRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPipelineRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPipelineType.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Registry\ViewModePassRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Runner\PipelineShaderResolver.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Runner\RenderMarkers.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Runner\RenderPipelineRunner.h" />
     <ClInclude Include="Source\Engine\Render\Resources\ConstantBufferBinding.h" />
     <ClInclude Include="Source\Engine\Render\Resources\RenderResources.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderBindingSlots.h" />
@@ -621,6 +620,7 @@
     <ClInclude Include="Source\Engine\Render\Submission\Batching\BatchBuffer.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Batching\FontBatch.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Batching\LineBatch.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Batching\OverlayBatchSet.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedOverlayData.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedSceneData.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\DrawCollector.h" />
@@ -665,10 +665,6 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\Passes\PostProcess\LightHitMap.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\PreDepth.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -783,25 +779,19 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Materials\StaticMeshShader.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\FXAA.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\PostProcess\OutlinePostProcess.hlsl">
+    <FxCompile Include="Shaders\Passes\PostProcess\LightHitMap.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\BaseDraw.hlsl">
+    <FxCompile Include="Shaders\Passes\PostProcess\OutlinePostProcess.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -837,7 +827,19 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\OpaquePass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\TileBasedLightCullingCS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\ViewModes\UberLit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -886,12 +888,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\ViewModes\SceneDepth.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Shaders\ViewModes\UberLit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>

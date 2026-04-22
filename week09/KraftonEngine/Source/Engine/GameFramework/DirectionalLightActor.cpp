@@ -1,4 +1,4 @@
-﻿#include "DirectionalLightActor.h"
+#include "DirectionalLightActor.h"
 #include "Component/DirectionalLightComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"

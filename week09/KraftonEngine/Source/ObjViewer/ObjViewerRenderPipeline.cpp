@@ -1,4 +1,4 @@
-﻿// #include "ObjViewer/ObjViewerRenderPipeline.h"
+// #include "ObjViewer/ObjViewerRenderPipeline.h"
 //
 // #include "ObjViewer/ObjViewerEngine.h"
 // #include "Render/Renderer/Renderer.h"
@@ -19,10 +19,10 @@
 //
 // void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 //{
-//	// 오프스크린 RT에 3D 씬 렌더
+//	// ������ũ�� RT�� 3D �� ����
 //	RenderPreviewViewport(Renderer);
 //
-//	// 스왑체인 백버퍼 → ImGui 합성 → Present
+//	// ����ü�� ����� �� ImGui �ռ� �� Present
 //	Renderer.BeginFrame();
 //	Engine->RenderUI(DeltaTime);
 //	Renderer.EndFrame();
@@ -41,7 +41,7 @@
 //
 //	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
 //
-//	// 지연 리사이즈 적용 + 오프스크린 RT 바인딩
+//	// ���� �������� ���� + ������ũ�� RT ���ε�
 //	if (VP->ApplyPendingResize())
 //	{
 //		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
@@ -49,7 +49,7 @@
 //	const float ClearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
 //	VP->BeginRender(Ctx, ClearColor);
 //
-//	// Frame 설정
+//	// Frame ����
 //	Frame.ClearViewportResources();
 //
 //	UWorld* World = Engine->GetWorld();
@@ -78,11 +78,11 @@
 //		Renderer.ReleaseViewModeTextures();
 //	}
 //
-//	// BeginCollect → 월드 수집 → 동적 커맨드 → Scene pipeline 실행
+//	// BeginCollect �� ���� ���� �� ���� Ŀ�ǵ� �� Scene pipeline ����
 //	Renderer.BeginCollect(Frame, Scene.GetPrimitiveProxyCount());
 //	Collector.CollectWorld(World, Frame, Renderer);
 //	Renderer.BuildDynamicCommands(Frame, &Scene);
 //	Renderer.PreparePipelineExecution(Frame);
-//	Renderer.ExecutePipeline(ERenderPipelineType::Scene, Frame);
+//	Renderer.ExecutePipeline(ERenderPipelineType::ScenePipeline, Frame);
 //	Renderer.FinalizePipelineExecution();
 // }

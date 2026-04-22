@@ -1,4 +1,4 @@
-﻿#include "RotatingMovementComponent.h"
+#include "RotatingMovementComponent.h"
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"

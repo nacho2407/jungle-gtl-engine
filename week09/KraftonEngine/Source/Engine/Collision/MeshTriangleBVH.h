@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "OBB.h"
 #include "Core/CoreTypes.h"

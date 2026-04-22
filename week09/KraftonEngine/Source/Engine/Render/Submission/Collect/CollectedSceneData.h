@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "Render/Pipelines/Context/RenderCollectContext.h"
+#include "Render/Execute/Context/RenderCollectContext.h"
 #include "Render/Scene/Proxies/Light/LightTypes.h"
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 
@@ -21,8 +21,8 @@ struct FCollectedPrimitives
 };
 
 /*
-    FCollectedSceneData는 Scene 수집 결과를 한 덩어리로 묶는 구조체입니다.
-    Primitive와 Light를 Renderer가 따로 들고 있지 않고 collector 결과 하나로 전달합니다.
+    FCollectedSceneData�� Scene ���� ����� �� ����� ���� ����ü�Դϴ�.
+    Primitive�� Light�� Renderer�� ���� ��� ���� �ʰ� collector ��� �ϳ��� �����մϴ�.
 */
 struct FCollectedSceneData
 {

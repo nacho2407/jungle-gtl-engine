@@ -1,4 +1,4 @@
-﻿#include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"

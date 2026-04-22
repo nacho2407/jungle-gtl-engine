@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"

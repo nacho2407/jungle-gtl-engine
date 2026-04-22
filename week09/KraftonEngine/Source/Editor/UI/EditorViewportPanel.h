@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Editor/UI/EditorPanel.h"
 #include <string>

@@ -1,4 +1,4 @@
-﻿#include "FName.h"
+#include "FName.h"
 #include <algorithm>
 #include <cctype>
 

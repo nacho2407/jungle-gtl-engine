@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "LightComponentBase.h"
 
 class FLightSceneProxy;

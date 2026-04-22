@@ -1,4 +1,4 @@
-﻿#include "Render/Renderer.h"
+#include "Render/Renderer.h"
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -10,11 +10,11 @@
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/Stats.h"
 #include "Profiling/Timer.h"
-#include "Render/Passes/Scene/FogParams.h"
-#include "Render/Passes/Scene/PresentPass.h"
-#include "Render/Pipelines/Registry/ViewModePassRegistry.h"
+#include "Render/Execute/Passes/Scene/FogParams.h"
+#include "Render/Execute/Passes/Scene/PresentPass.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Resources/Buffers/ConstantBufferPool.h"
-#include "Render/Pipelines/Runner/PipelineShaderResolver.h"
+#include "Render/Execute/Runner/PipelineShaderResolver.h"
 #include "Render/Resources/RenderResources.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
@@ -34,7 +34,7 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
     case ERenderPass::DepthPre:
         return ERenderPassNodeType::DepthPrePass;
     case ERenderPass::Opaque:
-        return ERenderPassNodeType::BaseDrawPass;
+        return ERenderPassNodeType::OpaquePass;
     case ERenderPass::Decal:
         return ERenderPassNodeType::DecalPass;
     case ERenderPass::Lighting:
@@ -60,7 +60,7 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
     case ERenderPass::PostProcess:
         return ERenderPassNodeType::HeightFogPass;
     default:
-        return ERenderPassNodeType::BaseDrawPass;
+        return ERenderPassNodeType::OpaquePass;
     }
 }
 } // namespace
@@ -414,7 +414,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     const FViewModePassRegistry* ViewModeRegistry = PipelineContext.ViewModePassRegistry ? PipelineContext.ViewModePassRegistry : ViewModePassRegistry;
     const bool bHasViewModeConfig = ViewModeRegistry && ViewModeRegistry->HasConfig(PipelineContext.ActiveViewMode);
     const bool bUsesDepthPre = bHasViewModeConfig && ViewModeRegistry->UsesDepthPrePass(PipelineContext.ActiveViewMode);
-    const bool bUsesBaseDraw = bHasViewModeConfig && ViewModeRegistry->UsesBaseDraw(PipelineContext.ActiveViewMode);
+    const bool bUsesOpaque = bHasViewModeConfig && ViewModeRegistry->UsesOpaque(PipelineContext.ActiveViewMode);
     const bool bUsesDecal = bHasViewModeConfig && ViewModeRegistry->UsesDecal(PipelineContext.ActiveViewMode);
     const bool bUsesAdditiveDecal = bHasViewModeConfig && ViewModeRegistry->UsesAdditiveDecal(PipelineContext.ActiveViewMode);
     const bool bUsesAlphaBlend = bHasViewModeConfig && ViewModeRegistry->UsesAlphaBlend(PipelineContext.ActiveViewMode);
@@ -455,7 +455,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
 
             if (bHasViewModeConfig)
             {
-                if (Proxy->Pass == ERenderPass::Opaque && !bUsesBaseDraw)
+                if (Proxy->Pass == ERenderPass::Opaque && !bUsesOpaque)
                 {
                     continue;
                 }
@@ -498,9 +498,9 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             }
         }
 
-        if (ViewModeRegistry->UsesViewModeResolve(PipelineContext.ActiveViewMode))
+        if (ViewModeRegistry->UsesNonLitViewMode(PipelineContext.ActiveViewMode))
         {
-            if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::ViewModeResolvePass))
+            if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::NonLitViewModePass))
             {
                 Pass->BuildDrawCommands(PipelineContext);
             }

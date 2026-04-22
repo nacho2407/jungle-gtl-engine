@@ -1,5 +1,5 @@
-﻿#include "Render/Passes/Base/PipelineStateTypes.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 
 #include "Component/DecalComponent.h"

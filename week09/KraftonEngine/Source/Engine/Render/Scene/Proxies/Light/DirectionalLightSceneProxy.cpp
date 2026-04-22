@@ -1,4 +1,4 @@
-﻿#include "Render/Scene/Proxies/Light/DirectionalLightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/DirectionalLightSceneProxy.h"
 #include "Component/DirectionalLightComponent.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Scene/DebugDraw/DrawDebugHelpers.h"

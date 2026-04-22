@@ -1,4 +1,4 @@
-﻿#include "Viewport/Viewport.h"
+#include "Viewport/Viewport.h"
 
 FViewport::~FViewport()
 {

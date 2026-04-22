@@ -1,4 +1,4 @@
-﻿#include "Component/CameraComponent.h"
+#include "Component/CameraComponent.h"
 #include "Object/ObjectFactory.h"
 #include <cmath>
 

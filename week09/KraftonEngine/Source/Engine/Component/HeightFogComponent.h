@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SceneComponent.h"
-#include "Render/Passes/Scene/FogParams.h"
+#include "Render/Execute/Passes/Scene/FogParams.h"
 
 class UHeightFogComponent : public USceneComponent
 {
@@ -18,7 +18,7 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
-	// Transform 변경 시 FogBaseHeight 갱신
+	// Transform 변�???FogBaseHeight 갱신
 	void OnTransformDirty() override;
 
 private:

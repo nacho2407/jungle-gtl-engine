@@ -1,4 +1,4 @@
-﻿#include "EngineTypes.h"
+#include "EngineTypes.h"
 
 void FBoundingBox::Expand(const FVector& Point)
 {
