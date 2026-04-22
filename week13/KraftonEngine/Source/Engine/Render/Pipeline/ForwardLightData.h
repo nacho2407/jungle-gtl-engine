@@ -109,6 +109,6 @@ static_assert(sizeof(FLightingCBData) == 128, "FLightingCBData size mismatch wit
 namespace ETileCulling
 {
 	constexpr uint32 TileSize = 16;   // 16x16 픽셀
-	constexpr uint32 MaxLightsPerTile = 256;
+	constexpr uint32 MaxLightsPerTile = 1024;
 	constexpr uint32 MaxLights = 1024; // g_AllLights 최대 크기
 }

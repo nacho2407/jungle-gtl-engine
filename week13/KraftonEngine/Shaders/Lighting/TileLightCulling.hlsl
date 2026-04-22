@@ -259,7 +259,7 @@ void mainCS(uint3 groupID : SV_GroupID, uint3 dispatchID:SV_DispatchThreadID, ui
         {
             uint slot;
             InterlockedAdd(hitCount, 1, slot);
-            if(slot < 256)
+            if (slot < 256)
             {
                 localIndices[slot] = i;
             }
