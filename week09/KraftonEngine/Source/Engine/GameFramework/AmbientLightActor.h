@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GameFramework/AActor.h"
+#include "Platform/Paths.h"
 
 class UAmbientLightComponent;
 class UBillboardComponent;
@@ -16,5 +17,5 @@ public:
 private:
     UAmbientLightComponent* AmbientLightComponent = nullptr;
 	UBillboardComponent* BillboardComponent = nullptr;
-	FString AmbientLightIconPath = "Asset/Materials/AmbientLightIcon.json";
+	FString AmbientLightIconPath = FPaths::EditorRelativePath("Icons/Materials/AmbientLightIcon.json");
 };

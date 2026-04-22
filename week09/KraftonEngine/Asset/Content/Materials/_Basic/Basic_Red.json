@@ -1,12 +1,22 @@
 {
-  "Parameters" : {
-    "HasBaseTexture" : 0.000000,
-    "HasNormalTexture" : 0.000000,
-    "MaterialParam" : [0.000000, 0.000000, 0.000000, 0.000000],
-    "SectionColor" : [1.000000, 0.000000, 0.000000, 1.000000],
-    "StaticMeshMaterialPadding" : null
+  "Parameters": {
+    "HasBaseTexture": 0.0,
+    "HasNormalTexture": 0.0,
+    "MaterialParam": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "SectionColor": [
+      1.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "StaticMeshMaterialPadding": null
   },
-  "PathFileName" : "Asset/Materials/Basic_Red.json",
-  "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl"
+  "PathFileName": "Asset/Content/Materials/_Basic/Basic_Red.json",
+  "RenderPass": "Opaque",
+  "ShaderPath": "Shaders/Materials/StaticMeshShader.hlsl"
 }

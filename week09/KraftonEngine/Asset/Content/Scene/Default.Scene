@@ -1,4 +1,4 @@
-{
+﻿{
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
@@ -71,21 +71,21 @@
   "Primitives" : {
     "10" : {
       "Location" : [0.000000, 7.919561, 0.000000],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
     "12" : {
       "Location" : [-29.272213, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
     "8" : {
       "Location" : [0.000000, -7.255380, 0.000000],
-      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"

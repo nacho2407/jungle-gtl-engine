@@ -2,6 +2,7 @@
 #include "Component/HeightFogComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
+#include "Platform/Paths.h"
 
 IMPLEMENT_CLASS(AHeightFogActor, AActor)
 
@@ -17,7 +18,7 @@ void AHeightFogActor::InitDefaultComponents()
 	BillboardComponent = AddComponent<UBillboardComponent>();
 	BillboardComponent->AttachToComponent(FogComponent);
 	
-	auto FogMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/HeightFog.json");
+	auto FogMaterial = FMaterialManager::Get().GetOrCreateMaterial(FPaths::EditorRelativePath("Icons/Materials/HeightFog.json"));
 	BillboardComponent->SetVisibleInEditor(true);
 	BillboardComponent->SetVisibleInGame(false);
 	BillboardComponent->SetEditorHelper(true);

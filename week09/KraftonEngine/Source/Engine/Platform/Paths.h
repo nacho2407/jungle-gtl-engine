@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <filesystem>
@@ -13,8 +13,11 @@ public:
 	static std::wstring RootDir();
 
 	// 주요 디렉터리
+	static std::wstring AssetDir();       // Asset/
+	static std::wstring ContentDir();     // Asset/Content/
+	static std::wstring EditorDir();      // Asset/Editor/
 	static std::wstring ShaderDir();      // Shaders/
-	static std::wstring SceneDir();       // Asset/Scene/
+	static std::wstring SceneDir();       // Asset/Content/Scene/
 	static std::wstring DumpDir();        // Saves/Dump/
 	static std::wstring SettingsDir();    // Settings/
 
@@ -40,5 +43,15 @@ public:
 	static std::string FromPath(const std::filesystem::path& Path);
 	static std::string FromWide(const std::wstring& WideStr);
 
+	// BaseFilePath 기준으로 TargetPath를 실제 에셋 상대 경로로 해석합니다.
 	static std::string ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath);
+
+	// 프로젝트 루트 기준 상대 경로 생성 유틸
+	static std::string MakeRelativeToRoot(const std::filesystem::path& Path);
+	static bool PathContainsDirectory(const std::filesystem::path& Path, const std::wstring& DirectoryName);
+
+	// Asset 루트 기반 경로 생성 유틸
+	static std::string AssetRelativePath(const std::string& RelativePath);
+	static std::string ContentRelativePath(const std::string& RelativePath);
+	static std::string EditorRelativePath(const std::string& RelativePath);
 };

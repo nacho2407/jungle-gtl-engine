@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/AActor.h"
+#include "Platform/Paths.h"
 
 class UDecalComponent;
 class UBillboardComponent;
@@ -20,6 +21,6 @@ private:
     UDecalComponent* DecalComponent;
     UBillboardComponent* BillboardComponent = nullptr;
 
-    const FString DefaultDecalMaterialPath = "Asset/Materials/PawnIcon.json";
-    const FString DecalIconPath = "Asset/Materials/DecalIcon.json";
+    const FString DefaultDecalMaterialPath = FPaths::EditorRelativePath("Icons/Materials/PawnIcon.json");
+    const FString DecalIconPath = FPaths::EditorRelativePath("Icons/Materials/DecalIcon.json");
 };

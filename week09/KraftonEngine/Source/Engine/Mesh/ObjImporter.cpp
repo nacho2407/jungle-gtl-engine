@@ -495,10 +495,51 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 // MTL 정보에서 머티리얼 JSON 파일로 변환하는 함수
 FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 {
-	FString JsonPath = "Asset/Materials/" + MtlInfo->MaterialSlotName + ".json";
-
-	// 이미 존재하면 덮어쓰지 않음 (에디터에서 수정했을 수 있으므로)
-	if (std::filesystem::exists(FPaths::ToWide(JsonPath)))
+	std::filesystem::path JsonFullPath;
+	auto TryBuildMaterialPathFromAsset = [&](const FString& AssetPath)
+	{
+		if (AssetPath.empty() || !JsonFullPath.empty())
+		{
+			return;
+		}
+		std::filesystem::path AssetRoot = FPaths::ToPath(FPaths::AssetDir()).lexically_normal();
+		std::filesystem::path FullAssetPath = (FPaths::ToPath(FPaths::RootDir()) / FPaths::ToPath(FPaths::ToWide(AssetPath))).lexically_normal();
+		std::filesystem::path Relative = FullAssetPath.lexically_relative(AssetRoot);
+		if (Relative.empty())
+		{
+			return;
+		}
+		std::filesystem::path Rebased;
+		bool bReplaced = false;
+		for (const auto& Part : Relative)
+		{
+			std::wstring Component = Part.wstring();
+			std::transform(Component.begin(), Component.end(), Component.begin(), ::towlower);
+			if (!bReplaced && Component == L"models")
+			{
+				Rebased /= L"Materials";
+				bReplaced = true;
+			}
+			else
+			{
+				Rebased /= Part;
+			}
+		}
+		if (bReplaced)
+		{
+			JsonFullPath = (AssetRoot / Rebased.parent_path() / (FPaths::ToWide(MtlInfo->MaterialSlotName) + L".json")).lexically_normal();
+		}
+	};
+	TryBuildMaterialPathFromAsset(MtlInfo->map_Kd);
+	TryBuildMaterialPathFromAsset(MtlInfo->map_Ks);
+	TryBuildMaterialPathFromAsset(MtlInfo->map_Bump);
+	if (JsonFullPath.empty())
+	{
+		JsonFullPath = (FPaths::ToPath(FPaths::ContentDir()) / L"Materials" / (FPaths::ToWide(MtlInfo->MaterialSlotName) + L".json")).lexically_normal();
+	}
+	FPaths::CreateDir(JsonFullPath.parent_path().wstring());
+	const FString JsonPath = FPaths::MakeRelativeToRoot(JsonFullPath);
+	if (std::filesystem::exists(JsonFullPath))
 		return JsonPath;
 
 	json::JSON JsonData;
