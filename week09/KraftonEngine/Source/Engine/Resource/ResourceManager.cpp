@@ -1,4 +1,4 @@
-﻿#include "Resource/ResourceManager.h"
+#include "Resource/ResourceManager.h"
 #include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"
 
@@ -352,8 +352,27 @@ TArray<FString> FResourceManager::GetTextureNames() const
 {
     TArray<FString> Names;
     Names.reserve(TextureResources.size());
-    for (const auto& [Key, _] : TextureResources)
+    for (const auto& [Key, Resource] : TextureResources)
     {
+        if (FPaths::IsEditorAssetPath(Resource.Path))
+        {
+            continue;
+        }
+        Names.push_back(Key);
+    }
+    return Names;
+}
+
+TArray<FString> FResourceManager::GetEditorTextureNames() const
+{
+    TArray<FString> Names;
+    Names.reserve(TextureResources.size());
+    for (const auto& [Key, Resource] : TextureResources)
+    {
+        if (!FPaths::IsEditorAssetPath(Resource.Path))
+        {
+            continue;
+        }
         Names.push_back(Key);
     }
     return Names;

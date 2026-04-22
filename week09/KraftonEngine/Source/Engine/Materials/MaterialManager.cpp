@@ -1,4 +1,4 @@
-﻿#include "Render/Passes/Base/RenderStateStrings.h"
+#include "Render/Passes/Base/RenderStateStrings.h"
 #include "Render/Passes/Base/PipelineStateTypes.h"
 #include "Render/Passes/Base/RenderPassTypes.h"
 #include "MaterialManager.h"
@@ -150,36 +150,50 @@ uint64 BuildDependencyHash(const std::filesystem::path& FilePath)
 void FMaterialManager::ScanMaterialAssets()
 {
     AvailableMaterialFiles.clear();
+    AvailableEditorMaterialFiles.clear();
 
-    const std::filesystem::path MaterialRoot = FPaths::RootDir() + L"Asset\\Materials\\";
-
-    if (!std::filesystem::exists(MaterialRoot))
+    const std::filesystem::path AssetRoot = FPaths::AssetDir();
+    if (!std::filesystem::exists(AssetRoot))
     {
         return;
     }
 
     const std::filesystem::path ProjectRoot(FPaths::RootDir());
-
-    for (const auto& Entry : std::filesystem::recursive_directory_iterator(MaterialRoot))
+    for (const auto& Entry : std::filesystem::recursive_directory_iterator(AssetRoot))
     {
         if (!Entry.is_regular_file())
             continue;
 
         const std::filesystem::path& Path = Entry.path();
-
         if (Path.extension() != L".json")
             continue;
         if (Path.stem() == L"None")
+            continue;
+        if (!FPaths::PathContainsDirectory(Path.parent_path(), L"Materials"))
             continue;
 
         FMaterialAssetListItem Item;
         Item.DisplayName = FPaths::ToUtf8(Path.stem().wstring());
         Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
-        AvailableMaterialFiles.push_back(std::move(Item));
+
+        if (FPaths::IsEditorAssetPath(Path))
+        {
+            AvailableEditorMaterialFiles.push_back(Item);
+        }
+        else
+        {
+            AvailableMaterialFiles.push_back(Item);
+        }
     }
 }
 
+
 UMaterial* FMaterialManager::GetOrCreateStaticMeshMaterial(const FString& MatFilePath)
+{
+    return GetOrCreateMaterial(NormalizeCacheKey(MatFilePath));
+}
+
+UMaterial* FMaterialManager::GetOrCreateEditorMaterial(const FString& MatFilePath)
 {
     return GetOrCreateMaterial(NormalizeCacheKey(MatFilePath));
 }
