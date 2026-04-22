@@ -293,6 +293,7 @@
     <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
+    <ClCompile Include="Source\Engine\Core\Log.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
@@ -452,6 +453,7 @@
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Log.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
     <ClInclude Include="Source\Engine\Core\RayTypes.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />

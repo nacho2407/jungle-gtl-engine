@@ -395,6 +395,9 @@
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Log.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -863,6 +866,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\EngineTypes.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Log.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
