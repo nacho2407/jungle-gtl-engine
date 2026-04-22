@@ -4,6 +4,7 @@
 #include "Editor/UI/ContentBrowser/ContentItem.h"
 #include "SimpleJSON/json.hpp"
 #include "Engine/Materials/Material.h"
+#include "Engine/Runtime/Engine.h"
 #include "Engine/Texture/Texture2D.h"
 
 FEditorMaterialInspector::FEditorMaterialInspector(std::filesystem::path InPath)
@@ -123,7 +124,8 @@ void FEditorMaterialInspector::RenderTextureSection()
 				FString NewTexturePath = FPaths::ToUtf8(
 					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
 				);
-				UTexture2D* NewTexture = UTexture2D::LoadFromCached(NewTexturePath);
+				ID3D11Device* Device = GEngine ? GEngine->GetRenderer().GetFD3DDevice().GetDevice() : nullptr;
+				UTexture2D* NewTexture = UTexture2D::LoadFromFile(NewTexturePath, Device);
 				if (NewTexture)
 				{
 					CachedMaterial->SetTextureParameter(SlotName, NewTexture);
