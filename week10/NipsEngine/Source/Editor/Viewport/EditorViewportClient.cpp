@@ -140,6 +140,7 @@ void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 	{
 		OutView.ViewRect = Viewport->GetRect();
 		OutView.ViewMode = State->ViewMode;
+		OutView.LightCullMode = State->LightCullMode;
 	}
 }
 

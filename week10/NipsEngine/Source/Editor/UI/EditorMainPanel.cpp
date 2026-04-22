@@ -84,6 +84,17 @@ const char* GetViewModeName(EViewMode Mode)
     }
 }
 
+const char* GetLightCullModeName(ELightCullMode Mode)
+{
+    switch (Mode)
+    {
+    case ELightCullMode::Clustered: return "Clustered";
+	case ELightCullMode::Tiled:		return "Tiled";
+    case ELightCullMode::None:      return "None (All Lights)";
+    default:                        return "Clustered";
+    }
+}
+
 const char* GetViewportSlotName(int32 Index)
 {
     switch (Index)
@@ -444,6 +455,25 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             if (ImGui::MenuItem(Labels[j], nullptr, bSel))
                 State.ViewMode = Modes[j];
         }
+
+        ImGui::Separator();
+
+        if (ImGui::BeginMenu("Light Culling"))
+        {
+            static constexpr ELightCullMode CullModes[] = {
+                ELightCullMode::Clustered,
+				ELightCullMode::Tiled,
+                ELightCullMode::None,
+            };
+            for (ELightCullMode CullMode : CullModes)
+            {
+                const bool bSel = (State.LightCullMode == CullMode);
+                if (ImGui::MenuItem(GetLightCullModeName(CullMode), nullptr, bSel))
+                    State.LightCullMode = CullMode;
+            }
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMenu();
     }
 

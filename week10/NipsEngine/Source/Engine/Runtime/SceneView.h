@@ -25,6 +25,7 @@ struct FSceneView
 	FFrustum CameraFrustum;
 
 	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
+	ELightCullMode LightCullMode = ELightCullMode::Clustered;
 
 	bool bOrthographic = false;
 };
