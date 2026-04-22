@@ -129,7 +129,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
         TotalSpecular += Specular * LightColor;
     }
 
-    return float4(BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular, BaseColor.a);
+    return float4(BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular * 0.2, BaseColor.a);
 }
 
 float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition, float3 V, float Shininess, float SpecularStrength)
@@ -156,7 +156,7 @@ float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 N, float3 WorldPo
     }
 
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;
-    return (Diffuse * LightColor + Specular * LightColor) * Attenuation;
+    return (Diffuse * LightColor + Specular * LightColor * 0.2) * Attenuation;
 }
 
 float3 LocalLightLambert(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition)
