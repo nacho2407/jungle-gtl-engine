@@ -42,6 +42,10 @@ void FLightCullingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     if (Context.SceneView->ViewMode == EViewMode::Wireframe)
     {
+        if (Context.LightCulling)
+        {
+            Context.LightCulling->ClearDebugHitMap();
+        }
         return;
     }
 
