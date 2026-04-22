@@ -23,7 +23,8 @@ struct FStaticMeshMaterialViewConstants
     FVector4 MaterialParam = FVector4(MaterialSemantics::DefaultSpecularPower, MaterialSemantics::DefaultSpecularStrength, 0.0f, 1.0f);
     uint32 HasBaseTexture = 0;
     uint32 HasNormalTexture = 0;
-    float Padding[2] = { 0.0f, 0.0f };
+    uint32 HasSpecularTexture = 0;
+    float Padding = 0.0f;
 };
 
 bool SectionMaterialLess(const FMeshSectionRenderData& A, const FMeshSectionRenderData& B)
@@ -54,6 +55,13 @@ bool SectionMaterialLess(const FMeshSectionRenderData& A, const FMeshSectionRend
     if (ANormalSRV != BNormalSRV)
     {
         return ANormalSRV < BNormalSRV;
+    }
+
+    const uintptr_t ASpecularSRV = reinterpret_cast<uintptr_t>(A.SpecularSRV);
+    const uintptr_t BSpecularSRV = reinterpret_cast<uintptr_t>(B.SpecularSRV);
+    if (ASpecularSRV != BSpecularSRV)
+    {
+        return ASpecularSRV < BSpecularSRV;
     }
 
     return A.FirstIndex < B.FirstIndex;
@@ -106,7 +114,8 @@ FVector4 GetVector4OrDefault(const UMaterial* Material, const char* ParamName, c
 }
 
 std::unique_ptr<FMaterialConstantBuffer> BuildStaticMeshMaterialCB(const UMaterial* Material, ID3D11Device* Device, ID3D11DeviceContext* Context,
-                                                                   ID3D11ShaderResourceView* DiffuseSRV, ID3D11ShaderResourceView* NormalSRV)
+                                                                   ID3D11ShaderResourceView* DiffuseSRV, ID3D11ShaderResourceView* NormalSRV,
+                                                                   ID3D11ShaderResourceView* SpecularSRV)
 {
     if (!Device || !Context)
     {
@@ -125,6 +134,7 @@ std::unique_ptr<FMaterialConstantBuffer> BuildStaticMeshMaterialCB(const UMateri
         1.0f);
     Constants.HasBaseTexture = DiffuseSRV ? 1u : 0u;
     Constants.HasNormalTexture = NormalSRV ? 1u : 0u;
+    Constants.HasSpecularTexture = SpecularSRV ? 1u : 0u;
 
     Buffer->SetData(&Constants, sizeof(Constants));
     Buffer->Upload(Context);
@@ -248,12 +258,13 @@ void FStaticMeshSceneProxy::RebuildSectionRenderData()
             {
                 TryGetTextureSRV(Mat, { MaterialSemantics::DiffuseTextureSlot, "BaseColorTexture", "AlbedoTexture", "BaseTexture", "DiffuseMap" }, Draw.DiffuseSRV);
                 TryGetTextureSRV(Mat, { MaterialSemantics::NormalTextureSlot, "NormalMap", "NormalMapTexture", "BumpTexture", "BumpMap" }, Draw.NormalSRV);
+                TryGetTextureSRV(Mat, { MaterialSemantics::SpecularTextureSlot, "SpecularMap", "SpecularMapTexture", "SpecularMask", "SpecularMaskTexture", "GlossMap" }, Draw.SpecularSRV);
                 Draw.Blend = Mat->GetBlendState();
                 Draw.DepthStencil = Mat->GetDepthStencilState();
                 Draw.Rasterizer = Mat->GetRasterizerState();
             }
 
-            auto MaterialCB = BuildStaticMeshMaterialCB(Mat, Device, Context, Draw.DiffuseSRV, Draw.NormalSRV);
+            auto MaterialCB = BuildStaticMeshMaterialCB(Mat, Device, Context, Draw.DiffuseSRV, Draw.NormalSRV, Draw.SpecularSRV);
             if (MaterialCB)
             {
                 Draw.MaterialCB[0] = MaterialCB->GetConstantBuffer();

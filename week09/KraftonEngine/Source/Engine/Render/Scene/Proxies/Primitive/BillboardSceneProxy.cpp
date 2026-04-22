@@ -75,6 +75,7 @@ void FBillboardSceneProxy::UpdateMesh()
 
     DiffuseSRV = nullptr;
     NormalSRV = nullptr;
+    SpecularSRV = nullptr;
     MaterialCB[0] = nullptr;
     MaterialCB[1] = nullptr;
 

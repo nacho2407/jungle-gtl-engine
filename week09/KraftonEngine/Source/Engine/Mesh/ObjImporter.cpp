@@ -105,6 +105,57 @@ struct FStringParser
 	}
 };
 
+static FString ExtractMtlTexturePath(std::string_view Line)
+{
+	std::string TextureFileName;
+
+	while (!Line.empty())
+	{
+		std::string_view LineBeforeToken = Line;
+		std::string_view Token = FStringParser::GetNextWhitespaceToken(Line);
+
+		if (Token.empty()) break;
+
+		if (Token[0] == '-')
+		{
+			int32 ArgsToSkip = 0;
+			if (Token == "-s" || Token == "-o" || Token == "-t")
+			{
+				ArgsToSkip = 3;
+			}
+			else if (Token == "-mm")
+			{
+				ArgsToSkip = 2;
+			}
+			else if (Token == "-bm" || Token == "-boost" || Token == "-texres" ||
+					 Token == "-blendu" || Token == "-blendv" || Token == "-clamp" ||
+					 Token == "-cc" || Token == "-imfchan" || Token == "-type")
+			{
+				ArgsToSkip = 1;
+			}
+
+			for (int32 i = 0; i < ArgsToSkip; ++i)
+			{
+				FStringParser::GetNextWhitespaceToken(Line);
+			}
+		}
+		else
+		{
+			FStringParser::TrimLeft(LineBeforeToken);
+			TextureFileName = FString(LineBeforeToken);
+			break;
+		}
+	}
+
+	const size_t LastNonSpace = TextureFileName.find_last_not_of(" \t");
+	if (LastNonSpace != FString::npos)
+	{
+		TextureFileName.erase(LastNonSpace + 1);
+	}
+
+	return TextureFileName;
+}
+
 struct FRawFaceVertex
 {
     int32 PosIndex = -1;
@@ -355,8 +406,18 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			FObjMaterialInfo MaterialInfo;
 			FStringParser::TrimLeft(Line);
 			MaterialInfo.MaterialSlotName = std::string(Line);
-			MaterialInfo.Kd = FallbackColor3;
 			OutMtlInfos.emplace_back(MaterialInfo);
+		}
+		else if (Prefix == "Ka")
+		{
+			if (OutMtlInfos.empty())
+			{
+				continue;
+			}
+			FObjMaterialInfo& CurrentMaterial = OutMtlInfos.back();
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Ka.X);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Ka.Y);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Ka.Z);
 		}
 		else if (Prefix == "Kd")
 		{
@@ -369,74 +430,61 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Y);
 			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Kd.Z);
 		}
-		else if (Prefix == "map_Kd")
+		else if (Prefix == "Ks")
+		{
+			if (OutMtlInfos.empty())
+			{
+				continue;
+			}
+			FObjMaterialInfo& CurrentMaterial = OutMtlInfos.back();
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Ks.X);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Ks.Y);
+			FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), CurrentMaterial.Ks.Z);
+		}
+		else if (Prefix == "Ns")
+		{
+			if (!OutMtlInfos.empty())
+			{
+				FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), OutMtlInfos.back().Ns);
+			}
+		}
+		else if (Prefix == "Ni")
+		{
+			if (!OutMtlInfos.empty())
+			{
+				FStringParser::ParseFloat(FStringParser::GetNextWhitespaceToken(Line), OutMtlInfos.back().Ni);
+			}
+		}
+		else if (Prefix == "illum")
+		{
+			if (!OutMtlInfos.empty())
+			{
+				FStringParser::ParseInt(FStringParser::GetNextWhitespaceToken(Line), OutMtlInfos.back().illum);
+			}
+		}
+		else if (Prefix == "map_Kd" || Prefix == "map_Ks" || Prefix == "map_Bump" || Prefix == "map_bump" || Prefix == "bump" || Prefix == "norm")
 		{
 			if (OutMtlInfos.empty())
 			{
 				continue;
 			}
 
-			std::string TextureFileName;
-
-			// 토큰 단위로 옵션들을 건너뜁니다.
-			while (!Line.empty())
+			const FString TextureFileName = ExtractMtlTexturePath(Line);
+			if (!TextureFileName.empty())
 			{
-				// 파일명에 공백이 포함될 수 있으므로, 현재 Line의 상태를 백업해둡니다.
-				std::string_view LineBeforeToken = Line;
-				std::string_view Token = FStringParser::GetNextWhitespaceToken(Line);
-
-				if (Token.empty()) break;
-
-				// 토큰이 '-'로 시작하면 옵션 플래그인지 확인합니다.
-				if (Token[0] == '-')
+				const FString ResolvedPath = FPaths::ResolveAssetPath(MtlFilePath, TextureFileName);
+				if (Prefix == "map_Kd")
 				{
-					int32 ArgsToSkip = 0;
-
-					// 1. 3개의 인자를 받는 옵션 (Vector)
-					if (Token == "-s" || Token == "-o" || Token == "-t")
-					{
-						ArgsToSkip = 3;
-					}
-					// 2. 2개의 인자를 받는 옵션
-					else if (Token == "-mm")
-					{
-						ArgsToSkip = 2;
-					}
-					// 3. 1개의 인자를 받는 옵션 (Float, String, Bool)
-					else if (Token == "-bm" || Token == "-boost" || Token == "-texres" ||
-							 Token == "-blendu" || Token == "-blendv" || Token == "-clamp" ||
-							 Token == "-cc" || Token == "-imfchan")
-					{
-						ArgsToSkip = 1;
-					}
-
-					// 파악된 옵션의 인자 개수만큼 다음 토큰들을 무시합니다.
-					for (int32 i = 0; i < ArgsToSkip; ++i)
-					{
-						FStringParser::GetNextWhitespaceToken(Line);
-					}
+					OutMtlInfos.back().map_Kd = ResolvedPath;
+				}
+				else if (Prefix == "map_Ks")
+				{
+					OutMtlInfos.back().map_Ks = ResolvedPath;
 				}
 				else
 				{
-					// '-'로 시작하지 않는 첫 번째 토큰을 만났다면, 이것이 파일명의 시작입니다!
-					// 파일명 내부에 띄어쓰기가 있을 수 있으므로 토큰을 뽑기 전의 전체 라인을 가져옵니다.
-					FStringParser::TrimLeft(LineBeforeToken);
-					TextureFileName = FString(LineBeforeToken);
-					break;
+					OutMtlInfos.back().map_Bump = ResolvedPath;
 				}
-			}
-
-			// 문자열 끝에 남아있을지 모르는 쓸데없는 공백이나 탭을 정리합니다. (RTrim)
-			size_t LastNonSpace = TextureFileName.find_last_not_of(" \t");
-			if (LastNonSpace != FString::npos)
-			{
-				TextureFileName.erase(LastNonSpace + 1);
-			}
-
-			// 최종적으로 추출된 파일명 할당
-			if (!TextureFileName.empty())
-			{
-				OutMtlInfos.back().map_Kd = FPaths::ResolveAssetPath(MtlFilePath, TextureFileName);
 			}
 		}
 	}
@@ -455,7 +503,11 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 	json::JSON JsonData;
 	JsonData["PathFileName"] = JsonPath;
+	JsonData["ShaderPath"] = "Shaders/Materials/StaticMeshShader.hlsl";
 	JsonData["RenderPass"] = "Opaque";
+	JsonData["BlendState"] = "Opaque";
+	JsonData["DepthStencilState"] = "Default";
+	JsonData["RasterizerState"] = "SolidBackCull";
 
 	if (!MtlInfo->map_Kd.empty())
 	{
@@ -472,6 +524,16 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 		JsonData["Parameters"]["SectionColor"][1] = MtlInfo->Kd.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MtlInfo->Kd.Z;
 		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+
+	if (!MtlInfo->map_Bump.empty())
+	{
+		JsonData["Textures"]["NormalTexture"] = MtlInfo->map_Bump;
+	}
+
+	if (!MtlInfo->map_Ks.empty())
+	{
+		JsonData["Textures"]["SpecularTexture"] = MtlInfo->map_Ks;
 	}
 
 	JsonData["Parameters"]["SpecularPower"] = (MtlInfo->Ns > 0.0f) ? MtlInfo->Ns : 32.0f;

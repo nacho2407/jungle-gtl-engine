@@ -54,6 +54,7 @@ void FDecalPass::PrepareInputs(FRenderPipelineContext& Context)
     {
         Context.StateCache->DiffuseSRV = nullptr;
         Context.StateCache->NormalSRV = nullptr;
+        Context.StateCache->SpecularSRV = nullptr;
         Context.StateCache->bForceAll = true;
     }
 }

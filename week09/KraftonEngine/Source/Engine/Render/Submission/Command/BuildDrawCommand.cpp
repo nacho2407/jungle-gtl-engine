@@ -115,6 +115,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
     }
 
     auto AddSection = [&](uint32 FirstIndex, uint32 IndexCount, ID3D11ShaderResourceView* BaseSRV, ID3D11ShaderResourceView* InNormalSRV,
+                          ID3D11ShaderResourceView* InSpecularSRV,
                           FConstantBuffer* CB0, FConstantBuffer* CB1,
                           EBlendState SectionBlend, EDepthStencilState SectionDepthStencil, ERasterizerState SectionRasterizer)
     {
@@ -192,12 +193,14 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
         Cmd.LocalLightSRV = (bIsMaskLikePass || !Context.Resources) ? nullptr : Context.Resources->LocalLightSRV;
         Cmd.DiffuseSRV = bIsMaskLikePass ? nullptr : BaseSRV;
         Cmd.NormalSRV = bIsMaskLikePass ? nullptr : InNormalSRV;
+        Cmd.SpecularSRV = bIsMaskLikePass ? nullptr : InSpecularSRV;
         Cmd.Pass = Pass;
         const uintptr_t MaterialHash =
             (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[0]) >> 4) ^
             (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[1]) >> 9) ^
             (reinterpret_cast<uintptr_t>(Cmd.DiffuseSRV) >> 14) ^
-            (reinterpret_cast<uintptr_t>(Cmd.NormalSRV) >> 19);
+            (reinterpret_cast<uintptr_t>(Cmd.NormalSRV) >> 19) ^
+            (reinterpret_cast<uintptr_t>(Cmd.SpecularSRV) >> 24);
         Cmd.SortKey = FDrawCommand::BuildSortKey(
             Pass,
             Cmd.Shader,
@@ -215,6 +218,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
                 S.IndexCount,
                 S.DiffuseSRV,
                 S.NormalSRV,
+                S.SpecularSRV,
                 S.MaterialCB[0],
                 S.MaterialCB[1],
                 S.Blend,
@@ -229,6 +233,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             Proxy.MeshBuffer->GetIndexBuffer().GetIndexCount(),
             Proxy.DiffuseSRV,
             Proxy.NormalSRV,
+            Proxy.SpecularSRV,
             Proxy.MaterialCB[0],
             Proxy.MaterialCB[1],
             Proxy.Blend,
