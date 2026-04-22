@@ -28,6 +28,7 @@ namespace Key
 	constexpr const char* bSceneBVH = "bSceneBVH";
 	constexpr const char* bSceneOctree = "bSceneOctree";
 	constexpr const char* bWorldBound = "bWorldBound";
+	constexpr const char* bLightDebugLines = "bLightDebugLines";
 	constexpr const char* bFog = "bFog";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
@@ -106,6 +107,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::bSceneBVH] = Opts.ShowFlags.bSceneBVH;
 		SlotObj[Key::bSceneOctree] = Opts.ShowFlags.bSceneOctree;
 		SlotObj[Key::bWorldBound] = Opts.ShowFlags.bWorldBound;
+		SlotObj[Key::bLightDebugLines] = Opts.ShowFlags.bLightDebugLines;
 		SlotObj[Key::bFog] = Opts.ShowFlags.bFog;
 		SlotObj[Key::GridSpacing] = Opts.GridSpacing;
 		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
@@ -245,6 +247,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.ShowFlags.bSceneOctree = S[Key::bSceneOctree].ToBool();
 				if (S.hasKey(Key::bWorldBound))
 					Opts.ShowFlags.bWorldBound = S[Key::bWorldBound].ToBool();
+				if (S.hasKey(Key::bLightDebugLines))
+					Opts.ShowFlags.bLightDebugLines = S[Key::bLightDebugLines].ToBool();
 				if (S.hasKey(Key::bFog))
 					Opts.ShowFlags.bFog = S[Key::bFog].ToBool();
 				if (S.hasKey(Key::GridSpacing))
