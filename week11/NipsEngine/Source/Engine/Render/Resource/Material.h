@@ -184,7 +184,26 @@ public:
 	FString& GetFilePathRef() override { return FilePath; }
 
 	bool HasDiffuseMap() const override { return Parent ? Parent->HasDiffuseMap() : false; }
-	bool HasNormalMap() const override { return Parent ? Parent->HasNormalMap() : false; }
+	bool HasNormalMap() const override
+	{
+		if (auto It = OverridedParams.find("bHasBumpMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+			{
+				return std::get<bool>(It->second.Value);
+			}
+		}
+
+		if (auto It = OverridedParams.find("BumpMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+			{
+				return std::get<UTexture*>(It->second.Value) != nullptr;
+			}
+		}
+
+		return Parent ? Parent->HasNormalMap() : false;
+	}
 	bool HasSpecularMap() const override { return Parent ? Parent->HasSpecularMap() : false; }
 	bool HasEmissiveMap() const override { return Parent ? Parent->HasEmissiveMap() : false; }
 	bool HasAlphaMask() const override { return Parent ? Parent->HasAlphaMask() : false; }
