@@ -23,6 +23,14 @@ void FScene::RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList
 	}
 
 	const uint32 Index = Proxy->SelectedListIndex;
+
+	// 리스트가 비었거나 인덱스가 범위를 초과하면 인덱스만 정리하고 리턴
+	if (SelectedList.empty() || Index >= static_cast<uint32>(SelectedList.size()))
+	{
+		Proxy->SelectedListIndex = UINT32_MAX;
+		return;
+	}
+
 	const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
 	if (Index != LastIndex)
 	{

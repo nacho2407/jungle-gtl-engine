@@ -8,7 +8,7 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/DollByeok.json"
+            "Path" : "Asset/Materials/DollByeok.mat"
           },
           "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 19.984787],
@@ -40,7 +40,7 @@
           "Height" : 1.000000,
           "Location" : [0.000000, 0.000000, 0.000000],
           "Material" : {
-            "Path" : "Asset/Materials/DirectionalLight.json"
+            "Path" : "Asset/Materials/DirectionalLight.mat"
           },
           "Rotation" : [45.000000, 45.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],

@@ -135,6 +135,8 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 					Actor->GetWorld()->DestroyActor(Actor);
 				}
 			}
+			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
+			EditorEngine->InvalidateOcclusionResults();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
@@ -158,11 +160,15 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ImGui::SameLine();
 		if (ImGui::Button("Remove"))
 		{
-			if (PrimaryActor->GetWorld())
-			{
-				PrimaryActor->GetWorld()->DestroyActor(PrimaryActor);
-			}
+			// 선택 해제를 먼저 수행 (dangling pointer로 Proxy 접근 방지)
+			AActor* ToDelete = PrimaryActor;
 			Selection.ClearSelection();
+			if (ToDelete && ToDelete->GetWorld())
+			{
+				ToDelete->GetWorld()->DestroyActor(ToDelete);
+			}
+			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
+			EditorEngine->InvalidateOcclusionResults();
 			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
@@ -773,7 +779,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		ImGui::BeginGroup();
 		ImGui::SetNextItemWidth(-1);
 
-		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
+		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : Slot->Path;
 		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
 		{
 			// "None" 선택지 기본 제공
@@ -798,6 +804,19 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				if (bSelected) ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
+			{
+				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+				Slot->Path = FPaths::ToUtf8(
+					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+				);
+				bChanged = true;
+			}
+			ImGui::EndDragDropTarget();
 		}
 
 		ImGui::EndGroup();

@@ -19,8 +19,10 @@ public:
 	void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
 	void Render(float DeltaTime) override;
 	void Refresh();
+	void SaveToSettings() const;
 
 private:
+	void LoadFromSettings();
 	void RefreshContent();
 	void DrawDirNode(FDirNode InNode);
 	void DrawContents();
@@ -32,6 +34,6 @@ private:
 	ContentBrowserContext BrowserContext;
 
 	FDirNode RootNode;
-	TArray<std::unique_ptr<ContentBrowserElement>> CachedBrowserElements;
+	TArray<std::shared_ptr<ContentBrowserElement>> CachedBrowserElements;
 	TMap<FString, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> ICons;
 };

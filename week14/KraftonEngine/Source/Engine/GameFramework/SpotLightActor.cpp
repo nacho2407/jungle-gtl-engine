@@ -11,7 +11,7 @@ void ASpotLightActor::InitDefaultComponents()
 	BillboardComponent->SetEditorOnly(true);
 	SetRootComponent(BillboardComponent);
 
-	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/SpotLight.json");
+	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/SpotLight.mat");
 	BillboardComponent->SetMaterial(LightMaterial);
 
 	LightComponent = AddComponent<USpotLightComponent>();

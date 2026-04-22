@@ -78,6 +78,8 @@ private:
 	bool bDataReady          = false;
 	bool bPendingReadback    = false;
 	bool bCurrentFrameActive = false;
+	bool bDispatchedThisFrame = false;
+	bool bDispatchedLastFrame = false;
 };
 
 // ============================================================

@@ -15,43 +15,43 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/Eyes.json"
+            "Path" : "Asset/Materials/Eyes.mat"
           },
           "Element 1" : {
-            "Path" : "Asset/Materials/EyeWhites.json"
+            "Path" : "Asset/Materials/EyeWhites.mat"
           },
           "Element 10" : {
-            "Path" : "Asset/Materials/Skirt.json"
+            "Path" : "Asset/Materials/Skirt.mat"
           },
           "Element 11" : {
-            "Path" : "Asset/Materials/Shoes.json"
+            "Path" : "Asset/Materials/Shoes.mat"
           },
           "Element 12" : {
-            "Path" : "Asset/Materials/Gloves.json"
+            "Path" : "Asset/Materials/Gloves.mat"
           },
           "Element 2" : {
-            "Path" : "Asset/Materials/Neck.json"
+            "Path" : "Asset/Materials/Neck.mat"
           },
           "Element 3" : {
-            "Path" : "Asset/Materials/Face.json"
+            "Path" : "Asset/Materials/Face.mat"
           },
           "Element 4" : {
-            "Path" : "Asset/Materials/Hair.json"
+            "Path" : "Asset/Materials/Hair.mat"
           },
           "Element 5" : {
-            "Path" : "Asset/Materials/Expression.json"
+            "Path" : "Asset/Materials/Expression.mat"
           },
           "Element 6" : {
-            "Path" : "Asset/Materials/Skin.json"
+            "Path" : "Asset/Materials/Skin.mat"
           },
           "Element 7" : {
-            "Path" : "Asset/Materials/Clothes.json"
+            "Path" : "Asset/Materials/Clothes.mat"
           },
           "Element 8" : {
-            "Path" : "Asset/Materials/Pants.json"
+            "Path" : "Asset/Materials/Pants.mat"
           },
           "Element 9" : {
-            "Path" : "Asset/Materials/BackAccessory.json"
+            "Path" : "Asset/Materials/BackAccessory.mat"
           },
           "Location" : [14.321032, 0.000000, -31.548086],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -74,7 +74,7 @@
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, -0.700000],
               "Material" : {
-                "Path" : "Asset/Materials/Lampshade.json"
+                "Path" : "Asset/Materials/Lampshade.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [3.000000, 3.000000, 3.000000],
@@ -93,7 +93,7 @@
               "FadeOutDuration" : 0.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
-                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+                "Path" : "Asset/Materials/FakeLight_LightArea.mat"
               },
               "Rotation" : [90.000000, 0.000000, 0.000000],
               "Scale" : [3.000000, 3.000000, 3.000000],
@@ -104,10 +104,10 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/clean_bulb_light_mat.002.json"
+            "Path" : "Asset/Materials/clean_bulb_light_mat.002.mat"
           },
           "Element 1" : {
-            "Path" : "Asset/Materials/clean_retro_light_mat.002.json"
+            "Path" : "Asset/Materials/clean_retro_light_mat.002.mat"
           },
           "Location" : [14.073861, 0.000000, -29.836563],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -133,7 +133,7 @@
               "FadeOutDuration" : 0.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
-                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+                "Path" : "Asset/Materials/FakeLight_LightArea.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [70.000000, 70.000000, 70.000000],
@@ -151,7 +151,7 @@
               "FadeOutDuration" : 0.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
-                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+                "Path" : "Asset/Materials/FakeLight_LightArea.mat"
               },
               "Rotation" : [90.000000, 0.000000, 0.000000],
               "Scale" : [10.000000, 10.000000, 10.000000],
@@ -169,7 +169,7 @@
               "FadeOutDuration" : 0.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
-                "Path" : "Asset/Materials/FakeLight_LightArea.json"
+                "Path" : "Asset/Materials/FakeLight_LightArea.mat"
               },
               "Rotation" : [0.000000, 90.000000, 0.000000],
               "Scale" : [10.000000, 10.000000, 10.000000],
@@ -180,7 +180,7 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/BasicShapeMaterial.json"
+            "Path" : "Asset/Materials/BasicShapeMaterial.mat"
           },
           "Location" : [-7.556620, -0.654142, -22.255745],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -199,103 +199,103 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Materials/verre-or.json"
+            "Path" : "Asset/Materials/verre-or.mat"
           },
           "Element 1" : {
-            "Path" : "Asset/Materials/chain.json"
+            "Path" : "Asset/Materials/chain.mat"
           },
           "Element 10" : {
-            "Path" : "Asset/Materials/estrade-centre.json"
+            "Path" : "Asset/Materials/estrade-centre.mat"
           },
           "Element 11" : {
-            "Path" : "Asset/Materials/vitrail-bas.json"
+            "Path" : "Asset/Materials/vitrail-bas.mat"
           },
           "Element 12" : {
-            "Path" : "Asset/Materials/vitrail-fond.005.json"
+            "Path" : "Asset/Materials/vitrail-fond.005.mat"
           },
           "Element 13" : {
-            "Path" : "Asset/Materials/vitrail-fond.004.json"
+            "Path" : "Asset/Materials/vitrail-fond.004.mat"
           },
           "Element 14" : {
-            "Path" : "Asset/Materials/vitrail-fond.003.json"
+            "Path" : "Asset/Materials/vitrail-fond.003.mat"
           },
           "Element 15" : {
-            "Path" : "Asset/Materials/vitrail-fond.002.json"
+            "Path" : "Asset/Materials/vitrail-fond.002.mat"
           },
           "Element 16" : {
-            "Path" : "Asset/Materials/vitrail-fond.001.json"
+            "Path" : "Asset/Materials/vitrail-fond.001.mat"
           },
           "Element 17" : {
-            "Path" : "Asset/Materials/vitrail-fond.json"
+            "Path" : "Asset/Materials/vitrail-fond.mat"
           },
           "Element 18" : {
-            "Path" : "Asset/Materials/vitrail-gauche.json"
+            "Path" : "Asset/Materials/vitrail-gauche.mat"
           },
           "Element 19" : {
-            "Path" : "Asset/Materials/vitrail-droite.json"
+            "Path" : "Asset/Materials/vitrail-droite.mat"
           },
           "Element 2" : {
-            "Path" : "Asset/Materials/pied-autel.json"
+            "Path" : "Asset/Materials/pied-autel.mat"
           },
           "Element 20" : {
-            "Path" : "Asset/Materials/debord-mur.json"
+            "Path" : "Asset/Materials/debord-mur.mat"
           },
           "Element 21" : {
-            "Path" : "Asset/Materials/mur-haut.json"
+            "Path" : "Asset/Materials/mur-haut.mat"
           },
           "Element 22" : {
-            "Path" : "Asset/Materials/arche.005.json"
+            "Path" : "Asset/Materials/arche.005.mat"
           },
           "Element 23" : {
-            "Path" : "Asset/Materials/arche.001.json"
+            "Path" : "Asset/Materials/arche.001.mat"
           },
           "Element 24" : {
-            "Path" : "Asset/Materials/sol.json"
+            "Path" : "Asset/Materials/sol.mat"
           },
           "Element 25" : {
-            "Path" : "Asset/Materials/mur-bas-ext.json"
+            "Path" : "Asset/Materials/mur-bas-ext.mat"
           },
           "Element 26" : {
-            "Path" : "Asset/Materials/colonne-ext.json"
+            "Path" : "Asset/Materials/colonne-ext.mat"
           },
           "Element 27" : {
-            "Path" : "Asset/Materials/arche.json"
+            "Path" : "Asset/Materials/arche.mat"
           },
           "Element 28" : {
-            "Path" : "Asset/Materials/colonne.json"
+            "Path" : "Asset/Materials/colonne.mat"
           },
           "Element 29" : {
-            "Path" : "Asset/Materials/mur-bas.json"
+            "Path" : "Asset/Materials/mur-bas.mat"
           },
           "Element 3" : {
-            "Path" : "Asset/Materials/chain.json"
+            "Path" : "Asset/Materials/chain.mat"
           },
           "Element 30" : {
-            "Path" : "Asset/Materials/pied-colonne.json"
+            "Path" : "Asset/Materials/pied-colonne.mat"
           },
           "Element 31" : {
-            "Path" : "Asset/Materials/banc.json"
+            "Path" : "Asset/Materials/banc.mat"
           },
           "Element 32" : {
-            "Path" : "Asset/Materials/arche.002.json"
+            "Path" : "Asset/Materials/arche.002.mat"
           },
           "Element 4" : {
-            "Path" : "Asset/Materials/ampoule.json"
+            "Path" : "Asset/Materials/ampoule.mat"
           },
           "Element 5" : {
-            "Path" : "Asset/Materials/mur-bas.002.json"
+            "Path" : "Asset/Materials/mur-bas.002.mat"
           },
           "Element 6" : {
-            "Path" : "Asset/Materials/Doors_Old_Wooden_1.json"
+            "Path" : "Asset/Materials/Doors_Old_Wooden_1.mat"
           },
           "Element 7" : {
-            "Path" : "Asset/Materials/autel.json"
+            "Path" : "Asset/Materials/autel.mat"
           },
           "Element 8" : {
-            "Path" : "Asset/Materials/drap.json"
+            "Path" : "Asset/Materials/drap.mat"
           },
           "Element 9" : {
-            "Path" : "Asset/Materials/estrade-centre.json"
+            "Path" : "Asset/Materials/estrade-centre.mat"
           },
           "Location" : [1.749607, 0.000000, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -343,7 +343,7 @@
           "FadeOutDuration" : 0.000000,
           "Location" : [0.324429, -6.000000, -34.568130],
           "Material" : {
-            "Path" : "Asset/Materials/StainedGlass02Decal.json"
+            "Path" : "Asset/Materials/StainedGlass02Decal.mat"
           },
           "Rotation" : [90.000000, 90.000000, -6.100006],
           "Scale" : [24.000000, 7.900000, 21.400000],
@@ -390,7 +390,7 @@
           "FadeOutDuration" : 0.000000,
           "Location" : [-15.616149, -6.000000, -34.568130],
           "Material" : {
-            "Path" : "Asset/Materials/StainedGlass02Decal.json"
+            "Path" : "Asset/Materials/StainedGlass02Decal.mat"
           },
           "Rotation" : [90.000000, 90.000793, -6.100006],
           "Scale" : [24.000000, 7.900000, 21.400000],
@@ -437,7 +437,7 @@
           "FadeOutDuration" : 0.000000,
           "Location" : [-31.718283, -6.000000, -34.568130],
           "Material" : {
-            "Path" : "Asset/Materials/StainedGlass02Decal.json"
+            "Path" : "Asset/Materials/StainedGlass02Decal.mat"
           },
           "Rotation" : [90.000000, 90.000793, -6.100006],
           "Scale" : [24.000000, 7.900000, 21.400000],
@@ -484,7 +484,7 @@
           "FadeOutDuration" : 0.000000,
           "Location" : [-47.411156, -6.000000, -34.568130],
           "Material" : {
-            "Path" : "Asset/Materials/StainedGlass02Decal.json"
+            "Path" : "Asset/Materials/StainedGlass02Decal.mat"
           },
           "Rotation" : [90.000000, 90.000793, -6.100006],
           "Scale" : [24.000000, 7.900000, 21.400000],
@@ -532,7 +532,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -575,7 +575,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -618,7 +618,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -661,7 +661,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -704,7 +704,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -747,7 +747,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -790,7 +790,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
@@ -833,7 +833,7 @@
               "Height" : 5.800000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Material" : {
-                "Path" : "Asset/Materials/AdditiveBillboardTyndall.json"
+                "Path" : "Asset/Materials/AdditiveBillboardTyndall.mat"
               },
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],

@@ -4,6 +4,7 @@
 #include "Core/Singleton.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
+#include <wrl/client.h>
 
 // 리소스를 관리하는 싱글턴.
 // Resource.ini에서 리소스 경로/그리드 정보를 읽고, GPU 리소스를 로드/캐싱합니다.
@@ -19,6 +20,7 @@ public:
 	// Resource.ini에서 경로/그리드 정보 로드 후 GPU 리소스 생성
 	void LoadFromFile(const FString& Path, ID3D11Device* InDevice);
 
+	void LoadFromDirectory(const FString& Path, ID3D11Device* InDevice);
 	// GPU 리소스 로드 (Device 필요)
 	bool LoadGPUResources(ID3D11Device* Device);
 
@@ -49,6 +51,8 @@ public:
 	// --- Texture names ---
 	TArray<FString> GetTextureNames() const;
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FindLoadedTexture(FString InPath);
+
 private:
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
@@ -56,4 +60,5 @@ private:
 	TMap<FString, FFontResource>     FontResources;
 	TMap<FString, FParticleResource> ParticleResources;
 	TMap<FString, FTextureResource>  TextureResources;
+	TMap<FString, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> LoadedResource;
 };
