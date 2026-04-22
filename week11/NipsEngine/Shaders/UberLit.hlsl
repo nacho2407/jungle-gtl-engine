@@ -82,7 +82,7 @@ PSInput mainVS(VSInput input)
     output.UV = input.UV + ScrollUV;
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
     
-#if HAS_NORMAL_MAP
+#if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
 #endif
     
@@ -155,7 +155,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
 
     float3 N = normalize(input.WorldNormal);
-#if HAS_NORMAL_MAP
+#if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     N = PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV);
 #endif
     
@@ -270,9 +270,9 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
     FinalColor = (DecalColor.a > 0.001) ? DecalColor : FinalColor;
     output.Color = float4(FinalColor.xyz * accumulatedLight, 1.0f);
-    output.Normal = float4(N * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
-    
+    output.Normal = float4(N * 0.5f + 0.5f, 1.f);
+
     if (bIsWireframe > 0.5f)
     {
         output.Color = float4(WireframeRGB, 1.f);
