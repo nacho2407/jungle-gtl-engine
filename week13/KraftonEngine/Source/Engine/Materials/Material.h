@@ -108,6 +108,9 @@ public:
 		TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
 	const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
+
+	const TMap<FString, FMaterialParameterInfo*> GetParameterInfo() const { return Template->GetParameterInfo(); }
+
 	bool SetScalarParameter(const FString& ParamName, float Value);
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value);
 	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value);
