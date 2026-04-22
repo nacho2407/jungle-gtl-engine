@@ -1,8 +1,9 @@
 {
-  "PathFileName": "Asset/Editor/Icons/Materials/PointLightIcon.json",
-  "ShaderPath": "Shaders/Editor/ShaderBillboard.hlsl",
-  "RenderPass": "AlphaBlend",
-  "Textures": {
-    "DiffuseTexture": "Asset/Editor/Icons/PointLight_64x.png"
-  }
+    "PathFileName":  "Asset/Editor/Icons/Materials/PointLightIcon.json",
+    "Textures":  {
+                     "DiffuseTexture":  "Asset/Editor/Icons/PointLight_64x.png"
+                 },
+    "BlendState":  "AlphaBlend",
+    "DepthStencilState":  "NoDepth",
+    "RasterizerState":  "SolidNoCull"
 }

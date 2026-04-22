@@ -1,4 +1,4 @@
-﻿#include "PendulumMovementComponent.h"
+#include "PendulumMovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "Math/MathUtils.h"

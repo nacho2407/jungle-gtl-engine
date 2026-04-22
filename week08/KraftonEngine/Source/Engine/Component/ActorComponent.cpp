@@ -1,4 +1,4 @@
-﻿#include "ActorComponent.h"
+#include "ActorComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"

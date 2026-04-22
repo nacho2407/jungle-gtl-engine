@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
 #include "PrimitiveComponent.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"

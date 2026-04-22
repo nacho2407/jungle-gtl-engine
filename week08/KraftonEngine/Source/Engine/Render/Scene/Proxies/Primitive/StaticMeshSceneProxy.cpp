@@ -1,5 +1,5 @@
-﻿#include "Render/Passes/Base/PipelineStateTypes.h"
-#include "Render/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
@@ -169,7 +169,8 @@ void FStaticMeshSceneProxy::UpdateMaterial()
 void FStaticMeshSceneProxy::UpdateMesh()
 {
     MeshBuffer = Owner->GetMeshBuffer();
-    Shader = FShaderManager::Get().GetShader(EShaderType::StaticMesh);
+    // Static mesh shading is selected by the active render pass/view mode registry.
+    Shader = nullptr;
     Pass = ERenderPass::Opaque;
 
     RebuildSectionRenderData();

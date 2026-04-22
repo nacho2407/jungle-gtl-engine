@@ -1,4 +1,4 @@
-﻿#include "AmbientLightComponent.h"
+#include "AmbientLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Light/AmbientLightSceneProxy.h"

@@ -1,0 +1,92 @@
+#pragma once
+
+#include "Core/CoreTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+
+/*
+    ?�더 ?�태 enum??문자?�과 ?�호 변?�할 ???�용?�는 공용 ?�이블입?�다.
+    JSON, ?�버�?출력, ?�정 직렬?�에??같�? 규칙???�도�???곳으�?모았?�니??
+*/
+namespace RenderStateStrings
+{
+struct FEnumEntry
+{
+    const char* Str;
+    int Value;
+};
+
+inline constexpr FEnumEntry BlendStateMap[] = {
+    { "Opaque", (int)EBlendState::Opaque },
+    { "AlphaBlend", (int)EBlendState::AlphaBlend },
+    { "Additive", (int)EBlendState::Additive },
+    { "NoColor", (int)EBlendState::NoColor },
+};
+
+inline constexpr FEnumEntry DepthStencilStateMap[] = {
+    { "Default", (int)EDepthStencilState::Default },
+    { "DepthReadOnly", (int)EDepthStencilState::DepthReadOnly },
+    { "StencilWrite", (int)EDepthStencilState::StencilWrite },
+    { "StencilWriteOnlyEqual", (int)EDepthStencilState::StencilWriteOnlyEqual },
+    { "NoDepth", (int)EDepthStencilState::NoDepth },
+    { "GizmoInside", (int)EDepthStencilState::GizmoInside },
+    { "GizmoOutside", (int)EDepthStencilState::GizmoOutside },
+};
+
+inline constexpr FEnumEntry RasterizerStateMap[] = {
+    { "SolidBackCull", (int)ERasterizerState::SolidBackCull },
+    { "SolidFrontCull", (int)ERasterizerState::SolidFrontCull },
+    { "SolidNoCull", (int)ERasterizerState::SolidNoCull },
+    { "WireFrame", (int)ERasterizerState::WireFrame },
+};
+
+inline constexpr FEnumEntry RenderPassMap[] = {
+    { "Grid", (int)ERenderPass::Grid },
+    { "DepthPre", (int)ERenderPass::DepthPre },
+    { "Opaque", (int)ERenderPass::Opaque },
+    { "Decal", (int)ERenderPass::Decal },
+    { "Lighting", (int)ERenderPass::Lighting },
+    { "AdditiveDecal", (int)ERenderPass::AdditiveDecal },
+    { "AlphaBlend", (int)ERenderPass::AlphaBlend },
+    { "SelectionMask", (int)ERenderPass::SelectionMask },
+    { "EditorLines", (int)ERenderPass::EditorLines },
+    { "PostProcess", (int)ERenderPass::PostProcess },
+    { "FXAA", (int)ERenderPass::FXAA },
+    { "GizmoOuter", (int)ERenderPass::GizmoOuter },
+    { "GizmoInner", (int)ERenderPass::GizmoInner },
+    { "OverlayBillboard", (int)ERenderPass::OverlayBillboard },
+    { "OverlayTextWorld", (int)ERenderPass::OverlayTextWorld },
+    { "OverlayFont", (int)ERenderPass::OverlayFont },
+};
+
+static_assert(ARRAY_SIZE(BlendStateMap) == (int)EBlendState::MAX, "BlendStateMap must match EBlendState entries");
+static_assert(ARRAY_SIZE(DepthStencilStateMap) == (int)EDepthStencilState::MAX, "DepthStencilStateMap must match EDepthStencilState entries");
+static_assert(ARRAY_SIZE(RasterizerStateMap) == (int)ERasterizerState::MAX, "RasterizerStateMap must match ERasterizerState entries");
+static_assert(ARRAY_SIZE(RenderPassMap) == (int)ERenderPass::MAX, "RenderPassMap must match ERenderPass entries");
+
+template <typename EnumT, size_t N>
+inline EnumT FromString(const FEnumEntry (&Map)[N], const FString& Str, EnumT Default)
+{
+    for (size_t i = 0; i < N; ++i)
+    {
+        if (Str == Map[i].Str)
+        {
+            return static_cast<EnumT>(Map[i].Value);
+        }
+    }
+    return Default;
+}
+
+template <typename EnumT, size_t N>
+inline const char* ToString(const FEnumEntry (&Map)[N], EnumT Value)
+{
+    for (size_t i = 0; i < N; ++i)
+    {
+        if (static_cast<EnumT>(Map[i].Value) == Value)
+        {
+            return Map[i].Str;
+        }
+    }
+    return "";
+}
+} // namespace RenderStateStrings

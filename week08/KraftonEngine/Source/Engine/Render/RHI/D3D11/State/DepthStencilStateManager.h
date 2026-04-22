@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Passes/Base/PipelineStateTypes.h"
+#include "Render/Execute/Context/PipelineStateTypes.h"
 
 class FDepthStencilStateManager
 {
@@ -20,6 +20,6 @@ private:
     ID3D11DepthStencilState* GizmoInside = nullptr;
     ID3D11DepthStencilState* GizmoOutside = nullptr;
 
-    // 무효 값으로 초기화 — 첫 Set() 호출이 반드시 GPU에 도달하도록 보장
+    // 무효 값으�?초기????�?Set() ?�출??반드??GPU???�달?�도�?보장
     EDepthStencilState CurrentState = static_cast<EDepthStencilState>(-1);
 };

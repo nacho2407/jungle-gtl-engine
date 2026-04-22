@@ -2,7 +2,7 @@
 #define VERTEX_LAYOUTS_HLSL
 
 // ============================================================
-// VS Input Layouts — C++ VertexTypes.h 와 1:1 대응
+// VS Input Layouts ??C++ VertexTypes.h ?� 1:1 ?�??
 // ============================================================
 
 // FVertex (Position + Color)
@@ -45,7 +45,7 @@ struct VS_Input_P
 };
 
 // ============================================================
-// PS Input (VS -> PS 전달 구조체)
+// PS Input (VS -> PS ?�달 구조�?
 // ============================================================
 
 // SV_POSITION + Color
@@ -113,10 +113,10 @@ struct PS_Input_ColorWorld
 };
 
 // ============================================================
-// PS Output (픽셀 쉐이더 출력 구조체)
+// PS Output (?��? ?�이??출력 구조�?
 // ============================================================
 
-// G-Buffer Output (BaseDraw Pass)
+// G-Buffer Output (Opaque Pass)
 struct PS_Output_GBuffer
 {
     float4 BaseColor : SV_Target0;

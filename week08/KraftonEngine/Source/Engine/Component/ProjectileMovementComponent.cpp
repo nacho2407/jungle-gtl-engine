@@ -1,4 +1,4 @@
-﻿#include "ProjectileMovementComponent.h"
+#include "ProjectileMovementComponent.h"
 
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"

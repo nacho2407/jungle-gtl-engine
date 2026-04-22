@@ -1,4 +1,4 @@
-﻿#include "Object.h"
+#include "Object.h"
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
 #include "Serialization/MemoryArchive.h"

@@ -1,4 +1,4 @@
-﻿// #include "ObjViewer/ObjViewerPanel.h"
+// #include "ObjViewer/ObjViewerPanel.h"
 //
 // #include "ObjViewer/ObjViewerEngine.h"
 // #include "ObjViewer/ObjViewerViewportClient.h"

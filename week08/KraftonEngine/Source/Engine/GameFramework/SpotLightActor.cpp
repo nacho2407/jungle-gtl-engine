@@ -1,4 +1,4 @@
-﻿#include "SpotLightActor.h"
+#include "SpotLightActor.h"
 #include "Component/SpotLightComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"

@@ -1,4 +1,4 @@
-﻿#include "Texture/Texture2D.h"
+#include "Texture/Texture2D.h"
 #include "Object/ObjectFactory.h"
 #include "Editor/UI/EditorConsolePanel.h"
 #include "Platform/Paths.h"

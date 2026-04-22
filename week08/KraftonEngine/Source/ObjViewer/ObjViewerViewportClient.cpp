@@ -1,4 +1,4 @@
-﻿//#include "ObjViewer/ObjViewerViewportClient.h"
+//#include "ObjViewer/ObjViewerViewportClient.h"
 //
 //#include "Engine/Input/InputSystem.h"
 //#include "Engine/Runtime/WindowsWindow.h"

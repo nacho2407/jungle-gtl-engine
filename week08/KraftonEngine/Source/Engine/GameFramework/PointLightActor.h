@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "GameFramework/AActor.h"
 #include "Platform/Paths.h"

@@ -1,4 +1,4 @@
-﻿#include "Render/Resources/Shaders/ShaderManager.h"
+#include "Render/Resources/Shaders/ShaderManager.h"
 
 #include "Platform/Paths.h"
 
@@ -197,8 +197,6 @@ FString FShaderManager::GetBuiltInShaderPath(EShaderType InType) const
         return "Shaders/Editor/Gizmo.hlsl";
     case EShaderType::Editor:
         return "Shaders/Editor/Editor.hlsl";
-    case EShaderType::StaticMesh:
-        return "Shaders/Materials/StaticMeshShader.hlsl";
     case EShaderType::Decal:
         return "Shaders/Passes/Scene/DecalPass.hlsl";
     case EShaderType::OutlinePostProcess:

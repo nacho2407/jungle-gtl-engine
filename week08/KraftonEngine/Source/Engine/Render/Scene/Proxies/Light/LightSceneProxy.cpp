@@ -1,4 +1,4 @@
-﻿#include "Render/Scene/Proxies/Light/LightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 #include "Component/LightComponent.h"
 
 FLightSceneProxy::FLightSceneProxy(ULightComponent* InComponent)

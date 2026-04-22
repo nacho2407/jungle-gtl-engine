@@ -2,50 +2,48 @@
 
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
-
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 
+#include <memory>
 
 class FShader;
 
-// 파라미터 이름 → 상수 버퍼 내 위치 매핑
+// 머티리얼 파라미터가 어느 cbuffer/offset에 들어가는지 설명하는 레이아웃 항목입니다.
 struct FMaterialParameterInfo
 {
-    FString BufferName; // ConstantBuffers 이름 "PerMaterial""PerFrame"
-    uint32 SlotIndex;   // ConstantBuffers 슬롯 인덱스
-
-    uint32 Offset; // 버퍼 내 바이트 오프셋
-    uint32 Size;   // 바이트 크기
-
-    uint32 BufferSize; // 이 변수가 속한 상수 버퍼의 전체 크기 (16의 배수)
+    FString BufferName;
+    uint32 SlotIndex = 0;
+    uint32 Offset = 0;
+    uint32 Size = 0;
+    uint32 BufferSize = 0;
 };
 
-
-// 셰이더 + 레이아웃 (불변, 공유)
-// Template은 셰이더 파일이 있으면 언제든 재생성 가능
+// 머티리얼은 셰이더 파일을 직접 고르지 않습니다.
+// 이 템플릿은 렌더러가 고정한 표준 surface cbuffer 레이아웃만 공유합니다.
 class FMaterialTemplate
 {
 private:
-    uint32 MaterialTemplateID;                              // 고유 ID
-    FShader* Shader;                                        // 어떤 셰이더를 사용하는지
-    TMap<FString, FMaterialParameterInfo*> ParameterLayout; // 리플렉션 결과 : 쉐이더 constant buffer 레이아웃 정보
+    uint32 MaterialTemplateID = 0;
+    FShader* Shader = nullptr;
+    TMap<FString, FMaterialParameterInfo*> ParameterLayout;
+    TArray<std::unique_ptr<FMaterialParameterInfo>> OwnedParameterLayout;
 
 public:
     const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
     void Create(FShader* InShader);
+    void CreateSurfaceMaterialLayout();
 
     FShader* GetShader() const { return Shader; }
     bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
 };
 
-
-// 실제 데이터가 올라가는 버퍼
+// CPU/GPU 양쪽에 존재하는 실제 머티리얼 cbuffer입니다.
 struct FMaterialConstantBuffer
 {
-    uint8* CPUData; // CPU 메모리의 실제 값
+    uint8* CPUData = nullptr;
     FConstantBuffer GPUBuffer;
     uint32 Size = 0;
-    UINT SlotIndex = 0; // cbuffer 바인딩 슬롯 (b0, b1 등)
+    UINT SlotIndex = 0;
     bool bDirty = false;
 
     FMaterialConstantBuffer() = default;

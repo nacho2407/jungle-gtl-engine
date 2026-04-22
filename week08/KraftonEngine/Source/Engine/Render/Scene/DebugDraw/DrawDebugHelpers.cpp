@@ -1,4 +1,4 @@
-﻿#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
+#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
 
 #if defined(_DEBUG)
 

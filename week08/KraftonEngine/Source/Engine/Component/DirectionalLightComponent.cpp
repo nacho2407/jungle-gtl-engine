@@ -1,4 +1,4 @@
-﻿#include "DirectionalLightComponent.h"
+#include "DirectionalLightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Scene/Scene.h"
 #include "Serialization/Archive.h"

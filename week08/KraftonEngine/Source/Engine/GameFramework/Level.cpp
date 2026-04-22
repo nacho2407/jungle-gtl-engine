@@ -1,4 +1,4 @@
-﻿#include "GameFramework/Level.h"
+#include "GameFramework/Level.h"
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>
 

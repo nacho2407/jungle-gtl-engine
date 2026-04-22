@@ -1,4 +1,4 @@
-﻿#include "Render/Scene/Proxies/Light/AmbientLightSceneProxy.h"
+#include "Render/Scene/Proxies/Light/AmbientLightSceneProxy.h"
 #include "Component/AmbientLightComponent.h"
 
 FAmbientLightSceneProxy::FAmbientLightSceneProxy(UAmbientLightComponent* InComponent)

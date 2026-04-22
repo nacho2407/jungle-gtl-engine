@@ -1,4 +1,4 @@
-﻿#include "LightComponent.h"
+#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Scene.h"

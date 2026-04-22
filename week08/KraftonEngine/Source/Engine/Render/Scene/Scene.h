@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/Passes/Scene/FogParams.h"
+#include "Render/Execute/Passes/Scene/FogParams.h"
 #include "Render/Scene/DebugDraw/DebugDrawQueue.h"
 #include "Render/Scene/Proxies/Effects/FogSceneProxy.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
@@ -13,8 +13,8 @@ class ULightComponent;
 class UHeightFogComponent;
 
 /*
-    FScene는 렌더용 프록시 registry를 관리하는 컨테이너입니다.
-    Primitive / Light / Effect 프록시의 등록, dirty 추적, 선택 상태, free slot 재사용을 담당합니다.
+    FScene�� ������ ���Ͻ� registry�� �����ϴ� �����̳��Դϴ�.
+    Primitive / Light / Effect ���Ͻ��� ���, dirty ����, ���� ����, free slot ������ ����մϴ�.
 */
 class FScene
 {
