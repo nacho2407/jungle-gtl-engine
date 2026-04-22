@@ -25,6 +25,12 @@ cbuffer LightCullingParams : register(b2)
     float NumLights;
 };
 
+struct FLocalBlinnPhongTerm
+{
+    float3 Diffuse;
+    float3 Specular;
+};
+
 float3 GetAmbientLightColor()
 {
     return Ambient.Color * Ambient.Intensity;
@@ -152,13 +158,23 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
     return float4(BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular * 0.2, BaseColor.a);
 }
 
-float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition, float3 V, float Shininess, float SpecularStrength)
+FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
+    FLocalLightInfo LocalLight,
+    float3 N,
+    float3 WorldPosition,
+    float3 V,
+    float Shininess,
+    float SpecularStrength)
 {
+    FLocalBlinnPhongTerm Out;
+    Out.Diffuse = 0;
+    Out.Specular = 0;
+
     float3 LightVector = LocalLight.Position - WorldPosition;
     float Distance = length(LightVector);
 
     if (Distance >= LocalLight.AttenuationRadius || LocalLight.AttenuationRadius <= 0.001f)
-        return 0;
+        return Out;
 
     float3 L = LightVector / Distance;
     float3 H = normalize(V + L);
@@ -172,32 +188,42 @@ float3 LocalLightBlinnPhong(FLocalLightInfo LocalLight, float3 N, float3 WorldPo
     if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
     {
         float3 SpotDir = normalize(LocalLight.Direction);
-        Attenuation *= smoothstep(cos(radians(LocalLight.OuterConeAngle)), cos(radians(LocalLight.InnerConeAngle)), dot(-L, SpotDir));
+        Attenuation *= smoothstep(
+            cos(radians(LocalLight.OuterConeAngle)),
+            cos(radians(LocalLight.InnerConeAngle)),
+            dot(-L, SpotDir));
     }
 
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;
-    return (Diffuse * LightColor + Specular * LightColor * 0.2) * Attenuation;
+    Out.Diffuse  = Diffuse  * LightColor * Attenuation;
+    Out.Specular = Specular * LightColor * 0.2f * Attenuation;
+    return Out;
 }
 
-float3 LocalLightLambert(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition)
+
+float3 LocalLightLambertTerm(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition)
 {
     float3 LightVector = LocalLight.Position - WorldPosition;
     float Distance = length(LightVector);
-    
+
     if (Distance >= LocalLight.AttenuationRadius || LocalLight.AttenuationRadius <= 0.001f)
         return 0;
-    
+
     float3 L = LightVector / Distance;
     float Diffuse = saturate(dot(N, L));
+
     float Attenuation = saturate(1.0f - (Distance / LocalLight.AttenuationRadius));
     Attenuation *= Attenuation;
-    
+
     if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
     {
         float3 SpotDir = normalize(LocalLight.Direction);
-        Attenuation *= smoothstep(cos(radians(LocalLight.OuterConeAngle)), cos(radians(LocalLight.InnerConeAngle)), dot(-L, SpotDir));
+        Attenuation *= smoothstep(
+            cos(radians(LocalLight.OuterConeAngle)),
+            cos(radians(LocalLight.InnerConeAngle)),
+            dot(-L, SpotDir));
     }
-    
+
     return Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation;
 }
 #endif

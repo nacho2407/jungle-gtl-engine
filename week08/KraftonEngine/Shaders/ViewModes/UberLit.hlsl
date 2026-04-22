@@ -73,7 +73,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                 int GlobalPointLightIndex = Bucket * 32 + bit;
                 if (GlobalPointLightIndex < NumLocalLights)
                 {
-                    FinalColor.rgb += LocalLightLambert(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
+                    float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
+                    FinalColor.rgb += BaseColor.rgb * LocalTerm;
                 }
 
             }
@@ -112,7 +113,14 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                 int GlobalPointLightIndex = Bucket * 32 + bit;
                 if (GlobalPointLightIndex < NumLocalLights)
                 {
-                    FinalColor.rgb += LocalLightBlinnPhong(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos, ViewDir, Shininess, SpecularStrength);
+                    FLocalBlinnPhongTerm LocalTerm = LocalLightBlinnPhongTerm(
+                        g_LightBuffer[GlobalPointLightIndex],
+                        Normal,
+                        WorldPos,
+                        ViewDir,
+                        Shininess,
+                        SpecularStrength);
+                    FinalColor.rgb += BaseColor.rgb * LocalTerm.Diffuse + LocalTerm.Specular;
                 }
 
             }
