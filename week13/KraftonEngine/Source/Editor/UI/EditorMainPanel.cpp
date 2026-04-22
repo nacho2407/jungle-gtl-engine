@@ -22,6 +22,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ImGuiSetting::LoadSetting();
 
 	ImGuiIO& IO = ImGui::GetIO();
+	IO.IniFilename = "Settings/imgui.ini";
 	IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	Window = InWindow;
