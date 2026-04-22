@@ -30,7 +30,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		FShowFlags ShowFlags;
 		EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 
-		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
+		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(), Camera->GetNearPlane(), Camera->GetFarPlane());
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 		Bus.SetFXAAEnabled(true);
 

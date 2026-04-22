@@ -66,10 +66,22 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
     float P00 = Projection[1][0];
     float P11 = Projection[2][1];
 
-    float3 planeL = normalize(float3(-ndcL,  P00, 0.0f));
+    float3 planeL = normalize(float3(-ndcL, P00, 0.0f));
     float3 planeR = normalize(float3( ndcR, -P00, 0.0f));
     float3 planeB = normalize(float3(-ndcB, 0.0f,  P11));
     float3 planeT = normalize(float3( ndcT, 0.0f, -P11));
+    
+    float orthoL, orthoR, orthoB, orthoT;
+    if (IsOrthographic > 0.5f)
+    {
+        float invScaleX = 1.0f / P00;
+        float invScaleY = 1.0f / P11;
+        
+        orthoL = ndcL * invScaleX;
+        orthoR = ndcR * invScaleX;
+        orthoB = ndcB * invScaleY;
+        orthoT = ndcT * invScaleY;
+    }
 
     for (uint i = threadIndex; i < LightCount; i += TILE_SIZE * TILE_SIZE)
     {
@@ -79,14 +91,28 @@ void main(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, ui
 
         float3 lightPosView = mul(float4(light.Position, 1.0f), View).xyz;
         float radius = light.Radius;
-
+        
         if (lightPosView.x + radius < tileNear || lightPosView.x - radius > tileFar)
             continue;
 
-        if (dot(planeL, lightPosView) < -radius) continue;
-        if (dot(planeR, lightPosView) < -radius) continue;
-        if (dot(planeB, lightPosView) < -radius) continue;
-        if (dot(planeT, lightPosView) < -radius) continue;
+        if (IsOrthographic > 0.5f)
+        {
+            if (lightPosView.y + radius < orthoL || lightPosView.y - radius > orthoR)
+                continue;
+            if (lightPosView.z + radius < orthoB || lightPosView.z - radius > orthoT)
+                continue;
+        }
+        else
+        {
+            if (dot(planeL, lightPosView) < -radius)
+                continue;
+            if (dot(planeR, lightPosView) < -radius)
+                continue;
+            if (dot(planeB, lightPosView) < -radius)
+                continue;
+            if (dot(planeT, lightPosView) < -radius)
+                continue;
+        }
         
         uint index;
         InterlockedAdd(TileLightCount, 1, index);

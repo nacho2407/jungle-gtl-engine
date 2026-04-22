@@ -88,14 +88,20 @@ PSInput mainVS(VSInput input)
     
 #if LIGHTING_MODEL_GOURAUD
     float3 accumulatedLight = float3(0, 0, 0);
+    float3 V = CameraPosition - output.WorldPos;
+    if (IsOrthographic > 0.5f)
+    {
+        V = -float3(View[0].xyz);
+    }
+
     accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
-    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess);
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess);
     
     for (uint i = 0; i < LightCount; i++) {
         LightInfo light = Lights[i];
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, Shininess);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess);
     }
     
     output.LitColor = accumulatedLight;
@@ -186,10 +192,16 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
+    float3 V = normalize(CameraPosition - input.WorldPos);
+    if (IsOrthographic > 0.5f)
+    {
+        V = normalize(-float3(View[0].xyz));
+    }
+    
     #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N);
     #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, CameraPosition - input.WorldPos.xyz, Shininess);
+        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
     #endif
 
     for (uint i = 0; i < tileData.y; i++)
@@ -201,8 +213,8 @@ PSOutput mainPS(PSInput input) : SV_TARGET
             : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz);
     #elif LIGHTING_MODEL_PHONG
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, CameraPosition - input.WorldPos.xyz, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, CameraPosition - input.WorldPos.xyz, Shininess);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
     #endif
         //accumulatedLight = float4(1,1,1,1);
     }

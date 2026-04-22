@@ -8,9 +8,9 @@ cbuffer FrameBuffer : register(b0)
     row_major float4x4 View;
     row_major float4x4 Projection;
     float3 CameraPosition;
-    float bIsWireframe;
+    float IsOrthographic;
     float3 WireframeRGB;
-    float Pad;
+    float bIsWireframe;
     float2 ViewportSize;
     float NearZ;
     float FarZ;
@@ -74,6 +74,12 @@ float3x3 Inverse3x3(float3x3 m)
 
 float LinearizeDepth(float d)
 {
-    return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
-
+    if (IsOrthographic > 0.5f)
+    {
+        return NearZ + d * (FarZ - NearZ);
+    }
+    else
+    {
+        return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
+    }
 }
