@@ -179,7 +179,10 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             }
         }
 
-        if (Pass == ERenderPass::Opaque &&
+        if ((Pass == ERenderPass::Opaque ||
+             Pass == ERenderPass::AlphaBlend ||
+             Pass == ERenderPass::OverlayBillboard ||
+             Pass == ERenderPass::OverlayTextWorld) &&
             Context.ActiveViewMode == EViewMode::Wireframe)
         {
             Cmd.Rasterizer = ERasterizerState::WireFrame;
@@ -496,7 +499,7 @@ void DrawCommandBuilder::BuildOverlayTextDrawCommand(FRenderPipelineContext& Con
     Cmd.Shader = Shader;
     Cmd.DepthStencil = State.DepthStencil;
     Cmd.Blend = State.Blend;
-    Cmd.Rasterizer = ERasterizerState::SolidNoCull;
+    Cmd.Rasterizer = Context.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
     Cmd.Topology = State.Topology;
     Cmd.RawVB = FontBatch.GetScreenVBBuffer();
     Cmd.RawVBStride = FontBatch.GetScreenVBStride();
@@ -558,7 +561,7 @@ void DrawCommandBuilder::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& 
     Cmd.Shader = Shader;
     Cmd.DepthStencil = State.DepthStencil;
     Cmd.Blend = State.Blend;
-    Cmd.Rasterizer = ERasterizerState::SolidNoCull;
+    Cmd.Rasterizer = Context.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
     Cmd.Topology = State.Topology;
     Cmd.RawVB = FontBatch.GetWorldVBBuffer();
     Cmd.RawVBStride = FontBatch.GetWorldVBStride();
@@ -621,7 +624,7 @@ void DrawCommandBuilder::BuildOverlayWorldTextDrawCommand(const FTextRenderScene
     Cmd.Shader = Shader;
     Cmd.DepthStencil = State.DepthStencil;
     Cmd.Blend = State.Blend;
-    Cmd.Rasterizer = ERasterizerState::SolidNoCull;
+    Cmd.Rasterizer = Context.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
     Cmd.Topology = State.Topology;
     Cmd.RawVB = FontBatch.GetOverlayWorldVBBuffer();
     Cmd.RawVBStride = FontBatch.GetOverlayWorldVBStride();
