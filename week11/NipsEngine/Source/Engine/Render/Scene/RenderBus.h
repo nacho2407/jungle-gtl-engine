@@ -33,6 +33,8 @@ public:
 	const FVector& GetCameraRight() const { return CameraRight; }
 	EViewMode GetViewMode() const { return ViewMode; }
 	FShowFlags GetShowFlags() const { return ShowFlags; }
+	ELightCullMode GetLightCullMode() const { return LightCullMode; }
+	void SetLightCullMode(ELightCullMode InMode) { LightCullMode = InMode; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 	bool GetFXAAEnabled() const { return bFXAAEnabled; }
@@ -47,27 +49,28 @@ public:
 
 public:
 	// Light
-	FAmbientLightInfo AmbientLightInfo;
-	FDirectionalLightInfo DirectionalLightInfo;
-	TArray<FLightInfo> LightInfos;
+	FAmbientLightInfo		AmbientLightInfo;
+	FDirectionalLightInfo	DirectionalLightInfo;
+	TArray<FLightInfo>		LightInfos;
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
 
-	FMatrix View;
-	FMatrix Proj;
-	FVector CameraPosition;
-	FVector CameraForward;
-	FVector CameraRight;
-	FVector CameraUp;
-	float NearPlane = 0.1f;
-	float FarPlane = 1000.0f;
+	FMatrix  View;
+	FMatrix  Proj;
+	FVector  CameraPosition;
+	FVector  CameraForward;
+	FVector  CameraRight;
+	FVector  CameraUp;
+	float	 NearPlane = 0.1f;
+	float	 FarPlane = 1000.0f;
 	FVector2 ViewportSize;
 	FVector2 ViewportOrigin = FVector2(0.0f, 0.0f);
 
 	//Editor Settings
-	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
-	FShowFlags ShowFlags;
-	FVector WireframeColor = FVector(1.0f, 1.0f, 1.0f);
-	bool bFXAAEnabled = true;
+	EViewMode		ViewMode		= EViewMode::Lit_BlinnPhong;
+	ELightCullMode	LightCullMode	= ELightCullMode::Clustered;
+	FShowFlags		ShowFlags;
+	FVector			WireframeColor	= FVector(1.0f, 1.0f, 1.0f);
+	bool			bFXAAEnabled	= true;
 };

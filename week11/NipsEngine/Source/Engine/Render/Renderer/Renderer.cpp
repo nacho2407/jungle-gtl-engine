@@ -12,6 +12,7 @@
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
+#include "Render/Resource/ShaderHelper.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -68,11 +69,17 @@ void FRenderer::Create(HWND hWindow)
 
 	for (uint32 Key : UberLitPermutations)
 	{
-		FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(Key).data(), Key);
-		FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(Key).data(), Key);
+		for (uint32 CullBit : { 0u, FEAT(ClusterCull), FEAT(TileCull) })
+		{
+			uint32 CullKey = Key | CullBit;
+            FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);
+		}
 	}
 
-	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main");
+	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
+		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Clustered).data(), "LightCullingCS_Clustered");
+	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
+		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Tiled).data(), "LightCullingCS_Tiled");
 }
 
 void FRenderer::CreateResources()
@@ -83,8 +90,8 @@ void FRenderer::CreateResources()
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
 	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
-	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 522240, true);
-	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 522240, true);
+	Resources.LightCulledIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 522240 * 24, true);
+	Resources.LightTileBuffer.Create(Device.GetDevice(), sizeof(uint32) * 2, 522240 * 24, true);
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));

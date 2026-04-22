@@ -2,8 +2,8 @@
 
 TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey)
 {
-	constexpr uint32 FeatureMask = 0xFF;
-	constexpr uint32 LightingMask = 0x700;
+	constexpr uint32 FeatureMask   = 0x1FFF;
+	constexpr uint32 LightingMask  = 0x700;
 
 	EShaderFeature Features =
 		static_cast<EShaderFeature>(PermutationKey & FeatureMask);
@@ -24,6 +24,8 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	if (!!(Features & EShaderFeature::HasSpecularMap)) AddMacro("HAS_SPECULAR_MAP", "1");
 	if (!!(Features & EShaderFeature::HasEmissiveMap)) AddMacro("HAS_EMISSIVE_MAP", "1");
 	if (!!(Features & EShaderFeature::HasAlphaMask))   AddMacro("HAS_ALPHA_MASK", "1");
+	if (!!(Features & EShaderFeature::ClusterCull))    AddMacro("CULLING_MODEL_CLUSTERED", "1");
+	if (!!(Features & EShaderFeature::TileCull))       AddMacro("CULLING_MODEL_TILED", "1");
 
 	switch (LightingModel)
 	{
@@ -35,6 +37,17 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	default:                         AddMacro("LIGHTING_MODEL_PHONG", "1"); break;
 	}
 
+	Macros.push_back({ nullptr, nullptr });
+	return Macros;
+}
+
+TArray<D3D_SHADER_MACRO> FShaderHelper::BuildLightCullingCSMacros(ELightCullMode Mode)
+{
+	TArray<D3D_SHADER_MACRO> Macros;
+	if (Mode == ELightCullMode::Clustered)
+		Macros.push_back({ "CULLING_MODEL_CLUSTERED", "1" });
+	else if (Mode == ELightCullMode::Tiled)
+		Macros.push_back({ "CULLING_MODEL_TILED", "1" });
 	Macros.push_back({ nullptr, nullptr });
 	return Macros;
 }

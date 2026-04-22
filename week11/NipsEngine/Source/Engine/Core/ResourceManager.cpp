@@ -772,26 +772,28 @@ UShader* FResourceManager::GetShader(const FString& FilePath) const
 	return (It != Shaders.end()) ? It->second : nullptr;
 }
 
-bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint)
+bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint,
+                                         const D3D_SHADER_MACRO* Defines, const FString& Key)
 {
     const FString NormalizedFilePath = FPaths::Normalize(FilePath);
+    const FString CacheKey = Key.empty() ? NormalizedFilePath : Key;
+
     FComputeShader* Shader = nullptr;
-    auto It = ComputeShaders.find(NormalizedFilePath);
+    auto It = ComputeShaders.find(CacheKey);
     if (It != ComputeShaders.end())
     {
-        Shader = It->second;
         return true;
     }
     else
     {
         Shader = new FComputeShader();
-        ComputeShaders[NormalizedFilePath] = Shader;
+        ComputeShaders[CacheKey] = Shader;
     }
 
     TComPtr<ID3DBlob> CSBlob;
     TComPtr<ID3DBlob> ErrorBlob;
 
-    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(NormalizedFilePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(NormalizedFilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
                                     EntryPoint.c_str(), "cs_5_0", 0, 0, &CSBlob, &ErrorBlob);
     if (FAILED(hr))
     {
@@ -818,10 +820,13 @@ bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString&
     return true;
 }
 
-FComputeShader* FResourceManager::GetComputeShader(const FString& FilePath) const
+FComputeShader* FResourceManager::GetComputeShader(const FString& Key) const
 {
-    const FString NormalizedFilePath = FPaths::Normalize(FilePath);
-    auto It = ComputeShaders.find(NormalizedFilePath);
+    auto It = ComputeShaders.find(Key);
+    if (It != ComputeShaders.end()) return It->second;
+    // Fallback: try normalized path for backward compatibility
+    const FString NormalizedFilePath = FPaths::Normalize(Key);
+    It = ComputeShaders.find(NormalizedFilePath);
     return (It != ComputeShaders.end()) ? It->second : nullptr;
 }
 

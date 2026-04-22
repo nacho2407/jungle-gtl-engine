@@ -3,6 +3,7 @@
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
+#include "Render/Resource/ShaderHelper.h"
 #include "Core/ResourceManager.h"
 
 bool FOpaqueRenderPass::Initialize()
@@ -85,6 +86,11 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 		   break;
 	   }
 
+       if (RenderBus->GetLightCullMode() == ELightCullMode::Clustered)
+           PermutationKey |= (uint32)EShaderFeature::ClusterCull;
+       else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
+           PermutationKey |= (uint32)EShaderFeature::TileCull;
+
        if (Cmd.Material)
        {
 		   if (Cmd.Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
@@ -96,7 +102,6 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
        }
 
-       // Depth prepass already wrote correct depth values, so use LESS_EQUAL + no writes
        auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
        Context->DeviceContext->OMSetDepthStencilState(DSState, 0);
 

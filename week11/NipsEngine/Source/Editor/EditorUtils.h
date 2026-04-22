@@ -17,6 +17,7 @@ enum class EViewportPlayState : uint8
 struct FEditorViewportState
 {
 	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
+	ELightCullMode LightCullMode = ELightCullMode::Clustered;
 	bool bHovered = false;
 
 	// Stat Overlay (뷰포트별 독립 제어)
