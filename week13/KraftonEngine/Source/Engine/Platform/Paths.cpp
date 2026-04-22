@@ -26,9 +26,13 @@ std::wstring FPaths::RootDir()
 	return Cached;
 }
 
-std::wstring FPaths::ShaderDir() { return RootDir() + L"Shaders\\"; }
-std::wstring FPaths::SceneDir() { return RootDir() + L"Asset\\Scene\\"; }
-std::wstring FPaths::DumpDir() { return RootDir() + L"Saves\\Dump\\"; }
+std::wstring FPaths::ShaderDir()   { return RootDir() + L"Shaders\\"; }
+std::wstring FPaths::AssetDir()    { return RootDir() + L"Asset\\"; }
+std::wstring FPaths::SceneDir()    { return RootDir() + L"Asset\\Scene\\"; }
+std::wstring FPaths::DataDir()     { return RootDir() + L"Data\\"; }
+std::wstring FPaths::SaveDir()     { return RootDir() + L"Saves\\"; }
+std::wstring FPaths::DumpDir()     { return RootDir() + L"Saves\\Dump\\"; }
+std::wstring FPaths::LogDir()      { return RootDir() + L"Saves\\Logs\\"; }
 std::wstring FPaths::SettingsDir() { return RootDir() + L"Settings\\"; }
 
 std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings\\Editor.ini"; }

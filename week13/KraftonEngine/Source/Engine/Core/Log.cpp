@@ -26,9 +26,8 @@ class FFileOutputDevice : public ILogOutputDevice
 public:
 	FFileOutputDevice()
 	{
-		std::wstring LogDir = FPaths::RootDir() + L"Logs";
-		FPaths::CreateDir(LogDir);
-		std::wstring LogPath = LogDir + L"\\Engine.log";
+		std::wstring LogPath = FPaths::LogDir() + L"Engine.log";
+		FPaths::CreateDir(FPaths::LogDir());
 		_wfopen_s(&File, LogPath.c_str(), L"w");
 	}
 
