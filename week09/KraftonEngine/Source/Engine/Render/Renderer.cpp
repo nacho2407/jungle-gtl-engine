@@ -419,16 +419,6 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     const bool bUsesAdditiveDecal = bHasViewModeConfig && ViewModeRegistry->UsesAdditiveDecal(PipelineContext.ActiveViewMode);
     const bool bUsesAlphaBlend = bHasViewModeConfig && ViewModeRegistry->UsesAlphaBlend(PipelineContext.ActiveViewMode);
 
-    TSet<FPrimitiveSceneProxy*> VisibleProxySet;
-    VisibleProxySet.reserve(CollectedPrimitives.VisibleProxies.size());
-    for (FPrimitiveSceneProxy* Proxy : CollectedPrimitives.VisibleProxies)
-    {
-        if (Proxy)
-        {
-            VisibleProxySet.insert(Proxy);
-        }
-    }
-
     for (FPrimitiveSceneProxy* Proxy : CollectedPrimitives.VisibleProxies)
     {
         if (!Proxy)
@@ -448,34 +438,11 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         {
             FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
 
-            if (bHasViewModeConfig)
+            if (bHasViewModeConfig && bUsesDecal)
             {
-                if (bUsesDecal)
+                if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DecalPass))
                 {
-                    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DecalPass))
-                    {
-                        Pass->BuildDrawCommands(PipelineContext, *DecalProxy);
-                    }
-                }
-            }
-            else
-            {
-                UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
-                for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
-                {
-                    if (!Receiver)
-                    {
-                        continue;
-                    }
-                    FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
-                    if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
-                    {
-                        continue;
-                    }
-                    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DecalPass))
-                    {
-                        Pass->BuildDrawCommands(PipelineContext, *ReceiverProxy);
-                    }
+                    Pass->BuildDrawCommands(PipelineContext, *DecalProxy);
                 }
             }
         }

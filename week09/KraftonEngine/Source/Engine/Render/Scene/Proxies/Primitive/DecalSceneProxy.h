@@ -15,11 +15,13 @@ public:
 	FDecalSceneProxy(UDecalComponent* InComponent);
 	~FDecalSceneProxy() override;
 
+	void UpdateTransform() override;
 	void UpdateMaterial() override;
 	void UpdateMesh() override;
 
 private:
 	UDecalComponent* GetDecalComponent() const;
+	void UpdateDecalConstants();
 
 	FConstantBuffer* DecalCB;
 	class UMaterial* DecalMaterial = nullptr;

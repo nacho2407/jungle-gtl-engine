@@ -51,6 +51,11 @@ PS_Input_UV VS_DecalFullscreen(uint VertexID : SV_VertexID)
     return FullscreenTriangleVS(VertexID);
 }
 
+PS_Input_UV VS(uint VertexID : SV_VertexID)
+{
+    return VS_DecalFullscreen(VertexID);
+}
+
 float4 PS_Decal_Unlit(PS_Input_UV Input) : SV_TARGET0
 {
     float4 DecalSample;
@@ -59,10 +64,15 @@ float4 PS_Decal_Unlit(PS_Input_UV Input) : SV_TARGET0
     float4 Surface2;
     if (!SampleDecalData(Input.uv, DecalSample, BaseColor, Surface1, Surface2))
     {
-        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+        discard;
     }
 
     return ApplyDecalBaseColor(BaseColor, DecalSample, DecalSample.a);
+}
+
+float4 PS(PS_Input_UV Input) : SV_TARGET0
+{
+    return PS_Decal_Unlit(Input);
 }
 
 float4 PS_Decal_Gouraud(PS_Input_UV Input) : SV_TARGET0
@@ -73,7 +83,7 @@ float4 PS_Decal_Gouraud(PS_Input_UV Input) : SV_TARGET0
     float4 Surface2;
     if (!SampleDecalData(Input.uv, DecalSample, BaseColor, Surface1, Surface2))
     {
-        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+        discard;
     }
 
     return ApplyDecalBaseColor(BaseColor, DecalSample, DecalSample.a);
@@ -89,7 +99,7 @@ FDecalOutput2 PS_Decal_Lambert(PS_Input_UV Input)
     float4 Surface2;
     if (!SampleDecalData(Input.uv, DecalSample, BaseColor, Surface1, Surface2))
     {
-        return Output;
+        discard;
     }
 
     float Alpha = DecalSample.a;
@@ -111,7 +121,7 @@ FDecalOutput3 PS_Decal_BlinnPhong(PS_Input_UV Input)
     float4 Surface2;
     if (!SampleDecalData(Input.uv, DecalSample, BaseColor, Surface1, Surface2))
     {
-        return Output;
+        discard;
     }
 
     float Alpha = DecalSample.a;

@@ -31,7 +31,4 @@ namespace DrawCommandBuilder
 
     // 데칼 프록시를 드로우 커맨드로 변환합니다.
     void BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
-
-    // 데칼 리시버 프록시용 드로우 커맨드를 생성합니다.
-    void BuildDecalReceiverDrawCommand(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 }

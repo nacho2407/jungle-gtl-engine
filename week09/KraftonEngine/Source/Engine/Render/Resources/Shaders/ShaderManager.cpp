@@ -200,7 +200,7 @@ FString FShaderManager::GetBuiltInShaderPath(EShaderType InType) const
     case EShaderType::StaticMesh:
         return "Shaders/Materials/StaticMeshShader.hlsl";
     case EShaderType::Decal:
-        return "Shaders/Materials/DecalShader.hlsl";
+        return "Shaders/Passes/Scene/DecalPass.hlsl";
     case EShaderType::OutlinePostProcess:
         return "Shaders/Passes/PostProcess/OutlinePostProcess.hlsl";
     case EShaderType::SceneDepth:
