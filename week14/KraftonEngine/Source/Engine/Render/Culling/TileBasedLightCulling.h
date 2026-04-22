@@ -4,6 +4,8 @@
 #include "Engine/Render/Pipeline/ForwardLightData.h"
 #include "Engine/Render/Pipeline/FrameContext.h"
 
+class FComputeShader;
+
 
 // b2: 타일 컬링 파라미터
 struct FTileLightCullingCBData
@@ -118,7 +120,7 @@ public:
 private:
 	ID3D11Device* Device = nullptr;
 
-	ID3D11ComputeShader* TileLightCullingCS = nullptr;
+	FComputeShader* TileLightCullingCS = nullptr;  // FShaderManager 소유
 	ID3D11Buffer*        TileCullingCB      = nullptr;
 
 	bool bInitialized = false;

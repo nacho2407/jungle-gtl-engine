@@ -1,9 +1,7 @@
 ﻿#include "GPUOcclusionCulling.h"
-#include "Render/Resource/ShaderInclude.h"
+#include "Render/Resource/ShaderManager.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Profiling/Stats.h"
-#include "Core/Log.h"
-#include "Core/Notification.h"
 
 #include <cstring>
 
@@ -26,37 +24,6 @@ struct FOcclusionTestParamsCB
 };
 
 // ================================================================
-// Helper: compile a compute shader from file
-// ================================================================
-static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, const char* Entry)
-{
-	ID3DBlob* csBlob = nullptr;
-	ID3DBlob* errBlob = nullptr;
-	FShaderInclude IncludeHandler;
-
-	HRESULT hr = D3DCompileFromFile(Path, nullptr, &IncludeHandler,
-		Entry, "cs_5_0", 0, 0, &csBlob, &errBlob);
-
-	if (FAILED(hr))
-	{
-		if (errBlob)
-		{
-			const char* Msg = (const char*)errBlob->GetBufferPointer();
-			UE_LOG("[Shader] CS Compile Error: %s", Msg);
-			FNotificationManager::Get().AddNotification("CS Compile Error (see log)", ENotificationType::Error, 5.0f);
-			errBlob->Release();
-		}
-		return nullptr;
-	}
-
-	ID3D11ComputeShader* cs = nullptr;
-	hr = Dev->CreateComputeShader(csBlob->GetBufferPointer(), csBlob->GetBufferSize(), nullptr, &cs);
-	csBlob->Release();
-
-	return SUCCEEDED(hr) ? cs : nullptr;
-}
-
-// ================================================================
 // Initialize / Release
 // ================================================================
 
@@ -64,11 +31,13 @@ void FGPUOcclusionCulling::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 
-	HiZCopyCS = CompileCS(Device, L"Shaders/Lighting/HiZGenerate.hlsl", "CSCopyDepth");
-	HiZDownsampleCS = CompileCS(Device, L"Shaders/Lighting/HiZGenerate.hlsl", "CSDownsample");
-	OcclusionTestCS = CompileCS(Device, L"Shaders/Lighting/OcclusionTest.hlsl", "CSOcclusionTest");
+	HiZCopyCS       = FShaderManager::Get().GetOrCreateCS("Shaders/Lighting/HiZGenerate.hlsl", "CSCopyDepth");
+	HiZDownsampleCS = FShaderManager::Get().GetOrCreateCS("Shaders/Lighting/HiZGenerate.hlsl", "CSDownsample");
+	OcclusionTestCS = FShaderManager::Get().GetOrCreateCS("Shaders/Lighting/OcclusionTest.hlsl", "CSOcclusionTest");
 
-	if (!HiZCopyCS || !HiZDownsampleCS || !OcclusionTestCS)
+	if (!HiZCopyCS || !HiZCopyCS->IsValid()
+		|| !HiZDownsampleCS || !HiZDownsampleCS->IsValid()
+		|| !OcclusionTestCS || !OcclusionTestCS->IsValid())
 	{
 		Release();
 		return;
@@ -90,10 +59,10 @@ void FGPUOcclusionCulling::Release()
 	ReleaseHiZResources();
 	ReleaseBuffers();
 
-	if (ParamsCB) { ParamsCB->Release();        ParamsCB = nullptr; }
-	if (HiZCopyCS) { HiZCopyCS->Release();       HiZCopyCS = nullptr; }
-	if (HiZDownsampleCS) { HiZDownsampleCS->Release(); HiZDownsampleCS = nullptr; }
-	if (OcclusionTestCS) { OcclusionTestCS->Release();  OcclusionTestCS = nullptr; }
+	if (ParamsCB) { ParamsCB->Release(); ParamsCB = nullptr; }
+	HiZCopyCS = nullptr;        // FShaderManager 소유
+	HiZDownsampleCS = nullptr;
+	OcclusionTestCS = nullptr;
 
 	OccludedBits.clear();
 	bHasResults = false;
@@ -328,7 +297,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 		p.SrcHeight = Height;
 		UpdateParamsCB(Ctx, &p, sizeof(p));
 
-		Ctx->CSSetShader(HiZCopyCS, nullptr, 0);
+		HiZCopyCS->Bind(Ctx);
 		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
 		Ctx->CSSetShaderResources(0, 1, &DepthSRV);
 		Ctx->CSSetUnorderedAccessViews(0, 1, &HiZUAVs_A[0], nullptr);
@@ -341,7 +310,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 
 	// ── Mip 1+: 진짜 핑퐁 downsample (Copy 0회) ──
 	// Even mips → TextureA, Odd mips → TextureB
-	Ctx->CSSetShader(HiZDownsampleCS, nullptr, 0);
+	HiZDownsampleCS->Bind(Ctx);
 	uint32 mW = Width, mH = Height;
 
 	for (uint32 mip = 1; mip < HiZMipCount; mip++)
@@ -530,7 +499,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 		params.HiZMipCount = HiZMipCount;
 		UpdateParamsCB(Ctx, &params, sizeof(params));
 
-		Ctx->CSSetShader(OcclusionTestCS, nullptr, 0);
+		OcclusionTestCS->Bind(Ctx);
 		Ctx->CSSetConstantBuffers(0, 1, &ParamsCB);
 
 		ID3D11ShaderResourceView* srvs[3] = { AABBSRV, HiZSRV_A, HiZSRV_B };
