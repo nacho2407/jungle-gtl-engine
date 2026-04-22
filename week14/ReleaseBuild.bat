@@ -43,9 +43,6 @@ echo [3/3] Copying files...
 :: 실행 파일 (루트에)
 copy "%BUILD_OUTPUT%\KraftonEngine.exe" "%RELEASE_DIR%\" >nul
 
-:: ImGui 레이아웃 (도킹 설정 포함)
-if exist "%PROJECT_DIR%\imgui.ini" copy "%PROJECT_DIR%\imgui.ini" "%RELEASE_DIR%\" >nul
-
 :: Shaders
 xcopy "%PROJECT_DIR%\Shaders" "%RELEASE_DIR%\Shaders\" /e /i /q >nul
 
@@ -58,11 +55,6 @@ xcopy "%PROJECT_DIR%\Settings" "%RELEASE_DIR%\Settings\" /e /i /q >nul
 :: Data (OBJ, MTL, 텍스처 원본 — .bin 재빌드 및 머티리얼 로드에 필요)
 xcopy "%PROJECT_DIR%\Data" "%RELEASE_DIR%\Data\" /e /i /q >nul
 
-:: Saves (있으면 복사)
-if exist "%PROJECT_DIR%\Saves" (
-    xcopy "%PROJECT_DIR%\Saves" "%RELEASE_DIR%\Saves\" /e /i /q >nul
-)
-
 echo.
 echo ============================================
 echo  Build complete: %RELEASE_DIR%
@@ -70,11 +62,9 @@ echo ============================================
 echo.
 echo  ReleaseBuild/
 echo    KraftonEngine.exe
-echo    imgui.ini
 echo    Shaders/
 echo    Asset/
 echo    Data/
 echo    Settings/
-echo    Saves/
 echo.
 pause
