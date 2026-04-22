@@ -10,10 +10,10 @@ cbuffer FrameBuffer : register(b0)
     float3 CameraPosition;
     float bIsWireframe;
     float3 WireframeRGB;
+    float Pad;
     float2 ViewportSize;
     float NearZ;
     float FarZ;
-    float Pad;
 }
 
 cbuffer PerObjectBuffer : register(b1)

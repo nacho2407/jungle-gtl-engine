@@ -19,6 +19,16 @@ cbuffer StaticMeshBuffer : register(b2)
     float padding3;
 };
 
+struct FDecalInfo
+{
+    row_major matrix InvDecalWorld;
+    float4 DecalColorTint;
+    uint TextureIndex;
+    float3 Padding;
+};
+StructuredBuffer<FDecalInfo> Decals : register(t7);
+Texture2DArray DecalDiffuseTexture : register(t8);
+
 #if HAS_DIFFUSE_MAP
 Texture2D DiffuseMap  : register(t0);
 #endif
@@ -127,7 +137,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         clip(DiffuseTex.a - 0.001f);
     #endif
     
-    float3 FinalColor = DiffuseColor * DiffuseTex.rgb;
+    float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
     
     if (any(EmissiveColor > 0.f))
     {
@@ -179,7 +189,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N);
     #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos, CameraPosition - input.WorldPos, Shininess);
+        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, CameraPosition - input.WorldPos.xyz, Shininess);
     #endif
 
     for (uint i = 0; i < tileData.y; i++)
@@ -187,17 +197,33 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
     #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos)
-            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos);
+            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)
+            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz);
     #elif LIGHTING_MODEL_PHONG
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos, CameraPosition - input.WorldPos, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos, CameraPosition - input.WorldPos, Shininess);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, CameraPosition - input.WorldPos.xyz, Shininess)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, CameraPosition - input.WorldPos.xyz, Shininess);
     #endif
+        //accumulatedLight = float4(1,1,1,1);
     }
 #endif
     
-    output.Color = float4(FinalColor * accumulatedLight, 1.0f);
+    float4 DecalColor = float4(0, 0, 0, 0);
+    for (uint i = 0; i < DecalCount; i++)
+    {
+        float4 DecalWorldPos = mul(float4(input.WorldPos, 1.0f), Decals[i].InvDecalWorld);
+        if (any(abs(DecalWorldPos.xyz) > 0.5f))
+            continue;
+
+        float2 decalUV;
+        decalUV.xy = DecalWorldPos.yz + 0.5f;
+        decalUV.y = 1.0f - decalUV.y;
+
+        float4 decalTex = DecalDiffuseTexture.SampleLevel(SampleState, float3(decalUV, Decals[i].TextureIndex), 0);
+        DecalColor = (decalTex.a > 0.001) ? decalTex * Decals[i].DecalColorTint : DecalColor;
+    }
+    FinalColor = (DecalColor.a > 0.001) ? DecalColor : FinalColor;
+    output.Color = float4(FinalColor.xyz * accumulatedLight, 1.0f);
     output.Normal = float4(N * 0.5f + 0.5f, 1.f);
     output.WorldPos = float4(input.WorldPos, 1.f);
     

@@ -61,11 +61,11 @@ struct FFrameConstants
 	FVector CameraPosition;
 	float bIsWireframe = 0.0f;
 	FVector WireframeColor;
+	float Padding0 = 0.0f; // HLSL cbuffer packs float2 to the next float4 row after float3
 
 	FVector2 ViewportSize;
     float NearPlane;
     float FarPlane;
-	float Pad;
 };
 
 struct FAmbientLightInfo
