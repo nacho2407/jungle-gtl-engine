@@ -31,7 +31,7 @@ public:
     void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies);
 
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
-    void CollectSceneLights(FScene* Scene);
+    void CollectSceneLights(UWorld* World, FScene* Scene);
     void CollectOverlay(const FCollectOverlayContext& OverlayContext);
 
     const FCollectedSceneData&           GetCollectedSceneData() const { return CollectedSceneData; }
