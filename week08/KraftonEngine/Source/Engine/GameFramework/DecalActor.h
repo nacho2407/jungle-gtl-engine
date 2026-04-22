@@ -2,8 +2,8 @@
 
 #include "GameFramework/AActor.h"
 
-class UTextRenderComponent;
 class UDecalComponent;
+class UBillboardComponent;
 
 class ADecalActor : public AActor
 {
@@ -18,7 +18,8 @@ public:
 
 private:
 	UDecalComponent* DecalComponent;
-	UTextRenderComponent* TextRenderComponent = nullptr;
+	UBillboardComponent* BillboardComponent = nullptr;
 	
 	const FString DefaultDecalMaterialPath = "Asset/Materials/DefaultDecal.json";
+	const FString DecalIconPath = "Asset/Materials/DecalIcon.json";
 };

@@ -185,6 +185,10 @@ FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle,
     Context.ContextHandle = Handle;
     Context.ContextName   = Name.empty() ? Handle.ToString() : Name;
     Context.World         = UObjectManager::Get().CreateObject<UWorld>();
+    if (Context.World)
+    {
+        Context.World->SetWorldType(Type);
+    }
     WorldList.push_back(Context);
     return WorldList.back();
 }

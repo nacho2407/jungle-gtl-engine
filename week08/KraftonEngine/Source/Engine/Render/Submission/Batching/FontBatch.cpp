@@ -1,9 +1,10 @@
-#include "Render/Submission/Batching/FontBatch.h"
+﻿#include "Render/Submission/Batching/FontBatch.h"
 #include "Resource/ResourceManager.h"
 
 void FFontBatch::Create(ID3D11Device* InDevice)
 {
     WorldBuffer.Create(InDevice, 1024, 1536);
+    OverlayWorldBuffer.Create(InDevice, 512, 768);
     ScreenBuffer.Create(InDevice, 256, 384);
 
     if (const FFontResource* DefaultFont = FResourceManager::Get().FindFont(FName("Default")))
@@ -20,6 +21,7 @@ void FFontBatch::Release()
     CharInfoMap.clear();
     ClearAll();
     WorldBuffer.Release();
+    OverlayWorldBuffer.Release();
     ScreenBuffer.Release();
 }
 
@@ -79,6 +81,11 @@ void FFontBatch::ClearWorld()
     WorldBuffer.Clear();
 }
 
+void FFontBatch::ClearOverlayWorld()
+{
+    OverlayWorldBuffer.Clear();
+}
+
 void FFontBatch::ClearScreen()
 {
     ScreenBuffer.Clear();
@@ -87,39 +94,54 @@ void FFontBatch::ClearScreen()
 void FFontBatch::ClearAll()
 {
     ClearWorld();
+    ClearOverlayWorld();
     ClearScreen();
 }
 
-void FFontBatch::AddWorldText(const FString& Text,
-                              const FVector& WorldPos,
-                              const FVector& CamRight,
-                              const FVector& CamUp,
-                              const FVector& WorldScale,
-                              float          Scale)
+namespace
+{
+uint32 CountUTF8Codepoints(const FString& Text)
+{
+    uint32 Count = 0;
+    for (size_t i = 0; i < Text.size(); ++i)
+    {
+        if ((static_cast<unsigned char>(Text[i]) & 0xC0) != 0x80)
+        {
+            ++Count;
+        }
+    }
+    return Count;
+}
+
+void AddWorldTextToBuffer(TBatchBuffer<FTextureVertex>& Buffer, const FFontBatch* Batch, const FString& Text,
+                          const FVector& WorldPos, const FVector& CamRight, const FVector& CamUp,
+                          const FVector& WorldScale, float Scale)
 {
     if (Text.empty())
         return;
 
-    const float  CharW       = 0.5f * Scale * WorldScale.Y;
-    const float  CharH       = 0.5f * Scale * WorldScale.Z;
-    float        CharCursorX = 0.0f;
-    const uint32 Base        = static_cast<uint32>(WorldBuffer.Vertices.size());
-    const uint32 IdxBase     = static_cast<uint32>(WorldBuffer.Indices.size());
-    const size_t CharCount   = Text.size();
+    const float CharW = 0.5f * Scale * WorldScale.Y;
+    const float CharH = 0.5f * Scale * WorldScale.Z;
+    const size_t ByteCount = Text.size();
+    const uint32 GlyphCount = CountUTF8Codepoints(Text);
+    float CharCursorX = (GlyphCount > 0) ? (-0.5f * static_cast<float>(GlyphCount - 1) * CharW) : 0.0f;
 
-    WorldBuffer.Vertices.resize(Base + CharCount * 4);
-    WorldBuffer.Indices.resize(IdxBase + CharCount * 6);
-    FTextureVertex* pV = WorldBuffer.Vertices.data() + Base;
-    uint32*         pI = WorldBuffer.Indices.data() + IdxBase;
+    const uint32 Base = static_cast<uint32>(Buffer.Vertices.size());
+    const uint32 IdxBase = static_cast<uint32>(Buffer.Indices.size());
+
+    Buffer.Vertices.resize(Base + ByteCount * 4);
+    Buffer.Indices.resize(IdxBase + ByteCount * 6);
+    FTextureVertex* pV = Buffer.Vertices.data() + Base;
+    uint32* pI = Buffer.Indices.data() + IdxBase;
 
     const FVector HalfRight = CamRight * (CharW * 0.5f);
-    const FVector HalfUp    = CamUp * (CharH * 0.5f);
+    const FVector HalfUp = CamUp * (CharH * 0.5f);
 
-    const uint8*       Ptr     = reinterpret_cast<const uint8*>(Text.c_str());
-    const uint8* const End     = Ptr + Text.size();
-    uint32             CharIdx = 0;
+    const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
+    const uint8* const End = Ptr + ByteCount;
+    uint32 CharIdx = 0;
 
-    for (size_t i = 0; i < CharCount && Ptr < End; ++i)
+    while (Ptr < End)
     {
         uint32 CP = 0;
         if (Ptr[0] < 0x80)
@@ -149,22 +171,22 @@ void FFontBatch::AddWorldText(const FString& Text,
         }
 
         FVector2 UVMin, UVMax;
-        GetCharUV(CP, UVMin, UVMax);
+        Batch->GetCharUV(CP, UVMin, UVMax);
 
         const FVector Center = WorldPos + CamRight * CharCursorX;
 
-        pV[0] = { Center + HalfUp, { UVMin.X, UVMin.Y } };
-        pV[1] = { Center + HalfRight * 2 + HalfUp, { UVMax.X, UVMin.Y } };
-        pV[2] = { Center - HalfUp, { UVMin.X, UVMax.Y } };
-        pV[3] = { Center + HalfRight * 2 - HalfUp, { UVMax.X, UVMax.Y } };
+        pV[0] = { Center + HalfUp - HalfRight, { UVMin.X, UVMin.Y } };
+        pV[1] = { Center + HalfUp + HalfRight, { UVMax.X, UVMin.Y } };
+        pV[2] = { Center - HalfUp - HalfRight, { UVMin.X, UVMax.Y } };
+        pV[3] = { Center - HalfUp + HalfRight, { UVMax.X, UVMax.Y } };
 
         const uint32 Vi = Base + CharIdx * 4;
-        pI[0]           = Vi;
-        pI[1]           = Vi + 1;
-        pI[2]           = Vi + 2;
-        pI[3]           = Vi + 1;
-        pI[4]           = Vi + 3;
-        pI[5]           = Vi + 2;
+        pI[0] = Vi;
+        pI[1] = Vi + 1;
+        pI[2] = Vi + 2;
+        pI[3] = Vi + 1;
+        pI[4] = Vi + 3;
+        pI[5] = Vi + 2;
 
         pV += 4;
         pI += 6;
@@ -172,8 +194,29 @@ void FFontBatch::AddWorldText(const FString& Text,
         CharCursorX += CharW;
     }
 
-    WorldBuffer.Vertices.resize(Base + CharIdx * 4);
-    WorldBuffer.Indices.resize(IdxBase + CharIdx * 6);
+    Buffer.Vertices.resize(Base + CharIdx * 4);
+    Buffer.Indices.resize(IdxBase + CharIdx * 6);
+}
+} // namespace
+
+void FFontBatch::AddWorldText(const FString& Text,
+                              const FVector& WorldPos,
+                              const FVector& CamRight,
+                              const FVector& CamUp,
+                              const FVector& WorldScale,
+                              float          Scale)
+{
+    AddWorldTextToBuffer(WorldBuffer, this, Text, WorldPos, CamRight, CamUp, WorldScale, Scale);
+}
+
+void FFontBatch::AddOverlayWorldText(const FString& Text,
+                                     const FVector& WorldPos,
+                                     const FVector& CamRight,
+                                     const FVector& CamUp,
+                                     const FVector& WorldScale,
+                                     float          Scale)
+{
+    AddWorldTextToBuffer(OverlayWorldBuffer, this, Text, WorldPos, CamRight, CamUp, WorldScale, Scale);
 }
 
 void FFontBatch::AddScreenText(const FString& Text,
@@ -192,16 +235,16 @@ void FFontBatch::AddScreenText(const FString& Text,
 
     const uint32 Base      = static_cast<uint32>(ScreenBuffer.Vertices.size());
     const uint32 IdxBase   = static_cast<uint32>(ScreenBuffer.Indices.size());
-    const size_t CharCount = Text.size();
+    const size_t ByteCount = Text.size();
 
-    ScreenBuffer.Vertices.resize(Base + CharCount * 4);
-    ScreenBuffer.Indices.resize(IdxBase + CharCount * 6);
+    ScreenBuffer.Vertices.resize(Base + ByteCount * 4);
+    ScreenBuffer.Indices.resize(IdxBase + ByteCount * 6);
 
     FTextureVertex* pV = ScreenBuffer.Vertices.data() + Base;
     uint32*         pI = ScreenBuffer.Indices.data() + IdxBase;
 
     const uint8*       Ptr = reinterpret_cast<const uint8*>(Text.c_str());
-    const uint8* const End = Ptr + Text.size();
+    const uint8* const End = Ptr + ByteCount;
 
     uint32 CharIdx = 0;
     float  CursorX = ScreenX;
@@ -216,7 +259,7 @@ void FFontBatch::AddScreenText(const FString& Text,
         return 1.0f - (Y / ViewportHeight) * 2.0f;
     };
 
-    for (size_t i = 0; i < CharCount && Ptr < End; ++i)
+    while (Ptr < End)
     {
         uint32 CP = 0;
         if (Ptr[0] < 0x80)
@@ -279,6 +322,11 @@ void FFontBatch::AddScreenText(const FString& Text,
 bool FFontBatch::UploadWorldBuffers(ID3D11DeviceContext* Context)
 {
     return WorldBuffer.Upload(Context);
+}
+
+bool FFontBatch::UploadOverlayWorldBuffers(ID3D11DeviceContext* Context)
+{
+    return OverlayWorldBuffer.Upload(Context);
 }
 
 bool FFontBatch::UploadScreenBuffers(ID3D11DeviceContext* Context)

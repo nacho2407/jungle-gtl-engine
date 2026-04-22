@@ -23,11 +23,22 @@ void FOverlayTextPass::BuildDrawCommands(FRenderPipelineContext& Context)
 
 void FOverlayTextPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
-    if (Context.DrawCommandList)
+    if (!Context.DrawCommandList)
     {
-        uint32 s, e;
-        Context.DrawCommandList->GetPassRange(ERenderPass::OverlayFont, s, e);
-        if (s < e)
-            Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
+        return;
+    }
+
+    uint32 Start = 0;
+    uint32 End = 0;
+    Context.DrawCommandList->GetPassRange(ERenderPass::OverlayTextWorld, Start, End);
+    if (Start < End)
+    {
+        Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
+    }
+
+    Context.DrawCommandList->GetPassRange(ERenderPass::OverlayFont, Start, End);
+    if (Start < End)
+    {
+        Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
     }
 }

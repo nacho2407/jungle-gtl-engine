@@ -7,6 +7,11 @@
 #include "Render/Pipelines/Context/Scene/SceneView.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Scene.h"
+#include "Component/BillboardComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "GameFramework/World.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
 
 // ==================== Public API ====================
 
@@ -25,6 +30,11 @@ void FDrawCollector::CollectOverlay(const FCollectOverlayContext& OverlayContext
     if (OverlayContext.SceneView && OverlayContext.Scene)
     {
         CollectDebugDraw(*OverlayContext.SceneView, *OverlayContext.Scene, CollectedOverlayData);
+    }
+
+    if (OverlayContext.World && OverlayContext.SceneView)
+    {
+        CollectEditorHelpers(const_cast<UWorld*>(OverlayContext.World), *OverlayContext.SceneView, CollectedOverlayData);
     }
 
     if (OverlayContext.Octree)
@@ -76,6 +86,58 @@ void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>
 
 // ==================== Overlay Helpers ====================
 
+void FDrawCollector::CollectEditorHelpers(UWorld* World, const FSceneView& SceneView, FCollectedOverlayData& OverlayData)
+{
+    OverlayData.EditorHelpers.Billboards.clear();
+    OverlayData.EditorHelpers.Texts.clear();
+
+    if (!World || World->GetWorldType() != EWorldType::Editor)
+    {
+        return;
+    }
+
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor || !Actor->IsVisible())
+        {
+            continue;
+        }
+
+        for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+        {
+            if (!Primitive || !Primitive->IsEditorHelper() || !Primitive->ShouldRenderInCurrentWorld())
+            {
+                continue;
+            }
+
+            FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy();
+            if (!Proxy)
+            {
+                continue;
+            }
+
+            if (Proxy->bPerViewportUpdate)
+            {
+                Proxy->UpdatePerViewport(SceneView);
+            }
+
+            if (!Proxy->bVisible)
+            {
+                continue;
+            }
+
+            if (Primitive->IsA<UBillboardComponent>())
+            {
+                OverlayData.EditorHelpers.Billboards.push_back(Proxy);
+            }
+            else if (Primitive->IsA<UTextRenderComponent>())
+            {
+                OverlayData.EditorHelpers.Texts.push_back(Proxy);
+            }
+        }
+    }
+}
+
 void FDrawCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FCollectedPrimitives& OutPrimitives)
 {
     TArray<FOverlayStatLine> Lines;
@@ -107,11 +169,6 @@ void FDrawCollector::CollectDebugDraw(const FSceneView& SceneView, const FScene&
         OverlayData.Debug.Lines.push_back({ Item.Start, Item.End, Item.Color });
     }
 
-    if (!SceneView.ShowFlags.bDebugDraw)
-    {
-        return;
-    }
-	
 	const TArray<FDebugDrawItem> Items = Scene.GetDebugDrawQueue().GetItems();
     for (const FDebugDrawItem& Item : Items)
     {

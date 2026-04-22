@@ -403,6 +403,9 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 	auto IsMaterialProp = [](const FString& Name, EPropertyType Type) {
 		return Type == EPropertyType::MaterialSlot || Name.rfind("Element ", 0) == 0;
 	};
+	auto IsVisibilityProp = [](const FString& Name) {
+		return Name == "Visible" || Name == "Visible In Editor" || Name == "Visible In Game" || Name == "Is Editor Helper";
+	};
 
 	bool bIsRoot = false;
 	if (SelectedComponent->IsA<USceneComponent>())
@@ -423,6 +426,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 	}
 
 	const bool bIsStaticMeshComponent = SelectedComponent->IsA<UStaticMeshComponent>();
+    UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SelectedComponent);
 	if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
@@ -453,11 +457,46 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 		}
 	}
 
+	if (PrimitiveComponent && ImGui::CollapsingHeader("Visibility", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+        bool bVisible = PrimitiveComponent->IsVisible();
+        if (ImGui::Checkbox("Visible", &bVisible))
+        {
+            PrimitiveComponent->SetVisibility(bVisible);
+            PrimitiveComponent->PostEditProperty("Visible");
+        }
+
+        ImGui::Indent();
+        bool bVisibleInEditor = PrimitiveComponent->IsVisibleInEditor();
+        bool bVisibleInGame = PrimitiveComponent->IsVisibleInGame();
+
+        if (!PrimitiveComponent->IsVisible())
+        {
+            bVisibleInEditor = false;
+            bVisibleInGame = false;
+        }
+
+        ImGui::BeginDisabled(!PrimitiveComponent->IsVisible());
+        if (ImGui::Checkbox("Visible In Editor", &bVisibleInEditor))
+        {
+            PrimitiveComponent->SetVisibleInEditor(bVisibleInEditor);
+            PrimitiveComponent->PostEditProperty("Visible In Editor");
+        }
+        if (ImGui::Checkbox("Visible In Game", &bVisibleInGame))
+        {
+            PrimitiveComponent->SetVisibleInGame(bVisibleInGame);
+            PrimitiveComponent->PostEditProperty("Visible In Game");
+        }
+        ImGui::EndDisabled();
+        ImGui::Unindent();
+
+	}
+
 	if (ImGui::CollapsingHeader("Details", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
-			if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type))
+			if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name))
 			{
 				continue;
 			}

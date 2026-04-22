@@ -18,5 +18,8 @@ void AHeightFogActor::InitDefaultComponents()
 	BillboardComponent->AttachToComponent(FogComponent);
 	
 	auto FogMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/HeightFog.json");
+	BillboardComponent->SetVisibleInEditor(true);
+	BillboardComponent->SetVisibleInGame(false);
+	BillboardComponent->SetEditorHelper(true);
 	BillboardComponent->SetMaterial(FogMaterial);
 }

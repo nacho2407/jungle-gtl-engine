@@ -80,7 +80,7 @@ FMatrix UCylindricalBillboardComponent::ComputeBillboardMatrix(const FVector& Ca
 	FVector Up = WorldAxis;
 
 	FMatrix RotMatrix;
-	RotMatrix.SetAxes(Forward, Right, Up);
+	RotMatrix.SetAxes(Right, Up, Forward);
 
 	return FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(BillboardPos);
 }

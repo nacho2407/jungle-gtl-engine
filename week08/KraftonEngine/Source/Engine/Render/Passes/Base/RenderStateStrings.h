@@ -54,6 +54,8 @@ inline constexpr FEnumEntry RenderPassMap[] = {
     { "FXAA", (int)ERenderPass::FXAA },
     { "GizmoOuter", (int)ERenderPass::GizmoOuter },
     { "GizmoInner", (int)ERenderPass::GizmoInner },
+    { "OverlayBillboard", (int)ERenderPass::OverlayBillboard },
+    { "OverlayTextWorld", (int)ERenderPass::OverlayTextWorld },
     { "OverlayFont", (int)ERenderPass::OverlayFont },
 };
 

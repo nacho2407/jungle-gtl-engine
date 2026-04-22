@@ -19,11 +19,15 @@ namespace DrawCommandBuilder
     // 디버그 라인 배치를 드로우 커맨드로 변환합니다.
     void BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
-    // 화면 오버레이 텍스트용 드로우 커맨드를 생성합니다.
+    // 에디터 helper billboard용 오버레이 드로우 커맨드를 생성합니다.
+    void BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+
+    // 화면 오버레이 텍스트와 editor helper world text용 드로우 커맨드를 생성합니다.
     void BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
     // 월드 텍스트 프록시를 드로우 커맨드로 변환합니다.
     void BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
+    void BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
     // 데칼 프록시를 드로우 커맨드로 변환합니다.
     void BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);

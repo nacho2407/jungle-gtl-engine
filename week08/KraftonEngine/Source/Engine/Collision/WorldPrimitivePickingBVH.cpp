@@ -2,8 +2,10 @@
 
 #include "Collision/RayUtils.h"
 #include "Collision/RayUtilsSIMD.h"
+#include "Component/BillboardComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/TextRenderComponent.h"
 #include "GameFramework/AActor.h"
 
 #include <algorithm>
@@ -32,6 +34,11 @@ namespace
 		const float Depth = std::max(Extent.Z * 2.0f, 0.0f);
 		return 2.0f * ((Width * Height) + (Width * Depth) + (Height * Depth));
 	}
+
+	bool IsPickableEditorHelper(const UPrimitiveComponent* Primitive)
+	{
+		return Primitive && (Primitive->IsA<UBillboardComponent>() || Primitive->IsA<UTextRenderComponent>());
+	}
 }
 
 void FWorldPrimitivePickingBVH::MarkDirty()
@@ -39,7 +46,7 @@ void FWorldPrimitivePickingBVH::MarkDirty()
 	bDirty = true;
 }
 
-void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
+void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors, bool bIncludePickableEditorHelpers)
 {
 	Leaves.clear();
 	Nodes.clear();
@@ -54,7 +61,12 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
-			if (!Primitive || !Primitive->IsVisible())
+			if (!Primitive || !Primitive->ShouldRenderInCurrentWorld())
+			{
+				continue;
+			}
+
+			if (Primitive->IsEditorHelper() && (!bIncludePickableEditorHelpers || !IsPickableEditorHelper(Primitive)))
 			{
 				continue;
 			}
@@ -83,14 +95,14 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 	bDirty = false;
 }
 
-void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
+void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors, bool bIncludePickableEditorHelpers)
 {
 	if (!bDirty)
 	{
 		return;
 	}
 
-	BuildNow(Actors);
+	BuildNow(Actors, bIncludePickableEditorHelpers);
 }
 
 /**

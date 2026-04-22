@@ -1,4 +1,4 @@
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+﻿#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
 #include "Render/Passes/Base/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Scene.h"
@@ -32,12 +32,22 @@ void FPrimitiveSceneProxy::UpdateMaterial()
 
 void FPrimitiveSceneProxy::UpdateVisibility()
 {
-    bVisible = Owner->IsVisible();
-    if (bVisible)
+    if (!Owner)
     {
-        AActor* OwnerActor = Owner->GetOwner();
-        if (OwnerActor && !OwnerActor->IsVisible())
-            bVisible = false;
+        bVisible = false;
+        return;
+    }
+
+    bVisible = Owner->ShouldRenderInCurrentWorld();
+    if (!bVisible)
+    {
+        return;
+    }
+
+    AActor* OwnerActor = Owner->GetOwner();
+    if (OwnerActor && !OwnerActor->IsVisible())
+    {
+        bVisible = false;
     }
 }
 
