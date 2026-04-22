@@ -1,4 +1,4 @@
-#include "DrawCommandBuilder.h"
+﻿#include "DrawCommandBuilder.h"
 
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
@@ -17,7 +17,7 @@
 
 void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, const FPassRenderStateTable* InPassRenderStateTable)
 {
-	CachedDevice  = InDevice;
+	CachedDevice = InDevice;
 	CachedContext = InContext;
 	PassRenderStateTable = InPassRenderStateTable;
 
@@ -98,7 +98,7 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 // ============================================================
 void FDrawCommandBuilder::ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterial* Mat, const FDrawCommandRenderState& BaseState)
 {
-	OutState.Blend        = Mat->GetBlendState();
+	OutState.Blend = Mat->GetBlendState();
 	OutState.DepthStencil = Mat->GetDepthStencilState();
 	if (BaseState.Rasterizer != ERasterizerState::WireFrame)
 		OutState.Rasterizer = Mat->GetRasterizerState();
@@ -132,9 +132,9 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 
 	// MeshBuffer → FDrawCommandBuffer 변환
 	FDrawCommandBuffer ProxyBuffer;
-	ProxyBuffer.VB       = Proxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
+	ProxyBuffer.VB = Proxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
 	ProxyBuffer.VBStride = Proxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
-	ProxyBuffer.IB       = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
+	ProxyBuffer.IB = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
 	// 섹션당 1개 커맨드 (per-section 셰이더)
 	for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
@@ -149,10 +149,10 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Pass        = Pass;
-		Cmd.Shader      = EffectiveShader;
+		Cmd.Pass = Pass;
+		Cmd.Shader = EffectiveShader;
 		Cmd.RenderState = BaseRenderState;
-		Cmd.Buffer      = ProxyBuffer;
+		Cmd.Buffer = ProxyBuffer;
 		Cmd.PerObjectCB = PerObjCB;
 		Cmd.Buffer.FirstIndex = Section.FirstIndex;
 		Cmd.Buffer.IndexCount = Section.IndexCount;
@@ -207,26 +207,26 @@ void FDrawCommandBuilder::BuildDecalCommandForReceiver(const FPrimitiveSceneProx
 	DecalMat->FlushDirtyBuffers(CachedDevice, Ctx);
 
 	FDrawCommandBuffer ReceiverBuffer;
-	ReceiverBuffer.VB       = ReceiverProxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
+	ReceiverBuffer.VB = ReceiverProxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
 	ReceiverBuffer.VBStride = ReceiverProxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
-	ReceiverBuffer.IB       = ReceiverProxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
+	ReceiverBuffer.IB = ReceiverProxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
 	auto AddDraw = [&](uint32 FirstIndex, uint32 IndexCount)
 		{
 			if (IndexCount == 0) return;
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.Pass        = DecalPass;
-			Cmd.Shader      = DecalMat->GetShader();
+			Cmd.Pass = DecalPass;
+			Cmd.Shader = DecalMat->GetShader();
 			Cmd.RenderState = BaseRenderState;
 
 			// 머티리얼 기반 렌더 상태 오버라이드
 			ApplyMaterialRenderState(Cmd.RenderState, DecalMat, BaseRenderState);
 
-			Cmd.Buffer            = ReceiverBuffer;
+			Cmd.Buffer = ReceiverBuffer;
 			Cmd.Buffer.FirstIndex = FirstIndex;
 			Cmd.Buffer.IndexCount = IndexCount;
-			Cmd.PerObjectCB       = ReceiverPerObjCB;
+			Cmd.PerObjectCB = ReceiverPerObjCB;
 			Cmd.Bindings.PerShaderCB[0] = DecalMat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 
 			// Material의 CachedSRVs에서 텍스처 바인딩
@@ -341,10 +341,10 @@ void FDrawCommandBuilder::EmitLineCommand(FLineGeometry& Lines, FShader* Shader,
 	if (Lines.GetLineCount() > 0 && Lines.UploadBuffers(CachedContext))
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Pass        = ERenderPass::EditorLines;
-		Cmd.Shader      = Shader;
+		Cmd.Pass = ERenderPass::EditorLines;
+		Cmd.Shader = Shader;
 		Cmd.RenderState = RS;
-		Cmd.Buffer      = { Lines.GetVBBuffer(), Lines.GetVBStride(), Lines.GetIBBuffer() };
+		Cmd.Buffer = { Lines.GetVBBuffer(), Lines.GetVBStride(), Lines.GetIBBuffer() };
 		Cmd.Buffer.IndexCount = Lines.GetIndexCount();
 		Cmd.BuildSortKey();
 	}
@@ -359,7 +359,7 @@ void FDrawCommandBuilder::BuildEditorLineCommands(EViewMode ViewMode)
 	const FDrawCommandRenderState EditorLinesRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::EditorLines, ViewMode);
 
 	EmitLineCommand(EditorLines, EditorShader, EditorLinesRS);
-	EmitLineCommand(GridLines,   EditorShader, EditorLinesRS);
+	EmitLineCommand(GridLines, EditorShader, EditorLinesRS);
 }
 
 // ============================================================
@@ -492,10 +492,10 @@ void FDrawCommandBuilder::BuildFontCommands(EViewMode ViewMode)
 	if (FontGeometry.GetWorldQuadCount() > 0 && FontGeometry.UploadWorldBuffers(Ctx))
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Pass        = ERenderPass::AlphaBlend;
-		Cmd.Shader      = FShaderManager::Get().GetOrCreate(EShaderPath::Font);
+		Cmd.Pass = ERenderPass::AlphaBlend;
+		Cmd.Shader = FShaderManager::Get().GetOrCreate(EShaderPath::Font);
 		Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::AlphaBlend, ViewMode);
-		Cmd.Buffer      = { FontGeometry.GetWorldVBBuffer(), FontGeometry.GetWorldVBStride(), FontGeometry.GetWorldIBBuffer() };
+		Cmd.Buffer = { FontGeometry.GetWorldVBBuffer(), FontGeometry.GetWorldVBStride(), FontGeometry.GetWorldIBBuffer() };
 		Cmd.Buffer.IndexCount = FontGeometry.GetWorldIndexCount();
 		Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
 		Cmd.BuildSortKey();
@@ -504,10 +504,10 @@ void FDrawCommandBuilder::BuildFontCommands(EViewMode ViewMode)
 	if (FontGeometry.GetScreenQuadCount() > 0 && FontGeometry.UploadScreenBuffers(Ctx))
 	{
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
-		Cmd.Pass        = ERenderPass::OverlayFont;
-		Cmd.Shader      = FShaderManager::Get().GetOrCreate(EShaderPath::OverlayFont);
+		Cmd.Pass = ERenderPass::OverlayFont;
+		Cmd.Shader = FShaderManager::Get().GetOrCreate(EShaderPath::OverlayFont);
 		Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::OverlayFont, ViewMode);
-		Cmd.Buffer      = { FontGeometry.GetScreenVBBuffer(), FontGeometry.GetScreenVBStride(), FontGeometry.GetScreenIBBuffer() };
+		Cmd.Buffer = { FontGeometry.GetScreenVBBuffer(), FontGeometry.GetScreenVBStride(), FontGeometry.GetScreenIBBuffer() };
 		Cmd.Buffer.IndexCount = FontGeometry.GetScreenIndexCount();
 		Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] = FontRes->SRV;
 		Cmd.BuildSortKey();
