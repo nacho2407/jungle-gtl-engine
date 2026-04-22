@@ -1,4 +1,4 @@
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+﻿#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
 #include "Render/Passes/Base/PipelineStateTypes.h"
 #include "Render/Scene/Proxies/Primitive/CylindricalBillboardSceneProxy.h"
 
@@ -25,7 +25,7 @@ void FCylindricalBillboardSceneProxy::UpdateMesh()
 void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(Owner);
-    bVisible = Comp->IsVisible();
+    bVisible = Comp->ShouldRenderInCurrentWorld();
     if (!bVisible)
     {
         return;
@@ -93,7 +93,7 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
     const FVector Up = WorldAxis;
 
     FMatrix RotMatrix;
-    RotMatrix.SetAxes(Forward, Right, Up);
+    RotMatrix.SetAxes(Right, Up, Forward);
 
     const FVector WorldScale = Comp->GetWorldScale();
     const FVector SpriteScale(

@@ -47,11 +47,14 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass)
         return ERenderPassNodeType::SelectionMaskPass;
     case ERenderPass::EditorLines:
         return ERenderPassNodeType::DebugLinePass;
+    case ERenderPass::OverlayBillboard:
+        return ERenderPassNodeType::OverlayBillboardPass;
     case ERenderPass::FXAA:
         return ERenderPassNodeType::FXAAPass;
     case ERenderPass::GizmoOuter:
     case ERenderPass::GizmoInner:
         return ERenderPassNodeType::GizmoPass;
+    case ERenderPass::OverlayTextWorld:
     case ERenderPass::OverlayFont:
         return ERenderPassNodeType::OverlayTextPass;
     case ERenderPass::PostProcess:
@@ -351,7 +354,7 @@ FConstantBuffer* FRenderer::AcquirePerObjectCBForProxy(const FPrimitiveSceneProx
     return FrameResources.GetPerObjectCBForProxy(Device.GetDevice(), Proxy);
 }
 
-FRenderPipelineContext FRenderer::CreatePassContext(
+FRenderPipelineContext FRenderer::CreatePipelineContext(
     const FSceneView& SceneView,
     const FViewportRenderTargets* Targets,
     FScene* Scene,
@@ -376,19 +379,21 @@ FRenderPipelineContext FRenderer::CreatePassContext(
     PipelineContext.OverlayData = &DrawCollector.GetCollectedOverlayData();
     PipelineContext.DebugLines = &DrawCollector.GetCollectedOverlayData().GetDebugLines();
     PipelineContext.OverlayTexts = &DrawCollector.GetCollectedPrimitives().OverlayTexts;
+    PipelineContext.OverlayBillboardProxies = &DrawCollector.GetCollectedOverlayData().GetEditorHelperBillboards();
+    PipelineContext.OverlayTextProxies = &DrawCollector.GetCollectedOverlayData().GetEditorHelperTexts();
     PipelineContext.Occlusion = SceneView.OcclusionCulling;
     PipelineContext.LightCulling = LightCulling.get();
     PipelineContext.LODContext = &SceneView.LODContext;
     return PipelineContext;
 }
 
-FRenderPipelineContext FRenderer::CreatePassContext(
+FRenderPipelineContext FRenderer::CreatePipelineContext(
     const FSceneView& SceneView,
     const FViewportRenderTargets* Targets,
     FScene* Scene,
     const FCollectedPrimitives& CollectedPrimitives)
 {
-    FRenderPipelineContext PipelineContext = CreatePassContext(SceneView, Targets, Scene, &CollectedPrimitives.VisibleProxies);
+    FRenderPipelineContext PipelineContext = CreatePipelineContext(SceneView, Targets, Scene, &CollectedPrimitives.VisibleProxies);
     PipelineContext.CollectedPrimitives = &CollectedPrimitives;
     return PipelineContext;
 }
@@ -414,16 +419,6 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     const bool bUsesAdditiveDecal = bHasViewModeConfig && ViewModeRegistry->UsesAdditiveDecal(PipelineContext.ActiveViewMode);
     const bool bUsesAlphaBlend = bHasViewModeConfig && ViewModeRegistry->UsesAlphaBlend(PipelineContext.ActiveViewMode);
 
-    TSet<FPrimitiveSceneProxy*> VisibleProxySet;
-    VisibleProxySet.reserve(CollectedPrimitives.VisibleProxies.size());
-    for (FPrimitiveSceneProxy* Proxy : CollectedPrimitives.VisibleProxies)
-    {
-        if (Proxy)
-        {
-            VisibleProxySet.insert(Proxy);
-        }
-    }
-
     for (FPrimitiveSceneProxy* Proxy : CollectedPrimitives.VisibleProxies)
     {
         if (!Proxy)
@@ -443,34 +438,11 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         {
             FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
 
-            if (bHasViewModeConfig)
+            if (bHasViewModeConfig && bUsesDecal)
             {
-                if (bUsesDecal)
+                if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DecalPass))
                 {
-                    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DecalPass))
-                    {
-                        Pass->BuildDrawCommands(PipelineContext, *DecalProxy);
-                    }
-                }
-            }
-            else
-            {
-                UDecalComponent* DecalComponent = static_cast<UDecalComponent*>(Proxy->Owner);
-                for (UStaticMeshComponent* Receiver : DecalComponent->GetReceivers())
-                {
-                    if (!Receiver)
-                    {
-                        continue;
-                    }
-                    FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
-                    if (!ReceiverProxy || VisibleProxySet.find(ReceiverProxy) == VisibleProxySet.end())
-                    {
-                        continue;
-                    }
-                    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DecalPass))
-                    {
-                        Pass->BuildDrawCommands(PipelineContext, *ReceiverProxy);
-                    }
+                    Pass->BuildDrawCommands(PipelineContext, *DecalProxy);
                 }
             }
         }
@@ -559,7 +531,15 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     {
         Pass->BuildDrawCommands(PipelineContext);
     }
+    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::OverlayBillboardPass))
+    {
+        Pass->BuildDrawCommands(PipelineContext);
+    }
     if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::OverlayTextPass))
+    {
+        Pass->BuildDrawCommands(PipelineContext);
+    }
+    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::LightHitMapPass))
     {
         Pass->BuildDrawCommands(PipelineContext);
     }

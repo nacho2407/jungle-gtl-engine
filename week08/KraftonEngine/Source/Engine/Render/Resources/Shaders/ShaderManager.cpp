@@ -1,4 +1,4 @@
-#include "Render/Resources/Shaders/ShaderManager.h"
+﻿#include "Render/Resources/Shaders/ShaderManager.h"
 
 #include "Platform/Paths.h"
 
@@ -200,7 +200,7 @@ FString FShaderManager::GetBuiltInShaderPath(EShaderType InType) const
     case EShaderType::StaticMesh:
         return "Shaders/Materials/StaticMeshShader.hlsl";
     case EShaderType::Decal:
-        return "Shaders/Materials/DecalShader.hlsl";
+        return "Shaders/Passes/Scene/DecalPass.hlsl";
     case EShaderType::OutlinePostProcess:
         return "Shaders/Passes/PostProcess/OutlinePostProcess.hlsl";
     case EShaderType::SceneDepth:
@@ -221,6 +221,8 @@ FString FShaderManager::GetBuiltInShaderPath(EShaderType InType) const
         return "Shaders/Passes/Scene/HeightFog.hlsl";
     case EShaderType::DepthOnly:
         return "Shaders/Passes/Scene/DepthOnly.hlsl";
+    case EShaderType::LightHitMap:
+        return "Shaders/Passes/PostProcess/LightHitMap.hlsl";
     default:
         return "";
     }

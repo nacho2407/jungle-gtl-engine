@@ -37,7 +37,7 @@ void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 
     FOutlinePostProcessConstants Constants = {};
     Constants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
-    Constants.OutlineThickness = 1.0f;
+    Constants.OutlineThickness = 2.5f;
 
     FConstantBuffer* OutlineCB = FConstantBufferPool::Get().GetBuffer(ERenderCBKey::Outline, sizeof(FOutlinePostProcessConstants));
     if (!OutlineCB)

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Pipelines/Context/RenderCollectContext.h"
 #include "Render/Scene/Proxies/Light/LightTypes.h"
@@ -36,6 +36,7 @@ struct FCollectOverlayContext
     const class UEditorEngine*             Editor             = nullptr;
     const struct FSceneView*               SceneView          = nullptr;
     const class FScene*                    Scene              = nullptr;
+    const class UWorld*                    World              = nullptr;
     float                                  GridSpacing        = 0.0f;
     int32                                  GridHalfLineCount  = 0;
     const class FOctree*                   Octree             = nullptr;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
@@ -8,6 +8,7 @@
 #include "Core/EngineTypes.h"
 #include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include "Render/Scene/DirtyFlag.h"
+#include "GameFramework/WorldContext.h"
 
 class FPrimitiveSceneProxy;
 class FScene;
@@ -30,7 +31,17 @@ public:
     virtual FMeshDataView GetMeshDataView() const { return {}; }
 
     void SetVisibility(bool bNewVisible);
+    void SetVisibleInEditor(bool bNewVisible);
+    void SetVisibleInGame(bool bNewVisible);
+    void SetEditorHelper(bool bNewHelper);
+
     inline bool IsVisible() const { return bIsVisible; }
+    inline bool IsVisibleInEditor() const { return bVisibleInEditor; }
+    inline bool IsVisibleInGame() const { return bVisibleInGame; }
+    inline bool IsEditorHelper() const { return bIsEditorHelper; }
+
+    bool ShouldRenderInWorld(EWorldType WorldType) const;
+    bool ShouldRenderInCurrentWorld() const;
 
     // 월드 공간 AABB를 FBoundingBox로 반환
     FBoundingBox GetWorldBoundingBox() const;
@@ -95,6 +106,9 @@ protected:
     mutable bool bWorldAABBDirty = true;
     mutable bool bHasValidWorldAABB = false;
     bool bIsVisible = true;
+    bool bVisibleInEditor = true;
+    bool bVisibleInGame = true;
+    bool bIsEditorHelper = false;
     FPrimitiveSceneProxy* SceneProxy = nullptr;
 
     FOctree* OctreeNode = nullptr;

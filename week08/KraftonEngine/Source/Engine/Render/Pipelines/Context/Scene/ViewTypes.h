@@ -27,13 +27,13 @@ struct FShowFlags
 	bool bWorldAxis = true;
 	bool bGizmo = true;
 	bool bBillboardText = true;
-	bool bDebugDraw = true;
 	bool bSceneBVH = false;
 	bool bSceneOctree = false;
 	bool bBoundingVolume = false;
 	bool bWorldBound = false;
 	bool bFog = true;
 	bool bFXAA = false;
+    bool bLightHitMap = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

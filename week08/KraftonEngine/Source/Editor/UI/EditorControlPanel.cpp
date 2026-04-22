@@ -14,6 +14,7 @@
 #include "GameFramework/DirectionalLightActor.h"
 #include "GameFramework/PointLightActor.h"
 #include "GameFramework/SpotLightActor.h"
+#include "Engine/Platform/Paths.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -44,8 +45,8 @@ namespace
 
 	constexpr FSpawnEntry SpawnTable[] =
 	{
-		SPAWN_MESH("Cube", "Data/BasicShape/Cube.OBJ"),
-		SPAWN_MESH("Sphere", "Data/BasicShape/Sphere.OBJ"),
+		SPAWN_MESH("Cube", FPaths::ContentRelativePath("Models/_Basic/Cube.OBJ")),
+		SPAWN_MESH("Sphere", FPaths::ContentRelativePath("Models/_Basic/Sphere.OBJ")),
 
 		SPAWN_ACTOR("Decal", ADecalActor, true),
 		SPAWN_ACTOR("Height Fog", AHeightFogActor, false),

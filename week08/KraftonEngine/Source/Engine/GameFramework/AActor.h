@@ -100,6 +100,7 @@ protected:
 	virtual void TickActor( float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction );
 	
 	void MarkPickingDirty();
+    void EnsureDefaultEditorHelperTextComponent();
 
 	USceneComponent* RootComponent = nullptr;
 
@@ -113,4 +114,5 @@ protected:
 	mutable bool bPrimitiveCacheDirty = true;
 	bool bQueuedForPartitionUpdate = false;
 	bool bActorHasBegunPlay = false;
+    bool bSuppressDefaultEditorHelperCreation = false;
 };

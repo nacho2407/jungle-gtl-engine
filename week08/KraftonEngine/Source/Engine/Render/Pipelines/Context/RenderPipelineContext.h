@@ -51,9 +51,11 @@ struct FRenderPipelineContext
     const FCollectedPrimitives*          CollectedPrimitives = nullptr;
     const TArray<FPrimitiveSceneProxy*>* VisibleProxies      = nullptr;
     const TArray<FDecalSceneProxy*>*     VisibleDecals       = nullptr;
-    const FCollectedOverlayData*         OverlayData         = nullptr;
-    const TArray<FSceneDebugLine>*       DebugLines          = nullptr;
-    const TArray<FSceneOverlayText>*     OverlayTexts        = nullptr;
+    const FCollectedOverlayData*         OverlayData            = nullptr;
+    const TArray<FSceneDebugLine>*       DebugLines             = nullptr;
+    const TArray<FSceneOverlayText>*     OverlayTexts           = nullptr;
+    const TArray<FPrimitiveSceneProxy*>* OverlayBillboardProxies = nullptr;
+    const TArray<FPrimitiveSceneProxy*>* OverlayTextProxies      = nullptr;
 
     FGPUOcclusionCulling*    Occlusion  = nullptr;
     FTileBasedLightCulling*  LightCulling = nullptr;

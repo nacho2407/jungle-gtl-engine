@@ -117,4 +117,7 @@ private:
 	bool bHasSavedWorldAxisVisibility = false;
 	bool SavedWorldAxisVisibility[MaxViewportSlots] = {};
 	bool SavedGridVisibility[MaxViewportSlots] = {};
+	bool SavedSceneBVHVisibility[MaxViewportSlots] = {};
+	bool SavedSceneOctreeVisibility[MaxViewportSlots] = {};
+	bool SavedWorldBoundVisibility[MaxViewportSlots] = {};
 };

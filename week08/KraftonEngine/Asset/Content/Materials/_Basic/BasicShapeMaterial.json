@@ -1,0 +1,16 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 32.000000,
+    "SpecularStrength" : 1.000000
+  },
+  "PathFileName" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Materials/StaticMeshShader.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/_Basic/BasicShape.png"
+  }
+}

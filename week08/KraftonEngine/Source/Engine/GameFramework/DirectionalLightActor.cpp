@@ -19,6 +19,9 @@ void ADirectionalLightActor::InitDefaultComponents()
 	
 	BillboardComponent = AddComponent<UBillboardComponent>();
 	auto DirectionalLightIcon = FMaterialManager::Get().GetOrCreateMaterial(DirectionalLightIconPath);
+	BillboardComponent->SetVisibleInEditor(true);
+	BillboardComponent->SetVisibleInGame(false);
+	BillboardComponent->SetEditorHelper(true);
 	BillboardComponent->SetMaterial(DirectionalLightIcon);
 	BillboardComponent->AttachToComponent(DirectionalLightComponent);
 }

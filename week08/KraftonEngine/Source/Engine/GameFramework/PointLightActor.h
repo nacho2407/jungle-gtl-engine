@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GameFramework/AActor.h"
+#include "Platform/Paths.h"
 
 class UPointLightComponent;
 class UBillboardComponent;
@@ -16,5 +17,5 @@ public:
 private:
     UPointLightComponent* PointLightComponent = nullptr;
 	UBillboardComponent* BillboardComponent = nullptr;
-	FString PointLightIconPath = "Asset/Materials/PointLightIcon.json";
+	FString PointLightIconPath = FPaths::EditorRelativePath("Icons/Materials/PointLightIcon.json");
 };

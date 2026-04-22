@@ -19,6 +19,9 @@ void ASpotLightActor::InitDefaultComponents()
 
 	BillboardComponent = AddComponent<UBillboardComponent>();
 	auto SpotLightIcon = FMaterialManager::Get().GetOrCreateMaterial(SpotLightIconPath);
+	BillboardComponent->SetVisibleInEditor(true);
+	BillboardComponent->SetVisibleInGame(false);
+	BillboardComponent->SetEditorHelper(true);
 	BillboardComponent->SetMaterial(SpotLightIcon);
 	BillboardComponent->AttachToComponent(SpotLightComponent);
 }

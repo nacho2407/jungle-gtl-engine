@@ -1,0 +1,22 @@
+{
+  "Parameters": {
+    "HasBaseTexture": 0.0,
+    "HasNormalTexture": 0.0,
+    "MaterialParam": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "SectionColor": [
+      0.0,
+      1.0,
+      0.0,
+      1.0
+    ],
+    "StaticMeshMaterialPadding": null
+  },
+  "PathFileName": "Asset/Content/Materials/_Basic/Basic_Green.json",
+  "RenderPass": "Opaque",
+  "ShaderPath": "Shaders/Materials/StaticMeshShader.hlsl"
+}

@@ -8,6 +8,7 @@ namespace MaterialSemantics
 {
 inline constexpr const char* DiffuseTextureSlot = "DiffuseTexture";
 inline constexpr const char* NormalTextureSlot = "NormalTexture";
+inline constexpr const char* SpecularTextureSlot = "SpecularTexture";
 inline constexpr const char* SectionColorParameter = "SectionColor";
 inline constexpr const char* SpecularPowerParameter = "SpecularPower";
 inline constexpr const char* SpecularStrengthParameter = "SpecularStrength";
@@ -37,6 +38,11 @@ inline FString CanonicalizeTextureSlot(const FString& SlotName)
     if (MatchesAny(SlotName, { NormalTextureSlot, "NormalMap", "NormalMapTexture", "BumpTexture", "BumpMap" }))
     {
         return NormalTextureSlot;
+    }
+
+    if (MatchesAny(SlotName, { SpecularTextureSlot, "SpecularMap", "SpecularMapTexture", "SpecularMask", "SpecularMaskTexture", "GlossMap" }))
+    {
+        return SpecularTextureSlot;
     }
 
     return SlotName;

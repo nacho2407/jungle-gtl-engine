@@ -51,6 +51,7 @@ class FMaterialManager : public TSingleton<FMaterialManager>
     TMap<FString, FTemplateCacheEntry> TemplateCache;     // 정규화된 셰이더 경로 → Template
 	TMap<FString, FMaterialCacheEntry> MaterialCache;      // 정규화된 머티리얼 경로 → Material
 	TArray<FMaterialAssetListItem> AvailableMaterialFiles;
+	TArray<FMaterialAssetListItem> AvailableEditorMaterialFiles;
     TArray<FMaterialTemplate*> RetiredTemplates;
     TArray<UMaterial*> RetiredMaterials;
 
@@ -65,9 +66,12 @@ public:
 
 	UMaterial* GetOrCreateMaterial(const FString& MatFilePath);
 	UMaterial* GetOrCreateStaticMeshMaterial(const FString& MatFilePath);
+	UMaterial* GetOrCreateEditorMaterial(const FString& MatFilePath);
 
 	void ScanMaterialAssets();
 	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
+	const TArray<FMaterialAssetListItem>& GetAvailableRuntimeMaterialFiles() const { return AvailableMaterialFiles; }
+	const TArray<FMaterialAssetListItem>& GetAvailableEditorMaterialFiles() const { return AvailableEditorMaterialFiles; }
 
 	void Release();
 private:

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "AActor.h"
+#include "Platform/Paths.h"
 
 class UDecalComponent;
 class UStaticMeshComponent;
@@ -15,6 +16,6 @@ public:
 private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;
 	UDecalComponent* DecalComponents[3] = { nullptr, }; // xyz 각 방향으로 1개씩
-	const FString FireballMeshName = "Data/BasicShape/Sphere.OBJ";
-	const FString LightAreaMaterialPath = "Asset/Materials/FakeLight_LightArea.json";
+	const FString FireballMeshName = FPaths::ContentRelativePath("Models/_Basic/Sphere.OBJ");
+	const FString LightAreaMaterialPath = FPaths::ContentRelativePath("Materials/FakeLight_LightArea.json");
 };

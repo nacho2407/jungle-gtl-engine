@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -48,6 +48,7 @@ public:
 
 	// --- Texture names ---
 	TArray<FString> GetTextureNames() const;
+	TArray<FString> GetEditorTextureNames() const;
 
 private:
 	FResourceManager() = default;

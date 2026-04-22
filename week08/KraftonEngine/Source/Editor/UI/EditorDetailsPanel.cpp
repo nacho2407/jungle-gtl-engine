@@ -403,6 +403,9 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 	auto IsMaterialProp = [](const FString& Name, EPropertyType Type) {
 		return Type == EPropertyType::MaterialSlot || Name.rfind("Element ", 0) == 0;
 	};
+	auto IsVisibilityProp = [](const FString& Name) {
+		return Name == "Visible" || Name == "Visible In Editor" || Name == "Visible In Game" || Name == "Is Editor Helper";
+	};
 
 	bool bIsRoot = false;
 	if (SelectedComponent->IsA<USceneComponent>())
@@ -411,7 +414,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 		bIsRoot = (SceneComp->GetParent() == nullptr);
 	}
 
-	if (!bIsRoot && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+	if (SelectedComponent->IsA<USceneComponent>() && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
@@ -423,6 +426,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 	}
 
 	const bool bIsStaticMeshComponent = SelectedComponent->IsA<UStaticMeshComponent>();
+    UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SelectedComponent);
 	if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
@@ -442,7 +446,17 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 		}
 	}
 
-	if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
+	bool bHasMaterialProp = false;
+	for (const FPropertyDescriptor& Prop : Props)
+	{
+		if (IsMaterialProp(Prop.Name, Prop.Type))
+		{
+			bHasMaterialProp = true;
+			break;
+		}
+	}
+
+	if (bHasMaterialProp && ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
@@ -453,11 +467,46 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 		}
 	}
 
+	if (PrimitiveComponent && ImGui::CollapsingHeader("Visibility", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+        bool bVisible = PrimitiveComponent->IsVisible();
+        if (ImGui::Checkbox("Visible", &bVisible))
+        {
+            PrimitiveComponent->SetVisibility(bVisible);
+            PrimitiveComponent->PostEditProperty("Visible");
+        }
+
+        ImGui::Indent();
+        bool bVisibleInEditor = PrimitiveComponent->IsVisibleInEditor();
+        bool bVisibleInGame = PrimitiveComponent->IsVisibleInGame();
+
+        if (!PrimitiveComponent->IsVisible())
+        {
+            bVisibleInEditor = false;
+            bVisibleInGame = false;
+        }
+
+        ImGui::BeginDisabled(!PrimitiveComponent->IsVisible());
+        if (ImGui::Checkbox("Visible In Editor", &bVisibleInEditor))
+        {
+            PrimitiveComponent->SetVisibleInEditor(bVisibleInEditor);
+            PrimitiveComponent->PostEditProperty("Visible In Editor");
+        }
+        if (ImGui::Checkbox("Visible In Game", &bVisibleInGame))
+        {
+            PrimitiveComponent->SetVisibleInGame(bVisibleInGame);
+            PrimitiveComponent->PostEditProperty("Visible In Game");
+        }
+        ImGui::EndDisabled();
+        ImGui::Unindent();
+
+	}
+
 	if (ImGui::CollapsingHeader("Details", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
-			if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type))
+			if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name))
 			{
 				continue;
 			}
@@ -641,7 +690,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 	case EPropertyType::MaterialSlot:
 	{
 		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
-		int32          ElemIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
+		const bool bHasElementPrefix = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0);
+		const int32 ElemIdx = bHasElementPrefix ? atoi(&Prop.Name[8]) : -1;
 
 		FString SlotName = "None";
 		if (ElemIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComponent>())
@@ -651,13 +701,22 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 				SlotName = SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
 		}
 
-		// 좌측: Element 인덱스 + 슬롯 이름
+		const bool bIsArrayElementSlot = (ElemIdx != -1);
+
+		// 좌측: Element 인덱스 + 슬롯 이름, 또는 단일 Material 라벨
 		ImGui::BeginGroup();
-		ImGui::Text("Element %d", ElemIdx);
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-		ImGui::TextUnformatted(SlotName.c_str());
-		ImGui::PopStyleColor();
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+		if (bIsArrayElementSlot)
+		{
+			ImGui::Text("Element %d", ElemIdx);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::TextUnformatted(SlotName.c_str());
+			ImGui::PopStyleColor();
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", SlotName.c_str());
+		}
+		else
+		{
+			ImGui::TextUnformatted(Prop.Name.c_str());
+		}
 		ImGui::EndGroup();
 
 		ImGui::SameLine(120);
@@ -667,7 +726,8 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 		ImGui::SetNextItemWidth(-1);
 
 		FString Preview = (Slot->Path.empty() || Slot->Path == "None") ? "None" : GetStemFromPath(Slot->Path);
-		if (ImGui::BeginCombo("##Mat", Preview.c_str()))
+		FString ComboId = bIsArrayElementSlot ? "##Mat" : "##SingleMaterial";
+		if (ImGui::BeginCombo(ComboId.c_str(), Preview.c_str()))
 		{
 			FMaterialManager::Get().ScanMaterialAssets();
 
@@ -681,7 +741,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 			if (bSelectedNone) ImGui::SetItemDefaultFocus();
 
 			// TObjectIterator 대신 FMaterialManager 파일 목록 스캔 데이터 사용
-			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableRuntimeMaterialFiles();
 			for (const FMaterialAssetListItem& Item : MatFiles)
 			{
 				bool bSelected = (Slot->Path == Item.FullPath);

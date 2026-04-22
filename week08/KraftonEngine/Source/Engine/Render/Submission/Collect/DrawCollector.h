@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 #include "Render/Submission/Collect/CollectedSceneData.h"
@@ -31,7 +31,7 @@ public:
     void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies);
 
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
-    void CollectSceneLights(FScene* Scene);
+    void CollectSceneLights(UWorld* World, FScene* Scene);
     void CollectOverlay(const FCollectOverlayContext& OverlayContext);
 
     const FCollectedSceneData&           GetCollectedSceneData() const { return CollectedSceneData; }
@@ -47,6 +47,7 @@ private:
 
     // ==================== Scene Helpers ====================
     static uint32 SelectLOD(uint32 CurrentLOD, float DistSq);
+    static void CollectEditorHelpers(UWorld* World, const FSceneView& SceneView, FCollectedOverlayData& OverlayData);
 
     // ==================== Overlay Helpers ====================
     static void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FCollectedPrimitives& OutPrimitives);

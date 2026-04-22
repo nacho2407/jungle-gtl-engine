@@ -1,8 +1,0 @@
-{
-  "PathFileName" : "Asset/Materials/HeightFog.json",
-  "ShaderPath" : "Shaders/Editor/ShaderBillboard.hlsl",
-  "RenderPass" : "AlphaBlend",
-  "Textures" : {
-    "DiffuseTexture" : "Asset/Editor/Icons/S_ExpoHeightFog.png"
-  }
-}

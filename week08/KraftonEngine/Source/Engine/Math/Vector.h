@@ -43,6 +43,7 @@ struct FVector {
     static FVector ZeroVector;
 
 	float Length() const;
+	float LengthSquared() const;
 	void  Normalize();
 	FVector Normalized() const;
 

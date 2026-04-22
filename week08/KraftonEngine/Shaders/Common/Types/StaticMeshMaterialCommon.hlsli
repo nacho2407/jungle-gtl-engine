@@ -7,7 +7,8 @@ cbuffer StaticMeshMaterialBuffer : register(b2)
     float4 MaterialParam;
     uint HasBaseTexture;
     uint HasNormalTexture;
-    float2 StaticMeshMaterialPadding;
+    uint HasSpecularTexture;
+    float StaticMeshMaterialPadding;
 }
 
 float4 GetStaticMeshSectionColorOrWhite()
@@ -29,6 +30,11 @@ float4 SampleStaticMeshBaseColor(Texture2D TextureRef, float2 UV)
 bool StaticMeshHasNormalTexture()
 {
     return HasNormalTexture != 0;
+}
+
+bool StaticMeshHasSpecularTexture()
+{
+    return HasSpecularTexture != 0;
 }
 
 #endif
