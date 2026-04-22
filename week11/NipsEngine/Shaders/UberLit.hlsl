@@ -26,8 +26,8 @@ struct FDecalInfo
     uint TextureIndex;
     float3 Padding;
 };
-StructuredBuffer<FDecalInfo> Decals : register(t7);
-Texture2DArray DecalDiffuseTexture : register(t8);
+StructuredBuffer<FDecalInfo> Decals : register(t8);
+Texture2DArray DecalDiffuseTexture : register(t9);
 
 #if HAS_DIFFUSE_MAP
 Texture2D DiffuseMap  : register(t0);
