@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -23,6 +23,7 @@ enum class EViewModePostProcessVariant : uint16
     Outline = 1,
     SceneDepth = 2,
     WorldNormal = 3,
+	LightHitMap = 4,
 };
 
 uint16 ToPostProcessUserBits(EViewModePostProcessVariant Variant);

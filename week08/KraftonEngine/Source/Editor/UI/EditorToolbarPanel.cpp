@@ -479,6 +479,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::Checkbox("Scene BVH", &Opts.ShowFlags.bSceneBVH);
             ImGui::Checkbox("Scene Octree", &Opts.ShowFlags.bSceneOctree);
             ImGui::Checkbox("World Bound", &Opts.ShowFlags.bWorldBound);
+            ImGui::Checkbox("LightHitMap", &Opts.ShowFlags.bLightHitMap);
         }
 
         if (ImGui::CollapsingHeader("Post-Processing Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
