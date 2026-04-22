@@ -98,7 +98,7 @@ class FViewportCamera
     uint32 Height = 1080;
     float  AspectRatio = 16.0f / 9.0f;
 
-    float FOV = 3.14159265358979f * 90.0f / 180.0f;
+    float FOV = 3.14159265358979f * 60.0f / 180.0f;
     float NearPlane = 0.1f;
     float FarPlane = 2000.0f;
 
