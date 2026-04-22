@@ -40,6 +40,7 @@ void FRenderer::Release()
 
 	Resources.Release();
 	TileBasedCulling.Release();
+	ClusteredLightCuller.Release();
 	FShaderManager::Get().Release();
 	FMaterialManager::Get().Release();
 	Device.Release();
