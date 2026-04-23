@@ -66,7 +66,8 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors, bool bIn
                 continue;
             }
 
-            if (Primitive->IsEditorHelper() && (!bIncludePickableEditorHelpers || !IsPickableEditorHelper(Primitive)))
+            // if (Primitive->IsEditorHelper() && (!bIncludePickableEditorHelpers || !IsPickableEditorHelper(Primitive)))
+            if (Primitive->IsEditorHelper())
             {
                 continue;
             }
