@@ -1,4 +1,4 @@
-﻿// Shader: FXAAPass
+// Shader: FXAAPass
 // Role: fullscreen FXAA post-process.
 // Entries: VS, PS. Slots: b2 FXAABuffer, t11 SceneColor, s0 LinearClamp.
 

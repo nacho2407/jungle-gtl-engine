@@ -1,4 +1,4 @@
-﻿// Shader: OcclusionTestPass
+// Shader: OcclusionTestPass
 // Role: GPU occlusion test compute shader.
 // Entry: CSOcclusionTest. Slots: b0 params, SRV/UAV slots are pass-local.
 

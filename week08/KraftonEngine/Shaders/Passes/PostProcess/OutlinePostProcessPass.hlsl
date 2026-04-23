@@ -1,4 +1,4 @@
-﻿// Shader: OutlinePostProcessPass
+// Shader: OutlinePostProcessPass
 // Role: fullscreen editor selection outline.
 // Entries: VS, PS. Slots: b2 OutlinePostProcessCB, t11 SceneColor, t13 StencilTex, s0 LinearClamp.
 

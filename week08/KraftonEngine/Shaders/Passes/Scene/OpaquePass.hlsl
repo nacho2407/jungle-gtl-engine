@@ -1,4 +1,4 @@
-﻿// Shader: OpaquePass
+// Shader: OpaquePass
 // Role: scene mesh entry shader for base surface generation.
 // Entries: VS_Opaque, PS_Opaque_Unlit, PS_Opaque_Gouraud, PS_Opaque_Lambert, PS_Opaque_BlinnPhong.
 // Slots: b0 Frame, b1 Object/Material, t0 BaseColor, t1 NormalMap, t2 SpecularMap, s1 LinearWrap.

@@ -1,4 +1,4 @@
-﻿// Shader: DecalPass
+// Shader: DecalPass
 // Role: fullscreen decal projection into modified surface buffers.
 // Entries: VS_DecalFullscreen, PS_Decal_*.
 // Slots: b0 Frame, b2 DecalBuffer, t0 DecalTex, t10 SceneDepth, s0/s1/s2 common samplers.

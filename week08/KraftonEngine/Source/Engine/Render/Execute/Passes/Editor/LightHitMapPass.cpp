@@ -35,7 +35,7 @@ void FLightHitMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::LightHitMap);
+    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::LightHitMap);
 }
 
 void FLightHitMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)

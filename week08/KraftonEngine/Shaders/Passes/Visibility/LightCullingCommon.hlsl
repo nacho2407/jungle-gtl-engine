@@ -1,4 +1,4 @@
-﻿// Shader include: LightCullingCommon
+// Shader include: LightCullingCommon
 // Role: shared types and helpers for light culling compute shaders.
 // Slots: b2 LightCullingParams, t1 SceneDepth, t6 LocalLights, u0/u1/u2 outputs.
 

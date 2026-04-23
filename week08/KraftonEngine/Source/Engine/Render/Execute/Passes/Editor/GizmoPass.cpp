@@ -17,7 +17,7 @@ void FGizmoPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FGizmoPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommand::BuildMeshDrawCommand(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildMeshDrawCommand(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
 }
 
 void FGizmoPass::SubmitDrawCommands(FRenderPipelineContext& Context)

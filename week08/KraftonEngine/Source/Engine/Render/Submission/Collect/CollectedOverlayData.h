@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
+#include "Core/EngineTypes.h"
 
 class FPrimitiveSceneProxy;
 

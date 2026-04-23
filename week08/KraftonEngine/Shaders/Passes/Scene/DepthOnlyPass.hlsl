@@ -1,4 +1,4 @@
-﻿// Shader: DepthOnlyPass
+// Shader: DepthOnlyPass
 // Role: depth pre-pass entry shader.
 // Entries: VS, PS.
 // Slots: b0 Frame, b1 Object.

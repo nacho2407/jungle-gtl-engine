@@ -17,7 +17,7 @@ void FOverlayBillboardPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOverlayBillboardPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommand::BuildOverlayBillboardDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildOverlayBillboardDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FOverlayBillboardPass::SubmitDrawCommands(FRenderPipelineContext& Context)

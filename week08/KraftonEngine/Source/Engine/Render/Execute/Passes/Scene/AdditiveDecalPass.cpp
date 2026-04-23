@@ -17,7 +17,7 @@ void FAdditiveDecalPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FAdditiveDecalPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommand::BuildMeshDrawCommand(Proxy, ERenderPass::AdditiveDecal, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildMeshDrawCommand(Proxy, ERenderPass::AdditiveDecal, Context, *Context.DrawCommandList);
 }
 
 void FAdditiveDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)

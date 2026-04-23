@@ -18,7 +18,7 @@ void FOverlayTextPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOverlayTextPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommand::BuildOverlayTextDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildOverlayTextDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FOverlayTextPass::SubmitDrawCommands(FRenderPipelineContext& Context)

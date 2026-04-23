@@ -10,6 +10,7 @@
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Texture/Texture2D.h"
 #include <algorithm>
 

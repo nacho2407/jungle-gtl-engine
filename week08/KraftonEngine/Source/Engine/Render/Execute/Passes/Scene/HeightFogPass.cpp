@@ -33,7 +33,7 @@ void FHeightFogPass::BuildDrawCommands(FRenderPipelineContext& Context)
     if (!Context.Scene || !Context.Scene->HasFog())
         return;
 
-    DrawCommand::BuildFullscreenDrawCommand(
+    DrawCommandBuild::BuildFullscreenDrawCommand(
         ERenderPass::PostProcess,
         Context,
         *Context.DrawCommandList,

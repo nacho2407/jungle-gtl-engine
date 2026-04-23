@@ -175,7 +175,7 @@ void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::Lighting, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::Lighting, Context, *Context.DrawCommandList);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {

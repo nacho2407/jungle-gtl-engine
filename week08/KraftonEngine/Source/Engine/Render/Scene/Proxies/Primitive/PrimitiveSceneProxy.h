@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/EngineTypes.h"
 #include "Core/CoreTypes.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"

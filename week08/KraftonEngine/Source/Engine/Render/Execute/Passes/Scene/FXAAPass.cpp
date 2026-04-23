@@ -31,7 +31,7 @@ void FFXAAPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::FXAA, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::FXAA, Context, *Context.DrawCommandList);
 }
 
 void FFXAAPass::SubmitDrawCommands(FRenderPipelineContext& Context)

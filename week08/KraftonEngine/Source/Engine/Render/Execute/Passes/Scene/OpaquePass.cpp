@@ -65,7 +65,7 @@ void FOpaquePass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOpaquePass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommand::BuildMeshDrawCommand(Proxy, ERenderPass::Opaque, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildMeshDrawCommand(Proxy, ERenderPass::Opaque, Context, *Context.DrawCommandList);
 }
 
 void FOpaquePass::SubmitDrawCommands(FRenderPipelineContext& Context)

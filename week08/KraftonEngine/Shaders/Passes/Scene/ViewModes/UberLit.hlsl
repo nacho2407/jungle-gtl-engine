@@ -1,4 +1,4 @@
-﻿// Shader include: UberLit
+// Shader include: UberLit
 // Role: shared lighting implementation used by LightingPass variants.
 // Defines: LIGHTING_MODEL_GOURAUD, LIGHTING_MODEL_LAMBERT, LIGHTING_MODEL_PHONG, LIGHTING_MODEL_WORLDNORMAL, LIGHTING_MODEL_UNLIT.
 // Slots: t0-t5 view mode surfaces, t6 local lights, t7 tile masks, t8 debug hit map, t10 SceneDepth, u1 light eval counter.

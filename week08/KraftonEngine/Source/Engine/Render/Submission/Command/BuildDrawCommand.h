@@ -8,7 +8,7 @@ class FTextRenderSceneProxy;
 class FDrawCommandList;
 struct FRenderPipelineContext;
 
-namespace DrawCommandBuilder
+namespace DrawCommandBuild
 {
 void BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
@@ -24,4 +24,4 @@ void BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipeli
 void BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
 void BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
-} // namespace DrawCommandBuilder
+} // namespace DrawCommandBuild

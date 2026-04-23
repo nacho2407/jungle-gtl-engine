@@ -7,6 +7,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Texture/Texture2D.h"

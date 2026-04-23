@@ -4,6 +4,7 @@
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 
