@@ -19,6 +19,8 @@
 #include "Render/Execute/Passes/Scene/PresentPass.h"
 #include "Render/Execute/Passes/Scene/NonLitViewModePass.h"
 
+// ========== Lifecycle ==========
+
 FRenderPassRegistry::~FRenderPassRegistry()
 {
     Release();
@@ -28,8 +30,9 @@ void FRenderPassRegistry::Initialize()
 {
     Release();
 
-    InitializeDefaultPassRenderStateDescs(PassStateDescs);
+    InitializeDefaultRenderPassPresets(RenderPassPresets);
 
+    // ---------- Scene Passes ----------
     Passes.emplace((int32)ERenderPassNodeType::DepthPrePass, new FDepthPrePass());
     Passes.emplace((int32)ERenderPassNodeType::LightCullingPass, new FLightCullingPass());
     Passes.emplace((int32)ERenderPassNodeType::OpaquePass, new FOpaquePass());
@@ -41,6 +44,8 @@ void FRenderPassRegistry::Initialize()
     Passes.emplace((int32)ERenderPassNodeType::HeightFogPass, new FHeightFogPass());
     Passes.emplace((int32)ERenderPassNodeType::FXAAPass, new FFXAAPass());
     Passes.emplace((int32)ERenderPassNodeType::PresentPass, new FPresentPass());
+
+    // ---------- Editor And Overlay Passes ----------
     Passes.emplace((int32)ERenderPassNodeType::SelectionMaskPass, new FSelectionMaskPass());
     Passes.emplace((int32)ERenderPassNodeType::OutlinePass, new FOutlinePass());
     Passes.emplace((int32)ERenderPassNodeType::DebugLinePass, new FDebugLinePass());
@@ -60,18 +65,25 @@ void FRenderPassRegistry::Release()
     Passes.clear();
 }
 
+// ========== Lookup ==========
+
 FRenderPass* FRenderPassRegistry::FindPass(ERenderPassNodeType Type) const
 {
     auto It = Passes.find((int32)Type);
     return It != Passes.end() ? It->second : nullptr;
 }
 
-const FPassRenderStateDesc& FRenderPassRegistry::GetPassStateDesc(ERenderPass Pass) const
+const FRenderPassPreset& FRenderPassRegistry::GetRenderPassPreset(ERenderPass Pass) const
 {
-    return PassStateDescs[(uint32)Pass];
+    return RenderPassPresets[(uint32)Pass];
 }
 
-const FPassRenderStateDesc* FRenderPassRegistry::GetPassStateDescs() const
+const FRenderPassDrawPreset& FRenderPassRegistry::GetRenderPassDrawPreset(ERenderPass Pass) const
 {
-    return PassStateDescs;
+    return RenderPassPresets[(uint32)Pass].Draw;
+}
+
+const FRenderPassPreset* FRenderPassRegistry::GetRenderPassPresets() const
+{
+    return RenderPassPresets;
 }

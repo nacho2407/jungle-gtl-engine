@@ -8,8 +8,8 @@ IMPLEMENT_CLASS(ASpotLightActor, AActor)
 
 ASpotLightActor::ASpotLightActor()
 {
-	bNeedsTick = false;
-	bTickInEditor = false;
+    bNeedsTick = false;
+    bTickInEditor = false;
 }
 
 void ASpotLightActor::InitDefaultComponents()
@@ -17,11 +17,11 @@ void ASpotLightActor::InitDefaultComponents()
     SpotLightComponent = AddComponent<USpotLightComponent>();
     SetRootComponent(SpotLightComponent);
 
-	BillboardComponent = AddComponent<UBillboardComponent>();
-	auto SpotLightIcon = FMaterialManager::Get().GetOrCreateMaterial(SpotLightIconPath);
-	BillboardComponent->SetVisibleInEditor(true);
-	BillboardComponent->SetVisibleInGame(false);
-	BillboardComponent->SetEditorHelper(true);
-	BillboardComponent->SetMaterial(SpotLightIcon);
-	BillboardComponent->AttachToComponent(SpotLightComponent);
+    BillboardComponent = AddComponent<UBillboardComponent>();
+    auto SpotLightIcon = FMaterialManager::Get().GetOrCreateMaterial(SpotLightIconPath);
+    BillboardComponent->SetVisibleInEditor(true);
+    BillboardComponent->SetVisibleInGame(false);
+    BillboardComponent->SetEditorHelper(true);
+    BillboardComponent->SetMaterial(SpotLightIcon);
+    BillboardComponent->AttachToComponent(SpotLightComponent);
 }

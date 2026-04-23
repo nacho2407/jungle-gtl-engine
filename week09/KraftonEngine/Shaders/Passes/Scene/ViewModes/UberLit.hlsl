@@ -1,6 +1,11 @@
-#include "../../../Common/Types/CommonTypes.hlsli"
-#include "../../../Common/Types/SurfaceData.hlsli"
-#include "../../../Common/Types/LightingCommon.hlsli"
+﻿// Shader include: UberLit
+// Role: shared lighting implementation used by LightingPass variants.
+// Defines: LIGHTING_MODEL_GOURAUD, LIGHTING_MODEL_LAMBERT, LIGHTING_MODEL_PHONG, LIGHTING_MODEL_WORLDNORMAL, LIGHTING_MODEL_UNLIT.
+// Slots: t0-t5 view mode surfaces, t6 local lights, t7 tile masks, t8 debug hit map, t10 SceneDepth, u1 light eval counter.
+
+#include "../../../Common/Surface/CommonTypes.hlsli"
+#include "../../../Common/Surface/SurfaceData.hlsli"
+#include "../../../Common/Lighting/LightingCommon.hlsli"
 
 Texture2D g_BaseColorTex : register(t0);
 Texture2D g_Surface1Tex : register(t1);
@@ -59,8 +64,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     
     // Local Lights (Point, Spot)
     uint2 PixelCoord = uint2(Input.position.xy);
-    uint2 TileCoord = PixelCoord / TileSize; // �??�분�??�눔
-    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x; // ???�에 존재?�는 ?�????
+    uint2 TileCoord = PixelCoord / TileSize;
+    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x;
     uint FlatTileIndex = TileCoord.x + TileCoord.y * TilesX;
     
     int BucketsPerTile = MAX_LIGHTS_PER_TILE / 32;
@@ -100,8 +105,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
 
     // Local Lights (Point, Spot)
     uint2 PixelCoord = uint2(Input.position.xy);
-    uint2 TileCoord = PixelCoord / TileSize; // �??�분�??�눔
-    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x; // ???�에 존재?�는 ?�????
+    uint2 TileCoord = PixelCoord / TileSize;
+    uint TilesX = (ScreenSize.x + TileSize.x - 1) / TileSize.x;
     uint FlatTileIndex = TileCoord.x + TileCoord.y * TilesX;
     
     int BucketsPerTile = MAX_LIGHTS_PER_TILE / 32;
@@ -148,3 +153,4 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
 
     return FinalColor;
 }
+

@@ -118,7 +118,7 @@ struct TShaderCacheEntry
 inline std::filesystem::path ResolveIncludePath(const std::filesystem::path& IncludingFile, const std::filesystem::path& IncludePath)
 {
     std::vector<std::filesystem::path> SearchRoots;
-    const std::filesystem::path Parent = IncludingFile.parent_path();
+    const std::filesystem::path        Parent = IncludingFile.parent_path();
     SearchRoots.push_back(Parent);
 
     std::filesystem::path Cursor = Parent;
@@ -139,7 +139,7 @@ inline std::filesystem::path ResolveIncludePath(const std::filesystem::path& Inc
 
     for (const std::filesystem::path& Root : SearchRoots)
     {
-        std::error_code Ec;
+        std::error_code             Ec;
         const std::filesystem::path Candidate = (Root / IncludePath).lexically_normal();
         if (std::filesystem::exists(Candidate, Ec) && !Ec)
         {
@@ -152,16 +152,16 @@ inline std::filesystem::path ResolveIncludePath(const std::filesystem::path& Inc
 
 struct FShaderFileDependency
 {
-    FString FullPath;
-    std::filesystem::file_time_type LastWriteTime{};
-    bool bExists = false;
-    uint64 DependencyHash = 0;
+    FString                               FullPath;
+    std::filesystem::file_time_type       LastWriteTime{};
+    bool                                  bExists        = false;
+    uint64                                DependencyHash = 0;
     std::chrono::steady_clock::time_point LastValidationTime{};
 };
 
 inline uint64 BuildDependencyHashRecursive(const std::filesystem::path& FilePath, std::unordered_set<std::wstring>& Visited)
 {
-    std::error_code Ec;
+    std::error_code       Ec;
     std::filesystem::path Canonical = std::filesystem::weakly_canonical(FilePath, Ec);
     if (Ec)
     {
@@ -174,7 +174,7 @@ inline uint64 BuildDependencyHashRecursive(const std::filesystem::path& FilePath
         return 0;
     }
 
-    uint64 Hash = HashString64(CanonicalKey);
+    uint64     Hash    = HashString64(CanonicalKey);
     const bool bExists = std::filesystem::exists(Canonical, Ec) && !Ec;
     HashCombine64(Hash, bExists ? 1ull : 0ull);
     if (!bExists)
@@ -226,7 +226,7 @@ inline FShaderFileDependency BuildFileDependency(const FString& FilePath)
         Path = FPaths::ToPath(FPaths::RootDir()) / Path;
     }
 
-    std::error_code Ec;
+    std::error_code       Ec;
     std::filesystem::path Canonical = std::filesystem::weakly_canonical(Path, Ec);
     if (Ec)
     {
@@ -234,13 +234,13 @@ inline FShaderFileDependency BuildFileDependency(const FString& FilePath)
     }
 
     Dependency.FullPath = FPaths::FromPath(Canonical);
-    Dependency.bExists = std::filesystem::exists(Canonical, Ec) && !Ec;
+    Dependency.bExists  = std::filesystem::exists(Canonical, Ec) && !Ec;
     if (Dependency.bExists)
     {
         Dependency.LastWriteTime = std::filesystem::last_write_time(Canonical, Ec);
         if (Ec)
         {
-            Dependency.bExists = false;
+            Dependency.bExists       = false;
             Dependency.LastWriteTime = {};
         }
     }
@@ -256,7 +256,7 @@ inline bool HasDependencyChanged(FShaderFileDependency& MutableDependency)
         return false;
     }
 
-    const auto Now = std::chrono::steady_clock::now();
+    const auto     Now                = std::chrono::steady_clock::now();
     constexpr auto ValidationInterval = std::chrono::milliseconds(250);
     if (MutableDependency.LastValidationTime.time_since_epoch().count() != 0 &&
         (Now - MutableDependency.LastValidationTime) < ValidationInterval)

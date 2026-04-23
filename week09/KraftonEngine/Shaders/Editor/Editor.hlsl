@@ -1,3 +1,7 @@
+// Shader include: Editor/Editor.hlsl
+// Role: shared shader code or editor/material entry.
+// Slots: declared locally or in included common resources.
+
 #include "../Common/Resources/ConstantBuffers.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 
@@ -20,3 +24,4 @@ float4 PS(PS_Input_ColorWorld input) : SV_TARGET
 {
     return input.color;
 }
+

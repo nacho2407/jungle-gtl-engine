@@ -1,6 +1,6 @@
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
-#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
+#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
@@ -27,11 +27,10 @@ void FSubUVSceneProxy::UpdateMesh()
 
     // TexturedQuad (FVertexPNCT with UVs) for rendering
     MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
-    Shader = FShaderManager::Get().GetShader(EShaderType::SubUV);
-    Pass = ERenderPass::AlphaBlend;
+    Shader     = FShaderManager::Get().GetShader(EShaderType::SubUV);
+    Pass       = ERenderPass::AlphaBlend;
 
-    // ExtraCB bind (UV region, b2 slot) ? ���� GPU ���۴� Renderer���� lazy ����
-    ExtraCB.Bind<FSubUVRegionConstants>(&UVRegionCB, ECBSlot::PerShader0);
+    ExtraCB.Bind<FSubUVRegionCBData>(&UVRegionCB, ECBSlot::PerShader0);
 
     // Set DiffuseSRV from particle resource
     const FParticleResource* Particle = Comp->GetParticle();
@@ -44,7 +43,7 @@ void FSubUVSceneProxy::UpdateMesh()
 void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     USubUVComponent* Comp = GetSubUVComponent();
-    bVisible = Comp->ShouldRenderInCurrentWorld();
+    bVisible              = Comp->ShouldRenderInCurrentWorld();
     if (!bVisible)
         return;
 
@@ -64,7 +63,7 @@ void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     RotMatrix.SetAxes(SceneView.CameraRight, SceneView.CameraUp, BillboardForward);
     FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(Comp->GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(Comp->GetWorldLocation());
 
-    PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
+    PerObjectConstants = FPerObjectCBData::FromWorldMatrix(BillboardMatrix);
     MarkPerObjectCBDirty();
 
     // Update UV region from frame index
@@ -72,17 +71,17 @@ void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     const uint32 Rows = Particle->Rows;
     if (Cols > 0 && Rows > 0)
     {
-        const float FrameW = 1.0f / static_cast<float>(Cols);
-        const float FrameH = 1.0f / static_cast<float>(Rows);
+        const float  FrameW   = 1.0f / static_cast<float>(Cols);
+        const float  FrameH   = 1.0f / static_cast<float>(Rows);
         const uint32 FrameIdx = Comp->GetFrameIndex();
-        const uint32 Col = FrameIdx % Cols;
-        const uint32 Row = FrameIdx / Cols;
+        const uint32 Col      = FrameIdx % Cols;
+        const uint32 Row      = FrameIdx / Cols;
 
-        FSubUVRegionConstants& Region = ExtraCB.As<FSubUVRegionConstants>();
-        Region.U = Col * FrameW;
-        Region.V = Row * FrameH;
-        Region.Width = FrameW;
-        Region.Height = FrameH;
+        FSubUVRegionCBData& Region = ExtraCB.As<FSubUVRegionCBData>();
+        Region.U                   = Col * FrameW;
+        Region.V                   = Row * FrameH;
+        Region.Width               = FrameW;
+        Region.Height              = FrameH;
     }
 }
 

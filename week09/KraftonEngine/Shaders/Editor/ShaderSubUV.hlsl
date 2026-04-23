@@ -1,3 +1,7 @@
+// Shader include: Editor/ShaderSubUV.hlsl
+// Role: shared shader code or editor/material entry.
+// Slots: declared locally or in included common resources.
+
 #include "../Common/Utils/Functions.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 #include "../Common/Resources/SystemSamplers.hlsl"
@@ -26,3 +30,4 @@ float4 PS(PS_Input_Tex input) : SV_TARGET
 
     return float4(ApplyWireframe(col.rgb), bIsWireframe ? 1.0f : col.a);
 }
+

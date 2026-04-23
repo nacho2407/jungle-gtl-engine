@@ -1,8 +1,6 @@
-#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Serialization/Archive.h"
-#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Renderer.h"
@@ -10,7 +8,7 @@
 
 IMPLEMENT_CLASS(UMaterial, UMaterialInterface)
 
-// ������ UMaterial ������
+// ========== UMaterial ==========
 
 UMaterial::~UMaterial()
 {
@@ -32,16 +30,10 @@ UMaterial::~UMaterial()
 }
 
 void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTemplate,
-                       EBlendState InBlend,
-                       EDepthStencilState InDepth,
-                       ERasterizerState InRaster,
                        TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers)
 {
     PathFileName = InPathFileName;
     Template = InTemplate;
-    BlendState = InBlend;
-    DepthStencilState = InDepth;
-    RasterizerState = InRaster;
 
     ConstantBufferMap = std::move(InBuffers);
 }
@@ -339,7 +331,7 @@ void UMaterial::Serialize(FArchive& Ar)
     }
 }
 
-// ������ UMaterialInstanceDynamic ������
+// ========== UMaterial ==========
 
 IMPLEMENT_CLASS(UMaterialInstanceDynamic, UMaterial)
 

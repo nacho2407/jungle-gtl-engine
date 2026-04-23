@@ -2,22 +2,9 @@
 
 #include "Materials/MaterialSemantics.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
-#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
-
-void FMaterialTemplate::Create(FShader* InShader)
-{
-    OwnedParameterLayout.clear();
-    ParameterLayout.clear();
-    if (InShader)
-    {
-        ParameterLayout = InShader->GetParameterLayout();
-    }
-    Shader = InShader;
-}
 
 void FMaterialTemplate::CreateSurfaceMaterialLayout()
 {
-    Shader = nullptr;
     ParameterLayout.clear();
     OwnedParameterLayout.clear();
 

@@ -8,6 +8,6 @@
 class FLevelEditorViewportClient : public FEditorViewportClient
 {
 public:
-	FLevelEditorViewportClient() = default;
-	~FLevelEditorViewportClient() override = default;
+    FLevelEditorViewportClient() = default;
+    ~FLevelEditorViewportClient() override = default;
 };

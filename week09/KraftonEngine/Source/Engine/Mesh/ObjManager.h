@@ -14,35 +14,35 @@ class UStaticMesh;
 
 struct FMeshAssetListItem
 {
-	FString DisplayName;
-	FString FullPath;
+    FString DisplayName;
+    FString FullPath;
 };
 
 class FObjManager
 {
-	// path → UStaticMesh* 캐시 (소유권은 UObjectManager)
-	static TMap<FString, UStaticMesh*> StaticMeshCache;
-	static TArray<FMeshAssetListItem> AvailableMeshFiles;
-	static TArray<FMeshAssetListItem> AvailableObjFiles;
+    // path → UStaticMesh* 캐시 (소유권은 UObjectManager)
+    static TMap<FString, UStaticMesh*> StaticMeshCache;
+    static TArray<FMeshAssetListItem> AvailableMeshFiles;
+    static TArray<FMeshAssetListItem> AvailableObjFiles;
 
 public:
-	// 원본 경로(.obj 등)를 대응되는 바이너리 캐시 경로로 변환한다.
-	// 이미 .bin 이면 그대로 반환한다.
-	static FString GetBinaryFilePath(const FString& OriginalPath);
+    // 원본 경로(.obj 등)를 대응되는 바이너리 캐시 경로로 변환한다.
+    // 이미 .bin 이면 그대로 반환한다.
+    static FString GetBinaryFilePath(const FString& OriginalPath);
 
-	// 이전 패치/로컬 코드와의 호환용 별칭
-	static FString GetBinaryFilePathString(const FString& OriginalPath) { return GetBinaryFilePath(OriginalPath); }
+    // 이전 패치/로컬 코드와의 호환용 별칭
+    static FString GetBinaryFilePathString(const FString& OriginalPath) { return GetBinaryFilePath(OriginalPath); }
 
-	static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice);
-	static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
-	static void ScanMeshAssets();
-	static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
-	static void ScanObjSourceFiles();
-	static const TArray<FMeshAssetListItem>& GetAvailableObjFiles();
+    static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice);
+    static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
+    static void ScanMeshAssets();
+    static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
+    static void ScanObjSourceFiles();
+    static const TArray<FMeshAssetListItem>& GetAvailableObjFiles();
 
-	// 캐시된 StaticMesh GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
-	static void ReleaseAllGPU();
+    // 캐시된 StaticMesh GPU 리소스 해제 (Shutdown 시 Device 해제 전 호출)
+    static void ReleaseAllGPU();
 
 private:
-	static bool TryImportStaticMesh(const FString& ObjPath, const FImportOptions* Options, UStaticMesh* StaticMesh, const FString& BinPath);
+    static bool TryImportStaticMesh(const FString& ObjPath, const FImportOptions* Options, UStaticMesh* StaticMesh, const FString& BinPath);
 };

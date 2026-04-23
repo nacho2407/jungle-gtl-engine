@@ -1,4 +1,4 @@
-#include "BillboardComponent.h"
+﻿#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Scene/Proxies/Primitive/BillboardSceneProxy.h"
@@ -20,25 +20,25 @@ FMatrix BuildStableBillboardMatrix(
     float Width,
     float Height)
 {
-    // billboard normal: 카메라를 향하도록
+    // 빌보드 법선이 카메라를 향하도록 맞춥니다.
     FVector Forward = (CameraForward * (-1)).Normalized();
 
-    // z-up 고정
+    // 임시 up 축을 바꿔 특이점을 피합니다.
     FVector WorldUp(0.0f, 0.0f, 1.0f);
     if (std::abs(Forward.Dot(WorldUp)) > 0.95f)
     {
         WorldUp = FVector(0.0f, 1.0f, 0.0f);
     }
 
-    // local Y -> world Right
+    // local Y축은 월드 right 방향에 대응합니다.
     FVector Right = WorldUp.Cross(Forward).Normalized();
 
-    // local Z -> world Up
+    // 임시 up 축을 바꿔 특이점을 피합니다.
     FVector Up = Forward.Cross(Right).Normalized();
 
     FMatrix RotMatrix;
 
-    // local X=depth, Y=width, Z=height 라는 현재 scale/AABB 가정에 맞춤
+    // local X=depth, Y=width, Z=height 규칙을 현재 scale/AABB 가정에 맞춥니다.
     RotMatrix.SetAxes(Forward, Right, Up);
 
     const FVector SpriteScale(
@@ -91,9 +91,9 @@ void UBillboardComponent::SetMaterial(UMaterial* InMaterial)
     {
         MaterialSlot.Path = "None";
     }
-    // 머티리얼 변경 시 렌더 스테이트와 프록시 갱신
-    MarkProxyDirty(EDirtyFlag::Material);
-    MarkProxyDirty(EDirtyFlag::Mesh);
+    // 머티리얼 변경은 프록시 머티리얼과 메시 캐시를 갱신합니다.
+    MarkProxyDirty(ESceneProxyDirtyFlag::Material);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -126,8 +126,8 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
     }
     else if (strcmp(PropertyName, "Width") == 0 || strcmp(PropertyName, "Height") == 0)
     {
-        // Width/Height는 빌보드 쿼드 크기를 결정하므로 트랜스폼/월드 바운드 모두 갱신해야 한다.
-        MarkProxyDirty(EDirtyFlag::Transform);
+        // Width/Height는 빌보드 쿼드 크기와 bounds를 모두 바꾸므로 transform과 bounds를 갱신합니다.
+        MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
         MarkWorldBoundsDirty();
     }
 }
@@ -148,7 +148,7 @@ void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
     if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
     {
-        WorldUp = FVector(0.0f, 1.0f, 0.0f); // 임시 Up축 변경
+        WorldUp = FVector(0.0f, 1.0f, 0.0f); // 임시 up 축을 바꿔 특이점을 피합니다.
     }
 
     FVector Right = WorldUp.Cross(Forward).Normalized();
@@ -164,27 +164,27 @@ void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 FMatrix UBillboardComponent::ComputeBillboardMatrix(const FVector& CameraForward) const
 {
-	FVector Forward = (CameraForward * -1.0f).Normalized();
-	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
+    FVector Forward = (CameraForward * -1.0f).Normalized();
+    FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
 
-	if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
-	{
-		WorldUp = FVector(0.0f, 1.0f, 0.0f);
-	}
+    if (std::abs(Forward.Dot(WorldUp)) > 0.99f)
+    {
+        WorldUp = FVector(0.0f, 1.0f, 0.0f);
+    }
 
-	FVector Right = WorldUp.Cross(Forward).Normalized();
-	FVector Up = Forward.Cross(Right).Normalized();
+    FVector Right = WorldUp.Cross(Forward).Normalized();
+    FVector Up = Forward.Cross(Right).Normalized();
 
-	FMatrix RotMatrix;
-	RotMatrix.SetAxes(Forward, Right, Up);
+    FMatrix RotMatrix;
+    RotMatrix.SetAxes(Forward, Right, Up);
 
-	const FVector WorldScale = GetWorldScale();
-	const FVector SpriteScale(
-		std::max(WorldScale.X, 1.0f),
-		Width * WorldScale.Y,
-		Height * WorldScale.Z);
+    const FVector WorldScale = GetWorldScale();
+    const FVector SpriteScale(
+        std::max(WorldScale.X, 1.0f),
+        Width * WorldScale.Y,
+        Height * WorldScale.Z);
 
-	return FMatrix::MakeScaleMatrix(SpriteScale) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
+    return FMatrix::MakeScaleMatrix(SpriteScale) * RotMatrix * FMatrix::MakeTranslationMatrix(GetWorldLocation());
 }
 
 void UBillboardComponent::UpdateWorldAABB() const

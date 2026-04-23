@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 
 class FBlendStateManager
 {
@@ -12,8 +12,8 @@ public:
     void ResetCache() { CurrentState = static_cast<EBlendState>(-1); }
 
 private:
-    ID3D11BlendState* Alpha = nullptr;
-    ID3D11BlendState* Additive = nullptr;
+    ID3D11BlendState* Alpha        = nullptr;
+    ID3D11BlendState* Additive     = nullptr;
     ID3D11BlendState* NoColorWrite = nullptr;
 
     EBlendState CurrentState = EBlendState::Opaque;

@@ -1,4 +1,4 @@
-#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
+#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "MeshBufferManager.h"
 #include "Math/MathUtils.h"
 
@@ -67,9 +67,9 @@ void FMeshBufferManager::CreatePrimitiveMeshData()
 
 void FMeshBufferManager::CreateCube()
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::Cube];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::Cube];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
     auto MakeColor = [](float x, float y, float z) -> FVector4
     {
@@ -129,9 +129,9 @@ void FMeshBufferManager::CreateCube()
 
 void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::Sphere];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::Sphere];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
     const float Radius = 0.5f;
 
@@ -155,7 +155,7 @@ void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
     {
         for (int j = 0; j < Slices; ++j)
         {
-            uint32 first = i * (Slices + 1) + j;
+            uint32 first  = i * (Slices + 1) + j;
             uint32 second = first + Slices + 1;
 
             indices.push_back(first);
@@ -171,14 +171,14 @@ void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
 
 void FMeshBufferManager::CreateRotationGizmo()
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::RotGizmo];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::RotGizmo];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
-    const float Radius = 1.0f;
-    const float Thickness = 0.03f;
-    const int Segments = 64;
-    const int TubeSegments = 8;
+    const float Radius       = 1.0f;
+    const float Thickness    = 0.03f;
+    const int   Segments     = 64;
+    const int   TubeSegments = 8;
 
     FVector4 Colors[3] = {
         FVector4(1.0f, 0.0f, 0.0f, 1.0f),
@@ -193,14 +193,14 @@ void FMeshBufferManager::CreateRotationGizmo()
         for (int i = 0; i <= Segments; ++i)
         {
             float longitude = (float)i / Segments * 2.0f * M_PI;
-            float sinLong = sin(longitude);
-            float cosLong = cos(longitude);
+            float sinLong   = sin(longitude);
+            float cosLong   = cos(longitude);
 
             for (int j = 0; j < TubeSegments; ++j)
             {
                 float latitude = (float)j / TubeSegments * 2.0f * M_PI;
-                float sinLat = sin(latitude);
-                float cosLat = cos(latitude);
+                float sinLat   = sin(latitude);
+                float cosLat   = cos(latitude);
 
                 float x = (Radius + Thickness * cosLat) * cosLong;
                 float y = (Radius + Thickness * cosLat) * sinLong;
@@ -243,12 +243,12 @@ void FMeshBufferManager::CreateRotationGizmo()
 
 void FMeshBufferManager::CreateScaleGizmo()
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::ScaleGizmo];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::ScaleGizmo];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
-    const float LineLength = 1.0f;
-    const float BoxSize = 0.05f;
+    const float LineLength    = 1.0f;
+    const float BoxSize       = 0.05f;
     const float StemThickness = 0.03f;
 
     FVector4 colors[3] = {
@@ -261,8 +261,8 @@ void FMeshBufferManager::CreateScaleGizmo()
 
     auto AddBox = [&](const FVector& Center, const FVector& Extent, const FVector4& Color, int SubID)
     {
-        uint32 StartIdx = (uint32)vertices.size();
-        FVector p[8] = {
+        uint32  StartIdx = (uint32)vertices.size();
+        FVector p[8]     = {
             Center + FVector(-Extent.X, -Extent.Y, -Extent.Z), Center + FVector(Extent.X, -Extent.Y, -Extent.Z),
             Center + FVector(Extent.X, Extent.Y, -Extent.Z), Center + FVector(-Extent.X, Extent.Y, -Extent.Z),
             Center + FVector(-Extent.X, -Extent.Y, Extent.Z), Center + FVector(Extent.X, -Extent.Y, Extent.Z),
@@ -295,9 +295,9 @@ void FMeshBufferManager::CreateScaleGizmo()
 
 void FMeshBufferManager::CreateQuad()
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::Quad];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::Quad];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
     FVector4 DefaultColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -311,14 +311,14 @@ void FMeshBufferManager::CreateQuad()
 
 void FMeshBufferManager::CreateTranslationGizmo()
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::TransGizmo];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::TransGizmo];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
-    const int32 segments = 16;
-    const float radius = 0.06f;
-    const float headRadius = 0.12f;
-    const float stemLength = 0.8f;
+    const int32 segments    = 16;
+    const float radius      = 0.06f;
+    const float headRadius  = 0.12f;
+    const float stemLength  = 0.8f;
     const float totalLength = 1.0f;
 
     FVector4 colors[3] = {
@@ -344,8 +344,8 @@ void FMeshBufferManager::CreateTranslationGizmo()
         for (int32 i = 0; i <= segments; ++i)
         {
             float angle = (2.0f * M_PI * i) / segments;
-            float c = cos(angle);
-            float s = sin(angle);
+            float c     = cos(angle);
+            float s     = sin(angle);
 
             vertices.push_back({ GetRotatedPos(c * radius, s * radius, 0.0f), colors[axis], axis });
             vertices.push_back({ GetRotatedPos(c * radius, s * radius, stemLength), colors[axis], axis });
@@ -393,11 +393,11 @@ void FMeshBufferManager::CreateTranslationGizmo()
 
 void FMeshBufferManager::CreateTexturedQuad()
 {
-    TMeshData<FVertexPNCT>& Data = PNCTMeshDataMap[EMeshShape::TexturedQuad];
-    TArray<FVertexPNCT>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TMeshData<FVertexPNCT>& Data     = PNCTMeshDataMap[EMeshShape::TexturedQuad];
+    TArray<FVertexPNCT>&    vertices = Data.Vertices;
+    TArray<uint32>&         indices  = Data.Indices;
 
-    FVector Normal(1.0f, 0.0f, 0.0f);
+    FVector  Normal(1.0f, 0.0f, 0.0f);
     FVector4 Color(1.0f, 1.0f, 1.0f, 1.0f);
 
     // Same positions as Quad: camera-facing billboard plane
@@ -411,9 +411,9 @@ void FMeshBufferManager::CreateTexturedQuad()
 
 void FMeshBufferManager::CreatePlane()
 {
-    FMeshData& Data = MeshDataMap[EMeshShape::Plane];
+    FMeshData&       Data     = MeshDataMap[EMeshShape::Plane];
     TArray<FVertex>& vertices = Data.Vertices;
-    TArray<uint32>& indices = Data.Indices;
+    TArray<uint32>&  indices  = Data.Indices;
 
     FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
 

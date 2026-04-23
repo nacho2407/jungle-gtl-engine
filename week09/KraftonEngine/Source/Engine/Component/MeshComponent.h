@@ -5,8 +5,8 @@
 class UMeshComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
+    DECLARE_CLASS(UMeshComponent, UPrimitiveComponent)
 
-	UMeshComponent() = default;
-	~UMeshComponent() override = default;
+    UMeshComponent() = default;
+    ~UMeshComponent() override = default;
 };

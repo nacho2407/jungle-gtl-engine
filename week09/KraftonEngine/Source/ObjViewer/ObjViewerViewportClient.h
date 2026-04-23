@@ -1,16 +1,16 @@
-//#pragma once
+// #pragma once
 //
-//#include "Viewport/ViewportClient.h"
-//#include "Math/Vector.h"
+// #include "Viewport/ViewportClient.h"
+// #include "Math/Vector.h"
 //
-//class UCameraComponent;
-//class FWindowsWindow;
-//class FViewport;
+// class UCameraComponent;
+// class FWindowsWindow;
+// class FViewport;
 //
 //// ObjViewer용 간이 뷰포트 클라이언트 — 마우스 오빗/줌/팬
-//class FObjViewerViewportClient : public FViewportClient
+// class FObjViewerViewportClient : public FViewportClient
 //{
-//public:
+// public:
 //	void Initialize(FWindowsWindow* InWindow);
 //	void Release();
 //
@@ -32,10 +32,10 @@
 //	// ImDrawList에 SRV를 그려주는 헬퍼
 //	void RenderViewportImage();
 //
-//private:
+// private:
 //	void TickInput(float DeltaTime);
 //
-//private:
+// private:
 //	FViewport* Viewport = nullptr;
 //	FWindowsWindow* Window = nullptr;
 //	UCameraComponent* Camera = nullptr;
@@ -51,4 +51,4 @@
 //	float ViewportY = 0.0f;
 //	float ViewportWidth = 800.0f;
 //	float ViewportHeight = 600.0f;
-//};
+// };

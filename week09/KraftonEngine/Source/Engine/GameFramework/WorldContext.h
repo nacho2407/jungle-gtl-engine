@@ -6,9 +6,9 @@ class UWorld;
 
 enum class EWorldType : uint32
 {
-    Editor,    // Editor mode — no BeginPlay
-    Game,      // Game mode — BeginPlay/Tick active
-    PIE,       // Play In Editor (future use)
+    Editor, // Editor mode — no BeginPlay
+    Game,   // Game mode — BeginPlay/Tick active
+    PIE,    // Play In Editor (future use)
 };
 
 struct FWorldContext

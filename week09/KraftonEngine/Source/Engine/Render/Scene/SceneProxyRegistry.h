@@ -14,7 +14,7 @@ struct TSceneProxyRegistry
     TArray<ProxyT*> Proxies;
     TArray<ProxyT*> DirtyProxies;
     TArray<ProxyT*> SelectedProxies;
-    TArray<uint32> FreeSlots;
+    TArray<uint32>  FreeSlots;
 
     void Reset()
     {

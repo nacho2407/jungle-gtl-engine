@@ -10,17 +10,16 @@
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/Stats.h"
 #include "Profiling/Timer.h"
-#include "Render/Execute/Passes/Scene/FogParams.h"
 #include "Render/Execute/Passes/Scene/PresentPass.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
-#include "Render/Resources/Buffers/ConstantBufferPool.h"
-#include "Render/Execute/Runner/PipelineShaderResolver.h"
-#include "Render/Resources/RenderResources.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Resources/Buffers/ConstantBufferCache.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Visibility/TileBasedLightCulling.h"
+#include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 #include "Resource/ResourceManager.h"
 
 #include <Collision/SpatialPartition.h>
@@ -77,7 +76,7 @@ void FRenderer::Create(HWND hWindow)
     }
 
     FShaderManager::Get().Initialize(Device.GetDevice());
-    FConstantBufferPool::Get().Initialize(Device.GetDevice());
+    FConstantBufferCache::Get().Initialize(Device.GetDevice());
     FrameResources.Create(Device.GetDevice());
 
     PassRegistry.Initialize();
@@ -120,23 +119,23 @@ void FRenderer::Release()
     OverlayBatches.GridLines.Release();
 
     FrameResources.Release();
-    FConstantBufferPool::Get().Release();
+    FConstantBufferCache::Get().Release();
     FShaderManager::Get().Release();
     FMaterialManager::Get().Release();
     Device.Release();
 }
 
-FSceneViewModeSurfaces* FRenderer::AcquireViewModeSurfaces(FViewport* Viewport, uint32 Width, uint32 Height)
+FViewModeSurfaces* FRenderer::AcquireViewModeSurfaces(FViewport* Viewport, uint32 Width, uint32 Height)
 {
     if (!Viewport || !Device.GetDevice() || Width == 0 || Height == 0)
     {
         return nullptr;
     }
 
-    std::unique_ptr<FSceneViewModeSurfaces>& Entry = ViewModeSurfacesMap[Viewport];
+    std::unique_ptr<FViewModeSurfaces>& Entry = ViewModeSurfacesMap[Viewport];
     if (!Entry)
     {
-        Entry = std::make_unique<FSceneViewModeSurfaces>();
+        Entry = std::make_unique<FViewModeSurfaces>();
     }
 
     Entry->Resize(Device.GetDevice(), Width, Height);
@@ -214,9 +213,9 @@ void FRenderer::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, cons
     DrawCollector.CollectOverlayText(OverlaySystem, Editor);
 }
 
-void FRenderer::CollectDebugDraw(const FSceneView& SceneView, const FScene& Scene)
+void FRenderer::CollectDebugRender(const FScene& Scene)
 {
-    DrawCollector.CollectDebugDraw(SceneView, Scene);
+    DrawCollector.CollectDebugRender(Scene);
 }
 
 void FRenderer::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth)
@@ -241,9 +240,9 @@ void FRenderer::BeginFrame(const FSceneView& SceneView, const FViewportRenderTar
 {
     FShaderManager::Get().TickHotReload();
 
-    ID3D11DeviceContext* Context = Device.GetDeviceContext();
-    ID3D11RenderTargetView* RTV = (Targets && Targets->ViewportRTV) ? Targets->ViewportRTV : Device.GetFrameBufferRTV();
-    ID3D11DepthStencilView* DSV = (Targets && Targets->ViewportDSV) ? Targets->ViewportDSV : Device.GetDepthStencilView();
+    ID3D11DeviceContext*    Context = Device.GetDeviceContext();
+    ID3D11RenderTargetView* RTV     = (Targets && Targets->ViewportRTV) ? Targets->ViewportRTV : Device.GetFrameBufferRTV();
+    ID3D11DepthStencilView* DSV     = (Targets && Targets->ViewportDSV) ? Targets->ViewportDSV : Device.GetDepthStencilView();
 
     if (RTV)
     {
@@ -259,8 +258,8 @@ void FRenderer::BeginFrame(const FSceneView& SceneView, const FViewportRenderTar
     {
         Viewport.TopLeftX = 0.0f;
         Viewport.TopLeftY = 0.0f;
-        Viewport.Width = SceneView.ViewportWidth;
-        Viewport.Height = SceneView.ViewportHeight;
+        Viewport.Width    = SceneView.ViewportWidth;
+        Viewport.Height   = SceneView.ViewportHeight;
         Viewport.MinDepth = 0.0f;
         Viewport.MaxDepth = 1.0f;
     }
@@ -276,11 +275,11 @@ void FRenderer::EndFrame()
 
 void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FSceneView& SceneView)
 {
-    FFrameConstants FrameConstantData = {};
-    FrameConstantData.View = SceneView.View;
-    FrameConstantData.Projection = SceneView.Proj;
-    FrameConstantData.InvViewProj = (SceneView.View * SceneView.Proj).GetInverse();
-    FrameConstantData.bIsWireframe = (SceneView.ViewMode == EViewMode::Wireframe);
+    FFrameCBData FrameConstantData   = {};
+    FrameConstantData.View           = SceneView.View;
+    FrameConstantData.Projection     = SceneView.Proj;
+    FrameConstantData.InvViewProj    = (SceneView.View * SceneView.Proj).GetInverse();
+    FrameConstantData.bIsWireframe   = (SceneView.ViewMode == EViewMode::Wireframe);
     FrameConstantData.WireframeColor = SceneView.WireframeColor;
     FrameConstantData.CameraWorldPos = SceneView.CameraPosition;
 
@@ -289,13 +288,13 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FSceneView
         FrameConstantData.Time = static_cast<float>(GEngine->GetTimer()->GetTotalTime());
     }
 
-    FrameResources.FrameBuffer.Update(Context, &FrameConstantData, sizeof(FFrameConstants));
+    FrameResources.FrameBuffer.Update(Context, &FrameConstantData, sizeof(FFrameCBData));
     ID3D11Buffer* FrameCB = FrameResources.FrameBuffer.GetBuffer();
     Context->VSSetConstantBuffers(ECBSlot::Frame, 1, &FrameCB);
     Context->PSSetConstantBuffers(ECBSlot::Frame, 1, &FrameCB);
 
-    const FCollectedLights EmptyLights = {};
-    const FCollectedLights& Lights = ActiveScene ? DrawCollector.GetCollectedSceneData().Lights : EmptyLights;
+    const FCollectedLights  EmptyLights = {};
+    const FCollectedLights& Lights      = ActiveScene ? DrawCollector.GetCollectedSceneData().Lights : EmptyLights;
 
     FrameResources.GlobalLightBuffer.Update(Context, &Lights.GlobalLights, sizeof(FGlobalLightConstants));
     FrameResources.UpdateLocalLights(Device.GetDevice(), Context, Lights.LocalLights);
@@ -330,11 +329,11 @@ void FRenderer::FinalizePipelineExecution()
 
     ID3D11DeviceContext* Context = Device.GetDeviceContext();
     CleanupPassState(Context, SubmitStateCache);
-    ActiveScene = nullptr;
+    ActiveScene                = nullptr;
     bPipelineExecutionPrepared = false;
 }
 
-void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FDrawSubmitStateCache& Cache)
+void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FDrawBindStateCache& Cache)
 {
     ID3D11ShaderResourceView* NullSRVs[8] = {};
     Context->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
@@ -355,46 +354,40 @@ FConstantBuffer* FRenderer::AcquirePerObjectCBForProxy(const FPrimitiveSceneProx
 }
 
 FRenderPipelineContext FRenderer::CreatePipelineContext(
-    const FSceneView& SceneView,
+    const FSceneView&             SceneView,
     const FViewportRenderTargets* Targets,
-    FScene* Scene,
-    const TArray<FPrimitiveSceneProxy*>* VisibleProxies)
+    FScene*                       Scene)
 {
-    FRenderPipelineContext PipelineContext = {};
-    PipelineContext.SceneView = &SceneView;
-    PipelineContext.Targets = Targets;
-    PipelineContext.Scene = Scene ? Scene : const_cast<FScene*>(ActiveScene);
-    PipelineContext.Renderer = this;
-    PipelineContext.Device = &Device;
-    PipelineContext.Context = Device.GetDeviceContext();
-    PipelineContext.Resources = &FrameResources;
-    PipelineContext.StateCache = &SubmitStateCache;
-    PipelineContext.DrawCommandList = &DrawCommandList;
-    PipelineContext.PassStateDescs = PassRegistry.GetPassStateDescs();
-    PipelineContext.ViewModePassRegistry = ViewModePassRegistry;
-    PipelineContext.ActiveViewSurfaces = nullptr;
-    PipelineContext.ActiveViewMode = SceneView.ViewMode;
-    PipelineContext.CollectedPrimitives = nullptr;
-    PipelineContext.VisibleProxies = VisibleProxies;
-    PipelineContext.OverlayData = &DrawCollector.GetCollectedOverlayData();
-    PipelineContext.DebugLines = &DrawCollector.GetCollectedOverlayData().GetDebugLines();
-    PipelineContext.OverlayTexts = &DrawCollector.GetCollectedPrimitives().OverlayTexts;
-    PipelineContext.OverlayBillboardProxies = &DrawCollector.GetCollectedOverlayData().GetEditorHelperBillboards();
-    PipelineContext.OverlayTextProxies = &DrawCollector.GetCollectedOverlayData().GetEditorHelperTexts();
-    PipelineContext.Occlusion = SceneView.OcclusionCulling;
-    PipelineContext.LightCulling = LightCulling.get();
-    PipelineContext.LODContext = &SceneView.LODContext;
+    FRenderPipelineContext PipelineContext  = {};
+    PipelineContext.SceneView               = &SceneView;
+    PipelineContext.Targets                 = Targets;
+    PipelineContext.Scene                   = Scene ? Scene : const_cast<FScene*>(ActiveScene);
+    PipelineContext.Renderer                = this;
+    PipelineContext.Device                  = &Device;
+    PipelineContext.Context                 = Device.GetDeviceContext();
+    PipelineContext.Resources               = &FrameResources;
+    PipelineContext.StateCache              = &SubmitStateCache;
+    PipelineContext.DrawCommandList         = &DrawCommandList;
+    PipelineContext.RenderPassPresets       = PassRegistry.GetRenderPassPresets();
+    PipelineContext.ViewMode.Registry       = ViewModePassRegistry;
+    PipelineContext.ViewMode.Surfaces       = nullptr;
+    PipelineContext.ViewMode.ActiveViewMode = SceneView.ViewMode;
+    PipelineContext.Submission.SceneData    = &DrawCollector.GetCollectedSceneData();
+    PipelineContext.Submission.OverlayData  = &DrawCollector.GetCollectedOverlayData();
+    PipelineContext.Occlusion               = SceneView.OcclusionCulling;
+    PipelineContext.LightCulling            = LightCulling.get();
+    PipelineContext.LODContext              = &SceneView.LODContext;
     return PipelineContext;
 }
 
 FRenderPipelineContext FRenderer::CreatePipelineContext(
-    const FSceneView& SceneView,
+    const FSceneView&             SceneView,
     const FViewportRenderTargets* Targets,
-    FScene* Scene,
-    const FCollectedPrimitives& CollectedPrimitives)
+    FScene*                       Scene,
+    const FCollectedSceneData&    SceneData)
 {
-    FRenderPipelineContext PipelineContext = CreatePipelineContext(SceneView, Targets, Scene, &CollectedPrimitives.VisibleProxies);
-    PipelineContext.CollectedPrimitives = &CollectedPrimitives;
+    FRenderPipelineContext PipelineContext = CreatePipelineContext(SceneView, Targets, Scene);
+    PipelineContext.Submission.SceneData   = &SceneData;
     return PipelineContext;
 }
 
@@ -407,17 +400,24 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
 
     ActiveScene = PipelineContext.Scene;
 
-    const FCollectedPrimitives& CollectedPrimitives = DrawCollector.GetCollectedSceneData().Primitives;
-    PipelineContext.CollectedPrimitives = &CollectedPrimitives;
-    PipelineContext.VisibleProxies = &CollectedPrimitives.VisibleProxies;
+    if (!PipelineContext.Submission.SceneData)
+    {
+        PipelineContext.Submission.SceneData = &DrawCollector.GetCollectedSceneData();
+    }
+    if (!PipelineContext.Submission.OverlayData)
+    {
+        PipelineContext.Submission.OverlayData = &DrawCollector.GetCollectedOverlayData();
+    }
 
-    const FViewModePassRegistry* ViewModeRegistry = PipelineContext.ViewModePassRegistry ? PipelineContext.ViewModePassRegistry : ViewModePassRegistry;
-    const bool bHasViewModeConfig = ViewModeRegistry && ViewModeRegistry->HasConfig(PipelineContext.ActiveViewMode);
-    const bool bUsesDepthPre = bHasViewModeConfig && ViewModeRegistry->UsesDepthPrePass(PipelineContext.ActiveViewMode);
-    const bool bUsesOpaque = bHasViewModeConfig && ViewModeRegistry->UsesOpaque(PipelineContext.ActiveViewMode);
-    const bool bUsesDecal = bHasViewModeConfig && ViewModeRegistry->UsesDecal(PipelineContext.ActiveViewMode);
-    const bool bUsesAdditiveDecal = bHasViewModeConfig && ViewModeRegistry->UsesAdditiveDecal(PipelineContext.ActiveViewMode);
-    const bool bUsesAlphaBlend = bHasViewModeConfig && ViewModeRegistry->UsesAlphaBlend(PipelineContext.ActiveViewMode);
+    const FCollectedPrimitives& CollectedPrimitives = PipelineContext.Submission.SceneData->Primitives;
+
+    const FViewModePassRegistry* ViewModeRegistry   = PipelineContext.ViewMode.Registry ? PipelineContext.ViewMode.Registry : ViewModePassRegistry;
+    const bool                   bHasViewModeConfig = ViewModeRegistry && ViewModeRegistry->HasConfig(PipelineContext.ViewMode.ActiveViewMode);
+    const bool                   bUsesDepthPre      = bHasViewModeConfig && ViewModeRegistry->UsesDepthPrePass(PipelineContext.ViewMode.ActiveViewMode);
+    const bool                   bUsesOpaque        = bHasViewModeConfig && ViewModeRegistry->UsesOpaque(PipelineContext.ViewMode.ActiveViewMode);
+    const bool                   bUsesDecal         = bHasViewModeConfig && ViewModeRegistry->UsesDecal(PipelineContext.ViewMode.ActiveViewMode);
+    const bool                   bUsesAdditiveDecal = bHasViewModeConfig && ViewModeRegistry->UsesAdditiveDecal(PipelineContext.ViewMode.ActiveViewMode);
+    const bool                   bUsesAlphaBlend    = bHasViewModeConfig && ViewModeRegistry->UsesAlphaBlend(PipelineContext.ViewMode.ActiveViewMode);
 
     for (FPrimitiveSceneProxy* Proxy : CollectedPrimitives.VisibleProxies)
     {
@@ -431,7 +431,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
             if (!TextProxy->CachedText.empty())
             {
-                DrawCommandBuilder::BuildWorldTextDrawCommand(*TextProxy, PipelineContext, *PipelineContext.DrawCommandList);
+                DrawCommand::BuildWorldTextDrawCommand(*TextProxy, PipelineContext, *PipelineContext.DrawCommandList);
             }
         }
         else if (Cast<UDecalComponent>(Proxy->Owner))
@@ -450,7 +450,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         {
             if (bUsesDepthPre && Proxy->Pass == ERenderPass::Opaque && PassRegistry.FindPass(ERenderPassNodeType::DepthPrePass))
             {
-                DrawCommandBuilder::BuildMeshDrawCommand(*Proxy, ERenderPass::DepthPre, PipelineContext, *PipelineContext.DrawCommandList);
+                DrawCommand::BuildMeshDrawCommand(*Proxy, ERenderPass::DepthPre, PipelineContext, *PipelineContext.DrawCommandList);
             }
 
             if (bHasViewModeConfig)
@@ -490,7 +490,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
 
     if (bHasViewModeConfig)
     {
-        if (ViewModeRegistry->UsesLightingPass(PipelineContext.ActiveViewMode))
+        if (ViewModeRegistry->UsesLightingPass(PipelineContext.ViewMode.ActiveViewMode))
         {
             if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::LightingPass))
             {
@@ -498,7 +498,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             }
         }
 
-        if (ViewModeRegistry->UsesNonLitViewMode(PipelineContext.ActiveViewMode))
+        if (ViewModeRegistry->UsesNonLitViewMode(PipelineContext.ViewMode.ActiveViewMode))
         {
             if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::NonLitViewModePass))
             {
@@ -506,7 +506,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             }
         }
 
-        if (ViewModeRegistry->UsesHeightFog(PipelineContext.ActiveViewMode))
+        if (ViewModeRegistry->UsesHeightFog(PipelineContext.ViewMode.ActiveViewMode))
         {
             if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::HeightFogPass))
             {
@@ -514,7 +514,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             }
         }
 
-        if (ViewModeRegistry->UsesFXAA(PipelineContext.ActiveViewMode))
+        if (ViewModeRegistry->UsesFXAA(PipelineContext.ViewMode.ActiveViewMode))
         {
             if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::FXAAPass))
             {
@@ -561,15 +561,15 @@ void FRenderer::RenderFrame(ERenderPipelineType RootType, FRenderPipelineContext
 void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineContext& PipelineContext)
 {
     PreparePipelineExecution(*PipelineContext.SceneView, PipelineContext.Targets);
-    PipelineContext.Renderer = this;
-    PipelineContext.StateCache = &SubmitStateCache;
-    PipelineContext.Context = Device.GetDeviceContext();
-    PipelineContext.Device = &Device;
-    PipelineContext.Resources = &FrameResources;
-    PipelineContext.DrawCommandList = &DrawCommandList;
-    PipelineContext.PassStateDescs = PassRegistry.GetPassStateDescs();
-    PipelineContext.ViewModePassRegistry = ViewModePassRegistry;
-    PipelineContext.LightCulling = LightCulling.get();
+    PipelineContext.Renderer          = this;
+    PipelineContext.StateCache        = &SubmitStateCache;
+    PipelineContext.Context           = Device.GetDeviceContext();
+    PipelineContext.Device            = &Device;
+    PipelineContext.Resources         = &FrameResources;
+    PipelineContext.DrawCommandList   = &DrawCommandList;
+    PipelineContext.RenderPassPresets = PassRegistry.GetRenderPassPresets();
+    PipelineContext.ViewMode.Registry = ViewModePassRegistry;
+    PipelineContext.LightCulling      = LightCulling.get();
 
     PipelineRunner.ExecutePipeline(RootType, PipelineContext, *PipelineContext.SceneView, PipelineRegistry, PassRegistry);
     FinalizePipelineExecution();
@@ -590,15 +590,15 @@ void FRenderer::ExecutePresentPass(FRenderPipelineContext& PipelineContext)
 
 void FRenderer::ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext& PipelineContext)
 {
-    PipelineContext.Renderer = this;
-    PipelineContext.StateCache = &SubmitStateCache;
-    PipelineContext.Context = Device.GetDeviceContext();
-    PipelineContext.Device = &Device;
-    PipelineContext.Resources = &FrameResources;
-    PipelineContext.DrawCommandList = &DrawCommandList;
-    PipelineContext.PassStateDescs = PassRegistry.GetPassStateDescs();
-    PipelineContext.ViewModePassRegistry = ViewModePassRegistry;
-    PipelineContext.LightCulling = LightCulling.get();
+    PipelineContext.Renderer          = this;
+    PipelineContext.StateCache        = &SubmitStateCache;
+    PipelineContext.Context           = Device.GetDeviceContext();
+    PipelineContext.Device            = &Device;
+    PipelineContext.Resources         = &FrameResources;
+    PipelineContext.DrawCommandList   = &DrawCommandList;
+    PipelineContext.RenderPassPresets = PassRegistry.GetRenderPassPresets();
+    PipelineContext.ViewMode.Registry = ViewModePassRegistry;
+    PipelineContext.LightCulling      = LightCulling.get();
 
     PipelineRunner.ExecutePipeline(Type, PipelineContext, *PipelineContext.SceneView, PipelineRegistry, PassRegistry);
 }

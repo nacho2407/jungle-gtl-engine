@@ -8,14 +8,14 @@ class UBillboardComponent;
 class AHeightFogActor : public AActor
 {
 public:
-	DECLARE_CLASS(AHeightFogActor, AActor)
+    DECLARE_CLASS(AHeightFogActor, AActor)
 
-	AHeightFogActor();
-	void InitDefaultComponents();
+    AHeightFogActor();
+    void InitDefaultComponents();
 
-	UHeightFogComponent* GetFogComponent() const { return FogComponent; }
+    UHeightFogComponent* GetFogComponent() const { return FogComponent; }
 
 private:
-	UHeightFogComponent* FogComponent = nullptr;
-	UBillboardComponent* BillboardComponent = nullptr;
+    UHeightFogComponent* FogComponent = nullptr;
+    UBillboardComponent* BillboardComponent = nullptr;
 };

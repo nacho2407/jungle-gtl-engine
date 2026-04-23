@@ -1,17 +1,17 @@
-//#include "ObjViewer/ObjViewerEngine.h"
+// #include "ObjViewer/ObjViewerEngine.h"
 //
-//#include "ObjViewer/ObjViewerRenderPipeline.h"
-//#include "Engine/Runtime/WindowsWindow.h"
-//#include "GameFramework/World.h"
-//#include "Object/ObjectFactory.h"
-//#include "Mesh/ObjManager.h"
-//#include "Component/StaticMeshComponent.h"
-//#include "GameFramework/AActor.h"
-//#include "Viewport/Viewport.h"
+// #include "ObjViewer/ObjViewerRenderPipeline.h"
+// #include "Engine/Runtime/WindowsWindow.h"
+// #include "GameFramework/World.h"
+// #include "Object/ObjectFactory.h"
+// #include "Mesh/ObjManager.h"
+// #include "Component/StaticMeshComponent.h"
+// #include "GameFramework/AActor.h"
+// #include "Viewport/Viewport.h"
 //
-//IMPLEMENT_CLASS(UObjViewerEngine, UEngine)
+// IMPLEMENT_CLASS(UObjViewerEngine, UEngine)
 //
-//void UObjViewerEngine::Init(FWindowsWindow* InWindow)
+// void UObjViewerEngine::Init(FWindowsWindow* InWindow)
 //{
 //	UEngine::Init(InWindow);
 //
@@ -43,9 +43,9 @@
 //
 //	// ObjViewer 전용 렌더 경로
 //	RenderPipeline = std::make_unique<FObjViewerRenderPipeline>(this, Renderer);
-//}
+// }
 //
-//void UObjViewerEngine::Shutdown()
+// void UObjViewerEngine::Shutdown()
 //{
 //	ViewportClient.Release();
 //	Panel.Release();
@@ -59,16 +59,16 @@
 //	ActiveWorldHandle = FName::None;
 //
 //	UEngine::Shutdown();
-//}
+// }
 //
-//void UObjViewerEngine::Tick(float DeltaTime)
+// void UObjViewerEngine::Tick(float DeltaTime)
 //{
 //	ViewportClient.Tick(DeltaTime);
 //	Panel.Update();
 //	UEngine::Tick(DeltaTime);
-//}
+// }
 //
-//void UObjViewerEngine::Render(float DeltaTime)
+// void UObjViewerEngine::Render(float DeltaTime)
 //{
 //	if (RenderPipeline)
 //	{
@@ -77,14 +77,14 @@
 //	}
 //
 //	UEngine::Render(DeltaTime);
-//}
+// }
 //
-//void UObjViewerEngine::RenderUI(float DeltaTime)
+// void UObjViewerEngine::RenderUI(float DeltaTime)
 //{
 //	Panel.Render(DeltaTime);
-//}
+// }
 //
-//void UObjViewerEngine::LoadPreviewMesh(const FString& MeshPath)
+// void UObjViewerEngine::LoadPreviewMesh(const FString& MeshPath)
 //{
 //	UWorld* World = GetWorld();
 //	if (!World) return;
@@ -111,9 +111,9 @@
 //
 //	// 카메라 리셋
 //	ViewportClient.ResetCamera();
-//}
+// }
 //
-//void UObjViewerEngine::ImportObjWithOptions(const FString& ObjPath, const FImportOptions& Options)
+// void UObjViewerEngine::ImportObjWithOptions(const FString& ObjPath, const FImportOptions& Options)
 //{
 //	UWorld* World = GetWorld();
 //	if (!World) return;
@@ -141,4 +141,4 @@
 //	// 리프레시 + 카메라 리셋
 //	FObjManager::ScanObjSourceFiles();
 //	ViewportClient.ResetCamera();
-//}
+// }

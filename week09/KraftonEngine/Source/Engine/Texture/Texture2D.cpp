@@ -14,42 +14,42 @@ std::vector<UTexture2D*> UTexture2D::RetiredTextures;
 
 UTexture2D::~UTexture2D()
 {
-	if (SRV)
-	{
-		if (TrackedTextureMemory > 0)
-		{
-			MemoryStats::SubTextureMemory(TrackedTextureMemory);
-			TrackedTextureMemory = 0;
-		}
+    if (SRV)
+    {
+        if (TrackedTextureMemory > 0)
+        {
+            MemoryStats::SubTextureMemory(TrackedTextureMemory);
+            TrackedTextureMemory = 0;
+        }
 
-		SRV->Release();
-		SRV = nullptr;
-	}
+        SRV->Release();
+        SRV = nullptr;
+    }
 
-	auto It = TextureCache.find(SourceFilePath);
-	if (It != TextureCache.end() && It->second.Texture == this)
-	{
-		TextureCache.erase(It);
-	}
+    auto It = TextureCache.find(SourceFilePath);
+    if (It != TextureCache.end() && It->second.Texture == this)
+    {
+        TextureCache.erase(It);
+    }
 }
 
 void UTexture2D::ReleaseAllGPU()
 {
-	for (auto& [Path, Entry] : TextureCache)
-	{
-		UTexture2D* Texture = Entry.Texture;
-		if (Texture && Texture->SRV)
-		{
-			if (Texture->TrackedTextureMemory > 0)
-			{
-				MemoryStats::SubTextureMemory(Texture->TrackedTextureMemory);
-				Texture->TrackedTextureMemory = 0;
-			}
-			Texture->SRV->Release();
-			Texture->SRV = nullptr;
-		}
-	}
-	TextureCache.clear();
+    for (auto& [Path, Entry] : TextureCache)
+    {
+        UTexture2D* Texture = Entry.Texture;
+        if (Texture && Texture->SRV)
+        {
+            if (Texture->TrackedTextureMemory > 0)
+            {
+                MemoryStats::SubTextureMemory(Texture->TrackedTextureMemory);
+                Texture->TrackedTextureMemory = 0;
+            }
+            Texture->SRV->Release();
+            Texture->SRV = nullptr;
+        }
+    }
+    TextureCache.clear();
 
     for (UTexture2D* Texture : RetiredTextures)
     {
@@ -73,17 +73,18 @@ void UTexture2D::ReleaseAllGPU()
 
 UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Device)
 {
-	if (FilePath.empty() || !Device) return nullptr;
+    if (FilePath.empty() || !Device)
+        return nullptr;
 
     const std::filesystem::path FullPath = ResolveFullPath(FilePath);
     const FString CacheKey = FPaths::FromPath(FullPath);
 
-	auto It = TextureCache.find(CacheKey);
-	if (It != TextureCache.end())
-	{
+    auto It = TextureCache.find(CacheKey);
+    if (It != TextureCache.end())
+    {
         if (!HasCacheEntryChanged(It->second))
         {
-		    return It->second.Texture;
+            return It->second.Texture;
         }
 
         if (It->second.Texture)
@@ -91,64 +92,64 @@ UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Devi
             RetiredTextures.push_back(It->second.Texture);
         }
         TextureCache.erase(It);
-	}
+    }
 
-	UTexture2D* Texture = UObjectManager::Get().CreateObject<UTexture2D>();
-	if (!Texture->LoadInternal(CacheKey, Device))
-	{
-		UObjectManager::Get().DestroyObject(Texture);
-		return nullptr;
-	}
+    UTexture2D* Texture = UObjectManager::Get().CreateObject<UTexture2D>();
+    if (!Texture->LoadInternal(CacheKey, Device))
+    {
+        UObjectManager::Get().DestroyObject(Texture);
+        return nullptr;
+    }
 
-	TextureCache[CacheKey] = BuildCacheEntry(FullPath);
+    TextureCache[CacheKey] = BuildCacheEntry(FullPath);
     TextureCache[CacheKey].Texture = Texture;
-	return Texture;
+    return Texture;
 }
 
 bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 {
-	std::wstring WidePath = FPaths::ToWide(FilePath);
+    std::wstring WidePath = FPaths::ToWide(FilePath);
 
-	ID3D11Resource* Resource = nullptr;
-	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
-		Device, WidePath.c_str(),
-		0,
-		D3D11_USAGE_DEFAULT,
-		D3D11_BIND_SHADER_RESOURCE,
-		0,
-		0,
-		DirectX::WIC_LOADER_IGNORE_SRGB,
-		&Resource, &SRV);
+    ID3D11Resource* Resource = nullptr;
+    HRESULT hr = DirectX::CreateWICTextureFromFileEx(
+        Device, WidePath.c_str(),
+        0,
+        D3D11_USAGE_DEFAULT,
+        D3D11_BIND_SHADER_RESOURCE,
+        0,
+        0,
+        DirectX::WIC_LOADER_IGNORE_SRGB,
+        &Resource, &SRV);
 
-	if (FAILED(hr))
-	{
-		UE_LOG("Failed to load texture: %s", FilePath.c_str());
-		return false;
-	}
+    if (FAILED(hr))
+    {
+        UE_LOG("Failed to load texture: %s", FilePath.c_str());
+        return false;
+    }
 
-	if (Resource)
-	{
-		TrackedTextureMemory = MemoryStats::CalculateTextureMemory(Resource);
+    if (Resource)
+    {
+        TrackedTextureMemory = MemoryStats::CalculateTextureMemory(Resource);
 
-		ID3D11Texture2D* Tex2D = nullptr;
-		if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&Tex2D)))
-		{
-			D3D11_TEXTURE2D_DESC Desc;
-			Tex2D->GetDesc(&Desc);
-			Width = Desc.Width;
-			Height = Desc.Height;
-			Tex2D->Release();
-		}
+        ID3D11Texture2D* Tex2D = nullptr;
+        if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&Tex2D)))
+        {
+            D3D11_TEXTURE2D_DESC Desc;
+            Tex2D->GetDesc(&Desc);
+            Width = Desc.Width;
+            Height = Desc.Height;
+            Tex2D->Release();
+        }
 
-		if (TrackedTextureMemory > 0)
-		{
-			MemoryStats::AddTextureMemory(TrackedTextureMemory);
-		}
-		Resource->Release();
-	}
+        if (TrackedTextureMemory > 0)
+        {
+            MemoryStats::AddTextureMemory(TrackedTextureMemory);
+        }
+        Resource->Release();
+    }
 
-	SourceFilePath = FilePath;
-	return true;
+    SourceFilePath = FilePath;
+    return true;
 }
 
 std::filesystem::path UTexture2D::ResolveFullPath(const FString& FilePath)

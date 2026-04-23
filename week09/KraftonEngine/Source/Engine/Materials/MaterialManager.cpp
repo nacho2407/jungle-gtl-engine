@@ -1,5 +1,3 @@
-#include "Render/Execute/Passes/Base/RenderStateStrings.h"
-#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>
@@ -9,7 +7,6 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
-#include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 #include "Texture/Texture2D.h"
 #include "Render/Renderer.h"
@@ -17,9 +14,6 @@
 namespace MatKeys
 {
 static constexpr const char* PathFileName = "PathFileName";
-static constexpr const char* BlendState = "BlendState";
-static constexpr const char* DepthStencilState = "DepthStencilState";
-static constexpr const char* RasterizerState = "RasterizerState";
 static constexpr const char* Parameters = "Parameters";
 static constexpr const char* Textures = "Textures";
 } // namespace MatKeys
@@ -28,22 +22,13 @@ static constexpr const char* Textures = "Textures";
 namespace
 {
 FString CanonicalizeTextureSlotName(const FString& SlotName)
-{   
+{
     return MaterialSemantics::CanonicalizeTextureSlot(SlotName);
 }
 
 FString CanonicalizeParameterName(const FString& ParamName)
 {
     return MaterialSemantics::CanonicalizeParameterName(ParamName);
-}
-
-bool IsRuntimeGeneratedMaterialParameter(const FString& ParamName)
-{
-    return ParamName == "MaterialParam" ||
-           ParamName == "HasBaseTexture" ||
-           ParamName == "HasNormalTexture" ||
-           ParamName == "HasSpecularTexture" ||
-           ParamName == "StaticMeshMaterialPadding";
 }
 
 uint64 HashString64(const std::string& Value)
@@ -101,7 +86,7 @@ uint64 BuildDependencyHashRecursive(const std::filesystem::path& FilePath, std::
         return 0;
     }
 
-    uint64 Hash = HashString64(std::string(CanonicalKey.begin(), CanonicalKey.end()));
+    uint64 Hash = HashString64(FPaths::ToUtf8(CanonicalKey));
     const bool bExists = std::filesystem::exists(Canonical, Ec) && !Ec;
     HashCombine64(Hash, bExists ? 1ull : 0ull);
     if (!bExists)
@@ -142,7 +127,7 @@ uint64 BuildDependencyHash(const std::filesystem::path& FilePath)
     std::unordered_set<std::wstring> Visited;
     return BuildDependencyHashRecursive(FilePath, Visited);
 }
-}
+} // namespace
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -226,7 +211,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
         }
 
         TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> Buffers = CreateConstantBuffers(Template);
-        DefaultMaterial->Create(CacheKey, Template, EBlendState::Opaque, EDepthStencilState::Default, ERasterizerState::SolidBackCull, std::move(Buffers));
+        DefaultMaterial->Create(CacheKey, Template, std::move(Buffers));
         DefaultMaterial->SetVector4Parameter("SectionColor", FVector4(1.0f, 0.0f, 1.0f, 1.0f));
 
         FMaterialCacheEntry NewEntry;
@@ -236,18 +221,9 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
         return DefaultMaterial;
     }
 
-    const bool bNormalized = NormalizeMaterialJson(JsonData, CacheKey);
-
     FString PathFileName = (JsonData.hasKey(MatKeys::PathFileName) && !JsonData[MatKeys::PathFileName].ToString().empty())
-        ? JsonData[MatKeys::PathFileName].ToString().c_str()
-        : CacheKey;
-    FString BlendStr = JsonData.hasKey(MatKeys::BlendState) ? JsonData[MatKeys::BlendState].ToString().c_str() : "";
-    FString DepthStr = JsonData.hasKey(MatKeys::DepthStencilState) ? JsonData[MatKeys::DepthStencilState].ToString().c_str() : "";
-    FString RasterStr = JsonData.hasKey(MatKeys::RasterizerState) ? JsonData[MatKeys::RasterizerState].ToString().c_str() : "";
-
-    EBlendState BlendState = StringToBlendState(BlendStr);
-    EDepthStencilState DepthState = StringToDepthStencilState(DepthStr);
-    ERasterizerState RasterState = StringToRasterizerState(RasterStr);
+                               ? JsonData[MatKeys::PathFileName].ToString().c_str()
+                               : CacheKey;
 
     FMaterialTemplate* Template = GetOrCreateTemplate();
     if (!Template)
@@ -256,18 +232,10 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
     auto InjectedBuffers = CreateConstantBuffers(Template);
 
     UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
-    Material->Create(PathFileName, Template, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
-
-    bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
-    bool bPurged = PurgeStaleParameters(JsonData, Template);
+    Material->Create(PathFileName, Template, std::move(InjectedBuffers));
 
     ApplyParameters(Material, JsonData);
     ApplyTextures(Material, JsonData, CacheKey);
-
-    if (bNormalized || bInjected || bPurged)
-    {
-        SaveToJSON(JsonData, CacheKey);
-    }
 
     FMaterialCacheEntry NewEntry;
     NewEntry.Material = Material;
@@ -328,16 +296,27 @@ void FMaterialManager::ApplyParameters(UMaterial* Material, json::JSON& JsonData
         {
             if (Value.length() == 3)
             {
-                Material->SetVector3Parameter(ParamName, FVector(Value[0].ToFloat(), Value[1].ToFloat(), Value[2].ToFloat()));
+                Material->SetVector3Parameter(
+                    ParamName,
+                    FVector(
+                        static_cast<float>(Value[0].ToFloat()),
+                        static_cast<float>(Value[1].ToFloat()),
+                        static_cast<float>(Value[2].ToFloat())));
             }
             else if (Value.length() == 4)
             {
-                Material->SetVector4Parameter(ParamName, FVector4(Value[0].ToFloat(), Value[1].ToFloat(), Value[2].ToFloat(), Value[3].ToFloat()));
+                Material->SetVector4Parameter(
+                    ParamName,
+                    FVector4(
+                        static_cast<float>(Value[0].ToFloat()),
+                        static_cast<float>(Value[1].ToFloat()),
+                        static_cast<float>(Value[2].ToFloat()),
+                        static_cast<float>(Value[3].ToFloat())));
             }
         }
         else if (Value.JSONType() == json::JSON::Class::Floating || Value.JSONType() == json::JSON::Class::Integral)
         {
-            Material->SetScalarParameter(ParamName, Value.ToFloat());
+            Material->SetScalarParameter(ParamName, static_cast<float>(Value.ToFloat()));
         }
     }
 }
@@ -359,141 +338,6 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData, 
             Material->SetTextureParameter(SlotName, Texture);
         }
     }
-}
-
-EBlendState FMaterialManager::StringToBlendState(const FString& Str) const
-{
-    using namespace RenderStateStrings;
-    return !Str.empty() ? FromString(BlendStateMap, Str, EBlendState::Opaque) : EBlendState::Opaque;
-}
-
-EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& Str) const
-{
-    using namespace RenderStateStrings;
-    return !Str.empty() ? FromString(DepthStencilStateMap, Str, EDepthStencilState::Default) : EDepthStencilState::Default;
-}
-
-ERasterizerState FMaterialManager::StringToRasterizerState(const FString& Str) const
-{
-    using namespace RenderStateStrings;
-    return !Str.empty() ? FromString(RasterizerStateMap, Str, ERasterizerState::SolidBackCull) : ERasterizerState::SolidBackCull;
-}
-
-bool FMaterialManager::NormalizeMaterialJson(json::JSON& JsonData, const FString& MaterialPath)
-{
-    bool bChanged = false;
-
-    if (!JsonData.hasKey(MatKeys::PathFileName) || JsonData[MatKeys::PathFileName].ToString().empty())
-    {
-        JsonData[MatKeys::PathFileName] = MaterialPath.c_str();
-        bChanged = true;
-    }
-
-    if (JsonData.hasKey(MatKeys::Textures))
-    {
-        json::JSON CanonicalTextures = json::JSON::Make(json::JSON::Class::Object);
-        for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
-        {
-            const FString CanonicalSlot = CanonicalizeTextureSlotName(Pair.first.c_str());
-            CanonicalTextures[CanonicalSlot] = Pair.second;
-            if (CanonicalSlot != Pair.first.c_str())
-            {
-                bChanged = true;
-            }
-        }
-        JsonData[MatKeys::Textures] = std::move(CanonicalTextures);
-    }
-
-    if (JsonData.hasKey(MatKeys::Parameters))
-    {
-        json::JSON CanonicalParams = json::JSON::Make(json::JSON::Class::Object);
-        for (auto& Pair : JsonData[MatKeys::Parameters].ObjectRange())
-        {
-            const FString CanonicalName = CanonicalizeParameterName(Pair.first.c_str());
-            CanonicalParams[CanonicalName] = Pair.second;
-            if (CanonicalName != Pair.first.c_str())
-            {
-                bChanged = true;
-            }
-        }
-        JsonData[MatKeys::Parameters] = std::move(CanonicalParams);
-    }
-
-
-    return bChanged;
-}
-
-void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
-{
-    const std::filesystem::path FullPath = ResolveFullPath(MatFilePath);
-    std::ofstream File(FullPath);
-    File << JsonData.dump();
-}
-
-bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material)
-{
-    const auto& Layout = Template->GetParameterInfo();
-    bool bInjected = false;
-
-    for (const auto& Pair : Layout)
-    {
-        const FString& ParamName = Pair.first;
-        const FMaterialParameterInfo* Info = Pair.second;
-
-        if (IsRuntimeGeneratedMaterialParameter(ParamName))
-            continue;
-
-        if (!JsonData[MatKeys::Parameters][ParamName].IsNull())
-            continue;
-
-        bInjected = true;
-
-        switch (Info->Size)
-        {
-        case sizeof(float):
-        {
-            float Value = 0.f;
-            Material->GetScalarParameter(ParamName, Value);
-            JsonData[MatKeys::Parameters][ParamName] = Value;
-            break;
-        }
-        case sizeof(float) * 3:
-        {
-            FVector Value;
-            Material->GetVector3Parameter(ParamName, Value);
-            JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z);
-            break;
-        }
-        case sizeof(float) * 4:
-        {
-            FVector4 Value;
-            Material->GetVector4Parameter(ParamName, Value);
-            JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
-            break;
-        }
-        case sizeof(float) * 16:
-        {
-            FMatrix Value;
-            Material->GetMatrixParameter(ParamName, Value);
-            auto MatArray = json::Array();
-            for (int i = 0; i < 16; ++i)
-                MatArray.append(Value.Data[i]);
-            JsonData[MatKeys::Parameters][ParamName] = MatArray;
-            break;
-        }
-        default:
-            break;
-        }
-    }
-
-    return bInjected;
-}
-
-bool FMaterialManager::PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template)
-{
-    (void)JsonData;
-    (void)Template;
-    return false;
 }
 
 FMaterialTemplate* FMaterialManager::GetOrCreateTemplate()

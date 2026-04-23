@@ -1,7 +1,6 @@
 #include "Render/Execute/Passes/Scene/FXAAPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Resources/RenderResources.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
@@ -32,7 +31,7 @@ void FFXAAPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::FXAA, Context, *Context.DrawCommandList);
+    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::FXAA, Context, *Context.DrawCommandList);
 }
 
 void FFXAAPass::SubmitDrawCommands(FRenderPipelineContext& Context)

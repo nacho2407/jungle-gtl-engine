@@ -120,26 +120,26 @@ void AddWorldTextToBuffer(TBatchBuffer<FTextureVertex>& Buffer, const FFontBatch
     if (Text.empty())
         return;
 
-    const float CharW = 0.5f * Scale * WorldScale.Y;
-    const float CharH = 0.5f * Scale * WorldScale.Z;
-    const size_t ByteCount = Text.size();
-    const uint32 GlyphCount = CountUTF8Codepoints(Text);
-    float CharCursorX = (GlyphCount > 0) ? (-0.5f * static_cast<float>(GlyphCount - 1) * CharW) : 0.0f;
+    const float  CharW       = 0.5f * Scale * WorldScale.Y;
+    const float  CharH       = 0.5f * Scale * WorldScale.Z;
+    const size_t ByteCount   = Text.size();
+    const uint32 GlyphCount  = CountUTF8Codepoints(Text);
+    float        CharCursorX = (GlyphCount > 0) ? (-0.5f * static_cast<float>(GlyphCount - 1) * CharW) : 0.0f;
 
-    const uint32 Base = static_cast<uint32>(Buffer.Vertices.size());
+    const uint32 Base    = static_cast<uint32>(Buffer.Vertices.size());
     const uint32 IdxBase = static_cast<uint32>(Buffer.Indices.size());
 
     Buffer.Vertices.resize(Base + ByteCount * 4);
     Buffer.Indices.resize(IdxBase + ByteCount * 6);
     FTextureVertex* pV = Buffer.Vertices.data() + Base;
-    uint32* pI = Buffer.Indices.data() + IdxBase;
+    uint32*         pI = Buffer.Indices.data() + IdxBase;
 
     const FVector HalfRight = CamRight * (CharW * 0.5f);
-    const FVector HalfUp = CamUp * (CharH * 0.5f);
+    const FVector HalfUp    = CamUp * (CharH * 0.5f);
 
-    const uint8* Ptr = reinterpret_cast<const uint8*>(Text.c_str());
-    const uint8* const End = Ptr + ByteCount;
-    uint32 CharIdx = 0;
+    const uint8*       Ptr     = reinterpret_cast<const uint8*>(Text.c_str());
+    const uint8* const End     = Ptr + ByteCount;
+    uint32             CharIdx = 0;
 
     while (Ptr < End)
     {
@@ -181,12 +181,12 @@ void AddWorldTextToBuffer(TBatchBuffer<FTextureVertex>& Buffer, const FFontBatch
         pV[3] = { Center - HalfUp + HalfRight, { UVMax.X, UVMax.Y } };
 
         const uint32 Vi = Base + CharIdx * 4;
-        pI[0] = Vi;
-        pI[1] = Vi + 1;
-        pI[2] = Vi + 2;
-        pI[3] = Vi + 1;
-        pI[4] = Vi + 3;
-        pI[5] = Vi + 2;
+        pI[0]           = Vi;
+        pI[1]           = Vi + 1;
+        pI[2]           = Vi + 2;
+        pI[3]           = Vi + 1;
+        pI[4]           = Vi + 3;
+        pI[5]           = Vi + 2;
 
         pV += 4;
         pI += 6;

@@ -1,33 +1,33 @@
-#pragma once
+﻿#pragma once
 
 #include "SceneComponent.h"
-#include "Render/Execute/Passes/Scene/FogParams.h"
+#include "Component/FogParams.h"
 
 class UHeightFogComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UHeightFogComponent, USceneComponent)
+    DECLARE_CLASS(UHeightFogComponent, USceneComponent)
 
-	UHeightFogComponent();
+    UHeightFogComponent();
 
-	void CreateRenderState() override;
-	void DestroyRenderState() override;
+    void CreateRenderState() override;
+    void DestroyRenderState() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char* PropertyName) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
-	void Serialize(FArchive& Ar) override;
+    void Serialize(FArchive& Ar) override;
 
-	// Transform 변�???FogBaseHeight 갱신
-	void OnTransformDirty() override;
+    // Updates FogBaseHeight when the component transform changes.
+    void OnTransformDirty() override;
 
 private:
-	void PushToScene();
+    void PushToScene();
 
-	float FogDensity        = 0.02f;
-	float FogHeightFalloff  = 0.2f;
-	float StartDistance     = 0.0f;
-	float FogCutoffDistance = 0.0f;
-	float FogMaxOpacity     = 1.0f;
-	FVector4 FogInscatteringColor = FVector4(0.45f, 0.55f, 0.65f, 1.0f);
+    float FogDensity = 0.02f;
+    float FogHeightFalloff = 0.2f;
+    float StartDistance = 0.0f;
+    float FogCutoffDistance = 0.0f;
+    float FogMaxOpacity = 1.0f;
+    FVector4 FogInscatteringColor = FVector4(0.45f, 0.55f, 0.65f, 1.0f);
 };

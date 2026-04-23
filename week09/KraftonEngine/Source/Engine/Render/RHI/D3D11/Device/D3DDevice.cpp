@@ -1,4 +1,4 @@
-#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
 
 //	Safe Release Macro
@@ -52,14 +52,13 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 
     SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SwapChainFlags);
 
-    ViewportInfo.Width = static_cast<float>(Width);
+    ViewportInfo.Width  = static_cast<float>(Width);
     ViewportInfo.Height = static_cast<float>(Height);
 
     CreateFrameBuffer();
     CreateDepthStencilBuffer();
     DepthStencilStateManager.Create(Device);
 
-    // ?�태 캐시 초기?????�로 ?�성??state 객체가 BeginFrame?�서 ?�적?�되?�록
     RasterizerStateManager.ResetCache();
     DepthStencilStateManager.ResetCache();
     BlendStateManager.ResetCache();
@@ -95,15 +94,15 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
     D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
     DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-    swapChainDesc.BufferDesc.Width = 0;
-    swapChainDesc.BufferDesc.Height = 0;
-    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    swapChainDesc.SampleDesc.Count = 1;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount = 2;
-    swapChainDesc.OutputWindow = InHWindow;
-    swapChainDesc.Windowed = TRUE;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.BufferDesc.Width     = 0;
+    swapChainDesc.BufferDesc.Height    = 0;
+    swapChainDesc.BufferDesc.Format    = DXGI_FORMAT_B8G8R8A8_UNORM;
+    swapChainDesc.SampleDesc.Count     = 1;
+    swapChainDesc.BufferUsage          = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount          = 2;
+    swapChainDesc.OutputWindow         = InHWindow;
+    swapChainDesc.Windowed             = TRUE;
+    swapChainDesc.SwapEffect           = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
     // Check tearing support for no-vsync with flip model
     IDXGIFactory5* Factory5 = nullptr;
@@ -141,8 +140,6 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
         DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&UserDefinedAnnotation);
     }
 
-    // CPU가 GPU보다 1?�레???�상 ?�서지 못하�??�한
-    // (기본�?3 ??Present ??깊이�??�한 FPS ?�니???�상 방�?)
     {
         IDXGIDevice1* DXGIDevice = nullptr;
         if (SUCCEEDED(Device->QueryInterface(__uuidof(IDXGIDevice1), (void**)&DXGIDevice)))
@@ -173,7 +170,6 @@ void FD3DDevice::ReleaseDeviceAndSwapChain()
     SAFE_RELEASE(DeviceContext);
 
 #ifdef _DEBUG
-    // �?진단: Device ?�제 직전 ?�아?�는 D3D 객체 리포??
     if (Device)
     {
         ID3D11Debug* Debug = nullptr;
@@ -200,8 +196,8 @@ void FD3DDevice::CreateFrameBuffer()
     SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
 
     CD3D11_RENDER_TARGET_VIEW_DESC frameBufferRTVDesc = {};
-    frameBufferRTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    frameBufferRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    frameBufferRTVDesc.Format                         = DXGI_FORMAT_B8G8R8A8_UNORM;
+    frameBufferRTVDesc.ViewDimension                  = D3D11_RTV_DIMENSION_TEXTURE2D;
 
     Device->CreateRenderTargetView(FrameBuffer, &frameBufferRTVDesc, &FrameBufferRTV);
 }
@@ -215,14 +211,14 @@ void FD3DDevice::ReleaseFrameBuffer()
 void FD3DDevice::CreateDepthStencilBuffer()
 {
     D3D11_TEXTURE2D_DESC depthStencilDesc = {};
-    depthStencilDesc.Width = static_cast<uint32>(ViewportInfo.Width);
-    depthStencilDesc.Height = static_cast<uint32>(ViewportInfo.Height);
-    depthStencilDesc.MipLevels = 1;
-    depthStencilDesc.ArraySize = 1;
-    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //	Depth 24bit + Stencil 8bit
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthStencilDesc.Width                = static_cast<uint32>(ViewportInfo.Width);
+    depthStencilDesc.Height               = static_cast<uint32>(ViewportInfo.Height);
+    depthStencilDesc.MipLevels            = 1;
+    depthStencilDesc.ArraySize            = 1;
+    depthStencilDesc.Format               = DXGI_FORMAT_D24_UNORM_S8_UINT; //	Depth 24bit + Stencil 8bit
+    depthStencilDesc.SampleDesc.Count     = 1;
+    depthStencilDesc.Usage                = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags            = D3D11_BIND_DEPTH_STENCIL;
 
     Device->CreateTexture2D(&depthStencilDesc, nullptr, &DepthStencilBuffer);
     Device->CreateDepthStencilView(DepthStencilBuffer, nullptr, &DepthStencilView);

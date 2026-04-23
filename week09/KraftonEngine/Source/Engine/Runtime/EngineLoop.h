@@ -7,14 +7,14 @@
 class FEngineLoop
 {
 public:
-	bool Init(HINSTANCE hInstance, int nShowCmd);
-	int Run();
-	void Shutdown();
+    bool Init(HINSTANCE hInstance, int nShowCmd);
+    int Run();
+    void Shutdown();
 
 private:
-	void CreateEngine();
+    void CreateEngine();
 
 private:
-	FWindowsApplication Application;
-	FTimer Timer;
+    FWindowsApplication Application;
+    FTimer Timer;
 };

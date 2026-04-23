@@ -13,11 +13,11 @@ public:
     virtual ~FRenderPass() = default;
 
     virtual void Reset() {}
-    virtual void PrepareInputs(FRenderPipelineContext& Context) = 0;
-    virtual void PrepareTargets(FRenderPipelineContext& Context) = 0;
-    virtual void BuildDrawCommands(FRenderPipelineContext& Context) = 0;
+    virtual void PrepareInputs(FRenderPipelineContext& Context)                                        = 0;
+    virtual void PrepareTargets(FRenderPipelineContext& Context)                                       = 0;
+    virtual void BuildDrawCommands(FRenderPipelineContext& Context)                                    = 0;
     virtual void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) = 0;
-    virtual void SubmitDrawCommands(FRenderPipelineContext& Context) = 0;
+    virtual void SubmitDrawCommands(FRenderPipelineContext& Context)                                   = 0;
 
     virtual void Execute(FRenderPipelineContext& Context)
     {

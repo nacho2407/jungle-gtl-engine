@@ -14,5 +14,5 @@ void FAmbientLightSceneProxy::UpdateLightConstants()
     FLightSceneProxy::UpdateLightConstants();
 
     UAmbientLightComponent* AmbientLight = static_cast<UAmbientLightComponent*>(Owner);
-    LightConstants.LightType = static_cast<uint32>(ELightType::Ambient);
+    LightConstants.LightType             = static_cast<uint32>(ELightType::Ambient);
 }

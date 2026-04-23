@@ -3,13 +3,13 @@
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Resources/RenderResources.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
-#include "Render/Execute/Context/FrameRenderResources.h"
-#include "Render/Visibility/TileBasedLightCulling.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Resources/FrameResources.h"
+#include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 #include "Profiling/Stats.h"
 
 namespace
@@ -21,33 +21,31 @@ void BuildSurfaceSRVTable(const FRenderPipelineContext& Context, EShadingModel S
         OutSurfaceSRVs[i] = nullptr;
     }
 
-    if (!Context.ActiveViewSurfaces)
+    if (!Context.ViewMode.Surfaces)
     {
         return;
     }
 
-    OutSurfaceSRVs[0] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor);
-    OutSurfaceSRVs[3] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedBaseColor);
+    OutSurfaceSRVs[0] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor);
+    OutSurfaceSRVs[3] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::ModifiedBaseColor);
 
     switch (ShadingModel)
     {
     case EShadingModel::Gouraud:
-        // Surface1 = GouraudL, ������ ǥ���� ������� �ʽ��ϴ�.
-        OutSurfaceSRVs[1] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
+        OutSurfaceSRVs[1] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface1);
         break;
 
     case EShadingModel::Lambert:
-        // Surface1 = Normal, ModifiedSurface1 = Decal ���� Normal
-        OutSurfaceSRVs[1] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
-        OutSurfaceSRVs[4] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface1);
+        OutSurfaceSRVs[1] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface1);
+        OutSurfaceSRVs[4] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::ModifiedSurface1);
         break;
 
     case EShadingModel::BlinnPhong:
         // Surface1 = Normal, Surface2 = MaterialParam
-        OutSurfaceSRVs[1] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
-        OutSurfaceSRVs[2] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface2);
-        OutSurfaceSRVs[4] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface1);
-        OutSurfaceSRVs[5] = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface2);
+        OutSurfaceSRVs[1] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface1);
+        OutSurfaceSRVs[2] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface2);
+        OutSurfaceSRVs[4] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::ModifiedSurface1);
+        OutSurfaceSRVs[5] = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::ModifiedSurface2);
         break;
 
     case EShadingModel::Unlit:
@@ -75,7 +73,7 @@ bool FLightingPass::IsEnabled(const FRenderPipelineContext& Context) const
         break;
     }
 
-    return Context.ViewModePassRegistry && Context.ViewModePassRegistry->UsesLightingPass(Context.ActiveViewMode);
+    return Context.ViewMode.Registry && Context.ViewMode.Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
 }
 
 static bool SupportsLightCullStats(EViewMode ViewMode)
@@ -96,12 +94,12 @@ static bool SupportsLightCullStats(EViewMode ViewMode)
 void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Context.ActiveViewSurfaces || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (!Context.ViewMode.Surfaces || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         return;
     }
 
-    const EShadingModel ShadingModel = Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode);
+    const EShadingModel ShadingModel = Context.ViewMode.Registry->GetShadingModel(Context.ViewMode.ActiveViewMode);
     if (ShadingModel == EShadingModel::Unlit)
     {
         return;
@@ -121,19 +119,16 @@ void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
     BuildSurfaceSRVTable(Context, ShadingModel, SurfaceSRVs);
     Context.Context->PSSetShaderResources(0, ARRAY_SIZE(SurfaceSRVs), SurfaceSRVs);
 
-	// LightCulling ���� ������ ���̵�
     if (Context.LightCulling)
     {
-        // TileMask SRV �߰�
         ID3D11ShaderResourceView* TileMaskSRV = Context.LightCulling->GetPerTileMaskSRV();
         Context.Context->PSSetShaderResources(7, 1, &TileMaskSRV);
 
-		// ����� �� ��Ʈ�� SRV �߰�
-		ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
+        ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
         Context.Context->PSSetShaderResources(8, 1, &HipMapSRV);
 
-		//b2 LightCullingParams
-		ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
+        // b2 LightCullingParams
+        ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
         Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &LightCullingParamsCB);
     }
 
@@ -154,12 +149,12 @@ void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
 
     if (Context.StateCache)
     {
-        Context.StateCache->LightCB = Context.Resources ? &Context.Resources->GlobalLightBuffer : nullptr;
+        Context.StateCache->LightCB       = Context.Resources ? &Context.Resources->GlobalLightBuffer : nullptr;
         Context.StateCache->LocalLightSRV = Context.Resources ? Context.Resources->LocalLightSRV : nullptr;
-        Context.StateCache->DiffuseSRV = nullptr;
-        Context.StateCache->NormalSRV = nullptr;
-        Context.StateCache->SpecularSRV = nullptr;
-        Context.StateCache->bForceAll = true;
+        Context.StateCache->DiffuseSRV    = nullptr;
+        Context.StateCache->NormalSRV     = nullptr;
+        Context.StateCache->SpecularSRV   = nullptr;
+        Context.StateCache->bForceAll     = true;
     }
 }
 
@@ -170,24 +165,24 @@ void FLightingPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    if (!Context.ActiveViewSurfaces || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (!Context.ViewMode.Surfaces || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         return;
     }
 
-    if (Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode) == EShadingModel::Unlit)
+    if (Context.ViewMode.Registry->GetShadingModel(Context.ViewMode.ActiveViewMode) == EShadingModel::Unlit)
     {
         return;
     }
 
-    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::Lighting, Context, *Context.DrawCommandList);
+    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::Lighting, Context, *Context.DrawCommandList);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
         return;
     }
 
-    FDrawCommand& Command = Context.DrawCommandList->GetCommands().back();
+    FDrawCommand& Command  = Context.DrawCommandList->GetCommands().back();
     Command.PerShaderCB[0] = Context.LightCulling ? Context.LightCulling->GetLightCullingParamsCBWrapper() : nullptr;
 }
 
@@ -204,7 +199,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.SceneView &&
         SupportsLightCullStats(Context.SceneView->ViewMode);
 
-	// ---- ⏱️ 1. 쿼리 지연 초기화 (최초 1회만 실행) ----
+    // ---- ⏱️ 1. 쿼리 지연 초기화 (최초 1회만 실행) ----
     if (bMeasureLightCullStats && !bQueryInitialized && Context.Context)
     {
         ID3D11Device* device = nullptr;
@@ -213,36 +208,36 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         if (device)
         {
             D3D11_QUERY_DESC queryDesc;
-            queryDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+            queryDesc.Query     = D3D11_QUERY_TIMESTAMP_DISJOINT;
             queryDesc.MiscFlags = 0;
-            HRESULT disjointHr = device->CreateQuery(&queryDesc, DisjointQuery.GetAddressOf());
+            HRESULT disjointHr  = device->CreateQuery(&queryDesc, DisjointQuery.GetAddressOf());
 
             queryDesc.Query = D3D11_QUERY_TIMESTAMP;
             HRESULT startHr = device->CreateQuery(&queryDesc, TimestampStartQuery.GetAddressOf());
-            HRESULT endHr = device->CreateQuery(&queryDesc, TimestampEndQuery.GetAddressOf());
+            HRESULT endHr   = device->CreateQuery(&queryDesc, TimestampEndQuery.GetAddressOf());
 
-			// 💡 1. 카운터 버퍼(UAV용) 생성 (Structured 아님!)
+            // 💡 1. 카운터 버퍼(UAV용) 생성 (Structured 아님!)
             D3D11_BUFFER_DESC bufDesc = {};
-            bufDesc.ByteWidth = 16; // 4바이트 uint가 4개 들어가는 16바이트로 넉넉하게
-            bufDesc.Usage = D3D11_USAGE_DEFAULT;
-            bufDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
-            bufDesc.MiscFlags = 0; // 🚨 D3D11_RESOURCE_MISC_BUFFER_STRUCTURED 제거!
-            HRESULT counterHr = device->CreateBuffer(&bufDesc, nullptr, EvalCounterBuffer.GetAddressOf());
+            bufDesc.ByteWidth         = 16; // 4바이트 uint가 4개 들어가는 16바이트로 넉넉하게
+            bufDesc.Usage             = D3D11_USAGE_DEFAULT;
+            bufDesc.BindFlags         = D3D11_BIND_UNORDERED_ACCESS;
+            bufDesc.MiscFlags         = 0; // 🚨 D3D11_RESOURCE_MISC_BUFFER_STRUCTURED 제거!
+            HRESULT counterHr         = device->CreateBuffer(&bufDesc, nullptr, EvalCounterBuffer.GetAddressOf());
 
             // 💡 2. UAV 생성 (확실한 타입 명시!)
             D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-            uavDesc.Format = DXGI_FORMAT_R32_UINT; // 🚨 UNKNOWN 대신 R32_UINT 사용
-            uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-            uavDesc.Buffer.NumElements = 4;
-            HRESULT uavHr = SUCCEEDED(counterHr)
-                ? device->CreateUnorderedAccessView(EvalCounterBuffer.Get(), &uavDesc, EvalCounterUAV.GetAddressOf())
-                : counterHr;
+            uavDesc.Format                           = DXGI_FORMAT_R32_UINT; // 🚨 UNKNOWN 대신 R32_UINT 사용
+            uavDesc.ViewDimension                    = D3D11_UAV_DIMENSION_BUFFER;
+            uavDesc.Buffer.NumElements               = 4;
+            HRESULT uavHr                            = SUCCEEDED(counterHr)
+                                                           ? device->CreateUnorderedAccessView(EvalCounterBuffer.Get(), &uavDesc, EvalCounterUAV.GetAddressOf())
+                                                           : counterHr;
 
             // 3. Staging 버퍼(CPU Read용) 생성 (기존과 동일)
-            bufDesc.Usage = D3D11_USAGE_STAGING;
-            bufDesc.BindFlags = 0;
+            bufDesc.Usage          = D3D11_USAGE_STAGING;
+            bufDesc.BindFlags      = 0;
             bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-            HRESULT stagingHr = device->CreateBuffer(&bufDesc, nullptr, EvalStagingBuffer.GetAddressOf());
+            HRESULT stagingHr      = device->CreateBuffer(&bufDesc, nullptr, EvalStagingBuffer.GetAddressOf());
 
             device->Release(); // GetDevice는 참조 카운트를 올리므로 꼭 Release() 해줘야 메모리 누수가 안 생깁니다.
             bQueryInitialized =
@@ -261,16 +256,16 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.Context->Begin(DisjointQuery.Get());
         Context.Context->End(TimestampStartQuery.Get());
 
-		// 💡 [추가] UAV를 0으로 초기화
+        // 💡 [추가] UAV를 0으로 초기화
         UINT clearVals[4] = { 0, 0, 0, 0 };
         Context.Context->ClearUnorderedAccessViewUint(EvalCounterUAV.Get(), clearVals); // 기존에 묶인 RTV를 가져와서 UAV와 함께 다시 묶음
         ID3D11RenderTargetView* currentRTVs[1] = { nullptr };
-        ID3D11DepthStencilView* currentDSV = nullptr;
+        ID3D11DepthStencilView* currentDSV     = nullptr;
         Context.Context->OMGetRenderTargets(1, currentRTVs, &currentDSV);
 
         // RTV는 슬롯 0, UAV는 슬롯 1 (StartSlot = 1)에 바인딩
-        UINT uavInitialCounts = 0;
-        ID3D11UnorderedAccessView* pUAV = EvalCounterUAV.Get();
+        UINT                       uavInitialCounts = 0;
+        ID3D11UnorderedAccessView* pUAV             = EvalCounterUAV.Get();
         Context.Context->OMSetRenderTargetsAndUnorderedAccessViews(
             1, currentRTVs, currentDSV, 1, 1, &pUAV, &uavInitialCounts);
 
@@ -281,13 +276,13 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             currentDSV->Release();
     }
 
-	//진짜 조명 연산 제출
+    // 진짜 조명 연산 제출
     SubmitPassRange(Context, ERenderPass::Lighting);
 
-	if (bMeasureLightCullStats && bQueryInitialized)
+    if (bMeasureLightCullStats && bQueryInitialized)
     {
         ID3D11RenderTargetView* currentRTVs[1] = { nullptr };
-        ID3D11DepthStencilView* currentDSV = nullptr;
+        ID3D11DepthStencilView* currentDSV     = nullptr;
         Context.Context->OMGetRenderTargets(1, currentRTVs, &currentDSV);
 
         // UAV 슬롯을 명시하지 않고 RTV만 다시 세팅하면, 꽂혀있던 UAV가 자동으로 뽑힙니다.
@@ -299,7 +294,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             currentDSV->Release();
     }
 
-	if (bMeasureLightCullStats && bQueryInitialized)
+    if (bMeasureLightCullStats && bQueryInitialized)
     {
         Context.Context->End(TimestampEndQuery.Get());
         Context.Context->End(DisjointQuery.Get());
@@ -323,11 +318,11 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             {
             }
 
-            LastGPUTimeMs = float(endTime - startTime) / float(disjointData.Frequency) * 1000.0f;
+            LastGPUTimeMs    = float(endTime - startTime) / float(disjointData.Frequency) * 1000.0f;
             bHasValidGPUTime = true;
         }
 
-		// 💡 [추가] GPU의 버퍼 값을 CPU가 읽을 수 있는 Staging 버퍼로 복사
+        // 💡 [추가] GPU의 버퍼 값을 CPU가 읽을 수 있는 Staging 버퍼로 복사
         Context.Context->CopyResource(EvalStagingBuffer.Get(), EvalCounterBuffer.Get());
 
         // 💡 [추가] 메모리 맵핑을 통해 값 읽어오기
@@ -352,7 +347,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         BindViewportTarget(Context);
     }
 
-	ID3D11ShaderResourceView* nullSRV = {};
+    ID3D11ShaderResourceView* nullSRV = {};
     Context.Context->PSSetShaderResources(7, 1, &nullSRV);
 
     Context.Context->PSSetShaderResources(8, 1, &nullSRV);

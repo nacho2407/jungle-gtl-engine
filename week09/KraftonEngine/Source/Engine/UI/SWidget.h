@@ -6,6 +6,6 @@
 class SWidget
 {
 public:
-	SWidget() = default;
-	virtual ~SWidget() = default;
+    SWidget() = default;
+    virtual ~SWidget() = default;
 };

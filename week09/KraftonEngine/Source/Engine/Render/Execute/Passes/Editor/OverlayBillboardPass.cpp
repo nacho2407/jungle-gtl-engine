@@ -1,4 +1,4 @@
-#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Editor/OverlayBillboardPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
@@ -17,7 +17,7 @@ void FOverlayBillboardPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOverlayBillboardPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommandBuilder::BuildOverlayBillboardDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommand::BuildOverlayBillboardDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FOverlayBillboardPass::SubmitDrawCommands(FRenderPipelineContext& Context)
@@ -28,7 +28,7 @@ void FOverlayBillboardPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     uint32 Start = 0;
-    uint32 End = 0;
+    uint32 End   = 0;
     Context.DrawCommandList->GetPassRange(ERenderPass::OverlayBillboard, Start, End);
     if (Start < End)
     {

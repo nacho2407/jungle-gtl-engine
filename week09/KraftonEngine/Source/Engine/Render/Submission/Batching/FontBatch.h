@@ -74,7 +74,7 @@ public:
     uint32 GetWorldQuadCount() const { return static_cast<uint32>(WorldBuffer.Vertices.size() / 4); }
     uint32 GetOverlayWorldQuadCount() const { return static_cast<uint32>(OverlayWorldBuffer.Vertices.size() / 4); }
     uint32 GetScreenQuadCount() const { return static_cast<uint32>(ScreenBuffer.Vertices.size() / 4); }
-    void GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
+    void   GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
 
 private:
     void BuildCharInfoMap(uint32 Columns, uint32 Rows);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -11,10 +11,6 @@ class UCameraComponent;
 class FViewport;
 class FGPUOcclusionCulling;
 class FTileBasedLightCulling;
-    /*
-    �� ���� ����Ʈ/ī�޶� �������� �������� �� �ʿ��� �б� ���� �� �����Դϴ�.
-    ī�޶� ���, �� ���, ShowFlag, ��������, LOD ������ �Բ� �����մϴ�.
-*/
 struct FSceneView
 {
     FMatrix View;
@@ -23,25 +19,25 @@ struct FSceneView
     FVector CameraForward;
     FVector CameraRight;
     FVector CameraUp;
-    float NearClip = 0.1f;
-    float FarClip = 1000.0f;
+    float   NearClip = 0.1f;
+    float   FarClip  = 1000.0f;
 
-    bool bIsOrtho = false;
+    bool  bIsOrtho   = false;
     float OrthoWidth = 10.0f;
 
-    float ViewportWidth = 0.0f;
-    float ViewportHeight = 0.0f;
-    ELevelViewportType ViewportType = ELevelViewportType::Perspective;
+    float              ViewportWidth  = 0.0f;
+    float              ViewportHeight = 0.0f;
+    ELevelViewportType ViewportType   = ELevelViewportType::Perspective;
 
     FViewportRenderOptions RenderOptions;
-    EViewMode ViewMode = EViewMode::Lit_Phong;
-    FShowFlags ShowFlags;
-    FVector WireframeColor = FVector(0.0f, 0.0f, 0.7f);
+    EViewMode              ViewMode = EViewMode::Lit_Phong;
+    FShowFlags             ShowFlags;
+    FVector                WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
-    FGPUOcclusionCulling* OcclusionCulling = nullptr;
-    FTileBasedLightCulling* LightCulling = nullptr;
-    FConvexVolume FrustumVolume;
-    FLODUpdateContext LODContext;
+    FGPUOcclusionCulling*   OcclusionCulling = nullptr;
+    FTileBasedLightCulling* LightCulling     = nullptr;
+    FConvexVolume           FrustumVolume;
+    FLODUpdateContext       LODContext;
 
     bool IsFixedOrtho() const
     {
@@ -53,7 +49,7 @@ struct FSceneView
 
     void SetViewportSize(float InWidth, float InHeight)
     {
-        ViewportWidth = InWidth;
+        ViewportWidth  = InWidth;
         ViewportHeight = InHeight;
     }
 
@@ -69,10 +65,9 @@ struct FSceneView
 
     void SetRenderSettings(EViewMode InViewMode, const FShowFlags& InShowFlags)
     {
-        RenderOptions.ViewMode = InViewMode;
+        RenderOptions.ViewMode  = InViewMode;
         RenderOptions.ShowFlags = InShowFlags;
-        ViewMode = InViewMode;
-        ShowFlags = InShowFlags;
+        ViewMode                = InViewMode;
+        ShowFlags               = InShowFlags;
     }
 };
-

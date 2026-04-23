@@ -6,9 +6,7 @@
 
 #include <memory>
 
-class FShader;
-
-// 머티리얼 파라미터가 어느 cbuffer/offset에 들어가는지 설명하는 레이아웃 항목입니다.
+// Describes where one material parameter lives inside a reflected cbuffer.
 struct FMaterialParameterInfo
 {
     FString BufferName;
@@ -18,26 +16,22 @@ struct FMaterialParameterInfo
     uint32 BufferSize = 0;
 };
 
-// 머티리얼은 셰이더 파일을 직접 고르지 않습니다.
-// 이 템플릿은 렌더러가 고정한 표준 surface cbuffer 레이아웃만 공유합니다.
+// Owns the shader-reflected material layout shared by material instances.
 class FMaterialTemplate
 {
 private:
     uint32 MaterialTemplateID = 0;
-    FShader* Shader = nullptr;
     TMap<FString, FMaterialParameterInfo*> ParameterLayout;
     TArray<std::unique_ptr<FMaterialParameterInfo>> OwnedParameterLayout;
 
 public:
     const TMap<FString, FMaterialParameterInfo*>& GetParameterInfo() const { return ParameterLayout; }
-    void Create(FShader* InShader);
     void CreateSurfaceMaterialLayout();
 
-    FShader* GetShader() const { return Shader; }
     bool GetParameterInfo(const FString& Name, FMaterialParameterInfo& OutInfo) const;
 };
 
-// CPU/GPU 양쪽에 존재하는 실제 머티리얼 cbuffer입니다.
+// CPU-side storage and GPU constant buffer for one material cbuffer slot.
 struct FMaterialConstantBuffer
 {
     uint8* CPUData = nullptr;

@@ -7,15 +7,15 @@
 class URotatingMovementComponent : public UMovementComponent
 {
 public:
-	DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
+    DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
 
-	URotatingMovementComponent() = default;
-	~URotatingMovementComponent() override = default;
+    URotatingMovementComponent() = default;
+    ~URotatingMovementComponent() override = default;
 
-	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void Serialize(FArchive& Ar) override;
+    void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void Serialize(FArchive& Ar) override;
 
 private:
-	FRotator RotationRate = FRotator(0.0f, 90.0f, 0.0f);
+    FRotator RotationRate = FRotator(0.0f, 90.0f, 0.0f);
 };

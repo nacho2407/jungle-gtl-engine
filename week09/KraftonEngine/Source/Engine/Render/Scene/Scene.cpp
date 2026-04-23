@@ -27,13 +27,13 @@ void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimi
         return;
     }
 
-    const uint32 Index = Proxy->SelectedListIndex;
+    const uint32 Index     = Proxy->SelectedListIndex;
     const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
     if (Index != LastIndex)
     {
         FPrimitiveSceneProxy* LastProxy = SelectedList.back();
-        SelectedList[Index] = LastProxy;
-        LastProxy->SelectedListIndex = Index;
+        SelectedList[Index]             = LastProxy;
+        LastProxy->SelectedListIndex    = Index;
     }
 
     SelectedList.pop_back();
@@ -69,13 +69,13 @@ void FScene::RegisterPrimitiveProxy(FPrimitiveSceneProxy* Proxy)
         return;
     }
 
-    Proxy->DirtyFlags = EDirtyFlag::All;
+    Proxy->DirtyFlags = ESceneProxyDirtyFlag::All;
 
     if (!PrimitiveProxyRegistry.FreeSlots.empty())
     {
         const uint32 Slot = PrimitiveProxyRegistry.FreeSlots.back();
         PrimitiveProxyRegistry.FreeSlots.pop_back();
-        Proxy->ProxyId = Slot;
+        Proxy->ProxyId                       = Slot;
         PrimitiveProxyRegistry.Proxies[Slot] = Proxy;
     }
     else
@@ -169,23 +169,23 @@ void FScene::UpdateDirtyProxies()
             continue;
         }
 
-        const EDirtyFlag FlagsToProcess = Proxy->DirtyFlags;
-        Proxy->DirtyFlags = EDirtyFlag::None;
+        const ESceneProxyDirtyFlag FlagsToProcess = Proxy->DirtyFlags;
+        Proxy->DirtyFlags                         = ESceneProxyDirtyFlag::None;
 
-        if (HasFlag(FlagsToProcess, EDirtyFlag::Mesh))
+        if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Mesh))
         {
             Proxy->UpdateMesh();
         }
-        else if (HasFlag(FlagsToProcess, EDirtyFlag::Material))
+        else if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Material))
         {
             Proxy->UpdateMaterial();
         }
 
-        if (HasFlag(FlagsToProcess, EDirtyFlag::Transform))
+        if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Transform))
         {
             Proxy->UpdateTransform();
         }
-        if (HasFlag(FlagsToProcess, EDirtyFlag::Visibility))
+        if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Visibility))
         {
             Proxy->UpdateVisibility();
         }
@@ -210,23 +210,25 @@ void FScene::UpdateDirtyLightProxies()
             continue;
         }
 
-        const EDirtyFlag FlagsToProcess = Proxy->DirtyFlags;
-        Proxy->DirtyFlags = EDirtyFlag::None;
+        const ESceneProxyDirtyFlag FlagsToProcess = Proxy->DirtyFlags;
+        Proxy->DirtyFlags                         = ESceneProxyDirtyFlag::None;
 
-        if (HasFlag(FlagsToProcess, EDirtyFlag::Transform))
+        if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Transform))
         {
             Proxy->UpdateTransform();
         }
 
-        if (HasFlag(FlagsToProcess, EDirtyFlag::Material) ||
-            HasFlag(FlagsToProcess, EDirtyFlag::Visibility))
+        if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Material) ||
+            HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Visibility) ||
+            HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Lighting) ||
+            HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Shadow))
         {
             Proxy->UpdateLightConstants();
         }
     }
 }
 
-void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
+void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, ESceneProxyDirtyFlag Flag)
 {
     if (!Proxy)
     {
@@ -237,7 +239,7 @@ void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, EDirtyFlag Flag)
     EnqueueDirtyProxy(PrimitiveProxyRegistry.DirtyProxies, Proxy);
 }
 
-void FScene::MarkLightProxyDirty(FLightSceneProxy* Proxy, EDirtyFlag Flag)
+void FScene::MarkLightProxyDirty(FLightSceneProxy* Proxy, ESceneProxyDirtyFlag Flag)
 {
     if (!Proxy)
     {
@@ -311,13 +313,13 @@ void FScene::RegisterLightProxy(FLightSceneProxy* Proxy)
         return;
     }
 
-    Proxy->DirtyFlags = EDirtyFlag::All;
+    Proxy->DirtyFlags = ESceneProxyDirtyFlag::All;
 
     if (!LightProxyRegistry.FreeSlots.empty())
     {
         const uint32 Slot = LightProxyRegistry.FreeSlots.back();
         LightProxyRegistry.FreeSlots.pop_back();
-        Proxy->ProxyId = Slot;
+        Proxy->ProxyId                   = Slot;
         LightProxyRegistry.Proxies[Slot] = Proxy;
     }
     else
@@ -355,19 +357,19 @@ void FScene::RemoveLight(FLightSceneProxy* Proxy)
     delete Proxy;
 }
 
-FFogSceneProxy* FScene::AddFog(const UHeightFogComponent* Owner, const FFogParams& Params)
+FFogSceneProxy* FScene::AddFog(const UHeightFogComponent* Owner, const FFogSceneData& FogData)
 {
     for (FFogSceneProxy* Proxy : FogProxyRegistry.Proxies)
     {
         if (Proxy && Proxy->GetOwner() == Owner)
         {
-            Proxy->UpdateParams(Params);
+            Proxy->UpdateData(FogData);
             return Proxy;
         }
     }
 
-    FFogSceneProxy* Proxy = new FFogSceneProxy(Owner, Params);
-    Proxy->ProxyId = static_cast<uint32>(FogProxyRegistry.Proxies.size());
+    FFogSceneProxy* Proxy = new FFogSceneProxy(Owner, FogData);
+    Proxy->ProxyId        = static_cast<uint32>(FogProxyRegistry.Proxies.size());
     FogProxyRegistry.Proxies.push_back(Proxy);
     return Proxy;
 }
@@ -405,16 +407,16 @@ bool FScene::HasFog() const
     return false;
 }
 
-const FFogParams& FScene::GetFogParams() const
+const FFogSceneData& FScene::GetFogData() const
 {
     for (FFogSceneProxy* Proxy : FogProxyRegistry.Proxies)
     {
         if (Proxy)
         {
-            return Proxy->GetFogParams();
+            return Proxy->GetFogData();
         }
     }
 
-    static const FFogParams EmptyParams = {};
-    return EmptyParams;
+    static const FFogSceneData EmptyFogData = {};
+    return EmptyFogData;
 }

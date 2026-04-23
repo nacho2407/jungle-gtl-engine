@@ -2,56 +2,91 @@
 
 namespace ViewModePassConfigUtils
 {
+// ========== Define Helpers ==========
+
 void AddDefine(TArray<FShaderMacroDefine>& Defines, const char* Name, const char* Value)
 {
     Defines.push_back({ Name, Value });
 }
+
 } // namespace ViewModePassConfigUtils
+  // namespace ViewModePassConfigUtils
+
+// ========== Config Queries ==========
 
 uint16 ToPostProcessUserBits(EViewModePostProcessVariant Variant)
 {
     return static_cast<uint16>(Variant);
 }
 
-const FRenderPipelinePassDesc* FindViewModePassDesc(const FViewModePassConfig* Config, EViewModeStage Stage)
+
+EShadingModel GetViewModeShadingModel(const FViewModePassConfig* Config)
 {
-    if (!Config)
-    {
-        return nullptr;
-    }
-
-    for (const FRenderPipelinePassDesc& Pass : Config->Passes)
-    {
-        if (Pass.Stage == Stage)
-        {
-            return &Pass;
-        }
-    }
-
-    return nullptr;
+    return Config ? Config->ShadingModel : EShadingModel::Unlit;
 }
 
-EShadingModel GetViewModeShadingModel(const FViewModePassConfig* Config) { return Config ? Config->ShadingModel : EShadingModel::Unlit; }
-bool UsesViewModeDepthPre(const FViewModePassConfig* Config) { return Config ? Config->bEnableDepthPre : false; }
-bool UsesViewModeOpaque(const FViewModePassConfig* Config) { return Config ? Config->bEnableOpaque : false; }
-bool UsesViewModeDecal(const FViewModePassConfig* Config) { return Config ? Config->bEnableDecal : false; }
-bool UsesViewModeLighting(const FViewModePassConfig* Config) { return Config ? Config->bEnableLighting : false; }
-bool UsesViewModeAdditiveDecal(const FViewModePassConfig* Config) { return Config ? Config->bEnableAdditiveDecal : false; }
-bool UsesViewModeAlphaBlend(const FViewModePassConfig* Config) { return Config ? Config->bEnableAlphaBlend : false; }
-bool UsesNonLitViewMode(const FViewModePassConfig* Config) { return Config ? Config->bEnableNonLitViewMode : false; }
-bool UsesViewModeHeightFog(const FViewModePassConfig* Config) { return Config ? Config->bEnableHeightFog : false; }
-bool UsesViewModeFXAA(const FViewModePassConfig* Config) { return Config ? Config->bEnableFXAA : false; }
-EViewModePostProcessVariant GetViewModePostProcessVariant(const FViewModePassConfig* Config) { return Config ? Config->PostProcessVariant : EViewModePostProcessVariant::None; }
-
-FRenderPipelinePassDesc BuildViewModeOpaquePassDesc(EShadingModel ShadingModel)
+bool UsesViewModeDepthPre(const FViewModePassConfig* Config)
 {
-    FRenderPipelinePassDesc Pass = {};
-    Pass.Stage = EViewModeStage::Opaque;
-    Pass.RenderPass = ERenderPass::Opaque;
-    Pass.bFullscreenPass = false;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/OpaquePass.hlsl";
-    Pass.ShaderVariant.VSEntry = "VS_Opaque";
+    return Config ? Config->bEnableDepthPre : false;
+}
 
+bool UsesViewModeOpaque(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableOpaque : false;
+}
+
+bool UsesViewModeDecal(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableDecal : false;
+}
+
+bool UsesViewModeLighting(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableLighting : false;
+}
+
+bool UsesViewModeAdditiveDecal(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableAdditiveDecal : false;
+}
+
+bool UsesViewModeAlphaBlend(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableAlphaBlend : false;
+}
+
+bool UsesNonLitViewMode(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableNonLitViewMode : false;
+}
+
+bool UsesViewModeHeightFog(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableHeightFog : false;
+}
+
+bool UsesViewModeFXAA(const FViewModePassConfig* Config)
+{
+    return Config ? Config->bEnableFXAA : false;
+}
+
+EViewModePostProcessVariant GetViewModePostProcessVariant(const FViewModePassConfig* Config)
+{
+    return Config ? Config->PostProcessVariant : EViewModePostProcessVariant::None;
+}
+
+
+// ========== Pass Descs ==========
+
+FViewModePassDesc BuildViewModeOpaquePassDesc(EShadingModel ShadingModel)
+{
+    FViewModePassDesc Pass      = {};
+    Pass.RenderPass             = ERenderPass::Opaque;
+    Pass.bFullscreenPass        = false;
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/OpaquePass.hlsl";
+    Pass.ShaderVariant.VSEntry  = "VS_Opaque";
+
+    // ---------- Shading Permutation ----------
     switch (ShadingModel)
     {
     case EShadingModel::Gouraud:
@@ -85,18 +120,20 @@ FRenderPipelinePassDesc BuildViewModeOpaquePassDesc(EShadingModel ShadingModel)
         break;
     }
 
+
     return Pass;
 }
 
-FRenderPipelinePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingModel)
-{
-    FRenderPipelinePassDesc Pass = {};
-    Pass.Stage = EViewModeStage::Decal;
-    Pass.RenderPass = ERenderPass::Decal;
-    Pass.bFullscreenPass = true;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DecalPass.hlsl";
-    Pass.ShaderVariant.VSEntry = "VS_DecalFullscreen";
 
+FViewModePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingModel)
+{
+    FViewModePassDesc Pass      = {};
+    Pass.RenderPass             = ERenderPass::Decal;
+    Pass.bFullscreenPass        = true;
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DecalPass.hlsl";
+    Pass.ShaderVariant.VSEntry  = "VS_DecalFullscreen";
+
+    // ---------- Decal Surface Writes ----------
     switch (ShadingModel)
     {
     case EShadingModel::Gouraud:
@@ -123,19 +160,21 @@ FRenderPipelinePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingModel)
         break;
     }
 
+
     return Pass;
 }
 
-FRenderPipelinePassDesc BuildViewModeLightingPassDesc(EShadingModel ShadingModel)
-{
-    FRenderPipelinePassDesc Pass = {};
-    Pass.Stage = EViewModeStage::Lighting;
-    Pass.RenderPass = ERenderPass::Lighting;
-    Pass.bFullscreenPass = true;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/ViewModes/UberLit.hlsl";
-    Pass.ShaderVariant.VSEntry = "VS_Fullscreen";
-    Pass.ShaderVariant.PSEntry = "PS_UberLit";
 
+FViewModePassDesc BuildViewModeLightingPassDesc(EShadingModel ShadingModel)
+{
+    FViewModePassDesc Pass      = {};
+    Pass.RenderPass             = ERenderPass::Lighting;
+    Pass.bFullscreenPass        = true;
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/LightingPass.hlsl";
+    Pass.ShaderVariant.VSEntry  = "VS_Fullscreen";
+    Pass.ShaderVariant.PSEntry  = "PS_UberLit";
+
+    // ---------- Lighting Permutation ----------
     switch (ShadingModel)
     {
     case EShadingModel::Gouraud:
@@ -153,8 +192,12 @@ FRenderPipelinePassDesc BuildViewModeLightingPassDesc(EShadingModel ShadingModel
         break;
     }
 
+
     return Pass;
 }
+
+
+// ========== View Mode Config Build ==========
 
 void BuildViewModePasses(FViewModePassConfig& Config)
 {
@@ -165,10 +208,12 @@ void BuildViewModePasses(FViewModePassConfig& Config)
         Config.Passes.push_back(BuildViewModeOpaquePassDesc(Config.ShadingModel));
     }
 
+
     if (Config.bEnableDecal)
     {
         Config.Passes.push_back(BuildViewModeDecalPassDesc(Config.ShadingModel));
     }
+
 
     if (Config.bEnableLighting)
     {
@@ -176,90 +221,97 @@ void BuildViewModePasses(FViewModePassConfig& Config)
     }
 }
 
+
 void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewMode, FShaderVariantCache& VariantCache)
 {
-    Config = {};
-    Config.ViewMode = InViewMode;
+    Config              = {};
+    Config.ViewMode     = InViewMode;
     Config.ShadingModel = GetShadingModelFromViewMode(InViewMode);
 
+    // ---------- Pipeline Flags ----------
     switch (InViewMode)
     {
     case EViewMode::Wireframe:
-        Config.bEnableDepthPre = false;
-        Config.bEnableOpaque = true;
-        Config.bEnableDecal = false;
-        Config.bEnableLighting = false;
-        Config.bEnableAdditiveDecal = false;
-        Config.bEnableAlphaBlend = false;
+        Config.bEnableDepthPre       = false;
+        Config.bEnableOpaque         = true;
+        Config.bEnableDecal          = false;
+        Config.bEnableLighting       = false;
+        Config.bEnableAdditiveDecal  = false;
+        Config.bEnableAlphaBlend     = false;
         Config.bEnableNonLitViewMode = false;
-        Config.bEnableHeightFog = false;
-        Config.bEnableFXAA = false;
-        Config.PostProcessVariant = EViewModePostProcessVariant::None;
+        Config.bEnableHeightFog      = false;
+        Config.bEnableFXAA           = false;
+        Config.PostProcessVariant    = EViewModePostProcessVariant::None;
         break;
 
     case EViewMode::SceneDepth:
-        Config.bEnableDepthPre = true;
-        Config.bEnableOpaque = false;
-        Config.bEnableDecal = false;
-        Config.bEnableLighting = false;
-        Config.bEnableAdditiveDecal = false;
-        Config.bEnableAlphaBlend = false;
+        Config.bEnableDepthPre       = true;
+        Config.bEnableOpaque         = false;
+        Config.bEnableDecal          = false;
+        Config.bEnableLighting       = false;
+        Config.bEnableAdditiveDecal  = false;
+        Config.bEnableAlphaBlend     = false;
         Config.bEnableNonLitViewMode = true;
-        Config.bEnableHeightFog = false;
-        Config.bEnableFXAA = false;
-        Config.PostProcessVariant = EViewModePostProcessVariant::SceneDepth;
+        Config.bEnableHeightFog      = false;
+        Config.bEnableFXAA           = false;
+        Config.PostProcessVariant    = EViewModePostProcessVariant::SceneDepth;
         break;
 
     case EViewMode::WorldNormal:
-        Config.bEnableDepthPre = true;
-        Config.bEnableOpaque = true;
-        Config.bEnableDecal = true;
-        Config.bEnableLighting = false;
-        Config.bEnableAdditiveDecal = false;
-        Config.bEnableAlphaBlend = false;
+        Config.bEnableDepthPre       = true;
+        Config.bEnableOpaque         = true;
+        Config.bEnableDecal          = true;
+        Config.bEnableLighting       = false;
+        Config.bEnableAdditiveDecal  = false;
+        Config.bEnableAlphaBlend     = false;
         Config.bEnableNonLitViewMode = true;
-        Config.bEnableHeightFog = false;
-        Config.bEnableFXAA = false;
-        Config.PostProcessVariant = EViewModePostProcessVariant::WorldNormal;
+        Config.bEnableHeightFog      = false;
+        Config.bEnableFXAA           = false;
+        Config.PostProcessVariant    = EViewModePostProcessVariant::WorldNormal;
         break;
 
     case EViewMode::Unlit:
-        Config.bEnableDepthPre = true;
-        Config.bEnableOpaque = true;
-        Config.bEnableDecal = true;
-        Config.bEnableLighting = false;
-        Config.bEnableAdditiveDecal = false;
-        Config.bEnableAlphaBlend = false;
+        Config.bEnableDepthPre       = true;
+        Config.bEnableOpaque         = true;
+        Config.bEnableDecal          = true;
+        Config.bEnableLighting       = false;
+        Config.bEnableAdditiveDecal  = false;
+        Config.bEnableAlphaBlend     = false;
         Config.bEnableNonLitViewMode = false;
-        Config.bEnableHeightFog = true;
-        Config.bEnableFXAA = true;
-        Config.PostProcessVariant = EViewModePostProcessVariant::None;
+        Config.bEnableHeightFog      = true;
+        Config.bEnableFXAA           = true;
+        Config.PostProcessVariant    = EViewModePostProcessVariant::None;
         break;
 
     case EViewMode::Lit_Gouraud:
     case EViewMode::Lit_Lambert:
     case EViewMode::Lit_Phong:
     default:
-        Config.bEnableDepthPre = true;
-        Config.bEnableOpaque = true;
-        Config.bEnableDecal = true;
-        Config.bEnableLighting = true;
-        Config.bEnableAdditiveDecal = false;
-        Config.bEnableAlphaBlend = false;
+        Config.bEnableDepthPre       = true;
+        Config.bEnableOpaque         = true;
+        Config.bEnableDecal          = true;
+        Config.bEnableLighting       = true;
+        Config.bEnableAdditiveDecal  = false;
+        Config.bEnableAlphaBlend     = false;
         Config.bEnableNonLitViewMode = false;
-        Config.bEnableHeightFog = true;
-        Config.bEnableFXAA = true;
-        Config.PostProcessVariant = EViewModePostProcessVariant::None;
+        Config.bEnableHeightFog      = true;
+        Config.bEnableFXAA           = true;
+        Config.PostProcessVariant    = EViewModePostProcessVariant::None;
         break;
     }
 
+
     BuildViewModePasses(Config);
 
-    for (FRenderPipelinePassDesc& Pass : Config.Passes)
+    // ---------- Initial Shader Compile ----------
+    for (FViewModePassDesc& Pass : Config.Passes)
     {
         Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
     }
 }
+
+
+// ========== Registry Lifecycle ==========
 
 void FViewModePassRegistry::Initialize(ID3D11Device* Device)
 {
@@ -280,9 +332,10 @@ void FViewModePassRegistry::Initialize(ID3D11Device* Device)
     {
         FViewModePassConfig Config = {};
         InitializeViewModePassConfig(Config, Mode, VariantCache);
-        Configs.emplace(static_cast<int32>(Mode), std::move(Config));
+        Configs.emplace(Mode, std::move(Config));
     }
 }
+
 
 void FViewModePassRegistry::Release()
 {
@@ -290,40 +343,107 @@ void FViewModePassRegistry::Release()
     VariantCache.Release();
 }
 
+
+// ========== Registry Lookup ==========
+
 bool FViewModePassRegistry::HasConfig(EViewMode ViewMode) const
 {
-    return Configs.find(static_cast<int32>(ViewMode)) != Configs.end();
+    return Configs.find(ViewMode) != Configs.end();
 }
+
 
 const FViewModePassConfig* FViewModePassRegistry::GetConfig(EViewMode ViewMode) const
 {
-    auto It = Configs.find(static_cast<int32>(ViewMode));
+    auto It = Configs.find(ViewMode);
     if (It == Configs.end())
     {
         return nullptr;
     }
 
+
     RefreshCompiledShaders(It->second);
     return &It->second;
 }
 
-const FRenderPipelinePassDesc* FViewModePassRegistry::FindPassDesc(EViewMode ViewMode, EViewModeStage Stage) const { return FindViewModePassDesc(GetConfig(ViewMode), Stage); }
-EShadingModel FViewModePassRegistry::GetShadingModel(EViewMode ViewMode) const { return GetViewModeShadingModel(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesDepthPrePass(EViewMode ViewMode) const { return UsesViewModeDepthPre(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesOpaque(EViewMode ViewMode) const { return UsesViewModeOpaque(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesDecal(EViewMode ViewMode) const { return UsesViewModeDecal(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesLightingPass(EViewMode ViewMode) const { return UsesViewModeLighting(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesAdditiveDecal(EViewMode ViewMode) const { return UsesViewModeAdditiveDecal(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesAlphaBlend(EViewMode ViewMode) const { return UsesViewModeAlphaBlend(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesNonLitViewMode(EViewMode ViewMode) const { return ::UsesNonLitViewMode(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesHeightFog(EViewMode ViewMode) const { return UsesViewModeHeightFog(GetConfig(ViewMode)); }
-bool FViewModePassRegistry::UsesFXAA(EViewMode ViewMode) const { return UsesViewModeFXAA(GetConfig(ViewMode)); }
-EViewModePostProcessVariant FViewModePassRegistry::GetPostProcessVariant(EViewMode ViewMode) const { return GetViewModePostProcessVariant(GetConfig(ViewMode)); }
+EShadingModel FViewModePassRegistry::GetShadingModel(EViewMode ViewMode) const
+{
+    return GetViewModeShadingModel(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesDepthPrePass(EViewMode ViewMode) const
+{
+    return UsesViewModeDepthPre(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesOpaque(EViewMode ViewMode) const
+{
+    return UsesViewModeOpaque(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesDecal(EViewMode ViewMode) const
+{
+    return UsesViewModeDecal(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesLightingPass(EViewMode ViewMode) const
+{
+    return UsesViewModeLighting(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesAdditiveDecal(EViewMode ViewMode) const
+{
+    return UsesViewModeAdditiveDecal(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesAlphaBlend(EViewMode ViewMode) const
+{
+    return UsesViewModeAlphaBlend(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesNonLitViewMode(EViewMode ViewMode) const
+{
+    return ::UsesNonLitViewMode(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesHeightFog(EViewMode ViewMode) const
+{
+    return UsesViewModeHeightFog(GetConfig(ViewMode));
+}
+
+bool FViewModePassRegistry::UsesFXAA(EViewMode ViewMode) const
+{
+    return UsesViewModeFXAA(GetConfig(ViewMode));
+}
+
+EViewModePostProcessVariant FViewModePassRegistry::GetPostProcessVariant(EViewMode ViewMode) const
+{
+    return GetViewModePostProcessVariant(GetConfig(ViewMode));
+}
+
 
 void FViewModePassRegistry::RefreshCompiledShaders(FViewModePassConfig& Config) const
 {
-    for (FRenderPipelinePassDesc& Pass : Config.Passes)
+    for (FViewModePassDesc& Pass : Config.Passes)
     {
         Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
     }
+}
+
+const FViewModePassDesc* FViewModePassRegistry::FindPassDesc(EViewMode ViewMode, ERenderPass RenderPass) const
+{
+    const FViewModePassConfig* Config = GetConfig(ViewMode);
+    if (!Config)
+    {
+        return nullptr;
+    }
+
+    for (const FViewModePassDesc& Pass : Config->Passes)
+    {
+        if (Pass.RenderPass == RenderPass)
+        {
+            return &Pass;
+        }
+    }
+
+    return nullptr;
 }

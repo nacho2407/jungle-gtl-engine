@@ -14,13 +14,13 @@ void FPresentPass::PrepareInputs(FRenderPipelineContext& Context)
 
     if (Context.StateCache)
     {
-        Context.StateCache->DiffuseSRV = nullptr;
-        Context.StateCache->NormalSRV = nullptr;
-        Context.StateCache->SpecularSRV = nullptr;
+        Context.StateCache->DiffuseSRV    = nullptr;
+        Context.StateCache->NormalSRV     = nullptr;
+        Context.StateCache->SpecularSRV   = nullptr;
         Context.StateCache->LocalLightSRV = nullptr;
-        Context.StateCache->RTV = nullptr;
-        Context.StateCache->DSV = nullptr;
-        Context.StateCache->bForceAll = true;
+        Context.StateCache->RTV           = nullptr;
+        Context.StateCache->DSV           = nullptr;
+        Context.StateCache->bForceAll     = true;
     }
 }
 
@@ -48,7 +48,7 @@ void FPresentPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     ID3D11Texture2D* Source = Context.Targets->ViewportRenderTexture ? Context.Targets->ViewportRenderTexture : Context.Targets->SceneColorCopyTexture;
-    ID3D11Texture2D* Dest = Context.Device->GetFrameBufferTexture();
+    ID3D11Texture2D* Dest   = Context.Device->GetFrameBufferTexture();
     if (!Source || !Dest)
     {
         return;

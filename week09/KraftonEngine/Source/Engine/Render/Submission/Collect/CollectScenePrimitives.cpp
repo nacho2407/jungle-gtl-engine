@@ -22,14 +22,14 @@ thread_local uint64 GLOD2 = 0;
         GLOD0 = GLOD1 = GLOD2 = 0;       \
     } while (0)
 #define DRAW_COLLECTOR_LOD_STATS_RECORD(L) \
-    do                                      \
-    {                                       \
-        if ((L) == 0)                       \
-            ++GLOD0;                        \
-        else if ((L) == 1)                  \
-            ++GLOD1;                        \
-        else                                \
-            ++GLOD2;                        \
+    do                                     \
+    {                                      \
+        if ((L) == 0)                      \
+            ++GLOD0;                       \
+        else if ((L) == 1)                 \
+            ++GLOD1;                       \
+        else                               \
+            ++GLOD2;                       \
     } while (0)
 #else
 #define DRAW_COLLECTOR_LOD_STATS_RESET() \
@@ -37,8 +37,8 @@ thread_local uint64 GLOD2 = 0;
     {                                    \
     } while (0)
 #define DRAW_COLLECTOR_LOD_STATS_RECORD(L) \
-    do                                      \
-    {                                       \
+    do                                     \
+    {                                      \
     } while (0)
 #endif
 

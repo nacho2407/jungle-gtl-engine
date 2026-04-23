@@ -9,6 +9,7 @@
 #include <array>
 #include <string>
 #include <utility>
+#include <optional>
 
 using int8 = __int8;
 using int16 = __int16;
@@ -44,6 +45,8 @@ using TMap = std::unordered_map<KeyType, ValueType>;
 template <typename T1, typename T2>
 using TPair = std::pair<T1, T2>;
 
+template <typename T>
+using TOptional = std::optional<T>;
 
 template <typename T>
 using TQueue = std::queue<T>;

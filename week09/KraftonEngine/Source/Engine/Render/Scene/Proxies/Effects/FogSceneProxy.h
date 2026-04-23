@@ -1,32 +1,39 @@
 #pragma once
 
-#include "Render/Execute/Passes/Scene/FogParams.h"
+#include "Math/Vector.h"
 #include "Render/Scene/Proxies/Effects/SceneEffectProxy.h"
 
 class UHeightFogComponent;
 
-/*
-    FFogSceneProxy??HeightFogComponent???�더 ?�라미터�?Scene effect 계층??보�??�니??
-    ?�재??HeightFogPass가 �?번째 fog ?�록?�의 ?�라미터�??�어 ?�용?�니??
-*/
+struct FFogSceneData
+{
+    float    Density           = 0.02f;
+    float    HeightFalloff     = 0.2f;
+    float    StartDistance     = 0.0f;
+    float    CutoffDistance    = 0.0f;
+    float    MaxOpacity        = 1.0f;
+    float    FogBaseHeight     = 0.0f;
+    FVector4 InscatteringColor = FVector4(0.45f, 0.55f, 0.65f, 1.0f);
+};
+
 class FFogSceneProxy : public FSceneEffectProxy
 {
 public:
-    FFogSceneProxy(const UHeightFogComponent* InOwner, const FFogParams& InParams)
-        : Owner(InOwner), Params(InParams)
+    FFogSceneProxy(const UHeightFogComponent* InOwner, const FFogSceneData& InData)
+        : Owner(InOwner), FogData(InData)
     {
     }
 
-    void UpdateParams(const FFogParams& InParams)
+    void UpdateData(const FFogSceneData& InData)
     {
-        Params = InParams;
-        DirtyFlags = EDirtyFlag::All;
+        FogData    = InData;
+        DirtyFlags = ESceneProxyDirtyFlag::All;
     }
 
     const UHeightFogComponent* GetOwner() const { return Owner; }
-    const FFogParams& GetFogParams() const { return Params; }
+    const FFogSceneData&       GetFogData() const { return FogData; }
 
 private:
     const UHeightFogComponent* Owner = nullptr;
-    FFogParams Params;
+    FFogSceneData              FogData;
 };

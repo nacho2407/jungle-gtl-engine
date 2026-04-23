@@ -9,44 +9,44 @@
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
-	friend class TSingleton<FEditorSettings>;
+    friend class TSingleton<FEditorSettings>;
 
 public:
-	// Viewport
-	float CameraSpeed = 10.f;
-	float CameraRotationSpeed = 60.f;
-	float CameraZoomSpeed = 300.f;
-	FVector InitViewPos = FVector(10, 0, 5);
-	FVector InitLookAt = FVector(0, 0, 0);
+    // Viewport
+    float CameraSpeed = 10.f;
+    float CameraRotationSpeed = 60.f;
+    float CameraZoomSpeed = 300.f;
+    FVector InitViewPos = FVector(10, 0, 5);
+    FVector InitLookAt = FVector(0, 0, 0);
 
-	// Viewport Layout
-	int32 LayoutType = 0; // EViewportLayout
-	FViewportRenderOptions SlotOptions[4];
-	float SplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
-	int32 SplitterCount = 0;
+    // Viewport Layout
+    int32 LayoutType = 0; // EViewportLayout
+    FViewportRenderOptions SlotOptions[4];
+    float SplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
+    int32 SplitterCount = 0;
 
-	// Perspective Camera (slot 0) ������
-	FVector PerspCamLocation = FVector(10, 0, 5);
-	FRotator PerspCamRotation;
-	float PerspCamFOV = 60.0f;
-	float PerspCamNearClip = 0.1f;
-	float PerspCamFarClip = 1000.0f;
+    // Perspective Camera (slot 0) ������
+    FVector PerspCamLocation = FVector(10, 0, 5);
+    FRotator PerspCamRotation;
+    float PerspCamFOV = 60.0f;
+    float PerspCamNearClip = 0.1f;
+    float PerspCamFarClip = 1000.0f;
 
-	// File paths
-	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
+    // File paths
+    FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
-	// UI ���� ǥ�� ����
-	struct FUIVisibility
-	{
-		bool bConsole = true;
-		bool bControl = true;
-		bool bProperty = true;
-		bool bScene = true;
-		bool bStat = false;
-	} UI;
+    // UI ���� ǥ�� ����
+    struct FUIVisibility
+    {
+        bool bConsole = true;
+        bool bControl = true;
+        bool bProperty = true;
+        bool bScene = true;
+        bool bStat = false;
+    } UI;
 
-	void SaveToFile(const FString& Path) const;
-	void LoadFromFile(const FString& Path);
+    void SaveToFile(const FString& Path) const;
+    void LoadFromFile(const FString& Path);
 
-	static FString GetDefaultSettingsPath() { return FPaths::ToUtf8(FPaths::SettingsFilePath()); }
+    static FString GetDefaultSettingsPath() { return FPaths::ToUtf8(FPaths::SettingsFilePath()); }
 };

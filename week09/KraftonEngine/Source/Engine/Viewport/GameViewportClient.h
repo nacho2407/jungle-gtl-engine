@@ -10,19 +10,19 @@ class FViewport;
 class UGameViewportClient : public UObject, public FViewportClient
 {
 public:
-	DECLARE_CLASS(UGameViewportClient, UObject)
+    DECLARE_CLASS(UGameViewportClient, UObject)
 
-	UGameViewportClient() = default;
-	~UGameViewportClient() override = default;
+    UGameViewportClient() = default;
+    ~UGameViewportClient() override = default;
 
-	// FViewportClient overrides
-	void Draw(FViewport* Viewport, float DeltaTime) override {}
-	bool InputKey(int32 Key, bool bPressed) override { return false; }
+    // FViewportClient overrides
+    void Draw(FViewport* Viewport, float DeltaTime) override {}
+    bool InputKey(int32 Key, bool bPressed) override { return false; }
 
-	// Viewport 소유
-	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
-	FViewport* GetViewport() const override { return Viewport; }
+    // Viewport 소유
+    void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
+    FViewport* GetViewport() const override { return Viewport; }
 
 private:
-	FViewport* Viewport = nullptr;
+    FViewport* Viewport = nullptr;
 };

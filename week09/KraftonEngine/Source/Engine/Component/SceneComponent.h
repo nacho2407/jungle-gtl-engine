@@ -10,78 +10,77 @@ class AActor;
 class USceneComponent : public UActorComponent
 {
 public:
-	DECLARE_CLASS(USceneComponent, UActorComponent)
+    DECLARE_CLASS(USceneComponent, UActorComponent)
 
-	USceneComponent();
-	~USceneComponent();
+    USceneComponent();
+    ~USceneComponent();
 
-	// Parent Relation Manager
-	void AttachToComponent(USceneComponent* InParent);
-	void SetParent(USceneComponent* NewParent);
-	USceneComponent* GetParent() const { return ParentComponent; }
-	void AddChild(USceneComponent* NewChild);
-	void RemoveChild(USceneComponent* Child);
-	bool ContainsChild(const USceneComponent* Child) const;
-	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
+    // Parent Relation Manager
+    void AttachToComponent(USceneComponent* InParent);
+    void SetParent(USceneComponent* NewParent);
+    USceneComponent* GetParent() const { return ParentComponent; }
+    void AddChild(USceneComponent* NewChild);
+    void RemoveChild(USceneComponent* Child);
+    bool ContainsChild(const USceneComponent* Child) const;
+    const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char* PropertyName) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
-	void Serialize(FArchive& Ar) override;
+    void Serialize(FArchive& Ar) override;
 
-	virtual void UpdateWorldMatrix() const;
-	virtual void AddWorldOffset(const FVector& WorldDelta);
-	virtual void SetRelativeLocation(const FVector& NewLocation);
-	virtual void SetRelativeRotation(const FRotator& NewRotation);
-	virtual void SetRelativeRotation(const FQuat& NewRotation);
-	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
-	virtual void SetRelativeScale(const FVector& NewScale);
+    virtual void UpdateWorldMatrix() const;
+    virtual void AddWorldOffset(const FVector& WorldDelta);
+    virtual void SetRelativeLocation(const FVector& NewLocation);
+    virtual void SetRelativeRotation(const FRotator& NewRotation);
+    virtual void SetRelativeRotation(const FQuat& NewRotation);
+    void SetRelativeRotation(const FVector& EulerRotation); // FVector 호환
+    virtual void SetRelativeScale(const FVector& NewScale);
 
-	// 누적 회전용 — Quat 합성으로 적용해 짐벌락/Euler 라운드트립 손실을 회피한다.
-	// 매 프레임 누적이 필요한 코드는 GetRelativeRotation()→+delta→Set 패턴 대신 이걸 써야 한다.
-	void AddLocalRotation(const FQuat& DeltaQuat);
-	void AddLocalRotation(const FRotator& DeltaRotator);
-	void MarkTransformDirty();
-	virtual void OnTransformDirty();
-	void ApplyCachedEditRotator();
-	FRotator& GetCachedEditRotator();	// 에디터 UI용 Euler 캐시 접근
-	// Quat을 직접 세팅하면서 Euler 캐시도 함께 지정 (짐벌락 방지)
-	void SetRelativeRotationWithEulerHint(const FQuat& NewQuat, const FRotator& EulerHint);
-	const FMatrix& GetWorldMatrix() const;
-	const FMatrix& GetWorldInverseMatrix() const;
-	void SetWorldLocation(FVector NewWorldLocation);
-	FVector GetWorldLocation() const;
-	FVector GetWorldScale() const;
-	const FTransform& GetRelativeTransform() const { return RelativeTransform; }
-	FVector GetRelativeLocation() const { return RelativeTransform.Location; }
-	FRotator GetRelativeRotation() const { return RelativeTransform.GetRotator(); }
-	const FQuat& GetRelativeQuat() const { return RelativeTransform.Rotation; }
-	FVector GetRelativeScale() const { return RelativeTransform.Scale; }
-	FVector GetForwardVector() const;
-	FVector GetUpVector() const;
-	FVector GetRightVector() const;
+    // 누적 회전용 — Quat 합성으로 적용해 짐벌락/Euler 라운드트립 손실을 회피한다.
+    // 매 프레임 누적이 필요한 코드는 GetRelativeRotation()→+delta→Set 패턴 대신 이걸 써야 한다.
+    void AddLocalRotation(const FQuat& DeltaQuat);
+    void AddLocalRotation(const FRotator& DeltaRotator);
+    void MarkTransformDirty();
+    virtual void OnTransformDirty();
+    void ApplyCachedEditRotator();
+    FRotator& GetCachedEditRotator(); // 에디터 UI용 Euler 캐시 접근
+    // Quat을 직접 세팅하면서 Euler 캐시도 함께 지정 (짐벌락 방지)
+    void SetRelativeRotationWithEulerHint(const FQuat& NewQuat, const FRotator& EulerHint);
+    const FMatrix& GetWorldMatrix() const;
+    const FMatrix& GetWorldInverseMatrix() const;
+    void SetWorldLocation(FVector NewWorldLocation);
+    FVector GetWorldLocation() const;
+    FVector GetWorldScale() const;
+    const FTransform& GetRelativeTransform() const { return RelativeTransform; }
+    FVector GetRelativeLocation() const { return RelativeTransform.Location; }
+    FRotator GetRelativeRotation() const { return RelativeTransform.GetRotator(); }
+    const FQuat& GetRelativeQuat() const { return RelativeTransform.Rotation; }
+    FVector GetRelativeScale() const { return RelativeTransform.Scale; }
+    FVector GetForwardVector() const;
+    FVector GetUpVector() const;
+    FVector GetRightVector() const;
 
-	FMatrix GetRelativeMatrix() const;
+    FMatrix GetRelativeMatrix() const;
 
-	void Move(const FVector& Delta);
-	void MoveLocal(const FVector& Delta);
-	void Rotate(float DeltaYaw, float DeltaPitch);
+    void Move(const FVector& Delta);
+    void MoveLocal(const FVector& Delta);
+    void Rotate(float DeltaYaw, float DeltaPitch);
 
 protected:
-	USceneComponent* ParentComponent = nullptr;
-	TArray<USceneComponent*> ChildComponents;
+    USceneComponent* ParentComponent = nullptr;
+    TArray<USceneComponent*> ChildComponents;
 
 
-	mutable bool bTransformDirty = true;
+    mutable bool bTransformDirty = true;
 
-	FTransform RelativeTransform;
-	mutable FRotator CachedEditRotator;	// 에디터 프로퍼티 바인딩용 (Euler 캐시)
-	mutable bool bCachedEulerDirty = true;	// Quat가 외부에서 변경됐을 때만 Euler 재계산
+    FTransform RelativeTransform;
+    mutable FRotator CachedEditRotator;    // 에디터 프로퍼티 바인딩용 (Euler 캐시)
+    mutable bool bCachedEulerDirty = true; // Quat가 외부에서 변경됐을 때만 Euler 재계산
 
-	//world matrix caching
-	mutable FMatrix CachedWorldMatrix{};
-	//inverse world matrix caching
-	mutable FMatrix CachedInverseWorldMatrix{};
-	mutable bool bInverseWorldDirty = true;
+    // world matrix caching
+    mutable FMatrix CachedWorldMatrix{};
+    // inverse world matrix caching
+    mutable FMatrix CachedInverseWorldMatrix{};
+    mutable bool bInverseWorldDirty = true;
 };
-

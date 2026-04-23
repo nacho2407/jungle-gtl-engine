@@ -8,8 +8,8 @@
 */
 struct FSurfaceTexture
 {
-    ID3D11Texture2D* Texture = nullptr;
-    ID3D11RenderTargetView* RTV = nullptr;
-    ID3D11ShaderResourceView* SRV = nullptr;
-    DXGI_FORMAT Format = DXGI_FORMAT_UNKNOWN;
+    ID3D11Texture2D*          Texture = nullptr;
+    ID3D11RenderTargetView*   RTV     = nullptr;
+    ID3D11ShaderResourceView* SRV     = nullptr;
+    DXGI_FORMAT               Format  = DXGI_FORMAT_UNKNOWN;
 };

@@ -5,7 +5,6 @@
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "SimpleJSON/json.hpp"
 #include "Materials/MaterialSemantics.h"
-#include "Render/Execute/Context/PipelineStateTypes.h"
 
 #include <filesystem>
 #include <memory>
@@ -79,16 +78,6 @@ private:
 
     void ApplyParameters(UMaterial* Material, json::JSON& JsonData);
     void ApplyTextures(UMaterial* Material, json::JSON& JsonData, const FString& MatFilePath);
-
-    EBlendState StringToBlendState(const FString& Str) const;
-    EDepthStencilState StringToDepthStencilState(const FString& Str) const;
-    ERasterizerState StringToRasterizerState(const FString& Str) const;
-
-    void SaveToJSON(json::JSON& JsonData, const FString& MatFilePath);
-    bool NormalizeMaterialJson(json::JSON& JsonData, const FString& MaterialPath);
-
-    bool InjectDefaultParameters(json::JSON& JsonData, FMaterialTemplate* Template, UMaterial* Material);
-    bool PurgeStaleParameters(json::JSON& JsonData, FMaterialTemplate* Template);
 
     std::filesystem::path ResolveFullPath(const FString& FilePath) const;
     FString NormalizeCacheKey(const FString& FilePath) const;

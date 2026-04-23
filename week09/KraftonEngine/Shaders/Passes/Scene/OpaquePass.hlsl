@@ -1,6 +1,11 @@
-#include "../../Common/Types/CommonTypes.hlsli"
-#include "../../Common/Types/SurfaceData.hlsli"
-#include "../../Common/Types/LightingCommon.hlsli"
+﻿// Shader: OpaquePass
+// Role: scene mesh entry shader for base surface generation.
+// Entries: VS_Opaque, PS_Opaque_Unlit, PS_Opaque_Gouraud, PS_Opaque_Lambert, PS_Opaque_BlinnPhong.
+// Slots: b0 Frame, b1 Object/Material, t0 BaseColor, t1 NormalMap, t2 SpecularMap, s1 LinearWrap.
+
+#include "../../Common/Surface/CommonTypes.hlsli"
+#include "../../Common/Surface/SurfaceData.hlsli"
+#include "../../Common/Lighting/LightingCommon.hlsli"
 
 Texture2D g_txColor : register(t0);
 
@@ -42,7 +47,6 @@ FOpaqueVSOutput VS_Opaque(VS_Input_PNCT_T Input)
     FOpaqueVSOutput Output;
     Output.position = ApplyMVP(Input.position);
     
-    // ?�드 ?��? �??�젠??변??(?�규???�함)
     float3 VSNormal = normalize(mul(Input.normal, (float3x3) NormalMatrix));
     Output.worldNormal = VSNormal;
     Output.worldTangent.xyz = normalize(mul(Input.tangent.xyz, (float3x3) NormalMatrix));
@@ -50,8 +54,6 @@ FOpaqueVSOutput VS_Opaque(VS_Input_PNCT_T Input)
     Output.color = Input.color;
     Output.texcoord = Input.texcoord;
 
-    // Gouraud Shading???�점 ?�이??계산???�해 ?�드 ?��???계산
-    // float4(pos, 1.0f)�?w=1??명시?�야 Model ?�렬???�동 ?�분???�용??(??그럴 ??w=0 ?�며 ?�아�?
     float3 WorldPos = mul(float4(Input.position, 1.0f), Model).xyz;
     float3 GouraudLighting = ComputeGouraudLightingColor(VSNormal, WorldPos);
     Output.gouraud = float4(GouraudLighting, 1.0f);
@@ -68,7 +70,6 @@ FOpaqueOutput2 PS_Opaque_Gouraud(FOpaqueVSOutput Input)
 {
     FOpaqueOutput2 Output;
     Output.BaseColor = EncodeBaseColor(ResolveOpaqueColor(Input));
-    // ?�점?�서 계산???�이??값을 그�?�?G-Buffer(Surface1)??기록
     Output.Surface1 = Input.gouraud;
     return Output;
 }
@@ -87,7 +88,6 @@ FOpaqueOutput3 PS_Opaque_BlinnPhong(FOpaqueVSOutput Input)
     Output.BaseColor = EncodeBaseColor(ResolveOpaqueColor(Input));
     Output.Surface1 = EncodeNormal(ResolveOpaqueNormal(Input));
     
-    // SpecularStrength�?0.3?�로 ??��???�이?�이?��? ?�얗�??�버리???�상??방�?
     float Shininess = MaterialParam.x > 0.0f ? MaterialParam.x : 32.0f;
     float SpecularStrength = MaterialParam.y > 0.0f ? MaterialParam.y : 0.3f;
     if (StaticMeshHasSpecularTexture())
@@ -97,3 +97,4 @@ FOpaqueOutput3 PS_Opaque_BlinnPhong(FOpaqueVSOutput Input)
     Output.Surface2 = EncodeMaterialParam(float4(Shininess, SpecularStrength, 0.0f, 1.0f));
     return Output;
 }
+

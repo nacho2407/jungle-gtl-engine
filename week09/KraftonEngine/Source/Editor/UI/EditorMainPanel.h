@@ -13,17 +13,17 @@ class FWindowsWindow;
 
 class FEditorMainPanel
 {
-  public:
-    void Create(FWindowsWindow *InWindow, FRenderer &InRenderer, UEditorEngine *InEditorEngine);
+public:
+    void Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine);
     void Release();
     void Render(float DeltaTime);
     void Update();
     void HideEditorWindowsForPIE();
     void RestoreEditorWindowsAfterPIE();
 
-  private:
-    FWindowsWindow *Window = nullptr;
-    UEditorEngine *EditorEngine = nullptr;
+private:
+    FWindowsWindow* Window = nullptr;
+    UEditorEngine* EditorEngine = nullptr;
     FEditorConsolePanel ConsolePanel;
     FEditorControlPanel ControlPanel;
     FEditorDetailsPanel DetailsPanel;

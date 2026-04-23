@@ -1,48 +1,48 @@
-#include "DrawCommandList.h"
+﻿#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>
 
 #include "Profiling/Stats.h"
-#include "Render/Resources/RenderResources.h"
-#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/RHI/D3D11/Shaders/GraphicsProgram.h"
 
-// ============================================================
-// FDrawSubmitStateCache
-// ============================================================
+/*
+    드로우 제출 중 중복 상태 바인딩을 피하기 위한 캐시를 초기 상태로 되돌립니다.
+*/
 
-void FDrawSubmitStateCache::Reset()
+void FDrawBindStateCache::Reset()
 {
     bForceAll = true;
 
-    Shader = nullptr;
-    DepthStencil = {};
-    Blend = {};
-    Rasterizer = {};
-    Topology = {};
-    StencilRef = 0;
-    MeshBuffer = nullptr;
-    RawVB = nullptr;
-    RawIB = nullptr;
-    PerObjectCB = nullptr;
+    Shader         = nullptr;
+    DepthStencil   = {};
+    Blend          = {};
+    Rasterizer     = {};
+    Topology       = {};
+    StencilRef     = 0;
+    MeshBuffer     = nullptr;
+    RawVB          = nullptr;
+    RawIB          = nullptr;
+    PerObjectCB    = nullptr;
     PerShaderCB[0] = nullptr;
     PerShaderCB[1] = nullptr;
-    LightCB = nullptr;
-    DiffuseSRV = nullptr;
-    NormalSRV = nullptr;
-    SpecularSRV = nullptr;
-    LocalLightSRV = nullptr;
+    LightCB        = nullptr;
+    DiffuseSRV     = nullptr;
+    NormalSRV      = nullptr;
+    SpecularSRV    = nullptr;
+    LocalLightSRV  = nullptr;
 
     RTV = nullptr;
     DSV = nullptr;
 }
 
-void FDrawSubmitStateCache::Cleanup(ID3D11DeviceContext* Ctx)
+void FDrawBindStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 {
     ID3D11ShaderResourceView* NullSRVs[8] = {};
     Ctx->PSSetShaderResources(0, ARRAY_SIZE(NullSRVs), NullSRVs);
-    DiffuseSRV = nullptr;
-    NormalSRV = nullptr;
+    DiffuseSRV  = nullptr;
+    NormalSRV   = nullptr;
     SpecularSRV = nullptr;
 
     ID3D11ShaderResourceView* NullLocalLightSRV = nullptr;
@@ -73,7 +73,7 @@ void FDrawCommandList::Sort()
 
     std::memset(PassOffsets, 0, sizeof(PassOffsets));
     const uint32 Total = static_cast<uint32>(Commands.size());
-    uint32 Idx = 0;
+    uint32       Idx   = 0;
     for (uint32 P = 0; P < (uint32)ERenderPass::MAX; ++P)
     {
         PassOffsets[P] = Idx;
@@ -86,7 +86,7 @@ void FDrawCommandList::Sort()
 void FDrawCommandList::GetPassRange(ERenderPass Pass, uint32& OutStart, uint32& OutEnd) const
 {
     OutStart = PassOffsets[(uint32)Pass];
-    OutEnd = PassOffsets[(uint32)Pass + 1];
+    OutEnd   = PassOffsets[(uint32)Pass + 1];
 }
 
 void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
@@ -96,7 +96,7 @@ void FDrawCommandList::Submit(FD3DDevice& Device, ID3D11DeviceContext* Ctx)
 
     SCOPE_STAT_CAT("DrawCommandList::Submit", "4_ExecutePass");
 
-    FDrawSubmitStateCache Cache;
+    FDrawBindStateCache Cache;
     Cache.Reset();
 
     for (const FDrawCommand& Cmd : Commands)
@@ -114,7 +114,7 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& D
     if (EndIdx > Commands.size())
         EndIdx = static_cast<uint32>(Commands.size());
 
-    FDrawSubmitStateCache Cache;
+    FDrawBindStateCache Cache;
     Cache.Reset();
 
     for (uint32 i = StartIdx; i < EndIdx; ++i)
@@ -126,7 +126,7 @@ void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& D
 }
 
 void FDrawCommandList::SubmitRange(uint32 StartIdx, uint32 EndIdx, FD3DDevice& Device,
-                                   ID3D11DeviceContext* Ctx, FDrawSubmitStateCache& Cache)
+                                   ID3D11DeviceContext* Ctx, FDrawBindStateCache& Cache)
 {
     if (StartIdx >= EndIdx)
         return;
@@ -150,12 +150,12 @@ uint32 FDrawCommandList::GetCommandCount(ERenderPass Pass) const
     return PassOffsets[(uint32)Pass + 1] - PassOffsets[(uint32)Pass];
 }
 
-// ============================================================
-// 단일 커맨드 GPU 제출 — StateCache 비교 후 변경분만 바인딩
-// ============================================================
+/*
+    단일 드로우 커맨드를 GPU에 제출하고 StateCache와 비교해 변경된 상태만 바인딩합니다.
+*/
 
 void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device,
-                                     ID3D11DeviceContext* Ctx, FDrawSubmitStateCache& Cache)
+                                     ID3D11DeviceContext* Ctx, FDrawBindStateCache& Cache)
 {
     const bool bForce = Cache.bForceAll;
 
@@ -199,9 +199,9 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     {
         if (bForce || Cmd.MeshBuffer != Cache.MeshBuffer)
         {
-            uint32 Offset = 0;
-            uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-            ID3D11Buffer* VB = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+            uint32        Offset = 0;
+            uint32        Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+            ID3D11Buffer* VB     = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
 
             if (VB && Stride > 0)
             {
@@ -215,8 +215,8 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
             }
 
             Cache.MeshBuffer = Cmd.MeshBuffer;
-            Cache.RawVB = nullptr;
-            Cache.RawIB = nullptr;
+            Cache.RawVB      = nullptr;
+            Cache.RawIB      = nullptr;
         }
     }
     else if (Cmd.RawVB)
@@ -225,7 +225,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         {
             uint32 Offset = 0;
             Ctx->IASetVertexBuffers(0, 1, &Cmd.RawVB, &Cmd.RawVBStride, &Offset);
-            Cache.RawVB = Cmd.RawVB;
+            Cache.RawVB      = Cmd.RawVB;
             Cache.MeshBuffer = nullptr;
         }
 
@@ -240,8 +240,8 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         Ctx->IASetInputLayout(nullptr);
         Ctx->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
         Cache.MeshBuffer = nullptr;
-        Cache.RawVB = nullptr;
-        Cache.RawIB = nullptr;
+        Cache.RawVB      = nullptr;
+        Cache.RawIB      = nullptr;
     }
 
     if (Cmd.PerObjectCB && (bForce || Cmd.PerObjectCB != Cache.PerObjectCB))
@@ -258,7 +258,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     {
         if (bForce || Cmd.PerShaderCB[i] != Cache.PerShaderCB[i])
         {
-            const uint32 Slot = ECBSlot::PerShader0 + i;
+            const uint32  Slot  = ECBSlot::PerShader0 + i;
             ID3D11Buffer* RawCB = Cmd.PerShaderCB[i] ? Cmd.PerShaderCB[i]->GetBuffer() : nullptr;
             Ctx->VSSetConstantBuffers(Slot, 1, &RawCB);
             Ctx->PSSetConstantBuffers(Slot, 1, &RawCB);
@@ -286,7 +286,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     }
 
     const bool bUsesPreBoundLightingInputs = (Cmd.Pass == ERenderPass::Lighting);
-    const bool bUsesPreBoundDecalInputs = (Cmd.Pass == ERenderPass::Decal && Cmd.MeshBuffer == nullptr);
+    const bool bUsesPreBoundDecalInputs    = (Cmd.Pass == ERenderPass::Decal && Cmd.MeshBuffer == nullptr);
 
     if (bUsesPreBoundDecalInputs)
     {
@@ -302,14 +302,14 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     {
         ID3D11ShaderResourceView* SRVs[3] = { Cmd.DiffuseSRV, Cmd.NormalSRV, Cmd.SpecularSRV };
         Ctx->PSSetShaderResources(0, 3, SRVs);
-        Cache.DiffuseSRV = Cmd.DiffuseSRV;
-        Cache.NormalSRV = Cmd.NormalSRV;
+        Cache.DiffuseSRV  = Cmd.DiffuseSRV;
+        Cache.NormalSRV   = Cmd.NormalSRV;
         Cache.SpecularSRV = Cmd.SpecularSRV;
     }
     else if (bUsesPreBoundLightingInputs)
     {
-        Cache.DiffuseSRV = Cmd.DiffuseSRV;
-        Cache.NormalSRV = Cmd.NormalSRV;
+        Cache.DiffuseSRV  = Cmd.DiffuseSRV;
+        Cache.NormalSRV   = Cmd.NormalSRV;
         Cache.SpecularSRV = Cmd.SpecularSRV;
     }
 

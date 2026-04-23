@@ -27,9 +27,9 @@ void FDrawCollector::CollectOverlay(const FCollectOverlayContext& OverlayContext
 
     CollectGrid(OverlayContext.GridSpacing, OverlayContext.GridHalfLineCount, CollectedOverlayData);
 
-    if (OverlayContext.SceneView && OverlayContext.Scene)
+    if (OverlayContext.Scene)
     {
-        CollectDebugDraw(*OverlayContext.SceneView, *OverlayContext.Scene, CollectedOverlayData);
+        CollectDebugRender(*OverlayContext.Scene, CollectedOverlayData);
     }
 
     if (OverlayContext.World && OverlayContext.SceneView)
@@ -63,9 +63,9 @@ void FDrawCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem,
     CollectOverlayText(OverlaySystem, Editor, CollectedSceneData.Primitives);
 }
 
-void FDrawCollector::CollectDebugDraw(const FSceneView& SceneView, const FScene& Scene)
+void FDrawCollector::CollectDebugRender(const FScene& Scene)
 {
-    CollectDebugDraw(SceneView, Scene, CollectedOverlayData);
+    CollectDebugRender(Scene, CollectedOverlayData);
 }
 
 void FDrawCollector::CollectOctreeDebug(const FOctree* Node, uint32 Depth)
@@ -160,17 +160,15 @@ void FDrawCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FCo
     OverlayData.Guides.Grid.bEnabled      = (GridSpacing > 0.0f && GridHalfLineCount > 0);
 }
 
-void FDrawCollector::CollectDebugDraw(const FSceneView& SceneView, const FScene& Scene, FCollectedOverlayData& OverlayData)
+void FDrawCollector::CollectDebugRender(const FScene& Scene, FCollectedOverlayData& OverlayData)
 {
-    OverlayData.Debug.Queue = Scene.GetDebugDrawQueue();
-
-    for (const FDebugDrawItem& Item : Scene.GetImmediateDebugLines())
+    for (const FDebugLineItem& Item : Scene.GetDebugPrimitiveQueue().GetOneFrameLines())
     {
         OverlayData.Debug.Lines.push_back({ Item.Start, Item.End, Item.Color });
     }
 
-	const TArray<FDebugDrawItem> Items = Scene.GetDebugDrawQueue().GetItems();
-    for (const FDebugDrawItem& Item : Items)
+    const TArray<FDebugLineItem>& Items = Scene.GetDebugPrimitiveQueue().GetPersistentLines();
+    for (const FDebugLineItem& Item : Items)
     {
         OverlayData.Debug.Lines.push_back({ Item.Start, Item.End, Item.Color });
     }

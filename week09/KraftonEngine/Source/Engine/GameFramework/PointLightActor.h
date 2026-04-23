@@ -9,13 +9,13 @@ class UBillboardComponent;
 class APointLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(APointLightActor, AActor)
-	APointLightActor();
+    DECLARE_CLASS(APointLightActor, AActor)
+    APointLightActor();
 
-	void InitDefaultComponents();
+    void InitDefaultComponents();
 
 private:
     UPointLightComponent* PointLightComponent = nullptr;
-	UBillboardComponent* BillboardComponent = nullptr;
-	FString PointLightIconPath = FPaths::EditorRelativePath("Icons/Materials/PointLightIcon.json");
+    UBillboardComponent* BillboardComponent = nullptr;
+    FString PointLightIconPath = FPaths::EditorRelativePath("Icons/Materials/PointLightIcon.json");
 };

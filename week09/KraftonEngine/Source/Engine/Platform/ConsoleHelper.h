@@ -3,10 +3,13 @@
 #include <iostream>
 #include <cstdio>
 
-class ConsoleHelper {
+class ConsoleHelper
+{
 public:
-    ConsoleHelper() {
-        if (AllocConsole()) {
+    ConsoleHelper()
+    {
+        if (AllocConsole())
+        {
             freopen_s(&m_fpIn, "CONIN$", "r", stdin);
             freopen_s(&m_fpOut, "CONOUT$", "w", stdout);
             freopen_s(&m_fpErr, "CONOUT$", "w", stderr);
@@ -15,10 +18,14 @@ public:
         }
     }
 
-    ~ConsoleHelper() {
-        if (m_fpIn)  fclose(m_fpIn);
-        if (m_fpOut) fclose(m_fpOut);
-        if (m_fpErr) fclose(m_fpErr);
+    ~ConsoleHelper()
+    {
+        if (m_fpIn)
+            fclose(m_fpIn);
+        if (m_fpOut)
+            fclose(m_fpOut);
+        if (m_fpErr)
+            fclose(m_fpErr);
 
         FreeConsole();
     }

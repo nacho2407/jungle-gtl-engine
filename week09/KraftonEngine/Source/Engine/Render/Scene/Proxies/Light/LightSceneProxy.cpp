@@ -10,10 +10,10 @@ void FLightSceneProxy::UpdateLightConstants()
 {
     if (!Owner)
         return;
-	bAffectsWorld = Owner->AffectsWorld();
-    LightConstants.Position = Owner->GetWorldLocation();
-    LightConstants.Direction = Owner->GetForwardVector();
-    LightConstants.Intensity = Owner->GetIntensity();
+    bAffectsWorld             = Owner->AffectsWorld();
+    LightConstants.Position   = Owner->GetWorldLocation();
+    LightConstants.Direction  = Owner->GetForwardVector();
+    LightConstants.Intensity  = Owner->GetIntensity();
     LightConstants.LightColor = Owner->GetLightColor();
 }
 
@@ -21,6 +21,6 @@ void FLightSceneProxy::UpdateTransform()
 {
     if (!Owner)
         return;
-    LightConstants.Position = Owner->GetWorldLocation();
+    LightConstants.Position  = Owner->GetWorldLocation();
     LightConstants.Direction = Owner->GetForwardVector();
 }

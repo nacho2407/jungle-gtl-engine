@@ -2,20 +2,20 @@
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
-#include "Render/Resources/RenderResources.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
-#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 
 namespace
 {
 bool UsesDecalPass(const FRenderPipelineContext& Context)
 {
-    return !Context.ViewModePassRegistry ||
-           !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode) ||
-           Context.ViewModePassRegistry->UsesDecal(Context.ActiveViewMode);
+    return !Context.ViewMode.Registry ||
+           !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode) ||
+           Context.ViewMode.Registry->UsesDecal(Context.ViewMode.ActiveViewMode);
 }
 } // namespace
 
@@ -27,14 +27,14 @@ void FDecalPass::PrepareInputs(FRenderPipelineContext& Context)
         return;
     }
 
-    if (Context.ActiveViewSurfaces)
+    if (Context.ViewMode.Surfaces)
     {
         Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
 
         ID3D11ShaderResourceView* BaseInputs[3] = {
-            Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor),
-            Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1),
-            Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface2),
+            Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor),
+            Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface1),
+            Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface2),
         };
         Context.Context->PSSetShaderResources(1, ARRAY_SIZE(BaseInputs), BaseInputs);
     }
@@ -52,10 +52,10 @@ void FDecalPass::PrepareInputs(FRenderPipelineContext& Context)
 
     if (Context.StateCache)
     {
-        Context.StateCache->DiffuseSRV = nullptr;
-        Context.StateCache->NormalSRV = nullptr;
+        Context.StateCache->DiffuseSRV  = nullptr;
+        Context.StateCache->NormalSRV   = nullptr;
         Context.StateCache->SpecularSRV = nullptr;
-        Context.StateCache->bForceAll = true;
+        Context.StateCache->bForceAll   = true;
     }
 }
 
@@ -66,14 +66,14 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
         return;
     }
 
-    if (!Context.ActiveViewSurfaces || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (!Context.ViewMode.Surfaces || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
         Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
         return;
     }
 
-    const EShadingModel ShadingModel = Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode);
+    const EShadingModel ShadingModel = Context.ViewMode.Registry->GetShadingModel(Context.ViewMode.ActiveViewMode);
 
     if (ShadingModel == EShadingModel::Unlit)
     {
@@ -82,14 +82,14 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
         return;
     }
 
-    Context.ActiveViewSurfaces->ClearModifiedTargets(Context.Context, ShadingModel);
+    Context.ViewMode.Surfaces->ClearModifiedTargets(Context.Context, ShadingModel);
 
-    if (Context.ActiveViewSurfaces->GetRTV(ESceneViewModeSurfaceSlot::ModifiedBaseColor) && Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor))
+    if (Context.ViewMode.Surfaces->GetRTV(EViewModeSurfaceslot::ModifiedBaseColor) && Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor))
     {
         ID3D11Resource* Src = nullptr;
         ID3D11Resource* Dst = nullptr;
-        Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor)->GetResource(&Src);
-        Context.ActiveViewSurfaces->GetRTV(ESceneViewModeSurfaceSlot::ModifiedBaseColor)->GetResource(&Dst);
+        Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor)->GetResource(&Src);
+        Context.ViewMode.Surfaces->GetRTV(EViewModeSurfaceslot::ModifiedBaseColor)->GetResource(&Dst);
         if (Src && Dst)
             Context.Context->CopyResource(Dst, Src);
         if (Dst)
@@ -102,8 +102,8 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
     {
         ID3D11Resource* Src = nullptr;
         ID3D11Resource* Dst = nullptr;
-        Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1)->GetResource(&Src);
-        Context.ActiveViewSurfaces->GetRTV(ESceneViewModeSurfaceSlot::ModifiedSurface1)->GetResource(&Dst);
+        Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface1)->GetResource(&Src);
+        Context.ViewMode.Surfaces->GetRTV(EViewModeSurfaceslot::ModifiedSurface1)->GetResource(&Dst);
         if (Src && Dst)
             Context.Context->CopyResource(Dst, Src);
         if (Dst)
@@ -116,8 +116,8 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
     {
         ID3D11Resource* Src = nullptr;
         ID3D11Resource* Dst = nullptr;
-        Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface2)->GetResource(&Src);
-        Context.ActiveViewSurfaces->GetRTV(ESceneViewModeSurfaceSlot::ModifiedSurface2)->GetResource(&Dst);
+        Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface2)->GetResource(&Src);
+        Context.ViewMode.Surfaces->GetRTV(EViewModeSurfaceslot::ModifiedSurface2)->GetResource(&Dst);
         if (Src && Dst)
             Context.Context->CopyResource(Dst, Src);
         if (Dst)
@@ -126,12 +126,12 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
             Src->Release();
     }
 
-    Context.ActiveViewSurfaces->BindDecalTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
+    Context.ViewMode.Surfaces->BindDecalTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
 }
 
 void FDecalPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommandBuilder::BuildDecalDrawCommand(Proxy, Context, *Context.DrawCommandList);
+    DrawCommand::BuildDecalDrawCommand(Proxy, Context, *Context.DrawCommandList);
 }
 
 void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
@@ -142,8 +142,8 @@ void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    const bool bHasViewModeConfig = Context.ActiveViewSurfaces && Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode);
-    const EShadingModel ShadingModel = bHasViewModeConfig ? Context.ViewModePassRegistry->GetShadingModel(Context.ActiveViewMode) : EShadingModel::Unlit;
+    const bool          bHasViewModeConfig = Context.ViewMode.Surfaces && Context.ViewMode.Registry && Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode);
+    const EShadingModel ShadingModel       = bHasViewModeConfig ? Context.ViewMode.Registry->GetShadingModel(Context.ViewMode.ActiveViewMode) : EShadingModel::Unlit;
 
     uint32 s, e;
     Context.DrawCommandList->GetPassRange(ERenderPass::Decal, s, e);
@@ -159,11 +159,11 @@ void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     if (bHasViewModeConfig && ShadingModel == EShadingModel::Unlit)
     {
-        if (s == e && Context.ActiveViewSurfaces)
+        if (s == e && Context.ViewMode.Surfaces)
         {
             Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
             ID3D11Resource* Src = nullptr;
-            Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor)->GetResource(&Src);
+            Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor)->GetResource(&Src);
             if (Src)
             {
                 Context.Context->CopyResource(Targets->ViewportRenderTexture, Src);

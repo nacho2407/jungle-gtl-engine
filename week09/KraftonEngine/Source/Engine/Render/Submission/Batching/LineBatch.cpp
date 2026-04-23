@@ -6,60 +6,60 @@
 
 namespace
 {
-    float Comp(const FVector& V, int I)
-    {
-        return (&V.X)[I];
-    }
+float Comp(const FVector& V, int I)
+{
+    return (&V.X)[I];
+}
 
-    FVector MakeGridPoint(int A0, int A1, int N, float V0, float V1, float VN)
-    {
-        FVector P;
-        (&P.X)[A0] = V0;
-        (&P.X)[A1] = V1;
-        (&P.X)[N]  = VN;
-        return P;
-    }
+FVector MakeGridPoint(int A0, int A1, int N, float V0, float V1, float VN)
+{
+    FVector P;
+    (&P.X)[A0] = V0;
+    (&P.X)[A1] = V1;
+    (&P.X)[N]  = VN;
+    return P;
+}
 
-    FVector4 AxisColor(int Axis)
+FVector4 AxisColor(int Axis)
+{
+    switch (Axis)
     {
-        switch (Axis)
-        {
-        case 0:
-            return FColor::Red().ToVector4();
-        case 1:
-            return FColor::Green().ToVector4();
-        default:
-            return FColor::Blue().ToVector4();
-        }
+    case 0:
+        return FColor::Red().ToVector4();
+    case 1:
+        return FColor::Green().ToVector4();
+    default:
+        return FColor::Blue().ToVector4();
     }
+}
 
-    float SnapToGrid(float Value, float Spacing)
-    {
-        return std::round(Value / Spacing) * Spacing;
-    }
+float SnapToGrid(float Value, float Spacing)
+{
+    return std::round(Value / Spacing) * Spacing;
+}
 
-    bool IsAxisLine(float Coordinate, float Spacing)
-    {
-        return std::fabs(Coordinate) <= (Spacing * 0.25f);
-    }
+bool IsAxisLine(float Coordinate, float Spacing)
+{
+    return std::fabs(Coordinate) <= (Spacing * 0.25f);
+}
 
-    int32 ComputeDynamicHalfCount(float Spacing, int32 BaseHalfCount, float CameraNormalDist)
-    {
-        const float BaseExtent         = Spacing * static_cast<float>(std::max(BaseHalfCount, 1));
-        const float HeightDrivenExtent = (std::fabs(CameraNormalDist) * 2.0f) + (Spacing * 4.0f);
-        const float RequiredExtent     = std::max(BaseExtent, HeightDrivenExtent);
-        return std::max(BaseHalfCount, static_cast<int32>(std::ceil(RequiredExtent / Spacing)));
-    }
+int32 ComputeDynamicHalfCount(float Spacing, int32 BaseHalfCount, float CameraNormalDist)
+{
+    const float BaseExtent         = Spacing * static_cast<float>(std::max(BaseHalfCount, 1));
+    const float HeightDrivenExtent = (std::fabs(CameraNormalDist) * 2.0f) + (Spacing * 4.0f);
+    const float RequiredExtent     = std::max(BaseExtent, HeightDrivenExtent);
+    return std::max(BaseHalfCount, static_cast<int32>(std::ceil(RequiredExtent / Spacing)));
+}
 
-    int DominantAxis(const FVector& V)
-    {
-        float AX = std::fabs(V.X), AY = std::fabs(V.Y), AZ = std::fabs(V.Z);
-        if (AX >= AY && AX >= AZ)
-            return 0;
-        if (AY >= AX && AY >= AZ)
-            return 1;
-        return 2;
-    }
+int DominantAxis(const FVector& V)
+{
+    float AX = std::fabs(V.X), AY = std::fabs(V.Y), AZ = std::fabs(V.Z);
+    if (AX >= AY && AX >= AZ)
+        return 0;
+    if (AY >= AX && AY >= AZ)
+        return 1;
+    return 2;
+}
 } // namespace
 
 void FLineBatch::Create(ID3D11Device* InDevice)

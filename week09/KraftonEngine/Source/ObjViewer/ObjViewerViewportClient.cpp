@@ -1,20 +1,20 @@
-//#include "ObjViewer/ObjViewerViewportClient.h"
+// #include "ObjViewer/ObjViewerViewportClient.h"
 //
-//#include "Engine/Input/InputSystem.h"
-//#include "Engine/Runtime/WindowsWindow.h"
-//#include "Component/CameraComponent.h"
-//#include "Viewport/Viewport.h"
-//#include "Math/MathUtils.h"
-//#include "ImGui/imgui.h"
+// #include "Engine/Input/InputSystem.h"
+// #include "Engine/Runtime/WindowsWindow.h"
+// #include "Component/CameraComponent.h"
+// #include "Viewport/Viewport.h"
+// #include "Math/MathUtils.h"
+// #include "ImGui/imgui.h"
 //
-//#include <cmath>
+// #include <cmath>
 //
-//void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
+// void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 //{
 //	Window = InWindow;
-//}
+// }
 //
-//void FObjViewerViewportClient::Release()
+// void FObjViewerViewportClient::Release()
 //{
 //	DestroyCamera();
 //	if (Viewport)
@@ -23,32 +23,32 @@
 //		delete Viewport;
 //		Viewport = nullptr;
 //	}
-//}
+// }
 //
-//void FObjViewerViewportClient::CreateCamera()
+// void FObjViewerViewportClient::CreateCamera()
 //{
 //	DestroyCamera();
 //	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
-//}
+// }
 //
-//void FObjViewerViewportClient::DestroyCamera()
+// void FObjViewerViewportClient::DestroyCamera()
 //{
 //	if (Camera)
 //	{
 //		UObjectManager::Get().DestroyObject(Camera);
 //		Camera = nullptr;
 //	}
-//}
+// }
 //
-//void FObjViewerViewportClient::ResetCamera()
+// void FObjViewerViewportClient::ResetCamera()
 //{
 //	OrbitTarget = FVector(0, 0, 0);
 //	OrbitDistance = 5.0f;
 //	OrbitYaw = 0.0f;
 //	OrbitPitch = 30.0f;
-//}
+// }
 //
-//static void UpdateOrbitCamera(UCameraComponent* Camera, const FVector& Target, float Distance, float Yaw, float Pitch)
+// static void UpdateOrbitCamera(UCameraComponent* Camera, const FVector& Target, float Distance, float Yaw, float Pitch)
 //{
 //	float YawRad = Yaw * DEG_TO_RAD;
 //	float PitchRad = Pitch * DEG_TO_RAD;
@@ -61,9 +61,9 @@
 //
 //	Camera->SetWorldLocation(Target + Offset);
 //	Camera->LookAt(Target);
-//}
+// }
 //
-//void FObjViewerViewportClient::Tick(float DeltaTime)
+// void FObjViewerViewportClient::Tick(float DeltaTime)
 //{
 //	TickInput(DeltaTime);
 //
@@ -71,9 +71,9 @@
 //	{
 //		UpdateOrbitCamera(Camera, OrbitTarget, OrbitDistance, OrbitYaw, OrbitPitch);
 //	}
-//}
+// }
 //
-//void FObjViewerViewportClient::TickInput(float DeltaTime)
+// void FObjViewerViewportClient::TickInput(float DeltaTime)
 //{
 //	if (!Camera) return;
 //	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard) return;
@@ -122,9 +122,9 @@
 //		OrbitDistance -= ScrollNotches * OrbitDistance * 0.1f;
 //		OrbitDistance = Clamp(OrbitDistance, 0.1f, 500.0f);
 //	}
-//}
+// }
 //
-//void FObjViewerViewportClient::SetViewportRect(float X, float Y, float Width, float Height)
+// void FObjViewerViewportClient::SetViewportRect(float X, float Y, float Width, float Height)
 //{
 //	ViewportX = X;
 //	ViewportY = Y;
@@ -141,9 +141,9 @@
 //			Viewport->RequestResize(W, H);
 //		}
 //	}
-//}
+// }
 //
-//void FObjViewerViewportClient::RenderViewportImage()
+// void FObjViewerViewportClient::RenderViewportImage()
 //{
 //	if (!Viewport || !Viewport->GetSRV()) return;
 //	if (ViewportWidth <= 0 || ViewportHeight <= 0) return;
@@ -153,4 +153,4 @@
 //	ImVec2 Max(ViewportX + ViewportWidth, ViewportY + ViewportHeight);
 //
 //	DrawList->AddImage((ImTextureID)Viewport->GetSRV(), Min, Max);
-//}
+// }
