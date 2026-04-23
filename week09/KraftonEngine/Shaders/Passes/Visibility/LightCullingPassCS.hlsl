@@ -1,4 +1,4 @@
-﻿// Shader: LightCullingPassCS
+// Shader: LightCullingPassCS
 // Role: tile-based local light culling compute entry.
 // Entry: CS_LightCulling. Slots: b0 Frame, b2 LightCullingParams, t1 SceneDepth, t6 LocalLights, u0/u1/u2 culling outputs.
 

@@ -28,7 +28,7 @@ void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 
 void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::Outline);
+    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::Outline);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {

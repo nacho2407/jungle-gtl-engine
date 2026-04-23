@@ -17,7 +17,7 @@ void FAlphaBlendPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FAlphaBlendPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommand::BuildMeshDrawCommand(Proxy, ERenderPass::AlphaBlend, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildMeshDrawCommand(Proxy, ERenderPass::AlphaBlend, Context, *Context.DrawCommandList);
 }
 
 void FAlphaBlendPass::SubmitDrawCommands(FRenderPipelineContext& Context)

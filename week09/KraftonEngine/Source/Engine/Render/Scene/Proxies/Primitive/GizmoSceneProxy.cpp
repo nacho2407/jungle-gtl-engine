@@ -2,6 +2,7 @@
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/Resources/Buffers/ConstantBufferCache.h"
 #include "Render/Execute/Context/Scene/SceneView.h"

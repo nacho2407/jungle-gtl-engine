@@ -18,7 +18,7 @@ void FDebugLinePass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FDebugLinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommand::BuildLineDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildLineDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FDebugLinePass::SubmitDrawCommands(FRenderPipelineContext& Context)

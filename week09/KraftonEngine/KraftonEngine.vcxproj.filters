@@ -28,9 +28,6 @@
     <Filter Include="Shaders\Editor">
       <UniqueIdentifier>{f3afd37d-e427-b6e6-d610-351b0cbf0f39}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Materials">
-      <UniqueIdentifier>{7e992644-e406-1469-fcce-d21514b58d9f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\Passes">
       <UniqueIdentifier>{b21644f6-5006-8cd7-fbd7-0fd38ae73be8}</UniqueIdentifier>
     </Filter>
@@ -176,16 +173,19 @@
       <UniqueIdentifier>{c578f6e2-c3e9-c6b1-37d6-02cfde79b05a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Resources\Meshes">
-      <UniqueIdentifier>{69d31e44-31a7-47fc-aec9-3dfe8b85fb1f}</UniqueIdentifier>
+      <UniqueIdentifier>{9f0f26a5-0571-cf6f-a149-9fc611663fdd}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Resources\Shaders">
       <UniqueIdentifier>{e7f06a05-364a-9d03-9db8-9afb0e7f7547}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Resources\State">
+      <UniqueIdentifier>{cea97875-8a89-c858-5c43-58430c2a03f6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Scene">
       <UniqueIdentifier>{773edb3e-6615-a398-31f8-5f6fe4028008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Scene\DebugDraw">
-      <UniqueIdentifier>{d7c433c2-8d1b-4747-fc20-9536719442f2}</UniqueIdentifier>
+    <Filter Include="Source\Engine\Render\Scene\Debug">
+      <UniqueIdentifier>{34ad6b1b-dfc7-0d55-93cb-e9e12d8605ac}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Scene\Proxies">
       <UniqueIdentifier>{c86ce6c1-d35b-837d-97ed-051762b239df}</UniqueIdentifier>
@@ -198,12 +198,6 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Scene\Proxies\Primitive">
       <UniqueIdentifier>{9f981728-91ca-763b-bca8-5db990a390b6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Pipeline">
-      <UniqueIdentifier>{f93d8e66-92c6-4697-b716-38bf0c667a6d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Pipeline\State">
-      <UniqueIdentifier>{4c8e94c6-e59a-1517-a5b8-9f70eda0a883}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Submission">
       <UniqueIdentifier>{2087514d-385b-db99-7f6e-638e97bfaa6c}</UniqueIdentifier>
@@ -226,14 +220,11 @@
     <Filter Include="Source\Engine\Render\Visibility\LOD">
       <UniqueIdentifier>{ff923159-7de4-9cad-df7e-d691dba3e8c3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Visibility\LightCulling">
+      <UniqueIdentifier>{232a0d4d-bf28-3eb6-0ff3-dcbddfe74e59}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Visibility\Occlusion">
       <UniqueIdentifier>{8cccb767-e48b-b07f-f58e-e90d787ddd58}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Lighting">
-      <UniqueIdentifier>{0b7c0dcc-74d5-4b0d-9a76-7b98d6d2a8a3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Render\Lighting\Culling">
-      <UniqueIdentifier>{1c821597-9a4b-4fd7-8510-1b585f4046f0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Resource">
       <UniqueIdentifier>{856648ae-d4d3-9a74-aa50-13bfda809bf1}</UniqueIdentifier>
@@ -329,9 +320,6 @@
     </FxCompile>
     <FxCompile Include="Shaders\Editor\ShaderSubUV.hlsl">
       <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Materials\DecalShader.hlsl">
-      <Filter>Shaders\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\FXAAPass.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
@@ -632,9 +620,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer.cpp">
       <Filter>Source\Engine\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resources\FrameResources.cpp">
-      <Filter>Source\Engine\Render\Resources</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.cpp">
       <Filter>Source\Engine\Render\Execute\Context</Filter>
     </ClCompile>
@@ -722,6 +707,9 @@
     <ClCompile Include="Source\Engine\Render\Execute\Runner\RenderPipelineRunner.cpp">
       <Filter>Source\Engine\Render\Execute\Runner</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resources\FrameResources.cpp">
+      <Filter>Source\Engine\Render\Resources</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resources\Buffers\ConstantBufferCache.cpp">
       <Filter>Source\Engine\Render\Resources\Buffers</Filter>
     </ClCompile>
@@ -767,14 +755,11 @@
     <ClCompile Include="Source\Engine\Render\Scene\Scene.cpp">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Scene\DebugDraw\DebugDrawQueue.cpp">
-      <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
+    <ClCompile Include="Source\Engine\Render\Scene\Debug\DebugPrimitiveQueue.cpp">
+      <Filter>Source\Engine\Render\Scene\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Scene\DebugDraw\DrawDebugHelpers.cpp">
-      <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Scene\DebugDraw\SceneDebugData.cpp">
-      <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
+    <ClCompile Include="Source\Engine\Render\Scene\Debug\DebugRenderAPI.cpp">
+      <Filter>Source\Engine\Render\Scene\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\AmbientLightSceneProxy.cpp">
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
@@ -839,11 +824,11 @@
     <ClCompile Include="Source\Engine\Render\Submission\Command\DrawCommandList.cpp">
       <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Lighting\Culling\TileBasedLightCulling.cpp">
-      <Filter>Source\Engine\Render\Lighting\Culling</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp">
       <Filter>Source\Engine\Render\Visibility\Frustum</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Visibility\LightCulling\TileBasedLightCulling.cpp">
+      <Filter>Source\Engine\Render\Visibility\LightCulling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Visibility\Occlusion\GPUOcclusionCulling.cpp">
       <Filter>Source\Engine\Render\Visibility\Occlusion</Filter>
@@ -1020,6 +1005,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\DirectionalLightComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\FogParams.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
@@ -1304,9 +1292,6 @@
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\FogParams.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
@@ -1358,20 +1343,29 @@
     <ClInclude Include="Source\Engine\Render\Resources\FrameResources.h">
       <Filter>Source\Engine\Render\Resources</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Bindings\ConstantBufferBinding.h">
+      <Filter>Source\Engine\Render\Resources\Bindings</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderBindingSlots.h">
       <Filter>Source\Engine\Render\Resources\Bindings</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderCBKeys.h">
       <Filter>Source\Engine\Render\Resources\Bindings</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferLayouts.h">
+    <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferCache.h">
       <Filter>Source\Engine\Render\Resources\Buffers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferCache.h">
+    <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferData.h">
+      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Buffers\LightBufferTypes.h">
       <Filter>Source\Engine\Render\Resources\Buffers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\Buffers\MeshBufferManager.h">
       <Filter>Source\Engine\Render\Resources\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Meshes\PrimitiveMeshTypes.h">
+      <Filter>Source\Engine\Render\Resources\Meshes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderDependencyUtils.h">
       <Filter>Source\Engine\Render\Resources\Shaders</Filter>
@@ -1387,6 +1381,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderVariantCache.h">
       <Filter>Source\Engine\Render\Resources\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\State\RenderStateNames.h">
+      <Filter>Source\Engine\Render\Resources\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\State\RenderStateTypes.h">
+      <Filter>Source\Engine\Render\Resources\State</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\Buffers.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Buffers</Filter>
@@ -1448,26 +1448,20 @@
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Textures\SurfaceTexture.h">
       <Filter>Source\Engine\Render\RHI\D3D11\Textures</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\Bindings\ConstantBufferBinding.h">
-      <Filter>Source\Engine\Render\Resources\Bindings</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\SceneProxyDirtyFlag.h">
+    <ClInclude Include="Source\Engine\Render\Scene\Scene.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\Scene.h">
+    <ClInclude Include="Source\Engine\Render\Scene\SceneProxyDirtyFlag.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\SceneProxyRegistry.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\DebugDraw\DebugDrawQueue.h">
-      <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
+    <ClInclude Include="Source\Engine\Render\Scene\Debug\DebugPrimitiveQueue.h">
+      <Filter>Source\Engine\Render\Scene\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\DebugDraw\DrawDebugHelpers.h">
-      <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\DebugDraw\SceneDebugData.h">
-      <Filter>Source\Engine\Render\Scene\DebugDraw</Filter>
+    <ClInclude Include="Source\Engine\Render\Scene\Debug\DebugRenderAPI.h">
+      <Filter>Source\Engine\Render\Scene\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\SceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies</Filter>
@@ -1486,9 +1480,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\LightTypes.h">
-      <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
@@ -1514,9 +1505,6 @@
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\Buffers\LightBufferTypes.h">
-      <Filter>Source\Engine\Render\Resources\Buffers</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
     </ClInclude>
@@ -1525,12 +1513,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\Meshes\PrimitiveMeshTypes.h">
-      <Filter>Source\Engine\Render\Resources\Meshes</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\State\RenderStateNames.h">
-      <Filter>Source\Engine\Render\Pipeline\State</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Batching\BatchBuffer.h">
       <Filter>Source\Engine\Render\Submission\Batching</Filter>
@@ -1562,14 +1544,11 @@
     <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommandList.h">
       <Filter>Source\Engine\Render\Submission\Command</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\State\RenderStateTypes.h">
-      <Filter>Source\Engine\Render\Pipeline\State</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Lighting\Culling\TileBasedLightCulling.h">
-      <Filter>Source\Engine\Render\Lighting\Culling</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.h">
       <Filter>Source\Engine\Render\Visibility\Frustum</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Visibility\LightCulling\TileBasedLightCulling.h">
+      <Filter>Source\Engine\Render\Visibility\LightCulling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Visibility\LOD\LODContext.h">
       <Filter>Source\Engine\Render\Visibility\LOD</Filter>

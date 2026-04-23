@@ -1,4 +1,4 @@
-﻿// Shader: LightHitMapPass
+// Shader: LightHitMapPass
 // Role: fullscreen light-culling debug overlay.
 // Entries: VS, PS. Slots: t8 DebugHitMap, t11 SceneColor, s0 LinearClamp.
 

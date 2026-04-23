@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -592,7 +592,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
         if (bIsEditorWorld)
         {
-            Renderer.CollectDebugDraw(SceneView, Scene);
+            Renderer.CollectDebugRender(Scene);
 
             if (ShowFlags.bSceneOctree)
             {

@@ -1,4 +1,4 @@
-#include "Render/Submission/Command/BuildDrawCommand.h"
+﻿#include "Render/Submission/Command/BuildDrawCommand.h"
 
 #include "Component/TextRenderComponent.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
@@ -18,10 +18,11 @@
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Submission/Command/DrawCommand.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Resource/ResourceManager.h"
 
-void DrawCommand::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     const bool bHasMeshBuffer = (Proxy.MeshBuffer != nullptr);
     const bool bMeshValid     = bHasMeshBuffer && Proxy.MeshBuffer->IsValid();
@@ -206,7 +207,7 @@ void DrawCommand::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERende
 }
 
 
-void DrawCommand::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant)
+void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
     FGraphicsProgram*             Shader  = nullptr;
@@ -284,7 +285,7 @@ void DrawCommand::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineCo
 }
 
 
-void DrawCommand::BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Scene || !Context.SceneView)
     {
@@ -375,7 +376,7 @@ void DrawCommand::BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCom
 }
 
 
-void DrawCommand::BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     const FCollectedOverlayData* OverlayData = Context.Submission.OverlayData;
     if (!OverlayData)
@@ -394,7 +395,7 @@ void DrawCommand::BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Conte
     }
 }
 
-void DrawCommand::BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.SceneView)
     {
@@ -478,7 +479,7 @@ void DrawCommand::BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, F
     Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
-void DrawCommand::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
     {
@@ -541,7 +542,7 @@ void DrawCommand::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, 
     Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
-void DrawCommand::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
     {
@@ -605,7 +606,7 @@ void DrawCommand::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& 
 }
 
 
-void DrawCommand::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Proxy.DiffuseSRV || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {

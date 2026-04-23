@@ -67,7 +67,7 @@ void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, Variant);
+    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, Variant);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {

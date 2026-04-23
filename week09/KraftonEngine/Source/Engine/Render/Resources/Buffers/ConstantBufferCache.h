@@ -20,6 +20,7 @@ public:
     void Release();
 
     FConstantBuffer* GetOrCreate(uint32 Slot, uint32 ByteWidth);
+    FConstantBuffer* GetBuffer(uint32 Slot, uint32 ByteWidth) { return GetOrCreate(Slot, ByteWidth); }
     FConstantBuffer* Find(uint32 Slot);
 
 private:

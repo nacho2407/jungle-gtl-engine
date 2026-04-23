@@ -17,7 +17,7 @@ void FSelectionMaskPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FSelectionMaskPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommand::BuildMeshDrawCommand(Proxy, ERenderPass::SelectionMask, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildMeshDrawCommand(Proxy, ERenderPass::SelectionMask, Context, *Context.DrawCommandList);
 }
 
 void FSelectionMaskPass::SubmitDrawCommands(FRenderPipelineContext& Context)

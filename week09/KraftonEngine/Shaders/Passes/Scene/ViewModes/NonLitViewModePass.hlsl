@@ -1,4 +1,4 @@
-﻿// Shader: NonLitViewModePass
+// Shader: NonLitViewModePass
 // Role: fullscreen visualization for non-lit view modes.
 // Defines: NON_LIT_VIEW_SCENE_DEPTH or NON_LIT_VIEW_WORLD_NORMAL.
 // Entries: VS, PS. Slots: b2 SceneDepthCB, t0 NormalTexture, t10 SceneDepth, s0 LinearClamp.

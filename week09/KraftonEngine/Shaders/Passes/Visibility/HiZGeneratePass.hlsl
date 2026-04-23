@@ -1,4 +1,4 @@
-﻿// Shader: HiZGeneratePass
+// Shader: HiZGeneratePass
 // Role: Hi-Z mip generation compute shaders.
 // Entries: CSCopyDepth, CSDownsample. Slots: b0 HiZParams, t0 input depth/mip, u0 output mip.
 

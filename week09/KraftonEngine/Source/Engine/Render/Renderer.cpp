@@ -431,7 +431,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
             if (!TextProxy->CachedText.empty())
             {
-                DrawCommand::BuildWorldTextDrawCommand(*TextProxy, PipelineContext, *PipelineContext.DrawCommandList);
+                DrawCommandBuild::BuildWorldTextDrawCommand(*TextProxy, PipelineContext, *PipelineContext.DrawCommandList);
             }
         }
         else if (Cast<UDecalComponent>(Proxy->Owner))
@@ -450,7 +450,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         {
             if (bUsesDepthPre && Proxy->Pass == ERenderPass::Opaque && PassRegistry.FindPass(ERenderPassNodeType::DepthPrePass))
             {
-                DrawCommand::BuildMeshDrawCommand(*Proxy, ERenderPass::DepthPre, PipelineContext, *PipelineContext.DrawCommandList);
+                DrawCommandBuild::BuildMeshDrawCommand(*Proxy, ERenderPass::DepthPre, PipelineContext, *PipelineContext.DrawCommandList);
             }
 
             if (bHasViewModeConfig)

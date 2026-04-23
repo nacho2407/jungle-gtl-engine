@@ -1,4 +1,4 @@
-﻿// Shader: HeightFogPass
+// Shader: HeightFogPass
 // Role: fullscreen height fog composition.
 // Entries: VS, PS. Slots: b2 FogBuffer, t10 SceneDepth, t11 SceneColor, s0 LinearClamp.
 

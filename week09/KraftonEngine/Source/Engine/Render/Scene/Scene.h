@@ -33,6 +33,7 @@ public:
     void MarkProxyDirty(FPrimitiveSceneProxy* Proxy, ESceneProxyDirtyFlag Flag);
     void MarkLightProxyDirty(FLightSceneProxy* Proxy, ESceneProxyDirtyFlag Flag);
     void MarkAllPerObjectCBDirty();
+    void ClearFrameData() {}
 
     void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
     bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;

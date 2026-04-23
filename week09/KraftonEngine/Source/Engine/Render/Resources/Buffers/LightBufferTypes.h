@@ -3,6 +3,14 @@
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 
+enum class ELightType : uint32
+{
+    Ambient = 0,
+    Directional,
+    Point,
+    Spot,
+};
+
 struct FAmbientLightInfo
 {
     FVector Color;

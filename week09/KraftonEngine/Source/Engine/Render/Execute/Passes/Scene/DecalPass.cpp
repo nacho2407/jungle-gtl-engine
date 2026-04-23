@@ -131,7 +131,7 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FDecalPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommand::BuildDecalDrawCommand(Proxy, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildDecalDrawCommand(Proxy, Context, *Context.DrawCommandList);
 }
 
 void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
